@@ -14,9 +14,6 @@ namespace metashell
   struct config
   {
     std::vector<std::string> include_path;
-    std::vector<std::string> sysinclude_path;
-
-    config(); // gives the default config
   };
 }
 

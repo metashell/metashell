@@ -24,9 +24,8 @@ find_package(Boost COMPONENTS
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
-# LLVM
-find_package(LLVM)
-find_package(Threads)
+# Clang
+find_package(Clang)
 
 # Editline lib
 include_directories("include")
@@ -46,7 +45,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_GENERATOR "DEB")
    
   set(CPACK_PACKAGE_DESCRIPTION "Metashell")
-  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C template metaprogramming shell")
+  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C++ template metaprogramming shell")
   set(CPACK_PACKAGE_VENDOR "Abel Sinkovics")
   set(CPACK_PACKAGE_CONTACT "abel@sinkovics.hu")
   set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")

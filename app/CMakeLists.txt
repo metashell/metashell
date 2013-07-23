@@ -16,9 +16,12 @@ target_link_libraries(metashell metashell_lib)
 # Editline
 target_link_libraries(metashell ${Editline_LIBRARY})
 
-# LLVM
-target_link_libraries(metashell ${LLVM_LIBRARY})
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${LLVM_CXX_FLAGS})
+# Program_options
+target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
+
+# Clang
+target_link_libraries(metashell ${CLANG_LIBRARY})
+include_directories(${CLANG_INCLUDE_DIR})
 
 install(TARGETS metashell DESTINATION bin)
 

@@ -3,17 +3,19 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "metashell_ast_consumer.hpp"
+#include "cxstring.hpp"
 
 using namespace metashell;
 
-void metashell_ast_consumer::set_context(clang::ASTContext& ctx_)
+cxstring::cxstring(CXString s_) : _s(s_) {}
+
+cxstring::~cxstring()
 {
-  _ctx = &ctx_;
+  clang_disposeString(_s);
 }
 
-clang::ASTContext* metashell_ast_consumer::context()
+cxstring::operator std::string() const
 {
-  return _ctx;
+  return clang_getCString(_s);
 }
 

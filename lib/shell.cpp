@@ -8,43 +8,45 @@
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
 
+#include <boost/xpressive/xpressive.hpp>
+
 #include <boost/preprocessor/stringize.hpp>
 
 using namespace metashell;
 
 namespace
 {
-  bool is_preprocessor_directive(const std::string& s_)
+  bool is_environment_setup_command(const std::string& s_)
   {
-    for (std::string::const_iterator i = s_.begin(), e = s_.end(); i != e; ++i)
-    {
-      switch (*i)
-      {
-      case ' ':
-      case '\t':
-        break;
-      case '#':
-        return true;
-      default: 
-        return false;
-      }
-    }
-    return false;
+    using boost::xpressive::sregex;
+    using boost::xpressive::blank;
+    using boost::xpressive::bos;
+    using boost::xpressive::smatch;
+    using boost::xpressive::as_xpr;
+    
+    const sregex re =
+      bos >> *blank >> (
+        as_xpr('#') // preprocessor directive
+        | (as_xpr("using") >> blank) // using
+      );
+
+    smatch what;
+    return regex_search(s_, what, re);
   }
 
   void display(const result& r_, shell& s_)
   {
     for (
       std::vector<std::string>::const_iterator
-        i = r_.report.errors.begin(),
-        e = r_.report.errors.end();
+        i = r_.errors.begin(),
+        e = r_.errors.end();
       i != e;
       ++i
     )
     {
       s_.display_error(*i);
     }
-    if (r_.report.errors.empty())
+    if (!r_.has_errors())
     {
       s_.display_normal(r_.output);
     }
@@ -70,7 +72,7 @@ void shell::display_splash() const
 
 void shell::line_available(const std::string& s_)
 {
-  if (is_preprocessor_directive(s_))
+  if (is_environment_setup_command(s_))
   {
     store_in_buffer(s_);
   }

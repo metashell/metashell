@@ -6,20 +6,31 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "parser_report.hpp"
-
 #include <string>
+#include <vector>
 
 namespace metashell
 {
   struct result
   {
     std::string output;
-    parser_report report;
+    std::vector<std::string> errors;
+
+    result() {}
+
+    template <class InputIt>
+    result(
+      const std::string& output_,
+      InputIt begin_errors_,
+      InputIt end_errors_
+    ) :
+      output(output_),
+      errors(begin_errors_, end_errors_)
+    {}
 
     bool has_errors() const
     {
-      return !report.errors.empty();
+      return !errors.empty();
     }
   };
 }
