@@ -27,7 +27,10 @@ namespace
     const sregex re =
       bos >> *blank >> (
         as_xpr('#') // preprocessor directive
-        | (as_xpr("using") >> blank) // using
+        |
+        (
+          (as_xpr("using") | as_xpr("template") | as_xpr("typedef")) >> blank
+        ) // keywords
       );
 
     smatch what;
