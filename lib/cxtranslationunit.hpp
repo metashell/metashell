@@ -33,6 +33,8 @@ namespace metashell
 
     error_iterator errors_begin() const;
     error_iterator errors_end() const;
+
+    bool has_errors() const;
   private:
     CXTranslationUnit _tu;
   };

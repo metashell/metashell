@@ -62,4 +62,8 @@ cxtranslationunit::error_iterator cxtranslationunit::errors_end() const
     );
 }
 
+bool cxtranslationunit::has_errors() const
+{
+  return clang_getNumDiagnostics(_tu) > 0;
+}
 
