@@ -18,10 +18,9 @@ namespace
     "namespace metashell { "
       "namespace impl { "
         "template <class T> "
-        "typename T::tag tag_of(T*, T*); "
+        "typename T::tag tag_of(T*); "
         
-        "template <class T> "
-        "void tag_of(T*, void*); "
+        "void tag_of(...); "
       "} "
       
       "template <class Tag> "
@@ -36,7 +35,7 @@ namespace
       "template <class T> "
       "struct format : "
         "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of((T*)0, (T*)0))"
+          "decltype(::metashell::impl::tag_of((T*)0))"
         ">::template apply<T>"
         "{}; "
 
