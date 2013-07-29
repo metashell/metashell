@@ -34,7 +34,7 @@ include_directories("include")
 enable_testing()
 
 # Recursing
-subdirs(lib app)
+subdirs(lib app test)
 
 # Debian package
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")

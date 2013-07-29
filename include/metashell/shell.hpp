@@ -27,11 +27,11 @@ namespace metashell
     std::string prompt() const;
   
     void cancel_operation();
+
+    bool store_in_buffer(const std::string& s_);
   private:
     std::string _buffer;
     config _config;
-
-    void store_in_buffer(const std::string& s_);
   };
 }
 

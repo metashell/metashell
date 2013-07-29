@@ -18,7 +18,10 @@ namespace
     "namespace metashell { "
       "namespace impl { "
         "template <class T> "
-        "typename T::tag tag_of(T*); "
+        "struct wrap {}; "
+
+        "template <class T> "
+        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
         
         "void tag_of(...); "
       "} "
@@ -35,7 +38,7 @@ namespace
       "template <class T> "
       "struct format : "
         "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of((T*)0))"
+          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
         ">::template apply<T>"
         "{}; "
 
@@ -57,8 +60,7 @@ namespace
         prefix
         + append_to_buffer(
           buffer_,
-          " typedef " + tmp_exp_ + " __metashell_t; "
-          "__metashell_t* " + var + ";\n"
+          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
         ),
         config_
       );

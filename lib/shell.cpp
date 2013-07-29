@@ -90,15 +90,17 @@ std::string shell::prompt() const
   return "> ";
 }
 
-void shell::store_in_buffer(const std::string& s_)
+bool shell::store_in_buffer(const std::string& s_)
 {
   const std::string new_buffer = append_to_buffer(_buffer, s_);
   const result r = validate_code(new_buffer, _config);
-  if (!r.has_errors())
+  const bool success = !r.has_errors();
+  if (success)
   {
     _buffer = new_buffer;
   }
   display(r, *this);
+  return success;
 }
 
 
