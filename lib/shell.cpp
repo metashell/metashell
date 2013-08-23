@@ -75,10 +75,11 @@ void shell::display_splash() const
       BOOST_PP_STRINGIZE(METASHELL_MAJOR)
       "." BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
     " */\n"
-    + std::string(
-      _config.verbose ? "\nVerbose mode: ON\n" : ""
-    )
   );
+  if (_config.verbose)
+  {
+    display_info("Verbose mode: ON\n");
+  }
 }
 
 void shell::line_available(const std::string& s_)
