@@ -29,11 +29,14 @@ int main(int argc_, char* argv_[])
   desc.add_options()
     ("help", "Display help")
     ("include,I", value(&cfg.include_path), "Additional include directory")
+    ("verbose,V", "Verbose mode")
     ;
 
   variables_map vm;
   store(parse_command_line(argc_, argv_, desc), vm);
   notify(vm);
+
+  cfg.verbose = vm.count("verbose") || vm.count("V");
 
   if (vm.count("help"))
   {

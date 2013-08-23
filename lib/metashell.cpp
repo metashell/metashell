@@ -48,31 +48,35 @@ namespace
 
   const char* var = "__metashell_v";
 
-  boost::shared_ptr<cxtranslationunit> parse_expr(
+  std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
     const config& config_,
     const std::string& buffer_,
     const std::string& tmp_exp_
   )
   {
-    return
-      index_.parse_code(
-        prefix
-        + append_to_buffer(
-          buffer_,
-          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
-        ),
-        config_
+    const std::string code =
+      prefix
+      + append_to_buffer(
+        buffer_,
+        "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
       );
+    return std::make_pair(index_.parse_code(code, config_), code);
   }
 }
 
 result metashell::validate_code(const std::string& src_, const config& config_)
 {
+  const std::string code = prefix + src_;
   cxindex index;
-  boost::shared_ptr<cxtranslationunit>
-    tu = index.parse_code(prefix + src_, config_);
-  return result("", tu->errors_begin(), tu->errors_end());
+  boost::shared_ptr<cxtranslationunit> tu = index.parse_code(code, config_);
+  return
+    result(
+      "",
+      tu->errors_begin(),
+      tu->errors_end(),
+      config_.verbose ? code : ""
+    );
 }
 
 result metashell::eval_tmp(
@@ -81,13 +85,18 @@ result metashell::eval_tmp(
   const config& config_
 )
 {
+  using std::string;
+  using std::pair;
+
+  typedef boost::shared_ptr<cxtranslationunit> tup;
+
   cxindex index;
 
-  boost::shared_ptr<cxtranslationunit>
-    simple = parse_expr(index, config_, buffer_, tmp_exp_);
+  const pair<tup, string> simple =
+    parse_expr(index, config_, buffer_, tmp_exp_);
 
-  boost::shared_ptr<cxtranslationunit> final =
-    simple->has_errors() ?
+  const pair<tup, string> final =
+    simple.first->has_errors() ?
       simple :
       parse_expr(
         index,
@@ -97,9 +106,15 @@ result metashell::eval_tmp(
       );
 
   get_type_of_variable v(var);
-  final->visit_nodes(boost::ref(v));
+  final.first->visit_nodes(boost::ref(v));
 
-  return result(v.result(), final->errors_begin(), final->errors_end());
+  return
+    result(
+      v.result(),
+      final.first->errors_begin(),
+      final.first->errors_end(),
+      config_.verbose ? final.second : ""
+    );
 }
 
 std::string metashell::append_to_buffer(

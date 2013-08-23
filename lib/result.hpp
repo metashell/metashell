@@ -15,23 +15,23 @@ namespace metashell
   {
     std::string output;
     std::vector<std::string> errors;
+    std::string info;
 
-    result() {}
+    result();
 
     template <class InputIt>
     result(
       const std::string& output_,
       InputIt begin_errors_,
-      InputIt end_errors_
+      InputIt end_errors_,
+      const std::string& info_
     ) :
       output(output_),
-      errors(begin_errors_, end_errors_)
+      errors(begin_errors_, end_errors_),
+      info(info_)
     {}
 
-    bool has_errors() const
-    {
-      return !errors.empty();
-    }
+    bool has_errors() const;
   };
 }
 

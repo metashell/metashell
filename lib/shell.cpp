@@ -39,6 +39,11 @@ namespace
 
   void display(const result& r_, shell& s_)
   {
+    if (!r_.info.empty())
+    {
+      s_.display_info(r_.info);
+    }
+
     for (
       std::vector<std::string>::const_iterator
         i = r_.errors.begin(),
@@ -70,6 +75,9 @@ void shell::display_splash() const
       BOOST_PP_STRINGIZE(METASHELL_MAJOR)
       "." BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
     " */\n"
+    + std::string(
+      _config.verbose ? "\nVerbose mode: ON\n" : ""
+    )
   );
 }
 
