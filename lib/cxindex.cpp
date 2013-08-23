@@ -153,7 +153,7 @@ boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
     >
     c_str_it;
 
-  const char fn[] = "__metashell_source_file";
+  const char fn[] = "<input>";
   const std::string internal_dir = "__metashell_internal";
 
   const std::string& mpl_formatter_fn = internal_dir + "/mpl_formatter.hpp";

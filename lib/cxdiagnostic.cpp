@@ -19,6 +19,9 @@ cxdiagnostic::~cxdiagnostic()
 
 std::string cxdiagnostic::spelling() const
 {
-  return cxstring(clang_getDiagnosticSpelling(_d));
+  return
+    cxstring(
+      clang_formatDiagnostic(_d, clang_defaultDiagnosticDisplayOptions())
+    );
 }
 
