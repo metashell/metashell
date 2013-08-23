@@ -51,7 +51,15 @@ CXChildVisitResult get_type_of_variable::operator()(
 {
   if (cursor_.kind() == CXCursor_VarDecl && cursor_.spelling() == _name)
   {
-    _result = unwrap("wrap<", cursor_.type().canonical_type().spelling(), ">");
+    try
+    {
+      _result =
+        unwrap("wrap<", cursor_.type().canonical_type().spelling(), ">");
+    }
+    catch (const exception& e_)
+    {
+      return CXChildVisit_Continue;
+    }
     boost::algorithm::trim(_result);
     // continue to get the last one
   }
