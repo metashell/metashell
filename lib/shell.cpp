@@ -29,7 +29,12 @@ namespace
         as_xpr('#') // preprocessor directive
         |
         (
-          (as_xpr("using") | as_xpr("template") | as_xpr("typedef")) >> blank
+          (
+            as_xpr("using")
+            | as_xpr("template")
+            | as_xpr("typedef")
+            | as_xpr("namespace")
+          ) >> blank
         ) // keywords
       );
 
