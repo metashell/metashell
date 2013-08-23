@@ -30,97 +30,66 @@ namespace
   )
   {
     return
-      "namespace impl "
-      "{ " 
-        "template <class C, class Item> "
-        "struct " + name_ + "_builder;\n"
-
-        "#ifdef METASHELL_TYPE_BUILDER\n"
-          "#error METASHELL_TYPE_BUILDER already defined\n"
-        "#endif\n"
-        "#define METASHELL_TYPE_BUILDER(z, n, unused) "
-          "template <"
-            "BOOST_PP_ENUM_PARAMS(n, class T) BOOST_PP_COMMA_IF(n) class Item"
-          "> "
-          "struct "
-            + name_ + "_builder<"
-              "::boost::mpl::" + name_ + "<"
-                "BOOST_PP_ENUM_PARAMS(n, T) "
-                  "BOOST_PP_COMMA_IF("
-                    "BOOST_PP_MUL(n, BOOST_PP_SUB(" + limit_ + ", n))"
-                  ")"
-                "BOOST_PP_ENUM("
-                  "BOOST_PP_SUB(" + limit_ + ", n), "
-                  "mpl_::na BOOST_PP_TUPLE_EAT(3), "
-                  "~"
-                ")"
-              ">,"
-              "Item"
-            "> "
-          "{ "
-              "typedef "
-                "::boost::mpl::" + name_ + "<"
-                  "BOOST_PP_ENUM_PARAMS(n, T) BOOST_PP_COMMA_IF(n) Item"
-                ">"
-                "type; "
+      "namespace boost_"
+      "{"
+        "namespace mpl"
+        "{"
+          "template <class... Ts>"
+          "struct " + name_ +
+          "{"
+            "typedef " + name_ + " type;"
           "};"
-          "\n"
+        "}"
+      "}"
 
-        "BOOST_PP_REPEAT(" + limit_ + ", METASHELL_TYPE_BUILDER, ~)\n"
+      "namespace metashell"
+      "{"
+        "namespace impl "
+        "{ " 
+          "template <class C, class Item> "
+          "struct " + name_ + "_builder;\n"
 
-        "#undef METASHELL_TYPE_BUILDER\n"
-      "} "
+          "template <class... Ts, class Item>"
+          "struct "
+            + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
+            "::boost_::mpl::" + name_ + "<Ts..., Item>"
+          "{};"
+        "} "
 
-      "template <> "
-      "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
-      "{ "
-        "typedef format_impl type; "
+        "template <> "
+        "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
+        "{ "
+          "typedef format_impl type; "
 
-        "template <class V> "
-        "struct apply : "
-          "::boost::mpl::copy<"
-            "V,"
-            "::boost::mpl::inserter<"
-              "::boost::mpl::" + name_ + "<>, "
+          "template <class V> "
+          "struct apply : "
+            "::boost::mpl::fold<"
+              "V,"
+              "::boost_::mpl::" + name_ + "<>,"
               "::metashell::impl::" + name_ + "_builder<"
                 "::boost::mpl::_1, "
                 "::boost::mpl::_2"
               ">"
             ">"
-          "> "
           "{};"
-      "}; "
+        "};"
+      "}"
       ;
   }
 
   const std::string mpl_formatter =
-    "#include <boost/mpl/copy.hpp>\n"
-    "#include <boost/mpl/inserter.hpp>\n"
-    "#include <boost/mpl/push_back.hpp>\n"
-
-    "#include <boost/preprocessor/arithmetic/sub.hpp>\n"
-    "#include <boost/preprocessor/arithmetic/mul.hpp>\n"
-    "#include <boost/preprocessor/cat.hpp>\n"
-    "#include <boost/preprocessor/punctuation/comma_if.hpp>\n"
-    "#include <boost/preprocessor/repetition/enum.hpp>\n"
-    "#include <boost/preprocessor/repetition/enum_params.hpp>\n"
-    "#include <boost/preprocessor/repetition/repeat.hpp>\n"
-    "#include <boost/preprocessor/tuple/eat.hpp>\n"
+    "#include <boost/mpl/fold.hpp>\n"
 
     "#include <boost/mpl/vector.hpp>\n"
     "#include <boost/mpl/list.hpp>\n"
     "#include <boost/mpl/set.hpp>\n"
     "#include <boost/mpl/map.hpp>\n"
 
-    "namespace metashell "
-    "{ "
-      + seq_formatter("vector", "BOOST_MPL_LIMIT_VECTOR_SIZE") // covers: deque
-      + seq_formatter("list", "BOOST_MPL_LIMIT_LIST_SIZE")
-      + seq_formatter("set", "BOOST_MPL_LIMIT_SET_SIZE")
-      + seq_formatter("map", "BOOST_MPL_LIMIT_MAP_SIZE")
-      +
-    "} "
-    "\n";
+    + seq_formatter("vector", "BOOST_MPL_LIMIT_VECTOR_SIZE") // covers: deque
+    + seq_formatter("list", "BOOST_MPL_LIMIT_LIST_SIZE")
+    + seq_formatter("set", "BOOST_MPL_LIMIT_SET_SIZE")
+    + seq_formatter("map", "BOOST_MPL_LIMIT_MAP_SIZE")
+    + "\n";
 }
 
 cxindex::cxindex() : _index(clang_createIndex(0, 0)) {}
