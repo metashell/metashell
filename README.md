@@ -217,6 +217,46 @@ values using that tag. These specialisations can be part of the implementation
 of a data-type to avoid Metashell users having to include extra headers for
 formatting.
 
+#### Embedding custom formatters
+
+Custom formatters can be part of a data type's implementation. Metashell defines
+the `__METASHELL` macro, thus the implementation of a data type (eg. a typelist)
+ can detect if it is used inside Metashell. For example:
+
+```cpp
+/*
+ * typelist.hpp
+ */
+
+// The definition of the typelist
+struct empty_list;
+
+template <class Head, class Tail>
+struct cons;
+
+// Metashell formatter
+#ifdef __METASHELL
+namespace metashell
+{
+  template <>
+  struct format<empty_list>
+  {
+    // ...
+  };
+
+  template <class Head, class Tail>
+  struct format<cons<Head, Tail>>
+  {
+    // ...
+  };
+}
+#endif
+```
+
+This example defines the formatter only when the header file is used inside
+Metashell. This is useful for debugging and has no impact on the regular users
+of the header.
+
 ## License
 
 Metashell is published under the

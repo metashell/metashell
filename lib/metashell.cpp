@@ -15,6 +15,8 @@ using namespace metashell;
 namespace
 {
   const char* prefix =
+    "#define __METASHELL 1\n"
+
     "namespace metashell { "
       "namespace impl { "
         "template <class T> "
