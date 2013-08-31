@@ -9,6 +9,7 @@ using namespace metashell;
 
 config::config() :
   include_path(),
-  verbose(false)
+  verbose(false),
+  syntax_highlight(true)
 {}
 

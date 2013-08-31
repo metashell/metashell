@@ -30,6 +30,7 @@ int main(int argc_, char* argv_[])
     ("help", "Display help")
     ("include,I", value(&cfg.include_path), "Additional include directory")
     ("verbose,V", "Verbose mode")
+    ("no_highlight,H", "Disable syntax highlighting")
     ;
 
   variables_map vm;
@@ -37,6 +38,7 @@ int main(int argc_, char* argv_[])
   notify(vm);
 
   cfg.verbose = vm.count("verbose") || vm.count("V");
+  cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
 
   if (vm.count("help"))
   {

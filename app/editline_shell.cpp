@@ -7,17 +7,26 @@
 #include "interrupt_handler_override.hpp"
 #include "console.hpp"
 
+#include <metashell/shell.hpp>
+
 #include <editline/readline.h>
 
 #include <boost/bind.hpp>
+
+#include <boost/wave.hpp>
+#include <boost/wave/cpplexer/cpp_lex_token.hpp>
+#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
 #include <algorithm>
 #include <list>
 #include <string>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include <cassert>
+
+using namespace metashell;
 
 namespace
 {
@@ -70,6 +79,77 @@ namespace
       std::cout << std::endl;
     }
   }
+
+  console::color color_of_token(boost::wave::token_id id_)
+  {
+    if (IS_CATEGORY(id_, boost::wave::CharacterLiteralTokenType))
+    {
+      return console::magenta;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::FloatingLiteralTokenType))
+    {
+      return console::magenta;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::IntegerLiteralTokenType))
+    {
+      return console::magenta;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::StringLiteralTokenType))
+    {
+      return console::magenta;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::BoolLiteralTokenType))
+    {
+      return console::magenta;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::IdentifierTokenType))
+    {
+      return console::white;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::KeywordTokenType))
+    {
+      return console::bright_green;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::OperatorTokenType))
+    {
+      return console::white;
+    }
+    else if (IS_CATEGORY(id_, boost::wave::PPTokenType))
+    {
+      return console::magenta;
+    }
+    else
+    {
+      return console::white;
+    }
+  }
+
+  void syntax_highlight(std::ostream& o_, const std::string& s_)
+  {
+    typedef boost::wave::cpplexer::lex_token<> token_type;
+
+    for(
+      boost::wave::cpplexer::lex_iterator<token_type>
+        i(
+          s_.begin(),
+          s_.end(),
+          token_type::position_type(shell::input_filename()),
+          boost::wave::language_support(
+            boost::wave::support_cpp
+            | boost::wave::support_option_long_long
+          )
+        ),
+
+        e;
+      i != e;
+      ++i
+    )
+    {
+      console::text_color(color_of_token(*i));
+      o_ << i->get_value();
+    }
+    console::reset();
+  }
 }
 
 editline_shell* editline_shell::_instance = 0;
@@ -81,7 +161,8 @@ editline_shell::~editline_shell()
 }
 
 editline_shell::editline_shell(const metashell::config& config_) :
-  shell(config_)
+  shell(config_),
+  _syntax_highlight(config_.syntax_highlight)
 {
   assert(!_instance);
   _instance = this;
@@ -123,7 +204,15 @@ void editline_shell::display_normal(const std::string& s_) const
 {
   if (s_ != "")
   {
-    std::cout << s_ << std::endl;
+    if (_syntax_highlight)
+    {
+      syntax_highlight(std::cout, s_);
+    }
+    else
+    {
+      std::cout << s_;
+    }
+    std::cout << std::endl;
   }
 }
 

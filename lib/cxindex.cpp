@@ -5,6 +5,8 @@
 
 #include "cxindex.hpp"
 
+#include <metashell/shell.hpp>
+
 #include <clang-c/Index.h>
 
 #include <boost/make_shared.hpp>
@@ -90,11 +92,7 @@ namespace
     + seq_formatter("set", "BOOST_MPL_LIMIT_SET_SIZE")
     + seq_formatter("map", "BOOST_MPL_LIMIT_MAP_SIZE")
     + "\n";
-
-  const char input_fn[] = "<input>";
 }
-
-const char* metashell::input_filename = input_fn;
 
 cxindex::cxindex() : _index(clang_createIndex(0, 0)) {}
 
@@ -145,7 +143,7 @@ boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
   );
 
   CXUnsavedFile uf[2];
-  uf[0].Filename = input_filename;
+  uf[0].Filename = shell::input_filename();
   uf[0].Contents = src_.c_str();
   uf[0].Length = src_.size();
   uf[1].Filename = mpl_formatter_fn.c_str();
@@ -155,7 +153,7 @@ boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
     boost::make_shared<cxtranslationunit>(
       clang_parseTranslationUnit(
         _index,
-        input_filename,
+        shell::input_filename(),
         &argv[0],
         argv.size(),
         uf,

@@ -4,7 +4,6 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "metashell.hpp"
-#include "cxindex.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
@@ -29,7 +28,7 @@ namespace
         it(
           s_.begin(),
           s_.end(),
-          token_type::position_type(input_filename),
+          token_type::position_type(shell::input_filename()),
           boost::wave::language_support(
             boost::wave::support_cpp
             | boost::wave::support_option_long_long
@@ -158,6 +157,11 @@ bool shell::store_in_buffer(const std::string& s_)
   }
   display(r, *this);
   return success;
+}
+
+const char* shell::input_filename()
+{
+  return "<input>";
 }
 
 

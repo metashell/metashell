@@ -17,8 +17,6 @@
 
 namespace metashell
 {
-  extern const char* input_filename;
-
   class cxindex : boost::noncopyable
   {
   public:

@@ -17,6 +17,7 @@ namespace metashell
 
     std::vector<std::string> include_path;
     bool verbose;
+    bool syntax_highlight;
   };
 }
 

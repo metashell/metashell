@@ -29,6 +29,8 @@ namespace metashell
     void cancel_operation();
 
     bool store_in_buffer(const std::string& s_);
+
+    static const char* input_filename();
   private:
     std::string _buffer;
     config _config;
