@@ -4,13 +4,16 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "metashell.hpp"
+#include "cxindex.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
 
-#include <boost/xpressive/xpressive.hpp>
-
 #include <boost/preprocessor/stringize.hpp>
+
+#include <boost/wave.hpp>
+#include <boost/wave/cpplexer/cpp_lex_token.hpp>
+#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
 using namespace metashell;
 
@@ -18,28 +21,68 @@ namespace
 {
   bool is_environment_setup_command(const std::string& s_)
   {
-    using boost::xpressive::sregex;
-    using boost::xpressive::blank;
-    using boost::xpressive::bos;
-    using boost::xpressive::smatch;
-    using boost::xpressive::as_xpr;
-    
-    const sregex re =
-      bos >> *blank >> (
-        as_xpr('#') // preprocessor directive
-        |
-        (
-          (
-            as_xpr("using")
-            | as_xpr("template")
-            | as_xpr("typedef")
-            | as_xpr("namespace")
-          ) >> blank
-        ) // keywords
-      );
+    try
+    {
+      typedef boost::wave::cpplexer::lex_token<> token_type;
 
-    smatch what;
-    return regex_search(s_, what, re);
+      const boost::wave::cpplexer::lex_iterator<token_type>
+        it(
+          s_.begin(),
+          s_.end(),
+          token_type::position_type(input_filename),
+          boost::wave::language_support(
+            boost::wave::support_cpp
+            | boost::wave::support_option_long_long
+          )
+        ),
+
+        end;
+
+      if (it == end)
+      {
+        // empty input is not a query
+        return true;
+      }
+      else
+      {
+        const boost::wave::token_id id = *it;
+        if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
+        {
+          switch (id)
+          {
+          case boost::wave::T_BOOL:
+          case boost::wave::T_CHAR:
+          case boost::wave::T_CONST:
+          case boost::wave::T_CONSTCAST:
+          case boost::wave::T_DOUBLE:
+          case boost::wave::T_DYNAMICCAST:
+          case boost::wave::T_FLOAT:
+          case boost::wave::T_INT:
+          case boost::wave::T_LONG:
+          case boost::wave::T_REINTERPRETCAST:
+          case boost::wave::T_SHORT:
+          case boost::wave::T_SIGNED:
+          case boost::wave::T_SIZEOF:
+          case boost::wave::T_STATICCAST:
+          case boost::wave::T_UNSIGNED:
+          case boost::wave::T_VOID:
+          case boost::wave::T_VOLATILE:
+          case boost::wave::T_WCHART:
+            return false;
+          default:
+            return true;
+          }
+        }
+        else
+        {
+          return IS_CATEGORY(id, boost::wave::PPTokenType);
+        }
+      }
+    }
+    catch (...)
+    {
+      return false;
+    }
   }
 
   void display(const result& r_, shell& s_)

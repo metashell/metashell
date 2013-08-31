@@ -23,5 +23,14 @@ target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 
+# Wave
+target_link_libraries(metashell
+  ${Boost_SYSTEM_LIBRARIES}
+  ${Boost_THREAD_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARIES}
+  ${Boost_WAVE_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+
 install(TARGETS metashell DESTINATION bin)
 

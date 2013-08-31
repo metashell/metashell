@@ -15,5 +15,14 @@ target_link_libraries(metashell_test
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )
 
+# Wave
+target_link_libraries(metashell_test
+  ${Boost_SYSTEM_LIBRARIES}
+  ${Boost_THREAD_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARIES}
+  ${Boost_WAVE_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+
 add_test(metashell_unit_tests metashell_test)
 
