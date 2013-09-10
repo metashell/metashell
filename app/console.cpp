@@ -57,6 +57,7 @@ namespace
     case bright_cyan:    return BRIGHT |     G | B;
     case white:          return BRIGHT | R | G | B;
     }
+    return 0; // keep GCC happy
   }
 
 #undef R
@@ -109,6 +110,7 @@ namespace
     case bright_cyan:    return CONSOLE_COLOR(1;36);
     case white:          return CONSOLE_COLOR(1;37);
     }
+    return ""; // keep GCC happy
   }
 
 #undef CONSOLE_COLOR

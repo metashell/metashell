@@ -24,6 +24,7 @@ namespace
       *static_cast<cxtranslationunit::visitor*>(client_data_);
 
     f(cxcursor(cursor_), cxcursor(parent_));
+    return CXChildVisit_Recurse;
   }
 
   std::string get_nth_error_msg(CXTranslationUnit tu_, int n_)
