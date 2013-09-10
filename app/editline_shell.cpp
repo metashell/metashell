@@ -4,10 +4,15 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "editline_shell.hpp"
+#include "syntax_highlighted_display.hpp"
+#include "editline_tab_completion_override.hpp"
 #include "interrupt_handler_override.hpp"
 #include "console.hpp"
 
 #include <metashell/shell.hpp>
+#include <metashell/indenter.hpp>
+
+#include <mindent/stream_display.hpp>
 
 #include <editline/readline.h>
 
@@ -17,12 +22,11 @@
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
+#include <sys/ioctl.h>
+
 #include <algorithm>
-#include <list>
 #include <string>
 #include <iostream>
-#include <vector>
-#include <sstream>
 
 #include <cassert>
 
@@ -30,44 +34,6 @@ using namespace metashell;
 
 namespace
 {
-  class editline_tab_completion_override : boost::noncopyable
-  {
-  private:
-    typedef char** (*callback)(const char*, int, int);
-  public:
-    editline_tab_completion_override(callback cb_) :
-      _old(rl_attempted_completion_function)
-    {
-      rl_attempted_completion_function = cb_;
-    }
-
-    ~editline_tab_completion_override()
-    {
-      rl_attempted_completion_function = _old;
-    }
-  private:
-    char** (*_old)(const char*, int, int);
-  };
-
-  bool starts_with(const std::string& prefix_, const std::string& s_)
-  {
-    if (prefix_.length() <= s_.length())
-    {
-      for (int i = 0, e = prefix_.length(); i != e; ++i)
-      {
-        if (prefix_[i] != s_[i])
-        {
-          return false;
-        }
-      }
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
   template <console::color Color>
   void display(const std::string& s_)
   {
@@ -80,75 +46,33 @@ namespace
     }
   }
 
-  console::color color_of_token(boost::wave::token_id id_)
-  {
-    if (IS_CATEGORY(id_, boost::wave::CharacterLiteralTokenType))
-    {
-      return console::magenta;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::FloatingLiteralTokenType))
-    {
-      return console::magenta;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::IntegerLiteralTokenType))
-    {
-      return console::magenta;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::StringLiteralTokenType))
-    {
-      return console::magenta;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::BoolLiteralTokenType))
-    {
-      return console::magenta;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::IdentifierTokenType))
-    {
-      return console::white;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::KeywordTokenType))
-    {
-      return console::bright_green;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::OperatorTokenType))
-    {
-      return console::white;
-    }
-    else if (IS_CATEGORY(id_, boost::wave::PPTokenType))
-    {
-      return console::magenta;
-    }
-    else
-    {
-      return console::white;
-    }
-  }
-
   void syntax_highlight(std::ostream& o_, const std::string& s_)
   {
     typedef boost::wave::cpplexer::lex_token<> token_type;
+    typedef boost::wave::cpplexer::lex_iterator<token_type> iterator_type;
+ 
+    std::for_each(
+      iterator_type(
+        s_.begin(),
+        s_.end(),
+        token_type::position_type(shell::input_filename()),
+        boost::wave::language_support(
+          boost::wave::support_cpp
+          | boost::wave::support_option_long_long
+        )
+      ),
+      iterator_type(),
+      syntax_highlighted_display()
+    );
 
-    for(
-      boost::wave::cpplexer::lex_iterator<token_type>
-        i(
-          s_.begin(),
-          s_.end(),
-          token_type::position_type(shell::input_filename()),
-          boost::wave::language_support(
-            boost::wave::support_cpp
-            | boost::wave::support_option_long_long
-          )
-        ),
-
-        e;
-      i != e;
-      ++i
-    )
-    {
-      console::text_color(color_of_token(*i));
-      o_ << i->get_value();
-    }
     console::reset();
+  }
+
+  int console_width()
+  {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    return w.ws_col;
   }
 }
 
@@ -162,7 +86,8 @@ editline_shell::~editline_shell()
 
 editline_shell::editline_shell(const metashell::config& config_) :
   shell(config_),
-  _syntax_highlight(config_.syntax_highlight)
+  _syntax_highlight(config_.syntax_highlight),
+  _indent(config_.indent)
 {
   assert(!_instance);
   _instance = this;
@@ -204,13 +129,28 @@ void editline_shell::display_normal(const std::string& s_) const
 {
   if (s_ != "")
   {
-    if (_syntax_highlight)
+    if (_indent)
     {
-      syntax_highlight(std::cout, s_);
+      if (_syntax_highlight)
+      {
+        indent(console_width(), 2, syntax_highlighted_display(), s_);
+        console::reset();
+      }
+      else
+      {
+        indent(console_width(), 2, mindent::stream_display(std::cout), s_);
+      }
     }
     else
     {
-      std::cout << s_;
+      if (_syntax_highlight)
+      {
+        syntax_highlight(std::cout, s_);
+      }
+      else
+      {
+        std::cout << s_;
+      }
     }
     std::cout << std::endl;
   }

@@ -10,6 +10,7 @@ using namespace metashell;
 config::config() :
   include_path(),
   verbose(false),
-  syntax_highlight(true)
+  syntax_highlight(true),
+  indent(true)
 {}
 

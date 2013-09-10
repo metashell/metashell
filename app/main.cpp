@@ -31,6 +31,7 @@ int main(int argc_, char* argv_[])
     ("include,I", value(&cfg.include_path), "Additional include directory")
     ("verbose,V", "Verbose mode")
     ("no_highlight,H", "Disable syntax highlighting")
+    ("no_indent,N", "Disable indenting")
     ;
 
   variables_map vm;
@@ -39,6 +40,7 @@ int main(int argc_, char* argv_[])
 
   cfg.verbose = vm.count("verbose") || vm.count("V");
   cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
+  cfg.indent = !(vm.count("no_indent") || vm.count("N"));
 
   if (vm.count("help"))
   {
