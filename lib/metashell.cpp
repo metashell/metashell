@@ -7,8 +7,13 @@
 #include "get_type_of_variable.hpp"
 #include "cxindex.hpp"
 
+#include <metashell/token_iterator.hpp>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/ref.hpp>
+#include <boost/foreach.hpp>
+
+#include <boost/algorithm/string/predicate.hpp>
 
 using namespace metashell;
 
@@ -125,6 +130,89 @@ std::string metashell::append_to_buffer(
 )
 {
   return buffer_.empty() ? s_ : (buffer_ + '\n' + s_);
+}
+
+namespace
+{
+  std::pair<std::string, std::string> find_completion_start(
+    const std::string& s_
+  )
+  {
+    typedef std::pair<std::string, std::string> string_pair;
+
+    std::ostringstream o;
+    token_iterator::value_type last_token;
+    bool first = true;
+    for (token_iterator i = begin_tokens(s_), e; i != e; ++i)
+    {
+      if (!IS_CATEGORY(*i, boost::wave::EOFTokenType))
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          o << last_token.get_value();
+        }
+        last_token = *i;
+      }
+    }
+
+    if (first) // no token
+    {
+      return string_pair("", "");
+    }
+    else
+    {
+      if (
+        IS_CATEGORY(last_token, boost::wave::IdentifierTokenType)
+        || IS_CATEGORY(last_token, boost::wave::KeywordTokenType)
+      )
+      {
+        const token_iterator::value_type::string_type
+          t = last_token.get_value();
+        return string_pair(o.str(), std::string(t.begin(), t.end()));
+      }
+      else
+      {
+        o << last_token.get_value();
+        return string_pair(o.str(), "");
+      }
+    }
+  }
+}
+
+void metashell::code_complete(
+  const std::string& buffer_,
+  const std::string& src_,
+  const config& config_,
+  std::set<std::string>& out_
+)
+{
+  using boost::starts_with;
+
+  using std::pair;
+  using std::string;
+  using std::set;
+
+  const pair<string, string> completion_start = find_completion_start(src_);
+
+  const string src = prefix + buffer_ + "\n" + completion_start.first;
+
+  set<string> c;
+  // code completion doesn't seem to work without that extra space at the end
+  cxindex().parse_code(src + " ", config_)->code_complete(c);
+  
+  out_.clear();
+  const int prefix_len = completion_start.second.length();
+  BOOST_FOREACH(const string& s, c)
+  {
+    if (starts_with(s, completion_start.second) && s != completion_start.second)
+    {
+      out_.insert(string(s.begin() + prefix_len, s.end()));
+    }
+  }
 }
 
 

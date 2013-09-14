@@ -10,6 +10,9 @@
 
 #include "result.hpp"
 
+#include <set>
+#include <string>
+
 namespace metashell
 {
   std::string append_to_buffer(
@@ -24,6 +27,13 @@ namespace metashell
   );
 
   result validate_code(const std::string& s_, const config& config_);
+
+  void code_complete(
+    const std::string& buffer_,
+    const std::string& src_,
+    const config& config_,
+    std::set<std::string>& out_
+  );
 }
 
 #endif

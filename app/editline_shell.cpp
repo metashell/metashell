@@ -5,22 +5,19 @@
 
 #include "editline_shell.hpp"
 #include "syntax_highlighted_display.hpp"
-#include "editline_tab_completion_override.hpp"
+#include "override_guard.hpp"
 #include "interrupt_handler_override.hpp"
 #include "console.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/indenter.hpp>
+#include <metashell/token_iterator.hpp>
 
 #include <mindent/stream_display.hpp>
 
 #include <editline/readline.h>
 
 #include <boost/bind.hpp>
-
-#include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
 #include <sys/ioctl.h>
 
@@ -48,20 +45,9 @@ namespace
 
   void syntax_highlight(std::ostream& o_, const std::string& s_)
   {
-    typedef boost::wave::cpplexer::lex_token<> token_type;
-    typedef boost::wave::cpplexer::lex_iterator<token_type> iterator_type;
- 
     std::for_each(
-      iterator_type(
-        s_.begin(),
-        s_.end(),
-        token_type::position_type(shell::input_filename()),
-        boost::wave::language_support(
-          boost::wave::support_cpp
-          | boost::wave::support_option_long_long
-        )
-      ),
-      iterator_type(),
+      begin_tokens(s_),
+      token_iterator(),
       syntax_highlighted_display()
     );
 
@@ -97,8 +83,13 @@ void editline_shell::run()
 {
   using boost::bind;
 
-  editline_tab_completion_override ovr1(tab_completion);
-  interrupt_handler_override ovr2(bind(&editline_shell::cancel_operation,this));
+  char empty_string[] = "";
+  override_guard<char*> ovr1(rl_basic_word_break_characters, empty_string);
+
+  override_guard<char** (*)(const char*, int, int)>
+    ovr2(rl_attempted_completion_function, tab_completion);
+
+  interrupt_handler_override ovr3(bind(&editline_shell::cancel_operation,this));
 
   for (;;)
   {
@@ -117,6 +108,30 @@ void editline_shell::run()
 
 char* editline_shell::tab_generator(const char* text_, int state_)
 {
+  assert(_instance);
+
+  static std::set<std::string> values;
+  static std::set<std::string>::const_iterator pos;
+
+  if (!state_) // init
+  {
+    _instance->code_complete(text_, values);
+    pos = values.begin();
+  }
+
+  if (pos == values.end())
+  {
+    return 0;
+  }
+  else
+  {
+    const std::string str = text_ + *pos;
+    char* s = new char[str.length() + 1];
+    std::copy(str.begin(), str.end(), s);
+    s[str.length()] = 0;
+    ++pos;
+    return s;
+  }
   return 0;
 }
 

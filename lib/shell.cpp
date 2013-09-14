@@ -7,12 +7,9 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
+#include <metashell/token_iterator.hpp>
 
 #include <boost/preprocessor/stringize.hpp>
-
-#include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
 using namespace metashell;
 
@@ -22,20 +19,7 @@ namespace
   {
     try
     {
-      typedef boost::wave::cpplexer::lex_token<> token_type;
-
-      const boost::wave::cpplexer::lex_iterator<token_type>
-        it(
-          s_.begin(),
-          s_.end(),
-          token_type::position_type(shell::input_filename()),
-          boost::wave::language_support(
-            boost::wave::support_cpp
-            | boost::wave::support_option_long_long
-          )
-        ),
-
-        end;
+      const token_iterator it = begin_tokens(s_), end;
 
       if (it == end)
       {
@@ -162,6 +146,14 @@ bool shell::store_in_buffer(const std::string& s_)
 const char* shell::input_filename()
 {
   return "<input>";
+}
+
+void shell::code_complete(
+  const std::string& s_,
+  std::set<std::string>& out_
+) const
+{
+  metashell::code_complete(_buffer, s_, _config, out_);
 }
 
 

@@ -9,6 +9,7 @@
 #include <metashell/config.hpp>
 
 #include <string>
+#include <set>
 
 namespace metashell
 {
@@ -31,6 +32,11 @@ namespace metashell
     bool store_in_buffer(const std::string& s_);
 
     static const char* input_filename();
+
+    void code_complete(
+      const std::string& s_,
+      std::set<std::string>& out_
+    ) const;
   private:
     std::string _buffer;
     config _config;
