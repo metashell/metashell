@@ -33,7 +33,7 @@ metaprograms.
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
     * libclang
-    * Editline
+    * Readline
 * Install CMake
 * In the source directory run the following commands:
     * `mkdir bin`
@@ -260,5 +260,5 @@ of the header.
 ## License
 
 Metashell is published under the
-[Boost Software License](http://www.boost.org/LICENSE_1_0.txt).
+[GNU General Public License, version 3](http://www.gnu.org/licenses/gpl.html).
 

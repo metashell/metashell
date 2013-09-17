@@ -1,5 +1,5 @@
-#ifndef METASHELL_CXINDEX_HPP
-#define METASHELL_CXINDEX_HPP
+#ifndef METASHELL_INDENTER_HPP
+#define METASHELL_INDENTER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,33 +17,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxtranslationunit.hpp"
-
-#include <metashell/config.hpp>
-
-#include <clang-c/Index.h>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-
 #include <string>
+#include <sstream>
 
-namespace metashell
+class indenter
 {
-  class cxindex : boost::noncopyable
-  {
-  public:
-    cxindex();
-    ~cxindex();
+public:
+  indenter(unsigned int width_, const std::string& default_prefix_);
 
-    boost::shared_ptr<cxtranslationunit> parse_code(
-      const std::string& src_,
-      const config& config_
-    );
-  private:
-    CXIndex _index;
-  };
-}
+  indenter& left_align(
+    const std::string& s_,
+    const std::string& line_prefix_,
+    const std::string& first_line_prefix_
+  );
+
+  indenter& left_align(
+    const std::string& s_,
+    const std::string& line_prefix_
+  );
+
+  indenter& raw(const std::string& s_);
+
+  indenter& left_align(const std::string& s_);
+
+  indenter& empty_line();
+
+  std::string str() const;
+private:
+  unsigned int _width;
+  std::string _default_prefix;
+  std::ostringstream _buff;
+};
 
 #endif
 

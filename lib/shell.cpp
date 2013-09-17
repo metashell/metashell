@@ -1,9 +1,21 @@
-// Copyright Abel Sinkovics (abel@sinkovics.hu)  2013.
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "metashell.hpp"
+#include "indenter.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
@@ -100,16 +112,42 @@ void shell::cancel_operation() {}
 
 void shell::display_splash() const
 {
-  display_normal(
-    "/*\n"
-    " *  Template metaprogramming shell "
-      BOOST_PP_STRINGIZE(METASHELL_MAJOR)
-      "." BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
-    " */\n"
+  display_info(
+    indenter(width(), " * ")
+      .raw("/*")
+      .left_align(
+        "Template metaprogramming shell "
+          BOOST_PP_STRINGIZE(METASHELL_MAJOR)
+          "." BOOST_PP_STRINGIZE(METASHELL_MINOR)
+          "." BOOST_PP_STRINGIZE(METASHELL_PATCH)
+      )
+      .empty_line()
+      .left_align(
+        "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
+      )
+      .left_align(
+        "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
+        " and you are welcome to redistribute it under certain conditions;"
+        " for details visit <http://www.gnu.org/licenses/>."
+      )
+      .empty_line()
+      .left_align("Based on")
+      .left_align(
+        metashell::libclang_version(),
+        " *              ",
+        " *   libclang   "
+      )
+      .left_align(
+        metashell::wave_version(),
+        " *              ",
+        " *   Boost.Wave "
+      )
+      .raw(" */")
+      .str()
   );
   if (_config.verbose)
   {
-    display_info("Verbose mode: ON\n");
+    display_info("\n// Verbose mode: ON\n\n");
   }
 }
 

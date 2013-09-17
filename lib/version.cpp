@@ -1,6 +1,3 @@
-#ifndef METASHELL_CXINDEX_HPP
-#define METASHELL_CXINDEX_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,33 +14,48 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxtranslationunit.hpp"
+#include <metashell/version.hpp>
 
-#include <metashell/config.hpp>
+#include "cxstring.hpp"
 
 #include <clang-c/Index.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <boost/wave/cpp_context.hpp>
+#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
-#include <string>
+using namespace metashell;
 
-namespace metashell
+namespace
 {
-  class cxindex : boost::noncopyable
+  template <char C>
+  std::string remove(const std::string& s_)
   {
-  public:
-    cxindex();
-    ~cxindex();
-
-    boost::shared_ptr<cxtranslationunit> parse_code(
-      const std::string& src_,
-      const config& config_
-    );
-  private:
-    CXIndex _index;
-  };
+    std::ostringstream s;
+    for (std::string::const_iterator i = s_.begin(), e = s_.end(); i != e; ++i)
+    {
+      if (*i != C)
+      {
+        s << *i;
+      }
+    }
+    return s.str();
+  }
 }
 
-#endif
+std::string metashell::libclang_version()
+{
+  return cxstring(clang_getClangVersion());
+}
+
+std::string metashell::wave_version()
+{
+  return
+    remove<'"'>(
+      boost::wave::context<
+        const char*,
+        boost::wave::cpplexer::lex_iterator<boost::wave::cpplexer::lex_token<> >
+      >::get_version_string()
+    );
+}
+
 

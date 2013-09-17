@@ -1,5 +1,5 @@
-#ifndef METASHELL_CXINDEX_HPP
-#define METASHELL_CXINDEX_HPP
+#ifndef READLINE_SHELL_HPP
+#define READLINE_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,33 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxtranslationunit.hpp"
-
+#include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 
-#include <clang-c/Index.h>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-
+#include <vector>
 #include <string>
 
-namespace metashell
+class readline_shell : public metashell::shell
 {
-  class cxindex : boost::noncopyable
-  {
-  public:
-    cxindex();
-    ~cxindex();
+public:
+  readline_shell(const metashell::config& config_);
+  virtual ~readline_shell();
 
-    boost::shared_ptr<cxtranslationunit> parse_code(
-      const std::string& src_,
-      const config& config_
-    );
-  private:
-    CXIndex _index;
-  };
-}
+  virtual void display_normal(const std::string& s_) const;
+  virtual void display_info(const std::string& s_) const;
+  virtual void display_error(const std::string& s_) const;
+
+  virtual unsigned int width() const;
+
+  void run();
+private:
+  bool _syntax_highlight;
+  bool _indent;
+
+  static char* tab_generator(const char* text_, int state_);
+  static char** tab_completion(const char* text_, int start_, int end_);
+
+  static readline_shell* _instance;
+
+  static int _completion_end;
+};
 
 #endif
 

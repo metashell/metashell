@@ -14,12 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aux_source_directory(. SOURCES)
-add_library(metashell_lib STATIC ${SOURCES})
+# This module will define the following:
+#   Readline_FOUND
+#   Readline_INCLUDE_DIR
+#   Readline_LIBRARY
 
-# LLVM
-include_directories(${LLVM_INCLUDE_DIR})
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${LLVM_CXX_FLAGS})
-target_link_libraries(metashell_lib ${CLANG_LIBRARY})
-target_link_libraries(metashell_lib ${LLVM_LIBRARY})
-target_link_libraries(metashell_lib ${CMAKE_THREAD_LIBS_INIT})
+find_path(Readline_INCLUDE_DIR readline/readline.h)
+find_library(Readline_LIBRARY NAMES readline)
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set Readline_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(
+  Readline DEFAULT_MSG Readline_LIBRARY Readline_INCLUDE_DIR
+)
+
+mark_as_advanced(Readline_INCLUDE_DIR, Readline_LIBRARY)
+
