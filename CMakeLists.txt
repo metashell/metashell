@@ -24,6 +24,11 @@ set(PATCH_VERSION 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+# Version macros
+add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
+add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
+add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
+
 # Boost
 # Turn this on to link statically against Boost
 set(Boost_USE_STATIC_LIBS ON)

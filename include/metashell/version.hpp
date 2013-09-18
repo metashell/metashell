@@ -19,20 +19,6 @@
 
 #include <string>
 
-#ifdef METASHELL_MAJOR
-  #error METASHELL_MAJOR already defined
-#endif
-#ifdef METASHELL_MINOR
-  #error METASHELL_MINOR already defined
-#endif
-#ifdef METASHELL_PATCH
-  #error METASHELL_PATCH already defined
-#endif
-
-#define METASHELL_MAJOR 0
-#define METASHELL_MINOR 1
-#define METASHELL_PATCH 0
-
 namespace metashell
 {
   std::string wave_version();
