@@ -22,6 +22,9 @@
 
 #include <boost/wave/cpp_context.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
+#include <readline/readline.h>
 
 using namespace metashell;
 
@@ -56,6 +59,21 @@ std::string metashell::wave_version()
         boost::wave::cpplexer::lex_iterator<boost::wave::cpplexer::lex_token<> >
       >::get_version_string()
     );
+}
+
+std::string metashell::readline_version()
+{
+  return
+    BOOST_PP_STRINGIZE(RL_VERSION_MAJOR)
+    "." BOOST_PP_STRINGIZE(RL_VERSION_MINOR);
+}
+
+std::string metashell::version()
+{
+  return
+    BOOST_PP_STRINGIZE(METASHELL_MAJOR)
+    "." BOOST_PP_STRINGIZE(METASHELL_MINOR)
+    "." BOOST_PP_STRINGIZE(METASHELL_PATCH);
 }
 
 

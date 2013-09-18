@@ -21,8 +21,6 @@
 #include <metashell/version.hpp>
 #include <metashell/token_iterator.hpp>
 
-#include <boost/preprocessor/stringize.hpp>
-
 using namespace metashell;
 
 namespace
@@ -115,12 +113,7 @@ void shell::display_splash() const
   display_info(
     indenter(width(), " * ")
       .raw("/*")
-      .left_align(
-        "Template metaprogramming shell "
-          BOOST_PP_STRINGIZE(METASHELL_MAJOR)
-          "." BOOST_PP_STRINGIZE(METASHELL_MINOR)
-          "." BOOST_PP_STRINGIZE(METASHELL_PATCH)
-      )
+      .left_align("Template metaprogramming shell " + version())
       .empty_line()
       .left_align(
         "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
@@ -141,6 +134,11 @@ void shell::display_splash() const
         metashell::wave_version(),
         " *              ",
         " *   Boost.Wave "
+      )
+      .left_align(
+        metashell::readline_version(),
+        " *              ",
+        " *   Readline   "
       )
       .raw(" */")
       .str()
