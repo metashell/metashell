@@ -21,6 +21,8 @@
 #include <vector>
 #include <cassert>
 
+using namespace metashell;
+
 namespace
 {
   bool is_whitespace(char c_)

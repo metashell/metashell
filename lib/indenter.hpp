@@ -20,34 +20,37 @@
 #include <string>
 #include <sstream>
 
-class indenter
+namespace metashell
 {
-public:
-  indenter(unsigned int width_, const std::string& default_prefix_);
-
-  indenter& left_align(
-    const std::string& s_,
-    const std::string& line_prefix_,
-    const std::string& first_line_prefix_
-  );
-
-  indenter& left_align(
-    const std::string& s_,
-    const std::string& line_prefix_
-  );
-
-  indenter& raw(const std::string& s_);
-
-  indenter& left_align(const std::string& s_);
-
-  indenter& empty_line();
-
-  std::string str() const;
-private:
-  unsigned int _width;
-  std::string _default_prefix;
-  std::ostringstream _buff;
-};
+  class indenter
+  {
+  public:
+    indenter(unsigned int width_, const std::string& default_prefix_);
+  
+    indenter& left_align(
+      const std::string& s_,
+      const std::string& line_prefix_,
+      const std::string& first_line_prefix_
+    );
+  
+    indenter& left_align(
+      const std::string& s_,
+      const std::string& line_prefix_
+    );
+  
+    indenter& raw(const std::string& s_);
+  
+    indenter& left_align(const std::string& s_);
+  
+    indenter& empty_line();
+  
+    std::string str() const;
+  private:
+    unsigned int _width;
+    std::string _default_prefix;
+    std::ostringstream _buff;
+  };
+}
 
 #endif
 
