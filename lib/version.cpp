@@ -70,6 +70,18 @@ std::string metashell::readline_version()
 
 std::string metashell::version()
 {
+#ifndef METASHELL_MAJOR
+  #error METASHELL_MAJOR not defined
+#endif
+
+#ifndef METASHELL_MINOR
+  #error METASHELL_MINOR not defined
+#endif
+
+#ifndef METASHELL_PATCH
+  #error METASHELL_PATCH not defined
+#endif
+
   return
     BOOST_PP_STRINGIZE(METASHELL_MAJOR)
     "." BOOST_PP_STRINGIZE(METASHELL_MINOR)
