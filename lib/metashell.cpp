@@ -26,12 +26,17 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <boost/preprocessor/stringize.hpp>
+
 using namespace metashell;
 
 namespace
 {
   const char* prefix =
-    "#define __METASHELL 1\n"
+    "#define __METASHELL\n"
+    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
+    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
+    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
 
     "namespace metashell { "
       "namespace impl { "

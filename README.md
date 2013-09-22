@@ -309,6 +309,9 @@ This example defines the formatter only when the header file is used inside
 Metashell. This is useful for debugging and has no impact on the regular users
 of the header.
 
+The version of the shell is also available for the headers. Metashell defines
+the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.
+
 ## License
 
 Metashell is published under the
