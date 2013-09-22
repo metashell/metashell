@@ -18,6 +18,11 @@
 
 #include <metashell/shell.hpp>
 
+#include <boost/phoenix/core.hpp>
+#include <boost/phoenix/operator.hpp>
+
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptors.hpp>
 #include <boost/foreach.hpp>
 
 using namespace metashell;
@@ -33,12 +38,12 @@ namespace
     return entry;
   }
 
-  std::string seq_formatter(
-    const std::string& name_,
-    const std::string& limit_
-  )
+  std::string seq_formatter(const std::string& name_)
   {
     return
+      "#include <boost/mpl/fold.hpp>\n"
+      "#include <boost/mpl/" + name_ + ".hpp>\n"
+
       "namespace boost_"
       "{"
         "namespace mpl"
@@ -83,6 +88,7 @@ namespace
           "{};"
         "};"
       "}"
+      "\n"
       ;
   }
 }
@@ -91,24 +97,35 @@ headers::headers(const std::string& src_) :
   _internal_dir("__metashell_internal"),
   _headers()
 {
+  using boost::algorithm::join;
+  using boost::adaptors::transformed;
+  using boost::phoenix::arg_names::arg1;
+
+  const char* formatters[] = {"vector", "list", "set", "map"};
+
+  BOOST_FOREACH(const char* f, formatters)
+  {
+    add(_internal_dir + "/metashell/formatter/" + f + ".hpp", seq_formatter(f));
+  }
   add(
-    _internal_dir + "/mpl_formatter.hpp",
-    "#include <boost/mpl/fold.hpp>\n"
-
-    "#include <boost/mpl/vector.hpp>\n"
-    "#include <boost/mpl/list.hpp>\n"
-    "#include <boost/mpl/set.hpp>\n"
-    "#include <boost/mpl/map.hpp>\n"
-
-    + seq_formatter("vector", "BOOST_MPL_LIMIT_VECTOR_SIZE") // covers: deque
-    + seq_formatter("list", "BOOST_MPL_LIMIT_LIST_SIZE")
-    + seq_formatter("set", "BOOST_MPL_LIMIT_SET_SIZE")
-    + seq_formatter("map", "BOOST_MPL_LIMIT_MAP_SIZE")
-    + "\n"
+    _internal_dir + "/metashell/formatter/deque.hpp",
+    "#include <metashell/formatter/vector.hpp>\n"
   );
 
   add(
-    _internal_dir + "/metashell_scalar.hpp",
+    _internal_dir + "/metashell/formatter.hpp",
+    join(
+      formatters |
+        transformed(
+          std::string("#include <metashell/formatter/")
+          + arg1 + std::string(".hpp>")
+        ),
+      "\n"
+    ) + "\n"
+  );
+
+  add(
+    _internal_dir + "/metashell/scalar.hpp",
     "#include <type_traits>\n"
 
     "#define SCALAR(...) "

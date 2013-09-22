@@ -122,7 +122,7 @@ Metashell offers a tool for working with scalar results in the shell. Run the
 following command to get it:
 
 ```cpp
-> #include <metashell_scalar.hpp>
+> #include <metashell/scalar.hpp>
 ```
 
 The above header defines the `SCALAR` macro which can be used to work with
@@ -199,7 +199,7 @@ Metashell provides a header file that can be used to display Boost.MPL's
 containers in a way we'd expect to see them. Let's include this header:
 
 ```cpp
-> #include <mpl_formatter.hpp>
+> #include <metashell/formatter.hpp>
 ```
 
 This header defines the formatting rules for the Boost.MPL containers. Let's
@@ -213,6 +213,13 @@ boost_::mpl::vector<void, int, double>
 This time the result is what we'd expect. Note that it is in the `boost_`
 namespace instead of `boost`. The `vector` template class in `boost_` is a
 helper template class used for pretty-printing.
+
+The header `metashell/formatter.hpp` loads all formatters that come with
+Metashell which may be more than what you need. Among other dependencies the
+formatters include the data structures they format, which may slow the shell
+down. To get only the formatters (and related data structures) you really need,
+you can include them one by one. For example to get the formatter of
+`mpl::vector` you need to include `metashell/formatter/vector.hpp`.
 
 ### Writing custom formatters
 
@@ -311,6 +318,44 @@ of the header.
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.
+
+## The full list of built-in header files
+
+These header files are available in Metashell:
+
+<table cellpadding='0' cellspacing='0'>
+  <tr>
+    <td>`metashell/formatter/deque.hpp`</td>
+    <td>Defines formatting for `boost::mpl::deque` values</td>
+  </tr>
+  <tr>
+    <td>`metashell/formatter/list.hpp`</td>
+    <td>Defines formatting for `boost::mpl::list` values</td>
+  </tr>
+  <tr>
+    <td>`metashell/formatter/map.hpp`</td>
+    <td>Defines formatting for `boost::mpl::map` values</td>
+  </tr>
+  <tr>
+    <td>`metashell/formatter/set.hpp`</td>
+    <td>Defines formatting for `boost::mpl::set` values</td>
+  </tr>
+  <tr>
+    <td>`metashell/formatter/vector.hpp`</td>
+    <td>Defines formatting for `boost::mpl::vector` values</td>
+  </tr>
+  <tr>
+    <td>`metashell/formatter.hpp`</td>
+    <td>
+      Defines formatting for `boost::mpl::deque`, `boost::mpl::list`,
+      `boost::mpl::map`, `boost::mpl::set` and `boost::mpl::vector` values.
+    </td>
+  </tr>
+  <tr>
+    <td>`metashell/scalar.hpp`</td>
+    <td>Defines the `SCALAR` macro.</td>
+  </tr>
+</table>
 
 ## License
 
