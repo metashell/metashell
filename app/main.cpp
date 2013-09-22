@@ -45,25 +45,33 @@ int main(int argc_, char* argv_[])
     ("no_indent,N", "Disable indenting")
     ;
 
-  variables_map vm;
-  store(parse_command_line(argc_, argv_, desc), vm);
-  notify(vm);
-
-  cfg.verbose = vm.count("verbose") || vm.count("V");
-  cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-  cfg.indent = !(vm.count("no_indent") || vm.count("N"));
-
-  if (vm.count("help"))
+  try
   {
-    std::cout << desc << std::endl;
+    variables_map vm;
+    store(parse_command_line(argc_, argv_, desc), vm);
+    notify(vm);
+
+    cfg.verbose = vm.count("verbose") || vm.count("V");
+    cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
+    cfg.indent = !(vm.count("no_indent") || vm.count("N"));
+
+    if (vm.count("help"))
+    {
+      std::cout << desc << std::endl;
+    }
+    else
+    {
+      readline_shell shell(cfg);
+
+      shell.display_splash();
+
+      shell.run();
+    }
   }
-  else
+  catch (const boost::program_options::error& e_)
   {
-    readline_shell shell(cfg);
-
-    shell.display_splash();
-
-    shell.run();
+    std::cerr << e_.what() << "\n\n" << desc << std::endl;
+    return 1;
   }
 }
 
