@@ -84,6 +84,58 @@ by running the following:
 You get `mpl_::integral_c<int, 13>`, which is the representation of the value
 `13`.
 
+### How about Fibonacci?
+
+You have seen how to do simple arithmetic using Boost.MPL's integral types but
+you haven't been able to run the classical Fibonacci example of template
+metaprogramming. Let's write it first:
+
+```cpp
+> template <int N> struct fib { static constexpr int value = N * fib<N - 1>::value; };
+> template <> struct fib<0> { static constexpr int value = 1; };
+> template <> struct fib<1> { static constexpr int value = 1; };
+```
+
+If you type the above commands into the shell you define the `fib` template
+class and its necessary specialisations. If you try to evaluate it, you get an
+error:
+
+```cpp
+> fib<6>::value
+<input>:6:26: error: template argument for template type parameter must be a type
+```
+
+The problem is that Metashell assumes, that _the result of a template
+metaprogram is a type_. And `fib<6>::value` is not a type. It is an integer
+value. You need some boxing solution, such as `boost::mpl::int_` to turn it into
+a type:
+
+```cpp
+> #include <boost/mpl/int.hpp>
+> boost::mpl::int_<fib<6>::value>
+mpl_::int_<720>
+```
+
+In this case we knew that the result is an `int` value. For other values other
+boxing classes have to be used. Keeping it all in mind is not convenient.
+Metashell offers a tool for working with scalar results in the shell. Run the
+following command to get it:
+
+```cpp
+> #include <metashell_scalar.hpp>
+```
+
+The above header defines the `SCALAR` macro which can be used to work with
+expressions evaluating to scalar results. For example:
+
+```cpp
+> SCALAR(fib<6>::value)
+std::integral_constant<int, 720>
+```
+
+The `SCALAR` macro instantiates `std::integral_constant` with the right
+arguments.
+
 ### Data structures of Boost.MPL
 
 Let's play with the vector implementation Boost.MPL provides. It is defined in

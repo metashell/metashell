@@ -107,6 +107,23 @@ headers::headers(const std::string& src_) :
     + "\n"
   );
 
+  add(
+    _internal_dir + "/metashell_scalar.hpp",
+    "#include <type_traits>\n"
+
+    "#define SCALAR(...) "
+      "std::integral_constant<"
+        "std::remove_reference<"
+          "std::remove_cv<"
+            "std::remove_reference<"
+              "decltype((__VA_ARGS__))"
+            ">::type"
+          ">::type"
+        ">::type,"
+        "(__VA_ARGS__)"
+      ">\n"
+  );
+
   add(shell::input_filename(), src_);
 }
 
