@@ -325,35 +325,36 @@ These header files are available in Metashell:
 
 <table cellpadding='0' cellspacing='0'>
   <tr>
-    <td>`metashell/formatter/deque.hpp`</td>
-    <td>Defines formatting for `boost::mpl::deque` values</td>
+    <td><code>metashell/formatter/deque.hpp</code></td>
+    <td>Defines formatting for <code>boost::mpl::deque</code> values</td>
   </tr>
   <tr>
-    <td>`metashell/formatter/list.hpp`</td>
-    <td>Defines formatting for `boost::mpl::list` values</td>
+    <td><code>metashell/formatter/list.hpp</code></td>
+    <td>Defines formatting for <code>boost::mpl::list</code> values</td>
   </tr>
   <tr>
-    <td>`metashell/formatter/map.hpp`</td>
-    <td>Defines formatting for `boost::mpl::map` values</td>
+    <td><code>metashell/formatter/map.hpp</code></td>
+    <td>Defines formatting for <code>boost::mpl::map</code> values</td>
   </tr>
   <tr>
-    <td>`metashell/formatter/set.hpp`</td>
-    <td>Defines formatting for `boost::mpl::set` values</td>
+    <td><code>metashell/formatter/set.hpp</code></td>
+    <td>Defines formatting for <code>boost::mpl::set</code> values</td>
   </tr>
   <tr>
-    <td>`metashell/formatter/vector.hpp`</td>
-    <td>Defines formatting for `boost::mpl::vector` values</td>
+    <td><code>metashell/formatter/vector.hpp</code></td>
+    <td>Defines formatting for <code>boost::mpl::vector</code> values</td>
   </tr>
   <tr>
-    <td>`metashell/formatter.hpp`</td>
+    <td><code>metashell/formatter.hpp</code></td>
     <td>
-      Defines formatting for `boost::mpl::deque`, `boost::mpl::list`,
-      `boost::mpl::map`, `boost::mpl::set` and `boost::mpl::vector` values.
+      Defines formatting for <code>boost::mpl::deque</code>,
+      <code>boost::mpl::list</code>, <code>boost::mpl::map</code>,
+      <code>boost::mpl::set</code> and <code>boost::mpl::vector</code> values.
     </td>
   </tr>
   <tr>
-    <td>`metashell/scalar.hpp`</td>
-    <td>Defines the `SCALAR` macro.</td>
+    <td><code>metashell/scalar.hpp</code></td>
+    <td>Defines the <code>SCALAR</code> macro.</td>
   </tr>
 </table>
 
