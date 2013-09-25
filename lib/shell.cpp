@@ -110,7 +110,7 @@ void shell::cancel_operation() {}
 
 void shell::display_splash() const
 {
-  display_info(
+  display_normal(
     indenter(width(), " * ")
       .raw("/*")
       .left_align("Template metaprogramming shell " + version())
@@ -145,7 +145,11 @@ void shell::display_splash() const
   );
   if (_config.verbose)
   {
-    display_info("\n// Verbose mode: ON\n\n");
+    display_normal(
+      indenter(width(), "// ")
+        .left_align("Verbose mode: ON")
+        .str()
+    );
   }
 }
 

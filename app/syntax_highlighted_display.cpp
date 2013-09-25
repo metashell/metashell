@@ -56,6 +56,10 @@ console::color syntax_highlighted_display::color_of_token(
   {
     return console::magenta;
   }
+  else if (id_ == boost::wave::T_CCOMMENT || id_ == boost::wave::T_CPPCOMMENT)
+  {
+    return console::green;
+  }
   else
   {
     return console::white;
