@@ -14,8 +14,12 @@
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/trim.hpp>
+
 #include <algorithm>
 #include <iterator>
+#include <cassert>
 
 namespace mindent
 {
@@ -35,6 +39,7 @@ namespace mindent
     template <class TokenType>
     TokenType space_token(int len_)
     {
+      assert(len_ > 0);
       return
         TokenType(
           boost::wave::T_SPACE,
@@ -102,7 +107,10 @@ namespace mindent
     )
     {
       show_(new_line_token<TokenType>());
-      show_(space_token<TokenType>(indented_));
+      if (indented_ > 0)
+      {
+        show_(space_token<TokenType>(indented_));
+      }
       current_line_left_ = width_ - indented_;
     }
 
@@ -115,6 +123,9 @@ namespace mindent
       DisplayF show_
     )
     {
+      using boost::algorithm::is_any_of;
+      using boost::algorithm::trim_right_copy_if;
+
       typedef typename TokenType::string_type string_t;
       typedef typename string_t::const_iterator string_it;
 
@@ -145,26 +156,58 @@ namespace mindent
           --current_line_left;
         }
 
-        const string_t value = i->get_value();
+        const string_t
+          value = trim_right_copy_if(i->get_value(), is_any_of("\n\r"));
+
+        string_t buff;
         for (string_it j = value.begin(), je = value.end(); j != je; )
         {
           typedef
             typename std::iterator_traits<string_it>::difference_type
             diff_t;
 
-          const string_it j2 = j + std::min<diff_t>(je - j, current_line_left);
-          show_(TokenType(*i, string_t(j, j2), i->get_position()));
-          current_line_left -= j2 - j;
-          if (current_line_left <= 0 && j2 != je)
-          {
-            display_new_line<TokenType>(
-              width_,
-              indented_,
-              current_line_left,
-              show_
+          const string_it j2 =
+            std::find_if(
+              j,
+              j + std::min<diff_t>(je - j, current_line_left),
+              is_any_of("\n\r")
             );
+          const bool j2_is_newline = (j2 != je && is_any_of("\n\r")(*j2));
+          if (*i == boost::wave::T_CCOMMENT)
+          {
+            buff += string_t(j, j2);
+          }
+          else
+          {
+            show_(TokenType(*i, string_t(j, j2), i->get_position()));
+          }
+          current_line_left -= j2 - j;
+          if (j2_is_newline || (current_line_left <= 0 && j2 != je))
+          {
+            if (*i == boost::wave::T_CCOMMENT)
+            {
+              buff += '\n' + string_t(indented_, ' ');
+              current_line_left = width_ - indented_;
+            }
+            else
+            {
+              display_new_line<TokenType>(
+                width_,
+                indented_,
+                current_line_left,
+                show_
+              );
+            }
           }
           j = j2;
+          if (j2_is_newline)
+          {
+            ++j;
+          }
+        }
+        if (!buff.empty())
+        {
+          show_(TokenType(*i, buff, i->get_position()));
         }
         first = false;
       }
@@ -214,7 +257,10 @@ namespace mindent
             ++i
           )
           {
-            show_(space_token<TokenType>(indented));
+            if (indented > 0)
+            {
+              show_(space_token<TokenType>(indented));
+            }
             show_ =
               display(
                 i->first,
@@ -227,7 +273,10 @@ namespace mindent
             show_(i->second);
             show_(new_line_token<TokenType>());
           }
-          show_(space_token<TokenType>(indented_));
+          if (indented_ > 0)
+          {
+            show_(space_token<TokenType>(indented_));
+          }
           show_(n_.template_end());
         }
         return show_;
@@ -296,8 +345,11 @@ namespace mindent
           if (!i->second.get_value().empty())
           {
             show_(new_line_token<TokenType>());
+            if (i->second == boost::wave::T_COLON_COLON)
+            {
+              show_(i->second);
+            }
           }
-          show_(i->second);
         }
         return show_;
       }
@@ -318,7 +370,10 @@ namespace mindent
       )
       {
         show_ = display_in_one_line(i->first, show_);
-        show_(i->second);
+        if (i->second == boost::wave::T_COLON_COLON)
+        {
+          show_(i->second);
+        }
       }
       return show_;
     }

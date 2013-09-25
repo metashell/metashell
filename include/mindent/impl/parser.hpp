@@ -25,8 +25,6 @@ namespace mindent
     {
       return
         t_ != boost::wave::T_ANY &&
-        t_ != boost::wave::T_CCOMMENT &&
-        t_ != boost::wave::T_CPPCOMMENT &&
         t_ != boost::wave::T_SPACE &&
         t_ != boost::wave::T_SPACE2 &&
         t_ != boost::wave::T_EOF &&
