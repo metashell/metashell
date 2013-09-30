@@ -1,5 +1,7 @@
 # Metashell
 
+[![Build Status](https://secure.travis-ci.org/sabel83/metashell.png?branch=master "Build Status")](http://travis-ci.org/sabel83/metashell)
+
 The goal of this project is to provide an interactive template metaprogramming
 shell.
 
