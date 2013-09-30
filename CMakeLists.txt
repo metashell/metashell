@@ -31,7 +31,7 @@ add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
 
 # Boost
 # Turn this on to link statically against Boost
-set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS
   system # used by Wave
   thread # used by Wave

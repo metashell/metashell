@@ -25,53 +25,84 @@
 #include <vector>
 #include <string>
 
+namespace
+{
+  enum parse_config_result
+  {
+    run_shell,
+    exit_with_error,
+    exit_without_error
+  };
+
+  parse_config_result parse_config(
+    metashell::config cfg_,
+    int argc_,
+    char* argv_[]
+  )
+  {
+    using boost::program_options::options_description;
+    using boost::program_options::variables_map;
+    using boost::program_options::store;
+    using boost::program_options::notify;
+    using boost::program_options::parse_command_line;
+    using boost::program_options::value;
+
+    std::string cppstd("c++0x");
+
+    options_description desc("Options");
+    desc.add_options()
+      ("help", "Display help")
+      ("include,I", value(&cfg_.include_path), "Additional include directory")
+      ("verbose,V", "Verbose mode")
+      ("no_highlight,H", "Disable syntax highlighting")
+      ("no_indent,N", "Disable indenting")
+      (
+        "std", value(&cppstd),
+        "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
+      )
+      ;
+
+    try
+    {
+      variables_map vm;
+      store(parse_command_line(argc_, argv_, desc), vm);
+      notify(vm);
+
+      cfg_.verbose = vm.count("verbose") || vm.count("V");
+      cfg_.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
+      cfg_.indent = !(vm.count("no_indent") || vm.count("N"));
+      cfg_.standard_to_use = metashell::parse(cppstd);
+
+      if (vm.count("help"))
+      {
+        std::cout << desc << std::endl;
+        return exit_without_error;
+      }
+      else
+      {
+        return run_shell;
+      }
+    }
+    catch (const std::exception& e_)
+    {
+      std::cerr << e_.what() << "\n\n" << desc << std::endl;
+      return exit_with_error;
+    }
+  }
+}
+
 int main(int argc_, char* argv_[])
 {
-  using boost::program_options::options_description;
-  using boost::program_options::variables_map;
-  using boost::program_options::store;
-  using boost::program_options::notify;
-  using boost::program_options::parse_command_line;
-  using boost::program_options::value;
-
   metashell::config cfg;
 
-  options_description desc("Options");
-  desc.add_options()
-    ("help", "Display help")
-    ("include,I", value(&cfg.include_path), "Additional include directory")
-    ("verbose,V", "Verbose mode")
-    ("no_highlight,H", "Disable syntax highlighting")
-    ("no_indent,N", "Disable indenting")
-    ;
+  const parse_config_result r = parse_config(cfg, argc_, argv_);
 
-  try
+  if (r == run_shell)
   {
-    variables_map vm;
-    store(parse_command_line(argc_, argv_, desc), vm);
-    notify(vm);
-
-    cfg.verbose = vm.count("verbose") || vm.count("V");
-    cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-    cfg.indent = !(vm.count("no_indent") || vm.count("N"));
-
-    if (vm.count("help"))
-    {
-      std::cout << desc << std::endl;
-    }
-    else
-    {
-      readline_shell shell(cfg);
-
-      shell.display_splash();
-
-      shell.run();
-    }
+    readline_shell shell(cfg);
+    shell.display_splash();
+    shell.run();
   }
-  catch (const boost::program_options::error& e_)
-  {
-    std::cerr << e_.what() << "\n\n" << desc << std::endl;
-    return 1;
-  }
+  return r == exit_with_error ? 1 : 0;
 }
 

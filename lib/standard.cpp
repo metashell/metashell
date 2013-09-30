@@ -14,15 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <metashell/standard.hpp>
+
+#include <stdexcept>
 
 using namespace metashell;
 
-config::config() :
-  include_path(),
-  verbose(false),
-  syntax_highlight(true),
-  indent(true),
-  standard_to_use(standard::cpp11)
-{}
+standard::type metashell::parse(const std::string& std_)
+{
+  if (std_ == "c++0x" || std_ == "c++11")
+  {
+    return standard::cpp11;
+  }
+  else if (std_ == "c++1y" || std_ == "c++14")
+  {
+    return standard::cpp14;
+  }
+  else
+  {
+    throw std::runtime_error("Invalid standard version: " + std_);
+  }
+}
+
+std::string metashell::clang_argument(standard::type std_)
+{
+  switch (std_)
+  {
+  case standard::cpp11: return "-std=c++0x";
+  case standard::cpp14: return "-std=c++1y";
+  }
+  throw std::runtime_error("Invalid standard value");
+}
+
 

@@ -1,3 +1,6 @@
+#ifndef METASHELL_STANDARD_HPP
+#define METASHELL_STANDARD_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,15 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <string>
 
-using namespace metashell;
+namespace metashell
+{
+  namespace standard
+  {
+    enum type
+    {
+      cpp11,
+      cpp14
+    };
+  }
+  
+  standard::type parse(const std::string& std_);
+  std::string clang_argument(standard::type std_);
+}
 
-config::config() :
-  include_path(),
-  verbose(false),
-  syntax_highlight(true),
-  indent(true),
-  standard_to_use(standard::cpp11)
-{}
+#endif
 

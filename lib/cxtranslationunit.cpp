@@ -80,7 +80,9 @@ cxtranslationunit::cxtranslationunit(
     c_str_it;
 
   vector<string> args = list_of<string>
-    ("-x")("c++")("-std=c++1y")("-I" + _headers.internal_dir());
+    ("-x")("c++")
+    (clang_argument(config_.standard_to_use))
+    ("-I" + _headers.internal_dir());
   std::transform(
     config_.include_path.begin(),
     config_.include_path.end(),
