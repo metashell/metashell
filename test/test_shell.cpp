@@ -16,7 +16,17 @@
 
 #include "test_shell.hpp"
 
-test_shell::test_shell() : metashell::shell(metashell::config()) {}
+using namespace metashell;
+
+test_shell::test_shell() :
+  shell(config()),
+  _width(80)
+{}
+
+test_shell::test_shell(const config& cfg_, int width_) :
+  shell(cfg_),
+  _width(width_)
+{}
 
 void test_shell::display_normal(const std::string& s_) const
 {
@@ -50,6 +60,6 @@ const std::string& test_shell::error() const
 
 unsigned int test_shell::width() const
 {
-  return 80;
+  return _width;
 }
 

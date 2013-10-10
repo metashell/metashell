@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util.hpp"
+#include "test_shell.hpp"
 
 #include <boost/test/unit_test.hpp>
 
@@ -64,6 +65,23 @@ BOOST_AUTO_TEST_CASE(test_tag_dispatched_formatting)
         "};"
       "}"
     )
+  );
+}
+
+BOOST_AUTO_TEST_CASE(test_formatting_disabled)
+{
+  metashell::config cfg;
+  cfg.indent = false;
+
+  test_shell sh(cfg, 10);
+  sh.line_available(
+    "template <class... Ts> struct template_with_a_long_name {};"
+  );
+  sh.line_available("template_with_a_long_name<int, double, char>");
+
+  BOOST_CHECK_EQUAL(
+    "template_with_a_long_name<int, double, char>",
+    sh.output()
   );
 }
 

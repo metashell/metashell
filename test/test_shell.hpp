@@ -23,6 +23,7 @@ class test_shell : public metashell::shell
 {
 public:
   test_shell();
+  test_shell(const metashell::config& cfg_, int width_);
 
   virtual void display_normal(const std::string& s_) const;
   virtual void display_info(const std::string& s_) const;
@@ -37,6 +38,8 @@ private:
   mutable std::string _output;
   mutable std::string _info;
   mutable std::string _error;
+
+  int _width;
 };
 
 #endif
