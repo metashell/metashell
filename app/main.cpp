@@ -35,7 +35,7 @@ namespace
   };
 
   parse_config_result parse_config(
-    metashell::config cfg_,
+    metashell::config& cfg_,
     int argc_,
     char* argv_[]
   )
@@ -55,7 +55,7 @@ namespace
       ("include,I", value(&cfg_.include_path), "Additional include directory")
       ("verbose,V", "Verbose mode")
       ("no_highlight,H", "Disable syntax highlighting")
-      ("no_indent,N", "Disable indenting")
+      ("indent", "Enable indenting (experimental)")
       (
         "std", value(&cppstd),
         "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
@@ -70,7 +70,7 @@ namespace
 
       cfg_.verbose = vm.count("verbose") || vm.count("V");
       cfg_.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-      cfg_.indent = !(vm.count("no_indent") || vm.count("N"));
+      cfg_.indent = vm.count("indent");
       cfg_.standard_to_use = metashell::parse(cppstd);
 
       if (vm.count("help"))
