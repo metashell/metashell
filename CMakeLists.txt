@@ -48,6 +48,9 @@ link_directories(${Boost_LIBRARY_DIRS})
 # Clang
 find_package(Clang)
 
+# Readline
+find_package(Readline)
+
 include_directories("include")
 
 # Unit testing

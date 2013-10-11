@@ -30,7 +30,6 @@ target_link_libraries(metashell
 )
 
 # Readline
-find_package(Readline)
 include_directories(${READLINE_INCLUDE_DIR})
 target_link_libraries(metashell ${READLINE_LIBRARY})
 

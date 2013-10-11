@@ -18,7 +18,6 @@ aux_source_directory(. SOURCES)
 add_library(metashell_lib STATIC ${SOURCES})
 
 # Readline
-find_package(Readline)
 include_directories(${READLINE_INCLUDE_DIR})
 
 # Clang
