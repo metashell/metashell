@@ -1,4 +1,4 @@
-# Metashell - Interactive C++ template metaprogramming shell
+# Metashell - Interactive C/C++ preprocessor shell
 # Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,20 +14,63 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Options for the module
+#  READLINE_INCLUDEDIR   Set this if the module can not find the Readline
+#                        headers
+#  READLINE_LIBRARYDIR   Set this if the module can not find the Readline
+#                        library
+#  READLINE_DEBUG        Set this for verbose output
+#
 # This module will define the following:
-#   Readline_FOUND
-#   Readline_INCLUDE_DIR
-#   Readline_LIBRARY
+#   READLINE_FOUND
+#   READLINE_INCLUDE_DIR
+#   READLINE_LIBRARY
 
-find_path(Readline_INCLUDE_DIR readline/readline.h)
-find_library(Readline_LIBRARY NAMES readline)
+if (NOT $ENV{READLINE_INCLUDEDIR} STREQUAL "" )
+  set(READLINE_INCLUDEDIR $ENV{READLINE_INCLUDEDIR})
+endif()
 
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set Readline_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(
-  Readline DEFAULT_MSG Readline_LIBRARY Readline_INCLUDE_DIR
+if (NOT $ENV{READLINE_LIBRARYDIR} STREQUAL "" )
+  set(READLINE_LIBRARYDIR $ENV{READLINE_LIBRARYDIR})
+endif()
+
+if (READLINE_DEBUG)
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+  message(STATUS "Searching for Readline")
+  message(STATUS "  READLINE_INCLUDEDIR = ${READLINE_INCLUDEDIR}")
+  message(STATUS "  READLINE_LIBRARYDIR = ${READLINE_LIBRARYDIR}")
+endif()
+
+find_path(
+  READLINE_INCLUDE_DIR
+  NAMES readline/readline.h
+  HINTS ${READLINE_INCLUDEDIR}
+)
+find_library(
+  READLINE_LIBRARY
+  NAMES readline
+  HINTS ${READLINE_LIBRARYDIR}
 )
 
-mark_as_advanced(Readline_INCLUDE_DIR, Readline_LIBRARY)
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set READLINE_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(
+  Readline DEFAULT_MSG READLINE_LIBRARY READLINE_INCLUDE_DIR
+)
+
+mark_as_advanced(READLINE_INCLUDE_DIR, READLINE_LIBRARY)
+
+if (READLINE_DEBUG)
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+  if (READLINE_FOUND)
+    message(STATUS "Readline found")
+    message(STATUS "  READLINE_INCLUDE_DIR = ${READLINE_INCLUDE_DIR}")
+    message(STATUS "  READLINE_LIBRARY = ${READLINE_LIBRARY}")
+  else()
+    message(STATUS "Readline not found")
+  endif()
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+endif()
+
 

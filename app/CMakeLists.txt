@@ -31,8 +31,8 @@ target_link_libraries(metashell
 
 # Readline
 find_package(Readline)
-include_directories(${Readline_INCLUDE_DIR})
-target_link_libraries(metashell ${Readline_LIBRARY})
+include_directories(${READLINE_INCLUDE_DIR})
+target_link_libraries(metashell ${READLINE_LIBRARY})
 
 # Program_options
 target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})

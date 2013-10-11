@@ -17,6 +17,10 @@
 aux_source_directory(. SOURCES)
 add_library(metashell_lib STATIC ${SOURCES})
 
+# Readline
+find_package(Readline)
+include_directories(${READLINE_INCLUDE_DIR})
+
 # LLVM
 include_directories(${LLVM_INCLUDE_DIR})
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${LLVM_CXX_FLAGS})
