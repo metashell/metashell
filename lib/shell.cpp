@@ -185,7 +185,7 @@ bool shell::store_in_buffer(const std::string& s_)
 
 const char* shell::input_filename()
 {
-  return "<input>";
+  return "<stdin>";
 }
 
 void shell::code_complete(

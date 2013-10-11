@@ -104,7 +104,7 @@ error:
 
 ```cpp
 > fib<6>::value
-<input>:6:26: error: template argument for template type parameter must be a type
+<stdin>:6:26: error: template argument for template type parameter must be a type
 ```
 
 The problem is that Metashell assumes, that _the result of a template
