@@ -14,13 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Options for the module
+#  CLANG_INCLUDEDIR   Set this if the module can not find the Readline
+#                     headers
+#  CLANG_LIBRARYDIR   Set this if the module can not find the Readline
+#                     library
+#  CLANG_DEBUG        Set this for verbose output
+#
 # This module will define the following:
-# CLANG_FOUND
-# CLANG_INCLUDE_DIR
-# CLANG_LIBRARY
+#   CLANG_FOUND
+#   CLANG_INCLUDE_DIR
+#   CLANG_LIBRARY
 
-find_path(CLANG_INCLUDE_DIR clang-c/Index.h)
-find_library(CLANG_LIBRARY NAMES clang)
+if (NOT $ENV{CLANG_INCLUDEDIR} STREQUAL "" )
+  set(CLANG_INCLUDEDIR $ENV{CLANG_INCLUDEDIR})
+endif()
+
+if (NOT $ENV{CLANG_LIBRARYDIR} STREQUAL "" )
+  set(CLANG_LIBRARYDIR $ENV{CLANG_LIBRARYDIR})
+endif()
+
+if (CLANG_DEBUG)
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+  message(STATUS "Searching for libclang")
+  message(STATUS "  CLANG_INCLUDEDIR = ${CLANG_INCLUDEDIR}")
+  message(STATUS "  CLANG_LIBRARYDIR = ${CLANG_LIBRARYDIR}")
+endif()
+
+find_path(CLANG_INCLUDE_DIR NAMES clang-c/Index.h HINTS ${CLANG_INCLUDEDIR})
+find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set CLANG_FOUND to TRUE
@@ -31,4 +53,15 @@ find_package_handle_standard_args(
 
 mark_as_advanced(CLANG_INCLUDE_DIR, CLANG_LIBRARY)
 
+if (CLANG_DEBUG)
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+  if (CLANG_FOUND)
+    message(STATUS "libclang found")
+    message(STATUS "  CLANG_INCLUDE_DIR = ${CLANG_INCLUDE_DIR}")
+    message(STATUS "  CLANG_LIBRARY = ${CLANG_LIBRARY}")
+  else()
+    message(STATUS "libclang not found")
+  endif()
+  message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
+endif()
 

@@ -21,9 +21,6 @@ add_library(metashell_lib STATIC ${SOURCES})
 find_package(Readline)
 include_directories(${READLINE_INCLUDE_DIR})
 
-# LLVM
-include_directories(${LLVM_INCLUDE_DIR})
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${LLVM_CXX_FLAGS})
+# Clang
 target_link_libraries(metashell_lib ${CLANG_LIBRARY})
-target_link_libraries(metashell_lib ${LLVM_LIBRARY})
-target_link_libraries(metashell_lib ${CMAKE_THREAD_LIBS_INIT})
+
