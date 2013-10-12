@@ -24,15 +24,26 @@
 
 namespace metashell
 {
-  struct config
+  class config
   {
-    config();
-
+  public:
     std::vector<std::string> include_path;
     bool verbose;
     bool syntax_highlight;
     bool indent;
     standard::type standard_to_use;
+
+    static const config empty;
+    static const config default_config;
+  private:
+    template <class InputIt>
+    config(InputIt include_path_begin_, InputIt include_path_end_) :
+      include_path(include_path_begin_, include_path_end_),
+      verbose(false),
+      syntax_highlight(true),
+      indent(true),
+      standard_to_use(standard::cpp11)
+    {}
   };
 }
 

@@ -1,4 +1,4 @@
-# Metashell - Interactive C/C++ preprocessor shell
+# Metashell - Interactive C++ template metaprogramming shell
 # Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify

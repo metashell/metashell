@@ -19,6 +19,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+using namespace metashell;
+
 BOOST_AUTO_TEST_CASE(test_basic_formatting)
 {
   BOOST_CHECK_EQUAL(
@@ -70,7 +72,7 @@ BOOST_AUTO_TEST_CASE(test_tag_dispatched_formatting)
 
 BOOST_AUTO_TEST_CASE(test_formatting_disabled)
 {
-  metashell::config cfg;
+  config cfg = config::empty;
   cfg.indent = false;
 
   test_shell sh(cfg, 10);

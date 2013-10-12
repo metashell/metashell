@@ -18,11 +18,21 @@
 
 using namespace metashell;
 
-config::config() :
-  include_path(),
-  verbose(false),
-  syntax_highlight(true),
-  indent(true),
-  standard_to_use(standard::cpp11)
-{}
+namespace
+{
+  const char* extra_sysinclude[] =
+    {
+      ""
+      #include "extra_sysinclude.hpp"
+    };
+}
+
+const config config::empty((const char**)0, (const char**)0);
+
+const config
+  config::default_config(
+    extra_sysinclude + 1,
+    extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*)
+  );
+
 

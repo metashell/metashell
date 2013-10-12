@@ -93,7 +93,7 @@ namespace
 
 int main(int argc_, char* argv_[])
 {
-  metashell::config cfg;
+  metashell::config cfg = metashell::config::default_config;
 
   const parse_config_result r = parse_config(cfg, argc_, argv_);
 

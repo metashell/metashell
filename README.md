@@ -37,6 +37,10 @@ metaprograms.
     * libclang
     * Readline
 * Install CMake
+* In case some elements of the default system include path are missing when
+  libclang is used, Metashell has to add them. You need to provide the system
+  include path clang uses to Metashell:
+    * `tools/clang_default_path > lib/extra_sysinclude.hpp`
 * In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
