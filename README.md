@@ -45,6 +45,7 @@ metaprograms.
     * `mkdir bin`
     * `cd bin`
     * `cmake ..`
+        * Note: on Fedora you need to run `cmake .. -DCLANG_LIBRARYDIR=/usr/lib/llvm`
     * `make`
 
 ## Getting started

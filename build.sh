@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if \
-  [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ] \
-  || [ -e /etc/SuSE-release ]
-then
+if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]; then
+  PACKAGE_FORMAT=RPM
+  CMAKE_ARG="-DCLANG_LIBRARYDIR=/usr/lib/llvm"
+elif [ -e /etc/SuSE-release ]; then
   PACKAGE_FORMAT=RPM
 else
   PACKAGE_FORMAT=DEB
@@ -29,7 +29,7 @@ tools/clang_default_path > lib/extra_sysinclude.hpp \
   \
   && mkdir -p bin \
   && cd bin \
-  && cmake .. \
+  && cmake .. $CMAKE_ARG \
   && make \
   && make test \
   \
