@@ -21,5 +21,6 @@ add_library(metashell_lib STATIC ${SOURCES})
 include_directories(${READLINE_INCLUDE_DIR})
 
 # Clang
+include_directories(${CLANG_INCLUDE_DIR})
 target_link_libraries(metashell_lib ${CLANG_LIBRARY})
 
