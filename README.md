@@ -5,6 +5,21 @@
 The goal of this project is to provide an interactive template metaprogramming
 shell.
 
+## Table of contents
+
+- [Motivation](#motivation)
+- [Building Metashell](#building-metashell)
+- [Getting started](#getting-started)
+    - [Evaluating simple expressions](#evaluating-simple-expressions)
+    - [How about Fibonacci?](#how-about-fibonacci?)
+    - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
+    - [Writing custom formatters](#writing-custom-formatters)
+        - [Using specialisation](#using-specialisation)
+        - [Using tag dispatching](#using-tag-dispatching)
+        - [Embedding custom formatters](#embedding-custom-formatters)
+- [The full list of built-in header files](#the-full-list-of-built-in-header-files)
+- [License](#license)
+
 ## Motivation
 
 When one starts learning a new programming language such as Haskell, Python or
