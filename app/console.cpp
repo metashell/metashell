@@ -52,6 +52,7 @@ namespace
   {
     switch (c_)
     {
+    case default_color:  return code_of_color(gray);
     case black:          return 0;
     case red:            return          R;
     case green:          return              G;
@@ -105,6 +106,7 @@ namespace
   {
     switch (c_)
     {
+    case default_color:  return CONSOLE_COLOR(0);
     case black:          return CONSOLE_COLOR(30);
     case red:            return CONSOLE_COLOR(31);
     case green:          return CONSOLE_COLOR(32);
@@ -125,11 +127,6 @@ namespace
   }
 
 #undef CONSOLE_COLOR
-}
-
-void console::reset()
-{
-  std::cout << "\033[0m";
 }
 
 void console::text_color(color c_)

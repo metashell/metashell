@@ -51,7 +51,7 @@ namespace
     {
       console::text_color(Color);
       std::cout << s_;
-      console::reset();
+      console::text_color(console::default_color);
       std::cout << std::endl;
     }
   }
@@ -64,7 +64,7 @@ namespace
       syntax_highlighted_display()
     );
 
-    console::reset();
+    console::text_color(console::default_color);
   }
 
   std::string get_edited_text()
@@ -159,7 +159,7 @@ void readline_shell::display_normal(const std::string& s_) const
       if (_syntax_highlight)
       {
         indent(width(), 2, syntax_highlighted_display(), s_);
-        console::reset();
+        console::text_color(console::default_color);
       }
       else
       {

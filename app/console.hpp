@@ -20,6 +20,8 @@
 namespace console
 {
   enum color {
+    default_color,
+
     black,
     red,
     bright_red,
@@ -37,7 +39,6 @@ namespace console
     white
   };
 
-  void reset();
   void text_color(color c_);
 }
 

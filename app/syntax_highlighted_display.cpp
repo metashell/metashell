@@ -42,7 +42,7 @@ console::color syntax_highlighted_display::color_of_token(
   }
   else if (IS_CATEGORY(id_, boost::wave::IdentifierTokenType))
   {
-    return console::white;
+    return console::default_color;
   }
   else if (IS_CATEGORY(id_, boost::wave::KeywordTokenType))
   {
@@ -50,7 +50,7 @@ console::color syntax_highlighted_display::color_of_token(
   }
   else if (IS_CATEGORY(id_, boost::wave::OperatorTokenType))
   {
-    return console::white;
+    return console::default_color;
   }
   else if (IS_CATEGORY(id_, boost::wave::PPTokenType))
   {
@@ -62,7 +62,7 @@ console::color syntax_highlighted_display::color_of_token(
   }
   else
   {
-    return console::white;
+    return console::default_color;
   }
 }
 
