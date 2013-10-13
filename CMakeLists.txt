@@ -18,8 +18,8 @@ cmake_minimum_required(VERSION 2.6)
 
 project(metashell)
 set(CMAKE_PROJECT_NAME metashell)
-set(MAJOR_VERSION 1)
-set(MINOR_VERSION 0)
+set(MAJOR_VERSION 0)
+set(MINOR_VERSION 1)
 set(PATCH_VERSION 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -44,6 +44,11 @@ find_package(Threads) # used by Boost.Thread
 
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
+
+set(
+  BOOST_VER
+  "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}"
+)
 
 # Clang
 find_package(Clang)
@@ -79,7 +84,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}_${CMAKE_SYSTEM_PROCESSOR}")
   set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
 
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-system1.49.0, libboost-thread1.49.0, libboost-filesystem1.49.0, libboost-wave1.49.0, libboost-program-options1.49.0, libclang1, libclang-dev")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-system${BOOST_VER}, libboost-thread${BOOST_VER}, libboost-filesystem${BOOST_VER}, libboost-wave${BOOST_VER}, libboost-program-options${BOOST_VER}, libclang1, libclang-dev")
    
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")

@@ -21,24 +21,8 @@ if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]; then
   CMAKE_ARG="-DCLANG_LIBRARYDIR=/usr/lib/llvm"
 elif [ -e /etc/SuSE-release ]; then
   PACKAGE_FORMAT=RPM
-elif [ -e /etc/lsb-release ] && grep Ubuntu /etc/lsb-release; then
-  UBUNTU_VERSION=$(grep DISTRIB_RELEASE /etc/lsb-release | sed 's/^[^=]*=//')
-  case $UBUNTU_VERSION in
-    12.04)
-      sed -i 's/\(libboost-[^0-9]*\)\([0-9]*\.\)\{2\}[0-9]*/\11.48.0/g' CMakeLists.txt
-      ;;
-    13.04)
-      # Nothing to do
-      ;;
-    *)
-      echo "The script does not support Ubuntu $UBUNTU_VERSION. Please build manually."
-      exit 1
-      ;;
-  esac
-  PACKAGE_FORMAT=DEB
 else
-  echo "The script could not detect your system. Please build manually."
-  exit 1
+  PACKAGE_FORMAT=DEB
 fi
 
 tools/clang_default_path > lib/extra_sysinclude.hpp \
