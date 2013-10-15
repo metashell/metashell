@@ -116,7 +116,7 @@ you haven't been able to run the classical Fibonacci example of template
 metaprogramming. Let's write it first:
 
 ```cpp
-> template <int N> struct fib { static constexpr int value = N * fib<N - 1>::value; };
+> template <int N> struct fib { static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; };
 > template <> struct fib<0> { static constexpr int value = 1; };
 > template <> struct fib<1> { static constexpr int value = 1; };
 ```
@@ -138,7 +138,7 @@ a type:
 ```cpp
 > #include <boost/mpl/int.hpp>
 > boost::mpl::int_<fib<6>::value>
-mpl_::int_<720>
+mpl_::int_<13>
 ```
 
 In this case we knew that the result is an `int` value. For other values other
@@ -155,7 +155,7 @@ expressions evaluating to scalar results. For example:
 
 ```cpp
 > SCALAR(fib<6>::value)
-std::integral_constant<int, 720>
+std::integral_constant<int, 13>
 ```
 
 The `SCALAR` macro instantiates `std::integral_constant` with the right
