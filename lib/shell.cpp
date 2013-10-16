@@ -110,10 +110,22 @@ void shell::cancel_operation() {}
 
 void shell::display_splash() const
 {
+  const std::string version_desc =
+    #include "version_desc.hpp"
+  ;
+
+  indenter ind(width(), " * ");
+  ind
+    .raw("/*")
+    .left_align("Template metaprogramming shell " + version());
+
+  if (!version_desc.empty())
+  {
+    ind.left_align(version_desc);
+  }
+
   display_normal(
-    indenter(width(), " * ")
-      .raw("/*")
-      .left_align("Template metaprogramming shell " + version())
+    ind
       .empty_line()
       .left_align(
         "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
