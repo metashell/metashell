@@ -21,6 +21,10 @@
 #include <metashell/version.hpp>
 #include <metashell/token_iterator.hpp>
 
+#include <boost/foreach.hpp>
+
+#include <cctype>
+
 using namespace metashell;
 
 namespace
@@ -100,6 +104,18 @@ namespace
       s_.display_normal(r_.output);
     }
   }
+
+  bool has_non_whitespace(const std::string& s_)
+  {
+    BOOST_FOREACH(char c, s_)
+    {
+      if (!std::isspace(c))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 shell::shell(const config& config_) : _config(config_) {}
@@ -167,13 +183,16 @@ void shell::display_splash() const
 
 void shell::line_available(const std::string& s_)
 {
-  if (is_environment_setup_command(s_))
+  if (has_non_whitespace(s_))
   {
-    store_in_buffer(s_);
-  }
-  else
-  {
-    display(eval_tmp(_buffer, s_, _config), *this);
+    if (is_environment_setup_command(s_))
+    {
+      store_in_buffer(s_);
+    }
+    else
+    {
+      display(eval_tmp(_buffer, s_, _config), *this);
+    }
   }
 }
 

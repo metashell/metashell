@@ -27,3 +27,67 @@ BOOST_AUTO_TEST_CASE(test_non_existing_class)
   BOOST_CHECK(!sh.error().empty());
 }
 
+BOOST_AUTO_TEST_CASE(test_accept_empty_input)
+{
+  test_shell sh;
+  sh.line_available("");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_space_input)
+{
+  test_shell sh;
+  sh.line_available(" ");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_tab_input)
+{
+  test_shell sh;
+  sh.line_available("\t");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_vertical_tab_input)
+{
+  test_shell sh;
+  sh.line_available("\v");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_new_line_input)
+{
+  test_shell sh;
+  sh.line_available("\n");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_carrige_return_input)
+{
+  test_shell sh;
+  sh.line_available("\r");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_two_space_input)
+{
+  test_shell sh;
+  sh.line_available("  ");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+
