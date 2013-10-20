@@ -101,3 +101,40 @@ BOOST_AUTO_TEST_CASE(test_macro_in_config)
   BOOST_CHECK_EQUAL("int", sh.output());
 }
 
+namespace
+{
+  void test_definition_and_query(
+    const std::string& definition_,
+    const std::string& query_,
+    const std::string& expected_result_
+  )
+  {
+    test_shell sh;
+
+    sh.line_available(definition_);
+    BOOST_CHECK_EQUAL("", sh.output());
+    BOOST_CHECK_EQUAL("", sh.error());
+
+    sh.line_available(query_);
+    BOOST_CHECK_EQUAL(expected_result_, sh.output());
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_typedef_in_the_middle_of_a_line)
+{
+  test_definition_and_query("bool typedef * x;", "x", "bool *");
+  test_definition_and_query("char typedef * x;", "x", "char *");
+  test_definition_and_query("const typedef int x;", "x", "const int");
+  test_definition_and_query("double typedef * x;", "x", "double *");
+  test_definition_and_query("float typedef * x;", "x", "float *");
+  test_definition_and_query("int typedef * x;", "x", "int *");
+  test_definition_and_query("long typedef int x;", "x", "long");
+  test_definition_and_query("short typedef int x;", "x", "short");
+  test_definition_and_query("signed typedef int x;", "x", "int");
+  test_definition_and_query("unsigned typedef int x;", "x", "unsigned int");
+  test_definition_and_query("void typedef * x;", "x", "void *");
+  test_definition_and_query("volatile typedef int x;", "x", "volatile int");
+  test_definition_and_query("wchar_t typedef * x;", "x", "wchar_t *");
+}
+
+

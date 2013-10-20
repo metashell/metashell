@@ -50,21 +50,22 @@ namespace
           case boost::wave::T_BOOL:
           case boost::wave::T_CHAR:
           case boost::wave::T_CONST:
-          case boost::wave::T_CONSTCAST:
           case boost::wave::T_DOUBLE:
-          case boost::wave::T_DYNAMICCAST:
           case boost::wave::T_FLOAT:
           case boost::wave::T_INT:
           case boost::wave::T_LONG:
-          case boost::wave::T_REINTERPRETCAST:
           case boost::wave::T_SHORT:
           case boost::wave::T_SIGNED:
-          case boost::wave::T_SIZEOF:
-          case boost::wave::T_STATICCAST:
           case boost::wave::T_UNSIGNED:
           case boost::wave::T_VOID:
           case boost::wave::T_VOLATILE:
           case boost::wave::T_WCHART:
+            return std::find(it, end, boost::wave::T_TYPEDEF) != end;
+          case boost::wave::T_SIZEOF:
+          case boost::wave::T_CONSTCAST:
+          case boost::wave::T_STATICCAST:
+          case boost::wave::T_DYNAMICCAST:
+          case boost::wave::T_REINTERPRETCAST:
             return false;
           default:
             return true;
