@@ -32,6 +32,7 @@ namespace metashell
     bool syntax_highlight;
     bool indent;
     standard::type standard_to_use;
+    std::vector<std::string> macros;
 
     static const config empty;
     static const config default_config;

@@ -55,6 +55,26 @@ namespace
   }
 }
 
+namespace
+{
+  template <class Cont>
+  void add_with_prefix(
+    const std::string& prefix_,
+    const Cont& cont_,
+    std::vector<std::string>& v_
+  )
+  {
+    using boost::phoenix::arg_names::arg1;
+
+    std::transform(
+      cont_.begin(),
+      cont_.end(),
+      std::back_insert_iterator<std::vector<std::string> >(v_),
+      prefix_ + arg1
+    );
+  }
+}
+
 cxtranslationunit::cxtranslationunit(
   const config& config_,
   const std::string& src_,
@@ -66,8 +86,6 @@ cxtranslationunit::cxtranslationunit(
   using boost::transform_iterator;
   using boost::function;
   using boost::assign::list_of;
-
-  using boost::phoenix::arg_names::arg1;
 
   using std::string;
   using std::vector;
@@ -83,12 +101,8 @@ cxtranslationunit::cxtranslationunit(
     ("-x")("c++")
     (clang_argument(config_.standard_to_use))
     ("-I" + _headers.internal_dir());
-  std::transform(
-    config_.include_path.begin(),
-    config_.include_path.end(),
-    std::back_insert_iterator<vector<string> >(args),
-    "-I" + arg1
-  );
+  add_with_prefix("-I", config_.include_path, args);
+  add_with_prefix("-D", config_.macros, args);
 
   const vector<const char*> argv(
     c_str_it(args.begin(), bind(&string::c_str, _1)),

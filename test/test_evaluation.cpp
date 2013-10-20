@@ -90,4 +90,14 @@ BOOST_AUTO_TEST_CASE(test_accept_two_space_input)
   BOOST_CHECK_EQUAL("", sh.error());
 }
 
+BOOST_AUTO_TEST_CASE(test_macro_in_config)
+{
+  metashell::config cfg = metashell::config::empty;
+  cfg.macros.push_back("FOO=int");
+  test_shell sh(cfg, 80);
+
+  sh.line_available("FOO");
+
+  BOOST_CHECK_EQUAL("int", sh.output());
+}
 

@@ -53,6 +53,7 @@ namespace
     desc.add_options()
       ("help", "Display help")
       ("include,I", value(&cfg_.include_path), "Additional include directory")
+      ("define,D", value(&cfg_.macros), "Additional macro definitions")
       ("verbose,V", "Verbose mode")
       ("no_highlight,H", "Disable syntax highlighting")
       ("indent", "Enable indenting (experimental)")
