@@ -4,6 +4,8 @@
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
+[![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](https://github.com/sabel83/metashell/releases)
+
 The goal of this project is to provide an interactive template metaprogramming
 shell.
 
