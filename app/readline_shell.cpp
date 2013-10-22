@@ -94,6 +94,11 @@ readline_shell::readline_shell(const metashell::config& config_) :
   _instance = this;
 }
 
+void readline_shell::add_history(const std::string& s_)
+{
+  ::add_history(s_.c_str());
+}
+
 void readline_shell::run()
 {
   using boost::bind;
@@ -105,9 +110,9 @@ void readline_shell::run()
 
   while (char* l = readline(prompt().c_str()))
   {
-    add_history(l);
-    line_available(l);
+    const std::string line(l);
     free(l);
+    line_available(line);
   }
 }
 

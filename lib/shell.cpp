@@ -195,6 +195,7 @@ void shell::line_available(const std::string& s_)
 {
   if (has_non_whitespace(s_))
   {
+    add_history(s_);
     if (is_environment_setup_command(s_))
     {
       store_in_buffer(s_);

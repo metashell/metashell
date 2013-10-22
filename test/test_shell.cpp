@@ -20,12 +20,20 @@ using namespace metashell;
 
 test_shell::test_shell() :
   shell(config::default_config),
-  _width(80)
+  _width(80),
+  _history(0)
 {}
 
 test_shell::test_shell(const config& cfg_, int width_) :
   shell(cfg_),
-  _width(width_)
+  _width(width_),
+  _history(0)
+{}
+
+test_shell::test_shell(std::vector<std::string>& history_) :
+  shell(config::default_config),
+  _width(80),
+  _history(&history_)
 {}
 
 void test_shell::display_normal(const std::string& s_) const
@@ -61,5 +69,13 @@ const std::string& test_shell::error() const
 unsigned int test_shell::width() const
 {
   return _width;
+}
+
+void test_shell::add_history(const std::string& s_)
+{
+  if (_history)
+  {
+    _history->push_back(s_);
+  }
 }
 

@@ -151,3 +151,36 @@ BOOST_AUTO_TEST_CASE(
   BOOST_CHECK_EQUAL("y *", sh.output());
 }
 
+BOOST_AUTO_TEST_CASE(test_history_is_stored)
+{
+  std::vector<std::string> history;
+  test_shell sh(history);
+
+  sh.line_available("int");
+
+  BOOST_REQUIRE_EQUAL(1, history.size());
+  BOOST_CHECK_EQUAL("int", history.front());
+}
+
+BOOST_AUTO_TEST_CASE(test_empty_line_is_not_stored_in_history)
+{
+  std::vector<std::string> history;
+  test_shell sh(history);
+
+  sh.line_available("");
+
+  BOOST_CHECK_EQUAL(0, history.size());
+}
+
+BOOST_AUTO_TEST_CASE(
+  test_line_containing_just_whitespace_is_not_stored_in_history
+)
+{
+  std::vector<std::string> history;
+  test_shell sh(history);
+
+  sh.line_available(" ");
+
+  BOOST_CHECK_EQUAL(0, history.size());
+}
+

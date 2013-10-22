@@ -19,11 +19,16 @@
 
 #include <metashell/shell.hpp>
 
+#include <vector>
+
 class test_shell : public metashell::shell
 {
 public:
   test_shell();
   test_shell(const metashell::config& cfg_, int width_);
+  test_shell(std::vector<std::string>& history_);
+
+  virtual void add_history(const std::string& s_);
 
   virtual void display_normal(const std::string& s_) const;
   virtual void display_info(const std::string& s_) const;
@@ -40,6 +45,7 @@ private:
   mutable std::string _error;
 
   int _width;
+  std::vector<std::string>* _history; // no ownership
 };
 
 #endif
