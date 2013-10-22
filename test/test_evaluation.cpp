@@ -137,4 +137,17 @@ BOOST_AUTO_TEST_CASE(test_typedef_in_the_middle_of_a_line)
   test_definition_and_query("wchar_t typedef * x;", "x", "wchar_t *");
 }
 
+BOOST_AUTO_TEST_CASE(
+  test_typedef_in_the_middle_of_a_line_starting_with_an_identifier
+)
+{
+  test_shell sh;
+
+  sh.line_available("struct y;");
+  sh.line_available("y typedef * x;");
+  BOOST_CHECK_EQUAL("", sh.error());
+
+  sh.line_available("x");
+  BOOST_CHECK_EQUAL("y *", sh.output());
+}
 

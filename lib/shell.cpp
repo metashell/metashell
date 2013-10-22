@@ -29,6 +29,11 @@ using namespace metashell;
 
 namespace
 {
+  bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
+  {
+    return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
+  }
+
   bool is_environment_setup_command(const std::string& s_)
   {
     try
@@ -60,7 +65,7 @@ namespace
           case boost::wave::T_VOID:
           case boost::wave::T_VOLATILE:
           case boost::wave::T_WCHART:
-            return std::find(it, end, boost::wave::T_TYPEDEF) != end;
+            return has_typedef(it, end);
           case boost::wave::T_SIZEOF:
           case boost::wave::T_CONSTCAST:
           case boost::wave::T_STATICCAST:
@@ -70,6 +75,10 @@ namespace
           default:
             return true;
           }
+        }
+        else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
+        {
+          return has_typedef(it, end);
         }
         else
         {
