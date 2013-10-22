@@ -29,6 +29,8 @@ namespace metashell
   public:
     explicit shell(const config& config_);
     virtual ~shell();
+
+    virtual void add_history(const std::string& s_) = 0;
   
     virtual void display_normal(const std::string& s_) const = 0;
     virtual void display_info(const std::string& s_) const = 0;
@@ -53,6 +55,7 @@ namespace metashell
   private:
     std::string _buffer;
     config _config;
+    std::string _prev_line;
   };
 }
 
