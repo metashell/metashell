@@ -34,6 +34,7 @@ namespace metashell
     standard::type standard_to_use;
     std::vector<std::string> macros;
     bool warnings_enabled;
+    std::vector<std::string> extra_clang_args;
 
     static const config empty;
     static const config default_config;

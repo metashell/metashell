@@ -14,29 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "readline_shell.hpp"
-
 #include <metashell/parse_config.hpp>
-#include <metashell/config.hpp>
 
-#include <iostream>
+#include <boost/test/unit_test.hpp>
 
-int main(int argc_, const char* argv_[])
+namespace
 {
-  using metashell::parse_config;
-  using metashell::parse_config_result;
-
-  metashell::config cfg = metashell::config::default_config;
-
-  const parse_config_result
-    r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
-
-  if (r == metashell::run_shell)
+  template <int Len>
+  metashell::parse_config_result parse_config(
+    metashell::config& cfg_,
+    const char* (&args_)[Len]
+  )
   {
-    readline_shell shell(cfg);
-    shell.display_splash();
-    shell.run();
+    return metashell::parse_config(cfg_, Len, args_);
   }
-  return r == metashell::exit_with_error ? 1 : 0;
+}
+
+BOOST_AUTO_TEST_CASE(test_recognising_extra_clang_arg)
+{
+  const char* args[] = {"metashell", "--", "foo"};
+
+  metashell::config cfg = metashell::config::empty;
+  parse_config(cfg, args);
+
+  BOOST_REQUIRE_EQUAL(1, cfg.extra_clang_args.size());
+  BOOST_CHECK_EQUAL("foo", cfg.extra_clang_args.front());
+}
+
+BOOST_AUTO_TEST_CASE(test_extra_clang_args_are_not_parsed)
+{
+  const char* args[] = {"metashell", "--", "foo"};
+
+  metashell::config cfg = metashell::config::empty;
+  BOOST_CHECK_EQUAL(metashell::run_shell, parse_config(cfg, args));
 }
 

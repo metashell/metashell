@@ -1,3 +1,6 @@
+#ifndef METASHELL_PARSE_CONFIG_HPP
+#define METASHELL_PARSE_CONFIG_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,29 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "readline_shell.hpp"
-
-#include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
 
-#include <iostream>
+#include <iosfwd>
 
-int main(int argc_, const char* argv_[])
+namespace metashell
 {
-  using metashell::parse_config;
-  using metashell::parse_config_result;
-
-  metashell::config cfg = metashell::config::default_config;
-
-  const parse_config_result
-    r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
-
-  if (r == metashell::run_shell)
+  enum parse_config_result
   {
-    readline_shell shell(cfg);
-    shell.display_splash();
-    shell.run();
-  }
-  return r == metashell::exit_with_error ? 1 : 0;
+    run_shell,
+    exit_with_error,
+    exit_without_error
+  };
+
+  parse_config_result parse_config(
+    config& cfg_,
+    int argc_,
+    const char* argv_[],
+    std::ostream* out_ = 0,
+    std::ostream* err_ = 0
+  );
 }
+
+#endif
 

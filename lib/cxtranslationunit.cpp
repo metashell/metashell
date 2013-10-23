@@ -109,6 +109,12 @@ cxtranslationunit::cxtranslationunit(
     args.push_back("-w");
   }
 
+  args.insert(
+    args.end(),
+    config_.extra_clang_args.begin(),
+    config_.extra_clang_args.end()
+  );
+
   const vector<const char*> argv(
     c_str_it(args.begin(), bind(&string::c_str, _1)),
     c_str_it(args.end())

@@ -264,3 +264,15 @@ BOOST_AUTO_TEST_CASE(test_disabled_warnings)
   BOOST_CHECK_EQUAL("", sh.error());
 }
 
+BOOST_AUTO_TEST_CASE(test_extra_clang_arg)
+{
+  metashell::config cfg = metashell::config::empty;
+  cfg.extra_clang_args.push_back("-DFOO=double");
+  test_shell sh(cfg, 80);
+
+  sh.line_available("FOO");
+
+  BOOST_CHECK_EQUAL("", sh.error());
+  BOOST_CHECK_EQUAL("double", sh.output());
+}
+

@@ -35,5 +35,8 @@ target_link_libraries(metashell_test
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
+# Program_options
+target_link_libraries(metashell_test ${Boost_PROGRAM_OPTIONS_LIBRARIES})
+
 add_test(metashell_unit_tests metashell_test)
 
