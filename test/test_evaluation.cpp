@@ -226,3 +226,41 @@ BOOST_AUTO_TEST_CASE(test_comment_is_stored_in_history)
   BOOST_CHECK_EQUAL(1, history.size());
 }
 
+namespace
+{
+  void generate_warning(metashell::shell& sh_)
+  {
+    sh_.line_available("enum color { red, green, blue };");
+    sh_.line_available(
+      "template <int>"
+      "void f(color c)"
+      "{"
+        "switch (c)"
+        "{"
+        "case green: break;"
+        "}"
+      "}"
+    );
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_warnings)
+{
+  test_shell sh;
+
+  generate_warning(sh);
+
+  BOOST_CHECK(!sh.error().empty());
+}
+
+BOOST_AUTO_TEST_CASE(test_disabled_warnings)
+{
+  metashell::config cfg = metashell::config::empty;
+  cfg.warnings_enabled = false;
+  test_shell sh(cfg, 80);
+
+  generate_warning(sh);
+
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+

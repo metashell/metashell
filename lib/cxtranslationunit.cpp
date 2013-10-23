@@ -104,6 +104,11 @@ cxtranslationunit::cxtranslationunit(
   add_with_prefix("-I", config_.include_path, args);
   add_with_prefix("-D", config_.macros, args);
 
+  if (!config_.warnings_enabled)
+  {
+    args.push_back("-w");
+  }
+
   const vector<const char*> argv(
     c_str_it(args.begin(), bind(&string::c_str, _1)),
     c_str_it(args.end())

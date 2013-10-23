@@ -33,6 +33,7 @@ namespace metashell
     bool indent;
     standard::type standard_to_use;
     std::vector<std::string> macros;
+    bool warnings_enabled;
 
     static const config empty;
     static const config default_config;
@@ -43,7 +44,8 @@ namespace metashell
       verbose(false),
       syntax_highlight(true),
       indent(true),
-      standard_to_use(standard::cpp11)
+      standard_to_use(standard::cpp11),
+      warnings_enabled(true)
     {}
   };
 }

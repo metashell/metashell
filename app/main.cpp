@@ -61,6 +61,7 @@ namespace
         "std", value(&cppstd),
         "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
       )
+      ("no_warnings,w", "Disable warnings")
       ;
 
     try
@@ -73,6 +74,7 @@ namespace
       cfg_.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
       cfg_.indent = vm.count("indent");
       cfg_.standard_to_use = metashell::parse(cppstd);
+      cfg_.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
 
       if (vm.count("help"))
       {
