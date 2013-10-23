@@ -15,7 +15,7 @@ shell.
 - [Building Metashell](#building-metashell)
 - [Getting started](#getting-started)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
-    - [How about Fibonacci?](#how-about-fibonacci?)
+    - [How about Fibonacci?](#how-about-fibonacci)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
         - [Using specialisation](#using-specialisation)
