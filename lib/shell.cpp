@@ -21,6 +21,8 @@
 #include <metashell/version.hpp>
 #include <metashell/token_iterator.hpp>
 
+#include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
+
 #include <boost/foreach.hpp>
 
 #include <cctype>
@@ -99,15 +101,9 @@ namespace
       s_.display_info(r_.info);
     }
 
-    for (
-      std::vector<std::string>::const_iterator
-        i = r_.errors.begin(),
-        e = r_.errors.end();
-      i != e;
-      ++i
-    )
+    BOOST_FOREACH(const std::string& i, r_.errors)
     {
-      s_.display_error(*i);
+      s_.display_error(i);
     }
     if (!r_.has_errors())
     {
@@ -125,6 +121,43 @@ namespace
       }
     }
     return false;
+  }
+
+  bool is_empty_line(const std::string& s_)
+  {
+    try
+    {
+      token_iterator i = begin_tokens(s_), e;
+      while (i != e)
+      {
+        try
+        {
+          if (
+            !(
+              IS_CATEGORY(*i, boost::wave::WhiteSpaceTokenType)
+              || IS_CATEGORY(*i, boost::wave::EOFTokenType)
+              || IS_CATEGORY(*i, boost::wave::EOLTokenType)
+            )
+          )
+          {
+            return false;
+          }
+          ++i;
+        }
+        catch (const boost::wave::cpplexer::lexing_exception& e)
+        {
+          if (!e.is_recoverable())
+          {
+            throw;
+          }
+        }
+      }
+    }
+    catch (...)
+    {
+      return false;
+    }
+    return true;
   }
 }
 
@@ -200,13 +233,17 @@ void shell::line_available(const std::string& s_)
       add_history(s_);
       _prev_line = s_;
     }
-    if (is_environment_setup_command(s_))
+
+    if (!is_empty_line(s_))
     {
-      store_in_buffer(s_);
-    }
-    else
-    {
-      display(eval_tmp(_buffer, s_, _config), *this);
+      if (is_environment_setup_command(s_))
+      {
+        store_in_buffer(s_);
+      }
+      else
+      {
+        display(eval_tmp(_buffer, s_, _config), *this);
+      }
     }
   }
 }

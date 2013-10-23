@@ -198,3 +198,31 @@ BOOST_AUTO_TEST_CASE(
   BOOST_CHECK_EQUAL("int", history.front());
 }
 
+BOOST_AUTO_TEST_CASE(test_accept_c_comment_input)
+{
+  test_shell sh;
+  sh.line_available("/* some comment */");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_accept_cpp_comment_input)
+{
+  test_shell sh;
+  sh.line_available("// some comment");
+
+  BOOST_CHECK_EQUAL("", sh.output());
+  BOOST_CHECK_EQUAL("", sh.error());
+}
+
+BOOST_AUTO_TEST_CASE(test_comment_is_stored_in_history)
+{
+  std::vector<std::string> history;
+  test_shell sh(history);
+
+  sh.line_available("// some comment");
+
+  BOOST_CHECK_EQUAL(1, history.size());
+}
+
