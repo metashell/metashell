@@ -34,14 +34,25 @@ if (NOT $ENV{CLANG_LIBRARYDIR} STREQUAL "" )
   set(CLANG_LIBRARYDIR $ENV{CLANG_LIBRARYDIR})
 endif()
 
+# Find clang-c on Ubuntu 13.10
+foreach(V 3.4 3.3 3.2)
+  set(CLANG_INCLUDEDIR "${CLANG_INCLUDEDIR};/usr/lib/llvm-${V}/include")
+endforeach()
+
 if (CLANG_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
   message(STATUS "Searching for libclang")
   message(STATUS "  CLANG_INCLUDEDIR = ${CLANG_INCLUDEDIR}")
-  message(STATUS "  CLANG_LIBRARYDIR = ${CLANG_LIBRARYDIR}")
 endif()
 
 find_path(CLANG_INCLUDE_DIR NAMES clang-c/Index.h HINTS ${CLANG_INCLUDEDIR})
+
+set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${CLANG_INCLUDE_DIR}/../lib")
+
+if (CLANG_DEBUG)
+  message(STATUS "  CLANG_LIBRARYDIR = ${CLANG_LIBRARYDIR}")
+endif()
+
 find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
 
 include(FindPackageHandleStandardArgs)
