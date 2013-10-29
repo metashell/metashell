@@ -41,4 +41,5 @@ target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 
 install(TARGETS metashell DESTINATION bin)
+set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
