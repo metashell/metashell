@@ -53,10 +53,7 @@ namespace
   {
     return cxdiagnostic(clang_getDiagnostic(tu_, n_)).spelling();
   }
-}
 
-namespace
-{
   template <class Cont>
   void add_with_prefix(
     const std::string& prefix_,
