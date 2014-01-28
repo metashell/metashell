@@ -73,6 +73,11 @@ namespace
       prefix_ + arg1
     );
   }
+
+  const char* c_str(const std::string& s_)
+  {
+    return s_.c_str();
+  }
 }
 
 cxtranslationunit::cxtranslationunit(
@@ -116,7 +121,7 @@ cxtranslationunit::cxtranslationunit(
   );
 
   const vector<const char*> argv(
-    c_str_it(args.begin(), bind(&string::c_str, _1)),
+    c_str_it(args.begin(), c_str),
     c_str_it(args.end())
   );
 
