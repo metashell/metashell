@@ -38,7 +38,6 @@ find_package(Boost COMPONENTS
   filesystem # used by Wave
   wave
   program_options
-  unit_test_framework
 )
 find_package(Threads) # used by Boost.Thread
 

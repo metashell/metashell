@@ -17,13 +17,13 @@
 #include "util.hpp"
 #include "test_shell.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include <just/test.hpp>
 
 using namespace metashell;
 
-BOOST_AUTO_TEST_CASE(test_basic_formatting)
+JUST_TEST_CASE(test_basic_formatting)
 {
-  BOOST_CHECK_EQUAL(
+  JUST_ASSERT_EQUAL(
     "double",
     get_output(
       "int",
@@ -39,9 +39,9 @@ BOOST_AUTO_TEST_CASE(test_basic_formatting)
   );
 }
 
-BOOST_AUTO_TEST_CASE(test_tag_dispatched_formatting)
+JUST_TEST_CASE(test_tag_dispatched_formatting)
 {
-  BOOST_CHECK_EQUAL(
+  JUST_ASSERT_EQUAL(
     "char",
     get_output(
       "foo",
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(test_tag_dispatched_formatting)
   );
 }
 
-BOOST_AUTO_TEST_CASE(test_formatting_disabled)
+JUST_TEST_CASE(test_formatting_disabled)
 {
   config cfg = config::empty;
   cfg.indent = false;
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(test_formatting_disabled)
   );
   sh.line_available("template_with_a_long_name<int, double, char>");
 
-  BOOST_CHECK_EQUAL(
+  JUST_ASSERT_EQUAL(
     "template_with_a_long_name<int, double, char>",
     sh.output()
   );

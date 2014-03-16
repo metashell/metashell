@@ -17,14 +17,7 @@
 aux_source_directory(. SOURCES)
 add_executable(metashell_test ${SOURCES})
 
-if(NOT Boost_USE_STATIC_LIBS)
-  add_definitions(-DBOOST_TEST_DYN_LINK)
-endif(NOT Boost_USE_STATIC_LIBS)
-
-target_link_libraries(metashell_test
-  metashell_lib
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-)
+target_link_libraries(metashell_test metashell_lib)
 
 # Wave
 target_link_libraries(metashell_test

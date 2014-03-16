@@ -17,7 +17,7 @@
 #include "util.hpp"
 #include "test_shell.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include <just/test.hpp>
 
 std::string get_output(const std::string& input_, const std::string& test_code_)
 {
@@ -25,11 +25,11 @@ std::string get_output(const std::string& input_, const std::string& test_code_)
   if (!test_code_.empty())
   {
     const bool r = sh.store_in_buffer(test_code_);
-    BOOST_CHECK(r);
+    JUST_ASSERT(r);
   }
   sh.line_available(input_);
-  BOOST_CHECK_EQUAL("", sh.info());
-  BOOST_CHECK_EQUAL("", sh.error());
+  JUST_ASSERT_EQUAL("", sh.info());
+  JUST_ASSERT_EQUAL("", sh.error());
   return sh.output();
 }
 

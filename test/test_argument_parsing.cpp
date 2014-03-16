@@ -16,7 +16,7 @@
 
 #include <metashell/parse_config.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include <just/test.hpp>
 
 namespace
 {
@@ -30,22 +30,22 @@ namespace
   }
 }
 
-BOOST_AUTO_TEST_CASE(test_recognising_extra_clang_arg)
+JUST_TEST_CASE(test_recognising_extra_clang_arg)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
   metashell::config cfg = metashell::config::empty;
   parse_config(cfg, args);
 
-  BOOST_REQUIRE_EQUAL(1, cfg.extra_clang_args.size());
-  BOOST_CHECK_EQUAL("foo", cfg.extra_clang_args.front());
+  JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
+  JUST_ASSERT_EQUAL("foo", cfg.extra_clang_args.front());
 }
 
-BOOST_AUTO_TEST_CASE(test_extra_clang_args_are_not_parsed)
+JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
   metashell::config cfg = metashell::config::empty;
-  BOOST_CHECK_EQUAL(metashell::run_shell, parse_config(cfg, args));
+  JUST_ASSERT_EQUAL(metashell::run_shell, parse_config(cfg, args));
 }
 
