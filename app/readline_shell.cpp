@@ -18,11 +18,12 @@
 #include "syntax_highlighted_display.hpp"
 #include "override_guard.hpp"
 #include "interrupt_handler_override.hpp"
-#include "console.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/indenter.hpp>
 #include <metashell/token_iterator.hpp>
+
+#include <just/console.hpp>
 
 #include <mindent/stream_display.hpp>
 
@@ -44,14 +45,13 @@ using namespace metashell;
 
 namespace
 {
-  template <console::color Color>
-  void display(const std::string& s_)
+  void display(just::console::color c_, const std::string& s_)
   {
     if (s_ != "")
     {
-      console::text_color(Color);
+      just::console::text_color(c_);
       std::cout << s_;
-      console::text_color(console::default_color);
+      just::console::reset();
       std::cout << std::endl;
     }
   }
@@ -64,7 +64,7 @@ namespace
       syntax_highlighted_display()
     );
 
-    console::text_color(console::default_color);
+    just::console::reset();
   }
 
   std::string get_edited_text()
@@ -164,7 +164,7 @@ void readline_shell::display_normal(const std::string& s_) const
       if (_syntax_highlight)
       {
         indent(width(), 2, syntax_highlighted_display(), s_);
-        console::text_color(console::default_color);
+        just::console::reset();
       }
       else
       {
@@ -193,7 +193,7 @@ void readline_shell::display_info(const std::string& s_) const
 
 void readline_shell::display_error(const std::string& s_) const
 {
-  display<console::bright_red>(s_);
+  display(just::console::color::bright_red, s_);
 }
 
 unsigned int readline_shell::width() const

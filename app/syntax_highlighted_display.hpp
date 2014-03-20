@@ -18,11 +18,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "readline_shell.hpp"
-#include "console.hpp"
+
+#include <just/console.hpp>
 
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
+
+#include <boost/optional.hpp>
 
 #include <iostream>
 
@@ -32,11 +35,20 @@ public:
   template <class TokenType>
   void operator()(const TokenType& t_)
   {
-    console::text_color(color_of_token(t_));
+    if (const boost::optional<just::console::color> c = color_of_token(t_))
+    {
+      just::console::text_color(*c);
+    }
+    else
+    {
+      just::console::reset();
+    }
     std::cout << t_.get_value();
   }
 private:
-  static console::color color_of_token(boost::wave::token_id id_);
+  static boost::optional<just::console::color> color_of_token(
+    boost::wave::token_id id_
+  );
 };
 
 #endif

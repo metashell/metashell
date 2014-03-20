@@ -16,53 +16,34 @@
 
 #include "syntax_highlighted_display.hpp"
 
-console::color syntax_highlighted_display::color_of_token(
-  boost::wave::token_id id_
-)
+boost::optional<just::console::color>
+syntax_highlighted_display::color_of_token(boost::wave::token_id id_)
 {
-  if (IS_CATEGORY(id_, boost::wave::CharacterLiteralTokenType))
+  using just::console::color;
+  using boost::optional;
+
+  if (
+    IS_CATEGORY(id_, boost::wave::CharacterLiteralTokenType)
+    || IS_CATEGORY(id_, boost::wave::FloatingLiteralTokenType)
+    || IS_CATEGORY(id_, boost::wave::IntegerLiteralTokenType)
+    || IS_CATEGORY(id_, boost::wave::StringLiteralTokenType)
+    || IS_CATEGORY(id_, boost::wave::BoolLiteralTokenType)
+    || IS_CATEGORY(id_, boost::wave::PPTokenType)
+  )
   {
-    return console::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::FloatingLiteralTokenType))
-  {
-    return console::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::IntegerLiteralTokenType))
-  {
-    return console::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::StringLiteralTokenType))
-  {
-    return console::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::BoolLiteralTokenType))
-  {
-    return console::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::IdentifierTokenType))
-  {
-    return console::default_color;
+    return color::magenta;
   }
   else if (IS_CATEGORY(id_, boost::wave::KeywordTokenType))
   {
-    return console::bright_green;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::OperatorTokenType))
-  {
-    return console::default_color;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::PPTokenType))
-  {
-    return console::magenta;
+    return color::bright_green;
   }
   else if (id_ == boost::wave::T_CCOMMENT || id_ == boost::wave::T_CPPCOMMENT)
   {
-    return console::green;
+    return color::green;
   }
   else
   {
-    return console::default_color;
+    return boost::optional<just::console::color>();
   }
 }
 
