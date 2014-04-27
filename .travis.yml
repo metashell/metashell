@@ -11,6 +11,8 @@ script:
   - tools/clang_default_path > lib/extra_sysinclude.hpp
   - mkdir bin
   - cd bin
-  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic"
+  # -DMETASHELL_DISABLE_CONSTEXPR (and its usage in the code) can be removed
+  # when clang 3.1 or higher will be available on the CI servers
+  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic -DMETASHELL_DISABLE_CONSTEXPR"
   - make
   - make test || (cat Testing/Temporary/LastTest.log && false)

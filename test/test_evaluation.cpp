@@ -148,6 +148,7 @@ JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
   test_definition_and_query("wchar_t typedef * x;", "x", "wchar_t *");
 }
 
+#ifndef METASHELL_DISABLE_CONSTEXPR
 JUST_TEST_CASE(test_defining_constexpr_function)
 {
   test_definition_and_query(
@@ -157,6 +158,7 @@ JUST_TEST_CASE(test_defining_constexpr_function)
     "std::integral_constant<int, 13>"
   );
 }
+#endif
 
 JUST_TEST_CASE(
   test_typedef_in_the_middle_of_a_line_starting_with_an_identifier
