@@ -13,4 +13,4 @@ script:
   - cd bin
   - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic"
   - make
-  - make test
+  - make test || (cat Testing/Temporary/LastTest.log && false)
