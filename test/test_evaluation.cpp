@@ -104,6 +104,7 @@ JUST_TEST_CASE(test_macro_in_config)
 namespace
 {
   void test_definition_and_query(
+    const std::string& init_line_,
     const std::string& definition_,
     const std::string& query_,
     const std::string& expected_result_
@@ -111,12 +112,22 @@ namespace
   {
     test_shell sh;
 
+    sh.line_available(init_line_);
     sh.line_available(definition_);
     JUST_ASSERT_EQUAL("", sh.output());
     JUST_ASSERT_EQUAL("", sh.error());
 
     sh.line_available(query_);
     JUST_ASSERT_EQUAL(expected_result_, sh.output());
+  }
+
+  void test_definition_and_query(
+    const std::string& definition_,
+    const std::string& query_,
+    const std::string& expected_result_
+  )
+  {
+    test_definition_and_query("", definition_, query_, expected_result_);
   }
 }
 
@@ -135,6 +146,16 @@ JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
   test_definition_and_query("void typedef * x;", "x", "void *");
   test_definition_and_query("volatile typedef int x;", "x", "volatile int");
   test_definition_and_query("wchar_t typedef * x;", "x", "wchar_t *");
+}
+
+JUST_TEST_CASE(test_defining_constexpr_function)
+{
+  test_definition_and_query(
+    "#include <metashell/scalar.hpp>",
+    "constexpr int f() { return 13; }",
+    "SCALAR(f())",
+    "std::integral_constant<int, 13>"
+  );
 }
 
 JUST_TEST_CASE(

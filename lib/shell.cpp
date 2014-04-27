@@ -80,7 +80,7 @@ namespace
         }
         else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
         {
-          return has_typedef(it, end);
+          return it->get_value() == "constexpr" || has_typedef(it, end);
         }
         else
         {
