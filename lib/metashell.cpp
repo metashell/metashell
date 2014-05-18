@@ -26,49 +26,10 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <boost/preprocessor/stringize.hpp>
-
 using namespace metashell;
 
 namespace
 {
-  const char* prefix =
-    "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
-
-    "namespace metashell { "
-      "namespace impl { "
-        "template <class T> "
-        "struct wrap {}; "
-
-        "template <class T> "
-        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
-        
-        "void tag_of(...); "
-      "} "
-      
-      "template <class Tag> "
-      "struct format_impl "
-      "{ "
-        "typedef format_impl type; "
-        
-        "template <class T> "
-        "struct apply { typedef T type; }; "
-      "}; "
-
-      "template <class T> "
-      "struct format : "
-        "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
-        ">::template apply<T>"
-        "{}; "
-
-      ""
-    "}"
-    "\n";
-
   const char* var = "__metashell_v";
 
   std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
@@ -79,7 +40,7 @@ namespace
   )
   {
     const std::string code =
-      prefix + env_.get_appended(
+      env_.get_appended(
         "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
       );
     return
@@ -96,16 +57,15 @@ result metashell::validate_code(
   const std::vector<std::string>& extra_clang_args_
 )
 {
-  const std::string code = prefix + src_;
   cxindex index;
   boost::shared_ptr<cxtranslationunit>
-    tu = index.parse_code(code, config_, extra_clang_args_);
+    tu = index.parse_code(src_, config_, extra_clang_args_);
   return
     result(
       "",
       tu->errors_begin(),
       tu->errors_end(),
-      config_.verbose ? code : ""
+      config_.verbose ? src_ : ""
     );
 }
 
@@ -212,7 +172,7 @@ void metashell::code_complete(
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
-  const string src = prefix + env_.get() + "\n" + completion_start.first;
+  const string src = env_.get() + "\n" + completion_start.first;
 
   set<string> c;
   // code completion doesn't seem to work without that extra space at the end

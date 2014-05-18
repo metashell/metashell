@@ -166,7 +166,45 @@ namespace
 shell::shell(const config& config_) :
   _config(config_),
   _env(new header_file_environment())
-{}
+{
+  _env->append(
+    "#define __METASHELL\n"
+    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
+    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
+    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
+
+    "namespace metashell { "
+      "namespace impl { "
+        "template <class T> "
+        "struct wrap {}; "
+
+        "template <class T> "
+        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
+        
+        "void tag_of(...); "
+      "} "
+      
+      "template <class Tag> "
+      "struct format_impl "
+      "{ "
+        "typedef format_impl type; "
+        
+        "template <class T> "
+        "struct apply { typedef T type; }; "
+      "}; "
+
+      "template <class T> "
+      "struct format : "
+        "::metashell::format_impl<"
+          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
+        ">::template apply<T>"
+        "{}; "
+
+      ""
+    "}"
+    "\n"
+  );
+}
 
 shell::~shell() {}
 
