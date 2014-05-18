@@ -20,6 +20,8 @@
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
 #include <metashell/token_iterator.hpp>
+#include <metashell/in_memory_environment.hpp>
+#include <metashell/header_file_environment.hpp>
 
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
@@ -161,7 +163,10 @@ namespace
   }
 }
 
-shell::shell(const config& config_) : _config(config_) {}
+shell::shell(const config& config_) :
+  _config(config_),
+  _env(new header_file_environment())
+{}
 
 shell::~shell() {}
 
@@ -242,7 +247,7 @@ void shell::line_available(const std::string& s_)
       }
       else
       {
-        display(eval_tmp(_buffer, s_, _config), *this);
+        display(eval_tmp(*_env, s_, _config), *this);
       }
     }
   }
@@ -255,12 +260,16 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_)
 {
-  const std::string new_buffer = append_to_buffer(_buffer, s_);
-  const result r = validate_code(new_buffer, _config);
+  const result r =
+    validate_code(
+      _env->get_appended(s_),
+      _config,
+      _env->extra_clang_arguments()
+    );
   const bool success = !r.has_errors();
   if (success)
   {
-    _buffer = new_buffer;
+    _env->append(s_);
   }
   display(r, *this);
   return success;
@@ -276,7 +285,7 @@ void shell::code_complete(
   std::set<std::string>& out_
 ) const
 {
-  metashell::code_complete(_buffer, s_, _config, out_);
+  metashell::code_complete(*_env, s_, _config, out_);
 }
 
 

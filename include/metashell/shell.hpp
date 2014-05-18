@@ -18,6 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
+#include <metashell/environment.hpp>
+
+#include <boost/scoped_ptr.hpp>
 
 #include <string>
 #include <set>
@@ -53,7 +56,7 @@ namespace metashell
       std::set<std::string>& out_
     ) const;
   private:
-    std::string _buffer;
+    boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
   };

@@ -31,6 +31,7 @@
 
 #include <string>
 #include <set>
+#include <vector>
 
 namespace metashell
 {
@@ -44,6 +45,7 @@ namespace metashell
     // takes ownership
     cxtranslationunit(
       const config& config_,
+      const std::vector<std::string>& extra_clang_args_,
       const std::string& src_,
       CXIndex index_
     );

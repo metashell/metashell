@@ -1,8 +1,8 @@
-#ifndef METASHELL_CXINDEX_HPP
-#define METASHELL_CXINDEX_HPP
+#ifndef METASHELL_HEADER_FILE_ENVIRONMENT_HPP
+#define METASHELL_HEADER_FILE_ENVIRONMENT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,35 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxtranslationunit.hpp"
+#include <metashell/in_memory_environment.hpp>
 
-#include <metashell/config.hpp>
-
-#include <clang-c/Index.h>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-
-#include <string>
-#include <vector>
+#include <just/temp.hpp>
 
 namespace metashell
 {
-  class cxindex : boost::noncopyable
+  class header_file_environment : public environment
   {
   public:
-    cxindex();
-    ~cxindex();
+    header_file_environment();
 
-    boost::shared_ptr<cxtranslationunit> parse_code(
-      const std::string& src_,
-      const config& config_,
-      const std::vector<std::string>& extra_clang_args_
-    );
+    virtual void append(const std::string& s_);
+    virtual std::string get() const;
+    virtual std::string get_appended(const std::string& s_) const;
+
+    virtual const std::vector<std::string>& extra_clang_arguments() const;
   private:
-    CXIndex _index;
+    just::temp::directory _dir;
+    std::vector<std::string> _extra_clang_args;
+    in_memory_environment _buffer;
+
+    void save();
   };
 }
 
 #endif
+
 

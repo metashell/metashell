@@ -79,6 +79,7 @@ namespace
 
 cxtranslationunit::cxtranslationunit(
   const config& config_,
+  const std::vector<std::string>& extra_clang_args_,
   const std::string& src_,
   CXIndex index_
 ) :
@@ -115,6 +116,12 @@ cxtranslationunit::cxtranslationunit(
     args.end(),
     config_.extra_clang_args.begin(),
     config_.extra_clang_args.end()
+  );
+
+  args.insert(
+    args.end(),
+    extra_clang_args_.begin(),
+    extra_clang_args_.end()
   );
 
   const vector<const char*> argv(

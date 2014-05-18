@@ -74,25 +74,32 @@ namespace
   std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
     const config& config_,
-    const std::string& buffer_,
+    const environment& env_,
     const std::string& tmp_exp_
   )
   {
     const std::string code =
-      prefix
-      + append_to_buffer(
-        buffer_,
+      prefix + env_.get_appended(
         "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
       );
-    return std::make_pair(index_.parse_code(code, config_), code);
+    return
+      std::make_pair(
+        index_.parse_code(code, config_, env_.extra_clang_arguments()),
+        code
+      );
   }
 }
 
-result metashell::validate_code(const std::string& src_, const config& config_)
+result metashell::validate_code(
+  const std::string& src_,
+  const config& config_,
+  const std::vector<std::string>& extra_clang_args_
+)
 {
   const std::string code = prefix + src_;
   cxindex index;
-  boost::shared_ptr<cxtranslationunit> tu = index.parse_code(code, config_);
+  boost::shared_ptr<cxtranslationunit>
+    tu = index.parse_code(code, config_, extra_clang_args_);
   return
     result(
       "",
@@ -103,7 +110,7 @@ result metashell::validate_code(const std::string& src_, const config& config_)
 }
 
 result metashell::eval_tmp(
-  const std::string& buffer_,
+  const environment& env_,
   const std::string& tmp_exp_,
   const config& config_
 )
@@ -115,8 +122,7 @@ result metashell::eval_tmp(
 
   cxindex index;
 
-  const pair<tup, string> simple =
-    parse_expr(index, config_, buffer_, tmp_exp_);
+  const pair<tup, string> simple = parse_expr(index, config_, env_, tmp_exp_);
 
   const pair<tup, string> final =
     simple.first->has_errors() ?
@@ -124,7 +130,7 @@ result metashell::eval_tmp(
       parse_expr(
         index,
         config_,
-        buffer_,
+        env_,
         "::metashell::format<" + tmp_exp_ + ">::type"
       );
 
@@ -138,14 +144,6 @@ result metashell::eval_tmp(
       final.first->errors_end(),
       config_.verbose ? final.second : ""
     );
-}
-
-std::string metashell::append_to_buffer(
-  const std::string& buffer_,
-  const std::string& s_
-)
-{
-  return buffer_.empty() ? s_ : (buffer_ + '\n' + s_);
 }
 
 namespace
@@ -200,7 +198,7 @@ namespace
 }
 
 void metashell::code_complete(
-  const std::string& buffer_,
+  const environment& env_,
   const std::string& src_,
   const config& config_,
   std::set<std::string>& out_
@@ -214,11 +212,12 @@ void metashell::code_complete(
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
-  const string src = prefix + buffer_ + "\n" + completion_start.first;
+  const string src = prefix + env_.get() + "\n" + completion_start.first;
 
   set<string> c;
   // code completion doesn't seem to work without that extra space at the end
-  cxindex().parse_code(src + " ", config_)->code_complete(c);
+  cxindex().parse_code(src + " ", config_, env_.extra_clang_arguments())
+    ->code_complete(c);
   
   out_.clear();
   const int prefix_len = completion_start.second.length();

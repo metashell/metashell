@@ -18,29 +18,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
+#include <metashell/environment.hpp>
 
 #include "result.hpp"
 
 #include <set>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
-  std::string append_to_buffer(
-    const std::string& buffer_,
-    const std::string& s_
-  );
-
   result eval_tmp(
-    const std::string& buffer_,
+    const environment& env_,
     const std::string& tmp_exp_,
     const config& config_
   );
 
-  result validate_code(const std::string& s_, const config& config_);
+  result validate_code(
+    const std::string& s_,
+    const config& config_,
+    const std::vector<std::string>& extra_clang_args_
+  );
 
   void code_complete(
-    const std::string& buffer_,
+    const environment& env_,
     const std::string& src_,
     const config& config_,
     std::set<std::string>& out_
