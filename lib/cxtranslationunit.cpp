@@ -77,18 +77,54 @@ namespace
   }
 }
 
+namespace
+{
+  std::vector<std::string> get_clang_args(
+    const config& config_,
+    const environment& env_
+  )
+  {
+    using boost::assign::list_of;
+
+    std::vector<std::string> args = list_of<std::string>
+      ("-x")("c++")
+      (clang_argument(config_.standard_to_use))
+      ("-I" + env_.internal_dir());
+    add_with_prefix("-I", config_.include_path, args);
+    add_with_prefix("-D", config_.macros, args);
+
+    if (!config_.warnings_enabled)
+    {
+      args.push_back("-w");
+    }
+
+    args.insert(
+      args.end(),
+      config_.extra_clang_args.begin(),
+      config_.extra_clang_args.end()
+    );
+
+    args.insert(
+      args.end(),
+      env_.extra_clang_arguments().begin(),
+      env_.extra_clang_arguments().end()
+    );
+
+    return args;
+  }
+}
+
 cxtranslationunit::cxtranslationunit(
   const config& config_,
-  const std::vector<std::string>& extra_clang_args_,
+  const environment& env_,
   const std::string& src_,
   CXIndex index_
 ) :
-  _headers(src_)
+  _headers(src_, env_.internal_dir())
 {
   using boost::bind;
   using boost::transform_iterator;
   using boost::function;
-  using boost::assign::list_of;
 
   using std::string;
   using std::vector;
@@ -100,29 +136,7 @@ cxtranslationunit::cxtranslationunit(
     >
     c_str_it;
 
-  vector<string> args = list_of<string>
-    ("-x")("c++")
-    (clang_argument(config_.standard_to_use))
-    ("-I" + _headers.internal_dir());
-  add_with_prefix("-I", config_.include_path, args);
-  add_with_prefix("-D", config_.macros, args);
-
-  if (!config_.warnings_enabled)
-  {
-    args.push_back("-w");
-  }
-
-  args.insert(
-    args.end(),
-    config_.extra_clang_args.begin(),
-    config_.extra_clang_args.end()
-  );
-
-  args.insert(
-    args.end(),
-    extra_clang_args_.begin(),
-    extra_clang_args_.end()
-  );
+  const vector<string> args = get_clang_args(config_, env_);
 
   const vector<const char*> argv(
     c_str_it(args.begin(), c_str),

@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
+#include <metashell/environment.hpp>
 #include <metashell/text_position.hpp>
 
 #include "cxcursor.hpp"
@@ -31,7 +32,6 @@
 
 #include <string>
 #include <set>
-#include <vector>
 
 namespace metashell
 {
@@ -45,7 +45,7 @@ namespace metashell
     // takes ownership
     cxtranslationunit(
       const config& config_,
-      const std::vector<std::string>& extra_clang_args_,
+      const environment& env_,
       const std::string& src_,
       CXIndex index_
     );

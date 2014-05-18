@@ -93,8 +93,7 @@ namespace
   }
 }
 
-headers::headers(const std::string& src_) :
-  _internal_dir("__metashell_internal"),
+headers::headers(const std::string& src_, const std::string& internal_dir_) :
   _headers()
 {
   using boost::algorithm::join;
@@ -105,15 +104,15 @@ headers::headers(const std::string& src_) :
 
   BOOST_FOREACH(const char* f, formatters)
   {
-    add(_internal_dir + "/metashell/formatter/" + f + ".hpp", seq_formatter(f));
+    add(internal_dir_ + "/metashell/formatter/" + f + ".hpp", seq_formatter(f));
   }
   add(
-    _internal_dir + "/metashell/formatter/deque.hpp",
+    internal_dir_ + "/metashell/formatter/deque.hpp",
     "#include <metashell/formatter/vector.hpp>\n"
   );
 
   add(
-    _internal_dir + "/metashell/formatter.hpp",
+    internal_dir_ + "/metashell/formatter.hpp",
     join(
       formatters |
         transformed(
@@ -125,7 +124,7 @@ headers::headers(const std::string& src_) :
   );
 
   add(
-    _internal_dir + "/metashell/scalar.hpp",
+    internal_dir_ + "/metashell/scalar.hpp",
     "#include <type_traits>\n"
 
     "#define SCALAR(...) "
@@ -157,11 +156,6 @@ headers::iterator headers::begin() const
 headers::iterator headers::end() const
 {
   return iterator(_headers.end(), create_entry);
-}
-
-const std::string& headers::internal_dir() const
-{
-  return _internal_dir;
 }
 
 std::string headers::operator[](const std::string& filename_) const

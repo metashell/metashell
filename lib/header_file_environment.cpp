@@ -45,3 +45,9 @@ void header_file_environment::save()
   f << _buffer.get();
 }
 
+std::string header_file_environment::internal_dir() const
+{
+  return _dir.path();
+}
+
+

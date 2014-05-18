@@ -43,29 +43,26 @@ namespace
       env_.get_appended(
         "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
       );
-    return
-      std::make_pair(
-        index_.parse_code(code, config_, env_.extra_clang_arguments()),
-        code
-      );
+    return std::make_pair(index_.parse_code(code, config_, env_), code);
   }
 }
 
 result metashell::validate_code(
   const std::string& src_,
   const config& config_,
-  const std::vector<std::string>& extra_clang_args_
+  const environment& env_
 )
 {
+  const std::string src = env_.get_appended(src_);
   cxindex index;
   boost::shared_ptr<cxtranslationunit>
-    tu = index.parse_code(src_, config_, extra_clang_args_);
+    tu = index.parse_code(src, config_, env_);
   return
     result(
       "",
       tu->errors_begin(),
       tu->errors_end(),
-      config_.verbose ? src_ : ""
+      config_.verbose ? src : ""
     );
 }
 
@@ -172,12 +169,11 @@ void metashell::code_complete(
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
-  const string src = env_.get() + "\n" + completion_start.first;
+  // code completion doesn't seem to work without that extra space at the end
+  const string src = env_.get_appended(completion_start.first + " ");
 
   set<string> c;
-  // code completion doesn't seem to work without that extra space at the end
-  cxindex().parse_code(src + " ", config_, env_.extra_clang_arguments())
-    ->code_complete(c);
+  cxindex().parse_code(src, config_, env_)->code_complete(c);
   
   out_.clear();
   const int prefix_len = completion_start.second.length();

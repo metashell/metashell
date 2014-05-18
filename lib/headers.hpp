@@ -32,7 +32,7 @@ namespace metashell
   private:
     typedef std::pair<std::string, std::string> header;
   public:
-    explicit headers(const std::string& src_);
+    headers(const std::string& src_, const std::string& internal_dir_);
 
     typedef
       boost::transform_iterator<
@@ -44,11 +44,8 @@ namespace metashell
     iterator begin() const;
     iterator end() const;
 
-    const std::string& internal_dir() const;
-
     std::string operator[](const std::string& filename_) const;
   private:
-    std::string _internal_dir;
     std::vector<header> _headers;
 
     void add(const std::string& filename_, const std::string& content_);

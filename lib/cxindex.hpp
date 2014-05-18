@@ -20,6 +20,7 @@
 #include "cxtranslationunit.hpp"
 
 #include <metashell/config.hpp>
+#include <metashell/environment.hpp>
 
 #include <clang-c/Index.h>
 
@@ -27,7 +28,6 @@
 #include <boost/utility.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -40,7 +40,7 @@ namespace metashell
     boost::shared_ptr<cxtranslationunit> parse_code(
       const std::string& src_,
       const config& config_,
-      const std::vector<std::string>& extra_clang_args_
+      const environment& env_
     );
   private:
     CXIndex _index;

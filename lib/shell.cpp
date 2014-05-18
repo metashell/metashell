@@ -298,12 +298,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_)
 {
-  const result r =
-    validate_code(
-      _env->get_appended(s_),
-      _config,
-      _env->extra_clang_arguments()
-    );
+  const result r = validate_code(s_, _config, *_env);
   const bool success = !r.has_errors();
   if (success)
   {

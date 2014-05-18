@@ -37,7 +37,7 @@ namespace metashell
   result validate_code(
     const std::string& s_,
     const config& config_,
-    const std::vector<std::string>& extra_clang_args_
+    const environment& env_
   );
 
   void code_complete(

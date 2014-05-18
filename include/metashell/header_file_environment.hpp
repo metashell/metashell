@@ -32,6 +32,8 @@ namespace metashell
     virtual std::string get() const;
     virtual std::string get_appended(const std::string& s_) const;
 
+    virtual std::string internal_dir() const;
+
     virtual const std::vector<std::string>& extra_clang_arguments() const;
   private:
     just::temp::directory _dir;

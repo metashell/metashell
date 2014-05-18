@@ -32,16 +32,10 @@ cxindex::~cxindex()
 boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
   const std::string& src_,
   const config& config_,
-  const std::vector<std::string>& extra_clang_args_
+  const environment& env_
 )
 {
-  return
-    boost::make_shared<cxtranslationunit>(
-      config_,
-      extra_clang_args_,
-      src_,
-      _index
-    );
+  return boost::make_shared<cxtranslationunit>(config_, env_, src_, _index);
 }
 
 

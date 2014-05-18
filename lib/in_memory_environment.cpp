@@ -28,3 +28,9 @@ const std::vector<std::string>&
   return no_extra_arguments;
 }
 
+std::string in_memory_environment::internal_dir() const
+{
+  return "__metashell_internal";
+}
+
+
