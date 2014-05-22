@@ -1,5 +1,5 @@
-#ifndef METASHELL_ENVIRONMENT_HPP
-#define METASHELL_ENVIRONMENT_HPP
+#ifndef METASHELL_UNSAVED_FILE_HPP
+#define METASHELL_UNSAVED_FILE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,29 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/utility.hpp>
+#include <clang-c/Index.h>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
-  class headers;
-
-  class environment : boost::noncopyable
+  class unsaved_file
   {
   public:
-    virtual ~environment() {}
+    explicit unsaved_file(
+      const std::string& filename_ = "",
+      const std::string& content_ = ""
+    );
 
-    virtual void append(const std::string& s_) = 0;
-    virtual std::string get() const = 0;
-    virtual std::string get_appended(const std::string& s_) const = 0;
+    // The resulting CXUnsavedFile object refers back to this object.
+    // Destroying the unsaved_file object invalidates the CXUnsavedFile.
+    CXUnsavedFile get() const;
 
-    virtual std::string internal_dir() const = 0;
+    const std::string& filename() const;
+    const std::string& content() const;
 
-    virtual const std::vector<std::string>& extra_clang_arguments() const = 0;
-
-    virtual const headers& get_headers() const = 0;
+    void generate() const;
+  private:
+    std::string _filename;
+    std::string _content;
   };
 }
 

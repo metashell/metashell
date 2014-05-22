@@ -1,4 +1,5 @@
 #include <metashell/header_file_environment.hpp>
+#include <metashell/headers.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -11,9 +12,12 @@ namespace
 }
 
 header_file_environment::header_file_environment() :
-  _extra_clang_args(1, "-I" + _dir.path())
+  _dir(),
+  _extra_clang_args(1, "-I" + _dir.path()),
+  _buffer(_dir.path())
 {
   save();
+  get_headers().generate();
 }
 
 void header_file_environment::append(const std::string& s_)
@@ -48,6 +52,11 @@ void header_file_environment::save()
 std::string header_file_environment::internal_dir() const
 {
   return _dir.path();
+}
+
+const headers& header_file_environment::get_headers() const
+{
+  return _buffer.get_headers();
 }
 
 

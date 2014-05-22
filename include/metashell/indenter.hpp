@@ -32,12 +32,13 @@ namespace metashell
     int width_,
     int indent_step_,
     DisplayF f_,
-    const std::string& s_
+    const std::string& s_,
+    const std::string& input_filename_
   )
   {
     return
       mindent::display(
-        mindent::parse_syntax_node_list(begin_tokens(s_)),
+        mindent::parse_syntax_node_list(begin_tokens(s_, input_filename_)),
         width_,
         indent_step_,
         f_

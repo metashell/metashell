@@ -56,10 +56,14 @@ namespace
     }
   }
 
-  void syntax_highlight(std::ostream& o_, const std::string& s_)
+  void syntax_highlight(
+    std::ostream& o_,
+    const std::string& s_,
+    const std::string& input_filename_
+  )
   {
     std::for_each(
-      begin_tokens(s_),
+      begin_tokens(s_, input_filename_),
       token_iterator(),
       syntax_highlighted_display()
     );
@@ -163,19 +167,25 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        indent(width(), 2, syntax_highlighted_display(), s_);
+        indent(width(), 2, syntax_highlighted_display(), s_, input_filename());
         just::console::reset();
       }
       else
       {
-        indent(width(), 2, mindent::stream_display(std::cout), s_);
+        indent(
+          width(),
+          2,
+          mindent::stream_display(std::cout),
+          s_,
+          input_filename()
+        );
       }
     }
     else
     {
       if (_syntax_highlight)
       {
-        syntax_highlight(std::cout, s_);
+        syntax_highlight(std::cout, s_, input_filename());
       }
       else
       {

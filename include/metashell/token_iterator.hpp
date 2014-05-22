@@ -31,7 +31,10 @@ namespace metashell
     >
     token_iterator;
 
-  token_iterator begin_tokens(const std::string& s_);
+  token_iterator begin_tokens(
+    const std::string& s_,
+    const std::string& input_filename_
+  );
 }
 
 #endif

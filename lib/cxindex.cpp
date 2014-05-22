@@ -30,7 +30,7 @@ cxindex::~cxindex()
 }
 
 boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
-  const std::string& src_,
+  const unsaved_file& src_,
   const config& config_,
   const environment& env_
 )

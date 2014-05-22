@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_environment.hpp>
+#include <metashell/headers.hpp>
 
 #include <just/temp.hpp>
 
@@ -35,6 +36,8 @@ namespace metashell
     virtual std::string internal_dir() const;
 
     virtual const std::vector<std::string>& extra_clang_arguments() const;
+
+    virtual const headers& get_headers() const;
   private:
     just::temp::directory _dir;
     std::vector<std::string> _extra_clang_args;

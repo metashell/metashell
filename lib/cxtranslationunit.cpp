@@ -19,11 +19,11 @@
 
 #include "cxtranslationunit.hpp"
 #include "cxdiagnostic.hpp"
-#include "headers.hpp"
 #include "cxcodecompleteresults.hpp"
 
 #include <clang-c/Index.h>
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/function.hpp>
@@ -117,10 +117,12 @@ namespace
 cxtranslationunit::cxtranslationunit(
   const config& config_,
   const environment& env_,
-  const std::string& src_,
+  const unsaved_file& src_,
   CXIndex index_
 ) :
-  _headers(src_, env_.internal_dir())
+  _headers(env_.internal_dir()),
+  _src(src_),
+  _unsaved_files()
 {
   using boost::bind;
   using boost::transform_iterator;
@@ -136,6 +138,13 @@ cxtranslationunit::cxtranslationunit(
     >
     c_str_it;
 
+  _unsaved_files.reserve(_headers.size() + 1);
+  BOOST_FOREACH(const unsaved_file& uf, _headers)
+  {
+    _unsaved_files.push_back(uf.get());
+  }
+  _unsaved_files.push_back(_src.get());
+
   const vector<string> args = get_clang_args(config_, env_);
 
   const vector<const char*> argv(
@@ -143,15 +152,14 @@ cxtranslationunit::cxtranslationunit(
     c_str_it(args.end())
   );
 
-  std::vector<CXUnsavedFile> uf(_headers.begin(), _headers.end());
   _tu =
     clang_parseTranslationUnit(
       index_,
-      shell::input_filename(),
+      _src.filename().c_str(),
       &argv[0],
       argv.size(),
-      &uf[0],
-      uf.size(),
+      &_unsaved_files[0],
+      _unsaved_files.size(),
       CXTranslationUnit_None 
     );
 }
@@ -191,16 +199,16 @@ bool cxtranslationunit::has_errors() const
 
 void cxtranslationunit::code_complete(std::set<std::string>& out_) const
 {
-  std::vector<CXUnsavedFile> uf(_headers.begin(), _headers.end());
-  const text_position pos = text_position() + _headers[shell::input_filename()];
+  const text_position pos = text_position() + _src.content();
   cxcodecompleteresults(
     clang_codeCompleteAt(
       _tu,
-      shell::input_filename(),
+      _src.filename().c_str(),
       pos.line(),
       pos.column() - 1, // -1 because of the extra space at the end of the input
-      &uf[0],
-      uf.size(),
+      // I assume this won't be changed
+      const_cast<CXUnsavedFile*>(&_unsaved_files[0]),
+      _unsaved_files.size(),
       clang_defaultCodeCompleteOptions()
     )
   ).fill(out_);

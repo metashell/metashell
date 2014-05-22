@@ -38,11 +38,14 @@ namespace
     return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
   }
 
-  bool is_environment_setup_command(const std::string& s_)
+  bool is_environment_setup_command(
+    const std::string& s_,
+    const std::string& input_filename_
+  )
   {
     try
     {
-      const token_iterator it = begin_tokens(s_), end;
+      const token_iterator it = begin_tokens(s_, input_filename_), end;
 
       if (it == end)
       {
@@ -125,11 +128,11 @@ namespace
     return false;
   }
 
-  bool is_empty_line(const std::string& s_)
+  bool is_empty_line(const std::string& s_, const std::string& input_filename_)
   {
     try
     {
-      token_iterator i = begin_tokens(s_), e;
+      token_iterator i = begin_tokens(s_, input_filename_), e;
       while (i != e)
       {
         try
@@ -277,15 +280,15 @@ void shell::line_available(const std::string& s_)
       _prev_line = s_;
     }
 
-    if (!is_empty_line(s_))
+    if (!is_empty_line(s_, input_filename()))
     {
-      if (is_environment_setup_command(s_))
+      if (is_environment_setup_command(s_, input_filename()))
       {
         store_in_buffer(s_);
       }
       else
       {
-        display(eval_tmp(*_env, s_, _config), *this);
+        display(eval_tmp(*_env, s_, _config, input_filename()), *this);
       }
     }
   }
@@ -298,7 +301,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_)
 {
-  const result r = validate_code(s_, _config, *_env);
+  const result r = validate_code(s_, _config, *_env, input_filename());
   const bool success = !r.has_errors();
   if (success)
   {
@@ -318,7 +321,7 @@ void shell::code_complete(
   std::set<std::string>& out_
 ) const
 {
-  metashell::code_complete(*_env, s_, _config, out_);
+  metashell::code_complete(*_env, s_, _config, input_filename(), out_);
 }
 
 

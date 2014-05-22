@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <clang-c/Index.h>
+#include <metashell/unsaved_file.hpp>
 
-#include <boost/iterator/transform_iterator.hpp>
+#include <clang-c/Index.h>
 
 #include <map>
 #include <vector>
@@ -29,26 +29,27 @@ namespace metashell
 {
   class headers
   {
-  private:
-    typedef std::pair<std::string, std::string> header;
   public:
-    headers(const std::string& src_, const std::string& internal_dir_);
+    explicit headers(const std::string& internal_dir_);
 
-    typedef
-      boost::transform_iterator<
-        CXUnsavedFile (*)(const header&),
-        std::vector<header>::const_iterator
-      >
-      iterator;
+    typedef std::vector<unsaved_file>::const_iterator iterator;
+    typedef iterator const_iterator;
+    typedef std::vector<unsaved_file>::size_type size_type;
 
     iterator begin() const;
     iterator end() const;
 
-    std::string operator[](const std::string& filename_) const;
+    size_type size() const;
+
+    void generate() const;
+
+    const std::string& internal_dir() const;
   private:
-    std::vector<header> _headers;
+    std::vector<unsaved_file> _headers;
+    std::string _internal_dir;
 
     void add(const std::string& filename_, const std::string& content_);
+    void init(const std::string& internal_dir_);
   };
 }
 

@@ -18,12 +18,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/environment.hpp>
+#include <metashell/headers.hpp>
+
+#include <string>
 
 namespace metashell
 {
   class in_memory_environment : public environment
   {
   public:
+    explicit in_memory_environment(
+      const std::string& internal_dir_ = "__metashell_internal"
+    );
+
     virtual void append(const std::string& s_);
     virtual std::string get() const;
     virtual std::string get_appended(const std::string& s_) const;
@@ -31,8 +38,11 @@ namespace metashell
     virtual std::string internal_dir() const;
 
     virtual const std::vector<std::string>& extra_clang_arguments() const;
+
+    virtual const headers& get_headers() const;
   private:
     std::string _buffer;
+    headers _headers;
   };
 }
 

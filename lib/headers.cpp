@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "headers.hpp"
-
+#include <metashell/headers.hpp>
 #include <metashell/shell.hpp>
 
 #include <boost/phoenix/core.hpp>
@@ -29,15 +28,6 @@ using namespace metashell;
 
 namespace
 {
-  CXUnsavedFile create_entry(const std::pair<std::string, std::string>& header_)
-  {
-    CXUnsavedFile entry;
-    entry.Filename = header_.first.c_str();
-    entry.Contents = header_.second.c_str();
-    entry.Length = header_.second.size();
-    return entry;
-  }
-
   std::string seq_formatter(const std::string& name_)
   {
     return
@@ -93,8 +83,37 @@ namespace
   }
 }
 
-headers::headers(const std::string& src_, const std::string& internal_dir_) :
-  _headers()
+headers::headers(const std::string& internal_dir_) :
+  _headers(),
+  _internal_dir(internal_dir_)
+{
+  init(internal_dir_);
+}
+
+void headers::add(const std::string& filename_, const std::string& content_)
+{
+  _headers.push_back(unsaved_file(filename_, content_));
+}
+
+headers::iterator headers::begin() const
+{
+  return _headers.begin();
+}
+
+headers::iterator headers::end() const
+{
+  return _headers.end();
+}
+
+void headers::generate() const
+{
+  BOOST_FOREACH(const unsaved_file& h, _headers)
+  {
+    h.generate();
+  }
+}
+
+void headers::init(const std::string& internal_dir_)
 {
   using boost::algorithm::join;
   using boost::adaptors::transformed;
@@ -139,35 +158,16 @@ headers::headers(const std::string& src_, const std::string& internal_dir_) :
         "(__VA_ARGS__)"
       ">\n"
   );
-
-  add(shell::input_filename(), src_);
 }
 
-void headers::add(const std::string& filename_, const std::string& content_)
+headers::size_type headers::size() const
 {
-  _headers.push_back(header(filename_, content_));
+  return _headers.size();
 }
 
-headers::iterator headers::begin() const
+const std::string& headers::internal_dir() const
 {
-  return iterator(_headers.begin(), create_entry);
-}
-
-headers::iterator headers::end() const
-{
-  return iterator(_headers.end(), create_entry);
-}
-
-std::string headers::operator[](const std::string& filename_) const
-{
-  BOOST_FOREACH(const header& h, _headers)
-  {
-    if (h.first == filename_)
-    {
-      return h.second;
-    }
-  }
-  return std::string();
+  return _internal_dir;
 }
 
 

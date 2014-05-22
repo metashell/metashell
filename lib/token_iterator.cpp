@@ -15,17 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/token_iterator.hpp>
-#include <metashell/shell.hpp>
 
 using namespace metashell;
 
-token_iterator metashell::begin_tokens(const std::string& s_)
+token_iterator metashell::begin_tokens(
+  const std::string& s_,
+  const std::string& input_filename_
+)
 {
   return
     token_iterator(
       s_.begin(),
       s_.end(),
-      token_iterator::value_type::position_type(shell::input_filename()),
+      token_iterator::value_type::position_type(input_filename_.c_str()),
       boost::wave::language_support(
         boost::wave::support_cpp
         | boost::wave::support_option_long_long

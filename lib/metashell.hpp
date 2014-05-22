@@ -31,19 +31,22 @@ namespace metashell
   result eval_tmp(
     const environment& env_,
     const std::string& tmp_exp_,
-    const config& config_
+    const config& config_,
+    const std::string& input_filename_
   );
 
   result validate_code(
     const std::string& s_,
     const config& config_,
-    const environment& env_
+    const environment& env_,
+    const std::string& intput_filename_
   );
 
   void code_complete(
     const environment& env_,
     const std::string& src_,
     const config& config_,
+    const std::string& input_filename_,
     std::set<std::string>& out_
   );
 }

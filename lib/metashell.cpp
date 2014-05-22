@@ -35,25 +35,32 @@ namespace
   std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
     const config& config_,
+    const std::string& input_filename_,
     const environment& env_,
     const std::string& tmp_exp_
   )
   {
-    const std::string code =
-      env_.get_appended(
-        "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
+    using std::make_pair;
+
+    const unsaved_file
+      code(
+        input_filename_,
+        env_.get_appended(
+          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
+        )
       );
-    return std::make_pair(index_.parse_code(code, config_, env_), code);
+    return make_pair(index_.parse_code(code, config_, env_), code.content());
   }
 }
 
 result metashell::validate_code(
   const std::string& src_,
   const config& config_,
-  const environment& env_
+  const environment& env_,
+  const std::string& input_filename_
 )
 {
-  const std::string src = env_.get_appended(src_);
+  const unsaved_file src(input_filename_, env_.get_appended(src_));
   cxindex index;
   boost::shared_ptr<cxtranslationunit>
     tu = index.parse_code(src, config_, env_);
@@ -62,14 +69,15 @@ result metashell::validate_code(
       "",
       tu->errors_begin(),
       tu->errors_end(),
-      config_.verbose ? src : ""
+      config_.verbose ? src.content() : ""
     );
 }
 
 result metashell::eval_tmp(
   const environment& env_,
   const std::string& tmp_exp_,
-  const config& config_
+  const config& config_,
+  const std::string& input_filename_
 )
 {
   using std::string;
@@ -79,7 +87,8 @@ result metashell::eval_tmp(
 
   cxindex index;
 
-  const pair<tup, string> simple = parse_expr(index, config_, env_, tmp_exp_);
+  const pair<tup, string> simple =
+    parse_expr(index, config_, input_filename_, env_, tmp_exp_);
 
   const pair<tup, string> final =
     simple.first->has_errors() ?
@@ -87,6 +96,7 @@ result metashell::eval_tmp(
       parse_expr(
         index,
         config_,
+        input_filename_,
         env_,
         "::metashell::format<" + tmp_exp_ + ">::type"
       );
@@ -106,7 +116,8 @@ result metashell::eval_tmp(
 namespace
 {
   std::pair<std::string, std::string> find_completion_start(
-    const std::string& s_
+    const std::string& s_,
+    const std::string& input_filename_
   )
   {
     typedef std::pair<std::string, std::string> string_pair;
@@ -114,7 +125,7 @@ namespace
     std::ostringstream o;
     token_iterator::value_type last_token;
     bool first = true;
-    for (token_iterator i = begin_tokens(s_), e; i != e; ++i)
+    for (token_iterator i = begin_tokens(s_, input_filename_), e; i != e; ++i)
     {
       if (!IS_CATEGORY(*i, boost::wave::EOFTokenType))
       {
@@ -158,6 +169,7 @@ void metashell::code_complete(
   const environment& env_,
   const std::string& src_,
   const config& config_,
+  const std::string& input_filename_,
   std::set<std::string>& out_
 )
 {
@@ -167,10 +179,14 @@ void metashell::code_complete(
   using std::string;
   using std::set;
 
-  const pair<string, string> completion_start = find_completion_start(src_);
+  const pair<string, string> completion_start =
+    find_completion_start(src_, input_filename_);
 
-  // code completion doesn't seem to work without that extra space at the end
-  const string src = env_.get_appended(completion_start.first + " ");
+  const unsaved_file src(
+    input_filename_,
+    // code completion doesn't seem to work without that extra space at the end
+    env_.get_appended(completion_start.first + " ")
+  );
 
   set<string> c;
   cxindex().parse_code(src, config_, env_)->code_complete(c);
