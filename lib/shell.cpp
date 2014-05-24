@@ -167,7 +167,6 @@ namespace
 }
 
 shell::shell(const config& config_) :
-  _config(config_),
   _env(
     config_.use_precompiled_headers ?
       static_cast<environment*>(
@@ -176,7 +175,8 @@ shell::shell(const config& config_) :
       static_cast<environment*>(
         new in_memory_environment("__metashell_internal", config_)
       )
-  )
+  ),
+  _config(config_)
 {
   _env->append(
     "#define __METASHELL\n"
