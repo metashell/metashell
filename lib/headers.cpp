@@ -83,11 +83,59 @@ namespace
   }
 }
 
-headers::headers(const std::string& internal_dir_) :
+headers::headers(const std::string& internal_dir_, bool empty_) :
   _headers(),
   _internal_dir(internal_dir_)
 {
-  init(internal_dir_);
+  if (!empty_)
+  {
+    using boost::algorithm::join;
+    using boost::adaptors::transformed;
+    using boost::phoenix::arg_names::arg1;
+
+    const char* formatters[] = {"vector", "list", "set", "map"};
+
+    BOOST_FOREACH(const char* f, formatters)
+    {
+      add(
+        _internal_dir + "/metashell/formatter/" + f + ".hpp",
+        seq_formatter(f)
+      );
+    }
+    add(
+      _internal_dir + "/metashell/formatter/deque.hpp",
+      "#include <metashell/formatter/vector.hpp>\n"
+    );
+
+    add(
+      _internal_dir + "/metashell/formatter.hpp",
+      join(
+        formatters |
+          transformed(
+            std::string("#include <metashell/formatter/")
+            + arg1 + std::string(".hpp>")
+          ),
+        "\n"
+      ) + "\n"
+    );
+
+    add(
+      _internal_dir + "/metashell/scalar.hpp",
+      "#include <type_traits>\n"
+
+      "#define SCALAR(...) "
+        "std::integral_constant<"
+          "std::remove_reference<"
+            "std::remove_cv<"
+              "std::remove_reference<"
+                "decltype((__VA_ARGS__))"
+              ">::type"
+            ">::type"
+          ">::type,"
+          "(__VA_ARGS__)"
+        ">\n"
+    );
+  }
 }
 
 void headers::add(const std::string& filename_, const std::string& content_)
@@ -113,53 +161,6 @@ void headers::generate() const
   }
 }
 
-void headers::init(const std::string& internal_dir_)
-{
-  using boost::algorithm::join;
-  using boost::adaptors::transformed;
-  using boost::phoenix::arg_names::arg1;
-
-  const char* formatters[] = {"vector", "list", "set", "map"};
-
-  BOOST_FOREACH(const char* f, formatters)
-  {
-    add(internal_dir_ + "/metashell/formatter/" + f + ".hpp", seq_formatter(f));
-  }
-  add(
-    internal_dir_ + "/metashell/formatter/deque.hpp",
-    "#include <metashell/formatter/vector.hpp>\n"
-  );
-
-  add(
-    internal_dir_ + "/metashell/formatter.hpp",
-    join(
-      formatters |
-        transformed(
-          std::string("#include <metashell/formatter/")
-          + arg1 + std::string(".hpp>")
-        ),
-      "\n"
-    ) + "\n"
-  );
-
-  add(
-    internal_dir_ + "/metashell/scalar.hpp",
-    "#include <type_traits>\n"
-
-    "#define SCALAR(...) "
-      "std::integral_constant<"
-        "std::remove_reference<"
-          "std::remove_cv<"
-            "std::remove_reference<"
-              "decltype((__VA_ARGS__))"
-            ">::type"
-          ">::type"
-        ">::type,"
-        "(__VA_ARGS__)"
-      ">\n"
-  );
-}
-
 headers::size_type headers::size() const
 {
   return _headers.size();
@@ -169,5 +170,4 @@ const std::string& headers::internal_dir() const
 {
   return _internal_dir;
 }
-
 

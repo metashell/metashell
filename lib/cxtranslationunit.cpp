@@ -16,6 +16,7 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/text_position.hpp>
+#include <metashell/headers.hpp>
 
 #include "cxtranslationunit.hpp"
 #include "cxdiagnostic.hpp"
@@ -25,12 +26,8 @@
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/function.hpp>
 #include <boost/iterator/transform_iterator.hpp>
-
-#include <boost/phoenix/core.hpp>
-#include <boost/phoenix/operator.hpp>
 
 using namespace metashell;
 
@@ -54,63 +51,9 @@ namespace
     return cxdiagnostic(clang_getDiagnostic(tu_, n_)).spelling();
   }
 
-  template <class Cont>
-  void add_with_prefix(
-    const std::string& prefix_,
-    const Cont& cont_,
-    std::vector<std::string>& v_
-  )
-  {
-    using boost::phoenix::arg_names::arg1;
-
-    std::transform(
-      cont_.begin(),
-      cont_.end(),
-      std::back_insert_iterator<std::vector<std::string> >(v_),
-      prefix_ + arg1
-    );
-  }
-
   const char* c_str(const std::string& s_)
   {
     return s_.c_str();
-  }
-}
-
-namespace
-{
-  std::vector<std::string> get_clang_args(
-    const config& config_,
-    const environment& env_
-  )
-  {
-    using boost::assign::list_of;
-
-    std::vector<std::string> args = list_of<std::string>
-      ("-x")("c++")
-      (clang_argument(config_.standard_to_use))
-      ("-I" + env_.internal_dir());
-    add_with_prefix("-I", config_.include_path, args);
-    add_with_prefix("-D", config_.macros, args);
-
-    if (!config_.warnings_enabled)
-    {
-      args.push_back("-w");
-    }
-
-    args.insert(
-      args.end(),
-      config_.extra_clang_args.begin(),
-      config_.extra_clang_args.end()
-    );
-
-    args.insert(
-      args.end(),
-      env_.extra_clang_arguments().begin(),
-      env_.extra_clang_arguments().end()
-    );
-
-    return args;
   }
 }
 
@@ -120,7 +63,6 @@ cxtranslationunit::cxtranslationunit(
   const unsaved_file& src_,
   CXIndex index_
 ) :
-  _headers(env_.internal_dir()),
   _src(src_),
   _unsaved_files()
 {
@@ -138,18 +80,16 @@ cxtranslationunit::cxtranslationunit(
     >
     c_str_it;
 
-  _unsaved_files.reserve(_headers.size() + 1);
-  BOOST_FOREACH(const unsaved_file& uf, _headers)
+  _unsaved_files.reserve(env_.get_headers().size() + 1);
+  BOOST_FOREACH(const unsaved_file& uf, env_.get_headers())
   {
     _unsaved_files.push_back(uf.get());
   }
   _unsaved_files.push_back(_src.get());
 
-  const vector<string> args = get_clang_args(config_, env_);
-
   const vector<const char*> argv(
-    c_str_it(args.begin(), c_str),
-    c_str_it(args.end())
+    c_str_it(env_.clang_arguments().begin(), c_str),
+    c_str_it(env_.clang_arguments().end())
   );
 
   _tu =

@@ -30,7 +30,7 @@ namespace metashell
   class headers
   {
   public:
-    explicit headers(const std::string& internal_dir_);
+    explicit headers(const std::string& internal_dir_, bool empty_ = false);
 
     typedef std::vector<unsaved_file>::const_iterator iterator;
     typedef iterator const_iterator;
@@ -49,7 +49,6 @@ namespace metashell
     std::string _internal_dir;
 
     void add(const std::string& filename_, const std::string& content_);
-    void init(const std::string& internal_dir_);
   };
 }
 

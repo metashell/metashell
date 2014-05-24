@@ -37,7 +37,7 @@ namespace metashell
 
     virtual std::string internal_dir() const = 0;
 
-    virtual const std::vector<std::string>& extra_clang_arguments() const = 0;
+    virtual const std::vector<std::string>& clang_arguments() const = 0;
 
     virtual const headers& get_headers() const = 0;
   };

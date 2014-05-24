@@ -20,23 +20,31 @@
 #include <metashell/config.hpp>
 
 #include <iostream>
+#include <stdexcept>
 
 int main(int argc_, const char* argv_[])
 {
-  using metashell::parse_config;
-  using metashell::parse_config_result;
-
-  metashell::config cfg = metashell::config::default_config;
-
-  const parse_config_result
-    r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
-
-  if (r == metashell::run_shell)
+  try
   {
-    readline_shell shell(cfg);
-    shell.display_splash();
-    shell.run();
+    using metashell::parse_config;
+    using metashell::parse_config_result;
+
+    metashell::config cfg = metashell::config::default_config;
+
+    const parse_config_result
+      r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
+
+    if (r == metashell::run_shell)
+    {
+      readline_shell shell(cfg);
+      shell.display_splash();
+      shell.run();
+    }
+    return r == metashell::exit_with_error ? 1 : 0;
   }
-  return r == metashell::exit_with_error ? 1 : 0;
+  catch (std::exception& e_)
+  {
+    std::cerr << "Error: " << e_.what() << std::endl;
+  }
 }
 

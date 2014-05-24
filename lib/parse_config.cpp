@@ -82,6 +82,16 @@ parse_config_result metashell::parse_config(
       "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
     )
     ("no_warnings,w", "Disable warnings")
+    (
+      "no_precompiled_headers",
+      "Disable precompiled header usage."
+      " (It needs clang++ to be available and writes to the local disc.)"
+    )
+    (
+      "clang", value(&cfg_.clang_path),
+      "The path of the clang++ binary to use for"
+      " generating precompiled headers."
+    )
     ;
 
   try
@@ -95,6 +105,7 @@ parse_config_result metashell::parse_config(
     cfg_.indent = vm.count("indent");
     cfg_.standard_to_use = metashell::parse(cppstd);
     cfg_.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
+    cfg_.use_precompiled_headers = !vm.count("no_precompiled_headers");
 
     if (vm.count("help"))
     {

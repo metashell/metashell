@@ -1,23 +1,64 @@
 #include <metashell/header_file_environment.hpp>
 #include <metashell/headers.hpp>
+#include <metashell/config.hpp>
+
+#include "exception.hpp"
+
+#include <just/process.hpp>
+
+#include <boost/assign/list_of.hpp>
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 using namespace metashell;
 
 namespace
 {
   const char env_fn[] = "metashell_environment.hpp";
+
+  void precompile(
+    const std::string& clang_path_,
+    const std::vector<std::string>& clang_args_,
+    const std::string& fn_
+  )
+  {
+    std::vector<std::string> cmd(1, clang_path_);
+    cmd.insert(cmd.end(), clang_args_.begin(), clang_args_.end());
+    cmd.push_back("-o");
+    cmd.push_back(fn_ + ".pch");
+    cmd.push_back(fn_);
+
+    const just::process::output o = just::process::run(cmd, "");
+    const std::string err = o.standard_output() + o.standard_error();
+    if (!err.empty())
+    {
+      throw exception("Error precompiling header " + fn_ + ": " + err);
+    }
+  }
 }
 
-header_file_environment::header_file_environment() :
+header_file_environment::header_file_environment(
+  bool use_precompiled_headers_,
+  const config& config_
+) :
   _dir(),
-  _extra_clang_args(1, "-I" + _dir.path()),
-  _buffer(_dir.path())
+  _buffer(_dir.path(), config_, "-I" + _dir.path()),
+  _clang_args(),
+  _empty_headers(_buffer.internal_dir(), true),
+  _use_precompiled_headers(use_precompiled_headers_),
+  _clang_path(config_.clang_path)
 {
+  _clang_args = _buffer.clang_arguments();
+  if (_use_precompiled_headers)
+  {
+    _clang_args.push_back("-include");
+    _clang_args.push_back(env_filename());
+  }
+
   save();
-  get_headers().generate();
+  _buffer.get_headers().generate();
 }
 
 void header_file_environment::append(const std::string& s_)
@@ -28,7 +69,10 @@ void header_file_environment::append(const std::string& s_)
 
 std::string header_file_environment::get() const
 {
-  return "#include <" + std::string(env_fn) + ">\n";
+  return
+    _use_precompiled_headers ?
+      std::string() : // The -include directive includes the header
+      "#include <" + std::string(env_fn) + ">\n";
 }
 
 std::string header_file_environment::get_appended(const std::string& s_) const
@@ -37,16 +81,35 @@ std::string header_file_environment::get_appended(const std::string& s_) const
 }
 
 const std::vector<std::string>&
-  header_file_environment::extra_clang_arguments() const
+  header_file_environment::clang_arguments() const
 {
-  return _extra_clang_args;
+  return _clang_args;
+}
+
+std::string header_file_environment::env_filename() const
+{
+  return internal_dir() + "/" + env_fn;
 }
 
 void header_file_environment::save()
 {
-  const std::string fn = _dir.path() + "/" + env_fn;
-  std::ofstream f(fn.c_str());
-  f << _buffer.get();
+  const std::string fn = env_filename();
+  {
+    std::ofstream f(fn.c_str());
+    if (f)
+    {
+      f << _buffer.get();
+    }
+    else
+    {
+      throw exception("Error saving environment to " + fn);
+    }
+  }
+
+  if (_use_precompiled_headers)
+  {
+    precompile(_clang_path, _buffer.clang_arguments(), fn);
+  }
 }
 
 std::string header_file_environment::internal_dir() const
@@ -56,7 +119,7 @@ std::string header_file_environment::internal_dir() const
 
 const headers& header_file_environment::get_headers() const
 {
-  return _buffer.get_headers();
+  return _empty_headers;
 }
 
 

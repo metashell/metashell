@@ -24,11 +24,15 @@
 
 namespace metashell
 {
+  class config;
+
   class in_memory_environment : public environment
   {
   public:
-    explicit in_memory_environment(
-      const std::string& internal_dir_ = "__metashell_internal"
+    in_memory_environment(
+      const std::string& internal_dir_,
+      const config& config_,
+      const std::string& clang_extra_arg_ = ""
     );
 
     virtual void append(const std::string& s_);
@@ -37,12 +41,15 @@ namespace metashell
 
     virtual std::string internal_dir() const;
 
-    virtual const std::vector<std::string>& extra_clang_arguments() const;
+    virtual const std::vector<std::string>& clang_arguments() const;
 
     virtual const headers& get_headers() const;
+
+    void add_clang_arg(const std::string& arg_);
   private:
     std::string _buffer;
     headers _headers;
+    std::vector<std::string> _clang_args;
   };
 }
 

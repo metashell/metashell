@@ -35,6 +35,8 @@ namespace metashell
     std::vector<std::string> macros;
     bool warnings_enabled;
     std::vector<std::string> extra_clang_args;
+    bool use_precompiled_headers;
+    std::string clang_path;
 
     static const config empty;
     static const config default_config;
@@ -46,7 +48,9 @@ namespace metashell
       syntax_highlight(true),
       indent(true),
       standard_to_use(standard::cpp11),
-      warnings_enabled(true)
+      warnings_enabled(true),
+      use_precompiled_headers(true),
+      clang_path("/usr/bin/clang++")
     {}
   };
 }

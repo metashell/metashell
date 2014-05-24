@@ -20,7 +20,6 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/text_position.hpp>
-#include <metashell/headers.hpp>
 #include <metashell/unsaved_file.hpp>
 
 #include "cxcursor.hpp"
@@ -62,7 +61,6 @@ namespace metashell
 
     void code_complete(std::set<std::string>& out_) const;
   private:
-    headers _headers;
     unsaved_file _src;
     std::vector<CXUnsavedFile> _unsaved_files;
     CXTranslationUnit _tu;
