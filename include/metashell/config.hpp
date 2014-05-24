@@ -42,7 +42,11 @@ namespace metashell
     static const config default_config;
   private:
     template <class InputIt>
-    config(InputIt include_path_begin_, InputIt include_path_end_) :
+    config(
+      InputIt include_path_begin_,
+      InputIt include_path_end_,
+      const std::string& clang_path_
+    ) :
       include_path(include_path_begin_, include_path_end_),
       verbose(false),
       syntax_highlight(true),
@@ -50,7 +54,7 @@ namespace metashell
       standard_to_use(standard::cpp11),
       warnings_enabled(true),
       use_precompiled_headers(true),
-      clang_path("/usr/bin/clang++")
+      clang_path(clang_path_)
     {}
   };
 }

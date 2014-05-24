@@ -16,6 +16,11 @@
 
 #include <metashell/config.hpp>
 
+#include "metashell.hpp"
+
+#include <fstream>
+#include <algorithm>
+
 using namespace metashell;
 
 namespace
@@ -25,14 +30,39 @@ namespace
       ""
       #include "extra_sysinclude.hpp"
     };
+
+  const char* default_clang_search_path[] =
+    {
+      ""
+      #include "default_clang_search_path.hpp"
+    };
+
+  template <class It>
+  std::string search_clang(It begin_, It end_)
+  {
+    const It p = std::find_if(begin_, end_, file_exists);
+    return p == end_ ? "" : *p;
+  }
+
+  const std::string default_clang_path =
+    search_clang(
+      default_clang_search_path + 1,
+      default_clang_search_path
+        + sizeof(default_clang_search_path) / sizeof(const char*)
+    );
 }
 
-const config config::empty((const char**)0, (const char**)0);
+const config config::empty(
+  (const char**)0,
+  (const char**)0,
+  default_clang_path
+);
 
 const config
   config::default_config(
     extra_sysinclude + 1,
-    extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*)
+    extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*),
+    default_clang_path
   );
 
 

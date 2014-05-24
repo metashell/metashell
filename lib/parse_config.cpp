@@ -16,12 +16,16 @@
 
 #include <metashell/parse_config.hpp>
 
+#include "metashell.hpp"
+
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <iterator>
 
 using namespace metashell;
 
@@ -38,6 +42,12 @@ namespace
       << "\n"
       << desc_ << std::endl;
   }
+
+  const char* default_clang_search_path[] =
+    {
+      ""
+      #include "default_clang_search_path.hpp"
+    };
 }
 
 parse_config_result metashell::parse_config(
@@ -117,6 +127,25 @@ parse_config_result metashell::parse_config(
     }
     else
     {
+      if (cfg_.use_precompiled_headers && !file_exists(cfg_.clang_path))
+      {
+        std::cerr << "Error: clang++ not found. Checked:" << std::endl;
+        if (vm.count("clang"))
+        {
+          std::cerr << cfg_.clang_path << std::endl;
+        }
+        else
+        {
+          std::copy(
+            default_clang_search_path + 1,
+            default_clang_search_path
+              + sizeof(default_clang_search_path) / sizeof(const char*),
+            std::ostream_iterator<std::string>(std::cerr, "\n")
+          );
+        }
+        std::cerr << "Disabling precompiled headers" << std::endl;
+        cfg_.use_precompiled_headers = false;
+      }
       return run_shell;
     }
   }

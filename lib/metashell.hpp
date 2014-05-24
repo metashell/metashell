@@ -49,6 +49,8 @@ namespace metashell
     const std::string& input_filename_,
     std::set<std::string>& out_
   );
+
+  bool file_exists(const std::string& fn_);
 }
 
 #endif

@@ -26,6 +26,8 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <fstream>
+
 using namespace metashell;
 
 namespace
@@ -202,4 +204,9 @@ void metashell::code_complete(
   }
 }
 
+bool metashell::file_exists(const std::string& fn_)
+{
+  std::ifstream f(fn_.c_str());
+  return f;
+}
 

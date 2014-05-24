@@ -265,6 +265,12 @@ void shell::display_splash() const
         " *              ",
         " *   Readline   "
       )
+      .empty_line()
+      .left_align(
+        _config.use_precompiled_headers ?
+          "Using precompiled headers" :
+          "Not using precompiled headers"
+      )
       .raw(" */")
       .str()
   );
