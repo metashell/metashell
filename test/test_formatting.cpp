@@ -72,7 +72,7 @@ JUST_TEST_CASE(test_tag_dispatched_formatting)
 
 JUST_TEST_CASE(test_formatting_disabled)
 {
-  config cfg = config::empty;
+  config cfg = config::empty();
   cfg.indent = false;
 
   test_shell sh(cfg, 10);

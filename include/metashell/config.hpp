@@ -38,8 +38,8 @@ namespace metashell
     bool use_precompiled_headers;
     std::string clang_path;
 
-    static const config empty;
-    static const config default_config;
+    static config empty();
+    static config default_config();
   private:
     template <class InputIt>
     config(

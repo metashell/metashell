@@ -19,7 +19,7 @@
 using namespace metashell;
 
 test_shell::test_shell() :
-  shell(config::default_config),
+  shell(config::default_config()),
   _width(80),
   _history(0)
 {}
@@ -31,7 +31,7 @@ test_shell::test_shell(const config& cfg_, int width_) :
 {}
 
 test_shell::test_shell(std::vector<std::string>& history_) :
-  shell(config::default_config),
+  shell(config::default_config()),
   _width(80),
   _history(&history_)
 {}

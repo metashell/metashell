@@ -52,17 +52,23 @@ namespace
     );
 }
 
-const config config::empty(
-  (const char**)0,
-  (const char**)0,
-  default_clang_path
-);
+config config::empty()
+{
+  return
+    config(
+      (const char**)0,
+      (const char**)0,
+      default_clang_path
+    );
+}
 
-const config
-  config::default_config(
-    extra_sysinclude + 1,
-    extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*),
-    default_clang_path
-  );
-
+config config::default_config()
+{
+  return
+    config(
+      extra_sysinclude + 1,
+      extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*),
+      default_clang_path
+    );
+}
 

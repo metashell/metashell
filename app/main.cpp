@@ -29,7 +29,7 @@ int main(int argc_, const char* argv_[])
     using metashell::parse_config;
     using metashell::parse_config_result;
 
-    metashell::config cfg = metashell::config::default_config;
+    metashell::config cfg = metashell::config::default_config();
 
     const parse_config_result
       r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);

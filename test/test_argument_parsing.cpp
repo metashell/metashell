@@ -34,7 +34,7 @@ JUST_TEST_CASE(test_recognising_extra_clang_arg)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
-  metashell::config cfg = metashell::config::empty;
+  metashell::config cfg = metashell::config::empty();
   parse_config(cfg, args);
 
   JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
@@ -45,7 +45,7 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
-  metashell::config cfg = metashell::config::empty;
+  metashell::config cfg = metashell::config::empty();
   JUST_ASSERT_EQUAL(metashell::run_shell, parse_config(cfg, args));
 }
 
