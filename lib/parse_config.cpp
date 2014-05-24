@@ -78,6 +78,7 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string cppstd("c++0x");
+  cfg_.use_precompiled_headers = !cfg_.clang_path.empty();
 
   options_description desc("Options");
   desc.add_options()
