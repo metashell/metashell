@@ -49,6 +49,9 @@ set(
   "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}"
 )
 
+# Workaround on some systems (OSX + clang + Boost 1.55)
+add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
+
 # Clang
 find_package(Clang)
 
