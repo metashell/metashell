@@ -73,10 +73,7 @@ namespace
 
   std::string get_edited_text()
   {
-    char* cs = rl_copy_text(0, rl_end);
-    const std::string s(cs);
-    free(cs);
-    return s;
+    return std::string(rl_line_buffer, rl_line_buffer + rl_end);
   }
 }
 
