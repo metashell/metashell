@@ -34,17 +34,30 @@ JUST_TEST_CASE(test_breaking_environment_does_not_throw)
   e.get_headers();
 }
 
-JUST_TEST_CASE(test_breaking_environment_throws)
+JUST_TEST_CASE(test_breaking_environment_append_throws)
 {
   breaking_environment e(metashell::config::empty());
-  e.throw_from_now();
+  e.append_throw_from_now();
 
   JUST_ASSERT_THROWS_SOMETHING(e.append("foo"));
-  JUST_ASSERT_THROWS_SOMETHING(e.get());
+  e.get();
+  e.get_appended("bar");
+  e.internal_dir();
+  e.clang_arguments();
+  e.get_headers();
+}
+
+JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
+{
+  breaking_environment e(metashell::config::empty());
+  e.get_appended_throw_from_now();
+
+  e.append("foo");
+  e.get();
   JUST_ASSERT_THROWS_SOMETHING(e.get_appended("bar"));
-  JUST_ASSERT_THROWS_SOMETHING(e.internal_dir());
-  JUST_ASSERT_THROWS_SOMETHING(e.clang_arguments());
-  JUST_ASSERT_THROWS_SOMETHING(e.get_headers());
+  e.internal_dir();
+  e.clang_arguments();
+  e.get_headers();
 }
 
 

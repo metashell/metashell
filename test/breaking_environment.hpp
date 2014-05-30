@@ -25,18 +25,15 @@ public:
   explicit breaking_environment(const metashell::config& cfg_);
 
   virtual void append(const std::string& s_);
-  virtual std::string get() const;
   virtual std::string get_appended(const std::string& s_) const;
 
-  virtual std::string internal_dir() const;
-
-  virtual const std::vector<std::string>& clang_arguments() const;
-
-  virtual const metashell::headers& get_headers() const;
-
-  void throw_from_now();
+  void append_throw_from_now();
+  void get_appended_throw_from_now();
 private:
-  bool _throwing;
+  bool _append_throw;
+  bool _get_appended_throw;
+
+  bool _in_append;
 };
 
 #endif

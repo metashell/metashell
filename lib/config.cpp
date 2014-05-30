@@ -16,7 +16,7 @@
 
 #include <metashell/config.hpp>
 
-#include "metashell.hpp"
+#include <metashell/metashell.hpp>
 
 #include <fstream>
 #include <algorithm>

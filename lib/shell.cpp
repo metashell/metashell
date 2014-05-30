@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "metashell.hpp"
+#include <metashell/metashell.hpp>
 #include "indenter.hpp"
 
 #include <metashell/shell.hpp>
@@ -178,43 +178,14 @@ shell::shell(const config& config_) :
   ),
   _config(config_)
 {
-  _env->append(
-    "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
+  init();
+}
 
-    "namespace metashell { "
-      "namespace impl { "
-        "template <class T> "
-        "struct wrap {}; "
-
-        "template <class T> "
-        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
-        
-        "void tag_of(...); "
-      "} "
-      
-      "template <class Tag> "
-      "struct format_impl "
-      "{ "
-        "typedef format_impl type; "
-        
-        "template <class T> "
-        "struct apply { typedef T type; }; "
-      "}; "
-
-      "template <class T> "
-      "struct format : "
-        "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
-        ">::template apply<T>"
-        "{}; "
-
-      ""
-    "}"
-    "\n"
-  );
+shell::shell(const config& config_, environment* env_) :
+  _env(env_),
+  _config(config_)
+{
+  init();
 }
 
 shell::~shell() {}
@@ -319,7 +290,15 @@ bool shell::store_in_buffer(const std::string& s_)
   const bool success = !r.has_errors();
   if (success)
   {
-    _env->append(s_);
+    try
+    {
+      _env->append(s_);
+    }
+    catch (const std::exception& e)
+    {
+      display_error(e.what());
+      return false;
+    }
   }
   display(r, *this);
   return success;
@@ -338,4 +317,44 @@ void shell::code_complete(
   metashell::code_complete(*_env, s_, _config, input_filename(), out_);
 }
 
+void shell::init()
+{
+  _env->append(
+    "#define __METASHELL\n"
+    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
+    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
+    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
+
+    "namespace metashell { "
+      "namespace impl { "
+        "template <class T> "
+        "struct wrap {}; "
+
+        "template <class T> "
+        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
+        
+        "void tag_of(...); "
+      "} "
+      
+      "template <class Tag> "
+      "struct format_impl "
+      "{ "
+        "typedef format_impl type; "
+        
+        "template <class T> "
+        "struct apply { typedef T type; }; "
+      "}; "
+
+      "template <class T> "
+      "struct format : "
+        "::metashell::format_impl<"
+          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
+        ">::template apply<T>"
+        "{}; "
+
+      ""
+    "}"
+    "\n"
+  );
+}
 

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "metashell.hpp"
+#include <metashell/metashell.hpp>
 #include "get_type_of_variable.hpp"
 #include "cxindex.hpp"
 
@@ -62,17 +62,25 @@ result metashell::validate_code(
   const std::string& input_filename_
 )
 {
-  const unsaved_file src(input_filename_, env_.get_appended(src_));
-  cxindex index;
-  boost::shared_ptr<cxtranslationunit>
-    tu = index.parse_code(src, config_, env_);
-  return
-    result(
-      "",
-      tu->errors_begin(),
-      tu->errors_end(),
-      config_.verbose ? src.content() : ""
-    );
+  try
+  {
+    const unsaved_file src(input_filename_, env_.get_appended(src_));
+    cxindex index;
+    boost::shared_ptr<cxtranslationunit>
+      tu = index.parse_code(src, config_, env_);
+    return
+      result(
+        "",
+        tu->errors_begin(),
+        tu->errors_end(),
+        config_.verbose ? src.content() : ""
+      );
+  }
+  catch (const std::exception& e)
+  {
+    const std::string es[] = { e.what() };
+    return result("", es, es + sizeof(es) / sizeof(es[0]), "");
+  }
 }
 
 result metashell::eval_tmp(

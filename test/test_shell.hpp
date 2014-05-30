@@ -28,6 +28,9 @@ public:
   test_shell(const metashell::config& cfg_, int width_);
   test_shell(std::vector<std::string>& history_);
 
+  // Takes ownership of env_
+  test_shell(const metashell::config& cfg_, metashell::environment* env_);
+
   virtual void add_history(const std::string& s_);
 
   virtual void display_normal(const std::string& s_) const;

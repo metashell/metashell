@@ -30,53 +30,54 @@ namespace
       throw std::runtime_error("Test exception");
     }
   }
+
+  class bool_override_guard
+  {
+  public:
+    explicit bool_override_guard(bool& b_) : _b(b_)
+    {
+      _b = true;
+    }
+
+    ~bool_override_guard()
+    {
+      _b = false;
+    }
+  private:
+    bool& _b;
+  };
 }
 
 breaking_environment::breaking_environment(const config& cfg_) :
   in_memory_environment("", cfg_),
-  _throwing(false)
+  _append_throw(false),
+  _get_appended_throw(false),
+  _in_append(false)
 {}
 
 void breaking_environment::append(const std::string& s_)
 {
-  throw_(_throwing);
+  throw_(_append_throw);
+  
+  bool_override_guard g(_in_append);
   in_memory_environment::append(s_);
-}
-
-std::string breaking_environment::get() const
-{
-  throw_(_throwing);
-  return in_memory_environment::get();
 }
 
 std::string breaking_environment::get_appended(const std::string& s_) const
 {
-  throw_(_throwing);
+  throw_(!_in_append && _get_appended_throw);
   return in_memory_environment::get_appended(s_);
 }
 
-std::string breaking_environment::internal_dir() const
+void breaking_environment::append_throw_from_now()
 {
-  throw_(_throwing);
-  return in_memory_environment::internal_dir();
+  assert(!_append_throw);
+  _append_throw = true;
 }
 
-const std::vector<std::string>& breaking_environment::clang_arguments() const
+void breaking_environment::get_appended_throw_from_now()
 {
-  throw_(_throwing);
-  return in_memory_environment::clang_arguments();
+  assert(!_get_appended_throw);
+  _get_appended_throw = true;
 }
-
-const headers& breaking_environment::get_headers() const
-{
-  throw_(_throwing);
-  return in_memory_environment::get_headers();
-}
-
-void breaking_environment::throw_from_now()
-{
-  assert(!_throwing);
-  _throwing = true;
-}
-
 

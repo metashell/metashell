@@ -18,9 +18,14 @@
 
 using namespace metashell;
 
+namespace
+{
+  const int default_width = 80;
+}
+
 test_shell::test_shell() :
   shell(config::default_config()),
-  _width(80),
+  _width(default_width),
   _history(0)
 {}
 
@@ -32,8 +37,14 @@ test_shell::test_shell(const config& cfg_, int width_) :
 
 test_shell::test_shell(std::vector<std::string>& history_) :
   shell(config::default_config()),
-  _width(80),
+  _width(default_width),
   _history(&history_)
+{}
+
+test_shell::test_shell(const metashell::config& cfg_, environment* env_) :
+  shell(cfg_, env_),
+  _width(default_width),
+  _history(0)
 {}
 
 void test_shell::display_normal(const std::string& s_) const

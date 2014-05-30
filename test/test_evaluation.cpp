@@ -15,6 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_shell.hpp"
+#include "breaking_environment.hpp"
+
+#include <metashell/metashell.hpp>
 
 #include <just/test.hpp>
 
@@ -298,4 +301,28 @@ JUST_TEST_CASE(test_extra_clang_arg)
   JUST_ASSERT_EQUAL("", sh.error());
   JUST_ASSERT_EQUAL("double", sh.output());
 }
+
+JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
+{
+  metashell::config cfg = metashell::config::empty();
+  breaking_environment* e = new breaking_environment(cfg);
+  test_shell sh(cfg, e);
+  e->append_throw_from_now();
+  
+  sh.store_in_buffer("typedef int foo;");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
+{
+  metashell::config cfg = metashell::config::empty();
+  breaking_environment e(cfg);
+  e.get_appended_throw_from_now();
+  const metashell::result
+    r = metashell::validate_code("typedef int foo;", cfg, e, "<input>");
+
+  JUST_ASSERT(!r.errors.empty());
+}
+
 

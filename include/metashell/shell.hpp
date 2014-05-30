@@ -31,6 +31,10 @@ namespace metashell
   {
   public:
     explicit shell(const config& config_);
+
+    // Takes ownership of env_
+    shell(const config& config_, environment* env_);
+
     virtual ~shell();
 
     virtual void add_history(const std::string& s_) = 0;
@@ -59,6 +63,8 @@ namespace metashell
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
+
+    void init();
   };
 }
 
