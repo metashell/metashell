@@ -21,6 +21,7 @@
 #include "cxtranslationunit.hpp"
 #include "cxdiagnostic.hpp"
 #include "cxcodecompleteresults.hpp"
+#include "exception.hpp"
 
 #include <clang-c/Index.h>
 
@@ -102,6 +103,14 @@ cxtranslationunit::cxtranslationunit(
       _unsaved_files.size(),
       CXTranslationUnit_None 
     );
+  if (!_tu)
+  {
+    throw
+      exception(
+        "Error parsing source code (" + src_.filename() + ": "
+        + src_.content() + ")"
+      );
+  }
 }
 
 cxtranslationunit::~cxtranslationunit()
