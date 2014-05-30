@@ -23,6 +23,7 @@
 #include <just/process.hpp>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -40,15 +41,23 @@ namespace
     const std::string& fn_
   )
   {
+    using boost::algorithm::trim_copy;
+
     std::vector<std::string> cmd(1, clang_path_);
     cmd.insert(cmd.end(), clang_args_.begin(), clang_args_.end());
+    cmd.push_back("-w");
     cmd.push_back("-o");
     cmd.push_back(fn_ + ".pch");
     cmd.push_back(fn_);
 
     const just::process::output o = just::process::run(cmd, "");
     const std::string err = o.standard_output() + o.standard_error();
-    if (!err.empty())
+    if (
+      !err.empty()
+      // clang displays this even when "-w" is used. This can be ignored
+      && trim_copy(err) !=
+        "warning: precompiled header used __DATE__ or __TIME__."
+    )
     {
       throw exception("Error precompiling header " + fn_ + ": " + err);
     }
