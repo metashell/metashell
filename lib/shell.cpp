@@ -23,9 +23,13 @@
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
 
+#include <metashell/pragma_help.hpp>
+#include <metashell/pragma_switch.hpp>
+
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 
 #include <cctype>
 
@@ -33,6 +37,16 @@ using namespace metashell;
 
 namespace
 {
+  template <class Handler>
+  void add(
+    std::map<std::string, pragma_handler>& map_,
+    const std::string& name_,
+    Handler h_
+  )
+  {
+    map_.insert(std::make_pair(name_, pragma_handler(h_)));
+  }
+
   bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
   {
     return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
@@ -164,6 +178,16 @@ namespace
     }
     return true;
   }
+
+  void set(bool& var_, bool val_)
+  {
+    var_ = val_;
+  }
+
+  bool return_(bool val_)
+  {
+    return val_;
+  }
 }
 
 shell::shell(const config& config_) :
@@ -242,6 +266,8 @@ void shell::display_splash() const
           "Using precompiled headers" :
           "Not using precompiled headers"
       )
+      .empty_line()
+      .left_align("Getting help: #pragma metashell help")
       .raw(" */")
       .str()
   );
@@ -267,7 +293,11 @@ void shell::line_available(const std::string& s_)
 
     if (!is_empty_line(s_, input_filename()))
     {
-      if (is_environment_setup_command(s_, input_filename()))
+      if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
+      {
+        process_pragma(*p);
+      }
+      else if (is_environment_setup_command(s_, input_filename()))
       {
         store_in_buffer(s_);
       }
@@ -356,5 +386,37 @@ void shell::init()
     "}"
     "\n"
   );
+
+  add(_pragma_handlers, "help", pragma_help(*this));
+  add(
+    _pragma_handlers,
+    "verbose",
+    pragma_switch(
+      "verbose mode",
+      boost::bind(return_, boost::ref(_config.verbose)),
+      boost::bind(set, boost::ref(_config.verbose), _1),
+      *this
+    )
+  );
+}
+
+void shell::process_pragma(const metashell_pragma& p_)
+{
+  const std::map<std::string, pragma_handler>::const_iterator i =
+    _pragma_handlers.find(p_.name());
+
+  if (i == _pragma_handlers.end())
+  {
+    display_error("Pragma " + p_.name() + " not found.");
+  }
+  else
+  {
+    i->second.run(p_);
+  }
+}
+
+const std::map<std::string, pragma_handler>& shell::pragma_handlers() const
+{
+  return _pragma_handlers;
 }
 

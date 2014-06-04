@@ -19,11 +19,14 @@
 
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
+#include <metashell/pragma_handler.hpp>
+#include <metashell/metashell_pragma.hpp>
 
 #include <boost/scoped_ptr.hpp>
 
 #include <string>
 #include <set>
+#include <map>
 
 namespace metashell
 {
@@ -59,12 +62,16 @@ namespace metashell
       const std::string& s_,
       std::set<std::string>& out_
     ) const;
+
+    const std::map<std::string, pragma_handler>& pragma_handlers() const;
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
+    std::map<std::string, pragma_handler> _pragma_handlers;
 
     void init();
+    void process_pragma(const metashell_pragma& p_);
   };
 }
 
