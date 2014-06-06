@@ -283,29 +283,40 @@ void shell::display_splash() const
 
 void shell::line_available(const std::string& s_)
 {
-  if (has_non_whitespace(s_))
+  try
   {
-    if (_prev_line != s_)
+    if (has_non_whitespace(s_))
     {
-      add_history(s_);
-      _prev_line = s_;
-    }
+      if (_prev_line != s_)
+      {
+        add_history(s_);
+        _prev_line = s_;
+      }
 
-    if (!is_empty_line(s_, input_filename()))
-    {
-      if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
+      if (!is_empty_line(s_, input_filename()))
       {
-        process_pragma(*p);
-      }
-      else if (is_environment_setup_command(s_, input_filename()))
-      {
-        store_in_buffer(s_);
-      }
-      else
-      {
-        display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+        if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
+        {
+          process_pragma(*p);
+        }
+        else if (is_environment_setup_command(s_, input_filename()))
+        {
+          store_in_buffer(s_);
+        }
+        else
+        {
+          display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+        }
       }
     }
+  }
+  catch (const std::exception& e)
+  {
+    display_error(std::string("Error: ") + e.what());
+  }
+  catch (...)
+  {
+    display_error("Unknown error");
   }
 }
 

@@ -151,3 +151,11 @@ JUST_TEST_CASE(test_check_enabling_verbosity)
   JUST_ASSERT_EQUAL("// verbose mode is on\n", sh.output());
 }
 
+JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
+{
+  test_shell sh;
+
+  // should not throw
+  sh.line_available("#pragma metashell");
+}
+
