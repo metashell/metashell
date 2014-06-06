@@ -116,11 +116,19 @@ metashell_pragma::metashell_pragma(const std::string& line_) :
   }
   else
   {
-    std::ostringstream s;
-    s
-      << "Metashell pragmas have to be identifiers. " << i->get_value()
-      << " is not an identifier.";
-    throw exception(s.str());
+    const token_iterator::token_type::string_type v = i->get_value();
+    if (v.empty())
+    {
+      throw exception("The identifier after the metashell keyword is missing.");
+    }
+    else
+    {
+      std::ostringstream s;
+      s
+        << "Metashell pragmas have to be identifiers. " << i->get_value()
+        << " is not an identifier.";
+      throw exception(s.str());
+    }
   }
 }
 
