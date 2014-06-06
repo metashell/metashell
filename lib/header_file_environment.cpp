@@ -35,6 +35,12 @@ namespace
 {
   const char env_fn[] = "metashell_environment.hpp";
 
+  void extend_to_find_headers_in_local_dir(std::vector<std::string>& v_)
+  {
+    v_.push_back("-iquote");
+    v_.push_back(".");
+  }
+
   void precompile(
     const std::string& clang_path_,
     const std::vector<std::string>& clang_args_,
@@ -45,6 +51,7 @@ namespace
 
     std::vector<std::string> cmd(1, clang_path_);
     cmd.insert(cmd.end(), clang_args_.begin(), clang_args_.end());
+    extend_to_find_headers_in_local_dir(cmd);
     cmd.push_back("-w");
     cmd.push_back("-o");
     cmd.push_back(fn_ + ".pch");
@@ -81,6 +88,8 @@ header_file_environment::header_file_environment(
     _clang_args.push_back("-include");
     _clang_args.push_back(env_filename());
   }
+
+  extend_to_find_headers_in_local_dir(_clang_args);
 
   save();
   _buffer.get_headers().generate();
