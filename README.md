@@ -55,11 +55,18 @@ metaprograms.
 * Install the dependent libraries:
     * libclang
     * Readline
+    * Boost
 * Install CMake
 * In case some elements of the default system include path are missing when
   libclang is used, Metashell has to add them. You need to provide the system
   include path clang uses to Metashell:
     * `tools/clang_default_path > lib/extra_sysinclude.hpp`
+* Metashell needs the `clang++` compiler to generate precompiled headers. There
+  is a default search path Metashell uses at startup to find `clang++`. In case
+  it can be found in another directory on your system, you should add that path
+  to the default search path: add the path to
+  `lib/default_clang_search_path.hpp`. If you don't know where `clang++` on your
+  system is, you can use the `which clang++` command to find it.
 * In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
