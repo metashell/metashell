@@ -22,6 +22,7 @@ shell.
         - [Using specialisation](#using-specialisation)
         - [Using tag dispatching](#using-tag-dispatching)
         - [Embedding custom formatters](#embedding-custom-formatters)
+- [The pragmas Metashell provides](#the-pragmas-metashell-provides)
 - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
 - [License](#license)
 
@@ -361,6 +362,21 @@ of the header.
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.
+
+## The pragmas Metashell provides
+
+Metashell provides a number of pragmas controlling the shell. Note that these
+pragmas are available only from the shell's command prompt. If you put them in a
+header file and include that header, these pragmas will be ignored.
+
+`#pragma metashell help`
+
+Displays a help message.
+
+`#pragma metashell verbose [on|1|off|0]`
+
+Turns verbose mode on or off. When no arguments are used, it displays if verbose
+mode is turned on.
 
 ## The full list of built-in header files
 
