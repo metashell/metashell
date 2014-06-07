@@ -14,6 +14,7 @@ shell.
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
 - [Getting started](#getting-started)
+    - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
     - [How about Fibonacci?](#how-about-fibonacci)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
@@ -80,6 +81,12 @@ metaprograms.
 ## Getting started
 
 This section presents how to use Metashell to do simple debugging.
+
+### Trying Metashell online
+
+You can try Metashell in your browser without installing anything. You can find
+an online demo at
+[http://abel.web.elte.hu/shell/](http://abel.web.elte.hu/shell/).
 
 ### Evaluating simple expressions
 
