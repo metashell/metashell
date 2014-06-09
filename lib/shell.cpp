@@ -23,13 +23,9 @@
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
 
-#include <metashell/pragma_help.hpp>
-#include <metashell/pragma_switch.hpp>
-
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
 #include <boost/foreach.hpp>
-#include <boost/bind.hpp>
 
 #include <cctype>
 
@@ -167,16 +163,6 @@ namespace
       return false;
     }
     return true;
-  }
-
-  void set(bool& var_, bool val_)
-  {
-    var_ = val_;
-  }
-
-  bool return_(bool val_)
-  {
-    return val_;
   }
 }
 
@@ -388,20 +374,22 @@ void shell::init()
     "\n"
   );
 
-  _pragma_handlers.add("help", pragma_help(*this));
-  _pragma_handlers.add(
-    "verbose",
-    pragma_switch(
-      "verbose mode",
-      boost::bind(return_, boost::ref(_config.verbose)),
-      boost::bind(set, boost::ref(_config.verbose), _1),
-      *this
-    )
-  );
+  // TODO: move it to initialisation later
+  _pragma_handlers = pragma_handler_map::build_default(*this);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
 {
   return _pragma_handlers;
+}
+
+void shell::verbose(bool enabled_)
+{
+  _config.verbose = enabled_;
+}
+
+bool shell::verbose() const
+{
+  return _config.verbose;
 }
 

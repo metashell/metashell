@@ -16,8 +16,14 @@
 
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/metashell_pragma.hpp>
+#include <metashell/shell.hpp>
+
+#include <metashell/pragma_help.hpp>
+#include <metashell/pragma_switch.hpp>
 
 #include "exception.hpp"
+
+#include <boost/bind.hpp>
 
 using namespace metashell;
 
@@ -44,5 +50,24 @@ pragma_handler_map::iterator pragma_handler_map::begin() const
 pragma_handler_map::iterator pragma_handler_map::end() const
 {
   return _handlers.end();
+}
+
+pragma_handler_map pragma_handler_map::build_default(shell& shell_)
+{
+  using boost::bind;
+
+  return
+    pragma_handler_map()
+      .add("help", pragma_help(shell_))
+      .add(
+        "verbose",
+        pragma_switch(
+          "verbose mode",
+          bind(&shell::verbose, &shell_),
+          bind(&shell::verbose, &shell_, _1),
+          shell_
+        )
+      )
+    ;
 }
 

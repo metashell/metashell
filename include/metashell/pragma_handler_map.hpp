@@ -25,15 +25,17 @@
 namespace metashell
 {
   class metashell_pragma;
+  class shell;
 
   class pragma_handler_map
   {
   public:
     template <class Handler>
       // requires: Handler implements pragma_handler_interface
-    void add(const std::string& name_, Handler handler_)
+    pragma_handler_map& add(const std::string& name_, Handler handler_)
     {
       _handlers.insert(std::make_pair(name_, pragma_handler(handler_)));
+      return *this;
     }
 
     void process(const metashell_pragma& p_) const;
@@ -43,6 +45,8 @@ namespace metashell
 
     iterator begin() const;
     iterator end() const;
+
+    static pragma_handler_map build_default(shell& shell_);
   private:
     std::map<std::string, pragma_handler> _handlers;
   };

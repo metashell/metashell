@@ -64,6 +64,9 @@ namespace metashell
     ) const;
 
     const pragma_handler_map& pragma_handlers() const;
+
+    void verbose(bool enabled_);
+    bool verbose() const;
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
