@@ -37,16 +37,6 @@ using namespace metashell;
 
 namespace
 {
-  template <class Handler>
-  void add(
-    std::map<std::string, pragma_handler>& map_,
-    const std::string& name_,
-    Handler h_
-  )
-  {
-    map_.insert(std::make_pair(name_, pragma_handler(h_)));
-  }
-
   bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
   {
     return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
@@ -297,7 +287,7 @@ void shell::line_available(const std::string& s_)
       {
         if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
         {
-          process_pragma(*p);
+          _pragma_handlers.process(*p);
         }
         else if (is_environment_setup_command(s_, input_filename()))
         {
@@ -398,9 +388,8 @@ void shell::init()
     "\n"
   );
 
-  add(_pragma_handlers, "help", pragma_help(*this));
-  add(
-    _pragma_handlers,
+  _pragma_handlers.add("help", pragma_help(*this));
+  _pragma_handlers.add(
     "verbose",
     pragma_switch(
       "verbose mode",
@@ -411,22 +400,7 @@ void shell::init()
   );
 }
 
-void shell::process_pragma(const metashell_pragma& p_)
-{
-  const std::map<std::string, pragma_handler>::const_iterator i =
-    _pragma_handlers.find(p_.name());
-
-  if (i == _pragma_handlers.end())
-  {
-    display_error("Pragma " + p_.name() + " not found.");
-  }
-  else
-  {
-    i->second.run(p_);
-  }
-}
-
-const std::map<std::string, pragma_handler>& shell::pragma_handlers() const
+const pragma_handler_map& shell::pragma_handlers() const
 {
   return _pragma_handlers;
 }
