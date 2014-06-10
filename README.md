@@ -369,14 +369,17 @@ Metashell provides a number of pragmas controlling the shell. Note that these
 pragmas are available only from the shell's command prompt. If you put them in a
 header file and include that header, these pragmas will be ignored.
 
+<!-- pragma_info -->
 `#pragma metashell help`
 
 Displays a help message.
 
 `#pragma metashell verbose [on|1|off|0]`
 
-Turns verbose mode on or off. When no arguments are used, it displays if verbose
-mode is turned on.
+Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
+
+
+<!-- pragma_info -->
 
 ## The full list of built-in header files
 
