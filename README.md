@@ -374,6 +374,10 @@ header file and include that header, these pragmas will be ignored.
 
 Displays a help message.
 
+`#pragma metashell quit`
+
+Terminates the shell.
+
 `#pragma metashell verbose [on|1|off|0]`
 
 Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.

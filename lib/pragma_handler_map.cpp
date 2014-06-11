@@ -20,6 +20,7 @@
 
 #include <metashell/pragma_help.hpp>
 #include <metashell/pragma_switch.hpp>
+#include <metashell/pragma_quit.hpp>
 
 #include "exception.hpp"
 
@@ -68,6 +69,7 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
           shell_
         )
       )
+      .add("quit", pragma_quit(shell_))
     ;
 }
 

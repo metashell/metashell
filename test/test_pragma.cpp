@@ -159,3 +159,10 @@ JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
   sh.line_available("#pragma metashell");
 }
 
+JUST_TEST_CASE(test_quit)
+{
+  test_shell sh;
+  sh.line_available("#pragma metashell quit");
+  JUST_ASSERT(sh.stopped());
+}
+
