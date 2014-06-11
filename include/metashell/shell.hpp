@@ -67,11 +67,15 @@ namespace metashell
 
     void verbose(bool enabled_);
     bool verbose() const;
+
+    bool stopped() const;
+    void stop();
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
+    bool _stopped;
 
     void init();
   };

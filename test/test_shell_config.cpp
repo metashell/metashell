@@ -62,3 +62,18 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   JUST_ASSERT(!sh.verbose());
 }
 
+JUST_TEST_CASE(test_new_shell_not_stopped)
+{
+  test_shell sh;
+
+  JUST_ASSERT(!sh.stopped());
+}
+
+JUST_TEST_CASE(test_shell_stopped_after_stop)
+{
+  test_shell sh;
+  sh.stop();
+
+  JUST_ASSERT(sh.stopped());
+}
+

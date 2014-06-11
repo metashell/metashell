@@ -109,7 +109,7 @@ void readline_shell::run()
 
   interrupt_handler_override ovr3(bind(&readline_shell::cancel_operation,this));
 
-  while (char* l = readline(prompt().c_str()))
+  for (char* l = 0; !stopped() && (l = readline(prompt().c_str()));)
   {
     const std::string line(l);
     free(l);

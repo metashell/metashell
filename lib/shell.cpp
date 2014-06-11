@@ -176,14 +176,16 @@ shell::shell(const config& config_) :
         new in_memory_environment("__metashell_internal", config_)
       )
   ),
-  _config(config_)
+  _config(config_),
+  _stopped(false)
 {
   init();
 }
 
 shell::shell(const config& config_, environment* env_) :
   _env(env_),
-  _config(config_)
+  _config(config_),
+  _stopped(false)
 {
   init();
 }
@@ -391,5 +393,15 @@ void shell::verbose(bool enabled_)
 bool shell::verbose() const
 {
   return _config.verbose;
+}
+
+bool shell::stopped() const
+{
+  return _stopped;
+}
+
+void shell::stop()
+{
+  _stopped = true;
 }
 
