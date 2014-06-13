@@ -102,6 +102,13 @@ parse_config_result metashell::parse_config(
       "The path of the clang++ binary to use for"
       " generating precompiled headers."
     )
+    (
+      "use_templight,T", value(&cfg_.use_templight),
+      "Use templight for debugging metaprograms.\n"
+      "Note: this option needs that clang is compiled "
+      "with templight support. Please see docs for "
+      "more information."
+    )
     ;
 
   try
@@ -116,6 +123,7 @@ parse_config_result metashell::parse_config(
     cfg_.standard_to_use = metashell::parse(cppstd);
     cfg_.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     cfg_.use_precompiled_headers = !vm.count("no_precompiled_headers");
+    cfg_.use_templight = vm.count("use_templight") || vm.count("T");
 
     if (vm.count("help"))
     {
