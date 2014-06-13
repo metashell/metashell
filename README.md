@@ -79,13 +79,13 @@ metaprograms.
     * To package it for Debian or Ubuntu run `cpack -G DEB`
     * To package it for OpenSUSE or Fedora run `cpack -G RPM`
 * In case you want to build metashell with a custom clang build:
-	* Let's assume that the clang build is under /llvm/build/Debug+Asserts/
-	* Add the `/llvm/build/Debug+Asserts/bin/clang++` path as the first path in `lib/default_clang_search_path.hpp`
-	* `mkdir bin`
-	* `cd bin`
-	* `cmake .. -DCLANG_LIBRARYDIR=/llvm/build/Debug+Asserts/lib/ -DCLANG_INCLUDEDIR=/llvm/llvm/tools/clang/include/`
-	* `make`
-	* A better way to build metashell with custom clang will be implemented
+    * Let's assume that the clang build is under /llvm/build/Debug+Asserts/
+    * Add the `/llvm/build/Debug+Asserts/bin/clang++` path as the first path in `lib/default_clang_search_path.hpp`
+    * `mkdir bin`
+    * `cd bin`
+    * `cmake .. -DCLANG_LIBRARYDIR=/llvm/build/Debug+Asserts/lib/ -DCLANG_INCLUDEDIR=/llvm/llvm/tools/clang/include/`
+    * `make`
+    * A better way to build metashell with custom clang will be implemented
 
 ## Getting started
 
