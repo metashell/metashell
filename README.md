@@ -370,6 +370,10 @@ pragmas are available only from the shell's command prompt. If you put them in a
 header file and include that header, these pragmas will be ignored.
 
 <!-- pragma_info -->
+`#pragma metashell environment`
+
+Displays the entire content of the environment.
+
 `#pragma metashell help`
 
 Displays a help message.
