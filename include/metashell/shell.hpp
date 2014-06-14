@@ -26,6 +26,7 @@
 #include <string>
 #include <set>
 #include <map>
+#include <stack>
 
 namespace metashell
 {
@@ -74,15 +75,20 @@ namespace metashell
     bool using_precompiled_headers() const;
 
     const environment& env() const;
+
+    void push_environment();
+    void pop_environment();
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;
+    std::stack<std::string> _environment_stack;
 
     void init();
     void rebuild_environment();
+    void rebuild_environment(const std::string& content_);
   };
 }
 

@@ -374,6 +374,14 @@ header file and include that header, these pragmas will be ignored.
 
 Displays the entire content of the environment.
 
+`#pragma metashell environment pop`
+
+Pops the last environment from the environment stack.
+
+`#pragma metashell environment push`
+
+Pushes the current environment to the environment stack.
+
 `#pragma metashell help`
 
 Displays a help message.

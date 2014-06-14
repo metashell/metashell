@@ -16,6 +16,7 @@
 
 #include <metashell/metashell.hpp>
 #include "indenter.hpp"
+#include "exception.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
@@ -415,9 +416,8 @@ const environment& shell::env() const
   return *_env;
 }
 
-void shell::rebuild_environment()
+void shell::rebuild_environment(const std::string& content_)
 {
-  const std::string environ = _env ? _env->get_all() : std::string();
   if (_config.use_precompiled_headers)
   {
     _env.reset(new header_file_environment(_config));
@@ -426,9 +426,32 @@ void shell::rebuild_environment()
   {
     _env.reset(new in_memory_environment("__metashell_internal", _config));
   }
-  if (!environ.empty())
+  if (!content_.empty())
   {
-    _env->append(environ);
+    _env->append(content_);
+  }
+}
+
+void shell::rebuild_environment()
+{
+  rebuild_environment(_env ? _env->get_all() : std::string());
+}
+
+void shell::push_environment()
+{
+  _environment_stack.push(_env->get_all());
+}
+
+void shell::pop_environment()
+{
+  if (_environment_stack.empty())
+  {
+    throw exception("The environment stack is empty.");
+  }
+  else
+  {
+    rebuild_environment(_environment_stack.top());
+    _environment_stack.pop();
   }
 }
 

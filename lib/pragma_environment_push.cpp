@@ -14,35 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_environment.hpp>
+#include <metashell/pragma_environment_push.hpp>
 #include <metashell/shell.hpp>
 
 using namespace metashell;
 
-pragma_environment::pragma_environment(shell& shell_) :
+pragma_environment_push::pragma_environment_push(shell& shell_) :
   _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_environment::clone() const
+pragma_handler_interface* pragma_environment_push::clone() const
 {
-  return new pragma_environment(_shell);
+  return new pragma_environment_push(_shell);
 }
 
-std::string pragma_environment::arguments() const
+std::string pragma_environment_push::arguments() const
 {
   return "";
 }
 
-std::string pragma_environment::description() const
+std::string pragma_environment_push::description() const
 {
-  return "Displays the entire content of the environment.";
+  return "Pushes the current environment to the environment stack.";
 }
 
-void pragma_environment::run(
+void pragma_environment_push::run(
   const token_iterator& args_begin_,
   const token_iterator& args_end_
 ) const
 {
-  _shell.display_normal(_shell.env().get_all());
+  _shell.push_environment();
 }
 
