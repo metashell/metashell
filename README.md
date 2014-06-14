@@ -382,6 +382,10 @@ Pops the last environment from the environment stack.
 
 Pushes the current environment to the environment stack.
 
+`#pragma metashell environment stack`
+
+Displays the size of the environment stack.
+
 `#pragma metashell help`
 
 Displays a help message.

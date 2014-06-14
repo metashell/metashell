@@ -24,6 +24,7 @@
 #include <metashell/pragma_environment.hpp>
 #include <metashell/pragma_environment_push.hpp>
 #include <metashell/pragma_environment_pop.hpp>
+#include <metashell/pragma_environment_stack.hpp>
 
 #include "exception.hpp"
 
@@ -155,6 +156,7 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add("environment", pragma_environment(shell_))
       .add("environment", "push", pragma_environment_push(shell_))
       .add("environment", "pop", pragma_environment_pop(shell_))
+      .add("environment", "stack", pragma_environment_stack(shell_))
       .add("quit", pragma_quit(shell_))
     ;
 }
