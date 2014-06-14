@@ -374,6 +374,10 @@ header file and include that header, these pragmas will be ignored.
 
 Displays a help message.
 
+`#pragma metashell precompiled_headers [on|1|off|0]`
+
+Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
+
 `#pragma metashell quit`
 
 Terminates the shell.

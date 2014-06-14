@@ -69,6 +69,15 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
           shell_
         )
       )
+      .add(
+        "precompiled_headers",
+        pragma_switch(
+          "precompiled header usage",
+          bind(&shell::using_precompiled_headers, &shell_),
+          bind(&shell::using_precompiled_headers, &shell_, _1),
+          shell_
+        )
+      )
       .add("quit", pragma_quit(shell_))
     ;
 }
