@@ -25,21 +25,92 @@
 #include "exception.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+
+#include <cassert>
+#include <iostream>
+#include <sstream>
 
 using namespace metashell;
 
-void pragma_handler_map::process(const metashell_pragma& p_) const
+namespace
 {
-  const std::map<std::string, pragma_handler>::const_iterator i =
-    _handlers.find(p_.name());
-
-  if (i == _handlers.end())
+  bool can_be_part_of_name(const token_iterator::token_type& t_)
   {
-    throw exception("Pragma " + p_.name() + " not found");
+    return t_ == boost::wave::T_IDENTIFIER;
+  }
+
+  boost::optional<token_iterator> is_this_pragma(
+    const std::vector<std::string>& name_,
+    token_iterator begin_,
+    const token_iterator& end_
+  )
+  {
+    using std::string;
+    using std::vector;
+    using boost::optional;
+
+    const vector<string>::const_iterator e = name_.end();
+    vector<string>::const_iterator i = name_.begin();
+    while (
+      begin_ != end_ && i != e
+      && can_be_part_of_name(*begin_)
+      && *i == string(begin_->get_value().begin(), begin_->get_value().end()))
+    {
+      ++i;
+      begin_ = skip_whitespace(skip(begin_));
+    }
+    return
+      i == e ? optional<token_iterator>(begin_) : optional<token_iterator>();
+  }
+
+  std::string name_of_pragma(token_iterator begin_, const token_iterator& end_)
+  {
+    std::ostringstream s;
+    bool first = true;
+    for (
+      ;
+      begin_ != end_ && can_be_part_of_name(*begin_);
+      begin_ = skip_whitespace(skip(begin_))
+    )
+    {
+      s << (first ? "" : " ") << begin_->get_value();
+      first = false;
+    }
+    return s.str();
+  }
+}
+
+void pragma_handler_map::process(const token_iterator& begin_) const
+{
+  using boost::optional;
+
+  const token_iterator e = end_of_pragma_argument_list(begin_);
+
+  token_iterator longest_fit_begin = e;
+  const pragma_handler* longest_fit_handler = 0;
+  int longest_fit_len = -1;
+
+  typedef std::pair<const std::vector<std::string>, pragma_handler> np;
+  BOOST_FOREACH(const np& p, _handlers)
+  {
+    if (const optional<token_iterator> i = is_this_pragma(p.first, begin_, e))
+    {
+      if (longest_fit_len < int(p.first.size()))
+      {
+        longest_fit_begin = *i;
+        longest_fit_handler = &p.second;
+        longest_fit_len = p.first.size();
+      }
+    }
+  }
+  if (longest_fit_handler)
+  {
+    longest_fit_handler->run(longest_fit_begin, e);
   }
   else
   {
-    i->second.run(p_);
+    throw exception("Pragma " + name_of_pragma(begin_, e) + " not found");
   }
 }
 
@@ -81,4 +152,5 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add("quit", pragma_quit(shell_))
     ;
 }
+
 

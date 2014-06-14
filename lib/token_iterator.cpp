@@ -35,3 +35,21 @@ token_iterator metashell::begin_tokens(
     );
 }
 
+token_iterator metashell::skip(token_iterator i_)
+{
+  ++i_;
+  return i_;
+}
+
+token_iterator metashell::skip_whitespace(token_iterator i_)
+{
+  const token_iterator end;
+  assert(i_ != end);
+  if (IS_CATEGORY(*i_, boost::wave::WhiteSpaceTokenType))
+  {
+    ++i_;
+  }
+  assert(i_ != end);
+  return i_;
+}
+

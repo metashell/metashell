@@ -35,6 +35,9 @@ namespace metashell
     const std::string& s_,
     const std::string& input_filename_
   );
+
+  token_iterator skip(token_iterator i_);
+  token_iterator skip_whitespace(token_iterator i_);
 }
 
 #endif

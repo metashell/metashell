@@ -17,12 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/token_iterator.hpp>
+
 #include <string>
 
 namespace metashell
 {
-  class metashell_pragma;
-
   class pragma_handler_interface
   {
   public:
@@ -33,8 +33,13 @@ namespace metashell
     virtual std::string arguments() const = 0;
     virtual std::string description() const = 0;
 
-    virtual void run(const metashell_pragma& p_) const = 0;
+    virtual void run(
+      const token_iterator& args_begin_,
+      const token_iterator& args_end_
+    ) const = 0;
   };
+
+  void run(const pragma_handler_interface& handler_, const std::string& args_);
 }
 
 #endif

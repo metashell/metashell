@@ -20,7 +20,6 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
-#include <metashell/metashell_pragma.hpp>
 
 #include <boost/scoped_ptr.hpp>
 

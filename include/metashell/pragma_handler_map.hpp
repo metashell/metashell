@@ -18,13 +18,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler.hpp>
+#include <metashell/token_iterator.hpp>
 
 #include <map>
+#include <vector>
 #include <string>
 
 namespace metashell
 {
-  class metashell_pragma;
   class shell;
 
   class pragma_handler_map
@@ -34,13 +35,38 @@ namespace metashell
       // requires: Handler implements pragma_handler_interface
     pragma_handler_map& add(const std::string& name_, Handler handler_)
     {
-      _handlers.insert(std::make_pair(name_, pragma_handler(handler_)));
+      _handlers.insert(
+        std::make_pair(
+          std::vector<std::string>(1, name_),
+          pragma_handler(handler_)
+        )
+      );
       return *this;
     }
 
-    void process(const metashell_pragma& p_) const;
+    template <class Handler>
+      // requires: Handler implements pragma_handler_interface
+    pragma_handler_map& add(
+      const std::string& name1_,
+      const std::string& name2_,
+      Handler handler_
+    )
+    {
+      typedef std::vector<std::string> svec;
 
-    typedef std::map<std::string, pragma_handler>::const_iterator iterator;
+      std::pair<svec, pragma_handler> p(svec(0), pragma_handler(handler_));
+      p.first.reserve(2);
+      p.first.push_back(name1_);
+      p.first.push_back(name2_);
+      _handlers.insert(p);
+      return *this;
+    }
+
+    void process(const token_iterator& p_) const;
+
+    typedef
+      std::map<std::vector<std::string>, pragma_handler>::const_iterator
+      iterator;
     typedef iterator const_iterator;
 
     iterator begin() const;
@@ -48,7 +74,7 @@ namespace metashell
 
     static pragma_handler_map build_default(shell& shell_);
   private:
-    std::map<std::string, pragma_handler> _handlers;
+    std::map<std::vector<std::string>, pragma_handler> _handlers;
   };
 }
 

@@ -22,6 +22,7 @@
 #include <metashell/token_iterator.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
+#include <metashell/metashell_pragma.hpp>
 
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
@@ -266,7 +267,7 @@ void shell::line_available(const std::string& s_)
 
       if (!is_empty_line(s_, input_filename()))
       {
-        if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
+        if (boost::optional<token_iterator> p = parse_pragma(s_))
         {
           _pragma_handlers.process(*p);
         }

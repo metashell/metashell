@@ -16,7 +16,6 @@
 
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/pragma_handler_interface.hpp>
-#include <metashell/metashell_pragma.hpp>
 
 #include <just/test.hpp>
 
@@ -37,7 +36,10 @@ namespace
     virtual std::string arguments() const { return "a|b|c"; }
     virtual std::string description() const { return "Foo bar"; }
 
-    virtual void run(const metashell_pragma& p_) const
+    virtual void run(
+      const token_iterator& args_begin_,
+      const token_iterator& args_end_
+    ) const
     {
       _run_flag = true;
     }
@@ -48,9 +50,8 @@ namespace
 
 JUST_TEST_CASE(test_test_handler_sets_run_flag)
 {
-  const metashell_pragma p = *metashell_pragma::parse("#pragma metashell foo");
   bool flag = false;
-  test_handler(flag).run(p);
+  run(test_handler(flag), "foo");
 
   JUST_ASSERT(flag);
 }
@@ -58,9 +59,9 @@ JUST_TEST_CASE(test_test_handler_sets_run_flag)
 JUST_TEST_CASE(test_processing_non_existing_handler)
 {
   pragma_handler_map m;
-  const metashell_pragma p = *metashell_pragma::parse("#pragma metashell foo");
+  const std::string p = /* #pragma metashell */ "foo";
 
-  JUST_ASSERT_THROWS_SOMETHING(m.process(p));
+  JUST_ASSERT_THROWS_SOMETHING(m.process(begin_tokens(p, "<str>")));
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)
@@ -68,10 +69,54 @@ JUST_TEST_CASE(test_processing_existing_handler)
   bool foo_run = false;
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
-  const metashell_pragma p = *metashell_pragma::parse("#pragma metashell foo");
+  const std::string p = /* #pragma metashell */ "foo";
 
-  m.process(p);
+  m.process(begin_tokens(p, "<str>"));
 
   JUST_ASSERT(foo_run);
+}
+
+JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
+{
+  bool foo_bar_run = false;
+  pragma_handler_map m;
+  m.add("foo", "bar", test_handler(foo_bar_run));
+  const std::string p = /* #pragma metashell */ "foo bar";
+
+  m.process(begin_tokens(p, "<str>"));
+
+  JUST_ASSERT(foo_bar_run);
+}
+
+JUST_TEST_CASE(
+  test_pragma_with_two_token_name_is_called_when_prefix_is_available
+)
+{
+  bool foo_bar_run = false;
+  bool foo_run = false;
+  pragma_handler_map m;
+  m.add("foo", test_handler(foo_run));
+  m.add("foo", "bar", test_handler(foo_bar_run));
+  const std::string p = /* #pragma metashell */ "foo bar";
+
+  m.process(begin_tokens(p, "<str>"));
+
+  JUST_ASSERT(!foo_run);
+  JUST_ASSERT(foo_bar_run);
+}
+
+JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
+{
+  bool foo_bar_run = false;
+  bool foo_run = false;
+  pragma_handler_map m;
+  m.add("foo", test_handler(foo_run));
+  m.add("foo", "bar", test_handler(foo_bar_run));
+  const std::string p = /* #pragma metashell */ "foo x";
+
+  m.process(begin_tokens(p, "<str>"));
+
+  JUST_ASSERT(foo_run);
+  JUST_ASSERT(!foo_bar_run);
 }
 

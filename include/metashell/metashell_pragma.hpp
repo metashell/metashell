@@ -25,23 +25,9 @@
 
 namespace metashell
 {
-  class metashell_pragma
-  {
-  public:
-    std::string name() const;
+  boost::optional<token_iterator> parse_pragma(const std::string& s_);
 
-    token_iterator begin() const;
-    token_iterator end() const;
-
-    static boost::optional<metashell_pragma> parse(const std::string& s_);
-  private:
-    std::string _line;
-    token_iterator _name;
-    token_iterator _begin;
-    token_iterator _end;
-
-    metashell_pragma(const std::string& line_);
-  };
+  token_iterator end_of_pragma_argument_list(token_iterator begin_);
 }
 
 #endif

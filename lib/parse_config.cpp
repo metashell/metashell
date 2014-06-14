@@ -25,6 +25,8 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <boost/foreach.hpp>
 
 #include <string>
@@ -55,16 +57,18 @@ namespace
     };
 
   void show_markdown(
-    const std::string& name_,
+    const std::vector<std::string>& name_,
     const pragma_handler& h_,
     std::ostream& out_
   )
   {
+    using boost::algorithm::join;
     using std::endl;
+
     const std::string args = h_.arguments();
 
     out_
-      << "`#pragma metashell " << name_ << (args.empty() ? "" : " ")
+      << "`#pragma metashell " << join(name_, " ") << (args.empty() ? "" : " ")
       << args << "`" << endl
       << endl
       << h_.description() << endl
@@ -76,7 +80,7 @@ namespace
     shell_stub sh;
     const pragma_handler_map m = pragma_handler_map::build_default(sh);
 
-    typedef std::pair<std::string, pragma_handler> sp;
+    typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     BOOST_FOREACH(const sp& p, m)
     {
       show_markdown(p.first, p.second, std::cout);

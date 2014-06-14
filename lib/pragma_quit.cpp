@@ -38,7 +38,10 @@ std::string pragma_quit::description() const
   return "Terminates the shell.";
 }
 
-void pragma_quit::run(const metashell_pragma&) const
+void pragma_quit::run(
+  const token_iterator& args_begin_,
+  const token_iterator& args_end_
+) const
 {
   _shell.stop();
 }
