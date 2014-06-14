@@ -17,6 +17,8 @@
 #include "test_shell.hpp"
 
 #include <metashell/config.hpp>
+#include <metashell/header_file_environment.hpp>
+#include <metashell/in_memory_environment.hpp>
 
 #include <just/test.hpp>
 
@@ -75,5 +77,105 @@ JUST_TEST_CASE(test_shell_stopped_after_stop)
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
+}
+
+JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = false;
+
+  test_shell sh(cfg, 80);
+
+  JUST_ASSERT(!sh.using_precompiled_headers());
+}
+
+JUST_TEST_CASE(test_shell_using_precompiled_headers)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = true;
+
+  test_shell sh(cfg, 80);
+
+  JUST_ASSERT(sh.using_precompiled_headers());
+}
+
+JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = false;
+
+  test_shell sh(cfg, 80);
+  sh.using_precompiled_headers(true);
+
+  JUST_ASSERT(sh.using_precompiled_headers());
+}
+
+JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = true;
+
+  test_shell sh(cfg, 80);
+  sh.using_precompiled_headers(false);
+
+  JUST_ASSERT(!sh.using_precompiled_headers());
+}
+
+JUST_TEST_CASE(
+  test_shell_with_enabled_precompiled_headers_uses_header_file_environment
+)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = false;
+
+  test_shell sh(cfg, 80);
+  sh.using_precompiled_headers(true);
+  
+  JUST_ASSERT(
+    dynamic_cast<const metashell::header_file_environment*>(&sh.env())
+  );
+}
+
+JUST_TEST_CASE(
+  test_shell_with_disabled_precompiled_headers_uses_in_memory_environment
+)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = true;
+
+  test_shell sh(cfg, 80);
+  sh.using_precompiled_headers(false);
+  
+  JUST_ASSERT(
+    dynamic_cast<const metashell::in_memory_environment*>(&sh.env())
+  );
+}
+
+JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = false;
+
+  test_shell sh(cfg, 80);
+  sh.store_in_buffer("typedef int foo;\n");
+  const std::string env_before = sh.env().get_all();
+
+  sh.using_precompiled_headers(true);
+  
+  JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
+}
+
+JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
+{
+  metashell::config cfg = metashell::config::empty();
+  cfg.use_precompiled_headers = true;
+
+  test_shell sh(cfg, 80);
+  sh.store_in_buffer("typedef int foo;\n");
+  const std::string env_before = sh.env().get_all();
+
+  sh.using_precompiled_headers(false);
+  
+  JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
 

@@ -46,6 +46,8 @@ namespace metashell
     virtual const headers& get_headers() const;
 
     void add_clang_arg(const std::string& arg_);
+
+    virtual std::string get_all() const;
   private:
     std::string _buffer;
     headers _headers;

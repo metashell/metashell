@@ -70,6 +70,11 @@ namespace metashell
 
     bool stopped() const;
     void stop();
+
+    void using_precompiled_headers(bool enabled_);
+    bool using_precompiled_headers() const;
+
+    const environment& env() const;
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
@@ -78,6 +83,7 @@ namespace metashell
     bool _stopped;
 
     void init();
+    void rebuild_environment();
   };
 }
 

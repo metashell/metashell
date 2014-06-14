@@ -167,18 +167,11 @@ namespace
 }
 
 shell::shell(const config& config_) :
-  _env(
-    config_.use_precompiled_headers ?
-      static_cast<environment*>(
-        new header_file_environment(true, config_)
-      ) :
-      static_cast<environment*>(
-        new in_memory_environment("__metashell_internal", config_)
-      )
-  ),
+  _env(),
   _config(config_),
   _stopped(false)
 {
+  rebuild_environment();
   init();
 }
 
@@ -403,5 +396,38 @@ bool shell::stopped() const
 void shell::stop()
 {
   _stopped = true;
+}
+
+bool shell::using_precompiled_headers() const
+{
+  return _config.use_precompiled_headers;
+}
+
+void shell::using_precompiled_headers(bool enabled_)
+{
+  _config.use_precompiled_headers = enabled_;
+  rebuild_environment();
+}
+
+const environment& shell::env() const
+{
+  return *_env;
+}
+
+void shell::rebuild_environment()
+{
+  const std::string environ = _env ? _env->get_all() : std::string();
+  if (_config.use_precompiled_headers)
+  {
+    _env.reset(new header_file_environment(_config));
+  }
+  else
+  {
+    _env.reset(new in_memory_environment("__metashell_internal", _config));
+  }
+  if (!environ.empty())
+  {
+    _env->append(environ);
+  }
 }
 

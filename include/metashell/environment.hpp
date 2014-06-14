@@ -40,6 +40,9 @@ namespace metashell
     virtual const std::vector<std::string>& clang_arguments() const = 0;
 
     virtual const headers& get_headers() const = 0;
+
+    // Returns parts that are in precompiled header files as well
+    virtual std::string get_all() const = 0;
   };
 }
 
