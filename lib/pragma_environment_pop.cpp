@@ -44,5 +44,6 @@ void pragma_environment_pop::run(
 ) const
 {
   _shell.pop_environment();
+  _shell.display_environment_stack_size();
 }
 

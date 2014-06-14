@@ -78,6 +78,7 @@ namespace metashell
 
     void push_environment();
     void pop_environment();
+    void display_environment_stack_size();
   private:
     boost::scoped_ptr<environment> _env;
     config _config;

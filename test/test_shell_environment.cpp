@@ -63,3 +63,30 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
   JUST_ASSERT_EQUAL(old_env, sh.env().get_all());
 }
 
+JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
+{
+  test_shell sh;
+  sh.display_environment_stack_size();
+
+  JUST_ASSERT_EQUAL("// Environment stack is empty\n", sh.output());
+}
+
+JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
+{
+  test_shell sh;
+  sh.push_environment();
+  sh.display_environment_stack_size();
+
+  JUST_ASSERT_EQUAL("// Environment stack has 1 entry\n", sh.output());
+}
+
+JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
+{
+  test_shell sh;
+  sh.push_environment();
+  sh.push_environment();
+  sh.display_environment_stack_size();
+
+  JUST_ASSERT_EQUAL("// Environment stack has 2 entries\n", sh.output());
+}
+

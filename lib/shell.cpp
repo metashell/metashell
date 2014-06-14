@@ -455,3 +455,23 @@ void shell::pop_environment()
   }
 }
 
+void shell::display_environment_stack_size()
+{
+  if (_environment_stack.empty())
+  {
+    display_normal("// Environment stack is empty\n");
+  }
+  else if (_environment_stack.size() == 1)
+  {
+    display_normal("// Environment stack has 1 entry\n");
+  }
+  else
+  {
+    std::ostringstream s;
+    s
+      << "// Environment stack has " << _environment_stack.size()
+      << " entries\n";
+    display_normal(s.str());
+  }
+}
+
