@@ -374,6 +374,10 @@ header file and include that header, these pragmas will be ignored.
 
 Displays the entire content of the environment.
 
+`#pragma metashell environment add <code>`
+
+Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
+
 `#pragma metashell environment pop`
 
 Pops the last environment from the environment stack.
@@ -385,6 +389,10 @@ Pushes the current environment to the environment stack.
 `#pragma metashell environment stack`
 
 Displays the size of the environment stack.
+
+`#pragma metashell evaluate <code>`
+
+Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
 
 `#pragma metashell help`
 

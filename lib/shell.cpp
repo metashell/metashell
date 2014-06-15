@@ -212,7 +212,7 @@ void shell::line_available(const std::string& s_)
         }
         else
         {
-          display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+          run_metaprogram(s_);
         }
       }
     }
@@ -407,5 +407,10 @@ void shell::display_environment_stack_size()
       << " entries\n";
     display_normal(s.str());
   }
+}
+
+void shell::run_metaprogram(const std::string& s_)
+{
+  display(eval_tmp(*_env, s_, _config, input_filename()), *this);
 }
 
