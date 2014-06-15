@@ -230,16 +230,29 @@ bool metashell::is_environment_setup_command(
 {
   try
   {
-    const token_iterator it = begin_tokens(s_, input_filename_), end;
+    return is_environment_setup_command(begin_tokens(s_, input_filename_));
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
 
-    if (it == end)
+bool metashell::is_environment_setup_command(
+  token_iterator begin_,
+  const token_iterator& end_
+)
+{
+  try
+  {
+    if (begin_ == end_)
     {
       // empty input is not a query
       return true;
     }
     else
     {
-      const boost::wave::token_id id = *it;
+      const boost::wave::token_id id = *begin_;
       if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
       {
         switch (id)
@@ -257,7 +270,7 @@ bool metashell::is_environment_setup_command(
         case boost::wave::T_VOID:
         case boost::wave::T_VOLATILE:
         case boost::wave::T_WCHART:
-          return has_typedef(it, end);
+          return has_typedef(begin_, end_);
         case boost::wave::T_SIZEOF:
         case boost::wave::T_CONSTCAST:
         case boost::wave::T_STATICCAST:
@@ -270,7 +283,7 @@ bool metashell::is_environment_setup_command(
       }
       else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
       {
-        return it->get_value() == "constexpr" || has_typedef(it, end);
+        return begin_->get_value() == "constexpr" || has_typedef(begin_, end_);
       }
       else
       {

@@ -19,6 +19,7 @@
 
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
+#include <metashell/token_iterator.hpp>
 
 #include "result.hpp"
 
@@ -55,6 +56,11 @@ namespace metashell
   bool is_environment_setup_command(
     const std::string& s_,
     const std::string& input_filename_
+  );
+
+  bool is_environment_setup_command(
+    token_iterator begin_,
+    const token_iterator& end_ = token_iterator()
   );
 }
 

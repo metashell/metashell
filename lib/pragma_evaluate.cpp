@@ -51,7 +51,7 @@ void pragma_evaluate::run(
 
   _shell.run_metaprogram(cmd);
 
-  if (!is_environment_setup_command(cmd, "<pragma args>"))
+  if (!is_environment_setup_command(args_begin_, args_end_))
   {
     _shell.display_normal(
       indenter(_shell.width(), "")
