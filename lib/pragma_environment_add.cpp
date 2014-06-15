@@ -16,6 +16,8 @@
 
 #include <metashell/pragma_environment_add.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/metashell.hpp>
+#include "indenter.hpp"
 
 using namespace metashell;
 
@@ -45,6 +47,36 @@ void pragma_environment_add::run(
   const token_iterator& args_end_
 ) const
 {
-  _shell.store_in_buffer(tokens_to_string(args_begin_, args_end_));
+  const std::string cmd = tokens_to_string(args_begin_, args_end_);
+
+  _shell.store_in_buffer(cmd);
+
+  if (is_environment_setup_command(cmd, "<pragma args>"))
+  {
+    _shell.display_normal(
+      indenter(_shell.width(), "")
+        .left_align(
+          "You don't need the environment add pragma to add this to the"
+          " environment. The following command does this as well:",
+          "// "
+        )
+        .left_align(cmd)
+        .str()
+    );
+  }
+  else
+  {
+    _shell.display_normal(
+      indenter(_shell.width(), "// ")
+        .left_align(
+          "Metashell (incorrectly) thinks that this command should execute a"
+          " metaprogram and would not add it to the environment without using"
+          " the \"environment add\" pragma. Please file a bug report containing"
+          " this command (" + cmd + ") at"
+          " https://github.com/sabel83/metashell/issues. Thank you."
+        )
+        .str()
+    );
+  }
 }
 

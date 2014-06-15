@@ -150,3 +150,16 @@ JUST_TEST_CASE(test_environment_add_invalid_code_displays_error)
   JUST_ASSERT(!sh.error().empty());
 }
 
+JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
+{
+  test_shell sh(metashell::config::default_config(), 1024);
+  sh.line_available("#pragma metashell environment add typedef int x;");
+
+  JUST_ASSERT_EQUAL(
+    "// You don't need the environment add pragma to add this to the"
+    " environment. The following command does this as well:\n"
+    "typedef int x;\n",
+    sh.output()
+  );
+}
+

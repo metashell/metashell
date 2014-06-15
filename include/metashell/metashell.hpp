@@ -51,6 +51,11 @@ namespace metashell
   );
 
   bool file_exists(const std::string& fn_);
+
+  bool is_environment_setup_command(
+    const std::string& s_,
+    const std::string& input_filename_
+  );
 }
 
 #endif

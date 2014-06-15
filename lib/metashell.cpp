@@ -53,6 +53,11 @@ namespace
       );
     return make_pair(index_.parse_code(code, config_, env_), code.content());
   }
+
+  bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
+  {
+    return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
+  }
 }
 
 result metashell::validate_code(
@@ -216,5 +221,66 @@ bool metashell::file_exists(const std::string& fn_)
 {
   std::ifstream f(fn_.c_str());
   return f;
+}
+
+bool metashell::is_environment_setup_command(
+  const std::string& s_,
+  const std::string& input_filename_
+)
+{
+  try
+  {
+    const token_iterator it = begin_tokens(s_, input_filename_), end;
+
+    if (it == end)
+    {
+      // empty input is not a query
+      return true;
+    }
+    else
+    {
+      const boost::wave::token_id id = *it;
+      if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
+      {
+        switch (id)
+        {
+        case boost::wave::T_BOOL:
+        case boost::wave::T_CHAR:
+        case boost::wave::T_CONST:
+        case boost::wave::T_DOUBLE:
+        case boost::wave::T_FLOAT:
+        case boost::wave::T_INT:
+        case boost::wave::T_LONG:
+        case boost::wave::T_SHORT:
+        case boost::wave::T_SIGNED:
+        case boost::wave::T_UNSIGNED:
+        case boost::wave::T_VOID:
+        case boost::wave::T_VOLATILE:
+        case boost::wave::T_WCHART:
+          return has_typedef(it, end);
+        case boost::wave::T_SIZEOF:
+        case boost::wave::T_CONSTCAST:
+        case boost::wave::T_STATICCAST:
+        case boost::wave::T_DYNAMICCAST:
+        case boost::wave::T_REINTERPRETCAST:
+          return false;
+        default:
+          return true;
+        }
+      }
+      else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
+      {
+        return it->get_value() == "constexpr" || has_typedef(it, end);
+      }
+      else
+      {
+        return IS_CATEGORY(id, boost::wave::PPTokenType);
+      }
+    }
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
 
