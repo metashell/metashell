@@ -18,6 +18,19 @@
 
 #include <just/test.hpp>
 
+#include <string>
+#include <cassert>
+
+namespace
+{
+  std::string appended_since(const std::string& old_, const std::string& new_)
+  {
+    assert(new_.size() >= old_.size());
+    assert(new_.substr(0, old_.size()) == old_);
+    return new_.substr(old_.size());
+  }
+}
+
 JUST_TEST_CASE(test_popping_environment_from_empty_queue)
 {
   test_shell sh;
@@ -88,5 +101,52 @@ JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
   sh.display_environment_stack_size();
 
   JUST_ASSERT_EQUAL("// Environment stack has 2 entries\n", sh.output());
+}
+
+JUST_TEST_CASE(test_appended_since_when_nothing_appended)
+{
+  JUST_ASSERT_EQUAL("", appended_since("", ""));
+}
+
+JUST_TEST_CASE(test_appended_since_when_something_appended)
+{
+  JUST_ASSERT_EQUAL(" world", appended_since("hello", "hello world"));
+}
+
+JUST_TEST_CASE(test_extending_environment_with_pragma)
+{
+  test_shell sh;
+  const std::string original_env = sh.env().get_all();
+
+  sh.line_available("#pragma metashell environment add typedef int x;");
+  sh.line_available("#pragma metashell environment");
+
+  JUST_ASSERT_EQUAL(
+    "\ntypedef int x;",
+    appended_since(original_env, sh.env().get_all())
+  );
+}
+
+JUST_TEST_CASE(test_environment_add_invalid_code_does_not_change_environment)
+{
+  test_shell sh;
+  const std::string original_env = sh.env().get_all();
+
+  sh.line_available(
+    "#pragma metashell environment add typedef nonexisting_type x;"
+  );
+  sh.line_available("#pragma metashell environment");
+
+  JUST_ASSERT_EQUAL(original_env, sh.env().get_all());
+}
+
+JUST_TEST_CASE(test_environment_add_invalid_code_displays_error)
+{
+  test_shell sh;
+  sh.line_available(
+    "#pragma metashell environment add typedef nonexisting_type x;"
+  );
+
+  JUST_ASSERT(!sh.error().empty());
 }
 
