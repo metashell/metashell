@@ -493,45 +493,25 @@ pragmas are available only from the shell's command prompt. If you put them in a
 header file and include that header, these pragmas will be ignored.
 
 <!-- pragma_info -->
-`#pragma metashell environment`
+* `#pragma metashell environment` <br /> <br /> Displays the entire content of the environment.
 
-Displays the entire content of the environment.
+* `#pragma metashell environment add <code>` <br /> <br /> Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
 
-`#pragma metashell environment add <code>`
+* `#pragma metashell environment pop` <br /> <br /> Pops the last environment from the environment stack.
 
-Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
+* `#pragma metashell environment push` <br /> <br /> Pushes the current environment to the environment stack.
 
-`#pragma metashell environment pop`
+* `#pragma metashell environment stack` <br /> <br /> Displays the size of the environment stack.
 
-Pops the last environment from the environment stack.
+* `#pragma metashell evaluate <code>` <br /> <br /> Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
 
-`#pragma metashell environment push`
+* `#pragma metashell help` <br /> <br /> Displays a help message.
 
-Pushes the current environment to the environment stack.
+* `#pragma metashell precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
-`#pragma metashell environment stack`
+* `#pragma metashell quit` <br /> <br /> Terminates the shell.
 
-Displays the size of the environment stack.
-
-`#pragma metashell evaluate <code>`
-
-Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
-
-`#pragma metashell help`
-
-Displays a help message.
-
-`#pragma metashell precompiled_headers [on|1|off|0]`
-
-Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
-
-`#pragma metashell quit`
-
-Terminates the shell.
-
-`#pragma metashell verbose [on|1|off|0]`
-
-Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
+* `#pragma metashell verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
 
 <!-- pragma_info -->
