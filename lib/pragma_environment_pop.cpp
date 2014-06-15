@@ -1,6 +1,3 @@
-#ifndef METASHELL_PRAGMA_HELP_HPP
-#define METASHELL_PRAGMA_HELP_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,32 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/pragma_environment_pop.hpp>
+#include <metashell/shell.hpp>
 
-#include <string>
+using namespace metashell;
 
-namespace metashell
+pragma_environment_pop::pragma_environment_pop(shell& shell_) :
+  _shell(shell_)
+{}
+
+pragma_handler_interface* pragma_environment_pop::clone() const
 {
-  class shell;
-
-  class pragma_help : public pragma_handler_interface
-  {
-  public:
-    explicit pragma_help(shell& shell_);
-
-    virtual pragma_handler_interface* clone() const;
-
-    virtual std::string arguments() const;
-    virtual std::string description() const;
-
-    virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
-    ) const;
-  private:
-    shell& _shell;
-  };
+  return new pragma_environment_pop(_shell);
 }
 
-#endif
+std::string pragma_environment_pop::arguments() const
+{
+  return "";
+}
+
+std::string pragma_environment_pop::description() const
+{
+  return "Pops the last environment from the environment stack.";
+}
+
+void pragma_environment_pop::run(
+  const token_iterator& args_begin_,
+  const token_iterator& args_end_
+) const
+{
+  _shell.pop_environment();
+  _shell.display_environment_stack_size();
+}
 

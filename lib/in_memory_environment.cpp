@@ -119,4 +119,8 @@ void in_memory_environment::add_clang_arg(const std::string& arg_)
   _clang_args.push_back(arg_);
 }
 
+std::string in_memory_environment::get_all() const
+{
+  return _buffer;
+}
 

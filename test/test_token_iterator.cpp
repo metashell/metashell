@@ -1,6 +1,3 @@
-#ifndef METASHELL_PRAGMA_HELP_HPP
-#define METASHELL_PRAGMA_HELP_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,32 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/token_iterator.hpp>
 
-#include <string>
+#include <just/test.hpp>
 
-namespace metashell
+using namespace metashell;
+
+JUST_TEST_CASE(test_formatting_empty_token_list)
 {
-  class shell;
-
-  class pragma_help : public pragma_handler_interface
-  {
-  public:
-    explicit pragma_help(shell& shell_);
-
-    virtual pragma_handler_interface* clone() const;
-
-    virtual std::string arguments() const;
-    virtual std::string description() const;
-
-    virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
-    ) const;
-  private:
-    shell& _shell;
-  };
+  JUST_ASSERT_EQUAL("", tokens_to_string(token_iterator(), token_iterator()));
 }
 
-#endif
+JUST_TEST_CASE(test_formatting_one_token)
+{
+  const std::string src = "int hello";
+  const token_iterator b = begin_tokens(src, "<test>");
+
+  JUST_ASSERT_EQUAL("int", tokens_to_string(b, skip(b)));
+}
+
+JUST_TEST_CASE(test_formatting_more_tokens)
+{
+  const std::string src = "int hello";
+  const token_iterator b = begin_tokens(src, "<test>");
+
+  JUST_ASSERT_EQUAL("int hello", tokens_to_string(b, token_iterator()));
+}
 

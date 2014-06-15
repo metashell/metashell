@@ -42,7 +42,10 @@ namespace metashell
     virtual std::string arguments() const;
     virtual std::string description() const;
 
-    virtual void run(const metashell_pragma& p_) const;
+    virtual void run(
+      const token_iterator& args_begin_,
+      const token_iterator& args_end_
+    ) const;
   private:
     boost::function<bool()> _query;
     boost::function<void(bool)> _update;

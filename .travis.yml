@@ -16,3 +16,5 @@ script:
   - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic -DMETASHELL_DISABLE_CONSTEXPR"
   - make
   - make test || (cat Testing/Temporary/LastTest.log && false)
+  # Test that the documentation about the built-in pragmas is up to date
+  - app/metashell --show_pragma_help | ../tools/replace_part -i ../README.md -o - -r - | diff ../README.md -

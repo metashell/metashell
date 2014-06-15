@@ -80,11 +80,14 @@ std::string pragma_switch::description() const
     + _name + " is turned on.";
 }
 
-void pragma_switch::run(const metashell_pragma& p_) const
+void pragma_switch::run(
+  const token_iterator& args_begin_,
+  const token_iterator& args_end_
+) const
 {
-  token_iterator i = p_.begin();
+  token_iterator i = args_begin_;
 
-  if (i != p_.end())
+  if (i != args_end_)
   {
     const std::string v(i->get_value().begin(), i->get_value().end());
     if (valid_argument(v))

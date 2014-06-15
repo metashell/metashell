@@ -15,11 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/parse_config.hpp>
+#include <metashell/config.hpp>
 #include <metashell/metashell.hpp>
+#include <metashell/pragma_handler_map.hpp>
+#include <metashell/shell.hpp>
+#include <metashell/shell_stub.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
+
+#include <boost/algorithm/string/join.hpp>
+
+#include <boost/foreach.hpp>
 
 #include <string>
 #include <iostream>
@@ -47,6 +55,36 @@ namespace
       ""
       #include "default_clang_search_path.hpp"
     };
+
+  void show_markdown(
+    const std::vector<std::string>& name_,
+    const pragma_handler& h_,
+    std::ostream& out_
+  )
+  {
+    using boost::algorithm::join;
+    using std::endl;
+
+    const std::string args = h_.arguments();
+
+    out_
+      << "* `#pragma metashell " << join(name_, " ")
+      << (args.empty() ? "" : " ") << args << "` <br /> <br /> "
+      << h_.description() << endl
+      << endl;
+  }
+
+  void show_pragma_help()
+  {
+    shell_stub sh;
+    const pragma_handler_map m = pragma_handler_map::build_default(sh);
+
+    typedef std::pair<std::vector<std::string>, pragma_handler> sp;
+    BOOST_FOREACH(const sp& p, m)
+    {
+      show_markdown(p.first, p.second, std::cout);
+    }
+  }
 }
 
 parse_config_result metashell::parse_config(
@@ -109,6 +147,10 @@ parse_config_result metashell::parse_config(
       "with templight support. Please see docs for "
       "more information."
     )
+    (
+      "show_pragma_help",
+      "Display help for pragmas in MarkDown format and exit."
+    )
     ;
 
   try
@@ -131,6 +173,11 @@ parse_config_result metashell::parse_config(
       {
         show_help(*out_, desc);
       }
+      return exit_without_error;
+    }
+    else if (vm.count("show_pragma_help"))
+    {
+      show_pragma_help();
       return exit_without_error;
     }
     else

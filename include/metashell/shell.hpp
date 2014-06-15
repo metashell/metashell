@@ -19,14 +19,14 @@
 
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
-#include <metashell/pragma_handler.hpp>
-#include <metashell/metashell_pragma.hpp>
+#include <metashell/pragma_handler_map.hpp>
 
 #include <boost/scoped_ptr.hpp>
 
 #include <string>
 #include <set>
 #include <map>
+#include <stack>
 
 namespace metashell
 {
@@ -55,6 +55,7 @@ namespace metashell
     void cancel_operation();
 
     bool store_in_buffer(const std::string& s_);
+    void run_metaprogram(const std::string& s_);
 
     static const char* input_filename();
 
@@ -63,15 +64,33 @@ namespace metashell
       std::set<std::string>& out_
     ) const;
 
-    const std::map<std::string, pragma_handler>& pragma_handlers() const;
+    const pragma_handler_map& pragma_handlers() const;
+
+    void verbose(bool enabled_);
+    bool verbose() const;
+
+    bool stopped() const;
+    void stop();
+
+    void using_precompiled_headers(bool enabled_);
+    bool using_precompiled_headers() const;
+
+    const environment& env() const;
+
+    void push_environment();
+    void pop_environment();
+    void display_environment_stack_size();
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;
-    std::map<std::string, pragma_handler> _pragma_handlers;
+    pragma_handler_map _pragma_handlers;
+    bool _stopped;
+    std::stack<std::string> _environment_stack;
 
     void init();
-    void process_pragma(const metashell_pragma& p_);
+    void rebuild_environment();
+    void rebuild_environment(const std::string& content_);
   };
 }
 

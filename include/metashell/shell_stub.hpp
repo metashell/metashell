@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_HELP_HPP
-#define METASHELL_PRAGMA_HELP_HPP
+#ifndef METASHELL_SHELL_STUB_HPP
+#define METASHELL_SHELL_STUB_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,30 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
-
-#include <string>
+#include <metashell/shell.hpp>
 
 namespace metashell
 {
-  class shell;
-
-  class pragma_help : public pragma_handler_interface
+  class shell_stub : public shell
   {
   public:
-    explicit pragma_help(shell& shell_);
+    shell_stub();
 
-    virtual pragma_handler_interface* clone() const;
+    virtual void add_history(const std::string& s_);
+  
+    virtual void display_normal(const std::string& s_) const;
+    virtual void display_info(const std::string& s_) const;
+    virtual void display_error(const std::string& s_) const;
 
-    virtual std::string arguments() const;
-    virtual std::string description() const;
-
-    virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
-    ) const;
-  private:
-    shell& _shell;
+    virtual unsigned int width() const;
   };
 }
 

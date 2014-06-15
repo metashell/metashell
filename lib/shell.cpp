@@ -16,20 +16,18 @@
 
 #include <metashell/metashell.hpp>
 #include "indenter.hpp"
+#include "exception.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
 #include <metashell/token_iterator.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
-
-#include <metashell/pragma_help.hpp>
-#include <metashell/pragma_switch.hpp>
+#include <metashell/metashell_pragma.hpp>
 
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
 #include <boost/foreach.hpp>
-#include <boost/bind.hpp>
 
 #include <cctype>
 
@@ -37,82 +35,6 @@ using namespace metashell;
 
 namespace
 {
-  template <class Handler>
-  void add(
-    std::map<std::string, pragma_handler>& map_,
-    const std::string& name_,
-    Handler h_
-  )
-  {
-    map_.insert(std::make_pair(name_, pragma_handler(h_)));
-  }
-
-  bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
-  {
-    return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
-  }
-
-  bool is_environment_setup_command(
-    const std::string& s_,
-    const std::string& input_filename_
-  )
-  {
-    try
-    {
-      const token_iterator it = begin_tokens(s_, input_filename_), end;
-
-      if (it == end)
-      {
-        // empty input is not a query
-        return true;
-      }
-      else
-      {
-        const boost::wave::token_id id = *it;
-        if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
-        {
-          switch (id)
-          {
-          case boost::wave::T_BOOL:
-          case boost::wave::T_CHAR:
-          case boost::wave::T_CONST:
-          case boost::wave::T_DOUBLE:
-          case boost::wave::T_FLOAT:
-          case boost::wave::T_INT:
-          case boost::wave::T_LONG:
-          case boost::wave::T_SHORT:
-          case boost::wave::T_SIGNED:
-          case boost::wave::T_UNSIGNED:
-          case boost::wave::T_VOID:
-          case boost::wave::T_VOLATILE:
-          case boost::wave::T_WCHART:
-            return has_typedef(it, end);
-          case boost::wave::T_SIZEOF:
-          case boost::wave::T_CONSTCAST:
-          case boost::wave::T_STATICCAST:
-          case boost::wave::T_DYNAMICCAST:
-          case boost::wave::T_REINTERPRETCAST:
-            return false;
-          default:
-            return true;
-          }
-        }
-        else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
-        {
-          return it->get_value() == "constexpr" || has_typedef(it, end);
-        }
-        else
-        {
-          return IS_CATEGORY(id, boost::wave::PPTokenType);
-        }
-      }
-    }
-    catch (...)
-    {
-      return false;
-    }
-  }
-
   void display(const result& r_, shell& s_)
   {
     if (!r_.info.empty())
@@ -178,36 +100,21 @@ namespace
     }
     return true;
   }
-
-  void set(bool& var_, bool val_)
-  {
-    var_ = val_;
-  }
-
-  bool return_(bool val_)
-  {
-    return val_;
-  }
 }
 
 shell::shell(const config& config_) :
-  _env(
-    config_.use_precompiled_headers ?
-      static_cast<environment*>(
-        new header_file_environment(true, config_)
-      ) :
-      static_cast<environment*>(
-        new in_memory_environment("__metashell_internal", config_)
-      )
-  ),
-  _config(config_)
+  _env(),
+  _config(config_),
+  _stopped(false)
 {
+  rebuild_environment();
   init();
 }
 
 shell::shell(const config& config_, environment* env_) :
   _env(env_),
-  _config(config_)
+  _config(config_),
+  _stopped(false)
 {
   init();
 }
@@ -295,9 +202,9 @@ void shell::line_available(const std::string& s_)
 
       if (!is_empty_line(s_, input_filename()))
       {
-        if (boost::optional<metashell_pragma> p = metashell_pragma::parse(s_))
+        if (boost::optional<token_iterator> p = parse_pragma(s_))
         {
-          process_pragma(*p);
+          _pragma_handlers.process(*p);
         }
         else if (is_environment_setup_command(s_, input_filename()))
         {
@@ -305,7 +212,7 @@ void shell::line_available(const std::string& s_)
         }
         else
         {
-          display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+          run_metaprogram(s_);
         }
       }
     }
@@ -398,36 +305,112 @@ void shell::init()
     "\n"
   );
 
-  add(_pragma_handlers, "help", pragma_help(*this));
-  add(
-    _pragma_handlers,
-    "verbose",
-    pragma_switch(
-      "verbose mode",
-      boost::bind(return_, boost::ref(_config.verbose)),
-      boost::bind(set, boost::ref(_config.verbose), _1),
-      *this
-    )
-  );
+  // TODO: move it to initialisation later
+  _pragma_handlers = pragma_handler_map::build_default(*this);
 }
 
-void shell::process_pragma(const metashell_pragma& p_)
+const pragma_handler_map& shell::pragma_handlers() const
 {
-  const std::map<std::string, pragma_handler>::const_iterator i =
-    _pragma_handlers.find(p_.name());
+  return _pragma_handlers;
+}
 
-  if (i == _pragma_handlers.end())
+void shell::verbose(bool enabled_)
+{
+  _config.verbose = enabled_;
+}
+
+bool shell::verbose() const
+{
+  return _config.verbose;
+}
+
+bool shell::stopped() const
+{
+  return _stopped;
+}
+
+void shell::stop()
+{
+  _stopped = true;
+}
+
+bool shell::using_precompiled_headers() const
+{
+  return _config.use_precompiled_headers;
+}
+
+void shell::using_precompiled_headers(bool enabled_)
+{
+  _config.use_precompiled_headers = enabled_;
+  rebuild_environment();
+}
+
+const environment& shell::env() const
+{
+  return *_env;
+}
+
+void shell::rebuild_environment(const std::string& content_)
+{
+  if (_config.use_precompiled_headers)
   {
-    display_error("Pragma " + p_.name() + " not found.");
+    _env.reset(new header_file_environment(_config));
   }
   else
   {
-    i->second.run(p_);
+    _env.reset(new in_memory_environment("__metashell_internal", _config));
+  }
+  if (!content_.empty())
+  {
+    _env->append(content_);
   }
 }
 
-const std::map<std::string, pragma_handler>& shell::pragma_handlers() const
+void shell::rebuild_environment()
 {
-  return _pragma_handlers;
+  rebuild_environment(_env ? _env->get_all() : std::string());
+}
+
+void shell::push_environment()
+{
+  _environment_stack.push(_env->get_all());
+}
+
+void shell::pop_environment()
+{
+  if (_environment_stack.empty())
+  {
+    throw exception("The environment stack is empty.");
+  }
+  else
+  {
+    rebuild_environment(_environment_stack.top());
+    _environment_stack.pop();
+  }
+}
+
+void shell::display_environment_stack_size()
+{
+  if (_environment_stack.empty())
+  {
+    display_normal("// Environment stack is empty\n");
+  }
+  else if (_environment_stack.size() == 1)
+  {
+    display_normal("// Environment stack has 1 entry\n");
+  }
+  else
+  {
+    std::ostringstream s;
+    s
+      << "// Environment stack has " << _environment_stack.size()
+      << " entries\n";
+    display_normal(s.str());
+  }
+}
+
+void shell::run_metaprogram(const std::string& s_)
+{
+  display(eval_tmp(*_env, s_, _config, input_filename()), *this);
 }
 

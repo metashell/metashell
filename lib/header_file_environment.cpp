@@ -71,15 +71,12 @@ namespace
   }
 }
 
-header_file_environment::header_file_environment(
-  bool use_precompiled_headers_,
-  const config& config_
-) :
+header_file_environment::header_file_environment(const config& config_) :
   _dir(),
   _buffer(_dir.path(), config_, "-I" + _dir.path()),
   _clang_args(),
   _empty_headers(_buffer.internal_dir(), true),
-  _use_precompiled_headers(use_precompiled_headers_),
+  _use_precompiled_headers(config_.use_precompiled_headers),
   _clang_path(config_.clang_path)
 {
   _clang_args = _buffer.clang_arguments();
@@ -156,4 +153,8 @@ const headers& header_file_environment::get_headers() const
   return _empty_headers;
 }
 
+std::string header_file_environment::get_all() const
+{
+  return _buffer.get_all();
+}
 

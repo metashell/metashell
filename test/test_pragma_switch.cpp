@@ -30,19 +30,11 @@ namespace
     set_to_value_ = value_;
   }
 
-  bool set_values(bool& set_to_true_)
-  {
-    set_to_true_ = true;
-    return true;
-  }
-
   template <bool B>
   bool always()
   {
     return B;
   }
-
-  void ignore(bool) {}
 
   template <bool ExpectedResult>
   void test_callback_is_called(const std::string& arg_)
@@ -53,7 +45,7 @@ namespace
     bool was_called = false;
     bool arg = !ExpectedResult;
     test_shell sh;
-  
+
     pragma_switch
       p(
         "test",
@@ -61,7 +53,7 @@ namespace
         bind(set_values, ref(was_called), ref(arg), _1),
         sh
       );
-    p.run(*metashell_pragma::parse("#pragma metashell test " + arg_));
+    run(p, arg_);
   
     JUST_ASSERT(was_called);
     JUST_ASSERT_EQUAL(ExpectedResult, arg);
@@ -76,19 +68,4 @@ JUST_TEST_CASE(test_pragma_switch_calls_updating_callback)
   test_callback_is_called<false>("off");
   test_callback_is_called<false>("0");
 }
-
-JUST_TEST_CASE(test_pragma_switch_calls_query_callback)
-{
-  using boost::bind;
-  using boost::ref;
-  
-  bool was_called = false;
-  test_shell sh;
-  
-  pragma_switch p("test", bind(set_values, ref(was_called)), ignore, sh);
-  p.run(*metashell_pragma::parse("#pragma metashell test"));
-  
-  JUST_ASSERT(was_called);
-}
-
 

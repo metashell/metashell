@@ -21,106 +21,49 @@
 
 using namespace metashell;
 
-typedef boost::optional<metashell_pragma> optional_pragma;
-
 JUST_TEST_CASE(test_parse_pragma)
 {
-  const optional_pragma op = metashell_pragma::parse("#pragma metashell foo");
-
-  JUST_ASSERT(op);
+  JUST_ASSERT(parse_pragma("#pragma metashell foo"));
 }
 
 JUST_TEST_CASE(test_parse_no_pragma)
 {
-  const optional_pragma op = metashell_pragma::parse("");
-
-  JUST_ASSERT(!op);
+  JUST_ASSERT(!parse_pragma(""));
 }
 
 JUST_TEST_CASE(test_parse_pragma_with_inital_whitespace)
 {
-  const optional_pragma
-    op = metashell_pragma::parse(" \t #pragma metashell foo");
-
-  JUST_ASSERT(op);
+  JUST_ASSERT(parse_pragma(" \t #pragma metashell foo"));
 }
 
 JUST_TEST_CASE(test_whitespace_is_not_pragma)
 {
-  const optional_pragma op = metashell_pragma::parse(" ");
-
-  JUST_ASSERT(!op);
+  JUST_ASSERT(!parse_pragma(" "));
 }
 
 JUST_TEST_CASE(test_gcc_pragma_is_not_metashell_pragma)
 {
-  const optional_pragma op = metashell_pragma::parse("#pragma gcc foo");
-
-  JUST_ASSERT(!op);
+  JUST_ASSERT(!parse_pragma("#pragma gcc foo"));
 }
 
 JUST_TEST_CASE(test_name_of_pragma)
 {
-  const optional_pragma op_foo
-    = metashell_pragma::parse("#pragma metashell foo");
+  const token_iterator
+    op_foo = *parse_pragma("#pragma metashell foo"),
+    op_bar = *parse_pragma("#pragma metashell bar");
 
-  const optional_pragma op_bar
-    = metashell_pragma::parse("#pragma metashell bar");
-
-  JUST_ASSERT_EQUAL("foo", op_foo->name());
-  JUST_ASSERT_EQUAL("bar", op_bar->name());
+  JUST_ASSERT_EQUAL("foo", op_foo->get_value());
+  JUST_ASSERT_EQUAL("bar", op_bar->get_value());
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS_SOMETHING(metashell_pragma::parse("#pragma metashell 13"));
+  JUST_ASSERT_THROWS_SOMETHING(parse_pragma("#pragma metashell 13"));
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS_SOMETHING(metashell_pragma::parse("#pragma metashell"));
-}
-
-JUST_TEST_CASE(test_first_pragma_argument)
-{
-  const optional_pragma op
-    = metashell_pragma::parse("#pragma metashell foo bar");
-
-  JUST_ASSERT_EQUAL("bar", op->begin()->get_value());
-}
-
-JUST_TEST_CASE(test_no_pragma_arguments)
-{
-  const optional_pragma op = metashell_pragma::parse("#pragma metashell foo");
-
-  JUST_ASSERT(op->begin() == op->end());
-}
-
-JUST_TEST_CASE(test_non_empty_list_of_pragma_arguments)
-{
-  const optional_pragma op
-    = metashell_pragma::parse("#pragma metashell foo bar");
-
-  JUST_ASSERT(op->begin() != op->end());
-}
-
-JUST_TEST_CASE(test_pargma_argument_values)
-{
-  const optional_pragma op
-    = metashell_pragma::parse("#pragma metashell foo a1 a2 a3");
-
-  token_iterator i = op->begin();
-  JUST_ASSERT_EQUAL("a1", i->get_value());
-  ++i;
-  JUST_ASSERT_EQUAL(" ", i->get_value());
-  ++i;
-  JUST_ASSERT_EQUAL("a2", i->get_value());
-  ++i;
-  JUST_ASSERT_EQUAL(" ", i->get_value());
-  ++i;
-  JUST_ASSERT_EQUAL("a3", i->get_value());
-  ++i;
-  JUST_ASSERT(i == op->end());
+  JUST_ASSERT_THROWS_SOMETHING(parse_pragma("#pragma metashell"));
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)
@@ -157,5 +100,12 @@ JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
 
   // should not throw
   sh.line_available("#pragma metashell");
+}
+
+JUST_TEST_CASE(test_quit)
+{
+  test_shell sh;
+  sh.line_available("#pragma metashell quit");
+  JUST_ASSERT(sh.stopped());
 }
 

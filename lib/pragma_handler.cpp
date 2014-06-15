@@ -36,10 +36,13 @@ void pragma_handler::swap(pragma_handler& h_)
   _body.swap(h_._body);
 }
 
-void pragma_handler::run(const metashell_pragma& p_) const
+void pragma_handler::run(
+  const token_iterator& args_begin_,
+  const token_iterator& args_end_
+) const
 {
   assert(_body);
-  _body->run(p_);
+  _body->run(args_begin_, args_end_);
 }
 
 std::string pragma_handler::arguments() const

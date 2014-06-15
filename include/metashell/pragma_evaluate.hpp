@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_HELP_HPP
-#define METASHELL_PRAGMA_HELP_HPP
+#ifndef METASHELL_PRAGMA_EVALUATE_HPP
+#define METASHELL_PRAGMA_EVALUATE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -25,10 +25,10 @@ namespace metashell
 {
   class shell;
 
-  class pragma_help : public pragma_handler_interface
+  class pragma_evaluate : public pragma_handler_interface
   {
   public:
-    explicit pragma_help(shell& shell_);
+    explicit pragma_evaluate(shell& shell_);
 
     virtual pragma_handler_interface* clone() const;
 

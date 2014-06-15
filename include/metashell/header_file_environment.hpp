@@ -27,10 +27,7 @@ namespace metashell
   class header_file_environment : public environment
   {
   public:
-    header_file_environment(
-      bool use_precompiled_headers_,
-      const config& config_
-    );
+    explicit header_file_environment(const config& config_);
 
     virtual void append(const std::string& s_);
     virtual std::string get() const;
@@ -41,6 +38,8 @@ namespace metashell
     virtual const std::vector<std::string>& clang_arguments() const;
 
     virtual const headers& get_headers() const;
+
+    virtual std::string get_all() const;
   private:
     just::temp::directory _dir;
     in_memory_environment _buffer;

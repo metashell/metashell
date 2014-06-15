@@ -21,6 +21,7 @@
 #include "indenter.hpp"
 
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 using namespace metashell;
 
@@ -43,8 +44,13 @@ std::string pragma_help::description() const
   return "Displays a help message.";
 }
 
-void pragma_help::run(const metashell_pragma&) const
+void pragma_help::run(
+  const token_iterator& args_begin_,
+  const token_iterator& args_end_
+) const
 {
+  using boost::algorithm::join;
+
   indenter ind(_shell.width(), " * ");
   ind
     .raw("/*")
@@ -61,7 +67,7 @@ void pragma_help::run(const metashell_pragma&) const
     .empty_line()
     .left_align("Metashell has the following built-in pragmas:");
 
-  typedef std::pair<std::string, pragma_handler> sp;
+  typedef std::pair<std::vector<std::string>, pragma_handler> sp;
   BOOST_FOREACH(const sp& p, _shell.pragma_handlers())
   {
     const std::string args = p.second.arguments();
@@ -69,7 +75,7 @@ void pragma_help::run(const metashell_pragma&) const
       .empty_line()
       .left_align(
         "#pragma metashell "
-          + p.first + (args.empty() ? std::string() : " " + args),
+          + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
         " *   "
       )
       .left_align(p.second.description(), " *     ");
