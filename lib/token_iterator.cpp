@@ -16,6 +16,9 @@
 
 #include <metashell/token_iterator.hpp>
 
+#include <sstream>
+#include <iostream>
+
 using namespace metashell;
 
 token_iterator metashell::begin_tokens(
@@ -51,5 +54,18 @@ token_iterator metashell::skip_whitespace(token_iterator i_)
   }
   assert(i_ != end);
   return i_;
+}
+
+std::string metashell::tokens_to_string(
+  token_iterator begin_,
+  const token_iterator& end_
+)
+{
+  std::ostringstream s;
+  for (; begin_ != end_; ++begin_)
+  {
+    s << begin_->get_value();
+  }
+  return s.str();
 }
 
