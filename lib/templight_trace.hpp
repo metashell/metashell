@@ -10,11 +10,24 @@
 
 namespace metashell {
 
+enum instantiation_kind {
+  template_instantiation,
+  default_template_argument_instantiation,
+  default_function_argument_instantiation,
+  explicit_template_argument_substitution,
+  deduced_template_argument_substitution,
+  prior_template_argument_substitution,
+  default_template_argument_checking,
+  exception_spec_instantiation,
+  memoization
+};
+
 class templight_trace {
 public:
 
   static templight_trace create_from_xml(const std::string& file);
 
+  void print_graph(std::ostream& os = std::cout) const;
 private:
   typedef boost::adjacency_list<
     boost::vecS,
@@ -30,8 +43,6 @@ private:
 
   vertex_descriptor add_vertex(const std::string& element);
 
-  void print_graph(std::ostream& os = std::cout) const;
-
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property
   // - in element_vertex_map
@@ -39,6 +50,9 @@ private:
 
   element_vertex_map_t element_vertex_map;
 };
+
+std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
+std::ostream& operator<<(std::ostream& os, const templight_trace& trace);
 
 }
 

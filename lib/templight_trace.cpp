@@ -46,5 +46,26 @@ void templight_trace::print_graph(std::ostream& os) const {
   }
 }
 
+std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
+  switch (kind) {
+    default: os << "UnknownKind"; break;
+    case template_instantiation: os << "TemplateInstantiation"; break;
+    case default_template_argument_instantiation: os << "DefaultTemplateArgumentInstantiation"; break;
+    case default_function_argument_instantiation: os << "DefaultFunctionArgumentInstantiation"; break;
+    case explicit_template_argument_substitution: os << "ExplicitTemplateArgumentSubstitution"; break;
+    case deduced_template_argument_substitution: os << "DeducedTemplateArgumentSubstitution"; break;
+    case prior_template_argument_substitution: os << "PriorTemplateArgumentSubstitution"; break;
+    case default_template_argument_checking: os << "DefaultTemplateArgumentChecking"; break;
+    case exception_spec_instantiation: os << "ExceptionSpecInstantiation"; break;
+    case memoization: os << "Memoization"; break;
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const templight_trace& trace) {
+  //trace.print_graph(os);
+  return os;
+}
+
 }
 
