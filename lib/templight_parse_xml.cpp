@@ -67,21 +67,6 @@ private:
   std::stack<vertex_descriptor> vertex_stack;
 };
 
-templight_trace create_trace() {
-  return templight_trace();
-}
-
-templight_trace handle_template_begin(
-    instantiation_kind kind,
-    const std::string& context,
-    const file_location& location,
-    double timestamp,
-    unsigned long long memory_usage)
-{
-  std::cout << "Begin: " << context << std::endl;
-  return templight_trace();
-}
-
 template<class Iterator>
 struct templight_grammar :
   qi::grammar<Iterator, skipper_t> {
