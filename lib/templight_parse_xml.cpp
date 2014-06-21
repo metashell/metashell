@@ -84,7 +84,7 @@ templight_trace handle_template_begin(
 
 template<class Iterator>
 struct templight_grammar :
-  qi::grammar<Iterator, void(), skipper_t> {
+  qi::grammar<Iterator, skipper_t> {
 
   templight_grammar() : templight_grammar::base_type(start) {
 
@@ -121,12 +121,12 @@ struct templight_grammar :
 
     const std::string prologue = "<?xml version=\"1.0\" standalone=\"yes\"?>";
 
-    start %= prologue >> lit("<Trace>") >> body >> lit("</Trace>");
+    start %= lit(prologue) >> "<Trace>" >> body >> "</Trace>";
 
     body = *template_instantiation_rule;
 
     template_instantiation_rule =
-      template_begin >> (*template_instantiation_rule) >> template_end;
+      template_begin >> body >> template_end;
 
 
     //<TemplateBegin>
@@ -145,7 +145,7 @@ struct templight_grammar :
         "<PointOfInstantiation>" >> file_location_rule >> "</PointOfInstantiation>" >>
         "<TimeStamp" >> "time" >> "=" >> timestamp >> "/>" >>
         "<MemoryUsage" >> "bytes" >> "=" >> memory_usage >> "/>" >>
-      lit("</TemplateBegin>")
+      "</TemplateBegin>"
       )
       [phx::bind(
           &templight_trace_builder::handle_template_begin,
@@ -160,16 +160,17 @@ struct templight_grammar :
     template_end =
       (
       lit("<TemplateEnd>") >>
-        lit("<Kind>") >> instantiation_kinds >> lit("</Kind>") >>
-        lit("<TimeStamp") >> "time" >> "=" >> timestamp >> "/>" >>
-        lit("<MemoryUsage") >> "bytes" >> "=" >> memory_usage >> "/>" >>
-      lit("</TemplateEnd>")
+        "<Kind>" >> instantiation_kinds >> "</Kind>" >>
+        "<TimeStamp" >> "time" >> "=" >> timestamp >> "/>" >>
+        "<MemoryUsage" >> "bytes" >> "=" >> memory_usage >> "/>" >>
+      "</TemplateEnd>"
       )
       [phx::bind(
           &templight_trace_builder::handle_template_end,
           phx::ref(builder), _1, _2, _3)];
 
-    unescaped_string %= '"' >> *(unescaped_characters | (ascii::print - '"')) >> '"';
+    unescaped_string %=
+      '"' >> *(unescaped_characters | (ascii::print - '"')) >> '"';
 
     context %= unescaped_string;
 
@@ -181,11 +182,11 @@ struct templight_grammar :
 
   templight_trace_builder builder;
 
-  qi::rule<Iterator, void(), skipper_t> start;
-  qi::rule<Iterator, void(), skipper_t> body;
-  qi::rule<Iterator, void(), skipper_t> template_instantiation_rule;
-  qi::rule<Iterator, void(), skipper_t> template_begin;
-  qi::rule<Iterator, void(), skipper_t> template_end;
+  qi::rule<Iterator, skipper_t> start;
+  qi::rule<Iterator, skipper_t> body;
+  qi::rule<Iterator, skipper_t> template_instantiation_rule;
+  qi::rule<Iterator, skipper_t> template_begin;
+  qi::rule<Iterator, skipper_t> template_end;
   qi::rule<Iterator, std::string(), skipper_t> context;
   qi::rule<Iterator, file_location(), skipper_t> file_location_rule;
   qi::rule<Iterator, unsigned long long(), skipper_t> memory_usage;
