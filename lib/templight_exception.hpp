@@ -2,7 +2,7 @@
 #define METASHELL_TEMPLIGHT_EXCEPTION_HPP
 
 #include <exception>
-#include <boost/exception.hpp>
+#include <boost/exception/all.hpp>
 
 namespace metashell {
 

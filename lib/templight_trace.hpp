@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 
+#include <boost/bimap.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
@@ -28,6 +29,7 @@ public:
   static templight_trace create_from_xml(const std::string& file);
 
   void print_graph(std::ostream& os = std::cout) const;
+  void print_graphviz(std::ostream& os = std::cout) const;
 private:
   typedef boost::adjacency_list<
     boost::vecS,
@@ -42,6 +44,7 @@ private:
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
   vertex_descriptor add_vertex(const std::string& element);
+  void add_edge(vertex_descriptor from, vertex_descriptor to);
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property
@@ -49,6 +52,8 @@ private:
   graph_t graph;
 
   element_vertex_map_t element_vertex_map;
+
+  friend struct templight_trace_builder;
 };
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind);

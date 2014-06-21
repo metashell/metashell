@@ -1,13 +1,15 @@
 
-#include "file_location.hpp"
-#include "templight_trace.hpp"
-
 #include <string>
+#include <stack>
 #include <fstream>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
+
+#include "file_location.hpp"
+#include "templight_trace.hpp"
+#include "templight_exception.hpp"
 
 BOOST_FUSION_ADAPT_STRUCT(
   metashell::file_location,
@@ -24,6 +26,46 @@ namespace ascii = boost::spirit::ascii;
 namespace phx = boost::phoenix;
 
 typedef ascii::space_type skipper_t;
+
+struct templight_trace_builder {
+  void handle_template_begin(
+    instantiation_kind kind,
+    const std::string& context,
+    const file_location& location,
+    double timestamp,
+    unsigned long long memory_usage)
+  {
+    vertex_descriptor vertex = trace.add_vertex(context);
+    if (!vertex_stack.empty()) {
+      vertex_descriptor top_vertex = vertex_stack.top();
+      //TODO maybe the other way around will be more helpful
+      trace.add_edge(vertex, top_vertex);
+    }
+    vertex_stack.push(vertex);
+  }
+
+  void handle_template_end(
+    instantiation_kind kind,
+    double timestamp,
+    unsigned long long memory_usage)
+  {
+    if (vertex_stack.empty()) {
+      throw templight_exception();
+    }
+    vertex_stack.pop();
+  }
+
+  const templight_trace& get_trace() const {
+    return trace;
+  }
+
+private:
+  templight_trace trace;
+
+  typedef templight_trace::vertex_descriptor vertex_descriptor;
+
+  std::stack<vertex_descriptor> vertex_stack;
+};
 
 templight_trace create_trace() {
   return templight_trace();
@@ -42,7 +84,7 @@ templight_trace handle_template_begin(
 
 template<class Iterator>
 struct templight_grammar :
-  qi::grammar<Iterator, templight_trace(), skipper_t> {
+  qi::grammar<Iterator, void(), skipper_t> {
 
   templight_grammar() : templight_grammar::base_type(start) {
 
@@ -81,12 +123,10 @@ struct templight_grammar :
 
     start %= prologue >> lit("<Trace>") >> body >> lit("</Trace>");
 
-    body = *template_instantiation_rule
-      [_val = phx::bind(&create_trace)];
+    body = *template_instantiation_rule;
 
     template_instantiation_rule =
-      template_begin >> (*template_instantiation_rule) >> template_end
-      [_val = phx::bind(&create_trace)];
+      template_begin >> (*template_instantiation_rule) >> template_end;
 
 
     //<TemplateBegin>
@@ -106,7 +146,10 @@ struct templight_grammar :
         "<TimeStamp" >> "time" >> "=" >> timestamp >> "/>" >>
         "<MemoryUsage" >> "bytes" >> "=" >> memory_usage >> "/>" >>
       lit("</TemplateBegin>")
-      ) [_val = phx::bind(&handle_template_begin, _1, _2, _3, _4, _5)];
+      )
+      [phx::bind(
+          &templight_trace_builder::handle_template_begin,
+          phx::ref(builder), _1, _2, _3, _4, _5)];
 
     //<TemplateEnd>
     //    <Kind>TemplateInstantiation</Kind>
@@ -121,7 +164,10 @@ struct templight_grammar :
         lit("<TimeStamp") >> "time" >> "=" >> timestamp >> "/>" >>
         lit("<MemoryUsage") >> "bytes" >> "=" >> memory_usage >> "/>" >>
       lit("</TemplateEnd>")
-      ) [_val = phx::bind(&create_trace)];
+      )
+      [phx::bind(
+          &templight_trace_builder::handle_template_end,
+          phx::ref(builder), _1, _2, _3)];
 
     unescaped_string %= '"' >> *(unescaped_characters | (ascii::print - '"')) >> '"';
 
@@ -133,15 +179,17 @@ struct templight_grammar :
     timestamp = '"' >> double_ >> '"';
   }
 
-  qi::rule<Iterator, templight_trace(), skipper_t> start;
-  qi::rule<Iterator, templight_trace(), skipper_t> body;
-  qi::rule<Iterator, templight_trace(), skipper_t> template_instantiation_rule;
+  templight_trace_builder builder;
+
+  qi::rule<Iterator, void(), skipper_t> start;
+  qi::rule<Iterator, void(), skipper_t> body;
+  qi::rule<Iterator, void(), skipper_t> template_instantiation_rule;
+  qi::rule<Iterator, void(), skipper_t> template_begin;
+  qi::rule<Iterator, void(), skipper_t> template_end;
   qi::rule<Iterator, std::string(), skipper_t> context;
   qi::rule<Iterator, file_location(), skipper_t> file_location_rule;
   qi::rule<Iterator, unsigned long long(), skipper_t> memory_usage;
   qi::rule<Iterator, double(), skipper_t> timestamp;
-  qi::rule<Iterator, templight_trace(), skipper_t> template_begin;
-  qi::rule<Iterator, templight_trace(), skipper_t> template_end;
   qi::rule<Iterator, std::string()> unescaped_string;
 
 	qi::symbols<char, char> unescaped_characters;
@@ -150,17 +198,12 @@ struct templight_grammar :
 
 templight_trace templight_trace::create_from_xml(const std::string& file) {
 
-  templight_trace trace;
-
   std::string file_content;
   std::ifstream in(file.c_str());
   //TODO error handling, not very efficient
   for (std::string line; std::getline(in, line); ) {
     file_content += line + '\n';
   }
-
-  std::cout << "Content:\n" <<
-    file_content << std::endl;
 
   std::string::const_iterator begin = file_content.begin();
   std::string::const_iterator end = file_content.end();
@@ -169,15 +212,17 @@ templight_trace templight_trace::create_from_xml(const std::string& file) {
 
   bool success = qi::phrase_parse(
       begin, end, grammar,
-      skipper_t(),
-      trace);
-  if (success && begin == end) {
-    return trace;
-  } else {
-    std::cout << "Failed to parse:\n" <<
+      skipper_t());
+
+  if (!success || begin != end) {
+    std::cout <<
+      "Failed to parse templight file\n"
+      "unparsed part:\n" <<
       std::string(begin, end) << std::endl;
+
+    throw templight_exception();
   }
-  return trace;
+  return grammar.builder.get_trace();
 }
 
 }

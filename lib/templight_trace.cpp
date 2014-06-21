@@ -6,6 +6,7 @@
 #include <utility>
 
 #include <boost/tuple/tuple.hpp> //for boost::tie
+#include <boost/graph/graphviz.hpp>
 
 namespace metashell {
 
@@ -27,6 +28,10 @@ templight_trace::vertex_descriptor templight_trace::add_vertex(
   return pos->second;
 }
 
+void templight_trace::add_edge(vertex_descriptor from, vertex_descriptor to) {
+  boost::add_edge(from, to, graph);
+}
+
 void templight_trace::print_graph(std::ostream& os) const {
 
   boost::property_map<graph_t, boost::vertex_name_t>::const_type name_map =
@@ -46,6 +51,10 @@ void templight_trace::print_graph(std::ostream& os) const {
   }
 }
 
+void templight_trace::print_graphviz(std::ostream& os) const {
+  boost::write_graphviz(os, graph);
+}
+
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
   switch (kind) {
     default: os << "UnknownKind"; break;
@@ -63,7 +72,7 @@ std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
 }
 
 std::ostream& operator<<(std::ostream& os, const templight_trace& trace) {
-  //trace.print_graph(os);
+  trace.print_graph(os);
   return os;
 }
 
