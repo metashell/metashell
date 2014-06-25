@@ -386,11 +386,12 @@ Metashell has an initial environment. To see what it contains, start a new shell
 and run the following command:
 
 ```cpp
-> #pragma metashell environment
+> #msh environment
 ```
 
-The `metashell environment` pragma displays the content of the environment. A
-new shell contains the initial environment.
+`#msh` is a short version of `#pragma metashell`. Metashell accepts both, but
+`#msh` is easier to use. The `metashell environment` pragma displays the content
+of the environment. A new shell contains the initial environment.
 
 ### Extending the environment
 
@@ -412,7 +413,7 @@ to add something to the environment, but Metashell thinks that it is a
 metaprogram to evaluate, there is a pragma you can use:
 
 ```cpp
-> #pragma metashell environment add template <class T> struct add_const { typedef const T type; };
+> #msh environment add template <class T> struct add_const { typedef const T type; };
 ```
 
 This will always add your command to the environment. Similarly, if you'd like
@@ -420,7 +421,7 @@ to run a metaprogram, but Metashell tries adding it to the environment, there is
 a pragma which you can use:
 
 ```cpp
-> #pragma metashell evaluate add_const<int>::type
+> #msh evaluate add_const<int>::type
 ```
 
 This will always evaluate your command as a metaprogram. Note that if you need
@@ -438,7 +439,7 @@ Metashell has an *environment stack* which you can use. You can push the current
 environment on this stack by running the following command:
 
 ```cpp
-> #pragma metashell environment push
+> #msh environment push
 ```
 
 This command does not change the environment, but saves it in a stack. You can
@@ -447,7 +448,7 @@ updated environment. Once you're done and you'd like to get back to the original
 environment, you can run the following command:
 
 ```cpp
-> #pragma metashell environment pop
+> #msh environment pop
 ```
 
 This will restore the environment you saved by the `environment push` pragma and
@@ -456,7 +457,7 @@ stack and get back to them later. You can always check the current size of the
 environment stack by running the following command:
 
 ```cpp
-> #pragma metashell environment stack
+> #msh environment stack
 ```
 
 This command displays how many environments have been stored on the stack.
@@ -489,7 +490,7 @@ Precompiled header usage is enabled by default (if Metashell can find the
 following command in the shell:
 
 ```cpp
-#pragma metashell precompiled_headers off
+#msh precompiled_headers off
 ```
 
 This command disables precompiled header usage in the current shell.
@@ -499,27 +500,37 @@ This command disables precompiled header usage in the current shell.
 Metashell provides a number of pragmas controlling the shell. Note that these
 pragmas are available only from the shell's command prompt. If you put them in a
 header file and include that header, these pragmas will be ignored.
+The pragmas accepted by Metashell begin with `#pragma metashell`. Since this is
+a long prefix to type, Metashell accepts shorter versions as well. Here is the
+complete list of accepted forms. All of them are equivalent:
+
+* `#pragma metashell`
+* `#pragma msh`
+* `#metashell`
+* `#msh`
 
 <!-- pragma_info -->
-* `#pragma metashell environment` <br /> <br /> Displays the entire content of the environment.
+* `#msh environment` <br /> <br /> Displays the entire content of the environment.
 
-* `#pragma metashell environment add <code>` <br /> <br /> Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
+* `#msh environment add <code>` <br /> <br /> Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
 
-* `#pragma metashell environment pop` <br /> <br /> Pops the last environment from the environment stack.
+* `#msh environment pop` <br /> <br /> Pops the last environment from the environment stack.
 
-* `#pragma metashell environment push` <br /> <br /> Pushes the current environment to the environment stack.
+* `#msh environment push` <br /> <br /> Pushes the current environment to the environment stack.
 
-* `#pragma metashell environment stack` <br /> <br /> Displays the size of the environment stack.
+* `#msh environment reset` <br /> <br /> Resets the environment to its initial state. It does not change the environment stack.
 
-* `#pragma metashell evaluate <code>` <br /> <br /> Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
+* `#msh environment stack` <br /> <br /> Displays the size of the environment stack.
 
-* `#pragma metashell help` <br /> <br /> Displays a help message.
+* `#msh evaluate <code>` <br /> <br /> Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
 
-* `#pragma metashell precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
+* `#msh help` <br /> <br /> Displays a help message.
 
-* `#pragma metashell quit` <br /> <br /> Terminates the shell.
+* `#msh precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
-* `#pragma metashell verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
+* `#msh quit` <br /> <br /> Terminates the shell.
+
+* `#msh verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
 
 <!-- pragma_info -->

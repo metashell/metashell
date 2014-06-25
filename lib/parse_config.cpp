@@ -68,7 +68,7 @@ namespace
     const std::string args = h_.arguments();
 
     out_
-      << "* `#pragma metashell " << join(name_, " ")
+      << "* `#msh " << join(name_, " ")
       << (args.empty() ? "" : " ") << args << "` <br /> <br /> "
       << h_.description() << endl
       << endl;

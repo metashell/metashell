@@ -57,14 +57,16 @@ boost::optional<token_iterator> metashell::parse_pragma(const std::string& s_)
   const token_iterator end;
   token_iterator i = skip_whitespace(begin_tokens(s_, "<string>"));
 
-  if (i != end && *i == boost::wave::T_PP_PRAGMA)
+  if (
+    i != end && (*i == boost::wave::T_PP_PRAGMA || *i == boost::wave::T_POUND)
+  )
   {
     i = skip_whitespace(skip(i));
-
+   
     if (
       i != end
       && *i == boost::wave::T_IDENTIFIER
-      && i->get_value() == "metashell"
+      && (i->get_value() == "metashell" || i->get_value() == "msh")
     )
     {
       i = skip_whitespace(skip(i));

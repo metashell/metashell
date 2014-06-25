@@ -77,6 +77,7 @@ namespace metashell
 
     const environment& env() const;
 
+    void reset_environment();
     void push_environment();
     void pop_environment();
     void display_environment_stack_size();

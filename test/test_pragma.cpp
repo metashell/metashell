@@ -109,3 +109,24 @@ JUST_TEST_CASE(test_quit)
   JUST_ASSERT(sh.stopped());
 }
 
+JUST_TEST_CASE(test_accept_pound_msh_as_pragma_metashell)
+{
+  JUST_ASSERT(parse_pragma("#msh foo"));
+  JUST_ASSERT(parse_pragma("# msh foo"));
+  JUST_ASSERT(parse_pragma(" # msh foo"));
+}
+
+JUST_TEST_CASE(test_accept_pound_metashell_as_pragma_metashell)
+{
+  JUST_ASSERT(parse_pragma("#metashell foo"));
+  JUST_ASSERT(parse_pragma("# metashell foo"));
+  JUST_ASSERT(parse_pragma(" # metashell foo"));
+}
+
+JUST_TEST_CASE(test_accept_pragma_msh_as_pragma_metashell)
+{
+  JUST_ASSERT(parse_pragma("#pragma msh foo"));
+  JUST_ASSERT(parse_pragma("# pragma msh foo"));
+  JUST_ASSERT(parse_pragma(" # pragma msh foo"));
+}
+

@@ -74,7 +74,7 @@ void pragma_help::run(
     ind
       .empty_line()
       .left_align(
-        "#pragma metashell "
+        "#msh "
           + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
         " *   "
       )
@@ -84,8 +84,9 @@ void pragma_help::run(
   ind
     .empty_line()
     .left_align(
-      "To quit Metashell press Ctrl+D"
+      "#msh is the short form of #pragma metashell. Both forms are accepted."
     )
+    .left_align("To quit Metashell press Ctrl+D")
     .empty_line()
     .raw(" */");
 
