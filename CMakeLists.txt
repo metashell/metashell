@@ -63,6 +63,16 @@ if (ENABLE_SANITIZERS)
   endif()
 endif()
 
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  include(CodeCoverage)
+
+  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --coverage")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} --coverage")
+  endif()
+endif()
+
 # Clang
 find_package(Clang)
 

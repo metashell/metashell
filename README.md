@@ -82,6 +82,14 @@ metaprograms.
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`
     * To package it for OpenSUSE or Fedora run `cpack -G RPM`
+* To generate code-coverage statistics for unit tests run the following commands
+  in the source directory instead the above ones:
+    * `mkdir bin`
+    * `cd bin`
+    * `cmake .. -DENABLE_CODE_COVERAGE=true -DCMAKE_BUILD_TYPE=Debug`
+    * `make`
+    * `make test_coverage`
+    * You can find the test coverage statistics in the `bin/coverage` directory.
 
 ## Getting started
 
