@@ -509,6 +509,8 @@ complete list of accepted forms. All of them are equivalent:
 * `#metashell`
 * `#msh`
 
+Metashell supports the following pragmas:
+
 <!-- pragma_info -->
 * `#msh environment` <br /> <br /> Displays the entire content of the environment.
 
