@@ -52,6 +52,17 @@ set(
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
 
+# Sanitizers
+if (ENABLE_SANITIZERS)
+  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    message(STATUS "Enabling GCC's address sanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    message(STATUS "Enabling Clang's address sanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  endif()
+endif()
+
 # Clang
 find_package(Clang)
 
