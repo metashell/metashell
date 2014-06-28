@@ -81,6 +81,7 @@ namespace metashell
     void push_environment();
     void pop_environment();
     void display_environment_stack_size();
+    void rebuild_environment();
   private:
     boost::scoped_ptr<environment> _env;
     config _config;
@@ -90,7 +91,6 @@ namespace metashell
     std::stack<std::string> _environment_stack;
 
     void init();
-    void rebuild_environment();
     void rebuild_environment(const std::string& content_);
   };
 }

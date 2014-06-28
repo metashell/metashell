@@ -476,6 +476,8 @@ It depends on multiple things.
 * When you run a metaprogram *and* you have turned precompiled header usage off,
   the environment is re-evaluated. If you have enabled precompiled header usage,
   the environment is not re-evaluated.
+* You can ask Metashell to re-evaluate the environment by running the
+  `#msh environment reload` command.
 
 Metashell uses precompiled headers to make the shell faster. When you use
 metaprograms you might (eg. by using Boost.MPL) need to include large header
@@ -519,6 +521,8 @@ Metashell supports the following pragmas:
 * `#msh environment pop` <br /> <br /> Pops the last environment from the environment stack.
 
 * `#msh environment push` <br /> <br /> Pushes the current environment to the environment stack.
+
+* `#msh environment reload` <br /> <br /> Re-reads the included header files from disc.
 
 * `#msh environment reset` <br /> <br /> Resets the environment to its initial state. It does not change the environment stack.
 
