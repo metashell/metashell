@@ -122,9 +122,6 @@ void pragma_help::run(
     ind .raw("/*");
     bool was_pragma = false;
 
-    const std::map<std::vector<std::string>, pragma_handler>::const_iterator
-      i = _shell.pragma_handlers().find(args);
-      
     for (
       std::map<std::vector<std::string>, pragma_handler>::const_iterator
         i = _shell.pragma_handlers().begin(),
