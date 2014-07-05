@@ -60,7 +60,7 @@ metaprograms.
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
     * libclang
-    * Readline
+    * Readline (or Libedit)
     * Boost
 * Install CMake
 * In case some elements of the default system include path are missing when
@@ -78,6 +78,10 @@ metaprograms.
     * `cd bin`
     * `cmake ..`
         * Note: on Fedora you need to run `cmake .. -DCLANG_LIBRARYDIR=/usr/lib/llvm`
+        * Note: to use
+          [libedit](http://thrysoee.dk/editline/) instead
+          of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
+          add the `-DUSE_EDITLINE=true` argument to the above command line.
     * `make`
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`

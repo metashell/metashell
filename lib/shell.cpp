@@ -202,7 +202,11 @@ void shell::display_splash() const
       .left_align(
         metashell::readline_version(),
         " *              ",
+#ifdef USE_EDITLINE
+        " *   Libedit    "
+#else
         " *   Readline   "
+#endif
       )
       .empty_line()
       .left_align(

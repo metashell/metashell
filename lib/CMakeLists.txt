@@ -18,7 +18,12 @@ aux_source_directory(. SOURCES)
 add_library(metashell_lib STATIC ${SOURCES})
 
 # Readline
-include_directories(${READLINE_INCLUDE_DIR})
+if (USE_EDITLINE)
+  include_directories(${EDITLINE_INCLUDE_DIR})
+  add_definitions( -DUSE_EDITLINE )
+else()
+  include_directories(${READLINE_INCLUDE_DIR})
+endif()
 
 # Clang
 include_directories(${CLANG_INCLUDE_DIR})

@@ -30,8 +30,14 @@ target_link_libraries(metashell
 )
 
 # Readline
-include_directories(${READLINE_INCLUDE_DIR})
-target_link_libraries(metashell ${READLINE_LIBRARY})
+if (USE_EDITLINE)
+  include_directories(${EDITLINE_INCLUDE_DIR})
+  target_link_libraries(metashell ${EDITLINE_LIBRARY})
+  add_definitions( -DUSE_EDITLINE )
+else()
+  include_directories(${READLINE_INCLUDE_DIR})
+  target_link_libraries(metashell ${READLINE_LIBRARY})
+endif()
 
 # Program_options
 target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})

@@ -77,7 +77,11 @@ endif()
 find_package(Clang)
 
 # Readline
-find_package(Readline)
+if (USE_EDITLINE)
+  find_package(Editline)
+else()
+  find_package(Readline)
+endif()
 
 include_directories("include")
 

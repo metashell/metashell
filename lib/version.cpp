@@ -24,7 +24,11 @@
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 #include <boost/preprocessor/stringize.hpp>
 
-#include <readline/readline.h>
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#endif
 
 using namespace metashell;
 
@@ -63,9 +67,13 @@ std::string metashell::wave_version()
 
 std::string metashell::readline_version()
 {
+#ifdef USE_EDITLINE
+  return " ";
+#else
   return
     BOOST_PP_STRINGIZE(RL_VERSION_MAJOR)
     "." BOOST_PP_STRINGIZE(RL_VERSION_MINOR);
+#endif
 }
 
 std::string metashell::version()
