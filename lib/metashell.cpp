@@ -58,6 +58,31 @@ namespace
   {
     return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
   }
+
+  bool is_whitespace(boost::wave::token_id id_)
+  {
+    return
+      IS_CATEGORY(id_, boost::wave::WhiteSpaceTokenType)
+      || IS_CATEGORY(id_, boost::wave::EOFTokenType)
+      || IS_CATEGORY(id_, boost::wave::EOLTokenType);
+  }
+
+  boost::wave::token_id last_non_whitespace_token_id(
+    token_iterator begin_,
+    const token_iterator& end_
+  )
+  {
+    boost::wave::token_id id;
+    for (; begin_ != end_; ++begin_)
+    {
+      const boost::wave::token_id cid = *begin_;
+      if (!is_whitespace(cid))
+      {
+        id = cid;
+      }
+    }
+    return id;
+  }
 }
 
 result metashell::validate_code(
@@ -270,7 +295,18 @@ bool metashell::is_environment_setup_command(
         case boost::wave::T_VOID:
         case boost::wave::T_VOLATILE:
         case boost::wave::T_WCHART:
-          return has_typedef(begin_, end_);
+          if (has_typedef(begin_, end_))
+          {
+            return true;
+          }
+          else
+          {
+            const boost::wave::token_id
+              lid = last_non_whitespace_token_id(begin_, end_);
+            return
+              lid == boost::wave::T_SEMICOLON
+              || lid == boost::wave::T_RIGHTBRACE;
+          }
         case boost::wave::T_SIZEOF:
         case boost::wave::T_CONSTCAST:
         case boost::wave::T_STATICCAST:
