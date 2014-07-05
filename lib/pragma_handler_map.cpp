@@ -169,3 +169,10 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
     ;
 }
 
+pragma_handler_map::iterator pragma_handler_map::find(
+  const std::vector<std::string>& p_
+) const
+{
+  return _handlers.find(p_);
+}
+

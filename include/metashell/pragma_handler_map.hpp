@@ -71,6 +71,7 @@ namespace metashell
 
     iterator begin() const;
     iterator end() const;
+    iterator find(const std::vector<std::string>& p_) const;
 
     static pragma_handler_map build_default(shell& shell_);
   private:

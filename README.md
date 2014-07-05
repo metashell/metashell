@@ -534,7 +534,7 @@ Metashell supports the following pragmas:
 
 * `#msh evaluate <code>` <br /> <br /> Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
 
-* `#msh help` <br /> <br /> Displays a help message.
+* `#msh help [<command>]` <br /> <br /> Displays a help message.
 
 * `#msh precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
