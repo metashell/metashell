@@ -163,3 +163,35 @@ JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
   );
 }
 
+JUST_TEST_CASE(test_resetting_the_environment)
+{
+  test_shell sh;
+  sh.line_available("typedef int foo;");
+  sh.line_available("#pragma metashell environment reset");
+  sh.line_available("foo");
+
+  JUST_ASSERT(!sh.error().empty());
+}
+
+JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
+{
+  test_shell sh;
+  sh.line_available("#pragma metashell environment reset");
+  sh.line_available("#include <metashell/scalar.hpp>");
+  sh.line_available("SCALAR(__METASHELL_MAJOR)");
+
+  JUST_ASSERT(sh.error().empty());
+}
+
+JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
+{
+  test_shell sh;
+  sh.line_available("typedef int foo;");
+  sh.line_available("#pragma metashell environment push");
+  sh.line_available("#pragma metashell environment reset");
+  sh.line_available("#pragma metashell environment pop");
+  sh.line_available("foo");
+
+  JUST_ASSERT(sh.error().empty());
+}
+

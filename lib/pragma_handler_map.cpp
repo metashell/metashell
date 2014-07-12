@@ -26,6 +26,8 @@
 #include <metashell/pragma_environment_pop.hpp>
 #include <metashell/pragma_environment_stack.hpp>
 #include <metashell/pragma_environment_add.hpp>
+#include <metashell/pragma_environment_reset.hpp>
+#include <metashell/pragma_environment_reload.hpp>
 #include <metashell/pragma_evaluate.hpp>
 
 #include "exception.hpp"
@@ -160,8 +162,17 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add("environment", "pop", pragma_environment_pop(shell_))
       .add("environment", "stack", pragma_environment_stack(shell_))
       .add("environment", "add", pragma_environment_add(shell_))
+      .add("environment", "reset", pragma_environment_reset(shell_))
+      .add("environment", "reload", pragma_environment_reload(shell_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;
+}
+
+pragma_handler_map::iterator pragma_handler_map::find(
+  const std::vector<std::string>& p_
+) const
+{
+  return _handlers.find(p_);
 }
 

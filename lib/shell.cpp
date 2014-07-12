@@ -100,6 +100,43 @@ namespace
     }
     return true;
   }
+
+  const char default_env[] =
+    "#define __METASHELL\n"
+    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
+    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
+    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
+
+    "namespace metashell { "
+      "namespace impl { "
+        "template <class T> "
+        "struct wrap {}; "
+
+        "template <class T> "
+        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
+        
+        "void tag_of(...); "
+      "} "
+      
+      "template <class Tag> "
+      "struct format_impl "
+      "{ "
+        "typedef format_impl type; "
+        
+        "template <class T> "
+        "struct apply { typedef T type; }; "
+      "}; "
+
+      "template <class T> "
+      "struct format : "
+        "::metashell::format_impl<"
+          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
+        ">::template apply<T>"
+        "{}; "
+
+      ""
+    "}"
+    "\n";
 }
 
 shell::shell(const config& config_) :
@@ -165,7 +202,11 @@ void shell::display_splash() const
       .left_align(
         metashell::readline_version(),
         " *              ",
+#ifdef USE_EDITLINE
+        " *   Libedit    "
+#else
         " *   Readline   "
+#endif
       )
       .empty_line()
       .left_align(
@@ -174,7 +215,7 @@ void shell::display_splash() const
           "Not using precompiled headers"
       )
       .empty_line()
-      .left_align("Getting help: #pragma metashell help")
+      .left_align("Getting help: #msh help")
       .raw(" */")
       .str()
   );
@@ -267,43 +308,7 @@ void shell::code_complete(
 
 void shell::init()
 {
-  _env->append(
-    "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
-
-    "namespace metashell { "
-      "namespace impl { "
-        "template <class T> "
-        "struct wrap {}; "
-
-        "template <class T> "
-        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
-        
-        "void tag_of(...); "
-      "} "
-      
-      "template <class Tag> "
-      "struct format_impl "
-      "{ "
-        "typedef format_impl type; "
-        
-        "template <class T> "
-        "struct apply { typedef T type; }; "
-      "}; "
-
-      "template <class T> "
-      "struct format : "
-        "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
-        ">::template apply<T>"
-        "{}; "
-
-      ""
-    "}"
-    "\n"
-  );
+  _env->append(default_env);
 
   // TODO: move it to initialisation later
   _pragma_handlers = pragma_handler_map::build_default(*this);
@@ -412,5 +417,11 @@ void shell::display_environment_stack_size()
 void shell::run_metaprogram(const std::string& s_)
 {
   display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+}
+
+void shell::reset_environment()
+{
+  rebuild_environment("");
+  _env->append(default_env);
 }
 

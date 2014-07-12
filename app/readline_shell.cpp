@@ -27,8 +27,12 @@
 
 #include <mindent/stream_display.hpp>
 
-#include <readline/readline.h>
-#include <readline/history.h>
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
 
 #include <boost/bind.hpp>
 

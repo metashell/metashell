@@ -37,3 +37,20 @@ target_link_libraries(metashell_test ${CLANG_LIBRARY})
 
 add_test(metashell_unit_tests metashell_test)
 
+# Readline
+if (USE_EDITLINE)
+  target_link_libraries(metashell_test ${EDITLINE_LIBRARY})
+else()
+  target_link_libraries(metashell_test ${READLINE_LIBRARY})
+endif()
+
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    test_coverage
+    metashell_test
+    coverage
+    "'/usr/*';'test/*';'include/just/*'"
+  )
+endif()
+

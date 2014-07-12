@@ -25,6 +25,57 @@
 
 using namespace metashell;
 
+namespace
+{
+  void display_all(shell& shell_)
+  {
+    using boost::algorithm::join;
+  
+    indenter ind(shell_.width(), " * ");
+    ind
+      .raw("/*")
+      .left_align("Metashell has the following built-in pragmas:");
+  
+    typedef std::pair<const std::vector<std::string>, pragma_handler> sp;
+    BOOST_FOREACH(const sp& p, shell_.pragma_handlers())
+    {
+      const std::string args = p.second.arguments();
+      ind.left_align(
+        "#msh "
+          + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
+        " *   "
+      );
+    }
+  
+    ind
+      .empty_line()
+      .left_align(
+        "#msh is the short form of #pragma metashell. Both forms are accepted"
+      )
+      .left_align(
+        "To quit Metashell press Ctrl+D"
+      )
+      .empty_line()
+      .raw(" */");
+  
+    shell_.display_normal(ind.str());
+  }
+
+  template <class It1, class It2>
+  bool prefix_of(It1 prefix_begin_, It1 prefix_end_, It2 begin_, It2 end_)
+  {
+    while (
+      prefix_begin_ != prefix_end_ && begin_ != end_
+        && *prefix_begin_ == *begin_
+    )
+    {
+      ++prefix_begin_;
+      ++begin_;
+    }
+    return prefix_begin_ == prefix_end_;
+  }
+}
+
 pragma_help::pragma_help(shell& shell_) :
   _shell(shell_)
 {}
@@ -36,7 +87,7 @@ pragma_handler_interface* pragma_help::clone() const
 
 std::string pragma_help::arguments() const
 {
-  return "";
+  return "[<command>]";
 }
 
 std::string pragma_help::description() const
@@ -51,44 +102,62 @@ void pragma_help::run(
 {
   using boost::algorithm::join;
 
-  indenter ind(_shell.width(), " * ");
-  ind
-    .raw("/*")
-    .left_align("Template metaprogramming shell " + version())
-    .empty_line()
-    .left_align(
-      "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
-    )
-    .left_align(
-      "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
-      " and you are welcome to redistribute it under certain conditions;"
-      " for details visit <http://www.gnu.org/licenses/>."
-    )
-    .empty_line()
-    .left_align("Metashell has the following built-in pragmas:");
-
-  typedef std::pair<std::vector<std::string>, pragma_handler> sp;
-  BOOST_FOREACH(const sp& p, _shell.pragma_handlers())
+  if (args_begin_ == args_end_)
   {
-    const std::string args = p.second.arguments();
-    ind
-      .empty_line()
-      .left_align(
-        "#pragma metashell "
-          + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
-        " *   "
-      )
-      .left_align(p.second.description(), " *     ");
+    display_all(_shell);
   }
-
-  ind
-    .empty_line()
-    .left_align(
-      "To quit Metashell press Ctrl+D"
+  else
+  {
+    std::vector<std::string> args;
+    for (
+      token_iterator i = args_begin_;
+      i != args_end_;
+      i = skip_whitespace(skip(i))
     )
-    .empty_line()
-    .raw(" */");
+    {
+      args.push_back(std::string(i->get_value().begin(), i->get_value().end()));
+    }
+    
+    indenter ind(_shell.width(), " * ");
+    ind .raw("/*");
+    bool was_pragma = false;
 
-  _shell.display_normal(ind.str());
+    for (
+      std::map<std::vector<std::string>, pragma_handler>::const_iterator
+        i = _shell.pragma_handlers().begin(),
+        e = _shell.pragma_handlers().end();
+      i != e;
+      ++i
+    )
+    {
+      if (prefix_of(args.begin(), args.end(), i->first.begin(), i->first.end()))
+      {
+        if (was_pragma)
+        {
+          ind.empty_line();
+        }
+        else
+        {
+          was_pragma = true;
+        }
+        const std::string p_args = i->second.arguments();
+        ind
+          .left_align(
+            "#msh "
+              + join(i->first, " ")
+              + (p_args.empty() ? std::string() : " " + p_args)
+          )
+          .left_align(i->second.description(), " *     ");
+      }
+    }
+    if (was_pragma)
+    {
+      _shell.display_normal(ind.raw(" */").str());
+    }
+    else
+    {
+      _shell.display_error("Pragma " + join(args, " ") + " not found.");
+    }
+  }
 }
 

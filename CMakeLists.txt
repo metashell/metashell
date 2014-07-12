@@ -52,11 +52,36 @@ set(
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
 
+# Sanitizers
+if (ENABLE_SANITIZERS)
+  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    message(STATUS "Enabling GCC's address sanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    message(STATUS "Enabling Clang's address sanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  endif()
+endif()
+
+# Code coverage
+if (ENABLE_CODE_COVERAGE)
+  include(CodeCoverage)
+
+  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --coverage")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} --coverage")
+  endif()
+endif()
+
 # Clang
 find_package(Clang)
 
 # Readline
-find_package(Readline)
+if (USE_EDITLINE)
+  find_package(Editline)
+else()
+  find_package(Readline)
+endif()
 
 include_directories("include")
 

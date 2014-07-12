@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Options for the module
-#  CLANG_INCLUDEDIR   Set this if the module can not find the Readline
+#  CLANG_INCLUDEDIR   Set this if the module can not find the Clang
 #                     headers
-#  CLANG_LIBRARYDIR   Set this if the module can not find the Readline
+#  CLANG_LIBRARYDIR   Set this if the module can not find the Clang
 #                     library
 #  CLANG_DEBUG        Set this for verbose output
 #
