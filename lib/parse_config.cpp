@@ -141,7 +141,7 @@ parse_config_result metashell::parse_config(
       " generating precompiled headers."
     )
     (
-      "use_templight,T", value(&cfg_.use_templight),
+      "use_templight,T",
       "Use templight for debugging metaprograms.\n"
       "Note: this option needs that clang is compiled "
       "with templight support. Please see docs for "
