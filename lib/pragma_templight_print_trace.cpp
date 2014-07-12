@@ -22,7 +22,7 @@ std::string pragma_templight_print_trace::arguments() const
 
 std::string pragma_templight_print_trace::description() const
 {
-  return "Prints the last template stack trace templight produced";
+  return "Prints the last template stack trace templight produced.";
 }
 
 void pragma_templight_print_trace::run(
