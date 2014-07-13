@@ -31,20 +31,64 @@ public:
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 private:
+
+  struct template_vertex_property_tag {
+    typedef boost::vertex_property_tag kind;
+  };
+  struct template_edge_property_tag {
+    typedef boost::edge_property_tag kind;
+  };
+
+  struct template_vertex_property {
+    std::string name;
+  };
+  struct template_edge_property {
+    instantiation_kind kind;
+  };
+
+  typedef boost::property<
+    template_vertex_property_tag,
+    template_vertex_property> vertex_property;
+  typedef boost::property<
+    template_edge_property_tag,
+    template_edge_property> edge_property;
+
   typedef boost::adjacency_list<
     boost::vecS,
     boost::vecS,
     boost::bidirectionalS,
-    boost::property<boost::vertex_name_t, std::string> > graph_t;
+    vertex_property,
+    edge_property> graph_t;
 
   typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
-  typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
+  typedef boost::graph_traits<graph_t>::edge_descriptor edge_descriptor;
+
   typedef boost::graph_traits<graph_t>::vertex_iterator vertex_iterator;
+  typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
 
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
+  typedef boost::property_map<
+      graph_t,
+      template_vertex_property_tag>::type vertex_property_map_t;
+
+  typedef boost::property_map<
+      graph_t,
+      template_vertex_property_tag>::const_type const_vertex_property_map_t;
+
+  typedef boost::property_map<
+      graph_t,
+      template_edge_property_tag>::type edge_property_map_t;
+
+  typedef boost::property_map<
+      graph_t,
+      template_edge_property_tag>::const_type const_edge_property_map_t;
+
   vertex_descriptor add_vertex(const std::string& element);
-  void add_edge(vertex_descriptor from, vertex_descriptor to);
+  void add_edge(
+      vertex_descriptor from,
+      vertex_descriptor to,
+      instantiation_kind kind);
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property

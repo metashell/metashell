@@ -30,6 +30,10 @@ void pragma_templight_print_trace::run(
   const token_iterator& args_end_
 ) const
 {
+  for (token_iterator it = args_begin_; it != args_end_; ++it) {
+    std::cout << it->get_value() << std::endl;
+  }
+
   templight_trace trace =
     metashell::templight_trace::create_from_xml("templight.xml");
 
