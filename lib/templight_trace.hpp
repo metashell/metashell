@@ -9,6 +9,8 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
+#include "file_location.hpp"
+
 namespace metashell {
 
 enum instantiation_kind {
@@ -41,6 +43,7 @@ private:
 
   struct template_vertex_property {
     std::string name;
+    file_location point_of_instantiation;
   };
   struct template_edge_property {
     instantiation_kind kind;
@@ -84,7 +87,10 @@ private:
       graph_t,
       template_edge_property_tag>::const_type const_edge_property_map_t;
 
-  vertex_descriptor add_vertex(const std::string& element);
+  vertex_descriptor add_vertex(
+      const std::string& element,
+      const file_location& point_of_instantiation);
+
   void add_edge(
       vertex_descriptor from,
       vertex_descriptor to,

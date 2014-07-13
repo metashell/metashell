@@ -12,7 +12,8 @@
 namespace metashell {
 
 templight_trace::vertex_descriptor templight_trace::add_vertex(
-  const std::string& element)
+  const std::string& element,
+  const file_location& point_of_instantiation)
 {
   element_vertex_map_t::iterator pos;
   bool inserted;
@@ -23,8 +24,13 @@ templight_trace::vertex_descriptor templight_trace::add_vertex(
   if (inserted) {
     vertex_descriptor vertex = boost::add_vertex(graph);
     pos->second = vertex;
-    boost::get(
-        boost::get(template_vertex_property_tag(), graph), vertex).name = element;
+
+    template_vertex_property& vertex_property =
+      boost::get(template_vertex_property_tag(), graph, vertex);
+
+    vertex_property.name = element;
+    vertex_property.point_of_instantiation = point_of_instantiation;
+
     return vertex;
   }
   return pos->second;
@@ -42,8 +48,7 @@ void templight_trace::add_edge(
 
   assert(inserted);
 
-  boost::get(
-      boost::get(template_edge_property_tag(), graph), edge).kind = kind;
+  boost::get(template_edge_property_tag(), graph, edge).kind = kind;
 }
 
 void templight_trace::print_graph(std::ostream& os) const {
@@ -57,15 +62,21 @@ void templight_trace::print_graph(std::ostream& os) const {
   os << "Verticies:\n";
   vertex_iterator vi, vi_end;
   for (boost::tie(vi, vi_end) = boost::vertices(graph); vi != vi_end; ++vi) {
-    os << *vi << " : " << boost::get(vertex_map, *vi).name << '\n';
+    const template_vertex_property& vertex_property =
+      boost::get(vertex_map, *vi);
+
+    os << *vi << " : " <<
+      vertex_property.name <<
+      " instantiated from " <<
+      vertex_property.point_of_instantiation << '\n';
   }
 
   os << "Edges:\n";
   edge_iterator ei, ei_end;
   for (boost::tie(ei, ei_end) = boost::edges(graph); ei != ei_end; ++ei) {
-    os << boost::get(vertex_map, source(*ei, graph)).name << " ---" <<
-      boost::get(edge_map, *ei).kind <<
-      "---> " << boost::get(vertex_map, target(*ei, graph)).name << '\n';
+    os << boost::get(vertex_map, source(*ei, graph)).name <<
+      " ---" << boost::get(edge_map, *ei).kind << "---> " <<
+      boost::get(vertex_map, target(*ei, graph)).name << '\n';
   }
 }
 

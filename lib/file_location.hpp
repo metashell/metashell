@@ -3,6 +3,7 @@
 #define METASHELL_FILE_LOCATION_HPP
 
 #include <string>
+#include <ostream>
 
 namespace metashell {
 
@@ -14,6 +15,8 @@ struct file_location {
   int row;
   int column;
 };
+
+std::ostream& operator<<(std::ostream& os, const file_location& location);
 
 }
 

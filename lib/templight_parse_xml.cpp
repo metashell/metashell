@@ -35,7 +35,7 @@ struct templight_trace_builder {
     double timestamp,
     unsigned long long memory_usage)
   {
-    vertex_descriptor vertex = trace.add_vertex(context);
+    vertex_descriptor vertex = trace.add_vertex(context, location);
     if (!vertex_stack.empty()) {
       vertex_descriptor top_vertex = vertex_stack.top();
       //TODO maybe the other way around will be more helpful
