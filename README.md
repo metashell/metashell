@@ -267,7 +267,7 @@ try running the `push_front` operation again:
 
 ```cpp
 > push_front<vector<int, double, char>, void>::type
-boost_::mpl::vector<void, int, double>
+boost_::mpl::vector<void, int, double, char>
 ```
 
 This time the result is what we'd expect. Note that it is in the `boost_`
