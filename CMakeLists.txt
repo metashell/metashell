@@ -80,6 +80,7 @@ find_package(Clang)
 if (USE_EDITLINE)
   find_package(Editline)
 else()
+  find_package(Termcap)
   find_package(Readline)
 endif()
 

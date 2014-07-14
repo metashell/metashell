@@ -61,6 +61,7 @@ metaprograms.
 * Install the dependent libraries:
     * libclang
     * Readline (or Libedit)
+    * Termcap
     * Boost
 * Install CMake
 * In case some elements of the default system include path are missing when

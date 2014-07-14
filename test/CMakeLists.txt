@@ -41,7 +41,7 @@ add_test(metashell_unit_tests metashell_test)
 if (USE_EDITLINE)
   target_link_libraries(metashell_test ${EDITLINE_LIBRARY})
 else()
-  target_link_libraries(metashell_test ${READLINE_LIBRARY})
+  target_link_libraries(metashell_test ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
 
 # Code coverage
