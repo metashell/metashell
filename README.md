@@ -4,6 +4,7 @@
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
+[![Try online](https://raw.github.com/sabel83/metashell/master/try_online.png "Try online")](http://abel.web.elte.hu/shell/metashell)
 [![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](https://github.com/sabel83/metashell/releases)
 
 The goal of this project is to provide an interactive template metaprogramming
