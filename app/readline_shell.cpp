@@ -36,7 +36,9 @@
 
 #include <boost/bind.hpp>
 
-#include <sys/ioctl.h>
+#ifndef _WIN32
+#  include <sys/ioctl.h>
+#endif
 
 #include <algorithm>
 #include <string>
@@ -209,8 +211,15 @@ void readline_shell::display_error(const std::string& s_) const
 
 unsigned int readline_shell::width() const
 {
+#ifdef _WIN32
+  CONSOLE_SCREEN_BUFFER_INFO info;
+
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+  return info.srWindow.Right - info.srWindow.Left + 1;
+#else
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
   return w.ws_col;
+#endif
 }
 
