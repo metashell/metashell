@@ -76,7 +76,7 @@ cxtranslationunit::cxtranslationunit(
 
   typedef
     transform_iterator<
-      function<const char*(string)>,
+      function<const char*(const string&)>,
       vector<string>::const_iterator
     >
     c_str_it;
