@@ -122,7 +122,10 @@ void readline_shell::run()
   for (char* l = 0; !stopped() && (l = readline(prompt().c_str()));)
   {
     const std::string line(l);
+#ifndef _WIN32
+    // It breaks on Windows. The library owns the buffer?
     free(l);
+#endif
     line_available(line);
   }
 }
