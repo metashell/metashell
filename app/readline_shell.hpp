@@ -42,8 +42,10 @@ private:
   bool _syntax_highlight;
   bool _indent;
 
+#ifndef _WIN32
   static char* tab_generator(const char* text_, int state_);
   static char** tab_completion(const char* text_, int start_, int end_);
+#endif
 
   static readline_shell* _instance;
 

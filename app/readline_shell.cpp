@@ -77,10 +77,12 @@ namespace
     just::console::reset();
   }
 
+#ifndef _WIN32
   std::string get_edited_text()
   {
     return std::string(rl_line_buffer, rl_line_buffer + rl_end);
   }
+#endif
 }
 
 readline_shell* readline_shell::_instance = 0;
@@ -110,8 +112,10 @@ void readline_shell::run()
 {
   using boost::bind;
 
+#ifndef _WIN32
   override_guard<char** (*)(const char*, int, int)>
     ovr2(rl_attempted_completion_function, tab_completion);
+#endif
 
   interrupt_handler_override ovr3(bind(&readline_shell::cancel_operation,this));
 
@@ -123,6 +127,7 @@ void readline_shell::run()
   }
 }
 
+#ifndef _WIN32
 char* readline_shell::tab_generator(const char* text_, int state_)
 {
   assert(_instance);
@@ -155,12 +160,15 @@ char* readline_shell::tab_generator(const char* text_, int state_)
   }
   return 0;
 }
+#endif
 
+#ifndef _WIN32
 char** readline_shell::tab_completion(const char* text_, int start_, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
 }
+#endif
 
 void readline_shell::display_normal(const std::string& s_) const
 {
