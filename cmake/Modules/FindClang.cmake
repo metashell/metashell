@@ -53,7 +53,12 @@ if (CLANG_DEBUG)
   message(STATUS "  CLANG_LIBRARYDIR = ${CLANG_LIBRARYDIR}")
 endif()
 
-find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+if (WIN32)
+  # The import library of clang is called libclang.imp instead of libclang.lib
+  find_file(CLANG_LIBRARY NAMES libclang.imp HINTS ${CLANG_LIBRARYDIR})
+else()
+  find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+endif()
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set CLANG_FOUND to TRUE
