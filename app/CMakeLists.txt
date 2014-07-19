@@ -36,7 +36,7 @@ if (USE_EDITLINE)
   add_definitions( -DUSE_EDITLINE )
 else()
   include_directories(${READLINE_INCLUDE_DIR})
-  target_link_libraries(metashell ${READLINE_LIBRARY})
+  target_link_libraries(metashell ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
 
 # Program_options

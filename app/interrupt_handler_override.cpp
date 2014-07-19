@@ -41,10 +41,7 @@ namespace
   {
   }
 #else
-#if defined (__APPLE__)
-  typedef void (*sighandler_t)(int);
-#endif
-  sighandler_t old_handler;
+  void (*old_handler)(int);
 
   void sigint_handler(int)
   {

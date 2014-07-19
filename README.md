@@ -4,6 +4,7 @@
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
+[![Try online](https://raw.github.com/sabel83/metashell/master/try_online.png "Try online")](http://abel.web.elte.hu/shell/metashell)
 [![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](https://github.com/sabel83/metashell/releases)
 
 The goal of this project is to provide an interactive template metaprogramming
@@ -61,6 +62,7 @@ metaprograms.
 * Install the dependent libraries:
     * libclang
     * Readline (or Libedit)
+    * Termcap
     * Boost
 * Install CMake
 * In case some elements of the default system include path are missing when
@@ -275,7 +277,7 @@ try running the `push_front` operation again:
 
 ```cpp
 > push_front<vector<int, double, char>, void>::type
-boost_::mpl::vector<void, int, double>
+boost_::mpl::vector<void, int, double, char>
 ```
 
 This time the result is what we'd expect. Note that it is in the `boost_`
