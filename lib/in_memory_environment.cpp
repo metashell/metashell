@@ -77,7 +77,6 @@ in_memory_environment::in_memory_environment(
     _clang_args.push_back("templight.xml");
     _clang_args.push_back("-templight-format");
     _clang_args.push_back("xml");
-    _clang_args.push_back("-templight-safe-mode");
   }
 
   _clang_args.insert(
