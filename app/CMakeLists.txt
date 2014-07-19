@@ -43,6 +43,10 @@ endif()
 target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 
 # Clang
+if (MSVC)
+  # libclang calls its import library libclang.imp instead of libclang.lib
+  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
+endif()
 target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 
