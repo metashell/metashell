@@ -1,4 +1,7 @@
 
+#include <string>
+#include <sstream>
+
 #include <metashell/pragma_templight_print_trace.hpp>
 #include <metashell/shell.hpp>
 
@@ -30,13 +33,21 @@ void pragma_templight_print_trace::run(
   const token_iterator& args_end_
 ) const
 {
+  std::stringstream command_stream;
   for (token_iterator it = args_begin_; it != args_end_; ++it) {
-    std::cout << it->get_value() << std::endl;
+    command_stream << it->get_value();
   }
+
+  std::string command = command_stream.str();
 
   templight_trace trace =
     metashell::templight_trace::create_from_xml("templight.xml");
 
-  trace.print_graph();
+  if (command == "") {
+    trace.print_graph();
+  } else if (command == "dot" || command == "graphviz") {
+    trace.print_graphviz();
+  }
+
 }
 
