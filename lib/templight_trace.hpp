@@ -103,8 +103,7 @@ private:
 
   element_vertex_map_t element_vertex_map;
 
-  struct vertex_property_writer;
-  struct edge_property_writer;
+  struct property_writer;
 
   friend struct templight_trace_builder;
 };

@@ -80,20 +80,14 @@ void templight_trace::print_graph(std::ostream& os) const {
   }
 }
 
-struct templight_trace::vertex_property_writer {
-  vertex_property_writer(const templight_trace& trace) : trace(trace) {}
+struct templight_trace::property_writer {
+  property_writer(const templight_trace& trace) : trace(trace) {}
 
   void operator()(std::ostream& os, vertex_descriptor vertex) {
     os << "[label=\"" <<
       boost::get(template_vertex_property_tag(), trace.graph, vertex).name <<
       "\"]";
   }
-private:
-  const templight_trace& trace;
-};
-
-struct templight_trace::edge_property_writer {
-  edge_property_writer(const templight_trace& trace) : trace(trace) {}
 
   void operator()(std::ostream& os, edge_descriptor edge) {
     os << "[label=\""<<
@@ -107,7 +101,7 @@ private:
 void templight_trace::print_graphviz(std::ostream& os) const {
 
   boost::write_graphviz(
-      os, graph, vertex_property_writer(*this), edge_property_writer(*this));
+      os, graph, property_writer(*this), property_writer(*this));
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
