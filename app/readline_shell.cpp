@@ -106,6 +106,7 @@ readline_shell::readline_shell(const metashell::config& config_) :
 void readline_shell::add_history(const std::string& s_)
 {
   std::vector<char> s(s_.begin(), s_.end());
+  s.push_back(0);
   ::add_history(&s[0]);
 }
 
