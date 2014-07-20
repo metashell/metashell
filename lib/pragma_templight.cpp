@@ -25,7 +25,7 @@ std::string pragma_templight::arguments() const
 
 std::string pragma_templight::description() const
 {
-  return "Prints the last template stack trace templight produced.";
+  return "Get templight info about the last evaluation.";
 }
 
 void pragma_templight::run(

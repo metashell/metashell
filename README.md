@@ -550,7 +550,7 @@ Metashell supports the following pragmas:
 
 * `#msh quit` <br /> <br /> Terminates the shell.
 
-* `#msh templight print` <br /> <br /> Prints the last template stack trace templight produced.
+* `#msh templight` <br /> <br /> Get templight info about the last evaluation.
 
 * `#msh verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
