@@ -15,7 +15,7 @@ shell.
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux](#building-metashell-on-linux)
-    - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-(experimental))
+    - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-experimental)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)

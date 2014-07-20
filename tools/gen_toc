@@ -17,7 +17,7 @@ def anchor(c, toc_type):
       return '.'
     else:
       return ''
-  elif c in [':', '`', '?']:
+  elif c in [':', '`', '?', '(', ')']:
     return ''
   else:
     return c.lower()
