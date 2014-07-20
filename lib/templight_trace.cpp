@@ -2,9 +2,11 @@
 #include "templight_trace.hpp"
 
 #include <map>
+#include <stack>
 #include <utility>
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 #include <boost/tuple/tuple.hpp> //for boost::tie
 #include <boost/graph/graphviz.hpp>
@@ -117,7 +119,19 @@ void templight_trace::print_graphviz(std::ostream& os) const {
       os, graph, property_writer(*this), property_writer(*this));
 }
 
-void templight_trace::print_backtrace(
+struct templight_trace::is_memoziation_predicate {
+  is_memoziation_predicate(const graph_t& graph) :
+    graph(graph) {}
+
+  bool operator()(const edge_descriptor& edge) const {
+    return
+      boost::get(template_edge_property_tag(), graph, edge).kind == memoization;
+  }
+private:
+  const graph_t& graph;
+};
+
+void templight_trace::print_forwardtrace(
     const std::string& type,
     std::ostream& os) const
 {
@@ -129,21 +143,57 @@ void templight_trace::print_backtrace(
     return;
   }
 
-  vertex_descriptor vertex = *opt_vertex;
+  // -----
+  // Customized DFS
+  //   The algorithm only checks vertices which are reachable from type
+  // ----
+  std::vector<bool> discovered(boost::num_vertices(graph), false);
 
-  for (unsigned i = 0; ; ++i) {
-    os << i << ": " <<
-      boost::get(template_vertex_property_tag(), graph, vertex).name <<
-      std::endl;
+  // Second argument is depth
+  typedef boost::tuple<
+    vertex_descriptor, unsigned, instantiation_kind> stack_element;
 
-    out_edge_iterator begin, end;
-    boost::tie(begin, end) = boost::out_edges(vertex, graph);
+  std::stack<stack_element> to_visit;
+  // We don't care about the instantiation_kind for the source vertex
+  to_visit.push(boost::make_tuple(*opt_vertex, 0, instantiation_kind()));
 
-    if (begin == end) {
-      break;
+  bool first_iteration = true;
+  while (!to_visit.empty()) {
+    unsigned depth;
+    vertex_descriptor vertex;
+    instantiation_kind kind;
+    boost::tie(vertex, depth, kind) = to_visit.top();
+    to_visit.pop();
+
+    os << std::string(2*depth, ' ') <<
+      boost::get(template_vertex_property_tag(), graph, vertex).name;
+    if (!first_iteration) { os << " (" <<  kind << ")"; }
+    os << '\n';
+
+    if (!discovered[vertex]) {
+      discovered[vertex] = true;
+
+      out_edge_iterator begin, end;
+      boost::tie(begin, end) = boost::out_edges(vertex, graph);
+
+      typedef std::vector<edge_descriptor> edges_t;
+      edges_t edges(begin, end);
+
+      // Partition Memozations to the back, so they get into the stack first
+      std::stable_partition(
+          edges.begin(), edges.end(), is_memoziation_predicate(graph));
+
+      for (edges_t::iterator it = edges.begin(), end = edges.end();
+         it != end; ++it)
+      {
+        instantiation_kind next_kind =
+          boost::get(template_edge_property_tag(), graph, *it).kind;
+
+        to_visit.push(
+            boost::make_tuple(target(*it, graph), depth+1, next_kind));
+      }
     }
-
-    vertex = target(*begin, graph);
+    first_iteration = false;
   }
 }
 

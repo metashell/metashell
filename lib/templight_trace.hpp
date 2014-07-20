@@ -33,7 +33,7 @@ public:
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 
-  void print_backtrace(const std::string& type,
+  void print_forwardtrace(const std::string& type,
       std::ostream& os = std::cout) const;
 private:
 
@@ -112,6 +112,7 @@ private:
   element_vertex_map_t element_vertex_map;
 
   struct property_writer;
+  struct is_memoziation_predicate;
 
   friend struct templight_trace_builder;
 };
