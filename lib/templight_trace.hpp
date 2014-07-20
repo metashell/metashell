@@ -5,7 +5,7 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/bimap.hpp>
+#include <boost/optional.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
@@ -32,6 +32,9 @@ public:
 
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
+
+  void print_backtrace(const std::string& type,
+      std::ostream& os = std::cout) const;
 private:
 
   struct template_vertex_property_tag {
@@ -68,6 +71,8 @@ private:
 
   typedef boost::graph_traits<graph_t>::vertex_iterator vertex_iterator;
   typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
+  typedef boost::graph_traits<graph_t>::in_edge_iterator in_edge_iterator;
+  typedef boost::graph_traits<graph_t>::out_edge_iterator out_edge_iterator;
 
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
@@ -95,6 +100,9 @@ private:
       vertex_descriptor from,
       vertex_descriptor to,
       instantiation_kind kind);
+
+  boost::optional<vertex_descriptor> find_vertex(
+      const std::string& element) const;
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property

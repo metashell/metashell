@@ -51,6 +51,19 @@ void templight_trace::add_edge(
   boost::get(template_edge_property_tag(), graph, edge).kind = kind;
 }
 
+boost::optional<templight_trace::vertex_descriptor>
+  templight_trace::find_vertex(const std::string& element) const
+{
+  element_vertex_map_t::const_iterator it =
+    element_vertex_map.find(element);
+
+  if (it == element_vertex_map.end()) {
+    return boost::none;
+  }
+
+  return it->second;
+}
+
 void templight_trace::print_graph(std::ostream& os) const {
 
   const_vertex_property_map_t vertex_map =
@@ -102,6 +115,36 @@ void templight_trace::print_graphviz(std::ostream& os) const {
 
   boost::write_graphviz(
       os, graph, property_writer(*this), property_writer(*this));
+}
+
+void templight_trace::print_backtrace(
+    const std::string& type,
+    std::ostream& os) const
+{
+  boost::optional<vertex_descriptor> opt_vertex =
+    find_vertex(type);
+
+  if (!opt_vertex) {
+    os << "type \"" << type << "\" not found" << std::endl;
+    return;
+  }
+
+  vertex_descriptor vertex = *opt_vertex;
+
+  for (unsigned i = 0; ; ++i) {
+    os << i << ": " <<
+      boost::get(template_vertex_property_tag(), graph, vertex).name <<
+      std::endl;
+
+    out_edge_iterator begin, end;
+    boost::tie(begin, end) = boost::out_edges(vertex, graph);
+
+    if (begin == end) {
+      break;
+    }
+
+    vertex = target(*begin, graph);
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
