@@ -1,6 +1,4 @@
 
-#include "templight_trace.hpp"
-
 #include <map>
 #include <stack>
 #include <utility>
@@ -10,6 +8,8 @@
 
 #include <boost/tuple/tuple.hpp> //for boost::tie
 #include <boost/graph/graphviz.hpp>
+
+#include <metashell/templight_trace.hpp>
 
 namespace metashell {
 

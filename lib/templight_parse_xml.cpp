@@ -7,8 +7,9 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
-#include "file_location.hpp"
-#include "templight_trace.hpp"
+#include <metashell/file_location.hpp>
+#include <metashell/templight_trace.hpp>
+
 #include "templight_exception.hpp"
 
 BOOST_FUSION_ADAPT_STRUCT(
