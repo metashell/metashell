@@ -178,7 +178,7 @@ struct templight_grammar :
   qi::rule<Iterator, double(), skipper_t> timestamp;
   qi::rule<Iterator, std::string()> unescaped_string;
 
-	qi::symbols<char, char> unescaped_characters;
+  qi::symbols<char, char> unescaped_characters;
   qi::symbols<char, instantiation_kind> instantiation_kinds;
 };
 
