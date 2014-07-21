@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_TEMPLIGHT_PRINT_TRACE_HPP
-#define METASHELL_PRAGMA_TEMPLIGHT_PRINT_TRACE_HPP
+#ifndef METASHELL_PRAGMA_TEMPLIGHT_HPP
+#define METASHELL_PRAGMA_TEMPLIGHT_HPP
 
 #include <metashell/pragma_handler_interface.hpp>
 
@@ -9,10 +9,10 @@ namespace metashell
 {
   class shell;
 
-  class pragma_templight_print_trace : public pragma_handler_interface
+  class pragma_templight : public pragma_handler_interface
   {
   public:
-    explicit pragma_templight_print_trace(shell& shell_);
+    explicit pragma_templight(shell& shell_);
 
     virtual pragma_handler_interface* clone() const;
 

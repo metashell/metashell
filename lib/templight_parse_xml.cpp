@@ -39,7 +39,7 @@ struct templight_trace_builder {
     if (!vertex_stack.empty()) {
       vertex_descriptor top_vertex = vertex_stack.top();
       //TODO maybe the other way around will be more helpful
-      trace.add_edge(vertex, top_vertex, kind);
+      trace.add_edge(top_vertex, vertex, kind);
     }
     vertex_stack.push(vertex);
   }
