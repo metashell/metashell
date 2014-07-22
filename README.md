@@ -550,7 +550,13 @@ Metashell supports the following pragmas:
 
 * `#msh quit` <br /> <br /> Terminates the shell.
 
-* `#msh templight` <br /> <br /> Get templight info about the last evaluation.
+* `#msh templight forwardtrace` <br /> <br /> Get forwardtrace for type given as parameter.
+
+* `#msh templight ft` <br /> <br /> Get forwardtrace for type given as parameter.
+
+* `#msh templight print` <br /> <br /> Print the templight graph for the last evauluation.
+
+* `#msh templight print dot` <br /> <br /> Output the templight graph in dot/graphviz format.
 
 * `#msh verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
