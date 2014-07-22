@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <cassert>
 
 namespace metashell
 {
@@ -35,12 +36,7 @@ namespace metashell
       // requires: Handler implements pragma_handler_interface
     pragma_handler_map& add(const std::string& name_, Handler handler_)
     {
-      _handlers.insert(
-        std::make_pair(
-          std::vector<std::string>(1, name_),
-          pragma_handler(handler_)
-        )
-      );
+      add(std::vector<std::string>(1, name_), handler_);
       return *this;
     }
 
@@ -52,15 +48,49 @@ namespace metashell
       Handler handler_
     )
     {
-      typedef std::vector<std::string> svec;
+      std::vector<std::string> params;
+      params.reserve(2);
 
-      std::pair<svec, pragma_handler> p(svec(0), pragma_handler(handler_));
-      p.first.reserve(2);
-      p.first.push_back(name1_);
-      p.first.push_back(name2_);
-      _handlers.insert(p);
+      params.push_back(name1_);
+      params.push_back(name2_);
+
+      add(params, handler_);
       return *this;
     }
+
+    template <class Handler>
+      // requires: Handler implements pragma_handler_interface
+    pragma_handler_map& add(
+      const std::string& name1_,
+      const std::string& name2_,
+      const std::string& name3_,
+      Handler handler_
+    )
+    {
+      std::vector<std::string> params;
+      params.reserve(3);
+
+      params.push_back(name1_);
+      params.push_back(name2_);
+      params.push_back(name3_);
+
+      add(params, handler_);
+      return *this;
+    }
+
+    template <class Handler>
+      // requires: Handler implements pragma_handler_interface
+    pragma_handler_map& add(
+      const std::vector<std::string>& names_,
+      Handler handler_
+    )
+    {
+      assert(!names_.empty());
+
+      _handlers.insert(std::make_pair(names_, pragma_handler(handler_)));
+      return *this;
+    }
+
 
     void process(const token_iterator& p_) const;
 
