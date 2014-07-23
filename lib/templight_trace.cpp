@@ -131,9 +131,10 @@ private:
   const graph_t& graph;
 };
 
-void templight_trace::print_forwardtrace(
-    const std::string& type,
-    std::ostream& os) const
+template<class EdgeIterator, class GetEdges, class EdgeDirection>
+void templight_trace::print_trace(
+    const std::string& type, std::ostream& os,
+    GetEdges get_edges, EdgeDirection edge_direction) const
 {
   boost::optional<vertex_descriptor> opt_vertex =
     find_vertex(type);
@@ -173,8 +174,8 @@ void templight_trace::print_forwardtrace(
     if (!discovered[vertex]) {
       discovered[vertex] = true;
 
-      out_edge_iterator begin, end;
-      boost::tie(begin, end) = boost::out_edges(vertex, graph);
+      EdgeIterator begin, end;
+      boost::tie(begin, end) = (this->*get_edges)(vertex);
 
       typedef std::vector<edge_descriptor> edges_t;
       edges_t edges(begin, end);
@@ -190,11 +191,53 @@ void templight_trace::print_forwardtrace(
           boost::get(template_edge_property_tag(), graph, *it).kind;
 
         to_visit.push(
-            boost::make_tuple(target(*it, graph), depth+1, next_kind));
+            boost::make_tuple((this->*edge_direction)(*it), depth+1, next_kind));
       }
     }
     first_iteration = false;
   }
+}
+
+std::pair<
+  templight_trace::out_edge_iterator,
+  templight_trace::out_edge_iterator
+> templight_trace::get_out_edges(vertex_descriptor v) const {
+  return boost::out_edges(v, graph);
+}
+
+std::pair<
+  templight_trace::in_edge_iterator,
+  templight_trace::in_edge_iterator
+> templight_trace::get_in_edges(vertex_descriptor v) const {
+  return boost::in_edges(v, graph);
+}
+
+templight_trace::vertex_descriptor templight_trace::get_source(
+    edge_descriptor e) const
+{
+  return boost::source(e, graph);
+}
+
+templight_trace::vertex_descriptor templight_trace::get_target(
+    edge_descriptor e) const
+{
+  return boost::target(e, graph);
+}
+
+void templight_trace::print_forwardtrace(
+    const std::string& type,
+    std::ostream& os) const
+{
+  print_trace<out_edge_iterator>(type, os,
+      &templight_trace::get_out_edges, &templight_trace::get_target);
+}
+
+void templight_trace::print_backtrace(
+    const std::string& type,
+    std::ostream& os) const
+{
+  print_trace<in_edge_iterator>(type, os,
+      &templight_trace::get_in_edges, &templight_trace::get_source);
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {

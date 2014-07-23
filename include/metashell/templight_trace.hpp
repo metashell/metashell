@@ -35,6 +35,9 @@ public:
 
   void print_forwardtrace(const std::string& type,
       std::ostream& os = std::cout) const;
+
+  void print_backtrace(const std::string& type,
+      std::ostream& os = std::cout) const;
 private:
 
   struct template_vertex_property_tag {
@@ -103,6 +106,19 @@ private:
 
   boost::optional<vertex_descriptor> find_vertex(
       const std::string& element) const;
+
+  std::pair<out_edge_iterator, out_edge_iterator> get_out_edges(
+      vertex_descriptor v) const;
+  std::pair<in_edge_iterator, in_edge_iterator> get_in_edges(
+      vertex_descriptor v) const;
+
+  vertex_descriptor get_source(edge_descriptor e) const;
+  vertex_descriptor get_target(edge_descriptor e) const;
+
+  template<class EdgeIterator, class GetEdges, class EdgeDirection>
+  void print_trace(
+      const std::string& type, std::ostream& os,
+      GetEdges ged_edges, EdgeDirection edge_direction) const;
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property
