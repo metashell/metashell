@@ -16,3 +16,6 @@
 
 , "/usr/bin/clang++"
 , "/usr/local/bin/clang++"
+, "c:\\Program Files (x86)\\LLVM\\bin\\clang++.exe"
+, "c:\\Program Files\\LLVM\\bin\\clang++.exe"
+
