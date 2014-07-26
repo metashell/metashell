@@ -31,15 +31,16 @@ Depending on its argument, the script queries the default
 import sys
 import subprocess
 import getopt
+import json
 
 def run(cmd):
   try:
     return subprocess.Popen(
-      ['/bin/sh', '-c', cmd],
+      cmd,
       stderr=subprocess.PIPE,
       stdout=subprocess.PIPE,
       stdin=subprocess.PIPE
-    ).communicate(input='')
+    ).communicate()
   except OSError:
     raise Exception('%s: %s' % (' '.join(cmd), sys.exc_info()[1]))
 
@@ -51,7 +52,7 @@ def get_standard_gcc_includes(gcc):
   includes = []
   sysincludes = []
   current = None
-  for l in bytes_to_string(run(gcc + ' -v -xc++ -')[1]).split('\n'):
+  for l in bytes_to_string(run([gcc, '-v', '-xc++', '-'])[1]).split('\n'):
     retry = True
     while retry:
       retry = False
@@ -99,7 +100,7 @@ def main():
       paths = system
     else:
       paths = normal
-    print('\n'.join([', "%s"' % s for s in paths]))
+    print('\n'.join([', %s' % (json.dumps(s)) for s in paths]))
     print('')
   except:
     sys.stderr.write('Error: %s\n' % (sys.exc_info()[1]))
