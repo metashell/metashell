@@ -6,6 +6,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include <boost/utility.hpp>
 #include <boost/tuple/tuple.hpp> //for boost::tie
 #include <boost/graph/graphviz.hpp>
 
@@ -150,13 +151,26 @@ void templight_trace::print_trace(
   // ----
   std::vector<bool> discovered(boost::num_vertices(graph), false);
 
+  //
+  // TODO optimize size. this is worst case for simplicity
+  //
+  // This vector counts how many elements are in the to_visit
+  // stack for each specific depth.
+  // The purpose is to not draw pipes, when a tree element
+  // doesn't have any more children.
+  // The 0th element is never read.
+  std::vector<unsigned> depth_counter(boost::num_vertices(graph));
+
   // Second argument is depth
   typedef boost::tuple<
     vertex_descriptor, unsigned, instantiation_kind> stack_element;
 
+  // The usual stack for DFS
   std::stack<stack_element> to_visit;
+
   // We don't care about the instantiation_kind for the source vertex
   to_visit.push(boost::make_tuple(*opt_vertex, 0, instantiation_kind()));
+  ++depth_counter[0]; // This value is neved read
 
   bool first_iteration = true;
   while (!to_visit.empty()) {
@@ -166,8 +180,17 @@ void templight_trace::print_trace(
     boost::tie(vertex, depth, kind) = to_visit.top();
     to_visit.pop();
 
-    os << std::string(2*depth, ' ') <<
-      boost::get(template_vertex_property_tag(), graph, vertex).name;
+    --depth_counter[depth];
+
+    // Print the current line
+    if (depth > 0) {
+      for (unsigned i = 1; i < depth; ++i) {
+        os << (depth_counter[i] > 0 ? "| " : "  ");
+      }
+      os << "+ ";
+    }
+    os << boost::get(template_vertex_property_tag(), graph, vertex).name;
+
     if (!first_iteration) { os << " (" <<  kind << ")"; }
     os << '\n';
 
@@ -180,7 +203,7 @@ void templight_trace::print_trace(
       typedef std::vector<edge_descriptor> edges_t;
       edges_t edges(begin, end);
 
-      // Partition Memozations to the back, so they get into the stack first
+      // Partition Memozations to the front, so they get into the stack first
       std::stable_partition(
           edges.begin(), edges.end(), is_memoziation_predicate(graph));
 
@@ -192,6 +215,7 @@ void templight_trace::print_trace(
 
         to_visit.push(
             boost::make_tuple((this->*edge_direction)(*it), depth+1, next_kind));
+        ++depth_counter[depth+1];
       }
     }
     first_iteration = false;
