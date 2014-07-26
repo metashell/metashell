@@ -44,12 +44,15 @@ namespace
     return p == end_ ? "" : *p;
   }
 
-  const std::string default_clang_path =
-    search_clang(
-      default_clang_search_path + 1,
-      default_clang_search_path
-        + sizeof(default_clang_search_path) / sizeof(const char*)
-    );
+  std::string default_clang_path()
+  {
+    return
+      search_clang(
+        default_clang_search_path + 1,
+        default_clang_search_path
+          + sizeof(default_clang_search_path) / sizeof(const char*)
+      );
+  }
 }
 
 config config::empty()
@@ -58,7 +61,7 @@ config config::empty()
     config(
       (const char**)0,
       (const char**)0,
-      default_clang_path
+      default_clang_path()
     );
 }
 
@@ -68,7 +71,7 @@ config config::default_config()
     config(
       extra_sysinclude + 1,
       extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*),
-      default_clang_path
+      default_clang_path()
     );
 }
 
