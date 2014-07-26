@@ -22,12 +22,14 @@
 
 namespace
 {
+#ifdef _WIN32
   std::string directory_of_file(const std::string& path_)
   {
     boost::filesystem::path p(path_);
     p.remove_filename();
     return p.string();
   }
+#endif
 
   struct init_clang_path
   {
