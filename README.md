@@ -16,6 +16,7 @@ shell.
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux](#building-metashell-on-linux)
     - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-experimental)
+        - [Standard header files on Windows](#standard-header-files-on-windows)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -134,6 +135,16 @@ need fixing. If you want to experiment with it, here is how you can build it:
 * To run the generated binaries, you need to copy the dependent dlls into the
   same directory with the executable or into a directory on the `PATH`. The
   dependent dlls are `libclang.dll` and `edit.dll`.
+
+#### Standard header files on Windows
+
+The `windows_headers` directory contains the [MinGW](http://mingw.org/) header
+files. To be able to use the standard header files from Metashell, you need to
+pass `metashell.exe` the `-I<path to the windows_headers directory>` argument.
+
+The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
+header files from the [Cygwin](http://cygwin.org/) project. You need to run this
+script on Linux.
 
 ## Getting started
 
