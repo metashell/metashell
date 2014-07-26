@@ -25,6 +25,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
+#include <boost/foreach.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -56,6 +58,13 @@ namespace
     cmd.push_back("-o");
     cmd.push_back(fn_ + ".pch");
     cmd.push_back(fn_);
+
+#ifdef _WIN32
+    BOOST_FOREACH(std::string& s, cmd)
+    {
+      s = "\"" + s + "\"";
+    }
+#endif
 
     const just::process::output o = just::process::run(cmd, "");
     const std::string err = o.standard_output() + o.standard_error();
