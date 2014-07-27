@@ -86,23 +86,21 @@ void templight_trace::print_graph(std::ostream& os) const {
       boost::get(template_edge_property_tag(), graph);
 
   os << "Verticies:\n";
-  vertex_iterator vi, vi_end;
-  for (boost::tie(vi, vi_end) = boost::vertices(graph); vi != vi_end; ++vi) {
+  BOOST_FOREACH(vertex_descriptor vertex, boost::vertices(graph)) {
     const template_vertex_property& vertex_property =
-      boost::get(vertex_map, *vi);
+      boost::get(vertex_map, vertex);
 
-    os << *vi << " : " <<
+    os << vertex << " : " <<
       vertex_property.name <<
       " instantiated from " <<
       vertex_property.point_of_instantiation << '\n';
   }
 
   os << "Edges:\n";
-  edge_iterator ei, ei_end;
-  for (boost::tie(ei, ei_end) = boost::edges(graph); ei != ei_end; ++ei) {
-    os << boost::get(vertex_map, source(*ei, graph)).name <<
-      " ---" << boost::get(edge_map, *ei).kind << "---> " <<
-      boost::get(vertex_map, target(*ei, graph)).name << '\n';
+  BOOST_FOREACH(const edge_descriptor& edge, boost::edges(graph)) {
+    os << boost::get(vertex_map, source(edge, graph)).name <<
+      " ---" << boost::get(edge_map, edge).kind << "---> " <<
+      boost::get(vertex_map, target(edge, graph)).name << '\n';
   }
 }
 
@@ -233,14 +231,13 @@ void templight_trace::print_trace(
       std::stable_partition(
           edges.begin(), edges.end(), is_memoziation_predicate(graph));
 
-      for (edges_t::iterator it = edges.begin(), end = edges.end();
-         it != end; ++it)
-      {
+      BOOST_FOREACH(const edge_descriptor& edge, edges) {
+
         instantiation_kind next_kind =
-          boost::get(template_edge_property_tag(), graph, *it).kind;
+          boost::get(template_edge_property_tag(), graph, edge).kind;
 
         to_visit.push(
-            boost::make_tuple((this->*edge_direction)(*it), depth+1, next_kind));
+            boost::make_tuple((this->*edge_direction)(edge), depth+1, next_kind));
 
         ++depth_counter[depth+1];
       }
