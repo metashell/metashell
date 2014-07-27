@@ -9,6 +9,8 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
+#include <just/console.hpp>
+
 #include "file_location.hpp"
 
 namespace metashell {
@@ -131,6 +133,8 @@ private:
   struct is_memoziation_predicate;
 
   friend struct templight_trace_builder;
+
+  const static std::vector<just::console::color> colors;
 };
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind);

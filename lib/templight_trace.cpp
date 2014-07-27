@@ -6,13 +6,23 @@
 #include <cassert>
 #include <algorithm>
 
-#include <boost/utility.hpp>
-#include <boost/tuple/tuple.hpp> //for boost::tie
+#include <boost/assign.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
 
 #include <metashell/templight_trace.hpp>
 
 namespace metashell {
+
+const std::vector<just::console::color> templight_trace::colors =
+  boost::assign::list_of
+    (just::console::color::red)
+    (just::console::color::green)
+    (just::console::color::yellow)
+    (just::console::color::blue)
+    (just::console::color::magenta)
+    (just::console::color::cyan);
+
 
 templight_trace::vertex_descriptor templight_trace::add_vertex(
   const std::string& element,
@@ -149,6 +159,8 @@ void templight_trace::print_trace(
   // Customized DFS
   //   The algorithm only checks vertices which are reachable from type
   // ----
+
+  // Stores which vertices have been discovered
   std::vector<bool> discovered(boost::num_vertices(graph), false);
 
   //
@@ -172,8 +184,9 @@ void templight_trace::print_trace(
   to_visit.push(boost::make_tuple(*opt_vertex, 0, instantiation_kind()));
   ++depth_counter[0]; // This value is neved read
 
-  bool first_iteration = true;
-  while (!to_visit.empty()) {
+  for (bool first_iteration = true;
+      !to_visit.empty(); first_iteration = false)
+  {
     unsigned depth;
     vertex_descriptor vertex;
     instantiation_kind kind;
@@ -184,10 +197,15 @@ void templight_trace::print_trace(
 
     // Print the current line
     if (depth > 0) {
+      //TODO respect the -H (no syntax highlight parameter)
       for (unsigned i = 1; i < depth; ++i) {
+        just::console::text_color(colors[i % colors.size()]);
         os << (depth_counter[i] > 0 ? "| " : "  ");
+        just::console::reset();
       }
+      just::console::text_color(colors[depth % colors.size()]);
       os << "+ ";
+      just::console::reset();
     }
     os << boost::get(template_vertex_property_tag(), graph, vertex).name;
 
@@ -218,7 +236,6 @@ void templight_trace::print_trace(
         ++depth_counter[depth+1];
       }
     }
-    first_iteration = false;
   }
 }
 
