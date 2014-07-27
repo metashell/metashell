@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include <boost/assign.hpp>
+#include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
 
