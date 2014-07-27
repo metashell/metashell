@@ -224,15 +224,13 @@ void templight_trace::print_trace(
       typedef std::vector<edge_descriptor> edges_t;
       edges_t edges(begin, end);
 
-      // Partition Memozations to the front, so they get into the stack first
-      std::stable_partition(
-        edges.begin(), edges.end(), is_memoziation_predicate(graph));
-
       if (depth_counter.size() <= depth+1) {
         depth_counter.resize(depth+1+1);
       }
 
-      BOOST_FOREACH(const edge_descriptor& edge, edges) {
+      // Reverse iteration, so types that got instantiated first
+      // get on the top of the stack
+      BOOST_REVERSE_FOREACH(const edge_descriptor& edge, edges) {
         instantiation_kind next_kind =
           boost::get(template_edge_property_tag(), graph, edge).kind;
 
