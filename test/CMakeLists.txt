@@ -46,6 +46,9 @@ if (MSVC)
 
   # delayload libclang
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:libclang.dll")
+
+  # PATH of the standard headers
+  add_definitions(-DWINDOWS_HEADERS="${CMAKE_SOURCE_DIR}/windows_headers")
 endif()
 target_link_libraries(metashell_test ${CLANG_LIBRARY})
 
