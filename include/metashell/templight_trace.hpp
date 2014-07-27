@@ -35,11 +35,9 @@ public:
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 
-  void print_forwardtrace(const std::string& type,
-      std::ostream& os = std::cout) const;
+  void print_forwardtrace(const std::string& type) const;
+  void print_backtrace(const std::string& type) const;
 
-  void print_backtrace(const std::string& type,
-      std::ostream& os = std::cout) const;
 private:
 
   struct template_vertex_property_tag {
@@ -117,10 +115,18 @@ private:
   vertex_descriptor get_source(edge_descriptor e) const;
   vertex_descriptor get_target(edge_descriptor e) const;
 
+  // Used by print_trace
+  void print_trace_line(
+      vertex_descriptor vertex,
+      unsigned depth,
+      const std::vector<unsigned>& depth_counter,
+      const boost::optional<instantiation_kind>& kind) const;
+
   template<class EdgeIterator, class GetEdges, class EdgeDirection>
   void print_trace(
-      const std::string& type, std::ostream& os,
-      GetEdges ged_edges, EdgeDirection edge_direction) const;
+      const std::string& type,
+      GetEdges ged_edges,
+      EdgeDirection edge_direction) const;
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property

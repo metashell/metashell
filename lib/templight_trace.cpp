@@ -142,16 +142,39 @@ private:
   const graph_t& graph;
 };
 
+void templight_trace::print_trace_line(
+    vertex_descriptor vertex,
+    unsigned depth,
+    const std::vector<unsigned>& depth_counter,
+    const boost::optional<instantiation_kind>& kind) const
+{
+  if (depth > 0) {
+    //TODO respect the -H (no syntax highlight parameter)
+    for (unsigned i = 1; i < depth; ++i) {
+      just::console::text_color(colors[i % colors.size()]);
+      std::cout << (depth_counter[i] > 0 ? "| " : "  ");
+      just::console::reset();
+    }
+    just::console::text_color(colors[depth % colors.size()]);
+    std::cout << "+ ";
+    just::console::reset();
+  }
+  std::cout << boost::get(template_vertex_property_tag(), graph, vertex).name;
+
+  if (kind) { std::cout << " (" << *kind << ")"; }
+  std::cout << '\n';
+}
+
 template<class EdgeIterator, class GetEdges, class EdgeDirection>
 void templight_trace::print_trace(
-    const std::string& type, std::ostream& os,
+    const std::string& type,
     GetEdges get_edges, EdgeDirection edge_direction) const
 {
   boost::optional<vertex_descriptor> opt_vertex =
     find_vertex(type);
 
   if (!opt_vertex) {
-    os << "type \"" << type << "\" not found" << std::endl;
+    std::cout << "type \"" << type << "\" not found" << std::endl;
     return;
   }
 
@@ -173,44 +196,29 @@ void templight_trace::print_trace(
   // The 0th element is never read.
   std::vector<unsigned> depth_counter(boost::num_vertices(graph));
 
-  // Second argument is depth
   typedef boost::tuple<
-    vertex_descriptor, unsigned, instantiation_kind> stack_element;
+    vertex_descriptor,
+    unsigned, // Depth
+    boost::optional<instantiation_kind> > stack_element;
 
   // The usual stack for DFS
   std::stack<stack_element> to_visit;
 
   // We don't care about the instantiation_kind for the source vertex
-  to_visit.push(boost::make_tuple(*opt_vertex, 0, instantiation_kind()));
+  to_visit.push(boost::make_tuple(*opt_vertex, 0, boost::none));
   ++depth_counter[0]; // This value is neved read
 
-  for (bool first_iteration = true;
-      !to_visit.empty(); first_iteration = false)
-  {
+  while (!to_visit.empty()) {
+
     unsigned depth;
     vertex_descriptor vertex;
-    instantiation_kind kind;
+    boost::optional<instantiation_kind> kind;
     boost::tie(vertex, depth, kind) = to_visit.top();
     to_visit.pop();
 
     --depth_counter[depth];
 
-    // Print the current line
-    if (depth > 0) {
-      //TODO respect the -H (no syntax highlight parameter)
-      for (unsigned i = 1; i < depth; ++i) {
-        just::console::text_color(colors[i % colors.size()]);
-        os << (depth_counter[i] > 0 ? "| " : "  ");
-        just::console::reset();
-      }
-      just::console::text_color(colors[depth % colors.size()]);
-      os << "+ ";
-      just::console::reset();
-    }
-    os << boost::get(template_vertex_property_tag(), graph, vertex).name;
-
-    if (!first_iteration) { os << " (" <<  kind << ")"; }
-    os << '\n';
+    print_trace_line(vertex, depth, depth_counter, kind);
 
     if (!discovered[vertex]) {
       discovered[vertex] = true;
@@ -233,6 +241,7 @@ void templight_trace::print_trace(
 
         to_visit.push(
             boost::make_tuple((this->*edge_direction)(*it), depth+1, next_kind));
+
         ++depth_counter[depth+1];
       }
     }
@@ -265,20 +274,14 @@ templight_trace::vertex_descriptor templight_trace::get_target(
   return boost::target(e, graph);
 }
 
-void templight_trace::print_forwardtrace(
-    const std::string& type,
-    std::ostream& os) const
-{
-  print_trace<out_edge_iterator>(type, os,
-      &templight_trace::get_out_edges, &templight_trace::get_target);
+void templight_trace::print_forwardtrace(const std::string& type) const {
+  print_trace<out_edge_iterator>(
+      type, &templight_trace::get_out_edges, &templight_trace::get_target);
 }
 
-void templight_trace::print_backtrace(
-    const std::string& type,
-    std::ostream& os) const
-{
-  print_trace<in_edge_iterator>(type, os,
-      &templight_trace::get_in_edges, &templight_trace::get_source);
+void templight_trace::print_backtrace(const std::string& type) const {
+  print_trace<in_edge_iterator>(
+      type, &templight_trace::get_in_edges, &templight_trace::get_source);
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
