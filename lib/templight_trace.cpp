@@ -185,15 +185,12 @@ void templight_trace::print_trace(
   // Stores which vertices have been discovered
   std::vector<bool> discovered(boost::num_vertices(graph), false);
 
-  //
-  // TODO optimize size. this is worst case for simplicity
-  //
   // This vector counts how many elements are in the to_visit
   // stack for each specific depth.
   // The purpose is to not draw pipes, when a tree element
   // doesn't have any more children.
   // The 0th element is never read.
-  std::vector<unsigned> depth_counter(boost::num_vertices(graph));
+  std::vector<unsigned> depth_counter(1);
 
   typedef boost::tuple<
     vertex_descriptor,
@@ -208,7 +205,6 @@ void templight_trace::print_trace(
   ++depth_counter[0]; // This value is neved read
 
   while (!to_visit.empty()) {
-
     unsigned depth;
     vertex_descriptor vertex;
     boost::optional<instantiation_kind> kind;
@@ -230,15 +226,18 @@ void templight_trace::print_trace(
 
       // Partition Memozations to the front, so they get into the stack first
       std::stable_partition(
-          edges.begin(), edges.end(), is_memoziation_predicate(graph));
+        edges.begin(), edges.end(), is_memoziation_predicate(graph));
+
+      if (depth_counter.size() <= depth+1) {
+        depth_counter.resize(depth+1+1);
+      }
 
       BOOST_FOREACH(const edge_descriptor& edge, edges) {
-
         instantiation_kind next_kind =
           boost::get(template_edge_property_tag(), graph, edge).kind;
 
         to_visit.push(
-            boost::make_tuple((this->*edge_direction)(edge), depth+1, next_kind));
+          boost::make_tuple((this->*edge_direction)(edge), depth+1, next_kind));
 
         ++depth_counter[depth+1];
       }
