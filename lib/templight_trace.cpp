@@ -1,6 +1,7 @@
 
 #include <map>
 #include <stack>
+#include <deque>
 #include <utility>
 #include <iostream>
 #include <cassert>
@@ -10,6 +11,7 @@
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/container/stable_vector.hpp>
 
 #include <metashell/templight_trace.hpp>
 
@@ -141,12 +143,13 @@ private:
   const graph_t& graph;
 };
 
-void templight_trace::print_trace_line(
-    vertex_descriptor vertex,
+void templight_trace::print_trace_graph(
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
-    const boost::optional<instantiation_kind>& kind) const
+    bool print_mark) const
 {
+  assert(depth_counter.size() > depth);
+
   if (depth > 0) {
     //TODO respect the -H (no syntax highlight parameter)
     for (unsigned i = 1; i < depth; ++i) {
@@ -154,20 +157,56 @@ void templight_trace::print_trace_line(
       std::cout << (depth_counter[i] > 0 ? "| " : "  ");
       just::console::reset();
     }
+
     just::console::text_color(colors[depth % colors.size()]);
-    std::cout << "+ ";
+    if (print_mark) {
+      std::cout << "+ ";
+    } else if (depth_counter[depth] > 0) {
+      std::cout << "| ";
+    } else {
+      std::cout << "  ";
+    }
     just::console::reset();
   }
-  std::cout << boost::get(template_vertex_property_tag(), graph, vertex).name;
+}
 
-  if (kind) { std::cout << " (" << *kind << ")"; }
-  std::cout << '\n';
+void templight_trace::print_trace_line(
+    vertex_descriptor vertex,
+    unsigned depth,
+    const std::vector<unsigned>& depth_counter,
+    const boost::optional<instantiation_kind>& kind,
+    unsigned width) const
+{
+  std::stringstream element_content_ss;
+  element_content_ss <<
+    boost::get(template_vertex_property_tag(), graph, vertex).name;
+
+  if (kind) {
+    element_content_ss << " (" << *kind << ")";
+  }
+
+  std::string element_content = element_content_ss.str();
+
+  unsigned non_content_length = 2*depth;
+
+  if (width < 10 || non_content_length >= width - 10) {
+    // We have no chance to display the graph nicely :(
+    print_trace_graph(depth, depth_counter, true);
+    std::cout << element_content_ss << '\n';
+  } else {
+    unsigned content_width = width - non_content_length;
+    for (unsigned i = 0; i < element_content.size(); i += content_width) {
+      print_trace_graph(depth, depth_counter, i == 0);
+      std::cout << element_content.substr(i, content_width) << '\n';
+    }
+  }
 }
 
 template<class EdgeIterator, class GetEdges, class EdgeDirection>
 void templight_trace::print_trace(
     const std::string& type,
-    GetEdges get_edges, EdgeDirection edge_direction) const
+    GetEdges get_edges, EdgeDirection edge_direction,
+    unsigned width) const
 {
   boost::optional<vertex_descriptor> opt_vertex =
     find_vertex(type);
@@ -213,7 +252,7 @@ void templight_trace::print_trace(
 
     --depth_counter[depth];
 
-    print_trace_line(vertex, depth, depth_counter, kind);
+    print_trace_line(vertex, depth, depth_counter, kind, width);
 
     if (!discovered[vertex]) {
       discovered[vertex] = true;
@@ -269,14 +308,24 @@ templight_trace::vertex_descriptor templight_trace::get_target(
   return boost::target(e, graph);
 }
 
-void templight_trace::print_forwardtrace(const std::string& type) const {
+void templight_trace::print_forwardtrace(
+    const std::string& type, unsigned width) const
+{
   print_trace<out_edge_iterator>(
-      type, &templight_trace::get_out_edges, &templight_trace::get_target);
+      type,
+      &templight_trace::get_out_edges,
+      &templight_trace::get_target,
+      width);
 }
 
-void templight_trace::print_backtrace(const std::string& type) const {
+void templight_trace::print_backtrace(
+    const std::string& type, unsigned width) const
+{
   print_trace<in_edge_iterator>(
-      type, &templight_trace::get_in_edges, &templight_trace::get_source);
+      type,
+      &templight_trace::get_in_edges,
+      &templight_trace::get_source,
+      width);
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {

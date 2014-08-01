@@ -35,8 +35,8 @@ public:
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 
-  void print_forwardtrace(const std::string& type) const;
-  void print_backtrace(const std::string& type) const;
+  void print_forwardtrace(const std::string& type, unsigned width) const;
+  void print_backtrace(const std::string& type, unsigned width) const;
 
 private:
 
@@ -115,18 +115,25 @@ private:
   vertex_descriptor get_source(edge_descriptor e) const;
   vertex_descriptor get_target(edge_descriptor e) const;
 
+  void print_trace_graph(
+      unsigned depth,
+      const std::vector<unsigned>& depth_counter,
+      bool print_mark) const;
+
   // Used by print_trace
   void print_trace_line(
       vertex_descriptor vertex,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
-      const boost::optional<instantiation_kind>& kind) const;
+      const boost::optional<instantiation_kind>& kind,
+      unsigned width) const;
 
   template<class EdgeIterator, class GetEdges, class EdgeDirection>
   void print_trace(
       const std::string& type,
-      GetEdges ged_edges,
-      EdgeDirection edge_direction) const;
+      GetEdges get_edges,
+      EdgeDirection edge_direction,
+      unsigned width) const;
 
   //vertex names are currently stored reduntantly:
   // - in graph vertex_name property
