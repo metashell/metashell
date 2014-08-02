@@ -143,8 +143,7 @@ files. To be able to use the standard header files from Metashell, you need to
 pass `metashell.exe` the `-I<path to the windows_headers directory>` argument.
 
 The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
-header files from the [Cygwin](http://cygwin.org/) project. You need to run this
-script on Linux.
+header files. You need to run this script on Linux.
 
 ## Getting started
 

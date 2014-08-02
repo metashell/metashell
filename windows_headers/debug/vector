@@ -1,7 +1,6 @@
 // Debugging vector implementation -*- C++ -*-
 
-// Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
-// Free Software Foundation, Inc.
+// Copyright (C) 2003-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -52,7 +51,7 @@ namespace __debug
       typedef typename _Base::const_iterator _Base_const_iterator;
       typedef __gnu_debug::_Equal_to<_Base_const_iterator> _Equal;
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       typedef __gnu_cxx::__alloc_traits<_Allocator>  _Alloc_traits;
 #endif
 
@@ -80,10 +79,10 @@ namespace __debug
       vector(const _Allocator& __a = _Allocator())
       : _Base(__a), _M_guaranteed_capacity(0) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       explicit
-      vector(size_type __n)
-      : _Base(__n), _M_guaranteed_capacity(__n) { }
+      vector(size_type __n, const _Allocator& __a = _Allocator())
+      : _Base(__n, __a), _M_guaranteed_capacity(__n) { }
 
       vector(size_type __n, const _Tp& __value,
 	     const _Allocator& __a = _Allocator())
@@ -95,7 +94,12 @@ namespace __debug
       : _Base(__n, __value, __a), _M_guaranteed_capacity(__n) { }
 #endif
 
+#if __cplusplus >= 201103L
+      template<class _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+#else
       template<class _InputIterator>
+#endif
         vector(_InputIterator __first, _InputIterator __last,
 	       const _Allocator& __a = _Allocator())
         : _Base(__gnu_debug::__base(__gnu_debug::__check_valid_range(__first,
@@ -111,7 +115,7 @@ namespace __debug
       vector(const _Base& __x)
       : _Base(__x), _M_guaranteed_capacity(__x.size()) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       vector(vector&& __x) noexcept
       : _Base(std::move(__x)),
 	_M_guaranteed_capacity(this->size())
@@ -148,10 +152,11 @@ namespace __debug
 	return *this;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       vector&
       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
       {
+	__glibcxx_check_self_move_assign(__x);
 	_Base::operator=(std::move(__x));
 	this->_M_invalidate_all();
 	_M_update_guaranteed_capacity();
@@ -170,7 +175,12 @@ namespace __debug
       }
 #endif
 
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+#else
       template<typename _InputIterator>
+#endif
         void
         assign(_InputIterator __first, _InputIterator __last)
         {
@@ -189,7 +199,7 @@ namespace __debug
 	_M_update_guaranteed_capacity();
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       assign(initializer_list<value_type> __l)
       {
@@ -234,7 +244,7 @@ namespace __debug
       rend() const _GLIBCXX_NOEXCEPT
       { return const_reverse_iterator(begin()); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       const_iterator
       cbegin() const noexcept
       { return const_iterator(_Base::begin(), this); }
@@ -256,7 +266,7 @@ namespace __debug
       using _Base::size;
       using _Base::max_size;
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       resize(size_type __sz)
       {
@@ -294,7 +304,7 @@ namespace __debug
       }
 #endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       shrink_to_fit()
       {
@@ -389,7 +399,7 @@ namespace __debug
 	_M_update_guaranteed_capacity();
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Up = _Tp>
         typename __gnu_cxx::__enable_if<!std::__are_same<_Up, bool>::__value,
 					void>::__type
@@ -416,7 +426,7 @@ namespace __debug
 	_Base::pop_back();
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename... _Args>
         iterator
         emplace(iterator __position, _Args&&... __args)
@@ -450,7 +460,7 @@ namespace __debug
 	return iterator(__res, this);
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Up = _Tp>
         typename __gnu_cxx::__enable_if<!std::__are_same<_Up, bool>::__value,
 					iterator>::__type
@@ -476,7 +486,12 @@ namespace __debug
 	_M_update_guaranteed_capacity();
       }
 
+#if __cplusplus >= 201103L
+      template<class _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+#else
       template<class _InputIterator>
+#endif
         void
         insert(iterator __position,
 	       _InputIterator __first, _InputIterator __last)
@@ -529,10 +544,14 @@ namespace __debug
 
       void
       swap(vector& __x)
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 			noexcept(_Alloc_traits::_S_nothrow_swap())
 #endif
       {
+#if __cplusplus >= 201103L
+	if (!_Alloc_traits::_S_propagate_on_swap())
+	  __glibcxx_check_equal_allocs(__x);
+#endif
 	_Base::swap(__x);
 	this->_M_swap(__x);
         std::swap(_M_guaranteed_capacity, __x._M_guaranteed_capacity);
@@ -617,7 +636,7 @@ namespace __debug
 
 } // namespace __debug
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
   // DR 1182.
   /// std::hash specialization for vector<bool>.
   template<typename _Alloc>

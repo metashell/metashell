@@ -1,6 +1,6 @@
 // Profiling unordered_set/unordered_multiset implementation -*- C++ -*-
 
-// Copyright (C) 2009, 2010, 2011 Free Software Foundation, Inc.
+// Copyright (C) 2009-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -28,7 +28,7 @@
 #ifndef _GLIBCXX_PROFILE_UNORDERED_SET
 #define _GLIBCXX_PROFILE_UNORDERED_SET 1
 
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
 # include <bits/c++0x_warning.h>
 #else
 # include <unordered_set>
@@ -50,7 +50,7 @@ namespace __profile
     class unordered_set
     : public _GLIBCXX_STD_BASE
     {
-      typedef typename _GLIBCXX_STD_BASE _Base;
+      typedef _GLIBCXX_STD_BASE _Base;
 
     public:
       typedef typename _Base::size_type       size_type;
@@ -287,22 +287,22 @@ namespace __profile
       }
   };
 
-  template<typename _Value, typename _Hash, typename _Pred, typename _Alloc>
+  template<typename _Key, typename _Hash, typename _Pred, typename _Alloc>
     inline void
-    swap(unordered_set<_Value, _Hash, _Pred, _Alloc>& __x,
-	 unordered_set<_Value, _Hash, _Pred, _Alloc>& __y)
+    swap(unordered_set<_Key, _Hash, _Pred, _Alloc>& __x,
+	 unordered_set<_Key, _Hash, _Pred, _Alloc>& __y)
     { __x.swap(__y); }
 
-  template<typename _Value, typename _Hash, typename _Pred, typename _Alloc>
+  template<typename _Key, typename _Hash, typename _Pred, typename _Alloc>
     inline bool
-    operator==(const unordered_set<_Value, _Hash, _Pred, _Alloc>& __x,
-	       const unordered_set<_Value, _Hash, _Pred, _Alloc>& __y)
-    { return __x._M_equal(__y); }
+    operator==(const unordered_set<_Key, _Hash, _Pred, _Alloc>& __x,
+	       const unordered_set<_Key, _Hash, _Pred, _Alloc>& __y)
+    { return static_cast<const _GLIBCXX_STD_BASE&>(__x) == __y; }
 
-  template<typename _Value, typename _Hash, typename _Pred, typename _Alloc>
+  template<typename _Key, typename _Hash, typename _Pred, typename _Alloc>
     inline bool
-    operator!=(const unordered_set<_Value, _Hash, _Pred, _Alloc>& __x,
-	       const unordered_set<_Value, _Hash, _Pred, _Alloc>& __y)
+    operator!=(const unordered_set<_Key, _Hash, _Pred, _Alloc>& __x,
+	       const unordered_set<_Key, _Hash, _Pred, _Alloc>& __y)
     { return !(__x == __y); }
 
 #undef _GLIBCXX_BASE
@@ -318,7 +318,7 @@ namespace __profile
     class unordered_multiset
     : public _GLIBCXX_STD_BASE
     {
-      typedef typename _GLIBCXX_STD_BASE _Base;
+      typedef _GLIBCXX_STD_BASE _Base;
 
     public:
       typedef typename _Base::size_type       size_type;
@@ -559,7 +559,7 @@ namespace __profile
     inline bool
     operator==(const unordered_multiset<_Value, _Hash, _Pred, _Alloc>& __x,
 	       const unordered_multiset<_Value, _Hash, _Pred, _Alloc>& __y)
-    { return __x._M_equal(__y); }
+    { return static_cast<const _GLIBCXX_STD_BASE&>(__x) == __y; }
 
   template<typename _Value, typename _Hash, typename _Pred, typename _Alloc>
     inline bool
@@ -573,6 +573,6 @@ namespace __profile
 #undef _GLIBCXX_BASE
 #undef _GLIBCXX_STD_BASE
 
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
 #endif

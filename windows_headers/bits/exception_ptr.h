@@ -1,6 +1,6 @@
 // Exception Handling support header (exception_ptr class) for -*- C++ -*-
 
-// Copyright (C) 2008, 2009, 2010, 2011 Free Software Foundation
+// Copyright (C) 2008-2013 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -91,7 +91,7 @@ namespace std
 
       exception_ptr(const exception_ptr&) _GLIBCXX_USE_NOEXCEPT;
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       exception_ptr(nullptr_t) noexcept
       : _M_exception_object(0)
       { }
@@ -101,7 +101,7 @@ namespace std
       { __o._M_exception_object = 0; }
 #endif
 
-#if !defined (__GXX_EXPERIMENTAL_CXX0X__) || defined (_GLIBCXX_EH_PTR_COMPAT)
+#if (__cplusplus < 201103L) || defined (_GLIBCXX_EH_PTR_COMPAT)
       typedef void (exception_ptr::*__safe_bool)();
 
       // For construction from nullptr or 0.
@@ -111,7 +111,7 @@ namespace std
       exception_ptr& 
       operator=(const exception_ptr&) _GLIBCXX_USE_NOEXCEPT;
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       exception_ptr& 
       operator=(exception_ptr&& __o) noexcept
       {
@@ -134,7 +134,7 @@ namespace std
       operator __safe_bool() const _GLIBCXX_USE_NOEXCEPT;
 #endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       explicit operator bool() const
       { return _M_exception_object; }
 #endif

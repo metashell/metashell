@@ -1,8 +1,6 @@
 // Components for manipulating sequences of characters -*- C++ -*-
 
-// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-// 2006, 2007, 2008, 2009, 2010, 2011
-// Free Software Foundation, Inc.
+// Copyright (C) 1997-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -40,7 +38,7 @@
 
 #include <ext/atomicity.h>
 #include <debug/debug.h>
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 #include <initializer_list>
 #endif
 
@@ -54,6 +52,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    *
    *  @ingroup strings
    *  @ingroup sequences
+   *
+   *  @tparam _CharT  Type of character
+   *  @tparam _Traits  Traits for character type, defaults to
+   *                   char_traits<_CharT>.
+   *  @tparam _Alloc  Allocator type, defaults to allocator<_CharT>.
    *
    *  Meets the requirements of a <a href="tables.html#65">container</a>, a
    *  <a href="tables.html#66">reversible container</a>, and a
@@ -493,7 +496,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        */
       basic_string(size_type __n, _CharT __c, const _Alloc& __a = _Alloc());
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Move construct string.
        *  @param  __str  Source string.
@@ -517,7 +520,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        *  @param  __a  Allocator to use (default is default allocator).
        */
       basic_string(initializer_list<_CharT> __l, const _Alloc& __a = _Alloc());
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Construct string as copy of a range.
@@ -565,7 +568,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	return *this;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Move assign the value of @a str to this string.
        *  @param  __str  Source string.
@@ -591,7 +594,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	this->assign(__l.begin(), __l.size());
 	return *this;
       }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       // Iterators:
       /**
@@ -668,7 +671,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       rend() const _GLIBCXX_NOEXCEPT
       { return const_reverse_iterator(this->begin()); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  Returns a read-only (constant) iterator that points to the first
        *  character in the %string.
@@ -750,7 +753,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       resize(size_type __n)
       { this->resize(__n, _CharT()); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       ///  A non-binding request to reduce capacity() to size().
       void
       shrink_to_fit()
@@ -885,7 +888,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	return _M_data()[__n];
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  Returns a read/write reference to the data at the first
        *  element of the %string.
@@ -950,7 +953,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	return *this;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Append an initializer_list of characters.
        *  @param __l  The initializer_list of characters to be appended.
@@ -959,7 +962,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string&
       operator+=(initializer_list<_CharT> __l)
       { return this->append(__l.begin(), __l.size()); }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Append a string to this string.
@@ -1017,7 +1020,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string&
       append(size_type __n, _CharT __c);
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Append an initializer_list of characters.
        *  @param __l  The initializer_list of characters to append.
@@ -1026,7 +1029,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string&
       append(initializer_list<_CharT> __l)
       { return this->append(__l.begin(), __l.size()); }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Append a range of characters.
@@ -1063,7 +1066,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string&
       assign(const basic_string& __str);
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Set value to contents of another string.
        *  @param  __str  Source string to use.
@@ -1078,7 +1081,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	this->swap(__str);
 	return *this;
       }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Set value to a substring of a string.
@@ -1154,7 +1157,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         assign(_InputIterator __first, _InputIterator __last)
         { return this->replace(_M_ibegin(), _M_iend(), __first, __last); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Set value to an initializer_list of characters.
        *  @param __l  The initializer_list of characters to assign.
@@ -1163,7 +1166,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string&
       assign(initializer_list<_CharT> __l)
       { return this->assign(__l.begin(), __l.size()); }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Insert multiple characters.
@@ -1199,7 +1202,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         insert(iterator __p, _InputIterator __beg, _InputIterator __end)
         { this->replace(__p, __p, __beg, __end); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Insert an initializer_list of characters.
        *  @param __p  Iterator referencing location in string to insert at.
@@ -1212,7 +1215,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	_GLIBCXX_DEBUG_PEDASSERT(__p >= _M_ibegin() && __p <= _M_iend());
 	this->insert(__p - _M_ibegin(), __l.begin(), __l.size());
       }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Insert value of a string.
@@ -1394,7 +1397,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       iterator
       erase(iterator __first, iterator __last);
  
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Remove the last character.
        *
@@ -1403,7 +1406,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       void
       pop_back()
       { erase(size()-1, 1); }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
       /**
        *  @brief  Replace characters with value from another string.
@@ -1671,7 +1674,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 			     __k1.base(), __k2 - __k1);
       }
       
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Replace range of characters with initializer_list.
        *  @param __i1  Iterator referencing start of range to replace.
@@ -1689,7 +1692,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       basic_string& replace(iterator __i1, iterator __i2,
 			    initializer_list<_CharT> __l)
       { return this->replace(__i1, __i2, __l.begin(), __l.end()); }
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
     private:
       template<class _Integer>
@@ -2421,7 +2424,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       return __str;
     }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
   template<typename _CharT, typename _Traits, typename _Alloc>
     inline basic_string<_CharT, _Traits, _Alloc>
     operator+(basic_string<_CharT, _Traits, _Alloc>&& __lhs,
@@ -2764,10 +2767,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    *
    *  Stores characters from @a __is into @a __str until @a __delim is
    *  found, the end of the stream is encountered, or str.max_size()
-   *  is reached.  If is.width() is non-zero, that is the limit on the
-   *  number of characters stored into @a __str.  Any previous
-   *  contents of @a __str are erased.  If @a __delim was encountered,
-   *  it is extracted but not stored into @a __str.
+   *  is reached.  Any previous contents of @a __str are erased.  If
+   *  @a __delim is encountered, it is extracted but not stored into
+   *  @a __str.
    */
   template<typename _CharT, typename _Traits, typename _Alloc>
     basic_istream<_CharT, _Traits>&
@@ -2782,10 +2784,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    *
    *  Stores characters from is into @a __str until &apos;\n&apos; is
    *  found, the end of the stream is encountered, or str.max_size()
-   *  is reached.  If __is.width() is non-zero, that is the limit on
-   *  the number of characters stored into @a __str.  Any previous
-   *  contents of @a __str are erased.  If end of line was
-   *  encountered, it is extracted but not stored into @a __str.
+   *  is reached.  Any previous contents of @a __str are erased.  If
+   *  end of line is encountered, it is extracted but not stored into
+   *  @a __str.
    */
   template<typename _CharT, typename _Traits, typename _Alloc>
     inline basic_istream<_CharT, _Traits>&
@@ -2808,7 +2809,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#if (defined(__GXX_EXPERIMENTAL_CXX0X__) && defined(_GLIBCXX_USE_C99) \
+#if ((__cplusplus >= 201103L) && defined(_GLIBCXX_USE_C99) \
      && !defined(_GLIBCXX_HAVE_BROKEN_VSWPRINTF))
 
 #include <ext/string_conversions.h>
@@ -3025,9 +3026,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#endif /* __GXX_EXPERIMENTAL_CXX0X__ && _GLIBCXX_USE_C99 ... */
+#endif /* C++11 && _GLIBCXX_USE_C99 ... */
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 
 #include <bits/functional_hash.h>
 
@@ -3048,6 +3049,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       { return std::_Hash_impl::hash(__s.data(), __s.length()); }
     };
 
+  template<>
+    struct __is_fast_hash<hash<string>> : std::false_type
+    { };
+
 #ifdef _GLIBCXX_USE_WCHAR_T
   /// std::hash specialization for wstring.
   template<>
@@ -3059,6 +3064,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       { return std::_Hash_impl::hash(__s.data(),
                                      __s.length() * sizeof(wchar_t)); }
     };
+
+  template<>
+    struct __is_fast_hash<hash<wstring>> : std::false_type
+    { };
 #endif
 #endif /* _GLIBCXX_COMPATIBILITY_CXX0X */
 
@@ -3074,6 +3083,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                                      __s.length() * sizeof(char16_t)); }
     };
 
+  template<>
+    struct __is_fast_hash<hash<u16string>> : std::false_type
+    { };
+
   /// std::hash specialization for u32string.
   template<>
     struct hash<u32string>
@@ -3084,11 +3097,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       { return std::_Hash_impl::hash(__s.data(),
                                      __s.length() * sizeof(char32_t)); }
     };
+
+  template<>
+    struct __is_fast_hash<hash<u32string>> : std::false_type
+    { };
 #endif
 
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#endif /* __GXX_EXPERIMENTAL_CXX0X__ */
+#endif // C++11
 
 #endif /* _BASIC_STRING_H */

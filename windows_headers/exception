@@ -1,8 +1,6 @@
 // Exception Handling support header for -*- C++ -*-
 
-// Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-// 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
-// Free Software Foundation
+// Copyright (C) 1995-2013 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -150,7 +148,7 @@ _GLIBCXX_END_NAMESPACE_VERSION
 
 #pragma GCC visibility pop
 
-#if defined(__GXX_EXPERIMENTAL_CXX0X__) && (ATOMIC_INT_LOCK_FREE > 1)
+#if (__cplusplus >= 201103L) && (ATOMIC_INT_LOCK_FREE > 1)
 #include <bits/exception_ptr.h>
 #include <bits/nested_exception.h>
 #endif

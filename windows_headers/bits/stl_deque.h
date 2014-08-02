@@ -1,7 +1,6 @@
 // Deque implementation -*- C++ -*-
 
-// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-// 2011 Free Software Foundation, Inc.
+// Copyright (C) 2001-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -60,7 +59,7 @@
 #include <bits/concept_check.h>
 #include <bits/stl_iterator_base_types.h>
 #include <bits/stl_iterator_base_funcs.h>
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 #include <initializer_list>
 #endif
 
@@ -392,7 +391,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 				const _Tp&, const _Tp*>(__last),
 				__result); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
   template<typename _Tp>
     _Deque_iterator<_Tp, _Tp&, _Tp*>
     move(_Deque_iterator<_Tp, const _Tp&, const _Tp*>,
@@ -465,7 +464,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       : _M_impl(__a)
       { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       _Deque_base(_Deque_base&& __x)
       : _M_impl(std::move(__x._M_get_Tp_allocator()))
       {
@@ -508,7 +507,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  _M_start(), _M_finish()
 	{ }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 	_Deque_impl(_Tp_alloc_type&& __a)
 	: _Tp_alloc_type(std::move(__a)), _M_map(0), _M_map_size(0),
 	  _M_start(), _M_finish()
@@ -649,6 +648,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
    *
    *  @ingroup sequences
    *
+   *  @tparam _Tp  Type of element.
+   *  @tparam _Alloc  Allocator type, defaults to allocator<_Tp>.
+   *
    *  Meets the requirements of a <a href="tables.html#65">container</a>, a
    *  <a href="tables.html#66">reversible container</a>, and a
    *  <a href="tables.html#67">sequence</a>, including the
@@ -788,7 +790,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       deque(const allocator_type& __a)
       : _Base(__a, 0) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Creates a %deque with default constructed elements.
        *  @param  __n  The number of elements to initially create.
@@ -842,7 +844,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 				    this->_M_impl._M_start,
 				    _M_get_Tp_allocator()); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  %Deque move constructor.
        *  @param  __x  A %deque of identical element and allocator types.
@@ -888,6 +890,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  input iterators are used, then this will do at most 2N calls to the
        *  copy constructor, and logN memory reallocations.
        */
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+        deque(_InputIterator __first, _InputIterator __last,
+	      const allocator_type& __a = allocator_type())
+	: _Base(__a)
+        { _M_initialize_dispatch(__first, __last, __false_type()); }
+#else
       template<typename _InputIterator>
         deque(_InputIterator __first, _InputIterator __last,
 	      const allocator_type& __a = allocator_type())
@@ -897,6 +907,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
 	  _M_initialize_dispatch(__first, __last, _Integral());
 	}
+#endif
 
       /**
        *  The dtor only erases the elements, and note that if the elements
@@ -916,7 +927,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       deque&
       operator=(const deque& __x);
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  %Deque move assignment operator.
        *  @param  __x  A %deque of identical element and allocator types.
@@ -979,6 +990,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  resulting %deque's size is the same as the number of elements
        *  assigned.  Old data may be lost.
        */
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+        void
+        assign(_InputIterator __first, _InputIterator __last)
+        { _M_assign_dispatch(__first, __last, __false_type()); }
+#else
       template<typename _InputIterator>
         void
         assign(_InputIterator __first, _InputIterator __last)
@@ -986,8 +1004,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
 	  _M_assign_dispatch(__first, __last, _Integral());
 	}
+#endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Assigns an initializer list to a %deque.
        *  @param  __l  An initializer_list.
@@ -1080,7 +1099,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       rend() const _GLIBCXX_NOEXCEPT
       { return const_reverse_iterator(this->_M_impl._M_start); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  Returns a read-only (constant) iterator that points to the first
        *  element in the %deque.  Iteration is done in ordinary element order.
@@ -1128,7 +1147,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       max_size() const _GLIBCXX_NOEXCEPT
       { return _M_get_Tp_allocator().max_size(); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Resizes the %deque to the specified number of elements.
        *  @param  __new_size  Number of elements the %deque should contain.
@@ -1194,7 +1213,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       }
 #endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**  A non-binding request to reduce memory use.  */
       void
       shrink_to_fit()
@@ -1348,7 +1367,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  _M_push_front_aux(__x);
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       push_front(value_type&& __x)
       { emplace_front(std::move(__x)); }
@@ -1380,7 +1399,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  _M_push_back_aux(__x);
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       push_back(value_type&& __x)
       { emplace_back(std::move(__x)); }
@@ -1432,7 +1451,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  _M_pop_back_aux();
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Inserts an object in %deque before specified iterator.
        *  @param  __position  An iterator into the %deque.
@@ -1459,7 +1478,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       iterator
       insert(iterator __position, const value_type& __x);
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  Inserts given rvalue into %deque before specified iterator.
        *  @param  __position  An iterator into the %deque.
@@ -1510,6 +1529,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  [__first,__last) into the %deque before the location specified
        *  by @a __position.  This is known as <em>range insert</em>.
        */
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+        void
+        insert(iterator __position, _InputIterator __first,
+	       _InputIterator __last)
+        { _M_insert_dispatch(__position, __first, __last, __false_type()); }
+#else
       template<typename _InputIterator>
         void
         insert(iterator __position, _InputIterator __first,
@@ -1519,6 +1546,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
 	  _M_insert_dispatch(__position, __first, __last, _Integral());
 	}
+#endif
 
       /**
        *  @brief  Remove element at given position.
@@ -1651,7 +1679,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       _M_fill_initialize(const value_type& __value);
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // called by deque(n).
       void
       _M_default_initialize();
@@ -1723,7 +1751,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 
       //@{
       /// Helper functions for push_* and pop_*.
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
       void _M_push_back_aux(const value_type&);
 
       void _M_push_front_aux(const value_type&);
@@ -1784,7 +1812,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       _M_fill_insert(iterator __pos, size_type __n, const value_type& __x);
 
       // called by insert(p,x)
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
       iterator
       _M_insert_aux(iterator __pos, const value_type& __x);
 #else
@@ -1845,7 +1873,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	this->_M_impl._M_finish = __pos;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // Called by resize(sz).
       void
       _M_default_append(size_type __n);

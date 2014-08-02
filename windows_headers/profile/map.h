@@ -1,6 +1,6 @@
 // Profiling map implementation -*- C++ -*-
 
-// Copyright (C) 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
+// Copyright (C) 2009-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -69,7 +69,12 @@ namespace __profile
       : _Base(__comp, __a)
       { __profcxx_map_to_unordered_map_construct(this); }
 
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+#else
       template<typename _InputIterator>
+#endif
         map(_InputIterator __first, _InputIterator __last,
 	    const _Compare& __comp = _Compare(),
 	    const _Allocator& __a = _Allocator())
@@ -84,7 +89,7 @@ namespace __profile
       : _Base(__x)
       { __profcxx_map_to_unordered_map_construct(this); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       map(map&& __x)
       noexcept(is_nothrow_copy_constructible<_Compare>::value)
       : _Base(std::move(__x))
@@ -106,7 +111,7 @@ namespace __profile
 	return *this;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       map&
       operator=(map&& __x)
       {
@@ -175,7 +180,7 @@ namespace __profile
         return const_reverse_iterator(begin());
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       const_iterator
       cbegin() const noexcept
       { return const_iterator(_Base::begin()); }
@@ -212,7 +217,7 @@ namespace __profile
         return _Base::operator[](__k);
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       mapped_type&
       operator[](key_type&& __k)
       {
@@ -236,6 +241,30 @@ namespace __profile
       }
 
       // modifiers:
+#if __cplusplus >= 201103L
+      template<typename... _Args>
+	std::pair<iterator, bool>
+	emplace(_Args&&... __args)
+	{
+	  __profcxx_map_to_unordered_map_insert(this, size(), 1);
+	  auto __res = _Base::emplace(std::forward<_Args>(__args)...);
+	  return std::pair<iterator, bool>(iterator(__res.first),
+					   __res.second);
+	}
+
+      template<typename... _Args>
+	iterator
+	emplace_hint(const_iterator __pos, _Args&&... __args)
+	{
+	  size_type size_before = size();
+	  auto __res = _Base::emplace_hint(__pos,
+					   std::forward<_Args>(__args)...);
+	  __profcxx_map_to_unordered_map_insert(this, size_before,
+						size() - size_before);
+	  return __res;
+	}
+#endif
+
       std::pair<iterator, bool>
       insert(const value_type& __x)
       {
@@ -246,7 +275,7 @@ namespace __profile
 					 __res.second);
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Pair, typename = typename
 	       std::enable_if<std::is_constructible<value_type,
 						    _Pair&&>::value>::type>
@@ -262,7 +291,7 @@ namespace __profile
 	}
 #endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       void
       insert(std::initializer_list<value_type> __list)
       { 
@@ -274,7 +303,7 @@ namespace __profile
 #endif
 
       iterator
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       insert(const_iterator __position, const value_type& __x)
 #else
       insert(iterator __position, const value_type& __x)
@@ -282,12 +311,12 @@ namespace __profile
       {
         size_type size_before = size();
 	iterator __i = iterator(_Base::insert(__position, __x));
-        __profcxx_map_to_unordered_map_insert(this, size_before, 
+        __profcxx_map_to_unordered_map_insert(this, size_before,
 					      size() - size_before);
 	return __i;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Pair, typename = typename
 	       std::enable_if<std::is_constructible<value_type,
 						    _Pair&&>::value>::type>
@@ -303,7 +332,12 @@ namespace __profile
       }
 #endif
 
+#if __cplusplus >= 201103L
+      template<typename _InputIterator,
+	       typename = std::_RequireInputIter<_InputIterator>>
+#else
       template<typename _InputIterator>
+#endif
         void
         insert(_InputIterator __first, _InputIterator __last)
         {
@@ -313,7 +347,7 @@ namespace __profile
                                                 size() - size_before);
 	}
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       iterator
       erase(const_iterator __position)
       {
@@ -347,7 +381,7 @@ namespace __profile
 	}
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       iterator
       erase(const_iterator __first, const_iterator __last)
       { return iterator(_Base::erase(__first, __last)); }

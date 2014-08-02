@@ -44,6 +44,9 @@
 #include <cmath>
 #include <sstream>
 
+// Get rid of a macro possibly defined in <complex.h>
+#undef complex
+
 namespace std _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -85,7 +88,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template<typename _Tp> complex<_Tp> log(const complex<_Tp>&);
   /// Return complex base 10 logarithm of @a z.
   template<typename _Tp> complex<_Tp> log10(const complex<_Tp>&);
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
   // DR 844.
   /// Return @a x to the @a y'th power.
   template<typename _Tp> complex<_Tp> pow(const complex<_Tp>&, int);
@@ -136,12 +139,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         _GLIBCXX_CONSTEXPR complex(const complex<_Up>& __z)
 	: _M_real(__z.real()), _M_imag(__z.imag()) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 387. std::complex over-encapsulated.
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr _Tp 
       real() { return _M_real; }
 
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr _Tp 
       imag() { return _M_imag; }
 #else
@@ -527,7 +532,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     }
 
   // Values
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
   template<typename _Tp>
     constexpr _Tp
     real(const complex<_Tp>& __z)
@@ -950,7 +955,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // 26.2.8/9  pow(__x, __y): Returns the complex power base of __x
   //                          raised to the __y-th power.  The branch
   //                          cut is on the negative axis.
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
   template<typename _Tp>
     complex<_Tp>
     __complex_pow_unsigned(complex<_Tp> __x, unsigned __n)
@@ -1044,7 +1049,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       _GLIBCXX_CONSTEXPR complex(_ComplexT __z) : _M_value(__z) { }
 
       _GLIBCXX_CONSTEXPR complex(float __r = 0.0f, float __i = 0.0f)
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       : _M_value{ __r, __i } { }
 #else
       {
@@ -1056,12 +1061,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       explicit _GLIBCXX_CONSTEXPR complex(const complex<double>&);
       explicit _GLIBCXX_CONSTEXPR complex(const complex<long double>&);	
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 387. std::complex over-encapsulated.
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr float 
       real() { return __real__ _M_value; }
 
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr float 
       imag() { return __imag__ _M_value; }
 #else
@@ -1191,7 +1198,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       _GLIBCXX_CONSTEXPR complex(_ComplexT __z) : _M_value(__z) { }
 
       _GLIBCXX_CONSTEXPR complex(double __r = 0.0, double __i = 0.0)
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       : _M_value{ __r, __i } { }
 #else
       {
@@ -1205,12 +1212,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       explicit _GLIBCXX_CONSTEXPR complex(const complex<long double>&);	
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 387. std::complex over-encapsulated.
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr double 
       real() { return __real__ _M_value; }
 
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr double 
       imag() { return __imag__ _M_value; }
 #else
@@ -1340,7 +1349,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       _GLIBCXX_CONSTEXPR complex(long double __r = 0.0L, 
 				 long double __i = 0.0L)
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       : _M_value{ __r, __i } { }
 #else
       {
@@ -1355,12 +1364,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       _GLIBCXX_CONSTEXPR complex(const complex<double>& __z)
       : _M_value(__z.__rep()) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 387. std::complex over-encapsulated.
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr long double 
       real() { return __real__ _M_value; }
 
+      __attribute ((__abi_tag__ ("cxx11")))
       constexpr long double 
       imag() { return __imag__ _M_value; }
 #else
@@ -1547,7 +1558,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
@@ -1917,6 +1928,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#endif  // __GXX_EXPERIMENTAL_CXX0X__
+#endif  // C++11
 
 #endif  /* _GLIBCXX_COMPLEX */
