@@ -132,15 +132,11 @@ need fixing. If you want to experiment with it, here is how you can build it:
 * If CMake can find the dependent libraries, it will generate a solution file
   for Metashell in the `bin` directory. Open it with Visual Studio 2012 and
   build it.
-* To run the generated binaries, you need to copy the dependent dlls into the
-  same directory with the executable or into a directory on the `PATH`. The
-  dependent dlls are `libclang.dll` and `edit.dll`.
 
 #### Standard header files on Windows
 
 The `windows_headers` directory contains the [MinGW](http://mingw.org/) header
-files. To be able to use the standard header files from Metashell, you need to
-pass `metashell.exe` the `-I<path to the windows_headers directory>` argument.
+files. These files are made available for Metashell.
 
 The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
 header files. You need to run this script on Linux.

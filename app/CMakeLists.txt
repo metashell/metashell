@@ -70,3 +70,28 @@ include_directories(${CLANG_INCLUDE_DIR})
 install(TARGETS metashell DESTINATION bin)
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
+########################
+# Windows header files #
+########################
+if (WIN32)
+  file(GLOB_RECURSE ABS_WINDOWS_HEADERS ${CMAKE_SOURCE_DIR}/windows_headers/*)
+  
+  foreach (HEADER ${ABS_WINDOWS_HEADERS})
+    file(RELATIVE_PATH REL_HEADER ${CMAKE_SOURCE_DIR} ${HEADER})
+    list(APPEND WINDOWS_HEADERS ${REL_HEADER})
+  endforeach()
+  
+  foreach (HEADER ${WINDOWS_HEADERS})
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/${HEADER}"
+      "${CMAKE_CURRENT_BINARY_DIR}/Debug/${HEADER}"
+      COPYONLY
+    )
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/${HEADER}"
+      "${CMAKE_CURRENT_BINARY_DIR}/Release/${HEADER}"
+      COPYONLY
+    )
+  endforeach ()
+endif ()
+
