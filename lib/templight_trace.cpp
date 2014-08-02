@@ -147,17 +147,21 @@ private:
 templight_trace::string_range templight_trace::find_type_emphasize(
     const std::string& type) const
 {
-  const std::string symbol_regex = "";
-  boost::regex reg("(::)?([_a-zA-Z][_a-zA-Z0-9]*::)*([_a-zA-Z][_a-zA-Z0-9]*)");
+  const std::string symbol_regex =
+    "([_a-zA-Z][_a-zA-Z0-9]*)";
+  const std::string namespace_regex =
+    "(" + symbol_regex + "|(\\(anonymous namespace\\)))";
+
+  boost::regex reg(
+      "^(::)?(" + namespace_regex + "::)*" + symbol_regex);
 
   boost::smatch match;
   if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
     return string_range(type.end(), type.end());
   }
 
-  return string_range(match[match.size()-1].first, match[match.size()-1].second);
+  return string_range(match[6].first, match[6].second);
 }
-
 
 void templight_trace::print_trace_graph(
     unsigned depth,
