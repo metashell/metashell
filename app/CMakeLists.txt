@@ -42,6 +42,9 @@ endif()
 # Program_options
 target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 
+# Regex
+target_link_libraries(metashell ${Boost_REGEX_LIBRARIES})
+
 # Clang
 target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})

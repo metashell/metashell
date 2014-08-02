@@ -31,6 +31,9 @@ target_link_libraries(metashell_test
 # Program_options
 target_link_libraries(metashell_test ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 
+# Regex
+target_link_libraries(metashell_test ${Boost_REGEX_LIBRARIES})
+
 # Clang
 include_directories(${CLANG_INCLUDE_DIR})
 target_link_libraries(metashell_test ${CLANG_LIBRARY})
