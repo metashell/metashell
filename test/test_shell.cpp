@@ -21,10 +21,19 @@ using namespace metashell;
 namespace
 {
   const int default_width = 80;
+
+  config default_config()
+  {
+    config cfg = config::default_config();
+#ifdef WINDOWS_HEADERS
+    cfg.include_path.push_back(WINDOWS_HEADERS);
+#endif
+    return cfg;
+  }
 }
 
 test_shell::test_shell() :
-  shell(config::default_config()),
+  shell(default_config()),
   _width(default_width),
   _history(0)
 {}
@@ -36,7 +45,7 @@ test_shell::test_shell(const config& cfg_, int width_) :
 {}
 
 test_shell::test_shell(std::vector<std::string>& history_) :
-  shell(config::default_config()),
+  shell(default_config()),
   _width(default_width),
   _history(&history_)
 {}

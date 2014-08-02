@@ -1,0 +1,145 @@
+/**
+ * @file ntddvol.h
+ * Copyright 2012, 2013 MinGW.org project
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+/* Created by Casper S. Hornstrup <chorns@users.sourceforge.net> */
+#ifndef __NTDDVOL_H
+#define __NTDDVOL_H
+#pragma GCC system_header
+#include <_mingw.h>
+
+/*
+ * Volume IOCTL interface.
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "ntddk.h"
+
+#define IOCTL_VOLUME_BASE                 ((ULONG) 'V')
+
+#define IOCTL_VOLUME_LOGICAL_TO_PHYSICAL \
+  CTL_CODE(IOCTL_VOLUME_BASE, 8, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_PHYSICAL_TO_LOGICAL \
+  CTL_CODE(IOCTL_VOLUME_BASE, 9, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_READ_PLEX \
+  CTL_CODE(IOCTL_VOLUME_BASE, 11, METHOD_OUT_DIRECT, FILE_READ_ACCESS)
+
+#define IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS \
+  CTL_CODE(IOCTL_VOLUME_BASE, 0, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_IS_CLUSTERED \
+  CTL_CODE(IOCTL_VOLUME_BASE, 12, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_QUERY_VOLUME_NUMBER \
+  CTL_CODE(IOCTL_VOLUME_BASE, 7, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_IS_PARTITION \
+  CTL_CODE(IOCTL_VOLUME_BASE, 10, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_SET_GPT_ATTRIBUTES \
+  CTL_CODE(IOCTL_VOLUME_BASE, 13, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_GET_GPT_ATTRIBUTES \
+  CTL_CODE(IOCTL_VOLUME_BASE, 14, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_SUPPORTS_ONLINE_OFFLINE \
+  CTL_CODE(IOCTL_VOLUME_BASE, 1, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_ONLINE \
+  CTL_CODE(IOCTL_VOLUME_BASE, 2, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+#define IOCTL_VOLUME_OFFLINE \
+  CTL_CODE(IOCTL_VOLUME_BASE, 3, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+#define IOCTL_VOLUME_IS_OFFLINE \
+  CTL_CODE(IOCTL_VOLUME_BASE, 4, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_IS_IO_CAPABLE \
+  CTL_CODE(IOCTL_VOLUME_BASE, 5, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VOLUME_QUERY_FAILOVER_SET \
+  CTL_CODE(IOCTL_VOLUME_BASE, 6, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+
+typedef struct _VOLUME_LOGICAL_OFFSET {
+  LONGLONG  LogicalOffset;
+} VOLUME_LOGICAL_OFFSET, *PVOLUME_LOGICAL_OFFSET;
+
+typedef struct _VOLUME_PHYSICAL_OFFSET {
+  ULONG  DiskNumber;
+  LONGLONG  Offset;
+} VOLUME_PHYSICAL_OFFSET, *PVOLUME_PHYSICAL_OFFSET;
+
+typedef struct _VOLUME_PHYSICAL_OFFSETS {
+  ULONG  NumberOfPhysicalOffsets;
+  VOLUME_PHYSICAL_OFFSET  PhysicalOffset[1];
+} VOLUME_PHYSICAL_OFFSETS, *PVOLUME_PHYSICAL_OFFSETS;
+
+typedef struct _VOLUME_READ_PLEX_INPUT {
+  LARGE_INTEGER  ByteOffset;
+  ULONG  Length;
+  ULONG  PlexNumber;
+} VOLUME_READ_PLEX_INPUT, *PVOLUME_READ_PLEX_INPUT;
+
+typedef struct _VOLUME_GET_GPT_ATTRIBUTES_INFORMATION {
+  ULONGLONG  GptAttributes;
+} VOLUME_GET_GPT_ATTRIBUTES_INFORMATION, *PVOLUME_GET_GPT_ATTRIBUTES_INFORMATION;
+
+typedef struct _VOLUME_SET_GPT_ATTRIBUTES_INFORMATION {
+	ULONGLONG  GptAttributes;
+	BOOLEAN  RevertOnClose;
+	BOOLEAN  ApplyToAllConnectedVolumes;
+	USHORT  Reserved1;
+	ULONG  Reserved2;
+} VOLUME_SET_GPT_ATTRIBUTES_INFORMATION, *PVOLUME_SET_GPT_ATTRIBUTES_INFORMATION;
+
+typedef struct _DISK_EXTENT {
+	ULONG  DiskNumber;
+	LARGE_INTEGER  StartingOffset;
+	LARGE_INTEGER  ExtentLength;
+} DISK_EXTENT, *PDISK_EXTENT;
+
+typedef struct _VOLUME_DISK_EXTENTS {
+	ULONG  NumberOfDiskExtents;
+	DISK_EXTENT  Extents[1];
+} VOLUME_DISK_EXTENTS, *PVOLUME_DISK_EXTENTS;
+
+typedef struct _VOLUME_NUMBER {
+	ULONG  VolumeNumber;
+	WCHAR  VolumeManagerName[8];
+} VOLUME_NUMBER, *PVOLUME_NUMBER;
+
+typedef struct _VOLUME_FAILOVER_SET {
+	ULONG  NumberOfDisks;
+	ULONG  DiskNumbers[1];
+} VOLUME_FAILOVER_SET, *PVOLUME_FAILOVER_SET;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __NTDDVOL_H */

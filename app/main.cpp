@@ -19,8 +19,19 @@
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
 
+#include <just/environment.hpp>
+
+#include <boost/filesystem/path.hpp>
+
 #include <iostream>
 #include <stdexcept>
+
+std::string directory_of_file(const std::string& path_)
+{
+  boost::filesystem::path p(path_);
+  p.remove_filename();
+  return p.string();
+}
 
 int main(int argc_, const char* argv_[])
 {
@@ -33,6 +44,14 @@ int main(int argc_, const char* argv_[])
 
     const parse_config_result
       r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
+
+#ifdef _WIN32
+    // To find libclang.dll
+    if (!cfg.clang_path.empty())
+    {
+      just::environment::append_to_path(directory_of_file(cfg.clang_path));
+    }
+#endif
 
     if (r == metashell::run_shell)
     {

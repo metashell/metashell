@@ -49,7 +49,7 @@ namespace
 }
 
 breaking_environment::breaking_environment(const config& cfg_) :
-  in_memory_environment("", cfg_),
+  in_memory_environment("__breaking_environment", cfg_),
   _append_throw(false),
   _get_appended_throw(false),
   _in_append(false)

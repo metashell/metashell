@@ -46,6 +46,13 @@ target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 target_link_libraries(metashell ${Boost_REGEX_LIBRARIES})
 
 # Clang
+if (MSVC)
+  # libclang calls its import library libclang.imp instead of libclang.lib
+  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
+
+  # delayload libclang
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:libclang.dll")
+endif()
 target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 

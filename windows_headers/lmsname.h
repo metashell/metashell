@@ -1,0 +1,81 @@
+/**
+ * @file lmsname.h
+ * Copyright 2012, 2013 MinGW.org project
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+#ifndef _LMSNAME_H
+#define _LMSNAME_H
+#pragma GCC system_header
+#include <_mingw.h>
+
+#define SERVICE_WORKSTATION TEXT("LanmanWorkstation")
+#define SERVICE_LM20_WORKSTATION TEXT("WORKSTATION")
+#define WORKSTATION_DISPLAY_NAME TEXT("Workstation")
+#define SERVICE_SERVER TEXT("LanmanServer")
+#define SERVICE_LM20_SERVER TEXT("SERVER")
+#define SERVER_DISPLAY_NAME TEXT("Server")
+#define SERVICE_BROWSER TEXT("BROWSER")
+#define SERVICE_LM20_BROWSER SERVICE_BROWSER
+#define SERVICE_MESSENGER TEXT("MESSENGER")
+#define SERVICE_LM20_MESSENGER SERVICE_MESSENGER
+#define SERVICE_NETRUN TEXT("NETRUN")
+#define SERVICE_LM20_NETRUN SERVICE_NETRUN
+#define SERVICE_SPOOLER TEXT("SPOOLER")
+#define SERVICE_LM20_SPOOLER SERVICE_SPOOLER
+#define SERVICE_ALERTER TEXT("ALERTER")
+#define SERVICE_LM20_ALERTER SERVICE_ALERTER
+#define SERVICE_NETLOGON TEXT("NETLOGON")
+#define SERVICE_LM20_NETLOGON SERVICE_NETLOGON
+#define SERVICE_NETPOPUP TEXT("NETPOPUP")
+#define SERVICE_LM20_NETPOPUP SERVICE_NETPOPUP
+#define SERVICE_SQLSERVER TEXT("SQLSERVER")
+#define SERVICE_LM20_SQLSERVER SERVICE_SQLSERVER
+#define SERVICE_REPL TEXT("REPLICATOR")
+#define SERVICE_LM20_REPL SERVICE_REPL
+#define SERVICE_RIPL TEXT("REMOTEBOOT")
+#define SERVICE_LM20_RIPL SERVICE_RIPL
+#define SERVICE_TIMESOURCE TEXT("TIMESOURCE")
+#define SERVICE_LM20_TIMESOURCE SERVICE_TIMESOURCE
+#define SERVICE_AFP TEXT("AFP")
+#define SERVICE_LM20_AFP SERVICE_AFP
+#define SERVICE_UPS TEXT("UPS")
+#define SERVICE_LM20_UPS SERVICE_UPS
+#define SERVICE_XACTSRV TEXT("XACTSRV")
+#define SERVICE_LM20_XACTSRV SERVICE_XACTSRV
+#define SERVICE_TCPIP TEXT("TCPIP")
+#define SERVICE_LM20_TCPIP SERVICE_TCPIP
+#define SERVICE_NBT TEXT("NBT")
+#define SERVICE_LM20_NBT SERVICE_NBT
+#define SERVICE_LMHOSTS TEXT("LMHOSTS")
+#define SERVICE_LM20_LMHOSTS SERVICE_LMHOSTS
+#define SERVICE_TELNET TEXT("Telnet")
+#define SERVICE_LM20_TELNET SERVICE_TELNET
+#define SERVICE_SCHEDULE TEXT("Schedule")
+#define SERVICE_LM20_SCHEDULE SERVICE_SCHEDULE
+#define SERVICE_NTLMSSP TEXT("NtLmSsp")
+#define SERVICE_DHCP TEXT("DHCP")
+#define SERVICE_LM20_DHCP SERVICE_DHCP
+#define SERVICE_NWSAP TEXT("NwSapAgent")
+#define SERVICE_LM20_NWSAP SERVICE_NWSAP
+#define NWSAP_DISPLAY_NAME TEXT("NW Sap Agent")
+#define SERVICE_NWCS TEXT("NWCWorkstation")
+
+#endif

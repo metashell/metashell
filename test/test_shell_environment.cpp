@@ -16,6 +16,8 @@
 
 #include "test_shell.hpp"
 
+#include <metashell/path_builder.hpp>
+
 #include <just/test.hpp>
 
 #include <string>
@@ -175,9 +177,12 @@ JUST_TEST_CASE(test_resetting_the_environment)
 
 JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
 {
+  const std::string scalar_hpp =
+    metashell::path_builder() / "metashell" / "scalar.hpp";
+
   test_shell sh;
   sh.line_available("#pragma metashell environment reset");
-  sh.line_available("#include <metashell/scalar.hpp>");
+  sh.line_available("#include <" + scalar_hpp + ">");
   sh.line_available("SCALAR(__METASHELL_MAJOR)");
 
   JUST_ASSERT(sh.error().empty());

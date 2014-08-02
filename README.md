@@ -14,6 +14,9 @@ shell.
 
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
+    - [Building Metashell on Linux](#building-metashell-on-linux)
+    - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-experimental)
+        - [Standard header files on Windows](#standard-header-files-on-windows)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -57,6 +60,8 @@ Erlang shells for template metaprogramming. It uses Clang to evaluate the
 metaprograms.
 
 ## Building Metashell
+
+### Building Metashell on Linux
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
@@ -104,6 +109,50 @@ metaprograms.
     * `make`
     * `make test_coverage`
     * You can find the test coverage statistics in the `bin/coverage` directory.
+
+### Building Metashell on Windows (experimental)
+
+Note that the Windows build does not have all the features yet. It has been
+tested with Visual Studio 2012. Some things work, but a number of bugs still
+need fixing. If you want to experiment with it, here is how you can build it:
+
+* Download the source code from [github](http://github.com/sabel83/metashell).
+* Install the dependent tools and libraries:
+    * [CMake](http://cmake.org/)
+    * [WinEditLine](http://mingweditline.sourceforge.net/)
+    * [Clang](http://llvm.org/builds/)
+    * [Boost](http://boost.teeks99.com/)
+* After installing CMake you should get the `cmake` command.
+* Create a `bin` directory in the source tree. Run `cmake` in that directory.
+* You need to tell CMake where to find the dependent libraries.
+  You need to give CMake the following command-line arguments. When the value
+  contains whitespaces, you can use double quotes. For example
+  `-DCLANG_INCLUDEDIR="C:/Program Files (x86)/LLVM/include"`.
+    * `-DBOOST_ROOT=<path to the Boost library>`
+    * `-DBOOST_LIBRARYDIR=<path to the directory containing the compiled Boost libraries>`
+    * `-DUSE_EDITLINE=true`
+    * `-DEDITLINE_INCLUDEDIR=<path to the WinEditLine headers>`
+    * `-DEDITLINE_LIBRARYDIR=<path to the WinEditLine compiled library>`
+    * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
+    * `-DCLANG_LIBRARYDIR=<path to the compiled libClang library>` Note that it
+      is called `libclang.imp` and not `libclang.lib`.
+    * `-G "Visual Studio 11 2012"`
+* If CMake can find the dependent libraries, it will generate a solution file
+  for Metashell in the `bin` directory. Open it with Visual Studio 2012 and
+  build it.
+* To run the generated binaries, you need to copy the dependent dlls into the
+  same directory with the executable or into a directory on the `PATH`. The
+  dependent dlls are `libclang.dll` and `edit.dll`.
+
+#### Standard header files on Windows
+
+The `windows_headers` directory contains the [MinGW](http://mingw.org/) header
+files. To be able to use the standard header files from Metashell, you need to
+pass `metashell.exe` the `-I<path to the windows_headers directory>` argument.
+
+The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
+header files from the [Cygwin](http://cygwin.org/) project. You need to run this
+script on Linux.
 
 ## Getting started
 

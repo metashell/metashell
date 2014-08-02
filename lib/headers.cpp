@@ -16,6 +16,7 @@
 
 #include <metashell/headers.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/path_builder.hpp>
 
 #include <boost/phoenix/core.hpp>
 #include <boost/phoenix/operator.hpp>
@@ -81,6 +82,16 @@ namespace
       "\n"
       ;
   }
+
+  std::string include_formatter(const std::string& name_)
+  {
+    using std::string;
+
+    return
+      "#include <"
+        + string(path_builder() / "metashell" / "formatter/" / (name_ + ".hpp"))
+        + ">";
+  }
 }
 
 headers::headers(const std::string& internal_dir_, bool empty_) :
@@ -93,34 +104,36 @@ headers::headers(const std::string& internal_dir_, bool empty_) :
     using boost::adaptors::transformed;
     using boost::phoenix::arg_names::arg1;
 
+    using std::string;
+    
+    const path_builder internal_dir(_internal_dir);
+    const string hpp(".hpp");
+
     const char* formatters[] = {"vector", "list", "set", "map"};
 
     BOOST_FOREACH(const char* f, formatters)
     {
       add(
-        _internal_dir + "/metashell/formatter/" + f + ".hpp",
+        internal_dir / "metashell" / "formatter" / (f + hpp),
         seq_formatter(f)
       );
     }
+
+    const string vector_formatter =
+       string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+
     add(
-      _internal_dir + "/metashell/formatter/deque.hpp",
-      "#include <metashell/formatter/vector.hpp>\n"
+      internal_dir / "metashell" / "formatter" / "deque.hpp",
+      "#include <" + vector_formatter + ">\n"
     );
 
     add(
-      _internal_dir + "/metashell/formatter.hpp",
-      join(
-        formatters |
-          transformed(
-            std::string("#include <metashell/formatter/")
-            + arg1 + std::string(".hpp>")
-          ),
-        "\n"
-      ) + "\n"
+      internal_dir / "metashell" / "formatter.hpp",
+      join(formatters | transformed(include_formatter), "\n") + "\n"
     );
 
     add(
-      _internal_dir + "/metashell/scalar.hpp",
+      internal_dir / "metashell" / "scalar.hpp",
       "#include <type_traits>\n"
 
       "#define SCALAR(...) "

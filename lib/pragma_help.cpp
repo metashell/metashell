@@ -53,7 +53,7 @@ namespace
         "#msh is the short form of #pragma metashell. Both forms are accepted"
       )
       .left_align(
-        "To quit Metashell press Ctrl+D"
+        "To quit Metashell run \"#msh quit\""
       )
       .empty_line()
       .raw(" */");

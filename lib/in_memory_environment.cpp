@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <cassert>
 
 using namespace metashell;
 
@@ -58,6 +59,8 @@ in_memory_environment::in_memory_environment(
   _headers(internal_dir_),
   _clang_args()
 {
+  assert(!internal_dir_.empty());
+
   _clang_args.push_back("-x");
   _clang_args.push_back("c++-header");
   _clang_args.push_back(clang_argument(config_.standard_to_use));

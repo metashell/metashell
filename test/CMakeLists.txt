@@ -34,18 +34,28 @@ target_link_libraries(metashell_test ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 # Regex
 target_link_libraries(metashell_test ${Boost_REGEX_LIBRARIES})
 
-# Clang
-include_directories(${CLANG_INCLUDE_DIR})
-target_link_libraries(metashell_test ${CLANG_LIBRARY})
-
-add_test(metashell_unit_tests metashell_test)
-
 # Readline
 if (USE_EDITLINE)
   target_link_libraries(metashell_test ${EDITLINE_LIBRARY})
 else()
   target_link_libraries(metashell_test ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
+
+# Clang
+include_directories(${CLANG_INCLUDE_DIR})
+if (MSVC)
+  # libclang calls its import library libclang.imp instead of libclang.lib
+  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
+
+  # delayload libclang
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:libclang.dll")
+
+  # PATH of the standard headers
+  add_definitions(-DWINDOWS_HEADERS="${CMAKE_SOURCE_DIR}/windows_headers")
+endif()
+target_link_libraries(metashell_test ${CLANG_LIBRARY})
+
+add_test(metashell_unit_tests metashell_test)
 
 # Code coverage
 if (ENABLE_CODE_COVERAGE)
