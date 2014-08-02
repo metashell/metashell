@@ -7,6 +7,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include <boost/regex.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -143,6 +144,32 @@ private:
   const graph_t& graph;
 };
 
+namespace {
+
+  std::pair<std::string::const_iterator, std::string::const_iterator>
+    find_type_emphasize(const std::string& type)
+  {
+    const std::string symbol_regex = "";
+    boost::regex reg("(::)?([_a-zA-Z][_a-zA-Z0-9]*::)*([_a-zA-Z][_a-zA-Z0-9]*)");
+
+    boost::smatch match;
+    if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
+      return std::make_pair(type.end(), type.end());
+    }
+
+    return std::make_pair(match[match.size()-1].first, match[match.size()-1].second);
+  }
+
+  void print_range(
+      std::string::const_iterator begin,
+      std::string::const_iterator end)
+  {
+    if (begin < end) {
+      std::cout << std::string(begin, end);
+    }
+  }
+}
+
 void templight_trace::print_trace_graph(
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -170,6 +197,30 @@ void templight_trace::print_trace_graph(
   }
 }
 
+void templight_trace::print_trace_content(
+    std::pair<
+      std::string::const_iterator,
+      std::string::const_iterator
+    > range,
+    std::pair<
+      std::string::const_iterator,
+      std::string::const_iterator
+    > emphasize) const
+{
+  assert(range.first <= range.second);
+  assert(emphasize.first <= emphasize.second);
+
+  //TODO avoid copying
+
+  print_range(range.first, std::min(range.second, emphasize.first));
+  just::console::text_color(just::console::color::white);
+  print_range(
+      std::max(range.first, emphasize.first),
+      std::min(range.second, emphasize.second));
+  just::console::reset();
+  print_range(std::max(emphasize.second, range.first), range.second);
+}
+
 void templight_trace::print_trace_line(
     vertex_descriptor vertex,
     unsigned depth,
@@ -187,17 +238,36 @@ void templight_trace::print_trace_line(
 
   std::string element_content = element_content_ss.str();
 
+  //TODO don't pass "kind" to find_type_emphasize
+  std::pair<
+    std::string::const_iterator,
+    std::string::const_iterator
+  > emphasize = find_type_emphasize(element_content);
+
   unsigned non_content_length = 2*depth;
 
   if (width < 10 || non_content_length >= width - 10) {
     // We have no chance to display the graph nicely :(
     print_trace_graph(depth, depth_counter, true);
-    std::cout << element_content_ss << '\n';
+
+    print_trace_content(
+      std::make_pair(element_content.begin(), element_content.end()),
+      emphasize);
+    std::cout << '\n';
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
       print_trace_graph(depth, depth_counter, i == 0);
-      std::cout << element_content.substr(i, content_width) << '\n';
+      print_trace_content(
+        std::make_pair(
+          element_content.begin() + i,
+          i + content_width < element_content.size() ?
+            element_content.begin() + (i + content_width) :
+            element_content.end()
+        ),
+        emphasize
+      );
+      std::cout << '\n';
     }
   }
 }

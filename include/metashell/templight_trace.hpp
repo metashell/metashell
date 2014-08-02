@@ -115,6 +115,16 @@ private:
   vertex_descriptor get_source(edge_descriptor e) const;
   vertex_descriptor get_target(edge_descriptor e) const;
 
+  void print_trace_content(
+      std::pair<
+        std::string::const_iterator,
+        std::string::const_iterator
+      > range,
+      std::pair<
+        std::string::const_iterator,
+        std::string::const_iterator
+      > emphasize) const;
+
   void print_trace_graph(
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
