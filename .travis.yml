@@ -13,7 +13,7 @@ script:
   - cd bin
   # -DMETASHELL_DISABLE_CONSTEXPR (and its usage in the code) can be removed
   # when clang 3.1 or higher will be available on the CI servers
-  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic -DMETASHELL_DISABLE_CONSTEXPR"
+  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-std=c++0x -Wall -Werror -pedantic -DMETASHELL_DISABLE_CONSTEXPR -DDISABLE_TESTS_THAT_NEED_A_CLANG_BINARY"
   - make
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas is up to date
