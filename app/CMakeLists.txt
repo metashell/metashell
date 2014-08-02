@@ -34,6 +34,20 @@ if (USE_EDITLINE)
   include_directories(${EDITLINE_INCLUDE_DIR})
   target_link_libraries(metashell ${EDITLINE_LIBRARY})
   add_definitions( -DUSE_EDITLINE )
+
+  if (WIN32)
+    get_filename_component(DLL_NAME "${EDITLINE_DLL}" NAME)
+    configure_file(
+      "${EDITLINE_DLL}"
+      "${CMAKE_CURRENT_BINARY_DIR}/Debug/${DLL_NAME}"
+      COPYONLY
+    )
+    configure_file(
+      "${EDITLINE_DLL}"
+      "${CMAKE_CURRENT_BINARY_DIR}/Release/${DLL_NAME}"
+      COPYONLY
+    )
+  endif ()
 else()
   include_directories(${READLINE_INCLUDE_DIR})
   target_link_libraries(metashell ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
