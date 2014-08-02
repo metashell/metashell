@@ -95,6 +95,11 @@ private:
       graph_t,
       template_edge_property_tag>::const_type const_edge_property_map_t;
 
+  typedef std::pair<
+        std::string::const_iterator,
+        std::string::const_iterator
+      > string_range;
+
   vertex_descriptor add_vertex(
       const std::string& element,
       const file_location& point_of_instantiation);
@@ -115,22 +120,17 @@ private:
   vertex_descriptor get_source(edge_descriptor e) const;
   vertex_descriptor get_target(edge_descriptor e) const;
 
+  string_range find_type_emphasize(const std::string& type) const;
+
   void print_trace_content(
-      std::pair<
-        std::string::const_iterator,
-        std::string::const_iterator
-      > range,
-      std::pair<
-        std::string::const_iterator,
-        std::string::const_iterator
-      > emphasize) const;
+      string_range range,
+      string_range emphasize) const;
 
   void print_trace_graph(
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
       bool print_mark) const;
 
-  // Used by print_trace
   void print_trace_line(
       vertex_descriptor vertex,
       unsigned depth,

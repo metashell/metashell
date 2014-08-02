@@ -144,31 +144,20 @@ private:
   const graph_t& graph;
 };
 
-namespace {
+templight_trace::string_range templight_trace::find_type_emphasize(
+    const std::string& type) const
+{
+  const std::string symbol_regex = "";
+  boost::regex reg("(::)?([_a-zA-Z][_a-zA-Z0-9]*::)*([_a-zA-Z][_a-zA-Z0-9]*)");
 
-  std::pair<std::string::const_iterator, std::string::const_iterator>
-    find_type_emphasize(const std::string& type)
-  {
-    const std::string symbol_regex = "";
-    boost::regex reg("(::)?([_a-zA-Z][_a-zA-Z0-9]*::)*([_a-zA-Z][_a-zA-Z0-9]*)");
-
-    boost::smatch match;
-    if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
-      return std::make_pair(type.end(), type.end());
-    }
-
-    return std::make_pair(match[match.size()-1].first, match[match.size()-1].second);
+  boost::smatch match;
+  if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
+    return string_range(type.end(), type.end());
   }
 
-  void print_range(
-      std::string::const_iterator begin,
-      std::string::const_iterator end)
-  {
-    if (begin < end) {
-      std::cout << std::string(begin, end);
-    }
-  }
+  return string_range(match[match.size()-1].first, match[match.size()-1].second);
 }
+
 
 void templight_trace::print_trace_graph(
     unsigned depth,
@@ -197,15 +186,22 @@ void templight_trace::print_trace_graph(
   }
 }
 
+namespace {
+
+void print_range(
+    std::string::const_iterator begin,
+    std::string::const_iterator end)
+{
+  if (begin < end) {
+    std::cout << std::string(begin, end);
+  }
+}
+
+}
+
 void templight_trace::print_trace_content(
-    std::pair<
-      std::string::const_iterator,
-      std::string::const_iterator
-    > range,
-    std::pair<
-      std::string::const_iterator,
-      std::string::const_iterator
-    > emphasize) const
+    string_range range,
+    string_range emphasize) const
 {
   assert(range.first <= range.second);
   assert(emphasize.first <= emphasize.second);
@@ -241,10 +237,7 @@ void templight_trace::print_trace_line(
 
   std::string element_content = element_content_ss.str();
 
-  std::pair<
-    std::string::const_iterator,
-    std::string::const_iterator
-  > emphasize = find_type_emphasize(type);
+  string_range emphasize = find_type_emphasize(type);
 
   // Realign the iterators from 'type' to 'element_content'
   emphasize.first = element_content.begin() + (emphasize.first - type.begin());
@@ -257,7 +250,7 @@ void templight_trace::print_trace_line(
     print_trace_graph(depth, depth_counter, true);
 
     print_trace_content(
-      std::make_pair(element_content.begin(), element_content.end()),
+      string_range(element_content.begin(), element_content.end()),
       emphasize);
     std::cout << '\n';
   } else {
@@ -265,7 +258,7 @@ void templight_trace::print_trace_line(
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
       print_trace_graph(depth, depth_counter, i == 0);
       print_trace_content(
-        std::make_pair(
+        string_range(
           element_content.begin() + i,
           i + content_width < element_content.size() ?
             element_content.begin() + (i + content_width) :
