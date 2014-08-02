@@ -228,9 +228,12 @@ void templight_trace::print_trace_line(
     const boost::optional<instantiation_kind>& kind,
     unsigned width) const
 {
-  std::stringstream element_content_ss;
-  element_content_ss <<
+
+  const std::string type =
     boost::get(template_vertex_property_tag(), graph, vertex).name;
+
+  std::stringstream element_content_ss;
+  element_content_ss << type;
 
   if (kind) {
     element_content_ss << " (" << *kind << ")";
@@ -238,11 +241,14 @@ void templight_trace::print_trace_line(
 
   std::string element_content = element_content_ss.str();
 
-  //TODO don't pass "kind" to find_type_emphasize
   std::pair<
     std::string::const_iterator,
     std::string::const_iterator
-  > emphasize = find_type_emphasize(element_content);
+  > emphasize = find_type_emphasize(type);
+
+  // Realign the iterators from 'type' to 'element_content'
+  emphasize.first = element_content.begin() + (emphasize.first - type.begin());
+  emphasize.second = element_content.begin() + (emphasize.second - type.begin());
 
   unsigned non_content_length = 2*depth;
 
