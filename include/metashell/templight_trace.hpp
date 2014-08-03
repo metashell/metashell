@@ -36,6 +36,7 @@ public:
   void print_graphviz(std::ostream& os = std::cout) const;
 
   void print_forwardtrace(const std::string& type, unsigned width) const;
+  void print_full_forwardtrace(unsigned width) const;
   void print_backtrace(const std::string& type, unsigned width) const;
 
 private:
@@ -100,6 +101,8 @@ private:
         std::string::const_iterator
       > string_range;
 
+  typedef std::vector<bool> discovered_t;
+
   vertex_descriptor add_vertex(
       const std::string& element,
       const file_location& point_of_instantiation);
@@ -132,15 +135,16 @@ private:
       bool print_mark) const;
 
   void print_trace_line(
-      vertex_descriptor vertex,
+      vertex_descriptor root_vertex,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
       const boost::optional<instantiation_kind>& kind,
       unsigned width) const;
 
   template<class EdgeIterator, class GetEdges, class EdgeDirection>
-  void print_trace(
-      const std::string& type,
+  void print_trace_visit(
+      vertex_descriptor vertex,
+      discovered_t& discovered,
       GetEdges get_edges,
       EdgeDirection edge_direction,
       unsigned width) const;

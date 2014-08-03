@@ -275,27 +275,24 @@ void templight_trace::print_trace_line(
   }
 }
 
+// Visits a single vertex and all of its children
 template<class EdgeIterator, class GetEdges, class EdgeDirection>
-void templight_trace::print_trace(
-    const std::string& type,
+void templight_trace::print_trace_visit(
+    vertex_descriptor root_vertex,
+    discovered_t& discovered,
     GetEdges get_edges, EdgeDirection edge_direction,
     unsigned width) const
 {
-  boost::optional<vertex_descriptor> opt_vertex =
-    find_vertex(type);
 
-  if (!opt_vertex) {
-    std::cout << "type \"" << type << "\" not found" << std::endl;
+  assert(discovered.size() == boost::num_vertices(graph));
+
+  if (discovered[root_vertex]) {
     return;
   }
-
   // -----
   // Customized DFS
-  //   The algorithm only checks vertices which are reachable from type
+  //   The algorithm only checks vertices which are reachable from root_vertex
   // ----
-
-  // Stores which vertices have been discovered
-  std::vector<bool> discovered(boost::num_vertices(graph), false);
 
   // This vector counts how many elements are in the to_visit
   // stack for each specific depth.
@@ -313,7 +310,7 @@ void templight_trace::print_trace(
   std::stack<stack_element> to_visit;
 
   // We don't care about the instantiation_kind for the source vertex
-  to_visit.push(boost::make_tuple(*opt_vertex, 0, boost::none));
+  to_visit.push(boost::make_tuple(root_vertex, 0, boost::none));
   ++depth_counter[0]; // This value is neved read
 
   while (!to_visit.empty()) {
@@ -384,18 +381,56 @@ templight_trace::vertex_descriptor templight_trace::get_target(
 void templight_trace::print_forwardtrace(
     const std::string& type, unsigned width) const
 {
-  print_trace<out_edge_iterator>(
-      type,
+
+  boost::optional<vertex_descriptor> opt_vertex =
+    find_vertex(type);
+
+  if (!opt_vertex) {
+    std::cout << "type \"" << type << "\" not found" << std::endl;
+    return;
+  }
+
+  discovered_t discovered(boost::num_vertices(graph));
+
+  print_trace_visit<out_edge_iterator>(
+      *opt_vertex,
+      discovered,
       &templight_trace::get_out_edges,
       &templight_trace::get_target,
       width);
 }
 
+void templight_trace::print_full_forwardtrace(unsigned width) const {
+
+  discovered_t discovered(boost::num_vertices(graph));
+
+  BOOST_FOREACH(vertex_descriptor root_vertex, boost::vertices(graph)) {
+    print_trace_visit<out_edge_iterator>(
+        root_vertex,
+        discovered,
+        &templight_trace::get_out_edges,
+        &templight_trace::get_target,
+        width);
+  }
+}
+
 void templight_trace::print_backtrace(
     const std::string& type, unsigned width) const
 {
-  print_trace<in_edge_iterator>(
-      type,
+
+  boost::optional<vertex_descriptor> opt_vertex =
+    find_vertex(type);
+
+  if (!opt_vertex) {
+    std::cout << "type \"" << type << "\" not found" << std::endl;
+    return;
+  }
+
+  discovered_t discovered(boost::num_vertices(graph));
+
+  print_trace_visit<in_edge_iterator>(
+      *opt_vertex,
+      discovered,
       &templight_trace::get_in_edges,
       &templight_trace::get_source,
       width);
