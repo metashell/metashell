@@ -407,7 +407,8 @@ void templight_trace::print_full_forwardtrace(unsigned width) const {
   assert(boost::num_vertices(graph) > 0);
 
   print_trace_visit<out_edge_iterator>(
-      0, //0 is always the <root> vertex
+      // 0 is always the <root> vertex, and every vertex is reachable from root
+      0,
       discovered,
       &templight_trace::get_out_edges,
       &templight_trace::get_target,
@@ -434,6 +435,59 @@ void templight_trace::print_backtrace(
       &templight_trace::get_in_edges,
       &templight_trace::get_source,
       width);
+}
+
+struct templight_trace::only_has_discovered_out_edge_predicate {
+  only_has_discovered_out_edge_predicate(
+    const graph_t& graph,
+    const discovered_t& discovered) :
+      graph(graph), discovered(discovered) {}
+
+  bool operator()(vertex_descriptor vertex) const {
+    if (discovered[vertex]) {
+      return false;
+    }
+    BOOST_FOREACH(edge_descriptor edge, boost::out_edges(vertex, graph)) {
+      if (!discovered[boost::target(edge, graph)]) {
+        return false;
+      }
+    }
+    return true;
+  }
+private:
+  const graph_t& graph;
+  const discovered_t& discovered;
+};
+
+void templight_trace::print_full_backtrace(unsigned width) const {
+
+  discovered_t discovered(boost::num_vertices(graph));
+
+  assert(boost::num_vertices(graph) > 0);
+
+  // TODO this needs some more work:
+  // -try to go with the deepest route first
+  // -try to find a natural way to produce bt
+  // -o(V^2) algorithm
+  while (true) {
+    // Since the graph is DAG, there is always a vertex which
+    // has only discovered out_edges
+    vertex_iterator begin, end, it;
+    boost::tie(begin, end) = boost::vertices(graph);
+
+    it = std::find_if(begin, end,
+        only_has_discovered_out_edge_predicate(graph, discovered));
+
+    if (it == end) {
+      break;
+    }
+    print_trace_visit<in_edge_iterator>(
+        *it,
+        discovered,
+        &templight_trace::get_in_edges,
+        &templight_trace::get_source,
+        width);
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {

@@ -38,6 +38,10 @@ void pragma_templight_backtrace::run(
   templight_trace trace =
     metashell::templight_trace::create_from_xml("templight.xml");
 
-  trace.print_backtrace(type, _shell.width());
+  if (type.empty()) {
+    trace.print_full_backtrace(_shell.width());
+  } else {
+    trace.print_backtrace(type, _shell.width());
+  }
 }
 

@@ -38,6 +38,7 @@ public:
   void print_forwardtrace(const std::string& type, unsigned width) const;
   void print_full_forwardtrace(unsigned width) const;
   void print_backtrace(const std::string& type, unsigned width) const;
+  void print_full_backtrace(unsigned width) const;
 
 private:
 
@@ -158,6 +159,7 @@ private:
 
   struct property_writer;
   struct is_memoziation_predicate;
+  struct only_has_discovered_out_edge_predicate;
 
   friend struct templight_trace_builder;
 
