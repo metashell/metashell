@@ -17,6 +17,7 @@
 #include <metashell/header_file_environment.hpp>
 #include <metashell/headers.hpp>
 #include <metashell/config.hpp>
+#include <metashell/clang_binary.hpp>
 
 #include "exception.hpp"
 
@@ -51,22 +52,14 @@ namespace
   {
     using boost::algorithm::trim_copy;
 
-    std::vector<std::string> cmd(1, clang_path_);
-    cmd.insert(cmd.end(), clang_args_.begin(), clang_args_.end());
-    extend_to_find_headers_in_local_dir(cmd);
-    cmd.push_back("-w");
-    cmd.push_back("-o");
-    cmd.push_back(fn_ + ".pch");
-    cmd.push_back(fn_);
+    std::vector<std::string> args(clang_args_);
+    extend_to_find_headers_in_local_dir(args);
+    args.push_back("-w");
+    args.push_back("-o");
+    args.push_back(fn_ + ".pch");
+    args.push_back(fn_);
 
-#ifdef _WIN32
-    BOOST_FOREACH(std::string& s, cmd)
-    {
-      s = "\"" + s + "\"";
-    }
-#endif
-
-    const just::process::output o = just::process::run(cmd, "");
+    const just::process::output o = clang_binary(clang_path_).run(args);
     const std::string err = o.standard_output() + o.standard_error();
     if (
       !err.empty()

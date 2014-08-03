@@ -133,7 +133,7 @@
  */
 #ifdef NTDDI_VERSION
 #  ifdef _WIN32_WINNT
-#    if _WIN32_WINNT != OSDIR(NTDDI_VERSION)
+#    if _WIN32_WINNT != OSVER(NTDDI_VERSION)
 #      error The _WIN32_WINNT value does not match NTDDI_VERSION
 #    endif
 #  else

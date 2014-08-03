@@ -70,7 +70,13 @@ namespace
       && *i == string(begin_->get_value().begin(), begin_->get_value().end()))
     {
       ++i;
-      begin_ = skip_whitespace(skip(begin_));
+      begin_ = skip(begin_);
+      // Don't accidentally skip over end_
+      if (begin_ == end_)
+      {
+        break;
+      }
+      begin_ = skip_whitespace(begin_);
     }
     return
       i == e ? optional<token_iterator>(begin_) : optional<token_iterator>();

@@ -1,6 +1,6 @@
 // <future> -*- C++ -*-
 
-// Copyright (C) 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
+// Copyright (C) 2009-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -31,19 +31,21 @@
 
 #pragma GCC system_header
 
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
 # include <bits/c++0x_warning.h>
 #else
 
 #include <functional>
-#include <memory>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
 #include <system_error>
-#include <exception>
 #include <atomic>
 #include <bits/functexcept.h>
+#include <bits/unique_ptr.h>
+#include <bits/shared_ptr.h>
+#include <bits/uses_allocator.h>
+#include <bits/alloc_traits.h>
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
@@ -168,19 +170,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     future<typename result_of<_Fn(_Args...)>::type>
     async(launch __policy, _Fn&& __fn, _Args&&... __args);
 
-  template<typename _FnCheck, typename _Fn, typename... _Args>
-    struct __async_sfinae_helper
-    {
-      typedef future<typename result_of<_Fn(_Args...)>::type> type;
-    };
-
   template<typename _Fn, typename... _Args>
-    struct __async_sfinae_helper<launch, _Fn, _Args...>
-    { };
-
-  template<typename _Fn, typename... _Args>
-    typename
-    __async_sfinae_helper<typename decay<_Fn>::type, _Fn, _Args...>::type
+    future<typename result_of<_Fn(_Args...)>::type>
     async(_Fn&& __fn, _Args&&... __args);
 
 #if defined(_GLIBCXX_HAS_GTHREADS) && defined(_GLIBCXX_USE_C99_STDINT_TR1) \
@@ -223,6 +214,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	bool 			_M_initialized;
 
       public:
+	typedef _Res result_type;
+
 	_Result() noexcept : _M_initialized() { }
 	
 	~_Result()
@@ -290,17 +283,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         typename __traits::allocator_type __a2(__a);
         __result_type* __p = __traits::allocate(__a2, 1);
         __try
-	{
-	  __traits::construct(__a2, __p, __a);
-        }
+	  {
+	    __traits::construct(__a2, __p, __a);
+	  }
         __catch(...)
-        {
-	  __traits::deallocate(__a2, __p, 1);
-          __throw_exception_again;
-        }
+	  {
+	    __traits::deallocate(__a2, __p, 1);
+	    __throw_exception_again;
+	  }
         return _Ptr<__result_type>(__p);
       }
 
+    template<typename _Res, typename _Tp>
+      static _Ptr<_Result<_Res>>
+      _S_allocate_result(const std::allocator<_Tp>& __a)
+      {
+	return _Ptr<_Result<_Res>>(new _Result<_Res>);
+      }
 
     /// Base class for state between a promise and one or more
     /// associated futures.
@@ -456,7 +455,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __setter(promise<void>* __prom);
 
       template<typename _Tp>
-        static bool
+        static void
         _S_check(const shared_ptr<_Tp>& __p)
         {
           if (!static_cast<bool>(__p))
@@ -491,6 +490,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       class _Async_state_impl;
 
     template<typename _Signature>
+      class _Task_state_base;
+
+    template<typename _Fn, typename _Alloc, typename _Signature>
       class _Task_state;
 
     template<typename _BoundFn>
@@ -501,24 +503,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       static std::shared_ptr<_State_base>
       _S_make_async_state(_BoundFn&& __fn);
 
-    template<typename _Res_ptr, typename _Res>
+    template<typename _Res_ptr,
+	     typename _Res = typename _Res_ptr::element_type::result_type>
       struct _Task_setter;
 
     template<typename _Res_ptr, typename _BoundFn>
-      class _Task_setter_helper
-      {
-	typedef typename remove_reference<_BoundFn>::type::result_type __res;
-      public:
-	typedef _Task_setter<_Res_ptr, __res> __type;
-      };
-
-    template<typename _Res_ptr, typename _BoundFn>
-      static typename _Task_setter_helper<_Res_ptr, _BoundFn>::__type
+      static _Task_setter<_Res_ptr>
       _S_task_setter(_Res_ptr& __ptr, _BoundFn&& __call)
       {
-	typedef _Task_setter_helper<_Res_ptr, _BoundFn> __helper_type;
-	typedef typename __helper_type::__type _Setter;
-	return _Setter{ __ptr, std::ref(__call) };
+	return _Task_setter<_Res_ptr>{ __ptr, std::ref(__call) };
       }
   };
 
@@ -526,6 +519,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template<typename _Res>
     struct __future_base::_Result<_Res&> : __future_base::_Result_base
     {
+      typedef _Res& result_type;
+
       _Result() noexcept : _M_value_ptr() { }
 
       void _M_set(_Res& __res) noexcept { _M_value_ptr = &__res; }
@@ -542,6 +537,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template<>
     struct __future_base::_Result<void> : __future_base::_Result_base
     {
+      typedef void result_type;
+
     private:
       void _M_destroy() { delete this; }
     };
@@ -592,7 +589,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     protected:
       /// Wait for the state to be ready and rethrow any stored exception
       __result_type
-      _M_get_result()
+      _M_get_result() const
       {
         _State_base::_S_check(_M_state);
         _Result_base& __res = _M_state->wait();
@@ -803,12 +800,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       /// Retrieving the value
       const _Res&
-      get()
-      {
-	typename _Base_type::__result_type __r = this->_M_get_result();
-	_Res& __rs(__r._M_value());
-	return __rs;
-      }
+      get() const { return this->_M_get_result()._M_value(); }
     };
 
   /// Partial specialization for shared_future<R&>
@@ -847,7 +839,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       /// Retrieving the value
       _Res&
-      get() { return this->_M_get_result()._M_get(); }
+      get() const { return this->_M_get_result()._M_get(); }
     };
 
   /// Explicit specialization for shared_future<void>
@@ -886,7 +878,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       // Retrieving the value
       void
-      get() { this->_M_get_result(); }
+      get() const { this->_M_get_result(); }
     };
 
   // Now we can define the protected __basic_future constructors.
@@ -1130,6 +1122,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  _M_storage(__future_base::_S_allocate_result<void>(__a))
         { }
 
+      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+      // 2095.  missing constructors needed for uses-allocator construction
       template<typename _Allocator>
         promise(allocator_arg_t, const _Allocator&, promise&& __rhs)
         : _M_future(std::move(__rhs._M_future)),
@@ -1209,7 +1203,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     {
       _Ptr_type operator()()
       {
-        __try
+	__try
 	  {
 	    _M_result->_M_set(_M_fn());
 	  }
@@ -1217,7 +1211,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  {
 	    _M_result->_M_error = current_exception();
 	  }
-        return std::move(_M_result);
+	return std::move(_M_result);
       }
       _Ptr_type&                _M_result;
       std::function<_Res()>     _M_fn;
@@ -1228,7 +1222,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     {
       _Ptr_type operator()()
       {
-        __try
+	__try
 	  {
 	    _M_fn();
 	  }
@@ -1243,49 +1237,85 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     };
 
   template<typename _Res, typename... _Args>
-    struct __future_base::_Task_state<_Res(_Args...)> final
+    struct __future_base::_Task_state_base<_Res(_Args...)>
     : __future_base::_State_base
     {
       typedef _Res _Res_type;
 
-      _Task_state(std::function<_Res(_Args...)> __task)
-      : _M_result(new _Result<_Res>()), _M_task(std::move(__task))
-      { }
+      template<typename _Alloc>
+	_Task_state_base(const _Alloc& __a)
+	: _M_result(_S_allocate_result<_Res>(__a))
+	{ }
 
-      template<typename _Func, typename _Alloc>
-        _Task_state(_Func&& __task, const _Alloc& __a)
-        : _M_result(_S_allocate_result<_Res>(__a)),
-	  _M_task(allocator_arg, __a, std::move(__task))
-        { }
+      virtual void
+      _M_run(_Args... __args) = 0;
 
-      void
-      _M_run(_Args... __args)
-      {
-        // bound arguments decay so wrap lvalue references
-	auto __boundfn = std::__bind_simple(std::ref(_M_task),
-	    _S_maybe_wrap_ref(std::forward<_Args>(__args))...);
-        auto __setter = _S_task_setter(_M_result, std::move(__boundfn));
-        _M_set_result(std::move(__setter));
-      }
+      virtual shared_ptr<_Task_state_base>
+      _M_reset() = 0;
 
       typedef __future_base::_Ptr<_Result<_Res>> _Ptr_type;
       _Ptr_type _M_result;
-      std::function<_Res(_Args...)> _M_task;
-
-      template<typename _Tp>
-        static reference_wrapper<_Tp>
-        _S_maybe_wrap_ref(_Tp& __t)
-        { return std::ref(__t); }
-
-      template<typename _Tp>
-        static typename enable_if<!is_lvalue_reference<_Tp>::value,
-                        _Tp>::type&&
-        _S_maybe_wrap_ref(_Tp&& __t)
-        { return std::forward<_Tp>(__t); }
     };
 
+  template<typename _Fn, typename _Alloc, typename _Res, typename... _Args>
+    struct __future_base::_Task_state<_Fn, _Alloc, _Res(_Args...)> final
+    : __future_base::_Task_state_base<_Res(_Args...)>
+    {
+      _Task_state(_Fn&& __fn, const _Alloc& __a)
+      : _Task_state_base<_Res(_Args...)>(__a), _M_impl(std::move(__fn), __a)
+      { }
+
+    private:
+      virtual void
+      _M_run(_Args... __args)
+      {
+	// bound arguments decay so wrap lvalue references
+	auto __boundfn = std::__bind_simple(std::ref(_M_impl._M_fn),
+	    _S_maybe_wrap_ref(std::forward<_Args>(__args))...);
+	auto __setter = _S_task_setter(this->_M_result, std::move(__boundfn));
+	this->_M_set_result(std::move(__setter));
+      }
+
+      virtual shared_ptr<_Task_state_base<_Res(_Args...)>>
+      _M_reset();
+
+      template<typename _Tp>
+	static reference_wrapper<_Tp>
+	_S_maybe_wrap_ref(_Tp& __t)
+	{ return std::ref(__t); }
+
+      template<typename _Tp>
+	static
+	typename enable_if<!is_lvalue_reference<_Tp>::value, _Tp>::type&&
+	_S_maybe_wrap_ref(_Tp&& __t)
+	{ return std::forward<_Tp>(__t); }
+
+      struct _Impl : _Alloc
+      {
+	_Impl(_Fn&& __fn, const _Alloc& __a)
+	  : _Alloc(__a), _M_fn(std::move(__fn)) { }
+	_Fn _M_fn;
+      } _M_impl;
+    };
+
+    template<typename _Signature, typename _Fn, typename _Alloc>
+      static shared_ptr<__future_base::_Task_state_base<_Signature>>
+      __create_task_state(_Fn&& __fn, const _Alloc& __a)
+      {
+	typedef __future_base::_Task_state<_Fn, _Alloc, _Signature> _State;
+	return std::allocate_shared<_State>(__a, std::move(__fn), __a);
+      }
+
+  template<typename _Fn, typename _Alloc, typename _Res, typename... _Args>
+    shared_ptr<__future_base::_Task_state_base<_Res(_Args...)>>
+    __future_base::_Task_state<_Fn, _Alloc, _Res(_Args...)>::_M_reset()
+    {
+      return __create_task_state<_Res(_Args...)>(std::move(_M_impl._M_fn),
+						 static_cast<_Alloc&>(_M_impl));
+    }
+
   template<typename _Task, typename _Fn, bool
-           = is_same<_Task, typename decay<_Fn>::type>::value>
+	   = is_same<_Task, typename decay<_Fn>::type>::value>
     struct __constrain_pkgdtask
     { typedef void __type; };
 
@@ -1297,37 +1327,40 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template<typename _Res, typename... _ArgTypes>
     class packaged_task<_Res(_ArgTypes...)>
     {
-      typedef __future_base::_Task_state<_Res(_ArgTypes...)>  _State_type;
+      typedef __future_base::_Task_state_base<_Res(_ArgTypes...)> _State_type;
       shared_ptr<_State_type>                   _M_state;
 
     public:
       // Construction and destruction
       packaged_task() noexcept { }
 
+      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+      // 2095.  missing constructors needed for uses-allocator construction
       template<typename _Allocator>
-        explicit
-        packaged_task(allocator_arg_t, const _Allocator& __a) noexcept
-        { }
+	packaged_task(allocator_arg_t, const _Allocator& __a) noexcept
+	{ }
 
       template<typename _Fn, typename = typename
-               __constrain_pkgdtask<packaged_task, _Fn>::__type>
-        explicit
-        packaged_task(_Fn&& __fn)
-        : _M_state(std::make_shared<_State_type>(std::forward<_Fn>(__fn)))
-        { }
+	       __constrain_pkgdtask<packaged_task, _Fn>::__type>
+	explicit
+	packaged_task(_Fn&& __fn)
+	: packaged_task(allocator_arg, std::allocator<int>(), std::move(__fn))
+	{ }
 
-      template<typename _Fn, typename _Allocator, typename = typename
-               __constrain_pkgdtask<packaged_task, _Fn>::__type>
-        explicit
-        packaged_task(allocator_arg_t, const _Allocator& __a, _Fn&& __fn)
-        : _M_state(std::allocate_shared<_State_type>(__a,
-                                                     std::forward<_Fn>(__fn)))
-        { }
+      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+      // 2097.  packaged_task constructors should be constrained
+      template<typename _Fn, typename _Alloc, typename = typename
+	       __constrain_pkgdtask<packaged_task, _Fn>::__type>
+	explicit
+	packaged_task(allocator_arg_t, const _Alloc& __a, _Fn&& __fn)
+	: _M_state(__create_task_state<_Res(_ArgTypes...)>(
+		    std::forward<_Fn>(__fn), __a))
+	{ }
 
       ~packaged_task()
       {
         if (static_cast<bool>(_M_state) && !_M_state.unique())
-          _M_state->_M_break_promise(std::move(_M_state->_M_result));
+	  _M_state->_M_break_promise(std::move(_M_state->_M_result));
       }
 
       // No copy
@@ -1335,24 +1368,22 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       packaged_task& operator=(const packaged_task&) = delete;
 
       template<typename _Allocator>
-        explicit
-        packaged_task(allocator_arg_t, const _Allocator&,
-                      const packaged_task&) = delete;
+	packaged_task(allocator_arg_t, const _Allocator&,
+		      const packaged_task&) = delete;
 
       // Move support
       packaged_task(packaged_task&& __other) noexcept
       { this->swap(__other); }
 
       template<typename _Allocator>
-        explicit
-        packaged_task(allocator_arg_t, const _Allocator&,
-                      packaged_task&& __other) noexcept
-        { this->swap(__other); }
+	packaged_task(allocator_arg_t, const _Allocator&,
+		      packaged_task&& __other) noexcept
+	{ this->swap(__other); }
 
       packaged_task& operator=(packaged_task&& __other) noexcept
       {
-        packaged_task(std::move(__other)).swap(*this);
-        return *this;
+	packaged_task(std::move(__other)).swap(*this);
+	return *this;
       }
 
       void
@@ -1372,15 +1403,17 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       void
       operator()(_ArgTypes... __args)
       {
-        __future_base::_State_base::_S_check(_M_state);
-        _M_state->_M_run(std::forward<_ArgTypes>(__args)...);
+	__future_base::_State_base::_S_check(_M_state);
+	_M_state->_M_run(std::forward<_ArgTypes>(__args)...);
       }
 
       void
       reset()
       {
-        __future_base::_State_base::_S_check(_M_state);
-        packaged_task(std::move(_M_state->_M_task)).swap(*this);
+	__future_base::_State_base::_S_check(_M_state);
+	packaged_task __tmp;
+	__tmp._M_state = _M_state;
+	_M_state = _M_state->_M_reset();
       }
     };
 
@@ -1501,8 +1534,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
   /// async, potential overload
   template<typename _Fn, typename... _Args>
-    inline typename
-    __async_sfinae_helper<typename decay<_Fn>::type, _Fn, _Args...>::type
+    inline future<typename result_of<_Fn(_Args...)>::type>
     async(_Fn&& __fn, _Args&&... __args)
     {
       return async(launch::async|launch::deferred, std::forward<_Fn>(__fn),
@@ -1516,6 +1548,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
 #endif // _GLIBCXX_FUTURE

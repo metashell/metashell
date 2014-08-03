@@ -1,130 +1,81 @@
-/**
- * @file fenv.h
- * Copyright 2012, 2013 MinGW.org project
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+// -*- C++ -*- compatibility header.
+
+// Copyright (C) 2007-2013 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+/** @file fenv.h
+ *  This is a Standard C++ Library header.
  */
-#ifndef _FENV_H_
-#define _FENV_H_
+
+#ifndef _GLIBCXX_FENV_H
+#define _GLIBCXX_FENV_H 1
+
 #pragma GCC system_header
-#include <_mingw.h>
 
-/* FPU status word exception flags */
-#define FE_INVALID	0x01
-#define FE_DENORMAL	0x02
-#define FE_DIVBYZERO	0x04
-#define FE_OVERFLOW	0x08
-#define FE_UNDERFLOW	0x10
-#define FE_INEXACT	0x20
-#define FE_ALL_EXCEPT (FE_INVALID | FE_DENORMAL | FE_DIVBYZERO \
-		       | FE_OVERFLOW | FE_UNDERFLOW | FE_INEXACT)
+#include <bits/c++config.h>
+#if _GLIBCXX_HAVE_FENV_H
+# include_next <fenv.h>
+#endif
 
-/* FPU control word rounding flags */
-#define FE_TONEAREST	0x0000
-#define FE_DOWNWARD	0x0400
-#define FE_UPWARD	0x0800
-#define FE_TOWARDZERO	0x0c00
+#if __cplusplus >= 201103L
 
-/* The MXCSR exception flags are the same as the
-   FE flags. */
-#define __MXCSR_EXCEPT_FLAG_SHIFT 0
+#if _GLIBCXX_USE_C99_FENV_TR1
 
-/* How much to shift FE status word exception flags
-   to get the MXCSR exeptions masks,  */
-#define __MXCSR_EXCEPT_MASK_SHIFT 7
+#undef feclearexcept
+#undef fegetexceptflag
+#undef feraiseexcept
+#undef fesetexceptflag
+#undef fetestexcept
+#undef fegetround
+#undef fesetround
+#undef fegetenv
+#undef feholdexcept
+#undef fesetenv
+#undef feupdateenv
 
-/* How much to shift FE control word rounding flags
-   to get MXCSR rounding flags,  */
-#define __MXCSR_ROUND_FLAG_SHIFT 3
-
-#ifndef RC_INVOKED
-/*
-  For now, support only for the basic abstraction of flags that are
-  either set or clear. fexcept_t could be  structure that holds more
-  info about the fp environment.
-*/
-typedef unsigned short fexcept_t;
-
-/* This 32-byte struct represents the entire floating point
-   environment as stored by fnstenv or fstenv, augmented by
-   the  contents of the MXCSR register, as stored by stmxcsr
-   (if CPU supports it). */
-typedef struct
+namespace std
 {
-  unsigned short __control_word;
-  unsigned short __unused0;
-  unsigned short __status_word;
-  unsigned short __unused1;
-  unsigned short __tag_word;
-  unsigned short __unused2;  
-  unsigned int	 __ip_offset;    /* instruction pointer offset */
-  unsigned short __ip_selector;  
-  unsigned short __opcode;
-  unsigned int	 __data_offset;
-  unsigned short __data_selector;
-  unsigned short  __unused3;
-  unsigned int __mxcsr; /* contents of the MXCSR register  */
-} fenv_t;
+  // types
+  using ::fenv_t;
+  using ::fexcept_t;
 
+  // functions
+  using ::feclearexcept;
+  using ::fegetexceptflag;
+  using ::feraiseexcept;
+  using ::fesetexceptflag;
+  using ::fetestexcept;
 
-/*The C99 standard (7.6.9) allows us to define implementation-specific macros for
-  different fp environments */
-  
-/* The default Intel x87 floating point environment (64-bit mantissa) */
-#define FE_PC64_ENV ((const fenv_t *)-1)
+  using ::fegetround;
+  using ::fesetround;
 
-/* The floating point environment set by MSVCRT _fpreset (53-bit mantissa) */
-#define FE_PC53_ENV ((const fenv_t *)-2)
+  using ::fegetenv;
+  using ::feholdexcept;
+  using ::fesetenv;
+  using ::feupdateenv;
+} // namespace
 
-/* The FE_DFL_ENV macro is required by standard.
-  fesetenv will use the environment set at app startup.*/
-#define FE_DFL_ENV ((const fenv_t *) 0)
+#endif // _GLIBCXX_USE_C99_FENV_TR1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#endif // C++11
 
-/*TODO: Some of these could be inlined */
-/* 7.6.2 Exception */
-
-extern int __cdecl __MINGW_NOTHROW feclearexcept (int);
-extern int __cdecl __MINGW_NOTHROW fegetexceptflag (fexcept_t * flagp, int excepts);
-extern int __cdecl __MINGW_NOTHROW feraiseexcept (int excepts );
-extern int __cdecl __MINGW_NOTHROW fesetexceptflag (const fexcept_t *, int);
-extern int __cdecl __MINGW_NOTHROW fetestexcept (int excepts);
-
-/* 7.6.3 Rounding */
-
-extern int __cdecl __MINGW_NOTHROW fegetround (void);
-extern int __cdecl __MINGW_NOTHROW fesetround (int mode);
-
-/* 7.6.4 Environment */
-
-extern int __cdecl __MINGW_NOTHROW fegetenv (fenv_t * envp);
-extern int __cdecl __MINGW_NOTHROW fesetenv (const fenv_t * );
-extern int __cdecl __MINGW_NOTHROW feupdateenv (const fenv_t *);
-extern int __cdecl __MINGW_NOTHROW feholdexcept (fenv_t *);
-
-#ifdef __cplusplus
-}
-#endif
-#endif	/* Not RC_INVOKED */
-
-#endif /* ndef _FENV_H */
+#endif // _GLIBCXX_FENV_H

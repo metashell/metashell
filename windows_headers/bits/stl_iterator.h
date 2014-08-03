@@ -1,8 +1,6 @@
 // Iterators -*- C++ -*-
 
-// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-// 2010, 2011, 2012
-// Free Software Foundation, Inc.
+// Copyright (C) 2001-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -375,7 +373,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     { return !(__x < __y); }
 
   template<typename _IteratorL, typename _IteratorR>
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
     // DR 685.
     inline auto
     operator-(const reverse_iterator<_IteratorL>& __x,
@@ -426,7 +424,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        *  the end, if you like).  Assigning a value to the %iterator will
        *  always append the value to the end of the container.
       */
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
       back_insert_iterator&
       operator=(typename _Container::const_reference __value)
       {
@@ -516,7 +514,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        *  the front, if you like).  Assigning a value to the %iterator will
        *  always prepend the value to the front of the container.
       */
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
       front_insert_iterator&
       operator=(typename _Container::const_reference __value)
       {
@@ -627,7 +625,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        *     // vector v contains A, 1, 2, 3, and Z
        *  @endcode
       */
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
       insert_iterator&
       operator=(typename _Container::const_reference __value)
       {
@@ -880,7 +878,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // operators but also operator- must accept mixed iterator/const_iterator
   // parameters.
   template<typename _IteratorL, typename _IteratorR, typename _Container>
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
     // DR 685.
     inline auto
     operator-(const __normal_iterator<_IteratorL, _Container>& __lhs,
@@ -908,7 +906,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
@@ -1145,6 +1143,6 @@ _GLIBCXX_END_NAMESPACE_VERSION
 #else
 #define _GLIBCXX_MAKE_MOVE_ITERATOR(_Iter) (_Iter)
 #define _GLIBCXX_MAKE_MOVE_IF_NOEXCEPT_ITERATOR(_Iter) (_Iter)
-#endif // __GXX_EXPERIMENTAL_CXX0X__
+#endif // C++11
 
 #endif

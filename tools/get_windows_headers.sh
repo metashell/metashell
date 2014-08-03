@@ -15,17 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ $# -ne 1 ]
-then
-  echo "Script to download the Windows headers"
-  echo "for Metashell providing the standard library."
-  echo 
-  echo "Usage: $0 <Cygwin mirror to use>"
-  echo "Example: $0 http://ftp.fsn.hu/pub/cygwin"
-  echo
-  exit 1
-fi
-
 ##################################
 # Validations before downloading #
 ##################################
@@ -42,52 +31,38 @@ fi
 # Getting the arguments #
 #########################
 
-MIRROR="$1"
+MIRROR="$1" # TODO
 OUT_DIR="windows_headers"
 TMP_DIR="tmp"
+GCC_VERSION="4.8.1"
+VERSION="$GCC_VERSION-4"
 
 function get {
-  DIR="$1"
+  PACKAGE_DIR="$1"
   PACKAGE="$2"
   PATH_TO_COPY="$3"
-  COPY_TO="$4"
+  VERSION="$4"
   TMP_DIR="$5"
+  OUT_DIR="$6"
 
-  rm -rf "$TMP_DIR/download"
-  mkdir -p "$TMP_DIR/download"
-  mkdir -p "$TMP_DIR/extract"
-  cd "$TMP_DIR/download"
-  wget $MIRROR/x86/release/$DIR/$PACKAGE
-  tar xf $PACKAGE
-  mkdir "../extract/$COPY_TO"
-  cp -r $PATH_TO_COPY/* "../extract/$COPY_TO"
-  cd ../..
-  rm -rf "$TMP_DIR/download"
-}
+  FN="$PACKAGE"
 
-function copy_subtree {
-  FROM="$1"
-  TO="$2"
-  TMP_DIR="$3"
-
-  mkdir $TMP_DIR/extract/$TO
-  cp -r $TMP_DIR/extract/$FROM/* $TMP_DIR/extract/$TO
+  rm -rf "$TMP_DIR"
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR"
+  curl -L -o $FN -O http://sourceforge.net/projects/mingw/files/MinGW/Base/$PACKAGE_DIR/$FN/download
+  tar -xvf $FN
+  cp -r $PATH_TO_COPY/* "../$OUT_DIR"
+  cd ..
+  rm -rf "$TMP_DIR"
 }
 
 rm -rf $TMP_DIR
 rm -rf $OUT_DIR
 
-get mingw/mingw-runtime            mingw-runtime-4.0-1.tar.bz2       usr/i686-pc-mingw32/sys-root/mingw/include     d1 $TMP_DIR
-get mingw/mingw-gcc/mingw-gcc-core mingw-gcc-core-4.7.3-1.tar.bz2    usr/lib/gcc/i686-pc-mingw32/4.7.3/include      d2 $TMP_DIR
-get mingw/mingw-gcc/mingw-gcc-g++  mingw-gcc-g++-4.7.3-1.tar.bz2     usr/lib/gcc/i686-pc-mingw32/4.7.3/include/c++  d3 $TMP_DIR
-copy_subtree                                                         d3/i686-pc-mingw32                             d4 $TMP_DIR
-get mingw/mingw-w32api             mingw-w32api-4.0-1.tar.bz2        usr/i686-pc-mingw32/sys-root/mingw/include     d5 $TMP_DIR
-
 mkdir $OUT_DIR
-for i in 5 4 3 2 1
-do
-  cp -r $TMP_DIR/extract/d$i/* $OUT_DIR
-done
-rm -rf $TMP_DIR
 
+get mingw-rt/mingwrt-4.0.3    mingwrt-4.0.3-1-mingw32-dev.tar.lzma  include                                          "$VERSION" "$TMP_DIR" "$OUT_DIR"
+get gcc/Version4/gcc-$VERSION gcc-c++-$VERSION-mingw32-dev.tar.lzma mingw32/lib/gcc/mingw32/$GCC_VERSION/include/c++ "$VERSION" "$TMP_DIR" "$OUT_DIR"
+get w32api/w32api-4.0.3       w32api-4.0.3-1-mingw32-dev.tar.lzma   include                                          "$VERSION" "$TMP_DIR" "$OUT_DIR"
 

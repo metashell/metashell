@@ -30,6 +30,16 @@ namespace just
 {
   namespace process
   {
+    /*
+     * exception
+     */
+    struct exception : std::runtime_error
+    {
+      explicit exception(const std::string& reason_) :
+        std::runtime_error(reason_)
+      {}
+    };
+
     namespace impl
     {
       /*
@@ -66,6 +76,40 @@ namespace just
         {
           return NULL;
         }
+      }
+#endif
+
+#ifdef _WIN32
+      template <class F>
+      static DWORD WINAPI start_on_background_thread_cb(LPVOID instance_)
+      {
+        F* f = reinterpret_cast<F*>(instance_);
+        try
+        {
+          (*f)();
+        }
+        catch (...)
+        {
+          // ignore
+        }
+        delete f;
+        return 0;
+      }
+#endif
+
+#ifdef _WIN32
+      template <class F>
+      HANDLE start_on_background_thread(F f_)
+      {
+        return
+          CreateThread(
+            NULL,
+            1,
+            &start_on_background_thread_cb<F>,
+            new F(f_),
+            0,
+            NULL
+          );
       }
 #endif
     
@@ -248,6 +292,26 @@ namespace just
       };
 
       /*
+       * reader
+       */
+      class reader
+      {
+      public:
+        explicit reader(input_file& f_, std::string& out_) :
+          _f(&f_),
+          _out(&out_)
+        {}
+
+        void operator()()
+        {
+          *_out = _f->read();
+        }
+      private:
+        input_file* _f;
+        std::string* _out;
+      };
+
+      /*
        * pipe
        */
       class pipe
@@ -308,16 +372,6 @@ namespace just
         return s.str();
       }
     }
-
-    /*
-     * exception
-     */
-    struct exception : std::runtime_error
-    {
-      explicit exception(const std::string& reason_) :
-        std::runtime_error(reason_)
-      {}
-    };
 
     /*
      * output
@@ -392,11 +446,19 @@ namespace just
 
         standard_output.output.close();
         standard_error.output.close();
-  
+
+        std::string std_err;
+        const HANDLE h_std_err =
+          impl::start_on_background_thread(
+            impl::reader(standard_error.input, std_err)
+          );
+
+        const std::string std_out = standard_output.input.read();
+
+        WaitForSingleObject(h_std_err, INFINITE);
         WaitForSingleObject(pi.hProcess, INFINITE);
 
-        return
-          output(standard_output.input.read(), standard_error.input.read());
+        return output(std_out, std_err);
       }
       else
       {

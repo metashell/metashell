@@ -1,7 +1,6 @@
 // Support for concurrent programing -*- C++ -*-
 
-// Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2012
-// Free Software Foundation, Inc.
+// Copyright (C) 2003-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -100,44 +99,20 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // Substitute for concurrence_error object in the case of -fno-exceptions.
   inline void
   __throw_concurrence_lock_error()
-  {
-#if __EXCEPTIONS
-    throw __concurrence_lock_error();
-#else
-    __builtin_abort();
-#endif
-  }
+  { _GLIBCXX_THROW_OR_ABORT(__concurrence_lock_error()); }
 
   inline void
   __throw_concurrence_unlock_error()
-  {
-#if __EXCEPTIONS
-    throw __concurrence_unlock_error();
-#else
-    __builtin_abort();
-#endif
-  }
+  { _GLIBCXX_THROW_OR_ABORT(__concurrence_unlock_error()); }
 
 #ifdef __GTHREAD_HAS_COND
   inline void
   __throw_concurrence_broadcast_error()
-  {
-#if __EXCEPTIONS
-    throw __concurrence_broadcast_error();
-#else
-    __builtin_abort();
-#endif
-  }
+  { _GLIBCXX_THROW_OR_ABORT(__concurrence_broadcast_error()); }
 
   inline void
   __throw_concurrence_wait_error()
-  {
-#if __EXCEPTIONS
-    throw __concurrence_wait_error();
-#else
-    __builtin_abort();
-#endif
-  }
+  { _GLIBCXX_THROW_OR_ABORT(__concurrence_wait_error()); }
 #endif
  
   class __mutex 
@@ -220,7 +195,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     ~__recursive_mutex()
     {
       if (__gthread_active_p())
-	_S_destroy(&_M_mutex);
+	__gthread_recursive_mutex_destroy(&_M_mutex);
     }
 #endif
 
@@ -248,43 +223,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     __gthread_recursive_mutex_t* gthread_recursive_mutex(void)
     { return &_M_mutex; }
-
-#if __GTHREADS && ! defined __GTHREAD_RECURSIVE_MUTEX_INIT
-    // FIXME: gthreads doesn't define __gthread_recursive_mutex_destroy
-    // so we need to obtain a __gthread_mutex_t to destroy
-  private:
-    template<typename _Mx, typename _Rm>
-      static void
-      _S_destroy_win32(_Mx* __mx, _Rm const* __rmx)
-      {
-        __mx->counter = __rmx->counter;
-        __mx->sema = __rmx->sema;
-        __gthread_mutex_destroy(__mx);
-      }
-
-    // matches a gthr-win32.h recursive mutex
-    template<typename _Rm>
-      static typename __enable_if<(bool)sizeof(&_Rm::sema), void>::__type
-      _S_destroy(_Rm* __mx)
-      {
-        __gthread_mutex_t __tmp;
-        _S_destroy_win32(&__tmp, __mx);
-      }
-
-    // matches a recursive mutex with a member 'actual'
-    template<typename _Rm>
-      static typename __enable_if<(bool)sizeof(&_Rm::actual), void>::__type
-      _S_destroy(_Rm* __mx)
-      { __gthread_mutex_destroy(&__mx->actual); }
-
-    // matches when there's only one mutex type
-    template<typename _Rm>
-      static typename
-      __enable_if<std::__are_same<_Rm, __gthread_mutex_t>::__value,
-        void>::__type
-      _S_destroy(_Rm* __mx)
-      { __gthread_mutex_destroy(__mx); }
-#endif
   };
 
   /// Scoped lock idiom.

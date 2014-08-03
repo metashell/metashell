@@ -18,6 +18,7 @@
 
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
+#include <metashell/clang_binary.hpp>
 
 #include <just/environment.hpp>
 
@@ -26,11 +27,29 @@
 #include <iostream>
 #include <stdexcept>
 
-std::string directory_of_file(const std::string& path_)
+#ifdef _WIN32
+#  include <windows.h>
+#endif
+
+namespace
 {
-  boost::filesystem::path p(path_);
-  p.remove_filename();
-  return p.string();
+#ifdef _WIN32
+  std::string directory_of_file(const std::string& path_)
+  {
+    boost::filesystem::path p(path_);
+    p.remove_filename();
+    return p.string();
+  }
+#endif
+  
+#ifdef _WIN32
+  std::string path_of_executable()
+  {
+    char path[MAX_PATH];
+    GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
+    return path;
+  }
+#endif
 }
 
 int main(int argc_, const char* argv_[])
@@ -45,13 +64,27 @@ int main(int argc_, const char* argv_[])
     const parse_config_result
       r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
 
-#ifdef _WIN32
-    // To find libclang.dll
     if (!cfg.clang_path.empty())
     {
+#ifdef _WIN32
+      // To find libclang.dll
       just::environment::append_to_path(directory_of_file(cfg.clang_path));
-    }
 #endif
+
+      // clang's headers
+      std::vector<std::string> si =
+        default_sysinclude(metashell::clang_binary(cfg.clang_path));
+
+#ifdef _WIN32
+      // mingw headers shipped with Metashell
+      const std::string mingw_headers =
+        directory_of_file(path_of_executable()) + "\\windows_headers";
+      si.push_back(mingw_headers);
+      si.push_back(mingw_headers + "\\mingw32");
+#endif
+
+      cfg.include_path.insert(cfg.include_path.begin(), si.begin(), si.end());
+    }
 
     if (r == metashell::run_shell)
     {

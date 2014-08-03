@@ -1,7 +1,6 @@
 // Map implementation -*- C++ -*-
 
-// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-// 2011, 2012 Free Software Foundation, Inc.
+// Copyright (C) 2001-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -59,8 +58,9 @@
 
 #include <bits/functexcept.h>
 #include <bits/concept_check.h>
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
 #include <initializer_list>
+#include <tuple>
 #endif
 
 namespace std _GLIBCXX_VISIBILITY(default)
@@ -72,6 +72,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
    *  retrieved based on a key, in logarithmic time.
    *
    *  @ingroup associative_containers
+   *
+   *  @tparam _Key  Type of key objects.
+   *  @tparam  _Tp  Type of mapped objects.
+   *  @tparam _Compare  Comparison function object type, defaults to less<_Key>.
+   *  @tparam _Alloc  Allocator type, defaults to 
+   *                  allocator<pair<const _Key, _Tp>.
    *
    *  Meets the requirements of a <a href="tables.html#65">container</a>, a
    *  <a href="tables.html#66">reversible container</a>, and an
@@ -174,7 +180,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       map(const map& __x)
       : _M_t(__x._M_t) { }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  %Map move constructor.
        *  @param  __x  A %map of identical element and allocator types.
@@ -261,7 +267,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	return *this;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief  %Map move assignment operator.
        *  @param  __x  A %map of identical element and allocator types.
@@ -377,7 +383,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       rend() const _GLIBCXX_NOEXCEPT
       { return _M_t.rend(); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  Returns a read-only (constant) iterator that points to the first pair
        *  in the %map.  Iteration is done in ascending order according to the
@@ -455,11 +461,17 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	iterator __i = lower_bound(__k);
 	// __i->first is greater than or equivalent to __k.
 	if (__i == end() || key_comp()(__k, (*__i).first))
+#if __cplusplus >= 201103L
+	  __i = _M_t._M_emplace_hint_unique(__i, std::piecewise_construct,
+					    std::tuple<const key_type&>(__k),
+					    std::tuple<>());
+#else
           __i = insert(__i, value_type(__k, mapped_type()));
+#endif
 	return (*__i).second;
       }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       mapped_type&
       operator[](key_type&& __k)
       {
@@ -469,7 +481,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	iterator __i = lower_bound(__k);
 	// __i->first is greater than or equivalent to __k.
 	if (__i == end() || key_comp()(__k, (*__i).first))
-          __i = insert(__i, std::make_pair(std::move(__k), mapped_type()));
+	  __i = _M_t._M_emplace_hint_unique(__i, std::piecewise_construct,
+					std::forward_as_tuple(std::move(__k)),
+					std::tuple<>());
 	return (*__i).second;
       }
 #endif
@@ -502,6 +516,64 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       }
 
       // modifiers
+#if __cplusplus >= 201103L
+      /**
+       *  @brief Attempts to build and insert a std::pair into the %map.
+       *
+       *  @param __args  Arguments used to generate a new pair instance (see
+       *	        std::piecewise_contruct for passing arguments to each
+       *	        part of the pair constructor).
+       *
+       *  @return  A pair, of which the first element is an iterator that points
+       *           to the possibly inserted pair, and the second is a bool that
+       *           is true if the pair was actually inserted.
+       *
+       *  This function attempts to build and insert a (key, value) %pair into
+       *  the %map.
+       *  A %map relies on unique keys and thus a %pair is only inserted if its
+       *  first element (the key) is not already present in the %map.
+       *
+       *  Insertion requires logarithmic time.
+       */
+      template<typename... _Args>
+	std::pair<iterator, bool>
+	emplace(_Args&&... __args)
+	{ return _M_t._M_emplace_unique(std::forward<_Args>(__args)...); }
+
+      /**
+       *  @brief Attempts to build and insert a std::pair into the %map.
+       *
+       *  @param  __pos  An iterator that serves as a hint as to where the pair
+       *                should be inserted.
+       *  @param  __args  Arguments used to generate a new pair instance (see
+       *	         std::piecewise_contruct for passing arguments to each
+       *	         part of the pair constructor).
+       *  @return An iterator that points to the element with key of the
+       *          std::pair built from @a __args (may or may not be that
+       *          std::pair).
+       *
+       *  This function is not concerned about whether the insertion took place,
+       *  and thus does not return a boolean like the single-argument emplace()
+       *  does.
+       *  Note that the first parameter is only a hint and can potentially
+       *  improve the performance of the insertion process. A bad hint would
+       *  cause no gains in efficiency.
+       *
+       *  See
+       *  http://gcc.gnu.org/onlinedocs/libstdc++/manual/bk01pt07ch17.html
+       *  for more on @a hinting.
+       *
+       *  Insertion requires logarithmic time (if the hint is not taken).
+       */
+      template<typename... _Args>
+	iterator
+	emplace_hint(const_iterator __pos, _Args&&... __args)
+	{
+	  return _M_t._M_emplace_hint_unique(__pos,
+					     std::forward<_Args>(__args)...);
+	}
+#endif
+
       /**
        *  @brief Attempts to insert a std::pair into the %map.
 
@@ -522,7 +594,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       insert(const value_type& __x)
       { return _M_t._M_insert_unique(__x); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Pair, typename = typename
 	       std::enable_if<std::is_constructible<value_type,
 						    _Pair&&>::value>::type>
@@ -531,7 +603,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
         { return _M_t._M_insert_unique(std::forward<_Pair>(__x)); }
 #endif
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       /**
        *  @brief Attempts to insert a list of std::pairs into the %map.
        *  @param  __list  A std::initializer_list<value_type> of pairs to be
@@ -568,14 +640,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  Insertion requires logarithmic time (if the hint is not taken).
        */
       iterator
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       insert(const_iterator __position, const value_type& __x)
 #else
       insert(iterator __position, const value_type& __x)
 #endif
       { return _M_t._M_insert_unique_(__position, __x); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       template<typename _Pair, typename = typename
 	       std::enable_if<std::is_constructible<value_type,
 						    _Pair&&>::value>::type>
@@ -598,7 +670,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
         insert(_InputIterator __first, _InputIterator __last)
         { _M_t._M_insert_unique(__first, __last); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 130. Associative erase should return an iterator.
       /**
@@ -653,7 +725,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       erase(const key_type& __x)
       { return _M_t.erase(__x); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 130. Associative erase should return an iterator.
       /**

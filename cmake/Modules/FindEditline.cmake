@@ -25,6 +25,7 @@
 #   EDITLINE_FOUND
 #   EDITLINE_INCLUDE_DIR
 #   EDITLINE_LIBRARY
+#   EDITLINE_DLL (only on Windows)
 
 if (NOT $ENV{EDITLINE_INCLUDEDIR} STREQUAL "" )
   set(EDITLINE_INCLUDEDIR $ENV{EDITLINE_INCLUDEDIR})
@@ -51,6 +52,9 @@ find_library(
   NAMES edit
   HINTS ${EDITLINE_LIBRARYDIR}
 )
+if (WIN32)
+  find_file(EDITLINE_DLL NAMES edit.dll HINTS ${EDITLINE_LIBRARYDIR})
+endif ()
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set EDITLINE_FOUND to TRUE
@@ -59,7 +63,7 @@ find_package_handle_standard_args(
   Editline DEFAULT_MSG EDITLINE_LIBRARY EDITLINE_INCLUDE_DIR
 )
 
-mark_as_advanced(EDITLINE_INCLUDE_DIR, EDITLINE_LIBRARY)
+mark_as_advanced(EDITLINE_INCLUDE_DIR, EDITLINE_LIBRARY, EDITLINE_DLL)
 
 if (EDITLINE_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
@@ -67,6 +71,9 @@ if (EDITLINE_DEBUG)
     message(STATUS "Editline found")
     message(STATUS "  EDITLINE_INCLUDE_DIR = ${EDITLINE_INCLUDE_DIR}")
     message(STATUS "  EDITLINE_LIBRARY = ${EDITLINE_LIBRARY}")
+    if (WIN32)
+      message(STATUS "  EDITLINE_DLL = ${EDITLINE_DLL}")
+    endif ()
   else()
     message(STATUS "Editline not found")
   endif()
