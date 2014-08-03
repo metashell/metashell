@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include <metashell/shell.hpp>
+#include <metashell/token_iterator.hpp>
 #include <metashell/templight_trace.hpp>
 #include <metashell/pragma_templight_backtrace.hpp>
 
@@ -32,12 +33,7 @@ void pragma_templight_backtrace::run(
   const token_iterator& args_end_
 ) const
 {
-  std::stringstream type_ss;
-  for (token_iterator it = args_begin_; it != args_end_; ++it) {
-    type_ss << it->get_value();
-  }
-
-  std::string type = type_ss.str();
+  std::string type = tokens_to_string(args_begin_, args_end_);
 
   templight_trace trace =
     metashell::templight_trace::create_from_xml("templight.xml");
