@@ -404,14 +404,14 @@ void templight_trace::print_full_forwardtrace(unsigned width) const {
 
   discovered_t discovered(boost::num_vertices(graph));
 
-  BOOST_FOREACH(vertex_descriptor root_vertex, boost::vertices(graph)) {
-    print_trace_visit<out_edge_iterator>(
-        root_vertex,
-        discovered,
-        &templight_trace::get_out_edges,
-        &templight_trace::get_target,
-        width);
-  }
+  assert(boost::num_vertices(graph) > 0);
+
+  print_trace_visit<out_edge_iterator>(
+      0, //0 is always the <root> vertex
+      discovered,
+      &templight_trace::get_out_edges,
+      &templight_trace::get_target,
+      width);
 }
 
 void templight_trace::print_backtrace(

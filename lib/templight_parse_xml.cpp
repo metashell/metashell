@@ -29,6 +29,12 @@ namespace phx = boost::phoenix;
 typedef ascii::space_type skipper_t;
 
 struct templight_trace_builder {
+
+  templight_trace_builder() {
+    // Add root vertex
+    vertex_stack.push(trace.add_vertex("<root>", file_location()));
+  }
+
   void handle_template_begin(
     instantiation_kind kind,
     const std::string& context,
@@ -39,7 +45,6 @@ struct templight_trace_builder {
     vertex_descriptor vertex = trace.add_vertex(context, location);
     if (!vertex_stack.empty()) {
       vertex_descriptor top_vertex = vertex_stack.top();
-      //TODO maybe the other way around will be more helpful
       trace.add_edge(top_vertex, vertex, kind);
     }
     vertex_stack.push(vertex);
@@ -50,6 +55,8 @@ struct templight_trace_builder {
     double timestamp,
     unsigned long long memory_usage)
   {
+    //TODO this check is not enough.
+    //The root vertex should always be in the stack
     if (vertex_stack.empty()) {
       throw templight_exception();
     }
