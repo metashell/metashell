@@ -89,7 +89,6 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(test_shell_using_precompiled_headers)
 {
   metashell::config cfg = metashell::config::empty();
@@ -99,9 +98,7 @@ JUST_TEST_CASE(test_shell_using_precompiled_headers)
 
   JUST_ASSERT(sh.using_precompiled_headers());
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
 {
   metashell::config cfg = metashell::config::empty();
@@ -112,9 +109,7 @@ JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
 
   JUST_ASSERT(sh.using_precompiled_headers());
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
 {
   metashell::config cfg = metashell::config::empty();
@@ -125,9 +120,7 @@ JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(
   test_shell_with_enabled_precompiled_headers_uses_header_file_environment
 )
@@ -142,9 +135,7 @@ JUST_TEST_CASE(
     dynamic_cast<const metashell::header_file_environment*>(&sh.env())
   );
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(
   test_shell_with_disabled_precompiled_headers_uses_in_memory_environment
 )
@@ -159,9 +150,7 @@ JUST_TEST_CASE(
     dynamic_cast<const metashell::in_memory_environment*>(&sh.env())
   );
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
 {
   metashell::config cfg = metashell::config::empty();
@@ -175,9 +164,7 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
   
   JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
-#endif
 
-#ifndef DISABLE_TESTS_THAT_NEED_A_CLANG_BINARY
 JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
 {
   metashell::config cfg = metashell::config::empty();
@@ -191,5 +178,4 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
   
   JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
-#endif
 
