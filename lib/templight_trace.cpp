@@ -153,6 +153,8 @@ templight_trace::string_range templight_trace::find_type_emphasize(
       "([_a-zA-Z][_a-zA-Z0-9]*)"    "|" \
       "(\\(anonymous namespace\\))" "|" \
       "(<anonymous>)"               "|" \
+      "(<anonymous struct>)"        "|" \
+      "(<anonymous class>)"         "|" \
       "(<anonymous union>)"             \
     ")"
 
@@ -166,7 +168,7 @@ templight_trace::string_range templight_trace::find_type_emphasize(
     return string_range(type.end(), type.end());
   }
 
-  return string_range(match[8].first, match[8].second);
+  return string_range(match[10].first, match[10].second);
 }
 
 void templight_trace::print_trace_graph(
