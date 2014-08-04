@@ -1,6 +1,6 @@
 # Metashell
 
-[![Build Status](https://secure.travis-ci.org/r0mai/metashell.png?branch=master "Build Status")](http://travis-ci.org/sabel83/metashell)
+[![Build Status](https://secure.travis-ci.org/r0mai/metashell.png?branch=master "Build Status")](http://travis-ci.org/r0mai/metashell)
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
