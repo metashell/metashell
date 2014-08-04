@@ -151,9 +151,11 @@ templight_trace::string_range templight_trace::find_type_emphasize(
     "([_a-zA-Z][_a-zA-Z0-9]*)";
   const std::string namespace_regex =
     "(" + symbol_regex + "|(\\(anonymous namespace\\)))";
+  const std::string type_regex =
+    "(" + symbol_regex + "|(<anonymous>))";
 
   boost::regex reg(
-      "^(::)?(" + namespace_regex + "::)*" + symbol_regex);
+      "^(::)?(" + namespace_regex + "::)*" + type_regex);
 
   boost::smatch match;
   if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
