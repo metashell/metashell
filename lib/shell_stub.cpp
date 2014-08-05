@@ -34,6 +34,11 @@ void shell_stub::display_info(const std::string& s_) const
 void shell_stub::display_error(const std::string& s_) const
 {}
 
+void shell_stub::display(
+  const std::string& s_,
+  optional_color c_) const
+{}
+
 unsigned int shell_stub::width() const
 {
   return 80;

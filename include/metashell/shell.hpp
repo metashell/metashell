@@ -21,6 +21,9 @@
 #include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
 
+#include <just/console.hpp>
+
+#include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <string>
@@ -33,6 +36,8 @@ namespace metashell
   class shell
   {
   public:
+    typedef boost::optional<just::console::color> optional_color;
+
     explicit shell(const config& config_);
 
     // Takes ownership of env_
@@ -41,17 +46,20 @@ namespace metashell
     virtual ~shell();
 
     virtual void add_history(const std::string& s_) = 0;
-  
+
     virtual void display_normal(const std::string& s_) const = 0;
     virtual void display_info(const std::string& s_) const = 0;
     virtual void display_error(const std::string& s_) const = 0;
+    virtual void display(
+        const std::string& s_,
+        optional_color c_ = boost::none) const = 0;
 
     virtual unsigned int width() const = 0;
-  
+
     void display_splash() const;
     void line_available(const std::string& s_);
     std::string prompt() const;
-  
+
     void cancel_operation();
 
     bool store_in_buffer(const std::string& s_);

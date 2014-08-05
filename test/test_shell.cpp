@@ -71,6 +71,13 @@ void test_shell::display_error(const std::string& s_) const
   _error += s_;
 }
 
+void test_shell::display(
+    const std::string& s_,
+    optional_color c_) const
+{
+  _output += s_; //TODO which should we append?
+}
+
 const std::string& test_shell::output() const
 {
   return _output;
