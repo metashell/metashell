@@ -346,7 +346,7 @@ void templight_trace::print_trace_visit(
       discovered[vertex] = true;
 
       EdgeIterator begin, end;
-      boost::tie(begin, end) = (this->*get_edges)(vertex);
+      boost::tie(begin, end) = get_edges(vertex);
 
       typedef std::vector<edge_descriptor> edges_t;
       edges_t edges(begin, end);
@@ -362,38 +362,12 @@ void templight_trace::print_trace_visit(
           boost::get(template_edge_property_tag(), graph, edge).kind;
 
         to_visit.push(
-          boost::make_tuple((this->*edge_direction)(edge), depth+1, next_kind));
+          boost::make_tuple(edge_direction(edge), depth+1, next_kind));
 
         ++depth_counter[depth+1];
       }
     }
   }
-}
-
-std::pair<
-  templight_trace::out_edge_iterator,
-  templight_trace::out_edge_iterator
-> templight_trace::get_out_edges(vertex_descriptor v) const {
-  return boost::out_edges(v, graph);
-}
-
-std::pair<
-  templight_trace::in_edge_iterator,
-  templight_trace::in_edge_iterator
-> templight_trace::get_in_edges(vertex_descriptor v) const {
-  return boost::in_edges(v, graph);
-}
-
-templight_trace::vertex_descriptor templight_trace::get_source(
-    edge_descriptor e) const
-{
-  return boost::source(e, graph);
-}
-
-templight_trace::vertex_descriptor templight_trace::get_target(
-    edge_descriptor e) const
-{
-  return boost::target(e, graph);
 }
 
 void templight_trace::print_forwardtrace(
@@ -417,8 +391,8 @@ void templight_trace::print_forwardtrace(
       sh,
       *opt_vertex,
       discovered,
-      &templight_trace::get_out_edges,
-      &templight_trace::get_target,
+      [this](vertex_descriptor v) { return boost::out_edges(v, graph); },
+      [this](edge_descriptor e) { return boost::target(e, graph); },
       width);
 }
 
@@ -435,8 +409,8 @@ void templight_trace::print_full_forwardtrace(const shell& sh) const {
       // 0 is always the <root> vertex, and every vertex is reachable from root
       0,
       discovered,
-      &templight_trace::get_out_edges,
-      &templight_trace::get_target,
+      [this](vertex_descriptor v) { return boost::out_edges(v, graph); },
+      [this](edge_descriptor e) { return boost::target(e, graph); },
       width);
 }
 
@@ -461,8 +435,8 @@ void templight_trace::print_backtrace(
       sh,
       *opt_vertex,
       discovered,
-      &templight_trace::get_in_edges,
-      &templight_trace::get_source,
+      [this](vertex_descriptor v) { return boost::in_edges(v, graph); },
+      [this](edge_descriptor e) { return boost::source(e, graph); },
       width);
 }
 
@@ -516,8 +490,8 @@ void templight_trace::print_full_backtrace(const shell& sh) const {
         sh,
         *it,
         discovered,
-        &templight_trace::get_in_edges,
-        &templight_trace::get_source,
+        [this](vertex_descriptor v) { return boost::in_edges(v, graph); },
+        [this](edge_descriptor e) { return boost::source(e, graph); },
         width);
   }
 }

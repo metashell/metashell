@@ -118,14 +118,6 @@ private:
   boost::optional<vertex_descriptor> find_vertex(
       const std::string& element) const;
 
-  std::pair<out_edge_iterator, out_edge_iterator> get_out_edges(
-      vertex_descriptor v) const;
-  std::pair<in_edge_iterator, in_edge_iterator> get_in_edges(
-      vertex_descriptor v) const;
-
-  vertex_descriptor get_source(edge_descriptor e) const;
-  vertex_descriptor get_target(edge_descriptor e) const;
-
   string_range find_type_emphasize(const std::string& type) const;
 
   void print_trace_content(
