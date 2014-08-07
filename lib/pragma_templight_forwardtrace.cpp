@@ -39,9 +39,9 @@ void pragma_templight_forwardtrace::run(
     metashell::templight_trace::create_from_xml("templight.xml");
 
   if (type.empty()) {
-    trace.print_full_forwardtrace(_shell.width());
+    trace.print_full_forwardtrace(_shell);
   } else {
-    trace.print_forwardtrace(type, _shell.width());
+    trace.print_forwardtrace(_shell, type);
   }
 }
 

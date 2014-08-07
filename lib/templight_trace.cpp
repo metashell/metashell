@@ -172,6 +172,7 @@ templight_trace::string_range templight_trace::find_type_emphasize(
 }
 
 void templight_trace::print_trace_graph(
+    const shell& sh,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
     bool print_mark) const
@@ -181,37 +182,39 @@ void templight_trace::print_trace_graph(
   if (depth > 0) {
     //TODO respect the -H (no syntax highlight parameter)
     for (unsigned i = 1; i < depth; ++i) {
-      just::console::text_color(colors[i % colors.size()]);
-      std::cout << (depth_counter[i] > 0 ? "| " : "  ");
-      just::console::reset();
+      sh.display(
+          depth_counter[i] > 0 ? "| " : "  ",
+          colors[i % colors.size()]);
     }
 
-    just::console::text_color(colors[depth % colors.size()]);
+    just::console::color mark_color = colors[depth % colors.size()];
     if (print_mark) {
-      std::cout << "+ ";
+      sh.display("+ ", mark_color);
     } else if (depth_counter[depth] > 0) {
-      std::cout << "| ";
+      sh.display("| ", mark_color);
     } else {
-      std::cout << "  ";
+      sh.display("  ");
     }
-    just::console::reset();
   }
 }
 
 namespace {
 
 void print_range(
+    const shell& sh,
     std::string::const_iterator begin,
-    std::string::const_iterator end)
+    std::string::const_iterator end,
+    shell::optional_color c)
 {
   if (begin < end) {
-    std::cout << std::string(begin, end);
+    sh.display(std::string(begin, end), c);
   }
 }
 
 }
 
 void templight_trace::print_trace_content(
+    const shell& sh,
     string_range range,
     string_range emphasize) const
 {
@@ -220,16 +223,27 @@ void templight_trace::print_trace_content(
 
   //TODO avoid copying
 
-  print_range(range.first, std::min(range.second, emphasize.first));
-  just::console::text_color(just::console::color::white);
   print_range(
+      sh,
+      range.first,
+      std::min(range.second, emphasize.first),
+      boost::none);
+
+  print_range(
+      sh,
       std::max(range.first, emphasize.first),
-      std::min(range.second, emphasize.second));
-  just::console::reset();
-  print_range(std::max(emphasize.second, range.first), range.second);
+      std::min(range.second, emphasize.second),
+      just::console::color::white);
+
+  print_range(
+      sh,
+      std::max(emphasize.second, range.first),
+      range.second,
+      boost::none);
 }
 
 void templight_trace::print_trace_line(
+    const shell& sh,
     vertex_descriptor vertex,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -259,17 +273,19 @@ void templight_trace::print_trace_line(
 
   if (width < 10 || non_content_length >= width - 10) {
     // We have no chance to display the graph nicely :(
-    print_trace_graph(depth, depth_counter, true);
+    print_trace_graph(sh, depth, depth_counter, true);
 
     print_trace_content(
+      sh,
       string_range(element_content.begin(), element_content.end()),
       emphasize);
-    std::cout << '\n';
+    sh.display("\n");
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
-      print_trace_graph(depth, depth_counter, i == 0);
+      print_trace_graph(sh, depth, depth_counter, i == 0);
       print_trace_content(
+        sh,
         string_range(
           element_content.begin() + i,
           i + content_width < element_content.size() ?
@@ -278,7 +294,7 @@ void templight_trace::print_trace_line(
         ),
         emphasize
       );
-      std::cout << '\n';
+      sh.display("\n");
     }
   }
 }
@@ -286,6 +302,7 @@ void templight_trace::print_trace_line(
 // Visits a single vertex and all of its children
 template<class EdgeIterator, class GetEdges, class EdgeDirection>
 void templight_trace::print_trace_visit(
+    const shell& sh,
     vertex_descriptor root_vertex,
     discovered_t& discovered,
     GetEdges get_edges, EdgeDirection edge_direction,
@@ -330,7 +347,7 @@ void templight_trace::print_trace_visit(
 
     --depth_counter[depth];
 
-    print_trace_line(vertex, depth, depth_counter, kind, width);
+    print_trace_line(sh, vertex, depth, depth_counter, kind, width);
 
     if (!discovered[vertex]) {
       discovered[vertex] = true;
@@ -387,20 +404,24 @@ templight_trace::vertex_descriptor templight_trace::get_target(
 }
 
 void templight_trace::print_forwardtrace(
-    const std::string& type, unsigned width) const
+    const shell& sh,
+    const std::string& type) const
 {
 
   boost::optional<vertex_descriptor> opt_vertex =
     find_vertex(type);
 
   if (!opt_vertex) {
-    std::cout << "type \"" << type << "\" not found" << std::endl;
+    sh.display_error("type \"" + type + "\" not found");
     return;
   }
+
+  unsigned width = sh.width();
 
   discovered_t discovered(boost::num_vertices(graph));
 
   print_trace_visit<out_edge_iterator>(
+      sh,
       *opt_vertex,
       discovered,
       &templight_trace::get_out_edges,
@@ -408,13 +429,16 @@ void templight_trace::print_forwardtrace(
       width);
 }
 
-void templight_trace::print_full_forwardtrace(unsigned width) const {
-
-  discovered_t discovered(boost::num_vertices(graph));
+void templight_trace::print_full_forwardtrace(const shell& sh) const {
 
   assert(boost::num_vertices(graph) > 0);
 
+  unsigned width = sh.width();
+
+  discovered_t discovered(boost::num_vertices(graph));
+
   print_trace_visit<out_edge_iterator>(
+      sh,
       // 0 is always the <root> vertex, and every vertex is reachable from root
       0,
       discovered,
@@ -424,20 +448,24 @@ void templight_trace::print_full_forwardtrace(unsigned width) const {
 }
 
 void templight_trace::print_backtrace(
-    const std::string& type, unsigned width) const
+    const shell& sh,
+    const std::string& type) const
 {
 
   boost::optional<vertex_descriptor> opt_vertex =
     find_vertex(type);
 
   if (!opt_vertex) {
-    std::cout << "type \"" << type << "\" not found" << std::endl;
+    sh.display_error("type \"" + type + "\" not found");
     return;
   }
+
+  unsigned width = sh.width();
 
   discovered_t discovered(boost::num_vertices(graph));
 
   print_trace_visit<in_edge_iterator>(
+      sh,
       *opt_vertex,
       discovered,
       &templight_trace::get_in_edges,
@@ -467,11 +495,13 @@ private:
   const discovered_t& discovered;
 };
 
-void templight_trace::print_full_backtrace(unsigned width) const {
+void templight_trace::print_full_backtrace(const shell& sh) const {
+
+  assert(boost::num_vertices(graph) > 0);
 
   discovered_t discovered(boost::num_vertices(graph));
 
-  assert(boost::num_vertices(graph) > 0);
+  unsigned width = sh.width();
 
   // TODO this needs some more work:
   // -try to go with the deepest route first
@@ -490,6 +520,7 @@ void templight_trace::print_full_backtrace(unsigned width) const {
       break;
     }
     print_trace_visit<in_edge_iterator>(
+        sh,
         *it,
         discovered,
         &templight_trace::get_in_edges,
