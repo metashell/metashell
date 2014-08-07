@@ -108,28 +108,21 @@ void templight_trace::print_graph(std::ostream& os) const {
   }
 }
 
-struct templight_trace::property_writer {
-  property_writer(const templight_trace& trace) : trace(trace) {}
-
-  void operator()(std::ostream& os, vertex_descriptor vertex) {
-    os << "[label=\"" <<
-      boost::get(template_vertex_property_tag(), trace.graph, vertex).name <<
-      "\"]";
-  }
-
-  void operator()(std::ostream& os, edge_descriptor edge) {
-    os << "[label=\""<<
-      boost::get(template_edge_property_tag(), trace.graph, edge).kind <<
-      "\"]";
-  }
-private:
-  const templight_trace& trace;
-};
-
 void templight_trace::print_graphviz(std::ostream& os) const {
 
   boost::write_graphviz(
-      os, graph, property_writer(*this), property_writer(*this));
+      os, graph,
+      [this](std::ostream& os, vertex_descriptor vertex) {
+        os << "[label=\"" <<
+          boost::get(template_vertex_property_tag(), graph, vertex).name <<
+          "\"]";
+      },
+      [this](std::ostream& os, edge_descriptor edge) {
+        os << "[label=\""<<
+          boost::get(template_edge_property_tag(), graph, edge).kind <<
+          "\"]";
+      }
+  );
 }
 
 struct templight_trace::is_memoziation_predicate {

@@ -163,7 +163,6 @@ private:
 
   element_vertex_map_t element_vertex_map;
 
-  struct property_writer;
   struct is_memoziation_predicate;
   struct only_has_discovered_out_edge_predicate;
 
