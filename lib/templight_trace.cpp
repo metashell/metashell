@@ -125,18 +125,6 @@ void templight_trace::print_graphviz(std::ostream& os) const {
   );
 }
 
-struct templight_trace::is_memoziation_predicate {
-  is_memoziation_predicate(const graph_t& graph) :
-    graph(graph) {}
-
-  bool operator()(const edge_descriptor& edge) const {
-    return
-      boost::get(template_edge_property_tag(), graph, edge).kind == memoization;
-  }
-private:
-  const graph_t& graph;
-};
-
 templight_trace::string_range templight_trace::find_type_emphasize(
     const std::string& type) const
 {

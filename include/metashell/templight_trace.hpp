@@ -155,7 +155,6 @@ private:
 
   element_vertex_map_t element_vertex_map;
 
-  struct is_memoziation_predicate;
   struct only_has_discovered_out_edge_predicate;
 
   friend struct templight_trace_builder;
