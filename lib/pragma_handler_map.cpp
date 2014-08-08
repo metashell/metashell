@@ -29,10 +29,6 @@
 #include <metashell/pragma_environment_reset.hpp>
 #include <metashell/pragma_environment_reload.hpp>
 #include <metashell/pragma_evaluate.hpp>
-#include <metashell/pragma_templight_print.hpp>
-#include <metashell/pragma_templight_print_dot.hpp>
-#include <metashell/pragma_templight_backtrace.hpp>
-#include <metashell/pragma_templight_forwardtrace.hpp>
 
 #include "exception.hpp"
 
@@ -174,12 +170,6 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add("environment", "add", pragma_environment_add(shell_))
       .add("environment", "reset", pragma_environment_reset(shell_))
       .add("environment", "reload", pragma_environment_reload(shell_))
-      .add("templight", "print", pragma_templight_print(shell_))
-      .add("templight", "print", "dot", pragma_templight_print_dot(shell_))
-      .add("templight", "forwardtrace", pragma_templight_forwardtrace(shell_))
-      .add("templight", "ft", pragma_templight_forwardtrace(shell_))
-      .add("templight", "backtrace", pragma_templight_backtrace(shell_))
-      .add("templight", "bt", pragma_templight_backtrace(shell_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;
