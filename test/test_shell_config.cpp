@@ -26,18 +26,6 @@
 
 #include <sstream>
 
-namespace
-{
-  metashell::config detect_config(
-    const metashell::user_config& ucfg_,
-    metashell::iface::environment_detector& env_detector_
-  )
-  {
-    std::ostringstream s;
-    return metashell::detect_config(ucfg_, env_detector_, s);
-  }
-}
-
 JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
 {
   metashell::config cfg;
