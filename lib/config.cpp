@@ -55,7 +55,7 @@ namespace
           default_clang_search_path + 1,
           default_clang_search_path
             + sizeof(default_clang_search_path) / sizeof(const char*),
-          std::ostream_iterator<std::string>(std::cerr, "\n")
+          std::ostream_iterator<std::string>(stderr_, "\n")
         );
       }
 
