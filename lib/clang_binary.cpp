@@ -16,7 +16,7 @@
 
 #include <metashell/clang_binary.hpp>
 
-#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/trim_all.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -63,7 +63,7 @@ std::vector<std::string> metashell::default_sysinclude(
   const clang_binary& clang_
 )
 {
-  using boost::algorithm::trim_left_copy;
+  using boost::algorithm::trim_all_copy;
   using boost::algorithm::split;
   using boost::is_any_of;
   using boost::starts_with;
@@ -88,7 +88,7 @@ std::vector<std::string> metashell::default_sysinclude(
     {
       if (starts_with(line, " "))
       {
-        result.push_back(trim_left_copy(line));
+        result.push_back(trim_all_copy(line));
       }
       else
       {
