@@ -294,7 +294,7 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
   
-  JUST_ASSERT_EQUAL(3, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
   JUST_ASSERT_EQUAL("/user/1", cfg.include_path[2]);
