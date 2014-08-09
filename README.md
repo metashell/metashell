@@ -590,6 +590,10 @@ Metashell supports the following pragmas:
 
 * `#msh help [<command>]` <br /> <br /> Displays a help message.
 
+* `#msh mdb` <br /> <br /> Starts the metadebugger.
+
+* `#msh metadebugger` <br /> <br /> Starts the metadebugger.
+
 * `#msh precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
 * `#msh quit` <br /> <br /> Terminates the shell.
