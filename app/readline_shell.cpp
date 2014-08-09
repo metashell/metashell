@@ -94,6 +94,7 @@ void readline_shell::run()
   {
     line_available(*line);
   }
+  std::cout << std::endl;
 }
 
 #ifndef _WIN32
