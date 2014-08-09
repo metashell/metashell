@@ -323,7 +323,7 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
   
-  JUST_ASSERT_EQUAL(2, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(2u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[0]);
   JUST_ASSERT_EQUAL(
     "c:/program files\\windows_headers\\mingw32",
@@ -360,7 +360,7 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
   
-  JUST_ASSERT_EQUAL(3, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[1]);
   JUST_ASSERT_EQUAL(
@@ -383,7 +383,7 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
   
-  JUST_ASSERT_EQUAL(3, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
   JUST_ASSERT_EQUAL("/user/1", cfg.include_path[2]);
