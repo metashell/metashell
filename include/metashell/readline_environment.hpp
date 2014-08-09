@@ -1,16 +1,16 @@
 #ifndef READLINE_ENVIRONMENT_HPP
 #define READLINE_ENVIRONMENT_HPP
 
+#include <string>
+
+#include <boost/optional.hpp>
+
 #ifdef USE_EDITLINE
 #  include <editline/readline.h>
 #else
 #  include <readline/readline.h>
 #  include <readline/history.h>
 #endif
-
-#include <string>
-
-#include <boost/optional.hpp>
 
 namespace metashell {
 
