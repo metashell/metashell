@@ -16,7 +16,6 @@
 
 #include "readline_shell.hpp"
 #include "syntax_highlighted_display.hpp"
-#include "override_guard.hpp"
 #include "interrupt_handler_override.hpp"
 
 #include <metashell/shell.hpp>
@@ -27,18 +26,7 @@
 
 #include <mindent/stream_display.hpp>
 
-#ifdef USE_EDITLINE
-#  include <editline/readline.h>
-#else
-#  include <readline/readline.h>
-#  include <readline/history.h>
-#endif
-
 #include <boost/bind.hpp>
-
-#ifndef _WIN32
-#  include <sys/ioctl.h>
-#endif
 
 #include <algorithm>
 #include <string>
@@ -65,13 +53,6 @@ namespace
 
     just::console::reset();
   }
-
-#ifndef _WIN32
-  std::string get_edited_text()
-  {
-    return std::string(rl_line_buffer, rl_line_buffer + rl_end);
-  }
-#endif
 }
 
 readline_shell* readline_shell::_instance = 0;
@@ -94,9 +75,7 @@ readline_shell::readline_shell(const metashell::config& config_) :
 
 void readline_shell::add_history(const std::string& s_)
 {
-  std::vector<char> s(s_.begin(), s_.end());
-  s.push_back(0);
-  ::add_history(&s[0]);
+  _readline_environment.add_history(s_);
 }
 
 void readline_shell::run()
@@ -104,20 +83,16 @@ void readline_shell::run()
   using boost::bind;
 
 #ifndef _WIN32
-  override_guard<char** (*)(const char*, int, int)>
-    ovr2(rl_attempted_completion_function, tab_completion);
+  _readline_environment.set_rl_attempted_completion_function(
+      tab_completion);
 #endif
 
   interrupt_handler_override ovr3(bind(&readline_shell::cancel_operation,this));
 
-  for (char* l = 0; !stopped() && (l = readline(prompt().c_str()));)
+  for (boost::optional<std::string> line;
+      !stopped() && (line = _readline_environment.readline(prompt())); )
   {
-    const std::string line(l);
-#ifndef _WIN32
-    // It breaks on Windows. The library owns the buffer?
-    free(l);
-#endif
-    line_available(line);
+    line_available(*line);
   }
 }
 
@@ -131,7 +106,9 @@ char* readline_shell::tab_generator(const char* text_, int state_)
 
   if (!state_) // init
   {
-    const std::string edited_text = get_edited_text();
+    const std::string edited_text =
+      _instance->_readline_environment.get_edited_text();
+
     _instance->code_complete(
       std::string(edited_text.begin(), edited_text.begin() + _completion_end),
       values
@@ -229,15 +206,6 @@ void readline_shell::display(
 
 unsigned int readline_shell::width() const
 {
-#ifdef _WIN32
-  CONSOLE_SCREEN_BUFFER_INFO info;
-
-  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-  return info.srWindow.Right - info.srWindow.Left + 1;
-#else
-  struct winsize w;
-  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-  return w.ws_col;
-#endif
+  return _readline_environment.width();
 }
 

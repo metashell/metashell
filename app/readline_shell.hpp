@@ -19,6 +19,7 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
+#include <metashell/readline_environment.hpp>
 
 #include <vector>
 #include <string>
@@ -42,6 +43,8 @@ public:
 
   void run();
 private:
+  metashell::readline_environment _readline_environment;
+
   bool _syntax_highlight;
   bool _indent;
 
