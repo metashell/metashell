@@ -3,7 +3,9 @@ compiler:
   - gcc
   - clang
 before_install:
-  - sudo apt-get install libboost1.48-dev libboost-program-options1.48-dev libboost-wave1.48-dev libboost-system1.48-dev libboost-thread1.48-dev libboost-filesystem1.48-dev libreadline-dev libclang-dev libncurses5-dev clang
+  - sudo add-apt-repository -y ppa:boost-latest/ppa
+  - sudo apt-get update -qq
+  - sudo apt-get install libboost1.55-dev libboost-program-options1.55-dev libboost-wave1.55-dev libboost-system1.55-dev libboost-thread1.55-dev libboost-filesystem1.55-dev libreadline-dev libclang-dev libncurses5-dev clang
 script:
   # Test that the TOC of the description is up to date
   - tools/gen_toc -i README.md -o - -t github | diff README.md -
