@@ -51,12 +51,6 @@ namespace
       << desc_ << std::endl;
   }
 
-  const char* default_clang_search_path[] =
-    {
-      ""
-      #include "default_clang_search_path.hpp"
-    };
-
   void show_markdown(
     const std::vector<std::string>& name_,
     const pragma_handler& h_,
