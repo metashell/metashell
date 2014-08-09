@@ -1,8 +1,8 @@
-#ifndef METASHELL_CONFIG_HPP
-#define METASHELL_CONFIG_HPP
+#ifndef METASHELL_USER_CONFIG_HPP
+#define METASHELL_USER_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,17 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
-#include <metashell/iface/environment_detector.hpp>
 
 #include <string>
 #include <vector>
-#include <iosfwd>
 
 namespace metashell
 {
-  class user_config;
-
-  class config
+  class user_config
   {
   public:
     std::vector<std::string> include_path;
@@ -42,16 +38,8 @@ namespace metashell
     bool use_precompiled_headers;
     std::string clang_path;
 
-    config();
+    user_config();
   };
-
-  config detect_config(
-    const user_config& ucfg_,
-    iface::environment_detector& env_detector_,
-    std::ostream& stderr_
-  );
-
-  config empty_config();
 }
 
 #endif

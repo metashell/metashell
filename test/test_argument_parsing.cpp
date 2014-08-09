@@ -21,12 +21,9 @@
 namespace
 {
   template <int Len>
-  metashell::parse_config_result parse_config(
-    metashell::config& cfg_,
-    const char* (&args_)[Len]
-  )
+  metashell::parse_config_result parse_config(const char* (&args_)[Len])
   {
-    return metashell::parse_config(cfg_, Len, args_);
+    return metashell::parse_config(Len, args_);
   }
 }
 
@@ -34,8 +31,7 @@ JUST_TEST_CASE(test_recognising_extra_clang_arg)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
-  metashell::config cfg = metashell::config::empty();
-  parse_config(cfg, args);
+  const metashell::user_config cfg = parse_config(args).cfg;
 
   JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
   JUST_ASSERT_EQUAL("foo", cfg.extra_clang_args.front());
@@ -45,7 +41,6 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 {
   const char* args[] = {"metashell", "--", "foo"};
 
-  metashell::config cfg = metashell::config::empty();
-  JUST_ASSERT_EQUAL(metashell::run_shell, parse_config(cfg, args));
+  JUST_ASSERT(parse_config(args).should_run_shell());
 }
 

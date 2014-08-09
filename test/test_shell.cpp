@@ -24,7 +24,7 @@ namespace
 
   config default_config()
   {
-    config cfg = config::default_config();
+    config cfg = empty_config();
 #ifdef WINDOWS_HEADERS
     cfg.include_path.push_back(WINDOWS_HEADERS);
 #endif

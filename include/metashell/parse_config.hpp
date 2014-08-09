@@ -17,21 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <metashell/user_config.hpp>
 
 #include <iosfwd>
 
 namespace metashell
 {
-  enum parse_config_result
+  struct parse_config_result
   {
-    run_shell,
-    exit_with_error,
-    exit_without_error
+    enum action_t
+    {
+      run_shell,
+      exit_with_error,
+      exit_without_error
+    };
+
+    action_t action;
+    user_config cfg;
+
+    bool should_run_shell() const;
+    bool should_error_at_exit() const;
+
+    static parse_config_result exit(bool with_error_);
+    static parse_config_result start_shell(const user_config& cfg_);
   };
 
   parse_config_result parse_config(
-    config& cfg_,
     int argc_,
     const char* argv_[],
     std::ostream* out_ = 0,

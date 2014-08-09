@@ -19,7 +19,7 @@
 using namespace metashell;
 
 shell_stub::shell_stub() :
-  shell(config::default_config())
+  shell(empty_config())
 {}
 
 void shell_stub::add_history(const std::string& s_)

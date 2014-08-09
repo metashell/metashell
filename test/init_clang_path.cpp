@@ -36,7 +36,7 @@ namespace
     init_clang_path()
     {
 #ifdef _WIN32
-       const metashell::config cfg = metashell::config::default_config();
+       const metashell::config cfg = metashell::empty_config();
 
       // To find libclang.dll
       if (!cfg.clang_path.empty())

@@ -154,7 +154,7 @@ JUST_TEST_CASE(test_environment_add_invalid_code_displays_error)
 
 JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
 {
-  test_shell sh(metashell::config::default_config(), 1024);
+  test_shell sh(metashell::empty_config(), 1024);
   sh.line_available("#pragma metashell environment add typedef int x;");
 
   JUST_ASSERT_EQUAL(
