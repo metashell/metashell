@@ -11,11 +11,12 @@
 
 #include <just/console.hpp>
 
-#include <metashell/shell.hpp>
-
 #include "file_location.hpp"
 
 namespace metashell {
+
+//Fwd:
+class metadebugger_shell;
 
 enum instantiation_kind {
   template_instantiation,
@@ -37,10 +38,10 @@ public:
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 
-  void print_forwardtrace(const shell& sh, const std::string& type) const;
-  void print_full_forwardtrace(const shell& sh) const;
-  void print_backtrace(const shell& sh, const std::string& type) const;
-  void print_full_backtrace(const shell& sh) const;
+  void print_forwardtrace(const metadebugger_shell& sh, const std::string& type) const;
+  void print_full_forwardtrace(const metadebugger_shell& sh) const;
+  void print_backtrace(const metadebugger_shell& sh, const std::string& type) const;
+  void print_full_backtrace(const metadebugger_shell& sh) const;
 
 private:
 
@@ -121,18 +122,18 @@ private:
   string_range find_type_emphasize(const std::string& type) const;
 
   void print_trace_content(
-      const shell& sh,
+      const metadebugger_shell& sh,
       string_range range,
       string_range emphasize) const;
 
   void print_trace_graph(
-      const shell& sh,
+      const metadebugger_shell& sh,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
       bool print_mark) const;
 
   void print_trace_line(
-      const shell& sh,
+      const metadebugger_shell& sh,
       vertex_descriptor root_vertex,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
@@ -141,7 +142,7 @@ private:
 
   template<class EdgeIterator, class GetEdges, class EdgeDirection>
   void print_trace_visit(
-      const shell& sh,
+      const metadebugger_shell& sh,
       vertex_descriptor vertex,
       discovered_t& discovered,
       GetEdges get_edges,

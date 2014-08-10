@@ -2,7 +2,7 @@
 #include <metashell/shell.hpp>
 #include <metashell/token_iterator.hpp>
 #include <metashell/pragma_metadebugger.hpp>
-#include <metashell/metadebugger_shell.hpp>
+#include <metashell/readline_metadebugger_shell.hpp>
 
 using namespace metashell;
 
@@ -31,11 +31,8 @@ void pragma_metadebugger::run(
 ) const
 {
   std::string args = tokens_to_string(args_begin_, args_end_);
-  if (!args.empty()) {
-    _shell.display_error("Warning: arguments are ignored");
-  }
 
-  metadebugger_shell mdb_shell;
+  readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env(), args);
   mdb_shell.run();
 }
 

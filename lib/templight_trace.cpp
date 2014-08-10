@@ -12,9 +12,9 @@
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
-#include <boost/container/stable_vector.hpp>
 
 #include <metashell/templight_trace.hpp>
+#include <metashell/metadebugger_shell.hpp>
 
 namespace metashell {
 
@@ -153,7 +153,7 @@ templight_trace::string_range templight_trace::find_type_emphasize(
 }
 
 void templight_trace::print_trace_graph(
-    const shell& sh,
+    const metadebugger_shell& sh,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
     bool print_mark) const
@@ -182,10 +182,10 @@ void templight_trace::print_trace_graph(
 namespace {
 
 void print_range(
-    const shell& sh,
+    const metadebugger_shell& sh,
     std::string::const_iterator begin,
     std::string::const_iterator end,
-    shell::optional_color c)
+    metadebugger_shell::optional_color c)
 {
   if (begin < end) {
     sh.display(std::string(begin, end), c);
@@ -195,7 +195,7 @@ void print_range(
 }
 
 void templight_trace::print_trace_content(
-    const shell& sh,
+    const metadebugger_shell& sh,
     string_range range,
     string_range emphasize) const
 {
@@ -224,7 +224,7 @@ void templight_trace::print_trace_content(
 }
 
 void templight_trace::print_trace_line(
-    const shell& sh,
+    const metadebugger_shell& sh,
     vertex_descriptor vertex,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -283,7 +283,7 @@ void templight_trace::print_trace_line(
 // Visits a single vertex and all of its children
 template<class EdgeIterator, class GetEdges, class EdgeDirection>
 void templight_trace::print_trace_visit(
-    const shell& sh,
+    const metadebugger_shell& sh,
     vertex_descriptor root_vertex,
     discovered_t& discovered,
     GetEdges get_edges, EdgeDirection edge_direction,
@@ -359,7 +359,7 @@ void templight_trace::print_trace_visit(
 }
 
 void templight_trace::print_forwardtrace(
-    const shell& sh,
+    const metadebugger_shell& sh,
     const std::string& type) const
 {
 
@@ -367,7 +367,7 @@ void templight_trace::print_forwardtrace(
     find_vertex(type);
 
   if (!opt_vertex) {
-    sh.display_error("type \"" + type + "\" not found");
+    sh.display("type \"" + type + "\" not found", just::console::color::red);
     return;
   }
 
@@ -384,7 +384,7 @@ void templight_trace::print_forwardtrace(
       width);
 }
 
-void templight_trace::print_full_forwardtrace(const shell& sh) const {
+void templight_trace::print_full_forwardtrace(const metadebugger_shell& sh) const {
 
   assert(boost::num_vertices(graph) > 0);
 
@@ -403,7 +403,7 @@ void templight_trace::print_full_forwardtrace(const shell& sh) const {
 }
 
 void templight_trace::print_backtrace(
-    const shell& sh,
+    const metadebugger_shell& sh,
     const std::string& type) const
 {
 
@@ -411,7 +411,7 @@ void templight_trace::print_backtrace(
     find_vertex(type);
 
   if (!opt_vertex) {
-    sh.display_error("type \"" + type + "\" not found");
+    sh.display("type \"" + type + "\" not found", just::console::color::red);
     return;
   }
 
@@ -450,7 +450,7 @@ private:
   const discovered_t& discovered;
 };
 
-void templight_trace::print_full_backtrace(const shell& sh) const {
+void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
 
   assert(boost::num_vertices(graph) > 0);
 

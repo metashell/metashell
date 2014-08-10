@@ -425,3 +425,7 @@ void shell::reset_environment()
   _env->append(default_env);
 }
 
+const config& shell::get_config() const {
+  return _config;
+}
+
