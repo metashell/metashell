@@ -39,6 +39,18 @@ foreach(V 3.4 3.3 3.2)
   set(CLANG_INCLUDEDIR "${CLANG_INCLUDEDIR};/usr/lib/llvm-${V}/include")
 endforeach()
 
+# Find clang-c on Windows
+if (WIN32)
+  set(
+    CLANG_INCLUDEDIR
+    "${CLANG_INCLUDEDIR};C:/Program Files (x86)/LLVM/include"
+  )
+  set(
+    CLANG_LIBRARYDIR
+    "${CLANG_LIBRARYDIR};C:/Program Files (x86)/LLVM/lib"
+  )
+endif()
+
 if (CLANG_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
   message(STATUS "Searching for libclang")

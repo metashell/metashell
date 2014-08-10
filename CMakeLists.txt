@@ -29,6 +29,15 @@ add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
 add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
 add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
 
+# C++11
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  message(STATUS "Turning on C++11 for GCC")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  message(STATUS "Turning on C++11 for Clang")
+endif()
+
 # Boost
 if (WIN32)
   set(Boost_USE_STATIC_LIBS ON)

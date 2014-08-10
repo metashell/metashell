@@ -15,63 +15,196 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
+#include <metashell/user_config.hpp>
+#include <metashell/default_environment_detector.hpp>
 
 #include <metashell/metashell.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <fstream>
 #include <algorithm>
+#include <iostream>
+#include <iterator>
+#include <sstream>
 
 using namespace metashell;
 
 namespace
 {
-  const char* extra_sysinclude[] =
-    {
-      ""
-      #include "extra_sysinclude.hpp"
-    };
-
   const char* default_clang_search_path[] =
     {
       ""
       #include "default_clang_search_path.hpp"
     };
 
-  template <class It>
-  std::string search_clang(It begin_, It end_)
+  std::string detect_clang_binary(
+    const std::string& user_defined_path_,
+    iface::environment_detector& env_detector_,
+    std::ostream& stderr_
+  )
   {
-    const It p = std::find_if(begin_, end_, file_exists);
-    return p == end_ ? "" : *p;
+    if (user_defined_path_.empty())
+    {
+      const std::string clang = env_detector_.search_clang_binary();
+
+      if (clang.empty())
+      {
+        stderr_ << "Error: clang++ not found. Checked:" << std::endl;
+        std::copy(
+          default_clang_search_path + 1,
+          default_clang_search_path
+            + sizeof(default_clang_search_path) / sizeof(const char*),
+          std::ostream_iterator<std::string>(stderr_, "\n")
+        );
+      }
+
+      return clang;
+    }
+    else if (env_detector_.file_exists(user_defined_path_))
+    {
+      return user_defined_path_;
+    }
+    else
+    {
+      stderr_
+        << "Error: clang++ not found. Checked:" << std::endl
+        << user_defined_path_ << std::endl;
+
+      return std::string();
+    }
   }
 
-  std::string default_clang_path()
+  bool detect_precompiled_header_usage(
+    bool user_wants_precompiled_headers_,
+    bool clang_binary_available_,
+    std::ostream& stderr_
+  )
+  {
+    if (user_wants_precompiled_headers_)
+    {
+      if (clang_binary_available_)
+      {
+        return true;
+      }
+      else
+      {
+        stderr_ << "Disabling precompiled headers" << std::endl;
+      }
+    }
+    return false;
+  }
+
+  std::string directory_of_file(const std::string& path_)
+  {
+    boost::filesystem::path p(path_);
+    p.remove_filename();
+    return p.string();
+  }
+
+  std::vector<std::string> clang_sysinclude(
+    const std::string& clang_binary_path_,
+    iface::environment_detector& env_detector_
+  )
   {
     return
-      search_clang(
-        default_clang_search_path + 1,
-        default_clang_search_path
-          + sizeof(default_clang_search_path) / sizeof(const char*)
+      clang_binary_path_.empty() ?
+        env_detector_.extra_sysinclude() :
+        env_detector_.default_clang_sysinclude(clang_binary_path_);
+  }
+
+  std::vector<std::string> determine_include_path(
+    const std::string& clang_binary_path_,
+    const std::vector<std::string>& user_include_path_,
+    iface::environment_detector& env_detector_
+  )
+  {
+    std::vector<std::string> result =
+      clang_sysinclude(clang_binary_path_, env_detector_);
+
+    if (env_detector_.on_windows())
+    {
+      // mingw headers shipped with Metashell
+      const std::string mingw_headers =
+        directory_of_file(env_detector_.path_of_executable())
+        + "\\windows_headers";
+
+      const std::string wpath[] =
+        {
+          mingw_headers,
+          mingw_headers + "\\mingw32"
+        };
+
+      result.insert(
+        result.end(),
+        wpath,
+        wpath + sizeof(wpath) / sizeof(wpath[0])
       );
+    }
+
+    result.insert(
+      result.end(),
+      user_include_path_.begin(),
+      user_include_path_.end()
+    );
+
+    return result;
   }
 }
 
-config config::empty()
+config::config() :
+  include_path(),
+  verbose(false),
+  syntax_highlight(true),
+  indent(true),
+  standard_to_use(standard::cpp11),
+  warnings_enabled(true),
+  use_precompiled_headers(false),
+  clang_path()
+{}
+
+config metashell::detect_config(
+  const user_config& ucfg_,
+  iface::environment_detector& env_detector_,
+  std::ostream& stderr_
+)
 {
-  return
-    config(
-      (const char**)0,
-      (const char**)0,
-      default_clang_path()
+  config cfg;
+
+  cfg.verbose = ucfg_.verbose;
+  cfg.syntax_highlight = ucfg_.syntax_highlight;
+  cfg.indent = ucfg_.indent;
+  cfg.standard_to_use = ucfg_.standard_to_use;
+  cfg.macros = ucfg_.macros;
+  cfg.warnings_enabled = ucfg_.warnings_enabled;
+  cfg.extra_clang_args = ucfg_.extra_clang_args;
+
+  cfg.clang_path =
+    detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_);
+
+  cfg.use_precompiled_headers =
+    detect_precompiled_header_usage(
+      ucfg_.use_precompiled_headers,
+      !cfg.clang_path.empty(),
+      stderr_
     );
+
+  cfg.include_path =
+    determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
+
+  if (env_detector_.on_windows() && !cfg.clang_path.empty())
+  {
+    // To find libclang.dll
+    env_detector_.append_to_path(directory_of_file(cfg.clang_path));
+  }
+
+  return cfg;
 }
 
-config config::default_config()
+config metashell::empty_config()
 {
-  return
-    config(
-      extra_sysinclude + 1,
-      extra_sysinclude + sizeof(extra_sysinclude) / sizeof(const char*),
-      default_clang_path()
-    );
+  default_environment_detector ed;
+  std::ostringstream s;
+  return detect_config(user_config(), ed, s);
 }
 

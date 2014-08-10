@@ -20,6 +20,7 @@
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/shell_stub.hpp>
+#    include <metashell/default_environment_detector.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -49,12 +50,6 @@ namespace
       << "\n"
       << desc_ << std::endl;
   }
-
-  const char* default_clang_search_path[] =
-    {
-      ""
-      #include "default_clang_search_path.hpp"
-    };
 
   void show_markdown(
     const std::vector<std::string>& name_,
@@ -88,7 +83,6 @@ namespace
 }
 
 parse_config_result metashell::parse_config(
-  config& cfg_,
   int argc_,
   const char* argv_[],
   std::ostream* out_,
@@ -102,12 +96,14 @@ parse_config_result metashell::parse_config(
   using boost::program_options::parse_command_line;
   using boost::program_options::value;
 
+  user_config ucfg;
+
   const char** const
     minus_minus = std::find(argv_, argv_ + argc_, std::string("--"));
   if (minus_minus != argv_ + argc_)
   {
-    cfg_.extra_clang_args.insert(
-      cfg_.extra_clang_args.end(),
+    ucfg.extra_clang_args.insert(
+      ucfg.extra_clang_args.end(),
       minus_minus + 1,
       argv_ + argc_
     );
@@ -115,13 +111,13 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string cppstd("c++0x");
-  cfg_.use_precompiled_headers = !cfg_.clang_path.empty();
+  ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
 
   options_description desc("Options");
   desc.add_options()
     ("help", "Display help")
-    ("include,I", value(&cfg_.include_path), "Additional include directory")
-    ("define,D", value(&cfg_.macros), "Additional macro definitions")
+    ("include,I", value(&ucfg.include_path), "Additional include directory")
+    ("define,D", value(&ucfg.macros), "Additional macro definitions")
     ("verbose,V", "Verbose mode")
     ("no_highlight,H", "Disable syntax highlighting")
     ("indent", "Enable indenting (experimental)")
@@ -136,7 +132,7 @@ parse_config_result metashell::parse_config(
       " (It needs clang++ to be available and writes to the local disc.)"
     )
     (
-      "clang", value(&cfg_.clang_path),
+      "clang", value(&ucfg.clang_path),
       "The path of the clang++ binary to use for"
       " generating precompiled headers."
     )
@@ -152,12 +148,12 @@ parse_config_result metashell::parse_config(
     store(parse_command_line(argc, argv_, desc), vm);
     notify(vm);
 
-    cfg_.verbose = vm.count("verbose") || vm.count("V");
-    cfg_.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-    cfg_.indent = vm.count("indent");
-    cfg_.standard_to_use = metashell::parse(cppstd);
-    cfg_.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
-    cfg_.use_precompiled_headers = !vm.count("no_precompiled_headers");
+    ucfg.verbose = vm.count("verbose") || vm.count("V");
+    ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
+    ucfg.indent = vm.count("indent");
+    ucfg.standard_to_use = metashell::parse(cppstd);
+    ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
+    ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
 
     if (vm.count("help"))
     {
@@ -165,35 +161,16 @@ parse_config_result metashell::parse_config(
       {
         show_help(*out_, desc);
       }
-      return exit_without_error;
+      return parse_config_result::exit(false);
     }
     else if (vm.count("show_pragma_help"))
     {
       show_pragma_help();
-      return exit_without_error;
+      return parse_config_result::exit(false);
     }
     else
     {
-      if (cfg_.use_precompiled_headers && !file_exists(cfg_.clang_path))
-      {
-        std::cerr << "Error: clang++ not found. Checked:" << std::endl;
-        if (vm.count("clang"))
-        {
-          std::cerr << cfg_.clang_path << std::endl;
-        }
-        else
-        {
-          std::copy(
-            default_clang_search_path + 1,
-            default_clang_search_path
-              + sizeof(default_clang_search_path) / sizeof(const char*),
-            std::ostream_iterator<std::string>(std::cerr, "\n")
-          );
-        }
-        std::cerr << "Disabling precompiled headers" << std::endl;
-        cfg_.use_precompiled_headers = false;
-      }
-      return run_shell;
+      return parse_config_result::start_shell(ucfg);
     }
   }
   catch (const std::exception& e_)
@@ -203,7 +180,32 @@ parse_config_result metashell::parse_config(
       *err_ << e_.what() << "\n\n";
       show_help(*err_, desc);
     }
-    return exit_with_error;
+    return parse_config_result::exit(true);
   }
+}
+
+parse_config_result parse_config_result::exit(bool with_error_)
+{
+  parse_config_result r;
+  r.action = with_error_ ? exit_with_error : exit_without_error;
+  return r;
+}
+
+parse_config_result parse_config_result::start_shell(const user_config& cfg_)
+{
+  parse_config_result r;
+  r.action = run_shell;
+  r.cfg = cfg_;
+  return r;
+}
+
+bool parse_config_result::should_run_shell() const
+{
+  return action == run_shell;
+}
+
+bool parse_config_result::should_error_at_exit() const
+{
+  return action == exit_with_error;
 }
 

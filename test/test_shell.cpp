@@ -24,9 +24,11 @@ namespace
 
   config default_config()
   {
-    config cfg = config::default_config();
+    config cfg = empty_config();
 #ifdef WINDOWS_HEADERS
-    cfg.include_path.push_back(WINDOWS_HEADERS);
+    const std::string windows_headers = WINDOWS_HEADERS;
+    cfg.include_path.push_back(windows_headers);
+    cfg.include_path.push_back(windows_headers + "\\mingw32");
 #endif
     return cfg;
   }

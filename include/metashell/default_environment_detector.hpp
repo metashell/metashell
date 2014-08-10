@@ -1,8 +1,8 @@
-#ifndef METASHELL_CONFIG_HPP
-#define METASHELL_CONFIG_HPP
+#ifndef METASHELL_DEFAULT_ENVIRONMENT_DETECTOR_HPP
+#define METASHELL_DEFAULT_ENVIRONMENT_DETECTOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,42 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
 #include <metashell/iface/environment_detector.hpp>
-
-#include <string>
-#include <vector>
-#include <iosfwd>
 
 namespace metashell
 {
-  class user_config;
-
-  class config
+  class default_environment_detector : public iface::environment_detector
   {
   public:
-    std::vector<std::string> include_path;
-    bool verbose;
-    bool syntax_highlight;
-    bool indent;
-    standard::type standard_to_use;
-    std::vector<std::string> macros;
-    bool warnings_enabled;
-    std::vector<std::string> extra_clang_args;
-    bool use_precompiled_headers;
-    std::string clang_path;
+    virtual std::string search_clang_binary();
+    virtual bool file_exists(const std::string& path_);
 
-    config();
+    virtual bool on_windows();
+
+    virtual void append_to_path(const std::string& path_);
+
+    virtual std::vector<std::string> default_clang_sysinclude(
+      const std::string& clang_path_
+    );
+    virtual std::vector<std::string> extra_sysinclude();
+
+    virtual std::string path_of_executable();
   };
-
-  config detect_config(
-    const user_config& ucfg_,
-    iface::environment_detector& env_detector_,
-    std::ostream& stderr_
-  );
-
-  config empty_config();
 }
 
 #endif
+
 

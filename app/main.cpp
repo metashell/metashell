@@ -18,11 +18,7 @@
 
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
-#include <metashell/clang_binary.hpp>
-
-#include <just/environment.hpp>
-
-#include <boost/filesystem/path.hpp>
+#include <metashell/default_environment_detector.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -31,27 +27,6 @@
 #  include <windows.h>
 #endif
 
-namespace
-{
-#ifdef _WIN32
-  std::string directory_of_file(const std::string& path_)
-  {
-    boost::filesystem::path p(path_);
-    p.remove_filename();
-    return p.string();
-  }
-#endif
-  
-#ifdef _WIN32
-  std::string path_of_executable()
-  {
-    char path[MAX_PATH];
-    GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
-    return path;
-  }
-#endif
-}
-
 int main(int argc_, const char* argv_[])
 {
   try
@@ -59,40 +34,19 @@ int main(int argc_, const char* argv_[])
     using metashell::parse_config;
     using metashell::parse_config_result;
 
-    metashell::config cfg = metashell::config::default_config();
-
     const parse_config_result
-      r = parse_config(cfg, argc_, argv_, &std::cout, &std::cerr);
+      r = parse_config(argc_, argv_, &std::cout, &std::cerr);
 
-    if (!cfg.clang_path.empty())
-    {
-#ifdef _WIN32
-      // To find libclang.dll
-      just::environment::append_to_path(directory_of_file(cfg.clang_path));
-#endif
+    metashell::default_environment_detector det;
+    const metashell::config cfg = detect_config(r.cfg, det, std::cerr);
 
-      // clang's headers
-      std::vector<std::string> si =
-        default_sysinclude(metashell::clang_binary(cfg.clang_path));
-
-#ifdef _WIN32
-      // mingw headers shipped with Metashell
-      const std::string mingw_headers =
-        directory_of_file(path_of_executable()) + "\\windows_headers";
-      si.push_back(mingw_headers);
-      si.push_back(mingw_headers + "\\mingw32");
-#endif
-
-      cfg.include_path.insert(cfg.include_path.begin(), si.begin(), si.end());
-    }
-
-    if (r == metashell::run_shell)
+    if (r.should_run_shell())
     {
       readline_shell shell(cfg);
       shell.display_splash();
       shell.run();
     }
-    return r == metashell::exit_with_error ? 1 : 0;
+    return r.should_error_at_exit() ? 1 : 0;
   }
   catch (std::exception& e_)
   {

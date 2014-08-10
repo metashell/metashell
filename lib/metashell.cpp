@@ -242,12 +242,6 @@ void metashell::code_complete(
   }
 }
 
-bool metashell::file_exists(const std::string& fn_)
-{
-  std::ifstream f(fn_.c_str());
-  return f;
-}
-
 bool metashell::is_environment_setup_command(
   const std::string& s_,
   const std::string& input_filename_

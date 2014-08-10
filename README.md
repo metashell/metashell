@@ -133,9 +133,11 @@ need fixing. If you want to experiment with it, here is how you can build it:
     * `-DUSE_EDITLINE=true`
     * `-DEDITLINE_INCLUDEDIR=<path to the WinEditLine headers>`
     * `-DEDITLINE_LIBRARYDIR=<path to the WinEditLine compiled library>`
-    * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
-    * `-DCLANG_LIBRARYDIR=<path to the compiled libClang library>` Note that it
-      is called `libclang.imp` and not `libclang.lib`.
+    * Unless you were using the [snapshot](http://llvm.org/builds/) to install
+      Clang, you need to tell CMake where to find it:
+        * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
+        * `-DCLANG_LIBRARYDIR=<path to the compiled libClang library>` Note that
+          it is called `libclang.imp` and not `libclang.lib`.
     * `-G "Visual Studio 11 2012"`
 * If CMake can find the dependent libraries, it will generate a solution file
   for Metashell in the `bin` directory. Open it with Visual Studio 2012 and

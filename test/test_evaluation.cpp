@@ -96,7 +96,7 @@ JUST_TEST_CASE(test_accept_two_space_input)
 
 JUST_TEST_CASE(test_macro_in_config)
 {
-  metashell::config cfg = metashell::config::empty();
+  metashell::config cfg;
   cfg.macros.push_back("FOO=int");
   test_shell sh(cfg, 80);
 
@@ -285,7 +285,7 @@ JUST_TEST_CASE(test_warnings)
 
 JUST_TEST_CASE(test_disabled_warnings)
 {
-  metashell::config cfg = metashell::config::empty();
+  metashell::config cfg;
   cfg.warnings_enabled = false;
   test_shell sh(cfg, 80);
 
@@ -296,7 +296,7 @@ JUST_TEST_CASE(test_disabled_warnings)
 
 JUST_TEST_CASE(test_extra_clang_arg)
 {
-  metashell::config cfg = metashell::config::empty();
+  metashell::config cfg;
   cfg.extra_clang_args.push_back("-DFOO=double");
   test_shell sh(cfg, 80);
 
@@ -308,7 +308,7 @@ JUST_TEST_CASE(test_extra_clang_arg)
 
 JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 {
-  metashell::config cfg = metashell::config::empty();
+  metashell::config cfg;
   breaking_environment* e = new breaking_environment(cfg);
   test_shell sh(cfg, e);
   e->append_throw_from_now();
@@ -320,7 +320,7 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 
 JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
 {
-  metashell::config cfg = metashell::config::empty();
+  metashell::config cfg;
   breaking_environment e(cfg);
   e.get_appended_throw_from_now();
   const metashell::result
