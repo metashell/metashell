@@ -73,14 +73,6 @@ in_memory_environment::in_memory_environment(
   {
     _clang_args.push_back("-w");
   }
-  if (config_.use_templight)
-  {
-    _clang_args.push_back("-templight");
-    _clang_args.push_back("-templight-output");
-    _clang_args.push_back("templight.xml");
-    _clang_args.push_back("-templight-format");
-    _clang_args.push_back("xml");
-  }
 
   _clang_args.insert(
     _clang_args.end(),
@@ -107,6 +99,11 @@ std::string in_memory_environment::get() const
 std::string in_memory_environment::get_appended(const std::string& s_) const
 {
   return _buffer.empty() ? s_ : (_buffer + '\n' + s_);
+}
+
+std::vector<std::string>& in_memory_environment::clang_arguments()
+{
+  return _clang_args;
 }
 
 const std::vector<std::string>&

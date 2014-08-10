@@ -350,6 +350,11 @@ void shell::using_precompiled_headers(bool enabled_)
   rebuild_environment();
 }
 
+environment& shell::env()
+{
+  return *_env;
+}
+
 const environment& shell::env() const
 {
   return *_env;

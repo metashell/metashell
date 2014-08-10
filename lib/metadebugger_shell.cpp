@@ -7,14 +7,14 @@ namespace metashell {
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
-    const environment& env,
+    environment& env,
     const std::string& args) :
   conf(conf),
   env(env),
   is_stopped(false)
 {
   if (!args.empty()) {
-    run_metaprogram(args);
+    get_templight_trace_from_metaprogram(args);
   }
 }
 
@@ -29,11 +29,27 @@ bool metadebugger_shell::stopped() const {
 }
 
 void metadebugger_shell::line_available(const std::string& line) {
+  get_templight_trace_from_metaprogram(line);
+  trace.print_full_forwardtrace(*this);
+}
 
-  templight_trace trace =
-    templight_trace::create_from_xml("templight.xml");
+void metadebugger_shell::get_templight_trace_from_metaprogram(
+    const std::string& str)
+{
 
+  std::vector<std::string>& clang_args = env.clang_arguments();
 
+  clang_args.push_back("-templight");
+  clang_args.push_back("-templight-output");
+  clang_args.push_back("templight.xml");
+  clang_args.push_back("-templight-format");
+  clang_args.push_back("xml");
+
+  run_metaprogram(str);
+
+  clang_args.erase(clang_args.end() - 5, clang_args.end());
+
+  trace = templight_trace::create_from_xml("templight.xml");
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
@@ -45,7 +61,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
 
   for (const std::string& e : res.errors)
   {
-    display(e, just::console::color::red);
+    display(e + "\n", just::console::color::red);
   }
   if (!res.has_errors())
   {

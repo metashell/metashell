@@ -31,6 +31,7 @@ void pragma_metadebugger::run(
 ) const
 {
   std::string args = tokens_to_string(args_begin_, args_end_);
+  std::cout << args << std::endl;
 
   readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env(), args);
   mdb_shell.run();

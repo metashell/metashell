@@ -38,8 +38,6 @@ namespace metashell
     bool use_precompiled_headers;
     std::string clang_path;
 
-    bool use_templight;
-
     static config empty();
     static config default_config();
   private:
@@ -56,8 +54,7 @@ namespace metashell
       standard_to_use(standard::cpp11),
       warnings_enabled(true),
       use_precompiled_headers(false),
-      clang_path(clang_path_),
-      use_templight(false)
+      clang_path(clang_path_)
     {}
   };
 }

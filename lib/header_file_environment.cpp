@@ -113,6 +113,11 @@ std::string header_file_environment::get_appended(const std::string& s_) const
   return get() + s_;
 }
 
+std::vector<std::string>& header_file_environment::clang_arguments()
+{
+  return _clang_args;
+}
+
 const std::vector<std::string>&
   header_file_environment::clang_arguments() const
 {

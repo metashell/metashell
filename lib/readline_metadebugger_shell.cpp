@@ -9,7 +9,7 @@ namespace metashell {
 
 readline_metadebugger_shell::readline_metadebugger_shell(
     const config& conf,
-    const environment& env,
+    environment& env,
     const std::string& args) :
   metadebugger_shell(conf, env, args) {}
 

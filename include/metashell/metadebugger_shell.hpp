@@ -18,7 +18,7 @@ public:
 
   metadebugger_shell(
       const config& conf,
-      const environment& env,
+      environment& env,
       const std::string& args);
 
   virtual ~metadebugger_shell();
@@ -38,11 +38,12 @@ protected:
   bool stopped() const;
   void line_available(const std::string& line);
 
+  void get_templight_trace_from_metaprogram(const std::string& str);
   // TODO put this method somewhere global (shell has it too)
   void run_metaprogram(const std::string& str);
 
   const config& conf;
-  const environment& env;
+  environment& env;
 
   templight_trace trace;
 
