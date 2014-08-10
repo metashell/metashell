@@ -18,7 +18,6 @@
 
 #include <boost/algorithm/string/trim_all.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <boost/assign/list_of.hpp>
@@ -65,7 +64,6 @@ std::vector<std::string> metashell::default_sysinclude(
 {
   using boost::algorithm::trim_all_copy;
   using boost::algorithm::split;
-  using boost::is_any_of;
   using boost::starts_with;
   using boost::assign::list_of;
 
@@ -78,7 +76,7 @@ std::vector<std::string> metashell::default_sysinclude(
   const string s = o.standard_output() + o.standard_error();
 
   vector<string> lines;
-  split(lines, s, is_any_of("\n"));
+  split(lines, s, [](char c_) { return c_ == '\n'; });
 
   vector<string> result;
   bool in_sysinclude = false;
