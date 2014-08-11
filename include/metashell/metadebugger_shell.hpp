@@ -63,6 +63,7 @@ protected:
 
   templight_trace trace;
 
+  std::string prev_line;
   bool is_stopped;
 };
 

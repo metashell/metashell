@@ -21,6 +21,9 @@
 
 #include <metashell/temporary_file.hpp>
 
+#include <cctype>
+#include <functional>
+
 namespace metashell {
 
 metadebugger_shell::metadebugger_shell(
@@ -47,8 +50,18 @@ bool metadebugger_shell::stopped() const {
 }
 
 void metadebugger_shell::line_available(const std::string& line) {
-  get_templight_trace_from_metaprogram(line);
-  trace.print_full_forwardtrace(*this);
+  bool has_non_whitespace = std::find_if(
+      line.begin(), line.end(),
+      [](char ch) { return !std::isspace(ch); }) != line.end();
+
+  if (has_non_whitespace) {
+    if (line != prev_line) {
+      add_history(line);
+      prev_line = line;
+    }
+    get_templight_trace_from_metaprogram(line);
+    trace.print_full_forwardtrace(*this);
+  }
 }
 
 void metadebugger_shell::get_templight_trace_from_metaprogram(
@@ -70,8 +83,6 @@ void metadebugger_shell::get_templight_trace_from_metaprogram(
   clang_args.erase(clang_args.end() - 5, clang_args.end());
 
   trace = templight_trace::create_from_xml(templight_xml_file.get_path().string());
-
-  std::cout << templight_xml_file.get_path().string() << std::endl;
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
