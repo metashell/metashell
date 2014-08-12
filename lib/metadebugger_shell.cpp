@@ -66,8 +66,12 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     get_templight_trace_from_metaprogram(
         line.substr(5, std::string::npos));
   } else if (line == "step") {
-    trace.step_metaprogram();
-    trace.print_current_frame(*this);
+    if (trace.step_metaprogram()) {
+      trace.print_current_frame(*this);
+    } else {
+      display("Metaprogram finished\n",
+          just::console::color::green);
+    }
   } else {
     display("Unknown command: \"" + line + "\"\n",
         just::console::color::red);

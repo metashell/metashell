@@ -132,7 +132,7 @@ private:
 
     typedef boost::tuple<
       vertex_descriptor,
-      boost::optional<instantiation_kind>
+      instantiation_kind
     > stack_element;
 
     typedef std::stack<stack_element> vertex_stack_t;

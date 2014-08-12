@@ -23,6 +23,7 @@
 #include <algorithm>
 
 #include <boost/regex.hpp>
+#include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -505,13 +506,23 @@ void templight_trace::print_current_frame(const metadebugger_shell& sh) const {
     return;
   }
   vertex_descriptor current_vertex;
-  boost::optional<instantiation_kind> kind;
+  instantiation_kind kind;
   boost::tie(current_vertex, kind) = mp_state.vertex_stack.top();
 
-  sh.display(boost::get(
-      template_vertex_property_tag(),
-      graph,
-      current_vertex).name + "\n");
+  // No kind for <root> vertex
+  if (current_vertex == 0) {
+    sh.display(boost::get(
+        template_vertex_property_tag(),
+        graph,
+        current_vertex).name + "\n");
+  } else {
+    sh.display((
+        boost::format("%1% (%2%)\n") %
+          boost::get(
+            template_vertex_property_tag(), graph, current_vertex).name %
+          kind
+        ).str());
+  }
 }
 
 void templight_trace::reset_metaprogram_state() {
@@ -556,7 +567,7 @@ templight_trace::metaprogram_state::metaprogram_state(
   if (vertex_count > 0) {
     discovered.resize(vertex_count, false);
     // 0 == <root> vertex
-    vertex_stack.push(boost::make_tuple(0, boost::none));  }
+    vertex_stack.push(boost::make_tuple(0, instantiation_kind()));  }
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
