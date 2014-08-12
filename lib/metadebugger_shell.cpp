@@ -24,7 +24,7 @@
 #include <cctype>
 #include <functional>
 
-#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace metashell {
 
@@ -51,29 +51,32 @@ bool metadebugger_shell::stopped() const {
   return is_stopped;
 }
 
-void metadebugger_shell::line_available(const std::string& line) {
-  bool has_non_whitespace = std::find_if(
-      line.begin(), line.end(),
-      [](char ch) { return !std::isspace(ch); }) != line.end();
+void metadebugger_shell::line_available(const std::string& original_line) {
 
-  // TODO gdb repeats last command when empty line is given
-  if (has_non_whitespace) {
-    if (line != prev_line) {
-      add_history(line);
-      prev_line = line;
-    }
-    if (line == "ft" || line == "forwardtrace") {
-      trace.print_full_forwardtrace(*this);
-    } else if (boost::starts_with(line, "eval ")) {
-      get_templight_trace_from_metaprogram(
-          line.substr(5, std::string::npos));
-    } else if (line == "step") {
-      trace.step_metaprogram();
+  std::string line = boost::trim_copy(original_line);
+
+  if (line.empty()) {
+    if (!prev_line.empty()) {
+      line = prev_line;
     } else {
-      display("Unknown command: \"" + line + "\"\n",
-          just::console::color::red);
+      return;
     }
+  } else if (line != prev_line) {
+    add_history(line);
+    prev_line = line;
   }
+  if (line == "ft" || line == "forwardtrace") {
+    trace.print_full_forwardtrace(*this);
+  } else if (boost::starts_with(line, "eval ")) {
+    get_templight_trace_from_metaprogram(
+        line.substr(5, std::string::npos));
+  } else if (line == "step") {
+    trace.step_metaprogram();
+  } else {
+    display("Unknown command: \"" + line + "\"\n",
+        just::console::color::red);
+  }
+
 }
 
 void metadebugger_shell::get_templight_trace_from_metaprogram(
