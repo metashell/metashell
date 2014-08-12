@@ -67,6 +67,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
         line.substr(5, std::string::npos));
   } else if (line == "step") {
     trace.step_metaprogram();
+    trace.print_current_frame(*this);
   } else {
     display("Unknown command: \"" + line + "\"\n",
         just::console::color::red);
@@ -99,14 +100,14 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   result res = eval_tmp(env, str, conf, "<mdb-stdin>");
 
   if (!res.info.empty()) {
-    std::cout << res.info;
+    display(res.info);
   }
 
   for (const std::string& e : res.errors) {
     display(e + "\n", just::console::color::red);
   }
   if (!res.has_errors()) {
-    std::cout << res.output << std::endl;
+    display(res.output + "\n");
   }
 }
 

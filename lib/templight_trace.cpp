@@ -499,6 +499,21 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
   }
 }
 
+void templight_trace::print_current_frame(const metadebugger_shell& sh) const {
+  if (mp_state.vertex_stack.empty()) {
+    sh.display("Stack is empty\n", just::console::color::red);
+    return;
+  }
+  vertex_descriptor current_vertex;
+  boost::optional<instantiation_kind> kind;
+  boost::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+
+  sh.display(boost::get(
+      template_vertex_property_tag(),
+      graph,
+      current_vertex).name + "\n");
+}
+
 void templight_trace::reset_metaprogram_state() {
   mp_state = metaprogram_state(*this);
 }
@@ -508,15 +523,11 @@ bool templight_trace::step_metaprogram() {
     return false;
   }
 
-  vertex_descriptor current_vertex;
-  boost::optional<instantiation_kind> kind;
-  boost::tie(current_vertex, kind) = mp_state.vertex_stack.top();
-  mp_state.vertex_stack.pop();
+  using boost::tuples::ignore;
 
-  std::cout << boost::get(
-      template_vertex_property_tag(),
-      graph,
-      current_vertex).name << std::endl;
+  vertex_descriptor current_vertex;
+  boost::tie(current_vertex, ignore) = mp_state.vertex_stack.top();
+  mp_state.vertex_stack.pop();
 
   if (!mp_state.discovered[current_vertex]) {
     mp_state.discovered[current_vertex] = true;
