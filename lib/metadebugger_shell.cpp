@@ -67,6 +67,8 @@ void metadebugger_shell::line_available(const std::string& line) {
     } else if (boost::starts_with(line, "eval ")) {
       get_templight_trace_from_metaprogram(
           line.substr(5, std::string::npos));
+    } else if (line == "step") {
+      trace.step_metaprogram();
     } else {
       display("Unknown command: \"" + line + "\"\n",
           just::console::color::red);

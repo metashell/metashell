@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <stack>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -58,6 +59,9 @@ public:
   void print_full_forwardtrace(const metadebugger_shell& sh) const;
   void print_backtrace(const metadebugger_shell& sh, const std::string& type) const;
   void print_full_backtrace(const metadebugger_shell& sh) const;
+
+  void reset_metaprogram_state();
+  bool step_metaprogram();
 
 private:
 
@@ -123,6 +127,22 @@ private:
 
   typedef std::vector<bool> discovered_t;
 
+  struct metaprogram_state {
+
+    typedef boost::tuple<
+      vertex_descriptor,
+      boost::optional<instantiation_kind>
+    > stack_element;
+
+    typedef std::stack<stack_element> vertex_stack_t;
+
+    metaprogram_state();
+    explicit metaprogram_state(const templight_trace& trace);
+
+    discovered_t discovered;
+    vertex_stack_t vertex_stack;
+  };
+
   vertex_descriptor add_vertex(
       const std::string& element,
       const file_location& point_of_instantiation);
@@ -169,6 +189,8 @@ private:
   // - in graph vertex_name property
   // - in element_vertex_map
   graph_t graph;
+
+  metaprogram_state mp_state;
 
   element_vertex_map_t element_vertex_map;
 

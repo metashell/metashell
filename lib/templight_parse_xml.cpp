@@ -232,7 +232,10 @@ templight_trace templight_trace::create_from_xml(const std::string& file) {
 
     throw templight_exception();
   }
-  return grammar.builder.get_trace();
+
+  templight_trace result = grammar.builder.get_trace();
+  result.reset_metaprogram_state();
+  return result;
 }
 
 }

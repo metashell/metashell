@@ -16,7 +16,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <map>
-#include <stack>
 #include <deque>
 #include <utility>
 #include <iostream>
@@ -498,6 +497,55 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
         [this](edge_descriptor e) { return boost::source(e, graph); },
         width);
   }
+}
+
+void templight_trace::reset_metaprogram_state() {
+  mp_state = metaprogram_state(*this);
+}
+
+bool templight_trace::step_metaprogram() {
+  if (mp_state.vertex_stack.empty()) {
+    return false;
+  }
+
+  vertex_descriptor current_vertex;
+  boost::optional<instantiation_kind> kind;
+  boost::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+  mp_state.vertex_stack.pop();
+
+  std::cout << boost::get(
+      template_vertex_property_tag(),
+      graph,
+      current_vertex).name << std::endl;
+
+  if (!mp_state.discovered[current_vertex]) {
+    mp_state.discovered[current_vertex] = true;
+
+    for (edge_descriptor edge :
+        boost::make_iterator_range(
+          boost::out_edges(current_vertex, graph)))
+    {
+      instantiation_kind next_kind =
+        boost::get(template_edge_property_tag(), graph, edge).kind;
+
+      mp_state.vertex_stack.push(
+        boost::make_tuple(
+          boost::target(edge, graph), next_kind));
+    }
+  }
+  return true;
+}
+
+templight_trace::metaprogram_state::metaprogram_state() {}
+
+templight_trace::metaprogram_state::metaprogram_state(
+    const templight_trace& trace)
+{
+  unsigned vertex_count = boost::num_vertices(trace.graph);
+  if (vertex_count > 0) {
+    discovered.resize(vertex_count, false);
+    // 0 == <root> vertex
+    vertex_stack.push(boost::make_tuple(0, boost::none));  }
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
