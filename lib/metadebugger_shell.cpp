@@ -24,6 +24,8 @@
 #include <cctype>
 #include <functional>
 
+#include <boost/algorithm/string/predicate.hpp>
+
 namespace metashell {
 
 metadebugger_shell::metadebugger_shell(
@@ -54,13 +56,21 @@ void metadebugger_shell::line_available(const std::string& line) {
       line.begin(), line.end(),
       [](char ch) { return !std::isspace(ch); }) != line.end();
 
+  // TODO gdb repeats last command when empty line is given
   if (has_non_whitespace) {
     if (line != prev_line) {
       add_history(line);
       prev_line = line;
     }
-    get_templight_trace_from_metaprogram(line);
-    trace.print_full_forwardtrace(*this);
+    if (line == "ft" || line == "forwardtrace") {
+      trace.print_full_forwardtrace(*this);
+    } else if (boost::starts_with(line, "eval ")) {
+      get_templight_trace_from_metaprogram(
+          line.substr(5, std::string::npos));
+    } else {
+      display("Unknown command: \"" + line + "\"\n",
+          just::console::color::red);
+    }
   }
 }
 
