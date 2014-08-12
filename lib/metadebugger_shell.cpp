@@ -30,16 +30,11 @@ namespace metashell {
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
-    environment& env,
-    const std::string& args) :
+    environment& env) :
   conf(conf),
   env(env),
   is_stopped(false)
-{
-  if (!args.empty()) {
-    get_templight_trace_from_metaprogram(args);
-  }
-}
+{}
 
 metadebugger_shell::~metadebugger_shell() {}
 

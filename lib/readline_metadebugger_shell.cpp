@@ -25,9 +25,8 @@ namespace metashell {
 
 readline_metadebugger_shell::readline_metadebugger_shell(
     const config& conf,
-    environment& env,
-    const std::string& args) :
-  metadebugger_shell(conf, env, args) {}
+    environment& env) :
+  metadebugger_shell(conf, env) {}
 
 void readline_metadebugger_shell::run() {
   for (boost::optional<std::string> line;

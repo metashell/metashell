@@ -47,9 +47,11 @@ void pragma_metadebugger::run(
 ) const
 {
   std::string args = tokens_to_string(args_begin_, args_end_);
-  std::cout << args << std::endl;
+  if (!args.empty()) {
+    _shell.display_error("Arguments are ignored");
+  }
 
-  readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env(), args);
+  readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env());
   mdb_shell.run();
 }
 

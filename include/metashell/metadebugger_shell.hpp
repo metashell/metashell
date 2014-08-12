@@ -34,8 +34,7 @@ public:
 
   metadebugger_shell(
       const config& conf,
-      environment& env,
-      const std::string& args);
+      environment& env);
 
   virtual ~metadebugger_shell();
 
