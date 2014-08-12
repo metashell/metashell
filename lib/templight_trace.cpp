@@ -28,6 +28,7 @@
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 #include <metashell/templight_trace.hpp>
 #include <metashell/metadebugger_shell.hpp>
@@ -545,7 +546,7 @@ bool templight_trace::step_metaprogram() {
 
     for (edge_descriptor edge :
         boost::make_iterator_range(
-          boost::out_edges(current_vertex, graph)))
+          boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed)
     {
       instantiation_kind next_kind =
         boost::get(template_edge_property_tag(), graph, edge).kind;
