@@ -80,7 +80,7 @@ private:
 
 templight_trace_builder::templight_trace_builder() {
   // Add root vertex
-  vertex_stack.push(trace.add_vertex("<root>", file_location()));
+  vertex_stack.push(add_vertex("<root>", file_location()));
 }
 
 void templight_trace_builder::handle_template_begin(
@@ -90,7 +90,7 @@ void templight_trace_builder::handle_template_begin(
   double timestamp,
   unsigned long long memory_usage)
 {
-  vertex_descriptor vertex = trace.add_vertex(context, location);
+  vertex_descriptor vertex = add_vertex(context, location);
   if (!vertex_stack.empty()) {
     vertex_descriptor top_vertex = vertex_stack.top();
     trace.add_edge(top_vertex, vertex, kind);
