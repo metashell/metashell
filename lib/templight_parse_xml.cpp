@@ -26,7 +26,7 @@
 #include <metashell/file_location.hpp>
 #include <metashell/templight_trace.hpp>
 
-#include "templight_exception.hpp"
+#include "exception.hpp"
 
 BOOST_FUSION_ADAPT_STRUCT(
   metashell::file_location,
@@ -74,7 +74,7 @@ struct templight_trace_builder {
     //TODO this check is not enough.
     //The root vertex should always be in the stack
     if (vertex_stack.empty()) {
-      throw templight_exception();
+      throw exception("Bad templight trace format");
     }
     vertex_stack.pop();
   }
@@ -225,12 +225,7 @@ templight_trace templight_trace::create_from_xml(const std::string& file) {
       skipper_t());
 
   if (!success || begin != end) {
-    std::cout <<
-      "Failed to parse templight file\n"
-      "unparsed part:\n" <<
-      std::string(begin, end) << std::endl;
-
-    throw templight_exception();
+    throw exception("Failed to parse templight file");
   }
 
   templight_trace result = grammar.builder.get_trace();
