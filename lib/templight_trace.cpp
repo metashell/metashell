@@ -530,10 +530,16 @@ void templight_trace::reset_metaprogram_state() {
   mp_state = metaprogram_state(*this);
 }
 
+void templight_trace::start_metaprogram() {
+  reset_metaprogram_state();
+}
+
+bool templight_trace::is_metaprogram_started() const {
+  return !mp_state.vertex_stack.empty();
+}
+
 bool templight_trace::step_metaprogram() {
-  if (mp_state.vertex_stack.empty()) {
-    return false;
-  }
+  assert(is_metaprogram_started());
 
   using boost::tuples::ignore;
 
@@ -556,7 +562,7 @@ bool templight_trace::step_metaprogram() {
           boost::target(edge, graph), next_kind));
     }
   }
-  return true;
+  return mp_state.vertex_stack.empty();
 }
 
 templight_trace::metaprogram_state::metaprogram_state() {}

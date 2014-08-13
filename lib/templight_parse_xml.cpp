@@ -228,9 +228,7 @@ templight_trace templight_trace::create_from_xml(const std::string& file) {
     throw exception("Failed to parse templight file");
   }
 
-  templight_trace result = grammar.builder.get_trace();
-  result.reset_metaprogram_state();
-  return result;
+  return grammar.builder.get_trace();
 }
 
 }

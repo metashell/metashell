@@ -65,12 +65,20 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   } else if (boost::starts_with(line, "eval ")) {
     get_templight_trace_from_metaprogram(
         line.substr(5, std::string::npos));
+  } else if (line == "start") {
+    //TODO ask user if he wants to restart
+    trace.start_metaprogram();
   } else if (line == "step") {
-    if (trace.step_metaprogram()) {
-      trace.print_current_frame(*this);
+    if (trace.is_metaprogram_started()) {
+        if (!trace.step_metaprogram()) {
+          trace.print_current_frame(*this);
+        } else {
+          display("Metaprogram finished\n",
+              just::console::color::green);
+        }
     } else {
-      display("Metaprogram finished\n",
-          just::console::color::green);
+      display("Metaprogram not started yet\n",
+          just::console::color::red);
     }
   } else {
     display("Unknown command: \"" + line + "\"\n",

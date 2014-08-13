@@ -61,7 +61,10 @@ public:
   void print_full_backtrace(const metadebugger_shell& sh) const;
   void print_current_frame(const metadebugger_shell& sh) const;
 
-  void reset_metaprogram_state();
+  void start_metaprogram();
+  bool is_metaprogram_started() const;
+
+  // Returns true when the program took it's last step (finished)
   bool step_metaprogram();
 
 private:
@@ -143,6 +146,8 @@ private:
     discovered_t discovered;
     vertex_stack_t vertex_stack;
   };
+
+  void reset_metaprogram_state();
 
   vertex_descriptor add_vertex(
       const std::string& element,
