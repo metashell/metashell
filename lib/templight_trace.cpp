@@ -26,7 +26,6 @@
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -68,7 +67,7 @@ void templight_trace::add_edge(
   edge_descriptor edge;
   bool inserted;
 
-  boost::tie(edge, inserted) = boost::add_edge(from, to, graph);
+  std::tie(edge, inserted) = boost::add_edge(from, to, graph);
 
   assert(inserted);
 
@@ -79,7 +78,7 @@ boost::optional<templight_trace::vertex_descriptor>
   templight_trace::find_vertex(const std::string& element) const
 {
   vertex_iterator begin, end;
-  boost::tie(begin, end) = boost::vertices(graph);
+  std::tie(begin, end) = boost::vertices(graph);
   vertex_iterator it =
     std::find_if(begin, end,
       [&](vertex_descriptor vertex) {
@@ -319,7 +318,7 @@ void templight_trace::print_trace_visit(
   // The 0th element is never read.
   std::vector<unsigned> depth_counter(1);
 
-  typedef boost::tuple<
+  typedef std::tuple<
     vertex_descriptor,
     unsigned, // Depth
     boost::optional<instantiation_kind> > stack_element;
@@ -328,14 +327,14 @@ void templight_trace::print_trace_visit(
   std::stack<stack_element> to_visit;
 
   // We don't care about the instantiation_kind for the source vertex
-  to_visit.push(boost::make_tuple(root_vertex, 0, boost::none));
+  to_visit.push(std::make_tuple(root_vertex, 0, boost::none));
   ++depth_counter[0]; // This value is neved read
 
   while (!to_visit.empty()) {
     unsigned depth;
     vertex_descriptor vertex;
     boost::optional<instantiation_kind> kind;
-    boost::tie(vertex, depth, kind) = to_visit.top();
+    std::tie(vertex, depth, kind) = to_visit.top();
     to_visit.pop();
 
     --depth_counter[depth];
@@ -346,7 +345,7 @@ void templight_trace::print_trace_visit(
       discovered[vertex] = true;
 
       EdgeIterator begin, end;
-      boost::tie(begin, end) = get_edges(vertex);
+      std::tie(begin, end) = get_edges(vertex);
 
       typedef std::vector<edge_descriptor> edges_t;
       edges_t edges(begin, end);
@@ -362,7 +361,7 @@ void templight_trace::print_trace_visit(
           boost::get(template_edge_property_tag(), graph, edge).kind;
 
         to_visit.push(
-          boost::make_tuple(edge_direction(edge), depth+1, next_kind));
+          std::make_tuple(edge_direction(edge), depth+1, next_kind));
 
         ++depth_counter[depth+1];
       }
@@ -478,7 +477,7 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
     // Since the graph is DAG, there is always a vertex which
     // has only discovered out_edges
     vertex_iterator begin, end, it;
-    boost::tie(begin, end) = boost::vertices(graph);
+    std::tie(begin, end) = boost::vertices(graph);
 
     it = std::find_if(begin, end,
         only_has_discovered_out_edge_predicate(graph, discovered));
@@ -503,7 +502,7 @@ void templight_trace::print_current_frame(const metadebugger_shell& sh) const {
   }
   vertex_descriptor current_vertex;
   instantiation_kind kind;
-  boost::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+  std::tie(current_vertex, kind) = mp_state.vertex_stack.top();
 
   // No kind for <root> vertex
   if (current_vertex == 0) {
@@ -536,10 +535,8 @@ bool templight_trace::is_metaprogram_started() const {
 bool templight_trace::step_metaprogram() {
   assert(is_metaprogram_started());
 
-  using boost::tuples::ignore;
-
   vertex_descriptor current_vertex;
-  boost::tie(current_vertex, ignore) = mp_state.vertex_stack.top();
+  std::tie(current_vertex, std::ignore) = mp_state.vertex_stack.top();
   mp_state.vertex_stack.pop();
 
   if (!mp_state.discovered[current_vertex]) {
@@ -553,7 +550,7 @@ bool templight_trace::step_metaprogram() {
         boost::get(template_edge_property_tag(), graph, edge).kind;
 
       mp_state.vertex_stack.push(
-        boost::make_tuple(
+        std::make_tuple(
           boost::target(edge, graph), next_kind));
     }
   }
@@ -569,7 +566,7 @@ templight_trace::metaprogram_state::metaprogram_state(
   if (vertex_count > 0) {
     discovered.resize(vertex_count, false);
     // 0 == <root> vertex
-    vertex_stack.push(boost::make_tuple(0, instantiation_kind()));  }
+    vertex_stack.push(std::make_tuple(0, instantiation_kind()));  }
 }
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {

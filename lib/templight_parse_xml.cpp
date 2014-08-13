@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
 #include <stack>
+#include <tuple>
+#include <string>
 #include <fstream>
 
 #include <boost/spirit/include/qi.hpp>
@@ -121,7 +122,7 @@ templight_trace_builder::vertex_descriptor templight_trace_builder::add_vertex(
   element_vertex_map_t::iterator pos;
   bool inserted;
 
-  boost::tie(pos, inserted) = element_vertex_map.insert(
+  std::tie(pos, inserted) = element_vertex_map.insert(
       std::make_pair(context, vertex_descriptor()));
 
   if (inserted) {

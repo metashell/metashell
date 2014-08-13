@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stack>
+#include <tuple>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -131,7 +132,7 @@ private:
 
   struct metaprogram_state {
 
-    typedef boost::tuple<
+    typedef std::tuple<
       vertex_descriptor,
       instantiation_kind
     > stack_element;
