@@ -17,6 +17,8 @@
 
 #include <metashell/file_location.hpp>
 
+#include <tuple>
+
 namespace metashell {
 
 file_location::file_location() : name(), row(-1), column(-1) {}
@@ -27,6 +29,16 @@ file_location::file_location(const std::string& name, int row, int column) :
 std::ostream& operator<<(std::ostream& os, const file_location& location) {
   os << location.name << ":" << location.row << ":" << location.column;
   return os;
+}
+
+bool operator<(const file_location& lhs, const file_location& rhs) {
+  return std::tie(lhs.name, lhs.row, lhs.column) <
+         std::tie(rhs.name, rhs.row, rhs.column);
+}
+
+bool operator==(const file_location& lhs, const file_location& rhs) {
+  return std::tie(lhs.name, lhs.row, lhs.column) ==
+         std::tie(rhs.name, rhs.row, rhs.column);
 }
 
 }

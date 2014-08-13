@@ -21,17 +21,22 @@
 #include <string>
 #include <ostream>
 
+#include <boost/operators.hpp>
+
 namespace metashell {
 
-struct file_location {
+struct file_location : boost::totally_ordered<file_location> {
   file_location();
   file_location(const std::string& name, int row, int column);
 
   std::string name;
   int row;
   int column;
+
 };
 
+bool operator<(const file_location& lhs, const file_location& rhs);
+bool operator==(const file_location& lhs, const file_location& rhs);
 std::ostream& operator<<(std::ostream& os, const file_location& location);
 
 }
