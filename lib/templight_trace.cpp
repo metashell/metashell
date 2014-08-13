@@ -49,25 +49,15 @@ templight_trace::vertex_descriptor templight_trace::add_vertex(
   const std::string& element,
   const file_location& point_of_instantiation)
 {
-  element_vertex_map_t::iterator pos;
-  bool inserted;
+  vertex_descriptor vertex = boost::add_vertex(graph);
 
-  boost::tie(pos, inserted) = element_vertex_map.insert(
-      std::make_pair(element, vertex_descriptor()));
+  template_vertex_property& vertex_property =
+    boost::get(template_vertex_property_tag(), graph, vertex);
 
-  if (inserted) {
-    vertex_descriptor vertex = boost::add_vertex(graph);
-    pos->second = vertex;
+  vertex_property.name = element;
+  vertex_property.point_of_instantiation = point_of_instantiation;
 
-    template_vertex_property& vertex_property =
-      boost::get(template_vertex_property_tag(), graph, vertex);
-
-    vertex_property.name = element;
-    vertex_property.point_of_instantiation = point_of_instantiation;
-
-    return vertex;
-  }
-  return pos->second;
+  return vertex;
 }
 
 void templight_trace::add_edge(
@@ -88,14 +78,19 @@ void templight_trace::add_edge(
 boost::optional<templight_trace::vertex_descriptor>
   templight_trace::find_vertex(const std::string& element) const
 {
-  element_vertex_map_t::const_iterator it =
-    element_vertex_map.find(element);
-
-  if (it == element_vertex_map.end()) {
-    return boost::none;
+  vertex_iterator begin, end;
+  boost::tie(begin, end) = boost::vertices(graph);
+  vertex_iterator it =
+    std::find_if(begin, end,
+      [&](vertex_descriptor vertex) {
+        return boost::get(
+          template_vertex_property_tag(), graph, vertex).name == element;
+      }
+    );
+  if (it != end) {
+    return *it;
   }
-
-  return it->second;
+  return boost::none;
 }
 
 void templight_trace::print_graph(std::ostream& os) const {

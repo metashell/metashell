@@ -46,50 +46,89 @@ typedef ascii::space_type skipper_t;
 
 struct templight_trace_builder {
 
-  templight_trace_builder() {
-    // Add root vertex
-    vertex_stack.push(trace.add_vertex("<root>", file_location()));
-  }
+  templight_trace_builder();
 
   void handle_template_begin(
     instantiation_kind kind,
     const std::string& context,
     const file_location& location,
     double timestamp,
-    unsigned long long memory_usage)
-  {
-    vertex_descriptor vertex = trace.add_vertex(context, location);
-    if (!vertex_stack.empty()) {
-      vertex_descriptor top_vertex = vertex_stack.top();
-      trace.add_edge(top_vertex, vertex, kind);
-    }
-    vertex_stack.push(vertex);
-  }
+    unsigned long long memory_usage);
 
   void handle_template_end(
     instantiation_kind kind,
     double timestamp,
-    unsigned long long memory_usage)
-  {
-    //TODO this check is not enough.
-    //The root vertex should always be in the stack
-    if (vertex_stack.empty()) {
-      throw exception("Bad templight trace format");
-    }
-    vertex_stack.pop();
-  }
+    unsigned long long memory_usage);
 
-  const templight_trace& get_trace() const {
-    return trace;
-  }
+  const templight_trace& get_trace() const;
 
 private:
+  typedef templight_trace::vertex_descriptor vertex_descriptor;
+  typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
+
+  vertex_descriptor add_vertex(
+      const std::string& context,
+      const file_location& location);
+
   templight_trace trace;
 
-  typedef templight_trace::vertex_descriptor vertex_descriptor;
-
   std::stack<vertex_descriptor> vertex_stack;
+
+  element_vertex_map_t element_vertex_map;
 };
+
+templight_trace_builder::templight_trace_builder() {
+  // Add root vertex
+  vertex_stack.push(trace.add_vertex("<root>", file_location()));
+}
+
+void templight_trace_builder::handle_template_begin(
+  instantiation_kind kind,
+  const std::string& context,
+  const file_location& location,
+  double timestamp,
+  unsigned long long memory_usage)
+{
+  vertex_descriptor vertex = trace.add_vertex(context, location);
+  if (!vertex_stack.empty()) {
+    vertex_descriptor top_vertex = vertex_stack.top();
+    trace.add_edge(top_vertex, vertex, kind);
+  }
+  vertex_stack.push(vertex);
+}
+
+void templight_trace_builder::handle_template_end(
+  instantiation_kind kind,
+  double timestamp,
+  unsigned long long memory_usage)
+{
+  //TODO this check is not enough.
+  //The root vertex should always be in the stack
+  if (vertex_stack.empty()) {
+    throw exception("Bad templight trace format");
+  }
+  vertex_stack.pop();
+}
+
+const templight_trace& templight_trace_builder::get_trace() const {
+  return trace;
+}
+
+templight_trace_builder::vertex_descriptor templight_trace_builder::add_vertex(
+    const std::string& context,
+    const file_location& location)
+{
+  element_vertex_map_t::iterator pos;
+  bool inserted;
+
+  boost::tie(pos, inserted) = element_vertex_map.insert(
+      std::make_pair(context, vertex_descriptor()));
+
+  if (inserted) {
+    pos->second = trace.add_vertex(context, location);
+  }
+  return pos->second;
+}
 
 template<class Iterator>
 struct templight_grammar :

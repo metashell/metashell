@@ -106,8 +106,6 @@ private:
   typedef boost::graph_traits<graph_t>::in_edge_iterator in_edge_iterator;
   typedef boost::graph_traits<graph_t>::out_edge_iterator out_edge_iterator;
 
-  typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
-
   typedef boost::property_map<
       graph_t,
       template_vertex_property_tag>::type vertex_property_map_t;
@@ -197,8 +195,6 @@ private:
   graph_t graph;
 
   metaprogram_state mp_state;
-
-  element_vertex_map_t element_vertex_map;
 
   struct only_has_discovered_out_edge_predicate;
 
