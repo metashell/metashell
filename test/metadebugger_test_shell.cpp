@@ -24,13 +24,13 @@ void test_metadebugger_shell::add_history(const std::string& str) {
 
 void test_metadebugger_shell::display(
     const std::string& str,
-    optional_color)
+    optional_color) const
 {
   //TODO We don't test colors at the moment
   output += str;
 }
 
-unsigned test_metadebugger_shell::width() {
+unsigned test_metadebugger_shell::width() const {
   return 80;
 }
 

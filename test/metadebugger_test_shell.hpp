@@ -31,16 +31,16 @@ public:
 
   virtual void display(
       const std::string& str,
-      optional_color color = boost::none);
+      optional_color color = boost::none) const;
 
-  virtual unsigned width();
+  virtual unsigned width() const;
 
   const std::string& get_output() const;
   const history_t& get_history() const;
 
 private:
   history_t history;
-  std::string output;
+  mutable std::string output;
 };
 
 #endif
