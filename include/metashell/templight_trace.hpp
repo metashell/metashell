@@ -27,6 +27,8 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
+#include <metashell/instantiation_kind.hpp>
+
 #include <just/console.hpp>
 
 #include "file_location.hpp"
@@ -35,18 +37,6 @@ namespace metashell {
 
 //Fwd:
 class metadebugger_shell;
-
-enum instantiation_kind {
-  template_instantiation,
-  default_template_argument_instantiation,
-  default_function_argument_instantiation,
-  explicit_template_argument_substitution,
-  deduced_template_argument_substitution,
-  prior_template_argument_substitution,
-  default_template_argument_checking,
-  exception_spec_instantiation,
-  memoization
-};
 
 class templight_trace {
 public:
@@ -204,7 +194,6 @@ private:
   const static std::vector<just::console::color> colors;
 };
 
-std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
 std::ostream& operator<<(std::ostream& os, const templight_trace& trace);
 
 }
