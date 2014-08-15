@@ -27,11 +27,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
+#include <metashell/file_location.hpp>
 #include <metashell/instantiation_kind.hpp>
 
 #include <just/console.hpp>
-
-#include "file_location.hpp"
 
 namespace metashell {
 
