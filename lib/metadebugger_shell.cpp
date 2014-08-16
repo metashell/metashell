@@ -24,10 +24,23 @@
 #include <cctype>
 #include <functional>
 
+#include <boost/regex.hpp>
 #include <boost/format.hpp>
+#include <boost/assign.hpp>
+#include <boost/foreach.hpp>
+#include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
 
 namespace metashell {
+
+const std::vector<just::console::color> metadebugger_shell::colors =
+  boost::assign::list_of
+    (just::console::color::red)
+    (just::console::color::green)
+    (just::console::color::yellow)
+    (just::console::color::blue)
+    (just::console::color::magenta)
+    (just::console::color::cyan);
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
@@ -62,7 +75,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     prev_line = line;
   }
   if (line == "ft" || line == "forwardtrace") {
-    trace.print_full_forwardtrace(*this);
+    display_forward_trace("<root>");
   } else if (boost::starts_with(line, "eval ")) {
     get_templight_trace_from_metaprogram(
         line.substr(5, std::string::npos));
@@ -133,6 +146,245 @@ void metadebugger_shell::display_current_frame() const {
   } else {
     display((boost::format("%1% (%2%)\n") % frame.type_name % frame.kind).str());
   }
+}
+
+metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
+    const std::string& type) const
+{
+
+  #define MSH_R_NAMESPACE_OR_TYPE       \
+    "("                                 \
+      "([_a-zA-Z][_a-zA-Z0-9]*)"    "|" \
+      "(\\(anonymous namespace\\))" "|" \
+      "(<anonymous>)"               "|" \
+      "(<anonymous struct>)"        "|" \
+      "(<anonymous class>)"         "|" \
+      "(<anonymous union>)"             \
+    ")"
+
+  boost::regex reg(
+      "^(::)?(" MSH_R_NAMESPACE_OR_TYPE "::)*" MSH_R_NAMESPACE_OR_TYPE);
+
+  #undef MSH_R_NAMESPACE_OR_TYPE
+
+  boost::smatch match;
+  if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
+    return string_range(type.end(), type.end());
+  }
+
+  return string_range(match[10].first, match[10].second);
+}
+
+void metadebugger_shell::print_range(
+    std::string::const_iterator begin,
+    std::string::const_iterator end,
+    optional_color c) const
+{
+  if (begin < end) {
+    display(std::string(begin, end), c);
+  }
+}
+
+void metadebugger_shell::print_trace_content(
+    string_range range,
+    string_range emphasize) const
+{
+  assert(range.first <= range.second);
+  assert(emphasize.first <= emphasize.second);
+
+  //TODO avoid copying
+
+  print_range(
+      range.first,
+      std::min(range.second, emphasize.first),
+      boost::none);
+
+  print_range(
+      std::max(range.first, emphasize.first),
+      std::min(range.second, emphasize.second),
+      just::console::color::white);
+
+  print_range(
+      std::max(emphasize.second, range.first),
+      range.second,
+      boost::none);
+}
+
+void metadebugger_shell::print_trace_graph(
+    const metaprogram::graph_t& graph,
+    unsigned depth,
+    const std::vector<unsigned>& depth_counter,
+    bool print_mark) const
+{
+  assert(depth_counter.size() > depth);
+
+  if (depth > 0) {
+    //TODO respect the -H (no syntax highlight parameter)
+    for (unsigned i = 1; i < depth; ++i) {
+      display(
+          depth_counter[i] > 0 ? "| " : "  ",
+          colors[i % colors.size()]);
+    }
+
+    just::console::color mark_color = colors[depth % colors.size()];
+    if (print_mark) {
+      display("+ ", mark_color);
+    } else if (depth_counter[depth] > 0) {
+      display("| ", mark_color);
+    } else {
+      display("  ");
+    }
+  }
+}
+
+void metadebugger_shell::print_trace_line(
+    const metaprogram::graph_t& graph,
+    metaprogram::vertex_descriptor vertex,
+    unsigned depth,
+    const std::vector<unsigned>& depth_counter,
+    const boost::optional<instantiation_kind>& kind,
+    unsigned width) const
+{
+
+  const std::string type =
+    boost::get(metaprogram::template_vertex_property_tag(), graph, vertex).name;
+
+  std::stringstream element_content_ss;
+  element_content_ss << type;
+
+  if (kind) {
+    element_content_ss << " (" << *kind << ")";
+  }
+
+  std::string element_content = element_content_ss.str();
+
+  string_range emphasize = find_type_emphasize(type);
+
+  // Realign the iterators from 'type' to 'element_content'
+  emphasize.first = element_content.begin() + (emphasize.first - type.begin());
+  emphasize.second = element_content.begin() + (emphasize.second - type.begin());
+
+  unsigned non_content_length = 2*depth;
+
+  if (width < 10 || non_content_length >= width - 10) {
+    // We have no chance to display the graph nicely :(
+    print_trace_graph(graph, depth, depth_counter, true);
+
+    print_trace_content(
+      string_range(element_content.begin(), element_content.end()),
+      emphasize);
+    display("\n");
+  } else {
+    unsigned content_width = width - non_content_length;
+    for (unsigned i = 0; i < element_content.size(); i += content_width) {
+      print_trace_graph(graph, depth, depth_counter, i == 0);
+      print_trace_content(
+        string_range(
+          element_content.begin() + i,
+          i + content_width < element_content.size() ?
+            element_content.begin() + (i + content_width) :
+            element_content.end()
+        ),
+        emphasize
+      );
+      display("\n");
+    }
+  }
+}
+
+// Visits a single vertex and all of its children
+void metadebugger_shell::print_trace_visit(
+    const metaprogram::graph_t& graph,
+    metaprogram::vertex_descriptor root_vertex,
+    metaprogram::discovered_t& discovered,
+    unsigned width) const
+{
+
+  if (discovered[root_vertex]) {
+    return;
+  }
+  // -----
+  // Customized DFS
+  //   The algorithm only checks vertices which are reachable from root_vertex
+  // ----
+
+  // This vector counts how many elements are in the to_visit
+  // stack for each specific depth.
+  // The purpose is to not draw pipes, when a tree element
+  // doesn't have any more children.
+  // The 0th element is never read.
+  std::vector<unsigned> depth_counter(1);
+
+  typedef std::tuple<
+    metaprogram::vertex_descriptor,
+    unsigned, // Depth
+    boost::optional<instantiation_kind> > stack_element;
+
+  // The usual stack for DFS
+  std::stack<stack_element> to_visit;
+
+  // We don't care about the instantiation_kind for the source vertex
+  to_visit.push(std::make_tuple(root_vertex, 0, boost::none));
+  ++depth_counter[0]; // This value is neved read
+
+  while (!to_visit.empty()) {
+    unsigned depth;
+    metaprogram::vertex_descriptor vertex;
+    boost::optional<instantiation_kind> kind;
+    std::tie(vertex, depth, kind) = to_visit.top();
+    to_visit.pop();
+
+    --depth_counter[depth];
+
+    print_trace_line(graph, vertex, depth, depth_counter, kind, width);
+
+    if (!discovered[vertex]) {
+      discovered[vertex] = true;
+
+      metaprogram::out_edge_iterator begin, end;
+      std::tie(begin, end) = boost::out_edges(vertex, graph);
+
+      typedef std::vector<metaprogram::edge_descriptor> edges_t;
+      edges_t edges(begin, end);
+
+      if (depth_counter.size() <= depth+1) {
+        depth_counter.resize(depth+1+1);
+      }
+
+      // Reverse iteration, so types that got instantiated first
+      // get on the top of the stack
+      BOOST_REVERSE_FOREACH(const metaprogram::edge_descriptor& edge, edges) {
+        instantiation_kind next_kind =
+          boost::get(metaprogram::template_edge_property_tag(),
+              graph, edge).kind;
+
+        to_visit.push(
+          std::make_tuple(boost::target(edge, graph), depth+1, next_kind));
+
+        ++depth_counter[depth+1];
+      }
+    }
+  }
+}
+
+void metadebugger_shell::display_forward_trace(
+    const std::string& root_type) const
+{
+  const metaprogram::graph_t& graph = trace.get_metaprogram().get_graph();
+
+  boost::optional<metaprogram::vertex_descriptor> opt_vertex =
+    trace.get_metaprogram().find_vertex(root_type);
+
+  if (!opt_vertex) {
+    display("Type \"" + root_type + "\" not found", just::console::color::red);
+    return;
+  }
+
+  unsigned shell_width = width();
+
+  metaprogram::discovered_t discovered(boost::num_vertices(graph));
+
+  print_trace_visit(graph, *opt_vertex, discovered, shell_width);
 }
 
 }
