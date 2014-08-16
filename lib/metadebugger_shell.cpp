@@ -77,14 +77,14 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   if (line == "ft" || line == "forwardtrace") {
     display_forward_trace("<root>");
   } else if (boost::starts_with(line, "eval ")) {
-    get_templight_trace_from_metaprogram(
+    run_metaprogram_with_templight(
         line.substr(5, std::string::npos));
   } else if (line == "start") {
     //TODO ask user if he wants to restart
-    trace.get_metaprogram().start_metaprogram();
+    mp.start_metaprogram();
   } else if (line == "step") {
-    if (trace.get_metaprogram().is_metaprogram_started()) {
-        if (!trace.get_metaprogram().step_metaprogram()) {
+    if (mp.is_metaprogram_started()) {
+        if (!mp.step_metaprogram()) {
           display_current_frame();
         } else {
           display("Metaprogram finished\n",
@@ -101,7 +101,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
 
 }
 
-void metadebugger_shell::get_templight_trace_from_metaprogram(
+void metadebugger_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
@@ -119,8 +119,7 @@ void metadebugger_shell::get_templight_trace_from_metaprogram(
   //TODO move this to a destructor. run_metaprogram might throw
   clang_args.erase(clang_args.end() - 5, clang_args.end());
 
-  trace.set_metaprogram(
-      metaprogram::create_from_xml(templight_xml_file.get_path().string()));
+  mp = metaprogram::create_from_xml(templight_xml_file.get_path().string());
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
@@ -139,7 +138,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
 }
 
 void metadebugger_shell::display_current_frame() const {
-  metaprogram::frame frame = trace.get_metaprogram().get_current_frame();
+  metaprogram::frame frame = mp.get_current_frame();
   // No kind for <root> vertex
   if (frame.vertex == 0) {
     display(frame.type_name + "\n");
@@ -370,10 +369,10 @@ void metadebugger_shell::print_trace_visit(
 void metadebugger_shell::display_forward_trace(
     const std::string& root_type) const
 {
-  const metaprogram::graph_t& graph = trace.get_metaprogram().get_graph();
+  const metaprogram::graph_t& graph = mp.get_graph();
 
   boost::optional<metaprogram::vertex_descriptor> opt_vertex =
-    trace.get_metaprogram().find_vertex(root_type);
+    mp.find_vertex(root_type);
 
   if (!opt_vertex) {
     display("Type \"" + root_type + "\" not found", just::console::color::red);

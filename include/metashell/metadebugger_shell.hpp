@@ -21,9 +21,11 @@
 
 #include <boost/optional.hpp>
 
+#include <just/console.hpp>
+
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
-#include <metashell/templight_trace.hpp>
+#include <metashell/metaprogram.hpp>
 #include <metashell/readline_environment.hpp>
 
 namespace metashell {
@@ -53,8 +55,7 @@ protected:
   bool stopped() const;
   void line_available(const std::string& line);
 
-  void get_templight_trace_from_metaprogram(const std::string& str);
-  // TODO put this method somewhere global (shell has it too)
+  void run_metaprogram_with_templight(const std::string& str);
   void run_metaprogram(const std::string& str);
 
   void display_current_frame() const;
@@ -63,7 +64,7 @@ protected:
   const config& conf;
   environment& env;
 
-  templight_trace trace;
+  metaprogram mp;
 
   std::string prev_line;
   bool is_stopped;

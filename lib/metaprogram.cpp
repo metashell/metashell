@@ -30,9 +30,9 @@ namespace metashell {
 metaprogram::metaprogram_state::metaprogram_state() {}
 
 metaprogram::metaprogram_state::metaprogram_state(
-    const metaprogram& trace)
+    const metaprogram& mp)
 {
-  unsigned vertex_count = boost::num_vertices(trace.graph);
+  unsigned vertex_count = boost::num_vertices(mp.graph);
   if (vertex_count > 0) {
     discovered.resize(vertex_count, false);
     // 0 == <root> vertex
