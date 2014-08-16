@@ -23,7 +23,6 @@
 #include <algorithm>
 
 #include <boost/regex.hpp>
-#include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -444,31 +443,6 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
         [this](vertex_descriptor v) { return boost::in_edges(v, mp.get_graph()); },
         [this](edge_descriptor e) { return boost::source(e, mp.get_graph()); },
         width);
-  }
-}
-
-void templight_trace::print_current_frame(const metadebugger_shell& sh) const {
-  if (mp.get_state().vertex_stack.empty()) {
-    sh.display("Stack is empty\n", just::console::color::red);
-    return;
-  }
-  vertex_descriptor current_vertex;
-  instantiation_kind kind;
-  std::tie(current_vertex, kind) = mp.get_state().vertex_stack.top();
-
-  // No kind for <root> vertex
-  if (current_vertex == 0) {
-    sh.display(boost::get(
-        template_vertex_property_tag(),
-        mp.get_graph(),
-        current_vertex).name + "\n");
-  } else {
-    sh.display((
-        boost::format("%1% (%2%)\n") %
-          boost::get(
-            template_vertex_property_tag(), mp.get_graph(), current_vertex).name %
-          kind
-        ).str());
   }
 }
 

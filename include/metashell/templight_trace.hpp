@@ -44,7 +44,6 @@ public:
   void print_full_forwardtrace(const metadebugger_shell& sh) const;
   void print_backtrace(const metadebugger_shell& sh, const std::string& type) const;
   void print_full_backtrace(const metadebugger_shell& sh) const;
-  void print_current_frame(const metadebugger_shell& sh) const;
 
   void set_metaprogram(const metaprogram& new_mp);
   metaprogram& get_metaprogram();

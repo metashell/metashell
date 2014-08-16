@@ -17,10 +17,13 @@
 
 #include <metashell/metaprogram.hpp>
 
+#include <tuple>
 #include <cassert>
 #include <algorithm>
 
 #include <boost/range/adaptor/reversed.hpp>
+
+#include "exception.hpp"
 
 namespace metashell {
 
@@ -35,6 +38,16 @@ metaprogram::metaprogram_state::metaprogram_state(
     // 0 == <root> vertex
     vertex_stack.push(std::make_tuple(0, instantiation_kind()));  }
 }
+
+metaprogram::frame::frame() :
+  index(), vertex(), type_name(), kind() {}
+
+metaprogram::frame::frame(
+    unsigned index,
+    vertex_descriptor vertex,
+    const std::string& type_name,
+    instantiation_kind kind) :
+  index(index), vertex(vertex), type_name(type_name), kind(kind) {}
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
   const std::string& element,
@@ -128,6 +141,29 @@ const metaprogram::graph_t& metaprogram::get_graph() const {
 
 const metaprogram::metaprogram_state& metaprogram::get_state() const {
   return mp_state;
+}
+
+metaprogram::frame metaprogram::get_current_frame() const {
+  if (mp_state.vertex_stack.empty()) {
+    throw exception("Metaprogram stack is empty");
+  }
+  vertex_descriptor current_vertex;
+  instantiation_kind kind;
+  std::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+
+  return frame(
+      0, //TODO
+      current_vertex,
+      boost::get(
+        template_vertex_property_tag(),
+        graph,
+        current_vertex).name,
+      kind);
+}
+
+metaprogram::back_trace_t metaprogram::get_back_trace() const {
+  //TODO
+  return back_trace_t();
 }
 
 }

@@ -57,6 +57,8 @@ protected:
   // TODO put this method somewhere global (shell has it too)
   void run_metaprogram(const std::string& str);
 
+  void display_current_frame() const;
+
   const config& conf;
   environment& env;
 

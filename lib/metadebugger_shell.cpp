@@ -24,6 +24,7 @@
 #include <cctype>
 #include <functional>
 
+#include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
 namespace metashell {
@@ -71,7 +72,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   } else if (line == "step") {
     if (trace.get_metaprogram().is_metaprogram_started()) {
         if (!trace.get_metaprogram().step_metaprogram()) {
-          trace.print_current_frame(*this);
+          display_current_frame();
         } else {
           display("Metaprogram finished\n",
               just::console::color::green);
@@ -121,6 +122,16 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   }
   if (!res.has_errors()) {
     display(res.output + "\n");
+  }
+}
+
+void metadebugger_shell::display_current_frame() const {
+  metaprogram::frame frame = trace.get_metaprogram().get_current_frame();
+  // No kind for <root> vertex
+  if (frame.vertex == 0) {
+    display(frame.type_name + "\n");
+  } else {
+    display((boost::format("%1% (%2%)\n") % frame.type_name % frame.kind).str());
   }
 }
 

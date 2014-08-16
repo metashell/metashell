@@ -107,6 +107,22 @@ public:
     vertex_stack_t vertex_stack;
   };
 
+  struct frame {
+    frame();
+    frame(
+        unsigned index,
+        vertex_descriptor vertex,
+        const std::string& type_name,
+        instantiation_kind kind);
+
+    unsigned index;
+    vertex_descriptor vertex;
+    std::string type_name;
+    instantiation_kind kind;
+  };
+
+  typedef std::vector<frame> back_trace_t;
+
   vertex_descriptor add_vertex(
       const std::string& element,
       const file_location& point_of_instantiation);
@@ -128,6 +144,9 @@ public:
 
   const graph_t& get_graph() const;
   const metaprogram_state& get_state() const;
+
+  frame get_current_frame() const;
+  back_trace_t get_back_trace() const;
 
 private:
   graph_t graph;
