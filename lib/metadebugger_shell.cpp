@@ -27,9 +27,9 @@
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
-#include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 namespace metashell {
 
@@ -352,7 +352,9 @@ void metadebugger_shell::print_trace_visit(
 
       // Reverse iteration, so types that got instantiated first
       // get on the top of the stack
-      BOOST_REVERSE_FOREACH(const metaprogram::edge_descriptor& edge, edges) {
+      for (const metaprogram::edge_descriptor& edge :
+          edges | boost::adaptors::reversed)
+      {
         instantiation_kind next_kind =
           boost::get(metaprogram::template_edge_property_tag(),
               graph, edge).kind;
