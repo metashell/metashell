@@ -27,7 +27,6 @@
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 #include <boost/graph/graphviz.hpp>
-#include <boost/range/adaptor/reversed.hpp>
 
 #include <metashell/templight_trace.hpp>
 #include <metashell/metadebugger_shell.hpp>
@@ -44,64 +43,17 @@ const std::vector<just::console::color> templight_trace::colors =
     (just::console::color::cyan);
 
 
-templight_trace::vertex_descriptor templight_trace::add_vertex(
-  const std::string& element,
-  const file_location& point_of_instantiation)
-{
-  vertex_descriptor vertex = boost::add_vertex(graph);
-
-  template_vertex_property& vertex_property =
-    boost::get(template_vertex_property_tag(), graph, vertex);
-
-  vertex_property.name = element;
-  vertex_property.point_of_instantiation = point_of_instantiation;
-
-  return vertex;
-}
-
-void templight_trace::add_edge(
-    vertex_descriptor from,
-    vertex_descriptor to,
-    instantiation_kind kind)
-{
-  edge_descriptor edge;
-  bool inserted;
-
-  std::tie(edge, inserted) = boost::add_edge(from, to, graph);
-
-  assert(inserted);
-
-  boost::get(template_edge_property_tag(), graph, edge).kind = kind;
-}
-
-boost::optional<templight_trace::vertex_descriptor>
-  templight_trace::find_vertex(const std::string& element) const
-{
-  vertex_iterator begin, end;
-  std::tie(begin, end) = boost::vertices(graph);
-  vertex_iterator it =
-    std::find_if(begin, end,
-      [&](vertex_descriptor vertex) {
-        return boost::get(
-          template_vertex_property_tag(), graph, vertex).name == element;
-      }
-    );
-  if (it != end) {
-    return *it;
-  }
-  return boost::none;
-}
 
 void templight_trace::print_graph(std::ostream& os) const {
 
   const_vertex_property_map_t vertex_map =
-      boost::get(template_vertex_property_tag(), graph);
+      boost::get(template_vertex_property_tag(), mp.get_graph());
 
   const_edge_property_map_t edge_map =
-      boost::get(template_edge_property_tag(), graph);
+      boost::get(template_edge_property_tag(), mp.get_graph());
 
   os << "Verticies:\n";
-  BOOST_FOREACH(vertex_descriptor vertex, boost::vertices(graph)) {
+  BOOST_FOREACH(vertex_descriptor vertex, boost::vertices(mp.get_graph())) {
     const template_vertex_property& vertex_property =
       boost::get(vertex_map, vertex);
 
@@ -112,25 +64,25 @@ void templight_trace::print_graph(std::ostream& os) const {
   }
 
   os << "Edges:\n";
-  BOOST_FOREACH(const edge_descriptor& edge, boost::edges(graph)) {
-    os << boost::get(vertex_map, source(edge, graph)).name <<
+  BOOST_FOREACH(const edge_descriptor& edge, boost::edges(mp.get_graph())) {
+    os << boost::get(vertex_map, source(edge, mp.get_graph())).name <<
       " ---" << boost::get(edge_map, edge).kind << "---> " <<
-      boost::get(vertex_map, target(edge, graph)).name << '\n';
+      boost::get(vertex_map, target(edge, mp.get_graph())).name << '\n';
   }
 }
 
 void templight_trace::print_graphviz(std::ostream& os) const {
 
   boost::write_graphviz(
-      os, graph,
+      os, mp.get_graph(),
       [this](std::ostream& os, vertex_descriptor vertex) {
         os << "[label=\"" <<
-          boost::get(template_vertex_property_tag(), graph, vertex).name <<
+          boost::get(template_vertex_property_tag(), mp.get_graph(), vertex).name <<
           "\"]";
       },
       [this](std::ostream& os, edge_descriptor edge) {
         os << "[label=\""<<
-          boost::get(template_edge_property_tag(), graph, edge).kind <<
+          boost::get(template_edge_property_tag(), mp.get_graph(), edge).kind <<
           "\"]";
       }
   );
@@ -244,7 +196,7 @@ void templight_trace::print_trace_line(
 {
 
   const std::string type =
-    boost::get(template_vertex_property_tag(), graph, vertex).name;
+    boost::get(template_vertex_property_tag(), mp.get_graph(), vertex).name;
 
   std::stringstream element_content_ss;
   element_content_ss << type;
@@ -301,7 +253,7 @@ void templight_trace::print_trace_visit(
     unsigned width) const
 {
 
-  assert(discovered.size() == boost::num_vertices(graph));
+  assert(discovered.size() == boost::num_vertices(mp.get_graph()));
 
   if (discovered[root_vertex]) {
     return;
@@ -358,7 +310,7 @@ void templight_trace::print_trace_visit(
       // get on the top of the stack
       BOOST_REVERSE_FOREACH(const edge_descriptor& edge, edges) {
         instantiation_kind next_kind =
-          boost::get(template_edge_property_tag(), graph, edge).kind;
+          boost::get(template_edge_property_tag(), mp.get_graph(), edge).kind;
 
         to_visit.push(
           std::make_tuple(edge_direction(edge), depth+1, next_kind));
@@ -375,7 +327,7 @@ void templight_trace::print_forwardtrace(
 {
 
   boost::optional<vertex_descriptor> opt_vertex =
-    find_vertex(type);
+    mp.find_vertex(type);
 
   if (!opt_vertex) {
     sh.display("type \"" + type + "\" not found", just::console::color::red);
@@ -384,32 +336,32 @@ void templight_trace::print_forwardtrace(
 
   unsigned width = sh.width();
 
-  discovered_t discovered(boost::num_vertices(graph));
+  discovered_t discovered(boost::num_vertices(mp.get_graph()));
 
   print_trace_visit<out_edge_iterator>(
       sh,
       *opt_vertex,
       discovered,
-      [this](vertex_descriptor v) { return boost::out_edges(v, graph); },
-      [this](edge_descriptor e) { return boost::target(e, graph); },
+      [this](vertex_descriptor v) { return boost::out_edges(v, mp.get_graph()); },
+      [this](edge_descriptor e) { return boost::target(e, mp.get_graph()); },
       width);
 }
 
 void templight_trace::print_full_forwardtrace(const metadebugger_shell& sh) const {
 
-  assert(boost::num_vertices(graph) > 0);
+  assert(boost::num_vertices(mp.get_graph()) > 0);
 
   unsigned width = sh.width();
 
-  discovered_t discovered(boost::num_vertices(graph));
+  discovered_t discovered(boost::num_vertices(mp.get_graph()));
 
   print_trace_visit<out_edge_iterator>(
       sh,
       // 0 is always the <root> vertex, and every vertex is reachable from root
       0,
       discovered,
-      [this](vertex_descriptor v) { return boost::out_edges(v, graph); },
-      [this](edge_descriptor e) { return boost::target(e, graph); },
+      [this](vertex_descriptor v) { return boost::out_edges(v, mp.get_graph()); },
+      [this](edge_descriptor e) { return boost::target(e, mp.get_graph()); },
       width);
 }
 
@@ -419,7 +371,7 @@ void templight_trace::print_backtrace(
 {
 
   boost::optional<vertex_descriptor> opt_vertex =
-    find_vertex(type);
+    mp.find_vertex(type);
 
   if (!opt_vertex) {
     sh.display("type \"" + type + "\" not found", just::console::color::red);
@@ -428,20 +380,20 @@ void templight_trace::print_backtrace(
 
   unsigned width = sh.width();
 
-  discovered_t discovered(boost::num_vertices(graph));
+  discovered_t discovered(boost::num_vertices(mp.get_graph()));
 
   print_trace_visit<in_edge_iterator>(
       sh,
       *opt_vertex,
       discovered,
-      [this](vertex_descriptor v) { return boost::in_edges(v, graph); },
-      [this](edge_descriptor e) { return boost::source(e, graph); },
+      [this](vertex_descriptor v) { return boost::in_edges(v, mp.get_graph()); },
+      [this](edge_descriptor e) { return boost::source(e, mp.get_graph()); },
       width);
 }
 
 struct templight_trace::only_has_discovered_out_edge_predicate {
   only_has_discovered_out_edge_predicate(
-    const graph_t& graph,
+    const metaprogram::graph_t& graph,
     const discovered_t& discovered) :
       graph(graph), discovered(discovered) {}
 
@@ -457,15 +409,15 @@ struct templight_trace::only_has_discovered_out_edge_predicate {
     return true;
   }
 private:
-  const graph_t& graph;
+  const metaprogram::graph_t& graph;
   const discovered_t& discovered;
 };
 
 void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
 
-  assert(boost::num_vertices(graph) > 0);
+  assert(boost::num_vertices(mp.get_graph()) > 0);
 
-  discovered_t discovered(boost::num_vertices(graph));
+  discovered_t discovered(boost::num_vertices(mp.get_graph()));
 
   unsigned width = sh.width();
 
@@ -477,10 +429,10 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
     // Since the graph is DAG, there is always a vertex which
     // has only discovered out_edges
     vertex_iterator begin, end, it;
-    std::tie(begin, end) = boost::vertices(graph);
+    std::tie(begin, end) = boost::vertices(mp.get_graph());
 
     it = std::find_if(begin, end,
-        only_has_discovered_out_edge_predicate(graph, discovered));
+        only_has_discovered_out_edge_predicate(mp.get_graph(), discovered));
 
     if (it == end) {
       break;
@@ -489,84 +441,47 @@ void templight_trace::print_full_backtrace(const metadebugger_shell& sh) const {
         sh,
         *it,
         discovered,
-        [this](vertex_descriptor v) { return boost::in_edges(v, graph); },
-        [this](edge_descriptor e) { return boost::source(e, graph); },
+        [this](vertex_descriptor v) { return boost::in_edges(v, mp.get_graph()); },
+        [this](edge_descriptor e) { return boost::source(e, mp.get_graph()); },
         width);
   }
 }
 
 void templight_trace::print_current_frame(const metadebugger_shell& sh) const {
-  if (mp_state.vertex_stack.empty()) {
+  if (mp.get_state().vertex_stack.empty()) {
     sh.display("Stack is empty\n", just::console::color::red);
     return;
   }
   vertex_descriptor current_vertex;
   instantiation_kind kind;
-  std::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+  std::tie(current_vertex, kind) = mp.get_state().vertex_stack.top();
 
   // No kind for <root> vertex
   if (current_vertex == 0) {
     sh.display(boost::get(
         template_vertex_property_tag(),
-        graph,
+        mp.get_graph(),
         current_vertex).name + "\n");
   } else {
     sh.display((
         boost::format("%1% (%2%)\n") %
           boost::get(
-            template_vertex_property_tag(), graph, current_vertex).name %
+            template_vertex_property_tag(), mp.get_graph(), current_vertex).name %
           kind
         ).str());
   }
 }
 
-void templight_trace::reset_metaprogram_state() {
-  mp_state = metaprogram_state(*this);
+void templight_trace::set_metaprogram(const metaprogram& new_mp) {
+  mp = new_mp;
 }
 
-void templight_trace::start_metaprogram() {
-  reset_metaprogram_state();
+metaprogram& templight_trace::get_metaprogram() {
+  return mp;
 }
 
-bool templight_trace::is_metaprogram_started() const {
-  return !mp_state.vertex_stack.empty();
-}
-
-bool templight_trace::step_metaprogram() {
-  assert(is_metaprogram_started());
-
-  vertex_descriptor current_vertex;
-  std::tie(current_vertex, std::ignore) = mp_state.vertex_stack.top();
-  mp_state.vertex_stack.pop();
-
-  if (!mp_state.discovered[current_vertex]) {
-    mp_state.discovered[current_vertex] = true;
-
-    for (edge_descriptor edge :
-        boost::make_iterator_range(
-          boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed)
-    {
-      instantiation_kind next_kind =
-        boost::get(template_edge_property_tag(), graph, edge).kind;
-
-      mp_state.vertex_stack.push(
-        std::make_tuple(
-          boost::target(edge, graph), next_kind));
-    }
-  }
-  return mp_state.vertex_stack.empty();
-}
-
-templight_trace::metaprogram_state::metaprogram_state() {}
-
-templight_trace::metaprogram_state::metaprogram_state(
-    const templight_trace& trace)
-{
-  unsigned vertex_count = boost::num_vertices(trace.graph);
-  if (vertex_count > 0) {
-    discovered.resize(vertex_count, false);
-    // 0 == <root> vertex
-    vertex_stack.push(std::make_tuple(0, instantiation_kind()));  }
+const metaprogram& templight_trace::get_metaprogram() const {
+  return mp;
 }
 
 std::ostream& operator<<(std::ostream& os, const templight_trace& trace) {

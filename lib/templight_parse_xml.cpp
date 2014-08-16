@@ -24,8 +24,8 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
+#include <metashell/metaprogram.hpp>
 #include <metashell/file_location.hpp>
-#include <metashell/templight_trace.hpp>
 
 #include "exception.hpp"
 
@@ -45,9 +45,9 @@ namespace phx = boost::phoenix;
 
 typedef ascii::space_type skipper_t;
 
-struct templight_trace_builder {
+struct metaprogram_builder {
 
-  templight_trace_builder();
+  metaprogram_builder();
 
   void handle_template_begin(
     instantiation_kind kind,
@@ -61,29 +61,29 @@ struct templight_trace_builder {
     double timestamp,
     unsigned long long memory_usage);
 
-  const templight_trace& get_trace() const;
+  const metaprogram& get_metaprogram() const;
 
 private:
-  typedef templight_trace::vertex_descriptor vertex_descriptor;
+  typedef metaprogram::vertex_descriptor vertex_descriptor;
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
   vertex_descriptor add_vertex(
       const std::string& context,
       const file_location& location);
 
-  templight_trace trace;
+  metaprogram trace;
 
   std::stack<vertex_descriptor> vertex_stack;
 
   element_vertex_map_t element_vertex_map;
 };
 
-templight_trace_builder::templight_trace_builder() {
+metaprogram_builder::metaprogram_builder() {
   // Add root vertex
   vertex_stack.push(add_vertex("<root>", file_location()));
 }
 
-void templight_trace_builder::handle_template_begin(
+void metaprogram_builder::handle_template_begin(
   instantiation_kind kind,
   const std::string& context,
   const file_location& location,
@@ -98,7 +98,7 @@ void templight_trace_builder::handle_template_begin(
   vertex_stack.push(vertex);
 }
 
-void templight_trace_builder::handle_template_end(
+void metaprogram_builder::handle_template_end(
   instantiation_kind kind,
   double timestamp,
   unsigned long long memory_usage)
@@ -111,11 +111,11 @@ void templight_trace_builder::handle_template_end(
   vertex_stack.pop();
 }
 
-const templight_trace& templight_trace_builder::get_trace() const {
+const metaprogram& metaprogram_builder::get_metaprogram() const {
   return trace;
 }
 
-templight_trace_builder::vertex_descriptor templight_trace_builder::add_vertex(
+metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
     const std::string& context,
     const file_location& location)
 {
@@ -197,7 +197,7 @@ struct templight_grammar :
       "</TemplateBegin>"
       )
       [phx::bind(
-          &templight_trace_builder::handle_template_begin,
+          &metaprogram_builder::handle_template_begin,
           phx::ref(builder), _1, _2, _3, _4, _5)];
 
     //<TemplateEnd>
@@ -215,7 +215,7 @@ struct templight_grammar :
       "</TemplateEnd>"
       )
       [phx::bind(
-          &templight_trace_builder::handle_template_end,
+          &metaprogram_builder::handle_template_end,
           phx::ref(builder), _1, _2, _3)];
 
     unescaped_string %=
@@ -229,7 +229,7 @@ struct templight_grammar :
     timestamp = '"' >> double_ >> '"';
   }
 
-  templight_trace_builder builder;
+  metaprogram_builder builder;
 
   qi::rule<Iterator, skipper_t> start;
   qi::rule<Iterator, skipper_t> body;
@@ -246,7 +246,7 @@ struct templight_grammar :
   qi::symbols<char, instantiation_kind> instantiation_kinds;
 };
 
-templight_trace templight_trace::create_from_xml(const std::string& file) {
+metaprogram metaprogram::create_from_xml(const std::string& file) {
 
   std::string file_content;
   std::ifstream in(file.c_str());
@@ -268,7 +268,7 @@ templight_trace templight_trace::create_from_xml(const std::string& file) {
     throw exception("Failed to parse templight file");
   }
 
-  return grammar.builder.get_trace();
+  return grammar.builder.get_metaprogram();
 }
 
 }

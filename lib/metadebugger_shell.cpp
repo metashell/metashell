@@ -67,10 +67,10 @@ void metadebugger_shell::line_available(const std::string& original_line) {
         line.substr(5, std::string::npos));
   } else if (line == "start") {
     //TODO ask user if he wants to restart
-    trace.start_metaprogram();
+    trace.get_metaprogram().start_metaprogram();
   } else if (line == "step") {
-    if (trace.is_metaprogram_started()) {
-        if (!trace.step_metaprogram()) {
+    if (trace.get_metaprogram().is_metaprogram_started()) {
+        if (!trace.get_metaprogram().step_metaprogram()) {
           trace.print_current_frame(*this);
         } else {
           display("Metaprogram finished\n",
@@ -105,7 +105,8 @@ void metadebugger_shell::get_templight_trace_from_metaprogram(
   //TODO move this to a destructor. run_metaprogram might throw
   clang_args.erase(clang_args.end() - 5, clang_args.end());
 
-  trace = templight_trace::create_from_xml(templight_xml_file.get_path().string());
+  trace.set_metaprogram(
+      metaprogram::create_from_xml(templight_xml_file.get_path().string()));
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {

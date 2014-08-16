@@ -24,11 +24,8 @@
 #include <iostream>
 
 #include <boost/optional.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
 
-#include <metashell/file_location.hpp>
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include <just/console.hpp>
 
@@ -40,8 +37,6 @@ class metadebugger_shell;
 class templight_trace {
 public:
 
-  static templight_trace create_from_xml(const std::string& file);
-
   void print_graph(std::ostream& os = std::cout) const;
   void print_graphviz(std::ostream& os = std::cout) const;
 
@@ -51,103 +46,31 @@ public:
   void print_full_backtrace(const metadebugger_shell& sh) const;
   void print_current_frame(const metadebugger_shell& sh) const;
 
-  void start_metaprogram();
-  bool is_metaprogram_started() const;
-
-  // Returns true when the program took it's last step (finished)
-  bool step_metaprogram();
+  void set_metaprogram(const metaprogram& new_mp);
+  metaprogram& get_metaprogram();
+  const metaprogram& get_metaprogram() const;
 
 private:
 
-  struct template_vertex_property_tag {
-    typedef boost::vertex_property_tag kind;
-  };
-  struct template_edge_property_tag {
-    typedef boost::edge_property_tag kind;
-  };
-
-  struct template_vertex_property {
-    std::string name;
-    file_location point_of_instantiation;
-  };
-  struct template_edge_property {
-    instantiation_kind kind;
-  };
-
-  typedef boost::property<
-    template_vertex_property_tag,
-    template_vertex_property> vertex_property;
-  typedef boost::property<
-    template_edge_property_tag,
-    template_edge_property> edge_property;
-
-  typedef boost::adjacency_list<
-    boost::vecS,
-    boost::vecS,
-    boost::bidirectionalS,
-    vertex_property,
-    edge_property> graph_t;
-
-  typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
-  typedef boost::graph_traits<graph_t>::edge_descriptor edge_descriptor;
-
-  typedef boost::graph_traits<graph_t>::vertex_iterator vertex_iterator;
-  typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
-  typedef boost::graph_traits<graph_t>::in_edge_iterator in_edge_iterator;
-  typedef boost::graph_traits<graph_t>::out_edge_iterator out_edge_iterator;
-
-  typedef boost::property_map<
-      graph_t,
-      template_vertex_property_tag>::type vertex_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_vertex_property_tag>::const_type const_vertex_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_edge_property_tag>::type edge_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_edge_property_tag>::const_type const_edge_property_map_t;
+  typedef metaprogram::graph_t graph;
+  typedef metaprogram::edge_descriptor edge_descriptor;
+  typedef metaprogram::out_edge_iterator out_edge_iterator;
+  typedef metaprogram::in_edge_iterator in_edge_iterator;
+  typedef metaprogram::vertex_descriptor vertex_descriptor;
+  typedef metaprogram::vertex_property vertex_property;
+  typedef metaprogram::vertex_iterator vertex_iterator;
+  typedef metaprogram::discovered_t discovered_t;
+  typedef metaprogram::const_vertex_property_map_t const_vertex_property_map_t;
+  typedef metaprogram::const_edge_property_map_t const_edge_property_map_t;
+  typedef metaprogram::template_vertex_property template_vertex_property;
+  typedef metaprogram::template_vertex_property_tag template_vertex_property_tag;
+  typedef metaprogram::template_edge_property template_edge_property;
+  typedef metaprogram::template_edge_property_tag template_edge_property_tag;
 
   typedef std::pair<
         std::string::const_iterator,
         std::string::const_iterator
       > string_range;
-
-  typedef std::vector<bool> discovered_t;
-
-  struct metaprogram_state {
-
-    typedef std::tuple<
-      vertex_descriptor,
-      instantiation_kind
-    > stack_element;
-
-    typedef std::stack<stack_element> vertex_stack_t;
-
-    metaprogram_state();
-    explicit metaprogram_state(const templight_trace& trace);
-
-    discovered_t discovered;
-    vertex_stack_t vertex_stack;
-  };
-
-  void reset_metaprogram_state();
-
-  vertex_descriptor add_vertex(
-      const std::string& element,
-      const file_location& point_of_instantiation);
-
-  void add_edge(
-      vertex_descriptor from,
-      vertex_descriptor to,
-      instantiation_kind kind);
-
-  boost::optional<vertex_descriptor> find_vertex(
-      const std::string& element) const;
 
   string_range find_type_emphasize(const std::string& type) const;
 
@@ -179,16 +102,9 @@ private:
       EdgeDirection edge_direction,
       unsigned width) const;
 
-  //vertex names are currently stored reduntantly:
-  // - in graph vertex_name property
-  // - in element_vertex_map
-  graph_t graph;
-
-  metaprogram_state mp_state;
+  metaprogram mp;
 
   struct only_has_discovered_out_edge_predicate;
-
-  friend struct templight_trace_builder;
 
   const static std::vector<just::console::color> colors;
 };
