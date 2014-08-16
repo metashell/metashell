@@ -26,7 +26,6 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
-#include <metashell/readline_environment.hpp>
 
 namespace metashell {
 

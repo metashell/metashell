@@ -21,9 +21,6 @@
 
 #include <metashell/temporary_file.hpp>
 
-#include <cctype>
-#include <functional>
-
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
