@@ -88,13 +88,11 @@ private:
       string_range emphasize) const;
 
   void display_trace_graph(
-     const metaprogram::graph_t& graph,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
       bool print_mark) const;
 
   void display_trace_line(
-      const metaprogram::graph_t& graph,
       metaprogram::vertex_descriptor vertex,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
@@ -102,7 +100,6 @@ private:
       unsigned width) const;
 
   void display_trace_visit(
-      const metaprogram::graph_t& graph,
       metaprogram::vertex_descriptor root_vertex,
       metaprogram::discovered_t& discovered,
       unsigned width) const;

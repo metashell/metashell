@@ -204,7 +204,6 @@ void metadebugger_shell::display_trace_content(
 }
 
 void metadebugger_shell::display_trace_graph(
-    const metaprogram::graph_t& graph,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
     bool print_mark) const
@@ -231,7 +230,6 @@ void metadebugger_shell::display_trace_graph(
 }
 
 void metadebugger_shell::display_trace_line(
-    const metaprogram::graph_t& graph,
     metaprogram::vertex_descriptor vertex,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -260,7 +258,7 @@ void metadebugger_shell::display_trace_line(
 
   if (width < 10 || non_content_length >= width - 10) {
     // We have no chance to display the graph nicely :(
-    display_trace_graph(graph, depth, depth_counter, true);
+    display_trace_graph(depth, depth_counter, true);
 
     display_trace_content(
       string_range(element_content.begin(), element_content.end()),
@@ -269,7 +267,7 @@ void metadebugger_shell::display_trace_line(
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
-      display_trace_graph(graph, depth, depth_counter, i == 0);
+      display_trace_graph(depth, depth_counter, i == 0);
       display_trace_content(
         string_range(
           element_content.begin() + i,
@@ -286,7 +284,6 @@ void metadebugger_shell::display_trace_line(
 
 // Visits a single vertex and all of its children
 void metadebugger_shell::display_trace_visit(
-    const metaprogram::graph_t& graph,
     metaprogram::vertex_descriptor root_vertex,
     metaprogram::discovered_t& discovered,
     unsigned width) const
@@ -305,6 +302,9 @@ void metadebugger_shell::display_trace_visit(
   // The purpose is to not draw pipes, when a tree element
   // doesn't have any more children.
   // The 0th element is never read.
+
+  const metaprogram::graph_t& graph = mp.get_graph();
+
   std::vector<unsigned> depth_counter(1);
 
   typedef std::tuple<
@@ -328,7 +328,7 @@ void metadebugger_shell::display_trace_visit(
 
     --depth_counter[depth];
 
-    display_trace_line(graph, vertex, depth, depth_counter, kind, width);
+    display_trace_line(vertex, depth, depth_counter, kind, width);
 
     if (!discovered[vertex]) {
       discovered[vertex] = true;
@@ -362,8 +362,6 @@ void metadebugger_shell::display_trace_visit(
 void metadebugger_shell::display_forward_trace(
     const std::string& root_type) const
 {
-  const metaprogram::graph_t& graph = mp.get_graph();
-
   boost::optional<metaprogram::vertex_descriptor> opt_vertex =
     mp.find_vertex(root_type);
 
@@ -374,9 +372,9 @@ void metadebugger_shell::display_forward_trace(
 
   unsigned shell_width = width();
 
-  metaprogram::discovered_t discovered(boost::num_vertices(graph));
+  metaprogram::discovered_t discovered(mp.get_num_vertices());
 
-  display_trace_visit(graph, *opt_vertex, discovered, shell_width);
+  display_trace_visit(*opt_vertex, discovered, shell_width);
 }
 
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
