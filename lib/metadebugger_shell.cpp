@@ -390,10 +390,14 @@ void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
 
 void metadebugger_shell::display_back_trace() const {
   const metaprogram::back_trace_t& back_trace = mp.get_back_trace();
+
+  unsigned i = 0;
   for (const metaprogram::frame& frame :
       back_trace | boost::adaptors::reversed)
   {
+    display((boost::format("#%1% ") % i).str());
     display_frame(frame);
+    ++i;
   }
 }
 
