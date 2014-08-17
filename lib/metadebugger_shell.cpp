@@ -380,16 +380,19 @@ void metadebugger_shell::display_forward_trace(
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
   // No kind for <root> vertex
   if (frame.vertex == 0) {
-    display(frame.type_name + "\n");
+    display(mp.get_vertex_property(frame.vertex).name + "\n");
   } else {
-    display((boost::format("%1% (%2%)\n") % frame.type_name % frame.kind).str());
+    display((boost::format("%1% (%2%)\n") %
+          mp.get_vertex_property(frame.vertex).name %
+          mp.get_edge_property(frame.parent_edge).kind).str());
   }
 }
 
 void metadebugger_shell::display_back_trace() const {
-
+  const metaprogram::back_trace_t& back_trace = mp.get_back_trace();
   for (const metaprogram::frame& frame :
-      mp.get_back_trace() | boost::adaptors::reversed) {
+      back_trace | boost::adaptors::reversed)
+  {
     display_frame(frame);
   }
 }

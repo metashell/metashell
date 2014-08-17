@@ -99,12 +99,7 @@ public:
 
   struct metaprogram_state {
 
-    typedef std::tuple<
-      vertex_descriptor,
-      instantiation_kind
-    > stack_element;
-
-    typedef std::stack<stack_element> vertex_stack_t;
+    typedef std::stack<vertex_descriptor> vertex_stack_t;
 
     metaprogram_state();
     explicit metaprogram_state(const metaprogram& mp);
@@ -116,16 +111,10 @@ public:
 
   struct frame {
     frame();
-    frame(
-        unsigned index,
-        vertex_descriptor vertex,
-        const std::string& type_name,
-        instantiation_kind kind);
+    frame(vertex_descriptor vertex, edge_descriptor parent_edge);
 
-    unsigned index;
     vertex_descriptor vertex;
-    std::string type_name;
-    instantiation_kind kind;
+    edge_descriptor parent_edge;
   };
 
   typedef std::vector<frame> back_trace_t;

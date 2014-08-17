@@ -37,18 +37,15 @@ metaprogram::metaprogram_state::metaprogram_state(
     discovered.resize(vertex_count, false);
     parent_edge.resize(vertex_count, boost::none);
     // 0 == <root> vertex
-    vertex_stack.push(std::make_tuple(0, instantiation_kind()));  }
+    vertex_stack.push(0);
+  }
 }
 
-metaprogram::frame::frame() :
-  index(), vertex(), type_name(), kind() {}
+metaprogram::frame::frame() : vertex(), parent_edge() {}
 
 metaprogram::frame::frame(
-    unsigned index,
-    vertex_descriptor vertex,
-    const std::string& type_name,
-    instantiation_kind kind) :
-  index(index), vertex(vertex), type_name(type_name), kind(kind) {}
+    vertex_descriptor vertex, edge_descriptor parent_edge) :
+  vertex(vertex), parent_edge(parent_edge) {}
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
   const std::string& element,
@@ -112,8 +109,7 @@ bool metaprogram::is_metaprogram_started() const {
 bool metaprogram::step_metaprogram() {
   assert(is_metaprogram_started());
 
-  vertex_descriptor current_vertex;
-  std::tie(current_vertex, std::ignore) = mp_state.vertex_stack.top();
+  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
   mp_state.vertex_stack.pop();
 
   if (!mp_state.discovered[current_vertex]) {
@@ -123,12 +119,10 @@ bool metaprogram::step_metaprogram() {
         boost::make_iterator_range(
           boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed)
     {
-      instantiation_kind next_kind = get_edge_property(edge).kind;
-
       vertex_descriptor target = boost::target(edge, graph);
 
       mp_state.parent_edge[target] = edge;
-      mp_state.vertex_stack.push(std::make_tuple(target, next_kind));
+      mp_state.vertex_stack.push(target);
     }
   }
   return mp_state.vertex_stack.empty();
@@ -178,15 +172,14 @@ metaprogram::frame metaprogram::get_current_frame() const {
   if (mp_state.vertex_stack.empty()) {
     throw exception("Metaprogram stack is empty");
   }
-  vertex_descriptor current_vertex;
-  instantiation_kind kind;
-  std::tie(current_vertex, kind) = mp_state.vertex_stack.top();
+
+  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
+
+  assert(mp_state.parent_edge[current_vertex]);
 
   return frame(
-      0, //TODO
       current_vertex,
-      get_vertex_property(current_vertex).name,
-      kind);
+      *mp_state.parent_edge[current_vertex]);
 }
 
 metaprogram::back_trace_t metaprogram::get_back_trace() const {
@@ -194,21 +187,21 @@ metaprogram::back_trace_t metaprogram::get_back_trace() const {
     throw exception("Metaprogram stack is empty");
   }
 
-  vertex_descriptor current_vertex;
-  std::tie(current_vertex, std::ignore) = mp_state.vertex_stack.top();
+  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
 
   back_trace_t back_trace;
 
-  for (unsigned i = 0; current_vertex != 0; ++i) {
+  while (current_vertex != 0) {
     assert(mp_state.parent_edge[current_vertex]);
 
     edge_descriptor parent_edge = *mp_state.parent_edge[current_vertex];
-    back_trace.push_back(frame(
-        i,
-        current_vertex,
-        get_vertex_property(current_vertex).name,
-        get_edge_property(parent_edge).kind)
+    back_trace.push_back(
+        frame(
+          current_vertex,
+          parent_edge
+        )
       );
+
     current_vertex = boost::source(parent_edge, graph);
   }
 
