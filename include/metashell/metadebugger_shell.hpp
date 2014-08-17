@@ -59,6 +59,7 @@ protected:
 
   void display_current_frame() const;
   void display_forward_trace(const std::string& root_type = "<root>") const;
+  void display_back_trace() const;
 
   const config& conf;
   environment& env;
@@ -105,6 +106,8 @@ private:
       metaprogram::vertex_descriptor root_vertex,
       metaprogram::discovered_t& discovered,
       unsigned width) const;
+
+  void display_frame(const metaprogram::frame& frame) const;
 
   const static std::vector<just::console::color> colors;
 };

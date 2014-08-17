@@ -95,6 +95,7 @@ public:
       template_edge_property_tag>::const_type const_edge_property_map_t;
 
   typedef std::vector<bool> discovered_t;
+  typedef std::vector<boost::optional<vertex_descriptor>> parent_vertices_t;
 
   struct metaprogram_state {
 
@@ -109,6 +110,7 @@ public:
     explicit metaprogram_state(const metaprogram& mp);
 
     discovered_t discovered;
+    parent_vertices_t parent_vertices;
     vertex_stack_t vertex_stack;
   };
 

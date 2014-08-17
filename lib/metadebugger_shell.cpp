@@ -73,6 +73,8 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   }
   if (line == "ft" || line == "forwardtrace") {
     display_forward_trace("<root>");
+  } else if (line == "bt" || line == "backtrace") {
+    display_back_trace();
   } else if (boost::starts_with(line, "eval ")) {
     run_metaprogram_with_templight(
         line.substr(5, std::string::npos));
@@ -136,13 +138,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
 }
 
 void metadebugger_shell::display_current_frame() const {
-  metaprogram::frame frame = mp.get_current_frame();
-  // No kind for <root> vertex
-  if (frame.vertex == 0) {
-    display(frame.type_name + "\n");
-  } else {
-    display((boost::format("%1% (%2%)\n") % frame.type_name % frame.kind).str());
-  }
+  display_frame(mp.get_current_frame());
 }
 
 metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
@@ -384,6 +380,23 @@ void metadebugger_shell::display_forward_trace(
   metaprogram::discovered_t discovered(boost::num_vertices(graph));
 
   print_trace_visit(graph, *opt_vertex, discovered, shell_width);
+}
+
+void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
+  // No kind for <root> vertex
+  if (frame.vertex == 0) {
+    display(frame.type_name + "\n");
+  } else {
+    display((boost::format("%1% (%2%)\n") % frame.type_name % frame.kind).str());
+  }
+}
+
+void metadebugger_shell::display_back_trace() const {
+
+  for (const metaprogram::frame& frame :
+      mp.get_back_trace() | boost::adaptors::reversed) {
+    display_frame(frame);
+  }
 }
 
 }
