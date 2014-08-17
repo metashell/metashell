@@ -78,22 +78,22 @@ private:
 
   string_range find_type_emphasize(const std::string& type) const;
 
-  void print_range(
+  void display_range(
       std::string::const_iterator begin,
       std::string::const_iterator end,
       optional_color c) const;
 
-  void print_trace_content(
+  void display_trace_content(
       string_range range,
       string_range emphasize) const;
 
-  void print_trace_graph(
+  void display_trace_graph(
      const metaprogram::graph_t& graph,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
       bool print_mark) const;
 
-  void print_trace_line(
+  void display_trace_line(
       const metaprogram::graph_t& graph,
       metaprogram::vertex_descriptor vertex,
       unsigned depth,
@@ -101,7 +101,7 @@ private:
       const boost::optional<instantiation_kind>& kind,
       unsigned width) const;
 
-  void print_trace_visit(
+  void display_trace_visit(
       const metaprogram::graph_t& graph,
       metaprogram::vertex_descriptor root_vertex,
       metaprogram::discovered_t& discovered,

@@ -168,7 +168,7 @@ metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
   return string_range(match[10].first, match[10].second);
 }
 
-void metadebugger_shell::print_range(
+void metadebugger_shell::display_range(
     std::string::const_iterator begin,
     std::string::const_iterator end,
     optional_color c) const
@@ -178,7 +178,7 @@ void metadebugger_shell::print_range(
   }
 }
 
-void metadebugger_shell::print_trace_content(
+void metadebugger_shell::display_trace_content(
     string_range range,
     string_range emphasize) const
 {
@@ -187,23 +187,23 @@ void metadebugger_shell::print_trace_content(
 
   //TODO avoid copying
 
-  print_range(
+  display_range(
       range.first,
       std::min(range.second, emphasize.first),
       boost::none);
 
-  print_range(
+  display_range(
       std::max(range.first, emphasize.first),
       std::min(range.second, emphasize.second),
       just::console::color::white);
 
-  print_range(
+  display_range(
       std::max(emphasize.second, range.first),
       range.second,
       boost::none);
 }
 
-void metadebugger_shell::print_trace_graph(
+void metadebugger_shell::display_trace_graph(
     const metaprogram::graph_t& graph,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -230,7 +230,7 @@ void metadebugger_shell::print_trace_graph(
   }
 }
 
-void metadebugger_shell::print_trace_line(
+void metadebugger_shell::display_trace_line(
     const metaprogram::graph_t& graph,
     metaprogram::vertex_descriptor vertex,
     unsigned depth,
@@ -261,17 +261,17 @@ void metadebugger_shell::print_trace_line(
 
   if (width < 10 || non_content_length >= width - 10) {
     // We have no chance to display the graph nicely :(
-    print_trace_graph(graph, depth, depth_counter, true);
+    display_trace_graph(graph, depth, depth_counter, true);
 
-    print_trace_content(
+    display_trace_content(
       string_range(element_content.begin(), element_content.end()),
       emphasize);
     display("\n");
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
-      print_trace_graph(graph, depth, depth_counter, i == 0);
-      print_trace_content(
+      display_trace_graph(graph, depth, depth_counter, i == 0);
+      display_trace_content(
         string_range(
           element_content.begin() + i,
           i + content_width < element_content.size() ?
@@ -286,7 +286,7 @@ void metadebugger_shell::print_trace_line(
 }
 
 // Visits a single vertex and all of its children
-void metadebugger_shell::print_trace_visit(
+void metadebugger_shell::display_trace_visit(
     const metaprogram::graph_t& graph,
     metaprogram::vertex_descriptor root_vertex,
     metaprogram::discovered_t& discovered,
@@ -329,7 +329,7 @@ void metadebugger_shell::print_trace_visit(
 
     --depth_counter[depth];
 
-    print_trace_line(graph, vertex, depth, depth_counter, kind, width);
+    display_trace_line(graph, vertex, depth, depth_counter, kind, width);
 
     if (!discovered[vertex]) {
       discovered[vertex] = true;
@@ -379,7 +379,7 @@ void metadebugger_shell::display_forward_trace(
 
   metaprogram::discovered_t discovered(boost::num_vertices(graph));
 
-  print_trace_visit(graph, *opt_vertex, discovered, shell_width);
+  display_trace_visit(graph, *opt_vertex, discovered, shell_width);
 }
 
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
