@@ -35,7 +35,7 @@ metaprogram::metaprogram_state::metaprogram_state(
   unsigned vertex_count = boost::num_vertices(mp.graph);
   if (vertex_count > 0) {
     discovered.resize(vertex_count, false);
-    parent_vertices.resize(vertex_count, boost::none);
+    parent_edge.resize(vertex_count, boost::none);
     // 0 == <root> vertex
     vertex_stack.push(std::make_tuple(0, instantiation_kind()));  }
 }
@@ -127,7 +127,7 @@ bool metaprogram::step_metaprogram() {
 
       vertex_descriptor target = boost::target(edge, graph);
 
-      mp_state.parent_vertices[target] = current_vertex;
+      mp_state.parent_edge[target] = edge;
       mp_state.vertex_stack.push(std::make_tuple(target, next_kind));
     }
   }
@@ -200,13 +200,16 @@ metaprogram::back_trace_t metaprogram::get_back_trace() const {
   back_trace_t back_trace;
 
   for (unsigned i = 0; current_vertex != 0; ++i) {
+    assert(mp_state.parent_edge[current_vertex]);
+
+    edge_descriptor parent_edge = *mp_state.parent_edge[current_vertex];
     back_trace.push_back(frame(
         i,
         current_vertex,
         get_vertex_property(current_vertex).name,
-        template_instantiation)
+        get_edge_property(parent_edge).kind)
       );
-    current_vertex = *mp_state.parent_vertices[current_vertex];
+    current_vertex = boost::source(parent_edge, graph);
   }
 
   return back_trace;
