@@ -143,6 +143,26 @@ const metaprogram::metaprogram_state& metaprogram::get_state() const {
   return mp_state;
 }
 
+metaprogram::vertices_size_type metaprogram::get_num_vertices() const {
+  return boost::num_vertices(graph);
+}
+
+metaprogram::edges_size_type metaprogram::get_num_edges() const {
+  return boost::num_edges(graph);
+}
+
+metaprogram::template_vertex_property metaprogram::get_vertex_property(
+    vertex_descriptor vertex) const
+{
+  return boost::get(template_vertex_property_tag(), graph, vertex);
+}
+
+metaprogram::template_edge_property metaprogram::get_edge_property(
+    edge_descriptor edge) const
+{
+  return boost::get(template_edge_property_tag(), graph, edge);
+}
+
 metaprogram::frame metaprogram::get_current_frame() const {
   if (mp_state.vertex_stack.empty()) {
     throw exception("Metaprogram stack is empty");

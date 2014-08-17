@@ -75,6 +75,9 @@ public:
   typedef boost::graph_traits<graph_t>::in_edge_iterator in_edge_iterator;
   typedef boost::graph_traits<graph_t>::out_edge_iterator out_edge_iterator;
 
+  typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
+  typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
+
   typedef boost::property_map<
       graph_t,
       template_vertex_property_tag>::type vertex_property_map_t;
@@ -144,11 +147,18 @@ public:
   // Returns true when the program took it's last step (finished)
   bool step_metaprogram();
 
+  frame get_current_frame() const;
+  back_trace_t get_back_trace() const;
+
   const graph_t& get_graph() const;
   const metaprogram_state& get_state() const;
 
-  frame get_current_frame() const;
-  back_trace_t get_back_trace() const;
+  vertices_size_type get_num_vertices() const;
+  edges_size_type get_num_edges() const;
+  template_vertex_property get_vertex_property(
+      vertex_descriptor vertex) const;
+  template_edge_property get_edge_property(
+      edge_descriptor edge) const;
 
 private:
   graph_t graph;
