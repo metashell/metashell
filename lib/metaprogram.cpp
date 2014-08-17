@@ -56,8 +56,7 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
 
-  template_vertex_property& vertex_property =
-    boost::get(template_vertex_property_tag(), graph, vertex);
+  template_vertex_property& vertex_property = get_vertex_property(vertex);
 
   vertex_property.name = element;
   vertex_property.point_of_instantiation = point_of_instantiation;
@@ -77,7 +76,7 @@ void metaprogram::add_edge(
 
   assert(inserted);
 
-  boost::get(template_edge_property_tag(), graph, edge).kind = kind;
+  get_edge_property(edge).kind = kind;
 }
 
 boost::optional<metaprogram::vertex_descriptor>
@@ -88,8 +87,7 @@ boost::optional<metaprogram::vertex_descriptor>
   vertex_iterator it =
     std::find_if(begin, end,
       [&](vertex_descriptor vertex) {
-        return boost::get(
-          template_vertex_property_tag(), graph, vertex).name == element;
+        return get_vertex_property(vertex).name == element;
       }
     );
   if (it != end) {
@@ -125,8 +123,7 @@ bool metaprogram::step_metaprogram() {
         boost::make_iterator_range(
           boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed)
     {
-      instantiation_kind next_kind =
-        boost::get(template_edge_property_tag(), graph, edge).kind;
+      instantiation_kind next_kind = get_edge_property(edge).kind;
 
       vertex_descriptor target = boost::target(edge, graph);
 
@@ -153,14 +150,26 @@ metaprogram::edges_size_type metaprogram::get_num_edges() const {
   return boost::num_edges(graph);
 }
 
-metaprogram::template_vertex_property metaprogram::get_vertex_property(
+const metaprogram::template_vertex_property& metaprogram::get_vertex_property(
     vertex_descriptor vertex) const
 {
   return boost::get(template_vertex_property_tag(), graph, vertex);
 }
 
-metaprogram::template_edge_property metaprogram::get_edge_property(
+const metaprogram::template_edge_property& metaprogram::get_edge_property(
     edge_descriptor edge) const
+{
+  return boost::get(template_edge_property_tag(), graph, edge);
+}
+
+metaprogram::template_vertex_property& metaprogram::get_vertex_property(
+    vertex_descriptor vertex)
+{
+  return boost::get(template_vertex_property_tag(), graph, vertex);
+}
+
+metaprogram::template_edge_property& metaprogram::get_edge_property(
+    edge_descriptor edge)
 {
   return boost::get(template_edge_property_tag(), graph, edge);
 }
@@ -176,10 +185,7 @@ metaprogram::frame metaprogram::get_current_frame() const {
   return frame(
       0, //TODO
       current_vertex,
-      boost::get(
-        template_vertex_property_tag(),
-        graph,
-        current_vertex).name,
+      get_vertex_property(current_vertex).name,
       kind);
 }
 
@@ -197,10 +203,7 @@ metaprogram::back_trace_t metaprogram::get_back_trace() const {
     back_trace.push_back(frame(
         i,
         current_vertex,
-        boost::get(
-          template_vertex_property_tag(),
-          graph,
-          current_vertex).name,
+        get_vertex_property(current_vertex).name,
         template_instantiation)
       );
     current_vertex = *mp_state.parent_vertices[current_vertex];

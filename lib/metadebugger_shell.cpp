@@ -239,8 +239,7 @@ void metadebugger_shell::display_trace_line(
     unsigned width) const
 {
 
-  const std::string type =
-    boost::get(metaprogram::template_vertex_property_tag(), graph, vertex).name;
+  const std::string type = mp.get_vertex_property(vertex).name;
 
   std::stringstream element_content_ss;
   element_content_ss << type;
@@ -349,9 +348,7 @@ void metadebugger_shell::display_trace_visit(
       for (const metaprogram::edge_descriptor& edge :
           edges | boost::adaptors::reversed)
       {
-        instantiation_kind next_kind =
-          boost::get(metaprogram::template_edge_property_tag(),
-              graph, edge).kind;
+        instantiation_kind next_kind = mp.get_edge_property(edge).kind;
 
         to_visit.push(
           std::make_tuple(boost::target(edge, graph), depth+1, next_kind));

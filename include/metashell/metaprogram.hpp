@@ -157,10 +157,16 @@ public:
 
   vertices_size_type get_num_vertices() const;
   edges_size_type get_num_edges() const;
-  template_vertex_property get_vertex_property(
+
+  const template_vertex_property& get_vertex_property(
       vertex_descriptor vertex) const;
-  template_edge_property get_edge_property(
+  const template_edge_property& get_edge_property(
       edge_descriptor edge) const;
+
+  template_vertex_property& get_vertex_property(
+      vertex_descriptor vertex);
+  template_edge_property& get_edge_property(
+      edge_descriptor edge);
 
 private:
   graph_t graph;
