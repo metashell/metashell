@@ -34,7 +34,9 @@ namespace metashell {
 
 class metaprogram {
 public:
-  static metaprogram create_from_xml(const std::string& file);
+  static metaprogram create_from_xml_stream(std::istream& stream);
+  static metaprogram create_from_xml_file(const std::string& file);
+  static metaprogram create_from_xml_string(const std::string& string);
 
   struct template_vertex_property_tag {
     typedef boost::vertex_property_tag kind;

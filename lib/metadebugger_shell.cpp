@@ -116,7 +116,8 @@ void metadebugger_shell::run_metaprogram_with_templight(
   //TODO move this to a destructor. run_metaprogram might throw
   clang_args.erase(clang_args.end() - 5, clang_args.end());
 
-  mp = metaprogram::create_from_xml(templight_xml_file.get_path().string());
+  mp = metaprogram::create_from_xml_file(
+      templight_xml_file.get_path().string());
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {

@@ -18,10 +18,13 @@
 #include <stack>
 #include <tuple>
 #include <string>
+#include <sstream>
 #include <fstream>
+#include <iterator>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
+#include <boost/spirit/include/support_multi_pass.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <metashell/metaprogram.hpp>
@@ -246,19 +249,18 @@ struct templight_grammar :
   qi::symbols<char, instantiation_kind> instantiation_kinds;
 };
 
-metaprogram metaprogram::create_from_xml(const std::string& file) {
+metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
 
-  std::string file_content;
-  std::ifstream in(file.c_str());
-  //TODO error handling, not very efficient
-  for (std::string line; std::getline(in, line); ) {
-    file_content += line + '\n';
-  }
+  using boost::spirit::multi_pass;
+  using boost::spirit::make_default_multi_pass;
 
-  std::string::const_iterator begin = file_content.begin();
-  std::string::const_iterator end = file_content.end();
+  typedef std::istreambuf_iterator<char> base_iterator;
 
-  templight_grammar<std::string::const_iterator> grammar;
+  templight_grammar<multi_pass<base_iterator>> grammar;
+
+  multi_pass<base_iterator>
+    begin(make_default_multi_pass(base_iterator(stream))),
+    end(make_default_multi_pass(base_iterator()));
 
   bool success = qi::phrase_parse(
       begin, end, grammar,
@@ -269,6 +271,19 @@ metaprogram metaprogram::create_from_xml(const std::string& file) {
   }
 
   return grammar.builder.get_metaprogram();
+}
+
+metaprogram metaprogram::create_from_xml_file(const std::string& file) {
+  std::ifstream in(file);
+  if (!in) {
+    throw exception("Can't open templight file");
+  }
+  return create_from_xml_stream(in);
+}
+
+metaprogram metaprogram::create_from_xml_string(const std::string& string) {
+  std::istringstream ss(string);
+  return create_from_xml_stream(ss);
 }
 
 }
