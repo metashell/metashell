@@ -70,9 +70,7 @@ private:
   typedef metaprogram::vertex_descriptor vertex_descriptor;
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
-  vertex_descriptor add_vertex(
-      const std::string& context,
-      const file_location& location);
+  vertex_descriptor add_vertex(const std::string& context);
 
   metaprogram trace;
 
@@ -83,7 +81,7 @@ private:
 
 metaprogram_builder::metaprogram_builder() {
   // Add root vertex
-  vertex_stack.push(add_vertex("<root>", file_location()));
+  vertex_stack.push(add_vertex("<root>"));
 }
 
 void metaprogram_builder::handle_template_begin(
@@ -93,7 +91,7 @@ void metaprogram_builder::handle_template_begin(
   double timestamp,
   unsigned long long memory_usage)
 {
-  vertex_descriptor vertex = add_vertex(context, location);
+  vertex_descriptor vertex = add_vertex(context);
   if (!vertex_stack.empty()) {
     vertex_descriptor top_vertex = vertex_stack.top();
     trace.add_edge(top_vertex, vertex, kind);
@@ -119,8 +117,7 @@ const metaprogram& metaprogram_builder::get_metaprogram() const {
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const std::string& context,
-    const file_location& location)
+    const std::string& context)
 {
   element_vertex_map_t::iterator pos;
   bool inserted;
@@ -129,7 +126,7 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
       std::make_pair(context, vertex_descriptor()));
 
   if (inserted) {
-    pos->second = trace.add_vertex(context, location);
+    pos->second = trace.add_vertex(context);
   }
   return pos->second;
 }

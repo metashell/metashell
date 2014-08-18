@@ -48,15 +48,13 @@ metaprogram::frame::frame(
   vertex(vertex), parent_edge(parent_edge) {}
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
-  const std::string& element,
-  const file_location& point_of_instantiation)
+  const std::string& element)
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
 
   template_vertex_property& vertex_property = get_vertex_property(vertex);
 
   vertex_property.name = element;
-  vertex_property.point_of_instantiation = point_of_instantiation;
 
   return vertex;
 }

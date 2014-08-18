@@ -50,10 +50,6 @@ void test_single_node_templight_parsing(
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, actual_type);
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(1).point_of_instantiation,
-      file_location("foo.hpp", 10, 20)
-  );
 
   metaprogram::edge_descriptor edge;
   bool found;
@@ -172,15 +168,7 @@ JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(1).point_of_instantiation,
-      file_location("foo.hpp", 10, 20)
-  );
   JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(2).point_of_instantiation,
-      file_location("bar.hpp", 20, 30)
-  );
 
   metaprogram::edge_descriptor edge;
   bool found;
@@ -232,15 +220,7 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(1).point_of_instantiation,
-      file_location("foo.hpp", 10, 20)
-  );
   JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(2).point_of_instantiation,
-      file_location("bar.hpp", 20, 30)
-  );
 
   metaprogram::edge_descriptor edge;
   bool found;

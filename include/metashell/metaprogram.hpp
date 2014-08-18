@@ -27,7 +27,6 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
-#include <metashell/file_location.hpp>
 #include <metashell/instantiation_kind.hpp>
 
 namespace metashell {
@@ -47,7 +46,6 @@ public:
 
   struct template_vertex_property {
     std::string name;
-    file_location point_of_instantiation;
   };
   struct template_edge_property {
     instantiation_kind kind;
@@ -119,9 +117,7 @@ public:
 
   typedef std::vector<frame> back_trace_t;
 
-  vertex_descriptor add_vertex(
-      const std::string& element,
-      const file_location& point_of_instantiation);
+  vertex_descriptor add_vertex(const std::string& element);
 
   void add_edge(
       vertex_descriptor from,
