@@ -39,8 +39,8 @@ std::string pragma_environment_reload::description() const
 }
 
 void pragma_environment_reload::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   _shell.rebuild_environment();

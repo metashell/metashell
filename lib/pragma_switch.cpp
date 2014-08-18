@@ -81,11 +81,11 @@ std::string pragma_switch::description() const
 }
 
 void pragma_switch::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
-  token_iterator i = args_begin_;
+  command::iterator i = args_begin_;
 
   if (i != args_end_)
   {

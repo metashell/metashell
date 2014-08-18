@@ -39,8 +39,8 @@ std::string pragma_environment_push::description() const
 }
 
 void pragma_environment_push::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   _shell.push_environment();

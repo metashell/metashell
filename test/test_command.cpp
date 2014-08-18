@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <just/test.hpp>
 
@@ -22,22 +22,21 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_formatting_empty_token_list)
 {
-  JUST_ASSERT_EQUAL("", tokens_to_string(token_iterator(), token_iterator()));
+  const command cmd("");
+  JUST_ASSERT_EQUAL("", tokens_to_string(cmd.begin(), cmd.end()));
 }
 
 JUST_TEST_CASE(test_formatting_one_token)
 {
-  const std::string src = "int hello";
-  const token_iterator b = begin_tokens(src, "<test>");
+  const command cmd("int hello");
 
-  JUST_ASSERT_EQUAL("int", tokens_to_string(b, skip(b)));
+  JUST_ASSERT_EQUAL("int", tokens_to_string(cmd.begin(), skip(cmd.begin())));
 }
 
 JUST_TEST_CASE(test_formatting_more_tokens)
 {
-  const std::string src = "int hello";
-  const token_iterator b = begin_tokens(src, "<test>");
+  const command cmd("int hello");
 
-  JUST_ASSERT_EQUAL("int hello", tokens_to_string(b, token_iterator()));
+  JUST_ASSERT_EQUAL("int hello", tokens_to_string(cmd.begin(), cmd.end()));
 }
 

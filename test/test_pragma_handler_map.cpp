@@ -37,8 +37,8 @@ namespace
     virtual std::string description() const { return "Foo bar"; }
 
     virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
+      const command::iterator& args_begin_,
+      const command::iterator& args_end_
     ) const
     {
       _run_flag = true;
@@ -59,9 +59,9 @@ JUST_TEST_CASE(test_test_handler_sets_run_flag)
 JUST_TEST_CASE(test_processing_non_existing_handler)
 {
   pragma_handler_map m;
-  const std::string p = /* #pragma metashell */ "foo";
+  const command cmd(/* #pragma metashell */ "foo");
 
-  JUST_ASSERT_THROWS_SOMETHING(m.process(begin_tokens(p, "<str>")));
+  JUST_ASSERT_THROWS_SOMETHING(m.process(cmd.begin(), cmd.end()));
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)
@@ -69,9 +69,9 @@ JUST_TEST_CASE(test_processing_existing_handler)
   bool foo_run = false;
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
-  const std::string p = /* #pragma metashell */ "foo";
+  const command cmd(/* #pragma metashell */ "foo");
 
-  m.process(begin_tokens(p, "<str>"));
+  m.process(cmd.begin(), cmd.end());
 
   JUST_ASSERT(foo_run);
 }
@@ -81,9 +81,9 @@ JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
   bool foo_bar_run = false;
   pragma_handler_map m;
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const std::string p = /* #pragma metashell */ "foo bar";
+  const command cmd(/* #pragma metashell */ "foo bar");
 
-  m.process(begin_tokens(p, "<str>"));
+  m.process(cmd.begin(), cmd.end());
 
   JUST_ASSERT(foo_bar_run);
 }
@@ -97,9 +97,9 @@ JUST_TEST_CASE(
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const std::string p = /* #pragma metashell */ "foo bar";
+  const command cmd(/* #pragma metashell */ "foo bar");
 
-  m.process(begin_tokens(p, "<str>"));
+  m.process(cmd.begin(), cmd.end());
 
   JUST_ASSERT(!foo_run);
   JUST_ASSERT(foo_bar_run);
@@ -112,9 +112,9 @@ JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const std::string p = /* #pragma metashell */ "foo x";
+  const command cmd(/* #pragma metashell */ "foo x");
 
-  m.process(begin_tokens(p, "<str>"));
+  m.process(cmd.begin(), cmd.end());
 
   JUST_ASSERT(foo_run);
   JUST_ASSERT(!foo_bar_run);

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <boost/optional.hpp>
 
@@ -25,9 +25,12 @@
 
 namespace metashell
 {
-  boost::optional<token_iterator> parse_pragma(const std::string& s_);
+  boost::optional<command::iterator> parse_pragma(const command& cmd_);
 
-  token_iterator end_of_pragma_argument_list(token_iterator begin_);
+  command::iterator end_of_pragma_argument_list(
+    command::iterator begin_,
+    const command::iterator& end_
+  );
 }
 
 #endif

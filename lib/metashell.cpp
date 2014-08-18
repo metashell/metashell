@@ -18,7 +18,7 @@
 #include "get_type_of_variable.hpp"
 #include "cxindex.hpp"
 
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/ref.hpp>
@@ -54,7 +54,10 @@ namespace
     return make_pair(index_.parse_code(code, config_, env_), code.content());
   }
 
-  bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
+  bool has_typedef(
+    const command::iterator& begin_,
+    const command::iterator& end_
+  )
   {
     return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
   }
@@ -68,8 +71,8 @@ namespace
   }
 
   boost::wave::token_id last_non_whitespace_token_id(
-    token_iterator begin_,
-    const token_iterator& end_
+    command::iterator begin_,
+    const command::iterator& end_
   )
   {
     boost::wave::token_id id;
@@ -156,16 +159,17 @@ result metashell::eval_tmp(
 namespace
 {
   std::pair<std::string, std::string> find_completion_start(
-    const std::string& s_,
-    const std::string& input_filename_
+    const std::string& s_
   )
   {
     typedef std::pair<std::string, std::string> string_pair;
 
+    const command cmd(s_);
+
     std::ostringstream o;
-    token_iterator::value_type last_token;
+    command::iterator::value_type last_token;
     bool first = true;
-    for (token_iterator i = begin_tokens(s_, input_filename_), e; i != e; ++i)
+    for (auto i = cmd.begin(), e = cmd.end(); i != e; ++i)
     {
       if (!IS_CATEGORY(*i, boost::wave::EOFTokenType))
       {
@@ -192,7 +196,7 @@ namespace
         || IS_CATEGORY(last_token, boost::wave::KeywordTokenType)
       )
       {
-        const token_iterator::value_type::string_type
+        const command::iterator::value_type::string_type
           t = last_token.get_value();
         return string_pair(o.str(), std::string(t.begin(), t.end()));
       }
@@ -219,8 +223,7 @@ void metashell::code_complete(
   using std::string;
   using std::set;
 
-  const pair<string, string> completion_start =
-    find_completion_start(src_, input_filename_);
+  const pair<string, string> completion_start = find_completion_start(src_);
 
   const unsaved_file src(
     input_filename_,
@@ -243,23 +246,8 @@ void metashell::code_complete(
 }
 
 bool metashell::is_environment_setup_command(
-  const std::string& s_,
-  const std::string& input_filename_
-)
-{
-  try
-  {
-    return is_environment_setup_command(begin_tokens(s_, input_filename_));
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-bool metashell::is_environment_setup_command(
-  token_iterator begin_,
-  const token_iterator& end_
+  command::iterator begin_,
+  const command::iterator& end_
 )
 {
   try

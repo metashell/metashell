@@ -37,8 +37,8 @@ void pragma_handler::swap(pragma_handler& h_)
 }
 
 void pragma_handler::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   assert(_body);

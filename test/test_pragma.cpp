@@ -23,34 +23,34 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_parse_pragma)
 {
-  JUST_ASSERT(parse_pragma("#pragma metashell foo"));
+  JUST_ASSERT(parse_pragma(command("#pragma metashell foo")));
 }
 
 JUST_TEST_CASE(test_parse_no_pragma)
 {
-  JUST_ASSERT(!parse_pragma(""));
+  JUST_ASSERT(!parse_pragma(command("")));
 }
 
 JUST_TEST_CASE(test_parse_pragma_with_inital_whitespace)
 {
-  JUST_ASSERT(parse_pragma(" \t #pragma metashell foo"));
+  JUST_ASSERT(parse_pragma(command(" \t #pragma metashell foo")));
 }
 
 JUST_TEST_CASE(test_whitespace_is_not_pragma)
 {
-  JUST_ASSERT(!parse_pragma(" "));
+  JUST_ASSERT(!parse_pragma(command(" ")));
 }
 
 JUST_TEST_CASE(test_gcc_pragma_is_not_metashell_pragma)
 {
-  JUST_ASSERT(!parse_pragma("#pragma gcc foo"));
+  JUST_ASSERT(!parse_pragma(command("#pragma gcc foo")));
 }
 
 JUST_TEST_CASE(test_name_of_pragma)
 {
-  const token_iterator
-    op_foo = *parse_pragma("#pragma metashell foo"),
-    op_bar = *parse_pragma("#pragma metashell bar");
+  const command::iterator
+    op_foo = *parse_pragma(command("#pragma metashell foo")),
+    op_bar = *parse_pragma(command("#pragma metashell bar"));
 
   JUST_ASSERT_EQUAL("foo", op_foo->get_value());
   JUST_ASSERT_EQUAL("bar", op_bar->get_value());
@@ -58,12 +58,12 @@ JUST_TEST_CASE(test_name_of_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS_SOMETHING(parse_pragma("#pragma metashell 13"));
+  JUST_ASSERT_THROWS_SOMETHING(parse_pragma(command("#pragma metashell 13")));
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS_SOMETHING(parse_pragma("#pragma metashell"));
+  JUST_ASSERT_THROWS_SOMETHING(parse_pragma(command("#pragma metashell")));
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)
@@ -111,22 +111,22 @@ JUST_TEST_CASE(test_quit)
 
 JUST_TEST_CASE(test_accept_pound_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(parse_pragma("#msh foo"));
-  JUST_ASSERT(parse_pragma("# msh foo"));
-  JUST_ASSERT(parse_pragma(" # msh foo"));
+  JUST_ASSERT(parse_pragma(command("#msh foo")));
+  JUST_ASSERT(parse_pragma(command("# msh foo")));
+  JUST_ASSERT(parse_pragma(command(" # msh foo")));
 }
 
 JUST_TEST_CASE(test_accept_pound_metashell_as_pragma_metashell)
 {
-  JUST_ASSERT(parse_pragma("#metashell foo"));
-  JUST_ASSERT(parse_pragma("# metashell foo"));
-  JUST_ASSERT(parse_pragma(" # metashell foo"));
+  JUST_ASSERT(parse_pragma(command("#metashell foo")));
+  JUST_ASSERT(parse_pragma(command("# metashell foo")));
+  JUST_ASSERT(parse_pragma(command(" # metashell foo")));
 }
 
 JUST_TEST_CASE(test_accept_pragma_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(parse_pragma("#pragma msh foo"));
-  JUST_ASSERT(parse_pragma("# pragma msh foo"));
-  JUST_ASSERT(parse_pragma(" # pragma msh foo"));
+  JUST_ASSERT(parse_pragma(command("#pragma msh foo")));
+  JUST_ASSERT(parse_pragma(command("# pragma msh foo")));
+  JUST_ASSERT(parse_pragma(command(" # pragma msh foo")));
 }
 

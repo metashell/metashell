@@ -43,15 +43,15 @@ using namespace metashell;
 
 namespace
 {
-  bool can_be_part_of_name(const token_iterator::token_type& t_)
+  bool can_be_part_of_name(const command::iterator::token_type& t_)
   {
     return t_ == boost::wave::T_IDENTIFIER;
   }
 
-  boost::optional<token_iterator> is_this_pragma(
+  boost::optional<command::iterator> is_this_pragma(
     const std::vector<std::string>& name_,
-    token_iterator begin_,
-    const token_iterator& end_
+    command::iterator begin_,
+    const command::iterator& end_
   )
   {
     using std::string;
@@ -75,10 +75,15 @@ namespace
       begin_ = skip_whitespace(begin_);
     }
     return
-      i == e ? optional<token_iterator>(begin_) : optional<token_iterator>();
+      i == e ?
+        optional<command::iterator>(begin_) :
+        optional<command::iterator>();
   }
 
-  std::string name_of_pragma(token_iterator begin_, const token_iterator& end_)
+  std::string name_of_pragma(
+    command::iterator begin_,
+    const command::iterator& end_
+  )
   {
     std::ostringstream s;
     bool first = true;
@@ -95,20 +100,25 @@ namespace
   }
 }
 
-void pragma_handler_map::process(const token_iterator& begin_) const
+void pragma_handler_map::process(
+  const command::iterator& begin_,
+  const command::iterator& end_
+) const
 {
   using boost::optional;
 
-  const token_iterator e = end_of_pragma_argument_list(begin_);
+  const command::iterator e = end_of_pragma_argument_list(begin_, end_);
 
-  token_iterator longest_fit_begin = e;
+  command::iterator longest_fit_begin = e;
   const pragma_handler* longest_fit_handler = 0;
   int longest_fit_len = -1;
 
   typedef std::pair<const std::vector<std::string>, pragma_handler> np;
   BOOST_FOREACH(const np& p, _handlers)
   {
-    if (const optional<token_iterator> i = is_this_pragma(p.first, begin_, e))
+    if (
+      const optional<command::iterator> i = is_this_pragma(p.first, begin_, e)
+    )
     {
       if (longest_fit_len < int(p.first.size()))
       {

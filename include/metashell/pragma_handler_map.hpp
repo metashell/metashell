@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <map>
 #include <vector>
@@ -62,7 +62,10 @@ namespace metashell
       return *this;
     }
 
-    void process(const token_iterator& p_) const;
+    void process(
+      const command::iterator& p_,
+      const command::iterator& end_
+    ) const;
 
     typedef
       std::map<std::vector<std::string>, pragma_handler>::const_iterator

@@ -43,8 +43,8 @@ std::string pragma_environment_add::description() const
 }
 
 void pragma_environment_add::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   const std::string cmd = tokens_to_string(args_begin_, args_end_);

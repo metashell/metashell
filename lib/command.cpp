@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,23 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_iterator.hpp>
-
-#include <sstream>
-#include <iostream>
+#include <metashell/command.hpp>
 
 using namespace metashell;
 
-token_iterator metashell::begin_tokens(
-  const std::string& s_,
-  const std::string& input_filename_
-)
+command::command(const std::string& cmd_) :
+  _cmd(cmd_)
+{}
+
+command::iterator command::begin() const
 {
   return
-    token_iterator(
-      s_.begin(),
-      s_.end(),
-      token_iterator::value_type::position_type(input_filename_.c_str()),
+    iterator(
+      _cmd.begin(),
+      _cmd.end(),
+      iterator::value_type::position_type("<input>"),
       boost::wave::language_support(
         boost::wave::support_cpp
         | boost::wave::support_option_long_long
@@ -38,27 +36,25 @@ token_iterator metashell::begin_tokens(
     );
 }
 
-token_iterator metashell::skip(token_iterator i_)
+command::iterator command::end() const
+{
+  return iterator();
+}
+
+command::iterator metashell::skip(command::iterator i_)
 {
   ++i_;
   return i_;
 }
 
-token_iterator metashell::skip_whitespace(token_iterator i_)
+command::iterator metashell::skip_whitespace(command::iterator i_)
 {
-  const token_iterator end;
-  assert(i_ != end);
-  if (IS_CATEGORY(*i_, boost::wave::WhiteSpaceTokenType))
-  {
-    ++i_;
-  }
-  assert(i_ != end);
-  return i_;
+  return IS_CATEGORY(*i_, boost::wave::WhiteSpaceTokenType) ? skip(i_) : i_;
 }
 
 std::string metashell::tokens_to_string(
-  token_iterator begin_,
-  const token_iterator& end_
+  command::iterator begin_,
+  const command::iterator& end_
 )
 {
   std::ostringstream s;

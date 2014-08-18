@@ -20,10 +20,10 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
-#include <metashell/token_iterator.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/metashell_pragma.hpp>
+#include <metashell/command.hpp>
 
 #include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
 
@@ -64,11 +64,12 @@ namespace
     return false;
   }
 
-  bool is_empty_line(const std::string& s_, const std::string& input_filename_)
+  bool is_empty_line(const command& cmd_)
   {
     try
     {
-      token_iterator i = begin_tokens(s_, input_filename_), e;
+      command::iterator i = cmd_.begin();
+      const command::iterator e = cmd_.end();
       while (i != e)
       {
         try
@@ -233,6 +234,8 @@ void shell::line_available(const std::string& s_)
 {
   try
   {
+    const command cmd(s_);
+
     if (has_non_whitespace(s_))
     {
       if (_prev_line != s_)
@@ -241,13 +244,13 @@ void shell::line_available(const std::string& s_)
         _prev_line = s_;
       }
 
-      if (!is_empty_line(s_, input_filename()))
+      if (!is_empty_line(cmd))
       {
-        if (boost::optional<token_iterator> p = parse_pragma(s_))
+        if (boost::optional<command::iterator> p = parse_pragma(cmd))
         {
-          _pragma_handlers.process(*p);
+          _pragma_handlers.process(*p, cmd.end());
         }
-        else if (is_environment_setup_command(s_, input_filename()))
+        else if (is_environment_setup_command(cmd))
         {
           store_in_buffer(s_);
         }

@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <mindent/display.hpp>
 #include <mindent/parser.hpp>
@@ -36,9 +36,11 @@ namespace metashell
     const std::string& input_filename_
   )
   {
+    const command cmd(s_);
+
     return
       mindent::display(
-        mindent::parse_syntax_node_list(begin_tokens(s_, input_filename_)),
+        mindent::parse_syntax_node_list(cmd.begin()),
         width_,
         indent_step_,
         f_

@@ -39,8 +39,8 @@ std::string pragma_quit::description() const
 }
 
 void pragma_quit::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   _shell.stop();

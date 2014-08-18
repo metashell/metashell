@@ -16,7 +16,7 @@
 
 #include <metashell/pragma_handler_interface.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 using namespace metashell;
 
@@ -25,7 +25,10 @@ void metashell::run(
   const std::string& args_
 )
 {
-  const token_iterator b = begin_tokens(args_, "<str>");
-  handler_.run(b, end_of_pragma_argument_list(b));
+  const command cmd(args_);
+  handler_.run(
+    cmd.begin(),
+    end_of_pragma_argument_list(cmd.begin(), cmd.end())
+  );
 }
 

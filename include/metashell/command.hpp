@@ -1,8 +1,8 @@
-#ifndef METASHELL_TOKEN_ITERATOR_HPP
-#define METASHELL_TOKEN_ITERATOR_HPP
+#ifndef METASHELL_COMMAND_HPP
+#define METASHELL_COMMAND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,23 +25,29 @@
 
 namespace metashell
 {
-  typedef
-    boost::wave::cpplexer::lex_iterator<
-      boost::wave::cpplexer::lex_token<>
-    >
-    token_iterator;
+  class command
+  {
+  public:
+    explicit command(const std::string& cmd_);
 
-  token_iterator begin_tokens(
-    const std::string& s_,
-    const std::string& input_filename_
-  );
+    typedef
+      boost::wave::cpplexer::lex_iterator<
+        boost::wave::cpplexer::lex_token<>
+      >
+      iterator;
 
-  token_iterator skip(token_iterator i_);
-  token_iterator skip_whitespace(token_iterator i_);
+    iterator begin() const;
+    iterator end() const;
+  private:
+    std::string _cmd;
+  };
+
+  command::iterator skip(command::iterator i_);
+  command::iterator skip_whitespace(command::iterator i_);
 
   std::string tokens_to_string(
-    token_iterator begin_,
-    const token_iterator& end_ = token_iterator()
+    command::iterator begin_,
+    const command::iterator& end_
   );
 }
 

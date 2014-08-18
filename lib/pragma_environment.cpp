@@ -39,8 +39,8 @@ std::string pragma_environment::description() const
 }
 
 void pragma_environment::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   _shell.display_normal(_shell.env().get_all());

@@ -21,7 +21,7 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/indenter.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <just/console.hpp>
 
@@ -62,18 +62,10 @@ namespace
     }
   }
 
-  void syntax_highlight(
-    std::ostream& o_,
-    const std::string& s_,
-    const std::string& input_filename_
-  )
+  void syntax_highlight(std::ostream& o_, const std::string& s_)
   {
-    std::for_each(
-      begin_tokens(s_, input_filename_),
-      token_iterator(),
-      syntax_highlighted_display()
-    );
-
+    const command cmd(s_);
+    std::for_each(cmd.begin(), cmd.end(), syntax_highlighted_display());
     just::console::reset();
   }
 
@@ -201,7 +193,7 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        syntax_highlight(std::cout, s_, input_filename());
+        syntax_highlight(std::cout, s_);
       }
       else
       {

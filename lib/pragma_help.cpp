@@ -96,8 +96,8 @@ std::string pragma_help::description() const
 }
 
 void pragma_help::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   using boost::algorithm::join;
@@ -110,7 +110,7 @@ void pragma_help::run(
   {
     std::vector<std::string> args;
     for (
-      token_iterator i = args_begin_;
+      command::iterator i = args_begin_;
       i != args_end_;
       i = skip_whitespace(skip(i))
     )
