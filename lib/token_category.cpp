@@ -173,5 +173,7 @@ token_category metashell::category_of_token(token_type type_)
   case token_type::unknown:
     return token_category::unknown;
   }
+  // Avoid warning about not returning a value...
+  return token_category::unknown;
 }
 
