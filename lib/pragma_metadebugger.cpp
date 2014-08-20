@@ -15,9 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
-#include <metashell/token_iterator.hpp>
 #include <metashell/pragma_metadebugger.hpp>
+#include <metashell/shell.hpp>
 #include <metashell/readline_metadebugger_shell.hpp>
 
 using namespace metashell;
@@ -42,8 +41,8 @@ std::string pragma_metadebugger::description() const
 }
 
 void pragma_metadebugger::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   std::string args = tokens_to_string(args_begin_, args_end_);

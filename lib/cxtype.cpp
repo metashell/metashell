@@ -28,7 +28,6 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/bind.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 using namespace metashell;

@@ -18,8 +18,6 @@
 
 #include <clang-c/Index.h>
 
-#include <boost/make_shared.hpp>
-
 using namespace metashell;
 
 cxindex::cxindex() : _index(clang_createIndex(0, 0)) {}
@@ -29,13 +27,15 @@ cxindex::~cxindex()
   clang_disposeIndex(_index);
 }
 
-boost::shared_ptr<cxtranslationunit> cxindex::parse_code(
+std::unique_ptr<cxtranslationunit> cxindex::parse_code(
   const unsaved_file& src_,
-  const config& config_,
   const environment& env_
 )
 {
-  return boost::make_shared<cxtranslationunit>(config_, env_, src_, _index);
+  return
+    std::unique_ptr<cxtranslationunit>(
+      new cxtranslationunit(env_, src_, _index)
+    );
 }
 
 

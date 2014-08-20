@@ -25,10 +25,9 @@
 
 #include <clang-c/Index.h>
 
-#include <boost/foreach.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include <boost/iterator/transform_iterator.hpp>
+
+#include <functional>
 
 using namespace metashell;
 
@@ -59,7 +58,6 @@ namespace
 }
 
 cxtranslationunit::cxtranslationunit(
-  const config& config_,
   const environment& env_,
   const unsaved_file& src_,
   CXIndex index_
@@ -67,22 +65,20 @@ cxtranslationunit::cxtranslationunit(
   _src(src_),
   _unsaved_files()
 {
-  using boost::bind;
   using boost::transform_iterator;
-  using boost::function;
 
   using std::string;
   using std::vector;
 
   typedef
     transform_iterator<
-      function<const char*(const string&)>,
+      std::function<const char*(const string&)>,
       vector<string>::const_iterator
     >
     c_str_it;
 
   _unsaved_files.reserve(env_.get_headers().size() + 1);
-  BOOST_FOREACH(const unsaved_file& uf, env_.get_headers())
+  for (const unsaved_file& uf : env_.get_headers())
   {
     _unsaved_files.push_back(uf.get());
   }
@@ -129,14 +125,18 @@ void cxtranslationunit::visit_nodes(const visitor& f_)
 
 cxtranslationunit::error_iterator cxtranslationunit::errors_begin() const
 {
-  return error_iterator(boost::bind(get_nth_error_msg, _tu, _1), 0);
+  return
+    error_iterator(
+      [this] (int n_) { return get_nth_error_msg(this->_tu, n_); },
+      0
+    );
 }
 
 cxtranslationunit::error_iterator cxtranslationunit::errors_end() const
 {
   return
     error_iterator(
-      boost::bind(get_nth_error_msg, _tu, _1),
+      [this] (int n_) { return get_nth_error_msg(this->_tu, n_); },
       clang_getNumDiagnostics(_tu)
     );
 }

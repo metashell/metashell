@@ -17,8 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/function.hpp>
 #include <boost/operators.hpp>
+
+#include <functional>
 
 namespace metashell
 {
@@ -34,7 +35,7 @@ namespace metashell
       >
   {
   public:
-    typedef boost::function<ValueType(int)> getter;
+    typedef std::function<ValueType(int)> getter;
 
     indexing_iterator(const getter& f_, int n_) :
       _f(f_),

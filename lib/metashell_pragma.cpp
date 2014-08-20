@@ -41,62 +41,62 @@ namespace
     return result;
   }
 
-  bool argument_token(const token_iterator::token_type& t_)
+  bool argument_token(const token& t_)
   {
-    return 
-      !(
-        IS_CATEGORY(t_, boost::wave::WhiteSpaceTokenType)
-        || IS_CATEGORY(t_, boost::wave::EOLTokenType)
-        || IS_CATEGORY(t_, boost::wave::EOFTokenType)
-      );
+    const token_category c = t_.category();
+    return c != token_category::whitespace && c != token_category::comment;
   }
 }
 
-boost::optional<token_iterator> metashell::parse_pragma(const std::string& s_)
+boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
 {
-  const token_iterator end;
-  token_iterator i = skip_whitespace(begin_tokens(s_, "<string>"));
+  command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
 
   if (
-    i != end && (*i == boost::wave::T_PP_PRAGMA || *i == boost::wave::T_POUND)
+    i != cmd_.end()
+    && (
+      i->type() == token_type::p_pragma
+      || i->type() == token_type::operator_pound
+    )
   )
   {
-    i = skip_whitespace(skip(i));
+    i = skip_whitespace(skip(i), cmd_.end());
    
     if (
-      i != end
-      && *i == boost::wave::T_IDENTIFIER
-      && (i->get_value() == "metashell" || i->get_value() == "msh")
+      i != cmd_.end()
+      && i->type() == token_type::identifier
+      && (i->value() == "metashell" || i->value() == "msh")
     )
     {
-      i = skip_whitespace(skip(i));
-      if (i == end || i->get_value().empty())
+      i = skip_whitespace(skip(i), cmd_.end());
+      if (i == cmd_.end() || i->value().empty())
       {
         throw exception("The name of the metashell pragma is missing.");
       }
-      else if (*i == boost::wave::T_IDENTIFIER)
+      else if (i->type() == token_type::identifier)
       {
         return i;
       }
       else
       {
         std::ostringstream s;
-        s << "Invalid pragma name " << i->get_value();
+        s << "Invalid pragma name " << i->value();
         throw exception(s.str());
       }
     }
   }
 
-  return boost::optional<token_iterator>();
+  return boost::optional<command::iterator>();
 }
 
-token_iterator metashell::end_of_pragma_argument_list(token_iterator begin_)
+command::iterator metashell::end_of_pragma_argument_list(
+  command::iterator begin_,
+  const command::iterator& end_
+)
 {
-  const token_iterator end;
+  command::iterator result = find_last_if(begin_, end_, argument_token);
 
-  token_iterator result = find_last_if(begin_, end, argument_token);
-
-  if (result == end)
+  if (result == end_)
   {
     return begin_;
   }

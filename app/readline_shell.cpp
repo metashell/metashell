@@ -20,13 +20,22 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/indenter.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <just/console.hpp>
 
 #include <mindent/stream_display.hpp>
 
-#include <boost/bind.hpp>
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
+
+#ifndef _WIN32
+#  include <sys/ioctl.h>
+#endif
 
 #include <algorithm>
 #include <string>
@@ -39,18 +48,21 @@ using namespace metashell;
 
 namespace
 {
-  void syntax_highlight(
-    std::ostream& o_,
-    const std::string& s_,
-    const std::string& input_filename_
-  )
+  void display(just::console::color c_, const std::string& s_)
   {
-    std::for_each(
-      begin_tokens(s_, input_filename_),
-      token_iterator(),
-      syntax_highlighted_display()
-    );
+    if (s_ != "")
+    {
+      just::console::text_color(c_);
+      std::cout << s_;
+      just::console::reset();
+      std::cout << std::endl;
+    }
+  }
 
+  void syntax_highlight(const std::string& s_)
+  {
+    const command cmd(s_);
+    std::for_each(cmd.begin(), cmd.end(), syntax_highlighted_display());
     just::console::reset();
   }
 }
@@ -80,14 +92,12 @@ void readline_shell::add_history(const std::string& s_)
 
 void readline_shell::run()
 {
-  using boost::bind;
-
 #ifndef _WIN32
   _readline_environment.set_rl_attempted_completion_function(
       tab_completion);
 #endif
 
-  interrupt_handler_override ovr3(bind(&readline_shell::cancel_operation,this));
+  interrupt_handler_override ovr3([this]() { this->cancel_operation(); });
 
   for (boost::optional<std::string> line;
       !stopped() && (line = _readline_environment.readline(prompt())); )
@@ -135,7 +145,7 @@ char* readline_shell::tab_generator(const char* text_, int state_)
 #endif
 
 #ifndef _WIN32
-char** readline_shell::tab_completion(const char* text_, int start_, int end_)
+char** readline_shell::tab_completion(const char* text_, int, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
@@ -168,7 +178,7 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        syntax_highlight(std::cout, s_, input_filename());
+        syntax_highlight(s_);
       }
       else
       {

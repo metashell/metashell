@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/text_position.hpp>
 #include <metashell/unsaved_file.hpp>
@@ -28,24 +27,23 @@
 #include <clang-c/Index.h>
 
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
 
 #include <string>
 #include <set>
 #include <vector>
+#include <functional>
 
 namespace metashell
 {
   class cxtranslationunit : boost::noncopyable
   {
   public:
-    typedef boost::function<void(cxcursor, cxcursor)> visitor;
+    typedef std::function<void(cxcursor, cxcursor)> visitor;
 
     typedef indexing_iterator<std::string> error_iterator;
 
     // takes ownership
     cxtranslationunit(
-      const config& config_,
       const environment& env_,
       const unsaved_file& src_,
       CXIndex index_

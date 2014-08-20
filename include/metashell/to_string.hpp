@@ -1,3 +1,6 @@
+#ifndef METASHELL_TO_STRING_HPP
+#define METASHELL_TO_STRING_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,30 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_iterator.hpp>
+#ifdef TO_STRING_IMPL
+#  error TO_STRING_IMPL already defined
+#endif
+#define TO_STRING_IMPL(x) #x
 
-#include <just/test.hpp>
+#ifdef TO_STRING
+#  error TO_STRING already defined
+#endif
+#define TO_STRING(x) TO_STRING_IMPL(x)
 
-using namespace metashell;
-
-JUST_TEST_CASE(test_formatting_empty_token_list)
-{
-  JUST_ASSERT_EQUAL("", tokens_to_string(token_iterator(), token_iterator()));
-}
-
-JUST_TEST_CASE(test_formatting_one_token)
-{
-  const std::string src = "int hello";
-  const token_iterator b = begin_tokens(src, "<test>");
-
-  JUST_ASSERT_EQUAL("int", tokens_to_string(b, skip(b)));
-}
-
-JUST_TEST_CASE(test_formatting_more_tokens)
-{
-  const std::string src = "int hello";
-  const token_iterator b = begin_tokens(src, "<test>");
-
-  JUST_ASSERT_EQUAL("int hello", tokens_to_string(b, token_iterator()));
-}
+#endif
 

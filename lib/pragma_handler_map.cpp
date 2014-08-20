@@ -33,9 +33,6 @@
 
 #include "exception.hpp"
 
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
-
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -44,15 +41,15 @@ using namespace metashell;
 
 namespace
 {
-  bool can_be_part_of_name(const token_iterator::token_type& t_)
+  bool can_be_part_of_name(const token& t_)
   {
-    return t_ == boost::wave::T_IDENTIFIER;
+    return t_.type() == token_type::identifier;
   }
 
-  boost::optional<token_iterator> is_this_pragma(
+  boost::optional<command::iterator> is_this_pragma(
     const std::vector<std::string>& name_,
-    token_iterator begin_,
-    const token_iterator& end_
+    command::iterator begin_,
+    const command::iterator& end_
   )
   {
     using std::string;
@@ -64,52 +61,56 @@ namespace
     while (
       begin_ != end_ && i != e
       && can_be_part_of_name(*begin_)
-      && *i == string(begin_->get_value().begin(), begin_->get_value().end()))
+      && *i == begin_->value())
     {
       ++i;
-      begin_ = skip(begin_);
-      // Don't accidentally skip over end_
-      if (begin_ == end_)
-      {
-        break;
-      }
-      begin_ = skip_whitespace(begin_);
+      begin_ = skip_whitespace(skip(begin_), end_);
     }
     return
-      i == e ? optional<token_iterator>(begin_) : optional<token_iterator>();
+      i == e ?
+        optional<command::iterator>(begin_) :
+        optional<command::iterator>();
   }
 
-  std::string name_of_pragma(token_iterator begin_, const token_iterator& end_)
+  std::string name_of_pragma(
+    command::iterator begin_,
+    const command::iterator& end_
+  )
   {
     std::ostringstream s;
     bool first = true;
     for (
       ;
       begin_ != end_ && can_be_part_of_name(*begin_);
-      begin_ = skip_whitespace(skip(begin_))
+      begin_ = skip_whitespace(skip(begin_), end_)
     )
     {
-      s << (first ? "" : " ") << begin_->get_value();
+      s << (first ? "" : " ") << begin_->value();
       first = false;
     }
     return s.str();
   }
 }
 
-void pragma_handler_map::process(const token_iterator& begin_) const
+void pragma_handler_map::process(
+  const command::iterator& begin_,
+  const command::iterator& end_
+) const
 {
   using boost::optional;
 
-  const token_iterator e = end_of_pragma_argument_list(begin_);
+  const command::iterator e = end_of_pragma_argument_list(begin_, end_);
 
-  token_iterator longest_fit_begin = e;
+  command::iterator longest_fit_begin = e;
   const pragma_handler* longest_fit_handler = 0;
   int longest_fit_len = -1;
 
   typedef std::pair<const std::vector<std::string>, pragma_handler> np;
-  BOOST_FOREACH(const np& p, _handlers)
+  for (const np& p : _handlers)
   {
-    if (const optional<token_iterator> i = is_this_pragma(p.first, begin_, e))
+    if (
+      const optional<command::iterator> i = is_this_pragma(p.first, begin_, e)
+    )
     {
       if (longest_fit_len < int(p.first.size()))
       {
@@ -141,8 +142,6 @@ pragma_handler_map::iterator pragma_handler_map::end() const
 
 pragma_handler_map pragma_handler_map::build_default(shell& shell_)
 {
-  using boost::bind;
-
   return
     pragma_handler_map()
       .add("help", pragma_help(shell_))
@@ -150,8 +149,8 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
         "verbose",
         pragma_switch(
           "verbose mode",
-          bind(&shell::verbose, &shell_),
-          bind(&shell::verbose, &shell_, _1),
+          [&shell_] () { return shell_.verbose(); },
+          [&shell_] (bool v_) { shell_.verbose(v_); },
           shell_
         )
       )
@@ -159,8 +158,8 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
         "precompiled_headers",
         pragma_switch(
           "precompiled header usage",
-          bind(&shell::using_precompiled_headers, &shell_),
-          bind(&shell::using_precompiled_headers, &shell_, _1),
+          [&shell_] () { return shell_.using_precompiled_headers(); },
+          [&shell_] (bool v_) { shell_.using_precompiled_headers(v_); },
           shell_
         )
       )

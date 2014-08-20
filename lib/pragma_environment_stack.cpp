@@ -39,8 +39,8 @@ std::string pragma_environment_stack::description() const
 }
 
 void pragma_environment_stack::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator&,
+  const command::iterator&
 ) const
 {
   _shell.display_environment_stack_size();

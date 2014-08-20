@@ -19,9 +19,8 @@
 
 #include <metashell/pragma_handler_interface.hpp>
 
-#include <boost/function.hpp>
-
 #include <string>
+#include <functional>
 
 namespace metashell
 {
@@ -32,8 +31,8 @@ namespace metashell
   public:
     pragma_switch(
       const std::string& name_,
-      const boost::function<bool()>& query_,
-      const boost::function<void(bool)>& update_,
+      const std::function<bool()>& query_,
+      const std::function<void(bool)>& update_,
       shell& shell_
     );
 
@@ -43,12 +42,12 @@ namespace metashell
     virtual std::string description() const;
 
     virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
+      const command::iterator& args_begin_,
+      const command::iterator& args_end_
     ) const;
   private:
-    boost::function<bool()> _query;
-    boost::function<void(bool)> _update;
+    std::function<bool()> _query;
+    std::function<void(bool)> _update;
     std::string _name;
     
     shell& _shell;

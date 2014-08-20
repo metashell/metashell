@@ -14,10 +14,6 @@
 #include <mindent/impl/parser.hpp>
 #include <mindent/syntax_node_list.hpp>
 
-#include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
-
 #include <map>
 #include <cassert>
 
@@ -29,22 +25,19 @@ namespace mindent
    * This function takes only the beginning of a token sequnce and assumes that
    * the entire sequence should be parsed.
    *
-   * @tparam TokenType the Boost.Wave type used for representeing tokens.
-   * @param begin_ the beginning of the Boost.Wave token sequence to parse.
+   * @tparam Lexer The lexer implementation to use.
+   * @param lexer_ the lexer to use.
    */
-  template <class TokenType>
-  syntax_node_list<TokenType>
-  parse_syntax_node_list(boost::wave::cpplexer::lex_iterator<TokenType> begin_)
+  template <class Lexer>
+  syntax_node_list<typename Lexer::token_type>
+  parse_syntax_node_list(Lexer& lexer_)
   {
-    using std::pair;
-    using boost::wave::cpplexer::lex_iterator;
+    const syntax_node_list<typename Lexer::token_type>
+      p = impl::parse_syntax_node_list(lexer_);
 
-    const pair<syntax_node_list<TokenType>, lex_iterator<TokenType> >
-      p = impl::parse_syntax_node_list(begin_);
+    assert(!lexer_.has_further_tokens());
 
-    assert(p.second == impl::end<TokenType>());
-
-    return p.first;
+    return p;
   }
 }
 

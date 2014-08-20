@@ -55,10 +55,7 @@ get_type_of_variable::get_type_of_variable(const std::string& name_) :
   _name(name_)
 {}
 
-CXChildVisitResult get_type_of_variable::operator()(
-  cxcursor cursor_,
-  cxcursor parent_
-)
+CXChildVisitResult get_type_of_variable::operator()(cxcursor cursor_)
 {
   if (cursor_.kind() == CXCursor_VarDecl && cursor_.spelling() == _name)
   {
@@ -67,7 +64,7 @@ CXChildVisitResult get_type_of_variable::operator()(
       _result =
         unwrap("wrap<", cursor_.type().canonical_type().spelling(), ">");
     }
-    catch (const exception& e_)
+    catch (const exception&)
     {
       return CXChildVisit_Continue;
     }

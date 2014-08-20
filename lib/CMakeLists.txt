@@ -20,11 +20,16 @@ add_library(metashell_lib STATIC ${SOURCES})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 # Readline
-if (USE_EDITLINE)
-  include_directories(${EDITLINE_INCLUDE_DIR})
+if (WIN32)
   add_definitions( -DUSE_EDITLINE )
+  include_directories("${CMAKE_SOURCE_DIR}/wineditline")
 else()
-  include_directories(${READLINE_INCLUDE_DIR})
+  if (USE_EDITLINE)
+    include_directories(${EDITLINE_INCLUDE_DIR})
+    add_definitions( -DUSE_EDITLINE )
+  else()
+    include_directories(${READLINE_INCLUDE_DIR})
+  endif()
 endif()
 
 # Clang

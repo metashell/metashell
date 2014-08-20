@@ -24,12 +24,6 @@ using namespace metashell;
 
 namespace
 {
-  void set_values(bool& set_to_true_, bool& set_to_value_, bool value_)
-  {
-    set_to_true_ = true;
-    set_to_value_ = value_;
-  }
-
   template <bool B>
   bool always()
   {
@@ -39,9 +33,6 @@ namespace
   template <bool ExpectedResult>
   void test_callback_is_called(const std::string& arg_)
   {
-    using boost::bind;
-    using boost::ref;
-  
     bool was_called = false;
     bool arg = !ExpectedResult;
     test_shell sh;
@@ -50,7 +41,11 @@ namespace
       p(
         "test",
         always<true>,
-        bind(set_values, ref(was_called), ref(arg), _1),
+        [&was_called, &arg](bool value_)
+        {
+          was_called = true;
+          arg = value_;
+        },
         sh
       );
     run(p, arg_);

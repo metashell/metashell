@@ -3,7 +3,23 @@ compiler:
   - gcc
   - clang
 before_install:
-  - sudo apt-get install libboost1.48-dev libboost-program-options1.48-dev libboost-wave1.48-dev libboost-system1.48-dev libboost-thread1.48-dev libboost-filesystem1.48-dev libboost-regex1.48-dev libreadline-dev libclang-dev libncurses5-dev clang
+  - sudo add-apt-repository -y ppa:boost-latest/ppa
+  - if [ "$CXX" = "g++" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi
+  - sudo apt-get update -qq
+install:
+  - sudo apt-get install -y
+      libboost1.55-dev
+      libboost-program-options1.55-dev
+      libboost-wave1.55-dev
+      libboost-system1.55-dev
+      libboost-thread1.55-dev
+      libboost-filesystem1.55-dev
+      libboost-regex1.55-dev
+      libreadline-dev
+      libclang-dev
+      libncurses5-dev
+      clang
+  - if [ "$CXX" == "g++" ]; then sudo apt-get install -y g++-4.8; export CXX="g++-4.8"; fi
 script:
   # Test that the TOC of the description is up to date
   - tools/gen_toc -i README.md -o - -t github | diff README.md -
@@ -13,7 +29,7 @@ script:
   - cd bin
   # -DMETASHELL_DISABLE_CONSTEXPR (and its usage in the code) can be removed
   # when clang 3.1 or higher will be available on the CI servers
-  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Wall -Werror -pedantic -DMETASHELL_DISABLE_CONSTEXPR"
+  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_CONSTEXPR"
   - make
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas is up to date

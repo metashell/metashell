@@ -6,6 +6,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include <mindent/token_traits.hpp>
+
 namespace mindent
 {
   namespace impl
@@ -18,7 +20,7 @@ namespace mindent
 
       void operator()(const TokenType& t_)
       {
-        _len += t_.get_value().length();
+        _len += token_traits<TokenType>::value(t_).length();
       }
 
       int length() const

@@ -8,227 +8,191 @@
 
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
-
-#include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
+#include <mindent/token_traits.hpp>
 
 #include <algorithm>
 #include <map>
+#include <list>
 #include <cassert>
 
 namespace mindent
 {
   namespace impl
   {
-    inline bool not_space(boost::wave::token_id t_)
+    template <class Lexer>
+    void skip_spaces(Lexer& lexer_)
     {
-      return
-        t_ != boost::wave::T_ANY &&
-        t_ != boost::wave::T_SPACE &&
-        t_ != boost::wave::T_SPACE2 &&
-        t_ != boost::wave::T_EOF &&
-        t_ != boost::wave::T_CONTLINE &&
-        t_ != boost::wave::T_NEWLINE;
-    }
+      typedef typename Lexer::token_type token_type;
 
-    template <class TokenType>
-    boost::wave::cpplexer::lex_iterator<TokenType> end()
-    {
-      return boost::wave::cpplexer::lex_iterator<TokenType>();
-    }
-
-    template <class TokenType>
-    boost::wave::cpplexer::lex_iterator<TokenType> skip_spaces(
-      boost::wave::cpplexer::lex_iterator<TokenType> i_
-    )
-    {
-      return std::find_if(i_, end<TokenType>(), not_space);
-    }
-
-    template <class TokenType>
-    TokenType empty_token()
-    {
-      return
-        TokenType(
-          boost::wave::T_ANY,
-          typename TokenType::string_type(),
-          typename TokenType::position_type()
-        );
-    }
-
-    template <boost::wave::token_id T, class TokenType>
-    bool at_token(boost::wave::cpplexer::lex_iterator<TokenType> i_)
-    {
-      return i_ != end<TokenType>() && *i_ == T;
-    }
-
-    template <boost::wave::token_id T, class TokenType>
-    boost::wave::cpplexer::lex_iterator<TokenType> skip_token(
-      boost::wave::cpplexer::lex_iterator<TokenType> i_
-    )
-    {
-      assert(at_token<T>(i_));
-      ++i_;
-      return i_;
-    }
-
-    template <class TokenType>
-    std::pair<
-      syntax_node_list<TokenType>,
-      boost::wave::cpplexer::lex_iterator<TokenType>
-    >
-    parse_syntax_node_list(
-      boost::wave::cpplexer::lex_iterator<TokenType> begin_
-    );
-
-    template <class TokenType>
-    std::pair<
-      std::vector<TokenType>,
-      boost::wave::cpplexer::lex_iterator<TokenType>
-    >
-    parse_name(boost::wave::cpplexer::lex_iterator<TokenType> begin_)
-    {
-      using std::pair;
-      using std::vector;
-
-      using boost::wave::cpplexer::lex_iterator;
-
-      pair<vector<TokenType>, lex_iterator<TokenType> >
-        result(vector<TokenType>(), begin_);
-      for (
-        ;
-        result.second != end<TokenType>()
-          && *result.second != boost::wave::T_COMMA
-          && *result.second != boost::wave::T_COLON_COLON
-          && *result.second != boost::wave::T_LESS
-          && *result.second != boost::wave::T_GREATER;
-        ++result.second
+      while (
+        lexer_.has_further_tokens()
+        && token_traits<token_type>::is_space(lexer_.current_token())
       )
       {
-        if (not_space(*result.second))
+        lexer_.move_to_next_token();
+      }
+    }
+
+    template <class Lexer>
+    syntax_node_list<typename Lexer::token_type>
+    parse_syntax_node_list(Lexer& begin_);
+
+    template <class Lexer>
+    bool still_in_name(const Lexer& lexer_)
+    {
+      if (lexer_.has_further_tokens())
+      {
+        typedef typename Lexer::token_type token_type;
+        const token_type t = lexer_.current_token();
+        return
+            !token_traits<token_type>::is_comma(t)
+            && !token_traits<token_type>::is_double_colon(t)
+            && !token_traits<token_type>::is_less(t)
+            && !token_traits<token_type>::is_greater(t);
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    template <class Lexer>
+    std::vector<typename Lexer::token_type> parse_name(Lexer& lexer_)
+    {
+      typedef typename Lexer::token_type token_type;
+
+      std::vector<token_type> result;
+      for (; still_in_name(lexer_); lexer_.move_to_next_token())
+      {
+        if (
+          !lexer_.has_further_tokens() ||
+          !token_traits<token_type>::is_space(lexer_.current_token())
+        )
         {
-          result.first.push_back(*result.second);
+          result.push_back(lexer_.current_token());
         }
       }
       return result;
     }
 
-    template <class TokenType>
-    std::pair<
-      syntax_node<TokenType>,
-      boost::wave::cpplexer::lex_iterator<TokenType>
-    >
-    parse_syntax_node(boost::wave::cpplexer::lex_iterator<TokenType> begin_)
+    template <class Lexer>
+    syntax_node<typename Lexer::token_type> parse_syntax_node(Lexer& lexer_)
     {
       using std::make_pair;
       using std::list;
       using std::pair;
       using std::vector;
 
-      using boost::wave::T_COLON_COLON;
-      using boost::wave::T_COMMA;
-      using boost::wave::T_GREATER;
-      using boost::wave::T_LESS;
+      typedef typename Lexer::token_type token_type;
 
-      using boost::wave::cpplexer::lex_iterator;
+      const vector<token_type> node_name = parse_name(lexer_);
 
-      const pair<vector<TokenType>, lex_iterator<TokenType> >
-        node_name = parse_name(begin_);
-
-      if (at_token<T_LESS>(node_name.second))
+      if (
+        lexer_.has_further_tokens()
+        && token_traits<token_type>::is_less(lexer_.current_token())
+      )
       {
-        const TokenType template_begin = *node_name.second;
-        lex_iterator<TokenType> i = skip_token<T_LESS>(node_name.second);
+        const token_type template_begin = lexer_.current_token();
 
-        assert(i != end<TokenType>());
-        list<pair<syntax_node_list<TokenType>, TokenType> > args;
+        assert(lexer_.has_further_tokens());
+        assert(token_traits<token_type>::is_less(lexer_.current_token()));
+        lexer_.move_to_next_token();
+
+        assert(lexer_.has_further_tokens());
+        list<pair<syntax_node_list<token_type>, token_type> > args;
         for (;;)
         {
-          const pair<syntax_node_list<TokenType>, lex_iterator<TokenType> >
-            p = parse_syntax_node_list(i);
-          i = p.second;
-          if (at_token<T_COMMA>(i))
+          const syntax_node_list<token_type>
+            p = impl::parse_syntax_node_list(lexer_);
+          if (
+            lexer_.has_further_tokens()
+            && token_traits<token_type>::is_comma(lexer_.current_token())
+          )
           {
-            args.push_back(make_pair(p.first, *i));
-            ++i; // we know that it is a comma token, no need to assert
+            args.push_back(make_pair(p, lexer_.current_token()));
+            lexer_.move_to_next_token();
           }
           else
           {
-            args.push_back(make_pair(p.first, empty_token<TokenType>()));
+            args.push_back(
+              make_pair(p, token_traits<token_type>::empty_token())
+            );
             break;
           }
         }
 
-        const TokenType template_end = *i;
-        i = skip_token<T_GREATER>(i);
+        const token_type template_end = lexer_.current_token();
+        assert(lexer_.has_further_tokens());
+        assert(token_traits<token_type>::is_greater(lexer_.current_token()));
+        lexer_.move_to_next_token();
 
         return
-          make_pair(
-            syntax_node<TokenType>(
-              node_name.first.begin(),
-              node_name.first.end(),
-              template_begin,
-              args.begin(),
-              args.end(),
-              template_end
-            ),
-            i
+          syntax_node<token_type>(
+            node_name.begin(),
+            node_name.end(),
+            template_begin,
+            args.begin(),
+            args.end(),
+            template_end
           );
       }
       else
       {
-        return
-          make_pair(
-            syntax_node<TokenType>(
-              node_name.first.begin(),
-              node_name.first.end()
-            ),
-            node_name.second
-          );
+        return syntax_node<token_type>(node_name.begin(), node_name.end());
       }
     }
 
-    template <class TokenType>
-    std::pair<
-      syntax_node_list<TokenType>,
-      boost::wave::cpplexer::lex_iterator<TokenType>
-    >
-    parse_syntax_node_list(
-      boost::wave::cpplexer::lex_iterator<TokenType> begin_
-    )
+    template <class Lexer>
+    bool at_syntax_node_list_separator(const Lexer& lexer_)
     {
-      using boost::wave::cpplexer::lex_iterator;
+      if (lexer_.has_further_tokens())
+      {
+        typedef typename Lexer::token_type token_type;
+        const token_type t = lexer_.current_token();
+        return
+          !token_traits<token_type>::is_comma(t)
+          && !token_traits<token_type>::is_greater(t);
+      }
+      else
+      {
+        return false;
+      }
+    }
 
+    template <class Lexer>
+    syntax_node_list<typename Lexer::token_type>
+    parse_syntax_node_list(Lexer& lexer_)
+    {
       using std::list;
       using std::pair;
       using std::make_pair;
 
-      lex_iterator<TokenType> i = skip_spaces(begin_);
-      list<pair<syntax_node<TokenType>, TokenType> > l;
-      while (
-        i != end<TokenType>()
-        && *i != boost::wave::T_COMMA
-        && *i != boost::wave::T_GREATER
-        && *i != boost::wave::T_EOF
-      )
+      typedef typename Lexer::token_type token_type;
+      typedef syntax_node<token_type> syn_node;
+
+      skip_spaces(lexer_);
+
+      list<pair<syn_node, token_type> > l;
+      while (at_syntax_node_list_separator(lexer_))
       {
-        const pair<syntax_node<TokenType>, lex_iterator<TokenType> >
-          p = parse_syntax_node(i);
-        assert(i != p.second);
-        i = skip_spaces(p.second);
-        if (at_token<boost::wave::T_COLON_COLON>(i))
+        const syn_node p = parse_syntax_node(lexer_);
+        skip_spaces(lexer_);
+        if (
+          lexer_.has_further_tokens()
+          && token_traits<token_type>::is_double_colon(lexer_.current_token())
+        )
         {
-          l.push_back(make_pair(p.first, *i));
-          ++i; // we know that it is a :: token, no need to assert
+          l.push_back(make_pair(p, lexer_.current_token()));
+          // we know that it is a :: token, no need to assert
+          lexer_.move_to_next_token();
         }
         else
         {
-          l.push_back(make_pair(p.first, empty_token<TokenType>()));
+          l.push_back(make_pair(p, token_traits<token_type>::empty_token()));
           break;
         }
       }
-      return make_pair(syntax_node_list<TokenType>(l.begin(), l.end()), i);
+      return syntax_node_list<token_type>(l.begin(), l.end());
     }
   }
 }

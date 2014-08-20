@@ -18,12 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
+
+#include <functional>
 
 class interrupt_handler_override : boost::noncopyable
 {
 public:
-  interrupt_handler_override(const boost::function<void ()>& handler_);
+  interrupt_handler_override(const std::function<void ()>& handler_);
   ~interrupt_handler_override();
 };
 

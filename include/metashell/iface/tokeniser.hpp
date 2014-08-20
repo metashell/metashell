@@ -1,8 +1,8 @@
-#ifndef METASHELL_TOKEN_ITERATOR_HPP
-#define METASHELL_TOKEN_ITERATOR_HPP
+#ifndef METASHELL_IFACE_TOKENISER_HPP
+#define METASHELL_IFACE_TOKENISER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,32 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
-
-#include <string>
+#include <metashell/token.hpp>
 
 namespace metashell
 {
-  typedef
-    boost::wave::cpplexer::lex_iterator<
-      boost::wave::cpplexer::lex_token<>
-    >
-    token_iterator;
+  namespace iface
+  {
+    class tokeniser
+    {
+    public:
+      typedef token token_type;
 
-  token_iterator begin_tokens(
-    const std::string& s_,
-    const std::string& input_filename_
-  );
+      virtual ~tokeniser() {}
 
-  token_iterator skip(token_iterator i_);
-  token_iterator skip_whitespace(token_iterator i_);
+      virtual bool has_further_tokens() const = 0;
+      virtual token current_token() const = 0;
+      virtual void move_to_next_token() = 0;
 
-  std::string tokens_to_string(
-    token_iterator begin_,
-    const token_iterator& end_ = token_iterator()
-  );
+      // The error flag is never cleared once it was set
+      virtual bool was_error() const = 0;
+    };
+  }
 }
 
 #endif

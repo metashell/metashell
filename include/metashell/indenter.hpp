@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/wave_tokeniser.hpp>
 
 #include <mindent/display.hpp>
 #include <mindent/parser.hpp>
@@ -36,9 +36,12 @@ namespace metashell
     const std::string& input_filename_
   )
   {
+    std::unique_ptr<iface::tokeniser>
+      tokeniser = create_wave_tokeniser(s_, input_filename_);
+
     return
       mindent::display(
-        mindent::parse_syntax_node_list(begin_tokens(s_, input_filename_)),
+        mindent::parse_syntax_node_list(*tokeniser),
         width_,
         indent_step_,
         f_

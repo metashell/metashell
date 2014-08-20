@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <string>
 
@@ -34,8 +34,8 @@ namespace metashell
     virtual std::string description() const = 0;
 
     virtual void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
+      const command::iterator& args_begin_,
+      const command::iterator& args_end_
     ) const = 0;
   };
 

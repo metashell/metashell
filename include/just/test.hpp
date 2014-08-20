@@ -169,7 +169,7 @@ namespace just
     /*
      * run
      */
-    inline int run(int argc_, char* argv_[])
+    inline int run(int, char *[])
     {
       return singleton<test_manager>::get().run(std::cerr) ? 0 : 1;
     }

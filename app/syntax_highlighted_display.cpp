@@ -16,35 +16,50 @@
 
 #include "syntax_highlighted_display.hpp"
 
-boost::optional<just::console::color>
-syntax_highlighted_display::color_of_token(boost::wave::token_id id_)
-{
-  using just::console::color;
-  using boost::optional;
+#include <just/console.hpp>
 
-  if (
-    IS_CATEGORY(id_, boost::wave::CharacterLiteralTokenType)
-    || IS_CATEGORY(id_, boost::wave::FloatingLiteralTokenType)
-    || IS_CATEGORY(id_, boost::wave::IntegerLiteralTokenType)
-    || IS_CATEGORY(id_, boost::wave::StringLiteralTokenType)
-    || IS_CATEGORY(id_, boost::wave::BoolLiteralTokenType)
-    || IS_CATEGORY(id_, boost::wave::PPTokenType)
-  )
+#include <boost/optional.hpp>
+
+#include <iostream>
+
+using namespace metashell;
+
+namespace
+{
+  boost::optional<just::console::color> color_of_token(const token& t_)
   {
-    return color::magenta;
-  }
-  else if (IS_CATEGORY(id_, boost::wave::KeywordTokenType))
-  {
-    return color::bright_green;
-  }
-  else if (id_ == boost::wave::T_CCOMMENT || id_ == boost::wave::T_CPPCOMMENT)
-  {
-    return color::green;
-  }
-  else
-  {
-    return boost::optional<just::console::color>();
+    using just::console::color;
+    using boost::optional;
+  
+    switch (t_.category())
+    {
+    case token_category::character_literal:
+    case token_category::floating_literal:
+    case token_category::integer_literal:
+    case token_category::string_literal:
+    case token_category::bool_literal:
+    case token_category::preprocessor:
+      return color::magenta;
+    case token_category::keyword:
+      return color::bright_green;
+    case token_category::comment:
+      return color::green;
+    default:
+      return optional<color>();
+    }
   }
 }
 
+void syntax_highlighted_display::operator()(const token& t_)
+{
+  if (const boost::optional<just::console::color> c = color_of_token(t_))
+  {
+    just::console::text_color(*c);
+  }
+  else
+  {
+    just::console::reset();
+  }
+  std::cout << t_.value();
+}
 

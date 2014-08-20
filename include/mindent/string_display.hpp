@@ -6,6 +6,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include <mindent/token_traits.hpp>
+
 #include <boost/algorithm/string/join.hpp>
 
 #include <list>
@@ -25,7 +27,7 @@ namespace mindent
     template <class TokenType>
     void operator()(const TokenType& t_)
     {
-      store(t_.get_value());
+      store(token_traits<TokenType>::value(t_));
     }
 
     /// Construct the string of all tokens displayed using this functor.

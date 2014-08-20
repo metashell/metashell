@@ -30,27 +30,19 @@ target_link_libraries(metashell
 )
 
 # Readline
-if (USE_EDITLINE)
-  include_directories(${EDITLINE_INCLUDE_DIR})
-  target_link_libraries(metashell ${EDITLINE_LIBRARY})
+if (WIN32)
+  target_link_libraries(metashell edit_static)
   add_definitions( -DUSE_EDITLINE )
-
-  if (WIN32)
-    get_filename_component(DLL_NAME "${EDITLINE_DLL}" NAME)
-    configure_file(
-      "${EDITLINE_DLL}"
-      "${CMAKE_CURRENT_BINARY_DIR}/Debug/${DLL_NAME}"
-      COPYONLY
-    )
-    configure_file(
-      "${EDITLINE_DLL}"
-      "${CMAKE_CURRENT_BINARY_DIR}/Release/${DLL_NAME}"
-      COPYONLY
-    )
-  endif ()
+  include_directories("${CMAKE_SOURCE_DIR}/wineditline")
 else()
-  include_directories(${READLINE_INCLUDE_DIR})
-  target_link_libraries(metashell ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
+  if (USE_EDITLINE)
+    include_directories(${EDITLINE_INCLUDE_DIR})
+    target_link_libraries(metashell ${EDITLINE_LIBRARY})
+    add_definitions( -DUSE_EDITLINE )
+  else()
+    include_directories(${READLINE_INCLUDE_DIR})
+    target_link_libraries(metashell ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
+  endif()
 endif()
 
 # Program_options

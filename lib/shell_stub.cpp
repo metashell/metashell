@@ -22,16 +22,16 @@ shell_stub::shell_stub() :
   shell(empty_config())
 {}
 
-void shell_stub::add_history(const std::string& s_)
+void shell_stub::add_history(const std::string&)
 {}
 
-void shell_stub::display_normal(const std::string& s_) const
+void shell_stub::display_normal(const std::string&) const
 {}
 
-void shell_stub::display_info(const std::string& s_) const
+void shell_stub::display_info(const std::string&) const
 {}
 
-void shell_stub::display_error(const std::string& s_) const
+void shell_stub::display_error(const std::string&) const
 {}
 
 void shell_stub::display(

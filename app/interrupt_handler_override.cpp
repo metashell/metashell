@@ -24,7 +24,7 @@
 
 namespace
 {
-  boost::function<void ()> handler_function;
+  std::function<void ()> handler_function;
 
   void call_handler()
   {
@@ -61,7 +61,7 @@ namespace
 }
 
 interrupt_handler_override::interrupt_handler_override(
-  const boost::function<void ()>& handler_
+  const std::function<void ()>& handler_
 )
 {
   assert(!handler_function);

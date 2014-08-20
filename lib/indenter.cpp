@@ -16,8 +16,6 @@
 
 #include "indenter.hpp"
 
-#include <boost/foreach.hpp>
-
 #include <vector>
 #include <cassert>
 
@@ -111,7 +109,7 @@ indenter& indenter::left_align(
   std::vector<std::string> lines;
   word_wrap(s_, _width - line_prefix_.length(), lines);
   bool first = true;
-  BOOST_FOREACH(const std::string& line, lines)
+  for (const std::string& line : lines)
   {
     _buff << (first ? first_line_prefix_ : line_prefix_) << line << "\n";
     first = false;

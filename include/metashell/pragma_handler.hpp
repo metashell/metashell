@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler_interface.hpp>
-#include <metashell/token_iterator.hpp>
+#include <metashell/command.hpp>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -40,8 +40,8 @@ namespace metashell
     std::string description() const;
 
     void run(
-      const token_iterator& args_begin_,
-      const token_iterator& args_end_
+      const command::iterator& args_begin_,
+      const command::iterator& args_end_
     ) const;
   private:
     boost::scoped_ptr<pragma_handler_interface> _body;

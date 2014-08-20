@@ -20,7 +20,6 @@
 #include <metashell/version.hpp>
 #include "indenter.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/join.hpp>
 
 using namespace metashell;
@@ -37,7 +36,7 @@ namespace
       .left_align("Metashell has the following built-in pragmas:");
   
     typedef std::pair<const std::vector<std::string>, pragma_handler> sp;
-    BOOST_FOREACH(const sp& p, shell_.pragma_handlers())
+    for (const sp& p : shell_.pragma_handlers())
     {
       const std::string args = p.second.arguments();
       ind.left_align(
@@ -96,8 +95,8 @@ std::string pragma_help::description() const
 }
 
 void pragma_help::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
   using boost::algorithm::join;
@@ -109,13 +108,17 @@ void pragma_help::run(
   else
   {
     std::vector<std::string> args;
-    for (
-      token_iterator i = args_begin_;
-      i != args_end_;
-      i = skip_whitespace(skip(i))
-    )
+    for (command::iterator i = args_begin_; i != args_end_; ++i)
     {
-      args.push_back(std::string(i->get_value().begin(), i->get_value().end()));
+      switch (i->category())
+      {
+      case token_category::whitespace:
+      case token_category::comment:
+        // skip token
+        break;
+      default:
+        args.push_back(i->value());
+      }
     }
     
     indenter ind(_shell.width(), " * ");

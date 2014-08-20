@@ -17,8 +17,6 @@
 #include <metashell/text_position.hpp>
 #include <iostream>
 
-#include <boost/foreach.hpp>
-
 using namespace metashell;
 
 text_position::text_position() :
@@ -56,7 +54,7 @@ text_position metashell::operator+(text_position pos_, const std::string& s_)
 {
   bool was13 = false;
 
-  BOOST_FOREACH(char c, s_)
+  for (char c : s_)
   {
     switch (c)
     {

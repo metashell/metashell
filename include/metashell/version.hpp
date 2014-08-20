@@ -23,7 +23,6 @@ namespace metashell
 {
   std::string version();
 
-  std::string wave_version();
   std::string libclang_version();
   std::string readline_version();
 }

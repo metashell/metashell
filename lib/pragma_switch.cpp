@@ -21,7 +21,6 @@
 #include <metashell/version.hpp>
 #include "indenter.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/join.hpp>
 
 #include <algorithm>
@@ -53,8 +52,8 @@ namespace
 
 pragma_switch::pragma_switch(
   const std::string& name_,
-  const boost::function<bool()>& query_,
-  const boost::function<void(bool)>& update_,
+  const std::function<bool()>& query_,
+  const std::function<void(bool)>& update_,
   shell& shell_
 ) :
   _query(query_),
@@ -81,15 +80,15 @@ std::string pragma_switch::description() const
 }
 
 void pragma_switch::run(
-  const token_iterator& args_begin_,
-  const token_iterator& args_end_
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
 ) const
 {
-  token_iterator i = args_begin_;
+  command::iterator i = args_begin_;
 
   if (i != args_end_)
   {
-    const std::string v(i->get_value().begin(), i->get_value().end());
+    const std::string v = i->value();
     if (valid_argument(v))
     {
       _update(element_of(true_values, v));

@@ -28,8 +28,6 @@
 
 #include <boost/algorithm/string/join.hpp>
 
-#include <boost/foreach.hpp>
-
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -75,7 +73,7 @@ namespace
     const pragma_handler_map m = pragma_handler_map::build_default(sh);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
-    BOOST_FOREACH(const sp& p, m)
+    for (const sp& p : m)
     {
       show_markdown(p.first, p.second, std::cout);
     }
@@ -150,7 +148,7 @@ parse_config_result metashell::parse_config(
 
     ucfg.verbose = vm.count("verbose") || vm.count("V");
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-    ucfg.indent = vm.count("indent");
+    ucfg.indent = vm.count("indent") != 0;
     ucfg.standard_to_use = metashell::parse(cppstd);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");

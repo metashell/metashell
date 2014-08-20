@@ -23,10 +23,7 @@
 
 #include <just/process.hpp>
 
-#include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string/trim.hpp>
-
-#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <fstream>

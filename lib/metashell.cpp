@@ -18,15 +18,12 @@
 #include "get_type_of_variable.hpp"
 #include "cxindex.hpp"
 
-#include <metashell/token_iterator.hpp>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/ref.hpp>
-#include <boost/foreach.hpp>
+#include <metashell/command.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <fstream>
+#include <memory>
 
 using namespace metashell;
 
@@ -34,9 +31,8 @@ namespace
 {
   const char* var = "__metashell_v";
 
-  std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
+  std::pair<std::unique_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
-    const config& config_,
     const std::string& input_filename_,
     const environment& env_,
     const std::string& tmp_exp_
@@ -51,37 +47,37 @@ namespace
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
         )
       );
-    return make_pair(index_.parse_code(code, config_, env_), code.content());
+    return make_pair(index_.parse_code(code, env_), code.content());
   }
 
-  bool has_typedef(const token_iterator& begin_, const token_iterator& end_)
-  {
-    return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
-  }
-
-  bool is_whitespace(boost::wave::token_id id_)
-  {
-    return
-      IS_CATEGORY(id_, boost::wave::WhiteSpaceTokenType)
-      || IS_CATEGORY(id_, boost::wave::EOFTokenType)
-      || IS_CATEGORY(id_, boost::wave::EOLTokenType);
-  }
-
-  boost::wave::token_id last_non_whitespace_token_id(
-    token_iterator begin_,
-    const token_iterator& end_
+  bool has_typedef(
+    const command::iterator& begin_,
+    const command::iterator& end_
   )
   {
-    boost::wave::token_id id;
+    return
+      std::find_if(
+        begin_,
+        end_,
+        [](const token& t_) { return t_.type() == token_type::keyword_typedef; }
+      ) != end_;
+  }
+
+  token_type last_non_whitespace_token_type(
+    command::iterator begin_,
+    const command::iterator& end_
+  )
+  {
+    token_type t;
     for (; begin_ != end_; ++begin_)
     {
-      const boost::wave::token_id cid = *begin_;
-      if (!is_whitespace(cid))
+      const token_category c = begin_->category();
+      if (c != token_category::whitespace && c != token_category::comment)
       {
-        id = cid;
+        t = begin_->type();
       }
     }
-    return id;
+    return t;
   }
 }
 
@@ -96,8 +92,7 @@ result metashell::validate_code(
   {
     const unsaved_file src(input_filename_, env_.get_appended(src_));
     cxindex index;
-    boost::shared_ptr<cxtranslationunit>
-      tu = index.parse_code(src, config_, env_);
+    std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env_);
     return
       result(
         "",
@@ -123,62 +118,60 @@ result metashell::eval_tmp(
   using std::string;
   using std::pair;
 
-  typedef boost::shared_ptr<cxtranslationunit> tup;
+  typedef std::unique_ptr<cxtranslationunit> tup;
 
   cxindex index;
 
-  const pair<tup, string> simple =
-    parse_expr(index, config_, input_filename_, env_, tmp_exp_);
+  pair<tup, string> simple = parse_expr(index, input_filename_, env_, tmp_exp_);
 
-  const pair<tup, string> final =
+  const pair<tup, string> final_pair =
     simple.first->has_errors() ?
-      simple :
+      std::move(simple) :
       parse_expr(
         index,
-        config_,
         input_filename_,
         env_,
         "::metashell::format<" + tmp_exp_ + ">::type"
       );
 
   get_type_of_variable v(var);
-  final.first->visit_nodes(boost::ref(v));
+  final_pair.first->visit_nodes(
+    [&v](cxcursor cursor_, cxcursor) { v(cursor_); }
+  );
 
   return
     result(
       v.result(),
-      final.first->errors_begin(),
-      final.first->errors_end(),
-      config_.verbose ? final.second : ""
+      final_pair.first->errors_begin(),
+      final_pair.first->errors_end(),
+      config_.verbose ? final_pair.second : ""
     );
 }
 
 namespace
 {
   std::pair<std::string, std::string> find_completion_start(
-    const std::string& s_,
-    const std::string& input_filename_
+    const std::string& s_
   )
   {
     typedef std::pair<std::string, std::string> string_pair;
 
+    const command cmd(s_);
+
     std::ostringstream o;
-    token_iterator::value_type last_token;
+    token last_token;
     bool first = true;
-    for (token_iterator i = begin_tokens(s_, input_filename_), e; i != e; ++i)
+    for (auto i = cmd.begin(), e = cmd.end(); i != e; ++i)
     {
-      if (!IS_CATEGORY(*i, boost::wave::EOFTokenType))
+      if (first)
       {
-        if (first)
-        {
-          first = false;
-        }
-        else
-        {
-          o << last_token.get_value();
-        }
-        last_token = *i;
+        first = false;
       }
+      else
+      {
+        o << last_token.value();
+      }
+      last_token = *i;
     }
 
     if (first) // no token
@@ -188,17 +181,15 @@ namespace
     else
     {
       if (
-        IS_CATEGORY(last_token, boost::wave::IdentifierTokenType)
-        || IS_CATEGORY(last_token, boost::wave::KeywordTokenType)
+        last_token.category() == token_category::identifier
+        || last_token.category() == token_category::keyword
       )
       {
-        const token_iterator::value_type::string_type
-          t = last_token.get_value();
-        return string_pair(o.str(), std::string(t.begin(), t.end()));
+        return string_pair(o.str(), last_token.value());
       }
       else
       {
-        o << last_token.get_value();
+        o << last_token.value();
         return string_pair(o.str(), "");
       }
     }
@@ -208,7 +199,6 @@ namespace
 void metashell::code_complete(
   const environment& env_,
   const std::string& src_,
-  const config& config_,
   const std::string& input_filename_,
   std::set<std::string>& out_
 )
@@ -219,8 +209,7 @@ void metashell::code_complete(
   using std::string;
   using std::set;
 
-  const pair<string, string> completion_start =
-    find_completion_start(src_, input_filename_);
+  const pair<string, string> completion_start = find_completion_start(src_);
 
   const unsaved_file src(
     input_filename_,
@@ -229,11 +218,11 @@ void metashell::code_complete(
   );
 
   set<string> c;
-  cxindex().parse_code(src, config_, env_)->code_complete(c);
+  cxindex().parse_code(src, env_)->code_complete(c);
   
   out_.clear();
   const int prefix_len = completion_start.second.length();
-  BOOST_FOREACH(const string& s, c)
+  for (const string& s : c)
   {
     if (starts_with(s, completion_start.second) && s != completion_start.second)
     {
@@ -243,23 +232,8 @@ void metashell::code_complete(
 }
 
 bool metashell::is_environment_setup_command(
-  const std::string& s_,
-  const std::string& input_filename_
-)
-{
-  try
-  {
-    return is_environment_setup_command(begin_tokens(s_, input_filename_));
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-bool metashell::is_environment_setup_command(
-  token_iterator begin_,
-  const token_iterator& end_
+  command::iterator begin_,
+  const command::iterator& end_
 )
 {
   try
@@ -271,53 +245,52 @@ bool metashell::is_environment_setup_command(
     }
     else
     {
-      const boost::wave::token_id id = *begin_;
-      if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
+      const token t = *begin_;
+      switch (t.category())
       {
-        switch (id)
+      case token_category::keyword:
+        switch (t.type())
         {
-        case boost::wave::T_BOOL:
-        case boost::wave::T_CHAR:
-        case boost::wave::T_CONST:
-        case boost::wave::T_DOUBLE:
-        case boost::wave::T_FLOAT:
-        case boost::wave::T_INT:
-        case boost::wave::T_LONG:
-        case boost::wave::T_SHORT:
-        case boost::wave::T_SIGNED:
-        case boost::wave::T_UNSIGNED:
-        case boost::wave::T_VOID:
-        case boost::wave::T_VOLATILE:
-        case boost::wave::T_WCHART:
+        case token_type::keyword_bool:
+        case token_type::keyword_char:
+        case token_type::keyword_const:
+        case token_type::keyword_double:
+        case token_type::keyword_float:
+        case token_type::keyword_int:
+        case token_type::keyword_long:
+        case token_type::keyword_short:
+        case token_type::keyword_signed:
+        case token_type::keyword_unsigned:
+        case token_type::keyword_void:
+        case token_type::keyword_volatile:
+        case token_type::keyword_wchar_t:
           if (has_typedef(begin_, end_))
           {
             return true;
           }
           else
           {
-            const boost::wave::token_id
-              lid = last_non_whitespace_token_id(begin_, end_);
+            const token_type lt = last_non_whitespace_token_type(begin_, end_);
             return
-              lid == boost::wave::T_SEMICOLON
-              || lid == boost::wave::T_RIGHTBRACE;
+              lt == token_type::operator_semicolon
+              || lt == token_type::operator_right_brace;
           }
-        case boost::wave::T_SIZEOF:
-        case boost::wave::T_CONSTCAST:
-        case boost::wave::T_STATICCAST:
-        case boost::wave::T_DYNAMICCAST:
-        case boost::wave::T_REINTERPRETCAST:
+        case token_type::keyword_sizeof:
+        case token_type::keyword_const_cast:
+        case token_type::keyword_static_cast:
+        case token_type::keyword_dynamic_cast:
+        case token_type::keyword_reinterpret_cast:
           return false;
         default:
           return true;
         }
-      }
-      else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
-      {
-        return begin_->get_value() == "constexpr" || has_typedef(begin_, end_);
-      }
-      else
-      {
-        return IS_CATEGORY(id, boost::wave::PPTokenType);
+        assert(false);
+      case token_category::identifier:
+        return has_typedef(begin_, end_);
+      case token_category::preprocessor:
+        return true;
+      default:
+        return false;
       }
     }
   }
