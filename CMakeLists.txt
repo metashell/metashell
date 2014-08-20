@@ -38,6 +38,15 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   message(STATUS "Turning on C++11 for Clang")
 endif()
 
+# Warnings
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+  message(STATUS "Turning on warnings for GCC")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+  message(STATUS "Turning on warnings for Clang")
+endif()
+
 # Boost
 if (WIN32)
   set(Boost_USE_STATIC_LIBS ON)

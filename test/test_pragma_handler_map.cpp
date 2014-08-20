@@ -36,10 +36,7 @@ namespace
     virtual std::string arguments() const { return "a|b|c"; }
     virtual std::string description() const { return "Foo bar"; }
 
-    virtual void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_
-    ) const
+    virtual void run(const command::iterator&, const command::iterator&) const
     {
       _run_flag = true;
     }

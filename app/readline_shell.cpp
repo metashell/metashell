@@ -60,7 +60,7 @@ namespace
     }
   }
 
-  void syntax_highlight(std::ostream& o_, const std::string& s_)
+  void syntax_highlight(const std::string& s_)
   {
     const command cmd(s_);
     std::for_each(cmd.begin(), cmd.end(), syntax_highlighted_display());
@@ -156,7 +156,7 @@ char* readline_shell::tab_generator(const char* text_, int state_)
 #endif
 
 #ifndef _WIN32
-char** readline_shell::tab_completion(const char* text_, int start_, int end_)
+char** readline_shell::tab_completion(const char* text_, int, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
@@ -189,7 +189,7 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        syntax_highlight(std::cout, s_);
+        syntax_highlight(s_);
       }
       else
       {

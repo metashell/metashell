@@ -29,13 +29,12 @@ cxindex::~cxindex()
 
 std::unique_ptr<cxtranslationunit> cxindex::parse_code(
   const unsaved_file& src_,
-  const config& config_,
   const environment& env_
 )
 {
   return
     std::unique_ptr<cxtranslationunit>(
-      new cxtranslationunit(config_, env_, src_, _index)
+      new cxtranslationunit(env_, src_, _index)
     );
 }
 

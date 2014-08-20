@@ -283,7 +283,7 @@ void shell::code_complete(
   std::set<std::string>& out_
 ) const
 {
-  metashell::code_complete(*_env, s_, _config, input_filename(), out_);
+  metashell::code_complete(*_env, s_, input_filename(), out_);
 }
 
 void shell::init()

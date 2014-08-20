@@ -32,7 +32,7 @@ namespace metashell
   public:
     explicit get_type_of_variable(const std::string& name_ = std::string());
 
-    CXChildVisitResult operator()(cxcursor cursor_, cxcursor parent_);
+    CXChildVisitResult operator()(cxcursor cursor_);
 
     const std::string& result() const;
   private:

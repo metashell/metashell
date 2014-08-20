@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/text_position.hpp>
 #include <metashell/unsaved_file.hpp>
@@ -45,7 +44,6 @@ namespace metashell
 
     // takes ownership
     cxtranslationunit(
-      const config& config_,
       const environment& env_,
       const unsaved_file& src_,
       CXIndex index_

@@ -41,8 +41,8 @@ std::string pragma_environment_reset::description() const
 }
 
 void pragma_environment_reset::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator&,
+  const command::iterator&
 ) const
 {
   _shell.reset_environment();

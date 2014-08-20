@@ -58,7 +58,6 @@ namespace
 }
 
 cxtranslationunit::cxtranslationunit(
-  const config& config_,
   const environment& env_,
   const unsaved_file& src_,
   CXIndex index_

@@ -19,7 +19,6 @@
 
 #include "cxtranslationunit.hpp"
 
-#include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/unsaved_file.hpp>
 
@@ -39,7 +38,6 @@ namespace metashell
 
     std::unique_ptr<cxtranslationunit> parse_code(
       const unsaved_file& src_,
-      const config& config_,
       const environment& env_
     );
   private:

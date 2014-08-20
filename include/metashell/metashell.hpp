@@ -46,7 +46,6 @@ namespace metashell
   void code_complete(
     const environment& env_,
     const std::string& src_,
-    const config& config_,
     const std::string& input_filename_,
     std::set<std::string>& out_
   );

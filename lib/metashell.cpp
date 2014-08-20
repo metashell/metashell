@@ -33,7 +33,6 @@ namespace
 
   std::pair<std::unique_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
-    const config& config_,
     const std::string& input_filename_,
     const environment& env_,
     const std::string& tmp_exp_
@@ -48,7 +47,7 @@ namespace
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
         )
       );
-    return make_pair(index_.parse_code(code, config_, env_), code.content());
+    return make_pair(index_.parse_code(code, env_), code.content());
   }
 
   bool has_typedef(
@@ -93,8 +92,7 @@ result metashell::validate_code(
   {
     const unsaved_file src(input_filename_, env_.get_appended(src_));
     cxindex index;
-    std::unique_ptr<cxtranslationunit>
-      tu = index.parse_code(src, config_, env_);
+    std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env_);
     return
       result(
         "",
@@ -124,15 +122,13 @@ result metashell::eval_tmp(
 
   cxindex index;
 
-  pair<tup, string> simple =
-    parse_expr(index, config_, input_filename_, env_, tmp_exp_);
+  pair<tup, string> simple = parse_expr(index, input_filename_, env_, tmp_exp_);
 
   const pair<tup, string> final_pair =
     simple.first->has_errors() ?
       std::move(simple) :
       parse_expr(
         index,
-        config_,
         input_filename_,
         env_,
         "::metashell::format<" + tmp_exp_ + ">::type"
@@ -140,7 +136,7 @@ result metashell::eval_tmp(
 
   get_type_of_variable v(var);
   final_pair.first->visit_nodes(
-    [&v](cxcursor cursor_, cxcursor parent_) { v(cursor_, parent_); }
+    [&v](cxcursor cursor_, cxcursor) { v(cursor_); }
   );
 
   return
@@ -203,7 +199,6 @@ namespace
 void metashell::code_complete(
   const environment& env_,
   const std::string& src_,
-  const config& config_,
   const std::string& input_filename_,
   std::set<std::string>& out_
 )
@@ -223,7 +218,7 @@ void metashell::code_complete(
   );
 
   set<string> c;
-  cxindex().parse_code(src, config_, env_)->code_complete(c);
+  cxindex().parse_code(src, env_)->code_complete(c);
   
   out_.clear();
   const int prefix_len = completion_start.second.length();
