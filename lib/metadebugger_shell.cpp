@@ -418,7 +418,7 @@ void metadebugger_shell::display_current_forward_trace() const {
 
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
   // No kind for <root> vertex
-  if (frame.vertex == 0) {
+  if (frame.vertex == mp.get_root_vertex()) {
     display(mp.get_vertex_property(frame.vertex).name + "\n");
   } else {
     display((boost::format("%1% (%2%)\n") %

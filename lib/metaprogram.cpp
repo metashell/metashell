@@ -36,8 +36,7 @@ metaprogram::metaprogram_state::metaprogram_state(
   if (vertex_count > 0) {
     discovered.resize(vertex_count, false);
     parent_edge.resize(vertex_count, boost::none);
-    // 0 == <root> vertex
-    vertex_stack.push(0);
+    vertex_stack.push(mp.get_root_vertex());
   }
 }
 
@@ -101,6 +100,10 @@ void metaprogram::start_metaprogram() {
 
 bool metaprogram::is_metaprogram_started() const {
   return !mp_state.vertex_stack.empty();
+}
+
+metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
+  return 0;
 }
 
 // Returns true when the program took it's last step (finished)
@@ -189,7 +192,7 @@ metaprogram::back_trace_t metaprogram::get_back_trace() const {
 
   back_trace_t back_trace;
 
-  while (current_vertex != 0) {
+  while (current_vertex != get_root_vertex()) {
     assert(mp_state.parent_edge[current_vertex]);
 
     edge_descriptor parent_edge = *mp_state.parent_edge[current_vertex];

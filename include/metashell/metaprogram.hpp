@@ -131,6 +131,8 @@ public:
   void start_metaprogram();
   bool is_metaprogram_started() const;
 
+  vertex_descriptor get_root_vertex() const;
+
   // Returns true when the program took it's last step (finished)
   bool step_metaprogram();
 
