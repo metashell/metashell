@@ -33,6 +33,10 @@ namespace metashell {
 
 class metaprogram {
 public:
+
+  // Creates empty metaprogram: single <root> vertex
+  metaprogram();
+
   static metaprogram create_from_xml_stream(std::istream& stream);
   static metaprogram create_from_xml_file(const std::string& file);
   static metaprogram create_from_xml_string(const std::string& string);

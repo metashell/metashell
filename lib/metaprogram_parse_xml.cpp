@@ -81,7 +81,7 @@ private:
 
 metaprogram_builder::metaprogram_builder() {
   // Add root vertex
-  vertex_stack.push(add_vertex("<root>"));
+  vertex_stack.push(trace.get_root_vertex());
 }
 
 void metaprogram_builder::handle_template_begin(

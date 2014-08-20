@@ -27,6 +27,10 @@
 
 namespace metashell {
 
+metaprogram::metaprogram() {
+  add_vertex("root");
+}
+
 metaprogram::metaprogram_state::metaprogram_state() {}
 
 metaprogram::metaprogram_state::metaprogram_state(
