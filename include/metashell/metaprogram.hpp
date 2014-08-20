@@ -163,6 +163,9 @@ private:
   graph_t graph;
 
   metaprogram_state mp_state;
+
+  // This should be always 0
+  vertex_descriptor root_vertex;
 };
 
 }

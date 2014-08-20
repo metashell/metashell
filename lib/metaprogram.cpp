@@ -28,7 +28,7 @@
 namespace metashell {
 
 metaprogram::metaprogram() {
-  add_vertex("root");
+  root_vertex = add_vertex("<root>");
 }
 
 metaprogram::metaprogram_state::metaprogram_state() {}
@@ -107,7 +107,7 @@ bool metaprogram::is_metaprogram_started() const {
 }
 
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
-  return 0;
+  return root_vertex;
 }
 
 // Returns true when the program took it's last step (finished)
