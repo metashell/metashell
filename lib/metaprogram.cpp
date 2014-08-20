@@ -62,9 +62,7 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
   mp_state.discovered.resize(vertex+1, false);
   mp_state.parent_edge.resize(vertex+1, boost::none);
 
-  template_vertex_property& vertex_property = get_vertex_property(vertex);
-
-  vertex_property.name = element;
+  get_vertex_property(vertex).name = element;
 
   return vertex;
 }
