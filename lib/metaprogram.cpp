@@ -21,6 +21,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 #include "exception.hpp"
@@ -29,6 +30,7 @@ namespace metashell {
 
 metaprogram::metaprogram() {
   root_vertex = add_vertex("<root>");
+  reset_metaprogram_state();
 }
 
 metaprogram::metaprogram_state::metaprogram_state() {}
@@ -37,11 +39,11 @@ metaprogram::metaprogram_state::metaprogram_state(
     const metaprogram& mp)
 {
   unsigned vertex_count = boost::num_vertices(mp.graph);
-  if (vertex_count > 0) {
-    discovered.resize(vertex_count, false);
-    parent_edge.resize(vertex_count, boost::none);
-    vertex_stack.push(mp.get_root_vertex());
-  }
+  assert(vertex_count > 0);
+
+  discovered.resize(vertex_count, false);
+  parent_edge.resize(vertex_count, boost::none);
+  vertex_stack.push(mp.get_root_vertex());
 }
 
 metaprogram::frame::frame() : vertex(), parent_edge() {}
@@ -54,6 +56,11 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
   const std::string& element)
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
+
+  // TODO resizing after every add_vertex is neither
+  // efficient nor nice
+  mp_state.discovered.resize(vertex+1, false);
+  mp_state.parent_edge.resize(vertex+1, boost::none);
 
   template_vertex_property& vertex_property = get_vertex_property(vertex);
 
@@ -98,12 +105,8 @@ void metaprogram::reset_metaprogram_state() {
   mp_state = metaprogram_state(*this);
 }
 
-void metaprogram::start_metaprogram() {
-  reset_metaprogram_state();
-}
-
-bool metaprogram::is_metaprogram_started() const {
-  return !mp_state.vertex_stack.empty();
+bool metaprogram::is_metaprogram_finished() const {
+  return mp_state.vertex_stack.empty();
 }
 
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
@@ -112,7 +115,7 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 
 // Returns true when the program took it's last step (finished)
 bool metaprogram::step_metaprogram() {
-  assert(is_metaprogram_started());
+  assert(!is_metaprogram_finished());
 
   vertex_descriptor current_vertex = mp_state.vertex_stack.top();
   mp_state.vertex_stack.pop();
@@ -120,17 +123,17 @@ bool metaprogram::step_metaprogram() {
   if (!mp_state.discovered[current_vertex]) {
     mp_state.discovered[current_vertex] = true;
 
-    for (edge_descriptor edge :
-        boost::make_iterator_range(
-          boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed)
-    {
+    auto reverse_edge_range = boost::make_iterator_range(
+          boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed;
+
+    for (edge_descriptor edge : reverse_edge_range) {
       vertex_descriptor target = boost::target(edge, graph);
 
       mp_state.parent_edge[target] = edge;
       mp_state.vertex_stack.push(target);
     }
   }
-  return mp_state.vertex_stack.empty();
+  return is_metaprogram_finished();
 }
 
 const metaprogram::graph_t& metaprogram::get_graph() const {
@@ -174,9 +177,7 @@ metaprogram::template_edge_property& metaprogram::get_edge_property(
 }
 
 metaprogram::frame metaprogram::get_current_frame() const {
-  if (mp_state.vertex_stack.empty()) {
-    throw exception("Metaprogram stack is empty");
-  }
+  assert(!is_metaprogram_finished());
 
   vertex_descriptor current_vertex = mp_state.vertex_stack.top();
 
@@ -188,9 +189,7 @@ metaprogram::frame metaprogram::get_current_frame() const {
 }
 
 metaprogram::back_trace_t metaprogram::get_back_trace() const {
-  if (mp_state.vertex_stack.empty()) {
-    throw exception("Metaprogram stack is empty");
-  }
+  assert(!is_metaprogram_finished());
 
   vertex_descriptor current_vertex = mp_state.vertex_stack.top();
 

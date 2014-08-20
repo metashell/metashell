@@ -58,6 +58,8 @@ protected:
   bool stopped() const;
   void line_available(const std::string& line);
 
+  bool require_running_metaprogram() const;
+
   void run_metaprogram_with_templight(const std::string& str);
   void run_metaprogram(const std::string& str);
 

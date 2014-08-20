@@ -72,39 +72,45 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     prev_line = line;
   }
   if (line == "ft" || line == "forwardtrace") {
-    // TODO check if metaprogram started
-    display_current_forward_trace();
+    if (require_running_metaprogram()) {
+      display_current_forward_trace();
+    }
   } else if (line == "bt" || line == "backtrace") {
-    display_back_trace();
+    if (require_running_metaprogram()) {
+      display_back_trace();
+    }
   } else if (boost::starts_with(line, "eval ")) {
     run_metaprogram_with_templight(
         line.substr(5, std::string::npos));
-  } else if (line == "start") {
-    //TODO ask user if he wants to restart
-    mp.start_metaprogram();
   } else if (line == "step") {
-    if (mp.is_metaprogram_started()) {
+    if (require_running_metaprogram()) {
         if (!mp.step_metaprogram()) {
           display_current_frame();
         } else {
           display("Metaprogram finished\n",
               just::console::color::green);
         }
-    } else {
-      display("Metaprogram not started yet\n",
-          just::console::color::red);
     }
   } else if (boost::starts_with(line, "break ")) {
     breakpoint_t breakpoint = line.substr(6, std::string::npos);
     display("Break point \"" + breakpoint + "\" added\n");
     breakpoints.push_back(breakpoint);
   } else if (line == "continue") {
-    continue_metaprogram();
+    if (require_running_metaprogram()) {
+      continue_metaprogram();
+    }
   } else {
     display("Unknown command: \"" + line + "\"\n",
         just::console::color::red);
   }
+}
 
+bool metadebugger_shell::require_running_metaprogram() const {
+  if (mp.is_metaprogram_finished()) {
+    display("Metaprogram finished\n", just::console::color::red);
+    return false;
+  }
+  return true;
 }
 
 void metadebugger_shell::run_metaprogram_with_templight(

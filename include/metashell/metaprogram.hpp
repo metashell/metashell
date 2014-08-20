@@ -132,8 +132,7 @@ public:
       const std::string& element) const;
 
   void reset_metaprogram_state();
-  void start_metaprogram();
-  bool is_metaprogram_started() const;
+  bool is_metaprogram_finished() const;
 
   vertex_descriptor get_root_vertex() const;
 
@@ -164,7 +163,7 @@ private:
 
   metaprogram_state mp_state;
 
-  // This should be always 0
+  // This should be generally 0
   vertex_descriptor root_vertex;
 };
 
