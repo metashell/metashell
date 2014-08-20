@@ -414,7 +414,7 @@ void metadebugger_shell::display_forward_trace(
 void metadebugger_shell::display_current_forward_trace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
 
-  metaprogram::vertex_descriptor vertex = mp.get_current_frame().vertex;
+  metaprogram::vertex_descriptor vertex = mp.get_current_vertex();
   discovered[vertex] = false;
 
   unsigned shell_width = width();

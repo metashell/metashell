@@ -139,6 +139,7 @@ public:
   // Returns true when the program took it's last step (finished)
   bool step_metaprogram();
 
+  vertex_descriptor get_current_vertex() const;
   frame get_current_frame() const;
   back_trace_t get_back_trace() const;
 

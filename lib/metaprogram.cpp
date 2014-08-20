@@ -176,6 +176,11 @@ metaprogram::template_edge_property& metaprogram::get_edge_property(
   return boost::get(template_edge_property_tag(), graph, edge);
 }
 
+metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
+  assert(!is_metaprogram_finished());
+  return mp_state.vertex_stack.top();
+}
+
 metaprogram::frame metaprogram::get_current_frame() const {
   assert(!is_metaprogram_finished());
 
