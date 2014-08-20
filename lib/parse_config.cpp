@@ -28,8 +28,6 @@
 
 #include <boost/algorithm/string/join.hpp>
 
-#include <boost/foreach.hpp>
-
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -75,7 +73,7 @@ namespace
     const pragma_handler_map m = pragma_handler_map::build_default(sh);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
-    BOOST_FOREACH(const sp& p, m)
+    for (const sp& p : m)
     {
       show_markdown(p.first, p.second, std::cout);
     }

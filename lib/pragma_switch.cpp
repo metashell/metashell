@@ -21,7 +21,6 @@
 #include <metashell/version.hpp>
 #include "indenter.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/join.hpp>
 
 #include <algorithm>
@@ -53,8 +52,8 @@ namespace
 
 pragma_switch::pragma_switch(
   const std::string& name_,
-  const boost::function<bool()>& query_,
-  const boost::function<void(bool)>& update_,
+  const std::function<bool()>& query_,
+  const std::function<void(bool)>& update_,
   shell& shell_
 ) :
   _query(query_),

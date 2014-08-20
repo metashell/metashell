@@ -25,8 +25,9 @@
 
 #include <clang-c/Index.h>
 
-#include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+
+#include <memory>
 
 namespace metashell
 {
@@ -36,7 +37,7 @@ namespace metashell
     cxindex();
     ~cxindex();
 
-    boost::shared_ptr<cxtranslationunit> parse_code(
+    std::unique_ptr<cxtranslationunit> parse_code(
       const unsaved_file& src_,
       const config& config_,
       const environment& env_

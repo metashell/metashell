@@ -32,9 +32,6 @@
 
 #include "exception.hpp"
 
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
-
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -108,7 +105,7 @@ void pragma_handler_map::process(
   int longest_fit_len = -1;
 
   typedef std::pair<const std::vector<std::string>, pragma_handler> np;
-  BOOST_FOREACH(const np& p, _handlers)
+  for (const np& p : _handlers)
   {
     if (
       const optional<command::iterator> i = is_this_pragma(p.first, begin_, e)
@@ -144,8 +141,6 @@ pragma_handler_map::iterator pragma_handler_map::end() const
 
 pragma_handler_map pragma_handler_map::build_default(shell& shell_)
 {
-  using boost::bind;
-
   return
     pragma_handler_map()
       .add("help", pragma_help(shell_))
@@ -153,8 +148,8 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
         "verbose",
         pragma_switch(
           "verbose mode",
-          bind(&shell::verbose, &shell_),
-          bind(&shell::verbose, &shell_, _1),
+          [&shell_] () { return shell_.verbose(); },
+          [&shell_] (bool v_) { shell_.verbose(v_); },
           shell_
         )
       )
@@ -162,8 +157,8 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
         "precompiled_headers",
         pragma_switch(
           "precompiled header usage",
-          bind(&shell::using_precompiled_headers, &shell_),
-          bind(&shell::using_precompiled_headers, &shell_, _1),
+          [&shell_] () { return shell_.using_precompiled_headers(); },
+          [&shell_] (bool v_) { shell_.using_precompiled_headers(v_); },
           shell_
         )
       )

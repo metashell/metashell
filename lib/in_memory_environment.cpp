@@ -18,9 +18,6 @@
 #include <metashell/standard.hpp>
 #include <metashell/config.hpp>
 
-#include <boost/phoenix/core.hpp>
-#include <boost/phoenix/operator.hpp>
-
 #include <algorithm>
 #include <iterator>
 #include <cassert>
@@ -38,13 +35,11 @@ namespace
     std::vector<std::string>& v_
   )
   {
-    using boost::phoenix::arg_names::arg1;
-
     std::transform(
       cont_.begin(),
       cont_.end(),
       std::back_insert_iterator<std::vector<std::string> >(v_),
-      prefix_ + arg1
+      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
     );
   }
 

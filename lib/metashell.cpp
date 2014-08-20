@@ -20,13 +20,10 @@
 
 #include <metashell/command.hpp>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/ref.hpp>
-#include <boost/foreach.hpp>
-
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <fstream>
+#include <memory>
 
 using namespace metashell;
 
@@ -34,7 +31,7 @@ namespace
 {
   const char* var = "__metashell_v";
 
-  std::pair<boost::shared_ptr<cxtranslationunit>, std::string> parse_expr(
+  std::pair<std::unique_ptr<cxtranslationunit>, std::string> parse_expr(
     cxindex& index_,
     const config& config_,
     const std::string& input_filename_,
@@ -96,7 +93,7 @@ result metashell::validate_code(
   {
     const unsaved_file src(input_filename_, env_.get_appended(src_));
     cxindex index;
-    boost::shared_ptr<cxtranslationunit>
+    std::unique_ptr<cxtranslationunit>
       tu = index.parse_code(src, config_, env_);
     return
       result(
@@ -123,16 +120,16 @@ result metashell::eval_tmp(
   using std::string;
   using std::pair;
 
-  typedef boost::shared_ptr<cxtranslationunit> tup;
+  typedef std::unique_ptr<cxtranslationunit> tup;
 
   cxindex index;
 
-  const pair<tup, string> simple =
+  pair<tup, string> simple =
     parse_expr(index, config_, input_filename_, env_, tmp_exp_);
 
-  const pair<tup, string> final =
+  const pair<tup, string> final_pair =
     simple.first->has_errors() ?
-      simple :
+      std::move(simple) :
       parse_expr(
         index,
         config_,
@@ -142,14 +139,16 @@ result metashell::eval_tmp(
       );
 
   get_type_of_variable v(var);
-  final.first->visit_nodes(boost::ref(v));
+  final_pair.first->visit_nodes(
+    [&v](cxcursor cursor_, cxcursor parent_) { v(cursor_, parent_); }
+  );
 
   return
     result(
       v.result(),
-      final.first->errors_begin(),
-      final.first->errors_end(),
-      config_.verbose ? final.second : ""
+      final_pair.first->errors_begin(),
+      final_pair.first->errors_end(),
+      config_.verbose ? final_pair.second : ""
     );
 }
 
@@ -228,7 +227,7 @@ void metashell::code_complete(
   
   out_.clear();
   const int prefix_len = completion_start.second.length();
-  BOOST_FOREACH(const string& s, c)
+  for (const string& s : c)
   {
     if (starts_with(s, completion_start.second) && s != completion_start.second)
     {

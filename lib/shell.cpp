@@ -25,8 +25,7 @@
 #include <metashell/header_file_environment.hpp>
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/command.hpp>
-
-#include <boost/foreach.hpp>
+#include <metashell/to_string.hpp>
 
 #include <cctype>
 #include <algorithm>
@@ -42,7 +41,7 @@ namespace
       s_.display_info(r_.info);
     }
 
-    BOOST_FOREACH(const std::string& i, r_.errors)
+    for (const std::string& i : r_.errors)
     {
       s_.display_error(i);
     }
@@ -54,7 +53,7 @@ namespace
 
   bool has_non_whitespace(const std::string& s_)
   {
-    BOOST_FOREACH(char c, s_)
+    for (char c : s_)
     {
       if (!std::isspace(c))
       {
@@ -82,9 +81,9 @@ namespace
 
   const char default_env[] =
     "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " BOOST_PP_STRINGIZE(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " BOOST_PP_STRINGIZE(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " BOOST_PP_STRINGIZE(METASHELL_PATCH) "\n"
+    "#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
+    "#define __METASHELL_MINOR " TO_STRING(METASHELL_MINOR) "\n"
+    "#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
 
     "namespace metashell { "
       "namespace impl { "

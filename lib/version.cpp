@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/version.hpp>
+#include <metashell/to_string.hpp>
 
 #include "cxstring.hpp"
 
@@ -25,16 +26,6 @@
 #else
 #  include <readline/readline.h>
 #endif
-
-#ifdef TO_STRING_IMPL
-#  error TO_STRING_IMPL already defined
-#endif
-#define TO_STRING_IMPL(x) #x
-
-#ifdef TO_STRING
-#  error TO_STRING already defined
-#endif
-#define TO_STRING(x) TO_STRING_IMPL(x)
 
 using namespace metashell;
 

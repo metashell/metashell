@@ -28,18 +28,18 @@
 #include <clang-c/Index.h>
 
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
 
 #include <string>
 #include <set>
 #include <vector>
+#include <functional>
 
 namespace metashell
 {
   class cxtranslationunit : boost::noncopyable
   {
   public:
-    typedef boost::function<void(cxcursor, cxcursor)> visitor;
+    typedef std::function<void(cxcursor, cxcursor)> visitor;
 
     typedef indexing_iterator<std::string> error_iterator;
 

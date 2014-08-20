@@ -20,7 +20,6 @@
 #include <metashell/version.hpp>
 #include "indenter.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/join.hpp>
 
 using namespace metashell;
@@ -37,7 +36,7 @@ namespace
       .left_align("Metashell has the following built-in pragmas:");
   
     typedef std::pair<const std::vector<std::string>, pragma_handler> sp;
-    BOOST_FOREACH(const sp& p, shell_.pragma_handlers())
+    for (const sp& p : shell_.pragma_handlers())
     {
       const std::string args = p.second.arguments();
       ind.left_align(

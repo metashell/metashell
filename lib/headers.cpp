@@ -18,12 +18,8 @@
 #include <metashell/shell.hpp>
 #include <metashell/path_builder.hpp>
 
-#include <boost/phoenix/core.hpp>
-#include <boost/phoenix/operator.hpp>
-
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptors.hpp>
-#include <boost/foreach.hpp>
 
 using namespace metashell;
 
@@ -102,7 +98,6 @@ headers::headers(const std::string& internal_dir_, bool empty_) :
   {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
-    using boost::phoenix::arg_names::arg1;
 
     using std::string;
     
@@ -111,7 +106,7 @@ headers::headers(const std::string& internal_dir_, bool empty_) :
 
     const char* formatters[] = {"vector", "list", "set", "map"};
 
-    BOOST_FOREACH(const char* f, formatters)
+    for (const char* f : formatters)
     {
       add(
         internal_dir / "metashell" / "formatter" / (f + hpp),
@@ -168,7 +163,7 @@ headers::iterator headers::end() const
 
 void headers::generate() const
 {
-  BOOST_FOREACH(const unsaved_file& h, _headers)
+  for (const unsaved_file& h : _headers)
   {
     h.generate();
   }

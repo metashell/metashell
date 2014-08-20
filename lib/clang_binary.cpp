@@ -22,8 +22,6 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include <boost/foreach.hpp>
-
 #include <algorithm>
 
 using namespace metashell;
@@ -80,7 +78,7 @@ std::vector<std::string> metashell::default_sysinclude(
 
   vector<string> result;
   bool in_sysinclude = false;
-  BOOST_FOREACH(const string& line, lines)
+  for (const string& line : lines)
   {
     if (in_sysinclude)
     {

@@ -34,8 +34,6 @@
 #  include <readline/history.h>
 #endif
 
-#include <boost/bind.hpp>
-
 #ifndef _WIN32
 #  include <sys/ioctl.h>
 #endif
@@ -104,14 +102,12 @@ void readline_shell::add_history(const std::string& s_)
 
 void readline_shell::run()
 {
-  using boost::bind;
-
 #ifndef _WIN32
   override_guard<char** (*)(const char*, int, int)>
     ovr2(rl_attempted_completion_function, tab_completion);
 #endif
 
-  interrupt_handler_override ovr3(bind(&readline_shell::cancel_operation,this));
+  interrupt_handler_override ovr3([this]() { this->cancel_operation(); });
 
   for (char* l = 0; !stopped() && (l = readline(prompt().c_str()));)
   {
