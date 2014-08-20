@@ -50,12 +50,18 @@ public:
   virtual unsigned width() const = 0;
 
 protected:
+  // breakpoint is simply a regex for now
+  typedef std::string breakpoint_t;
+  typedef std::vector<breakpoint_t> breakpoints_t;
+
   std::string prompt() const;
   bool stopped() const;
   void line_available(const std::string& line);
 
   void run_metaprogram_with_templight(const std::string& str);
   void run_metaprogram(const std::string& str);
+
+  void continue_metaprogram();
 
   void display_current_frame() const;
   void display_forward_trace(const std::string& root_type = "<root>") const;
@@ -66,6 +72,7 @@ protected:
   environment& env;
 
   metaprogram mp;
+  breakpoints_t breakpoints;
 
   std::string prev_line;
   bool is_stopped;

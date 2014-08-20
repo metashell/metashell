@@ -94,6 +94,12 @@ void metadebugger_shell::line_available(const std::string& original_line) {
       display("Metaprogram not started yet\n",
           just::console::color::red);
     }
+  } else if (boost::starts_with(line, "break ")) {
+    breakpoint_t breakpoint = line.substr(6, std::string::npos);
+    display("Break point \"" + breakpoint + "\" added\n");
+    breakpoints.push_back(breakpoint);
+  } else if (line == "continue") {
+    continue_metaprogram();
   } else {
     display("Unknown command: \"" + line + "\"\n",
         just::console::color::red);
@@ -135,6 +141,27 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   }
   if (!res.has_errors()) {
     display(res.output + "\n");
+  }
+}
+
+void metadebugger_shell::continue_metaprogram() {
+  //TODO check if metaprogram started
+
+  while (true) {
+    if (mp.step_metaprogram()) {
+      display("Metaprogram finished\n");
+      return;
+    }
+    for (const breakpoint_t& breakpoint : breakpoints) {
+      const std::string current_type =
+        mp.get_vertex_property(mp.get_current_frame().vertex).name;
+
+      boost::regex break_regex(breakpoint);
+      if (boost::regex_search(current_type, break_regex)) {
+        display("Breakpoint reached\n");
+        return;
+      }
+    }
   }
 }
 
