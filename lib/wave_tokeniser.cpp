@@ -14,6 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Disable warnings coming from Boost.Wave
+#ifdef _MSC_VER
+#  pragma warning( disable: 4996 )
+#endif
+
 #include <metashell/wave_tokeniser.hpp>
 
 #include <boost/wave.hpp>

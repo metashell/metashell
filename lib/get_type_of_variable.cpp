@@ -67,7 +67,7 @@ CXChildVisitResult get_type_of_variable::operator()(
       _result =
         unwrap("wrap<", cursor_.type().canonical_type().spelling(), ">");
     }
-    catch (const exception& e_)
+    catch (const exception&)
     {
       return CXChildVisit_Continue;
     }

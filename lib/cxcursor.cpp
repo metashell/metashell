@@ -100,7 +100,7 @@ cxcursor::namespace_iterator cxcursor::namespace_end() const
 
 bool cxcursor::operator==(const cxcursor& c_) const
 {
-  return clang_equalCursors(_cursor, c_._cursor);
+  return clang_equalCursors(_cursor, c_._cursor) != 0;
 }
 
 

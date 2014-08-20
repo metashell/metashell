@@ -137,6 +137,7 @@ JUST_TEST_CASE(
   
   JUST_ASSERT(
     dynamic_cast<const metashell::header_file_environment*>(&sh.env())
+    != nullptr
   );
 }
 
@@ -151,7 +152,7 @@ JUST_TEST_CASE(
   sh.using_precompiled_headers(false);
   
   JUST_ASSERT(
-    dynamic_cast<const metashell::in_memory_environment*>(&sh.env())
+    dynamic_cast<const metashell::in_memory_environment*>(&sh.env()) != nullptr
   );
 }
 

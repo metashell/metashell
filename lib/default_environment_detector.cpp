@@ -43,7 +43,7 @@ namespace
   bool file_exists(const std::string& path_)
   {
     std::ifstream f(path_.c_str());
-    return f;
+    return !(f.fail() || f.bad());
   }
 
   template <class It>
