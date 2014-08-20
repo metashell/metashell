@@ -70,7 +70,7 @@ namespace
       std::find_if(
         cmd_.begin(),
         cmd_.end(),
-        [] (const token& t_)
+        [] (const token& t_) -> bool
         {
           const token_category c = t_.category();
           return
