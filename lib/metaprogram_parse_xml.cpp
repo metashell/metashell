@@ -87,9 +87,9 @@ metaprogram_builder::metaprogram_builder() {
 void metaprogram_builder::handle_template_begin(
   instantiation_kind kind,
   const std::string& context,
-  const file_location& location,
-  double timestamp,
-  unsigned long long memory_usage)
+  const file_location& /* location */,
+  double /* timestamp */,
+  unsigned long long /* memory_usage */)
 {
   vertex_descriptor vertex = add_vertex(context);
   if (!vertex_stack.empty()) {
@@ -100,9 +100,9 @@ void metaprogram_builder::handle_template_begin(
 }
 
 void metaprogram_builder::handle_template_end(
-  instantiation_kind kind,
-  double timestamp,
-  unsigned long long memory_usage)
+  instantiation_kind /* kind */,
+  double /* timestamp */,
+  unsigned long long /* memory_usage */)
 {
   //TODO this check is not enough.
   //The root vertex should always be in the stack
