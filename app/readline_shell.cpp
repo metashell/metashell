@@ -197,21 +197,7 @@ void readline_shell::display_info(const std::string& s_) const
 void readline_shell::display_error(const std::string& s_) const
 {
   if (!s_.empty()) {
-    display(s_ + "\n", just::console::color::bright_red);
-    std::cout << std::flush;
-  }
-}
-
-void readline_shell::display(
-    const std::string& s_,
-    optional_color c_) const
-{
-  if (c_) {
-    just::console::text_color(*c_);
-  }
-  std::cout << s_;
-  if (c_) {
-    just::console::reset();
+    display(just::console::color::bright_red, s_);
   }
 }
 

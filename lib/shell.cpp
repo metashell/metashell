@@ -401,7 +401,7 @@ void shell::display_environment_stack_size()
 
 void shell::run_metaprogram(const std::string& s_)
 {
-  ::display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+  display(eval_tmp(*_env, s_, _config, input_filename()), *this);
 }
 
 void shell::reset_environment()

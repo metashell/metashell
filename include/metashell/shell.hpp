@@ -50,9 +50,6 @@ namespace metashell
     virtual void display_normal(const std::string& s_) const = 0;
     virtual void display_info(const std::string& s_) const = 0;
     virtual void display_error(const std::string& s_) const = 0;
-    virtual void display(
-        const std::string& s_,
-        optional_color c_ = boost::none) const = 0;
 
     virtual unsigned int width() const = 0;
 
