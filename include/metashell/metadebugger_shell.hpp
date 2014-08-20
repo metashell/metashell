@@ -59,6 +59,7 @@ protected:
 
   void display_current_frame() const;
   void display_forward_trace(const std::string& root_type = "<root>") const;
+  void display_current_forward_trace() const;
   void display_back_trace() const;
 
   const config& conf;

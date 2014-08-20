@@ -72,7 +72,8 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     prev_line = line;
   }
   if (line == "ft" || line == "forwardtrace") {
-    display_forward_trace("<root>");
+    // TODO check if metaprogram started
+    display_current_forward_trace();
   } else if (line == "bt" || line == "backtrace") {
     display_back_trace();
   } else if (boost::starts_with(line, "eval ")) {
@@ -375,6 +376,17 @@ void metadebugger_shell::display_forward_trace(
   metaprogram::discovered_t discovered(mp.get_num_vertices());
 
   display_trace_visit(*opt_vertex, discovered, shell_width);
+}
+
+void metadebugger_shell::display_current_forward_trace() const {
+  metaprogram::discovered_t discovered = mp.get_state().discovered;
+
+  metaprogram::vertex_descriptor vertex = mp.get_current_frame().vertex;
+  discovered[vertex] = false;
+
+  unsigned shell_width = width();
+
+  display_trace_visit(vertex, discovered, shell_width);
 }
 
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
