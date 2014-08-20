@@ -17,6 +17,7 @@ shell.
     - [Building Metashell on Linux](#building-metashell-on-linux)
     - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-experimental)
         - [Standard header files on Windows](#standard-header-files-on-windows)
+        - [WinEditLine](#wineditline)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -111,7 +112,6 @@ need fixing. If you want to experiment with it, here is how you can build it:
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools and libraries:
     * [CMake](http://cmake.org/)
-    * [WinEditLine](http://mingweditline.sourceforge.net/)
     * [Clang](http://llvm.org/builds/)
     * [Boost](http://boost.teeks99.com/)
 * After installing CMake you should get the `cmake` command.
@@ -122,9 +122,6 @@ need fixing. If you want to experiment with it, here is how you can build it:
   `-DCLANG_INCLUDEDIR="C:/Program Files (x86)/LLVM/include"`.
     * `-DBOOST_ROOT=<path to the Boost library>`
     * `-DBOOST_LIBRARYDIR=<path to the directory containing the compiled Boost libraries>`
-    * `-DUSE_EDITLINE=true`
-    * `-DEDITLINE_INCLUDEDIR=<path to the WinEditLine headers>`
-    * `-DEDITLINE_LIBRARYDIR=<path to the WinEditLine compiled library>`
     * Unless you were using the [snapshot](http://llvm.org/builds/) to install
       Clang, you need to tell CMake where to find it:
         * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
@@ -142,6 +139,16 @@ files. These files are made available for Metashell.
 
 The `tools/get_windows_headers.sh' script can (re)download these MinGW standard
 header files. You need to run this script on Linux.
+
+#### WinEditLine
+
+Metashell uses [WinEditLine](http://mingweditline.sourceforge.net/) on Windows.
+To simplify the Windows build, the source code of WindEditLine is redistributed
+as part of the Metashell source code and built together with Metashell.
+The content of the `src` directory of the WinEditLine source code can be found
+in the `wineditline` directory. The content of the original `CMakeLists.txt` has
+been changed to build the code together with Metashell. If you want to upgrade
+WinEditLine to a newer version, you need to update these files.
 
 ## Getting started
 

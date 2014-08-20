@@ -1,0 +1,2 @@
+#define WinEditLine_VERSION_MAJOR @WinEditLine_VERSION_MAJOR@
+#define WinEditLine_VERSION_MINOR @WinEditLine_VERSION_MINOR@
