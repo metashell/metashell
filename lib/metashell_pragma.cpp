@@ -41,47 +41,46 @@ namespace
     return result;
   }
 
-  bool argument_token(const command::iterator::token_type& t_)
+  bool argument_token(const token& t_)
   {
-    return 
-      !(
-        IS_CATEGORY(t_, boost::wave::WhiteSpaceTokenType)
-        || IS_CATEGORY(t_, boost::wave::EOLTokenType)
-        || IS_CATEGORY(t_, boost::wave::EOFTokenType)
-      );
+    const token_category c = t_.category();
+    return c != token_category::whitespace && c != token_category::comment;
   }
 }
 
 boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
 {
-  command::iterator i = skip_whitespace(cmd_.begin());
+  command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
 
   if (
     i != cmd_.end()
-    && (*i == boost::wave::T_PP_PRAGMA || *i == boost::wave::T_POUND)
+    && (
+      i->type() == token_type::p_pragma
+      || i->type() == token_type::operator_pound
+    )
   )
   {
-    i = skip_whitespace(skip(i));
+    i = skip_whitespace(skip(i), cmd_.end());
    
     if (
       i != cmd_.end()
-      && *i == boost::wave::T_IDENTIFIER
-      && (i->get_value() == "metashell" || i->get_value() == "msh")
+      && i->type() == token_type::identifier
+      && (i->value() == "metashell" || i->value() == "msh")
     )
     {
-      i = skip_whitespace(skip(i));
-      if (i == cmd_.end() || i->get_value().empty())
+      i = skip_whitespace(skip(i), cmd_.end());
+      if (i == cmd_.end() || i->value().empty())
       {
         throw exception("The name of the metashell pragma is missing.");
       }
-      else if (*i == boost::wave::T_IDENTIFIER)
+      else if (i->type() == token_type::identifier)
       {
         return i;
       }
       else
       {
         std::ostringstream s;
-        s << "Invalid pragma name " << i->get_value();
+        s << "Invalid pragma name " << i->value();
         throw exception(s.str());
       }
     }

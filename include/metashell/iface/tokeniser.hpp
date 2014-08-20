@@ -1,8 +1,8 @@
-#ifndef METASHELL_INDENTER_HPP
-#define METASHELL_INDENTER_HPP
+#ifndef METASHELL_IFACE_TOKENISER_HPP
+#define METASHELL_IFACE_TOKENISER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,35 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
-#include <metashell/wave_tokeniser.hpp>
-
-#include <mindent/display.hpp>
-#include <mindent/parser.hpp>
-#include <mindent/syntax_node.hpp>
-#include <mindent/syntax_node_list.hpp>
+#include <metashell/token.hpp>
 
 namespace metashell
 {
-  template <class DisplayF>
-  DisplayF indent(
-    int width_,
-    int indent_step_,
-    DisplayF f_,
-    const std::string& s_,
-    const std::string& input_filename_
-  )
+  namespace iface
   {
-    std::unique_ptr<iface::tokeniser>
-      tokeniser = create_wave_tokeniser(s_, input_filename_);
+    class tokeniser
+    {
+    public:
+      typedef token token_type;
 
-    return
-      mindent::display(
-        mindent::parse_syntax_node_list(*tokeniser),
-        width_,
-        indent_step_,
-        f_
-      );
+      virtual ~tokeniser() {}
+
+      virtual bool has_further_tokens() const = 0;
+      virtual token current_token() const = 0;
+      virtual void move_to_next_token() = 0;
+
+      // The error flag is never cleared once it was set
+      virtual bool was_error() const = 0;
+    };
   }
 }
 

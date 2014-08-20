@@ -6,6 +6,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#include <mindent/token_traits.hpp>
+
 #include <iostream>
 
 namespace mindent
@@ -29,7 +31,7 @@ namespace mindent
     template <class TokenType>
     void operator()(const TokenType& t_)
     {
-      *_o << t_.get_value();
+      *_o << token_traits<TokenType>::value(t_);
     }
   private:
     std::ostream* _o;

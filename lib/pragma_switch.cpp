@@ -89,7 +89,7 @@ void pragma_switch::run(
 
   if (i != args_end_)
   {
-    const std::string v(i->get_value().begin(), i->get_value().end());
+    const std::string v = i->value();
     if (valid_argument(v))
     {
       _update(element_of(true_values, v));

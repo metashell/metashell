@@ -20,49 +20,27 @@
 
 #include <clang-c/Index.h>
 
-#include <boost/wave/cpp_context.hpp>
-#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
-#include <boost/preprocessor/stringize.hpp>
-
 #ifdef USE_EDITLINE
 #  include <editline/readline.h>
 #else
 #  include <readline/readline.h>
 #endif
 
-using namespace metashell;
+#ifdef TO_STRING_IMPL
+#  error TO_STRING_IMPL already defined
+#endif
+#define TO_STRING_IMPL(x) #x
 
-namespace
-{
-  template <char C>
-  std::string remove(const std::string& s_)
-  {
-    std::ostringstream s;
-    for (std::string::const_iterator i = s_.begin(), e = s_.end(); i != e; ++i)
-    {
-      if (*i != C)
-      {
-        s << *i;
-      }
-    }
-    return s.str();
-  }
-}
+#ifdef TO_STRING
+#  error TO_STRING already defined
+#endif
+#define TO_STRING(x) TO_STRING_IMPL(x)
+
+using namespace metashell;
 
 std::string metashell::libclang_version()
 {
   return cxstring(clang_getClangVersion());
-}
-
-std::string metashell::wave_version()
-{
-  return
-    remove<'"'>(
-      boost::wave::context<
-        const char*,
-        boost::wave::cpplexer::lex_iterator<boost::wave::cpplexer::lex_token<> >
-      >::get_version_string()
-    );
 }
 
 std::string metashell::readline_version()
@@ -70,9 +48,7 @@ std::string metashell::readline_version()
 #ifdef USE_EDITLINE
   return " ";
 #else
-  return
-    BOOST_PP_STRINGIZE(RL_VERSION_MAJOR)
-    "." BOOST_PP_STRINGIZE(RL_VERSION_MINOR);
+  return TO_STRING(RL_VERSION_MAJOR) "." TO_STRING(RL_VERSION_MINOR);
 #endif
 }
 
@@ -91,9 +67,9 @@ std::string metashell::version()
 #endif
 
   return
-    BOOST_PP_STRINGIZE(METASHELL_MAJOR)
-    "." BOOST_PP_STRINGIZE(METASHELL_MINOR)
-    "." BOOST_PP_STRINGIZE(METASHELL_PATCH);
+    TO_STRING(METASHELL_MAJOR)
+    "." TO_STRING(METASHELL_MINOR)
+    "." TO_STRING(METASHELL_PATCH);
 }
 
 

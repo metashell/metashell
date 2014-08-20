@@ -1,6 +1,3 @@
-#ifndef METASHELL_COMMAND_HPP
-#define METASHELL_COMMAND_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -19,36 +16,30 @@
 
 #include <metashell/token.hpp>
 
-#include <string>
-#include <vector>
+using namespace metashell;
 
-namespace metashell
+token::token() :
+  _type(token_type::unknown),
+  _value()
+{}
+
+token::token(std::string value_, token_type type_) :
+  _type(type_),
+  _value(std::move(value_))
+{}
+
+token_type token::type() const
 {
-  class command
-  {
-  public:
-    explicit command(const std::string& cmd_);
-
-    typedef std::vector<token>::const_iterator iterator;
-
-    iterator begin() const;
-    iterator end() const;
-  private:
-    std::string _cmd;
-    std::vector<token> _tokens;
-  };
-
-  command::iterator skip(command::iterator i_);
-  command::iterator skip_whitespace(
-    command::iterator begin_,
-    const command::iterator& end_
-  );
-
-  std::string tokens_to_string(
-    command::iterator begin_,
-    const command::iterator& end_
-  );
+  return _type;
 }
 
-#endif
+token_category token::category() const
+{
+  return category_of_token(_type);
+}
+
+const std::string& token::value() const
+{
+  return _value;
+}
 

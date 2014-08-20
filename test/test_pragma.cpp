@@ -48,12 +48,15 @@ JUST_TEST_CASE(test_gcc_pragma_is_not_metashell_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma)
 {
-  const command::iterator
-    op_foo = *parse_pragma(command("#pragma metashell foo")),
-    op_bar = *parse_pragma(command("#pragma metashell bar"));
+  const command c_foo("#pragma metashell foo");
+  const command c_bar("#pragma metashell bar");
 
-  JUST_ASSERT_EQUAL("foo", op_foo->get_value());
-  JUST_ASSERT_EQUAL("bar", op_bar->get_value());
+  const command::iterator
+    op_foo = *parse_pragma(c_foo),
+    op_bar = *parse_pragma(c_bar);
+
+  JUST_ASSERT_EQUAL("foo", op_foo->value());
+  JUST_ASSERT_EQUAL("bar", op_bar->value());
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)

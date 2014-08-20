@@ -37,7 +37,7 @@ namespace mindent
    * string_display.
    *
    * @tparam DisplayF the type of the functor that displays one token.
-   * @tparam TokenType the Boost.Wave type used for representeing tokens.
+   * @tparam TokenType the type used for representeing tokens.
    *
    * @param l_ the syntax tree to be displayed.
    * @param width_ the maximum width of the displayed code.

@@ -59,32 +59,29 @@ namespace
     const command::iterator& end_
   )
   {
-    return std::find(begin_, end_, boost::wave::T_TYPEDEF) != end_;
-  }
-
-  bool is_whitespace(boost::wave::token_id id_)
-  {
     return
-      IS_CATEGORY(id_, boost::wave::WhiteSpaceTokenType)
-      || IS_CATEGORY(id_, boost::wave::EOFTokenType)
-      || IS_CATEGORY(id_, boost::wave::EOLTokenType);
+      std::find_if(
+        begin_,
+        end_,
+        [](const token& t_) { return t_.type() == token_type::keyword_typedef; }
+      ) != end_;
   }
 
-  boost::wave::token_id last_non_whitespace_token_id(
+  token_type last_non_whitespace_token_type(
     command::iterator begin_,
     const command::iterator& end_
   )
   {
-    boost::wave::token_id id;
+    token_type t;
     for (; begin_ != end_; ++begin_)
     {
-      const boost::wave::token_id cid = *begin_;
-      if (!is_whitespace(cid))
+      const token_category c = begin_->category();
+      if (c != token_category::whitespace && c != token_category::comment)
       {
-        id = cid;
+        t = begin_->type();
       }
     }
-    return id;
+    return t;
   }
 }
 
@@ -167,22 +164,19 @@ namespace
     const command cmd(s_);
 
     std::ostringstream o;
-    command::iterator::value_type last_token;
+    token last_token;
     bool first = true;
     for (auto i = cmd.begin(), e = cmd.end(); i != e; ++i)
     {
-      if (!IS_CATEGORY(*i, boost::wave::EOFTokenType))
+      if (first)
       {
-        if (first)
-        {
-          first = false;
-        }
-        else
-        {
-          o << last_token.get_value();
-        }
-        last_token = *i;
+        first = false;
       }
+      else
+      {
+        o << last_token.value();
+      }
+      last_token = *i;
     }
 
     if (first) // no token
@@ -192,17 +186,15 @@ namespace
     else
     {
       if (
-        IS_CATEGORY(last_token, boost::wave::IdentifierTokenType)
-        || IS_CATEGORY(last_token, boost::wave::KeywordTokenType)
+        last_token.category() == token_category::identifier
+        || last_token.category() == token_category::keyword
       )
       {
-        const command::iterator::value_type::string_type
-          t = last_token.get_value();
-        return string_pair(o.str(), std::string(t.begin(), t.end()));
+        return string_pair(o.str(), last_token.value());
       }
       else
       {
-        o << last_token.get_value();
+        o << last_token.value();
         return string_pair(o.str(), "");
       }
     }
@@ -259,53 +251,52 @@ bool metashell::is_environment_setup_command(
     }
     else
     {
-      const boost::wave::token_id id = *begin_;
-      if (IS_CATEGORY(id, boost::wave::KeywordTokenType))
+      const token t = *begin_;
+      switch (t.category())
       {
-        switch (id)
+      case token_category::keyword:
+        switch (t.type())
         {
-        case boost::wave::T_BOOL:
-        case boost::wave::T_CHAR:
-        case boost::wave::T_CONST:
-        case boost::wave::T_DOUBLE:
-        case boost::wave::T_FLOAT:
-        case boost::wave::T_INT:
-        case boost::wave::T_LONG:
-        case boost::wave::T_SHORT:
-        case boost::wave::T_SIGNED:
-        case boost::wave::T_UNSIGNED:
-        case boost::wave::T_VOID:
-        case boost::wave::T_VOLATILE:
-        case boost::wave::T_WCHART:
+        case token_type::keyword_bool:
+        case token_type::keyword_char:
+        case token_type::keyword_const:
+        case token_type::keyword_double:
+        case token_type::keyword_float:
+        case token_type::keyword_int:
+        case token_type::keyword_long:
+        case token_type::keyword_short:
+        case token_type::keyword_signed:
+        case token_type::keyword_unsigned:
+        case token_type::keyword_void:
+        case token_type::keyword_volatile:
+        case token_type::keyword_wchar_t:
           if (has_typedef(begin_, end_))
           {
             return true;
           }
           else
           {
-            const boost::wave::token_id
-              lid = last_non_whitespace_token_id(begin_, end_);
+            const token_type lt = last_non_whitespace_token_type(begin_, end_);
             return
-              lid == boost::wave::T_SEMICOLON
-              || lid == boost::wave::T_RIGHTBRACE;
+              lt == token_type::operator_semicolon
+              || lt == token_type::operator_right_brace;
           }
-        case boost::wave::T_SIZEOF:
-        case boost::wave::T_CONSTCAST:
-        case boost::wave::T_STATICCAST:
-        case boost::wave::T_DYNAMICCAST:
-        case boost::wave::T_REINTERPRETCAST:
+        case token_type::keyword_sizeof:
+        case token_type::keyword_const_cast:
+        case token_type::keyword_static_cast:
+        case token_type::keyword_dynamic_cast:
+        case token_type::keyword_reinterpret_cast:
           return false;
         default:
           return true;
         }
-      }
-      else if (IS_CATEGORY(id, boost::wave::IdentifierTokenType))
-      {
-        return begin_->get_value() == "constexpr" || has_typedef(begin_, end_);
-      }
-      else
-      {
-        return IS_CATEGORY(id, boost::wave::PPTokenType);
+        assert(false);
+      case token_category::identifier:
+        return has_typedef(begin_, end_);
+      case token_category::preprocessor:
+        return true;
+      default:
+        return false;
       }
     }
   }

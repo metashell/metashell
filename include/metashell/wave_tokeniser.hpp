@@ -1,5 +1,5 @@
-#ifndef METASHELL_COMMAND_HPP
-#define METASHELL_COMMAND_HPP
+#ifndef METASHELL_WAVE_TOKENISER_HPP
+#define METASHELL_WAVE_TOKENISER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,37 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token.hpp>
+#include <metashell/iface/tokeniser.hpp>
 
+#include <memory>
 #include <string>
-#include <vector>
 
 namespace metashell
 {
-  class command
-  {
-  public:
-    explicit command(const std::string& cmd_);
-
-    typedef std::vector<token>::const_iterator iterator;
-
-    iterator begin() const;
-    iterator end() const;
-  private:
-    std::string _cmd;
-    std::vector<token> _tokens;
-  };
-
-  command::iterator skip(command::iterator i_);
-  command::iterator skip_whitespace(
-    command::iterator begin_,
-    const command::iterator& end_
+  std::unique_ptr<iface::tokeniser> create_wave_tokeniser(
+    std::string src_,
+    std::string input_filename_ = std::string()
   );
 
-  std::string tokens_to_string(
-    command::iterator begin_,
-    const command::iterator& end_
-  );
+  std::string wave_version();
 }
 
 #endif

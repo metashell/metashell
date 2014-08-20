@@ -109,13 +109,17 @@ void pragma_help::run(
   else
   {
     std::vector<std::string> args;
-    for (
-      command::iterator i = args_begin_;
-      i != args_end_;
-      i = skip_whitespace(skip(i))
-    )
+    for (command::iterator i = args_begin_; i != args_end_; ++i)
     {
-      args.push_back(std::string(i->get_value().begin(), i->get_value().end()));
+      switch (i->category())
+      {
+      case token_category::whitespace:
+      case token_category::comment:
+        // skip token
+        break;
+      default:
+        args.push_back(i->value());
+      }
     }
     
     indenter ind(_shell.width(), " * ");

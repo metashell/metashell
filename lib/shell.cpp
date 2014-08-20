@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metashell.hpp>
+#include <metashell/wave_tokeniser.hpp>
 #include "indenter.hpp"
 #include "exception.hpp"
 
@@ -25,11 +26,10 @@
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/command.hpp>
 
-#include <boost/wave/cpplexer/cpplexer_exceptions.hpp>
-
 #include <boost/foreach.hpp>
 
 #include <cctype>
+#include <algorithm>
 
 using namespace metashell;
 
@@ -66,40 +66,18 @@ namespace
 
   bool is_empty_line(const command& cmd_)
   {
-    try
-    {
-      command::iterator i = cmd_.begin();
-      const command::iterator e = cmd_.end();
-      while (i != e)
-      {
-        try
+    return
+      std::find_if(
+        cmd_.begin(),
+        cmd_.end(),
+        [] (const token& t_)
         {
-          if (
-            !(
-              IS_CATEGORY(*i, boost::wave::WhiteSpaceTokenType)
-              || IS_CATEGORY(*i, boost::wave::EOFTokenType)
-              || IS_CATEGORY(*i, boost::wave::EOLTokenType)
-            )
-          )
-          {
-            return false;
-          }
-          ++i;
+          const token_category c = t_.category();
+          return
+            c != token_category::whitespace
+            && c != token_category::comment;
         }
-        catch (const boost::wave::cpplexer::lexing_exception& e)
-        {
-          if (!e.is_recoverable())
-          {
-            throw;
-          }
-        }
-      }
-    }
-    catch (...)
-    {
-      return false;
-    }
-    return true;
+      ) == cmd_.end();
   }
 
   const char default_env[] =

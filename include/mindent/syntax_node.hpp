@@ -43,9 +43,9 @@ namespace mindent
     syntax_node() :
       _name(),
       _template(false),
-      _template_begin(),
+      _template_begin(token_traits<TokenType>::empty_token()),
       _template_args(),
-      _template_end()
+      _template_end(token_traits<TokenType>::empty_token())
     {}
 
     /**
@@ -62,9 +62,9 @@ namespace mindent
     syntax_node(NameIt name_begin_, NameIt name_end_) :
       _name(name_begin_, name_end_),
       _template(false),
-      _template_begin(),
+      _template_begin(token_traits<TokenType>::empty_token()),
       _template_args(),
-      _template_end()
+      _template_end(token_traits<TokenType>::empty_token())
     {}
 
     /**

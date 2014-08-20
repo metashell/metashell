@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <fstream>
 
 using namespace metashell;
 

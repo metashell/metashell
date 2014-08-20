@@ -15,30 +15,40 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/command.hpp>
+#include <metashell/wave_tokeniser.hpp>
 
 using namespace metashell;
 
+namespace
+{
+  bool whitespace_or_comment(token_category c_)
+  {
+    return c_ == token_category::whitespace || c_ == token_category::comment;
+  }
+}
+
 command::command(const std::string& cmd_) :
-  _cmd(cmd_)
-{}
+  _cmd(cmd_),
+  _tokens()
+{
+  for (
+    auto t = create_wave_tokeniser(cmd_, "<command>");
+    t->has_further_tokens();
+    t->move_to_next_token()
+  )
+  {
+    _tokens.push_back(t->current_token());
+  }
+}
 
 command::iterator command::begin() const
 {
-  return
-    iterator(
-      _cmd.begin(),
-      _cmd.end(),
-      iterator::value_type::position_type("<input>"),
-      boost::wave::language_support(
-        boost::wave::support_cpp
-        | boost::wave::support_option_long_long
-      )
-    );
+  return _tokens.begin();
 }
 
 command::iterator command::end() const
 {
-  return iterator();
+  return _tokens.end();
 }
 
 command::iterator metashell::skip(command::iterator i_)
@@ -47,9 +57,15 @@ command::iterator metashell::skip(command::iterator i_)
   return i_;
 }
 
-command::iterator metashell::skip_whitespace(command::iterator i_)
+command::iterator metashell::skip_whitespace(
+  command::iterator begin_,
+  const command::iterator& end_
+)
 {
-  return IS_CATEGORY(*i_, boost::wave::WhiteSpaceTokenType) ? skip(i_) : i_;
+  return
+    (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
+      skip(begin_) :
+      begin_;
 }
 
 std::string metashell::tokens_to_string(
@@ -60,7 +76,7 @@ std::string metashell::tokens_to_string(
   std::ostringstream s;
   for (; begin_ != end_; ++begin_)
   {
-    s << begin_->get_value();
+    s << begin_->value();
   }
   return s.str();
 }

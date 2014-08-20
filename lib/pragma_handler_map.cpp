@@ -43,9 +43,9 @@ using namespace metashell;
 
 namespace
 {
-  bool can_be_part_of_name(const command::iterator::token_type& t_)
+  bool can_be_part_of_name(const token& t_)
   {
-    return t_ == boost::wave::T_IDENTIFIER;
+    return t_.type() == token_type::identifier;
   }
 
   boost::optional<command::iterator> is_this_pragma(
@@ -63,16 +63,10 @@ namespace
     while (
       begin_ != end_ && i != e
       && can_be_part_of_name(*begin_)
-      && *i == string(begin_->get_value().begin(), begin_->get_value().end()))
+      && *i == begin_->value())
     {
       ++i;
-      begin_ = skip(begin_);
-      // Don't accidentally skip over end_
-      if (begin_ == end_)
-      {
-        break;
-      }
-      begin_ = skip_whitespace(begin_);
+      begin_ = skip_whitespace(skip(begin_), end_);
     }
     return
       i == e ?
@@ -90,10 +84,10 @@ namespace
     for (
       ;
       begin_ != end_ && can_be_part_of_name(*begin_);
-      begin_ = skip_whitespace(skip(begin_))
+      begin_ = skip_whitespace(skip(begin_), end_)
     )
     {
-      s << (first ? "" : " ") << begin_->get_value();
+      s << (first ? "" : " ") << begin_->value();
       first = false;
     }
     return s.str();
