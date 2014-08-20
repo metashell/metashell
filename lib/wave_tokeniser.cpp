@@ -290,10 +290,7 @@ namespace
       catch (const boost::wave::cpplexer::lexing_exception& e)
       {
         error_flag = true;
-        if (!e.is_recoverable())
-        {
-          it = token_iterator();
-        }
+        it = token_iterator();
       }
     }
 
@@ -314,15 +311,8 @@ namespace
       catch (const boost::wave::cpplexer::lexing_exception& e)
       {
         error_flag = true;
-        if (e.is_recoverable())
-        {
-          return true;
-        }
-        else
-        {
-          it = token_iterator();
-          return false;
-        }
+        it = token_iterator();
+        return false;
       }
     }
 
@@ -346,10 +336,7 @@ namespace
       catch (const boost::wave::cpplexer::lexing_exception& e)
       {
         error_flag = true;
-        if (!e.is_recoverable())
-        {
-          it = token_iterator();
-        }
+        it = token_iterator();
       }
     }
 
