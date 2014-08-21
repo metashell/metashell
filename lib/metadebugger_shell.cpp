@@ -126,14 +126,14 @@ void metadebugger_shell::command_forwardtrace() {
   if (!require_running_metaprogram()) {
     return;
   }
-  display_current_forward_trace();
+  display_current_forwardtrace();
 }
 
 void metadebugger_shell::command_backtrace() {
   if (!require_running_metaprogram()) {
     return;
   }
-  display_back_trace();
+  display_backtrace();
 }
 
 void metadebugger_shell::command_break(const std::string& arg) {
@@ -421,7 +421,7 @@ void metadebugger_shell::display_trace_visit(
   }
 }
 
-void metadebugger_shell::display_forward_trace(
+void metadebugger_shell::display_forwardtrace(
     const std::string& root_type) const
 {
   boost::optional<metaprogram::vertex_descriptor> opt_vertex =
@@ -439,7 +439,7 @@ void metadebugger_shell::display_forward_trace(
   display_trace_visit(*opt_vertex, discovered, shell_width);
 }
 
-void metadebugger_shell::display_current_forward_trace() const {
+void metadebugger_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
 
   metaprogram::vertex_descriptor vertex = mp.get_current_vertex();
@@ -461,12 +461,12 @@ void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
   }
 }
 
-void metadebugger_shell::display_back_trace() const {
-  const metaprogram::back_trace_t& back_trace = mp.get_back_trace();
+void metadebugger_shell::display_backtrace() const {
+  const metaprogram::backtrace_t& backtrace = mp.get_backtrace();
 
   unsigned i = 0;
   for (const metaprogram::frame& frame :
-      back_trace | boost::adaptors::reversed)
+      backtrace | boost::adaptors::reversed)
   {
     display((boost::format("#%1% ") % i).str());
     display_frame(frame);

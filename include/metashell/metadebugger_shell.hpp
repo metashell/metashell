@@ -73,9 +73,9 @@ protected:
   void continue_metaprogram();
 
   void display_current_frame() const;
-  void display_forward_trace(const std::string& root_type = "<root>") const;
-  void display_current_forward_trace() const;
-  void display_back_trace() const;
+  void display_forwardtrace(const std::string& root_type = "<root>") const;
+  void display_current_forwardtrace() const;
+  void display_backtrace() const;
 
   const config& conf;
   environment& env;
@@ -87,7 +87,7 @@ protected:
   bool is_stopped;
 
 private:
-  // Helpers for display_forward_trace
+  // Helpers for display_forwardtrace
   typedef std::pair<
       std::string::const_iterator,
       std::string::const_iterator

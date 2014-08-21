@@ -119,7 +119,7 @@ public:
     edge_descriptor parent_edge;
   };
 
-  typedef std::vector<frame> back_trace_t;
+  typedef std::vector<frame> backtrace_t;
 
   vertex_descriptor add_vertex(const std::string& element);
 
@@ -141,7 +141,7 @@ public:
 
   vertex_descriptor get_current_vertex() const;
   frame get_current_frame() const;
-  back_trace_t get_back_trace() const;
+  backtrace_t get_backtrace() const;
 
   const graph_t& get_graph() const;
   const metaprogram_state& get_state() const;

@@ -191,18 +191,18 @@ metaprogram::frame metaprogram::get_current_frame() const {
       *mp_state.parent_edge[current_vertex]);
 }
 
-metaprogram::back_trace_t metaprogram::get_back_trace() const {
+metaprogram::backtrace_t metaprogram::get_backtrace() const {
   assert(!is_metaprogram_finished());
 
   vertex_descriptor current_vertex = mp_state.vertex_stack.top();
 
-  back_trace_t back_trace;
+  backtrace_t backtrace;
 
   while (current_vertex != get_root_vertex()) {
     assert(mp_state.parent_edge[current_vertex]);
 
     edge_descriptor parent_edge = *mp_state.parent_edge[current_vertex];
-    back_trace.push_back(
+    backtrace.push_back(
         frame(
           current_vertex,
           parent_edge
@@ -212,7 +212,7 @@ metaprogram::back_trace_t metaprogram::get_back_trace() const {
     current_vertex = boost::source(parent_edge, graph);
   }
 
-  return back_trace;
+  return backtrace;
 }
 
 }
