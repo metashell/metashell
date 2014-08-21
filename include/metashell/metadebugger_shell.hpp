@@ -62,6 +62,7 @@ protected:
 
   void command_continue();
   void command_step();
+  void command_step_over();
   void command_eval(const std::string& arg);
   void command_forwardtrace();
   void command_backtrace();

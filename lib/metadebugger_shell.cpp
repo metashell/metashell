@@ -77,6 +77,8 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     command_backtrace();
   } else if (boost::starts_with(line, "eval ")) {
     command_eval(line.substr(5, std::string::npos));
+  } else if (line == "step over") {
+    command_step_over();
   } else if (line == "step") {
     command_step();
   } else if (boost::starts_with(line, "break ")) {
@@ -115,6 +117,25 @@ void metadebugger_shell::command_step() {
   } else {
     display("Metaprogram finished\n",
         just::console::color::green);
+  }
+}
+
+void metadebugger_shell::command_step_over() {
+  if (!require_running_metaprogram()) {
+    return;
+  }
+
+  //TODO this needs some work
+  unsigned original_stack_size = mp.get_state().vertex_stack.size();
+  while (!mp.step_metaprogram() &&
+    original_stack_size < mp.get_state().vertex_stack.size())
+  {}
+
+  if (mp.is_metaprogram_finished()) {
+    display("Metaprogram finished\n",
+        just::console::color::green);
+  } else {
+    display_current_frame();
   }
 }
 
