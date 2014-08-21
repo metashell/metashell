@@ -60,6 +60,13 @@ protected:
 
   bool require_running_metaprogram() const;
 
+  void command_continue();
+  void command_step();
+  void command_eval(const std::string& arg);
+  void command_forwardtrace();
+  void command_backtrace();
+  void command_break(const std::string& arg);
+
   void run_metaprogram_with_templight(const std::string& str);
   void run_metaprogram(const std::string& str);
 

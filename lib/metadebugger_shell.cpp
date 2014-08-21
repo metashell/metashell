@@ -72,33 +72,17 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     prev_line = line;
   }
   if (line == "ft" || line == "forwardtrace") {
-    if (require_running_metaprogram()) {
-      display_current_forward_trace();
-    }
+    command_forwardtrace();
   } else if (line == "bt" || line == "backtrace") {
-    if (require_running_metaprogram()) {
-      display_back_trace();
-    }
+    command_backtrace();
   } else if (boost::starts_with(line, "eval ")) {
-    run_metaprogram_with_templight(
-        line.substr(5, std::string::npos));
+    command_eval(line.substr(5, std::string::npos));
   } else if (line == "step") {
-    if (require_running_metaprogram()) {
-        if (!mp.step_metaprogram()) {
-          display_current_frame();
-        } else {
-          display("Metaprogram finished\n",
-              just::console::color::green);
-        }
-    }
+    command_step();
   } else if (boost::starts_with(line, "break ")) {
-    breakpoint_t breakpoint = line.substr(6, std::string::npos);
-    display("Break point \"" + breakpoint + "\" added\n");
-    breakpoints.push_back(breakpoint);
+    command_break(line.substr(6, std::string::npos));
   } else if (line == "continue") {
-    if (require_running_metaprogram()) {
-      continue_metaprogram();
-    }
+    command_continue();
   } else {
     display("Unknown command: \"" + line + "\"\n",
         just::console::color::red);
@@ -111,6 +95,50 @@ bool metadebugger_shell::require_running_metaprogram() const {
     return false;
   }
   return true;
+}
+
+void metadebugger_shell::command_continue() {
+  if (!require_running_metaprogram()) {
+    return;
+  }
+
+  continue_metaprogram();
+}
+
+void metadebugger_shell::command_step() {
+  if (!require_running_metaprogram()) {
+    return;
+  }
+
+  if (!mp.step_metaprogram()) {
+    display_current_frame();
+  } else {
+    display("Metaprogram finished\n",
+        just::console::color::green);
+  }
+}
+
+void metadebugger_shell::command_eval(const std::string& arg) {
+  run_metaprogram_with_templight(arg);
+}
+
+void metadebugger_shell::command_forwardtrace() {
+  if (!require_running_metaprogram()) {
+    return;
+  }
+  display_current_forward_trace();
+}
+
+void metadebugger_shell::command_backtrace() {
+  if (!require_running_metaprogram()) {
+    return;
+  }
+  display_back_trace();
+}
+
+void metadebugger_shell::command_break(const std::string& arg) {
+  breakpoints.push_back(arg);
+  display("Break point \"" + arg + "\" added\n");
 }
 
 void metadebugger_shell::run_metaprogram_with_templight(
@@ -151,7 +179,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
 }
 
 void metadebugger_shell::continue_metaprogram() {
-  //TODO check if metaprogram started
+  assert(!mp.is_metaprogram_finished());
 
   while (true) {
     if (mp.step_metaprogram()) {
