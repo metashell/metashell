@@ -25,6 +25,8 @@
 #   CLANG_FOUND
 #   CLANG_INCLUDE_DIR
 #   CLANG_LIBRARY
+#   CLANG_DLL (only on Windows)
+#   CLANG_HEADERS (the path to the headers used by clang. Only on Windows)
 
 if (NOT $ENV{CLANG_INCLUDEDIR} STREQUAL "" )
   set(CLANG_INCLUDEDIR $ENV{CLANG_INCLUDEDIR})
@@ -45,9 +47,14 @@ if (WIN32)
     CLANG_INCLUDEDIR
     "${CLANG_INCLUDEDIR};C:/Program Files (x86)/LLVM/include"
   )
+
   set(
     CLANG_LIBRARYDIR
     "${CLANG_LIBRARYDIR};C:/Program Files (x86)/LLVM/lib"
+  )
+  set(
+    CLANG_LIBRARYDIR
+    "${CLANG_LIBRARYDIR};C:/Program Files (x86)/LLVM/bin"
   )
 endif()
 
@@ -68,6 +75,8 @@ endif()
 if (WIN32)
   # The import library of clang is called libclang.imp instead of libclang.lib
   find_file(CLANG_LIBRARY NAMES libclang.imp HINTS ${CLANG_LIBRARYDIR})
+  find_file(CLANG_DLL NAMES libclang.dll HINTS ${CLANG_LIBRARYDIR})
+
 else()
   find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
 endif()
@@ -79,7 +88,26 @@ find_package_handle_standard_args(
   CLANG DEFAULT_MSG CLANG_LIBRARY CLANG_INCLUDE_DIR
 )
 
-mark_as_advanced(CLANG_INCLUDE_DIR, CLANG_LIBRARY)
+# The standard headers on Windows
+if (WIN32)
+  set(CLANG_HEADER_ROOT ${CLANG_INCLUDE_DIR}/../lib/clang)
+  file(
+    GLOB
+    CLANG_HEADER_DIRS
+    RELATIVE ${CLANG_HEADER_ROOT}
+    ${CLANG_HEADER_ROOT}/*
+  )
+  list(SORT CLANG_HEADER_DIRS)
+  list(REVERSE CLANG_HEADER_DIRS)
+  list(GET CLANG_HEADER_DIRS 0 CLANG_HEADER_GREATEST_VERSION)
+
+  set(
+    CLANG_HEADERS
+    "${CLANG_HEADER_ROOT}/${CLANG_HEADER_GREATEST_VERSION}/include"
+  )
+endif()
+
+mark_as_advanced(CLANG_INCLUDE_DIR, CLANG_LIBRARY, CLANG_DLL)
 
 if (CLANG_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
@@ -87,6 +115,10 @@ if (CLANG_DEBUG)
     message(STATUS "libclang found")
     message(STATUS "  CLANG_INCLUDE_DIR = ${CLANG_INCLUDE_DIR}")
     message(STATUS "  CLANG_LIBRARY = ${CLANG_LIBRARY}")
+    if (WIN32)
+      message(STATUS "  CLANG_DLL = ${CLANG_DLL}")
+      message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
+    endif ()
   else()
     message(STATUS "libclang not found")
   endif()

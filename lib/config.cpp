@@ -124,22 +124,20 @@ namespace
 
     if (env_detector_.on_windows())
     {
+      const std::string dir_of_executable =
+        directory_of_file(env_detector_.path_of_executable());
       // mingw headers shipped with Metashell
-      const std::string mingw_headers =
-        directory_of_file(env_detector_.path_of_executable())
-        + "\\windows_headers";
+      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
 
-      const std::string wpath[] =
-        {
-          mingw_headers,
-          mingw_headers + "\\mingw32"
-        };
+      std::vector<std::string> wpath;
+      wpath.push_back(mingw_headers);
+      wpath.push_back(mingw_headers + "\\mingw32");
+      if (clang_binary_path_.empty())
+      {
+        wpath.push_back(dir_of_executable + "\\clang\\include");
+      }
 
-      result.insert(
-        result.end(),
-        wpath,
-        wpath + sizeof(wpath) / sizeof(wpath[0])
-      );
+      result.insert(result.end(), wpath.begin(), wpath.end());
     }
 
     result.insert(
@@ -192,10 +190,19 @@ config metashell::detect_config(
   cfg.include_path =
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
-  if (env_detector_.on_windows() && !cfg.clang_path.empty())
+  if (env_detector_.on_windows())
   {
     // To find libclang.dll
-    env_detector_.append_to_path(directory_of_file(cfg.clang_path));
+    if (cfg.clang_path.empty())
+    {
+      env_detector_.append_to_path(
+        directory_of_file(env_detector_.path_of_executable()) + "\\clang"
+      );
+    }
+    else
+    {
+      env_detector_.append_to_path(directory_of_file(cfg.clang_path));
+    }
   }
 
   return cfg;

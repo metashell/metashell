@@ -60,30 +60,56 @@ target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 
 install(TARGETS metashell DESTINATION bin)
+
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
-########################
-# Windows header files #
-########################
-if (WIN32)
-  file(GLOB_RECURSE ABS_WINDOWS_HEADERS ${CMAKE_SOURCE_DIR}/windows_headers/*)
+############################################
+# Copy files next to the binary on Windows #
+############################################
+function(copy_file_to_binary_dir SRC_PATH DST_PATH)
+  get_filename_component(DST_DIR "${DST_PATH}" DIRECTORY)
+
+  configure_file(
+    "${SRC_PATH}"
+    "${CMAKE_CURRENT_BINARY_DIR}/Debug/${DST_PATH}"
+    COPYONLY
+  )
+  configure_file(
+    "${SRC_PATH}"
+    "${CMAKE_CURRENT_BINARY_DIR}/Release/${DST_PATH}"
+    COPYONLY
+  )
+  install(
+    FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/Release/${DST_PATH}"
+    DESTINATION "bin/${DST_DIR}"
+  )
+endfunction(copy_file_to_binary_dir)
+
+function(copy_all_files_to_binary_dir SRC_PATH DST_PATH)
+  file(GLOB_RECURSE ABS_PATHS ${SRC_PATH}/*)
   
-  foreach (HEADER ${ABS_WINDOWS_HEADERS})
-    file(RELATIVE_PATH REL_HEADER ${CMAKE_SOURCE_DIR} ${HEADER})
-    list(APPEND WINDOWS_HEADERS ${REL_HEADER})
-  endforeach()
-  
-  foreach (HEADER ${WINDOWS_HEADERS})
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/${HEADER}"
-      "${CMAKE_CURRENT_BINARY_DIR}/Debug/${HEADER}"
-      COPYONLY
-    )
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/${HEADER}"
-      "${CMAKE_CURRENT_BINARY_DIR}/Release/${HEADER}"
-      COPYONLY
-    )
+  foreach (P ${ABS_PATHS})
+    file(RELATIVE_PATH REL_PATH ${SRC_PATH} ${P})
+
+    copy_file_to_binary_dir("${SRC_PATH}/${REL_PATH}" "${DST_PATH}/${REL_PATH}")
   endforeach ()
+endfunction(copy_all_files_to_binary_dir)
+
+#########################################################
+# Copying files next to the Metashell binary on Windows #
+#########################################################
+if (WIN32)
+  # Windows header files
+  copy_all_files_to_binary_dir(
+    "${CMAKE_SOURCE_DIR}/windows_headers"
+    "windows_headers"
+  )
+
+  # libclang.dll
+  copy_file_to_binary_dir("${CLANG_DLL}" "clang/libclang.dll")
+
+  # Headers used by Clang on Windows
+  copy_all_files_to_binary_dir("${CLANG_HEADERS}" "clang/include")
 endif ()
 
