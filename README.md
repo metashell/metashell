@@ -131,6 +131,11 @@ need fixing. If you want to experiment with it, here is how you can build it:
 * If CMake can find the dependent libraries, it will generate a solution file
   for Metashell in the `bin` directory. Open it with Visual Studio 2012 and
   build it.
+* To generate an installer for Metashell:
+    * Install [NSIS](http://nsis.sourceforge.net).
+    * Build Metashell following the above instructions (make sure you build the
+      Release config).
+    * Run `cpack` in the directory you run `cmake` as well.
 
 #### Standard header files on Windows
 
