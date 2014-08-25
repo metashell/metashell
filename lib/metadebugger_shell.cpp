@@ -23,35 +23,34 @@
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 namespace metashell {
 
 const std::vector<just::console::color> metadebugger_shell::colors =
-  boost::assign::list_of
-    (just::console::color::red)
-    (just::console::color::green)
-    (just::console::color::yellow)
-    (just::console::color::blue)
-    (just::console::color::magenta)
-    (just::console::color::cyan);
+  {
+    just::console::color::red,
+    just::console::color::green,
+    just::console::color::yellow,
+    just::console::color::blue,
+    just::console::color::magenta,
+    just::console::color::cyan
+  };
 
 namespace {
   metadebugger_command_handler_map::command_map_t create_default_command_map() {
-    metadebugger_command_handler_map::command_map_t res;
-
-    using std::make_tuple;
-
+    //
     //TODO include "step over" in "step"
-    res.push_back(metadebugger_command("continue", &metadebugger_shell::command_continue));
-    res.push_back(metadebugger_command("step", &metadebugger_shell::command_step));
-    res.push_back(metadebugger_command("eval", &metadebugger_shell::command_eval));
-    res.push_back(metadebugger_command("ft", &metadebugger_shell::command_forwardtrace));
-    res.push_back(metadebugger_command("bt", &metadebugger_shell::command_backtrace));
-    res.push_back(metadebugger_command("break", &metadebugger_shell::command_break));
-
+    metadebugger_command_handler_map::command_map_t res =
+      {
+        {"continue",  &metadebugger_shell::command_continue},
+        {"step",      &metadebugger_shell::command_step},
+        {"eval",      &metadebugger_shell::command_eval},
+        {"ft",        &metadebugger_shell::command_forwardtrace},
+        {"bt",        &metadebugger_shell::command_backtrace},
+        {"break",     &metadebugger_shell::command_break}
+      };
     return res;
   }
 }
