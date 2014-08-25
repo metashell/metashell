@@ -15,16 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metashell.hpp>
-
 #include <metashell/metadebugger_shell.hpp>
-
+#include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -39,11 +38,30 @@ const std::vector<just::console::color> metadebugger_shell::colors =
     (just::console::color::magenta)
     (just::console::color::cyan);
 
+namespace {
+  metadebugger_command_handler_map::command_map_t create_default_command_map() {
+    metadebugger_command_handler_map::command_map_t res;
+
+    using std::make_tuple;
+
+    //TODO include "step over" in "step"
+    res.push_back(make_tuple("continue", &metadebugger_shell::command_continue));
+    res.push_back(make_tuple("step", &metadebugger_shell::command_step));
+    res.push_back(make_tuple("eval", &metadebugger_shell::command_eval));
+    res.push_back(make_tuple("ft", &metadebugger_shell::command_forwardtrace));
+    res.push_back(make_tuple("bt", &metadebugger_shell::command_backtrace));
+    res.push_back(make_tuple("break", &metadebugger_shell::command_break));
+
+    return res;
+  }
+}
+
 metadebugger_shell::metadebugger_shell(
     const config& conf,
     environment& env) :
   conf(conf),
   env(env),
+  command_handler(create_default_command_map()),
   is_stopped(false)
 {}
 
@@ -71,24 +89,18 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     add_history(line);
     prev_line = line;
   }
-  if (line == "ft" || line == "forwardtrace") {
-    command_forwardtrace();
-  } else if (line == "bt" || line == "backtrace") {
-    command_backtrace();
-  } else if (boost::starts_with(line, "eval ")) {
-    command_eval(line.substr(5, std::string::npos));
-  } else if (line == "step over") {
-    command_step_over();
-  } else if (line == "step") {
-    command_step();
-  } else if (boost::starts_with(line, "break ")) {
-    command_break(line.substr(6, std::string::npos));
-  } else if (line == "continue") {
-    command_continue();
-  } else {
-    display("Unknown command: \"" + line + "\"\n",
-        just::console::color::red);
+
+  if (!command_handler.run_command(*this, line)) {
+    display("Command parsing failed\n", just::console::color::red);
   }
+}
+
+bool metadebugger_shell::require_empty_args(const std::string& args) const {
+  if (!args.empty()) {
+    display("Command doesn't accept arguments\n", just::console::color::red);
+    return false;
+  }
+  return true;
 }
 
 bool metadebugger_shell::require_running_metaprogram() const {
@@ -99,16 +111,15 @@ bool metadebugger_shell::require_running_metaprogram() const {
   return true;
 }
 
-void metadebugger_shell::command_continue() {
-  if (!require_running_metaprogram()) {
+void metadebugger_shell::command_continue(const std::string& arg) {
+  if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
-
   continue_metaprogram();
 }
 
-void metadebugger_shell::command_step() {
-  if (!require_running_metaprogram()) {
+void metadebugger_shell::command_step(const std::string& arg) {
+  if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
 
@@ -120,8 +131,8 @@ void metadebugger_shell::command_step() {
   }
 }
 
-void metadebugger_shell::command_step_over() {
-  if (!require_running_metaprogram()) {
+void metadebugger_shell::command_step_over(const std::string& arg) {
+  if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
 
@@ -143,15 +154,15 @@ void metadebugger_shell::command_eval(const std::string& arg) {
   run_metaprogram_with_templight(arg);
 }
 
-void metadebugger_shell::command_forwardtrace() {
-  if (!require_running_metaprogram()) {
+void metadebugger_shell::command_forwardtrace(const std::string& arg) {
+  if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
   display_current_forwardtrace();
 }
 
-void metadebugger_shell::command_backtrace() {
-  if (!require_running_metaprogram()) {
+void metadebugger_shell::command_backtrace(const std::string& arg) {
+  if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
   display_backtrace();

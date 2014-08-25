@@ -26,6 +26,7 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
+#include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
 
@@ -49,6 +50,14 @@ public:
 
   virtual unsigned width() const = 0;
 
+  void command_continue(const std::string& arg);
+  void command_step(const std::string& arg);
+  void command_step_over(const std::string& arg);
+  void command_eval(const std::string& arg);
+  void command_forwardtrace(const std::string& arg);
+  void command_backtrace(const std::string& arg);
+  void command_break(const std::string& arg);
+
 protected:
   // breakpoint is simply a regex for now
   typedef std::string breakpoint_t;
@@ -58,15 +67,8 @@ protected:
   bool stopped() const;
   void line_available(const std::string& line);
 
+  bool require_empty_args(const std::string& args) const;
   bool require_running_metaprogram() const;
-
-  void command_continue();
-  void command_step();
-  void command_step_over();
-  void command_eval(const std::string& arg);
-  void command_forwardtrace();
-  void command_backtrace();
-  void command_break(const std::string& arg);
 
   void run_metaprogram_with_templight(const std::string& str);
   void run_metaprogram(const std::string& str);
@@ -80,6 +82,7 @@ protected:
 
   const config& conf;
   environment& env;
+  metadebugger_command_handler_map command_handler;
 
   metaprogram mp;
   breakpoints_t breakpoints;
