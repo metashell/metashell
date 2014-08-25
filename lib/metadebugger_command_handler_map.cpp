@@ -57,7 +57,8 @@ metadebugger_command_handler_map::get_command_for_line(
   }
 
   // Check if the found command is unambiguous
-  if (std::next(lower) != command_map.end() &&
+  if (command != lower->get_key() && // Pass if the match is full
+      std::next(lower) != command_map.end() &&
       starts_with(std::next(lower)->get_key(), command))
   {
     return boost::none;
