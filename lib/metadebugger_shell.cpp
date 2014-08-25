@@ -90,9 +90,17 @@ void metadebugger_shell::line_available(const std::string& original_line) {
     prev_line = line;
   }
 
-  if (!command_handler.run_command(*this, line)) {
+  auto command_arg_pair = command_handler.get_command_for_line(line);
+  if (!command_arg_pair) {
     display("Command parsing failed\n", just::console::color::red);
+    return;
   }
+
+  metadebugger_command cmd;
+  std::string args;
+  std::tie(cmd, args) = *command_arg_pair;
+
+  (this->*cmd.get_func())(args);
 }
 
 bool metadebugger_shell::require_empty_args(const std::string& args) const {

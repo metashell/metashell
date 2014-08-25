@@ -33,15 +33,16 @@ metadebugger_command_handler_map::metadebugger_command_handler_map(
   std::sort(command_map.begin(), command_map.end());
 }
 
-bool metadebugger_command_handler_map::run_command(
-  metadebugger_shell& shell,
-  const std::string& line)
+boost::optional<std::tuple<metadebugger_command, std::string>>
+metadebugger_command_handler_map::get_command_for_line(
+    const std::string& line)
 {
+
   std::stringstream line_stream(line);
   std::string command;
 
   if (!(line_stream >> command)) {
-    return false;
+    return boost::none;
   }
 
   command_map_t::iterator lower =
@@ -52,23 +53,21 @@ bool metadebugger_command_handler_map::run_command(
   if (lower == command_map.end() ||
       !starts_with(lower->get_key(), command))
   {
-    return false;
+    return boost::none;
   }
 
   // Check if the found command is unambiguous
   if (std::next(lower) != command_map.end() &&
       starts_with(std::next(lower)->get_key(), command))
   {
-    return false;
+    return boost::none;
   }
 
   line_stream >> std::ws;
   std::string rest;
   std::getline(line_stream, rest);
 
-  (shell.*lower->get_func())(rest);
-
-  return true;
+  return std::make_tuple(*lower, rest);
 }
 
 }

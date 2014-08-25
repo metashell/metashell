@@ -19,6 +19,9 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
+
+#include <boost/optional.hpp>
 
 #include <metashell/metadebugger_command.hpp>
 
@@ -30,7 +33,9 @@ public:
 
   metadebugger_command_handler_map(const command_map_t& command_map);
 
-  bool run_command(metadebugger_shell& shell, const std::string& line);
+  // <command, args>
+  boost::optional<std::tuple<metadebugger_command, std::string>>
+    get_command_for_line(const std::string& line);
 
 private:
   command_map_t command_map;

@@ -27,6 +27,7 @@ class metadebugger_command {
 public:
   typedef void (metadebugger_shell::*function)(const std::string& args);
 
+  metadebugger_command() = default;
   metadebugger_command(const std::string& key, function func);
 
   const std::string& get_key() const;
