@@ -1,5 +1,3 @@
-#ifndef METADEBUGGER_COMMAND_HANDLER_MAP_HPP
-#define METADEBUGGER_COMMAND_HANDLER_MAP_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,26 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <vector>
-#include <string>
-
 #include <metashell/metadebugger_command.hpp>
 
 namespace metashell {
 
-class metadebugger_command_handler_map {
-public:
-  typedef std::vector<metadebugger_command> command_map_t;
+metadebugger_command::metadebugger_command(
+    const std::string& key,
+    function func) :
+  key(key), func(func)
+{}
 
-  metadebugger_command_handler_map(const command_map_t& command_map);
-
-  bool run_command(metadebugger_shell& shell, const std::string& line);
-
-private:
-  command_map_t command_map;
-};
-
+const std::string& metadebugger_command::get_key() const {
+  return key;
 }
 
-#endif
+metadebugger_command::function metadebugger_command::get_func() const {
+  return func;
+}
+
+bool operator<(
+    const metadebugger_command& lhs,
+    const metadebugger_command& rhs)
+{
+  return lhs.get_key() < rhs.get_key();
+}
+
+bool operator<(
+    const metadebugger_command& lhs,
+    const std::string& rhs)
+{
+  return lhs.get_key() < rhs;
+}
+
+}
 

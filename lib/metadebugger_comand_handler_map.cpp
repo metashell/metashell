@@ -26,20 +26,11 @@
 
 namespace metashell {
 
-namespace  {
-  auto command_map_compare =
-    [](const metadebugger_command_handler_map::command_map_t::value_type& lhs,
-       const metadebugger_command_handler_map::command_map_t::value_type& rhs)
-    {
-      return std::get<0>(lhs) < std::get<0>(rhs);
-    };
-}
-
 metadebugger_command_handler_map::metadebugger_command_handler_map(
     const command_map_t& command_map_arg) :
   command_map(command_map_arg)
 {
-  std::sort(command_map.begin(), command_map.end(), command_map_compare);
+  std::sort(command_map.begin(), command_map.end());
 }
 
 bool metadebugger_command_handler_map::run_command(
@@ -54,22 +45,19 @@ bool metadebugger_command_handler_map::run_command(
   }
 
   command_map_t::iterator lower =
-    std::lower_bound(command_map.begin(), command_map.end(), command,
-       [](const command_map_t::value_type& lhs, const std::string& rhs) {
-          return std::get<0>(lhs) < rhs;
-       });
+    std::lower_bound(command_map.begin(), command_map.end(), command);
 
   using boost::algorithm::starts_with;
 
   if (lower == command_map.end() ||
-      !starts_with(std::get<0>(*lower), command))
+      !starts_with(lower->get_key(), command))
   {
     return false;
   }
 
   // Check if the found command is unambiguous
   if (std::next(lower) != command_map.end() &&
-      starts_with(std::get<0>(*std::next(lower)), command))
+      starts_with(std::next(lower)->get_key(), command))
   {
     return false;
   }
@@ -78,7 +66,7 @@ bool metadebugger_command_handler_map::run_command(
   std::string rest;
   std::getline(line_stream, rest);
 
-  (shell.*std::get<1>(*lower))(rest);
+  (shell.*lower->get_func())(rest);
 
   return true;
 }

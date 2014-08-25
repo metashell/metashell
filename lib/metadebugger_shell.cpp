@@ -45,12 +45,12 @@ namespace {
     using std::make_tuple;
 
     //TODO include "step over" in "step"
-    res.push_back(make_tuple("continue", &metadebugger_shell::command_continue));
-    res.push_back(make_tuple("step", &metadebugger_shell::command_step));
-    res.push_back(make_tuple("eval", &metadebugger_shell::command_eval));
-    res.push_back(make_tuple("ft", &metadebugger_shell::command_forwardtrace));
-    res.push_back(make_tuple("bt", &metadebugger_shell::command_backtrace));
-    res.push_back(make_tuple("break", &metadebugger_shell::command_break));
+    res.push_back(metadebugger_command("continue", &metadebugger_shell::command_continue));
+    res.push_back(metadebugger_command("step", &metadebugger_shell::command_step));
+    res.push_back(metadebugger_command("eval", &metadebugger_shell::command_eval));
+    res.push_back(metadebugger_command("ft", &metadebugger_shell::command_forwardtrace));
+    res.push_back(metadebugger_command("bt", &metadebugger_shell::command_backtrace));
+    res.push_back(metadebugger_command("break", &metadebugger_shell::command_break));
 
     return res;
   }
