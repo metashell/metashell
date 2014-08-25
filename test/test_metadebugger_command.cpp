@@ -20,14 +20,14 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(mdb_command_constructor_test)
+JUST_TEST_CASE(test_mdb_command_constructor_test)
 {
   metadebugger_command x("asdf", nullptr);
 
   JUST_ASSERT_EQUAL(x.get_key(), "asdf");
 }
 
-JUST_TEST_CASE(mdb_command_comparsion_with_mdb_command_1)
+JUST_TEST_CASE(test_mdb_command_comparsion_with_mdb_command_1)
 {
   metadebugger_command x("aaaa", nullptr), y("bbbb", nullptr);
 
@@ -35,7 +35,7 @@ JUST_TEST_CASE(mdb_command_comparsion_with_mdb_command_1)
   JUST_ASSERT(!(y < x));
 }
 
-JUST_TEST_CASE(mdb_command_comparsion_with_mdb_command_2)
+JUST_TEST_CASE(test_mdb_command_comparsion_with_mdb_command_2)
 {
   metadebugger_command x("aaaa", nullptr), y("aa", nullptr);
 
@@ -43,14 +43,14 @@ JUST_TEST_CASE(mdb_command_comparsion_with_mdb_command_2)
   JUST_ASSERT(!(x < y));
 }
 
-JUST_TEST_CASE(mdb_command_comparsion_with_string_1)
+JUST_TEST_CASE(test_mdb_command_comparsion_with_string_1)
 {
   metadebugger_command x("aaaa", nullptr);
 
   JUST_ASSERT(x < "bbbb");
 }
 
-JUST_TEST_CASE(mdb_command_comparsion_with_string_2)
+JUST_TEST_CASE(test_mdb_command_comparsion_with_string_2)
 {
   metadebugger_command x("aaaa", nullptr);
 
