@@ -35,7 +35,7 @@ metadebugger_command_handler_map::metadebugger_command_handler_map(
 
 boost::optional<std::tuple<metadebugger_command, std::string>>
 metadebugger_command_handler_map::get_command_for_line(
-    const std::string& line)
+    const std::string& line) const
 {
 
   std::stringstream line_stream(line);
@@ -45,7 +45,7 @@ metadebugger_command_handler_map::get_command_for_line(
     return boost::none;
   }
 
-  command_map_t::iterator lower =
+  command_map_t::const_iterator lower =
     std::lower_bound(command_map.begin(), command_map.end(), command);
 
   using boost::algorithm::starts_with;

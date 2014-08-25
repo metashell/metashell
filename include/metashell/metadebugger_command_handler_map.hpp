@@ -35,7 +35,7 @@ public:
 
   // <command, args>
   boost::optional<std::tuple<metadebugger_command, std::string>>
-    get_command_for_line(const std::string& line);
+    get_command_for_line(const std::string& line) const;
 
 private:
   command_map_t command_map;
