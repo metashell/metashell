@@ -35,8 +35,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
   metadebugger_command_handler_map::command_map_t command_map =
   {
-    {"asd", nullptr},
-    {"efg", nullptr}
+    {"asd", nullptr, ""},
+    {"efg", nullptr, ""}
   };
 
   metadebugger_command_handler_map map(command_map);
@@ -69,8 +69,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 {
   metadebugger_command_handler_map::command_map_t command_map =
   {
-    {"asd", nullptr},
-    {"afg", nullptr}
+    {"asd", nullptr, ""},
+    {"afg", nullptr, ""}
   };
 
   metadebugger_command_handler_map map(command_map);
@@ -93,8 +93,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 {
   metadebugger_command_handler_map::command_map_t command_map =
   {
-    {"asd", nullptr},
-    {"a", nullptr}
+    {"asd", nullptr, ""},
+    {"a", nullptr, ""}
   };
 
   metadebugger_command_handler_map map(command_map);
@@ -117,8 +117,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 {
   metadebugger_command_handler_map::command_map_t command_map =
   {
-    {"asd", nullptr},
-    {"asf", nullptr}
+    {"asd", nullptr, ""},
+    {"asf", nullptr, ""}
   };
 
   metadebugger_command_handler_map map(command_map);
@@ -132,7 +132,7 @@ JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 {
   metadebugger_command_handler_map::command_map_t command_map =
   {
-    {"asf", nullptr}
+    {"asf", nullptr, ""}
   };
 
   metadebugger_command_handler_map map(command_map);

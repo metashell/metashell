@@ -40,16 +40,22 @@ const std::vector<just::console::color> metadebugger_shell::colors =
 
 namespace {
   metadebugger_command_handler_map::command_map_t create_default_command_map() {
-    //
+
     //TODO include "step over" in "step"
     metadebugger_command_handler_map::command_map_t res =
       {
-        {"continue",  &metadebugger_shell::command_continue},
-        {"step",      &metadebugger_shell::command_step},
-        {"eval",      &metadebugger_shell::command_eval},
-        {"ft",        &metadebugger_shell::command_forwardtrace},
-        {"bt",        &metadebugger_shell::command_backtrace},
-        {"break",     &metadebugger_shell::command_break}
+        {"continue", &metadebugger_shell::command_continue,
+          "Continue program being debugged, until breakpoint or end of program."},
+        {"step", &metadebugger_shell::command_step,
+          "Step the program one instantiation."},
+        {"eval", &metadebugger_shell::command_eval,
+          "Evaluate and start debugging new metaprogram."},
+        {"ft", &metadebugger_shell::command_forwardtrace,
+          "Print forwardtrace from the current point."},
+        {"bt", &metadebugger_shell::command_backtrace,
+          "Print backtrace from the current point."},
+        {"break", &metadebugger_shell::command_break,
+          "Add new breakpoint. Usage: break [breakpoint]"}
       };
     return res;
   }

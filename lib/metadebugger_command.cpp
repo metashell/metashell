@@ -21,8 +21,9 @@ namespace metashell {
 
 metadebugger_command::metadebugger_command(
     const std::string& key,
-    function func) :
-  key(key), func(func)
+    function func,
+    const std::string& description) :
+  key(key), func(func), description(description)
 {}
 
 const std::string& metadebugger_command::get_key() const {
@@ -31,6 +32,10 @@ const std::string& metadebugger_command::get_key() const {
 
 metadebugger_command::function metadebugger_command::get_func() const {
   return func;
+}
+
+const std::string& metadebugger_command::get_description() const {
+  return description;
 }
 
 bool operator<(

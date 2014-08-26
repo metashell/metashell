@@ -28,13 +28,17 @@ public:
   typedef void (metadebugger_shell::*function)(const std::string& args);
 
   metadebugger_command() = default;
-  metadebugger_command(const std::string& key, function func);
+  metadebugger_command(
+      const std::string& key, function func, const std::string& description);
 
   const std::string& get_key() const;
   function get_func() const;
+  const std::string& get_description() const;
+
 private:
   std::string key;
   function func;
+  std::string description;
 };
 
 bool operator<(
