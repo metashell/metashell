@@ -57,6 +57,7 @@ public:
   void command_forwardtrace(const std::string& arg);
   void command_backtrace(const std::string& arg);
   void command_break(const std::string& arg);
+  void command_help(const std::string& arg);
 
 protected:
   // breakpoint is simply a regex for now

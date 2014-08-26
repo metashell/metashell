@@ -55,7 +55,9 @@ namespace {
         {"bt", &metadebugger_shell::command_backtrace,
           "Print backtrace from the current point."},
         {"break", &metadebugger_shell::command_break,
-          "Add new breakpoint. Usage: break [breakpoint]"}
+          "Add new breakpoint. Usage: break [breakpoint]"},
+        {"help", &metadebugger_shell::command_help,
+          "Show help for commands. Usage: help [command]"}
       };
     return res;
   }
@@ -184,6 +186,25 @@ void metadebugger_shell::command_backtrace(const std::string& arg) {
 void metadebugger_shell::command_break(const std::string& arg) {
   breakpoints.push_back(arg);
   display("Break point \"" + arg + "\" added\n");
+}
+
+void metadebugger_shell::command_help(const std::string& arg) {
+  auto command_arg_pair = command_handler.get_command_for_line(arg);
+  if (!command_arg_pair) {
+    display("Command not found\n", just::console::color::red);
+    return;
+  }
+
+  metadebugger_command cmd;
+  std::string command_args;
+  std::tie(cmd, command_args) = *command_arg_pair;
+
+  if (!command_args.empty()) {
+    display("Only one argument expected\n", just::console::color::red);
+    return;
+  }
+
+  display(cmd.get_key() + ": " + cmd.get_description() + "\n");
 }
 
 void metadebugger_shell::run_metaprogram_with_templight(
