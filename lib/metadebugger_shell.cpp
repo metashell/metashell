@@ -24,6 +24,9 @@
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/home/phoenix/operator.hpp>
+#include <boost/spirit/home/phoenix/core/reference.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 namespace metashell {
@@ -47,7 +50,7 @@ namespace {
         {"continue", &metadebugger_shell::command_continue,
           "Continue program being debugged, until breakpoint or end of program."},
         {"step", &metadebugger_shell::command_step,
-          "Step the program one instantiation."},
+          "Step the program one instantiation. Usage: step [over] [count]"},
         {"eval", &metadebugger_shell::command_eval,
           "Evaluate and start debugging new metaprogram."},
         {"forwardtrace", &metadebugger_shell::command_forwardtrace,
@@ -138,15 +141,59 @@ void metadebugger_shell::command_continue(const std::string& arg) {
 }
 
 void metadebugger_shell::command_step(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
+  if (!require_running_metaprogram()) {
     return;
   }
 
-  if (!mp.step_metaprogram()) {
-    display_current_frame();
+  using boost::spirit::qi::lit;
+  using boost::spirit::qi::uint_;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+  using boost::spirit::qi::_1;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  bool has_over = false;
+  unsigned step_count = 1;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -lit("over") [ref(has_over) = true] >>
+        -uint_ [ref(step_count) = _1],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    display("Argument parsing failed\n", just::console::color::red);
+  }
+
+  if (has_over) {
+    //TODO this needs some work
+    bool stopped = false;
+    for (unsigned i = 0; !stopped && i < step_count; ++i) {
+      unsigned original_stack_size = mp.get_state().vertex_stack.size();
+      do {
+        if (mp.step_metaprogram()) {
+          stopped = true;
+          break;
+        }
+      } while (original_stack_size < mp.get_state().vertex_stack.size());
+    }
   } else {
-    display("Metaprogram finished\n",
-        just::console::color::green);
+    for (unsigned i = 0; i < step_count; ++i) {
+      if (mp.step_metaprogram()) {
+        break;
+      }
+    }
+  }
+  if (mp.is_metaprogram_finished()) {
+    display("Metaprogram finished\n", just::console::color::green);
+  } else {
+    display_current_frame();
   }
 }
 
