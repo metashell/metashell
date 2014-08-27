@@ -197,25 +197,6 @@ void metadebugger_shell::command_step(const std::string& arg) {
   }
 }
 
-void metadebugger_shell::command_step_over(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
-    return;
-  }
-
-  //TODO this needs some work
-  unsigned original_stack_size = mp.get_state().vertex_stack.size();
-  while (!mp.step_metaprogram() &&
-    original_stack_size < mp.get_state().vertex_stack.size())
-  {}
-
-  if (mp.is_metaprogram_finished()) {
-    display("Metaprogram finished\n",
-        just::console::color::green);
-  } else {
-    display_current_frame();
-  }
-}
-
 void metadebugger_shell::command_eval(const std::string& arg) {
   run_metaprogram_with_templight(arg);
 }
