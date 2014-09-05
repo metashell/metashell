@@ -495,31 +495,32 @@ void metadebugger_shell::display_trace_visit(
 
     display_trace_line(vertex, depth, depth_counter, kind, width);
 
-    if (!discovered[vertex]) {
-      discovered[vertex] = true;
+    if (discovered[vertex]) {
+      continue;
+    }
+    discovered[vertex] = true;
 
-      metaprogram::out_edge_iterator begin, end;
-      std::tie(begin, end) = boost::out_edges(vertex, graph);
+    metaprogram::out_edge_iterator begin, end;
+    std::tie(begin, end) = boost::out_edges(vertex, graph);
 
-      typedef std::vector<metaprogram::edge_descriptor> edges_t;
-      edges_t edges(begin, end);
+    typedef std::vector<metaprogram::edge_descriptor> edges_t;
+    edges_t edges(begin, end);
 
-      if (depth_counter.size() <= depth+1) {
-        depth_counter.resize(depth+1+1);
-      }
+    if (depth_counter.size() <= depth+1) {
+      depth_counter.resize(depth+1+1);
+    }
 
-      // Reverse iteration, so types that got instantiated first
-      // get on the top of the stack
-      for (const metaprogram::edge_descriptor& edge :
-          edges | boost::adaptors::reversed)
-      {
-        instantiation_kind next_kind = mp.get_edge_property(edge).kind;
+    // Reverse iteration, so types that got instantiated first
+    // get on the top of the stack
+    for (const metaprogram::edge_descriptor& edge :
+        edges | boost::adaptors::reversed)
+    {
+      instantiation_kind next_kind = mp.get_edge_property(edge).kind;
 
-        to_visit.push(
-          std::make_tuple(boost::target(edge, graph), depth+1, next_kind));
+      to_visit.push(
+        std::make_tuple(boost::target(edge, graph), depth+1, next_kind));
 
-        ++depth_counter[depth+1];
-      }
+      ++depth_counter[depth+1];
     }
   }
 }
