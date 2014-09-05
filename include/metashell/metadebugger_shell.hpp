@@ -75,6 +75,8 @@ protected:
 
   void continue_metaprogram();
 
+  void display_error(const std::string& str) const;
+  void display_info(const std::string& str) const;
   void display_current_frame() const;
   void display_current_forwardtrace() const;
   void display_backtrace() const;

@@ -106,7 +106,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
 
   auto command_arg_pair = command_handler.get_command_for_line(line);
   if (!command_arg_pair) {
-    display("Command parsing failed\n", just::console::color::red);
+    display_error("Command parsing failed\n");
     return;
   }
 
@@ -119,7 +119,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
 
 bool metadebugger_shell::require_empty_args(const std::string& args) const {
   if (!args.empty()) {
-    display("Command doesn't accept arguments\n", just::console::color::red);
+    display_error("Command doesn't accept arguments\n");
     return false;
   }
   return true;
@@ -127,7 +127,7 @@ bool metadebugger_shell::require_empty_args(const std::string& args) const {
 
 bool metadebugger_shell::require_running_metaprogram() const {
   if (mp.is_metaprogram_finished()) {
-    display("Metaprogram finished\n", just::console::color::red);
+    display_error("Metaprogram finished\n");
     return false;
   }
   return true;
@@ -168,7 +168,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display("Argument parsing failed\n", just::console::color::red);
+    display_error("Argument parsing failed\n");
   }
 
   if (has_over) {
@@ -223,7 +223,7 @@ void metadebugger_shell::command_break(const std::string& arg) {
 void metadebugger_shell::command_help(const std::string& arg) {
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
-    display("Command not found\n", just::console::color::red);
+    display_error("Command not found\n");
     return;
   }
 
@@ -232,7 +232,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
   std::tie(cmd, command_args) = *command_arg_pair;
 
   if (!command_args.empty()) {
-    display("Only one argument expected\n", just::console::color::red);
+    display_error("Only one argument expected\n");
     return;
   }
 
@@ -269,7 +269,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   }
 
   for (const std::string& e : res.errors) {
-    display(e + "\n", just::console::color::red);
+    display_error(e + "\n");
   }
   if (!res.has_errors()) {
     display(res.output + "\n");
@@ -295,6 +295,14 @@ void metadebugger_shell::continue_metaprogram() {
       }
     }
   }
+}
+
+void metadebugger_shell::display_error(const std::string& str) const {
+  display(str, just::console::color::bright_red);
+}
+
+void metadebugger_shell::display_info(const std::string& str) const {
+  display(str, just::console::color::bright_green);
 }
 
 void metadebugger_shell::display_current_frame() const {
