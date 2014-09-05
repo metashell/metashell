@@ -51,7 +51,7 @@ namespace {
           "Continue program being debugged, until breakpoint or end of program."},
         {"step", &metadebugger_shell::command_step,
           "Step the program one instantiation. Usage: step [over] [count]"},
-        {"eval", &metadebugger_shell::command_eval,
+        {"evaluate", &metadebugger_shell::command_eval,
           "Evaluate and start debugging new metaprogram."},
         {"forwardtrace", &metadebugger_shell::command_forwardtrace,
           "Print forwardtrace from the current point."},
