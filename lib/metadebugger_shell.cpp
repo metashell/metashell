@@ -191,7 +191,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
     }
   }
   if (mp.is_metaprogram_finished()) {
-    display("Metaprogram finished\n", just::console::color::green);
+    display_info("Metaprogram finished\n");
   } else {
     display_current_frame();
   }
@@ -217,7 +217,7 @@ void metadebugger_shell::command_backtrace(const std::string& arg) {
 
 void metadebugger_shell::command_break(const std::string& arg) {
   breakpoints.push_back(arg);
-  display("Break point \"" + arg + "\" added\n");
+  display_info("Break point \"" + arg + "\" added\n");
 }
 
 void metadebugger_shell::command_help(const std::string& arg) {
@@ -236,7 +236,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
     return;
   }
 
-  display(cmd.get_key() + ": " + cmd.get_description() + "\n");
+  display_info(cmd.get_key() + ": " + cmd.get_description() + "\n");
 }
 
 void metadebugger_shell::run_metaprogram_with_templight(
@@ -265,14 +265,14 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   result res = eval_tmp(env, str, conf, "<mdb-stdin>");
 
   if (!res.info.empty()) {
-    display(res.info);
+    display_info(res.info);
   }
 
   for (const std::string& e : res.errors) {
     display_error(e + "\n");
   }
   if (!res.has_errors()) {
-    display(res.output + "\n");
+    display_info(res.output + "\n"); //TODO syntax hightlighted
   }
 }
 
@@ -302,7 +302,7 @@ void metadebugger_shell::display_error(const std::string& str) const {
 }
 
 void metadebugger_shell::display_info(const std::string& str) const {
-  display(str, just::console::color::bright_green);
+  display(str);
 }
 
 void metadebugger_shell::display_current_frame() const {
