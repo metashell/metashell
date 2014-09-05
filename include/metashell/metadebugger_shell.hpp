@@ -76,7 +76,6 @@ protected:
   void continue_metaprogram();
 
   void display_current_frame() const;
-  void display_forwardtrace(const std::string& root_type = "<root>") const;
   void display_current_forwardtrace() const;
   void display_backtrace() const;
 

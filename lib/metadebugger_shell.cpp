@@ -516,24 +516,6 @@ void metadebugger_shell::display_trace_visit(
   }
 }
 
-void metadebugger_shell::display_forwardtrace(
-    const std::string& root_type) const
-{
-  boost::optional<metaprogram::vertex_descriptor> opt_vertex =
-    mp.find_vertex(root_type);
-
-  if (!opt_vertex) {
-    display("Type \"" + root_type + "\" not found", just::console::color::red);
-    return;
-  }
-
-  unsigned shell_width = width();
-
-  metaprogram::discovered_t discovered(mp.get_num_vertices());
-
-  display_trace_visit(*opt_vertex, discovered, shell_width);
-}
-
 void metadebugger_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
 
