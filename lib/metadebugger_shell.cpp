@@ -449,9 +449,6 @@ void metadebugger_shell::display_trace_visit(
     unsigned width) const
 {
 
-  if (discovered[root_vertex]) {
-    return;
-  }
   // -----
   // Customized DFS
   //   The algorithm only checks vertices which are reachable from root_vertex
@@ -540,12 +537,7 @@ void metadebugger_shell::display_forwardtrace(
 void metadebugger_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
 
-  metaprogram::vertex_descriptor vertex = mp.get_current_vertex();
-  discovered[vertex] = false;
-
-  unsigned shell_width = width();
-
-  display_trace_visit(vertex, discovered, shell_width);
+  display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
 
 void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
