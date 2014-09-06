@@ -20,14 +20,13 @@
 
 using namespace metashell;
 
-const std::vector<std::string> fibonacci_mp = {
+const std::string fibonacci_mp =
   "template <int N> struct fib {"
     "static constexpr int value = fib<N - 2>::value + fib<N - 1>::value;"
-  "};",
-  "template <> struct fib<0> { static constexpr int value = 0; };",
-  "template <> struct fib<1> { static constexpr int value = 1; };",
-  "template <int N> struct int_ {};"
-};
+  "};"
+  "template <> struct fib<0> { static constexpr int value = 0; };"
+  "template <> struct fib<1> { static constexpr int value = 1; };"
+  "template <int N> struct int_ {};";
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_int) {

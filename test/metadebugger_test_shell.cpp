@@ -23,13 +23,11 @@ metadebugger_test_shell metadebugger_test_shell::create_default() {
 }
 
 metadebugger_test_shell metadebugger_test_shell::create_with_environment(
-      const std::vector<std::string>& lines)
+      const std::string& line)
 {
   std::shared_ptr<metashell::shell> sh(new metashell::shell_stub());
 
-  for (const std::string& line : lines) {
-    sh->store_in_buffer(line);
-  }
+  sh->store_in_buffer(line);
 
   return metadebugger_test_shell(sh);
 }
