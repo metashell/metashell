@@ -29,6 +29,7 @@ const std::vector<std::string> fibonacci_mp = {
   "template <int N> struct int_ {};"
 };
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_int) {
   metadebugger_test_shell sh = metadebugger_test_shell::create_default();
 
@@ -36,7 +37,9 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
 
   JUST_ASSERT_EQUAL(sh.get_output(), "int\n");
 }
+#endif
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
   metadebugger_test_shell sh =
     metadebugger_test_shell::create_with_environment(fibonacci_mp);
@@ -45,3 +48,4 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 
   JUST_ASSERT_EQUAL(sh.get_output(), "int_<55>\n");
 }
+#endif
