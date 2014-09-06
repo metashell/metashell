@@ -16,7 +16,20 @@
 
 #include "metadebugger_test_shell.hpp"
 
-void metadebugger_test_shell::run() { }
+#include <metashell/shell_stub.hpp>
+
+metadebugger_test_shell metadebugger_test_shell::create_default() {
+  std::shared_ptr<metashell::shell> sh(new metashell::shell_stub());
+
+  return metadebugger_test_shell(sh);
+}
+
+metadebugger_test_shell::metadebugger_test_shell(
+  std::shared_ptr<metashell::shell> sh_) :
+  metashell::metadebugger_shell(sh_->get_config(), sh_->env()), sh(sh_)
+{}
+
+void metadebugger_test_shell::run() {}
 
 void metadebugger_test_shell::add_history(const std::string& str) {
   history.push_back(str);
