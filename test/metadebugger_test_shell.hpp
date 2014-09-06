@@ -37,6 +37,8 @@ public:
 
   const std::string& get_output() const;
   const history_t& get_history() const;
+  void clear_output();
+  void clear_history();
 
 private:
   history_t history;

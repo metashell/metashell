@@ -42,3 +42,12 @@ const test_metadebugger_shell::history_t&
 test_metadebugger_shell::get_history() const {
   return history;
 }
+
+void test_metadebugger_shell::clear_output() {
+  output.clear();
+}
+
+void test_metadebugger_shell::clear_history() {
+  history.clear();
+}
+
