@@ -76,6 +76,7 @@ metadebugger_shell::metadebugger_shell(
   conf(conf),
   env(env),
   command_handler(create_default_command_map()),
+  mp(metaprogram::create_empty_finished()),
   is_stopped(false)
 {}
 
@@ -132,7 +133,7 @@ bool metadebugger_shell::require_empty_args(const std::string& args) const {
 
 bool metadebugger_shell::require_running_metaprogram() const {
   if (mp.is_metaprogram_finished()) {
-    display_error("Metaprogram finished\n");
+    display_error("Metaprogram finished or not evaluated yet\n");
     return false;
   }
   return true;

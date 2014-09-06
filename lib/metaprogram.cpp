@@ -35,6 +35,14 @@ metaprogram::metaprogram() {
 
 metaprogram::metaprogram_state::metaprogram_state() {}
 
+metaprogram metaprogram::create_empty_finished() {
+  metaprogram mp;
+
+  mp.step_metaprogram();
+
+  return mp;
+}
+
 metaprogram::metaprogram_state::metaprogram_state(
     const metaprogram& mp)
 {
