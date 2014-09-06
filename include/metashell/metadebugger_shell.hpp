@@ -88,7 +88,10 @@ protected:
   metaprogram mp;
   breakpoints_t breakpoints;
 
-  std::string prev_line;
+  // Optional is empty, when there is non previous line, or
+  // the last command is non_repeatable
+  boost::optional<std::string> prev_line;
+
   bool is_stopped;
 
 private:

@@ -21,13 +21,18 @@ namespace metashell {
 
 metadebugger_command::metadebugger_command(
     const std::string& key,
+    repeatable_t rep,
     function func,
     const std::string& description) :
-  key(key), func(func), description(description)
+  key(key), rep(rep), func(func), description(description)
 {}
 
 const std::string& metadebugger_command::get_key() const {
   return key;
+}
+
+bool metadebugger_command::is_repeatable() const {
+  return rep == repeatable;
 }
 
 metadebugger_command::function metadebugger_command::get_func() const {

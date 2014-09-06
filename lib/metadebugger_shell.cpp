@@ -47,23 +47,23 @@ namespace {
     //TODO include "step over" in "step"
     metadebugger_command_handler_map::command_map_t res =
       {
-        {"continue", &metadebugger_shell::command_continue,
+        {"continue", repeatable, &metadebugger_shell::command_continue,
           "Continue program being debugged, until breakpoint or end of program."},
-        {"step", &metadebugger_shell::command_step,
+        {"step", repeatable, &metadebugger_shell::command_step,
           "Step the program one instantiation. Usage: step [over] [count]"},
-        {"evaluate", &metadebugger_shell::command_eval,
+        {"evaluate", non_repeatable, &metadebugger_shell::command_eval,
           "Evaluate and start debugging new metaprogram."},
-        {"forwardtrace", &metadebugger_shell::command_forwardtrace,
+        {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
           "Print forwardtrace from the current point."},
-        {"ft", &metadebugger_shell::command_forwardtrace,
+        {"ft", non_repeatable, &metadebugger_shell::command_forwardtrace,
           "Alias for forwardtrace."},
-        {"backtrace", &metadebugger_shell::command_backtrace,
+        {"backtrace", non_repeatable, &metadebugger_shell::command_backtrace,
           "Print backtrace from the current point."},
-        {"bt", &metadebugger_shell::command_backtrace,
+        {"bt", non_repeatable, &metadebugger_shell::command_backtrace,
           "Alias for backtrace."},
-        {"break", &metadebugger_shell::command_break,
+        {"break", non_repeatable, &metadebugger_shell::command_break,
           "Add new breakpoint. Usage: break [breakpoint]"},
-        {"help", &metadebugger_shell::command_help,
+        {"help", non_repeatable, &metadebugger_shell::command_help,
           "Show help for commands. Usage: help [command]"}
       };
     return res;
@@ -94,8 +94,8 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   std::string line = boost::trim_copy(original_line);
 
   if (line.empty()) {
-    if (!prev_line.empty()) {
-      line = prev_line;
+    if (prev_line && !prev_line->empty()) {
+      line = *prev_line;
     } else {
       return;
     }
@@ -107,12 +107,17 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   auto command_arg_pair = command_handler.get_command_for_line(line);
   if (!command_arg_pair) {
     display_error("Command parsing failed\n");
+    prev_line = boost::none;
     return;
   }
 
   metadebugger_command cmd;
   std::string args;
   std::tie(cmd, args) = *command_arg_pair;
+
+  if (!cmd.is_repeatable()) {
+    prev_line = boost::none;
+  }
 
   (this->*cmd.get_func())(args);
 }
