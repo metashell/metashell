@@ -111,7 +111,7 @@ void metaprogram::reset_state() {
   state = state_t(*this);
 }
 
-bool metaprogram::is_metaprogram_finished() const {
+bool metaprogram::is_finished() const {
   return state.vertex_stack.empty();
 }
 
@@ -121,7 +121,7 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 
 // Returns true when the program took it's last step (finished)
 bool metaprogram::step_metaprogram() {
-  assert(!is_metaprogram_finished());
+  assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
   state.vertex_stack.pop();
@@ -139,7 +139,7 @@ bool metaprogram::step_metaprogram() {
       state.vertex_stack.push(target);
     }
   }
-  return is_metaprogram_finished();
+  return is_finished();
 }
 
 const metaprogram::graph_t& metaprogram::get_graph() const {
@@ -183,12 +183,12 @@ metaprogram::template_edge_property& metaprogram::get_edge_property(
 }
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
-  assert(!is_metaprogram_finished());
+  assert(!is_finished());
   return state.vertex_stack.top();
 }
 
 metaprogram::frame metaprogram::get_current_frame() const {
-  assert(!is_metaprogram_finished());
+  assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
 
@@ -200,7 +200,7 @@ metaprogram::frame metaprogram::get_current_frame() const {
 }
 
 metaprogram::backtrace_t metaprogram::get_backtrace() const {
-  assert(!is_metaprogram_finished());
+  assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
 

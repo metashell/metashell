@@ -132,7 +132,7 @@ bool metadebugger_shell::require_empty_args(const std::string& args) const {
 }
 
 bool metadebugger_shell::require_running_metaprogram() const {
-  if (mp.is_metaprogram_finished()) {
+  if (mp.is_finished()) {
     display_error("Metaprogram finished or not evaluated yet\n");
     return false;
   }
@@ -197,7 +197,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
       }
     }
   }
-  if (mp.is_metaprogram_finished()) {
+  if (mp.is_finished()) {
     display_info("Metaprogram finished\n");
   } else {
     display_current_frame();
@@ -288,7 +288,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
 }
 
 void metadebugger_shell::continue_metaprogram() {
-  assert(!mp.is_metaprogram_finished());
+  assert(!mp.is_finished());
 
   while (true) {
     if (mp.step_metaprogram()) {

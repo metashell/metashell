@@ -135,7 +135,7 @@ public:
       const std::string& element) const;
 
   void reset_state();
-  bool is_metaprogram_finished() const;
+  bool is_finished() const;
 
   vertex_descriptor get_root_vertex() const;
 
