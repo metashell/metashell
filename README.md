@@ -420,7 +420,7 @@ namespace metashell
   };
 
   template <class Head, class Tail>
-  struct format<cons<Head, Tail>>
+  struct format<cons<typename format<Head>::type, Tail>>
   {
     // ...
   };
@@ -431,6 +431,10 @@ namespace metashell
 This example defines the formatter only when the header file is used inside
 Metashell. This is useful for debugging and has no impact on the regular users
 of the header.
+
+Note that it is a formatter for a _container_, which contains elements. Those
+elements might also need formatting, therefore it formats the elements as well
+by calling `format` recursively on each element (see `format<Head>::type`).
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.

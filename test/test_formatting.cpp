@@ -87,4 +87,15 @@ JUST_TEST_CASE(test_formatting_disabled)
   );
 }
 
+JUST_TEST_CASE(test_nested_mpl_vector_formatting)
+{
+  test_shell sh;
+  sh.line_available("#include <metashell/formatter/vector.hpp>");
+  sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
+
+  JUST_ASSERT_EQUAL(
+    "boost_::mpl::vector<boost_::mpl::vector<int> >",
+    sh.output()
+  );
+}
 
