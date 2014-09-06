@@ -93,6 +93,7 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
   sh.line_available("#include <metashell/formatter/vector.hpp>");
   sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
 
+  JUST_ASSERT_EQUAL("", sh.error());
   JUST_ASSERT_EQUAL(
     "boost_::mpl::vector<boost_::mpl::vector<int> >",
     sh.output()
