@@ -19,7 +19,17 @@
 #include <metashell/shell_stub.hpp>
 
 metadebugger_test_shell metadebugger_test_shell::create_default() {
+  return create_with_environment({});
+}
+
+metadebugger_test_shell metadebugger_test_shell::create_with_environment(
+      const std::vector<std::string>& lines)
+{
   std::shared_ptr<metashell::shell> sh(new metashell::shell_stub());
+
+  for (const std::string& line : lines) {
+    sh->store_in_buffer(line);
+  }
 
   return metadebugger_test_shell(sh);
 }

@@ -26,6 +26,8 @@
 class metadebugger_test_shell : public metashell::metadebugger_shell {
 public:
   static metadebugger_test_shell create_default();
+  static metadebugger_test_shell create_with_environment(
+      const std::vector<std::string>& lines);
 
   typedef std::vector<std::string> history_t;
 
