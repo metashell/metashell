@@ -21,7 +21,7 @@
 
 #include <metashell/metadebugger_shell.hpp>
 
-class test_metadebugger_shell : public metashell::metadebugger_shell {
+class metadebugger_test_shell : public metashell::metadebugger_shell {
 public:
   typedef std::vector<std::string> history_t;
 

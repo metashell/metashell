@@ -16,13 +16,13 @@
 
 #include "metadebugger_test_shell.hpp"
 
-void test_metadebugger_shell::run() { }
+void metadebugger_test_shell::run() { }
 
-void test_metadebugger_shell::add_history(const std::string& str) {
+void metadebugger_test_shell::add_history(const std::string& str) {
   history.push_back(str);
 }
 
-void test_metadebugger_shell::display(
+void metadebugger_test_shell::display(
     const std::string& str,
     optional_color) const
 {
@@ -30,24 +30,24 @@ void test_metadebugger_shell::display(
   output += str;
 }
 
-unsigned test_metadebugger_shell::width() const {
+unsigned metadebugger_test_shell::width() const {
   return 80;
 }
 
-const std::string& test_metadebugger_shell::get_output() const {
+const std::string& metadebugger_test_shell::get_output() const {
   return output;
 }
 
-const test_metadebugger_shell::history_t&
-test_metadebugger_shell::get_history() const {
+const metadebugger_test_shell::history_t&
+metadebugger_test_shell::get_history() const {
   return history;
 }
 
-void test_metadebugger_shell::clear_output() {
+void metadebugger_test_shell::clear_output() {
   output.clear();
 }
 
-void test_metadebugger_shell::clear_history() {
+void metadebugger_test_shell::clear_history() {
   history.clear();
 }
 
