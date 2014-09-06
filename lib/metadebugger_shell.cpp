@@ -316,6 +316,10 @@ void metadebugger_shell::display_info(const std::string& str) const {
 }
 
 void metadebugger_shell::display_current_frame() const {
+  if (mp.get_current_vertex() == mp.get_root_vertex()) {
+    // The MP hasn't been stepped at least once => no frame available
+    return;
+  }
   display_frame(mp.get_current_frame());
 }
 
