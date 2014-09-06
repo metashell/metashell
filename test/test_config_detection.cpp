@@ -412,3 +412,124 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
 }
 
+JUST_TEST_CASE(
+  test_when_no_clang_binary_is_found_it_is_not_tested_against_libclang
+)
+{
+  mock_environment_detector envd;
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = true;
+
+  std::ostringstream err;
+  detect_config(ucfg, envd, err);
+
+  JUST_ASSERT_EQUAL(0, envd.clang_binary_works_with_libclang_called_times());
+}
+
+JUST_TEST_CASE(
+  test_when_user_config_does_not_ask_for_precompiled_headers_clang_is_not_tested_against_libclang
+)
+{
+  mock_environment_detector envd;
+  envd.search_clang_binary_returns("/foo/bar/clang");
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = false;
+
+  std::ostringstream err;
+  detect_config(ucfg, envd, err);
+
+  JUST_ASSERT_EQUAL(0, envd.clang_binary_works_with_libclang_called_times());
+}
+
+JUST_TEST_CASE(test_when_clang_binary_is_set_it_is_tested_against_libclang)
+{
+  mock_environment_detector envd;
+  envd.search_clang_binary_returns("/foo/bar/clang");
+
+  std::string clang_binary_works_with_libclang_arg;
+  envd.set_clang_binary_works_with_libclang_callback(
+    [&clang_binary_works_with_libclang_arg](const std::string& clang_path_)
+    {
+      clang_binary_works_with_libclang_arg = clang_path_;
+      return true;
+    }
+  );
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = true;
+
+  std::ostringstream err;
+  detect_config(ucfg, envd, err);
+
+  JUST_ASSERT_EQUAL(1, envd.clang_binary_works_with_libclang_called_times());
+  JUST_ASSERT_EQUAL("/foo/bar/clang", clang_binary_works_with_libclang_arg);
+}
+
+JUST_TEST_CASE(
+  test_clang_binary_is_tested_against_libclang_after_updating_the_path
+)
+{
+  mock_environment_detector envd;
+  envd.on_windows_returns(true);
+  envd.search_clang_binary_returns("c:\\clang.exe");
+
+  int append_to_path_called_times = 0;
+  envd.set_clang_binary_works_with_libclang_callback(
+    [&append_to_path_called_times, &envd](const std::string&)
+    {
+      append_to_path_called_times = envd.append_to_path_called_times();
+      return true;
+    }
+  );
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = true;
+
+  std::ostringstream err;
+  detect_config(ucfg, envd, err);
+
+  JUST_ASSERT_EQUAL(1, append_to_path_called_times);
+}
+
+JUST_TEST_CASE(
+  test_when_clang_binary_works_with_libclang_precompiled_headers_are_not_disabled
+)
+{
+  mock_environment_detector envd;
+  envd.search_clang_binary_returns("/foo/bar/clang");
+
+  envd.set_clang_binary_works_with_libclang_callback(
+    [](const std::string&) { return true; }
+  );
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = true;
+
+  std::ostringstream err;
+  const config cfg = detect_config(ucfg, envd, err);
+
+  JUST_ASSERT(cfg.use_precompiled_headers);
+}
+
+JUST_TEST_CASE(
+  test_when_clang_binary_does_not_work_with_libclang_precompiled_headers_are_disabled
+)
+{
+  mock_environment_detector envd;
+  envd.search_clang_binary_returns("/foo/bar/clang");
+
+  envd.set_clang_binary_works_with_libclang_callback(
+    [](const std::string&) { return false; }
+  );
+
+  user_config ucfg;
+  ucfg.use_precompiled_headers = true;
+
+  std::ostringstream err;
+  const config cfg = detect_config(ucfg, envd, err);
+
+  JUST_ASSERT(!cfg.use_precompiled_headers);
+}
+

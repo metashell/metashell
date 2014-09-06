@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "cxindex.hpp"
+
 #include <metashell/metashell.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/clang_binary.hpp>
+#include <metashell/header_file_environment.hpp>
 
 #include <just/environment.hpp>
 
@@ -114,5 +117,29 @@ std::vector<std::string> default_environment_detector::extra_sysinclude()
       ::extra_sysinclude
         + sizeof(::extra_sysinclude) / sizeof(const char*)
     );
+}
+
+bool default_environment_detector::clang_binary_works_with_libclang(
+  const config& cfg_
+)
+{
+  config cfg(cfg_);
+  cfg.use_precompiled_headers = true;
+
+  const unsaved_file src("<stdin>", "typedef foo bar;");
+
+  try
+  {
+    header_file_environment env(cfg);
+    env.append("struct foo {};");
+
+    cxindex index;
+    std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env);
+    return tu->errors_begin() == tu->errors_end();
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
 

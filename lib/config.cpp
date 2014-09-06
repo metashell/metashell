@@ -77,15 +77,16 @@ namespace
 
   bool detect_precompiled_header_usage(
     bool user_wants_precompiled_headers_,
-    bool clang_binary_available_,
+    iface::environment_detector& env_detector_,
+    const config& cfg_,
     std::ostream& stderr_
   )
   {
     if (user_wants_precompiled_headers_)
     {
-      if (clang_binary_available_)
+      if (!cfg_.clang_path.empty())
       {
-        return true;
+        return env_detector_.clang_binary_works_with_libclang(cfg_);
       }
       else
       {
@@ -180,13 +181,6 @@ config metashell::detect_config(
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_);
 
-  cfg.use_precompiled_headers =
-    detect_precompiled_header_usage(
-      ucfg_.use_precompiled_headers,
-      !cfg.clang_path.empty(),
-      stderr_
-    );
-
   cfg.include_path =
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
@@ -204,6 +198,14 @@ config metashell::detect_config(
       env_detector_.append_to_path(directory_of_file(cfg.clang_path));
     }
   }
+
+  cfg.use_precompiled_headers =
+    detect_precompiled_header_usage(
+      ucfg_.use_precompiled_headers,
+      env_detector_,
+      cfg,
+      stderr_
+    );
 
   return cfg;
 }

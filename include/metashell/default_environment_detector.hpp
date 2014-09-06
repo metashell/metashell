@@ -37,6 +37,8 @@ namespace metashell
     virtual std::vector<std::string> extra_sysinclude();
 
     virtual std::string path_of_executable();
+
+    virtual bool clang_binary_works_with_libclang(const config& clang_path_);
   };
 }
 
