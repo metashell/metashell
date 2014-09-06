@@ -203,6 +203,10 @@ void metadebugger_shell::command_step(const std::string& arg) {
 }
 
 void metadebugger_shell::command_evaluate(const std::string& arg) {
+  if (arg.empty()) {
+    display_error("Argument expected\n");
+    return;
+  }
   run_metaprogram_with_templight(arg);
 }
 

@@ -48,3 +48,26 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
   JUST_ASSERT_EQUAL(sh.get_output(), "int_<55>\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_default();
+
+  sh.line_available("evaluate");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_default();
+
+  sh.line_available("evaluate  ");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+}
+#endif
+
