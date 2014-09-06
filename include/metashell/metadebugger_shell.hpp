@@ -56,7 +56,7 @@ public:
 
   void command_continue(const std::string& arg);
   void command_step(const std::string& arg);
-  void command_eval(const std::string& arg);
+  void command_evaluate(const std::string& arg);
   void command_forwardtrace(const std::string& arg);
   void command_backtrace(const std::string& arg);
   void command_break(const std::string& arg);

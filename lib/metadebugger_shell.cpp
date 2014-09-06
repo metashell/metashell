@@ -51,7 +51,7 @@ namespace {
           "Continue program being debugged, until breakpoint or end of program."},
         {"step", repeatable, &metadebugger_shell::command_step,
           "Step the program one instantiation. Usage: step [over] [count]"},
-        {"evaluate", non_repeatable, &metadebugger_shell::command_eval,
+        {"evaluate", non_repeatable, &metadebugger_shell::command_evaluate,
           "Evaluate and start debugging new metaprogram."},
         {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
           "Print forwardtrace from the current point."},
@@ -202,7 +202,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
   }
 }
 
-void metadebugger_shell::command_eval(const std::string& arg) {
+void metadebugger_shell::command_evaluate(const std::string& arg) {
   run_metaprogram_with_templight(arg);
 }
 
