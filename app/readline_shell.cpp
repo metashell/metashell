@@ -104,10 +104,31 @@ namespace
     just::console::reset();
   }
 
-#ifndef _WIN32
+  int line_length()
+  {
+#ifdef _WIN32
+    return int(wcslen(_el_line_buffer));
+#else
+    return rl_end;
+#endif
+  }
+
   std::string get_edited_text()
   {
-    return std::string(rl_line_buffer, rl_line_buffer + rl_end);
+    return std::string(rl_line_buffer, rl_line_buffer + line_length());
+  }
+
+#ifdef _WIN32
+  template <class T>
+  stdext::checked_array_iterator<T*> array_begin(T* array_, int len_)
+  {
+    return stdext::checked_array_iterator<T*>(array_, len_);
+  }
+#else
+  template <class T>
+  T* array_begin(T* array_, int)
+  {
+    return array_;
   }
 #endif
 }
@@ -139,25 +160,19 @@ void readline_shell::add_history(const std::string& s_)
 
 void readline_shell::run()
 {
-#ifndef _WIN32
   override_guard<char** (*)(const char*, int, int)>
     ovr2(rl_attempted_completion_function, tab_completion);
-#endif
 
   interrupt_handler_override ovr3([this]() { this->cancel_operation(); });
 
   for (char* l = 0; !stopped() && (l = readline(prompt().c_str()));)
   {
     const std::string line(l);
-#ifndef _WIN32
-    // It breaks on Windows. The library owns the buffer?
-    free(l);
-#endif
+    rl_free(l);
     line_available(line);
   }
 }
 
-#ifndef _WIN32
 char* readline_shell::tab_generator(const char* text_, int state_)
 {
   assert(_instance);
@@ -183,22 +198,19 @@ char* readline_shell::tab_generator(const char* text_, int state_)
   {
     const std::string str = text_ + *pos;
     char* s = new char[str.length() + 1];
-    std::copy(str.begin(), str.end(), s);
+    std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
     s[str.length()] = 0;
     ++pos;
     return s;
   }
   return 0;
 }
-#endif
 
-#ifndef _WIN32
 char** readline_shell::tab_completion(const char* text_, int, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
 }
-#endif
 
 void readline_shell::display_normal(const std::string& s_) const
 {
