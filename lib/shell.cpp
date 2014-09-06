@@ -91,9 +91,15 @@ namespace
         "struct wrap {}; "
 
         "template <class T> "
-        "typename T::tag tag_of(::metashell::impl::wrap<T>); "
+        "typename T::tag* tag_of(::metashell::impl::wrap<T>); "
         
-        "void tag_of(...); "
+        "void* tag_of(...); "
+
+        "template <class T> "
+        "struct remove_ptr; "
+
+        "template <class T> "
+        "struct remove_ptr<T*> { typedef T type; }; "
       "} "
       
       "template <class Tag> "
@@ -108,7 +114,9 @@ namespace
       "template <class T> "
       "struct format : "
         "::metashell::format_impl<"
-          "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
+          "typename ::metashell::impl::remove_ptr<"
+            "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
+          ">::type"
         ">::template apply<T>"
         "{}; "
 
