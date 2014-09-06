@@ -233,7 +233,7 @@ above in the shell the following way as well:
 ...> };
 ```
 
-What is important is that the last character of a line _has to be_ `\\`. That is
+What is important is that the last character of a line _has to be_ `\`. That is
 how Metashell knows that there is more to come.
 
 If you type the above commands into the shell you define the `fib` template
