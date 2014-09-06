@@ -118,3 +118,18 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
       "fib<10> (TemplateInstantiation)\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Argument parsing failed\n");
+}
+#endif

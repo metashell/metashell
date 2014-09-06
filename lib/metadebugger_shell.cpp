@@ -175,6 +175,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
 
   if (!result || begin != end) {
     display_error("Argument parsing failed\n");
+    return;
   }
 
   if (has_over) {
