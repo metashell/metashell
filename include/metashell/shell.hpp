@@ -83,6 +83,7 @@ namespace metashell
     void display_environment_stack_size();
     void rebuild_environment();
   private:
+    std::string _line_prefix;
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;

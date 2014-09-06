@@ -212,6 +212,30 @@ metaprogramming. Let's write it first:
 > template <> struct fib<1> { static constexpr int value = 1; };
 ```
 
+Note that Metashell supports multiline definitions as well. You can enter the
+above in the shell the following way as well:
+
+```cpp
+> template <int N> \
+...> struct fib \
+...> { \
+...>   static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \
+...> };
+> template <> \
+...> struct fib<0> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+> template <> \
+...> struct fib<1> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+```
+
+What is important is that the last character of a line _has to be_ `\\`. That is
+how Metashell knows that there is more to come.
+
 If you type the above commands into the shell you define the `fib` template
 class and its necessary specialisations. If you try to evaluate it, you get an
 error:

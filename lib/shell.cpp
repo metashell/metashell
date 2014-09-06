@@ -219,31 +219,41 @@ void shell::line_available(const std::string& s_)
 {
   try
   {
-    const command cmd(s_);
-
-    if (has_non_whitespace(s_))
+    if (s_.empty() || s_.back() != '\\')
     {
-      if (_prev_line != s_)
-      {
-        add_history(s_);
-        _prev_line = s_;
-      }
+      const std::string s = _line_prefix + s_;
+      _line_prefix.clear();
 
-      if (!is_empty_line(cmd))
+      const command cmd(s);
+
+      if (has_non_whitespace(s))
       {
-        if (boost::optional<command::iterator> p = parse_pragma(cmd))
+        if (_prev_line != s)
         {
-          _pragma_handlers.process(*p, cmd.end());
+          add_history(s);
+          _prev_line = s;
         }
-        else if (is_environment_setup_command(cmd))
+
+        if (!is_empty_line(cmd))
         {
-          store_in_buffer(s_);
-        }
-        else
-        {
-          run_metaprogram(s_);
+          if (boost::optional<command::iterator> p = parse_pragma(cmd))
+          {
+            _pragma_handlers.process(*p, cmd.end());
+          }
+          else if (is_environment_setup_command(cmd))
+          {
+            store_in_buffer(s);
+          }
+          else
+          {
+            run_metaprogram(s);
+          }
         }
       }
+    }
+    else
+    {
+      _line_prefix += s_.substr(0, s_.size() - 1);
     }
   }
   catch (const std::exception& e)
@@ -258,7 +268,7 @@ void shell::line_available(const std::string& s_)
 
 std::string shell::prompt() const
 {
-  return "> ";
+  return _line_prefix.empty() ? "> " : "...> ";
 }
 
 bool shell::store_in_buffer(const std::string& s_)
