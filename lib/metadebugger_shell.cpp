@@ -184,7 +184,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
     for (unsigned i = 0; !stopped && i < step_count; ++i) {
       unsigned original_stack_size = mp.get_state().vertex_stack.size();
       do {
-        if (mp.step_metaprogram()) {
+        if (mp.step()) {
           stopped = true;
           break;
         }
@@ -192,7 +192,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
     }
   } else {
     for (unsigned i = 0; i < step_count; ++i) {
-      if (mp.step_metaprogram()) {
+      if (mp.step()) {
         break;
       }
     }
@@ -291,7 +291,7 @@ void metadebugger_shell::continue_metaprogram() {
   assert(!mp.is_finished());
 
   while (true) {
-    if (mp.step_metaprogram()) {
+    if (mp.step()) {
       display("Metaprogram finished\n");
       return;
     }

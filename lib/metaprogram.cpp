@@ -38,7 +38,7 @@ metaprogram::state_t::state_t() {}
 metaprogram metaprogram::create_empty_finished() {
   metaprogram mp;
 
-  mp.step_metaprogram();
+  mp.step();
 
   return mp;
 }
@@ -120,7 +120,7 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 }
 
 // Returns true when the program took it's last step (finished)
-bool metaprogram::step_metaprogram() {
+bool metaprogram::step() {
   assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
