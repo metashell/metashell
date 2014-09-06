@@ -102,12 +102,12 @@ public:
   typedef std::vector<bool> discovered_t;
   typedef std::vector<boost::optional<edge_descriptor>> parent_edge_t;
 
-  struct metaprogram_state {
+  struct state_t {
 
     typedef std::stack<vertex_descriptor> vertex_stack_t;
 
-    metaprogram_state();
-    explicit metaprogram_state(const metaprogram& mp);
+    state_t();
+    explicit state_t(const metaprogram& mp);
 
     discovered_t discovered;
     parent_edge_t parent_edge;
@@ -134,7 +134,7 @@ public:
   boost::optional<vertex_descriptor> find_vertex(
       const std::string& element) const;
 
-  void reset_metaprogram_state();
+  void reset_state();
   bool is_metaprogram_finished() const;
 
   vertex_descriptor get_root_vertex() const;
@@ -147,7 +147,7 @@ public:
   backtrace_t get_backtrace() const;
 
   const graph_t& get_graph() const;
-  const metaprogram_state& get_state() const;
+  const state_t& get_state() const;
 
   vertices_size_type get_num_vertices() const;
   edges_size_type get_num_edges() const;
@@ -165,7 +165,7 @@ public:
 private:
   graph_t graph;
 
-  metaprogram_state mp_state;
+  state_t state;
 
   // This should be generally 0
   vertex_descriptor root_vertex;

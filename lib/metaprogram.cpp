@@ -30,10 +30,10 @@ namespace metashell {
 
 metaprogram::metaprogram() {
   root_vertex = add_vertex("<root>");
-  reset_metaprogram_state();
+  reset_state();
 }
 
-metaprogram::metaprogram_state::metaprogram_state() {}
+metaprogram::state_t::state_t() {}
 
 metaprogram metaprogram::create_empty_finished() {
   metaprogram mp;
@@ -43,7 +43,7 @@ metaprogram metaprogram::create_empty_finished() {
   return mp;
 }
 
-metaprogram::metaprogram_state::metaprogram_state(
+metaprogram::state_t::state_t(
     const metaprogram& mp)
 {
   unsigned vertex_count = boost::num_vertices(mp.graph);
@@ -67,8 +67,8 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
 
   // TODO resizing after every add_vertex is neither
   // efficient nor nice
-  mp_state.discovered.resize(vertex+1, false);
-  mp_state.parent_edge.resize(vertex+1, boost::none);
+  state.discovered.resize(vertex+1, false);
+  state.parent_edge.resize(vertex+1, boost::none);
 
   get_vertex_property(vertex).name = element;
 
@@ -107,12 +107,12 @@ boost::optional<metaprogram::vertex_descriptor>
   return boost::none;
 }
 
-void metaprogram::reset_metaprogram_state() {
-  mp_state = metaprogram_state(*this);
+void metaprogram::reset_state() {
+  state = state_t(*this);
 }
 
 bool metaprogram::is_metaprogram_finished() const {
-  return mp_state.vertex_stack.empty();
+  return state.vertex_stack.empty();
 }
 
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
@@ -123,11 +123,11 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 bool metaprogram::step_metaprogram() {
   assert(!is_metaprogram_finished());
 
-  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
-  mp_state.vertex_stack.pop();
+  vertex_descriptor current_vertex = state.vertex_stack.top();
+  state.vertex_stack.pop();
 
-  if (!mp_state.discovered[current_vertex]) {
-    mp_state.discovered[current_vertex] = true;
+  if (!state.discovered[current_vertex]) {
+    state.discovered[current_vertex] = true;
 
     auto reverse_edge_range = boost::make_iterator_range(
           boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed;
@@ -135,8 +135,8 @@ bool metaprogram::step_metaprogram() {
     for (edge_descriptor edge : reverse_edge_range) {
       vertex_descriptor target = boost::target(edge, graph);
 
-      mp_state.parent_edge[target] = edge;
-      mp_state.vertex_stack.push(target);
+      state.parent_edge[target] = edge;
+      state.vertex_stack.push(target);
     }
   }
   return is_metaprogram_finished();
@@ -146,8 +146,8 @@ const metaprogram::graph_t& metaprogram::get_graph() const {
   return graph;
 }
 
-const metaprogram::metaprogram_state& metaprogram::get_state() const {
-  return mp_state;
+const metaprogram::state_t& metaprogram::get_state() const {
+  return state;
 }
 
 metaprogram::vertices_size_type metaprogram::get_num_vertices() const {
@@ -184,32 +184,32 @@ metaprogram::template_edge_property& metaprogram::get_edge_property(
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   assert(!is_metaprogram_finished());
-  return mp_state.vertex_stack.top();
+  return state.vertex_stack.top();
 }
 
 metaprogram::frame metaprogram::get_current_frame() const {
   assert(!is_metaprogram_finished());
 
-  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
+  vertex_descriptor current_vertex = state.vertex_stack.top();
 
-  assert(mp_state.parent_edge[current_vertex]);
+  assert(state.parent_edge[current_vertex]);
 
   return frame(
       current_vertex,
-      *mp_state.parent_edge[current_vertex]);
+      *state.parent_edge[current_vertex]);
 }
 
 metaprogram::backtrace_t metaprogram::get_backtrace() const {
   assert(!is_metaprogram_finished());
 
-  vertex_descriptor current_vertex = mp_state.vertex_stack.top();
+  vertex_descriptor current_vertex = state.vertex_stack.top();
 
   backtrace_t backtrace;
 
   while (current_vertex != get_root_vertex()) {
-    assert(mp_state.parent_edge[current_vertex]);
+    assert(state.parent_edge[current_vertex]);
 
-    edge_descriptor parent_edge = *mp_state.parent_edge[current_vertex];
+    edge_descriptor parent_edge = *state.parent_edge[current_vertex];
     backtrace.push_back(
         frame(
           current_vertex,
