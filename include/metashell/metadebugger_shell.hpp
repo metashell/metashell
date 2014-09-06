@@ -50,6 +50,10 @@ public:
 
   virtual unsigned width() const = 0;
 
+  std::string prompt() const;
+  bool stopped() const;
+  void line_available(const std::string& line);
+
   void command_continue(const std::string& arg);
   void command_step(const std::string& arg);
   void command_eval(const std::string& arg);
@@ -62,10 +66,6 @@ protected:
   // breakpoint is simply a regex for now
   typedef std::string breakpoint_t;
   typedef std::vector<breakpoint_t> breakpoints_t;
-
-  std::string prompt() const;
-  bool stopped() const;
-  void line_available(const std::string& line);
 
   bool require_empty_args(const std::string& args) const;
   bool require_running_metaprogram() const;
