@@ -186,3 +186,18 @@ JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
       "Argument parsing failed\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_garbage_argument) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step asd");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Argument parsing failed\n");
+}
+#endif
