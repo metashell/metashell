@@ -125,7 +125,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
 
 bool metadebugger_shell::require_empty_args(const std::string& args) const {
   if (!args.empty()) {
-    display_error("Command doesn't accept arguments\n");
+    display_error("This command doesn't accept arguments\n");
     return false;
   }
   return true;
