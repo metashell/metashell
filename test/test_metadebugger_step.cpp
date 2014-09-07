@@ -120,6 +120,59 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step 30");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
+  metadebugger_test_shell sh =
+    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.clear_output();
+
+  std::string expected_output =
+    "fib<10> (TemplateInstantiation)\n"
+    "fib<8> (TemplateInstantiation)\n"
+    "fib<6> (TemplateInstantiation)\n"
+    "fib<4> (TemplateInstantiation)\n"
+    "fib<2> (TemplateInstantiation)\n"
+    "fib<0> (Memoization)\n"
+    "fib<1> (Memoization)\n"
+    "fib<3> (TemplateInstantiation)\n"
+    "fib<1> (Memoization)\n"
+    "fib<2> (Memoization)\n"
+    "fib<5> (TemplateInstantiation)\n"
+    "fib<3> (Memoization)\n"
+    "fib<4> (Memoization)\n"
+    "fib<7> (TemplateInstantiation)\n"
+    "fib<5> (Memoization)\n"
+    "fib<6> (Memoization)\n"
+    "fib<9> (TemplateInstantiation)\n"
+    "fib<7> (Memoization)\n"
+    "fib<8> (Memoization)\n"
+    "fib<10> (Memoization)\n";
+
+  for (unsigned i = 0; i < 20; ++i) {
+    sh.line_available("step");
+  }
+
+  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
   metadebugger_test_shell sh =
     metadebugger_test_shell::create_with_environment(fibonacci_mp);

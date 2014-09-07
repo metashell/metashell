@@ -119,6 +119,11 @@ bool metaprogram::step() {
   vertex_descriptor current_vertex = state.vertex_stack.top();
   state.vertex_stack.pop();
 
+  assert((current_vertex == get_root_vertex()) == state.edge_stack.empty());
+  if (current_vertex != get_root_vertex()) {
+    state.edge_stack.pop();
+  }
+
   if (!state.discovered[current_vertex]) {
     state.discovered[current_vertex] = true;
 
@@ -130,9 +135,17 @@ bool metaprogram::step() {
 
       state.parent_edge[target] = edge;
       state.vertex_stack.push(target);
+      state.edge_stack.push(edge);
     }
   }
-  return is_finished();
+  // TODO I feel like this doesn't solve every issue we have with
+  // paralell edges. Needs further tests and investigation
+  if (!is_finished()) {
+    state.parent_edge[get_current_vertex()] = state.edge_stack.top();
+    return false;
+  } else {
+    return true;
+  }
 }
 
 const metaprogram::graph_t& metaprogram::get_graph() const {

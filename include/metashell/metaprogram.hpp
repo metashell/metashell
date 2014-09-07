@@ -102,11 +102,17 @@ public:
   typedef std::vector<bool> discovered_t;
   typedef std::vector<boost::optional<edge_descriptor>> parent_edge_t;
   typedef std::stack<vertex_descriptor> vertex_stack_t;
+  typedef std::stack<edge_descriptor> edge_stack_t;
 
   struct state_t {
     discovered_t discovered;
     parent_edge_t parent_edge;
+
+    // We require two stack because we care about which edge
+    // we're traversing to a specific vertex
+    // edge_stack.size() == vertex_stack.size() - 1 (unless empty)
     vertex_stack_t vertex_stack;
+    edge_stack_t edge_stack;
   };
 
   struct frame {
