@@ -101,14 +101,9 @@ public:
 
   typedef std::vector<bool> discovered_t;
   typedef std::vector<boost::optional<edge_descriptor>> parent_edge_t;
+  typedef std::stack<vertex_descriptor> vertex_stack_t;
 
   struct state_t {
-
-    typedef std::stack<vertex_descriptor> vertex_stack_t;
-
-    state_t();
-    explicit state_t(const metaprogram& mp);
-
     discovered_t discovered;
     parent_edge_t parent_edge;
     vertex_stack_t vertex_stack;

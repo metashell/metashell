@@ -33,25 +33,12 @@ metaprogram::metaprogram() {
   reset_state();
 }
 
-metaprogram::state_t::state_t() {}
-
 metaprogram metaprogram::create_empty_finished() {
   metaprogram mp;
 
   mp.step();
 
   return mp;
-}
-
-metaprogram::state_t::state_t(
-    const metaprogram& mp)
-{
-  unsigned vertex_count = boost::num_vertices(mp.graph);
-  assert(vertex_count > 0);
-
-  discovered.resize(vertex_count, false);
-  parent_edge.resize(vertex_count, boost::none);
-  vertex_stack.push(mp.get_root_vertex());
 }
 
 metaprogram::frame::frame() : vertex(), parent_edge() {}
@@ -108,7 +95,13 @@ boost::optional<metaprogram::vertex_descriptor>
 }
 
 void metaprogram::reset_state() {
-  state = state_t(*this);
+  unsigned vertex_count = get_num_vertices();
+  assert(vertex_count > 0);
+
+  state.discovered = discovered_t(vertex_count, false);
+  state.parent_edge = parent_edge_t(vertex_count, boost::none);
+  state.vertex_stack = vertex_stack_t();
+  state.vertex_stack.push(get_root_vertex());
 }
 
 bool metaprogram::is_finished() const {
