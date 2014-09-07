@@ -16,222 +16,72 @@
 
 #include <metashell/metaprogram.hpp>
 
-#include <boost/graph/lookup_edge.hpp>
-
 #include <just/test.hpp>
 
 using namespace metashell;
 
-// Helper function, so there is not much repetition in test code
-void test_single_node_templight_parsing(
-    const std::string& xml_type, const std::string actual_type,
-    const std::string& xml_kind, instantiation_kind actual_kind)
+template<class T>
+void compare_stack_with_vector(
+    std::stack<T> stack,
+    std::vector<T> vector)
 {
-  const std::string xml =
-  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-  "<Trace>\n"
-  "<TemplateBegin>\n"
-  "<Kind>" + xml_kind + "</Kind>\n"
-  "<Context context = \"" + xml_type + "\"/>\n"
-  "<PointOfInstantiation>foo.hpp|10|20</PointOfInstantiation>\n"
-  "<TimeStamp time = \"50.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateBegin>\n"
-  "<TemplateEnd>\n"
-  "<Kind>" + xml_kind + "</Kind>\n"
-  "<TimeStamp time = \"100.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateEnd>\n"
-  "</Trace>\n";
+  while (!stack.empty() && !vector.empty()) {
+    T x = stack.top();
+    stack.pop();
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+    T y = vector.back();
+    vector.pop_back();
 
-  JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
-  JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, actual_type);
-
-  metaprogram::edge_descriptor edge;
-  bool found;
-  std::tie(edge, found) = boost::lookup_edge(0, 1, mp.get_graph());
-
-  JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, actual_kind);
+    JUST_ASSERT(x == y);
+  }
+  JUST_ASSERT(stack.empty() == vector.empty());
 }
 
-JUST_TEST_CASE(test_parse_empty_templight_xml)
+void assert_state_equal(
+    const metaprogram::state_t& state,
+    const metaprogram::discovered_t& discovered,
+    const metaprogram::parent_edge_t& parent_edge,
+    const std::vector<metaprogram::vertex_descriptor>& vertex_stack,
+    const std::vector<metaprogram::edge_descriptor>& edge_stack)
 {
-  const std::string xml =
-  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-  "<Trace>\n"
-  "</Trace>\n";
+  JUST_ASSERT(state.discovered == discovered);
+  JUST_ASSERT(state.parent_edge == parent_edge);
+  compare_stack_with_vector(state.vertex_stack, vertex_stack);
+  compare_stack_with_vector(state.edge_stack, edge_stack);
+}
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+JUST_TEST_CASE(test_metaprogram_default_constuctor) {
+  metaprogram mp;
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
+
+  JUST_ASSERT_EQUAL(
+      mp.get_vertex_property(mp.get_root_vertex()).name,
+      "<root>");
+
+  assert_state_equal(mp.get_state(),
+        {false},
+        {boost::none},
+        {mp.get_root_vertex()},
+        {}
+    );
 }
 
-JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_kinds)
-{
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "TemplateInstantiation", template_instantiation);
+JUST_TEST_CASE(test_metaprogram_create_empty_finished) {
+  metaprogram mp = metaprogram::create_empty_finished();
 
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "DefaultTemplateArgumentInstantiation", default_template_argument_instantiation);
+  JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
+  JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
 
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "DefaultFunctionArgumentInstantiation", default_function_argument_instantiation);
+  JUST_ASSERT_EQUAL(
+      mp.get_vertex_property(mp.get_root_vertex()).name,
+      "<root>");
 
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "ExplicitTemplateArgumentSubstitution", explicit_template_argument_substitution);
-
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "DeducedTemplateArgumentSubstitution", deduced_template_argument_substitution);
-
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "PriorTemplateArgumentSubstitution", prior_template_argument_substitution);
-
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "DefaultTemplateArgumentChecking", default_template_argument_checking);
-
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "ExceptionSpecInstantiation", exception_spec_instantiation);
-
-  test_single_node_templight_parsing(
-      "metashell::foo", "metashell::foo",
-      "Memoization", memoization);
+  assert_state_equal(mp.get_state(),
+        {true},
+        {boost::none},
+        {},
+        {}
+    );
 }
-
-JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_types)
-{
-  test_single_node_templight_parsing(
-      "metashell::foo&lt;10&gt;", "metashell::foo<10>",
-      "TemplateInstantiation", template_instantiation);
-
-  test_single_node_templight_parsing(
-      "metashell::foo&lt;&apos;a&apos;&gt;", "metashell::foo<'a'>",
-      "TemplateInstantiation", template_instantiation);
-
-  test_single_node_templight_parsing(
-      "metashell::foo&lt;&quot;foobar&quot;&gt;", "metashell::foo<\"foobar\">",
-      "TemplateInstantiation", template_instantiation);
-
-  test_single_node_templight_parsing(
-      "metashell::foo&lt;3&amp;4&gt;", "metashell::foo<3&4>",
-      "TemplateInstantiation", template_instantiation);
-}
-
-JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
-{
-  const std::string xml =
-  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-  "<Trace>\n"
-  "<TemplateBegin>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<Context context = \"metashell::foo\"/>\n"
-  "<PointOfInstantiation>foo.hpp|10|20</PointOfInstantiation>\n"
-  "<TimeStamp time = \"50.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateBegin>\n"
-  "<TemplateBegin>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<Context context = \"metashell::bar\"/>\n"
-  "<PointOfInstantiation>bar.hpp|20|30</PointOfInstantiation>\n"
-  "<TimeStamp time = \"60.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateBegin>\n"
-  "<TemplateEnd>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<TimeStamp time = \"70.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateEnd>\n"
-  "<TemplateEnd>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<TimeStamp time = \"100.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateEnd>\n"
-  "</Trace>\n";
-
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
-
-  JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
-  JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
-
-  metaprogram::edge_descriptor edge;
-  bool found;
-  std::tie(edge, found) = boost::lookup_edge(0, 1, mp.get_graph());
-
-  JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
-
-  std::tie(edge, found) = boost::lookup_edge(1, 2, mp.get_graph());
-
-  JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
-}
-
-JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
-{
-  const std::string xml =
-  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-  "<Trace>\n"
-  "<TemplateBegin>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<Context context = \"metashell::foo\"/>\n"
-  "<PointOfInstantiation>foo.hpp|10|20</PointOfInstantiation>\n"
-  "<TimeStamp time = \"50.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateBegin>\n"
-  "<TemplateEnd>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<TimeStamp time = \"100.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateEnd>\n"
-  "<TemplateBegin>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<Context context = \"metashell::bar\"/>\n"
-  "<PointOfInstantiation>bar.hpp|20|30</PointOfInstantiation>\n"
-  "<TimeStamp time = \"60.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateBegin>\n"
-  "<TemplateEnd>\n"
-  "<Kind>TemplateInstantiation</Kind>\n"
-  "<TimeStamp time = \"70.0\"/>\n"
-  "<MemoryUsage bytes = \"0\"/>\n"
-  "</TemplateEnd>\n"
-  "</Trace>\n";
-
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
-
-  JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
-  JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
-
-  metaprogram::edge_descriptor edge;
-  bool found;
-  std::tie(edge, found) = boost::lookup_edge(0, 1, mp.get_graph());
-
-  JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
-
-  std::tie(edge, found) = boost::lookup_edge(0, 2, mp.get_graph());
-
-  JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
-}
-
