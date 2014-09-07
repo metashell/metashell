@@ -127,7 +127,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
   sh.line_available("evaluate int_<fib<10>::value>");
 
   sh.clear_output();
-  sh.line_available("step 30");
+  sh.line_available("step 31");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Metaprogram finished\n");
