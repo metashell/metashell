@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "readline_shell.hpp"
-#include "syntax_highlighted_display.hpp"
 #include "interrupt_handler_override.hpp"
 
 #include <metashell/shell.hpp>
@@ -37,6 +36,8 @@
 #  include <sys/ioctl.h>
 #endif
 
+#include <boost/optional.hpp>
+
 #include <algorithm>
 #include <string>
 #include <iostream>
@@ -48,6 +49,29 @@ using namespace metashell;
 
 namespace
 {
+  boost::optional<just::console::color> color_of_token(const token& t_)
+  {
+    using just::console::color;
+    using boost::optional;
+
+    switch (t_.category())
+    {
+    case token_category::character_literal:
+    case token_category::floating_literal:
+    case token_category::integer_literal:
+    case token_category::string_literal:
+    case token_category::bool_literal:
+    case token_category::preprocessor:
+      return color::magenta;
+    case token_category::keyword:
+      return color::bright_green;
+    case token_category::comment:
+      return color::green;
+    default:
+      return optional<color>();
+    }
+  }
+
   void display(just::console::color c_, const std::string& s_)
   {
     if (s_ != "")
@@ -59,12 +83,39 @@ namespace
     }
   }
 
+  void display_syntax_highlighted(const token& t_)
+  {
+    if (const boost::optional<just::console::color> c = color_of_token(t_))
+    {
+      just::console::text_color(*c);
+    }
+    else
+    {
+      just::console::reset();
+    }
+    std::cout << t_.value();
+  }
+
   void syntax_highlight(const std::string& s_)
   {
     const command cmd(s_);
-    std::for_each(cmd.begin(), cmd.end(), syntax_highlighted_display());
+    std::for_each(cmd.begin(), cmd.end(), display_syntax_highlighted);
     just::console::reset();
   }
+
+#ifdef _WIN32
+  template <class T>
+  stdext::checked_array_iterator<T*> array_begin(T* array_, int len_)
+  {
+    return stdext::checked_array_iterator<T*>(array_, len_);
+  }
+#else
+  template <class T>
+  T* array_begin(T* array_, int)
+  {
+    return array_;
+  }
+#endif
 }
 
 readline_shell* readline_shell::_instance = 0;
@@ -92,10 +143,8 @@ void readline_shell::add_history(const std::string& s_)
 
 void readline_shell::run()
 {
-#ifndef _WIN32
   _readline_environment.set_rl_attempted_completion_function(
       tab_completion);
-#endif
 
   interrupt_handler_override ovr3([this]() { this->cancel_operation(); });
 
@@ -107,7 +156,6 @@ void readline_shell::run()
   std::cout << std::endl;
 }
 
-#ifndef _WIN32
 char* readline_shell::tab_generator(const char* text_, int state_)
 {
   assert(_instance);
@@ -135,22 +183,19 @@ char* readline_shell::tab_generator(const char* text_, int state_)
   {
     const std::string str = text_ + *pos;
     char* s = new char[str.length() + 1];
-    std::copy(str.begin(), str.end(), s);
+    std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
     s[str.length()] = 0;
     ++pos;
     return s;
   }
   return 0;
 }
-#endif
 
-#ifndef _WIN32
 char** readline_shell::tab_completion(const char* text_, int, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
 }
-#endif
 
 void readline_shell::display_normal(const std::string& s_) const
 {
@@ -160,7 +205,7 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        indent(width(), 2, syntax_highlighted_display(), s_, input_filename());
+        indent(width(), 2, display_syntax_highlighted, s_, input_filename());
         just::console::reset();
       }
       else

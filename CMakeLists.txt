@@ -126,9 +126,19 @@ set(CMAKE_INSTALL_PREFIX "/usr")
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   include(InstallRequiredSystemLibraries)
    
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS")
+  set(
+    CPACK_NSIS_MENU_LINKS
+    "bin/metashell.exe" "Metashell"
+    "https://github.com/sabel83/metashell#metashell" "Metashell website"
+    "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
+  )
+else()
   set(CPACK_SET_DESTDIR "on")
   set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   set(CPACK_GENERATOR "DEB")
+endif()
    
   set(CPACK_PACKAGE_DESCRIPTION "Metashell")
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C++ template metaprogramming shell")
@@ -139,6 +149,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_PACKAGE_VERSION_PATCH "${PATCH_VERSION}")
   set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}_${CMAKE_SYSTEM_PROCESSOR}")
   set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
+  seT(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
 
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-system${BOOST_VER}, libboost-thread${BOOST_VER}, libboost-filesystem${BOOST_VER}, libboost-wave${BOOST_VER}, libboost-program-options${BOOST_VER}, libboost-regex${BOOST_VER}, libclang1, libclang-dev")
    
@@ -146,10 +157,26 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
   set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
    
-  set(CPACK_COMPONENTS_ALL Libraries ApplicationData)
+  set(CPACK_COMPONENTS_ALL metashell windows_headers libclang)
+  set(CPACK_ALL_INSTALL_TYPES full nolibclang minimal)
+
+  set(CPACK_INSTALL_TYPE_FULL_DISPLAY_NAME "Full")
+  set(CPACK_INSTALL_TYPE_NOLIBLCANG_DISPLAY_NAME "Without libclang")
+  set(CPACK_INSTALL_TYPE_MINIMAL_DISPLAY_NAME "Minimal")
+
+  set(CPACK_COMPONENT_METASHELL_DISPLAY_NAME "Metashell")
+  set(CPACK_COMPONENT_METASHELL_DESCRIPTION "The Metashell binary")
+  set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full nolibclang minimal)
+
+  set(CPACK_COMPONENT_WINDOWS_HEADERS_DISPLAY_NAME "C++ headers")
+  set(CPACK_COMPONENT_WINDOWS_HEADERS_DESCRIPTION "The MinGW standard headers")
+  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full nolibclang)
+
+  set(CPACK_COMPONENT_LIBCLANG_DISPLAY_NAME "Libclang")
+  set(CPACK_COMPONENT_LIBCLANG_DESCRIPTION "A Clang library to use when Clang is not installed on your computer. It is recommend to install Clang for better performance in Metashell.")
+  set(CPACK_COMPONENT_LIBCLANG_INSTALL_TYPES full)
+
   include(CPack)
    
 endif(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
-
-
 

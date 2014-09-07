@@ -19,6 +19,8 @@
 
 #include <metashell/iface/environment_detector.hpp>
 
+#include <functional>
+
 class mock_environment_detector : public metashell::iface::environment_detector
 {
 public:
@@ -54,6 +56,14 @@ public:
   virtual std::string path_of_executable();
   int path_of_executable_called_times() const;
   void path_of_executable_returns(const std::string& result_);
+
+  virtual bool clang_binary_works_with_libclang(
+    const metashell::config& clang_path_
+  );
+  int clang_binary_works_with_libclang_called_times() const;
+  void set_clang_binary_works_with_libclang_callback(
+    const std::function<bool(const std::string&)> cb_
+  );
 private:
   std::string _search_clang_binary_returns;
   int _search_clang_binary_called_times;
@@ -76,6 +86,9 @@ private:
 
   int _path_of_executable_called_times;
   std::string _path_of_executable_returns;
+
+  int _clang_binary_works_with_libclang_called_times;
+  std::function<bool(const std::string&)> _clang_binary_works_with_libclang_cb;
 };
 
 #endif

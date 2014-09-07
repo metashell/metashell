@@ -91,6 +91,7 @@ namespace metashell
 
     const config& get_config() const;
   private:
+    std::string _line_prefix;
     boost::scoped_ptr<environment> _env;
     config _config;
     std::string _prev_line;

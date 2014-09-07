@@ -22,6 +22,8 @@
 
 namespace metashell
 {
+  class config;
+
   namespace iface
   {
     class environment_detector
@@ -44,6 +46,8 @@ namespace metashell
       virtual std::vector<std::string> extra_sysinclude() = 0;
 
       virtual std::string path_of_executable() = 0;
+
+      virtual bool clang_binary_works_with_libclang(const config& cfg_) = 0;
     };
   }
 }

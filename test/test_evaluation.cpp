@@ -341,3 +341,32 @@ JUST_TEST_CASE(test_function_definition)
   JUST_ASSERT(metashell::is_environment_setup_command(command("void f() {}")));
 }
 
+JUST_TEST_CASE(test_multiline_input)
+{
+  test_shell sh;
+  sh.line_available("const \\");
+  sh.line_available("int");
+
+  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EQUAL("const int", sh.output());
+}
+
+JUST_TEST_CASE(test_three_line_input)
+{
+  test_shell sh;
+  sh.line_available("const \\");
+  sh.line_available("int \\");
+  sh.line_available("*");
+
+  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EQUAL("const int *", sh.output());
+}
+
+JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
+{
+  test_shell sh;
+  sh.line_available("const \\");
+
+  JUST_ASSERT_EQUAL("...> ", sh.prompt());
+}
+

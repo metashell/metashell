@@ -53,7 +53,9 @@ namespace
           "template <class... Ts, class Item>"
           "struct "
             + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
-            "::boost_::mpl::" + name_ + "<Ts..., Item>"
+            "::boost_::mpl::" + name_ + "<"
+              "Ts..., typename ::metashell::format<Item>::type"
+            ">"
           "{};"
         "} "
 

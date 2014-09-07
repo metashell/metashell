@@ -42,22 +42,28 @@ boost::optional<std::string> readline_environment::readline(
 
   if (line) {
     std::string str(line);
-#ifndef _WIN32
-    // It breaks on Windows. The library owns the buffer?
-    std::free(line);
-#endif
+
+    rl_free(line);
     return str;
   } else {
     return boost::none;
   }
 }
 
-std::string readline_environment::get_edited_text() {
-#ifndef _WIN32
-  return std::string(rl_line_buffer, rl_line_buffer + rl_end);
+namespace {
+
+int line_length() {
+#ifdef _WIN32
+  return int(wcslen(_el_line_buffer));
 #else
-  return std::string();
+  return rl_end;
 #endif
+}
+
+}
+
+std::string readline_environment::get_edited_text() {
+  return std::string(rl_line_buffer, rl_line_buffer + line_length());
 }
 
 void readline_environment::add_history(const std::string& line) {

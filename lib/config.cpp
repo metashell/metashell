@@ -77,15 +77,16 @@ namespace
 
   bool detect_precompiled_header_usage(
     bool user_wants_precompiled_headers_,
-    bool clang_binary_available_,
+    iface::environment_detector& env_detector_,
+    const config& cfg_,
     std::ostream& stderr_
   )
   {
     if (user_wants_precompiled_headers_)
     {
-      if (clang_binary_available_)
+      if (!cfg_.clang_path.empty())
       {
-        return true;
+        return env_detector_.clang_binary_works_with_libclang(cfg_);
       }
       else
       {
@@ -124,22 +125,20 @@ namespace
 
     if (env_detector_.on_windows())
     {
+      const std::string dir_of_executable =
+        directory_of_file(env_detector_.path_of_executable());
       // mingw headers shipped with Metashell
-      const std::string mingw_headers =
-        directory_of_file(env_detector_.path_of_executable())
-        + "\\windows_headers";
+      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
 
-      const std::string wpath[] =
-        {
-          mingw_headers,
-          mingw_headers + "\\mingw32"
-        };
+      std::vector<std::string> wpath;
+      wpath.push_back(mingw_headers);
+      wpath.push_back(mingw_headers + "\\mingw32");
+      if (clang_binary_path_.empty())
+      {
+        wpath.push_back(dir_of_executable + "\\clang\\include");
+      }
 
-      result.insert(
-        result.end(),
-        wpath,
-        wpath + sizeof(wpath) / sizeof(wpath[0])
-      );
+      result.insert(result.end(), wpath.begin(), wpath.end());
     }
 
     result.insert(
@@ -182,21 +181,31 @@ config metashell::detect_config(
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_);
 
-  cfg.use_precompiled_headers =
-    detect_precompiled_header_usage(
-      ucfg_.use_precompiled_headers,
-      !cfg.clang_path.empty(),
-      stderr_
-    );
-
   cfg.include_path =
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
-  if (env_detector_.on_windows() && !cfg.clang_path.empty())
+  if (env_detector_.on_windows())
   {
     // To find libclang.dll
-    env_detector_.append_to_path(directory_of_file(cfg.clang_path));
+    if (cfg.clang_path.empty())
+    {
+      env_detector_.append_to_path(
+        directory_of_file(env_detector_.path_of_executable()) + "\\clang"
+      );
+    }
+    else
+    {
+      env_detector_.append_to_path(directory_of_file(cfg.clang_path));
+    }
   }
+
+  cfg.use_precompiled_headers =
+    detect_precompiled_header_usage(
+      ucfg_.use_precompiled_headers,
+      env_detector_,
+      cfg,
+      stderr_
+    );
 
   return cfg;
 }

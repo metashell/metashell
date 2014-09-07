@@ -15,7 +15,7 @@ shell.
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux](#building-metashell-on-linux)
-    - [Building Metashell on Windows (experimental)](#building-metashell-on-windows-experimental)
+    - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
 - [Getting started](#getting-started)
@@ -111,11 +111,7 @@ metaprograms.
     * `make test_coverage`
     * You can find the test coverage statistics in the `bin/coverage` directory.
 
-### Building Metashell on Windows (experimental)
-
-Note that the Windows build does not have all the features yet. It has been
-tested with Visual Studio 2012. Some things work, but a number of bugs still
-need fixing. If you want to experiment with it, here is how you can build it:
+### Building Metashell on Windows
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools and libraries:
@@ -135,10 +131,15 @@ need fixing. If you want to experiment with it, here is how you can build it:
         * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
         * `-DCLANG_LIBRARYDIR=<path to the compiled libClang library>` Note that
           it is called `libclang.imp` and not `libclang.lib`.
-    * `-G "Visual Studio 11 2012"`
+    * `-G "Visual Studio 12 2013"`
 * If CMake can find the dependent libraries, it will generate a solution file
-  for Metashell in the `bin` directory. Open it with Visual Studio 2012 and
+  for Metashell in the `bin` directory. Open it with Visual Studio 2013 and
   build it.
+* To generate an installer for Metashell:
+    * Install [NSIS](http://nsis.sourceforge.net).
+    * Build Metashell following the above instructions (make sure you build the
+      Release config).
+    * Run `cpack` in the directory you run `cmake` as well.
 
 #### Standard header files on Windows
 
@@ -218,6 +219,30 @@ metaprogramming. Let's write it first:
 > template <> struct fib<0> { static constexpr int value = 1; };
 > template <> struct fib<1> { static constexpr int value = 1; };
 ```
+
+Note that Metashell supports multiline definitions as well. You can enter the
+above in the shell the following way as well:
+
+```cpp
+> template <int N> \
+...> struct fib \
+...> { \
+...>   static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \
+...> };
+> template <> \
+...> struct fib<0> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+> template <> \
+...> struct fib<1> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+```
+
+What is important is that the last character of a line _has to be_ `\`. That is
+how Metashell knows that there is more to come.
 
 If you type the above commands into the shell you define the `fib` template
 class and its necessary specialisations. If you try to evaluate it, you get an
@@ -427,7 +452,7 @@ namespace metashell
   };
 
   template <class Head, class Tail>
-  struct format<cons<Head, Tail>>
+  struct format<cons<typename format<Head>::type, Tail>>
   {
     // ...
   };
@@ -438,6 +463,10 @@ namespace metashell
 This example defines the formatter only when the header file is used inside
 Metashell. This is useful for debugging and has no impact on the regular users
 of the header.
+
+Note that it is a formatter for a _container_, which contains elements. Those
+elements might also need formatting, therefore it formats the elements as well
+by calling `format` recursively on each element (see `format<Head>::type`).
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.

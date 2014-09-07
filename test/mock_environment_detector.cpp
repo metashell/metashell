@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/config.hpp>
+
 #include "mock_environment_detector.hpp"
 
 mock_environment_detector::mock_environment_detector() :
@@ -25,7 +27,8 @@ mock_environment_detector::mock_environment_detector() :
   _append_to_path_called_times(0),
   _default_clang_sysinclude_called_times(0),
   _extra_sysinclude_called_times(0),
-  _path_of_executable_called_times(0)
+  _path_of_executable_called_times(0),
+  _clang_binary_works_with_libclang_called_times(0)
 {}
 
 void mock_environment_detector::search_clang_binary_returns(
@@ -154,5 +157,29 @@ void mock_environment_detector::path_of_executable_returns(
 int mock_environment_detector::path_of_executable_called_times() const
 {
   return _path_of_executable_called_times;
+}
+
+bool mock_environment_detector::clang_binary_works_with_libclang(
+  const metashell::config& cfg_
+)
+{
+  ++_clang_binary_works_with_libclang_called_times;
+  return
+    _clang_binary_works_with_libclang_cb ?
+      _clang_binary_works_with_libclang_cb(cfg_.clang_path) :
+      true;
+}
+
+int mock_environment_detector::clang_binary_works_with_libclang_called_times(
+) const
+{
+  return _clang_binary_works_with_libclang_called_times;
+}
+
+void mock_environment_detector::set_clang_binary_works_with_libclang_callback(
+  const std::function<bool(const std::string&)> cb_
+)
+{
+  _clang_binary_works_with_libclang_cb = cb_;
 }
 
