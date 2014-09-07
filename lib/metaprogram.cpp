@@ -225,6 +225,7 @@ metaprogram::backtrace_t metaprogram::get_backtrace() const {
 
     current_vertex = boost::source(parent_edge, graph);
   }
+  std::reverse(backtrace.begin(), backtrace.end());
 
   return backtrace;
 }
