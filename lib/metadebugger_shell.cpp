@@ -403,7 +403,11 @@ void metadebugger_shell::display_trace_graph(
 
     just::console::color mark_color = colors[depth % colors.size()];
     if (print_mark) {
-      display("+ ", mark_color);
+      if (depth_counter[depth] == 0) {
+        display("` ", mark_color);
+      } else {
+        display("+ ", mark_color);
+      }
     } else if (depth_counter[depth] > 0) {
       display("| ", mark_color);
     } else {
