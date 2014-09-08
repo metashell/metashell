@@ -83,22 +83,6 @@ public:
   typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
   typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
 
-  typedef boost::property_map<
-      graph_t,
-      template_vertex_property_tag>::type vertex_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_vertex_property_tag>::const_type const_vertex_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_edge_property_tag>::type edge_property_map_t;
-
-  typedef boost::property_map<
-      graph_t,
-      template_edge_property_tag>::const_type const_edge_property_map_t;
-
   typedef std::vector<bool> discovered_t;
   typedef std::vector<boost::optional<edge_descriptor>> parent_edge_t;
   typedef std::stack<vertex_descriptor> vertex_stack_t;
