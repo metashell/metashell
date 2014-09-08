@@ -110,7 +110,7 @@ public:
 
     // We require two stack because we care about which edge
     // we're traversing to a specific vertex
-    // edge_stack.size() == vertex_stack.size() - 1 (unless empty)
+    // for edge_stack invariants see test_metaprogram.cpp
     vertex_stack_t vertex_stack;
     edge_stack_t edge_stack;
   };
