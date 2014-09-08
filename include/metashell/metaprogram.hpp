@@ -99,15 +99,15 @@ public:
     edge_stack_t edge_stack;
   };
 
-  struct frame {
-    frame();
-    frame(vertex_descriptor vertex, edge_descriptor parent_edge);
+  struct frame_t {
+    frame_t();
+    frame_t(vertex_descriptor vertex, edge_descriptor parent_edge);
 
     vertex_descriptor vertex;
     edge_descriptor parent_edge;
   };
 
-  typedef std::vector<frame> backtrace_t;
+  typedef std::vector<frame_t> backtrace_t;
 
   vertex_descriptor add_vertex(const std::string& element);
 
@@ -127,7 +127,7 @@ public:
   void step();
 
   vertex_descriptor get_current_vertex() const;
-  frame get_current_frame() const;
+  frame_t get_current_frame() const;
   backtrace_t get_backtrace() const;
 
   const graph_t& get_graph() const;

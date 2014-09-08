@@ -41,9 +41,9 @@ metaprogram metaprogram::create_empty_finished() {
   return mp;
 }
 
-metaprogram::frame::frame() : vertex(), parent_edge() {}
+metaprogram::frame_t::frame_t() : vertex(), parent_edge() {}
 
-metaprogram::frame::frame(
+metaprogram::frame_t::frame_t(
     vertex_descriptor vertex, edge_descriptor parent_edge) :
   vertex(vertex), parent_edge(parent_edge) {}
 
@@ -190,14 +190,14 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   return state.vertex_stack.top();
 }
 
-metaprogram::frame metaprogram::get_current_frame() const {
+metaprogram::frame_t metaprogram::get_current_frame() const {
   assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
 
   assert(state.parent_edge[current_vertex]);
 
-  return frame(
+  return frame_t(
       current_vertex,
       *state.parent_edge[current_vertex]);
 }
@@ -214,7 +214,7 @@ metaprogram::backtrace_t metaprogram::get_backtrace() const {
 
     edge_descriptor parent_edge = *state.parent_edge[current_vertex];
     backtrace.push_back(
-        frame(
+        frame_t(
           current_vertex,
           parent_edge
         )

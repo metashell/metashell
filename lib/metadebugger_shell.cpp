@@ -546,7 +546,7 @@ void metadebugger_shell::display_current_forwardtrace() const {
   display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
 
-void metadebugger_shell::display_frame(const metaprogram::frame& frame) const {
+void metadebugger_shell::display_frame(const metaprogram::frame_t& frame) const {
   // No kind for <root> vertex
   if (frame.vertex == mp.get_root_vertex()) {
     display(mp.get_vertex_property(frame.vertex).name + "\n");
@@ -561,7 +561,7 @@ void metadebugger_shell::display_backtrace() const {
   const metaprogram::backtrace_t& backtrace = mp.get_backtrace();
 
   unsigned i = 0;
-  for (const metaprogram::frame& frame :
+  for (const metaprogram::frame_t& frame :
       backtrace | boost::adaptors::reversed)
   {
     display((boost::format("#%1% ") % i).str());

@@ -129,7 +129,7 @@ private:
       metaprogram::discovered_t& discovered,
       unsigned width) const;
 
-  void display_frame(const metaprogram::frame& frame) const;
+  void display_frame(const metaprogram::frame_t& frame) const;
 
   const static std::vector<just::console::color> colors;
 };
