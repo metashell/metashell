@@ -113,8 +113,7 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
   return root_vertex;
 }
 
-// Returns true when the program took it's last step (finished)
-bool metaprogram::step() {
+void metaprogram::step() {
   assert(!is_finished());
 
   vertex_descriptor current_vertex = state.vertex_stack.top();
@@ -143,9 +142,6 @@ bool metaprogram::step() {
   // paralell edges. Needs further tests and investigation
   if (!is_finished()) {
     state.parent_edge[get_current_vertex()] = state.edge_stack.top();
-    return false;
-  } else {
-    return true;
   }
 }
 

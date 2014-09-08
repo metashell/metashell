@@ -140,8 +140,7 @@ public:
 
   vertex_descriptor get_root_vertex() const;
 
-  // Returns true when the program took it's last step (finished)
-  bool step();
+  void step();
 
   vertex_descriptor get_current_vertex() const;
   frame get_current_frame() const;
