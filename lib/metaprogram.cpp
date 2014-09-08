@@ -161,28 +161,28 @@ metaprogram::edges_size_type metaprogram::get_num_edges() const {
   return boost::num_edges(graph);
 }
 
-const metaprogram::template_vertex_property& metaprogram::get_vertex_property(
+const metaprogram::vertex_property& metaprogram::get_vertex_property(
     vertex_descriptor vertex) const
 {
-  return boost::get(template_vertex_property_tag(), graph, vertex);
+  return boost::get(vertex_property_tag(), graph, vertex);
 }
 
-const metaprogram::template_edge_property& metaprogram::get_edge_property(
+const metaprogram::edge_property& metaprogram::get_edge_property(
     edge_descriptor edge) const
 {
-  return boost::get(template_edge_property_tag(), graph, edge);
+  return boost::get(edge_property_tag(), graph, edge);
 }
 
-metaprogram::template_vertex_property& metaprogram::get_vertex_property(
+metaprogram::vertex_property& metaprogram::get_vertex_property(
     vertex_descriptor vertex)
 {
-  return boost::get(template_vertex_property_tag(), graph, vertex);
+  return boost::get(vertex_property_tag(), graph, vertex);
 }
 
-metaprogram::template_edge_property& metaprogram::get_edge_property(
+metaprogram::edge_property& metaprogram::get_edge_property(
     edge_descriptor edge)
 {
-  return boost::get(template_edge_property_tag(), graph, edge);
+  return boost::get(edge_property_tag(), graph, edge);
 }
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {

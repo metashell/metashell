@@ -44,33 +44,26 @@ public:
   static metaprogram create_from_xml_file(const std::string& file);
   static metaprogram create_from_xml_string(const std::string& string);
 
-  struct template_vertex_property_tag {
+  struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
   };
-  struct template_edge_property_tag {
+  struct edge_property_tag {
     typedef boost::edge_property_tag kind;
   };
 
-  struct template_vertex_property {
+  struct vertex_property {
     std::string name;
   };
-  struct template_edge_property {
+  struct edge_property {
     instantiation_kind kind;
   };
-
-  typedef boost::property<
-    template_vertex_property_tag,
-    template_vertex_property> vertex_property;
-  typedef boost::property<
-    template_edge_property_tag,
-    template_edge_property> edge_property;
 
   typedef boost::adjacency_list<
     boost::vecS,
     boost::vecS,
     boost::bidirectionalS,
-    vertex_property,
-    edge_property> graph_t;
+    boost::property<vertex_property_tag, vertex_property>,
+    boost::property<edge_property_tag, edge_property>> graph_t;
 
   typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
   typedef boost::graph_traits<graph_t>::edge_descriptor edge_descriptor;
@@ -136,14 +129,14 @@ public:
   vertices_size_type get_num_vertices() const;
   edges_size_type get_num_edges() const;
 
-  const template_vertex_property& get_vertex_property(
+  const vertex_property& get_vertex_property(
       vertex_descriptor vertex) const;
-  const template_edge_property& get_edge_property(
+  const edge_property& get_edge_property(
       edge_descriptor edge) const;
 
-  template_vertex_property& get_vertex_property(
+  vertex_property& get_vertex_property(
       vertex_descriptor vertex);
-  template_edge_property& get_edge_property(
+  edge_property& get_edge_property(
       edge_descriptor edge);
 
 private:
