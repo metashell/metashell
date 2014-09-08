@@ -62,19 +62,20 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
   return vertex;
 }
 
-void metaprogram::add_edge(
+metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
     instantiation_kind kind)
 {
   edge_descriptor edge;
   bool inserted;
-
   std::tie(edge, inserted) = boost::add_edge(from, to, graph);
 
   assert(inserted);
 
   get_edge_property(edge).kind = kind;
+
+  return edge;
 }
 
 boost::optional<metaprogram::vertex_descriptor>

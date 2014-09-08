@@ -127,7 +127,7 @@ public:
 
   vertex_descriptor add_vertex(const std::string& element);
 
-  void add_edge(
+  edge_descriptor add_edge(
       vertex_descriptor from,
       vertex_descriptor to,
       instantiation_kind kind);
