@@ -179,18 +179,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
   }
 
   if (has_over) {
-    //TODO this needs some work
-    bool stopped = false;
-    for (unsigned i = 0; !stopped && i < step_count; ++i) {
-      unsigned original_stack_size = mp.get_state().vertex_stack.size();
-      do {
-        mp.step();
-        if (mp.is_finished()) {
-          stopped = true;
-          break;
-        }
-      } while (original_stack_size < mp.get_state().vertex_stack.size());
-    }
+    display_error("Sorry, but step over is not supported yet\n");
   } else {
     for (unsigned i = 0; i < step_count && !mp.is_finished(); ++i) {
       mp.step();
