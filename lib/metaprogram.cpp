@@ -179,7 +179,7 @@ metaprogram::edge_property& metaprogram::get_edge_property(
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   assert(!is_finished());
 
-  const boost::optional<edge_descriptor>& edge = state.edge_stack.top();
+  const optional_edge_descriptor& edge = state.edge_stack.top();
   if (!edge) {
     return get_root_vertex();
   }

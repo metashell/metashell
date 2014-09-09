@@ -76,9 +76,11 @@ public:
   typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
   typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
 
+  typedef boost::optional<edge_descriptor> optional_edge_descriptor;
+
   typedef std::vector<bool> discovered_t;
-  typedef std::vector<boost::optional<edge_descriptor>> parent_edge_t;
-  typedef std::stack<boost::optional<edge_descriptor>> edge_stack_t;
+  typedef std::vector<optional_edge_descriptor> parent_edge_t;
+  typedef std::stack<optional_edge_descriptor> edge_stack_t;
 
   struct state_t {
     discovered_t discovered;

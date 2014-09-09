@@ -41,7 +41,7 @@ void assert_state_equal(
     const metaprogram::state_t& state,
     const metaprogram::discovered_t& discovered,
     const metaprogram::parent_edge_t& parent_edge,
-    const std::vector<boost::optional<metaprogram::edge_descriptor>>& edge_stack)
+    const std::vector<metaprogram::optional_edge_descriptor>& edge_stack)
 {
   JUST_ASSERT(state.discovered == discovered);
   JUST_ASSERT(state.parent_edge == parent_edge);
