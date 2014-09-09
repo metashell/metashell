@@ -101,12 +101,12 @@ void metaprogram::reset_state() {
 
   state.discovered = discovered_t(vertex_count, false);
   state.parent_edge = parent_edge_t(vertex_count, boost::none);
-  state.vertex_stack = vertex_stack_t();
-  state.vertex_stack.push(get_root_vertex());
+  state.edge_stack = edge_stack_t();
+  state.edge_stack.push(boost::none);
 }
 
 bool metaprogram::is_finished() const {
-  return state.vertex_stack.empty();
+  return state.edge_stack.empty();
 }
 
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
@@ -116,13 +116,8 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 void metaprogram::step() {
   assert(!is_finished());
 
-  vertex_descriptor current_vertex = state.vertex_stack.top();
-  state.vertex_stack.pop();
-
-  assert((current_vertex == get_root_vertex()) == state.edge_stack.empty());
-  if (current_vertex != get_root_vertex()) {
-    state.edge_stack.pop();
-  }
+  vertex_descriptor current_vertex = get_current_vertex();
+  state.edge_stack.pop();
 
   if (!state.discovered[current_vertex]) {
     state.discovered[current_vertex] = true;
@@ -131,17 +126,13 @@ void metaprogram::step() {
           boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed;
 
     for (edge_descriptor edge : reverse_edge_range) {
-      vertex_descriptor target = boost::target(edge, graph);
-
-      state.parent_edge[target] = edge;
-      state.vertex_stack.push(target);
       state.edge_stack.push(edge);
     }
   }
-  // TODO I feel like this doesn't solve every issue we have with
-  // paralell edges. Needs further tests and investigation
-  if (!is_finished()) {
-    state.parent_edge[get_current_vertex()] = state.edge_stack.top();
+
+  if (!state.edge_stack.empty()) {
+    assert(state.edge_stack.top());
+    state.parent_edge[get_current_vertex()] = *state.edge_stack.top();
   }
 }
 
@@ -187,13 +178,18 @@ metaprogram::edge_property& metaprogram::get_edge_property(
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   assert(!is_finished());
-  return state.vertex_stack.top();
+
+  const boost::optional<edge_descriptor>& edge = state.edge_stack.top();
+  if (!edge) {
+    return get_root_vertex();
+  }
+  return boost::target(*edge, graph);
 }
 
 metaprogram::frame_t metaprogram::get_current_frame() const {
   assert(!is_finished());
 
-  vertex_descriptor current_vertex = state.vertex_stack.top();
+  vertex_descriptor current_vertex = get_current_vertex();
 
   assert(state.parent_edge[current_vertex]);
 
@@ -205,7 +201,7 @@ metaprogram::frame_t metaprogram::get_current_frame() const {
 metaprogram::backtrace_t metaprogram::get_backtrace() const {
   assert(!is_finished());
 
-  vertex_descriptor current_vertex = state.vertex_stack.top();
+  vertex_descriptor current_vertex = get_current_vertex();
 
   backtrace_t backtrace;
 

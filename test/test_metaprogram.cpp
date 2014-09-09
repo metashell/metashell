@@ -41,12 +41,10 @@ void assert_state_equal(
     const metaprogram::state_t& state,
     const metaprogram::discovered_t& discovered,
     const metaprogram::parent_edge_t& parent_edge,
-    const std::vector<metaprogram::vertex_descriptor>& vertex_stack,
-    const std::vector<metaprogram::edge_descriptor>& edge_stack)
+    const std::vector<boost::optional<metaprogram::edge_descriptor>>& edge_stack)
 {
   JUST_ASSERT(state.discovered == discovered);
   JUST_ASSERT(state.parent_edge == parent_edge);
-  compare_stack_with_vector(state.vertex_stack, vertex_stack);
   compare_stack_with_vector(state.edge_stack, edge_stack);
 }
 
@@ -63,8 +61,7 @@ JUST_TEST_CASE(test_metaprogram_default_constuctor) {
   assert_state_equal(mp.get_state(),
         {false},
         {boost::none},
-        {mp.get_root_vertex()},
-        {}
+        {boost::none}
     );
   JUST_ASSERT(!mp.is_finished());
 
@@ -73,7 +70,6 @@ JUST_TEST_CASE(test_metaprogram_default_constuctor) {
   assert_state_equal(mp.get_state(),
         {true},
         {boost::none},
-        {},
         {}
     );
   JUST_ASSERT(mp.is_finished());
@@ -92,7 +88,6 @@ JUST_TEST_CASE(test_metaprogram_create_empty_finished) {
   assert_state_equal(mp.get_state(),
         {true},
         {boost::none},
-        {},
         {}
     );
   JUST_ASSERT(mp.is_finished());
@@ -114,8 +109,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   assert_state_equal(mp.get_state(),
         {false, false},
         {boost::none, boost::none},
-        {mp.get_root_vertex()},
-        {}
+        {boost::none}
     );
   JUST_ASSERT(!mp.is_finished());
 
@@ -124,7 +118,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   assert_state_equal(mp.get_state(),
         {true, false},
         {boost::none, edge_root_a},
-        {vertex_a},
         {edge_root_a}
     );
   JUST_ASSERT(!mp.is_finished());
@@ -134,7 +127,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   assert_state_equal(mp.get_state(),
         {true, true},
         {boost::none, edge_root_a},
-        {},
         {}
     );
   JUST_ASSERT(mp.is_finished());
@@ -160,8 +152,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   assert_state_equal(mp.get_state(),
         {false, false},
         {boost::none, boost::none},
-        {mp.get_root_vertex()},
-        {}
+        {boost::none}
     );
   JUST_ASSERT(!mp.is_finished());
 
@@ -170,7 +161,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   assert_state_equal(mp.get_state(),
         {true, false},
         {boost::none, edge_root_a_ti},
-        {vertex_a, vertex_a},
         {edge_root_a_me, edge_root_a_ti}
     );
   JUST_ASSERT(!mp.is_finished());
@@ -180,7 +170,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   assert_state_equal(mp.get_state(),
         {true, true},
         {boost::none, edge_root_a_me},
-        {vertex_a},
         {edge_root_a_me}
     );
   JUST_ASSERT(!mp.is_finished());
@@ -190,7 +179,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   assert_state_equal(mp.get_state(),
         {true, true},
         {boost::none, edge_root_a_me},
-        {},
         {}
     );
   JUST_ASSERT(mp.is_finished());
