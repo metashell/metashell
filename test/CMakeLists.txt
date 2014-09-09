@@ -35,10 +35,16 @@ target_link_libraries(metashell_test ${Boost_PROGRAM_OPTIONS_LIBRARIES})
 target_link_libraries(metashell_test ${Boost_REGEX_LIBRARIES})
 
 # Readline
-if (USE_EDITLINE)
-  target_link_libraries(metashell_test ${EDITLINE_LIBRARY})
+if (WIN32)
+  target_link_libraries(metashell_test edit_static)
+  add_definitions( -DUSE_EDITLINE )
+  include_directories("${CMAKE_SOURCE_DIR}/wineditline")
 else()
-  target_link_libraries(metashell_test ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
+  if (USE_EDITLINE)
+    target_link_libraries(metashell_test ${EDITLINE_LIBRARY})
+  else()
+    target_link_libraries(metashell_test ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
+  endif()
 endif()
 
 # Clang
