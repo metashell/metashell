@@ -730,7 +730,7 @@ int_<13>
 ```
 
 This will evaluate and print the result of the metaprogram just like how
-metashell does, but at the same time gathers infomation about
+metashell does, but at the same time, it gathers infomation about
 template instantiations using [Templight](http://plc.inf.elte.hu/templight/).
 
 Metadebugger provides an interface similar to gdb. For example you can step
@@ -748,7 +748,7 @@ You can check the current backtrace:
 ```cpp
 (mdb) bt
 #0 fib<5> (TemplateInstantiation)
-#1 fib<6> (TemplateInstantiation
+#1 fib<6> (TemplateInstantiation)
 ```
 
 And since the metaprogram is actually already ran, and we're just simulating
