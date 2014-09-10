@@ -34,6 +34,9 @@ class metadebugger_shell {
 public:
   typedef boost::optional<just::console::color> optional_color;
 
+  static metadebugger_command_handler_map::command_map_t
+    create_default_command_map();
+
   metadebugger_shell(
       const config& conf,
       environment& env);

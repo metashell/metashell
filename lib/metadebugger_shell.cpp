@@ -51,33 +51,31 @@ const std::vector<just::console::color> metadebugger_shell::colors =
     just::console::color::cyan
   };
 
-namespace {
-  metadebugger_command_handler_map::command_map_t create_default_command_map() {
+metadebugger_command_handler_map::command_map_t
+  metadebugger_shell::create_default_command_map() {
 
-    //TODO include "step over" in "step"
-    metadebugger_command_handler_map::command_map_t res =
-      {
-        {"continue", repeatable, &metadebugger_shell::command_continue,
-          "Continue program being debugged, until breakpoint or end of program."},
-        {"step", repeatable, &metadebugger_shell::command_step,
-          "Step the program one instantiation. Usage: step [over] [count]"},
-        {"evaluate", non_repeatable, &metadebugger_shell::command_evaluate,
-          "Evaluate and start debugging new metaprogram."},
-        {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
-          "Print forwardtrace from the current point."},
-        {"ft", non_repeatable, &metadebugger_shell::command_forwardtrace,
-          "Alias for forwardtrace."},
-        {"backtrace", non_repeatable, &metadebugger_shell::command_backtrace,
-          "Print backtrace from the current point."},
-        {"bt", non_repeatable, &metadebugger_shell::command_backtrace,
-          "Alias for backtrace."},
-        {"break", non_repeatable, &metadebugger_shell::command_break,
-          "Add new breakpoint. Usage: break [breakpoint]"},
-        {"help", non_repeatable, &metadebugger_shell::command_help,
-          "Show help for commands. Usage: help [command]"}
-      };
-    return res;
-  }
+  metadebugger_command_handler_map::command_map_t res =
+    {
+      {"continue", repeatable, &metadebugger_shell::command_continue,
+        "Continue program being debugged, until breakpoint or end of program."},
+      {"step", repeatable, &metadebugger_shell::command_step,
+        "Step the program one instantiation. Usage: step [over] [count]"},
+      {"evaluate", non_repeatable, &metadebugger_shell::command_evaluate,
+        "Evaluate and start debugging new metaprogram."},
+      {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
+        "Print forwardtrace from the current point."},
+      {"ft", non_repeatable, &metadebugger_shell::command_forwardtrace,
+        "Alias for forwardtrace."},
+      {"backtrace", non_repeatable, &metadebugger_shell::command_backtrace,
+        "Print backtrace from the current point."},
+      {"bt", non_repeatable, &metadebugger_shell::command_backtrace,
+        "Alias for backtrace."},
+      {"break", non_repeatable, &metadebugger_shell::command_break,
+        "Add new breakpoint. Usage: break [breakpoint]"},
+      {"help", non_repeatable, &metadebugger_shell::command_help,
+        "Show help for commands. Usage: help [command]"}
+    };
+  return res;
 }
 
 metadebugger_shell::metadebugger_shell(
