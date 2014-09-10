@@ -34,3 +34,4 @@ script:
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas is up to date
   - app/metashell --show_pragma_help | ../tools/replace_part -i ../README.md -m '<!-- pragma_info -->' -o - -r - | diff ../README.md -
+  - app/metashell --show_mdb_help | ../tools/replace_part -i ../README.md -m '<!-- mdb_info -->' -o - -r - | diff ../README.md -

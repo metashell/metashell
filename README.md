@@ -686,6 +686,7 @@ These header files are available in Metashell:
 
 ### Command reference
 
+<!-- mdb_info -->
 * `continue` <br /> <br /> Continue program being debugged, until breakpoint or end of program.
 
 * `step` <br /> <br /> Step the program one instantiation. Usage: step [over] [count]
@@ -703,6 +704,9 @@ These header files are available in Metashell:
 * `break` <br /> <br /> Add new breakpoint. Usage: break [breakpoint]
 
 * `help` <br /> <br /> Show help for commands. Usage: help [command]
+
+
+<!-- mdb_info -->
 
 ## License
 
