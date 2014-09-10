@@ -720,7 +720,7 @@ Now, you can start the metadebugger by entering:
 ```
 
 You'll see, that the prompt has changed to `(mdb)`, now you can enter
-metadebugger commands. To exit from metadebugger use Ctrl+D.
+metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
 
 Let's evaluate a metaprogram:
 
@@ -787,6 +787,8 @@ fib<5>
 * `break` <br /> <br /> Add new breakpoint. Usage: break [breakpoint]
 
 * `help` <br /> <br /> Show help for commands. Usage: help [command]
+
+* `quit` <br /> <br /> Quit metadebugger.
 
 
 <!-- mdb_info -->
