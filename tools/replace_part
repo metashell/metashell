@@ -41,7 +41,13 @@ def main():
     dest='replace_with',
     help='The file containing the part to place into <input>'
   )
-  
+  parser.add_option(
+    '-m', '--marker',
+    action='store',
+    dest='marker',
+    help='The marker to search for'
+  )
+
   (options, args) = parser.parse_args()
   if options.output == None:
     options.output = options.input
@@ -51,7 +57,6 @@ def main():
   elif options.replace_with == None:
     parser.error('No file to replace with specified')
   else:
-    marker = '<!-- pragma_info -->'
     doc = open(options.input, 'r').readlines()
     if options.output == '-':
       f = sys.stdout
@@ -61,7 +66,7 @@ def main():
       r = sys.stdin.readlines()
     else:
       r = open(options.replace_with, 'r').readlines()
-    do_replace(f, doc, r, marker)
+    do_replace(f, doc, r, options.marker)
 
 if __name__ == '__main__':
   main()
