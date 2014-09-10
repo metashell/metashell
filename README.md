@@ -34,6 +34,7 @@ shell.
 - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
 - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
 - [Metadebugger](#metadebugger)
+    - [Getting started with mdb](#getting-started-with-mdb)
     - [Command reference](#command-reference)
 - [License](#license)
 
@@ -683,6 +684,88 @@ These header files are available in Metashell:
 </table>
 
 ## Metadebugger
+
+### Getting started with mdb
+
+Metadebugger lets you inspect step by step how the compiler runs your
+metaprograms.
+
+Set up your environment by defining metaprograms and/or including header files.
+For demonstration purposes, we're going to use a simple fibonacci metaprogram:
+
+```cpp
+> template <int N> \
+...> struct fib \
+...> { \
+...>   static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \
+...> };
+> template <> \
+...> struct fib<0> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+> template <> \
+...> struct fib<1> \
+...> { \
+...>   static constexpr int value = 1; \
+...> };
+> template<int N> \
+...> struct int_ {};
+```
+
+Now, you can start the metadebugger by entering:
+
+```cpp
+> #msh mdb
+```
+
+You'll see, that the prompt has changed to `(mdb)`, now you can enter
+metadebugger commands. To exit from metadebugger use Ctrl+D.
+
+Let's evaluate a metaprogram:
+
+```cpp
+(mdb) evaluate int_<fib<6>::value>
+int_<13>
+```
+
+This will evaluate and print the result of the metaprogram just like how
+metashell does, but at the same time gathers infomation about
+template instantiations using [Templight](http://plc.inf.elte.hu/templight/).
+
+Metadebugger provides an interface similar to gdb. For example you can step
+the metaprogram forward two steps:
+
+```cpp
+(mdb) step 2
+fib<5> (TemplateInstantiation)
+```
+
+As you can see, metadebugger tells you that in this step `fib<5>` is getting
+instantiated in a TemplateInstantiation event.
+
+You can check the current backtrace:
+```cpp
+(mdb) bt
+#0 fib<5> (TemplateInstantiation)
+#1 fib<6> (TemplateInstantiation
+```
+
+And since the metaprogram is actually already ran, and we're just simulating
+the steps, we can also see the forwardtrace from any step:
+
+```cpp
+(mdb) ft
+fib<5>
++ fib<4> (TemplateInstantiation)
+| + fib<3> (TemplateInstantiation)
+| | + fib<2> (TemplateInstantiation)
+| | | + fib<1> (Memoization)
+| | | ` fib<0> (Memoization)
+| | ` fib<1> (Memoization)
+| ` fib<2> (Memoization)
+` fib<3> (Memoization)
+```
 
 ### Command reference
 
