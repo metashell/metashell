@@ -29,6 +29,11 @@ add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
 add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
 add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
 
+# Windows workaround
+if (WIN32)
+  add_definitions( -DNOMINMAX )
+endif()
+
 # C++11
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
