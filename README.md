@@ -33,6 +33,8 @@ shell.
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
 - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
 - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
+- [Metadebugger](#metadebugger)
+    - [Command reference](#command-reference)
 - [License](#license)
 
 ## Motivation
@@ -679,6 +681,28 @@ These header files are available in Metashell:
     <td>Defines the <code>SCALAR</code> macro.</td>
   </tr>
 </table>
+
+## Metadebugger
+
+### Command reference
+
+* `continue` <br /> <br /> Continue program being debugged, until breakpoint or end of program.
+
+* `step` <br /> <br /> Step the program one instantiation. Usage: step [over] [count]
+
+* `evaluate` <br /> <br /> Evaluate and start debugging new metaprogram.
+
+* `forwardtrace` <br /> <br /> Print forwardtrace from the current point.
+
+* `ft` <br /> <br /> Alias for forwardtrace.
+
+* `backtrace` <br /> <br /> Print backtrace from the current point.
+
+* `bt` <br /> <br /> Alias for backtrace.
+
+* `break` <br /> <br /> Add new breakpoint. Usage: break [breakpoint]
+
+* `help` <br /> <br /> Show help for commands. Usage: help [command]
 
 ## License
 
