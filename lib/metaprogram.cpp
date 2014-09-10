@@ -52,10 +52,11 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
 
-  // TODO resizing after every add_vertex is neither
-  // efficient nor nice
-  state.discovered.resize(vertex+1, false);
-  state.parent_edge.resize(vertex+1, boost::none);
+  assert(state.discovered.size() == vertex);
+  assert(state.parent_edge.size() == vertex);
+
+  state.discovered.push_back(false);
+  state.parent_edge.push_back(boost::none);
 
   get_vertex_property(vertex).name = element;
 
