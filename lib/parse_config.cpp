@@ -20,7 +20,9 @@
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/shell_stub.hpp>
-#    include <metashell/default_environment_detector.hpp>
+#include <metashell/default_environment_detector.hpp>
+#include <metashell/metadebugger_shell.hpp>
+#include <metashell/metadebugger_command_handler_map.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -76,6 +78,18 @@ namespace
     for (const sp& p : m)
     {
       show_markdown(p.first, p.second, std::cout);
+    }
+  }
+
+  void show_mdb_help()
+  {
+    metadebugger_command_handler_map::command_map_t
+      command_map = metadebugger_shell::create_default_command_map();
+    for (const metadebugger_command& cmd : command_map)
+    {
+      std::cout
+        << "* `" << cmd.get_key() << "` <br /> <br /> "
+        << cmd.get_description() << '\n' << std::endl;
     }
   }
 }
@@ -138,6 +152,10 @@ parse_config_result metashell::parse_config(
       "show_pragma_help",
       "Display help for pragmas in MarkDown format and exit."
     )
+    (
+      "show_mdb_help",
+      "Display help for metadebugger commands in MarkDown format and exit"
+    )
     ;
 
   try
@@ -164,6 +182,11 @@ parse_config_result metashell::parse_config(
     else if (vm.count("show_pragma_help"))
     {
       show_pragma_help();
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("show_mdb_help"))
+    {
+      show_mdb_help();
       return parse_config_result::exit(false);
     }
     else
