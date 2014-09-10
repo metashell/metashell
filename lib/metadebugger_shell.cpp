@@ -73,7 +73,9 @@ metadebugger_command_handler_map::command_map_t
       {"break", non_repeatable, &metadebugger_shell::command_break,
         "Add new breakpoint. Usage: break [breakpoint]"},
       {"help", non_repeatable, &metadebugger_shell::command_help,
-        "Show help for commands. Usage: help [command]"}
+        "Show help for commands. Usage: help [command]"},
+      {"quit", non_repeatable, &metadebugger_shell::command_quit,
+        "Quit metadebugger."}
     };
   return res;
 }
@@ -244,6 +246,13 @@ void metadebugger_shell::command_help(const std::string& arg) {
   }
 
   display_info(cmd.get_key() + ": " + cmd.get_description() + "\n");
+}
+
+void metadebugger_shell::command_quit(const std::string& arg) {
+  if (!require_empty_args(arg)) {
+    return;
+  }
+  is_stopped = true;
 }
 
 void metadebugger_shell::run_metaprogram_with_templight(
