@@ -19,10 +19,17 @@
 
 #include <string>
 
+#include <boost/range/algorithm/equal.hpp>
+
 std::string get_output(
   const std::string& input_,
   const std::string& test_code_ = std::string()
 );
+
+template<class C>
+bool equal(const C& c1, std::initializer_list<typename C::value_type> c2) {
+  return boost::equal(c1, c2);
+}
 
 #endif
 

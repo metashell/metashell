@@ -83,12 +83,14 @@ namespace
 
   void show_mdb_help()
   {
-    metadebugger_command_handler_map::command_map_t
-      command_map = metadebugger_shell::create_default_command_map();
-    for (const metadebugger_command& cmd : command_map)
+    using boost::algorithm::join;
+
+    metadebugger_command_handler_map::commands_t
+      commands = metadebugger_shell::create_default_command_map();
+    for (const metadebugger_command& cmd : commands)
     {
       std::cout
-        << "* `" << cmd.get_key() << "` <br /> <br /> "
+        << "* `" << join(cmd.get_keys(), "|") << "` <br /> <br /> "
         << cmd.get_description() << '\n' << std::endl;
     }
   }

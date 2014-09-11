@@ -20,15 +20,15 @@
 namespace metashell {
 
 metadebugger_command::metadebugger_command(
-    const std::string& key,
+    const keys_t& keys,
     repeatable_t rep,
     function func,
     const std::string& description) :
-  key(key), rep(rep), func(func), description(description)
+  keys(keys), rep(rep), func(func), description(description)
 {}
 
-const std::string& metadebugger_command::get_key() const {
-  return key;
+const metadebugger_command::keys_t& metadebugger_command::get_keys() const {
+  return keys;
 }
 
 bool metadebugger_command::is_repeatable() const {
@@ -41,20 +41,6 @@ metadebugger_command::function metadebugger_command::get_func() const {
 
 const std::string& metadebugger_command::get_description() const {
   return description;
-}
-
-bool operator<(
-    const metadebugger_command& lhs,
-    const metadebugger_command& rhs)
-{
-  return lhs.get_key() < rhs.get_key();
-}
-
-bool operator<(
-    const metadebugger_command& lhs,
-    const std::string& rhs)
-{
-  return lhs.get_key() < rhs;
 }
 
 }

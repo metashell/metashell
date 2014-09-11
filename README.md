@@ -737,13 +737,9 @@ fib<5>
 
 * `evaluate` <br /> <br /> Evaluate and start debugging new metaprogram.
 
-* `forwardtrace` <br /> <br /> Print forwardtrace from the current point.
+* `forwardtrace|ft` <br /> <br /> Print forwardtrace from the current point.
 
-* `ft` <br /> <br /> Alias for forwardtrace.
-
-* `backtrace` <br /> <br /> Print backtrace from the current point.
-
-* `bt` <br /> <br /> Alias for backtrace.
+* `backtrace|bt` <br /> <br /> Print backtrace from the current point.
 
 * `break` <br /> <br /> Add new breakpoint. Usage: break [breakpoint]
 

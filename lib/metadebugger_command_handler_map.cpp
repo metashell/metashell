@@ -27,10 +27,16 @@
 namespace metashell {
 
 metadebugger_command_handler_map::metadebugger_command_handler_map(
-    const command_map_t& command_map_arg) :
-  command_map(command_map_arg)
+    const commands_t& commands_arg) :
+  commands(commands_arg)
 {
-  std::sort(command_map.begin(), command_map.end());
+  std::vector<key_command_map_t::value_type> key_command_vec;
+  for (std::size_t i = 0; i < commands.size(); ++i) {
+    for (const std::string& key : commands[i].get_keys()) {
+      key_command_vec.push_back(key_command_map_t::value_type(key, i));
+    }
+  }
+  key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
 }
 
 boost::optional<std::tuple<metadebugger_command, std::string>>
@@ -45,21 +51,21 @@ metadebugger_command_handler_map::get_command_for_line(
     return boost::none;
   }
 
-  command_map_t::const_iterator lower =
-    std::lower_bound(command_map.begin(), command_map.end(), command);
+  key_command_map_t::const_iterator lower =
+    key_command_map.lower_bound(command);
 
   using boost::algorithm::starts_with;
 
-  if (lower == command_map.end() ||
-      !starts_with(lower->get_key(), command))
+  if (lower == key_command_map.end() ||
+      !starts_with(lower->first, command))
   {
     return boost::none;
   }
 
   // Check if the found command is unambiguous
-  if (command != lower->get_key() && // Pass if the match is full
-      std::next(lower) != command_map.end() &&
-      starts_with(std::next(lower)->get_key(), command))
+  if (command != lower->first && // Pass if the match is full
+      std::next(lower) != key_command_map.end() &&
+      starts_with(std::next(lower)->first, command))
   {
     return boost::none;
   }
@@ -68,7 +74,8 @@ metadebugger_command_handler_map::get_command_for_line(
   std::string rest;
   std::getline(line_stream, rest);
 
-  return std::make_tuple(*lower, rest);
+  assert(lower->second < commands.size());
+  return std::make_tuple(commands[lower->second], rest);
 }
 
 }

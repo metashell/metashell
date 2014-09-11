@@ -18,6 +18,8 @@
 
 #include <just/test.hpp>
 
+#include "util.hpp"
+
 using namespace metashell;
 
 std::tuple<metadebugger_command, std::string> get_command_from_map(
@@ -33,130 +35,160 @@ std::tuple<metadebugger_command, std::string> get_command_from_map(
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
-  metadebugger_command_handler_map::command_map_t command_map =
+  metadebugger_command_handler_map::commands_t commands =
   {
-    {"asd", non_repeatable, nullptr, ""},
-    {"efg", non_repeatable, nullptr, ""}
+    {{{"asd"}}, non_repeatable, nullptr, ""},
+    {{{"efg"}}, non_repeatable, nullptr, ""}
   };
 
-  metadebugger_command_handler_map map(command_map);
+  metadebugger_command_handler_map map(commands);
 
   metadebugger_command command;
   std::string args;
 
-  std::tie(command, args) = get_command_from_map(map, "asd");
+  std::tie(command, args) = get_command_from_map(map, {"asd"});
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asd");
+  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
   JUST_ASSERT_EQUAL(args, "");
 
-  std::tie(command, args) = get_command_from_map(map, "efg");
+  std::tie(command, args) = get_command_from_map(map, {"efg"});
 
-  JUST_ASSERT_EQUAL(command.get_key(), "efg");
+  JUST_ASSERT(equal(command.get_keys(), {"efg"}));
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asd");
+  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "e");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "efg");
+  JUST_ASSERT(equal(command.get_keys(), {"efg"}));
   JUST_ASSERT_EQUAL(args, "");
 }
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 {
-  metadebugger_command_handler_map::command_map_t command_map =
+  metadebugger_command_handler_map::commands_t commands =
   {
-    {"asd", non_repeatable, nullptr, ""},
-    {"afg", non_repeatable, nullptr, ""}
+    {{"asd"}, non_repeatable, nullptr, ""},
+    {{"afg"}, non_repeatable, nullptr, ""}
   };
 
-  metadebugger_command_handler_map map(command_map);
+  metadebugger_command_handler_map map(commands);
 
   metadebugger_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asd");
+  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "af");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "afg");
+  JUST_ASSERT(equal(command.get_keys(), {"afg"}));
   JUST_ASSERT_EQUAL(args, "");
 }
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 {
-  metadebugger_command_handler_map::command_map_t command_map =
+  metadebugger_command_handler_map::commands_t commands =
   {
-    {"asd", non_repeatable, nullptr, ""},
-    {"a", non_repeatable, nullptr, ""}
+    {{"asd"}, non_repeatable, nullptr, ""},
+    {{"a"}, non_repeatable, nullptr, ""}
   };
 
-  metadebugger_command_handler_map map(command_map);
+  metadebugger_command_handler_map map(commands);
 
   metadebugger_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asd");
+  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "a");
+  JUST_ASSERT(equal(command.get_keys(), {"a"}));
   JUST_ASSERT_EQUAL(args, "");
 }
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 {
-  metadebugger_command_handler_map::command_map_t command_map =
+  metadebugger_command_handler_map::commands_t commands =
   {
-    {"asd", non_repeatable, nullptr, ""},
-    {"asf", non_repeatable, nullptr, ""}
+    {{"asd"}, non_repeatable, nullptr, ""},
+    {{"asf"}, non_repeatable, nullptr, ""}
   };
 
-  metadebugger_command_handler_map map(command_map);
+  metadebugger_command_handler_map map(commands);
 
   JUST_ASSERT(!map.get_command_for_line(""));
   JUST_ASSERT(!map.get_command_for_line("a"));
   JUST_ASSERT(!map.get_command_for_line("as"));
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
+JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 {
-  metadebugger_command_handler_map::command_map_t command_map =
+  metadebugger_command_handler_map::commands_t commands =
   {
-    {"asf", non_repeatable, nullptr, ""}
+    {{"asd", "xyz"}, non_repeatable, nullptr, ""},
+    {{"asf"}, non_repeatable, nullptr, ""}
   };
 
-  metadebugger_command_handler_map map(command_map);
+  metadebugger_command_handler_map map(commands);
+
+  metadebugger_command command;
+  std::string args;
+
+  std::tie(command, args) = get_command_from_map(map, "asd");
+
+  JUST_ASSERT(equal(command.get_keys(), {"asd", "xyz"}));
+  JUST_ASSERT_EQUAL(args, "");
+
+  std::tie(command, args) = get_command_from_map(map, "xyz");
+
+  JUST_ASSERT(equal(command.get_keys(), {"asd", "xyz"}));
+  JUST_ASSERT_EQUAL(args, "");
+
+  std::tie(command, args) = get_command_from_map(map, "asf");
+
+  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL(args, "");
+}
+
+
+JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
+{
+  metadebugger_command_handler_map::commands_t commands =
+  {
+    {{"asf"}, non_repeatable, nullptr, ""}
+  };
+
+  metadebugger_command_handler_map map(commands);
 
   metadebugger_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "a abc");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asf");
+  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
   JUST_ASSERT_EQUAL(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "asf   abc");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asf");
+  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
   JUST_ASSERT_EQUAL(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "as   ab c");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asf");
+  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
   JUST_ASSERT_EQUAL(args, "ab c");
 
   std::tie(command, args) = get_command_from_map(map, "a   ");
 
-  JUST_ASSERT_EQUAL(command.get_key(), "asf");
+  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
   JUST_ASSERT_EQUAL(args, "");
 }

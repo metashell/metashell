@@ -51,30 +51,26 @@ const std::vector<just::console::color> metadebugger_shell::colors =
     just::console::color::cyan
   };
 
-metadebugger_command_handler_map::command_map_t
+metadebugger_command_handler_map::commands_t
   metadebugger_shell::create_default_command_map() {
 
-  metadebugger_command_handler_map::command_map_t res =
+  metadebugger_command_handler_map::commands_t res =
     {
-      {"continue", repeatable, &metadebugger_shell::command_continue,
+      {{"continue"}, repeatable, &metadebugger_shell::command_continue,
         "Continue program being debugged, until breakpoint or end of program."},
-      {"step", repeatable, &metadebugger_shell::command_step,
+      {{"step"}, repeatable, &metadebugger_shell::command_step,
         "Step the program one instantiation. Usage: step [over] [count]"},
-      {"evaluate", non_repeatable, &metadebugger_shell::command_evaluate,
+      {{"evaluate"}, non_repeatable, &metadebugger_shell::command_evaluate,
         "Evaluate and start debugging new metaprogram."},
-      {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
+      {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
         "Print forwardtrace from the current point."},
-      {"ft", non_repeatable, &metadebugger_shell::command_forwardtrace,
-        "Alias for forwardtrace."},
-      {"backtrace", non_repeatable, &metadebugger_shell::command_backtrace,
+      {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
         "Print backtrace from the current point."},
-      {"bt", non_repeatable, &metadebugger_shell::command_backtrace,
-        "Alias for backtrace."},
-      {"break", non_repeatable, &metadebugger_shell::command_break,
+      {{"break"}, non_repeatable, &metadebugger_shell::command_break,
         "Add new breakpoint. Usage: break [breakpoint]"},
-      {"help", non_repeatable, &metadebugger_shell::command_help,
+      {{"help"}, non_repeatable, &metadebugger_shell::command_help,
         "Show help for commands. Usage: help [command]"},
-      {"quit", non_repeatable, &metadebugger_shell::command_quit,
+      {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
         "Quit metadebugger."}
     };
   return res;
@@ -236,6 +232,8 @@ void metadebugger_shell::command_help(const std::string& arg) {
     return;
   }
 
+  using boost::algorithm::join;
+
   metadebugger_command cmd;
   std::string command_args;
   std::tie(cmd, command_args) = *command_arg_pair;
@@ -245,7 +243,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
     return;
   }
 
-  display_info(cmd.get_key() + ": " + cmd.get_description() + "\n");
+  display_info(join(cmd.get_keys(), "|") + ": " + cmd.get_description() + "\n");
 }
 
 void metadebugger_shell::command_quit(const std::string& arg) {
