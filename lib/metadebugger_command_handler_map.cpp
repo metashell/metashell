@@ -63,11 +63,20 @@ metadebugger_command_handler_map::get_command_for_line(
   }
 
   // Check if the found command is unambiguous
-  if (command != lower->first && // Pass if the match is full
-      std::next(lower) != key_command_map.end() &&
-      starts_with(std::next(lower)->first, command))
-  {
-    return boost::none;
+  if (command != lower->first) { // Pass if the match is full
+    std::size_t command_index = lower->second;
+    for (key_command_map_t::const_iterator it = std::next(lower);
+        it != key_command_map.end() &&
+        starts_with(it->first, command);
+        ++it)
+    {
+      // Even there are multiple matches,
+      // aliases for the same command should pass
+      // For example forwardtrace and ft with line "f"
+      if (it->second != command_index) {
+        return boost::none;
+      }
+    }
   }
 
   line_stream >> std::ws;

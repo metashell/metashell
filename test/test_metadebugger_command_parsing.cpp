@@ -159,6 +159,56 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
   JUST_ASSERT_EQUAL(args, "");
 }
 
+JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
+{
+  metadebugger_command_handler_map::commands_t commands =
+  {
+    {{"ft", "forwardtrace"}, non_repeatable, nullptr, ""},
+    {{"asf"}, non_repeatable, nullptr, ""}
+  };
+
+  metadebugger_command_handler_map map(commands);
+
+  metadebugger_command command;
+  std::string args;
+
+  std::tie(command, args) = get_command_from_map(map, "f");
+
+  JUST_ASSERT(equal(command.get_keys(), {"ft", "forwardtrace"}));
+  JUST_ASSERT_EQUAL(args, "");
+}
+
+JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
+{
+  metadebugger_command_handler_map::commands_t commands =
+  {
+    {{"ft", "forwardtrace", "fff"}, non_repeatable, nullptr, ""},
+    {{"asf"}, non_repeatable, nullptr, ""}
+  };
+
+  metadebugger_command_handler_map map(commands);
+
+  metadebugger_command command;
+  std::string args;
+
+  std::tie(command, args) = get_command_from_map(map, "f");
+
+  JUST_ASSERT(equal(command.get_keys(), {"ft", "forwardtrace", "fff"}));
+  JUST_ASSERT_EQUAL(args, "");
+}
+
+JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
+{
+  metadebugger_command_handler_map::commands_t commands =
+  {
+    {{"ft", "forwardtrace"}, non_repeatable, nullptr, ""},
+    {{"fff"}, non_repeatable, nullptr, ""}
+  };
+
+  metadebugger_command_handler_map map(commands);
+
+  JUST_ASSERT(!map.get_command_for_line("f"));
+}
 
 JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 {
