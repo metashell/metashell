@@ -29,16 +29,6 @@
 #include <boost/spirit/home/phoenix/core/reference.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
-// a min macro is defined in minwindef.h (Visual C++ 2013)
-#ifdef min
-#  undef min
-#endif
-
-// a max macro is defined in minwindef.h (Visual C++ 2013)
-#ifdef max
-#  undef max
-#endif
-
 namespace metashell {
 
 const std::vector<just::console::color> metadebugger_shell::colors =
