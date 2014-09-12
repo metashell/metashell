@@ -24,28 +24,49 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 {
-  metadebugger_command x({"asdf"}, repeatable, nullptr, "fdsa");
+  metadebugger_command x({"asdf"}, repeatable, nullptr, "fdsa", "xxyy");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
 }
 
 JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 {
-  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "fdsa");
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "fdsa", "xxyy");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(!x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
 }
 
 JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 {
-  metadebugger_command x({"asdf", "xxx"}, non_repeatable, nullptr, "fdsa");
+  metadebugger_command x({"asdf", "xxx"}, non_repeatable, nullptr, "fd", "xx");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf", "xxx"}));
   JUST_ASSERT(!x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
+}
+
+JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
+{
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "fd", "");
+
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "");
+  JUST_ASSERT_EQUAL(x.get_full_description(), "fd");
+}
+
+JUST_TEST_CASE(test_mdb_command_full_description_non_empty_long_description)
+{
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "fd", "xx");
+
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
+  JUST_ASSERT_EQUAL(x.get_full_description(), "fd\nxx");
 }
 

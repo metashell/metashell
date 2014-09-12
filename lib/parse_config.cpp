@@ -91,7 +91,11 @@ namespace
     {
       std::cout
         << "* `" << join(cmd.get_keys(), "|") << "` <br /> <br /> "
-        << cmd.get_description() << '\n' << std::endl;
+        << cmd.get_short_description();
+        if (!cmd.get_long_description().empty()) {
+          std::cout << " <br />" << '\n' << cmd.get_long_description();
+        }
+        std::cout << '\n' << std::endl;
     }
   }
 }
