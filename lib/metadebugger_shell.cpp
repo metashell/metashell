@@ -276,7 +276,7 @@ void metadebugger_shell::run_metaprogram_with_templight(
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
-  result res = eval_tmp(env, str, conf, "<mdb-stdin>");
+  result res = eval_tmp_unformatted(env, str, conf, "<mdb-stdin>");
 
   if (!res.info.empty()) {
     display_info(res.info);
