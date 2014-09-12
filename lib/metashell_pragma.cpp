@@ -61,7 +61,7 @@ boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
   )
   {
     i = skip_whitespace(skip(i), cmd_.end());
-   
+
     if (
       i != cmd_.end()
       && i->type() == token_type::identifier

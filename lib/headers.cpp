@@ -46,7 +46,7 @@ namespace
       "namespace metashell"
       "{"
         "namespace impl "
-        "{ " 
+        "{ "
           "template <class C, class Item> "
           "struct " + name_ + "_builder;\n"
 
@@ -102,7 +102,7 @@ headers::headers(const std::string& internal_dir_, bool empty_) :
     using boost::adaptors::transformed;
 
     using std::string;
-    
+
     const path_builder internal_dir(_internal_dir);
     const string hpp(".hpp");
 

@@ -77,7 +77,7 @@ bool default_environment_detector::file_exists(const std::string& path_)
   return ::file_exists(path_);
 }
 
-bool default_environment_detector::on_windows() 
+bool default_environment_detector::on_windows()
 {
 #ifdef _WIN32
   return true;

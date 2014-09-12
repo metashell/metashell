@@ -251,7 +251,7 @@ void metashell::code_complete(
 
   set<string> c;
   cxindex().parse_code(src, env_)->code_complete(c);
-  
+
   out_.clear();
   const int prefix_len = completion_start.second.length();
   for (const string& s : c)

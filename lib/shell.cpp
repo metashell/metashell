@@ -92,7 +92,7 @@ namespace
 
         "template <class T> "
         "typename T::tag* tag_of(::metashell::impl::wrap<T>); "
-        
+
         "void* tag_of(...); "
 
         "template <class T> "
@@ -101,12 +101,12 @@ namespace
         "template <class T> "
         "struct remove_ptr<T*> { typedef T type; }; "
       "} "
-      
+
       "template <class Tag> "
       "struct format_impl "
       "{ "
         "typedef format_impl type; "
-        
+
         "template <class T> "
         "struct apply { typedef T type; }; "
       "}; "

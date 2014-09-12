@@ -134,7 +134,7 @@ JUST_TEST_CASE(
 
   test_shell sh(cfg, 80);
   sh.using_precompiled_headers(true);
-  
+
   JUST_ASSERT(
     dynamic_cast<const metashell::header_file_environment*>(&sh.env())
     != nullptr
@@ -150,7 +150,7 @@ JUST_TEST_CASE(
 
   test_shell sh(cfg, 80);
   sh.using_precompiled_headers(false);
-  
+
   JUST_ASSERT(
     dynamic_cast<const metashell::in_memory_environment*>(&sh.env()) != nullptr
   );
@@ -166,7 +166,7 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
   const std::string env_before = sh.env().get_all();
 
   sh.using_precompiled_headers(true);
-  
+
   JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
 
@@ -180,7 +180,7 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
   const std::string env_before = sh.env().get_all();
 
   sh.using_precompiled_headers(false);
-  
+
   JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
 

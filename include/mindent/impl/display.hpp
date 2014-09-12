@@ -228,7 +228,7 @@ namespace mindent
           show_(token_traits<TokenType>::new_line_token());
           const int indented = indented_ + indent_step_;
           const int l = width_ - indented;
-          
+
           for (
             typename syntax_node<TokenType>::arg_iterator
               i = n_.begin_args(),

@@ -70,7 +70,7 @@ namespace mindent
   public:
     typedef boost::wave::cpplexer::lex_token<Position> token_type;
     typedef typename token_type::string_type string_type;
-    
+
     static bool is_double_colon(const token_type& t_)
     {
       return t_ == boost::wave::T_COLON_COLON;

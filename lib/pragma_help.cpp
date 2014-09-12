@@ -29,12 +29,12 @@ namespace
   void display_all(shell& shell_)
   {
     using boost::algorithm::join;
-  
+
     indenter ind(shell_.width(), " * ");
     ind
       .raw("/*")
       .left_align("Metashell has the following built-in pragmas:");
-  
+
     typedef std::pair<const std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : shell_.pragma_handlers())
     {
@@ -45,7 +45,7 @@ namespace
         " *   "
       );
     }
-  
+
     ind
       .empty_line()
       .left_align(
@@ -56,7 +56,7 @@ namespace
       )
       .empty_line()
       .raw(" */");
-  
+
     shell_.display_normal(ind.str());
   }
 
@@ -120,7 +120,7 @@ void pragma_help::run(
         args.push_back(i->value());
       }
     }
-    
+
     indenter ind(_shell.width(), " * ");
     ind .raw("/*");
     bool was_pragma = false;

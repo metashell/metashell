@@ -31,17 +31,17 @@ namespace just
         _filename(filename_),
         _line(line_)
       {}
-  
+
       const std::string& msg() const
       {
         return _msg;
       }
-  
+
       const std::string& filename() const
       {
         return _filename;
       }
-  
+
       int line() const
       {
         return _line;
@@ -51,7 +51,7 @@ namespace just
       std::string _filename;
       int _line;
     };
-  
+
     /*
      * test_case
      */
@@ -62,7 +62,7 @@ namespace just
         _f(f_),
         _name(name_)
       {}
-  
+
       bool run(std::ostream& report_) const
       {
         report_ << "Running " << _name << std::endl;
@@ -99,7 +99,7 @@ namespace just
       void (*_f)();
       std::string _name;
     };
-  
+
     /*
      * test_manager
      */
@@ -110,7 +110,7 @@ namespace just
       {
         _cases.push_back(test_case(name_, f_));
       }
-  
+
       bool run(std::ostream& report_) const
       {
         int failures = 0;
@@ -141,7 +141,7 @@ namespace just
     private:
       std::vector<test_case> _cases;
     };
-  
+
     /*
      * singleton
      */
@@ -162,10 +162,10 @@ namespace just
     private:
       static T* _t;
     };
-  
+
     template <class T>
     T* singleton<T>::_t = 0;
-  
+
     /*
      * run
      */
@@ -173,7 +173,7 @@ namespace just
     {
       return singleton<test_manager>::get().run(std::cerr) ? 0 : 1;
     }
-  
+
     /*
      * assert_msg
      */
@@ -184,7 +184,7 @@ namespace just
         _filename(filename_),
         _line(line_)
       {}
-  
+
       void operator()(const std::string& msg_, bool v_) const
       {
         if (!v_)
@@ -192,7 +192,7 @@ namespace just
           throw assertion_failed(msg_, _filename, _line);
         }
       }
-  
+
       void operator()(bool v_) const
       {
         operator()("Assertion failed", v_);
@@ -201,7 +201,7 @@ namespace just
       std::string _filename;
       int _line;
     };
-  
+
     /*
      * assert operations
      */
@@ -226,14 +226,14 @@ namespace just
     private: \
       assert_msg _assert; \
     }
-  
+
     JUST_TEST_ASSERT_OP(assert_equal, ==);
     JUST_TEST_ASSERT_OP(assert_not_equal, !=);
     JUST_TEST_ASSERT_OP(assert_less, <);
     JUST_TEST_ASSERT_OP(assert_less_equal, <=);
     JUST_TEST_ASSERT_OP(assert_greater, >);
     JUST_TEST_ASSERT_OP(assert_greater_equal, >=);
-  
+
   #undef JUST_TEST_ASSERT_OP
   }
 }

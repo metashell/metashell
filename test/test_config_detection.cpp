@@ -141,7 +141,7 @@ JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
 {
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
-  
+
   const config cfg = detect_config(user_config(), envd);
 
   JUST_ASSERT_EQUAL(1, envd.search_clang_binary_called_times());
@@ -151,7 +151,7 @@ JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
 JUST_TEST_CASE(test_clang_binary_is_not_searched_when_specified)
 {
   mock_environment_detector envd;
-  
+
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -165,7 +165,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  
+
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -179,7 +179,7 @@ JUST_TEST_CASE(test_custom_clang_binary_is_not_used_when_does_not_exist)
 {
   mock_environment_detector envd;
   envd.file_exists_returns(false);
-  
+
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -190,7 +190,7 @@ JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
 {
   mock_environment_detector envd;
   envd.file_exists_returns(false);
-  
+
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -205,7 +205,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  
+
   std::ostringstream err;
   detect_config(user_config(), envd, err);
 
@@ -218,7 +218,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
-  
+
   std::ostringstream err;
   detect_config(user_config(), envd, err);
 
@@ -231,7 +231,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_disabled_when_no_clang_is_found)
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
-  
+
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
 
@@ -248,7 +248,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
-  
+
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
 
@@ -282,7 +282,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-  
+
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
@@ -297,7 +297,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   detect_config(user_config(), envd, err);
-  
+
   JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
 }
 
@@ -311,7 +311,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
-  
+
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[0]);
   JUST_ASSERT_EQUAL(
@@ -333,7 +333,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-  
+
   JUST_ASSERT(!cfg.include_path.empty());
   JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
 }
@@ -348,7 +348,7 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
 
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
-  
+
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[1]);
@@ -371,7 +371,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-  
+
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
@@ -406,7 +406,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-  
+
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\clang\\include", cfg.include_path[2]);
   JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);

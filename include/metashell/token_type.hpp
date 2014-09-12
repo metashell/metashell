@@ -30,7 +30,7 @@ namespace metashell
     integer_literal,
     string_literal,
     bool_literal,
-    
+
     c_comment,
     cpp_comment,
     whitespace,

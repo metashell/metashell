@@ -97,7 +97,7 @@ cxtranslationunit::cxtranslationunit(
       argv.size(),
       &_unsaved_files[0],
       _unsaved_files.size(),
-      CXTranslationUnit_None 
+      CXTranslationUnit_None
     );
   if (!_tu)
   {

@@ -29,7 +29,7 @@ namespace metashell
       cpp14
     };
   }
-  
+
   standard::type parse(const std::string& std_);
   std::string clang_argument(standard::type std_);
 }
