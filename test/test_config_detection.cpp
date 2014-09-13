@@ -141,7 +141,8 @@ JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
 {
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
-
+  envd.file_exists_returns(false);
+  
   const config cfg = detect_config(user_config(), envd);
 
   JUST_ASSERT_EQUAL(1, envd.search_clang_binary_called_times());
@@ -151,7 +152,7 @@ JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
 JUST_TEST_CASE(test_clang_binary_is_not_searched_when_specified)
 {
   mock_environment_detector envd;
-
+  
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -165,7 +166,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-
+  
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -179,7 +180,7 @@ JUST_TEST_CASE(test_custom_clang_binary_is_not_used_when_does_not_exist)
 {
   mock_environment_detector envd;
   envd.file_exists_returns(false);
-
+  
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -190,7 +191,7 @@ JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
 {
   mock_environment_detector envd;
   envd.file_exists_returns(false);
-
+  
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
@@ -201,11 +202,12 @@ JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
 }
 
 JUST_TEST_CASE(
-  test_error_is_displayed_clang_binary_is_not_found_at_default_locations
+  test_error_is_displayed_when_clang_binary_is_not_found_at_default_locations
 )
 {
   mock_environment_detector envd;
-
+  envd.file_exists_returns(false);
+  
   std::ostringstream err;
   detect_config(user_config(), envd, err);
 
@@ -218,7 +220,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
-
+  
   std::ostringstream err;
   detect_config(user_config(), envd, err);
 
@@ -228,10 +230,11 @@ JUST_TEST_CASE(
 JUST_TEST_CASE(test_precompiled_headers_are_disabled_when_no_clang_is_found)
 {
   mock_environment_detector envd;
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
-
+  
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
 
@@ -248,7 +251,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
-
+  
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
 
@@ -260,6 +263,7 @@ JUST_TEST_CASE(test_directory_of_binary_is_added_to_path_on_windows)
   mock_environment_detector envd;
   envd.on_windows_returns(true);
   envd.search_clang_binary_returns("/foo/bar/clang");
+  envd.file_exists_returns(false);
 
   std::ostringstream err;
   detect_config(user_config(), envd, err);
@@ -282,7 +286,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-
+  
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
@@ -294,10 +298,11 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
+  envd.file_exists_returns(false);
 
   std::ostringstream err;
   detect_config(user_config(), envd, err);
-
+  
   JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
 }
 
@@ -308,10 +313,11 @@ JUST_TEST_CASE(
   mock_environment_detector envd;
   envd.on_windows_returns(true);
   envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.file_exists_returns(false);
 
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
-
+  
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[0]);
   JUST_ASSERT_EQUAL(
@@ -333,7 +339,7 @@ JUST_TEST_CASE(
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-
+  
   JUST_ASSERT(!cfg.include_path.empty());
   JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
 }
@@ -348,7 +354,7 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
 
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
-
+  
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[1]);
@@ -365,13 +371,14 @@ JUST_TEST_CASE(
   mock_environment_detector envd;
   envd.extra_sysinclude_returns_append("/foo/include");
   envd.extra_sysinclude_returns_append("/bar/include");
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.include_path.push_back("/user/1");
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-
+  
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
@@ -385,6 +392,7 @@ JUST_TEST_CASE(
   mock_environment_detector envd;
   envd.on_windows_returns(true);
   envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.file_exists_returns(false);
 
   std::ostringstream err;
   detect_config(user_config(), envd, err);
@@ -400,13 +408,14 @@ JUST_TEST_CASE(
   mock_environment_detector envd;
   envd.on_windows_returns(true);
   envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.include_path.push_back("/user/1");
 
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
-
+  
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\clang\\include", cfg.include_path[2]);
   JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
@@ -417,6 +426,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
@@ -456,6 +466,7 @@ JUST_TEST_CASE(test_when_clang_binary_is_set_it_is_tested_against_libclang)
       return true;
     }
   );
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.use_precompiled_headers = true;
@@ -532,4 +543,72 @@ JUST_TEST_CASE(
 
   JUST_ASSERT(!cfg.use_precompiled_headers);
 }
+
+JUST_TEST_CASE(
+  test_clang_shipped_with_metashell_is_used_on_linux_when_user_does_not_override
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("/usr/local/bin/metashell");
+  envd.search_clang_binary_returns("/some/other/path");
+  envd.file_exists_returns(true);
+  envd.on_windows_returns(false);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+
+  JUST_ASSERT_EQUAL("/usr/local/bin/clang_metashell", cfg.clang_path);
+}
+
+JUST_TEST_CASE(
+  test_when_clang_is_not_found_clang_metashell_appears_in_the_error_message_as_well
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("/usr/local/bin/metashell");
+  envd.search_clang_binary_returns("");
+  envd.file_exists_returns(false);
+  envd.on_windows_returns(false);
+
+  std::ostringstream err;
+  detect_config(user_config(), envd, err);
+
+  JUST_ASSERT(
+    err.str().find("/usr/local/bin/clang_metashell") != std::string::npos
+  );
+}
+
+JUST_TEST_CASE(
+  test_clang_shipped_with_metashell_is_used_on_windows_when_user_does_not_override
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.search_clang_binary_returns("c:/some/other/path");
+  envd.file_exists_returns(true);
+  envd.on_windows_returns(true);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+
+  JUST_ASSERT_EQUAL("c:/foo/bar\\clang\\clang.exe", cfg.clang_path);
+}
+
+JUST_TEST_CASE(
+  test_when_the_clang_shipped_with_metashell_is_used_the_right_directory_is_added_to_path_on_windows
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.search_clang_binary_returns("c:/some/other/path");
+  envd.file_exists_returns(true);
+  envd.on_windows_returns(true);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+
+  JUST_ASSERT_EQUAL(1, envd.append_to_path_called_times());
+  JUST_ASSERT_EQUAL("c:/foo/bar\\clang", envd.append_to_path_last_arg());
+}
+
 

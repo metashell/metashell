@@ -108,6 +108,10 @@ if (CLANG_STATIC)
   find_package(ZLIB)
 endif()
 
+if (NOT DEFINED CLANG_HEADER_INSTALL_PATH)
+  set(CLANG_HEADER_INSTALL_PATH "include/metashell/clang")
+endif ()
+
 
 # Readline
 if (WIN32)
@@ -166,24 +170,28 @@ endif()
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
   set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
    
-  set(CPACK_COMPONENTS_ALL metashell windows_headers libclang)
-  set(CPACK_ALL_INSTALL_TYPES full nolibclang minimal)
+  set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
+  set(CPACK_ALL_INSTALL_TYPES full noclang minimal)
 
   set(CPACK_INSTALL_TYPE_FULL_DISPLAY_NAME "Full")
-  set(CPACK_INSTALL_TYPE_NOLIBLCANG_DISPLAY_NAME "Without libclang")
+  set(CPACK_INSTALL_TYPE_NOLCANG_DISPLAY_NAME "Without Clang")
   set(CPACK_INSTALL_TYPE_MINIMAL_DISPLAY_NAME "Minimal")
 
   set(CPACK_COMPONENT_METASHELL_DISPLAY_NAME "Metashell")
   set(CPACK_COMPONENT_METASHELL_DESCRIPTION "The Metashell binary")
-  set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full nolibclang minimal)
+  set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full noclang minimal)
 
   set(CPACK_COMPONENT_WINDOWS_HEADERS_DISPLAY_NAME "C++ headers")
   set(CPACK_COMPONENT_WINDOWS_HEADERS_DESCRIPTION "The MinGW standard headers")
-  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full nolibclang)
+  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full noclang)
 
   set(CPACK_COMPONENT_LIBCLANG_DISPLAY_NAME "Libclang")
   set(CPACK_COMPONENT_LIBCLANG_DESCRIPTION "A Clang library to use when Clang is not installed on your computer. It is recommend to install Clang for better performance in Metashell.")
   set(CPACK_COMPONENT_LIBCLANG_INSTALL_TYPES full)
+
+  set(CPACK_COMPONENT_CLANG_DISPLAY_NAME "Clang")
+  set(CPACK_COMPONENT_CLANG_DESCRIPTION "The Clang compiler")
+  set(CPACK_COMPONENT_CLANG_INSTALL_TYPES full)
 
   include(CPack)
    

@@ -19,6 +19,7 @@
 #                     headers
 #  CLANG_LIBRARYDIR   Set this if the module can not find the Clang
 #                     library
+#  CLANG_BINARYDIR    Set this if the module can not find the clang binary
 #  CLANG_DEBUG        Set this for verbose output
 #  CLANG_STATIC       Link staticly against libClang (not supported on Windows)
 #
@@ -27,7 +28,8 @@
 #   CLANG_INCLUDE_DIR
 #   CLANG_LIBRARY
 #   CLANG_DLL (only on Windows)
-#   CLANG_HEADERS (the path to the headers used by clang. Only on Windows)
+#   CLANG_HEADERS (the path to the headers used by clang)
+#   CLANG_BINARY
 
 if (NOT $ENV{CLANG_INCLUDEDIR} STREQUAL "" )
   set(CLANG_INCLUDEDIR $ENV{CLANG_INCLUDEDIR})
@@ -141,26 +143,29 @@ find_package_handle_standard_args(
   CLANG DEFAULT_MSG CLANG_LIBRARY CLANG_INCLUDE_DIR
 )
 
-# The standard headers on Windows
+# The clang binary
 if (WIN32)
-  set(CLANG_HEADER_ROOT ${CLANG_INCLUDE_DIR}/../lib/clang)
-  file(
-    GLOB
-    CLANG_HEADER_DIRS
-    RELATIVE ${CLANG_HEADER_ROOT}
-    ${CLANG_HEADER_ROOT}/*
-  )
-  list(SORT CLANG_HEADER_DIRS)
-  list(REVERSE CLANG_HEADER_DIRS)
-  list(GET CLANG_HEADER_DIRS 0 CLANG_HEADER_GREATEST_VERSION)
+  set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${CLANG_LIBRARYDIR}")
+endif ()
+find_program(CLANG_BINARY clang HINTS ${CLANG_BINARYDIR})
 
-  set(
-    CLANG_HEADERS
-    "${CLANG_HEADER_ROOT}/${CLANG_HEADER_GREATEST_VERSION}/include"
-  )
-endif()
+# The standard Clang header files
+file(WRITE "${PROJECT_BINARY_DIR}/empty.hpp" "")
+execute_process(
+  COMMAND ${CLANG_BINARY} -v -xc++ "${PROJECT_BINARY_DIR}/empty.hpp"
+  ERROR_VARIABLE CLANG_OUTPUT
+)
+string(REGEX MATCHALL "\n[ ][^\r\n\"]*\n" LINES "${CLANG_OUTPUT}")
+foreach (L ${LINES})
+  string(STRIP "${L}" SL)
+  list(APPEND CLANG_INCLUDE_PATH ${SL})
+endforeach()
 
-mark_as_advanced(CLANG_INCLUDE_DIR, CLANG_LIBRARY, CLANG_DLL)
+find_path(CLANG_HEADERS NAMES altivec.h HINTS ${CLANG_INCLUDE_PATH})
+
+# Done
+
+mark_as_advanced(CLANG_INCLUDE_DIR CLANG_LIBRARY CLANG_DLL)
 
 if (CLANG_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
@@ -168,9 +173,10 @@ if (CLANG_DEBUG)
     message(STATUS "libclang found")
     message(STATUS "  CLANG_INCLUDE_DIR = ${CLANG_INCLUDE_DIR}")
     message(STATUS "  CLANG_LIBRARY = ${CLANG_LIBRARY}")
+    message(STATUS "  CLANG_BINARY = ${CLANG_BINARY}")
+    message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
     if (WIN32)
       message(STATUS "  CLANG_DLL = ${CLANG_DLL}")
-      message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
     endif ()
   else()
     message(STATUS "libclang not found")

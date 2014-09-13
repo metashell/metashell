@@ -70,6 +70,39 @@ install(TARGETS metashell DESTINATION bin COMPONENT metashell)
 
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
+#########################################
+# Install a custom Clang with Metashell #
+#########################################
+
+if (NOT WIN32)
+  # Clang binary
+  set(MY_CLANG "${CMAKE_CURRENT_BINARY_DIR}/clang_metashell")
+  configure_file("${CLANG_BINARY}" "${MY_CLANG}" COPYONLY)
+  install(
+    FILES "${MY_CLANG}"
+    DESTINATION bin
+    PERMISSIONS
+      OWNER_READ OWNER_EXECUTE
+      GROUP_READ GROUP_EXECUTE
+      WORLD_READ WORLD_EXECUTE
+    COMPONENT clang
+  )
+
+  # Clang headers
+  file(GLOB_RECURSE ABS_PATHS ${CLANG_HEADERS}/*)
+  
+  foreach (P ${ABS_PATHS})
+    file(RELATIVE_PATH REL_PATH ${CLANG_HEADERS} ${P})
+    get_filename_component(DST_DIR "${REL_PATH}" DIRECTORY)
+
+    install(
+      FILES "${CLANG_HEADERS}/${REL_PATH}"
+      DESTINATION "${CLANG_HEADER_INSTALL_PATH}/${DST_DIR}"
+      COMPONENT clang
+    )
+  endforeach ()
+endif ()
+
 ############################################
 # Copy files next to the binary on Windows #
 ############################################
@@ -124,5 +157,8 @@ if (WIN32)
 
   # Headers used by Clang on Windows
   copy_all_files_to_binary_dir("${CLANG_HEADERS}" "clang/include" libclang)
+
+  # clang compiler
+  copy_file_to_binary_dir("${CLANG_BINARY}" "clang/clang.exe" clang)
 endif ()
 

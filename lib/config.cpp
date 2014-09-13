@@ -38,6 +38,22 @@ namespace
       #include "default_clang_search_path.hpp"
     };
 
+  std::string directory_of_file(const std::string& path_)
+  {
+    boost::filesystem::path p(path_);
+    p.remove_filename();
+    return p.string();
+  }
+  
+  std::string clang_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      directory_of_file(env_detector_.path_of_executable())
+      + (env_detector_.on_windows() ? "\\clang\\clang.exe" : "/clang_metashell");
+  }
+
   std::string detect_clang_binary(
     const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
@@ -46,20 +62,32 @@ namespace
   {
     if (user_defined_path_.empty())
     {
-      const std::string clang = env_detector_.search_clang_binary();
+      const std::string clang_metashell =
+        clang_shipped_with_metashell(env_detector_);
 
-      if (clang.empty())
+      if (env_detector_.file_exists(clang_metashell))
       {
-        stderr_ << "Error: clang++ not found. Checked:" << std::endl;
-        std::copy(
-          default_clang_search_path + 1,
-          default_clang_search_path
-            + sizeof(default_clang_search_path) / sizeof(const char*),
-          std::ostream_iterator<std::string>(stderr_, "\n")
-        );
+        return clang_metashell;
       }
+      else
+      {
+        const std::string clang = env_detector_.search_clang_binary();
 
-      return clang;
+        if (clang.empty())
+        {
+          stderr_
+            << "Error: clang++ not found. Checked:" << std::endl
+            << clang_metashell << std::endl;
+          std::copy(
+            default_clang_search_path + 1,
+            default_clang_search_path
+              + sizeof(default_clang_search_path) / sizeof(const char*),
+            std::ostream_iterator<std::string>(stderr_, "\n")
+          );
+        }
+
+        return clang;
+      }
     }
     else if (env_detector_.file_exists(user_defined_path_))
     {
@@ -94,13 +122,6 @@ namespace
       }
     }
     return false;
-  }
-
-  std::string directory_of_file(const std::string& path_)
-  {
-    boost::filesystem::path p(path_);
-    p.remove_filename();
-    return p.string();
   }
 
   std::vector<std::string> clang_sysinclude(
@@ -187,7 +208,10 @@ config metashell::detect_config(
   if (env_detector_.on_windows())
   {
     // To find libclang.dll
-    if (cfg.clang_path.empty())
+    if (
+      cfg.clang_path.empty()
+      || cfg.clang_path == clang_shipped_with_metashell(env_detector_)
+    )
     {
       env_detector_.append_to_path(
         directory_of_file(env_detector_.path_of_executable()) + "\\clang"
