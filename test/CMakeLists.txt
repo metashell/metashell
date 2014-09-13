@@ -61,6 +61,10 @@ if (MSVC)
 endif()
 target_link_libraries(metashell_test ${CLANG_LIBRARY})
 
+if (CLANG_STATIC)
+  target_link_libraries(metashell_test ${ZLIB_LIBRARIES})
+endif()
+
 add_test(metashell_unit_tests metashell_test)
 
 # Code coverage

@@ -70,6 +70,10 @@ metaprograms.
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
     * libclang
+        * Note: you might use a custom Clang build. In that case it is
+          recommended to apply the [Templight patch](
+          http://plc.inf.elte.hu/templight/) on it, since the Metadebugger needs
+          it.
     * Readline (or Libedit)
     * Termcap
     * Boost
@@ -78,12 +82,17 @@ metaprograms.
   libclang is used, Metashell has to add them. You need to provide the system
   include path clang uses to Metashell:
     * `tools/clang_default_path > lib/extra_sysinclude.hpp`
+        * Note: if you use your own Clang build you need to run
+          `tools/clang_default_path --gcc ` _path to `clang++` in your own
+          Clang build_ ` > lib/extra_sysinclude.hpp`
 * Metashell needs the `clang++` compiler to generate precompiled headers. There
   is a default search path Metashell uses at startup to find `clang++`. In case
   it can be found in another directory on your system, you should add that path
   to the default search path: add the path to
   `lib/default_clang_search_path.hpp`. If you don't know where `clang++` on your
   system is, you can use the `which clang++` command to find it.
+    * Note: if you use a custom Clang build, don't forget to add the path to
+      the `clang++` binary in it to this file.
 * In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
@@ -93,6 +102,12 @@ metaprograms.
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
+        * Note: if you use your own Clang build, you need toadd the following
+          arguments to the above command line:
+            * `-DCLANG_INCLUDEDIR=<path to the llvm source tree>/tools/clang/include`
+            * `-DCLANG_LIBRARYDIR=<path to the directory you were running configure or cmake in while building Clang>/Release+Asserts/lib`
+        * Note: if you want to link staticly against libclang, you need to add
+          `-DCLANG_STATIC=true` to the above command line.
     * `make`
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`
@@ -120,6 +135,10 @@ metaprograms.
 * Install the dependent tools and libraries:
     * [CMake](http://cmake.org/)
     * [Clang](http://llvm.org/builds/)
+        * Note: you might use a custom Clang build. In that case it is
+          recommended to apply the [Templight patch](
+          http://plc.inf.elte.hu/templight/) on it, since the Metadebugger needs
+          it.
     * [Boost](http://boost.teeks99.com/)
 * After installing CMake you should get the `cmake` command.
 * Create a `bin` directory in the source tree. Run `cmake` in that directory.

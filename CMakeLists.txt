@@ -104,6 +104,10 @@ endif()
 
 # Clang
 find_package(Clang)
+if (CLANG_STATIC)
+  find_package(ZLIB)
+endif()
+
 
 # Readline
 if (WIN32)

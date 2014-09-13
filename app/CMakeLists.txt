@@ -62,6 +62,10 @@ endif()
 target_link_libraries(metashell ${CLANG_LIBRARY})
 include_directories(${CLANG_INCLUDE_DIR})
 
+if (CLANG_STATIC)
+  target_link_libraries(metashell ${ZLIB_LIBRARIES})
+endif()
+
 install(TARGETS metashell DESTINATION bin COMPONENT metashell)
 
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)

@@ -20,6 +20,7 @@
 #  CLANG_LIBRARYDIR   Set this if the module can not find the Clang
 #                     library
 #  CLANG_DEBUG        Set this for verbose output
+#  CLANG_STATIC       Link staticly against libClang (not supported on Windows)
 #
 # This module will define the following:
 #   CLANG_FOUND
@@ -73,12 +74,64 @@ if (CLANG_DEBUG)
 endif()
 
 if (WIN32)
+  if (CLANG_STATIC)
+    message(FATAL_ERROR "CLANG_STATIC is not supported on Windows")
+  endif()
   # The import library of clang is called libclang.imp instead of libclang.lib
   find_file(CLANG_LIBRARY NAMES libclang.imp HINTS ${CLANG_LIBRARYDIR})
   find_file(CLANG_DLL NAMES libclang.dll HINTS ${CLANG_LIBRARYDIR})
 
 else()
-  find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+  if (CLANG_STATIC)
+    if (CLANG_DEBUG)
+      message(STATUS "Link against libClang staticly")
+    endif()
+    set(N 1)
+    foreach(L
+      libclang.a
+      libclangFrontend.a
+      libclangParse.a
+      libclangSema.a
+      libclangAnalysis.a
+      libclangAST.a
+      libclangEdit.a
+      libclangLex.a
+      libclangBasic.a
+      libclangDriver.a
+      libclangIndex.a
+      libclangFormat.a
+      libclangRewrite.a
+      libclangSerialization.a
+      libclangTooling.a
+      libLLVMBitReader.a
+      libLLVMTransformUtils.a
+      libLLVMCore.a
+      libLLVMMC.a
+      libLLVMMCParser.a
+      libLLVMOption.a
+      libLLVMSupport.a
+      dl
+      tinfo
+    )
+      if (CLANG_DEBUG)
+        message(STATUS "CLANG: searching ${L}")
+      endif()
+      find_library(CLANG_LIBRARY_${N} NAMES ${L} HINTS ${CLANG_LIBRARYDIR})
+      if (CLANG_LIBRARY_${N})
+        if (CLANG_DEBUG)
+          message(STATUS "CLANG: found ${CLANG_LIBRARY_${N}}")
+        endif()
+        list(APPEND CLANG_LIBRARY ${CLANG_LIBRARY_${N}})
+      else()
+        if (CLANG_DEBUG)
+          message(STATUS "CLANG: not found ${CLANG_LIBRARY_${N}}")
+        endif()
+      endif()
+      math(EXPR N "${N} + 1")
+    endforeach()
+  else()
+    find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)
