@@ -93,7 +93,7 @@ if (NOT WIN32)
   
   foreach (P ${ABS_PATHS})
     file(RELATIVE_PATH REL_PATH ${CLANG_HEADERS} ${P})
-    get_filename_component(DST_DIR "${REL_PATH}" DIRECTORY)
+    get_filename_component(DST_DIR "${REL_PATH}" PATH)
 
     install(
       FILES "${CLANG_HEADERS}/${REL_PATH}"
@@ -107,7 +107,7 @@ endif ()
 # Copy files next to the binary on Windows #
 ############################################
 function(copy_file_to_binary_dir SRC_PATH DST_PATH COMPONENT)
-  get_filename_component(DST_DIR "${DST_PATH}" DIRECTORY)
+  get_filename_component(DST_DIR "${DST_PATH}" PATH)
 
   configure_file(
     "${SRC_PATH}"
