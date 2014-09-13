@@ -102,6 +102,22 @@ if (ENABLE_CODE_COVERAGE)
   endif()
 endif()
 
+# The "internal" Clang build
+set(TEMPLIGHT_BUILD "${CMAKE_SOURCE_DIR}/templight/build")
+
+set(
+  CLANG_INCLUDEDIR
+  "${CLANG_INCLUDEDIR};${CMAKE_SOURCE_DIR}/templight/llvm/tools/clang/include"
+)
+set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin")
+set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/bin")
+set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/lib")
+set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/lib")
+
+
+set(CLANG_BINARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin")
+set(CLANG_BINARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/bin")
+
 # Clang
 find_package(Clang)
 if (CLANG_STATIC)

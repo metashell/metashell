@@ -69,57 +69,29 @@ metaprograms.
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
-    * libclang
-        * Note: you might use a custom Clang build. In that case it is
-          recommended to apply the [Templight patch](
-          http://plc.inf.elte.hu/templight/) on it, since the Metadebugger needs
-          it.
     * Readline (or Libedit)
     * Termcap
     * Boost
-* Install CMake
-* In case some elements of the default system include path are missing when
-  libclang is used, Metashell has to add them. You need to provide the system
-  include path clang uses to Metashell:
-    * `tools/clang_default_path > lib/extra_sysinclude.hpp`
-        * Note: if you use your own Clang build you need to run
-          `tools/clang_default_path --gcc ` _path to `clang++` in your own
-          Clang build_ ` > lib/extra_sysinclude.hpp`
-* Metashell needs the `clang++` compiler to generate precompiled headers. There
-  is a default search path Metashell uses at startup to find `clang++`. In case
-  it can be found in another directory on your system, you should add that path
-  to the default search path: add the path to
-  `lib/default_clang_search_path.hpp`. If you don't know where `clang++` on your
-  system is, you can use the `which clang++` command to find it.
-    * Note: if you use a custom Clang build, don't forget to add the path to
-      the `clang++` binary in it to this file.
-* In the source directory run the following commands:
+* Install the dependent tools:
+    * CMake
+    * SVN
+* Get and build Clang with [Templight](http://plc.inf.elte.hu/templight/)
+    * Run `tools/get_templight.sh` in the source directory. This will download,
+      patch and build Clang for you.
+* Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
     * `cmake ..`
-        * Note: on Fedora you need to run `cmake .. -DCLANG_LIBRARYDIR=/usr/lib/llvm`
         * Note: to use
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
-        * Note: if you use your own Clang build, you need toadd the following
-          arguments to the above command line:
-            * `-DCLANG_INCLUDEDIR=<path to the llvm source tree>/tools/clang/include`
-            * `-DCLANG_LIBRARYDIR=<path to the directory you were running configure or cmake in while building Clang>/Release+Asserts/lib`
         * Note: if you want to link staticly against libclang, you need to add
           `-DCLANG_STATIC=true` to the above command line.
     * `make`
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`
     * To package it for OpenSUSE or Fedora run `cpack -G RPM`
-* In case you want to build metashell with a custom clang build:
-    * Let's assume that the clang build is under /llvm/build/Debug+Asserts/
-    * Add the `/llvm/build/Debug+Asserts/bin/clang++` path as the first path in `lib/default_clang_search_path.hpp`
-    * `mkdir bin`
-    * `cd bin`
-    * `cmake .. -DCLANG_LIBRARYDIR=/llvm/build/Debug+Asserts/lib/ -DCLANG_INCLUDEDIR=/llvm/llvm/tools/clang/include/`
-    * `make`
-    * A better way to build metashell with custom clang will be implemented
 * To generate code-coverage statistics for unit tests run the following commands
   in the source directory instead the above ones:
     * `mkdir bin`
@@ -134,29 +106,45 @@ metaprograms.
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools and libraries:
     * [CMake](http://cmake.org/)
-    * [Clang](http://llvm.org/builds/)
         * Note: you might use a custom Clang build. In that case it is
           recommended to apply the [Templight patch](
           http://plc.inf.elte.hu/templight/) on it, since the Metadebugger needs
           it.
     * [Boost](http://boost.teeks99.com/)
-* After installing CMake you should get the `cmake` command.
-* Create a `bin` directory in the source tree. Run `cmake` in that directory.
-* You need to tell CMake where to find the dependent libraries.
-  You need to give CMake the following command-line arguments. When the value
-  contains whitespaces, you can use double quotes. For example
-  `-DCLANG_INCLUDEDIR="C:/Program Files (x86)/LLVM/include"`.
-    * `-DBOOST_ROOT=<path to the Boost library>`
-    * `-DBOOST_LIBRARYDIR=<path to the directory containing the compiled Boost libraries>`
-    * Unless you were using the [snapshot](http://llvm.org/builds/) to install
-      Clang, you need to tell CMake where to find it:
-        * `-DCLANG_INCLUDEDIR=<path to the libClang header>`
-        * `-DCLANG_LIBRARYDIR=<path to the compiled libClang library>` Note that
-          it is called `libclang.imp` and not `libclang.lib`.
-    * `-G "Visual Studio 12 2013"`
-* If CMake can find the dependent libraries, it will generate a solution file
-  for Metashell in the `bin` directory. Open it with Visual Studio 2013 and
-  build it.
+* Download the source code on your Windows host.
+* Fist you need to build Clang with
+  [Templight](http://plc.inf.elte.hu/templight/).
+    * Download the source code on a Linux host and run `tools/get_templight.sh`
+      in the source directory. This will download and patch Clang and zip the
+      patched code for you.
+    * Copy the zip file generated in the previous step
+      (`tools/templight-<revision number>.zip`) onto your Windows host and unzip
+      its content into the `templight` directory of the source code. (So you
+      create a `templight\llvm` directory).
+    * Start a command line on your Windows host and go into the source directory
+    * Run `cd templight`
+    * Run `md build`
+    * Run `cd build`
+    * Run `cmake ..`
+    * Start Visual Studio 2013 and open the generated solution
+      (`templight\build\LLVM.sln`)
+    * In the _BUILD_ menu choose _Configuration Manager..._. As
+      _Active solution configuration:_ choose _Release_ and click on _Close_.
+      This is needed to do a release instead of a debug build of Clang.
+    * In _Solution Explorer_ right-click on _Clang libraries_ and choose
+      _Build_.
+    * In _Solution Explorer_ right-click on _Clang executables_ and choose
+      _Build_.
+    * You can optionally try building the rest of the projects, but Metashell
+      does not need them.
+* Now you can build Metashell
+    * Start a command line on your Windows host and go into the source directory
+    * Run `md bin`
+    * Run `cd bin`
+    * Run `cmake .. -G "Visual Studio 12 2013" -DBOOST_ROOT=<path to your Boost library> -DBOOST_LIBRARYDIR=<path to the directory containing the compiled Boost libraries>`.
+    * If CMake can find the dependent libraries, it will generate a solution
+      file for Metashell in the `bin` directory. Open it with Visual Studio 2013
+      and build it.
 * To generate an installer for Metashell:
     * Install [NSIS](http://nsis.sourceforge.net).
     * Build Metashell following the above instructions (make sure you build the
