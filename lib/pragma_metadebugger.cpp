@@ -51,6 +51,7 @@ void pragma_metadebugger::run(
   }
 
   readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env());
+  mdb_shell.display_splash();
   mdb_shell.run();
 }
 

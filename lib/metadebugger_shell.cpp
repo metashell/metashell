@@ -104,6 +104,12 @@ bool metadebugger_shell::stopped() const {
   return is_stopped;
 }
 
+void metadebugger_shell::display_splash() const {
+  display_info(
+      "For help, type \"help\".\n"
+  );
+}
+
 void metadebugger_shell::line_available(const std::string& original_line) {
 
   std::string line = boost::trim_copy(original_line);

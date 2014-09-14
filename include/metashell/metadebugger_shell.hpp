@@ -55,6 +55,8 @@ public:
 
   std::string prompt() const;
   bool stopped() const;
+
+  void display_splash() const;
   void line_available(const std::string& line);
 
   void command_continue(const std::string& arg);
