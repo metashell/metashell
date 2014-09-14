@@ -21,7 +21,6 @@
 #include <metashell/temporary_file.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
@@ -506,9 +505,10 @@ void metadebugger_shell::display_frame(const metaprogram::frame_t& frame) const 
   if (frame.vertex == mp.get_root_vertex()) {
     display(mp.get_vertex_property(frame.vertex).name + "\n");
   } else {
-    display((boost::format("%1% (%2%)\n") %
-          mp.get_vertex_property(frame.vertex).name %
-          mp.get_edge_property(frame.parent_edge).kind).str());
+    display(
+        highlight_syntax(mp.get_vertex_property(frame.vertex).name) +
+        " (" + to_string(mp.get_edge_property(frame.parent_edge).kind) + ")\n"
+    );
   }
 }
 
@@ -519,7 +519,7 @@ void metadebugger_shell::display_backtrace() const {
   for (const metaprogram::frame_t& frame :
       backtrace | boost::adaptors::reversed)
   {
-    display((boost::format("#%1% ") % i).str());
+    display("#" + std::to_string(i) + " ");
     display_frame(frame);
     ++i;
   }
