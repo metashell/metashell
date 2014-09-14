@@ -77,7 +77,7 @@ void colored_string::print_to_cout(size_type begin, size_type length) const {
       }
       prev_color = color;
     }
-    std::cout << string[i];
+    std::cout << string[begin + i];
   }
   if (prev_color) {
     just::console::reset();
