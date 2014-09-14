@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <string>
 #include <ostream>
 
 namespace metashell {
@@ -34,6 +35,8 @@ enum instantiation_kind {
 };
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
+
+std::string to_string(instantiation_kind kind);
 
 }
 

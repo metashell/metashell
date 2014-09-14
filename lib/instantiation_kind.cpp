@@ -16,6 +16,8 @@
 
 #include <metashell/instantiation_kind.hpp>
 
+#include <sstream>
+
 namespace metashell {
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
@@ -42,6 +44,12 @@ std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
         os << "Memoization"; break;
   }
   return os;
+}
+
+std::string to_string(instantiation_kind kind) {
+  std::stringstream ss;
+  ss << kind;
+  return ss.str();
 }
 
 }
