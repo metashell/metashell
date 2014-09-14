@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <vector>
 #include <string>
 
 namespace metashell {
@@ -30,34 +31,34 @@ enum repeatable_t {
 
 class metadebugger_command {
 public:
+  typedef std::vector<std::string> keys_t;
   typedef void (metadebugger_shell::*function)(const std::string& args);
 
   metadebugger_command() = default;
   metadebugger_command(
-      const std::string& key,
+      const keys_t& key,
       repeatable_t rep,
       function func,
-      const std::string& description);
+      const std::string& usage,
+      const std::string& short_description,
+      const std::string& long_description);
 
-  const std::string& get_key() const;
+  const keys_t& get_keys() const;
   bool is_repeatable() const;
   function get_func() const;
-  const std::string& get_description() const;
+  const std::string& get_usage() const;
+  const std::string& get_short_description() const;
+  const std::string& get_long_description() const;
+  std::string get_full_description() const;
 
 private:
-  std::string key;
+  keys_t keys;
   repeatable_t rep;
   function func;
-  std::string description;
+  std::string usage;
+  std::string short_description;
+  std::string long_description;
 };
-
-bool operator<(
-    const metadebugger_command& lhs,
-    const metadebugger_command& rhs);
-
-bool operator<(
-    const metadebugger_command& lhs,
-    const std::string& rhs);
 
 }
 

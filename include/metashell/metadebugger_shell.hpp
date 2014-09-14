@@ -22,21 +22,21 @@
 #include <boost/optional.hpp>
 
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
 #include <metashell/colored_string.hpp>
+#include <metashell/templight_environment.hpp>
 #include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
 
 class metadebugger_shell {
 public:
-  static metadebugger_command_handler_map::command_map_t
+  static metadebugger_command_handler_map::commands_t
     create_default_command_map();
 
   metadebugger_shell(
       const config& conf,
-      environment& env);
+      const environment& env);
 
   virtual ~metadebugger_shell();
 
@@ -50,6 +50,8 @@ public:
 
   std::string prompt() const;
   bool stopped() const;
+
+  void display_splash() const;
   void line_available(const std::string& line);
 
   void command_continue(const std::string& arg);
@@ -80,8 +82,8 @@ protected:
   void display_current_forwardtrace() const;
   void display_backtrace() const;
 
-  const config& conf;
-  environment& env;
+  config conf;
+  templight_environment env;
   metadebugger_command_handler_map command_handler;
 
   metaprogram mp;

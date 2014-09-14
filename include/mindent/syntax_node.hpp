@@ -118,13 +118,13 @@ namespace mindent
     {
       return _name.end();
     }
-    
+
     /// Returns true when the node represents a template class, false otherwise.
     bool is_template() const
     {
       return _template;
     }
-    
+
     /**
      * The < token of the template type.
      *

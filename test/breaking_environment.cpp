@@ -58,7 +58,7 @@ breaking_environment::breaking_environment(const config& cfg_) :
 void breaking_environment::append(const std::string& s_)
 {
   throw_(_append_throw);
-  
+
   bool_override_guard g(_in_append);
   in_memory_environment::append(s_);
 }

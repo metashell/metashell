@@ -30,7 +30,7 @@ namespace metashell
   private:
     std::string _path;
   };
-  
+
   path_builder operator/(const path_builder& a_, const std::string& b_);
 }
 

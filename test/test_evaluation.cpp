@@ -312,7 +312,7 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   breaking_environment* e = new breaking_environment(cfg);
   test_shell sh(cfg, e);
   e->append_throw_from_now();
-  
+
   sh.store_in_buffer("typedef int foo;");
 
   JUST_ASSERT_NOT_EQUAL("", sh.error());

@@ -38,7 +38,7 @@ namespace just
         return GetEnvironmentVariable(name_.c_str(), NULL, 0);
       }
 #endif
-      
+
       inline std::string prepend_to_path(
         const std::string& item_,
         const std::string& path_

@@ -47,7 +47,7 @@ just::process::output clang_binary::run(
 ) const
 {
   std::vector<std::string> cmd(args_.size() + 1);
-  
+
   std::vector<std::string>::iterator i = cmd.begin();
   *i = quote_argument(_path);
   ++i;

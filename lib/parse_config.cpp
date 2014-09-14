@@ -58,15 +58,14 @@ namespace
   )
   {
     using boost::algorithm::join;
-    using std::endl;
 
     const std::string args = h_.arguments();
 
     out_
-      << "* `#msh " << join(name_, " ")
-      << (args.empty() ? "" : " ") << args << "` <br /> <br /> "
-      << h_.description() << endl
-      << endl;
+      << "* __`#msh " << join(name_, " ")
+      << (args.empty() ? "" : " ") << args << "`__ <br />\n"
+      << h_.description() << "\n"
+      << std::endl;
   }
 
   void show_pragma_help()
@@ -83,13 +82,20 @@ namespace
 
   void show_mdb_help()
   {
-    metadebugger_command_handler_map::command_map_t
-      command_map = metadebugger_shell::create_default_command_map();
-    for (const metadebugger_command& cmd : command_map)
+    using boost::algorithm::join;
+
+    metadebugger_command_handler_map::commands_t
+      commands = metadebugger_shell::create_default_command_map();
+    for (const metadebugger_command& cmd : commands)
     {
       std::cout
-        << "* `" << cmd.get_key() << "` <br /> <br /> "
-        << cmd.get_description() << '\n' << std::endl;
+        << "* __`" << join(cmd.get_keys(), "|") << " "
+        << cmd.get_usage() <<  "`__ <br />\n"
+        << cmd.get_short_description();
+      if (!cmd.get_long_description().empty()) {
+        std::cout << " <br />" << '\n' << cmd.get_long_description();
+      }
+      std::cout << '\n' << std::endl;
     }
   }
 }

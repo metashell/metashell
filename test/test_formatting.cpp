@@ -17,6 +17,8 @@
 #include "util.hpp"
 #include "test_shell.hpp"
 
+#include <metashell/path_builder.hpp>
+
 #include <just/test.hpp>
 
 using namespace metashell;
@@ -89,8 +91,11 @@ JUST_TEST_CASE(test_formatting_disabled)
 
 JUST_TEST_CASE(test_nested_mpl_vector_formatting)
 {
+  const std::string vector_hpp =
+    metashell::path_builder() / "metashell" / "formatter" / "vector.hpp";
+
   test_shell sh;
-  sh.line_available("#include <metashell/formatter/vector.hpp>");
+  sh.line_available("#include <" + vector_hpp + ">");
   sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
 
   JUST_ASSERT_EQUAL("", sh.error());

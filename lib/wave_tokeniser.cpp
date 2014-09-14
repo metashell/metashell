@@ -294,7 +294,7 @@ namespace
       }
     }
 
-    virtual bool has_further_tokens() const 
+    virtual bool has_further_tokens() const
     {
       try
       {

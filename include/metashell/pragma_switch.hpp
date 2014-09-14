@@ -49,7 +49,7 @@ namespace metashell
     std::function<bool()> _query;
     std::function<void(bool)> _update;
     std::string _name;
-    
+
     shell& _shell;
   };
 }

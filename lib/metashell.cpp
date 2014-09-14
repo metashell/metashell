@@ -108,7 +108,7 @@ result metashell::validate_code(
   }
 }
 
-result metashell::eval_tmp(
+result metashell::eval_tmp_formatted(
   const environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
@@ -147,6 +147,38 @@ result metashell::eval_tmp(
       config_.verbose ? final_pair.second : ""
     );
 }
+
+result metashell::eval_tmp_unformatted(
+  const environment& env_,
+  const std::string& tmp_exp_,
+  const config& config_,
+  const std::string& input_filename_
+)
+{
+  using std::string;
+  using std::pair;
+
+  typedef std::unique_ptr<cxtranslationunit> tup;
+
+  cxindex index;
+
+  pair<tup, string> final_pair =
+    parse_expr(index, input_filename_, env_, tmp_exp_);
+
+  get_type_of_variable v(var);
+  final_pair.first->visit_nodes(
+    [&v](cxcursor cursor_, cxcursor) { v(cursor_); }
+  );
+
+  return
+    result(
+      v.result(),
+      final_pair.first->errors_begin(),
+      final_pair.first->errors_end(),
+      config_.verbose ? final_pair.second : ""
+    );
+}
+
 
 namespace
 {
@@ -219,7 +251,7 @@ void metashell::code_complete(
 
   set<string> c;
   cxindex().parse_code(src, env_)->code_complete(c);
-  
+
   out_.clear();
   const int prefix_len = completion_start.second.length();
   for (const string& s : c)

@@ -1,5 +1,3 @@
-#ifndef METASHELL_METADEBUGGER_TEST_SHELL_HPP
-#define METASHELL_METADEBUGGER_TEST_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,35 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <vector>
-#include <memory>
+#include <metashell/in_memory_environment.hpp>
 
-#include <metashell/shell.hpp>
-#include <metashell/metadebugger_shell.hpp>
+namespace metashell {
 
-class metadebugger_test_shell : public metashell::metadebugger_shell {
+class templight_environment : public in_memory_environment {
 public:
-  metadebugger_test_shell(const std::string& line = "");
+  templight_environment(
+    const std::string& internal_dir,
+    const config& config
+  );
 
-  typedef std::vector<std::string> history_t;
-
-  virtual void run();
-
-  virtual void add_history(const std::string& str);
-
-  virtual void display(const metashell::colored_string& cs) const;
-
-  virtual unsigned width() const;
-
-  const std::string& get_output() const;
-  const history_t& get_history() const;
-
-  void clear_output();
-  void clear_history();
+  // This should be called before the first evaluation
+  // with this environment
+  void set_xml_location(const std::string& xml_location);
 
 private:
-  history_t history;
-  mutable std::string output;
+  // Indexes into clang_arguments()
+  std::size_t xml_path_index;
 };
 
-#endif
+}

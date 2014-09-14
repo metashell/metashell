@@ -29,7 +29,7 @@ public:
   virtual std::string search_clang_binary();
   void search_clang_binary_returns(const std::string& result_);
   int search_clang_binary_called_times() const;
-  
+
   virtual bool file_exists(const std::string& path_);
   void file_exists_returns(bool result_);
   int file_exists_called_times() const;

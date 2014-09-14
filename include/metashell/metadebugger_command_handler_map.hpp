@@ -20,8 +20,10 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <map>
 
 #include <boost/optional.hpp>
+#include <boost/container/flat_map.hpp>
 
 #include <metashell/metadebugger_command.hpp>
 
@@ -29,16 +31,29 @@ namespace metashell {
 
 class metadebugger_command_handler_map {
 public:
-  typedef std::vector<metadebugger_command> command_map_t;
+  typedef std::vector<metadebugger_command> commands_t;
 
-  metadebugger_command_handler_map(const command_map_t& command_map);
+  metadebugger_command_handler_map(const commands_t& commands);
 
   // <command, args>
   boost::optional<std::tuple<metadebugger_command, std::string>>
     get_command_for_line(const std::string& line) const;
 
+  const commands_t& get_commands() const;
+
 private:
-  command_map_t command_map;
+#ifdef _WIN32
+  // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)
+  typedef std::map<std::string, std::size_t> key_command_map_t;
+#else
+  typedef boost::container::flat_map<std::string, std::size_t>
+    key_command_map_t;
+#endif
+
+  commands_t commands;
+
+  // This map's key indexes into commands
+  key_command_map_t key_command_map;
 };
 
 }

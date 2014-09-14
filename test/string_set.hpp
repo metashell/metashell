@@ -38,7 +38,7 @@ private:
   typedef std::set<std::string> container;
 public:
   string_set(const metashell::shell& shell_, const std::string& s_);
-  
+
   #ifdef METASHELL_STRING_SET_CONST
     #error METASHELL_STRING_SET_CONST already defined
   #endif

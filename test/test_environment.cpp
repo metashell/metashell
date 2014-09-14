@@ -30,7 +30,7 @@ namespace
   void test_append_text_to_environment(environment& env_)
   {
     env_.append("#include <foo/bar.hpp>\n");
-    
+
     JUST_ASSERT_EQUAL("#include <foo/bar.hpp>\n", env_.get_all());
   }
 }
@@ -40,7 +40,7 @@ JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
   const config cfg = empty_config();
 
   in_memory_environment env("foo", cfg);
-  
+
   JUST_ASSERT_EQUAL("", env.get_all());
 }
 
@@ -59,7 +59,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg);
-  
+
   JUST_ASSERT_EQUAL("", env.get_all());
 }
 
@@ -69,7 +69,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg);
-  
+
   test_append_text_to_environment(env);
 }
 

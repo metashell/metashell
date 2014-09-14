@@ -29,7 +29,14 @@
 
 namespace metashell
 {
-  result eval_tmp(
+  result eval_tmp_unformatted(
+    const environment& env_,
+    const std::string& tmp_exp_,
+    const config& config_,
+    const std::string& input_filename_
+  );
+
+  result eval_tmp_formatted(
     const environment& env_,
     const std::string& tmp_exp_,
     const config& config_,

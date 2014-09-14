@@ -29,16 +29,6 @@
 #include <boost/spirit/home/phoenix/core/reference.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
-// a min macro is defined in minwindef.h (Visual C++ 2013)
-#ifdef min
-#  undef min
-#endif
-
-// a max macro is defined in minwindef.h (Visual C++ 2013)
-#ifdef max
-#  undef max
-#endif
-
 namespace metashell {
 
 const std::vector<color> metadebugger_shell::colors =
@@ -51,44 +41,58 @@ const std::vector<color> metadebugger_shell::colors =
     color::cyan
   };
 
-metadebugger_command_handler_map::command_map_t
+metadebugger_command_handler_map::commands_t
   metadebugger_shell::create_default_command_map() {
 
-  metadebugger_command_handler_map::command_map_t res =
+  metadebugger_command_handler_map::commands_t res =
     {
-      {"continue", repeatable, &metadebugger_shell::command_continue,
-        "Continue program being debugged, until breakpoint or end of program."},
-      {"step", repeatable, &metadebugger_shell::command_step,
-        "Step the program one instantiation. Usage: step [over] [count]"},
-      {"evaluate", non_repeatable, &metadebugger_shell::command_evaluate,
-        "Evaluate and start debugging new metaprogram."},
-      {"forwardtrace", non_repeatable, &metadebugger_shell::command_forwardtrace,
-        "Print forwardtrace from the current point."},
-      {"ft", non_repeatable, &metadebugger_shell::command_forwardtrace,
-        "Alias for forwardtrace."},
-      {"backtrace", non_repeatable, &metadebugger_shell::command_backtrace,
-        "Print backtrace from the current point."},
-      {"bt", non_repeatable, &metadebugger_shell::command_backtrace,
-        "Alias for backtrace."},
-      {"break", non_repeatable, &metadebugger_shell::command_break,
-        "Add new breakpoint. Usage: break [breakpoint]"},
-      {"help", non_repeatable, &metadebugger_shell::command_help,
-        "Show help for commands. Usage: help [command]"},
-      {"quit", non_repeatable, &metadebugger_shell::command_quit,
-        "Quit metadebugger."}
+      {{"continue"}, repeatable, &metadebugger_shell::command_continue,
+        "",
+        "Continue program being debugged.",
+        "The program is continued until breakpoint or end of program."},
+      {{"step"}, repeatable, &metadebugger_shell::command_step,
+        "[over] [count]",
+        "Step the program one instantiation.",
+        ""},
+      {{"evaluate"}, non_repeatable, &metadebugger_shell::command_evaluate,
+        "[type]",
+        "Evaluate and start debugging a new metaprogram.",
+        ""},
+      {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
+        "",
+        "Print forwardtrace from the current point.",
+        ""},
+      {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
+        "",
+        "Print backtrace from the current point.",
+        ""},
+      {{"break"}, non_repeatable, &metadebugger_shell::command_break,
+        "[breakpoint]",
+        "Add new breakpoint.",
+        ""},
+      {{"help"}, non_repeatable, &metadebugger_shell::command_help,
+        "[command]",
+        "Show help for commands.",
+        "If no [command] is specified, show short help for all avaliable commands."},
+      {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
+        "",
+        "Quit metadebugger.",
+        ""}
     };
   return res;
 }
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
-    environment& env) :
+    const environment& env_arg) :
   conf(conf),
-  env(env),
+  env("__mdb_internal", conf),
   command_handler(create_default_command_map()),
   mp(metaprogram::create_empty_finished()),
   is_stopped(false)
-{}
+{
+  env.append(env_arg.get_all());
+}
 
 metadebugger_shell::~metadebugger_shell() {}
 
@@ -98,6 +102,12 @@ std::string metadebugger_shell::prompt() const {
 
 bool metadebugger_shell::stopped() const {
   return is_stopped;
+}
+
+void metadebugger_shell::display_splash() const {
+  display_info(
+      "For help, type \"help\".\n"
+  );
 }
 
 void metadebugger_shell::line_available(const std::string& original_line) {
@@ -230,11 +240,28 @@ void metadebugger_shell::command_break(const std::string& arg) {
 }
 
 void metadebugger_shell::command_help(const std::string& arg) {
+  if (arg.empty()) {
+    display_info(
+        "List of available commands:\n\n");
+    for (const metadebugger_command& cmd : command_handler.get_commands()) {
+      display_info(
+          cmd.get_keys().front() + " -- " +
+          cmd.get_short_description() + "\n");
+    }
+    display_info(
+        "\n"
+        "Type \"help\" followed by a command name for more information.\n"
+        "Command name abbreviations are allowed if unambiguous.\n");
+    return;
+  }
+
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
     display_error("Command not found\n");
     return;
   }
+
+  using boost::algorithm::join;
 
   metadebugger_command cmd;
   std::string command_args;
@@ -245,7 +272,9 @@ void metadebugger_shell::command_help(const std::string& arg) {
     return;
   }
 
-  display_info(cmd.get_key() + ": " + cmd.get_description() + "\n");
+  display_info(
+      join(cmd.get_keys(), "|") + " " + cmd.get_usage() + "\n" +
+      cmd.get_full_description() + "\n");
 }
 
 void metadebugger_shell::command_quit(const std::string& arg) {
@@ -259,26 +288,17 @@ void metadebugger_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
+  const std::string& xml_path = templight_xml_file.get_path().string();
 
-  std::vector<std::string>& clang_args = env.clang_arguments();
-
-  clang_args.push_back("-templight");
-  clang_args.push_back("-templight-output");
-  clang_args.push_back(templight_xml_file.get_path().string());
-  clang_args.push_back("-templight-format");
-  clang_args.push_back("xml");
+  env.set_xml_location(xml_path);
 
   run_metaprogram(str);
 
-  //TODO move this to a destructor. run_metaprogram might throw
-  clang_args.erase(clang_args.end() - 5, clang_args.end());
-
-  mp = metaprogram::create_from_xml_file(
-      templight_xml_file.get_path().string());
+  mp = metaprogram::create_from_xml_file(xml_path);
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
-  result res = eval_tmp(env, str, conf, "<mdb-stdin>");
+  result res = eval_tmp_unformatted(env, str, conf, "<mdb-stdin>");
 
   if (!res.info.empty()) {
     display_info(res.info);

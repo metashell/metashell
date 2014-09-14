@@ -18,54 +18,59 @@
 
 #include <just/test.hpp>
 
+#include "util.hpp"
+
 using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 {
-  metadebugger_command x("asdf", repeatable, nullptr, "fdsa");
+  metadebugger_command x({"asdf"}, repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT_EQUAL(x.get_key(), "asdf");
+  JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
 }
 
 JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 {
-  metadebugger_command x("asdf", non_repeatable, nullptr, "fdsa");
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT_EQUAL(x.get_key(), "asdf");
+  JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(!x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
 }
 
-JUST_TEST_CASE(test_mdb_command_comparsion_with_mdb_command_1)
+JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 {
-  metadebugger_command x("aaaa", non_repeatable, nullptr, ""),
-                       y("bbbb", non_repeatable, nullptr, "");
+  metadebugger_command x({"asdf", "xxx"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
 
-  JUST_ASSERT(x < y);
-  JUST_ASSERT(!(y < x));
+  JUST_ASSERT(equal(x.get_keys(), {"asdf", "xxx"}));
+  JUST_ASSERT(!x.is_repeatable());
+  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
 }
 
-JUST_TEST_CASE(test_mdb_command_comparsion_with_mdb_command_2)
+JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
 {
-  metadebugger_command x("aaaa", non_repeatable, nullptr, ""),
-                       y("aa", non_repeatable, nullptr, "");
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "");
 
-  JUST_ASSERT(y < x);
-  JUST_ASSERT(!(x < y));
+  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "");
+  JUST_ASSERT_EQUAL(x.get_full_description(), "fd");
 }
 
-JUST_TEST_CASE(test_mdb_command_comparsion_with_string_1)
+JUST_TEST_CASE(test_mdb_command_full_description_non_empty_long_description)
 {
-  metadebugger_command x("aaaa", non_repeatable, nullptr, "");
+  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
 
-  JUST_ASSERT(x < "bbbb");
+  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
+  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
+  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
+  JUST_ASSERT_EQUAL(x.get_full_description(), "fd\nxx");
 }
 
-JUST_TEST_CASE(test_mdb_command_comparsion_with_string_2)
-{
-  metadebugger_command x("aaaa", non_repeatable, nullptr, "");
-
-  JUST_ASSERT(!(x < "aa"));
-}

@@ -19,14 +19,17 @@
 #                     headers
 #  CLANG_LIBRARYDIR   Set this if the module can not find the Clang
 #                     library
+#  CLANG_BINARYDIR    Set this if the module can not find the clang binary
 #  CLANG_DEBUG        Set this for verbose output
+#  CLANG_STATIC       Link staticly against libClang (not supported on Windows)
 #
 # This module will define the following:
 #   CLANG_FOUND
 #   CLANG_INCLUDE_DIR
 #   CLANG_LIBRARY
 #   CLANG_DLL (only on Windows)
-#   CLANG_HEADERS (the path to the headers used by clang. Only on Windows)
+#   CLANG_HEADERS (the path to the headers used by clang)
+#   CLANG_BINARY
 
 if (NOT $ENV{CLANG_INCLUDEDIR} STREQUAL "" )
   set(CLANG_INCLUDEDIR $ENV{CLANG_INCLUDEDIR})
@@ -73,12 +76,64 @@ if (CLANG_DEBUG)
 endif()
 
 if (WIN32)
+  if (CLANG_STATIC)
+    message(FATAL_ERROR "CLANG_STATIC is not supported on Windows")
+  endif()
   # The import library of clang is called libclang.imp instead of libclang.lib
   find_file(CLANG_LIBRARY NAMES libclang.imp HINTS ${CLANG_LIBRARYDIR})
   find_file(CLANG_DLL NAMES libclang.dll HINTS ${CLANG_LIBRARYDIR})
 
 else()
-  find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+  if (CLANG_STATIC)
+    if (CLANG_DEBUG)
+      message(STATUS "Link against libClang staticly")
+    endif()
+    set(N 1)
+    foreach(L
+      libclang.a
+      libclangFrontend.a
+      libclangParse.a
+      libclangSema.a
+      libclangAnalysis.a
+      libclangAST.a
+      libclangEdit.a
+      libclangLex.a
+      libclangBasic.a
+      libclangDriver.a
+      libclangIndex.a
+      libclangFormat.a
+      libclangRewrite.a
+      libclangSerialization.a
+      libclangTooling.a
+      libLLVMBitReader.a
+      libLLVMTransformUtils.a
+      libLLVMCore.a
+      libLLVMMC.a
+      libLLVMMCParser.a
+      libLLVMOption.a
+      libLLVMSupport.a
+      dl
+      tinfo
+    )
+      if (CLANG_DEBUG)
+        message(STATUS "CLANG: searching ${L}")
+      endif()
+      find_library(CLANG_LIBRARY_${N} NAMES ${L} HINTS ${CLANG_LIBRARYDIR})
+      if (CLANG_LIBRARY_${N})
+        if (CLANG_DEBUG)
+          message(STATUS "CLANG: found ${CLANG_LIBRARY_${N}}")
+        endif()
+        list(APPEND CLANG_LIBRARY ${CLANG_LIBRARY_${N}})
+      else()
+        if (CLANG_DEBUG)
+          message(STATUS "CLANG: not found ${CLANG_LIBRARY_${N}}")
+        endif()
+      endif()
+      math(EXPR N "${N} + 1")
+    endforeach()
+  else()
+    find_library(CLANG_LIBRARY NAMES clang HINTS ${CLANG_LIBRARYDIR})
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -88,26 +143,29 @@ find_package_handle_standard_args(
   CLANG DEFAULT_MSG CLANG_LIBRARY CLANG_INCLUDE_DIR
 )
 
-# The standard headers on Windows
+# The clang binary
 if (WIN32)
-  set(CLANG_HEADER_ROOT ${CLANG_INCLUDE_DIR}/../lib/clang)
-  file(
-    GLOB
-    CLANG_HEADER_DIRS
-    RELATIVE ${CLANG_HEADER_ROOT}
-    ${CLANG_HEADER_ROOT}/*
-  )
-  list(SORT CLANG_HEADER_DIRS)
-  list(REVERSE CLANG_HEADER_DIRS)
-  list(GET CLANG_HEADER_DIRS 0 CLANG_HEADER_GREATEST_VERSION)
+  set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${CLANG_LIBRARYDIR}")
+endif ()
+find_program(CLANG_BINARY clang HINTS ${CLANG_BINARYDIR})
 
-  set(
-    CLANG_HEADERS
-    "${CLANG_HEADER_ROOT}/${CLANG_HEADER_GREATEST_VERSION}/include"
-  )
-endif()
+# The standard Clang header files
+file(WRITE "${PROJECT_BINARY_DIR}/empty.hpp" "")
+execute_process(
+  COMMAND ${CLANG_BINARY} -v -xc++ "${PROJECT_BINARY_DIR}/empty.hpp"
+  ERROR_VARIABLE CLANG_OUTPUT
+)
+string(REGEX MATCHALL "\n[ ][^\r\n\"]*\n" LINES "${CLANG_OUTPUT}")
+foreach (L ${LINES})
+  string(STRIP "${L}" SL)
+  list(APPEND CLANG_INCLUDE_PATH ${SL})
+endforeach()
 
-mark_as_advanced(CLANG_INCLUDE_DIR, CLANG_LIBRARY, CLANG_DLL)
+find_path(CLANG_HEADERS NAMES altivec.h HINTS ${CLANG_INCLUDE_PATH})
+
+# Done
+
+mark_as_advanced(CLANG_INCLUDE_DIR CLANG_LIBRARY CLANG_DLL)
 
 if (CLANG_DEBUG)
   message(STATUS "[${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}]")
@@ -115,9 +173,10 @@ if (CLANG_DEBUG)
     message(STATUS "libclang found")
     message(STATUS "  CLANG_INCLUDE_DIR = ${CLANG_INCLUDE_DIR}")
     message(STATUS "  CLANG_LIBRARY = ${CLANG_LIBRARY}")
+    message(STATUS "  CLANG_BINARY = ${CLANG_BINARY}")
+    message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
     if (WIN32)
       message(STATUS "  CLANG_DLL = ${CLANG_DLL}")
-      message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
     endif ()
   else()
     message(STATUS "libclang not found")

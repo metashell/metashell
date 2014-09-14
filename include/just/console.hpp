@@ -25,7 +25,7 @@ namespace just
       public:
         bool operator==(color c_) const { return _id == c_._id; }
         bool operator!=(color c_) const { return !(*this == c_); }
-  
+
         static const color black;
         static const color red;
         static const color bright_red;
@@ -43,10 +43,10 @@ namespace just
         static const color white;
       private:
         color(int id_) : _id(id_) {}
-  
+
         int _id;
       };
-  
+
       template <class T> const color<T> color<T>::black(0);
       template <class T> const color<T> color<T>::red(1);
       template <class T> const color<T> color<T>::bright_red(2);
@@ -62,7 +62,7 @@ namespace just
       template <class T> const color<T> color<T>::bright_cyan(12);
       template <class T> const color<T> color<T>::gray(13);
       template <class T> const color<T> color<T>::white(14);
-  
+
       template <class T>
       std::ostream& operator<<(std::ostream& o_, color<T> c_)
       {
@@ -82,13 +82,13 @@ namespace just
         else if (c_ == color<T>::bright_cyan)    { o_ << "bright_cyan"; }
         else if (c_ == color<T>::white)          { o_ << "white"; }
         else { assert(!"Invalid color value"); }
-  
+
         return o_;
       }
     }
-  
+
     typedef impl::color<void> color;
-  
+
 #ifdef _WIN32
     inline void text_color(color c_)
     {
@@ -161,15 +161,15 @@ namespace just
       {
         assert(!"Invalid color value");
       }
-  
+
       SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c);
     }
-  
+
     inline void reset()
     {
       text_color(color::gray);
     }
-  
+
 #else
     inline void text_color(color c_)
     {
@@ -190,7 +190,7 @@ namespace just
       else if (c_ == color::white)          { std::cout << "\033[1;37m"; }
       else { assert(!"Invalid color value"); }
     }
-  
+
     inline void reset()
     {
       std::cout << "\033[0m";

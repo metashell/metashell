@@ -20,15 +20,18 @@
 namespace metashell {
 
 metadebugger_command::metadebugger_command(
-    const std::string& key,
+    const keys_t& keys,
     repeatable_t rep,
     function func,
-    const std::string& description) :
-  key(key), rep(rep), func(func), description(description)
+    const std::string& usage,
+    const std::string& short_description,
+    const std::string& long_description) :
+  keys(keys), rep(rep), func(func), usage(usage),
+  short_description(short_description), long_description(long_description)
 {}
 
-const std::string& metadebugger_command::get_key() const {
-  return key;
+const metadebugger_command::keys_t& metadebugger_command::get_keys() const {
+  return keys;
 }
 
 bool metadebugger_command::is_repeatable() const {
@@ -39,22 +42,23 @@ metadebugger_command::function metadebugger_command::get_func() const {
   return func;
 }
 
-const std::string& metadebugger_command::get_description() const {
-  return description;
+const std::string& metadebugger_command::get_usage() const {
+  return usage;
 }
 
-bool operator<(
-    const metadebugger_command& lhs,
-    const metadebugger_command& rhs)
-{
-  return lhs.get_key() < rhs.get_key();
+const std::string& metadebugger_command::get_short_description() const {
+  return short_description;
 }
 
-bool operator<(
-    const metadebugger_command& lhs,
-    const std::string& rhs)
-{
-  return lhs.get_key() < rhs;
+const std::string& metadebugger_command::get_long_description() const {
+  return long_description;
+}
+
+std::string metadebugger_command::get_full_description() const {
+  if (long_description.empty()) {
+    return short_description;
+  }
+  return short_description + "\n" + long_description;
 }
 
 }

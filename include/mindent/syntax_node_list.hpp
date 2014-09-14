@@ -13,7 +13,7 @@ namespace mindent
 {
   template <class TokenType>
   class syntax_node;
-  
+
   /**
    * @brief Nested types in an angle-bracket expression
    *

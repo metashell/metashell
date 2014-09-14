@@ -24,8 +24,6 @@
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
-#include "exception.hpp"
-
 namespace metashell {
 
 metaprogram::metaprogram() {

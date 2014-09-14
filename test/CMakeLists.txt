@@ -19,6 +19,9 @@ add_executable(metashell_test ${SOURCES})
 
 target_link_libraries(metashell_test metashell_lib)
 
+# Boost for the unit tests
+add_definitions( -DBOOST_INCLUDE_PATH=\"${Boost_INCLUDE_DIR}\" )
+
 # Wave
 target_link_libraries(metashell_test
   ${Boost_SYSTEM_LIBRARIES}
@@ -60,6 +63,10 @@ if (MSVC)
   add_definitions(-DWINDOWS_HEADERS="${CMAKE_SOURCE_DIR}/windows_headers")
 endif()
 target_link_libraries(metashell_test ${CLANG_LIBRARY})
+
+if (CLANG_STATIC)
+  target_link_libraries(metashell_test ${ZLIB_LIBRARIES})
+endif()
 
 add_test(metashell_unit_tests metashell_test)
 

@@ -112,7 +112,7 @@ namespace just
           );
       }
 #endif
-    
+
       /*
        * fd_t
        */
@@ -121,7 +121,7 @@ namespace just
 #else
         typedef int fd_t;
 #endif
-      
+
       inline fd_t invalid_fd()
       {
 #ifdef _WIN32
@@ -203,7 +203,7 @@ namespace just
           dup2(_fd, fd_);
         }
 #endif
-        
+
 #ifdef _WIN32
         fd_t copy_handle() const { return make_inheritable_copy(_fd); }
 #endif
@@ -494,17 +494,17 @@ namespace just
       using std::vector;
       using std::transform;
       using std::string;
-  
+
       assert(!cmd_.empty());
-  
+
       vector<const char*> cmd(cmd_.size() + 1, 0);
       transform(cmd_.begin(), cmd_.end(), cmd.begin(), impl::c_str);
-  
+
       impl::pipe standard_input;
       impl::pipe standard_output;
       impl::pipe standard_error;
       impl::pipe error_reporting;
-  
+
       const pid_t pid = fork();
       switch (pid)
       {
@@ -516,11 +516,11 @@ namespace just
         standard_error.input.close();
         error_reporting.input.close();
         error_reporting.output.close_on_exec();
-  
+
         standard_input.input.use_as(STDIN_FILENO);
         standard_output.output.use_as(STDOUT_FILENO);
         standard_error.output.use_as(STDERR_FILENO);
-  
+
         execv(cmd[0], const_cast<char*const*>(&cmd[0]));
         {
           const int err = errno;
@@ -542,15 +542,15 @@ namespace just
         standard_input.input.close();
         standard_input.output.write(input_);
         standard_input.output.close();
-  
+
         standard_output.output.close();
         standard_error.output.close();
-  
+
         error_reporting.output.close();
-  
+
         int status;
         waitpid(pid, &status, 0);
-  
+
         const std::string err = error_reporting.input.read();
         if (err.empty())
         {

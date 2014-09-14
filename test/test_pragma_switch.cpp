@@ -49,7 +49,7 @@ namespace
         sh
       );
     run(p, arg_);
-  
+
     JUST_ASSERT(was_called);
     JUST_ASSERT_EQUAL(ExpectedResult, arg);
   }

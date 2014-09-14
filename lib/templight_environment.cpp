@@ -1,5 +1,3 @@
-#ifndef METASHELL_METADEBUGGER_TEST_SHELL_HPP
-#define METASHELL_METADEBUGGER_TEST_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,35 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <vector>
-#include <memory>
+#include <metashell/templight_environment.hpp>
 
-#include <metashell/shell.hpp>
-#include <metashell/metadebugger_shell.hpp>
+namespace metashell {
 
-class metadebugger_test_shell : public metashell::metadebugger_shell {
-public:
-  metadebugger_test_shell(const std::string& line = "");
+templight_environment::templight_environment(
+  const std::string& internal_dir,
+  const config& config
+) : in_memory_environment(internal_dir, config)
+{
+  clang_arguments().push_back("-templight");
+  clang_arguments().push_back("-templight-format");
+  clang_arguments().push_back("xml");
+  clang_arguments().push_back("-templight-output");
+  clang_arguments().push_back("TEMPLIGHT_XML_LOCATION_IS_NOT_SET");
+  xml_path_index = clang_arguments().size() - 1;
+}
 
-  typedef std::vector<std::string> history_t;
+void templight_environment::set_xml_location(const std::string& xml_location) {
+  clang_arguments()[xml_path_index] = xml_location;
+}
 
-  virtual void run();
-
-  virtual void add_history(const std::string& str);
-
-  virtual void display(const metashell::colored_string& cs) const;
-
-  virtual unsigned width() const;
-
-  const std::string& get_output() const;
-  const history_t& get_history() const;
-
-  void clear_output();
-  void clear_history();
-
-private:
-  history_t history;
-  mutable std::string output;
-};
-
-#endif
+}

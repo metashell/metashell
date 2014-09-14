@@ -92,7 +92,7 @@ namespace
 
         "template <class T> "
         "typename T::tag* tag_of(::metashell::impl::wrap<T>); "
-        
+
         "void* tag_of(...); "
 
         "template <class T> "
@@ -101,12 +101,12 @@ namespace
         "template <class T> "
         "struct remove_ptr<T*> { typedef T type; }; "
       "} "
-      
+
       "template <class Tag> "
       "struct format_impl "
       "{ "
         "typedef format_impl type; "
-        
+
         "template <class T> "
         "struct apply { typedef T type; }; "
       "}; "
@@ -348,11 +348,6 @@ void shell::using_precompiled_headers(bool enabled_)
   rebuild_environment();
 }
 
-environment& shell::env()
-{
-  return *_env;
-}
-
 const environment& shell::env() const
 {
   return *_env;
@@ -419,7 +414,7 @@ void shell::display_environment_stack_size()
 
 void shell::run_metaprogram(const std::string& s_)
 {
-  display(eval_tmp(*_env, s_, _config, input_filename()), *this);
+  display(eval_tmp_formatted(*_env, s_, _config, input_filename()), *this);
 }
 
 void shell::reset_environment()
