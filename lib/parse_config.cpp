@@ -89,7 +89,8 @@ namespace
     for (const metadebugger_command& cmd : commands)
     {
       std::cout
-        << "* __`" << join(cmd.get_keys(), "|") << "`__ <br />\n"
+        << "* __`" << join(cmd.get_keys(), "|") << " "
+        << cmd.get_usage() <<  "`__ <br />\n"
         << cmd.get_short_description();
       if (!cmd.get_long_description().empty()) {
         std::cout << " <br />" << '\n' << cmd.get_long_description();

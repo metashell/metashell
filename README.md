@@ -745,33 +745,29 @@ fib<5>
 ### Command reference
 
 <!-- mdb_info -->
-* __`continue`__ <br />
+* __`continue `__ <br />
 Continue program being debugged. <br />
 The program is continued until breakpoint or end of program.
 
-* __`step`__ <br />
-Step the program one instantiation. <br />
-Usage: step [over] [count]
+* __`step [over] [count]`__ <br />
+Step the program one instantiation.
 
-* __`evaluate`__ <br />
-Evaluate and start debugging a new metaprogram. <br />
-Usage: evaluate [type]
+* __`evaluate [type]`__ <br />
+Evaluate and start debugging a new metaprogram.
 
-* __`forwardtrace|ft`__ <br />
+* __`forwardtrace|ft `__ <br />
 Print forwardtrace from the current point.
 
-* __`backtrace|bt`__ <br />
+* __`backtrace|bt `__ <br />
 Print backtrace from the current point.
 
-* __`break`__ <br />
-Add new breakpoint. <br />
-Usage: break [breakpoint]
+* __`break [breakpoint]`__ <br />
+Add new breakpoint.
 
-* __`help`__ <br />
-Show help for commands. <br />
-Usage: help [command]
+* __`help [command]`__ <br />
+Show help for commands.
 
-* __`quit`__ <br />
+* __`quit `__ <br />
 Quit metadebugger.
 
 

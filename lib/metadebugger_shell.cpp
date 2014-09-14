@@ -47,27 +47,35 @@ metadebugger_command_handler_map::commands_t
   metadebugger_command_handler_map::commands_t res =
     {
       {{"continue"}, repeatable, &metadebugger_shell::command_continue,
+        "",
         "Continue program being debugged.",
         "The program is continued until breakpoint or end of program."},
       {{"step"}, repeatable, &metadebugger_shell::command_step,
+        "[over] [count]",
         "Step the program one instantiation.",
-        "Usage: step [over] [count]"},
+        ""},
       {{"evaluate"}, non_repeatable, &metadebugger_shell::command_evaluate,
+        "[type]",
         "Evaluate and start debugging a new metaprogram.",
-        "Usage: evaluate [type]"},
+        ""},
       {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
+        "",
         "Print forwardtrace from the current point.",
         ""},
       {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
+        "",
         "Print backtrace from the current point.",
         ""},
       {{"break"}, non_repeatable, &metadebugger_shell::command_break,
+        "[breakpoint]",
         "Add new breakpoint.",
-        "Usage: break [breakpoint]"},
+        ""},
       {{"help"}, non_repeatable, &metadebugger_shell::command_help,
+        "[command]",
         "Show help for commands.",
-        "Usage: help [command]"},
+        ""},
       {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
+        "",
         "Quit metadebugger.",
         ""}
     };
@@ -244,7 +252,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
   }
 
   display_info(
-      join(cmd.get_keys(), "|") + ": " +
+      join(cmd.get_keys(), "|") + " " + cmd.get_usage() + "\n" +
       cmd.get_full_description() + "\n");
 }
 
