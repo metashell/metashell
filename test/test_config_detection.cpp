@@ -280,6 +280,8 @@ JUST_TEST_CASE(
   envd.search_clang_binary_returns("/foo/bar/clang");
   envd.default_clang_sysinclude_returns_append("/foo/include");
   envd.default_clang_sysinclude_returns_append("/bar/include");
+  // It should not find Clang shipped with Metashell
+  envd.file_exists_returns(false);
 
   user_config ucfg;
   ucfg.include_path.push_back("/user/1");
@@ -351,6 +353,8 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   envd.default_clang_sysinclude_returns_append("/foo/include");
   envd.on_windows_returns(true);
   envd.path_of_executable_returns("c:/program files/metashell.exe");
+  // It should not find Clang shipped with Metashell
+  envd.file_exists_returns(false);
 
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
@@ -611,4 +615,44 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL("c:/foo/bar\\clang", envd.append_to_path_last_arg());
 }
 
+JUST_TEST_CASE(
+  test_when_clang_shipped_with_metashell_is_used_on_windows_its_include_directory_is_added_to_include_path
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.file_exists_returns(true);
+  envd.on_windows_returns(true);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+
+  JUST_ASSERT(contains("c:/foo/bar\\clang\\include", cfg.include_path));
+}
+
+JUST_TEST_CASE(
+  test_default_clang_sysinclude_is_not_called_for_clang_shipped_with_metashell
+)
+{
+  mock_environment_detector envd;
+  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.file_exists_returns(true);
+  envd.on_windows_returns(true);
+
+  std::ostringstream err;
+  detect_config(user_config(), envd, err);
+
+  JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
+}
+
+JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
+{
+  mock_environment_detector envd;
+  envd.on_windows_returns(true);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+
+  JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
+}
 

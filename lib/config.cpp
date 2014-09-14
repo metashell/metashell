@@ -130,9 +130,24 @@ namespace
   )
   {
     return
-      clang_binary_path_.empty() ?
+      (
+        clang_binary_path_.empty() ||
+        clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
+      ) ?
         env_detector_.extra_sysinclude() :
         env_detector_.default_clang_sysinclude(clang_binary_path_);
+  }
+
+  std::vector<std::string> determine_extra_clang_args(
+    std::vector<std::string> extra_clang_args_,
+    iface::environment_detector& env_detector_
+  )
+  {
+    if (env_detector_.on_windows())
+    {
+      extra_clang_args_.push_back("-fno-ms-compatibility");
+    }
+    return extra_clang_args_;
   }
 
   std::vector<std::string> determine_include_path(
@@ -154,7 +169,10 @@ namespace
       std::vector<std::string> wpath;
       wpath.push_back(mingw_headers);
       wpath.push_back(mingw_headers + "\\mingw32");
-      if (clang_binary_path_.empty())
+      if (
+        clang_binary_path_.empty()
+        || clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
+      )
       {
         wpath.push_back(dir_of_executable + "\\clang\\include");
       }
@@ -197,7 +215,8 @@ config metashell::detect_config(
   cfg.standard_to_use = ucfg_.standard_to_use;
   cfg.macros = ucfg_.macros;
   cfg.warnings_enabled = ucfg_.warnings_enabled;
-  cfg.extra_clang_args = ucfg_.extra_clang_args;
+  cfg.extra_clang_args =
+    determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
 
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_);
