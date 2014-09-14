@@ -44,7 +44,12 @@ public:
 
   virtual void add_history(const std::string& str) = 0;
 
-  virtual void display(const colored_string& cs) const = 0;
+  virtual void display(
+      const colored_string& cs,
+      colored_string::size_type first,
+      colored_string::size_type length) const = 0;
+
+  void display(const colored_string& cs) const;
 
   virtual unsigned width() const = 0;
 
@@ -96,23 +101,6 @@ protected:
   bool is_stopped;
 
 private:
-  // Helpers for display_forwardtrace
-  typedef std::pair<
-      std::string::const_iterator,
-      std::string::const_iterator
-    > string_range;
-
-  string_range find_type_emphasize(const std::string& type) const;
-
-  void display_range(
-      std::string::const_iterator begin,
-      std::string::const_iterator end,
-      colored_string::color_t c) const;
-
-  void display_trace_content(
-      string_range range,
-      string_range emphasize) const;
-
   void display_trace_graph(
       unsigned depth,
       const std::vector<unsigned>& depth_counter,

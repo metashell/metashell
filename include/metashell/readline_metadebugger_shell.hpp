@@ -34,7 +34,10 @@ public:
 
   virtual void add_history(const std::string& str);
 
-  virtual void display(const colored_string& cs) const;
+  virtual void display(
+      const colored_string& cs,
+      colored_string::size_type first,
+      colored_string::size_type length) const;
 
   virtual unsigned width() const;
 private:

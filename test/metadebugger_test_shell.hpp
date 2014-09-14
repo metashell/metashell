@@ -33,7 +33,10 @@ public:
 
   virtual void add_history(const std::string& str);
 
-  virtual void display(const metashell::colored_string& cs) const;
+  virtual void display(
+      const metashell::colored_string& cs,
+      metashell::colored_string::size_type first,
+      metashell::colored_string::size_type length) const;
 
   virtual unsigned width() const;
 

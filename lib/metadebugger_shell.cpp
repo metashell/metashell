@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metadebugger_shell.hpp>
+#include <metashell/highlight_syntax.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
 
@@ -95,6 +96,10 @@ metadebugger_shell::metadebugger_shell(
 }
 
 metadebugger_shell::~metadebugger_shell() {}
+
+void metadebugger_shell::display(const colored_string& cs) const {
+  display(cs, 0, cs.size());
+}
 
 std::string metadebugger_shell::prompt() const {
   return "(mdb) ";
@@ -350,68 +355,6 @@ void metadebugger_shell::display_current_frame() const {
   display_frame(mp.get_current_frame());
 }
 
-metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
-    const std::string& type) const
-{
-
-  #define MSH_R_NAMESPACE_OR_TYPE       \
-    "("                                 \
-      "([_a-zA-Z][_a-zA-Z0-9]*)"    "|" \
-      "(\\(anonymous namespace\\))" "|" \
-      "(<anonymous>)"               "|" \
-      "(<anonymous struct>)"        "|" \
-      "(<anonymous class>)"         "|" \
-      "(<anonymous union>)"             \
-    ")"
-
-  boost::regex reg(
-      "^(::)?(" MSH_R_NAMESPACE_OR_TYPE "::)*" MSH_R_NAMESPACE_OR_TYPE);
-
-  #undef MSH_R_NAMESPACE_OR_TYPE
-
-  boost::smatch match;
-  if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
-    return string_range(type.end(), type.end());
-  }
-
-  return string_range(match[10].first, match[10].second);
-}
-
-void metadebugger_shell::display_range(
-    std::string::const_iterator begin,
-    std::string::const_iterator end,
-    colored_string::color_t c) const
-{
-  if (begin < end) {
-    display(colored_string(std::string(begin, end), c));
-  }
-}
-
-void metadebugger_shell::display_trace_content(
-    string_range range,
-    string_range emphasize) const
-{
-  assert(range.first <= range.second);
-  assert(emphasize.first <= emphasize.second);
-
-  //TODO avoid copying
-
-  display_range(
-      range.first,
-      std::min(range.second, emphasize.first),
-      boost::none);
-
-  display_range(
-      std::max(range.first, emphasize.first),
-      std::min(range.second, emphasize.second),
-      color::white);
-
-  display_range(
-      std::max(emphasize.second, range.first),
-      range.second,
-      boost::none);
-}
-
 void metadebugger_shell::display_trace_graph(
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -450,22 +393,12 @@ void metadebugger_shell::display_trace_line(
     unsigned width) const
 {
 
-  const std::string type = mp.get_vertex_property(vertex).name;
-
-  std::stringstream element_content_ss;
-  element_content_ss << type;
+  colored_string element_content =
+    highlight_syntax(mp.get_vertex_property(vertex).name);
 
   if (kind) {
-    element_content_ss << " (" << *kind << ")";
+    element_content += " (" + to_string(*kind) + ")";
   }
-
-  std::string element_content = element_content_ss.str();
-
-  string_range emphasize = find_type_emphasize(type);
-
-  // Realign the iterators from 'type' to 'element_content'
-  emphasize.first = element_content.begin() + (emphasize.first - type.begin());
-  emphasize.second = element_content.begin() + (emphasize.second - type.begin());
 
   unsigned non_content_length = 2*depth;
 
@@ -473,23 +406,15 @@ void metadebugger_shell::display_trace_line(
     // We have no chance to display the graph nicely :(
     display_trace_graph(depth, depth_counter, true);
 
-    display_trace_content(
-      string_range(element_content.begin(), element_content.end()),
-      emphasize);
+    display(element_content);
     display("\n");
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
       display_trace_graph(depth, depth_counter, i == 0);
-      display_trace_content(
-        string_range(
-          element_content.begin() + i,
-          i + content_width < element_content.size() ?
-            element_content.begin() + (i + content_width) :
-            element_content.end()
-        ),
-        emphasize
-      );
+      display(
+          element_content,
+          i, content_width);
       display("\n");
     }
   }
