@@ -36,8 +36,6 @@ namespace metashell
   class shell
   {
   public:
-    typedef boost::optional<just::console::color> optional_color;
-
     explicit shell(const config& config_);
 
     // Takes ownership of env_
