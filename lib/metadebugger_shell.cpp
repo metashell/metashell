@@ -60,9 +60,9 @@ metadebugger_command_handler_map::commands_t
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
-        "",
+        "[full]",
         "Print forwardtrace from the current point.",
-        ""},
+        "Use of the full qualifier will expand Memoizations."},
       {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
         "",
         "Print backtrace from the current point.",

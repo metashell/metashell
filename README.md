@@ -766,8 +766,9 @@ Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
 the debugged metaprogram with unrelated code. If you need formatting, you can
 explicitly enter `metashell::format< <type> >::type` for the same effect.
 
-* __`forwardtrace|ft `__ <br />
-Print forwardtrace from the current point.
+* __`forwardtrace|ft [full]`__ <br />
+Print forwardtrace from the current point. <br />
+Use of the full qualifier will expand Memoizations.
 
 * __`backtrace|bt `__ <br />
 Print backtrace from the current point.
