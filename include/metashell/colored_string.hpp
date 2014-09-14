@@ -44,6 +44,8 @@ public:
   colored_string& operator+=(const std::string& rhs);
   colored_string& operator+=(const colored_string& rhs);
 
+  size_type size() const;
+
   const std::string& get_string() const;
   const colors_t& get_colors() const;
 

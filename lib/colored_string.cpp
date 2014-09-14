@@ -38,6 +38,11 @@ colored_string& colored_string::operator+=(const colored_string& rhs) {
   return *this;
 }
 
+colored_string::size_type colored_string::size() const {
+  assert(string.size() == colors.size());
+  return string.size();
+}
+
 const std::string& colored_string::get_string() const {
   return string;
 }
