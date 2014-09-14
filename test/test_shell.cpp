@@ -30,6 +30,7 @@ namespace
     cfg.include_path.push_back(windows_headers);
     cfg.include_path.push_back(windows_headers + "\\mingw32");
 #endif
+    cfg.include_path.push_back(BOOST_INCLUDE_PATH);
     return cfg;
   }
 }

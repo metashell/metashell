@@ -19,6 +19,9 @@ add_executable(metashell_test ${SOURCES})
 
 target_link_libraries(metashell_test metashell_lib)
 
+# Boost for the unit tests
+add_definitions( -DBOOST_INCLUDE_PATH=\"${Boost_INCLUDE_DIR}\" )
+
 # Wave
 target_link_libraries(metashell_test
   ${Boost_SYSTEM_LIBRARIES}
