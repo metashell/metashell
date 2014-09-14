@@ -37,7 +37,6 @@ const std::vector<color> metadebugger_shell::colors =
     color::green,
     color::yellow,
     color::blue,
-    color::magenta,
     color::cyan
   };
 
