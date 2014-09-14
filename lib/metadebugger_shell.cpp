@@ -16,11 +16,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metadebugger_shell.hpp>
+#include <metashell/highlight_syntax.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
@@ -31,14 +31,13 @@
 
 namespace metashell {
 
-const std::vector<just::console::color> metadebugger_shell::colors =
+const std::vector<color> metadebugger_shell::colors =
   {
-    just::console::color::red,
-    just::console::color::green,
-    just::console::color::yellow,
-    just::console::color::blue,
-    just::console::color::magenta,
-    just::console::color::cyan
+    color::red,
+    color::green,
+    color::yellow,
+    color::blue,
+    color::cyan
   };
 
 metadebugger_command_handler_map::commands_t
@@ -47,27 +46,37 @@ metadebugger_command_handler_map::commands_t
   metadebugger_command_handler_map::commands_t res =
     {
       {{"continue"}, repeatable, &metadebugger_shell::command_continue,
+        "",
         "Continue program being debugged.",
         "The program is continued until breakpoint or end of program."},
       {{"step"}, repeatable, &metadebugger_shell::command_step,
-        "Step the program one instantiation.",
-        "Usage: step [over] [count]"},
+        "[over] [n]",
+        "Step the program forward.",
+        "Argument n means step n times. n defaults to 1 if not specified."},
       {{"evaluate"}, non_repeatable, &metadebugger_shell::command_evaluate,
+        "<type>",
         "Evaluate and start debugging a new metaprogram.",
-        "Usage: evaluate [type]"},
+        "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
+        "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
+        "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
+        "[full]",
         "Print forwardtrace from the current point.",
-        ""},
+        "Use of the full qualifier will expand Memoizations."},
       {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
+        "",
         "Print backtrace from the current point.",
         ""},
       {{"break"}, non_repeatable, &metadebugger_shell::command_break,
+        "[breakpoint]",
         "Add new breakpoint.",
-        "Usage: break [breakpoint]"},
+        ""},
       {{"help"}, non_repeatable, &metadebugger_shell::command_help,
+        "[command]",
         "Show help for commands.",
-        "Usage: help [command]"},
+        "If no [command] is specified, show a list of all available commands."},
       {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
+        "",
         "Quit metadebugger.",
         ""}
     };
@@ -76,15 +85,21 @@ metadebugger_command_handler_map::commands_t
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
-    environment& env) :
+    const environment& env_arg) :
   conf(conf),
-  env(env),
+  env("__mdb_internal", conf),
   command_handler(create_default_command_map()),
   mp(metaprogram::create_empty_finished()),
   is_stopped(false)
-{}
+{
+  env.append(env_arg.get_all());
+}
 
 metadebugger_shell::~metadebugger_shell() {}
+
+void metadebugger_shell::display(const colored_string& cs) const {
+  display(cs, 0, cs.size());
+}
 
 std::string metadebugger_shell::prompt() const {
   return "(mdb) ";
@@ -92,6 +107,12 @@ std::string metadebugger_shell::prompt() const {
 
 bool metadebugger_shell::stopped() const {
   return is_stopped;
+}
+
+void metadebugger_shell::display_splash() const {
+  display_info(
+      "For help, type \"help\".\n"
+  );
 }
 
 void metadebugger_shell::line_available(const std::string& original_line) {
@@ -205,10 +226,38 @@ void metadebugger_shell::command_evaluate(const std::string& arg) {
 }
 
 void metadebugger_shell::command_forwardtrace(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
+  if (!require_running_metaprogram()) {
     return;
   }
-  display_current_forwardtrace();
+
+  using boost::spirit::qi::lit;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  bool has_full = false;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -lit("full") [ref(has_full) = true],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    display_error("Argument parsing failed\n");
+    return;
+  }
+
+  if (has_full) {
+    display_current_full_forwardtrace();
+  } else {
+    display_current_forwardtrace();
+  }
 }
 
 void metadebugger_shell::command_backtrace(const std::string& arg) {
@@ -224,6 +273,21 @@ void metadebugger_shell::command_break(const std::string& arg) {
 }
 
 void metadebugger_shell::command_help(const std::string& arg) {
+  if (arg.empty()) {
+    display_info(
+        "List of available commands:\n\n");
+    for (const metadebugger_command& cmd : command_handler.get_commands()) {
+      display_info(
+          cmd.get_keys().front() + " -- " +
+          cmd.get_short_description() + "\n");
+    }
+    display_info(
+        "\n"
+        "Type \"help\" followed by a command name for more information.\n"
+        "Command name abbreviations are allowed if unambiguous.\n");
+    return;
+  }
+
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
     display_error("Command not found\n");
@@ -242,7 +306,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
   }
 
   display_info(
-      join(cmd.get_keys(), "|") + ": " +
+      join(cmd.get_keys(), "|") + " " + cmd.get_usage() + "\n" +
       cmd.get_full_description() + "\n");
 }
 
@@ -257,22 +321,13 @@ void metadebugger_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
+  const std::string& xml_path = templight_xml_file.get_path().string();
 
-  std::vector<std::string>& clang_args = env.clang_arguments();
-
-  clang_args.push_back("-templight");
-  clang_args.push_back("-templight-output");
-  clang_args.push_back(templight_xml_file.get_path().string());
-  clang_args.push_back("-templight-format");
-  clang_args.push_back("xml");
+  env.set_xml_location(xml_path);
 
   run_metaprogram(str);
 
-  //TODO move this to a destructor. run_metaprogram might throw
-  clang_args.erase(clang_args.end() - 5, clang_args.end());
-
-  mp = metaprogram::create_from_xml_file(
-      templight_xml_file.get_path().string());
+  mp = metaprogram::create_from_xml_file(xml_path);
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {
@@ -286,7 +341,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
     display_error(e + "\n");
   }
   if (!res.has_errors()) {
-    display_info(res.output + "\n"); //TODO syntax hightlighted
+    display(highlight_syntax(res.output) + "\n");
   }
 }
 
@@ -313,7 +368,7 @@ void metadebugger_shell::continue_metaprogram() {
 }
 
 void metadebugger_shell::display_error(const std::string& str) const {
-  display(str, just::console::color::bright_red);
+  display(colored_string(str, color::bright_red));
 }
 
 void metadebugger_shell::display_info(const std::string& str) const {
@@ -328,68 +383,6 @@ void metadebugger_shell::display_current_frame() const {
   display_frame(mp.get_current_frame());
 }
 
-metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
-    const std::string& type) const
-{
-
-  #define MSH_R_NAMESPACE_OR_TYPE       \
-    "("                                 \
-      "([_a-zA-Z][_a-zA-Z0-9]*)"    "|" \
-      "(\\(anonymous namespace\\))" "|" \
-      "(<anonymous>)"               "|" \
-      "(<anonymous struct>)"        "|" \
-      "(<anonymous class>)"         "|" \
-      "(<anonymous union>)"             \
-    ")"
-
-  boost::regex reg(
-      "^(::)?(" MSH_R_NAMESPACE_OR_TYPE "::)*" MSH_R_NAMESPACE_OR_TYPE);
-
-  #undef MSH_R_NAMESPACE_OR_TYPE
-
-  boost::smatch match;
-  if (!boost::regex_search(type.begin(), type.end(), match, reg)) {
-    return string_range(type.end(), type.end());
-  }
-
-  return string_range(match[10].first, match[10].second);
-}
-
-void metadebugger_shell::display_range(
-    std::string::const_iterator begin,
-    std::string::const_iterator end,
-    optional_color c) const
-{
-  if (begin < end) {
-    display(std::string(begin, end), c);
-  }
-}
-
-void metadebugger_shell::display_trace_content(
-    string_range range,
-    string_range emphasize) const
-{
-  assert(range.first <= range.second);
-  assert(emphasize.first <= emphasize.second);
-
-  //TODO avoid copying
-
-  display_range(
-      range.first,
-      std::min(range.second, emphasize.first),
-      boost::none);
-
-  display_range(
-      std::max(range.first, emphasize.first),
-      std::min(range.second, emphasize.second),
-      just::console::color::white);
-
-  display_range(
-      std::max(emphasize.second, range.first),
-      range.second,
-      boost::none);
-}
-
 void metadebugger_shell::display_trace_graph(
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -400,20 +393,20 @@ void metadebugger_shell::display_trace_graph(
   if (depth > 0) {
     //TODO respect the -H (no syntax highlight parameter)
     for (unsigned i = 1; i < depth; ++i) {
-      display(
+      display(colored_string(
           depth_counter[i] > 0 ? "| " : "  ",
-          colors[i % colors.size()]);
+          colors[i % colors.size()]));
     }
 
-    just::console::color mark_color = colors[depth % colors.size()];
+    color mark_color = colors[depth % colors.size()];
     if (print_mark) {
       if (depth_counter[depth] == 0) {
-        display("` ", mark_color);
+        display(colored_string("` ", mark_color));
       } else {
-        display("+ ", mark_color);
+        display(colored_string("+ ", mark_color));
       }
     } else if (depth_counter[depth] > 0) {
-      display("| ", mark_color);
+      display(colored_string("| ", mark_color));
     } else {
       display("  ");
     }
@@ -428,46 +421,29 @@ void metadebugger_shell::display_trace_line(
     unsigned width) const
 {
 
-  const std::string type = mp.get_vertex_property(vertex).name;
-
-  std::stringstream element_content_ss;
-  element_content_ss << type;
+  colored_string element_content =
+    highlight_syntax(mp.get_vertex_property(vertex).name);
 
   if (kind) {
-    element_content_ss << " (" << *kind << ")";
+    element_content += " (" + to_string(*kind) + ")";
   }
-
-  std::string element_content = element_content_ss.str();
-
-  string_range emphasize = find_type_emphasize(type);
-
-  // Realign the iterators from 'type' to 'element_content'
-  emphasize.first = element_content.begin() + (emphasize.first - type.begin());
-  emphasize.second = element_content.begin() + (emphasize.second - type.begin());
 
   unsigned non_content_length = 2*depth;
 
-  if (width < 10 || non_content_length >= width - 10) {
+  const unsigned pretty_print_threshold = 10;
+  if (width < pretty_print_threshold ||
+      non_content_length >= width - pretty_print_threshold)
+  {
     // We have no chance to display the graph nicely :(
     display_trace_graph(depth, depth_counter, true);
 
-    display_trace_content(
-      string_range(element_content.begin(), element_content.end()),
-      emphasize);
+    display(element_content);
     display("\n");
   } else {
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
       display_trace_graph(depth, depth_counter, i == 0);
-      display_trace_content(
-        string_range(
-          element_content.begin() + i,
-          i + content_width < element_content.size() ?
-            element_content.begin() + (i + content_width) :
-            element_content.end()
-        ),
-        emphasize
-      );
+      display(element_content, i, content_width);
       display("\n");
     }
   }
@@ -554,14 +530,21 @@ void metadebugger_shell::display_current_forwardtrace() const {
   display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
 
+void metadebugger_shell::display_current_full_forwardtrace() const {
+  metaprogram::discovered_t discovered(mp.get_state().discovered.size());
+
+  display_trace_visit(mp.get_current_vertex(), discovered, width());
+}
+
 void metadebugger_shell::display_frame(const metaprogram::frame_t& frame) const {
   // No kind for <root> vertex
   if (frame.vertex == mp.get_root_vertex()) {
     display(mp.get_vertex_property(frame.vertex).name + "\n");
   } else {
-    display((boost::format("%1% (%2%)\n") %
-          mp.get_vertex_property(frame.vertex).name %
-          mp.get_edge_property(frame.parent_edge).kind).str());
+    display(
+        highlight_syntax(mp.get_vertex_property(frame.vertex).name) +
+        " (" + to_string(mp.get_edge_property(frame.parent_edge).kind) + ")\n"
+    );
   }
 }
 
@@ -572,7 +555,7 @@ void metadebugger_shell::display_backtrace() const {
   for (const metaprogram::frame_t& frame :
       backtrace | boost::adaptors::reversed)
   {
-    display((boost::format("#%1% ") % i).str());
+    display("#" + std::to_string(i) + " ");
     display_frame(frame);
     ++i;
   }

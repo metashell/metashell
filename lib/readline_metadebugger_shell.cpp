@@ -25,7 +25,7 @@ namespace metashell {
 
 readline_metadebugger_shell::readline_metadebugger_shell(
     const config& conf,
-    environment& env) :
+    const environment& env) :
   metadebugger_shell(conf, env) {}
 
 void readline_metadebugger_shell::run() {
@@ -42,16 +42,11 @@ void readline_metadebugger_shell::add_history(const std::string& str) {
 }
 
 void readline_metadebugger_shell::display(
-    const std::string& str,
-    optional_color color) const
+    const colored_string& cs,
+    colored_string::size_type first,
+    colored_string::size_type length) const
 {
-  if (color) {
-    just::console::text_color(*color);
-  }
-  std::cout << str;
-  if (color) {
-    just::console::reset();
-  }
+  cs.print_to_cout(first, length);
 }
 
 unsigned readline_metadebugger_shell::width() const {

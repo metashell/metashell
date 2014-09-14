@@ -21,14 +21,7 @@
 #include <string>
 #include <sstream>
 
-
 using namespace metashell;
-
-std::string to_string(instantiation_kind kind) {
-  std::stringstream ss;
-  ss << kind;
-  return ss.str();
-}
 
 JUST_TEST_CASE(test_instantiation_kind_print)
 {

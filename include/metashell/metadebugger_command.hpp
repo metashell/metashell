@@ -39,12 +39,14 @@ public:
       const keys_t& key,
       repeatable_t rep,
       function func,
+      const std::string& usage,
       const std::string& short_description,
       const std::string& long_description);
 
   const keys_t& get_keys() const;
   bool is_repeatable() const;
   function get_func() const;
+  const std::string& get_usage() const;
   const std::string& get_short_description() const;
   const std::string& get_long_description() const;
   std::string get_full_description() const;
@@ -53,6 +55,7 @@ private:
   keys_t keys;
   repeatable_t rep;
   function func;
+  std::string usage;
   std::string short_description;
   std::string long_description;
 };

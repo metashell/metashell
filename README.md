@@ -620,33 +620,47 @@ complete list of accepted forms. All of them are equivalent:
 Metashell supports the following pragmas:
 
 <!-- pragma_info -->
-* `#msh environment` <br /> <br /> Displays the entire content of the environment.
+* __`#msh environment`__ <br />
+Displays the entire content of the environment.
 
-* `#msh environment add <code>` <br /> <br /> Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
+* __`#msh environment add <code>`__ <br />
+Appends code to the environment. Use this if Metashell thinks about the code that it is an evaluation.
 
-* `#msh environment pop` <br /> <br /> Pops the last environment from the environment stack.
+* __`#msh environment pop`__ <br />
+Pops the last environment from the environment stack.
 
-* `#msh environment push` <br /> <br /> Pushes the current environment to the environment stack.
+* __`#msh environment push`__ <br />
+Pushes the current environment to the environment stack.
 
-* `#msh environment reload` <br /> <br /> Re-reads the included header files from disc.
+* __`#msh environment reload`__ <br />
+Re-reads the included header files from disc.
 
-* `#msh environment reset` <br /> <br /> Resets the environment to its initial state. It does not change the environment stack.
+* __`#msh environment reset`__ <br />
+Resets the environment to its initial state. It does not change the environment stack.
 
-* `#msh environment stack` <br /> <br /> Displays the size of the environment stack.
+* __`#msh environment stack`__ <br />
+Displays the size of the environment stack.
 
-* `#msh evaluate <code>` <br /> <br /> Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
+* __`#msh evaluate <code>`__ <br />
+Evaluates code as a metaprogram. Use this if Metashell thinks about the code that it is an addition to the environment.
 
-* `#msh help [<command>]` <br /> <br /> Displays a help message.
+* __`#msh help [<command>]`__ <br />
+Displays a help message.
 
-* `#msh mdb` <br /> <br /> Starts the metadebugger.
+* __`#msh mdb`__ <br />
+Starts the metadebugger.
 
-* `#msh metadebugger` <br /> <br /> Starts the metadebugger.
+* __`#msh metadebugger`__ <br />
+Starts the metadebugger.
 
-* `#msh precompiled_headers [on|1|off|0]` <br /> <br /> Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
+* __`#msh precompiled_headers [on|1|off|0]`__ <br />
+Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
-* `#msh quit` <br /> <br /> Terminates the shell.
+* __`#msh quit`__ <br />
+Terminates the shell.
 
-* `#msh verbose [on|1|off|0]` <br /> <br /> Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
+* __`#msh verbose [on|1|off|0]`__ <br />
+Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
 
 <!-- pragma_info -->
@@ -738,26 +752,36 @@ fib<5>
 ### Command reference
 
 <!-- mdb_info -->
-* `continue` <br /> <br /> Continue program being debugged. <br />
+* __`continue `__ <br />
+Continue program being debugged. <br />
 The program is continued until breakpoint or end of program.
 
-* `step` <br /> <br /> Step the program one instantiation. <br />
-Usage: step [over] [count]
+* __`step [over] [n]`__ <br />
+Step the program forward. <br />
+Argument n means step n times. n defaults to 1 if not specified.
 
-* `evaluate` <br /> <br /> Evaluate and start debugging a new metaprogram. <br />
-Usage: evaluate [type]
+* __`evaluate <type>`__ <br />
+Evaluate and start debugging a new metaprogram. <br />
+Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
+the debugged metaprogram with unrelated code. If you need formatting, you can
+explicitly enter `metashell::format< <type> >::type` for the same effect.
 
-* `forwardtrace|ft` <br /> <br /> Print forwardtrace from the current point.
+* __`forwardtrace|ft [full]`__ <br />
+Print forwardtrace from the current point. <br />
+Use of the full qualifier will expand Memoizations.
 
-* `backtrace|bt` <br /> <br /> Print backtrace from the current point.
+* __`backtrace|bt `__ <br />
+Print backtrace from the current point.
 
-* `break` <br /> <br /> Add new breakpoint. <br />
-Usage: break [breakpoint]
+* __`break [breakpoint]`__ <br />
+Add new breakpoint.
 
-* `help` <br /> <br /> Show help for commands. <br />
-Usage: help [command]
+* __`help [command]`__ <br />
+Show help for commands. <br />
+If no [command] is specified, show a list of all available commands.
 
-* `quit` <br /> <br /> Quit metadebugger.
+* __`quit `__ <br />
+Quit metadebugger.
 
 
 <!-- mdb_info -->

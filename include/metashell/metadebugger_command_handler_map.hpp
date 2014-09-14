@@ -39,6 +39,8 @@ public:
   boost::optional<std::tuple<metadebugger_command, std::string>>
     get_command_for_line(const std::string& line) const;
 
+  const commands_t& get_commands() const;
+
 private:
 #ifdef _WIN32
   // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)

@@ -23,9 +23,10 @@ metadebugger_command::metadebugger_command(
     const keys_t& keys,
     repeatable_t rep,
     function func,
+    const std::string& usage,
     const std::string& short_description,
     const std::string& long_description) :
-  keys(keys), rep(rep), func(func),
+  keys(keys), rep(rep), func(func), usage(usage),
   short_description(short_description), long_description(long_description)
 {}
 
@@ -39,6 +40,10 @@ bool metadebugger_command::is_repeatable() const {
 
 metadebugger_command::function metadebugger_command::get_func() const {
   return func;
+}
+
+const std::string& metadebugger_command::get_usage() const {
+  return usage;
 }
 
 const std::string& metadebugger_command::get_short_description() const {

@@ -24,7 +24,7 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_without_evaluation) {
-  metadebugger_test_shell sh = metadebugger_test_shell::create_default();
+  metadebugger_test_shell sh;
 
   sh.line_available("backtrace");
 
@@ -35,8 +35,7 @@ JUST_TEST_CASE(test_mdb_backtrace_without_evaluation) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -49,8 +48,7 @@ JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step");
@@ -64,8 +62,7 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step 2");
@@ -81,8 +78,7 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step 3");
@@ -99,8 +95,7 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_garbage_argument) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -114,8 +109,7 @@ JUST_TEST_CASE(test_mdb_backtrace_garbage_argument) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step");

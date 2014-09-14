@@ -20,8 +20,7 @@
 #include <metashell/shell.hpp>
 #include <metashell/indenter.hpp>
 #include <metashell/command.hpp>
-
-#include <just/console.hpp>
+#include <metashell/highlight_syntax.hpp>
 
 #include <mindent/stream_display.hpp>
 
@@ -49,60 +48,6 @@ using namespace metashell;
 
 namespace
 {
-  boost::optional<just::console::color> color_of_token(const token& t_)
-  {
-    using just::console::color;
-    using boost::optional;
-
-    switch (t_.category())
-    {
-    case token_category::character_literal:
-    case token_category::floating_literal:
-    case token_category::integer_literal:
-    case token_category::string_literal:
-    case token_category::bool_literal:
-    case token_category::preprocessor:
-      return color::magenta;
-    case token_category::keyword:
-      return color::bright_green;
-    case token_category::comment:
-      return color::green;
-    default:
-      return optional<color>();
-    }
-  }
-
-  void display(just::console::color c_, const std::string& s_)
-  {
-    if (s_ != "")
-    {
-      just::console::text_color(c_);
-      std::cout << s_;
-      just::console::reset();
-      std::cout << std::endl;
-    }
-  }
-
-  void display_syntax_highlighted(const token& t_)
-  {
-    if (const boost::optional<just::console::color> c = color_of_token(t_))
-    {
-      just::console::text_color(*c);
-    }
-    else
-    {
-      just::console::reset();
-    }
-    std::cout << t_.value();
-  }
-
-  void syntax_highlight(const std::string& s_)
-  {
-    const command cmd(s_);
-    std::for_each(cmd.begin(), cmd.end(), display_syntax_highlighted);
-    just::console::reset();
-  }
-
 #ifdef _WIN32
   template <class T>
   stdext::checked_array_iterator<T*> array_begin(T* array_, int len_)
@@ -206,7 +151,6 @@ void readline_shell::display_normal(const std::string& s_) const
       if (_syntax_highlight)
       {
         indent(width(), 2, display_syntax_highlighted, s_, input_filename());
-        just::console::reset();
       }
       else
       {
@@ -223,7 +167,7 @@ void readline_shell::display_normal(const std::string& s_) const
     {
       if (_syntax_highlight)
       {
-        syntax_highlight(s_);
+        std::cout << highlight_syntax(s_);
       }
       else
       {
@@ -242,7 +186,9 @@ void readline_shell::display_info(const std::string& s_) const
 void readline_shell::display_error(const std::string& s_) const
 {
   if (!s_.empty()) {
-    display(just::console::color::bright_red, s_);
+    std::cout
+      << colored_string(s_, color::bright_red)
+      << std::endl;
   }
 }
 

@@ -24,7 +24,7 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_int) {
-  metadebugger_test_shell sh = metadebugger_test_shell::create_default();
+  metadebugger_test_shell sh;
 
   sh.line_available("evaluate int");
 
@@ -34,8 +34,7 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_with_environment(fibonacci_mp);
+  metadebugger_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -45,8 +44,7 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_default();
+  metadebugger_test_shell sh;
 
   sh.line_available("evaluate");
 
@@ -56,8 +54,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
-  metadebugger_test_shell sh =
-    metadebugger_test_shell::create_default();
+  metadebugger_test_shell sh;
 
   sh.line_available("evaluate  ");
 

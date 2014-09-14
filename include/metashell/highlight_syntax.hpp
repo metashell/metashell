@@ -1,5 +1,5 @@
-#ifndef METASHELL_READLINE_METADEBUGGER_SHELL_HPP
-#define METASHELL_READLINE_METADEBUGGER_SHELL_HPP
+#ifndef METASHELL_HIGHLIGHT_SYNTAX_HPP
+#define METASHELL_HIGHLIGHT_SYNTAX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,33 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/token.hpp>
 #include <metashell/colored_string.hpp>
-#include <metashell/metadebugger_shell.hpp>
-#include <metashell/readline_environment.hpp>
 
 namespace metashell {
 
-class readline_metadebugger_shell : public metadebugger_shell {
-public:
+colored_string::color_t color_of_token(const token& t);
 
-  readline_metadebugger_shell(
-      const config& conf,
-      const environment& env);
+colored_string highlight_syntax(const std::string& s);
 
-  virtual void run();
-
-  virtual void add_history(const std::string& str);
-
-  virtual void display(
-      const colored_string& cs,
-      colored_string::size_type first,
-      colored_string::size_type length) const;
-
-  virtual unsigned width() const;
-private:
-
-  readline_environment readline_env;
-};
+void display_syntax_highlighted(const token& t);
 
 }
 

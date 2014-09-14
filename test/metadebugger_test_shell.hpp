@@ -25,9 +25,7 @@
 
 class metadebugger_test_shell : public metashell::metadebugger_shell {
 public:
-  static metadebugger_test_shell create_default();
-  static metadebugger_test_shell create_with_environment(
-      const std::string& line);
+  metadebugger_test_shell(const std::string& line = "");
 
   typedef std::vector<std::string> history_t;
 
@@ -36,8 +34,9 @@ public:
   virtual void add_history(const std::string& str);
 
   virtual void display(
-      const std::string& str,
-      optional_color color = boost::none) const;
+      const metashell::colored_string& cs,
+      metashell::colored_string::size_type first,
+      metashell::colored_string::size_type length) const;
 
   virtual unsigned width() const;
 
@@ -48,19 +47,8 @@ public:
   void clear_history();
 
 private:
-  metadebugger_test_shell(std::shared_ptr<metashell::shell> sh);
-
   history_t history;
   mutable std::string output;
-
-  // This is a little hackish (TODO)
-  //
-  // Since metadebugger_shell (the base class) takes environment as a reference
-  // we have to extend the environments lifetime until the base class dies
-  //
-  // We get the environment from a shell_stub instance and environment is
-  // non copyable, we have to save shell_stub until this object dies
-  std::shared_ptr<metashell::shell> sh;
 };
 
 #endif

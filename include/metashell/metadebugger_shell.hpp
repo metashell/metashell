@@ -21,25 +21,22 @@
 
 #include <boost/optional.hpp>
 
-#include <just/console.hpp>
-
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
+#include <metashell/colored_string.hpp>
+#include <metashell/templight_environment.hpp>
 #include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
 
 class metadebugger_shell {
 public:
-  typedef boost::optional<just::console::color> optional_color;
-
   static metadebugger_command_handler_map::commands_t
     create_default_command_map();
 
   metadebugger_shell(
       const config& conf,
-      environment& env);
+      const environment& env);
 
   virtual ~metadebugger_shell();
 
@@ -48,13 +45,18 @@ public:
   virtual void add_history(const std::string& str) = 0;
 
   virtual void display(
-      const std::string& str,
-      optional_color color = boost::none) const = 0;
+      const colored_string& cs,
+      colored_string::size_type first,
+      colored_string::size_type length) const = 0;
+
+  void display(const colored_string& cs) const;
 
   virtual unsigned width() const = 0;
 
   std::string prompt() const;
   bool stopped() const;
+
+  void display_splash() const;
   void line_available(const std::string& line);
 
   void command_continue(const std::string& arg);
@@ -83,10 +85,11 @@ protected:
   void display_info(const std::string& str) const;
   void display_current_frame() const;
   void display_current_forwardtrace() const;
+  void display_current_full_forwardtrace() const;
   void display_backtrace() const;
 
-  const config& conf;
-  environment& env;
+  config conf;
+  templight_environment env;
   metadebugger_command_handler_map command_handler;
 
   metaprogram mp;
@@ -99,23 +102,6 @@ protected:
   bool is_stopped;
 
 private:
-  // Helpers for display_forwardtrace
-  typedef std::pair<
-      std::string::const_iterator,
-      std::string::const_iterator
-    > string_range;
-
-  string_range find_type_emphasize(const std::string& type) const;
-
-  void display_range(
-      std::string::const_iterator begin,
-      std::string::const_iterator end,
-      optional_color c) const;
-
-  void display_trace_content(
-      string_range range,
-      string_range emphasize) const;
-
   void display_trace_graph(
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
@@ -135,7 +121,7 @@ private:
 
   void display_frame(const metaprogram::frame_t& frame) const;
 
-  const static std::vector<just::console::color> colors;
+  const static std::vector<color> colors;
 };
 
 }

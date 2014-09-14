@@ -1,5 +1,3 @@
-#ifndef METASHELL_READLINE_METADEBUGGER_SHELL_HPP
-#define METASHELL_READLINE_METADEBUGGER_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,34 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/colored_string.hpp>
-#include <metashell/metadebugger_shell.hpp>
-#include <metashell/readline_environment.hpp>
+#include <metashell/in_memory_environment.hpp>
 
 namespace metashell {
 
-class readline_metadebugger_shell : public metadebugger_shell {
+class templight_environment : public in_memory_environment {
 public:
+  templight_environment(
+    const std::string& internal_dir,
+    const config& config
+  );
 
-  readline_metadebugger_shell(
-      const config& conf,
-      const environment& env);
+  // This should be called before the first evaluation
+  // with this environment
+  void set_xml_location(const std::string& xml_location);
 
-  virtual void run();
-
-  virtual void add_history(const std::string& str);
-
-  virtual void display(
-      const colored_string& cs,
-      colored_string::size_type first,
-      colored_string::size_type length) const;
-
-  virtual unsigned width() const;
 private:
-
-  readline_environment readline_env;
+  // Indexes into clang_arguments()
+  std::size_t xml_path_index;
 };
 
 }
-
-#endif

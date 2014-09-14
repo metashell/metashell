@@ -37,8 +37,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{{"asd"}}, non_repeatable, nullptr, "", ""},
-    {{{"efg"}}, non_repeatable, nullptr, "", ""}
+    {{{"asd"}}, non_repeatable, nullptr, "", "", ""},
+    {{{"efg"}}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -71,8 +71,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", ""},
-    {{"afg"}, non_repeatable, nullptr, "", ""}
+    {{"asd"}, non_repeatable, nullptr, "", "", ""},
+    {{"afg"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -95,8 +95,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", ""},
-    {{"a"}, non_repeatable, nullptr, "", ""}
+    {{"asd"}, non_repeatable, nullptr, "", "", ""},
+    {{"a"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -119,8 +119,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", ""}
+    {{"asd"}, non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -134,8 +134,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"asd", "xyz"}, non_repeatable, nullptr, "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", ""}
+    {{"asd", "xyz"}, non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -163,8 +163,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", ""}
+    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -182,8 +182,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace", "fff"}, non_repeatable, nullptr, "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", ""}
+    {{"ft", "forwardtrace", "fff"}, non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -201,8 +201,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", ""},
-    {{"fff"}, non_repeatable, nullptr, "", ""}
+    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
+    {{"fff"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);
@@ -214,7 +214,7 @@ JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 {
   metadebugger_command_handler_map::commands_t commands =
   {
-    {{"asf"}, non_repeatable, nullptr, "", ""}
+    {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
   metadebugger_command_handler_map map(commands);

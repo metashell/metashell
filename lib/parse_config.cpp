@@ -58,15 +58,14 @@ namespace
   )
   {
     using boost::algorithm::join;
-    using std::endl;
 
     const std::string args = h_.arguments();
 
     out_
-      << "* `#msh " << join(name_, " ")
-      << (args.empty() ? "" : " ") << args << "` <br /> <br /> "
-      << h_.description() << endl
-      << endl;
+      << "* __`#msh " << join(name_, " ")
+      << (args.empty() ? "" : " ") << args << "`__ <br />\n"
+      << h_.description() << "\n"
+      << std::endl;
   }
 
   void show_pragma_help()
@@ -90,12 +89,13 @@ namespace
     for (const metadebugger_command& cmd : commands)
     {
       std::cout
-        << "* `" << join(cmd.get_keys(), "|") << "` <br /> <br /> "
+        << "* __`" << join(cmd.get_keys(), "|") << " "
+        << cmd.get_usage() <<  "`__ <br />\n"
         << cmd.get_short_description();
-        if (!cmd.get_long_description().empty()) {
-          std::cout << " <br />" << '\n' << cmd.get_long_description();
-        }
-        std::cout << '\n' << std::endl;
+      if (!cmd.get_long_description().empty()) {
+        std::cout << " <br />" << '\n' << cmd.get_long_description();
+      }
+      std::cout << '\n' << std::endl;
     }
   }
 }

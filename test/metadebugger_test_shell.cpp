@@ -14,28 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "test_shell.hpp"
 #include "metadebugger_test_shell.hpp"
 
-#include "test_shell.hpp"
+#include <metashell/config.hpp>
+#include <metashell/in_memory_environment.hpp>
 
-metadebugger_test_shell metadebugger_test_shell::create_default() {
-  return create_with_environment({});
-}
-
-metadebugger_test_shell metadebugger_test_shell::create_with_environment(
-      const std::string& line)
+metadebugger_test_shell::metadebugger_test_shell(const std::string& line) :
+  metashell::metadebugger_shell(
+      test_shell().get_config(),
+      test_shell().env()
+  )
 {
-  std::shared_ptr<metashell::shell> sh(new test_shell());
-
-  sh->store_in_buffer(line);
-
-  return metadebugger_test_shell(sh);
+  env.append(line);
 }
-
-metadebugger_test_shell::metadebugger_test_shell(
-  std::shared_ptr<metashell::shell> sh_) :
-  metashell::metadebugger_shell(sh_->get_config(), sh_->env()), sh(sh_)
-{}
 
 void metadebugger_test_shell::run() {}
 
@@ -44,11 +36,11 @@ void metadebugger_test_shell::add_history(const std::string& str) {
 }
 
 void metadebugger_test_shell::display(
-    const std::string& str,
-    optional_color) const
+    const metashell::colored_string& cs,
+    metashell::colored_string::size_type first,
+    metashell::colored_string::size_type length) const
 {
-  //TODO We don't test colors at the moment
-  output += str;
+  output += cs.get_string().substr(first, length);
 }
 
 unsigned metadebugger_test_shell::width() const {

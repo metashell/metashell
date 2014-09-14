@@ -21,7 +21,6 @@
 #include <tuple>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include <boost/optional.hpp>
 #include <boost/graph/graph_traits.hpp>

@@ -1,5 +1,3 @@
-#ifndef METASHELL_READLINE_METADEBUGGER_SHELL_HPP
-#define METASHELL_READLINE_METADEBUGGER_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,34 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/colored_string.hpp>
-#include <metashell/metadebugger_shell.hpp>
-#include <metashell/readline_environment.hpp>
+#include <metashell/templight_environment.hpp>
 
 namespace metashell {
 
-class readline_metadebugger_shell : public metadebugger_shell {
-public:
-
-  readline_metadebugger_shell(
-      const config& conf,
-      const environment& env);
-
-  virtual void run();
-
-  virtual void add_history(const std::string& str);
-
-  virtual void display(
-      const colored_string& cs,
-      colored_string::size_type first,
-      colored_string::size_type length) const;
-
-  virtual unsigned width() const;
-private:
-
-  readline_environment readline_env;
-};
-
+templight_environment::templight_environment(
+  const std::string& internal_dir,
+  const config& config
+) : in_memory_environment(internal_dir, config)
+{
+  clang_arguments().push_back("-templight");
+  clang_arguments().push_back("-templight-format");
+  clang_arguments().push_back("xml");
+  clang_arguments().push_back("-templight-output");
+  clang_arguments().push_back("TEMPLIGHT_XML_LOCATION_IS_NOT_SET");
+  xml_path_index = clang_arguments().size() - 1;
 }
 
-#endif
+void templight_environment::set_xml_location(const std::string& xml_location) {
+  clang_arguments()[xml_path_index] = xml_location;
+}
+
+}
