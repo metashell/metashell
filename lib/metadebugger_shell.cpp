@@ -226,10 +226,38 @@ void metadebugger_shell::command_evaluate(const std::string& arg) {
 }
 
 void metadebugger_shell::command_forwardtrace(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
+  if (!require_running_metaprogram()) {
     return;
   }
-  display_current_forwardtrace();
+
+  using boost::spirit::qi::lit;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  bool has_full = false;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -lit("full") [ref(has_full) = true],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    display_error("Argument parsing failed\n");
+    return;
+  }
+
+  if (has_full) {
+    display_current_full_forwardtrace();
+  } else {
+    display_current_forwardtrace();
+  }
 }
 
 void metadebugger_shell::command_backtrace(const std::string& arg) {
@@ -498,6 +526,12 @@ void metadebugger_shell::display_trace_visit(
 
 void metadebugger_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
+
+  display_trace_visit(mp.get_current_vertex(), discovered, width());
+}
+
+void metadebugger_shell::display_current_full_forwardtrace() const {
+  metaprogram::discovered_t discovered(mp.get_state().discovered.size());
 
   display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
