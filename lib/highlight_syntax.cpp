@@ -20,10 +20,10 @@
 
 namespace metashell {
 
-colored_string::color_t color_of_token(const token& t_) {
+colored_string::color_t color_of_token(const token& t) {
   using just::console::color;
 
-  switch (t_.category())
+  switch (t.category())
   {
   case token_category::character_literal:
   case token_category::floating_literal:
@@ -50,6 +50,10 @@ colored_string highlight_syntax(const std::string& str) {
   }
 
   return result;
+}
+
+void display_syntax_highlighted(const token& t) {
+  std::cout << colored_string(t.value(), color_of_token(t));
 }
 
 }

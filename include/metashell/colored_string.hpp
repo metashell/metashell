@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 #include <boost/optional.hpp>
 
@@ -39,6 +40,9 @@ public:
   colored_string& operator+=(const std::string& rhs);
   colored_string& operator+=(const colored_string& rhs);
 
+  const std::string& get_string() const;
+  const colors_t& get_colors() const;
+
   void print_to_cout() const;
   void print_to_cout(size_type begin, size_type length) const;
 
@@ -46,6 +50,8 @@ private:
   std::string string;
   colors_t colors;
 };
+
+std::ostream& operator<<(std::ostream& os, const colored_string& cs);
 
 }
 

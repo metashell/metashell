@@ -34,6 +34,14 @@ colored_string& colored_string::operator+=(const colored_string& rhs) {
   return *this;
 }
 
+const std::string& colored_string::get_string() const {
+  return string;
+}
+
+const colored_string::colors_t& colored_string::get_colors() const {
+  return colors;
+}
+
 void colored_string::print_to_cout() const {
   print_to_cout(0, string.size());
 }
@@ -59,6 +67,15 @@ void colored_string::print_to_cout(size_type begin, size_type length) const {
   if (prev_color) {
     just::console::reset();
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const colored_string& cs) {
+  if (&os == &std::cout) {
+    cs.print_to_cout();
+  } else {
+    os << cs.get_string();
+  }
+  return os;
 }
 
 }

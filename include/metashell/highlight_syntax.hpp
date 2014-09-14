@@ -22,10 +22,11 @@
 
 namespace metashell {
 
+colored_string::color_t color_of_token(const token& t);
 
-colored_string::color_t color_of_token(const token& t_);
+colored_string highlight_syntax(const std::string& s);
 
-colored_string highlight_syntax(const std::string& s_);
+void display_syntax_highlighted(const token& t);
 
 }
 
