@@ -27,6 +27,10 @@
 #include <stdexcept>
 #include <fstream>
 
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
+
 using namespace metashell;
 
 namespace
@@ -65,6 +69,22 @@ namespace
           + sizeof(default_clang_search_path) / sizeof(const char*)
       );
   }
+
+#ifndef _WIN32
+  std::string read_link(const std::string& path_)
+  {
+    const int step = 64;
+    std::vector<char> buff;
+    ssize_t res;
+    do
+    {
+      buff.resize(buff.size() + step);
+      res = readlink(path_.c_str(), buff.data(), buff.size());
+    }
+    while (res == ssize_t(buff.size()));
+    return res == -1 ? path_ : std::string(buff.begin(), buff.begin() + res);
+  }
+#endif
 }
 
 std::string default_environment_detector::search_clang_binary()
@@ -105,7 +125,7 @@ std::string default_environment_detector::path_of_executable()
   GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
   return path;
 #else
-  throw std::runtime_error("path_of_executable is not implemented");
+  return read_link("/proc/self/exe");
 #endif
 }
 

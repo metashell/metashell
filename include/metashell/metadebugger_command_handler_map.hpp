@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <map>
 
 #include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
@@ -41,8 +42,13 @@ public:
   const commands_t& get_commands() const;
 
 private:
+#ifdef _WIN32
+  // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)
+  typedef std::map<std::string, std::size_t> key_command_map_t;
+#else
   typedef boost::container::flat_map<std::string, std::size_t>
     key_command_map_t;
+#endif
 
   commands_t commands;
 
