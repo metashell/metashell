@@ -312,7 +312,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
     display_error(e + "\n");
   }
   if (!res.has_errors()) {
-    display_info(res.output + "\n"); //TODO syntax hightlighted
+    display(highlight_syntax(res.output) + "\n");
   }
 }
 
