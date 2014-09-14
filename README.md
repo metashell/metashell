@@ -765,7 +765,8 @@ Print backtrace from the current point.
 Add new breakpoint.
 
 * __`help [command]`__ <br />
-Show help for commands.
+Show help for commands. <br />
+If no [command] is specified, show short help for all avaliable commands.
 
 * __`quit `__ <br />
 Quit metadebugger.
