@@ -756,11 +756,15 @@ fib<5>
 Continue program being debugged. <br />
 The program is continued until breakpoint or end of program.
 
-* __`step [over] [count]`__ <br />
-Step the program one instantiation.
+* __`step [over] [n]`__ <br />
+Step the program forward. <br />
+Argument n means step n times. n defaults to 1 if not specified.
 
-* __`evaluate [type]`__ <br />
-Evaluate and start debugging a new metaprogram.
+* __`evaluate <type>`__ <br />
+Evaluate and start debugging a new metaprogram. <br />
+Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
+the debugged metaprogram with unrelated code. If you need formatting, you can
+explicitly enter `metashell::format< <type> >::type` for the same effect.
 
 * __`forwardtrace|ft `__ <br />
 Print forwardtrace from the current point.
@@ -773,7 +777,7 @@ Add new breakpoint.
 
 * __`help [command]`__ <br />
 Show help for commands. <br />
-If no [command] is specified, show short help for all avaliable commands.
+If no [command] is specified, show a list of all avaliable commands.
 
 * __`quit `__ <br />
 Quit metadebugger.
