@@ -21,8 +21,6 @@
 namespace metashell {
 
 colored_string::color_t color_of_token(const token& t) {
-  using just::console::color;
-
   switch (t.category())
   {
   case token_category::character_literal:

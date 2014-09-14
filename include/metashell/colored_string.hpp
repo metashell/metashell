@@ -27,9 +27,12 @@
 
 namespace metashell {
 
+// Bring color to metashell namespace
+using just::console::color;
+
 class colored_string {
 public:
-  typedef boost::optional<just::console::color> color_t;
+  typedef boost::optional<color> color_t;
   typedef std::vector<color_t> colors_t;
 
   typedef std::string::size_type size_type;

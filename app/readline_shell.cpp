@@ -22,8 +22,6 @@
 #include <metashell/command.hpp>
 #include <metashell/highlight_syntax.hpp>
 
-#include <just/console.hpp>
-
 #include <mindent/stream_display.hpp>
 
 #ifdef USE_EDITLINE
@@ -189,7 +187,7 @@ void readline_shell::display_error(const std::string& s_) const
 {
   if (!s_.empty()) {
     std::cout
-      << colored_string(s_, just::console::color::bright_red)
+      << colored_string(s_, color::bright_red)
       << std::endl;
   }
 }
