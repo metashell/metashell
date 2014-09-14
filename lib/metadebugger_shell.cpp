@@ -288,22 +288,13 @@ void metadebugger_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
+  const std::string& xml_path = templight_xml_file.get_path().string();
 
-  std::vector<std::string>& clang_args = env.clang_arguments();
-
-  clang_args.push_back("-templight");
-  clang_args.push_back("-templight-output");
-  clang_args.push_back(templight_xml_file.get_path().string());
-  clang_args.push_back("-templight-format");
-  clang_args.push_back("xml");
+  env.set_xml_location(xml_path);
 
   run_metaprogram(str);
 
-  //TODO move this to a destructor. run_metaprogram might throw
-  clang_args.erase(clang_args.end() - 5, clang_args.end());
-
-  mp = metaprogram::create_from_xml_file(
-      templight_xml_file.get_path().string());
+  mp = metaprogram::create_from_xml_file(xml_path);
 }
 
 void metadebugger_shell::run_metaprogram(const std::string& str) {

@@ -25,7 +25,7 @@
 
 #include <metashell/config.hpp>
 #include <metashell/metaprogram.hpp>
-#include <metashell/in_memory_environment.hpp>
+#include <metashell/templight_environment.hpp>
 #include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
@@ -88,7 +88,7 @@ protected:
   void display_backtrace() const;
 
   config conf;
-  in_memory_environment env;
+  templight_environment env;
   metadebugger_command_handler_map command_handler;
 
   metaprogram mp;
