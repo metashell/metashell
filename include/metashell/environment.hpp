@@ -29,6 +29,9 @@ namespace metashell
   class environment : boost::noncopyable
   {
   public:
+    environment() = default;
+    environment(environment&&) {}
+
     virtual ~environment() {}
 
     virtual void append(const std::string& s_) = 0;
