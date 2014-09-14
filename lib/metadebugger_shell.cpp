@@ -236,7 +236,7 @@ void metadebugger_shell::command_break(const std::string& arg) {
 void metadebugger_shell::command_help(const std::string& arg) {
   if (arg.empty()) {
     display_info(
-        "List of avaliable commands:\n\n");
+        "List of available commands:\n\n");
     for (const metadebugger_command& cmd : command_handler.get_commands()) {
       display_info(
           cmd.get_keys().front() + " -- " +
