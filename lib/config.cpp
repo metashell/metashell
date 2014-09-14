@@ -146,6 +146,7 @@ namespace
     if (env_detector_.on_windows())
     {
       extra_clang_args_.push_back("-fno-ms-compatibility");
+      extra_clang_args_.push_back("-U_MSC_VER");
     }
     return extra_clang_args_;
   }

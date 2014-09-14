@@ -654,5 +654,6 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
   const config cfg = detect_config(user_config(), envd, err);
 
   JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
+  JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
 }
 
