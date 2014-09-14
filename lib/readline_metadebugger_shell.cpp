@@ -41,17 +41,8 @@ void readline_metadebugger_shell::add_history(const std::string& str) {
   readline_env.add_history(str);
 }
 
-void readline_metadebugger_shell::display(
-    const std::string& str,
-    optional_color color) const
-{
-  if (color) {
-    just::console::text_color(*color);
-  }
-  std::cout << str;
-  if (color) {
-    just::console::reset();
-  }
+void readline_metadebugger_shell::display(const colored_string& cs) const {
+  std::cout << cs;
 }
 
 unsigned readline_metadebugger_shell::width() const {

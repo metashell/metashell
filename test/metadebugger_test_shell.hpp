@@ -35,9 +35,7 @@ public:
 
   virtual void add_history(const std::string& str);
 
-  virtual void display(
-      const std::string& str,
-      optional_color color = boost::none) const;
+  virtual void display(const metashell::colored_string& cs) const;
 
   virtual unsigned width() const;
 

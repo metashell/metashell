@@ -17,8 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <just/console.hpp>
-
+#include <metashell/colored_string.hpp>
 #include <metashell/metadebugger_shell.hpp>
 #include <metashell/readline_environment.hpp>
 
@@ -35,9 +34,7 @@ public:
 
   virtual void add_history(const std::string& str);
 
-  virtual void display(
-      const std::string& str,
-      optional_color color = boost::none) const;
+  virtual void display(const colored_string& cs) const;
 
   virtual unsigned width() const;
 private:

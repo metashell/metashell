@@ -21,19 +21,16 @@
 
 #include <boost/optional.hpp>
 
-#include <just/console.hpp>
-
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
+#include <metashell/colored_string.hpp>
 #include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
 
 class metadebugger_shell {
 public:
-  typedef boost::optional<just::console::color> optional_color;
-
   static metadebugger_command_handler_map::command_map_t
     create_default_command_map();
 
@@ -47,9 +44,7 @@ public:
 
   virtual void add_history(const std::string& str) = 0;
 
-  virtual void display(
-      const std::string& str,
-      optional_color color = boost::none) const = 0;
+  virtual void display(const colored_string& cs) const = 0;
 
   virtual unsigned width() const = 0;
 
@@ -110,7 +105,7 @@ private:
   void display_range(
       std::string::const_iterator begin,
       std::string::const_iterator end,
-      optional_color c) const;
+      colored_string::color_t c) const;
 
   void display_trace_content(
       string_range range,
@@ -135,7 +130,7 @@ private:
 
   void display_frame(const metaprogram::frame_t& frame) const;
 
-  const static std::vector<just::console::color> colors;
+  const static std::vector<color> colors;
 };
 
 }

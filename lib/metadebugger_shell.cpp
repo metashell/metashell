@@ -41,14 +41,14 @@
 
 namespace metashell {
 
-const std::vector<just::console::color> metadebugger_shell::colors =
+const std::vector<color> metadebugger_shell::colors =
   {
-    just::console::color::red,
-    just::console::color::green,
-    just::console::color::yellow,
-    just::console::color::blue,
-    just::console::color::magenta,
-    just::console::color::cyan
+    color::red,
+    color::green,
+    color::yellow,
+    color::blue,
+    color::magenta,
+    color::cyan
   };
 
 metadebugger_command_handler_map::command_map_t
@@ -315,7 +315,7 @@ void metadebugger_shell::continue_metaprogram() {
 }
 
 void metadebugger_shell::display_error(const std::string& str) const {
-  display(str, just::console::color::bright_red);
+  display(colored_string(str, color::bright_red));
 }
 
 void metadebugger_shell::display_info(const std::string& str) const {
@@ -360,10 +360,10 @@ metadebugger_shell::string_range metadebugger_shell::find_type_emphasize(
 void metadebugger_shell::display_range(
     std::string::const_iterator begin,
     std::string::const_iterator end,
-    optional_color c) const
+    colored_string::color_t c) const
 {
   if (begin < end) {
-    display(std::string(begin, end), c);
+    display(colored_string(std::string(begin, end), c));
   }
 }
 
@@ -384,7 +384,7 @@ void metadebugger_shell::display_trace_content(
   display_range(
       std::max(range.first, emphasize.first),
       std::min(range.second, emphasize.second),
-      just::console::color::white);
+      color::white);
 
   display_range(
       std::max(emphasize.second, range.first),
@@ -402,20 +402,20 @@ void metadebugger_shell::display_trace_graph(
   if (depth > 0) {
     //TODO respect the -H (no syntax highlight parameter)
     for (unsigned i = 1; i < depth; ++i) {
-      display(
+      display(colored_string(
           depth_counter[i] > 0 ? "| " : "  ",
-          colors[i % colors.size()]);
+          colors[i % colors.size()]));
     }
 
-    just::console::color mark_color = colors[depth % colors.size()];
+    color mark_color = colors[depth % colors.size()];
     if (print_mark) {
       if (depth_counter[depth] == 0) {
-        display("` ", mark_color);
+        display(colored_string("` ", mark_color));
       } else {
-        display("+ ", mark_color);
+        display(colored_string("+ ", mark_color));
       }
     } else if (depth_counter[depth] > 0) {
-      display("| ", mark_color);
+      display(colored_string("| ", mark_color));
     } else {
       display("  ");
     }

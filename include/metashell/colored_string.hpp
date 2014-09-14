@@ -38,6 +38,7 @@ public:
   typedef std::string::size_type size_type;
 
   colored_string() = default;
+  colored_string(const char *string, const color_t& color = boost::none);
   colored_string(const std::string& string, const color_t& color = boost::none);
 
   colored_string& operator+=(const std::string& rhs);

@@ -44,11 +44,10 @@ void metadebugger_test_shell::add_history(const std::string& str) {
 }
 
 void metadebugger_test_shell::display(
-    const std::string& str,
-    optional_color) const
+    const metashell::colored_string& cs) const
 {
   //TODO We don't test colors at the moment
-  output += str;
+  output += cs.get_string();
 }
 
 unsigned metadebugger_test_shell::width() const {
