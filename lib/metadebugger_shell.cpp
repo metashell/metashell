@@ -400,7 +400,10 @@ void metadebugger_shell::display_trace_line(
 
   unsigned non_content_length = 2*depth;
 
-  if (width < 10 || non_content_length >= width - 10) {
+  const unsigned pretty_print_threshold = 10;
+  if (width < pretty_print_threshold ||
+      non_content_length >= width - pretty_print_threshold)
+  {
     // We have no chance to display the graph nicely :(
     display_trace_graph(depth, depth_counter, true);
 
@@ -410,9 +413,7 @@ void metadebugger_shell::display_trace_line(
     unsigned content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width) {
       display_trace_graph(depth, depth_counter, i == 0);
-      display(
-          element_content,
-          i, content_width);
+      display(element_content, i, content_width);
       display("\n");
     }
   }
