@@ -87,5 +87,10 @@ metadebugger_command_handler_map::get_command_for_line(
   return std::make_tuple(commands[lower->second], rest);
 }
 
+const metadebugger_command_handler_map::commands_t&
+metadebugger_command_handler_map::get_commands() const {
+  return commands;
+}
+
 }
 

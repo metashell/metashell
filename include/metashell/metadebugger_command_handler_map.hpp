@@ -38,6 +38,8 @@ public:
   boost::optional<std::tuple<metadebugger_command, std::string>>
     get_command_for_line(const std::string& line) const;
 
+  const commands_t& get_commands() const;
+
 private:
   typedef boost::container::flat_map<std::string, std::size_t>
     key_command_map_t;

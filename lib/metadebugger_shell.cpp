@@ -234,6 +234,21 @@ void metadebugger_shell::command_break(const std::string& arg) {
 }
 
 void metadebugger_shell::command_help(const std::string& arg) {
+  if (arg.empty()) {
+    display_info(
+        "List of avaliable commands:\n\n");
+    for (const metadebugger_command& cmd : command_handler.get_commands()) {
+      display_info(
+          cmd.get_keys().front() + " -- " +
+          cmd.get_short_description() + "\n");
+    }
+    display_info(
+        "\n"
+        "Type \"help\" followed by a command name for more information.\n"
+        "Command name abbreviations are allowed if unambiguous.\n");
+    return;
+  }
+
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
     display_error("Command not found\n");
