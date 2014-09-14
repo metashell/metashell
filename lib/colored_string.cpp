@@ -26,6 +26,12 @@ colored_string::colored_string(
     const char *string, const color_t& color) :
   colored_string(std::string(string), color) {}
 
+colored_string& colored_string::operator+=(const char *rhs) {
+  string += rhs;
+  colors.resize(string.size(), boost::none);
+  return *this;
+}
+
 colored_string& colored_string::operator+=(const std::string& rhs) {
   string += rhs;
   colors.resize(string.size(), boost::none);

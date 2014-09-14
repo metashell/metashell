@@ -22,6 +22,7 @@
 #include <ostream>
 
 #include <boost/optional.hpp>
+#include <boost/operators.hpp>
 
 #include <just/console.hpp>
 
@@ -30,7 +31,12 @@ namespace metashell {
 // Bring color to metashell namespace
 using just::console::color;
 
-class colored_string {
+class colored_string :
+  boost::addable<colored_string,
+  boost::addable<colored_string, std::string,
+  boost::addable<colored_string, const char *
+  >>>
+{
 public:
   typedef boost::optional<color> color_t;
   typedef std::vector<color_t> colors_t;
@@ -41,6 +47,7 @@ public:
   colored_string(const char *string, const color_t& color = boost::none);
   colored_string(const std::string& string, const color_t& color = boost::none);
 
+  colored_string& operator+=(const char *rhs);
   colored_string& operator+=(const std::string& rhs);
   colored_string& operator+=(const colored_string& rhs);
 
