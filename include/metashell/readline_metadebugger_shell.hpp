@@ -29,7 +29,7 @@ public:
 
   readline_metadebugger_shell(
       const config& conf,
-      environment& env);
+      const environment& env);
 
   virtual void run();
 

@@ -25,7 +25,7 @@ namespace metashell {
 
 readline_metadebugger_shell::readline_metadebugger_shell(
     const config& conf,
-    environment& env) :
+    const environment& env) :
   metadebugger_shell(conf, env) {}
 
 void readline_metadebugger_shell::run() {

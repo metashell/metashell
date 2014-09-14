@@ -76,13 +76,15 @@ metadebugger_command_handler_map::commands_t
 
 metadebugger_shell::metadebugger_shell(
     const config& conf,
-    environment& env) :
+    const environment& env_arg) :
   conf(conf),
-  env(env),
+  env("__mdb_internal", conf),
   command_handler(create_default_command_map()),
   mp(metaprogram::create_empty_finished()),
   is_stopped(false)
-{}
+{
+  env.append(env_arg.get_all());
+}
 
 metadebugger_shell::~metadebugger_shell() {}
 

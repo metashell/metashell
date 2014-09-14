@@ -24,8 +24,8 @@
 #include <just/console.hpp>
 
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 #include <metashell/metaprogram.hpp>
+#include <metashell/in_memory_environment.hpp>
 #include <metashell/metadebugger_command_handler_map.hpp>
 
 namespace metashell {
@@ -39,7 +39,7 @@ public:
 
   metadebugger_shell(
       const config& conf,
-      environment& env);
+      const environment& env);
 
   virtual ~metadebugger_shell();
 
@@ -85,8 +85,8 @@ protected:
   void display_current_forwardtrace() const;
   void display_backtrace() const;
 
-  const config& conf;
-  environment& env;
+  config conf;
+  in_memory_environment env;
   metadebugger_command_handler_map command_handler;
 
   metaprogram mp;

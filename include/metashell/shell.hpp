@@ -80,7 +80,6 @@ namespace metashell
     void using_precompiled_headers(bool enabled_);
     bool using_precompiled_headers() const;
 
-    environment& env();
     const environment& env() const;
 
     void reset_environment();

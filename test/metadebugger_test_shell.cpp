@@ -14,28 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "test_shell.hpp"
 #include "metadebugger_test_shell.hpp"
 
-#include "test_shell.hpp"
+#include <metashell/config.hpp>
+#include <metashell/in_memory_environment.hpp>
 
-metadebugger_test_shell metadebugger_test_shell::create_default() {
-  return create_with_environment({});
-}
-
-metadebugger_test_shell metadebugger_test_shell::create_with_environment(
-      const std::string& line)
+metadebugger_test_shell::metadebugger_test_shell(const std::string& line) :
+  metashell::metadebugger_shell(
+      test_shell().get_config(),
+      test_shell().env()
+  )
 {
-  std::shared_ptr<metashell::shell> sh(new test_shell());
-
-  sh->store_in_buffer(line);
-
-  return metadebugger_test_shell(sh);
+  env.append(line);
 }
-
-metadebugger_test_shell::metadebugger_test_shell(
-  std::shared_ptr<metashell::shell> sh_) :
-  metashell::metadebugger_shell(sh_->get_config(), sh_->env()), sh(sh_)
-{}
 
 void metadebugger_test_shell::run() {}
 
