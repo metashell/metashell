@@ -74,7 +74,7 @@ metadebugger_command_handler_map::commands_t
       {{"help"}, non_repeatable, &metadebugger_shell::command_help,
         "[command]",
         "Show help for commands.",
-        "If no [command] is specified, show a list of all avaliable commands."},
+        "If no [command] is specified, show a list of all available commands."},
       {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
         "",
         "Quit metadebugger.",

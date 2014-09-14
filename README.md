@@ -778,7 +778,7 @@ Add new breakpoint.
 
 * __`help [command]`__ <br />
 Show help for commands. <br />
-If no [command] is specified, show a list of all avaliable commands.
+If no [command] is specified, show a list of all available commands.
 
 * __`quit `__ <br />
 Quit metadebugger.
