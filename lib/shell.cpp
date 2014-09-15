@@ -169,6 +169,9 @@ void shell::display_splash() const
         "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
       )
       .left_align(
+        "                             Andras Kucsma  (andras.kucsma@gmail.com)"
+      )
+      .left_align(
         "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
         " and you are welcome to redistribute it under certain conditions;"
         " for details visit <http://www.gnu.org/licenses/>."
