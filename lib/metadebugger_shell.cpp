@@ -115,25 +115,32 @@ void metadebugger_shell::display_splash() const {
   );
 }
 
-void metadebugger_shell::line_available(const std::string& original_line) {
+void metadebugger_shell::line_available(const std::string& line_arg) {
 
-  std::string line = boost::trim_copy(original_line);
+  using boost::algorithm::all;
+  using boost::is_space;
 
-  if (line.empty()) {
-    if (prev_line && !prev_line->empty()) {
-      line = *prev_line;
-    } else {
+  std::string line = line_arg;
+
+  const bool line_all_space = all(line, is_space());
+
+  if (!line_all_space && line != prev_line) {
+    add_history(line);
+  }
+
+  if (line_all_space) {
+    if (!last_command_repeatable) {
       return;
     }
-  } else if (line != prev_line) {
-    add_history(line);
+    line = prev_line;
+  } else {
     prev_line = line;
   }
 
   auto command_arg_pair = command_handler.get_command_for_line(line);
   if (!command_arg_pair) {
     display_error("Command parsing failed\n");
-    prev_line = boost::none;
+    last_command_repeatable = false;
     return;
   }
 
@@ -141,9 +148,7 @@ void metadebugger_shell::line_available(const std::string& original_line) {
   std::string args;
   std::tie(cmd, args) = *command_arg_pair;
 
-  if (!cmd.is_repeatable()) {
-    prev_line = boost::none;
-  }
+  last_command_repeatable = cmd.is_repeatable();
 
   (this->*cmd.get_func())(args);
 }

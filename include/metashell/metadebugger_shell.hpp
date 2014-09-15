@@ -95,9 +95,8 @@ protected:
   metaprogram mp;
   breakpoints_t breakpoints;
 
-  // Optional is empty, when there is non previous line, or
-  // the last command is non_repeatable
-  boost::optional<std::string> prev_line;
+  std::string prev_line;
+  bool last_command_repeatable = false;
 
   bool is_stopped;
 
