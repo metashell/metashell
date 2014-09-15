@@ -104,9 +104,6 @@ public:
       vertex_descriptor to,
       instantiation_kind kind);
 
-  boost::optional<vertex_descriptor> find_vertex(
-      const std::string& element) const;
-
   void reset_state();
   bool is_finished() const;
 

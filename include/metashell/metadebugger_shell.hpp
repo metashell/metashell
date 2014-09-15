@@ -64,7 +64,7 @@ public:
   void command_evaluate(const std::string& arg);
   void command_forwardtrace(const std::string& arg);
   void command_backtrace(const std::string& arg);
-  void command_break(const std::string& arg);
+  void command_rbreak(const std::string& arg);
   void command_help(const std::string& arg);
   void command_quit(const std::string& arg);
 
@@ -95,9 +95,8 @@ protected:
   metaprogram mp;
   breakpoints_t breakpoints;
 
-  // Optional is empty, when there is non previous line, or
-  // the last command is non_repeatable
-  boost::optional<std::string> prev_line;
+  std::string prev_line;
+  bool last_command_repeatable = false;
 
   bool is_stopped;
 

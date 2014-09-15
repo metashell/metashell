@@ -77,23 +77,6 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
-boost::optional<metaprogram::vertex_descriptor>
-  metaprogram::find_vertex(const std::string& element) const
-{
-  vertex_iterator begin, end;
-  std::tie(begin, end) = boost::vertices(graph);
-  vertex_iterator it =
-    std::find_if(begin, end,
-      [&](vertex_descriptor vertex) {
-        return get_vertex_property(vertex).name == element;
-      }
-    );
-  if (it != end) {
-    return *it;
-  }
-  return boost::none;
-}
-
 void metaprogram::reset_state() {
   unsigned vertex_count = get_num_vertices();
   assert(vertex_count > 0);
