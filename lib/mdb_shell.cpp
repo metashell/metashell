@@ -122,19 +122,21 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
   std::string line = line_arg;
 
-  const bool line_all_space = all(line, is_space());
-
-  if (!line_all_space && line != prev_line) {
+  if (line != prev_line && !line.empty()) {
     add_history(line);
   }
 
-  if (line_all_space) {
+  if (line.empty()) {
     if (!last_command_repeatable) {
       return;
     }
     line = prev_line;
   } else {
     prev_line = line;
+  }
+
+  if (all(line, is_space())) {
+    return;
   }
 
   auto command_arg_pair = command_handler.get_command_for_line(line);

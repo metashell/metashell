@@ -82,6 +82,45 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<8> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_space_second_line) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available(" ");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_fibonacci_at_start) {
   mdb_test_shell sh(fibonacci_mp);
 
