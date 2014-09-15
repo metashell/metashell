@@ -16,12 +16,12 @@
 
 #include <just/test.hpp>
 
-#include "metadebugger_test_shell.hpp"
+#include "mdb_test_shell.hpp"
 
 using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_shell_empty_lines) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT(sh.get_history().empty());
 
@@ -39,7 +39,7 @@ JUST_TEST_CASE(test_mdb_shell_empty_lines) {
 }
 
 JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT(sh.get_history().empty());
 
@@ -64,7 +64,7 @@ JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
 }
 
 JUST_TEST_CASE(test_mdb_shell_prompt) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT_EQUAL(sh.prompt(), "(mdb) ");
 }

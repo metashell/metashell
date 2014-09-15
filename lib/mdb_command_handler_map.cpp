@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metadebugger_command_handler_map.hpp>
-#include <metashell/metadebugger_shell.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/mdb_shell.hpp>
 
 #include <sstream>
 
@@ -26,7 +26,7 @@
 
 namespace metashell {
 
-metadebugger_command_handler_map::metadebugger_command_handler_map(
+mdb_command_handler_map::mdb_command_handler_map(
     const commands_t& commands_arg) :
   commands(commands_arg)
 {
@@ -39,8 +39,8 @@ metadebugger_command_handler_map::metadebugger_command_handler_map(
   key_command_map.insert(key_command_vec.begin(), key_command_vec.end());
 }
 
-boost::optional<std::tuple<metadebugger_command, std::string>>
-metadebugger_command_handler_map::get_command_for_line(
+boost::optional<std::tuple<mdb_command, std::string>>
+mdb_command_handler_map::get_command_for_line(
     const std::string& line) const
 {
 
@@ -87,8 +87,8 @@ metadebugger_command_handler_map::get_command_for_line(
   return std::make_tuple(commands[lower->second], rest);
 }
 
-const metadebugger_command_handler_map::commands_t&
-metadebugger_command_handler_map::get_commands() const {
+const mdb_command_handler_map::commands_t&
+mdb_command_handler_map::get_commands() const {
   return commands;
 }
 

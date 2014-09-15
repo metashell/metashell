@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metadebugger_command.hpp>
+#include <metashell/mdb_command.hpp>
 
 namespace metashell {
 
-metadebugger_command::metadebugger_command(
+mdb_command::mdb_command(
     const keys_t& keys,
     repeatable_t rep,
     function func,
@@ -30,31 +30,31 @@ metadebugger_command::metadebugger_command(
   short_description(short_description), long_description(long_description)
 {}
 
-const metadebugger_command::keys_t& metadebugger_command::get_keys() const {
+const mdb_command::keys_t& mdb_command::get_keys() const {
   return keys;
 }
 
-bool metadebugger_command::is_repeatable() const {
+bool mdb_command::is_repeatable() const {
   return rep == repeatable;
 }
 
-metadebugger_command::function metadebugger_command::get_func() const {
+mdb_command::function mdb_command::get_func() const {
   return func;
 }
 
-const std::string& metadebugger_command::get_usage() const {
+const std::string& mdb_command::get_usage() const {
   return usage;
 }
 
-const std::string& metadebugger_command::get_short_description() const {
+const std::string& mdb_command::get_short_description() const {
   return short_description;
 }
 
-const std::string& metadebugger_command::get_long_description() const {
+const std::string& mdb_command::get_long_description() const {
   return long_description;
 }
 
-std::string metadebugger_command::get_full_description() const {
+std::string mdb_command::get_full_description() const {
   if (long_description.empty()) {
     return short_description;
   }

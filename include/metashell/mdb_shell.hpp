@@ -1,5 +1,5 @@
-#ifndef METASHELL_METADEBUGGER_SHELL_HPP
-#define METASHELL_METADEBUGGER_SHELL_HPP
+#ifndef METASHELL_MDB_SHELL_HPP
+#define METASHELL_MDB_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -25,20 +25,20 @@
 #include <metashell/metaprogram.hpp>
 #include <metashell/colored_string.hpp>
 #include <metashell/templight_environment.hpp>
-#include <metashell/metadebugger_command_handler_map.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
 
 namespace metashell {
 
-class metadebugger_shell {
+class mdb_shell {
 public:
-  static metadebugger_command_handler_map::commands_t
+  static mdb_command_handler_map::commands_t
     create_default_command_map();
 
-  metadebugger_shell(
+  mdb_shell(
       const config& conf,
       const environment& env);
 
-  virtual ~metadebugger_shell();
+  virtual ~mdb_shell();
 
   virtual void run() = 0;
 
@@ -90,7 +90,7 @@ protected:
 
   config conf;
   templight_environment env;
-  metadebugger_command_handler_map command_handler;
+  mdb_command_handler_map command_handler;
 
   metaprogram mp;
   breakpoints_t breakpoints;

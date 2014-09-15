@@ -1,5 +1,5 @@
-#ifndef METADEBUGGER_COMMAND_HPP
-#define METADEBUGGER_COMMAND_HPP
+#ifndef MDB_COMMAND_HPP
+#define MDB_COMMAND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -22,20 +22,20 @@
 
 namespace metashell {
 
-class metadebugger_shell;
+class mdb_shell;
 
 enum repeatable_t {
   repeatable,
   non_repeatable
 };
 
-class metadebugger_command {
+class mdb_command {
 public:
   typedef std::vector<std::string> keys_t;
-  typedef void (metadebugger_shell::*function)(const std::string& args);
+  typedef void (mdb_shell::*function)(const std::string& args);
 
-  metadebugger_command() = default;
-  metadebugger_command(
+  mdb_command() = default;
+  mdb_command(
       const keys_t& key,
       repeatable_t rep,
       function func,

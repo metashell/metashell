@@ -1,5 +1,5 @@
-#ifndef METADEBUGGER_COMMAND_HANDLER_MAP_HPP
-#define METADEBUGGER_COMMAND_HANDLER_MAP_HPP
+#ifndef MDB_COMMAND_HANDLER_MAP_HPP
+#define MDB_COMMAND_HANDLER_MAP_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -25,18 +25,18 @@
 #include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
 
-#include <metashell/metadebugger_command.hpp>
+#include <metashell/mdb_command.hpp>
 
 namespace metashell {
 
-class metadebugger_command_handler_map {
+class mdb_command_handler_map {
 public:
-  typedef std::vector<metadebugger_command> commands_t;
+  typedef std::vector<mdb_command> commands_t;
 
-  metadebugger_command_handler_map(const commands_t& commands);
+  mdb_command_handler_map(const commands_t& commands);
 
   // <command, args>
-  boost::optional<std::tuple<metadebugger_command, std::string>>
+  boost::optional<std::tuple<mdb_command, std::string>>
     get_command_for_line(const std::string& line) const;
 
   const commands_t& get_commands() const;

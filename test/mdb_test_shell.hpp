@@ -1,5 +1,5 @@
-#ifndef METASHELL_METADEBUGGER_TEST_SHELL_HPP
-#define METASHELL_METADEBUGGER_TEST_SHELL_HPP
+#ifndef METASHELL_MDB_TEST_SHELL_HPP
+#define METASHELL_MDB_TEST_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -21,11 +21,11 @@
 #include <memory>
 
 #include <metashell/shell.hpp>
-#include <metashell/metadebugger_shell.hpp>
+#include <metashell/mdb_shell.hpp>
 
-class metadebugger_test_shell : public metashell::metadebugger_shell {
+class mdb_test_shell : public metashell::mdb_shell {
 public:
-  metadebugger_test_shell(const std::string& line = "");
+  mdb_test_shell(const std::string& line = "");
 
   typedef std::vector<std::string> history_t;
 

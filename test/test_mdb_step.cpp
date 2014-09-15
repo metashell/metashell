@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "metadebugger_test_shell.hpp"
+#include "mdb_test_shell.hpp"
 
 #include "test_fibonacci.hpp"
 
@@ -24,7 +24,7 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_without_evaluation) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   sh.line_available("step");
 
@@ -35,7 +35,7 @@ JUST_TEST_CASE(test_mdb_step_without_evaluation) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -49,7 +49,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -63,7 +63,7 @@ JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -83,7 +83,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_fibonacci_at_start) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -96,7 +96,7 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_at_start) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -116,7 +116,7 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -130,7 +130,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.clear_output();
@@ -167,7 +167,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -181,7 +181,7 @@ JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_garbage_argument) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
