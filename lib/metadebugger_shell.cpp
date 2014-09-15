@@ -67,9 +67,9 @@ metadebugger_command_handler_map::commands_t
         "",
         "Print backtrace from the current point.",
         ""},
-      {{"break"}, non_repeatable, &metadebugger_shell::command_break,
-        "[breakpoint]",
-        "Add new breakpoint.",
+      {{"rbreak"}, non_repeatable, &metadebugger_shell::command_rbreak,
+        "<regex>",
+        "Add breakpoint for all types matching <regex>.",
         ""},
       {{"help"}, non_repeatable, &metadebugger_shell::command_help,
         "[command]",
@@ -267,7 +267,7 @@ void metadebugger_shell::command_backtrace(const std::string& arg) {
   display_backtrace();
 }
 
-void metadebugger_shell::command_break(const std::string& arg) {
+void metadebugger_shell::command_rbreak(const std::string& arg) {
   breakpoints.push_back(arg);
   display_info("Break point \"" + arg + "\" added\n");
 }
