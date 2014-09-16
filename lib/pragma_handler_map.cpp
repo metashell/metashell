@@ -28,7 +28,7 @@
 #include <metashell/pragma_environment_add.hpp>
 #include <metashell/pragma_environment_reset.hpp>
 #include <metashell/pragma_environment_reload.hpp>
-#include <metashell/pragma_metadebugger.hpp>
+#include <metashell/pragma_mdb.hpp>
 #include <metashell/pragma_evaluate.hpp>
 
 #include "exception.hpp"
@@ -170,8 +170,7 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add("environment", "add", pragma_environment_add(shell_))
       .add("environment", "reset", pragma_environment_reset(shell_))
       .add("environment", "reload", pragma_environment_reload(shell_))
-      .add("metadebugger", pragma_metadebugger(shell_))
-      .add("mdb", pragma_metadebugger(shell_))
+      .add("mdb", pragma_mdb(shell_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;

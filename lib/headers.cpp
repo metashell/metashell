@@ -87,7 +87,7 @@ namespace
 
     return
       "#include <"
-        + string(path_builder() / "metashell" / "formatter/" / (name_ + ".hpp"))
+        + string(path_builder() / "metashell" / "formatter" / (name_ + ".hpp"))
         + ">";
   }
 }

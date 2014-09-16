@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metadebugger_shell.hpp>
+#include <metashell/mdb_shell.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
@@ -31,7 +31,7 @@
 
 namespace metashell {
 
-const std::vector<color> metadebugger_shell::colors =
+const std::vector<color> mdb_shell::colors =
   {
     color::red,
     color::green,
@@ -40,42 +40,42 @@ const std::vector<color> metadebugger_shell::colors =
     color::cyan
   };
 
-metadebugger_command_handler_map::commands_t
-  metadebugger_shell::create_default_command_map() {
+mdb_command_handler_map::commands_t
+  mdb_shell::create_default_command_map() {
 
-  metadebugger_command_handler_map::commands_t res =
+  mdb_command_handler_map::commands_t res =
     {
-      {{"continue"}, repeatable, &metadebugger_shell::command_continue,
+      {{"continue"}, repeatable, &mdb_shell::command_continue,
         "",
         "Continue program being debugged.",
         "The program is continued until breakpoint or end of program."},
-      {{"step"}, repeatable, &metadebugger_shell::command_step,
+      {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
         "Step the program forward.",
         "Argument n means step n times. n defaults to 1 if not specified."},
-      {{"evaluate"}, non_repeatable, &metadebugger_shell::command_evaluate,
+      {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
         "<type>",
         "Evaluate and start debugging a new metaprogram.",
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
-      {{"forwardtrace", "ft"}, non_repeatable, &metadebugger_shell::command_forwardtrace,
+      {{"forwardtrace", "ft"}, non_repeatable, &mdb_shell::command_forwardtrace,
         "[full]",
         "Print forwardtrace from the current point.",
         "Use of the full qualifier will expand Memoizations."},
-      {{"backtrace", "bt"}, non_repeatable, &metadebugger_shell::command_backtrace,
+      {{"backtrace", "bt"}, non_repeatable, &mdb_shell::command_backtrace,
         "",
         "Print backtrace from the current point.",
         ""},
-      {{"rbreak"}, non_repeatable, &metadebugger_shell::command_rbreak,
+      {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
         "Add breakpoint for all types matching <regex>.",
         ""},
-      {{"help"}, non_repeatable, &metadebugger_shell::command_help,
+      {{"help"}, non_repeatable, &mdb_shell::command_help,
         "[command]",
         "Show help for commands.",
         "If no [command] is specified, show a list of all available commands."},
-      {{"quit"} , non_repeatable, &metadebugger_shell::command_quit,
+      {{"quit"} , non_repeatable, &mdb_shell::command_quit,
         "",
         "Quit metadebugger.",
         ""}
@@ -83,7 +83,7 @@ metadebugger_command_handler_map::commands_t
   return res;
 }
 
-metadebugger_shell::metadebugger_shell(
+mdb_shell::mdb_shell(
     const config& conf,
     const environment& env_arg) :
   conf(conf),
@@ -95,46 +95,48 @@ metadebugger_shell::metadebugger_shell(
   env.append(env_arg.get_all());
 }
 
-metadebugger_shell::~metadebugger_shell() {}
+mdb_shell::~mdb_shell() {}
 
-void metadebugger_shell::display(const colored_string& cs) const {
+void mdb_shell::display(const colored_string& cs) const {
   display(cs, 0, cs.size());
 }
 
-std::string metadebugger_shell::prompt() const {
+std::string mdb_shell::prompt() const {
   return "(mdb) ";
 }
 
-bool metadebugger_shell::stopped() const {
+bool mdb_shell::stopped() const {
   return is_stopped;
 }
 
-void metadebugger_shell::display_splash() const {
+void mdb_shell::display_splash() const {
   display_info(
       "For help, type \"help\".\n"
   );
 }
 
-void metadebugger_shell::line_available(const std::string& line_arg) {
+void mdb_shell::line_available(const std::string& line_arg) {
 
   using boost::algorithm::all;
   using boost::is_space;
 
   std::string line = line_arg;
 
-  const bool line_all_space = all(line, is_space());
-
-  if (!line_all_space && line != prev_line) {
+  if (line != prev_line && !line.empty()) {
     add_history(line);
   }
 
-  if (line_all_space) {
+  if (line.empty()) {
     if (!last_command_repeatable) {
       return;
     }
     line = prev_line;
   } else {
     prev_line = line;
+  }
+
+  if (all(line, is_space())) {
+    return;
   }
 
   auto command_arg_pair = command_handler.get_command_for_line(line);
@@ -144,7 +146,7 @@ void metadebugger_shell::line_available(const std::string& line_arg) {
     return;
   }
 
-  metadebugger_command cmd;
+  mdb_command cmd;
   std::string args;
   std::tie(cmd, args) = *command_arg_pair;
 
@@ -153,7 +155,7 @@ void metadebugger_shell::line_available(const std::string& line_arg) {
   (this->*cmd.get_func())(args);
 }
 
-bool metadebugger_shell::require_empty_args(const std::string& args) const {
+bool mdb_shell::require_empty_args(const std::string& args) const {
   if (!args.empty()) {
     display_error("This command doesn't accept arguments\n");
     return false;
@@ -161,7 +163,7 @@ bool metadebugger_shell::require_empty_args(const std::string& args) const {
   return true;
 }
 
-bool metadebugger_shell::require_running_metaprogram() const {
+bool mdb_shell::require_running_metaprogram() const {
   if (mp.is_finished()) {
     display_error("Metaprogram finished or not evaluated yet\n");
     return false;
@@ -169,14 +171,14 @@ bool metadebugger_shell::require_running_metaprogram() const {
   return true;
 }
 
-void metadebugger_shell::command_continue(const std::string& arg) {
+void mdb_shell::command_continue(const std::string& arg) {
   if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
   continue_metaprogram();
 }
 
-void metadebugger_shell::command_step(const std::string& arg) {
+void mdb_shell::command_step(const std::string& arg) {
   if (!require_running_metaprogram()) {
     return;
   }
@@ -222,7 +224,7 @@ void metadebugger_shell::command_step(const std::string& arg) {
   }
 }
 
-void metadebugger_shell::command_evaluate(const std::string& arg) {
+void mdb_shell::command_evaluate(const std::string& arg) {
   if (arg.empty()) {
     display_error("Argument expected\n");
     return;
@@ -230,7 +232,7 @@ void metadebugger_shell::command_evaluate(const std::string& arg) {
   run_metaprogram_with_templight(arg);
 }
 
-void metadebugger_shell::command_forwardtrace(const std::string& arg) {
+void mdb_shell::command_forwardtrace(const std::string& arg) {
   if (!require_running_metaprogram()) {
     return;
   }
@@ -265,23 +267,23 @@ void metadebugger_shell::command_forwardtrace(const std::string& arg) {
   }
 }
 
-void metadebugger_shell::command_backtrace(const std::string& arg) {
+void mdb_shell::command_backtrace(const std::string& arg) {
   if (!require_empty_args(arg) || !require_running_metaprogram()) {
     return;
   }
   display_backtrace();
 }
 
-void metadebugger_shell::command_rbreak(const std::string& arg) {
+void mdb_shell::command_rbreak(const std::string& arg) {
   breakpoints.push_back(arg);
   display_info("Break point \"" + arg + "\" added\n");
 }
 
-void metadebugger_shell::command_help(const std::string& arg) {
+void mdb_shell::command_help(const std::string& arg) {
   if (arg.empty()) {
     display_info(
         "List of available commands:\n\n");
-    for (const metadebugger_command& cmd : command_handler.get_commands()) {
+    for (const mdb_command& cmd : command_handler.get_commands()) {
       display_info(
           cmd.get_keys().front() + " -- " +
           cmd.get_short_description() + "\n");
@@ -301,7 +303,7 @@ void metadebugger_shell::command_help(const std::string& arg) {
 
   using boost::algorithm::join;
 
-  metadebugger_command cmd;
+  mdb_command cmd;
   std::string command_args;
   std::tie(cmd, command_args) = *command_arg_pair;
 
@@ -315,14 +317,14 @@ void metadebugger_shell::command_help(const std::string& arg) {
       cmd.get_full_description() + "\n");
 }
 
-void metadebugger_shell::command_quit(const std::string& arg) {
+void mdb_shell::command_quit(const std::string& arg) {
   if (!require_empty_args(arg)) {
     return;
   }
   is_stopped = true;
 }
 
-void metadebugger_shell::run_metaprogram_with_templight(
+void mdb_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
@@ -335,7 +337,7 @@ void metadebugger_shell::run_metaprogram_with_templight(
   mp = metaprogram::create_from_xml_file(xml_path);
 }
 
-void metadebugger_shell::run_metaprogram(const std::string& str) {
+void mdb_shell::run_metaprogram(const std::string& str) {
   result res = eval_tmp_unformatted(env, str, conf, "<mdb-stdin>");
 
   if (!res.info.empty()) {
@@ -350,7 +352,7 @@ void metadebugger_shell::run_metaprogram(const std::string& str) {
   }
 }
 
-void metadebugger_shell::continue_metaprogram() {
+void mdb_shell::continue_metaprogram() {
   assert(!mp.is_finished());
 
   while (true) {
@@ -372,15 +374,15 @@ void metadebugger_shell::continue_metaprogram() {
   }
 }
 
-void metadebugger_shell::display_error(const std::string& str) const {
+void mdb_shell::display_error(const std::string& str) const {
   display(colored_string(str, color::bright_red));
 }
 
-void metadebugger_shell::display_info(const std::string& str) const {
+void mdb_shell::display_info(const std::string& str) const {
   display(str);
 }
 
-void metadebugger_shell::display_current_frame() const {
+void mdb_shell::display_current_frame() const {
   if (mp.get_current_vertex() == mp.get_root_vertex()) {
     // The MP hasn't been stepped at least once => no frame available
     return;
@@ -388,7 +390,7 @@ void metadebugger_shell::display_current_frame() const {
   display_frame(mp.get_current_frame());
 }
 
-void metadebugger_shell::display_trace_graph(
+void mdb_shell::display_trace_graph(
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
     bool print_mark) const
@@ -418,7 +420,7 @@ void metadebugger_shell::display_trace_graph(
   }
 }
 
-void metadebugger_shell::display_trace_line(
+void mdb_shell::display_trace_line(
     metaprogram::vertex_descriptor vertex,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
@@ -455,7 +457,7 @@ void metadebugger_shell::display_trace_line(
 }
 
 // Visits a single vertex and all of its children
-void metadebugger_shell::display_trace_visit(
+void mdb_shell::display_trace_visit(
     metaprogram::vertex_descriptor root_vertex,
     metaprogram::discovered_t& discovered,
     unsigned width) const
@@ -529,19 +531,19 @@ void metadebugger_shell::display_trace_visit(
   }
 }
 
-void metadebugger_shell::display_current_forwardtrace() const {
+void mdb_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp.get_state().discovered;
 
   display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
 
-void metadebugger_shell::display_current_full_forwardtrace() const {
+void mdb_shell::display_current_full_forwardtrace() const {
   metaprogram::discovered_t discovered(mp.get_state().discovered.size());
 
   display_trace_visit(mp.get_current_vertex(), discovered, width());
 }
 
-void metadebugger_shell::display_frame(const metaprogram::frame_t& frame) const {
+void mdb_shell::display_frame(const metaprogram::frame_t& frame) const {
   // No kind for <root> vertex
   if (frame.vertex == mp.get_root_vertex()) {
     display(mp.get_vertex_property(frame.vertex).name + "\n");
@@ -553,7 +555,7 @@ void metadebugger_shell::display_frame(const metaprogram::frame_t& frame) const 
   }
 }
 
-void metadebugger_shell::display_backtrace() const {
+void mdb_shell::display_backtrace() const {
   const metaprogram::backtrace_t& backtrace = mp.get_backtrace();
 
   unsigned i = 0;

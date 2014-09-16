@@ -21,8 +21,8 @@
 #include <metashell/shell.hpp>
 #include <metashell/shell_stub.hpp>
 #include <metashell/default_environment_detector.hpp>
-#include <metashell/metadebugger_shell.hpp>
-#include <metashell/metadebugger_command_handler_map.hpp>
+#include <metashell/mdb_shell.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -84,9 +84,9 @@ namespace
   {
     using boost::algorithm::join;
 
-    metadebugger_command_handler_map::commands_t
-      commands = metadebugger_shell::create_default_command_map();
-    for (const metadebugger_command& cmd : commands)
+    mdb_command_handler_map::commands_t
+      commands = mdb_shell::create_default_command_map();
+    for (const mdb_command& cmd : commands)
     {
       std::cout
         << "* __`" << join(cmd.get_keys(), "|") << " "
@@ -160,7 +160,7 @@ parse_config_result metashell::parse_config(
     )
     (
       "show_mdb_help",
-      "Display help for metadebugger commands in MarkDown format and exit"
+      "Display help for mdb commands in MarkDown format and exit"
     )
     ;
 

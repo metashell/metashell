@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_METADEBUGGER_HPP
-#define METASHELL_PRAGMA_METADEBUGGER_HPP
+#ifndef METASHELL_READLINE_MDB_SHELL_HPP
+#define METASHELL_READLINE_MDB_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,32 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/colored_string.hpp>
+#include <metashell/mdb_shell.hpp>
+#include <metashell/readline_environment.hpp>
 
-#include <string>
+namespace metashell {
 
-namespace metashell
-{
-  class shell;
+class readline_mdb_shell : public mdb_shell {
+public:
 
-  class pragma_metadebugger : public pragma_handler_interface
-  {
-  public:
-    explicit pragma_metadebugger(shell& shell_);
+  readline_mdb_shell(
+      const config& conf,
+      const environment& env);
 
-    virtual pragma_handler_interface* clone() const;
+  virtual void run();
 
-    virtual std::string arguments() const;
-    virtual std::string description() const;
+  virtual void add_history(const std::string& str);
 
-    virtual void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_
-    ) const;
-  private:
-    shell& _shell;
-  };
+  virtual void display(
+      const colored_string& cs,
+      colored_string::size_type first,
+      colored_string::size_type length) const;
+
+  virtual unsigned width() const;
+private:
+
+  readline_environment readline_env;
+};
+
 }
 
 #endif
-

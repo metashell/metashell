@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metadebugger_command.hpp>
+#include <metashell/mdb_command.hpp>
 
 #include <just/test.hpp>
 
@@ -24,7 +24,7 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 {
-  metadebugger_command x({"asdf"}, repeatable, nullptr, "[asd]", "fdsa", "xxyy");
+  mdb_command x({"asdf"}, repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(x.is_repeatable());
@@ -35,7 +35,7 @@ JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 {
-  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
+  mdb_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
   JUST_ASSERT(!x.is_repeatable());
@@ -45,7 +45,7 @@ JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 {
-  metadebugger_command x({"asdf", "xxx"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
+  mdb_command x({"asdf", "xxx"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
 
   JUST_ASSERT(equal(x.get_keys(), {"asdf", "xxx"}));
   JUST_ASSERT(!x.is_repeatable());
@@ -56,7 +56,7 @@ JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
 {
-  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "");
+  mdb_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "");
 
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
@@ -66,7 +66,7 @@ JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
 
 JUST_TEST_CASE(test_mdb_command_full_description_non_empty_long_description)
 {
-  metadebugger_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
+  mdb_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
 
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fd");

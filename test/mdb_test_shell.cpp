@@ -15,13 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_shell.hpp"
-#include "metadebugger_test_shell.hpp"
+#include "mdb_test_shell.hpp"
 
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
 
-metadebugger_test_shell::metadebugger_test_shell(const std::string& line) :
-  metashell::metadebugger_shell(
+mdb_test_shell::mdb_test_shell(const std::string& line) :
+  metashell::mdb_shell(
       test_shell().get_config(),
       test_shell().env()
   )
@@ -29,13 +29,13 @@ metadebugger_test_shell::metadebugger_test_shell(const std::string& line) :
   env.append(line);
 }
 
-void metadebugger_test_shell::run() {}
+void mdb_test_shell::run() {}
 
-void metadebugger_test_shell::add_history(const std::string& str) {
+void mdb_test_shell::add_history(const std::string& str) {
   history.push_back(str);
 }
 
-void metadebugger_test_shell::display(
+void mdb_test_shell::display(
     const metashell::colored_string& cs,
     metashell::colored_string::size_type first,
     metashell::colored_string::size_type length) const
@@ -43,24 +43,24 @@ void metadebugger_test_shell::display(
   output += cs.get_string().substr(first, length);
 }
 
-unsigned metadebugger_test_shell::width() const {
+unsigned mdb_test_shell::width() const {
   return 80;
 }
 
-const std::string& metadebugger_test_shell::get_output() const {
+const std::string& mdb_test_shell::get_output() const {
   return output;
 }
 
-const metadebugger_test_shell::history_t&
-metadebugger_test_shell::get_history() const {
+const mdb_test_shell::history_t&
+mdb_test_shell::get_history() const {
   return history;
 }
 
-void metadebugger_test_shell::clear_output() {
+void mdb_test_shell::clear_output() {
   output.clear();
 }
 
-void metadebugger_test_shell::clear_history() {
+void mdb_test_shell::clear_history() {
   history.clear();
 }
 

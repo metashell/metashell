@@ -19,16 +19,16 @@
 
 #include <boost/optional.hpp>
 
-#include <metashell/readline_metadebugger_shell.hpp>
+#include <metashell/readline_mdb_shell.hpp>
 
 namespace metashell {
 
-readline_metadebugger_shell::readline_metadebugger_shell(
+readline_mdb_shell::readline_mdb_shell(
     const config& conf,
     const environment& env) :
-  metadebugger_shell(conf, env) {}
+  mdb_shell(conf, env) {}
 
-void readline_metadebugger_shell::run() {
+void readline_mdb_shell::run() {
   for (boost::optional<std::string> line;
       !stopped() && (line = readline_env.readline(prompt())); )
   {
@@ -37,11 +37,11 @@ void readline_metadebugger_shell::run() {
   std::cout << std::endl;
 }
 
-void readline_metadebugger_shell::add_history(const std::string& str) {
+void readline_mdb_shell::add_history(const std::string& str) {
   readline_env.add_history(str);
 }
 
-void readline_metadebugger_shell::display(
+void readline_mdb_shell::display(
     const colored_string& cs,
     colored_string::size_type first,
     colored_string::size_type length) const
@@ -49,7 +49,7 @@ void readline_metadebugger_shell::display(
   cs.print_to_cout(first, length);
 }
 
-unsigned readline_metadebugger_shell::width() const {
+unsigned readline_mdb_shell::width() const {
   return readline_env.width();
 }
 

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metadebugger_command_handler_map.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
 
 #include <just/test.hpp>
 
@@ -22,8 +22,8 @@
 
 using namespace metashell;
 
-std::tuple<metadebugger_command, std::string> get_command_from_map(
-    const metadebugger_command_handler_map& map,
+std::tuple<mdb_command, std::string> get_command_from_map(
+    const mdb_command_handler_map& map,
     const std::string& line)
 {
   auto opt_pair = map.get_command_for_line(line);
@@ -35,15 +35,15 @@ std::tuple<metadebugger_command, std::string> get_command_from_map(
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{{"asd"}}, non_repeatable, nullptr, "", "", ""},
     {{{"efg"}}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, {"asd"});
@@ -69,15 +69,15 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"asd"}, non_repeatable, nullptr, "", "", ""},
     {{"afg"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
@@ -93,15 +93,15 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"asd"}, non_repeatable, nullptr, "", "", ""},
     {{"a"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "as");
@@ -117,13 +117,13 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"asd"}, non_repeatable, nullptr, "", "", ""},
     {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
   JUST_ASSERT(!map.get_command_for_line(""));
   JUST_ASSERT(!map.get_command_for_line("a"));
@@ -132,15 +132,15 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"asd", "xyz"}, non_repeatable, nullptr, "", "", ""},
     {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "asd");
@@ -161,15 +161,15 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
     {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "f");
@@ -180,15 +180,15 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"ft", "forwardtrace", "fff"}, non_repeatable, nullptr, "", "", ""},
     {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "f");
@@ -199,27 +199,27 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
     {{"fff"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
   JUST_ASSERT(!map.get_command_for_line("f"));
 }
 
 JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 {
-  metadebugger_command_handler_map::commands_t commands =
+  mdb_command_handler_map::commands_t commands =
   {
     {{"asf"}, non_repeatable, nullptr, "", "", ""}
   };
 
-  metadebugger_command_handler_map map(commands);
+  mdb_command_handler_map map(commands);
 
-  metadebugger_command command;
+  mdb_command command;
   std::string args;
 
   std::tie(command, args) = get_command_from_map(map, "a abc");

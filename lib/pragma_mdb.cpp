@@ -15,32 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_metadebugger.hpp>
+#include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/readline_metadebugger_shell.hpp>
+#include <metashell/readline_mdb_shell.hpp>
 
 using namespace metashell;
 
-pragma_metadebugger::pragma_metadebugger(shell& shell_) :
+pragma_mdb::pragma_mdb(shell& shell_) :
   _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_metadebugger::clone() const
+pragma_handler_interface* pragma_mdb::clone() const
 {
-  return new pragma_metadebugger(_shell);
+  return new pragma_mdb(_shell);
 }
 
-std::string pragma_metadebugger::arguments() const
+std::string pragma_mdb::arguments() const
 {
   return "";
 }
 
-std::string pragma_metadebugger::description() const
+std::string pragma_mdb::description() const
 {
   return "Starts the metadebugger.";
 }
 
-void pragma_metadebugger::run(
+void pragma_mdb::run(
   const command::iterator& args_begin_,
   const command::iterator& args_end_
 ) const
@@ -50,7 +50,7 @@ void pragma_metadebugger::run(
     _shell.display_error("Arguments are ignored");
   }
 
-  readline_metadebugger_shell mdb_shell(_shell.get_config(), _shell.env());
+  readline_mdb_shell mdb_shell(_shell.get_config(), _shell.env());
   mdb_shell.display_splash();
   mdb_shell.run();
 }

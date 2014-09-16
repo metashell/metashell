@@ -650,9 +650,6 @@ Displays a help message.
 * __`#msh mdb`__ <br />
 Starts the metadebugger.
 
-* __`#msh metadebugger`__ <br />
-Starts the metadebugger.
-
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "metadebugger_test_shell.hpp"
+#include "mdb_test_shell.hpp"
 
 #include "test_fibonacci.hpp"
 
@@ -24,7 +24,7 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_int) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   sh.line_available("evaluate int");
 
@@ -34,7 +34,7 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
-  metadebugger_test_shell sh(fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
@@ -44,7 +44,7 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   sh.line_available("evaluate");
 
@@ -54,7 +54,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   sh.line_available("evaluate  ");
 

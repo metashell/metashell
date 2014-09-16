@@ -16,12 +16,12 @@
 
 #include <just/test.hpp>
 
-#include "metadebugger_test_shell.hpp"
+#include "mdb_test_shell.hpp"
 
 using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_shell_empty_lines) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT(sh.get_history().empty());
 
@@ -30,16 +30,19 @@ JUST_TEST_CASE(test_mdb_shell_empty_lines) {
   JUST_ASSERT_EQUAL(sh.get_output(), "");
 
   sh.line_available(" ");
-  JUST_ASSERT(sh.get_history().empty());
+  JUST_ASSERT_EQUAL(sh.get_history().size(), 1u);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
   JUST_ASSERT_EQUAL(sh.get_output(), "");
 
   sh.line_available("\t");
-  JUST_ASSERT(sh.get_history().empty());
+  JUST_ASSERT_EQUAL(sh.get_history().size(), 2u);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
+  JUST_ASSERT_EQUAL(sh.get_history()[1], "\t");
   JUST_ASSERT_EQUAL(sh.get_output(), "");
 }
 
 JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT(sh.get_history().empty());
 
@@ -63,8 +66,51 @@ JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
   JUST_ASSERT_EQUAL(sh.get_history()[2], "asd");
 }
 
+JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history) {
+  mdb_test_shell sh;
+
+  JUST_ASSERT(sh.get_history().empty());
+
+  sh.line_available(" ");
+  JUST_ASSERT(sh.get_history().size() == 1);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
+
+  sh.line_available(" ");
+  JUST_ASSERT(sh.get_history().size() == 1);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
+
+  sh.line_available("  ");
+  JUST_ASSERT(sh.get_history().size() == 2);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
+  JUST_ASSERT_EQUAL(sh.get_history()[1], "  ");
+
+  sh.line_available(" ");
+  JUST_ASSERT(sh.get_history().size() == 3);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], " ");
+  JUST_ASSERT_EQUAL(sh.get_history()[1], "  ");
+  JUST_ASSERT_EQUAL(sh.get_history()[2], " ");
+}
+
+JUST_TEST_CASE(test_mdb_shell_skips_empty_lines) {
+  mdb_test_shell sh;
+
+  JUST_ASSERT(sh.get_history().empty());
+
+  sh.line_available("ads");
+  JUST_ASSERT(sh.get_history().size() == 1);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], "ads");
+
+  sh.line_available("");
+  JUST_ASSERT(sh.get_history().size() == 1);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], "ads");
+
+  sh.line_available("ads");
+  JUST_ASSERT(sh.get_history().size() == 1);
+  JUST_ASSERT_EQUAL(sh.get_history()[0], "ads");
+}
+
 JUST_TEST_CASE(test_mdb_shell_prompt) {
-  metadebugger_test_shell sh;
+  mdb_test_shell sh;
 
   JUST_ASSERT_EQUAL(sh.prompt(), "(mdb) ");
 }
