@@ -15,38 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stack>
-#include <tuple>
+#include <map>
 #include <string>
 #include <sstream>
-#include <fstream>
-#include <iterator>
 
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix.hpp>
-#include <boost/spirit/include/support_multi_pass.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 #include <metashell/metaprogram.hpp>
 #include <metashell/file_location.hpp>
 
 #include "exception.hpp"
 
-BOOST_FUSION_ADAPT_STRUCT(
-  metashell::file_location,
-  (std::string, name)
-  (int, row)
-  (int, column)
-)
-
 namespace metashell {
-
-namespace spirit = boost::spirit;
-namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
-namespace phx = boost::phoenix;
-
-typedef ascii::space_type skipper_t;
 
 struct metaprogram_builder {
 
@@ -131,143 +114,71 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
   return pos->second;
 }
 
-template<class Iterator>
-struct templight_grammar :
-  qi::grammar<Iterator, skipper_t> {
+file_location file_location_from_string(const std::string& str) {
+  std::vector<std::string> parts;
+  boost::algorithm::split(parts, str, boost::algorithm::is_any_of("|"));
 
-  templight_grammar() : templight_grammar::base_type(start) {
-
-    using qi::_val;
-    using qi::_1;
-    using qi::_2;
-    using qi::_3;
-    using qi::_4;
-    using qi::_5;
-    using qi::lit;
-    using qi::int_;
-    using qi::double_;
-    using qi::ulong_long;
-
-    unescaped_characters.add
-      ("&lt;", '<')
-      ("&gt;", '>')
-      ("&apos;", '\'')
-      ("&quot;", '"')
-      ("&amp;", '&')
-    ;
-
-    instantiation_kinds.add
-      ("TemplateInstantiation", template_instantiation)
-      ("DefaultTemplateArgumentInstantiation", default_template_argument_instantiation)
-      ("DefaultFunctionArgumentInstantiation", default_function_argument_instantiation)
-      ("ExplicitTemplateArgumentSubstitution", explicit_template_argument_substitution)
-      ("DeducedTemplateArgumentSubstitution", deduced_template_argument_substitution)
-      ("PriorTemplateArgumentSubstitution", prior_template_argument_substitution)
-      ("DefaultTemplateArgumentChecking", default_template_argument_checking)
-      ("ExceptionSpecInstantiation", exception_spec_instantiation)
-      ("Memoization", memoization)
-    ;
-
-    const std::string prologue = "<?xml version=\"1.0\" standalone=\"yes\"?>";
-
-    start %= lit(prologue) >> "<Trace>" >> body >> "</Trace>";
-
-    body = *template_instantiation_rule;
-
-    template_instantiation_rule =
-      template_begin >> body >> template_end;
-
-
-    //<TemplateBegin>
-    //    <Kind>TemplateInstantiation</Kind>
-    //    <Context context = "fib&lt;7&gt;"/>
-    //    <PointOfInstantiation><stdin>|1|50</PointOfInstantiation>
-    //    <TimeStamp time = "456168594.581344"/>
-    //    <MemoryUsage bytes = "0"/>
-    //</TemplateBegin>
-
-    template_begin =
-      (
-      lit("<TemplateBegin>") >>
-        "<Kind>" >> instantiation_kinds >> "</Kind>" >>
-        "<Context" >> "context" >> "=" >> context >> "/>" >>
-        "<PointOfInstantiation>" >> file_location_rule >> "</PointOfInstantiation>" >>
-        "<TimeStamp" >> "time" >> "=" >> timestamp >> "/>" >>
-        "<MemoryUsage" >> "bytes" >> "=" >> memory_usage >> "/>" >>
-      "</TemplateBegin>"
-      )
-      [phx::bind(
-          &metaprogram_builder::handle_template_begin,
-          phx::ref(builder), _1, _2, _3, _4, _5)];
-
-    //<TemplateEnd>
-    //    <Kind>TemplateInstantiation</Kind>
-    //    <TimeStamp time = "456168594.586666"/>
-    //    <MemoryUsage bytes = "0"/>
-    //</TemplateEnd>
-
-    template_end =
-      (
-      lit("<TemplateEnd>") >>
-        "<Kind>" >> instantiation_kinds >> "</Kind>" >>
-        "<TimeStamp" >> "time" >> "=" >> timestamp >> "/>" >>
-        "<MemoryUsage" >> "bytes" >> "=" >> memory_usage >> "/>" >>
-      "</TemplateEnd>"
-      )
-      [phx::bind(
-          &metaprogram_builder::handle_template_end,
-          phx::ref(builder), _1, _2, _3)];
-
-    unescaped_string %=
-      '"' >> *(unescaped_characters | (ascii::print - '"')) >> '"';
-
-    context %= unescaped_string;
-
-    file_location_rule %= *(ascii::print - '|') >> '|' >> int_ >> '|' >> int_;
-
-    memory_usage = '"' >> ulong_long >> '"';
-    timestamp = '"' >> double_ >> '"';
+  if (parts.size() != 3) {
+    throw exception("templight xml parse failed (invalid file location)");
   }
+  return file_location(
+      parts[0],
+      boost::lexical_cast<int>(parts[1]),
+      boost::lexical_cast<int>(parts[2]));
+}
+
+instantiation_kind instantiation_kind_from_string(const std::string& str) {
+  //TODO boost::flat_map
+  const static std::map<std::string, instantiation_kind> lookup = {
+     {"TemplateInstantiation", template_instantiation},
+     {"DefaultTemplateArgumentInstantiation", default_template_argument_instantiation},
+     {"DefaultFunctionArgumentInstantiation", default_function_argument_instantiation},
+     {"ExplicitTemplateArgumentSubstitution", explicit_template_argument_substitution},
+     {"DeducedTemplateArgumentSubstitution", deduced_template_argument_substitution},
+     {"PriorTemplateArgumentSubstitution", prior_template_argument_substitution},
+     {"DefaultTemplateArgumentChecking", default_template_argument_checking},
+     {"ExceptionSpecInstantiation", exception_spec_instantiation},
+     {"Memoization", memoization}
+  };
+
+  auto it = lookup.find(str);
+  if (it == lookup.end()) {
+    throw exception("templight xml parse failed (invalid instantiation kind)");
+  }
+  return it->second;
+}
+
+metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
+  typedef boost::property_tree::ptree ptree;
+
+  ptree pt;
+  read_xml(stream, pt);
 
   metaprogram_builder builder;
 
-  qi::rule<Iterator, skipper_t> start;
-  qi::rule<Iterator, skipper_t> body;
-  qi::rule<Iterator, skipper_t> template_instantiation_rule;
-  qi::rule<Iterator, skipper_t> template_begin;
-  qi::rule<Iterator, skipper_t> template_end;
-  qi::rule<Iterator, std::string(), skipper_t> context;
-  qi::rule<Iterator, file_location(), skipper_t> file_location_rule;
-  qi::rule<Iterator, unsigned long long(), skipper_t> memory_usage;
-  qi::rule<Iterator, double(), skipper_t> timestamp;
-  qi::rule<Iterator, std::string()> unescaped_string;
-
-  qi::symbols<char, char> unescaped_characters;
-  qi::symbols<char, instantiation_kind> instantiation_kinds;
-};
-
-metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
-
-  using boost::spirit::multi_pass;
-  using boost::spirit::make_default_multi_pass;
-
-  typedef std::istreambuf_iterator<char> base_iterator;
-
-  templight_grammar<multi_pass<base_iterator>> grammar;
-
-  multi_pass<base_iterator>
-    begin(make_default_multi_pass(base_iterator(stream))),
-    end(make_default_multi_pass(base_iterator()));
-
-  bool success = qi::phrase_parse(
-      begin, end, grammar,
-      skipper_t());
-
-  if (!success || begin != end) {
-    throw exception("Failed to parse templight file");
+  for (const ptree::value_type& pt_event :
+      boost::make_iterator_range(pt.get_child("Trace")))
+  {
+    if (pt_event.first == "TemplateBegin") {
+      builder.handle_template_begin(
+          instantiation_kind_from_string(
+            pt_event.second.get<std::string>("Kind")),
+          pt_event.second.get<std::string>("Context.<xmlattr>.context"),
+          file_location_from_string(
+            pt_event.second.get<std::string>("PointOfInstantiation")),
+          pt_event.second.get<double>("TimeStamp.<xmlattr>.time"),
+          pt_event.second.get<unsigned long long>("MemoryUsage.<xmlattr>.bytes"));
+    } else if (pt_event.first == "TemplateEnd") {
+      builder.handle_template_end(
+          instantiation_kind_from_string(
+            pt_event.second.get<std::string>("Kind")),
+          pt_event.second.get<double>("TimeStamp.<xmlattr>.time"),
+          pt_event.second.get<unsigned long long>("MemoryUsage.<xmlattr>.bytes"));
+    } else {
+      throw exception("Unknown templight xml node \"" + pt_event.first + "\"");
+    }
   }
-
-  return grammar.builder.get_metaprogram();
+  return builder.get_metaprogram();
 }
 
 metaprogram metaprogram::create_from_xml_file(const std::string& file) {
