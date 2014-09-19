@@ -30,6 +30,7 @@ target_link_libraries(metashell
   boost_filesystem
   boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
+  ${RT_LIBRARY}
 )
 
 # Readline
