@@ -117,42 +117,48 @@ void mdb_shell::display_splash() const {
 
 void mdb_shell::line_available(const std::string& line_arg) {
 
-  using boost::algorithm::all;
-  using boost::is_space;
+  try {
+    using boost::algorithm::all;
+    using boost::is_space;
 
-  std::string line = line_arg;
+    std::string line = line_arg;
 
-  if (line != prev_line && !line.empty()) {
-    add_history(line);
-  }
+    if (line != prev_line && !line.empty()) {
+      add_history(line);
+    }
 
-  if (line.empty()) {
-    if (!last_command_repeatable) {
+    if (line.empty()) {
+      if (!last_command_repeatable) {
+        return;
+      }
+      line = prev_line;
+    } else {
+      prev_line = line;
+    }
+
+    if (all(line, is_space())) {
       return;
     }
-    line = prev_line;
-  } else {
-    prev_line = line;
+
+    auto command_arg_pair = command_handler.get_command_for_line(line);
+    if (!command_arg_pair) {
+      display_error("Command parsing failed\n");
+      last_command_repeatable = false;
+      return;
+    }
+
+    mdb_command cmd;
+    std::string args;
+    std::tie(cmd, args) = *command_arg_pair;
+
+    last_command_repeatable = cmd.is_repeatable();
+
+    (this->*cmd.get_func())(args);
+  } catch (const std::exception& ex) {
+    display_error(std::string("Error: ") + ex.what());
+  } catch (...) {
+    display_error("Unknown error");
   }
-
-  if (all(line, is_space())) {
-    return;
-  }
-
-  auto command_arg_pair = command_handler.get_command_for_line(line);
-  if (!command_arg_pair) {
-    display_error("Command parsing failed\n");
-    last_command_repeatable = false;
-    return;
-  }
-
-  mdb_command cmd;
-  std::string args;
-  std::tie(cmd, args) = *command_arg_pair;
-
-  last_command_repeatable = cmd.is_repeatable();
-
-  (this->*cmd.get_func())(args);
 }
 
 bool mdb_shell::require_empty_args(const std::string& args) const {
