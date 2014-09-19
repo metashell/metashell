@@ -562,7 +562,7 @@ void mdb_shell::display_backtrace() const {
   for (const metaprogram::frame_t& frame :
       backtrace | boost::adaptors::reversed)
   {
-    display("#" + std::to_string(i) + " ");
+    display(colored_string("#" + std::to_string(i) + " ", color::white));
     display_frame(frame);
     ++i;
   }
