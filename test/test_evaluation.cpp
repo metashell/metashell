@@ -260,17 +260,7 @@ namespace
 {
   void generate_warning(metashell::shell& sh_)
   {
-    sh_.line_available("enum color { red, green, blue };");
-    sh_.line_available(
-      "template <int>"
-      "void f(color c)"
-      "{"
-        "switch (c)"
-        "{"
-        "case green: break;"
-        "}"
-      "}"
-    );
+    sh_.line_available("#warning hello");
   }
 }
 
