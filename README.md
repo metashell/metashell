@@ -100,6 +100,14 @@ metaprograms.
     * `make`
     * `make test_coverage`
     * You can find the test coverage statistics in the `bin/coverage` directory.
+* To compile the source for profiling using
+  [gprof](https://www.cs.utah.edu/dept/old/texinfo/as/gprof.html) (g++ only):
+    * `mkdir bin`
+    * `cd bin`
+    * `cmake .. -DENABLE_PROFILING=true`
+    * `make`
+    * The binaries will now generate profiling data to gmon.out.
+      Please see the gprof documentation for futher information.
 
 ### Building Metashell on Windows
 
