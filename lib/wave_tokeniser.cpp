@@ -19,7 +19,7 @@
 #  pragma warning( disable: 4996 )
 #endif
 
-#ifdef __GNUC__
+#if defined __GNUC__ && !defined __clang__
 #  pragma GCC diagnostic ignored "-Wpragmas"
 #  pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #endif
