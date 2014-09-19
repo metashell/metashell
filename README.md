@@ -34,7 +34,7 @@ shell.
 - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
 - [Metadebugger](#metadebugger)
     - [Getting started with mdb](#getting-started-with-mdb)
-    - [Command reference](#command-reference)
+    - [Metadebugger command reference](#metadebugger-command-reference)
 - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
 - [License](#license)
 
@@ -754,7 +754,7 @@ fib<5>
 ` fib<3> (Memoization)
 ```
 
-### Command reference
+### Metadebugger command reference
 
 <!-- mdb_info -->
 * __`continue `__ <br />
