@@ -289,10 +289,11 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
   
-  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
-  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[2]);
+  // path 2 is a relative path to the clang binary. Tested elsewhere
+  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
 }
 
 JUST_TEST_CASE(
@@ -383,10 +384,11 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(ucfg, envd, err);
   
-  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
+  JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
   JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
-  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[2]);
+  // path 2 is a relative path to the clang binary. Tested elsewhere
+  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
 }
 
 JUST_TEST_CASE(
@@ -655,5 +657,19 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
 
   JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
   JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
+}
+
+JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
+{
+  mock_environment_detector envd;
+  envd.on_windows_returns(false);
+  envd.path_of_executable_returns("/usr/bin/metashell");
+  envd.file_exists_returns(false);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+  
+  JUST_ASSERT_EQUAL(1u, cfg.include_path.size());
+  JUST_ASSERT_EQUAL("/usr/bin/../include/metashell/clang", cfg.include_path[0]);
 }
 

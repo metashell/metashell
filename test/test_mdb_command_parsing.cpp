@@ -28,7 +28,7 @@ std::tuple<mdb_command, std::string> get_command_from_map(
 {
   auto opt_pair = map.get_command_for_line(line);
 
-  JUST_ASSERT(opt_pair);
+  JUST_ASSERT(bool(opt_pair));
 
   return *opt_pair;
 }

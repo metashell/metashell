@@ -17,15 +17,18 @@
 aux_source_directory(. SOURCES)
 add_executable(metashell ${SOURCES})
 
+enable_warnings()
+
 # Metashell
 target_link_libraries(metashell metashell_lib)
 
 # Wave
 target_link_libraries(metashell
-  ${Boost_SYSTEM_LIBRARIES}
-  ${Boost_THREAD_LIBRARIES}
-  ${Boost_FILESYSTEM_LIBRARIES}
-  ${Boost_WAVE_LIBRARIES}
+  boost_system
+  boost_thread
+  ${BOOST_ATOMIC_LIB}
+  boost_filesystem
+  boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -46,10 +49,10 @@ else()
 endif()
 
 # Program_options
-target_link_libraries(metashell ${Boost_PROGRAM_OPTIONS_LIBRARIES})
+target_link_libraries(metashell boost_program_options)
 
 # Regex
-target_link_libraries(metashell ${Boost_REGEX_LIBRARIES})
+target_link_libraries(metashell boost_regex)
 
 # Clang
 if (MSVC)
@@ -95,6 +98,14 @@ if (NOT WIN32)
     file(RELATIVE_PATH REL_PATH ${CLANG_HEADERS} ${P})
     get_filename_component(DST_DIR "${REL_PATH}" PATH)
 
+    # Make a copy for running from the build's output dir
+    configure_file(
+      "${P}"
+      "${CMAKE_CURRENT_BINARY_DIR}/../include/metashell/clang/${REL_PATH}"
+      COPYONLY
+    )
+
+    # Install the headers on the target system
     install(
       FILES "${CLANG_HEADERS}/${REL_PATH}"
       DESTINATION "${CLANG_HEADER_INSTALL_PATH}/${DST_DIR}"
@@ -103,47 +114,11 @@ if (NOT WIN32)
   endforeach ()
 endif ()
 
-############################################
-# Copy files next to the binary on Windows #
-############################################
-function(copy_file_to_binary_dir SRC_PATH DST_PATH COMPONENT)
-  get_filename_component(DST_DIR "${DST_PATH}" PATH)
-
-  configure_file(
-    "${SRC_PATH}"
-    "${CMAKE_CURRENT_BINARY_DIR}/Debug/${DST_PATH}"
-    COPYONLY
-  )
-  configure_file(
-    "${SRC_PATH}"
-    "${CMAKE_CURRENT_BINARY_DIR}/Release/${DST_PATH}"
-    COPYONLY
-  )
-  install(
-    FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/Release/${DST_PATH}"
-    DESTINATION "bin/${DST_DIR}"
-    COMPONENT ${COMPONENT}
-  )
-endfunction(copy_file_to_binary_dir)
-
-function(copy_all_files_to_binary_dir SRC_PATH DST_PATH COMPONENT)
-  file(GLOB_RECURSE ABS_PATHS ${SRC_PATH}/*)
-  
-  foreach (P ${ABS_PATHS})
-    file(RELATIVE_PATH REL_PATH ${SRC_PATH} ${P})
-
-    copy_file_to_binary_dir(
-      "${SRC_PATH}/${REL_PATH}"
-      "${DST_PATH}/${REL_PATH}"
-      ${COMPONENT}
-    )
-  endforeach ()
-endfunction(copy_all_files_to_binary_dir)
-
 #########################################################
 # Copying files next to the Metashell binary on Windows #
 #########################################################
+include(CopyFiles)
+
 if (WIN32)
   # Windows header files
   copy_all_files_to_binary_dir(

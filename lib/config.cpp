@@ -160,10 +160,11 @@ namespace
     std::vector<std::string> result =
       clang_sysinclude(clang_binary_path_, env_detector_);
 
+    const std::string dir_of_executable =
+      directory_of_file(env_detector_.path_of_executable());
+
     if (env_detector_.on_windows())
     {
-      const std::string dir_of_executable =
-        directory_of_file(env_detector_.path_of_executable());
       // mingw headers shipped with Metashell
       const std::string mingw_headers = dir_of_executable + "\\windows_headers";
 
@@ -179,6 +180,10 @@ namespace
       }
 
       result.insert(result.end(), wpath.begin(), wpath.end());
+    }
+    else
+    {
+      result.push_back(dir_of_executable + "/../include/metashell/clang");
     }
 
     result.insert(

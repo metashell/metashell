@@ -71,7 +71,6 @@ metaprograms.
 * Install the dependent libraries:
     * Readline (or Libedit)
     * Termcap
-    * Boost
 * Install the dependent tools:
     * CMake
     * SVN
@@ -112,15 +111,9 @@ metaprograms.
 ### Building Metashell on Windows
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
-* Install the dependent tools and libraries:
-    * [CMake](http://cmake.org/)
-        * Note: you might use a custom Clang build. In that case it is
-          recommended to apply the [Templight patch](
-          http://plc.inf.elte.hu/templight/) on it, since the Metadebugger needs
-          it.
-    * [Boost](http://boost.teeks99.com/)
+* Install [CMake](http://cmake.org/)
 * Download the source code on your Windows host.
-* Fist you need to build Clang with
+* First you need to build Clang with
   [Templight](http://plc.inf.elte.hu/templight/).
     * Download the source code on a Linux host and run `tools/get_templight.sh`
       in the source directory. This will download and patch Clang and zip the
@@ -149,10 +142,9 @@ metaprograms.
     * Start a command line on your Windows host and go into the source directory
     * Run `md bin`
     * Run `cd bin`
-    * Run `cmake .. -G "Visual Studio 12 2013" -DBOOST_ROOT=<path to your Boost library> -DBOOST_LIBRARYDIR=<path to the directory containing the compiled Boost libraries>`.
-    * If CMake can find the dependent libraries, it will generate a solution
-      file for Metashell in the `bin` directory. Open it with Visual Studio 2013
-      and build it.
+    * Run `cmake .. -G "Visual Studio 12 2013"`.
+    * CMake will generate a solution file for Metashell in the `bin` directory.
+      Open it with Visual Studio 2013 and build it.
 * To generate an installer for Metashell:
     * Install [NSIS](http://nsis.sourceforge.net).
     * Build Metashell following the above instructions (make sure you build the

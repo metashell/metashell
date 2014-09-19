@@ -17,25 +17,28 @@
 aux_source_directory(. SOURCES)
 add_executable(metashell_test ${SOURCES})
 
+enable_warnings()
+
 target_link_libraries(metashell_test metashell_lib)
 
 # Boost for the unit tests
-add_definitions( -DBOOST_INCLUDE_PATH=\"${Boost_INCLUDE_DIR}\" )
+add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/include\" )
 
 # Wave
 target_link_libraries(metashell_test
-  ${Boost_SYSTEM_LIBRARIES}
-  ${Boost_THREAD_LIBRARIES}
-  ${Boost_FILESYSTEM_LIBRARIES}
-  ${Boost_WAVE_LIBRARIES}
+  boost_system
+  boost_thread
+  ${BOOST_ATOMIC_LIB}
+  boost_filesystem
+  boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
 # Program_options
-target_link_libraries(metashell_test ${Boost_PROGRAM_OPTIONS_LIBRARIES})
+target_link_libraries(metashell_test boost_program_options)
 
 # Regex
-target_link_libraries(metashell_test ${Boost_REGEX_LIBRARIES})
+target_link_libraries(metashell_test boost_regex)
 
 # Readline
 if (WIN32)
@@ -79,4 +82,20 @@ if (ENABLE_CODE_COVERAGE)
     "'/usr/*';'test/*';'include/just/*'"
   )
 endif()
+
+#########################################################
+# Copying files next to the Metashell binary on Windows #
+#########################################################
+include(CopyFiles)
+
+if (WIN32)
+  # libclang.dll
+  copy_file_to_binary_dir("${CLANG_DLL}" "clang/libclang.dll" libclang)
+
+  # Headers used by Clang on Windows
+  copy_all_files_to_binary_dir("${CLANG_HEADERS}" "clang/include" libclang)
+
+  # clang compiler
+  copy_file_to_binary_dir("${CLANG_BINARY}" "clang/clang.exe" clang)
+endif ()
 

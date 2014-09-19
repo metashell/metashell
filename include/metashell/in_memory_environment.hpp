@@ -35,8 +35,6 @@ namespace metashell
       const std::string& clang_extra_arg_ = ""
     );
 
-    in_memory_environment(in_memory_environment&& other) = default;
-
     virtual void append(const std::string& s_);
     virtual std::string get() const;
     virtual std::string get_appended(const std::string& s_) const;

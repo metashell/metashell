@@ -44,35 +44,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 # Warnings
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
-  message(STATUS "Turning on warnings for GCC")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
-  message(STATUS "Turning on warnings for Clang")
-endif()
-
-# Boost
-if (WIN32)
-  set(Boost_USE_STATIC_LIBS ON)
-endif()
-find_package(Boost COMPONENTS
-  system # used by Wave
-  thread # used by Wave
-  filesystem # used by Wave
-  wave
-  program_options
-  regex
-)
-find_package(Threads) # used by Boost.Thread
-
-include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIRS})
-
-set(
-  BOOST_VER
-  "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}"
-)
+include(Warnings)
 
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
@@ -136,6 +108,17 @@ if (NOT DEFINED CLANG_HEADER_INSTALL_PATH)
   set(CLANG_HEADER_INSTALL_PATH "include/metashell/clang")
 endif ()
 
+# Boost
+if (WIN32)
+  add_definitions(-DBOOST_ALL_NO_LIB=1)
+else ()
+  set(BOOST_ATOMIC_LIB boost_atomic)
+endif ()
+
+# Pthreads
+if (NOT WIN32)
+  find_package(Threads)
+endif()
 
 # Readline
 if (WIN32)
@@ -155,7 +138,7 @@ include_directories("include")
 enable_testing()
 
 # Recursing
-subdirs(lib app test)
+subdirs(lib app test boost)
 
 # Debian package
 set(CMAKE_INSTALL_PREFIX "/usr")
@@ -188,8 +171,6 @@ endif()
   set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
   seT(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
 
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-system${BOOST_VER}, libboost-thread${BOOST_VER}, libboost-filesystem${BOOST_VER}, libboost-wave${BOOST_VER}, libboost-program-options${BOOST_VER}, libboost-regex${BOOST_VER}, libclang1, libclang-dev")
-   
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
   set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})

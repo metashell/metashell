@@ -17,6 +17,8 @@
 aux_source_directory(. SOURCES)
 add_library(metashell_lib STATIC ${SOURCES})
 
+enable_warnings()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 # Readline
