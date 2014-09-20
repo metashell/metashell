@@ -63,6 +63,7 @@ JUST_TEST_CASE(test_metaprogram_default_constuctor) {
         {boost::none},
         {boost::none}
     );
+  JUST_ASSERT(mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -72,6 +73,7 @@ JUST_TEST_CASE(test_metaprogram_default_constuctor) {
         {boost::none},
         {}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(mp.is_finished());
 }
 
@@ -90,6 +92,7 @@ JUST_TEST_CASE(test_metaprogram_create_empty_finished) {
         {boost::none},
         {}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(mp.is_finished());
 }
 
@@ -111,6 +114,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
         {boost::none, boost::none},
         {boost::none}
     );
+  JUST_ASSERT(mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -120,6 +124,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
         {boost::none, edge_root_a},
         {edge_root_a}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -129,6 +134,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
         {boost::none, edge_root_a},
         {}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(mp.is_finished());
 }
 
@@ -154,6 +160,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
         {boost::none, boost::none},
         {boost::none}
     );
+  JUST_ASSERT(mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -163,6 +170,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
         {boost::none, edge_root_a_ti},
         {edge_root_a_me, edge_root_a_ti}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -172,6 +180,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
         {boost::none, edge_root_a_me},
         {edge_root_a_me}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
 
   mp.step();
@@ -181,5 +190,6 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
         {boost::none, edge_root_a_me},
         {}
     );
+  JUST_ASSERT(!mp.is_at_start());
   JUST_ASSERT(mp.is_finished());
 }

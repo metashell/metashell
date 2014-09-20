@@ -106,6 +106,7 @@ public:
 
   void reset_state();
   bool is_finished() const;
+  bool is_at_start() const;
 
   vertex_descriptor get_root_vertex() const;
 

@@ -91,6 +91,10 @@ bool metaprogram::is_finished() const {
   return state.edge_stack.empty();
 }
 
+bool metaprogram::is_at_start() const {
+  return state.edge_stack.size() == 1 && !state.edge_stack.top();
+}
+
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
   return root_vertex;
 }
