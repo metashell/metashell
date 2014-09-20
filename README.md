@@ -78,8 +78,10 @@ metaprograms.
     * `cd templight`
     * `mkdir build`
     * `cd build`
-    * `cmake ../llvm`
-    * `make clang libclang`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
+    * `make clang`
+    * `make libclang`
+    * `make libclang_static`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
@@ -88,8 +90,8 @@ metaprograms.
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
-        * Note: if you want to link staticly against libclang, you need to add
-          `-DCLANG_STATIC=true` to the above command line.
+        * Note: if you don't want to link staticly against libclang, you need to
+          add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`
@@ -133,7 +135,7 @@ used:
     * Run `cd templight`
     * Run `md build`
     * Run `cd build`
-    * Run `cmake ..`
+    * Run `cmake ..\llvm`
     * Start Visual Studio 2013 and open the generated solution
       (`templight\build\LLVM.sln`)
     * In the _BUILD_ menu choose _Configuration Manager..._. As

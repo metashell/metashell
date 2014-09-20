@@ -101,7 +101,12 @@ set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${TEMPLIGHT_BUILD}/Release/bin")
 set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${TEMPLIGHT_BUILD}/bin")
 
 # Clang
+if (NOT (WIN32 OR DEFINED CLANG_STATIC))
+  set(CLANG_STATIC true)
+endif()
+
 find_package(Clang)
+
 if (CLANG_STATIC)
   find_package(ZLIB)
 endif()
