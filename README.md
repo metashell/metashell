@@ -78,8 +78,10 @@ metaprograms.
     * `cd templight`
     * `mkdir build`
     * `cd build`
-    * `cmake ../llvm`
-    * `make clang libclang`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
+    * `make clang`
+    * `make libclang`
+    * `make libclang_static`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
