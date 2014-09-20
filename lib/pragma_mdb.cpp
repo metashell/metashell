@@ -32,12 +32,12 @@ pragma_handler_interface* pragma_mdb::clone() const
 
 std::string pragma_mdb::arguments() const
 {
-  return "";
+  return "[<type>]";
 }
 
 std::string pragma_mdb::description() const
 {
-  return "Starts the metadebugger.";
+  return "Starts the metadebugger, and optionally evaluates type.";
 }
 
 void pragma_mdb::run(
@@ -46,12 +46,14 @@ void pragma_mdb::run(
 ) const
 {
   std::string args = tokens_to_string(args_begin_, args_end_);
-  if (!args.empty()) {
-    _shell.display_error("Arguments are ignored");
-  }
 
   readline_mdb_shell mdb_shell(_shell.get_config(), _shell.env());
   mdb_shell.display_splash();
+
+  if (!args.empty()) {
+    mdb_shell.command_evaluate(args);
+  }
+
   mdb_shell.run();
 }
 
