@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <regex>
 #include <string>
 
+#include <boost/regex.hpp>
 #include <boost/optional.hpp>
 
 #include <metashell/config.hpp>
@@ -71,7 +71,7 @@ public:
 
 protected:
   // breakpoint is simply a regex for now
-  typedef std::regex breakpoint_t;
+  typedef boost::regex breakpoint_t;
   typedef std::vector<breakpoint_t> breakpoints_t;
 
   bool require_empty_args(const std::string& args) const;

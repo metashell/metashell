@@ -320,9 +320,9 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 
 void mdb_shell::command_rbreak(const std::string& arg) {
   try {
-    breakpoints.push_back(std::regex(arg));
+    breakpoints.push_back(boost::regex(arg));
     display_info("Break point \"" + arg + "\" added\n");
-  } catch (const std::regex_error&) {
+  } catch (const boost::regex_error&) {
     display_error("\"" + arg + "\" is not a valid regex\n");
   }
 }
@@ -412,7 +412,7 @@ void mdb_shell::continue_metaprogram() {
       const std::string current_type =
         mp.get_vertex_property(mp.get_current_frame().vertex).name;
 
-      if (std::regex_search(current_type, breakpoint)) {
+      if (boost::regex_search(current_type, breakpoint)) {
         return;
       }
     }
