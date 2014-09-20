@@ -88,8 +88,8 @@ metaprograms.
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
-        * Note: if you want to link staticly against libclang, you need to add
-          `-DCLANG_STATIC=true` to the above command line.
+        * Note: if you don't want to link staticly against libclang, you need to
+          add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install`
     * To package it for Debian or Ubuntu run `cpack -G DEB`
