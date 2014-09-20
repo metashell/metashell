@@ -22,6 +22,9 @@ then
     PATCH=$(ls patch | sort | tail -1)
     REV=$(echo "$PATCH" | egrep -o '[0-9]*')
 
+    echo "Deleting current templight"
+    rm -rf build llvm
+
     echo "Getting LLVM/Clang revision ${REV}"
     svn co -r "${REV}" http://llvm.org/svn/llvm-project/llvm/trunk llvm
     cd llvm/tools
@@ -31,20 +34,19 @@ then
       svn co -r "${REV}" http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
     cd ../..
 
+    echo "Make the entire LLVM/Clang source code managed in one git repository"
+    cat llvm/.gitignore | grep -v projects | grep -v tools > tmp
+    rm llvm/.gitignore
+    mv tmp llvm/.gitignore
+
+    rm -rf llvm/.svn
+    rm -rf llvm/projects/compiler-rt/.svn
+    rm -rf llvm/tools/clang/.svn
+
     echo "Patching LLVM/Clang"
     cd llvm/tools/clang
       patch -p0 -i "../../../patch/${PATCH}"
     cd ../../..
-
-    echo "Building LLVM/Clang"
-    mkdir build
-    cd build
-      ../llvm/configure --enable-optimized
-      make -j5
-    cd ..
-
-    echo "Zipping the patched LLVM/Clang"
-    zip -9 -r '--exclude=*.svn*'  "templight-${REV}.zip" llvm
   cd ..
 else
   echo "Please run this script from the root directory of the Metashell source code"

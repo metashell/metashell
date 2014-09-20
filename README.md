@@ -15,6 +15,7 @@ shell.
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux](#building-metashell-on-linux)
+        - [Clang and Templight](#clang-and-templight)
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
@@ -73,10 +74,12 @@ metaprograms.
     * Termcap
 * Install the dependent tools:
     * CMake
-    * SVN
-* Get and build Clang with [Templight](http://plc.inf.elte.hu/templight/)
-    * Run `tools/get_templight.sh` in the source directory. This will download,
-      patch and build Clang for you.
+* Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
+    * `cd templight`
+    * `mkdir build`
+    * `cd build`
+    * `cmake ../llvm`
+    * `make clang libclang`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
@@ -108,6 +111,17 @@ metaprograms.
     * The binaries will now generate profiling data to gmon.out.
       Please see the gprof documentation for futher information.
 
+#### Clang and Templight
+
+The source code of Metashell contains the source code of LLVM/Clang patched with
+[Templight](http://plc.inf.elte.hu/templight/). The Templight patch can be found
+in the `templight/patch` directory. The naming convention is
+`templight_patch_r<SVN release it patches>.diff`. To update the Clang version
+used:
+
+* Place a newer patch in the `patch` directory
+* Run the `tools/get_templight.sh` script
+
 ### Building Metashell on Windows
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
@@ -115,13 +129,6 @@ metaprograms.
 * Download the source code on your Windows host.
 * First you need to build Clang with
   [Templight](http://plc.inf.elte.hu/templight/).
-    * Download the source code on a Linux host and run `tools/get_templight.sh`
-      in the source directory. This will download and patch Clang and zip the
-      patched code for you.
-    * Copy the zip file generated in the previous step
-      (`tools/templight-<revision number>.zip`) onto your Windows host and unzip
-      its content into the `templight` directory of the source code. (So you
-      create a `templight\llvm` directory).
     * Start a command line on your Windows host and go into the source directory
     * Run `cd templight`
     * Run `md build`
