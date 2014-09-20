@@ -760,8 +760,8 @@ fib<5>
 <!-- mdb_info -->
 * __`continue [n]`__ <br />
 Continue program being debugged. <br />
-The program is continued stepping over n breakpoints or end of program.
-n defaults to 1 if not specified.
+The program is continued until the nth breakpoint or the end of the program
+is reached. n defaults to 1 if not specified.
 
 * __`step [over] [n]`__ <br />
 Step the program forward. <br />

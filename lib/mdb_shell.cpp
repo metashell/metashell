@@ -47,8 +47,8 @@ mdb_command_handler_map::commands_t
       {{"continue"}, repeatable, &mdb_shell::command_continue,
         "[n]",
         "Continue program being debugged.",
-        "The program is continued stepping over n breakpoints or end of program.\n"
-        "n defaults to 1 if not specified."},
+        "The program is continued until the nth breakpoint or the end of the program\n"
+        "is reached. n defaults to 1 if not specified."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
         "Step the program forward.",
