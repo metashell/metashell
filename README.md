@@ -781,7 +781,7 @@ Use of the full qualifier will expand Memoizations.
 Print backtrace from the current point.
 
 * __`rbreak <regex>`__ <br />
-Add breakpoint for all types matching <regex>.
+Add breakpoint for all types matching `<regex>`.
 
 * __`help [command]`__ <br />
 Show help for commands. <br />

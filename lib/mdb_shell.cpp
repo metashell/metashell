@@ -69,7 +69,7 @@ mdb_command_handler_map::commands_t
         ""},
       {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
-        "Add breakpoint for all types matching <regex>.",
+        "Add breakpoint for all types matching `<regex>`.",
         ""},
       {{"help"}, non_repeatable, &mdb_shell::command_help,
         "[command]",
