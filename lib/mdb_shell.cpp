@@ -20,7 +20,6 @@
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
 
-#include <boost/regex.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
@@ -320,8 +319,12 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 }
 
 void mdb_shell::command_rbreak(const std::string& arg) {
-  breakpoints.push_back(arg);
-  display_info("Break point \"" + arg + "\" added\n");
+  try {
+    breakpoints.push_back(std::regex(arg));
+    display_info("Break point \"" + arg + "\" added\n");
+  } catch (const std::regex_error&) {
+    display_error("\"" + arg + "\" is not a valid regex\n");
+  }
 }
 
 void mdb_shell::command_help(const std::string& arg) {
@@ -409,8 +412,7 @@ void mdb_shell::continue_metaprogram() {
       const std::string current_type =
         mp.get_vertex_property(mp.get_current_frame().vertex).name;
 
-      boost::regex break_regex(breakpoint);
-      if (boost::regex_search(current_type, break_regex)) {
+      if (std::regex_search(current_type, breakpoint)) {
         return;
       }
     }
