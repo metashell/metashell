@@ -133,7 +133,7 @@ used:
     * Run `cd templight`
     * Run `md build`
     * Run `cd build`
-    * Run `cmake ..`
+    * Run `cmake ..\llvm`
     * Start Visual Studio 2013 and open the generated solution
       (`templight\build\LLVM.sln`)
     * In the _BUILD_ menu choose _Configuration Manager..._. As
