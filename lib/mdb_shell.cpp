@@ -46,9 +46,10 @@ mdb_command_handler_map::commands_t
   mdb_command_handler_map::commands_t res =
     {
       {{"continue"}, repeatable, &mdb_shell::command_continue,
-        "",
+        "[n]",
         "Continue program being debugged.",
-        "The program is continued until breakpoint or end of program."},
+        "The program is continued stepping over n breakpoints or end of program.\n"
+        "n defaults to 1 if not specified."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
         "Step the program forward.",
@@ -178,10 +179,48 @@ bool mdb_shell::require_running_metaprogram() const {
 }
 
 void mdb_shell::command_continue(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
+  if (!require_running_metaprogram()) {
     return;
   }
-  continue_metaprogram();
+
+  using boost::spirit::qi::uint_;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+  using boost::spirit::qi::_1;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  unsigned continue_count = 1;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -uint_ [ref(continue_count) = _1],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    display_error("Argument parsing failed\n");
+    return;
+  }
+
+  if (continue_count == 0) {
+    return;
+  }
+
+  for (unsigned i = 0; i < continue_count && !mp.is_finished(); ++i) {
+    continue_metaprogram();
+  }
+
+  if (mp.is_finished()) {
+    display_info("Metaprogram finished\n");
+  } else {
+    display_info("Breakpoint reached\n");
+    display_current_frame();
+  }
 }
 
 void mdb_shell::command_step(const std::string& arg) {
@@ -364,7 +403,6 @@ void mdb_shell::continue_metaprogram() {
   while (true) {
     mp.step();
     if (mp.is_finished()) {
-      display("Metaprogram finished\n");
       return;
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
@@ -373,7 +411,6 @@ void mdb_shell::continue_metaprogram() {
 
       boost::regex break_regex(breakpoint);
       if (boost::regex_search(current_type, break_regex)) {
-        display("Breakpoint reached\n");
         return;
       }
     }

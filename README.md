@@ -756,9 +756,10 @@ fib<5>
 ### Metadebugger command reference
 
 <!-- mdb_info -->
-* __`continue `__ <br />
+* __`continue [n]`__ <br />
 Continue program being debugged. <br />
-The program is continued until breakpoint or end of program.
+The program is continued stepping over n breakpoints or end of program.
+n defaults to 1 if not specified.
 
 * __`step [over] [n]`__ <br />
 Step the program forward. <br />
