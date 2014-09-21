@@ -589,8 +589,7 @@ void mdb_shell::display_trace_visit(
     {
       instantiation_kind next_kind = mp->get_edge_property(edge).kind;
 
-      to_visit.push(
-        std::make_tuple(boost::target(edge, graph), depth+1, next_kind));
+      to_visit.push(std::make_tuple(mp->get_target(edge), depth+1, next_kind));
 
       ++depth_counter[depth+1];
     }

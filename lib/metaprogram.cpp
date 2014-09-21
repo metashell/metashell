@@ -199,7 +199,7 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   if (!edge) {
     return get_root_vertex();
   }
-  return boost::target(*edge, graph);
+  return get_target(*edge);
 }
 
 metaprogram::edge_descriptor metaprogram::get_current_frame() const {
