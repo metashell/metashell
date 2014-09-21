@@ -16,7 +16,6 @@ script:
   # Test that the TOC of the description is up to date
   - tools/gen_toc -i README.md -o - -t github | diff README.md -
   # Test the code
-  - tools/clang_default_path > lib/extra_sysinclude.hpp
   - mkdir bin
   - cd bin
   # -DMETASHELL_DISABLE_CONSTEXPR (and its usage in the code) can be removed
