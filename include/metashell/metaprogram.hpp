@@ -94,15 +94,7 @@ public:
 
   typedef std::vector<step_rollback_t> state_history_t;
 
-  struct frame_t {
-    frame_t();
-    frame_t(vertex_descriptor vertex, edge_descriptor parent_edge);
-
-    vertex_descriptor vertex;
-    edge_descriptor parent_edge;
-  };
-
-  typedef std::vector<frame_t> backtrace_t;
+  typedef std::vector<edge_descriptor> backtrace_t;
 
   vertex_descriptor add_vertex(const std::string& element);
 
@@ -121,7 +113,7 @@ public:
   void step_back();
 
   vertex_descriptor get_current_vertex() const;
-  frame_t get_current_frame() const;
+  edge_descriptor get_current_frame() const;
   backtrace_t get_backtrace() const;
 
   const graph_t& get_graph() const;
@@ -129,6 +121,9 @@ public:
 
   vertices_size_type get_num_vertices() const;
   edges_size_type get_num_edges() const;
+
+  vertex_descriptor get_source(const edge_descriptor& edge) const;
+  vertex_descriptor get_target(const edge_descriptor& edge) const;
 
   const vertex_property& get_vertex_property(
       vertex_descriptor vertex) const;

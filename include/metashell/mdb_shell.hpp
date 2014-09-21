@@ -120,7 +120,7 @@ private:
       metaprogram::discovered_t& discovered,
       unsigned width) const;
 
-  void display_frame(const metaprogram::frame_t& frame) const;
+  void display_frame(const metaprogram::edge_descriptor& frame) const;
 
   const static std::vector<color> colors;
 };

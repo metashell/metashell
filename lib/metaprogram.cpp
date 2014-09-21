@@ -20,7 +20,6 @@
 #include <tuple>
 #include <cassert>
 #include <algorithm>
-#include <iostream>
 
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
@@ -31,12 +30,6 @@ metaprogram::metaprogram() {
   root_vertex = add_vertex("<root>");
   reset_state();
 }
-
-metaprogram::frame_t::frame_t() : vertex(), parent_edge() {}
-
-metaprogram::frame_t::frame_t(
-    vertex_descriptor vertex, edge_descriptor parent_edge) :
-  vertex(vertex), parent_edge(parent_edge) {}
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
   const std::string& element)
@@ -163,6 +156,18 @@ metaprogram::edges_size_type metaprogram::get_num_edges() const {
   return boost::num_edges(graph);
 }
 
+metaprogram::vertex_descriptor metaprogram::get_source(
+    const edge_descriptor& edge) const
+{
+  return boost::source(edge, graph);
+}
+
+metaprogram::vertex_descriptor metaprogram::get_target(
+    const edge_descriptor& edge) const
+{
+  return boost::target(edge, graph);
+}
+
 const metaprogram::vertex_property& metaprogram::get_vertex_property(
     vertex_descriptor vertex) const
 {
@@ -197,37 +202,30 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   return boost::target(*edge, graph);
 }
 
-metaprogram::frame_t metaprogram::get_current_frame() const {
+metaprogram::edge_descriptor metaprogram::get_current_frame() const {
   assert(!is_finished());
 
   vertex_descriptor current_vertex = get_current_vertex();
 
   assert(state.parent_edge[current_vertex]);
 
-  return frame_t(
-      current_vertex,
-      *state.parent_edge[current_vertex]);
+  return *state.parent_edge[current_vertex];
 }
 
 metaprogram::backtrace_t metaprogram::get_backtrace() const {
   assert(!is_finished());
 
-  vertex_descriptor current_vertex = get_current_vertex();
-
   backtrace_t backtrace;
 
-  while (current_vertex != get_root_vertex()) {
+  for (vertex_descriptor current_vertex = get_current_vertex();
+      current_vertex != get_root_vertex(); )
+  {
     assert(state.parent_edge[current_vertex]);
 
     edge_descriptor parent_edge = *state.parent_edge[current_vertex];
-    backtrace.push_back(
-        frame_t(
-          current_vertex,
-          parent_edge
-        )
-      );
+    backtrace.push_back(parent_edge);
 
-    current_vertex = boost::source(parent_edge, graph);
+    current_vertex = get_source(parent_edge);
   }
   std::reverse(backtrace.begin(), backtrace.end());
 

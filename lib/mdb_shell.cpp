@@ -430,7 +430,8 @@ void mdb_shell::continue_metaprogram() {
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
       const std::string current_type =
-        mp->get_vertex_property(mp->get_current_frame().vertex).name;
+        mp->get_vertex_property(
+            mp->get_target(mp->get_current_frame())).name;
 
       if (boost::regex_search(current_type, breakpoint)) {
         return;
@@ -608,23 +609,19 @@ void mdb_shell::display_current_full_forwardtrace() const {
   display_trace_visit(mp->get_current_vertex(), discovered, width());
 }
 
-void mdb_shell::display_frame(const metaprogram::frame_t& frame) const {
-  // No kind for <root> vertex
-  if (frame.vertex == mp->get_root_vertex()) {
-    display(mp->get_vertex_property(frame.vertex).name + "\n");
-  } else {
-    display(
-        highlight_syntax(mp->get_vertex_property(frame.vertex).name) +
-        " (" + to_string(mp->get_edge_property(frame.parent_edge).kind) + ")\n"
-    );
-  }
+void mdb_shell::display_frame(const metaprogram::edge_descriptor& frame) const {
+  display(
+      highlight_syntax(
+        mp->get_vertex_property(mp->get_target(frame)).name) +
+      " (" + to_string(mp->get_edge_property(frame).kind) + ")\n"
+  );
 }
 
 void mdb_shell::display_backtrace() const {
   const metaprogram::backtrace_t& backtrace = mp->get_backtrace();
 
   unsigned i = 0;
-  for (const metaprogram::frame_t& frame :
+  for (const metaprogram::edge_descriptor& frame :
       backtrace | boost::adaptors::reversed)
   {
     display(colored_string("#" + std::to_string(i) + " ", color::white));
