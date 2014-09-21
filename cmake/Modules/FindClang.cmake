@@ -39,9 +39,10 @@ if (NOT $ENV{CLANG_LIBRARYDIR} STREQUAL "" )
   set(CLANG_LIBRARYDIR $ENV{CLANG_LIBRARYDIR})
 endif()
 
-# Find clang-c on Ubuntu 13.10
-foreach(V 3.4 3.3 3.2)
+# Find clang on some Ubuntu versions
+foreach(V 3.5 3.4 3.3 3.2)
   set(CLANG_INCLUDEDIR "${CLANG_INCLUDEDIR};/usr/lib/llvm-${V}/include")
+  set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};/usr/lib/llvm-${V}/lib")
 endforeach()
 
 # Find clang-c on Windows
