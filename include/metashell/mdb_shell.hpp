@@ -75,6 +75,7 @@ protected:
   typedef std::vector<breakpoint_t> breakpoints_t;
 
   bool require_empty_args(const std::string& args) const;
+  bool require_evaluated_metaprogram() const;
   bool require_running_metaprogram() const;
 
   void run_metaprogram_with_templight(const std::string& str);
@@ -93,7 +94,7 @@ protected:
   templight_environment env;
   mdb_command_handler_map command_handler;
 
-  metaprogram mp;
+  boost::optional<metaprogram> mp;
   breakpoints_t breakpoints;
 
   std::string prev_line;

@@ -77,25 +77,6 @@ JUST_TEST_CASE(test_metaprogram_default_constuctor) {
   JUST_ASSERT(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_create_empty_finished) {
-  metaprogram mp = metaprogram::create_empty_finished();
-
-  JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
-  JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
-
-  JUST_ASSERT_EQUAL(
-      mp.get_vertex_property(mp.get_root_vertex()).name,
-      "<root>");
-
-  assert_state_equal(mp.get_state(),
-        {true},
-        {boost::none},
-        {}
-    );
-  JUST_ASSERT(!mp.is_at_start());
-  JUST_ASSERT(mp.is_finished());
-}
-
 JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   metaprogram mp;
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");

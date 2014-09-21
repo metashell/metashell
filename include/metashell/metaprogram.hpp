@@ -36,9 +36,6 @@ public:
   // Creates empty metaprogram: single <root> vertex
   metaprogram();
 
-  // Like the default constructor, but "step"-ed once
-  static metaprogram create_empty_finished();
-
   static metaprogram create_from_xml_stream(std::istream& stream);
   static metaprogram create_from_xml_file(const std::string& file);
   static metaprogram create_from_xml_string(const std::string& string);

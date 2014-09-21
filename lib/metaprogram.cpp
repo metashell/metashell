@@ -32,14 +32,6 @@ metaprogram::metaprogram() {
   reset_state();
 }
 
-metaprogram metaprogram::create_empty_finished() {
-  metaprogram mp;
-
-  mp.step();
-
-  return mp;
-}
-
 metaprogram::frame_t::frame_t() : vertex(), parent_edge() {}
 
 metaprogram::frame_t::frame_t(

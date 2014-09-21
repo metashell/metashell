@@ -29,7 +29,7 @@ JUST_TEST_CASE(test_mdb_step_without_evaluation) {
   sh.line_available("step");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n");
+      "Metaprogram not evaluated yet\n");
 }
 #endif
 
