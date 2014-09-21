@@ -20,6 +20,7 @@
 #include <tuple>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
@@ -101,6 +102,7 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 
 void metaprogram::step() {
   assert(!is_finished());
+  state_history.push_back(state);
 
   vertex_descriptor current_vertex = get_current_vertex();
   state.edge_stack.pop();
@@ -120,6 +122,14 @@ void metaprogram::step() {
     assert(state.edge_stack.top());
     state.parent_edge[get_current_vertex()] = *state.edge_stack.top();
   }
+}
+
+void metaprogram::step_back() {
+  assert(!is_at_start());
+  assert(!state_history.empty());
+
+  state = state_history.back();
+  state_history.pop_back();
 }
 
 const metaprogram::graph_t& metaprogram::get_graph() const {

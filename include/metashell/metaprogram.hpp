@@ -86,6 +86,7 @@ public:
     parent_edge_t parent_edge;
     edge_stack_t edge_stack;
   };
+  typedef std::vector<state_t> state_history_t;
 
   struct frame_t {
     frame_t();
@@ -111,6 +112,7 @@ public:
   vertex_descriptor get_root_vertex() const;
 
   void step();
+  void step_back();
 
   vertex_descriptor get_current_vertex() const;
   frame_t get_current_frame() const;
@@ -136,6 +138,7 @@ private:
   graph_t graph;
 
   state_t state;
+  state_history_t state_history;
 
   // This should be generally 0
   vertex_descriptor root_vertex;

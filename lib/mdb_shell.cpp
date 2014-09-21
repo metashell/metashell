@@ -51,8 +51,9 @@ mdb_command_handler_map::commands_t
         "is reached. n defaults to 1 if not specified."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
-        "Step the program forward.",
-        "Argument n means step n times. n defaults to 1 if not specified."},
+        "Step the program.",
+        "Argument n means step n times. n defaults to 1 if not specified.\n"
+        "Negative n means step the program backwards."},
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
         "<type>",
         "Evaluate and start debugging a new metaprogram.",
@@ -228,7 +229,7 @@ void mdb_shell::command_step(const std::string& arg) {
   }
 
   using boost::spirit::qi::lit;
-  using boost::spirit::qi::uint_;
+  using boost::spirit::qi::int_;
   using boost::spirit::ascii::space;
   using boost::phoenix::ref;
   using boost::spirit::qi::_1;
@@ -237,14 +238,14 @@ void mdb_shell::command_step(const std::string& arg) {
        end = arg.end();
 
   bool has_over = false;
-  unsigned step_count = 1;
+  int step_count = 1;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
         -lit("over") [ref(has_over) = true] >>
-        -uint_ [ref(step_count) = _1],
+        -int_ [ref(step_count) = _1],
 
         space
     );
@@ -257,12 +258,20 @@ void mdb_shell::command_step(const std::string& arg) {
   if (has_over) {
     display_error("Sorry, but step over is not supported yet\n");
   } else {
-    for (unsigned i = 0; i < step_count && !mp.is_finished(); ++i) {
-      mp.step();
+    if (step_count >= 0) {
+      for (int i = 0; i < step_count && !mp.is_finished(); ++i) {
+        mp.step();
+      }
+    } else {
+      for (int i = 0; i < -step_count && !mp.is_at_start(); ++i) {
+        mp.step_back();
+      }
     }
   }
   if (mp.is_finished()) {
     display_info("Metaprogram finished\n");
+  } else if (step_count < 0 && mp.is_at_start()) {
+    display_info("Metaprogram reached the beginning\n");
   } else {
     display_current_frame();
   }
