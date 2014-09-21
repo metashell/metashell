@@ -224,9 +224,6 @@ void mdb_shell::command_continue(const std::string& arg) {
 }
 
 void mdb_shell::command_step(const std::string& arg) {
-  if (!require_running_metaprogram()) {
-    return;
-  }
 
   using boost::spirit::qi::lit;
   using boost::spirit::qi::int_;
