@@ -87,16 +87,7 @@ endif()
 #########################################################
 # Copying files next to the Metashell binary on Windows #
 #########################################################
-include(CopyFiles)
+include(MetashellClang)
 
-if (WIN32)
-  # libclang.dll
-  copy_file_to_binary_dir("${CLANG_DLL}" "clang/libclang.dll" libclang)
-
-  # Headers used by Clang on Windows
-  copy_all_files_to_binary_dir("${CLANG_HEADERS}" "clang/include" libclang)
-
-  # clang compiler
-  copy_file_to_binary_dir("${CLANG_BINARY}" "clang/clang.exe" clang)
-endif ()
+copy_clang_next_to_binary(false)
 
