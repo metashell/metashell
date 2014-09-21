@@ -75,6 +75,7 @@ public:
   typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
   typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
 
+  typedef boost::optional<vertex_descriptor> optional_vertex_descriptor;
   typedef boost::optional<edge_descriptor> optional_edge_descriptor;
 
   typedef std::vector<bool> discovered_t;
@@ -86,7 +87,15 @@ public:
     parent_edge_t parent_edge;
     edge_stack_t edge_stack;
   };
-  typedef std::vector<state_t> state_history_t;
+
+  struct step_rollback_t {
+    optional_edge_descriptor popped_edge;
+    optional_vertex_descriptor discovered_vertex;
+    unsigned edge_stack_push_count = 0;
+    boost::optional<optional_edge_descriptor> set_parent_edge;
+  };
+
+  typedef std::vector<step_rollback_t> state_history_t;
 
   struct frame_t {
     frame_t();

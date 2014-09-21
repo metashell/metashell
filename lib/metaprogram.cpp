@@ -86,6 +86,8 @@ void metaprogram::reset_state() {
   state.parent_edge = parent_edge_t(vertex_count, boost::none);
   state.edge_stack = edge_stack_t();
   state.edge_stack.push(boost::none);
+
+  state_history.clear();
 }
 
 bool metaprogram::is_finished() const {
@@ -102,33 +104,54 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 
 void metaprogram::step() {
   assert(!is_finished());
-  state_history.push_back(state);
+  step_rollback_t rollback;
 
   vertex_descriptor current_vertex = get_current_vertex();
+  rollback.popped_edge = state.edge_stack.top();
   state.edge_stack.pop();
 
   if (!state.discovered[current_vertex]) {
     state.discovered[current_vertex] = true;
+    rollback.discovered_vertex = current_vertex;
 
     auto reverse_edge_range = boost::make_iterator_range(
           boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed;
 
+    rollback.edge_stack_push_count = 0;
     for (edge_descriptor edge : reverse_edge_range) {
       state.edge_stack.push(edge);
+      ++rollback.edge_stack_push_count;
     }
   }
 
   if (!state.edge_stack.empty()) {
     assert(state.edge_stack.top());
+    rollback.set_parent_edge = state.parent_edge[get_current_vertex()];
     state.parent_edge[get_current_vertex()] = *state.edge_stack.top();
   }
+  state_history.push_back(rollback);
 }
 
 void metaprogram::step_back() {
   assert(!is_at_start());
   assert(!state_history.empty());
 
-  state = state_history.back();
+  const step_rollback_t& rollback = state_history.back();
+
+  if (rollback.set_parent_edge) {
+    state.parent_edge[get_current_vertex()] = *rollback.set_parent_edge;
+  }
+
+  for (unsigned i = 0; i < rollback.edge_stack_push_count; ++i) {
+    state.edge_stack.pop();
+  }
+
+  if (rollback.discovered_vertex) {
+    state.discovered[*rollback.discovered_vertex] = false;
+  }
+
+  state.edge_stack.push(rollback.popped_edge);
+
   state_history.pop_back();
 }
 
