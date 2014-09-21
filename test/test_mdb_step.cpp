@@ -29,7 +29,7 @@ JUST_TEST_CASE(test_mdb_step_without_evaluation) {
   sh.line_available("step");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished or not evaluated yet\n");
+      "Metaprogram not evaluated yet\n");
 }
 #endif
 
@@ -205,7 +205,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
+JUST_TEST_CASE(test_mdb_step_minus_1_at_start) {
   mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
@@ -214,7 +214,37 @@ JUST_TEST_CASE(test_mdb_step_negative_number_fails) {
   sh.line_available("step -1");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Argument parsing failed\n");
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_minus_1_after_step) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("step 1");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("step 2");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
 }
 #endif
 

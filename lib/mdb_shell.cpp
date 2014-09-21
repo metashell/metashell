@@ -51,8 +51,9 @@ mdb_command_handler_map::commands_t
         "is reached. n defaults to 1 if not specified."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
-        "Step the program forward.",
-        "Argument n means step n times. n defaults to 1 if not specified."},
+        "Step the program.",
+        "Argument n means step n times. n defaults to 1 if not specified.\n"
+        "Negative n means step the program backwards."},
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
         "<type>",
         "Evaluate and start debugging a new metaprogram.",
@@ -89,7 +90,6 @@ mdb_shell::mdb_shell(
   conf(conf),
   env("__mdb_internal", conf),
   command_handler(create_default_command_map()),
-  mp(metaprogram::create_empty_finished()),
   is_stopped(false)
 {
   env.append(env_arg.get_all());
@@ -169,9 +169,21 @@ bool mdb_shell::require_empty_args(const std::string& args) const {
   return true;
 }
 
+bool mdb_shell::require_evaluated_metaprogram() const {
+  if (!mp) {
+    display_error("Metaprogram not evaluated yet\n");
+    return false;
+  }
+  return true;
+}
+
 bool mdb_shell::require_running_metaprogram() const {
-  if (mp.is_finished()) {
-    display_error("Metaprogram finished or not evaluated yet\n");
+  if (!require_evaluated_metaprogram()) {
+    return false;
+  }
+
+  if (mp->is_finished()) {
+    display_error("Metaprogram finished\n");
     return false;
   }
   return true;
@@ -210,11 +222,11 @@ void mdb_shell::command_continue(const std::string& arg) {
     return;
   }
 
-  for (unsigned i = 0; i < continue_count && !mp.is_finished(); ++i) {
+  for (unsigned i = 0; i < continue_count && !mp->is_finished(); ++i) {
     continue_metaprogram();
   }
 
-  if (mp.is_finished()) {
+  if (mp->is_finished()) {
     display_info("Metaprogram finished\n");
   } else {
     display_info("Breakpoint reached\n");
@@ -223,12 +235,12 @@ void mdb_shell::command_continue(const std::string& arg) {
 }
 
 void mdb_shell::command_step(const std::string& arg) {
-  if (!require_running_metaprogram()) {
+  if (!require_evaluated_metaprogram()) {
     return;
   }
 
   using boost::spirit::qi::lit;
-  using boost::spirit::qi::uint_;
+  using boost::spirit::qi::int_;
   using boost::spirit::ascii::space;
   using boost::phoenix::ref;
   using boost::spirit::qi::_1;
@@ -237,14 +249,14 @@ void mdb_shell::command_step(const std::string& arg) {
        end = arg.end();
 
   bool has_over = false;
-  unsigned step_count = 1;
+  int step_count = 1;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
         -lit("over") [ref(has_over) = true] >>
-        -uint_ [ref(step_count) = _1],
+        -int_ [ref(step_count) = _1],
 
         space
     );
@@ -257,12 +269,20 @@ void mdb_shell::command_step(const std::string& arg) {
   if (has_over) {
     display_error("Sorry, but step over is not supported yet\n");
   } else {
-    for (unsigned i = 0; i < step_count && !mp.is_finished(); ++i) {
-      mp.step();
+    if (step_count >= 0) {
+      for (int i = 0; i < step_count && !mp->is_finished(); ++i) {
+        mp->step();
+      }
+    } else {
+      for (int i = 0; i < -step_count && !mp->is_at_start(); ++i) {
+        mp->step_back();
+      }
     }
   }
-  if (mp.is_finished()) {
+  if (mp->is_finished()) {
     display_info("Metaprogram finished\n");
+  } else if (step_count < 0 && mp->is_at_start()) {
+    display_info("Metaprogram reached the beginning\n");
   } else {
     display_current_frame();
   }
@@ -401,16 +421,16 @@ void mdb_shell::run_metaprogram(const std::string& str) {
 }
 
 void mdb_shell::continue_metaprogram() {
-  assert(!mp.is_finished());
+  assert(!mp->is_finished());
 
   while (true) {
-    mp.step();
-    if (mp.is_finished()) {
+    mp->step();
+    if (mp->is_finished()) {
       return;
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
       const std::string current_type =
-        mp.get_vertex_property(mp.get_current_frame().vertex).name;
+        mp->get_vertex_property(mp->get_current_frame().vertex).name;
 
       if (boost::regex_search(current_type, breakpoint)) {
         return;
@@ -428,11 +448,11 @@ void mdb_shell::display_info(const std::string& str) const {
 }
 
 void mdb_shell::display_current_frame() const {
-  if (mp.get_current_vertex() == mp.get_root_vertex()) {
+  if (mp->get_current_vertex() == mp->get_root_vertex()) {
     // The MP hasn't been stepped at least once => no frame available
     return;
   }
-  display_frame(mp.get_current_frame());
+  display_frame(mp->get_current_frame());
 }
 
 void mdb_shell::display_trace_graph(
@@ -474,7 +494,7 @@ void mdb_shell::display_trace_line(
 {
 
   colored_string element_content =
-    highlight_syntax(mp.get_vertex_property(vertex).name);
+    highlight_syntax(mp->get_vertex_property(vertex).name);
 
   if (kind) {
     element_content += " (" + to_string(*kind) + ")";
@@ -519,7 +539,7 @@ void mdb_shell::display_trace_visit(
   // doesn't have any more children.
   // The 0th element is never read.
 
-  const metaprogram::graph_t& graph = mp.get_graph();
+  const metaprogram::graph_t& graph = mp->get_graph();
 
   std::vector<unsigned> depth_counter(1);
 
@@ -566,7 +586,7 @@ void mdb_shell::display_trace_visit(
     for (const metaprogram::edge_descriptor& edge :
         edges | boost::adaptors::reversed)
     {
-      instantiation_kind next_kind = mp.get_edge_property(edge).kind;
+      instantiation_kind next_kind = mp->get_edge_property(edge).kind;
 
       to_visit.push(
         std::make_tuple(boost::target(edge, graph), depth+1, next_kind));
@@ -577,31 +597,31 @@ void mdb_shell::display_trace_visit(
 }
 
 void mdb_shell::display_current_forwardtrace() const {
-  metaprogram::discovered_t discovered = mp.get_state().discovered;
+  metaprogram::discovered_t discovered = mp->get_state().discovered;
 
-  display_trace_visit(mp.get_current_vertex(), discovered, width());
+  display_trace_visit(mp->get_current_vertex(), discovered, width());
 }
 
 void mdb_shell::display_current_full_forwardtrace() const {
-  metaprogram::discovered_t discovered(mp.get_state().discovered.size());
+  metaprogram::discovered_t discovered(mp->get_state().discovered.size());
 
-  display_trace_visit(mp.get_current_vertex(), discovered, width());
+  display_trace_visit(mp->get_current_vertex(), discovered, width());
 }
 
 void mdb_shell::display_frame(const metaprogram::frame_t& frame) const {
   // No kind for <root> vertex
-  if (frame.vertex == mp.get_root_vertex()) {
-    display(mp.get_vertex_property(frame.vertex).name + "\n");
+  if (frame.vertex == mp->get_root_vertex()) {
+    display(mp->get_vertex_property(frame.vertex).name + "\n");
   } else {
     display(
-        highlight_syntax(mp.get_vertex_property(frame.vertex).name) +
-        " (" + to_string(mp.get_edge_property(frame.parent_edge).kind) + ")\n"
+        highlight_syntax(mp->get_vertex_property(frame.vertex).name) +
+        " (" + to_string(mp->get_edge_property(frame.parent_edge).kind) + ")\n"
     );
   }
 }
 
 void mdb_shell::display_backtrace() const {
-  const metaprogram::backtrace_t& backtrace = mp.get_backtrace();
+  const metaprogram::backtrace_t& backtrace = mp->get_backtrace();
 
   unsigned i = 0;
   for (const metaprogram::frame_t& frame :

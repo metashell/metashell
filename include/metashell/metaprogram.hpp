@@ -36,9 +36,6 @@ public:
   // Creates empty metaprogram: single <root> vertex
   metaprogram();
 
-  // Like the default constructor, but "step"-ed once
-  static metaprogram create_empty_finished();
-
   static metaprogram create_from_xml_stream(std::istream& stream);
   static metaprogram create_from_xml_file(const std::string& file);
   static metaprogram create_from_xml_string(const std::string& string);
@@ -75,6 +72,7 @@ public:
   typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
   typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
 
+  typedef boost::optional<vertex_descriptor> optional_vertex_descriptor;
   typedef boost::optional<edge_descriptor> optional_edge_descriptor;
 
   typedef std::vector<bool> discovered_t;
@@ -86,6 +84,15 @@ public:
     parent_edge_t parent_edge;
     edge_stack_t edge_stack;
   };
+
+  struct step_rollback_t {
+    optional_edge_descriptor popped_edge;
+    optional_vertex_descriptor discovered_vertex;
+    unsigned edge_stack_push_count = 0;
+    boost::optional<optional_edge_descriptor> set_parent_edge;
+  };
+
+  typedef std::vector<step_rollback_t> state_history_t;
 
   struct frame_t {
     frame_t();
@@ -106,10 +113,12 @@ public:
 
   void reset_state();
   bool is_finished() const;
+  bool is_at_start() const;
 
   vertex_descriptor get_root_vertex() const;
 
   void step();
+  void step_back();
 
   vertex_descriptor get_current_vertex() const;
   frame_t get_current_frame() const;
@@ -135,6 +144,7 @@ private:
   graph_t graph;
 
   state_t state;
+  state_history_t state_history;
 
   // This should be generally 0
   vertex_descriptor root_vertex;
