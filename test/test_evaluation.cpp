@@ -122,6 +122,7 @@ namespace
     JUST_ASSERT_EQUAL("", sh.error());
 
     sh.line_available(query_);
+    JUST_ASSERT_EQUAL("", sh.error());
     JUST_ASSERT_EQUAL(expected_result_, sh.output());
   }
 
