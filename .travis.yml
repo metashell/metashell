@@ -18,9 +18,7 @@ script:
   # Test the code
   - mkdir bin
   - cd bin
-  # -DMETASHELL_DISABLE_CONSTEXPR (and its usage in the code) can be removed
-  # when clang 3.1 or higher will be available on the CI servers
-  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_CONSTEXPR -DMETASHELL_DISABLE_TEMPLIGHT_TESTS" -DCLANG_STATIC=false -DCLANG_DEBUG=true
+  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_TEMPLIGHT_TESTS" -DCLANG_STATIC=false -DCLANG_DEBUG=true
   - make
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas and mdb commands is up to date
