@@ -72,7 +72,7 @@ void metaprogram::reset_state() {
   state.edge_stack = edge_stack_t();
   state.edge_stack.push(boost::none);
 
-  state_history.clear();
+  state_history = state_history_t();
 }
 
 bool metaprogram::is_finished() const {
@@ -114,14 +114,14 @@ void metaprogram::step() {
     rollback.set_parent_edge = state.parent_edge[get_current_vertex()];
     state.parent_edge[get_current_vertex()] = *state.edge_stack.top();
   }
-  state_history.push_back(rollback);
+  state_history.push(rollback);
 }
 
 void metaprogram::step_back() {
   assert(!is_at_start());
   assert(!state_history.empty());
 
-  const step_rollback_t& rollback = state_history.back();
+  const step_rollback_t& rollback = state_history.top();
 
   if (rollback.set_parent_edge) {
     state.parent_edge[get_current_vertex()] = *rollback.set_parent_edge;
@@ -137,7 +137,7 @@ void metaprogram::step_back() {
 
   state.edge_stack.push(rollback.popped_edge);
 
-  state_history.pop_back();
+  state_history.pop();
 }
 
 const metaprogram::graph_t& metaprogram::get_graph() const {

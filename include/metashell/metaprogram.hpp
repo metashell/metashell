@@ -92,7 +92,7 @@ public:
     boost::optional<optional_edge_descriptor> set_parent_edge;
   };
 
-  typedef std::vector<step_rollback_t> state_history_t;
+  typedef std::stack<step_rollback_t> state_history_t;
 
   typedef std::vector<edge_descriptor> backtrace_t;
 
