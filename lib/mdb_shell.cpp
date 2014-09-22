@@ -30,6 +30,8 @@
 
 namespace metashell {
 
+const std::string mdb_shell::internal_file_name = "mdb-stdin";
+
 const std::vector<color> mdb_shell::colors =
   {
     color::red,
@@ -309,7 +311,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
       return
         mp->get_source(edge) == mp->get_root_vertex() &&
         (
-          point_of_instantiation.name != "mdb-stdin" ||
+          point_of_instantiation.name != internal_file_name ||
           point_of_instantiation.row != line_number + 2
         );
     }
@@ -427,7 +429,7 @@ void mdb_shell::run_metaprogram_with_templight(
 }
 
 void mdb_shell::run_metaprogram(const std::string& str) {
-  result res = eval_tmp_unformatted(env, str, conf, "mdb-stdin");
+  result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
 
   if (!res.info.empty()) {
     display_info(res.info);

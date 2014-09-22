@@ -122,6 +122,8 @@ private:
 
   void display_frame(const metaprogram::edge_descriptor& frame) const;
 
+  const static std::string internal_file_name;
+
   const static std::vector<color> colors;
 };
 
