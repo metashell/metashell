@@ -43,10 +43,15 @@ then
     rm -rf llvm/projects/compiler-rt/.svn
     rm -rf llvm/tools/clang/.svn
 
-    echo "Patching LLVM/Clang"
-    cd llvm/tools/clang
-      patch -p0 -i "../../../patch/${PATCH}"
-    cd ../../..
+    if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
+    then
+      echo "Patching LLVM/Clang"
+      cd llvm/tools/clang
+        patch -p0 -i "../../../patch/${PATCH}"
+      cd ../../..
+    else
+      echo "Patching LLVM/Clang is disabled"
+    fi
   cd ..
 else
   echo "Please run this script from the root directory of the Metashell source code"
