@@ -48,7 +48,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
 
   sh.line_available("evaluate");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument parsing failed\n");
 }
 #endif
 
@@ -58,7 +58,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
 
   sh.line_available("evaluate  ");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument parsing failed\n");
 }
 #endif
 

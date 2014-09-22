@@ -768,8 +768,11 @@ Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
 Negative n means step the program backwards.
 
-* __`evaluate <type>`__ <br />
+* __`evaluate [no-filter] <type>`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
+Without the no-filter qualifier, types which were not directly instantiated
+by `<type>` will be filtered out.
+
 Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
 the debugged metaprogram with unrelated code. If you need formatting, you can
 explicitly enter `metashell::format< <type> >::type` for the same effect.

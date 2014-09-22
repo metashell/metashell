@@ -57,8 +57,10 @@ mdb_command_handler_map::commands_t
         "Argument n means step n times. n defaults to 1 if not specified.\n"
         "Negative n means step the program backwards."},
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
-        "<type>",
+        "[no-filter] <type>",
         "Evaluate and start debugging a new metaprogram.",
+        "Without the no-filter qualifier, types which were not directly instantiated\n"
+        "by `<type>` will be filtered out.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
@@ -295,27 +297,53 @@ void mdb_shell::command_step(const std::string& arg) {
 }
 
 void mdb_shell::command_evaluate(const std::string& arg) {
-  if (arg.empty()) {
-    display_error("Argument expected\n");
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  using boost::spirit::qi::lit;
+  using boost::spirit::qi::_1;
+  using boost::spirit::ascii::print;
+  using boost::spirit::ascii::space;
+
+  namespace phx = boost::phoenix;
+
+  std::vector<char> type;
+  bool has_no_filter = false;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -lit("no-filter") [phx::ref(has_no_filter) = true] >>
+        (+print) [phx::ref(type) = _1],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    display_error("Argument parsing failed\n");
     return;
   }
-  run_metaprogram_with_templight(arg);
 
-  std::string env_buffer = env.get();
-  int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
+  run_metaprogram_with_templight(std::string(type.begin(), type.end()));
 
-  mp->disable_edges_if(
-    [this, line_number](const metaprogram::edge_descriptor& edge) {
-      const file_location& point_of_instantiation =
-        mp->get_edge_property(edge).point_of_instantiation;
-      return
-        mp->get_source(edge) == mp->get_root_vertex() &&
-        (
-          point_of_instantiation.name != internal_file_name ||
-          point_of_instantiation.row != line_number + 2
-        );
-    }
-  );
+  if (!has_no_filter) {
+    std::string env_buffer = env.get();
+    int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
+
+    mp->disable_edges_if(
+      [this, line_number](const metaprogram::edge_descriptor& edge) {
+        const file_location& point_of_instantiation =
+          mp->get_edge_property(edge).point_of_instantiation;
+        return
+          mp->get_source(edge) == mp->get_root_vertex() &&
+          (
+            point_of_instantiation.name != internal_file_name ||
+            point_of_instantiation.row != line_number + 2
+          );
+      }
+    );
+  }
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
