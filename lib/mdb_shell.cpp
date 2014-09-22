@@ -298,11 +298,22 @@ void mdb_shell::command_evaluate(const std::string& arg) {
     return;
   }
   run_metaprogram_with_templight(arg);
-  mp->disable_edges_if([this](const metaprogram::edge_descriptor& edge) {
-    return
-      mp->get_source(edge) == mp->get_root_vertex() &&
-      mp->get_edge_property(edge).point_of_instantiation.name != "mdb-stdin";
-  });
+
+  std::string env_buffer = env.get();
+  int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
+
+  mp->disable_edges_if(
+    [this, line_number](const metaprogram::edge_descriptor& edge) {
+      const file_location& point_of_instantiation =
+        mp->get_edge_property(edge).point_of_instantiation;
+      return
+        mp->get_source(edge) == mp->get_root_vertex() &&
+        (
+          point_of_instantiation.name != "mdb-stdin" ||
+          point_of_instantiation.row != line_number + 2
+        );
+    }
+  );
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
