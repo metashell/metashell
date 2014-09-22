@@ -359,7 +359,8 @@ void mdb_shell::command_help(const std::string& arg) {
     display_info(
         "\n"
         "Type \"help\" followed by a command name for more information.\n"
-        "Command name abbreviations are allowed if unambiguous.\n");
+        "Command name abbreviations are allowed if unambiguous.\n"
+        "A blank line as an input will repeat the last command, if it makes sense.\n");
     return;
   }
 
