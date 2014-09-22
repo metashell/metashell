@@ -112,7 +112,7 @@ private:
       metaprogram::vertex_descriptor vertex,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
-      const boost::optional<instantiation_kind>& kind,
+      const boost::optional<metaprogram::edge_property>& property,
       unsigned width) const;
 
   void display_trace_visit(

@@ -492,15 +492,15 @@ void mdb_shell::display_trace_line(
     metaprogram::vertex_descriptor vertex,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
-    const boost::optional<instantiation_kind>& kind,
+    const boost::optional<metaprogram::edge_property>& property,
     unsigned width) const
 {
 
   colored_string element_content =
     highlight_syntax(mp->get_vertex_property(vertex).name);
 
-  if (kind) {
-    element_content += " (" + to_string(*kind) + ")";
+  if (property) {
+    element_content += " (" + to_string(property->kind) + ")";
   }
 
   unsigned non_content_length = 2*depth;
@@ -549,7 +549,7 @@ void mdb_shell::display_trace_visit(
   typedef std::tuple<
     metaprogram::vertex_descriptor,
     unsigned, // Depth
-    boost::optional<instantiation_kind> > stack_element;
+    boost::optional<metaprogram::edge_property> > stack_element;
 
   // The usual stack for DFS
   std::stack<stack_element> to_visit;
@@ -561,13 +561,13 @@ void mdb_shell::display_trace_visit(
   while (!to_visit.empty()) {
     unsigned depth;
     metaprogram::vertex_descriptor vertex;
-    boost::optional<instantiation_kind> kind;
-    std::tie(vertex, depth, kind) = to_visit.top();
+    boost::optional<metaprogram::edge_property> property;
+    std::tie(vertex, depth, property) = to_visit.top();
     to_visit.pop();
 
     --depth_counter[depth];
 
-    display_trace_line(vertex, depth, depth_counter, kind, width);
+    display_trace_line(vertex, depth, depth_counter, property, width);
 
     if (discovered[vertex]) {
       continue;
@@ -589,9 +589,8 @@ void mdb_shell::display_trace_visit(
     for (const metaprogram::edge_descriptor& edge :
         edges | boost::adaptors::reversed)
     {
-      instantiation_kind next_kind = mp->get_edge_property(edge).kind;
-
-      to_visit.push(std::make_tuple(mp->get_target(edge), depth+1, next_kind));
+      to_visit.push(std::make_tuple(
+            mp->get_target(edge), depth+1, mp->get_edge_property(edge)));
 
       ++depth_counter[depth+1];
     }
