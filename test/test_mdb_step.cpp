@@ -234,6 +234,37 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_0_at_start) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step 0");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_0_at_end) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("continue");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram finished\n");
+
+  sh.clear_output();
+  sh.line_available("step 0");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
   mdb_test_shell sh(fibonacci_mp);
 

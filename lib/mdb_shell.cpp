@@ -280,9 +280,13 @@ void mdb_shell::command_step(const std::string& arg) {
     }
   }
   if (mp->is_finished()) {
-    display_info("Metaprogram finished\n");
-  } else if (step_count < 0 && mp->is_at_start()) {
-    display_info("Metaprogram reached the beginning\n");
+    if (step_count > 0) {
+      display_info("Metaprogram finished\n");
+    }
+  } else if (mp->is_at_start()) {
+    if (step_count < 0) {
+      display_info("Metaprogram reached the beginning\n");
+    }
   } else {
     display_current_frame();
   }
@@ -450,10 +454,7 @@ void mdb_shell::display_info(const std::string& str) const {
 }
 
 void mdb_shell::display_current_frame() const {
-  if (mp->get_current_vertex() == mp->get_root_vertex()) {
-    // The MP hasn't been stepped at least once => no frame available
-    return;
-  }
+  assert(mp && !mp->is_at_start() && !mp->is_finished());
   display_frame(mp->get_current_frame());
 }
 

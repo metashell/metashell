@@ -204,6 +204,7 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
 
 metaprogram::edge_descriptor metaprogram::get_current_frame() const {
   assert(!is_finished());
+  assert(!is_at_start());
 
   vertex_descriptor current_vertex = get_current_vertex();
 
