@@ -25,7 +25,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <metashell/metaprogram.hpp>
-#include <metashell/file_location.hpp>
 
 #include "exception.hpp"
 
@@ -70,14 +69,14 @@ metaprogram_builder::metaprogram_builder() {
 void metaprogram_builder::handle_template_begin(
   instantiation_kind kind,
   const std::string& context,
-  const file_location& /* location */,
+  const file_location& point_of_instantiation,
   double /* timestamp */,
   unsigned long long /* memory_usage */)
 {
   vertex_descriptor vertex = add_vertex(context);
   if (!vertex_stack.empty()) {
     vertex_descriptor top_vertex = vertex_stack.top();
-    trace.add_edge(top_vertex, vertex, kind);
+    trace.add_edge(top_vertex, vertex, kind, point_of_instantiation);
   }
   vertex_stack.push(vertex);
 }

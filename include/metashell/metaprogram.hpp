@@ -26,6 +26,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
+#include <metashell/file_location.hpp>
 #include <metashell/instantiation_kind.hpp>
 
 namespace metashell {
@@ -52,6 +53,8 @@ public:
   };
   struct edge_property {
     instantiation_kind kind;
+    file_location point_of_instantiation;
+    bool enabled = true;
   };
 
   typedef boost::adjacency_list<
@@ -101,13 +104,17 @@ public:
   edge_descriptor add_edge(
       vertex_descriptor from,
       vertex_descriptor to,
-      instantiation_kind kind);
+      instantiation_kind kind,
+      const file_location& point_of_instantiation);
 
   void reset_state();
   bool is_finished() const;
   bool is_at_start() const;
 
   vertex_descriptor get_root_vertex() const;
+
+  template<class P>
+  void disable_edges_if(P pred);
 
   void step();
   void step_back();
@@ -144,6 +151,17 @@ private:
   // This should be generally 0
   vertex_descriptor root_vertex;
 };
+
+template<class P>
+void metaprogram::disable_edges_if(P pred) {
+  for (edge_descriptor edge :
+      boost::make_iterator_range(boost::edges(graph)))
+  {
+    if (pred(edge)) {
+      get_edge_property(edge).enabled = false;
+    }
+  }
+}
 
 }
 

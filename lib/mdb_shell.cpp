@@ -298,6 +298,11 @@ void mdb_shell::command_evaluate(const std::string& arg) {
     return;
   }
   run_metaprogram_with_templight(arg);
+  mp->disable_edges_if([this](const metaprogram::edge_descriptor& edge) {
+    return
+      mp->get_source(edge) == mp->get_root_vertex() &&
+      mp->get_edge_property(edge).point_of_instantiation.name != "mdb-stdin";
+  });
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
@@ -589,10 +594,12 @@ void mdb_shell::display_trace_visit(
     for (const metaprogram::edge_descriptor& edge :
         edges | boost::adaptors::reversed)
     {
-      to_visit.push(std::make_tuple(
-            mp->get_target(edge), depth+1, mp->get_edge_property(edge)));
+      if (mp->get_edge_property(edge).enabled) {
+        to_visit.push(std::make_tuple(
+              mp->get_target(edge), depth+1, mp->get_edge_property(edge)));
 
-      ++depth_counter[depth+1];
+        ++depth_counter[depth+1];
+      }
     }
   }
 }

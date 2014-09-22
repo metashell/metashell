@@ -50,7 +50,8 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
 metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
-    instantiation_kind kind)
+    instantiation_kind kind,
+    const file_location& point_of_instantiation)
 {
   edge_descriptor edge;
   bool inserted;
@@ -59,6 +60,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   assert(inserted);
 
   get_edge_property(edge).kind = kind;
+  get_edge_property(edge).point_of_instantiation = point_of_instantiation;
 
   return edge;
 }
@@ -104,8 +106,10 @@ void metaprogram::step() {
 
     rollback.edge_stack_push_count = 0;
     for (edge_descriptor edge : reverse_edge_range) {
-      state.edge_stack.push(edge);
-      ++rollback.edge_stack_push_count;
+      if (get_edge_property(edge).enabled) {
+        state.edge_stack.push(edge);
+        ++rollback.edge_stack_push_count;
+      }
     }
   }
 
@@ -204,7 +208,6 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
 
 metaprogram::edge_descriptor metaprogram::get_current_frame() const {
   assert(!is_finished());
-  assert(!is_at_start());
 
   vertex_descriptor current_vertex = get_current_vertex();
 
