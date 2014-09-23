@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Metashell - Interactive C++ template metaprogramming shell
 # Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -55,9 +55,16 @@ cd ..
 
 # Build & package Metashell
 mkdir bin; cd bin
-  cmake .. \
-    && make -j${BUILD_THREADS} \
-    && make test \
-    && cpack -G "${PACKAGE_FORMAT}"
+  if [ `uname` == "Linux" ]
+  then
+    cmake .. \
+      && make -j${BUILD_THREADS} \
+      && make test \
+      && cpack -G "${PACKAGE_FORMAT}"
+  else
+    cmake .. \
+      && make -j${BUILD_THREADS} \
+      && make test
+  fi
 cd ..
 

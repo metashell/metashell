@@ -31,6 +31,11 @@
 #  include <unistd.h>
 #endif
 
+#ifdef __FreeBSD__
+#  include <sys/types.h>
+#  include <sys/sysctl.h>
+#endif
+
 using namespace metashell;
 
 namespace
@@ -70,7 +75,7 @@ namespace
       );
   }
 
-#ifndef _WIN32
+#if !(defined _WIN32 || defined __FreeBSD__)
   std::string read_link(const std::string& path_)
   {
     const int step = 64;
@@ -124,6 +129,16 @@ std::string default_environment_detector::path_of_executable()
   char path[MAX_PATH];
   GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
   return path;
+#elif defined __FreeBSD__
+  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+  std::vector<char> buff(1);
+  size_t cb = buff.size();
+  while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
+  {
+    buff.resize(buff.size() * 2);
+    cb = buff.size();
+  }
+  return std::string(buff.begin(), buff.begin() + cb);
 #else
   return read_link("/proc/self/exe");
 #endif

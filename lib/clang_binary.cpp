@@ -36,6 +36,11 @@ namespace
     return arg_;
 #endif
   }
+
+  bool is_new_line(char c_)
+  {
+    return c_ == '\n';
+  }
 }
 
 clang_binary::clang_binary(const std::string& path_) :
@@ -74,7 +79,7 @@ std::vector<std::string> metashell::default_sysinclude(
   const string s = o.standard_output() + o.standard_error();
 
   vector<string> lines;
-  split(lines, s, [](char c_) { return c_ == '\n'; });
+  split(lines, s, is_new_line);
 
   vector<string> result;
   bool in_sysinclude = false;

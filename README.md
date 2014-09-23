@@ -14,7 +14,7 @@ shell.
 
 - [Motivation](#motivation)
 - [Building Metashell](#building-metashell)
-    - [Building Metashell on Linux](#building-metashell-on-linux)
+    - [Building Metashell on Linux and FreeBSD](#building-metashell-on-linux-and-freebsd)
         - [Clang and Templight](#clang-and-templight)
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
@@ -66,7 +66,7 @@ metaprograms.
 
 ## Building Metashell
 
-### Building Metashell on Linux
+### Building Metashell on Linux and FreeBSD
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:

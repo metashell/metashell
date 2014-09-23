@@ -45,7 +45,11 @@ boost::optional<std::string> readline_environment::readline(
   if (line) {
     std::string str(line);
 
+#ifdef __FreeBSD__
+    free(line);
+#else
     rl_free(line);
+#endif
     return str;
   } else {
     return boost::none;
