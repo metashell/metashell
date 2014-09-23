@@ -29,11 +29,20 @@
 
 #include <cctype>
 #include <algorithm>
+#include <iostream>
+#include <sstream>
 
 using namespace metashell;
 
 namespace
 {
+  std::string max_template_depth_info(int depth_)
+  {
+    std::ostringstream s;
+    s << "Maximum template depth: " << depth_;
+    return s.str();
+  }
+
   void display(const result& r_, shell& s_)
   {
     if (!r_.info.empty())
@@ -203,6 +212,7 @@ void shell::display_splash() const
           "Using precompiled headers" :
           "Not using precompiled headers"
       )
+      .left_align(max_template_depth_info(_config.max_template_depth))
       .empty_line()
       .left_align("Getting help: #msh help")
       .raw(" */")

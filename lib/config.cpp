@@ -230,6 +230,8 @@ config metashell::detect_config(
   cfg.include_path =
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
+  cfg.max_template_depth = ucfg_.max_template_depth;
+
   if (env_detector_.on_windows())
   {
     // To find libclang.dll

@@ -37,6 +37,7 @@ namespace metashell
     std::vector<std::string> extra_clang_args;
     bool use_precompiled_headers;
     std::string clang_path;
+    int max_template_depth;
 
     user_config();
   };

@@ -34,6 +34,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 using namespace metashell;
 
@@ -98,6 +99,37 @@ namespace
       std::cout << '\n' << std::endl;
     }
   }
+
+  int parse_max_template_depth(const std::string& key_value_)
+  {
+    const auto eq = key_value_.find('=');
+    if (eq == std::string::npos || key_value_.substr(0, eq) != "template-depth")
+    {
+      throw
+        std::runtime_error("-f has to be followed by template-depth=<value>");
+    }
+    else if (eq == key_value_.size() - 1)
+    {
+      throw std::runtime_error("The value of -ftemplate-depth is missing.");
+    }
+    else
+    {
+      std::istringstream s(key_value_.substr(eq + 1));
+      int v;
+      if (!(s >> v))
+      {
+        throw std::runtime_error("Invalid value for -ftemplate-depth.");
+      }
+      else if (v < 0)
+      {
+        throw std::runtime_error("Template depth can not be negative.");
+      }
+      else
+      {
+        return v;
+      }
+    }
+  }
 }
 
 parse_config_result metashell::parse_config(
@@ -130,6 +162,7 @@ parse_config_result metashell::parse_config(
 
   std::string cppstd("c++0x");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
+  std::string fvalue;
 
   options_description desc("Options");
   desc.add_options()
@@ -162,6 +195,11 @@ parse_config_result metashell::parse_config(
       "show_mdb_help",
       "Display help for mdb commands in MarkDown format and exit"
     )
+    (
+      ",f",
+      value(&fvalue),
+      "Feature optioni. Currently supported: -ftemplate-depth=<value>"
+    )
     ;
 
   try
@@ -176,6 +214,11 @@ parse_config_result metashell::parse_config(
     ucfg.standard_to_use = metashell::parse(cppstd);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
+
+    if (!fvalue.empty())
+    {
+      ucfg.max_template_depth = parse_max_template_depth(fvalue);
+    }
 
     if (vm.count("help"))
     {

@@ -23,6 +23,8 @@
 
 #include "test_shell.hpp"
 
+#include <algorithm>
+
 using namespace metashell;
 
 namespace
@@ -81,5 +83,19 @@ JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
   sh.line_available("#msh environment reload");
 
   JUST_ASSERT_NOT_EQUAL(old_env_ptr, &sh.env());
+}
+
+JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
+{
+  config cfg;
+  cfg.max_template_depth = 13;
+
+  in_memory_environment e(".", cfg);
+
+  const auto& as = e.clang_arguments();
+
+  JUST_ASSERT(
+    std::find(as.begin(), as.end(), "-ftemplate-depth=13") != as.end()
+  );
 }
 

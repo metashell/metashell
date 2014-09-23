@@ -76,6 +76,7 @@ JUST_TEST_CASE(test_formatting_disabled)
 {
   config cfg;
   cfg.indent = false;
+  cfg.max_template_depth = 256;
 
   test_shell sh(cfg, 10);
   sh.line_available(
@@ -83,6 +84,7 @@ JUST_TEST_CASE(test_formatting_disabled)
   );
   sh.line_available("template_with_a_long_name<int, double, char>");
 
+  JUST_ASSERT_EQUAL("", sh.error());
   JUST_ASSERT_EQUAL(
     "template_with_a_long_name<int, double, char>",
     sh.output()

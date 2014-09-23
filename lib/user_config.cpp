@@ -10,6 +10,7 @@ user_config::user_config() :
   standard_to_use(standard::cpp11),
   warnings_enabled(true),
   use_precompiled_headers(false),
-  clang_path()
+  clang_path(),
+  max_template_depth(256)
 {}
 

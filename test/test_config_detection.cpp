@@ -673,3 +673,16 @@ JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
   JUST_ASSERT_EQUAL("/usr/bin/../include/metashell/clang", cfg.include_path[0]);
 }
 
+JUST_TEST_CASE(test_detect_max_template_depth)
+{
+  mock_environment_detector envd;
+  
+  user_config ucfg;
+  ucfg.max_template_depth = 13;
+
+  std::ostringstream err;
+  const config cfg = detect_config(ucfg, envd, err);
+  
+  JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
+}
+
