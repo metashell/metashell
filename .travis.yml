@@ -19,7 +19,7 @@ script:
   - mkdir bin
   - cd bin
   - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_TEMPLIGHT_TESTS" -DCLANG_STATIC=false -DCLANG_DEBUG=true -DCLANG_LIBRARYDIR=/usr/local/clang-3.4/lib
-  - make VERBOSE=1 -j2
+  - make -j2
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas and mdb commands is up to date
   - app/metashell --show_pragma_help | ../tools/replace_part -i ../README.md -m '<!-- pragma_info -->' -o - -r - | diff ../README.md -
