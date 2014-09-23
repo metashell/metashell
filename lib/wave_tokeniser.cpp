@@ -24,6 +24,10 @@
 #  pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #endif
 
+#if defined __clang__
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include <metashell/wave_tokeniser.hpp>
 
 #include <boost/wave.hpp>
