@@ -307,7 +307,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
 
   namespace phx = boost::phoenix;
 
-  std::vector<char> type;
+  std::vector<char> type_v;
   bool has_no_filter = false;
 
   bool result =
@@ -315,7 +315,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         begin, end,
 
         -lit("no-filter") [phx::ref(has_no_filter) = true] >>
-        (+print) [phx::ref(type) = _1],
+        (+print) [phx::ref(type_v) = _1],
 
         space
     );
@@ -325,7 +325,8 @@ void mdb_shell::command_evaluate(const std::string& arg) {
     return;
   }
 
-  run_metaprogram_with_templight(std::string(type.begin(), type.end()));
+  std::string type = std::string(type_v.begin(), type_v.end());
+  run_metaprogram_with_templight(type);
 
   if (!has_no_filter) {
     std::string env_buffer = env.get();
@@ -343,6 +344,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
           );
       }
     );
+    mp->get_vertex_property(mp->get_root_vertex()).name = type;
   }
 }
 
