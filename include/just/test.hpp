@@ -213,7 +213,7 @@ namespace just
     { \
     public: \
       name(const std::string& filename_, int line_) : \
-        _assert(filename_, line_) \
+        _assert_msg(filename_, line_) \
       {} \
       \
       template <class A, class B> \
@@ -221,10 +221,10 @@ namespace just
       { \
         std::ostringstream s; \
         s << "Expected: " << a_ << " " #pred " " << b_; \
-        _assert(s.str(), a_ pred b_); \
+        _assert_msg(s.str(), a_ pred b_); \
       } \
     private: \
-      assert_msg _assert; \
+      assert_msg _assert_msg; \
     }
 
     JUST_TEST_ASSERT_OP(assert_equal, ==);

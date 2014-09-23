@@ -18,6 +18,7 @@ aux_source_directory(. SOURCES)
 add_executable(metashell_test ${SOURCES})
 
 enable_warnings()
+use_cpp11()
 
 target_link_libraries(metashell_test metashell_lib)
 

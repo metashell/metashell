@@ -34,24 +34,11 @@ if (WIN32)
   add_definitions( -DNOMINMAX )
 endif()
 
-# C++11
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-  message(STATUS "Turning on C++11 for GCC")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-  message(STATUS "Turning on C++11 for Clang")
-endif()
-
-# Warnings
-include(Warnings)
+# Warnings, C++11, etc
+include(Compiler)
 
 # Workaround on some systems (OSX + clang + Boost 1.55)
 add_definitions(-DBOOST_ATOMIC_FORCE_FALLBACK=1)
-
-if (NOT WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-endif()
 
 # Sanitizers
 if (ENABLE_SANITIZERS)
