@@ -165,9 +165,9 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     (this->*cmd.get_func())(args);
   } catch (const std::exception& ex) {
-    display_error(std::string("Error: ") + ex.what());
+    display_error(std::string("Error: ") + ex.what() + "\n");
   } catch (...) {
-    display_error("Unknown error");
+    display_error("Unknown error\n");
   }
 }
 
