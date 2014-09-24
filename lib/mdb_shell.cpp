@@ -679,9 +679,7 @@ void mdb_shell::display_backtrace() const {
   const metaprogram::backtrace_t& backtrace = mp->get_backtrace();
 
   unsigned i = 0;
-  for (const metaprogram::edge_descriptor& frame :
-      backtrace | boost::adaptors::reversed)
-  {
+  for (const metaprogram::edge_descriptor& frame : backtrace) {
     display(colored_string("#" + std::to_string(i) + " ", color::white));
     display_frame(frame);
     ++i;
