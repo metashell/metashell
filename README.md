@@ -701,25 +701,19 @@ For demonstration purposes, we're going to use a simple fibonacci metaprogram:
 ...> struct int_ {};
 ```
 
-Now, you can start the metadebugger by entering:
+Now, you can start debugging a metaprogram by entering:
 
 ```cpp
-> #msh mdb
-```
-
-You'll see, that the prompt has changed to `(mdb)`, now you can enter
-metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
-
-Let's evaluate a metaprogram:
-
-```cpp
-(mdb) evaluate int_<fib<6>::value>
+> #msh mdb int_<fib<6>::value>
 int_<13>
 ```
 
 This will evaluate and print the result of the metaprogram just like how
 metashell does, but at the same time, it gathers infomation about
 template instantiations using [Templight](http://plc.inf.elte.hu/templight/).
+
+You'll see, that the prompt has changed to `(mdb)`, now you can enter
+metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
 
 Metadebugger provides an interface similar to gdb. For example you can step
 the metaprogram forward two steps:
