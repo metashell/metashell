@@ -427,7 +427,7 @@ void mdb_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
-  const std::string& xml_path = templight_xml_file.get_path().string();
+  std::string xml_path = templight_xml_file.get_path().string();
 
   env.set_xml_location(xml_path);
 
