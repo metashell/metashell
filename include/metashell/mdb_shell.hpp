@@ -89,6 +89,8 @@ protected:
   void display_current_forwardtrace() const;
   void display_current_full_forwardtrace() const;
   void display_backtrace() const;
+  void display_argument_parsing_failed() const;
+  void display_metaprogram_finished() const;
 
   config conf;
   templight_environment env;

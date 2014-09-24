@@ -195,7 +195,7 @@ bool mdb_shell::require_running_metaprogram() const {
   }
 
   if (mp->is_finished()) {
-    display_error("Metaprogram finished\n");
+    display_metaprogram_finished();
     return false;
   }
   return true;
@@ -226,7 +226,7 @@ void mdb_shell::command_continue(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_error("Argument parsing failed\n");
+    display_argument_parsing_failed();
     return;
   }
 
@@ -239,7 +239,7 @@ void mdb_shell::command_continue(const std::string& arg) {
   }
 
   if (mp->is_finished()) {
-    display_info("Metaprogram finished\n");
+    display_metaprogram_finished();
   } else {
     display_info("Breakpoint reached\n");
     display_current_frame();
@@ -274,7 +274,7 @@ void mdb_shell::command_step(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_error("Argument parsing failed\n");
+    display_argument_parsing_failed();
     return;
   }
 
@@ -293,7 +293,7 @@ void mdb_shell::command_step(const std::string& arg) {
   }
   if (mp->is_finished()) {
     if (step_count > 0) {
-      display_info("Metaprogram finished\n");
+      display_metaprogram_finished();
     }
   } else if (mp->is_at_start()) {
     if (step_count < 0) {
@@ -329,7 +329,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_error("Argument parsing failed\n");
+    display_argument_parsing_failed();
     return;
   }
 
@@ -380,7 +380,7 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_error("Argument parsing failed\n");
+    display_argument_parsing_failed();
     return;
   }
 
@@ -686,6 +686,14 @@ void mdb_shell::display_backtrace() const {
     display_frame(frame);
     ++i;
   }
+}
+
+void mdb_shell::display_argument_parsing_failed() const {
+  display_error("Argument parsing failed\n");
+}
+
+void mdb_shell::display_metaprogram_finished() const {
+  display_info("Metaprogram finished\n");
 }
 
 }
