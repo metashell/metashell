@@ -749,6 +749,37 @@ fib<5>
 ` fib<3> (Memoization)
 ```
 
+You can also create breakpoints:
+
+```cpp
+(mdb) rbreak fib<3>
+Break point "fib<3>" added
+```
+
+Now let's continue the execution until the first breakpoint:
+
+```cpp
+(mdb) continue
+Breakpoint reached
+fib<3> (TemplateInstantiation)
+```
+
+You can repeat the last command by simply hitting enter again:
+
+```cpp
+(mdb)
+Breakpoint reached
+fib<3> (Memoization)
+```
+
+And again:
+
+```cpp
+(mdb)
+Metaprogram finished
+int_<13>
+```
+
 ### Metadebugger command reference
 
 <!-- mdb_info -->
