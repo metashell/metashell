@@ -32,7 +32,7 @@ namespace metashell {
 
 struct metaprogram_builder {
 
-  metaprogram_builder();
+  metaprogram_builder(const std::string& root_name);
 
   void handle_template_begin(
     instantiation_kind kind,
@@ -61,7 +61,9 @@ private:
   element_vertex_map_t element_vertex_map;
 };
 
-metaprogram_builder::metaprogram_builder() {
+metaprogram_builder::metaprogram_builder(const std::string& root_name) :
+  trace(root_name)
+{
   // Add root vertex
   vertex_stack.push(trace.get_root_vertex());
 }
@@ -147,13 +149,15 @@ instantiation_kind instantiation_kind_from_string(const std::string& str) {
   return it->second;
 }
 
-metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
+metaprogram metaprogram::create_from_xml_stream(
+    std::istream& stream, const std::string& root_name)
+{
   typedef boost::property_tree::ptree ptree;
 
   ptree pt;
   read_xml(stream, pt);
 
-  metaprogram_builder builder;
+  metaprogram_builder builder(root_name);
 
   for (const ptree::value_type& pt_event :
       boost::make_iterator_range(pt.get_child("Trace")))
@@ -180,17 +184,21 @@ metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
   return builder.get_metaprogram();
 }
 
-metaprogram metaprogram::create_from_xml_file(const std::string& file) {
+metaprogram metaprogram::create_from_xml_file(
+    const std::string& file, const std::string& root_name)
+{
   std::ifstream in(file);
   if (!in) {
     throw exception("Can't open templight file");
   }
-  return create_from_xml_stream(in);
+  return create_from_xml_stream(in, root_name);
 }
 
-metaprogram metaprogram::create_from_xml_string(const std::string& string) {
+metaprogram metaprogram::create_from_xml_string(
+    const std::string& string, const std::string& root_name)
+{
   std::istringstream ss(string);
-  return create_from_xml_stream(ss);
+  return create_from_xml_stream(ss, root_name);
 }
 
 }

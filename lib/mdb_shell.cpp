@@ -434,7 +434,7 @@ void mdb_shell::run_metaprogram_with_templight(
 
   run_metaprogram(str);
 
-  mp = metaprogram::create_from_xml_file(xml_path);
+  mp = metaprogram::create_from_xml_file(xml_path, str);
 }
 
 void mdb_shell::run_metaprogram(const std::string& str) {

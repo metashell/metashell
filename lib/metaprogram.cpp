@@ -26,8 +26,8 @@
 
 namespace metashell {
 
-metaprogram::metaprogram() {
-  root_vertex = add_vertex("<root>");
+metaprogram::metaprogram(const std::string& root_name) {
+  root_vertex = add_vertex(root_name);
   reset_state();
 }
 

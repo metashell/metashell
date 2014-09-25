@@ -35,11 +35,14 @@ class metaprogram {
 public:
 
   // Creates empty metaprogram: single <root> vertex
-  metaprogram();
+  metaprogram(const std::string& root_name);
 
-  static metaprogram create_from_xml_stream(std::istream& stream);
-  static metaprogram create_from_xml_file(const std::string& file);
-  static metaprogram create_from_xml_string(const std::string& string);
+  static metaprogram create_from_xml_stream(
+      std::istream& stream, const std::string& root_name);
+  static metaprogram create_from_xml_file(
+      const std::string& file, const std::string& root_name);
+  static metaprogram create_from_xml_string(
+      const std::string& string, const std::string& root_name);
 
   struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
