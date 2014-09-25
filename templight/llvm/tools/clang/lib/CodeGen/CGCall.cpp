@@ -181,30 +181,35 @@ CodeGenTypes::arrangeCXXMethodDeclaration(const CXXMethodDecl *MD) {
   return arrangeFreeFunctionType(prototype);
 }
 
-/// Arrange the argument and result information for a declaration
-/// or definition to the given constructor variant.
 const CGFunctionInfo &
-CodeGenTypes::arrangeCXXConstructorDeclaration(const CXXConstructorDecl *D,
-                                               CXXCtorType ctorKind) {
+CodeGenTypes::arrangeCXXStructorDeclaration(const CXXMethodDecl *MD,
+                                            StructorType Type) {
+
   SmallVector<CanQualType, 16> argTypes;
-  argTypes.push_back(GetThisType(Context, D->getParent()));
+  argTypes.push_back(GetThisType(Context, MD->getParent()));
 
-  GlobalDecl GD(D, ctorKind);
-  CanQualType resultType =
-    TheCXXABI.HasThisReturn(GD) ? argTypes.front() : Context.VoidTy;
+  GlobalDecl GD;
+  if (auto *CD = dyn_cast<CXXConstructorDecl>(MD)) {
+    GD = GlobalDecl(CD, toCXXCtorType(Type));
+  } else {
+    auto *DD = dyn_cast<CXXDestructorDecl>(MD);
+    GD = GlobalDecl(DD, toCXXDtorType(Type));
+  }
 
-  CanQual<FunctionProtoType> FTP = GetFormalType(D);
+  CanQual<FunctionProtoType> FTP = GetFormalType(MD);
 
   // Add the formal parameters.
   for (unsigned i = 0, e = FTP->getNumParams(); i != e; ++i)
     argTypes.push_back(FTP->getParamType(i));
 
-  TheCXXABI.BuildConstructorSignature(D, ctorKind, resultType, argTypes);
+  TheCXXABI.buildStructorSignature(MD, Type, argTypes);
 
   RequiredArgs required =
-      (D->isVariadic() ? RequiredArgs(argTypes.size()) : RequiredArgs::All);
+      (MD->isVariadic() ? RequiredArgs(argTypes.size()) : RequiredArgs::All);
 
   FunctionType::ExtInfo extInfo = FTP->getExtInfo();
+  CanQualType resultType =
+      TheCXXABI.HasThisReturn(GD) ? argTypes.front() : Context.VoidTy;
   return arrangeLLVMFunctionInfo(resultType, true, argTypes, extInfo, required);
 }
 
@@ -227,30 +232,6 @@ CodeGenTypes::arrangeCXXConstructorCall(const CallArgList &args,
 
   FunctionType::ExtInfo Info = FPT->getExtInfo();
   return arrangeLLVMFunctionInfo(ResultType, true, ArgTypes, Info, Required);
-}
-
-/// Arrange the argument and result information for a declaration,
-/// definition, or call to the given destructor variant.  It so
-/// happens that all three cases produce the same information.
-const CGFunctionInfo &
-CodeGenTypes::arrangeCXXDestructor(const CXXDestructorDecl *D,
-                                   CXXDtorType dtorKind) {
-  SmallVector<CanQualType, 2> argTypes;
-  argTypes.push_back(GetThisType(Context, D->getParent()));
-
-  GlobalDecl GD(D, dtorKind);
-  CanQualType resultType =
-    TheCXXABI.HasThisReturn(GD) ? argTypes.front() : Context.VoidTy;
-
-  TheCXXABI.BuildDestructorSignature(D, dtorKind, resultType, argTypes);
-
-  CanQual<FunctionProtoType> FTP = GetFormalType(D);
-  assert(FTP->getNumParams() == 0 && "dtor with formal parameters");
-  assert(FTP->isVariadic() == 0 && "dtor with formal parameters");
-
-  FunctionType::ExtInfo extInfo = FTP->getExtInfo();
-  return arrangeLLVMFunctionInfo(resultType, true, argTypes, extInfo,
-                                 RequiredArgs::All);
 }
 
 /// Arrange the argument and result information for the declaration or
@@ -324,10 +305,10 @@ CodeGenTypes::arrangeGlobalDeclaration(GlobalDecl GD) {
   const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
 
   if (const CXXConstructorDecl *CD = dyn_cast<CXXConstructorDecl>(FD))
-    return arrangeCXXConstructorDeclaration(CD, GD.getCtorType());
+    return arrangeCXXStructorDeclaration(CD, getFromCtorType(GD.getCtorType()));
 
   if (const CXXDestructorDecl *DD = dyn_cast<CXXDestructorDecl>(FD))
-    return arrangeCXXDestructor(DD, GD.getDtorType());
+    return arrangeCXXStructorDeclaration(DD, getFromDtorType(GD.getDtorType()));
 
   return arrangeFunctionDeclaration(FD);
 }
@@ -1029,7 +1010,8 @@ llvm::Type *CodeGenTypes::GetFunctionTypeForVTable(GlobalDecl GD) {
     
   const CGFunctionInfo *Info;
   if (isa<CXXDestructorDecl>(MD))
-    Info = &arrangeCXXDestructor(cast<CXXDestructorDecl>(MD), GD.getDtorType());
+    Info =
+        &arrangeCXXStructorDeclaration(MD, getFromDtorType(GD.getDtorType()));
   else
     Info = &arrangeCXXMethodDeclaration(MD);
   return GetFunctionType(*Info);
@@ -1435,7 +1417,10 @@ static llvm::Value *emitArgumentDemotion(CodeGenFunction &CGF,
   return CGF.Builder.CreateFPCast(value, varType, "arg.unpromote");
 }
 
-static bool shouldAddNonNullAttr(const Decl *FD, const ParmVarDecl *PVD) {
+/// Returns the attribute (either parameter attribute, or function
+/// attribute), which declares argument ArgNo to be non-null.
+static const NonNullAttr *getNonNullAttr(const Decl *FD, const ParmVarDecl *PVD,
+                                         QualType ArgType, unsigned ArgNo) {
   // FIXME: __attribute__((nonnull)) can also be applied to:
   //   - references to pointers, where the pointee is known to be
   //     nonnull (apparently a Clang extension)
@@ -1443,20 +1428,21 @@ static bool shouldAddNonNullAttr(const Decl *FD, const ParmVarDecl *PVD) {
   // In the former case, LLVM IR cannot represent the constraint. In
   // the latter case, we have no guarantee that the transparent union
   // is in fact passed as a pointer.
-  if (!PVD->getType()->isAnyPointerType() &&
-      !PVD->getType()->isBlockPointerType())
-    return false;
+  if (!ArgType->isAnyPointerType() && !ArgType->isBlockPointerType())
+    return nullptr;
   // First, check attribute on parameter itself.
-  if (PVD->hasAttr<NonNullAttr>())
-    return true;
+  if (PVD) {
+    if (auto ParmNNAttr = PVD->getAttr<NonNullAttr>())
+      return ParmNNAttr;
+  }
   // Check function attributes.
   if (!FD)
-    return false;
+    return nullptr;
   for (const auto *NNAttr : FD->specific_attrs<NonNullAttr>()) {
-    if (NNAttr->isNonNull(PVD->getFunctionScopeIndex()))
-      return true;
+    if (NNAttr->isNonNull(ArgNo))
+      return NNAttr;
   }
-  return false;
+  return nullptr;
 }
 
 void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
@@ -1597,7 +1583,8 @@ void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
         llvm::Value *V = AI;
 
         if (const ParmVarDecl *PVD = dyn_cast<ParmVarDecl>(Arg)) {
-          if (shouldAddNonNullAttr(CurCodeDecl, PVD))
+          if (getNonNullAttr(CurCodeDecl, PVD, PVD->getType(),
+                             PVD->getFunctionScopeIndex()))
             AI->addAttr(llvm::AttributeSet::get(getLLVMContext(),
                                                 AI->getArgNo() + 1,
                                                 llvm::Attribute::NonNull));
@@ -2108,15 +2095,17 @@ void CodeGenFunction::EmitFunctionEpilog(const CGFunctionInfo &FI,
 
   llvm::Instruction *Ret;
   if (RV) {
-    if (SanOpts->ReturnsNonnullAttribute &&
-        CurGD.getDecl()->hasAttr<ReturnsNonNullAttr>()) {
-      SanitizerScope SanScope(this);
-      llvm::Value *Cond =
-          Builder.CreateICmpNE(RV, llvm::Constant::getNullValue(RV->getType()));
-      llvm::Constant *StaticData[] = {
-        EmitCheckSourceLocation(EndLoc)
-      };
-      EmitCheck(Cond, "nonnull_return", StaticData, None, CRK_Recoverable);
+    if (SanOpts->ReturnsNonnullAttribute) {
+      if (auto RetNNAttr = CurGD.getDecl()->getAttr<ReturnsNonNullAttr>()) {
+        SanitizerScope SanScope(this);
+        llvm::Value *Cond = Builder.CreateICmpNE(
+            RV, llvm::Constant::getNullValue(RV->getType()));
+        llvm::Constant *StaticData[] = {
+            EmitCheckSourceLocation(EndLoc),
+            EmitCheckSourceLocation(RetNNAttr->getLocation()),
+        };
+        EmitCheck(Cond, "nonnull_return", StaticData, None, CRK_Recoverable);
+      }
     }
     Ret = Builder.CreateRet(RV);
   } else {
@@ -2430,10 +2419,36 @@ void CallArgList::freeArgumentMemory(CodeGenFunction &CGF) const {
   }
 }
 
+static void emitNonNullArgCheck(CodeGenFunction &CGF, RValue RV,
+                                QualType ArgType, SourceLocation ArgLoc,
+                                const FunctionDecl *FD, unsigned ParmNum) {
+  if (!CGF.SanOpts->NonnullAttribute || !FD)
+    return;
+  auto PVD = ParmNum < FD->getNumParams() ? FD->getParamDecl(ParmNum) : nullptr;
+  unsigned ArgNo = PVD ? PVD->getFunctionScopeIndex() : ParmNum;
+  auto NNAttr = getNonNullAttr(FD, PVD, ArgType, ArgNo);
+  if (!NNAttr)
+    return;
+  CodeGenFunction::SanitizerScope SanScope(&CGF);
+  assert(RV.isScalar());
+  llvm::Value *V = RV.getScalarVal();
+  llvm::Value *Cond =
+      CGF.Builder.CreateICmpNE(V, llvm::Constant::getNullValue(V->getType()));
+  llvm::Constant *StaticData[] = {
+      CGF.EmitCheckSourceLocation(ArgLoc),
+      CGF.EmitCheckSourceLocation(NNAttr->getLocation()),
+      llvm::ConstantInt::get(CGF.Int32Ty, ArgNo + 1),
+  };
+  CGF.EmitCheck(Cond, "nonnull_arg", StaticData, None,
+                CodeGenFunction::CRK_Recoverable);
+}
+
 void CodeGenFunction::EmitCallArgs(CallArgList &Args,
                                    ArrayRef<QualType> ArgTypes,
                                    CallExpr::const_arg_iterator ArgBeg,
                                    CallExpr::const_arg_iterator ArgEnd,
+                                   const FunctionDecl *CalleeDecl,
+                                   unsigned ParamsToSkip,
                                    bool ForceColumnInfo) {
   CGDebugInfo *DI = getDebugInfo();
   SourceLocation CallLoc;
@@ -2457,6 +2472,8 @@ void CodeGenFunction::EmitCallArgs(CallArgList &Args,
     for (int I = ArgTypes.size() - 1; I >= 0; --I) {
       CallExpr::const_arg_iterator Arg = ArgBeg + I;
       EmitCallArg(Args, *Arg, ArgTypes[I]);
+      emitNonNullArgCheck(*this, Args.back().RV, ArgTypes[I], Arg->getExprLoc(),
+                          CalleeDecl, ParamsToSkip + I);
       // Restore the debug location.
       if (DI) DI->EmitLocation(Builder, CallLoc, ForceColumnInfo);
     }
@@ -2471,6 +2488,8 @@ void CodeGenFunction::EmitCallArgs(CallArgList &Args,
     CallExpr::const_arg_iterator Arg = ArgBeg + I;
     assert(Arg != ArgEnd);
     EmitCallArg(Args, *Arg, ArgTypes[I]);
+    emitNonNullArgCheck(*this, Args.back().RV, ArgTypes[I], Arg->getExprLoc(),
+                        CalleeDecl, ParamsToSkip + I);
     // Restore the debug location.
     if (DI) DI->EmitLocation(Builder, CallLoc, ForceColumnInfo);
   }

@@ -127,6 +127,7 @@ void FastISel::flushLocalValueMap() {
   LocalValueMap.clear();
   LastLocalValue = EmitStartPt;
   recomputeInsertPt();
+  SavedInsertPt = FuncInfo.InsertPt;
 }
 
 bool FastISel::hasTrivialKill(const Value *V) {
@@ -1296,7 +1297,7 @@ bool FastISel::selectInstruction(const Instruction *I) {
 
   DbgLoc = I->getDebugLoc();
 
-  MachineBasicBlock::iterator SavedInsertPt = FuncInfo.InsertPt;
+  SavedInsertPt = FuncInfo.InsertPt;
 
   if (const auto *Call = dyn_cast<CallInst>(I)) {
     const Function *F = Call->getCalledFunction();
@@ -1322,13 +1323,10 @@ bool FastISel::selectInstruction(const Instruction *I) {
       DbgLoc = DebugLoc();
       return true;
     }
-    // Remove dead code.  However, ignore call instructions since we've flushed
-    // the local value map and recomputed the insert point.
-    if (!isa<CallInst>(I)) {
-      recomputeInsertPt();
-      if (SavedInsertPt != FuncInfo.InsertPt)
-        removeDeadCode(FuncInfo.InsertPt, SavedInsertPt);
-    }
+    // Remove dead code.
+    recomputeInsertPt();
+    if (SavedInsertPt != FuncInfo.InsertPt)
+      removeDeadCode(FuncInfo.InsertPt, SavedInsertPt);
     SavedInsertPt = FuncInfo.InsertPt;
   }
   // Next, try calling the target to attempt to handle the instruction.
@@ -1337,13 +1335,10 @@ bool FastISel::selectInstruction(const Instruction *I) {
     DbgLoc = DebugLoc();
     return true;
   }
-  // Remove dead code.  However, ignore call instructions since we've flushed
-  // the local value map and recomputed the insert point.
-  if (!isa<CallInst>(I)) {
-    recomputeInsertPt();
-    if (SavedInsertPt != FuncInfo.InsertPt)
-      removeDeadCode(FuncInfo.InsertPt, SavedInsertPt);
-  }
+  // Remove dead code.
+  recomputeInsertPt();
+  if (SavedInsertPt != FuncInfo.InsertPt)
+    removeDeadCode(FuncInfo.InsertPt, SavedInsertPt);
 
   DbgLoc = DebugLoc();
   // Undo phi node updates, because they will be added again by SelectionDAG.
@@ -2146,4 +2141,44 @@ FastISel::createMachineMemOperandFor(const Instruction *I) const {
 
   return FuncInfo.MF->getMachineMemOperand(MachinePointerInfo(Ptr), Flags, Size,
                                            Alignment, AAInfo, Ranges);
+}
+
+CmpInst::Predicate FastISel::optimizeCmpPredicate(const CmpInst *CI) const {
+  // If both operands are the same, then try to optimize or fold the cmp.
+  CmpInst::Predicate Predicate = CI->getPredicate();
+  if (CI->getOperand(0) != CI->getOperand(1))
+    return Predicate;
+
+  switch (Predicate) {
+  default: llvm_unreachable("Invalid predicate!");
+  case CmpInst::FCMP_FALSE: Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::FCMP_OEQ:   Predicate = CmpInst::FCMP_ORD;   break;
+  case CmpInst::FCMP_OGT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::FCMP_OGE:   Predicate = CmpInst::FCMP_ORD;   break;
+  case CmpInst::FCMP_OLT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::FCMP_OLE:   Predicate = CmpInst::FCMP_ORD;   break;
+  case CmpInst::FCMP_ONE:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::FCMP_ORD:   Predicate = CmpInst::FCMP_ORD;   break;
+  case CmpInst::FCMP_UNO:   Predicate = CmpInst::FCMP_UNO;   break;
+  case CmpInst::FCMP_UEQ:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::FCMP_UGT:   Predicate = CmpInst::FCMP_UNO;   break;
+  case CmpInst::FCMP_UGE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::FCMP_ULT:   Predicate = CmpInst::FCMP_UNO;   break;
+  case CmpInst::FCMP_ULE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::FCMP_UNE:   Predicate = CmpInst::FCMP_UNO;   break;
+  case CmpInst::FCMP_TRUE:  Predicate = CmpInst::FCMP_TRUE;  break;
+
+  case CmpInst::ICMP_EQ:    Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::ICMP_NE:    Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::ICMP_UGT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::ICMP_UGE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::ICMP_ULT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::ICMP_ULE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::ICMP_SGT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::ICMP_SGE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  case CmpInst::ICMP_SLT:   Predicate = CmpInst::FCMP_FALSE; break;
+  case CmpInst::ICMP_SLE:   Predicate = CmpInst::FCMP_TRUE;  break;
+  }
+
+  return Predicate;
 }

@@ -319,9 +319,13 @@ DIE &DwarfDebug::updateSubprogramScopeDIE(DwarfCompileUnit &SPCU,
 
   attachLowHighPC(SPCU, *SPDie, FunctionBeginSym, FunctionEndSym);
 
-  const TargetRegisterInfo *RI = Asm->TM.getSubtargetImpl()->getRegisterInfo();
-  MachineLocation Location(RI->getFrameRegister(*Asm->MF));
-  SPCU.addAddress(*SPDie, dwarf::DW_AT_frame_base, Location);
+  // Only include DW_AT_frame_base in full debug info
+  if (SPCU.getCUNode().getEmissionKind() != DIBuilder::LineTablesOnly) {
+    const TargetRegisterInfo *RI =
+        Asm->TM.getSubtargetImpl()->getRegisterInfo();
+    MachineLocation Location(RI->getFrameRegister(*Asm->MF));
+    SPCU.addAddress(*SPDie, dwarf::DW_AT_frame_base, Location);
+  }
 
   // Add name to the name table, we do this here because we're guaranteed
   // to have concrete versions of our DW_TAG_subprogram nodes.
@@ -779,7 +783,7 @@ void DwarfDebug::beginModule() {
               ScopesWithImportedEntities.end(), less_first());
     DIArray GVs = CUNode.getGlobalVariables();
     for (unsigned i = 0, e = GVs.getNumElements(); i != e; ++i)
-      CU.createGlobalVariableDIE(DIGlobalVariable(GVs.getElement(i)));
+      CU.getOrCreateGlobalVariableDIE(DIGlobalVariable(GVs.getElement(i)));
     DIArray SPs = CUNode.getSubprograms();
     for (unsigned i = 0, e = SPs.getNumElements(); i != e; ++i)
       SPMap.insert(std::make_pair(SPs.getElement(i), &CU));
@@ -852,12 +856,14 @@ void DwarfDebug::finishSubprogramDefinitions() {
           // If this subprogram has an abstract definition, reference that
           SPCU->addDIEEntry(*D, dwarf::DW_AT_abstract_origin, *AbsSPDIE);
       } else {
-        if (!D)
+        if (!D && TheCU.getEmissionKind() != DIBuilder::LineTablesOnly)
           // Lazily construct the subprogram if we didn't see either concrete or
-          // inlined versions during codegen.
+          // inlined versions during codegen. (except in -gmlt ^ where we want
+          // to omit these entirely)
           D = SPCU->getOrCreateSubprogramDIE(SP);
-        // And attach the attributes
-        SPCU->applySubprogramAttributesToDefinition(SP, *D);
+        if (D)
+          // And attach the attributes
+          SPCU->applySubprogramAttributesToDefinition(SP, *D);
       }
     }
   }
@@ -1667,7 +1673,6 @@ void DwarfDebug::endFunction(const MachineFunction *MF) {
     // If we don't have a lexical scope for this function then there will
     // be a hole in the range information. Keep note of this by setting the
     // previously used section to nullptr.
-    PrevSection = nullptr;
     PrevCU = nullptr;
     CurFn = nullptr;
     return;
@@ -1686,6 +1691,24 @@ void DwarfDebug::endFunction(const MachineFunction *MF) {
 
   LexicalScope *FnScope = LScopes.getCurrentFunctionScope();
   DwarfCompileUnit &TheCU = *SPMap.lookup(FnScope->getScopeNode());
+
+  // Add the range of this function to the list of ranges for the CU.
+  TheCU.addRange(RangeSpan(FunctionBeginSym, FunctionEndSym));
+
+  // Under -gmlt, skip building the subprogram if there are no inlined
+  // subroutines inside it.
+  if (TheCU.getCUNode().getEmissionKind() == DIBuilder::LineTablesOnly &&
+      LScopes.getAbstractScopesList().empty()) {
+    assert(ScopeVariables.empty());
+    assert(CurrentFnArguments.empty());
+    assert(DbgValues.empty());
+    assert(AbstractVariables.empty());
+    LabelsBeforeInsn.clear();
+    LabelsAfterInsn.clear();
+    PrevLabel = nullptr;
+    CurFn = nullptr;
+    return;
+  }
 
   // Construct abstract scopes.
   for (LexicalScope *AScope : LScopes.getAbstractScopesList()) {
@@ -1706,12 +1729,6 @@ void DwarfDebug::endFunction(const MachineFunction *MF) {
   DIE &CurFnDIE = constructSubprogramScopeDIE(TheCU, FnScope);
   if (!CurFn->getTarget().Options.DisableFramePointerElim(*CurFn))
     TheCU.addFlag(CurFnDIE, dwarf::DW_AT_APPLE_omit_frame_ptr);
-
-  // Add the range of this function to the list of ranges for the CU.
-  RangeSpan Span(FunctionBeginSym, FunctionEndSym);
-  TheCU.addRange(std::move(Span));
-  PrevSection = Asm->getCurrentSection();
-  PrevCU = &TheCU;
 
   // Clear debug info
   // Ownership of DbgVariables is a bit subtle - ScopeVariables owns all the
@@ -1883,54 +1900,41 @@ void DwarfDebug::emitEndOfLineMatrix(unsigned SectionEnd) {
   Asm->EmitInt8(1);
 }
 
-// Emit visible names into a hashed accelerator table section.
-void DwarfDebug::emitAccelNames() {
-  AccelNames.FinalizeTable(Asm, "Names");
-  Asm->OutStreamer.SwitchSection(
-      Asm->getObjFileLowering().getDwarfAccelNamesSection());
-  MCSymbol *SectionBegin = Asm->GetTempSymbol("names_begin");
+void DwarfDebug::emitAccel(DwarfAccelTable &Accel, const MCSection *Section,
+                           StringRef TableName, StringRef SymName) {
+  Accel.FinalizeTable(Asm, TableName);
+  Asm->OutStreamer.SwitchSection(Section);
+  auto *SectionBegin = Asm->GetTempSymbol(SymName);
   Asm->OutStreamer.EmitLabel(SectionBegin);
 
   // Emit the full data.
-  AccelNames.Emit(Asm, SectionBegin, &InfoHolder);
+  Accel.Emit(Asm, SectionBegin, &InfoHolder, DwarfStrSectionSym);
+}
+
+// Emit visible names into a hashed accelerator table section.
+void DwarfDebug::emitAccelNames() {
+  emitAccel(AccelNames, Asm->getObjFileLowering().getDwarfAccelNamesSection(),
+            "Names", "names_begin");
 }
 
 // Emit objective C classes and categories into a hashed accelerator table
 // section.
 void DwarfDebug::emitAccelObjC() {
-  AccelObjC.FinalizeTable(Asm, "ObjC");
-  Asm->OutStreamer.SwitchSection(
-      Asm->getObjFileLowering().getDwarfAccelObjCSection());
-  MCSymbol *SectionBegin = Asm->GetTempSymbol("objc_begin");
-  Asm->OutStreamer.EmitLabel(SectionBegin);
-
-  // Emit the full data.
-  AccelObjC.Emit(Asm, SectionBegin, &InfoHolder);
+  emitAccel(AccelObjC, Asm->getObjFileLowering().getDwarfAccelObjCSection(),
+            "ObjC", "objc_begin");
 }
 
 // Emit namespace dies into a hashed accelerator table.
 void DwarfDebug::emitAccelNamespaces() {
-  AccelNamespace.FinalizeTable(Asm, "namespac");
-  Asm->OutStreamer.SwitchSection(
-      Asm->getObjFileLowering().getDwarfAccelNamespaceSection());
-  MCSymbol *SectionBegin = Asm->GetTempSymbol("namespac_begin");
-  Asm->OutStreamer.EmitLabel(SectionBegin);
-
-  // Emit the full data.
-  AccelNamespace.Emit(Asm, SectionBegin, &InfoHolder);
+  emitAccel(AccelNamespace,
+            Asm->getObjFileLowering().getDwarfAccelNamespaceSection(),
+            "namespac", "namespac_begin");
 }
 
 // Emit type dies into a hashed accelerator table.
 void DwarfDebug::emitAccelTypes() {
-
-  AccelTypes.FinalizeTable(Asm, "types");
-  Asm->OutStreamer.SwitchSection(
-      Asm->getObjFileLowering().getDwarfAccelTypesSection());
-  MCSymbol *SectionBegin = Asm->GetTempSymbol("types_begin");
-  Asm->OutStreamer.EmitLabel(SectionBegin);
-
-  // Emit the full data.
-  AccelTypes.Emit(Asm, SectionBegin, &InfoHolder);
+  emitAccel(AccelTypes, Asm->getObjFileLowering().getDwarfAccelTypesSection(),
+            "types", "types_begin");
 }
 
 // Public name handling.
@@ -2527,9 +2531,8 @@ void DwarfDebug::emitDebugStrDWO() {
   assert(useSplitDwarf() && "No split dwarf?");
   const MCSection *OffSec =
       Asm->getObjFileLowering().getDwarfStrOffDWOSection();
-  const MCSymbol *StrSym = DwarfStrSectionSym;
   InfoHolder.emitStrings(Asm->getObjFileLowering().getDwarfStrDWOSection(),
-                         OffSec, StrSym);
+                         OffSec);
 }
 
 MCDwarfDwoLineTable *DwarfDebug::getDwoLineTable(const DwarfCompileUnit &CU) {

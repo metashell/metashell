@@ -130,6 +130,9 @@ AMDGPUTargetLowering::AMDGPUTargetLowering(TargetMachine &TM) :
   setOperationAction(ISD::FROUND, MVT::f32, Legal);
   setOperationAction(ISD::FTRUNC, MVT::f32, Legal);
 
+  setOperationAction(ISD::FREM, MVT::f32, Custom);
+  setOperationAction(ISD::FREM, MVT::f64, Custom);
+
   // Lower floating point store/load to integer store/load to reduce the number
   // of patterns in tablegen.
   setOperationAction(ISD::STORE, MVT::f32, Promote);
@@ -347,6 +350,7 @@ AMDGPUTargetLowering::AMDGPUTargetLowering(TargetMachine &TM) :
     setOperationAction(ISD::FDIV, VT, Expand);
     setOperationAction(ISD::FEXP2, VT, Expand);
     setOperationAction(ISD::FLOG2, VT, Expand);
+    setOperationAction(ISD::FREM, VT, Expand);
     setOperationAction(ISD::FPOW, VT, Expand);
     setOperationAction(ISD::FFLOOR, VT, Expand);
     setOperationAction(ISD::FTRUNC, VT, Expand);
@@ -387,9 +391,6 @@ AMDGPUTargetLowering::AMDGPUTargetLowering(TargetMachine &TM) :
   // large sequence of instructions.
   setIntDivIsCheap(false);
   setPow2SDivIsCheap(false);
-
-  // TODO: Investigate this when 64-bit divides are implemented.
-  addBypassSlowDiv(64, 32);
 
   // FIXME: Need to really handle these.
   MaxStoresPerMemcpy  = 4096;
@@ -548,6 +549,7 @@ SDValue AMDGPUTargetLowering::LowerOperation(SDValue Op,
   case ISD::INTRINSIC_WO_CHAIN: return LowerINTRINSIC_WO_CHAIN(Op, DAG);
   case ISD::UDIVREM: return LowerUDIVREM(Op, DAG);
   case ISD::SDIVREM: return LowerSDIVREM(Op, DAG);
+  case ISD::FREM: return LowerFREM(Op, DAG);
   case ISD::FCEIL: return LowerFCEIL(Op, DAG);
   case ISD::FTRUNC: return LowerFTRUNC(Op, DAG);
   case ISD::FRINT: return LowerFRINT(Op, DAG);
@@ -1510,8 +1512,8 @@ SDValue AMDGPUTargetLowering::LowerUDIVREM(SDValue Op,
   // e is rounding error.
   SDValue RCP = DAG.getNode(AMDGPUISD::URECIP, DL, VT, Den);
 
-  // RCP_LO = umulo(RCP, Den) */
-  SDValue RCP_LO = DAG.getNode(ISD::UMULO, DL, VT, RCP, Den);
+  // RCP_LO = mul(RCP, Den) */
+  SDValue RCP_LO = DAG.getNode(ISD::MUL, DL, VT, RCP, Den);
 
   // RCP_HI = mulhu (RCP, Den) */
   SDValue RCP_HI = DAG.getNode(ISD::MULHU, DL, VT, RCP, Den);
@@ -1542,7 +1544,7 @@ SDValue AMDGPUTargetLowering::LowerUDIVREM(SDValue Op,
   SDValue Quotient = DAG.getNode(ISD::MULHU, DL, VT, Tmp0, Num);
 
   // Num_S_Remainder = Quotient * Den
-  SDValue Num_S_Remainder = DAG.getNode(ISD::UMULO, DL, VT, Quotient, Den);
+  SDValue Num_S_Remainder = DAG.getNode(ISD::MUL, DL, VT, Quotient, Den);
 
   // Remainder = Num - Num_S_Remainder
   SDValue Remainder = DAG.getNode(ISD::SUB, DL, VT, Num, Num_S_Remainder);
@@ -1648,6 +1650,20 @@ SDValue AMDGPUTargetLowering::LowerSDIVREM(SDValue Op,
     Rem
   };
   return DAG.getMergeValues(Res, DL);
+}
+
+// (frem x, y) -> (fsub x, (fmul (ftrunc (fdiv x, y)), y))
+SDValue AMDGPUTargetLowering::LowerFREM(SDValue Op, SelectionDAG &DAG) const {
+  SDLoc SL(Op);
+  EVT VT = Op.getValueType();
+  SDValue X = Op.getOperand(0);
+  SDValue Y = Op.getOperand(1);
+
+  SDValue Div = DAG.getNode(ISD::FDIV, SL, VT, X, Y);
+  SDValue Floor = DAG.getNode(ISD::FTRUNC, SL, VT, Div);
+  SDValue Mul = DAG.getNode(ISD::FMUL, SL, VT, Floor, Y);
+
+  return DAG.getNode(ISD::FSUB, SL, VT, X, Mul);
 }
 
 SDValue AMDGPUTargetLowering::LowerFCEIL(SDValue Op, SelectionDAG &DAG) const {
@@ -1877,7 +1893,8 @@ template <typename IntTy>
 static SDValue constantFoldBFE(SelectionDAG &DAG, IntTy Src0,
                                uint32_t Offset, uint32_t Width) {
   if (Width + Offset < 32) {
-    IntTy Result = (Src0 << (32 - Offset - Width)) >> (32 - Width);
+    uint32_t Shl = static_cast<uint32_t>(Src0) << (32 - Offset - Width);
+    IntTy Result = static_cast<IntTy>(Shl) >> (32 - Width);
     return DAG.getConstant(Result, MVT::i32);
   }
 
@@ -2029,16 +2046,19 @@ SDValue AMDGPUTargetLowering::PerformDAGCombine(SDNode *N,
       return DAG.getZeroExtendInReg(BitsFrom, DL, SmallVT);
     }
 
-    if (ConstantSDNode *Val = dyn_cast<ConstantSDNode>(N->getOperand(0))) {
+    if (ConstantSDNode *CVal = dyn_cast<ConstantSDNode>(N->getOperand(0))) {
       if (Signed) {
+        // Avoid undefined left shift of a negative in the constant fold.
+        // TODO: I'm not sure what the behavior of the hardware is, this should
+        // probably follow that instead.
         return constantFoldBFE<int32_t>(DAG,
-                                        Val->getSExtValue(),
+                                        CVal->getSExtValue(),
                                         OffsetVal,
                                         WidthVal);
       }
 
       return constantFoldBFE<uint32_t>(DAG,
-                                       Val->getZExtValue(),
+                                       CVal->getZExtValue(),
                                        OffsetVal,
                                        WidthVal);
     }

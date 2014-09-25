@@ -103,8 +103,8 @@ public:
       RetZExt = Call.paramHasAttr(0, Attribute::ZExt);
 
       CallConv = Call.getCallingConv();
-      NumFixedArgs = FuncTy->getNumParams();
       Args = std::move(ArgsList);
+      NumFixedArgs = FuncTy->getNumParams();
 
       CS = &Call;
 
@@ -127,8 +127,8 @@ public:
       RetZExt = Call.paramHasAttr(0, Attribute::ZExt);
 
       CallConv = Call.getCallingConv();
-      NumFixedArgs = (FixedArgs == ~0U) ? FuncTy->getNumParams() : FixedArgs;
       Args = std::move(ArgsList);
+      NumFixedArgs = (FixedArgs == ~0U) ? FuncTy->getNumParams() : FixedArgs;
 
       CS = &Call;
 
@@ -141,8 +141,19 @@ public:
       RetTy = ResultTy;
       Callee = Target;
       CallConv = CC;
-      NumFixedArgs = (FixedArgs == ~0U) ? Args.size() : FixedArgs;
       Args = std::move(ArgsList);
+      NumFixedArgs = (FixedArgs == ~0U) ? Args.size() : FixedArgs;
+      return *this;
+    }
+
+    CallLoweringInfo &setCallee(CallingConv::ID CC, Type *ResultTy,
+                                const char *Target, ArgListTy &&ArgsList,
+                                unsigned FixedArgs = ~0U) {
+      RetTy = ResultTy;
+      SymName = Target;
+      CallConv = CC;
+      Args = std::move(ArgsList);
+      NumFixedArgs = (FixedArgs == ~0U) ? Args.size() : FixedArgs;
       return *this;
     }
 
@@ -484,6 +495,8 @@ protected:
   /// \brief Create a machine mem operand from the given instruction.
   MachineMemOperand *createMachineMemOperandFor(const Instruction *I) const;
 
+  CmpInst::Predicate optimizeCmpPredicate(const CmpInst *CI) const;
+
   bool lowerCallTo(const CallInst *CI, const char *SymName, unsigned NumArgs);
   bool lowerCallTo(CallLoweringInfo &CLI);
 
@@ -538,6 +551,9 @@ private:
   /// to the beginning of the block. It helps to avoid spilling cached variables
   /// across heavy instructions like calls.
   void flushLocalValueMap();
+
+  /// \brief Insertion point before trying to select the current instruction.
+  MachineBasicBlock::iterator SavedInsertPt;
 
   /// \brief Add a stackmap or patchpoint intrinsic call's live variable
   /// operands to a stackmap or patchpoint machine instruction.

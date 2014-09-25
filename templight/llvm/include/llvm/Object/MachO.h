@@ -100,6 +100,90 @@ private:
 };
 typedef content_iterator<ExportEntry> export_iterator;
 
+/// MachORebaseEntry encapsulates the current state in the decompression of   
+/// rebasing opcodes. This allows you to iterate through the compressed table of
+/// rebasing using:
+///    for (const llvm::object::MachORebaseEntry &Entry : Obj->rebaseTable()) {
+///    }
+class MachORebaseEntry {
+public:
+  MachORebaseEntry(ArrayRef<uint8_t> opcodes, bool is64Bit);
+
+  uint32_t segmentIndex() const;
+  uint64_t segmentOffset() const;
+  StringRef typeName() const;
+
+  bool operator==(const MachORebaseEntry &) const;
+
+  void moveNext();
+  
+private:
+  friend class MachOObjectFile;
+  void moveToFirst();
+  void moveToEnd();
+  uint64_t readULEB128();
+
+  ArrayRef<uint8_t> Opcodes;
+  const uint8_t *Ptr;
+  uint64_t SegmentOffset;
+  uint32_t SegmentIndex;
+  uint64_t RemainingLoopCount;
+  uint64_t AdvanceAmount;
+  uint8_t  RebaseType;
+  uint8_t  PointerSize;
+  bool     Malformed;
+  bool     Done;
+};
+typedef content_iterator<MachORebaseEntry> rebase_iterator;
+
+/// MachOBindEntry encapsulates the current state in the decompression of
+/// binding opcodes. This allows you to iterate through the compressed table of
+/// bindings using:
+///    for (const llvm::object::MachOBindEntry &Entry : Obj->bindTable()) {
+///    }
+class MachOBindEntry {
+public:
+  enum class Kind { Regular, Lazy, Weak };
+
+  MachOBindEntry(ArrayRef<uint8_t> Opcodes, bool is64Bit, MachOBindEntry::Kind);
+
+  uint32_t segmentIndex() const;
+  uint64_t segmentOffset() const;
+  StringRef typeName() const;
+  StringRef symbolName() const;
+  uint32_t flags() const;
+  int64_t addend() const;
+  int ordinal() const;
+
+  bool operator==(const MachOBindEntry &) const;
+
+  void moveNext();
+
+private:
+  friend class MachOObjectFile;
+  void moveToFirst();
+  void moveToEnd();
+  uint64_t readULEB128();
+  int64_t readSLEB128();
+
+  ArrayRef<uint8_t> Opcodes;
+  const uint8_t *Ptr;
+  uint64_t SegmentOffset;
+  uint32_t SegmentIndex;
+  StringRef SymbolName;
+  int      Ordinal;
+  uint32_t Flags;
+  int64_t  Addend;
+  uint64_t RemainingLoopCount;
+  uint64_t AdvanceAmount;
+  uint8_t  BindType;
+  uint8_t  PointerSize;
+  Kind     TableKind;
+  bool     Malformed;
+  bool     Done;
+};
+typedef content_iterator<MachOBindEntry> bind_iterator;
+
 class MachOObjectFile : public ObjectFile {
 public:
   struct LoadCommandInfo {
@@ -202,6 +286,28 @@ public:
   /// For use examining a trie not in a MachOObjectFile.
   static iterator_range<export_iterator> exports(ArrayRef<uint8_t> Trie);
 
+  /// For use iterating over all rebase table entries.
+  iterator_range<rebase_iterator> rebaseTable() const;
+
+  /// For use examining rebase opcodes not in a MachOObjectFile.
+  static iterator_range<rebase_iterator> rebaseTable(ArrayRef<uint8_t> Opcodes,
+                                                     bool is64);
+
+  /// For use iterating over all bind table entries.
+  iterator_range<bind_iterator> bindTable() const;
+
+  /// For use iterating over all lazy bind table entries.
+  iterator_range<bind_iterator> lazyBindTable() const;
+
+  /// For use iterating over all lazy bind table entries.
+  iterator_range<bind_iterator> weakBindTable() const;
+
+  /// For use examining bind opcodes not in a MachOObjectFile.
+  static iterator_range<bind_iterator> bindTable(ArrayRef<uint8_t> Opcodes,
+                                                 bool is64,
+                                                 MachOBindEntry::Kind);
+
+
   // In a MachO file, sections have a segment name. This is used in the .o
   // files. They have a single segment, but this field specifies which segment
   // a section should be put in in the final object.
@@ -299,6 +405,8 @@ public:
 
   bool isRelocatableObject() const override;
 
+  bool hasPageZeroSegment() const { return HasPageZeroSegment; }
+
   static bool classof(const Binary *v) {
     return v->isMachO();
   }
@@ -314,6 +422,7 @@ private:
   const char *DysymtabLoadCmd;
   const char *DataInCodeLoadCmd;
   const char *DyldInfoLoadCmd;
+  bool HasPageZeroSegment;
 };
 
 /// DiceRef

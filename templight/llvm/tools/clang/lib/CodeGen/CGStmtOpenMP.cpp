@@ -78,6 +78,10 @@ void CodeGenFunction::EmitOMPForDirective(const OMPForDirective &) {
   llvm_unreachable("CodeGen for 'omp for' is not supported yet.");
 }
 
+void CodeGenFunction::EmitOMPForSimdDirective(const OMPForSimdDirective &) {
+  llvm_unreachable("CodeGen for 'omp for simd' is not supported yet.");
+}
+
 void CodeGenFunction::EmitOMPSectionsDirective(const OMPSectionsDirective &) {
   llvm_unreachable("CodeGen for 'omp sections' is not supported yet.");
 }
@@ -94,13 +98,32 @@ void CodeGenFunction::EmitOMPMasterDirective(const OMPMasterDirective &) {
   llvm_unreachable("CodeGen for 'omp master' is not supported yet.");
 }
 
-void CodeGenFunction::EmitOMPCriticalDirective(const OMPCriticalDirective &) {
-  llvm_unreachable("CodeGen for 'omp critical' is not supported yet.");
+void CodeGenFunction::EmitOMPCriticalDirective(const OMPCriticalDirective &S) {
+  // __kmpc_critical();
+  // <captured_body>
+  // __kmpc_end_critical();
+  //
+
+  auto Lock = CGM.getOpenMPRuntime().GetCriticalRegionLock(
+      S.getDirectiveName().getAsString());
+  CGM.getOpenMPRuntime().EmitOMPCriticalRegionStart(*this, Lock,
+                                                    S.getLocStart());
+  {
+    RunCleanupsScope Scope(*this);
+    EmitStmt(cast<CapturedStmt>(S.getAssociatedStmt())->getCapturedStmt());
+    EnsureInsertPoint();
+  }
+  CGM.getOpenMPRuntime().EmitOMPCriticalRegionEnd(*this, Lock, S.getLocEnd());
 }
 
 void
 CodeGenFunction::EmitOMPParallelForDirective(const OMPParallelForDirective &) {
   llvm_unreachable("CodeGen for 'omp parallel for' is not supported yet.");
+}
+
+void CodeGenFunction::EmitOMPParallelForSimdDirective(
+    const OMPParallelForSimdDirective &) {
+  llvm_unreachable("CodeGen for 'omp parallel for simd' is not supported yet.");
 }
 
 void CodeGenFunction::EmitOMPParallelSectionsDirective(
@@ -134,5 +157,9 @@ void CodeGenFunction::EmitOMPOrderedDirective(const OMPOrderedDirective &) {
 
 void CodeGenFunction::EmitOMPAtomicDirective(const OMPAtomicDirective &) {
   llvm_unreachable("CodeGen for 'omp atomic' is not supported yet.");
+}
+
+void CodeGenFunction::EmitOMPTargetDirective(const OMPTargetDirective &) {
+  llvm_unreachable("CodeGen for 'omp target' is not supported yet.");
 }
 

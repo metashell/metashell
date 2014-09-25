@@ -12,6 +12,7 @@
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Support/ManagedStatic.h"
 #include "gtest/gtest.h"
 
 using namespace llvm;
@@ -19,6 +20,9 @@ using namespace llvm;
 namespace {
 
 class ExecutionEngineTest : public testing::Test {
+private:
+  llvm_shutdown_obj Y; // Call llvm_shutdown() on exit.
+
 protected:
   ExecutionEngineTest() {
     auto Owner = make_unique<Module>("<main>", getGlobalContext());

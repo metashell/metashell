@@ -55,20 +55,18 @@ RValue CodeGenFunction::EmitCXXMemberOrOperatorCall(
 
   const FunctionProtoType *FPT = MD->getType()->castAs<FunctionProtoType>();
   RequiredArgs required = RequiredArgs::forPrototypePlus(FPT, Args.size());
-  
+
   // And the rest of the call args.
-  CallExpr::const_arg_iterator ArgBeg, ArgEnd;
-  if (CE == nullptr) {
-    ArgBeg = ArgEnd = nullptr;
-  } else if (auto OCE = dyn_cast<CXXOperatorCallExpr>(CE)) {
+  if (CE) {
     // Special case: skip first argument of CXXOperatorCall (it is "this").
-    ArgBeg = OCE->arg_begin() + 1;
-    ArgEnd = OCE->arg_end();
+    unsigned ArgsToSkip = isa<CXXOperatorCallExpr>(CE) ? 1 : 0;
+    EmitCallArgs(Args, FPT, CE->arg_begin() + ArgsToSkip, CE->arg_end(),
+                 CE->getDirectCallee());
   } else {
-    ArgBeg = CE->arg_begin();
-    ArgEnd = CE->arg_end();
+    assert(
+        FPT->getNumParams() == 0 &&
+        "No CallExpr specified for function with non-zero number of arguments");
   }
-  EmitCallArgs(Args, FPT, ArgBeg, ArgEnd);
 
   return EmitCall(CGM.getTypes().arrangeCXXMethodCall(Args, FPT, required),
                   Callee, ReturnValue, Args, MD);
@@ -170,11 +168,11 @@ RValue CodeGenFunction::EmitCXXMemberCallExpr(const CXXMemberCallExpr *CE,
   const CXXMethodDecl *CalleeDecl = DevirtualizedMethod ? DevirtualizedMethod : MD;
   const CGFunctionInfo *FInfo = nullptr;
   if (const CXXDestructorDecl *Dtor = dyn_cast<CXXDestructorDecl>(CalleeDecl))
-    FInfo = &CGM.getTypes().arrangeCXXDestructor(Dtor,
-                                                 Dtor_Complete);
+    FInfo = &CGM.getTypes().arrangeCXXStructorDeclaration(
+        Dtor, StructorType::Complete);
   else if (const CXXConstructorDecl *Ctor = dyn_cast<CXXConstructorDecl>(CalleeDecl))
-    FInfo = &CGM.getTypes().arrangeCXXConstructorDeclaration(Ctor,
-                                                             Ctor_Complete);
+    FInfo = &CGM.getTypes().arrangeCXXStructorDeclaration(
+        Ctor, StructorType::Complete);
   else
     FInfo = &CGM.getTypes().arrangeCXXMethodDeclaration(CalleeDecl);
 
@@ -202,7 +200,8 @@ RValue CodeGenFunction::EmitCXXMemberCallExpr(const CXXMemberCallExpr *CE,
           ME->hasQualifier())
         Callee = BuildAppleKextVirtualCall(MD, ME->getQualifier(), Ty);
       else if (!DevirtualizedMethod)
-        Callee = CGM.GetAddrOfCXXDestructor(Dtor, Dtor_Complete, FInfo, Ty);
+        Callee =
+            CGM.getAddrOfCXXStructor(Dtor, StructorType::Complete, FInfo, Ty);
       else {
         const CXXDestructorDecl *DDtor =
           cast<CXXDestructorDecl>(DevirtualizedMethod);
@@ -284,7 +283,7 @@ CodeGenFunction::EmitCXXMemberPointerCallExpr(const CXXMemberCallExpr *E,
   RequiredArgs required = RequiredArgs::forPrototypePlus(FPT, 1);
   
   // And the rest of the call args
-  EmitCallArgs(Args, FPT, E->arg_begin(), E->arg_end());
+  EmitCallArgs(Args, FPT, E->arg_begin(), E->arg_end(), E->getDirectCallee());
   return EmitCall(CGM.getTypes().arrangeCXXMethodCall(Args, FPT, required),
                   Callee, ReturnValue, Args);
 }
@@ -1238,7 +1237,8 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
   // We start at 1 here because the first argument (the allocation size)
   // has already been emitted.
   EmitCallArgs(allocatorArgs, allocatorType, E->placement_arg_begin(),
-               E->placement_arg_end(), /*ParamsToSkip*/ 1);
+               E->placement_arg_end(), /* CalleeDecl */ nullptr,
+               /*ParamsToSkip*/ 1);
 
   // Emit the allocation call.  If the allocator is a global placement
   // operator, just "inline" it directly.

@@ -38,6 +38,7 @@ void initializePPCTTIPass(PassRegistry &);
 namespace {
 
 class PPCTTI final : public ImmutablePass, public TargetTransformInfo {
+  const TargetMachine *TM;
   const PPCSubtarget *ST;
   const PPCTargetLowering *TLI;
 
@@ -47,7 +48,7 @@ public:
   }
 
   PPCTTI(const PPCTargetMachine *TM)
-      : ImmutablePass(ID), ST(TM->getSubtargetImpl()),
+      : ImmutablePass(ID), TM(TM), ST(TM->getSubtargetImpl()),
         TLI(TM->getSubtargetImpl()->getTargetLowering()) {
     initializePPCTTIPass(*PassRegistry::getPassRegistry());
   }
@@ -80,8 +81,8 @@ public:
                          Type *Ty) const override;
 
   PopcntSupportKind getPopcntSupport(unsigned TyWidth) const override;
-  void getUnrollingPreferences(
-    Loop *L, UnrollingPreferences &UP) const override;
+  void getUnrollingPreferences(const Function *F, Loop *L,
+                               UnrollingPreferences &UP) const override;
 
   /// @}
 
@@ -90,7 +91,7 @@ public:
 
   unsigned getNumberOfRegisters(bool Vector) const override;
   unsigned getRegisterBitWidth(bool Vector) const override;
-  unsigned getMaximumUnrollFactor() const override;
+  unsigned getMaxInterleaveFactor() const override;
   unsigned getArithmeticInstrCost(unsigned Opcode, Type *Ty, OperandValueKind,
                                   OperandValueKind, OperandValueProperties,
                                   OperandValueProperties) const override;
@@ -269,8 +270,9 @@ unsigned PPCTTI::getIntImmCost(unsigned Opcode, unsigned Idx, const APInt &Imm,
   return PPCTTI::getIntImmCost(Imm, Ty);
 }
 
-void PPCTTI::getUnrollingPreferences(Loop *L, UnrollingPreferences &UP) const {
-  if (ST->getDarwinDirective() == PPC::DIR_A2) {
+void PPCTTI::getUnrollingPreferences(const Function *F, Loop *L,
+                                     UnrollingPreferences &UP) const {
+  if (TM->getSubtarget<PPCSubtarget>(F).getDarwinDirective() == PPC::DIR_A2) {
     // The A2 is in-order with a deep pipeline, and concatenation unrolling
     // helps expose latency-hiding opportunities to the instruction scheduler.
     UP.Partial = UP.Runtime = true;
@@ -295,7 +297,7 @@ unsigned PPCTTI::getRegisterBitWidth(bool Vector) const {
 
 }
 
-unsigned PPCTTI::getMaximumUnrollFactor() const {
+unsigned PPCTTI::getMaxInterleaveFactor() const {
   unsigned Directive = ST->getDarwinDirective();
   // The 440 has no SIMD support, but floating-point instructions
   // have a 5-cycle latency, so unroll by 5x for latency hiding.

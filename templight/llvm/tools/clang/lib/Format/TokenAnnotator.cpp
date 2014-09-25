@@ -868,6 +868,9 @@ private:
                          Tok.Previous->Type == TT_PointerOrReference ||
                          Tok.Previous->Type == TT_TemplateCloser ||
                          Tok.Previous->isSimpleTypeSpecifier();
+    if (Style.Language == FormatStyle::LK_JavaScript && Tok.Next &&
+        Tok.Next->TokenText == "in")
+      return false;
     bool ParensCouldEndDecl =
         Tok.Next && Tok.Next->isOneOf(tok::equal, tok::semi, tok::l_brace);
     bool IsSizeOfOrAlignOf =
@@ -1653,6 +1656,8 @@ bool TokenAnnotator::spaceRequiredBefore(const AnnotatedLine &Line,
     return !Line.First->isOneOf(tok::kw_case, tok::kw_default) &&
            Tok.getNextNonComment() && Tok.Type != TT_ObjCMethodExpr &&
            !Tok.Previous->is(tok::question) &&
+           !(Tok.Type == TT_InlineASMColon &&
+             Tok.Previous->is(tok::coloncolon)) &&
            (Tok.Type != TT_DictLiteral || Style.SpacesInContainerLiterals);
   if (Tok.Previous->Type == TT_UnaryOperator)
     return Tok.Type == TT_BinaryOperator;
@@ -1851,16 +1856,21 @@ bool TokenAnnotator::canBreakBefore(const AnnotatedLine &Line,
   if (Left.is(tok::greater) && Right.is(tok::greater) &&
       Left.Type != TT_TemplateCloser)
     return false;
-  if (Right.Type == TT_BinaryOperator && Style.BreakBeforeBinaryOperators)
+  if (Right.Type == TT_BinaryOperator &&
+      Style.BreakBeforeBinaryOperators != FormatStyle::BOS_None &&
+      (Style.BreakBeforeBinaryOperators == FormatStyle::BOS_All ||
+       Right.getPrecedence() != prec::Assignment))
     return true;
   if (Left.Type == TT_ArrayInitializerLSquare)
     return true;
   if (Right.is(tok::kw_typename) && Left.isNot(tok::kw_const))
     return true;
-  return (Left.isBinaryOperator() &&
-          !Left.isOneOf(tok::arrowstar, tok::lessless) &&
-          !Style.BreakBeforeBinaryOperators) ||
-         Left.isOneOf(tok::comma, tok::coloncolon, tok::semi, tok::l_brace,
+  if (Left.isBinaryOperator() && !Left.isOneOf(tok::arrowstar, tok::lessless) &&
+      Style.BreakBeforeBinaryOperators != FormatStyle::BOS_All &&
+      (Style.BreakBeforeBinaryOperators == FormatStyle::BOS_None ||
+       Left.getPrecedence() == prec::Assignment))
+    return true;
+  return Left.isOneOf(tok::comma, tok::coloncolon, tok::semi, tok::l_brace,
                       tok::kw_class, tok::kw_struct) ||
          Right.isMemberAccess() ||
          Right.isOneOf(tok::lessless, tok::colon, tok::l_square, tok::at) ||

@@ -24,7 +24,7 @@ binutils_prefix = None
 sysroot_path = None
 binary_name_filter = None
 fix_filename_patterns = None
-logfile = None
+logfile = sys.stdin
 
 # FIXME: merge the code that calls fix_filename().
 def fix_filename(file_name):
@@ -382,7 +382,7 @@ class SymbolizationLoop(object):
       if not line:
         break
       processed = self.process_line(line)
-      print ''.join(processed)
+      print '\n'.join(processed)
 
   def process_line(self, line):
     self.current_line = line.rstrip()

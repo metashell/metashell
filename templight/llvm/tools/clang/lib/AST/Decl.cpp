@@ -1001,6 +1001,19 @@ bool NamedDecl::isLinkageValid() const {
          getCachedLinkage();
 }
 
+ObjCStringFormatFamily NamedDecl::getObjCFStringFormattingFamily() const {
+  StringRef name = getName();
+  if (name.empty()) return SFF_None;
+  
+  if (name.front() == 'C')
+    if (name == "CFStringCreateWithFormat" ||
+        name == "CFStringCreateWithFormatAndArguments" ||
+        name == "CFStringAppendFormat" ||
+        name == "CFStringAppendFormatAndArguments")
+      return SFF_CFString;
+  return SFF_None;
+}
+
 Linkage NamedDecl::getLinkageInternal() const {
   // We don't care about visibility here, so ask for the cheapest
   // possible visibility analysis.
@@ -3175,8 +3188,11 @@ unsigned FunctionDecl::getMemoryFunctionKind() const {
     return Builtin::BImemmove;
 
   case Builtin::BIstrlcpy:
+  case Builtin::BI__builtin___strlcpy_chk:
     return Builtin::BIstrlcpy;
+
   case Builtin::BIstrlcat:
+  case Builtin::BI__builtin___strlcat_chk:
     return Builtin::BIstrlcat;
 
   case Builtin::BI__builtin_memcmp:
@@ -3691,6 +3707,13 @@ LabelDecl *LabelDecl::Create(ASTContext &C, DeclContext *DC,
 LabelDecl *LabelDecl::CreateDeserialized(ASTContext &C, unsigned ID) {
   return new (C, ID) LabelDecl(nullptr, SourceLocation(), nullptr, nullptr,
                                SourceLocation());
+}
+
+void LabelDecl::setMSAsmLabel(StringRef Name) {
+  char *Buffer = new (getASTContext(), 1) char[Name.size() + 1];
+  memcpy(Buffer, Name.data(), Name.size());
+  Buffer[Name.size()] = '\0';
+  MSAsmName = Buffer;
 }
 
 void ValueDecl::anchor() { }

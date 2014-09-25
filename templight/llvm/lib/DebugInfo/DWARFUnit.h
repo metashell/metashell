@@ -26,6 +26,45 @@ class DWARFContext;
 class DWARFDebugAbbrev;
 class StringRef;
 class raw_ostream;
+class DWARFUnit;
+
+/// Base class for all DWARFUnitSection classes. This provides the
+/// functionality common to all unit types.
+class DWARFUnitSectionBase {
+public:
+  /// Returns the Unit that contains the given section offset in the
+  /// same section this Unit originated from.
+  virtual DWARFUnit *getUnitForOffset(uint32_t Offset) const = 0;
+
+protected:
+  ~DWARFUnitSectionBase() {}
+};
+
+/// Concrete instance of DWARFUnitSection, specialized for one Unit type.
+template<typename UnitType>
+class DWARFUnitSection final : public SmallVector<std::unique_ptr<UnitType>, 1>,
+                               public DWARFUnitSectionBase {
+
+  struct UnitOffsetComparator {
+    bool operator()(uint32_t LHS,
+                    const std::unique_ptr<UnitType> &RHS) const {
+      return LHS < RHS->getNextUnitOffset();
+    }
+  };
+
+public:
+  typedef llvm::SmallVectorImpl<std::unique_ptr<UnitType>> UnitVector;
+  typedef typename UnitVector::iterator iterator;
+  typedef llvm::iterator_range<typename UnitVector::iterator> iterator_range;
+
+  UnitType *getUnitForOffset(uint32_t Offset) const {
+    auto *CU = std::upper_bound(this->begin(), this->end(), Offset,
+                                UnitOffsetComparator());
+    if (CU != this->end())
+      return CU->get();
+    return nullptr;
+  }
+};
 
 class DWARFUnit {
   DWARFContext &Context;
@@ -40,6 +79,7 @@ class DWARFUnit {
   uint32_t AddrOffsetSectionBase;
   const RelocAddrMap *RelocMap;
   bool isLittleEndian;
+  const DWARFUnitSectionBase &UnitSection;
 
   uint32_t Offset;
   uint32_t Length;
@@ -68,7 +108,7 @@ protected:
 public:
   DWARFUnit(DWARFContext& Context, const DWARFDebugAbbrev *DA, StringRef IS,
             StringRef RS, StringRef SS, StringRef SOS, StringRef AOS,
-            const RelocAddrMap *M, bool LE);
+            const RelocAddrMap *M, bool LE, const DWARFUnitSectionBase &UnitSection);
 
   virtual ~DWARFUnit();
 
@@ -135,6 +175,9 @@ public:
   /// Returns empty chain if there is no subprogram containing address. The
   /// chain is valid as long as parsed compile unit DIEs are not cleared.
   DWARFDebugInfoEntryInlinedChain getInlinedChainForAddress(uint64_t Address);
+
+  /// getUnitSection - Return the DWARFUnitSection containing this unit.
+  const DWARFUnitSectionBase &getUnitSection() const { return UnitSection; }
 
 private:
   /// Size in bytes of the .debug_info data associated with this compile unit.

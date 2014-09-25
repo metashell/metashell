@@ -2382,7 +2382,18 @@ namespace {
             if (!FD->getType()->isReferenceType())
               DeclsToRemove.push_back(FD);
 
+      if (E->isCompoundAssignmentOp()) {
+        HandleValue(E->getLHS());
+      }
+
       Inherited::VisitBinaryOperator(E);
+    }
+
+    void VisitUnaryOperator(UnaryOperator *E) {
+      if (E->isIncrementDecrementOp())
+        HandleValue(E->getSubExpr());
+
+      Inherited::VisitUnaryOperator(E);
     }
   };
 
@@ -3622,6 +3633,8 @@ Sema::SetDelegatingInitializer(CXXConstructorDecl *Constructor,
   }
 
   DelegatingCtorDecls.push_back(Constructor);
+
+  DiagnoseUninitializedFields(*this, Constructor);
 
   return false;
 }

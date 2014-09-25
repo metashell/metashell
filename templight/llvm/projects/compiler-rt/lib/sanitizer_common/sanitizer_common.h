@@ -167,6 +167,8 @@ uptr ReadFileToBuffer(const char *file_name, char **buff,
 void *MapFileToMemory(const char *file_name, uptr *buff_size);
 void *MapWritableFileToMemory(void *addr, uptr size, uptr fd, uptr offset);
 
+bool IsAccessibleMemoryRange(uptr beg, uptr size);
+
 // Error report formatting.
 const char *StripPathPrefix(const char *filepath,
                             const char *strip_file_prefix);
@@ -248,7 +250,7 @@ const int kMaxSummaryLength = 1024;
 // and pass it to __sanitizer_report_error_summary.
 void ReportErrorSummary(const char *error_message);
 // Same as above, but construct error_message as:
-//   error_type: file:line function
+//   error_type file:line function
 void ReportErrorSummary(const char *error_type, const char *file,
                         int line, const char *function);
 void ReportErrorSummary(const char *error_type, StackTrace *trace);
@@ -544,10 +546,13 @@ F IndirectExternCall(F f) {
 #endif
 
 #if SANITIZER_ANDROID
+// Initialize Android logging. Any writes before this are silently lost.
+void AndroidLogInit();
 void AndroidLogWrite(const char *buffer);
 void GetExtraActivationFlags(char *buf, uptr size);
 void SanitizerInitializeUnwinder();
 #else
+INLINE void AndroidLogInit() {}
 INLINE void AndroidLogWrite(const char *buffer_unused) {}
 INLINE void GetExtraActivationFlags(char *buf, uptr size) { *buf = '\0'; }
 INLINE void SanitizerInitializeUnwinder() {}

@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm-objdump.h"
+#include "llvm-c/Disassembler.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/Triple.h"
@@ -35,6 +36,7 @@
 #include "llvm/Support/GraphWriter.h"
 #include "llvm/Support/MachO.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
@@ -49,6 +51,14 @@ static cl::opt<bool>
 
 static cl::opt<std::string>
   DSYMFile("dsym", cl::desc("Use .dSYM file for debug info"));
+
+static cl::opt<bool>
+    FullLeadingAddr("full-leading-addr",
+                    cl::desc("Print full leading address"));
+
+static cl::opt<bool>
+    PrintImmHex("print-imm-hex",
+                cl::desc("Use hex format for immediate values"));
 
 static std::string ThumbTripleName;
 
@@ -224,6 +234,376 @@ void llvm::DisassembleInputMachO(StringRef Filename) {
   DisassembleInputMachO2(Filename, MachOOF.get());
 }
 
+typedef DenseMap<uint64_t, StringRef> SymbolAddressMap;
+
+// The block of info used by the Symbolizer call backs.
+struct DisassembleInfo {
+  bool verbose;
+  MachOObjectFile *O;
+  SectionRef S;
+  SymbolAddressMap *AddrMap;
+};
+
+// SymbolizerGetOpInfo() is the operand information call back function.
+// This is called to get the symbolic information for operand(s) of an
+// instruction when it is being done.  This routine does this from
+// the relocation information, symbol table, etc. That block of information
+// is a pointer to the struct DisassembleInfo that was passed when the
+// disassembler context was created and passed to back to here when
+// called back by the disassembler for instruction operands that could have
+// relocation information. The address of the instruction containing operand is
+// at the Pc parameter.  The immediate value the operand has is passed in
+// op_info->Value and is at Offset past the start of the instruction and has a
+// byte Size of 1, 2 or 4. The symbolc information is returned in TagBuf is the
+// LLVMOpInfo1 struct defined in the header "llvm-c/Disassembler.h" as symbol
+// names and addends of the symbolic expression to add for the operand.  The
+// value of TagType is currently 1 (for the LLVMOpInfo1 struct). If symbolic
+// information is returned then this function returns 1 else it returns 0.
+int SymbolizerGetOpInfo(void *DisInfo, uint64_t Pc, uint64_t Offset,
+                        uint64_t Size, int TagType, void *TagBuf) {
+  struct DisassembleInfo *info = (struct DisassembleInfo *)DisInfo;
+  struct LLVMOpInfo1 *op_info = (struct LLVMOpInfo1 *)TagBuf;
+  unsigned int value = op_info->Value;
+
+  // Make sure all fields returned are zero if we don't set them.
+  memset((void *)op_info, '\0', sizeof(struct LLVMOpInfo1));
+  op_info->Value = value;
+
+  // If the TagType is not the value 1 which it code knows about or if no
+  // verbose symbolic information is wanted then just return 0, indicating no
+  // information is being returned.
+  if (TagType != 1 || info->verbose == false)
+    return 0;
+
+  unsigned int Arch = info->O->getArch();
+  if (Arch == Triple::x86) {
+    return 0;
+  } else if (Arch == Triple::x86_64) {
+    if (Size != 1 && Size != 2 && Size != 4 && Size != 0)
+      return 0;
+    // First search the section's relocation entries (if any) for an entry
+    // for this section offset.
+    uint64_t sect_addr;
+    info->S.getAddress(sect_addr);
+    uint64_t sect_offset = (Pc + Offset) - sect_addr;
+    bool reloc_found = false;
+    DataRefImpl Rel;
+    MachO::any_relocation_info RE;
+    bool isExtern = false;
+    SymbolRef Symbol;
+    for (const RelocationRef &Reloc : info->S.relocations()) {
+      uint64_t RelocOffset;
+      Reloc.getOffset(RelocOffset);
+      if (RelocOffset == sect_offset) {
+        Rel = Reloc.getRawDataRefImpl();
+        RE = info->O->getRelocation(Rel);
+        // NOTE: Scattered relocations don't exist on x86_64.
+        isExtern = info->O->getPlainRelocationExternal(RE);
+        if (isExtern) {
+          symbol_iterator RelocSym = Reloc.getSymbol();
+          Symbol = *RelocSym;
+        }
+        reloc_found = true;
+        break;
+      }
+    }
+    if (reloc_found && isExtern) {
+      // The Value passed in will be adjusted by the Pc if the instruction
+      // adds the Pc.  But for x86_64 external relocation entries the Value
+      // is the offset from the external symbol.
+      if (info->O->getAnyRelocationPCRel(RE))
+        op_info->Value -= Pc + Offset + Size;
+      StringRef SymName;
+      Symbol.getName(SymName);
+      const char *name = SymName.data();
+      unsigned Type = info->O->getAnyRelocationType(RE);
+      if (Type == MachO::X86_64_RELOC_SUBTRACTOR) {
+        DataRefImpl RelNext = Rel;
+        info->O->moveRelocationNext(RelNext);
+        MachO::any_relocation_info RENext = info->O->getRelocation(RelNext);
+        unsigned TypeNext = info->O->getAnyRelocationType(RENext);
+        bool isExternNext = info->O->getPlainRelocationExternal(RENext);
+        unsigned SymbolNum = info->O->getPlainRelocationSymbolNum(RENext);
+        if (TypeNext == MachO::X86_64_RELOC_UNSIGNED && isExternNext) {
+          op_info->SubtractSymbol.Present = 1;
+          op_info->SubtractSymbol.Name = name;
+          symbol_iterator RelocSymNext = info->O->getSymbolByIndex(SymbolNum);
+          Symbol = *RelocSymNext;
+          StringRef SymNameNext;
+          Symbol.getName(SymNameNext);
+          name = SymNameNext.data();
+        }
+      }
+      // TODO: add the VariantKinds to op_info->VariantKind for relocation types
+      // like: X86_64_RELOC_TLV, X86_64_RELOC_GOT_LOAD and X86_64_RELOC_GOT.
+      op_info->AddSymbol.Present = 1;
+      op_info->AddSymbol.Name = name;
+      return 1;
+    }
+    // TODO:
+    // Second search the external relocation entries of a fully linked image
+    // (if any) for an entry that matches this segment offset.
+    //uint64_t seg_offset = (Pc + Offset);
+    return 0;
+  } else if (Arch == Triple::arm) {
+    return 0;
+  } else if (Arch == Triple::aarch64) {
+    return 0;
+  } else {
+    return 0;
+  }
+}
+
+// GuessCstringPointer is passed the address of what might be a pointer to a
+// literal string in a cstring section.  If that address is in a cstring section
+// it returns a pointer to that string.  Else it returns nullptr.
+const char *GuessCstringPointer(uint64_t ReferenceValue,
+                                struct DisassembleInfo *info) {
+  uint32_t LoadCommandCount = info->O->getHeader().ncmds;
+  MachOObjectFile::LoadCommandInfo Load = info->O->getFirstLoadCommandInfo();
+  for (unsigned I = 0;; ++I) {
+    if (Load.C.cmd == MachO::LC_SEGMENT_64) {
+      MachO::segment_command_64 Seg = info->O->getSegment64LoadCommand(Load);
+      for (unsigned J = 0; J < Seg.nsects; ++J) {
+        MachO::section_64 Sec = info->O->getSection64(Load, J);
+        uint32_t section_type = Sec.flags & MachO::SECTION_TYPE;
+        if (section_type == MachO::S_CSTRING_LITERALS &&
+            ReferenceValue >= Sec.addr &&
+            ReferenceValue < Sec.addr + Sec.size) {
+          uint64_t sect_offset = ReferenceValue - Sec.addr;
+          uint64_t object_offset = Sec.offset + sect_offset;
+          StringRef MachOContents = info->O->getData();
+          uint64_t object_size = MachOContents.size();
+          const char *object_addr = (const char *)MachOContents.data();
+          if (object_offset < object_size) {
+            const char *name = object_addr + object_offset;
+            return name;
+          } else {
+            return nullptr;
+          }
+        }
+      }
+    } else if (Load.C.cmd == MachO::LC_SEGMENT) {
+      MachO::segment_command Seg = info->O->getSegmentLoadCommand(Load);
+      for (unsigned J = 0; J < Seg.nsects; ++J) {
+        MachO::section Sec = info->O->getSection(Load, J);
+        uint32_t section_type = Sec.flags & MachO::SECTION_TYPE;
+        if (section_type == MachO::S_CSTRING_LITERALS &&
+            ReferenceValue >= Sec.addr &&
+            ReferenceValue < Sec.addr + Sec.size) {
+          uint64_t sect_offset = ReferenceValue - Sec.addr;
+          uint64_t object_offset = Sec.offset + sect_offset;
+          StringRef MachOContents = info->O->getData();
+          uint64_t object_size = MachOContents.size();
+          const char *object_addr = (const char *)MachOContents.data();
+          if (object_offset < object_size) {
+            const char *name = object_addr + object_offset;
+            return name;
+          } else {
+            return nullptr;
+          }
+        }
+      }
+    }
+    if (I == LoadCommandCount - 1)
+      break;
+    else
+      Load = info->O->getNextLoadCommandInfo(Load);
+  }
+  return nullptr;
+}
+
+// GuessLiteralPointer returns a string which for the item in the Mach-O file
+// for the address passed in as ReferenceValue for printing as a comment with
+// the instruction and also returns the corresponding type of that item
+// indirectly through ReferenceType.
+//
+// If ReferenceValue is an address of literal cstring then a pointer to the
+// cstring is returned and ReferenceType is set to
+// LLVMDisassembler_ReferenceType_Out_LitPool_CstrAddr .
+//
+// TODO: other literals such as Objective-C CFStrings refs, Selector refs,
+// Message refs, Class refs and a Symbol address in a literal pool are yet
+// to be done here.
+const char *GuessLiteralPointer(uint64_t ReferenceValue, uint64_t ReferencePC,
+                                uint64_t *ReferenceType,
+                                struct DisassembleInfo *info) {
+  // TODO: This rouine's code is only for an x86_64 Mach-O file for now.
+  unsigned int Arch = info->O->getArch();
+  if (Arch != Triple::x86_64)
+    return nullptr;
+
+  // First see if there is an external relocation entry at the ReferencePC.
+  uint64_t sect_addr;
+  info->S.getAddress(sect_addr);
+  uint64_t sect_offset = ReferencePC - sect_addr;
+  bool reloc_found = false;
+  DataRefImpl Rel;
+  MachO::any_relocation_info RE;
+  bool isExtern = false;
+  SymbolRef Symbol;
+  for (const RelocationRef &Reloc : info->S.relocations()) {
+    uint64_t RelocOffset;
+    Reloc.getOffset(RelocOffset);
+    if (RelocOffset == sect_offset) {
+      Rel = Reloc.getRawDataRefImpl();
+      RE = info->O->getRelocation(Rel);
+      if (info->O->isRelocationScattered(RE))
+        continue;
+      isExtern = info->O->getPlainRelocationExternal(RE);
+      if (isExtern) {
+        symbol_iterator RelocSym = Reloc.getSymbol();
+        Symbol = *RelocSym;
+      }
+      reloc_found = true;
+      break;
+    }
+  }
+  // If there is an external relocation entry for a symbol in a section
+  // then used that symbol's value for the value of the reference.
+  if (reloc_found && isExtern) {
+    if (info->O->getAnyRelocationPCRel(RE)) {
+      unsigned Type = info->O->getAnyRelocationType(RE);
+      if (Type == MachO::X86_64_RELOC_SIGNED) {
+        Symbol.getAddress(ReferenceValue);
+      }
+    }
+  }
+
+  // TODO: the code to look for other literals such as Objective-C CFStrings
+  // refs, Selector refs, Message refs, Class refs will be added here.
+
+  const char *name = GuessCstringPointer(ReferenceValue, info);
+  if (name) {
+    // TODO: note when the code is added above for Selector refs and Message
+    // refs we will need check for that here and set the ReferenceType
+    // accordingly.
+    *ReferenceType = LLVMDisassembler_ReferenceType_Out_LitPool_CstrAddr;
+    return name;
+  }
+
+  // TODO: look for an indirect symbol with this ReferenceValue which is in
+  // a literal pool.
+
+  return nullptr;
+}
+
+// SymbolizerSymbolLookUp is the symbol lookup function passed when creating
+// the Symbolizer.  It looks up the ReferenceValue using the info passed via the
+// pointer to the struct DisassembleInfo that was passed when MCSymbolizer
+// is created and returns the symbol name that matches the ReferenceValue or
+// nullptr if none.  The ReferenceType is passed in for the IN type of
+// reference the instruction is making from the values in defined in the header
+// "llvm-c/Disassembler.h".  On return the ReferenceType can set to a specific
+// Out type and the ReferenceName will also be set which is added as a comment
+// to the disassembled instruction.
+//
+// If the symbol name is a C++ mangled name then the demangled name is
+// returned through ReferenceName and ReferenceType is set to
+// LLVMDisassembler_ReferenceType_DeMangled_Name .
+//
+// When this is called to get a symbol name for a branch target then the
+// ReferenceType will be LLVMDisassembler_ReferenceType_In_Branch and then
+// SymbolValue will be looked for in the indirect symbol table to determine if
+// it is an address for a symbol stub.  If so then the symbol name for that
+// stub is returned indirectly through ReferenceName and then ReferenceType is
+// set to LLVMDisassembler_ReferenceType_Out_SymbolStub.
+//
+// When this is called with an value loaded via a PC relative load then
+// ReferenceType will be LLVMDisassembler_ReferenceType_In_PCrel_Load then the
+// SymbolValue is checked to be an address of literal pointer, symbol pointer,
+// or an Objective-C meta data reference.  If so the output ReferenceType is
+// set to correspond to that as well as ReferenceName.
+const char *SymbolizerSymbolLookUp(void *DisInfo, uint64_t ReferenceValue,
+                                   uint64_t *ReferenceType,
+                                   uint64_t ReferencePC,
+                                   const char **ReferenceName) {
+  struct DisassembleInfo *info = (struct DisassembleInfo *)DisInfo;
+  // If no verbose symbolic information is wanted then just return nullptr.
+  if (info->verbose == false) {
+    *ReferenceName = nullptr;
+    *ReferenceType = LLVMDisassembler_ReferenceType_InOut_None;
+    return nullptr;
+  }
+
+  const char *SymbolName = nullptr;
+  StringRef name = info->AddrMap->lookup(ReferenceValue);
+  if (!name.empty())
+    SymbolName = name.data();
+
+  if (*ReferenceType == LLVMDisassembler_ReferenceType_In_PCrel_Load) {
+    *ReferenceName = GuessLiteralPointer(ReferenceValue, ReferencePC,
+                                         ReferenceType, info);
+    if (*ReferenceName == nullptr)
+      *ReferenceType = LLVMDisassembler_ReferenceType_InOut_None;
+  // TODO: other types of references to be added.
+  } else {
+    *ReferenceName = nullptr;
+    *ReferenceType = LLVMDisassembler_ReferenceType_InOut_None;
+  }
+
+  return SymbolName;
+}
+
+//
+// This is the memory object used by DisAsm->getInstruction() which has its
+// BasePC.  This then allows the 'address' parameter to getInstruction() to
+// be the actual PC of the instruction.  Then when a branch dispacement is
+// added to the PC of an instruction, the 'ReferenceValue' passed to the
+// SymbolizerSymbolLookUp() routine is the correct target addresses.  As in
+// the case of a fully linked Mach-O file where a section being disassembled
+// generally not linked at address zero.
+//
+class DisasmMemoryObject : public MemoryObject {
+  const uint8_t *Bytes;
+  uint64_t Size;
+  uint64_t BasePC;
+public:
+  DisasmMemoryObject(const uint8_t *bytes, uint64_t size, uint64_t basePC) :
+                     Bytes(bytes), Size(size), BasePC(basePC) {}
+
+  uint64_t getBase() const override { return BasePC; }
+  uint64_t getExtent() const override { return Size; }
+
+  int readByte(uint64_t Addr, uint8_t *Byte) const override {
+    if (Addr - BasePC >= Size)
+      return -1;
+    *Byte = Bytes[Addr - BasePC];
+    return 0;
+  }
+};
+
+/// \brief Emits the comments that are stored in the CommentStream.
+/// Each comment in the CommentStream must end with a newline.
+static void emitComments(raw_svector_ostream &CommentStream,
+                         SmallString<128> &CommentsToEmit,
+                         formatted_raw_ostream &FormattedOS,
+                         const MCAsmInfo &MAI) {
+  // Flush the stream before taking its content.
+  CommentStream.flush();
+  StringRef Comments = CommentsToEmit.str();
+  // Get the default information for printing a comment.
+  const char *CommentBegin = MAI.getCommentString();
+  unsigned CommentColumn = MAI.getCommentColumn();
+  bool IsFirst = true;
+  while (!Comments.empty()) {
+    if (!IsFirst)
+      FormattedOS << '\n';
+    // Emit a line of comments.
+    FormattedOS.PadToColumn(CommentColumn);
+    size_t Position = Comments.find('\n');
+    FormattedOS << CommentBegin << ' ' << Comments.substr(0, Position);
+    // Move after the newline character.
+    Comments = Comments.substr(Position + 1);
+    IsFirst = false;
+  }
+  FormattedOS.flush();
+
+  // Tell the comment stream that the vector changed underneath it.
+  CommentsToEmit.clear();
+  CommentStream.resync();
+}
+
 static void DisassembleInputMachO2(StringRef Filename,
                                    MachOObjectFile *MachOOF) {
   const char *McpuDefault = nullptr;
@@ -264,11 +644,27 @@ static void DisassembleInputMachO2(StringRef Filename,
   std::unique_ptr<const MCSubtargetInfo> STI(
       TheTarget->createMCSubtargetInfo(TripleName, MCPU, FeaturesStr));
   MCContext Ctx(AsmInfo.get(), MRI.get(), nullptr);
-  std::unique_ptr<const MCDisassembler> DisAsm(
+  std::unique_ptr<MCDisassembler> DisAsm(
       TheTarget->createMCDisassembler(*STI, Ctx));
+  std::unique_ptr<MCSymbolizer> Symbolizer;
+  struct DisassembleInfo SymbolizerInfo;
+  std::unique_ptr<MCRelocationInfo> RelInfo(
+      TheTarget->createMCRelocationInfo(TripleName, Ctx));
+  if (RelInfo) {
+    Symbolizer.reset(TheTarget->createMCSymbolizer(
+        TripleName, SymbolizerGetOpInfo, SymbolizerSymbolLookUp,
+        &SymbolizerInfo, &Ctx, RelInfo.release()));
+    DisAsm->setSymbolizer(std::move(Symbolizer));
+  }
   int AsmPrinterVariant = AsmInfo->getAssemblerDialect();
   std::unique_ptr<MCInstPrinter> IP(TheTarget->createMCInstPrinter(
       AsmPrinterVariant, *AsmInfo, *InstrInfo, *MRI, *STI));
+  // Set the display preference for hex vs. decimal immediates.
+  IP->setPrintImmHex(PrintImmHex);
+  // Comment stream and backing vector.
+  SmallString<128> CommentsToEmit;
+  raw_svector_ostream CommentStream(CommentsToEmit);
+  IP->setCommentStream(CommentStream);
 
   if (!InstrAnalysis || !AsmInfo || !STI || !DisAsm || !IP) {
     errs() << "error: couldn't initialize disassembler for target "
@@ -291,10 +687,13 @@ static void DisassembleInputMachO2(StringRef Filename,
         ThumbTarget->createMCSubtargetInfo(ThumbTripleName, MCPU, FeaturesStr));
     ThumbCtx.reset(new MCContext(ThumbAsmInfo.get(), ThumbMRI.get(), nullptr));
     ThumbDisAsm.reset(ThumbTarget->createMCDisassembler(*ThumbSTI, *ThumbCtx));
+    // TODO: add MCSymbolizer here for the ThumbTarget like above for TheTarget.
     int ThumbAsmPrinterVariant = ThumbAsmInfo->getAssemblerDialect();
     ThumbIP.reset(ThumbTarget->createMCInstPrinter(
         ThumbAsmPrinterVariant, *ThumbAsmInfo, *ThumbInstrInfo, *ThumbMRI,
         *ThumbSTI));
+    // Set the display preference for hex vs. decimal immediates.
+    ThumbIP->setPrintImmHex(PrintImmHex);
   }
 
   if (ThumbTarget && (!ThumbInstrAnalysis || !ThumbAsmInfo || !ThumbSTI ||
@@ -387,7 +786,10 @@ static void DisassembleInputMachO2(StringRef Filename,
 
     StringRef Bytes;
     Sections[SectIdx].getContents(Bytes);
-    StringRefMemoryObject memoryObject(Bytes);
+    uint64_t SectAddress = 0;
+    Sections[SectIdx].getAddress(SectAddress);
+    DisasmMemoryObject MemoryObject((const uint8_t *)Bytes.data(), Bytes.size(),
+                                    SectAddress);
     bool symbolTableWorked = false;
 
     // Parse relocations.
@@ -403,6 +805,27 @@ static void DisassembleInputMachO2(StringRef Filename,
       Relocs.push_back(std::make_pair(RelocOffset, *RelocSym));
     }
     array_pod_sort(Relocs.begin(), Relocs.end());
+
+    // Create a map of symbol addresses to symbol names for use by
+    // the SymbolizerSymbolLookUp() routine.
+    SymbolAddressMap AddrMap;
+    for (const SymbolRef &Symbol : MachOOF->symbols()) {
+      SymbolRef::Type ST;
+      Symbol.getType(ST);
+      if (ST == SymbolRef::ST_Function || ST == SymbolRef::ST_Data ||
+          ST == SymbolRef::ST_Other) {
+        uint64_t Address;
+        Symbol.getAddress(Address);
+        StringRef SymName;
+        Symbol.getName(SymName);
+        AddrMap[Address] = SymName;
+      }
+    }
+    // Set up the block of info used by the Symbolizer call backs.
+    SymbolizerInfo.verbose = true;
+    SymbolizerInfo.O = MachOOF;
+    SymbolizerInfo.S = Sections[SectIdx];
+    SymbolizerInfo.AddrMap = &AddrMap;
 
     // Disassemble symbol by symbol.
     for (unsigned SymIdx = 0; SymIdx != Symbols.size(); SymIdx++) {
@@ -461,14 +884,22 @@ static void DisassembleInputMachO2(StringRef Filename,
       for (uint64_t Index = Start; Index < End; Index += Size) {
         MCInst Inst;
 
-        uint64_t SectAddress = 0;
-        Sections[SectIdx].getAddress(SectAddress);
-        outs() << format("%8" PRIx64 ":\t", SectAddress + Index);
+        uint64_t PC = SectAddress + Index;
+        if (FullLeadingAddr) {
+          if (MachOOF->is64Bit())
+            outs() << format("%016" PRIx64, PC);
+           else
+            outs() << format("%08" PRIx64, PC);
+        } else {
+          outs() << format("%8" PRIx64 ":", PC);
+        }
+        if (!NoShowRawInsn)
+          outs() << "\t";
 
         // Check the data in code table here to see if this is data not an
         // instruction to be disassembled.
         DiceTable Dice;
-        Dice.push_back(std::make_pair(SectAddress + Index, DiceRef()));
+        Dice.push_back(std::make_pair(PC, DiceRef()));
         dice_table_iterator DTI = std::search(Dices.begin(), Dices.end(),
                                               Dice.begin(), Dice.end(),
                                               compareDiceTableEntries);
@@ -482,24 +913,33 @@ static void DisassembleInputMachO2(StringRef Filename,
           continue;
         }
 
+        SmallVector<char, 64> AnnotationsBytes;
+        raw_svector_ostream Annotations(AnnotationsBytes);
+
         bool gotInst;
         if (isThumb)
-          gotInst = ThumbDisAsm->getInstruction(Inst, Size, memoryObject, Index,
-                                     DebugOut, nulls());
+          gotInst = ThumbDisAsm->getInstruction(Inst, Size, MemoryObject, PC,
+                                                DebugOut, Annotations);
         else
-          gotInst = DisAsm->getInstruction(Inst, Size, memoryObject, Index,
-                                     DebugOut, nulls());
+          gotInst = DisAsm->getInstruction(Inst, Size, MemoryObject, PC,
+                                           DebugOut, Annotations);
         if (gotInst) {
-          DumpBytes(StringRef(Bytes.data() + Index, Size));
+          if (!NoShowRawInsn) {
+            DumpBytes(StringRef(Bytes.data() + Index, Size));
+          }
+          formatted_raw_ostream FormattedOS(outs());
+          Annotations.flush();
+          StringRef AnnotationsStr = Annotations.str();
           if (isThumb)
-            ThumbIP->printInst(&Inst, outs(), "");
+            ThumbIP->printInst(&Inst, FormattedOS, AnnotationsStr);
           else
-            IP->printInst(&Inst, outs(), "");
+            IP->printInst(&Inst, FormattedOS, AnnotationsStr);
+          emitComments(CommentStream, CommentsToEmit, FormattedOS, *AsmInfo);
 
           // Print debug info.
           if (diContext) {
             DILineInfo dli =
-              diContext->getLineInfoForAddress(SectAddress + Index);
+              diContext->getLineInfoForAddress(PC);
             // Print valid line info if it changed.
             if (dli != lastLine && dli.Line != 0)
               outs() << "\t## " << dli.FileName << ':' << dli.Line << ':'
@@ -524,10 +964,21 @@ static void DisassembleInputMachO2(StringRef Filename,
       for (uint64_t Index = 0; Index < SectSize; Index += InstSize) {
         MCInst Inst;
 
-        if (DisAsm->getInstruction(Inst, InstSize, memoryObject, Index,
+        uint64_t PC = SectAddress + Index;
+        if (DisAsm->getInstruction(Inst, InstSize, MemoryObject, PC,
                                    DebugOut, nulls())) {
-          outs() << format("%8" PRIx64 ":\t", SectAddress + Index);
-          DumpBytes(StringRef(Bytes.data() + Index, InstSize));
+          if (FullLeadingAddr) {
+            if (MachOOF->is64Bit())
+              outs() << format("%016" PRIx64, PC);
+             else
+              outs() << format("%08" PRIx64, PC);
+          } else {
+            outs() << format("%8" PRIx64 ":", PC);
+          }
+          if (!NoShowRawInsn) {
+            outs() << "\t";
+            DumpBytes(StringRef(Bytes.data() + Index, InstSize));
+          }
           IP->printInst(&Inst, outs(), "");
           outs() << "\n";
         } else {
@@ -649,6 +1100,9 @@ static void printUnwindRelocDest(const MachOObjectFile *Obj,
                                  uint64_t Addr) {
   StringRef Name;
   uint64_t Addend;
+
+  if (!Reloc.getObjectFile())
+    return;
 
   findUnwindRelocNameAddend(Obj, Symbols, Reloc, Addr, Name, Addend);
 
@@ -2143,3 +2597,231 @@ void llvm::printMachOExportsTrie(const object::MachOObjectFile *Obj) {
     outs() << "\n";
   }
 }
+
+
+//===----------------------------------------------------------------------===//
+// rebase table dumping
+//===----------------------------------------------------------------------===//
+
+namespace {
+class SegInfo {
+public:
+  SegInfo(const object::MachOObjectFile *Obj);
+
+  StringRef segmentName(uint32_t SegIndex);
+  StringRef sectionName(uint32_t SegIndex, uint64_t SegOffset);
+  uint64_t address(uint32_t SegIndex, uint64_t SegOffset);
+
+private:
+  struct SectionInfo {
+    uint64_t Address;
+    uint64_t Size;
+    StringRef SectionName;
+    StringRef SegmentName;
+    uint64_t OffsetInSegment;
+    uint64_t SegmentStartAddress;
+    uint32_t SegmentIndex;
+  };
+  const SectionInfo &findSection(uint32_t SegIndex, uint64_t SegOffset);
+  SmallVector<SectionInfo, 32> Sections;
+};
+}
+
+SegInfo::SegInfo(const object::MachOObjectFile *Obj) {
+  // Build table of sections so segIndex/offset pairs can be translated.
+  uint32_t CurSegIndex = Obj->hasPageZeroSegment() ? 1 : 0;
+  StringRef CurSegName;
+  uint64_t CurSegAddress;
+  for (const SectionRef &Section : Obj->sections()) {
+    SectionInfo Info;
+    if (error(Section.getName(Info.SectionName)))
+      return;
+    if (error(Section.getAddress(Info.Address)))
+      return;
+    if (error(Section.getSize(Info.Size)))
+      return;
+    Info.SegmentName =
+        Obj->getSectionFinalSegmentName(Section.getRawDataRefImpl());
+    if (!Info.SegmentName.equals(CurSegName)) {
+      ++CurSegIndex;
+      CurSegName = Info.SegmentName;
+      CurSegAddress = Info.Address;
+    }
+    Info.SegmentIndex = CurSegIndex - 1;
+    Info.OffsetInSegment = Info.Address - CurSegAddress;
+    Info.SegmentStartAddress = CurSegAddress;
+    Sections.push_back(Info);
+  }
+}
+
+StringRef SegInfo::segmentName(uint32_t SegIndex) {
+  for (const SectionInfo &SI : Sections) {
+    if (SI.SegmentIndex == SegIndex)
+      return SI.SegmentName;
+  }
+  llvm_unreachable("invalid segIndex");
+}
+
+const SegInfo::SectionInfo &SegInfo::findSection(uint32_t SegIndex,
+                                                 uint64_t OffsetInSeg) {
+  for (const SectionInfo &SI : Sections) {
+    if (SI.SegmentIndex != SegIndex)
+      continue;
+    if (SI.OffsetInSegment > OffsetInSeg)
+      continue;
+    if (OffsetInSeg >= (SI.OffsetInSegment + SI.Size))
+      continue;
+    return SI;
+  }
+  llvm_unreachable("segIndex and offset not in any section");
+}
+
+StringRef SegInfo::sectionName(uint32_t SegIndex, uint64_t OffsetInSeg) {
+  return findSection(SegIndex, OffsetInSeg).SectionName;
+}
+
+uint64_t SegInfo::address(uint32_t SegIndex, uint64_t OffsetInSeg) {
+  const SectionInfo &SI = findSection(SegIndex, OffsetInSeg);
+  return SI.SegmentStartAddress + OffsetInSeg;
+}
+
+void llvm::printMachORebaseTable(const object::MachOObjectFile *Obj) {
+  // Build table of sections so names can used in final output.
+  SegInfo sectionTable(Obj);
+
+  outs() << "segment  section            address     type\n";
+  for (const llvm::object::MachORebaseEntry &Entry : Obj->rebaseTable()) {
+    uint32_t SegIndex = Entry.segmentIndex();
+    uint64_t OffsetInSeg = Entry.segmentOffset();
+    StringRef SegmentName = sectionTable.segmentName(SegIndex);
+    StringRef SectionName = sectionTable.sectionName(SegIndex, OffsetInSeg);
+    uint64_t Address = sectionTable.address(SegIndex, OffsetInSeg);
+
+    // Table lines look like: __DATA  __nl_symbol_ptr  0x0000F00C  pointer
+    outs() << format("%-8s %-18s 0x%08" PRIX64 "  %s\n", 
+                     SegmentName.str().c_str(),
+                     SectionName.str().c_str(), Address,
+                     Entry.typeName().str().c_str());
+  }
+}
+
+static StringRef ordinalName(const object::MachOObjectFile *Obj, int Ordinal) {
+  StringRef DylibName;
+  switch (Ordinal) {
+  case MachO::BIND_SPECIAL_DYLIB_SELF:
+    return "this-image";
+  case MachO::BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE:
+    return "main-executable";
+  case MachO::BIND_SPECIAL_DYLIB_FLAT_LOOKUP:
+    return "flat-namespace";
+  default:
+    if (Ordinal > 0) {
+      std::error_code EC = Obj->getLibraryShortNameByIndex(Ordinal-1, 
+                                                           DylibName);
+      if (EC)
+        return "<<ordinal too big>>";
+      return DylibName;
+    }
+  }
+  return "<<unknown special ordinal>>";
+}
+
+//===----------------------------------------------------------------------===//
+// bind table dumping
+//===----------------------------------------------------------------------===//
+
+void llvm::printMachOBindTable(const object::MachOObjectFile *Obj) {
+  // Build table of sections so names can used in final output.
+  SegInfo sectionTable(Obj);
+
+  outs() << "segment  section            address     type     "
+            "addend   dylib               symbol\n";
+  for (const llvm::object::MachOBindEntry &Entry : Obj->bindTable()) {
+    uint32_t SegIndex = Entry.segmentIndex();
+    uint64_t OffsetInSeg = Entry.segmentOffset();
+    StringRef SegmentName = sectionTable.segmentName(SegIndex);
+    StringRef SectionName = sectionTable.sectionName(SegIndex, OffsetInSeg);
+    uint64_t Address = sectionTable.address(SegIndex, OffsetInSeg);
+
+    // Table lines look like:
+    //  __DATA  __got  0x00012010    pointer   0 libSystem ___stack_chk_guard
+    outs() << format("%-8s %-18s 0x%08" PRIX64 "  %-8s %-8" PRId64 " %-20s",
+                     SegmentName.str().c_str(),
+                     SectionName.str().c_str(),
+                     Address,
+                     Entry.typeName().str().c_str(),
+                     Entry.addend(),
+                     ordinalName(Obj, Entry.ordinal()).str().c_str())
+           << Entry.symbolName();
+    if (Entry.flags() & MachO::BIND_SYMBOL_FLAGS_WEAK_IMPORT)
+      outs() << " (weak_import)\n";
+    else
+      outs() << "\n";
+  }
+}
+
+//===----------------------------------------------------------------------===//
+// lazy bind table dumping
+//===----------------------------------------------------------------------===//
+
+void llvm::printMachOLazyBindTable(const object::MachOObjectFile *Obj) {
+  // Build table of sections so names can used in final output.
+  SegInfo sectionTable(Obj);
+
+  outs() << "segment  section            address      "
+            "dylib               symbol\n";
+  for (const llvm::object::MachOBindEntry &Entry : Obj->lazyBindTable()) {
+    uint32_t SegIndex = Entry.segmentIndex();
+    uint64_t OffsetInSeg = Entry.segmentOffset();
+    StringRef SegmentName = sectionTable.segmentName(SegIndex);
+    StringRef SectionName = sectionTable.sectionName(SegIndex, OffsetInSeg);
+    uint64_t Address = sectionTable.address(SegIndex, OffsetInSeg);
+
+    // Table lines look like:
+    //  __DATA  __got  0x00012010 libSystem ___stack_chk_guard
+    outs() << format("%-8s %-18s 0x%08" PRIX64 "   %-20s",
+                     SegmentName.str().c_str(),
+                     SectionName.str().c_str(),
+                     Address,
+                     ordinalName(Obj, Entry.ordinal()).str().c_str())
+           << Entry.symbolName() << "\n";
+  }
+}
+
+
+//===----------------------------------------------------------------------===//
+// weak bind table dumping
+//===----------------------------------------------------------------------===//
+
+void llvm::printMachOWeakBindTable(const object::MachOObjectFile *Obj) {
+  // Build table of sections so names can used in final output.
+  SegInfo sectionTable(Obj);
+
+  outs() << "segment  section            address      "
+            "type     addend   symbol\n";
+  for (const llvm::object::MachOBindEntry &Entry : Obj->weakBindTable()) {
+    // Strong symbols don't have a location to update.
+    if (Entry.flags() & MachO::BIND_SYMBOL_FLAGS_NON_WEAK_DEFINITION) {
+      outs() << "                                          strong            "
+             << Entry.symbolName() << "\n";
+      continue;
+    }
+    uint32_t SegIndex = Entry.segmentIndex();
+    uint64_t OffsetInSeg = Entry.segmentOffset();
+    StringRef SegmentName = sectionTable.segmentName(SegIndex);
+    StringRef SectionName = sectionTable.sectionName(SegIndex, OffsetInSeg);
+    uint64_t Address = sectionTable.address(SegIndex, OffsetInSeg);
+
+    // Table lines look like:
+    // __DATA  __data  0x00001000  pointer    0   _foo
+    outs() << format("%-8s %-18s 0x%08" PRIX64 "   %-8s %-8" PRId64 " ",
+                     SegmentName.str().c_str(),
+                     SectionName.str().c_str(),
+                     Address,
+                     Entry.typeName().str().c_str(),
+                     Entry.addend())
+           << Entry.symbolName() << "\n";
+  }
+}
+
+

@@ -87,9 +87,10 @@ bool TargetTransformInfo::isLoweredToCall(const Function *F) const {
   return PrevTTI->isLoweredToCall(F);
 }
 
-void TargetTransformInfo::getUnrollingPreferences(Loop *L,
-                            UnrollingPreferences &UP) const {
-  PrevTTI->getUnrollingPreferences(L, UP);
+void
+TargetTransformInfo::getUnrollingPreferences(const Function *F, Loop *L,
+                                             UnrollingPreferences &UP) const {
+  PrevTTI->getUnrollingPreferences(F, L, UP);
 }
 
 bool TargetTransformInfo::isLegalAddImmediate(int64_t Imm) const {
@@ -167,8 +168,8 @@ unsigned TargetTransformInfo::getRegisterBitWidth(bool Vector) const {
   return PrevTTI->getRegisterBitWidth(Vector);
 }
 
-unsigned TargetTransformInfo::getMaximumUnrollFactor() const {
-  return PrevTTI->getMaximumUnrollFactor();
+unsigned TargetTransformInfo::getMaxInterleaveFactor() const {
+  return PrevTTI->getMaxInterleaveFactor();
 }
 
 unsigned TargetTransformInfo::getArithmeticInstrCost(
@@ -487,8 +488,8 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     return true;
   }
 
-  void getUnrollingPreferences(Loop *, UnrollingPreferences &) const override {
-  }
+  void getUnrollingPreferences(const Function *, Loop *,
+                               UnrollingPreferences &) const override {}
 
   bool isLegalAddImmediate(int64_t Imm) const override {
     return false;
@@ -565,7 +566,7 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     return 32;
   }
 
-  unsigned getMaximumUnrollFactor() const override {
+  unsigned getMaxInterleaveFactor() const override {
     return 1;
   }
 

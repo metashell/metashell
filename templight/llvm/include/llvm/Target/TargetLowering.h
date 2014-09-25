@@ -268,6 +268,13 @@ public:
     return HasFloatingPointExceptions;
   }
 
+  /// Return true if target always beneficiates from combining into FMA for a
+  /// given value type. This must typically return false on targets where FMA
+  /// takes more cycles to execute than FADD.
+  virtual bool enableAggressiveFMAFusion(EVT VT) const {
+    return false;
+  }
+
   /// Return the ValueType of the result of SETCC operations.  Also used to
   /// obtain the target's preferred type for the condition operand of SELECT and
   /// BRCOND nodes.  In the case of BRCOND the argument passed is MVT::Other
@@ -936,6 +943,10 @@ public:
   /// \name Helpers for atomic expansion.
   /// @{
 
+  /// True if AtomicExpandPass should use emitLoadLinked/emitStoreConditional
+  /// and expand AtomicCmpXchgInst.
+  virtual bool hasLoadLinkedStoreConditional() const { return false; }
+
   /// Perform a load-linked operation on Addr, returning a "Value *" with the
   /// corresponding pointee type. This may entail some non-trivial operations to
   /// truncate or reconstruct types that will be illegal in the backend. See
@@ -957,9 +968,13 @@ public:
   ///   AtomicRMW/AtomicCmpXchg/AtomicStore/AtomicLoad.
   /// RMW and CmpXchg set both IsStore and IsLoad to true.
   /// Backends with !getInsertFencesForAtomic() should keep a no-op here.
-  virtual void emitLeadingFence(IRBuilder<> &Builder, AtomicOrdering Ord,
+  /// This function should either return a nullptr, or a pointer to an IR-level
+  ///   Instruction*. Even complex fence sequences can be represented by a
+  ///   single Instruction* through an intrinsic to be lowered later.
+  virtual Instruction* emitLeadingFence(IRBuilder<> &Builder, AtomicOrdering Ord,
           bool IsStore, bool IsLoad) const {
     assert(!getInsertFencesForAtomic());
+    return nullptr;
   }
 
   /// Inserts in the IR a target-specific intrinsic specifying a fence.
@@ -967,9 +982,13 @@ public:
   ///   AtomicRMW/AtomicCmpXchg/AtomicStore/AtomicLoad.
   /// RMW and CmpXchg set both IsStore and IsLoad to true.
   /// Backends with !getInsertFencesForAtomic() should keep a no-op here.
-  virtual void emitTrailingFence(IRBuilder<> &Builder, AtomicOrdering Ord,
+  /// This function should either return a nullptr, or a pointer to an IR-level
+  ///   Instruction*. Even complex fence sequences can be represented by a
+  ///   single Instruction* through an intrinsic to be lowered later.
+  virtual Instruction* emitTrailingFence(IRBuilder<> &Builder, AtomicOrdering Ord,
           bool IsStore, bool IsLoad) const {
     assert(!getInsertFencesForAtomic());
+    return nullptr;
   }
 
   /// Returns true if the given (atomic) store should be expanded by the
@@ -2588,6 +2607,10 @@ public:
   virtual SDValue BuildSDIVPow2(SDNode *N, const APInt &Divisor,
                                 SelectionDAG &DAG,
                                 std::vector<SDNode *> *Created) const {
+    return SDValue();
+  }
+
+  virtual SDValue BuildRSQRTE(SDValue Op, DAGCombinerInfo &DCI) const {
     return SDValue();
   }
 

@@ -232,32 +232,6 @@ namespace llvm {
     /// @param OffsetInBits Member offset.
     /// @param Flags        Flags to encode member attribute, e.g. private
     /// @param Ty           Parent type.
-    /// @param PropertyName Name of the Objective C property associated with
-    ///                     this ivar.
-    /// @param PropertyGetterName Name of the Objective C property getter
-    ///                           selector.
-    /// @param PropertySetterName Name of the Objective C property setter
-    ///                           selector.
-    /// @param PropertyAttributes Objective C property attributes.
-    DIDerivedType createObjCIVar(StringRef Name, DIFile File,
-                                 unsigned LineNo, uint64_t SizeInBits,
-                                 uint64_t AlignInBits, uint64_t OffsetInBits,
-                                 unsigned Flags, DIType Ty,
-                                 StringRef PropertyName = StringRef(),
-                                 StringRef PropertyGetterName = StringRef(),
-                                 StringRef PropertySetterName = StringRef(),
-                                 unsigned PropertyAttributes = 0);
-
-    /// createObjCIVar - Create debugging information entry for Objective-C
-    /// instance variable.
-    /// @param Name         Member name.
-    /// @param File         File where this member is defined.
-    /// @param LineNo       Line number.
-    /// @param SizeInBits   Member size.
-    /// @param AlignInBits  Member alignment.
-    /// @param OffsetInBits Member offset.
-    /// @param Flags        Flags to encode member attribute, e.g. private
-    /// @param Ty           Parent type.
     /// @param PropertyNode Property associated with this ivar.
     DIDerivedType createObjCIVar(StringRef Name, DIFile File,
                                  unsigned LineNo, uint64_t SizeInBits,
@@ -521,6 +495,15 @@ namespace llvm {
                          DITypeRef Ty, bool isLocalToUnit, llvm::Value *Val,
                          MDNode *Decl = nullptr);
 
+    /// createTempStaticVariableFwdDecl - Identical to createStaticVariable
+    /// except that the resulting DbgNode is temporary and meant to be RAUWed.
+    DIGlobalVariable
+    createTempStaticVariableFwdDecl(DIDescriptor Context, StringRef Name,
+                                    StringRef LinkageName, DIFile File,
+                                    unsigned LineNo, DITypeRef Ty,
+                                    bool isLocalToUnit, llvm::Value *Val,
+                                    MDNode *Decl = nullptr);
+
 
     /// createLocalVariable - Create a new descriptor for the specified
     /// local variable.
@@ -598,6 +581,21 @@ namespace llvm {
                                 Function *Fn = nullptr,
                                 MDNode *TParam = nullptr,
                                 MDNode *Decl = nullptr);
+
+    /// createTempFunctionFwdDecl - Identical to createFunction,
+    /// except that the resulting DbgNode is meant to be RAUWed.
+    DISubprogram createTempFunctionFwdDecl(DIDescriptor Scope, StringRef Name,
+                                           StringRef LinkageName,
+                                           DIFile File, unsigned LineNo,
+                                           DICompositeType Ty, bool isLocalToUnit,
+                                           bool isDefinition,
+                                           unsigned ScopeLine,
+                                           unsigned Flags = 0,
+                                           bool isOptimized = false,
+                                           Function *Fn = nullptr,
+                                           MDNode *TParam = nullptr,
+                                           MDNode *Decl = nullptr);
+
 
     /// FIXME: this is added for dragonegg. Once we update dragonegg
     /// to call resolve function, this will be removed.
@@ -731,7 +729,6 @@ namespace llvm {
     Instruction *insertDbgValueIntrinsic(llvm::Value *Val, uint64_t Offset,
                                          DIVariable VarInfo,
                                          Instruction *InsertBefore);
-
   };
 } // end namespace llvm
 

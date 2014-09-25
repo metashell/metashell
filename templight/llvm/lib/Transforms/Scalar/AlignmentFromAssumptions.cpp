@@ -141,6 +141,10 @@ static unsigned getNewAlignment(const SCEV *AASCEV, const SCEV *AlignSCEV,
   const SCEV *PtrSCEV = SE->getSCEV(Ptr);
   const SCEV *DiffSCEV = SE->getMinusSCEV(PtrSCEV, AASCEV);
 
+  // On 32-bit platforms, DiffSCEV might now have type i32 -- we've always
+  // sign-extended OffSCEV to i64, so make sure they agree again.
+  DiffSCEV = SE->getNoopOrSignExtend(DiffSCEV, OffSCEV->getType());
+
   // What we really want to know is the overall offset to the aligned
   // address. This address is displaced by the provided offset.
   DiffSCEV = SE->getMinusSCEV(DiffSCEV, OffSCEV);
@@ -179,7 +183,9 @@ static unsigned getNewAlignment(const SCEV *AASCEV, const SCEV *AlignSCEV,
     DEBUG(dbgs() << "\tnew start alignment: " << NewAlignment << "\n");
     DEBUG(dbgs() << "\tnew inc alignment: " << NewIncAlignment << "\n");
 
-    if (NewAlignment > NewIncAlignment) {
+    if (!NewAlignment || !NewIncAlignment) {
+      return 0;
+    } else if (NewAlignment > NewIncAlignment) {
       if (NewAlignment % NewIncAlignment == 0) {
         DEBUG(dbgs() << "\tnew start/inc alignment: " <<
                         NewIncAlignment << "\n");
@@ -191,7 +197,7 @@ static unsigned getNewAlignment(const SCEV *AASCEV, const SCEV *AlignSCEV,
                         NewAlignment << "\n");
         return NewAlignment;
       }
-    } else if (NewIncAlignment == NewAlignment && NewIncAlignment) {
+    } else if (NewIncAlignment == NewAlignment) {
       DEBUG(dbgs() << "\tnew start/inc alignment: " <<
                       NewAlignment << "\n");
       return NewAlignment;

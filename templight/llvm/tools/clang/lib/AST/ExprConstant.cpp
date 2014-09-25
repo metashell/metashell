@@ -2080,6 +2080,64 @@ static void expandArray(APValue &Array, unsigned Index) {
   Array.swap(NewValue);
 }
 
+/// Determine whether a type would actually be read by an lvalue-to-rvalue
+/// conversion. If it's of class type, we may assume that the copy operation
+/// is trivial. Note that this is never true for a union type with fields
+/// (because the copy always "reads" the active member) and always true for
+/// a non-class type.
+static bool isReadByLvalueToRvalueConversion(QualType T) {
+  CXXRecordDecl *RD = T->getBaseElementTypeUnsafe()->getAsCXXRecordDecl();
+  if (!RD || (RD->isUnion() && !RD->field_empty()))
+    return true;
+  if (RD->isEmpty())
+    return false;
+
+  for (auto *Field : RD->fields())
+    if (isReadByLvalueToRvalueConversion(Field->getType()))
+      return true;
+
+  for (auto &BaseSpec : RD->bases())
+    if (isReadByLvalueToRvalueConversion(BaseSpec.getType()))
+      return true;
+
+  return false;
+}
+
+/// Diagnose an attempt to read from any unreadable field within the specified
+/// type, which might be a class type.
+static bool diagnoseUnreadableFields(EvalInfo &Info, const Expr *E,
+                                     QualType T) {
+  CXXRecordDecl *RD = T->getBaseElementTypeUnsafe()->getAsCXXRecordDecl();
+  if (!RD)
+    return false;
+
+  if (!RD->hasMutableFields())
+    return false;
+
+  for (auto *Field : RD->fields()) {
+    // If we're actually going to read this field in some way, then it can't
+    // be mutable. If we're in a union, then assigning to a mutable field
+    // (even an empty one) can change the active member, so that's not OK.
+    // FIXME: Add core issue number for the union case.
+    if (Field->isMutable() &&
+        (RD->isUnion() || isReadByLvalueToRvalueConversion(Field->getType()))) {
+      Info.Diag(E, diag::note_constexpr_ltor_mutable, 1) << Field;
+      Info.Note(Field->getLocation(), diag::note_declared_at);
+      return true;
+    }
+
+    if (diagnoseUnreadableFields(Info, E, Field->getType()))
+      return true;
+  }
+
+  for (auto &BaseSpec : RD->bases())
+    if (diagnoseUnreadableFields(Info, E, BaseSpec.getType()))
+      return true;
+
+  // All mutable fields were empty, and thus not actually read.
+  return false;
+}
+
 /// Kinds of access we can perform on an object, for diagnostics.
 enum AccessKinds {
   AK_Read,
@@ -2135,6 +2193,14 @@ findSubobject(EvalInfo &Info, const Expr *E, const CompleteObject &Obj,
     }
 
     if (I == N) {
+      // If we are reading an object of class type, there may still be more
+      // things we need to check: if there are any mutable subobjects, we
+      // cannot perform this read. (This only happens when performing a trivial
+      // copy or assignment.)
+      if (ObjType->isRecordType() && handler.AccessKind == AK_Read &&
+          diagnoseUnreadableFields(Info, E, ObjType))
+        return handler.failed();
+
       if (!handler.found(*O, ObjType))
         return false;
 
@@ -5986,8 +6052,20 @@ bool IntExprEvaluator::TryEvaluateBuiltinObjectSize(const CallExpr *E) {
       return false;
   }
 
-  // If we can prove the base is null, lower to zero now.
-  if (!Base.getLValueBase()) return Success(0, E);
+  if (!Base.getLValueBase()) {
+    // It is not possible to determine which objects ptr points to at compile time,
+    // __builtin_object_size should return (size_t) -1 for type 0 or 1
+    // and (size_t) 0 for type 2 or 3.
+    llvm::APSInt TypeIntVaue;
+    const Expr *ExprType = E->getArg(1);
+    if (!ExprType->EvaluateAsInt(TypeIntVaue, Info.Ctx))
+      return false;
+    if (TypeIntVaue == 0 || TypeIntVaue == 1)
+      return Success(-1, E);
+    if (TypeIntVaue == 2 || TypeIntVaue == 3)
+      return Success(0, E);
+    return Error(E);
+  }
 
   QualType T = GetObjectType(Base.getLValueBase());
   if (T.isNull() ||

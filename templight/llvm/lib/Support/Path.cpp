@@ -11,9 +11,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Support/COFF.h"
+#include "llvm/Support/Endian.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/Path.h"
-#include "llvm/Support/Endian.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
@@ -210,13 +211,13 @@ retry_random_path:
   }
 
   case FS_Name: {
-    bool Exists;
-    std::error_code EC = sys::fs::exists(ResultPath.begin(), Exists);
+    std::error_code EC =
+        sys::fs::access(ResultPath.begin(), sys::fs::AccessMode::Exist);
+    if (EC == errc::no_such_file_or_directory)
+      return std::error_code();
     if (EC)
       return EC;
-    if (Exists)
-      goto retry_random_path;
-    return std::error_code();
+    goto retry_random_path;
   }
 
   case FS_Dir: {
@@ -901,10 +902,23 @@ file_magic identify_magic(StringRef Magic) {
     return file_magic::unknown;
   switch ((unsigned char)Magic[0]) {
     case 0x00: {
-      // COFF short import library file
+      // COFF bigobj or short import library file
       if (Magic[1] == (char)0x00 && Magic[2] == (char)0xff &&
-          Magic[3] == (char)0xff)
-        return file_magic::coff_import_library;
+          Magic[3] == (char)0xff) {
+        size_t MinSize = offsetof(COFF::BigObjHeader, UUID) + sizeof(COFF::BigObjMagic);
+        if (Magic.size() < MinSize)
+          return file_magic::coff_import_library;
+
+        int BigObjVersion = *reinterpret_cast<const support::ulittle16_t*>(
+            Magic.data() + offsetof(COFF::BigObjHeader, Version));
+        if (BigObjVersion < COFF::BigObjHeader::MinBigObjectVersion)
+          return file_magic::coff_import_library;
+
+        const char *Start = Magic.data() + offsetof(COFF::BigObjHeader, UUID);
+        if (memcmp(Start, COFF::BigObjMagic, sizeof(COFF::BigObjMagic)) != 0)
+          return file_magic::coff_import_library;
+        return file_magic::coff_object;
+      }
       // Windows resource file
       const char Expected[] = { 0, 0, 0, 0, '\x20', 0, 0, 0, '\xff' };
       if (Magic.size() >= sizeof(Expected) &&
@@ -985,7 +999,7 @@ file_magic identify_magic(StringRef Magic) {
         case 6: return file_magic::macho_dynamically_linked_shared_lib;
         case 7: return file_magic::macho_dynamic_linker;
         case 8: return file_magic::macho_bundle;
-        case 9: return file_magic::macho_dynamic_linker;
+        case 9: return file_magic::macho_dynamically_linked_shared_lib_stub;
         case 10: return file_magic::macho_dsym_companion;
       }
       break;

@@ -135,6 +135,8 @@ class ARMAsmParser : public MCTargetAsmParser {
   UnwindContext UC;
 
   ARMTargetStreamer &getTargetStreamer() {
+    assert(getParser().getStreamer().getTargetStreamer() &&
+           "do not have a target streamer");
     MCTargetStreamer &TS = *getParser().getStreamer().getTargetStreamer();
     return static_cast<ARMTargetStreamer &>(TS);
   }
@@ -1620,9 +1622,18 @@ public:
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
     // Must be a constant.
     if (!CE) return false;
-    int64_t Value = CE->getValue();
-    // i16 value in the range [0,255] or [0x0100, 0xff00]
-    return (Value >= 0 && Value < 256) || (Value >= 0x0100 && Value <= 0xff00);
+    unsigned Value = CE->getValue();
+    return ARM_AM::isNEONi16splat(Value);
+  }
+
+  bool isNEONi16splatNot() const {
+    if (!isImm())
+      return false;
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    // Must be a constant.
+    if (!CE) return false;
+    unsigned Value = CE->getValue();
+    return ARM_AM::isNEONi16splat(~Value & 0xffff);
   }
 
   bool isNEONi32splat() const {
@@ -1633,12 +1644,18 @@ public:
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
     // Must be a constant.
     if (!CE) return false;
-    int64_t Value = CE->getValue();
-    // i32 value with set bits only in one byte X000, 0X00, 00X0, or 000X.
-    return (Value >= 0 && Value < 256) ||
-      (Value >= 0x0100 && Value <= 0xff00) ||
-      (Value >= 0x010000 && Value <= 0xff0000) ||
-      (Value >= 0x01000000 && Value <= 0xff000000);
+    unsigned Value = CE->getValue();
+    return ARM_AM::isNEONi32splat(Value);
+  }
+
+  bool isNEONi32splatNot() const {
+    if (!isImm())
+      return false;
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    // Must be a constant.
+    if (!CE) return false;
+    unsigned Value = CE->getValue();
+    return ARM_AM::isNEONi32splat(~Value);
   }
 
   bool isNEONByteReplicate(unsigned NumBytes) const {
@@ -1674,6 +1691,7 @@ public:
     int64_t Value = CE->getValue();
     // i32 value with set bits only in one byte X000, 0X00, 00X0, or 000X,
     // for VMOV/VMVN only, 00Xf or 0Xff are also accepted.
+    // FIXME: This is probably wrong and a copy and paste from previous example
     return (Value >= 0 && Value < 256) ||
       (Value >= 0x0100 && Value <= 0xff00) ||
       (Value >= 0x010000 && Value <= 0xff0000) ||
@@ -1689,6 +1707,7 @@ public:
     int64_t Value = ~CE->getValue();
     // i32 value with set bits only in one byte X000, 0X00, 00X0, or 000X,
     // for VMOV/VMVN only, 00Xf or 0Xff are also accepted.
+    // FIXME: This is probably wrong and a copy and paste from previous example
     return (Value >= 0 && Value < 256) ||
       (Value >= 0x0100 && Value <= 0xff00) ||
       (Value >= 0x010000 && Value <= 0xff0000) ||
@@ -2402,10 +2421,16 @@ public:
     // The immediate encodes the type of constant as well as the value.
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
     unsigned Value = CE->getValue();
-    if (Value >= 256)
-      Value = (Value >> 8) | 0xa00;
-    else
-      Value |= 0x800;
+    Value = ARM_AM::encodeNEONi16splat(Value);
+    Inst.addOperand(MCOperand::CreateImm(Value));
+  }
+
+  void addNEONi16splatNotOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    // The immediate encodes the type of constant as well as the value.
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    unsigned Value = CE->getValue();
+    Value = ARM_AM::encodeNEONi16splat(~Value & 0xffff);
     Inst.addOperand(MCOperand::CreateImm(Value));
   }
 
@@ -2414,12 +2439,16 @@ public:
     // The immediate encodes the type of constant as well as the value.
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
     unsigned Value = CE->getValue();
-    if (Value >= 256 && Value <= 0xff00)
-      Value = (Value >> 8) | 0x200;
-    else if (Value > 0xffff && Value <= 0xff0000)
-      Value = (Value >> 16) | 0x400;
-    else if (Value > 0xffffff)
-      Value = (Value >> 24) | 0x600;
+    Value = ARM_AM::encodeNEONi32splat(Value);
+    Inst.addOperand(MCOperand::CreateImm(Value));
+  }
+
+  void addNEONi32splatNotOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    // The immediate encodes the type of constant as well as the value.
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    unsigned Value = CE->getValue();
+    Value = ARM_AM::encodeNEONi32splat(~Value);
     Inst.addOperand(MCOperand::CreateImm(Value));
   }
 
@@ -5512,6 +5541,8 @@ bool ARMAsmParser::ParseInstruction(ParseInstructionInfo &Info, StringRef Name,
     Operands.push_back(ARMOperand::CreateImm(
           MCConstantExpr::Create(ProcessorIMod, getContext()),
                                  NameLoc, NameLoc));
+  } else if (Mnemonic == "cps" && isMClass()) {
+    return Error(NameLoc, "instruction 'cps' requires effect for M-class");
   }
 
   // Add the remaining tokens in the mnemonic.
@@ -8313,6 +8344,7 @@ bool ARMAsmParser::ParseDirective(AsmToken DirectiveID) {
   const MCObjectFileInfo::Environment Format =
     getContext().getObjectFileInfo()->getObjectFileType();
   bool IsMachO = Format == MCObjectFileInfo::IsMachO;
+  bool IsCOFF = Format == MCObjectFileInfo::IsCOFF;
 
   StringRef IDVal = DirectiveID.getIdentifier();
   if (IDVal == ".word")
@@ -8364,7 +8396,7 @@ bool ARMAsmParser::ParseDirective(AsmToken DirectiveID) {
   else if (IDVal == ".thumb_set")
     return parseDirectiveThumbSet(DirectiveID.getLoc());
 
-  if (!IsMachO) {
+  if (!IsMachO && !IsCOFF) {
     if (IDVal == ".arch")
       return parseDirectiveArch(DirectiveID.getLoc());
     else if (IDVal == ".cpu")
@@ -8473,12 +8505,12 @@ void ARMAsmParser::onLabelParsed(MCSymbol *Symbol) {
 /// parseDirectiveThumbFunc
 ///  ::= .thumbfunc symbol_name
 bool ARMAsmParser::parseDirectiveThumbFunc(SMLoc L) {
-  const MCAsmInfo *MAI = getParser().getStreamer().getContext().getAsmInfo();
-  bool isMachO = MAI->hasSubsectionsViaSymbols();
+  const auto Format = getContext().getObjectFileInfo()->getObjectFileType();
+  bool IsMachO = Format == MCObjectFileInfo::IsMachO;
 
   // Darwin asm has (optionally) function name after .thumb_func direction
   // ELF doesn't
-  if (isMachO) {
+  if (IsMachO) {
     const AsmToken &Tok = Parser.getTok();
     if (Tok.isNot(AsmToken::EndOfStatement)) {
       if (Tok.isNot(AsmToken::Identifier) && Tok.isNot(AsmToken::String)) {
@@ -8495,7 +8527,8 @@ bool ARMAsmParser::parseDirectiveThumbFunc(SMLoc L) {
   }
 
   if (getLexer().isNot(AsmToken::EndOfStatement)) {
-    Error(L, "unexpected token in directive");
+    Error(Parser.getTok().getLoc(), "unexpected token in directive");
+    Parser.eatToEndOfStatement();
     return false;
   }
 

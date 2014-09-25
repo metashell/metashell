@@ -214,10 +214,10 @@ namespace llvm {
   class MipsTargetLowering : public TargetLowering  {
     bool isMicroMips;
   public:
-    explicit MipsTargetLowering(MipsTargetMachine &TM,
+    explicit MipsTargetLowering(const MipsTargetMachine &TM,
                                 const MipsSubtarget &STI);
 
-    static const MipsTargetLowering *create(MipsTargetMachine &TM,
+    static const MipsTargetLowering *create(const MipsTargetMachine &TM,
                                             const MipsSubtarget &STI);
 
     /// createFastISel - This method returns a target specific FastISel object,
@@ -355,9 +355,9 @@ namespace llvm {
         Mips16RetHelperConv, NoSpecialCallingConv
       };
 
-      MipsCC(CallingConv::ID CallConv, bool IsO32, bool IsFP64, CCState &Info,
+      MipsCC(CallingConv::ID CallConv, const MipsSubtarget &Subtarget,
+             CCState &Info,
              SpecialCallingConvType SpecialCallingConv = NoSpecialCallingConv);
-
 
       void analyzeCallOperands(const SmallVectorImpl<ISD::OutputArg> &Outs,
                                bool IsVarArg, bool IsSoftFloat,
@@ -367,30 +367,17 @@ namespace llvm {
                                   bool IsSoftFloat,
                                   Function::const_arg_iterator FuncArg);
 
-      void analyzeCallResult(const SmallVectorImpl<ISD::InputArg> &Ins,
-                             bool IsSoftFloat, const SDNode *CallNode,
-                             const Type *RetTy) const;
-
-      void analyzeReturn(const SmallVectorImpl<ISD::OutputArg> &Outs,
-                         bool IsSoftFloat, const Type *RetTy) const;
-
       const CCState &getCCInfo() const { return CCInfo; }
 
       /// hasByValArg - Returns true if function has byval arguments.
       bool hasByValArg() const { return !ByValArgs.empty(); }
-
-      /// regSize - Size (in number of bits) of integer registers.
-      unsigned regSize() const { return IsO32 ? 4 : 8; }
-
-      /// numIntArgRegs - Number of integer registers available for calls.
-      unsigned numIntArgRegs() const;
 
       /// reservedArgArea - The size of the area the caller reserves for
       /// register arguments. This is 16-byte if ABI is O32.
       unsigned reservedArgArea() const;
 
       /// Return pointer to array of integer argument registers.
-      const MCPhysReg *intArgRegs() const;
+      const ArrayRef<MCPhysReg> intArgRegs() const;
 
       typedef SmallVectorImpl<ByValArgInfo>::const_iterator byval_iterator;
       byval_iterator byval_begin() const { return ByValArgs.begin(); }
@@ -429,7 +416,7 @@ namespace llvm {
 
       CCState &CCInfo;
       CallingConv::ID CallConv;
-      bool IsO32, IsFP64;
+      const MipsSubtarget &Subtarget;
       SpecialCallingConvType SpecialCallingConv;
       SmallVector<ByValArgInfo, 2> ByValArgs;
     };
@@ -615,9 +602,11 @@ namespace llvm {
 
   /// Create MipsTargetLowering objects.
   const MipsTargetLowering *
-  createMips16TargetLowering(MipsTargetMachine &TM, const MipsSubtarget &STI);
+  createMips16TargetLowering(const MipsTargetMachine &TM,
+                             const MipsSubtarget &STI);
   const MipsTargetLowering *
-  createMipsSETargetLowering(MipsTargetMachine &TM, const MipsSubtarget &STI);
+  createMipsSETargetLowering(const MipsTargetMachine &TM,
+                             const MipsSubtarget &STI);
 
   namespace Mips {
     FastISel *createFastISel(FunctionLoweringInfo &funcInfo,

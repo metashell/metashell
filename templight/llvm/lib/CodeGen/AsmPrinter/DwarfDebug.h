@@ -243,10 +243,6 @@ class DwarfDebug : public AsmPrinterHandler {
   // If nonnull, stores the current machine instruction we're processing.
   const MachineInstr *CurMI;
 
-  // If nonnull, stores the section that the previous function was allocated to
-  // emitting.
-  const MCSection *PrevSection;
-
   // If nonnull, stores the CU in which the previous subprogram was contained.
   const DwarfCompileUnit *PrevCU;
 
@@ -425,6 +421,10 @@ class DwarfDebug : public AsmPrinterHandler {
   /// \brief Emit the last address of the section and the end of
   /// the line matrix.
   void emitEndOfLineMatrix(unsigned SectionEnd);
+
+  /// \brief Emit a specified accelerator table.
+  void emitAccel(DwarfAccelTable &Accel, const MCSection *Section,
+                 StringRef TableName, StringRef SymName);
 
   /// \brief Emit visible names into a hashed accelerator table section.
   void emitAccelNames();
@@ -631,11 +631,12 @@ public:
   /// Returns the section symbol for the .debug_loc section.
   MCSymbol *getDebugLocSym() const { return DwarfDebugLocSectionSym; }
 
-  /// Returns the previous section that was emitted into.
-  const MCSection *getPrevSection() const { return PrevSection; }
+  /// Returns the section symbol for the .debug_str section.
+  MCSymbol *getDebugStrSym() const { return DwarfStrSectionSym; }
 
   /// Returns the previous CU that was being updated
   const DwarfCompileUnit *getPrevCU() const { return PrevCU; }
+  void setPrevCU(const DwarfCompileUnit *PrevCU) { this->PrevCU = PrevCU; }
 
   /// Returns the entries for the .debug_loc section.
   const SmallVectorImpl<DebugLocList> &

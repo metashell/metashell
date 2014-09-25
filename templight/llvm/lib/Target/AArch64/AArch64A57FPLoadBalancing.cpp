@@ -73,8 +73,6 @@ static bool isMul(MachineInstr *MI) {
   case AArch64::FNMULSrr:
   case AArch64::FMULDrr:
   case AArch64::FNMULDrr:
-
-  case AArch64::FMULv2f32:
     return true;
   default:
     return false;
@@ -92,9 +90,6 @@ static bool isMla(MachineInstr *MI) {
   case AArch64::FMADDDrrr:
   case AArch64::FNMSUBDrrr:
   case AArch64::FNMADDDrrr:
-
-  case AArch64::FMLAv2f32:
-  case AArch64::FMLSv2f32:
     return true;
   default:
     return false;
@@ -141,8 +136,8 @@ private:
   bool colorChain(Chain *G, Color C, MachineBasicBlock &MBB);
   int scavengeRegister(Chain *G, Color C, MachineBasicBlock &MBB);
   void scanInstruction(MachineInstr *MI, unsigned Idx,
-                       std::map<unsigned, Chain*> &Chains,
-                       std::set<Chain*> &ChainSet);
+                       std::map<unsigned, Chain*> &Active,
+                       std::set<std::unique_ptr<Chain>> &AllChains);
   void maybeKillChain(MachineOperand &MO, unsigned Idx,
                       std::map<unsigned, Chain*> &RegChains);
   Color getColor(unsigned Register);
@@ -255,12 +250,12 @@ public:
   }
 
   /// Return true if this chain (StartInst..KillInst) overlaps with Other.
-  bool rangeOverlapsWith(Chain *Other) {
+  bool rangeOverlapsWith(const Chain &Other) const {
     unsigned End = KillInst ? KillInstIdx : LastInstIdx;
-    unsigned OtherEnd = Other->KillInst ?
-      Other->KillInstIdx : Other->LastInstIdx;
+    unsigned OtherEnd = Other.KillInst ?
+      Other.KillInstIdx : Other.LastInstIdx;
 
-    return StartInstIdx <= OtherEnd && Other->StartInstIdx <= End;
+    return StartInstIdx <= OtherEnd && Other.StartInstIdx <= End;
   }
 
   /// Return true if this chain starts before Other.
@@ -325,7 +320,7 @@ bool AArch64A57FPLoadBalancing::runOnBasicBlock(MachineBasicBlock &MBB) {
   // been killed yet. This is keyed by register - all chains can only have one
   // "link" register between each inst in the chain.
   std::map<unsigned, Chain*> ActiveChains;
-  std::set<Chain*> AllChains;
+  std::set<std::unique_ptr<Chain>> AllChains;
   unsigned Idx = 0;
   for (auto &MI : MBB)
     scanInstruction(&MI, Idx++, ActiveChains, AllChains);
@@ -340,15 +335,13 @@ bool AArch64A57FPLoadBalancing::runOnBasicBlock(MachineBasicBlock &MBB) {
   //       range of chains is quite small and they are clustered between loads
   //       and stores.
   EquivalenceClasses<Chain*> EC;
-  for (auto *I : AllChains)
-    EC.insert(I);
+  for (auto &I : AllChains)
+    EC.insert(I.get());
 
-  for (auto *I : AllChains) {
-    for (auto *J : AllChains) {
-      if (I != J && I->rangeOverlapsWith(J))
-        EC.unionSets(I, J);
-    }
-  }
+  for (auto &I : AllChains)
+    for (auto &J : AllChains)
+      if (I != J && I->rangeOverlapsWith(*J))
+        EC.unionSets(I.get(), J.get());
   DEBUG(dbgs() << "Created " << EC.getNumClasses() << " disjoint sets.\n");
 
   // Now we assume that every member of an equivalence class interferes
@@ -385,9 +378,6 @@ bool AArch64A57FPLoadBalancing::runOnBasicBlock(MachineBasicBlock &MBB) {
 
   for (auto &I : V)
     Changed |= colorChainSet(I, MBB, Parity);
-
-  for (auto *C : AllChains)
-    delete C;
 
   return Changed;
 }
@@ -587,12 +577,14 @@ bool AArch64A57FPLoadBalancing::colorChain(Chain *G, Color C,
 void AArch64A57FPLoadBalancing::
 scanInstruction(MachineInstr *MI, unsigned Idx, 
                 std::map<unsigned, Chain*> &ActiveChains,
-                std::set<Chain*> &AllChains) {
+                std::set<std::unique_ptr<Chain>> &AllChains) {
   // Inspect "MI", updating ActiveChains and AllChains.
 
   if (isMul(MI)) {
 
-    for (auto &I : MI->operands())
+    for (auto &I : MI->uses())
+      maybeKillChain(I, Idx, ActiveChains);
+    for (auto &I : MI->defs())
       maybeKillChain(I, Idx, ActiveChains);
 
     // Create a new chain. Multiplies don't require forwarding so can go on any
@@ -602,9 +594,9 @@ scanInstruction(MachineInstr *MI, unsigned Idx,
     DEBUG(dbgs() << "New chain started for register "
           << TRI->getName(DestReg) << " at " << *MI);
 
-    Chain *G = new Chain(MI, Idx, getColor(DestReg));
-    ActiveChains[DestReg] = G;
-    AllChains.insert(G);
+    auto G = llvm::make_unique<Chain>(MI, Idx, getColor(DestReg));
+    ActiveChains[DestReg] = G.get();
+    AllChains.insert(std::move(G));
 
   } else if (isMla(MI)) {
 
@@ -646,15 +638,17 @@ scanInstruction(MachineInstr *MI, unsigned Idx,
 
     DEBUG(dbgs() << "Creating new chain for dest register "
           << TRI->getName(DestReg) << "\n");
-    Chain *G = new Chain(MI, Idx, getColor(DestReg));
-    ActiveChains[DestReg] = G;
-    AllChains.insert(G);
+    auto G = llvm::make_unique<Chain>(MI, Idx, getColor(DestReg));
+    ActiveChains[DestReg] = G.get();
+    AllChains.insert(std::move(G));
 
   } else {
 
     // Non-MUL or MLA instruction. Invalidate any chain in the uses or defs
     // lists.
-    for (auto &I : MI->operands())
+    for (auto &I : MI->uses())
+      maybeKillChain(I, Idx, ActiveChains);
+    for (auto &I : MI->defs())
       maybeKillChain(I, Idx, ActiveChains);
 
   }

@@ -826,6 +826,11 @@ EVT PPCTargetLowering::getSetCCResultType(LLVMContext &, EVT VT) const {
   return VT.changeVectorElementTypeToInteger();
 }
 
+bool PPCTargetLowering::enableAggressiveFMAFusion(EVT VT) const {
+  assert(VT.isFloatingPoint() && "Non-floating-point FMA?");
+  return true;
+}
+
 //===----------------------------------------------------------------------===//
 // Node matching predicates, for use by the tblgen matching code.
 //===----------------------------------------------------------------------===//
@@ -2504,7 +2509,7 @@ PPCTargetLowering::LowerFormalArguments_32SVR4(
 
     // Make room for NumGPArgRegs and NumFPArgRegs.
     int Depth = NumGPArgRegs * PtrVT.getSizeInBits()/8 +
-                NumFPArgRegs * EVT(MVT::f64).getSizeInBits()/8;
+                NumFPArgRegs * MVT(MVT::f64).getSizeInBits()/8;
 
     FuncInfo->setVarArgsStackOffset(
       MFI->CreateFixedObject(PtrVT.getSizeInBits()/8,
@@ -2546,7 +2551,7 @@ PPCTargetLowering::LowerFormalArguments_32SVR4(
                                    MachinePointerInfo(), false, false, 0);
       MemOps.push_back(Store);
       // Increment the address by eight for the next argument to store
-      SDValue PtrOff = DAG.getConstant(EVT(MVT::f64).getSizeInBits()/8,
+      SDValue PtrOff = DAG.getConstant(MVT(MVT::f64).getSizeInBits()/8,
                                          PtrVT);
       FIN = DAG.getNode(ISD::ADD, dl, PtrOff.getValueType(), FIN, PtrOff);
     }
@@ -6533,6 +6538,38 @@ void PPCTargetLowering::ReplaceNodeResults(SDNode *N,
 //  Other Lowering Code
 //===----------------------------------------------------------------------===//
 
+static Instruction* callIntrinsic(IRBuilder<> &Builder, Intrinsic::ID Id) {
+  Module *M = Builder.GetInsertBlock()->getParent()->getParent();
+  Function *Func = Intrinsic::getDeclaration(M, Id);
+  return Builder.CreateCall(Func);
+}
+
+// The mappings for emitLeading/TrailingFence is taken from
+// http://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html
+Instruction* PPCTargetLowering::emitLeadingFence(IRBuilder<> &Builder,
+                                         AtomicOrdering Ord, bool IsStore,
+                                         bool IsLoad) const {
+  if (Ord == SequentiallyConsistent)
+    return callIntrinsic(Builder, Intrinsic::ppc_sync);
+  else if (isAtLeastRelease(Ord))
+    return callIntrinsic(Builder, Intrinsic::ppc_lwsync);
+  else
+    return nullptr;
+}
+
+Instruction* PPCTargetLowering::emitTrailingFence(IRBuilder<> &Builder,
+                                          AtomicOrdering Ord, bool IsStore,
+                                          bool IsLoad) const {
+  if (IsLoad && isAtLeastAcquire(Ord))
+    return callIntrinsic(Builder, Intrinsic::ppc_lwsync);
+  // FIXME: this is too conservative, a dependent branch + isync is enough.
+  // See http://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html and
+  // http://www.rdrop.com/users/paulmck/scalability/paper/N2745r.2011.03.04a.html
+  // and http://www.cl.cam.ac.uk/~pes20/cppppc/ for justification.
+  else
+    return nullptr;
+}
+
 MachineBasicBlock *
 PPCTargetLowering::EmitAtomicBinary(MachineInstr *MI, MachineBasicBlock *BB,
                                     bool is64bit, unsigned BinOpcode) const {
@@ -7484,8 +7521,7 @@ SDValue PPCTargetLowering::DAGCombineFastRecip(SDValue Op,
   return SDValue();
 }
 
-SDValue PPCTargetLowering::DAGCombineFastRecipFSQRT(SDValue Op,
-                                             DAGCombinerInfo &DCI) const {
+SDValue PPCTargetLowering::BuildRSQRTE(SDValue Op, DAGCombinerInfo &DCI) const {
   if (DCI.isAfterLegalizeVectorOps())
     return SDValue();
 
@@ -8284,43 +8320,6 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
     assert(TM.Options.UnsafeFPMath &&
            "Reciprocal estimates require UnsafeFPMath");
 
-    if (N->getOperand(1).getOpcode() == ISD::FSQRT) {
-      SDValue RV =
-        DAGCombineFastRecipFSQRT(N->getOperand(1).getOperand(0), DCI);
-      if (RV.getNode()) {
-        DCI.AddToWorklist(RV.getNode());
-        return DAG.getNode(ISD::FMUL, dl, N->getValueType(0),
-                           N->getOperand(0), RV);
-      }
-    } else if (N->getOperand(1).getOpcode() == ISD::FP_EXTEND &&
-               N->getOperand(1).getOperand(0).getOpcode() == ISD::FSQRT) {
-      SDValue RV =
-        DAGCombineFastRecipFSQRT(N->getOperand(1).getOperand(0).getOperand(0),
-                                 DCI);
-      if (RV.getNode()) {
-        DCI.AddToWorklist(RV.getNode());
-        RV = DAG.getNode(ISD::FP_EXTEND, SDLoc(N->getOperand(1)),
-                         N->getValueType(0), RV);
-        DCI.AddToWorklist(RV.getNode());
-        return DAG.getNode(ISD::FMUL, dl, N->getValueType(0),
-                           N->getOperand(0), RV);
-      }
-    } else if (N->getOperand(1).getOpcode() == ISD::FP_ROUND &&
-               N->getOperand(1).getOperand(0).getOpcode() == ISD::FSQRT) {
-      SDValue RV =
-        DAGCombineFastRecipFSQRT(N->getOperand(1).getOperand(0).getOperand(0),
-                                 DCI);
-      if (RV.getNode()) {
-        DCI.AddToWorklist(RV.getNode());
-        RV = DAG.getNode(ISD::FP_ROUND, SDLoc(N->getOperand(1)),
-                         N->getValueType(0), RV,
-                         N->getOperand(1).getOperand(1));
-        DCI.AddToWorklist(RV.getNode());
-        return DAG.getNode(ISD::FMUL, dl, N->getValueType(0),
-                           N->getOperand(0), RV);
-      }
-    }
-
     SDValue RV = DAGCombineFastRecip(N->getOperand(1), DCI);
     if (RV.getNode()) {
       DCI.AddToWorklist(RV.getNode());
@@ -8336,7 +8335,7 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
 
     // Compute this as 1/(1/sqrt(X)), which is the reciprocal of the
     // reciprocal sqrt.
-    SDValue RV = DAGCombineFastRecipFSQRT(N->getOperand(0), DCI);
+    SDValue RV = BuildRSQRTE(N->getOperand(0), DCI);
     if (RV.getNode()) {
       DCI.AddToWorklist(RV.getNode());
       RV = DAGCombineFastRecip(RV, DCI);
