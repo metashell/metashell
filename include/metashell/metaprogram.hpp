@@ -35,14 +35,24 @@ class metaprogram {
 public:
 
   // Creates empty metaprogram: single <root> vertex
-  metaprogram(const std::string& root_name);
+  metaprogram(
+      const std::string& root_name,
+      const std::string& evaluation_result);
 
   static metaprogram create_from_xml_stream(
-      std::istream& stream, const std::string& root_name);
+      std::istream& stream,
+      const std::string& root_name,
+      const std::string& evaluation_result);
+
   static metaprogram create_from_xml_file(
-      const std::string& file, const std::string& root_name);
+      const std::string& file,
+      const std::string& root_name,
+      const std::string& evaluation_result);
+
   static metaprogram create_from_xml_string(
-      const std::string& string, const std::string& root_name);
+      const std::string& string,
+      const std::string& root_name,
+      const std::string& evaluation_result);
 
   struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
@@ -110,6 +120,8 @@ public:
       instantiation_kind kind,
       const file_location& point_of_instantiation);
 
+  const std::string& get_evaluation_result() const;
+
   void reset_state();
   bool is_finished() const;
   bool is_at_start() const;
@@ -153,6 +165,8 @@ private:
 
   // This should be generally 0
   vertex_descriptor root_vertex;
+
+  std::string evaluation_result;
 };
 
 template<class P>

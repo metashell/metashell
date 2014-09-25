@@ -79,7 +79,7 @@ protected:
   bool require_running_metaprogram() const;
 
   void run_metaprogram_with_templight(const std::string& str);
-  void run_metaprogram(const std::string& str);
+  boost::optional<std::string> run_metaprogram(const std::string& str);
 
   void continue_metaprogram();
 

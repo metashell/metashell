@@ -32,7 +32,9 @@ namespace metashell {
 
 struct metaprogram_builder {
 
-  metaprogram_builder(const std::string& root_name);
+  metaprogram_builder(
+      const std::string& root_name,
+      const std::string& evaluation_result);
 
   void handle_template_begin(
     instantiation_kind kind,
@@ -61,8 +63,10 @@ private:
   element_vertex_map_t element_vertex_map;
 };
 
-metaprogram_builder::metaprogram_builder(const std::string& root_name) :
-  mp(root_name)
+metaprogram_builder::metaprogram_builder(
+    const std::string& root_name,
+    const std::string& evaluation_result) :
+  mp(root_name, evaluation_result)
 {
   // Add root vertex
   vertex_stack.push(mp.get_root_vertex());
@@ -150,14 +154,16 @@ instantiation_kind instantiation_kind_from_string(const std::string& str) {
 }
 
 metaprogram metaprogram::create_from_xml_stream(
-    std::istream& stream, const std::string& root_name)
+    std::istream& stream,
+    const std::string& root_name,
+    const std::string& evaluation_result)
 {
   typedef boost::property_tree::ptree ptree;
 
   ptree pt;
   read_xml(stream, pt);
 
-  metaprogram_builder builder(root_name);
+  metaprogram_builder builder(root_name, evaluation_result);
 
   for (const ptree::value_type& pt_event :
       boost::make_iterator_range(pt.get_child("Trace")))
@@ -185,20 +191,24 @@ metaprogram metaprogram::create_from_xml_stream(
 }
 
 metaprogram metaprogram::create_from_xml_file(
-    const std::string& file, const std::string& root_name)
+    const std::string& file,
+    const std::string& root_name,
+    const std::string& evaluation_result)
 {
   std::ifstream in(file);
   if (!in) {
     throw exception("Can't open templight file");
   }
-  return create_from_xml_stream(in, root_name);
+  return create_from_xml_stream(in, root_name, evaluation_result);
 }
 
 metaprogram metaprogram::create_from_xml_string(
-    const std::string& string, const std::string& root_name)
+    const std::string& string,
+    const std::string& root_name,
+    const std::string& evaluation_result)
 {
   std::istringstream ss(string);
-  return create_from_xml_stream(ss, root_name);
+  return create_from_xml_stream(ss, root_name, evaluation_result);
 }
 
 }

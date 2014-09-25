@@ -432,24 +432,31 @@ void mdb_shell::run_metaprogram_with_templight(
 
   env.set_xml_location(xml_path);
 
-  run_metaprogram(str);
+  boost::optional<std::string> evaluation_result = run_metaprogram(str);
 
-  mp = metaprogram::create_from_xml_file(xml_path, str);
+  if (evaluation_result) {
+    mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
+  } else {
+    mp = boost::none;
+  }
 }
 
-void mdb_shell::run_metaprogram(const std::string& str) {
+boost::optional<std::string> mdb_shell::run_metaprogram(
+    const std::string& str)
+{
   result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
 
   if (!res.info.empty()) {
     display_info(res.info);
   }
 
-  for (const std::string& e : res.errors) {
-    display_error(e + "\n");
+  if (res.has_errors()) {
+    for (const std::string& e : res.errors) {
+      display_error(e + "\n");
+    }
+    return boost::none;
   }
-  if (!res.has_errors()) {
-    display(highlight_syntax(res.output) + "\n");
-  }
+  return res.output;
 }
 
 void mdb_shell::continue_metaprogram() {
@@ -665,7 +672,9 @@ void mdb_shell::display_argument_parsing_failed() const {
 }
 
 void mdb_shell::display_metaprogram_finished() const {
-  display_info("Metaprogram finished\n");
+  display(
+      "Metaprogram finished\n" +
+      highlight_syntax(mp->get_evaluation_result()) + "\n");
 }
 
 }

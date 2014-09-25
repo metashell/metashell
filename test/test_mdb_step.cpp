@@ -163,7 +163,8 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
   sh.line_available("step 31");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n");
+      "Metaprogram finished\n"
+      "int_<55>\n");
 }
 #endif
 
@@ -255,7 +256,9 @@ JUST_TEST_CASE(test_mdb_step_0_at_end) {
   sh.clear_output();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram finished\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
 
   sh.clear_output();
   sh.line_available("step 0");

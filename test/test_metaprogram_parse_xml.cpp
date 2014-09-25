@@ -44,8 +44,10 @@ void test_single_node_templight_parsing(
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml, "some_type");
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -66,8 +68,10 @@ JUST_TEST_CASE(test_parse_empty_templight_xml)
   "<Trace>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml, "some_type");
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -162,8 +166,10 @@ JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml, "some_type");
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -214,8 +220,10 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml, "some_type");
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
