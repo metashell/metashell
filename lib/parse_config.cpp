@@ -86,7 +86,8 @@ namespace
     using boost::algorithm::join;
 
     mdb_command_handler_map::commands_t
-      commands = mdb_shell::create_default_command_map();
+      commands = mdb_shell::command_handler.get_commands();
+
     for (const mdb_command& cmd : commands)
     {
       std::cout

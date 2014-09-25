@@ -44,11 +44,13 @@ void test_single_node_templight_parsing(
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
+  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, actual_type);
 
   metaprogram::edge_descriptor edge;
@@ -66,11 +68,13 @@ JUST_TEST_CASE(test_parse_empty_templight_xml)
   "<Trace>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
+  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
 }
 
 JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_kinds)
@@ -162,11 +166,13 @@ JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
+  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
 
@@ -214,11 +220,13 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  metaprogram mp = metaprogram::create_from_xml_string(xml);
+  metaprogram mp = metaprogram::create_from_xml_string(
+      xml, "some_type", "the_result_type");
 
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
-  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "<root>");
+  JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(1).name, "metashell::foo");
   JUST_ASSERT_EQUAL(mp.get_vertex_property(2).name, "metashell::bar");
 

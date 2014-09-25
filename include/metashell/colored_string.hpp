@@ -31,11 +31,7 @@ namespace metashell {
 // Bring color to metashell namespace
 using just::console::color;
 
-class colored_string :
-  boost::addable<colored_string,
-  boost::addable<colored_string, std::string,
-  boost::addable<colored_string, const char *
-  >>>
+class colored_string : boost::addable<colored_string>
 {
 public:
   typedef boost::optional<color> color_t;
@@ -63,6 +59,26 @@ private:
   std::string string;
   colors_t colors;
 };
+
+inline
+colored_string operator+(const char *rhs, const colored_string& lhs) {
+  return colored_string(rhs) + lhs;
+}
+
+inline
+colored_string operator+(const std::string& rhs, const colored_string& lhs) {
+  return colored_string(rhs) + lhs;
+}
+
+inline
+colored_string operator+(colored_string rhs, const char *lhs) {
+  return rhs += lhs;
+}
+
+inline
+colored_string operator+(colored_string rhs, const std::string& lhs) {
+  return rhs += lhs;
+}
 
 std::ostream& operator<<(std::ostream& os, const colored_string& cs);
 

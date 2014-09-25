@@ -32,7 +32,9 @@ namespace metashell {
 
 struct metaprogram_builder {
 
-  metaprogram_builder();
+  metaprogram_builder(
+      const std::string& root_name,
+      const std::string& evaluation_result);
 
   void handle_template_begin(
     instantiation_kind kind,
@@ -54,16 +56,20 @@ private:
 
   vertex_descriptor add_vertex(const std::string& context);
 
-  metaprogram trace;
+  metaprogram mp;
 
   std::stack<vertex_descriptor> vertex_stack;
 
   element_vertex_map_t element_vertex_map;
 };
 
-metaprogram_builder::metaprogram_builder() {
+metaprogram_builder::metaprogram_builder(
+    const std::string& root_name,
+    const std::string& evaluation_result) :
+  mp(root_name, evaluation_result)
+{
   // Add root vertex
-  vertex_stack.push(trace.get_root_vertex());
+  vertex_stack.push(mp.get_root_vertex());
 }
 
 void metaprogram_builder::handle_template_begin(
@@ -76,7 +82,7 @@ void metaprogram_builder::handle_template_begin(
   vertex_descriptor vertex = add_vertex(context);
   if (!vertex_stack.empty()) {
     vertex_descriptor top_vertex = vertex_stack.top();
-    trace.add_edge(top_vertex, vertex, kind, point_of_instantiation);
+    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation);
   }
   vertex_stack.push(vertex);
 }
@@ -95,7 +101,7 @@ void metaprogram_builder::handle_template_end(
 }
 
 const metaprogram& metaprogram_builder::get_metaprogram() const {
-  return trace;
+  return mp;
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
@@ -108,7 +114,7 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
       std::make_pair(context, vertex_descriptor()));
 
   if (inserted) {
-    pos->second = trace.add_vertex(context);
+    pos->second = mp.add_vertex(context);
   }
   return pos->second;
 }
@@ -147,13 +153,17 @@ instantiation_kind instantiation_kind_from_string(const std::string& str) {
   return it->second;
 }
 
-metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
+metaprogram metaprogram::create_from_xml_stream(
+    std::istream& stream,
+    const std::string& root_name,
+    const std::string& evaluation_result)
+{
   typedef boost::property_tree::ptree ptree;
 
   ptree pt;
   read_xml(stream, pt);
 
-  metaprogram_builder builder;
+  metaprogram_builder builder(root_name, evaluation_result);
 
   for (const ptree::value_type& pt_event :
       boost::make_iterator_range(pt.get_child("Trace")))
@@ -180,17 +190,25 @@ metaprogram metaprogram::create_from_xml_stream(std::istream& stream) {
   return builder.get_metaprogram();
 }
 
-metaprogram metaprogram::create_from_xml_file(const std::string& file) {
+metaprogram metaprogram::create_from_xml_file(
+    const std::string& file,
+    const std::string& root_name,
+    const std::string& evaluation_result)
+{
   std::ifstream in(file);
   if (!in) {
     throw exception("Can't open templight file");
   }
-  return create_from_xml_stream(in);
+  return create_from_xml_stream(in, root_name, evaluation_result);
 }
 
-metaprogram metaprogram::create_from_xml_string(const std::string& string) {
+metaprogram metaprogram::create_from_xml_string(
+    const std::string& string,
+    const std::string& root_name,
+    const std::string& evaluation_result)
+{
   std::istringstream ss(string);
-  return create_from_xml_stream(ss);
+  return create_from_xml_stream(ss, root_name, evaluation_result);
 }
 
 }

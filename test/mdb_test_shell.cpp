@@ -47,6 +47,14 @@ unsigned mdb_test_shell::width() const {
   return 80;
 }
 
+bool mdb_test_shell::has_metaprogram() const {
+  return static_cast<bool>(mp);
+}
+
+const metashell::metaprogram& mdb_test_shell::get_metaprogram() const {
+  return *mp;
+}
+
 const std::string& mdb_test_shell::get_output() const {
   return output;
 }

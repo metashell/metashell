@@ -38,21 +38,8 @@
 
 namespace metashell {
 
-const std::string mdb_shell::internal_file_name = "mdb-stdin";
-
-const std::vector<color> mdb_shell::colors =
-  {
-    color::red,
-    color::green,
-    color::yellow,
-    color::blue,
-    color::cyan
-  };
-
-mdb_command_handler_map::commands_t
-  mdb_shell::create_default_command_map() {
-
-  mdb_command_handler_map::commands_t res =
+const mdb_command_handler_map mdb_shell::command_handler =
+  mdb_command_handler_map(
     {
       {{"continue"}, repeatable, &mdb_shell::command_continue,
         "[n]",
@@ -90,16 +77,25 @@ mdb_command_handler_map::commands_t
         "",
         "Quit metadebugger.",
         ""}
-    };
-  return res;
-}
+    });
+
+const std::string mdb_shell::internal_file_name = "mdb-stdin";
+
+const std::vector<color> mdb_shell::colors =
+  {
+    color::red,
+    color::green,
+    color::yellow,
+    color::blue,
+    color::cyan
+  };
+
 
 mdb_shell::mdb_shell(
     const config& conf,
     const environment& env_arg) :
   conf(conf),
   env("__mdb_internal", conf),
-  command_handler(create_default_command_map()),
   is_stopped(false)
 {
   env.append(env_arg.get_all());
@@ -165,9 +161,9 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     (this->*cmd.get_func())(args);
   } catch (const std::exception& ex) {
-    display_error(std::string("Error: ") + ex.what());
+    display_error(std::string("Error: ") + ex.what() + "\n");
   } catch (...) {
-    display_error("Unknown error");
+    display_error("Unknown error\n");
   }
 }
 
@@ -324,6 +320,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         );
     }
   );
+  mp->get_vertex_property(mp->get_root_vertex()).name = arg;
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
@@ -427,28 +424,36 @@ void mdb_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
-  const std::string& xml_path = templight_xml_file.get_path().string();
+  std::string xml_path = templight_xml_file.get_path().string();
 
   env.set_xml_location(xml_path);
 
-  run_metaprogram(str);
+  boost::optional<std::string> evaluation_result = run_metaprogram(str);
 
-  mp = metaprogram::create_from_xml_file(xml_path);
+  if (evaluation_result) {
+    mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
+    display_info("Metaprogram started\n");
+  } else {
+    mp = boost::none;
+  }
 }
 
-void mdb_shell::run_metaprogram(const std::string& str) {
+boost::optional<std::string> mdb_shell::run_metaprogram(
+    const std::string& str)
+{
   result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
 
   if (!res.info.empty()) {
     display_info(res.info);
   }
 
-  for (const std::string& e : res.errors) {
-    display_error(e + "\n");
+  if (res.has_errors()) {
+    for (const std::string& e : res.errors) {
+      display_error(e + "\n");
+    }
+    return boost::none;
   }
-  if (!res.has_errors()) {
-    display(highlight_syntax(res.output) + "\n");
-  }
+  return res.output;
 }
 
 void mdb_shell::continue_metaprogram() {
@@ -648,12 +653,15 @@ void mdb_shell::display_frame(const metaprogram::edge_descriptor& frame) const {
 void mdb_shell::display_backtrace() const {
   const metaprogram::backtrace_t& backtrace = mp->get_backtrace();
 
-  unsigned i = 0;
-  for (const metaprogram::edge_descriptor& frame : backtrace) {
+  for (unsigned i = 0; i < backtrace.size(); ++i) {
     display(colored_string("#" + std::to_string(i) + " ", color::white));
-    display_frame(frame);
-    ++i;
+    display_frame(backtrace[i]);
   }
+
+  display(colored_string(
+        "#" + std::to_string(backtrace.size()) + " ", color::white));
+  display(highlight_syntax(
+        mp->get_vertex_property(mp->get_root_vertex()).name) + "\n");
 }
 
 void mdb_shell::display_argument_parsing_failed() const {
@@ -661,7 +669,9 @@ void mdb_shell::display_argument_parsing_failed() const {
 }
 
 void mdb_shell::display_metaprogram_finished() const {
-  display_info("Metaprogram finished\n");
+  display(
+      "Metaprogram finished\n" +
+      highlight_syntax(mp->get_evaluation_result()) + "\n");
 }
 
 }

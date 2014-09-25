@@ -42,7 +42,9 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
   sh.clear_output();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram finished\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
 }
 #endif
 
@@ -153,7 +155,9 @@ JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints) {
   sh.clear_output();
   sh.line_available("continue 10");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram finished\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
 }
 #endif
 

@@ -28,7 +28,9 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
 
   sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "int\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), "int");
 }
 #endif
 
@@ -38,7 +40,9 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "int_<55>\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), "int_<55>");
 }
 #endif
 
@@ -48,6 +52,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
 
   sh.line_available("evaluate");
 
+  JUST_ASSERT(!sh.has_metaprogram());
   JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
 }
 #endif
@@ -58,6 +63,7 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
 
   sh.line_available("evaluate  ");
 
+  JUST_ASSERT(!sh.has_metaprogram());
   JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
 }
 #endif

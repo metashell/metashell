@@ -26,8 +26,12 @@
 
 namespace metashell {
 
-metaprogram::metaprogram() {
-  root_vertex = add_vertex("<root>");
+metaprogram::metaprogram(
+    const std::string& root_name,
+    const std::string& evaluation_result) :
+  evaluation_result(evaluation_result)
+{
+  root_vertex = add_vertex(root_name);
   reset_state();
 }
 
@@ -63,6 +67,10 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   get_edge_property(edge).point_of_instantiation = point_of_instantiation;
 
   return edge;
+}
+
+const std::string& metaprogram::get_evaluation_result() const {
+  return evaluation_result;
 }
 
 void metaprogram::reset_state() {
