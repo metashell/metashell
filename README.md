@@ -705,14 +705,13 @@ Now, you can start debugging a metaprogram by entering:
 
 ```cpp
 > #msh mdb int_<fib<6>::value>
-int_<13>
+Metaprogram started
 ```
 
-This will evaluate and print the result of the metaprogram just like how
-metashell does, but at the same time, it gathers infomation about
-template instantiations using [Templight](http://plc.inf.elte.hu/templight/).
+This will start simulating the compilation steps of the entered metaprogram
+using the information gathered by [Templight](http://plc.inf.elte.hu/templight/).
 
-You'll see, that the prompt has changed to `(mdb)`, now you can enter
+You'll see, that the prompt has changed to `(mdb)`. Now you can enter
 metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
 
 Metadebugger provides an interface similar to gdb. For example you can step
@@ -731,6 +730,7 @@ You can check the current backtrace:
 (mdb) bt
 #0 fib<5> (TemplateInstantiation)
 #1 fib<6> (TemplateInstantiation)
+#2 int_<fib<6>::value>
 ```
 
 And since the metaprogram is actually already ran, and we're just simulating
