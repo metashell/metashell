@@ -42,7 +42,7 @@ JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
   sh.clear_output();
   sh.line_available("backtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT_EQUAL(sh.get_output(), "#0 int_<fib<10>::value>\n");
 }
 #endif
 
@@ -56,7 +56,9 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
   sh.clear_output();
   sh.line_available("backtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "#0 fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "#0 fib<10> (TemplateInstantiation)\n"
+      "#1 int_<fib<10>::value>\n");
 }
 #endif
 
@@ -72,7 +74,8 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "#0 fib<8> (TemplateInstantiation)\n"
-      "#1 fib<10> (TemplateInstantiation)\n");
+      "#1 fib<10> (TemplateInstantiation)\n"
+      "#2 int_<fib<10>::value>\n");
 }
 #endif
 
@@ -89,7 +92,8 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
   JUST_ASSERT_EQUAL(sh.get_output(),
       "#0 fib<6> (TemplateInstantiation)\n"
       "#1 fib<8> (TemplateInstantiation)\n"
-      "#2 fib<10> (TemplateInstantiation)\n");
+      "#2 fib<10> (TemplateInstantiation)\n"
+      "#3 int_<fib<10>::value>\n");
 }
 #endif
 
@@ -116,10 +120,14 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
 
   sh.clear_output();
   sh.line_available("backtrace");
-  JUST_ASSERT_EQUAL(sh.get_output(), "#0 fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "#0 fib<10> (TemplateInstantiation)\n"
+      "#1 int_<fib<10>::value>\n");
 
   sh.clear_output();
   sh.line_available("bt");
-  JUST_ASSERT_EQUAL(sh.get_output(), "#0 fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "#0 fib<10> (TemplateInstantiation)\n"
+      "#1 int_<fib<10>::value>\n");
 }
 #endif
