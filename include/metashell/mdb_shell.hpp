@@ -32,8 +32,7 @@ namespace metashell {
 
 class mdb_shell {
 public:
-  static mdb_command_handler_map::commands_t
-    create_default_command_map();
+  const static mdb_command_handler_map command_handler;
 
   mdb_shell(
       const config& conf,
@@ -94,7 +93,6 @@ protected:
 
   config conf;
   templight_environment env;
-  mdb_command_handler_map command_handler;
 
   boost::optional<metaprogram> mp;
   breakpoints_t breakpoints;

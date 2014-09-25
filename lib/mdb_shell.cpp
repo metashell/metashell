@@ -38,21 +38,8 @@
 
 namespace metashell {
 
-const std::string mdb_shell::internal_file_name = "mdb-stdin";
-
-const std::vector<color> mdb_shell::colors =
-  {
-    color::red,
-    color::green,
-    color::yellow,
-    color::blue,
-    color::cyan
-  };
-
-mdb_command_handler_map::commands_t
-  mdb_shell::create_default_command_map() {
-
-  mdb_command_handler_map::commands_t res =
+const mdb_command_handler_map mdb_shell::command_handler =
+  mdb_command_handler_map(
     {
       {{"continue"}, repeatable, &mdb_shell::command_continue,
         "[n]",
@@ -90,16 +77,25 @@ mdb_command_handler_map::commands_t
         "",
         "Quit metadebugger.",
         ""}
-    };
-  return res;
-}
+    });
+
+const std::string mdb_shell::internal_file_name = "mdb-stdin";
+
+const std::vector<color> mdb_shell::colors =
+  {
+    color::red,
+    color::green,
+    color::yellow,
+    color::blue,
+    color::cyan
+  };
+
 
 mdb_shell::mdb_shell(
     const config& conf,
     const environment& env_arg) :
   conf(conf),
   env("__mdb_internal", conf),
-  command_handler(create_default_command_map()),
   is_stopped(false)
 {
   env.append(env_arg.get_all());
