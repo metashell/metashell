@@ -54,7 +54,7 @@ private:
 
   vertex_descriptor add_vertex(const std::string& context);
 
-  metaprogram trace;
+  metaprogram mp;
 
   std::stack<vertex_descriptor> vertex_stack;
 
@@ -62,10 +62,10 @@ private:
 };
 
 metaprogram_builder::metaprogram_builder(const std::string& root_name) :
-  trace(root_name)
+  mp(root_name)
 {
   // Add root vertex
-  vertex_stack.push(trace.get_root_vertex());
+  vertex_stack.push(mp.get_root_vertex());
 }
 
 void metaprogram_builder::handle_template_begin(
@@ -78,7 +78,7 @@ void metaprogram_builder::handle_template_begin(
   vertex_descriptor vertex = add_vertex(context);
   if (!vertex_stack.empty()) {
     vertex_descriptor top_vertex = vertex_stack.top();
-    trace.add_edge(top_vertex, vertex, kind, point_of_instantiation);
+    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation);
   }
   vertex_stack.push(vertex);
 }
@@ -97,7 +97,7 @@ void metaprogram_builder::handle_template_end(
 }
 
 const metaprogram& metaprogram_builder::get_metaprogram() const {
-  return trace;
+  return mp;
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
@@ -110,7 +110,7 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
       std::make_pair(context, vertex_descriptor()));
 
   if (inserted) {
-    pos->second = trace.add_vertex(context);
+    pos->second = mp.add_vertex(context);
   }
   return pos->second;
 }
