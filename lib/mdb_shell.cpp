@@ -432,6 +432,7 @@ void mdb_shell::run_metaprogram_with_templight(
 
   if (evaluation_result) {
     mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
+    display_info("Metaprogram started\n");
   } else {
     mp = boost::none;
   }
