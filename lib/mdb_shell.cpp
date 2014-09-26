@@ -300,10 +300,15 @@ void mdb_shell::command_step(const std::string& arg) {
 
 void mdb_shell::command_evaluate(const std::string& arg) {
   if (arg.empty()) {
+    mp = boost::none;
     display_error("Argument expected\n");
     return;
   }
-  run_metaprogram_with_templight(arg);
+
+  if (!run_metaprogram_with_templight(arg)) {
+    return;
+  }
+  display_info("Metaprogram started\n");
 
   std::string env_buffer = env.get();
   int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
@@ -420,7 +425,7 @@ void mdb_shell::command_quit(const std::string& arg) {
   is_stopped = true;
 }
 
-void mdb_shell::run_metaprogram_with_templight(
+bool mdb_shell::run_metaprogram_with_templight(
     const std::string& str)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
@@ -430,12 +435,13 @@ void mdb_shell::run_metaprogram_with_templight(
 
   boost::optional<std::string> evaluation_result = run_metaprogram(str);
 
-  if (evaluation_result) {
-    mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
-    display_info("Metaprogram started\n");
-  } else {
+  if (!evaluation_result) {
     mp = boost::none;
+    return false;
   }
+
+  mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
+  return true;
 }
 
 boost::optional<std::string> mdb_shell::run_metaprogram(

@@ -16,9 +16,12 @@
 
 #include "mdb_test_shell.hpp"
 
+#include <boost/algorithm/string.hpp>
+
 #include "test_fibonacci.hpp"
 
 #include <just/test.hpp>
+
 
 using namespace metashell;
 
@@ -68,3 +71,50 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
 }
 #endif
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_failure_will_reset_metaprogram_state) {
+  using boost::algorithm::icontains;
+
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("evaluate in");
+
+  JUST_ASSERT(!sh.has_metaprogram());
+  JUST_ASSERT(icontains(sh.get_output(), "error"));
+
+  sh.clear_output();
+  sh.line_available("evaluate int");
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_reset_metaprogram_state) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("evaluate");
+
+  JUST_ASSERT(!sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+
+  sh.clear_output();
+  sh.line_available("evaluate int");
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+}
+#endif
