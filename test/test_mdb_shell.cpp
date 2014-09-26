@@ -20,6 +20,12 @@
 
 using namespace metashell;
 
+JUST_TEST_CASE(test_mdb_shell_is_stopped_false_by_default) {
+  mdb_test_shell sh;
+
+  JUST_ASSERT(!sh.stopped());
+}
+
 JUST_TEST_CASE(test_mdb_shell_empty_lines) {
   mdb_test_shell sh;
 

@@ -100,7 +100,7 @@ protected:
   std::string prev_line;
   bool last_command_repeatable = false;
 
-  bool is_stopped;
+  bool is_stopped = false;
 
 private:
   void display_trace_graph(

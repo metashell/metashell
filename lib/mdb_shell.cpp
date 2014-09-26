@@ -95,8 +95,7 @@ mdb_shell::mdb_shell(
     const config& conf,
     const environment& env_arg) :
   conf(conf),
-  env("__mdb_internal", conf),
-  is_stopped(false)
+  env("__mdb_internal", conf)
 {
   env.append(env_arg.get_all());
 }
