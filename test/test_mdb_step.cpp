@@ -195,9 +195,12 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
     "fib<9> (TemplateInstantiation)\n"
     "fib<7> (Memoization)\n"
     "fib<8> (Memoization)\n"
-    "fib<10> (Memoization)\n";
+    "fib<10> (Memoization)\n"
+    "int_<55> (TemplateInstantiation)\n"
+    "Metaprogram finished\n"
+    "int_<55>\n";
 
-  for (unsigned i = 0; i < 20; ++i) {
+  for (unsigned i = 0; i < 22; ++i) {
     sh.line_available("step");
   }
 

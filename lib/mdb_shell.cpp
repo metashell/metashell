@@ -299,6 +299,10 @@ void mdb_shell::command_step(const std::string& arg) {
 }
 
 void mdb_shell::command_evaluate(const std::string& arg) {
+  using boost::starts_with;
+  using boost::ends_with;
+  using boost::trim_copy;
+
   if (arg.empty()) {
     mp = boost::none;
     display_error("Argument expected\n");
@@ -313,18 +317,40 @@ void mdb_shell::command_evaluate(const std::string& arg) {
   std::string env_buffer = env.get();
   int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
 
+  static const std::string wrap_prefix = "metashell::impl::wrap<";
+  static const std::string wrap_suffix = ">";
+
+  // TODO this check could be made more strict,
+  // since we now whats inside wrap<...> (mp->get_evaluation_result)
+  auto is_wrap_type = [](const std::string& type) {
+    return starts_with(type, wrap_prefix) && ends_with(type, wrap_suffix);
+  };
+
   mp->disable_edges_if(
-    [this, line_number](const metaprogram::edge_descriptor& edge) {
-      const file_location& point_of_instantiation =
-        mp->get_edge_property(edge).point_of_instantiation;
+    [&](const metaprogram::edge_descriptor& edge) {
+      const metaprogram::edge_property& edge_property =
+        mp->get_edge_property(edge);
+      const std::string& target_name =
+        mp->get_vertex_property(mp->get_target(edge)).name;
       return
         mp->get_source(edge) == mp->get_root_vertex() &&
         (
-          point_of_instantiation.name != internal_file_name ||
-          point_of_instantiation.row != line_number + 2
+          edge_property.point_of_instantiation.name != internal_file_name ||
+          edge_property.point_of_instantiation.row != line_number + 2 ||
+          (is_wrap_type(target_name) && edge_property.kind == memoization)
         );
     }
   );
+  for (metaprogram::vertex_descriptor vertex :
+      boost::make_iterator_range(boost::vertices(mp->get_graph())))
+  {
+    std::string& name = mp->get_vertex_property(vertex).name;
+    if (is_wrap_type(name)) {
+      name = trim_copy(name.substr(
+          wrap_prefix.size(),
+          name.size() - wrap_prefix.size() - wrap_suffix.size()));
+    }
+  }
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
