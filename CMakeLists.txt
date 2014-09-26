@@ -29,6 +29,8 @@ add_definitions(-DMETASHELL_MAJOR=${MAJOR_VERSION})
 add_definitions(-DMETASHELL_MINOR=${MINOR_VERSION})
 add_definitions(-DMETASHELL_PATCH=${PATCH_VERSION})
 
+include(Platform)
+
 # Windows workaround
 if (WIN32)
   add_definitions( -DNOMINMAX )
@@ -141,19 +143,27 @@ set(CMAKE_INSTALL_PREFIX "/usr")
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   include(InstallRequiredSystemLibraries)
    
-if(WIN32)
-  set(CPACK_GENERATOR "NSIS")
-  set(
-    CPACK_NSIS_MENU_LINKS
-    "bin/metashell.exe" "Metashell"
-    "https://github.com/sabel83/metashell#metashell" "Metashell website"
-    "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
-  )
-else()
-  set(CPACK_SET_DESTDIR "on")
-  set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
-  set(CPACK_GENERATOR "DEB")
-endif()
+  if(WIN32)
+    set(
+      CPACK_NSIS_MENU_LINKS
+      "bin/metashell.exe" "Metashell"
+      "https://github.com/sabel83/metashell#metashell" "Metashell website"
+      "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
+    )
+  else()
+    set(CPACK_SET_DESTDIR "on")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
+  endif()
+
+  if (DEFINED PLATFORM_CPACK_GENERATOR)
+    set(CPACK_GENERATOR "${PLATFORM_CPACK_GENERATOR}")
+  endif ()
+
+  if (PLATFORM_NAME AND NOT WIN32)
+    set(METASHELL_PACKAGE_PLATFORM "_${PLATFORM_NAME}${PLATFORM_VERSION}")
+  else()
+    set(METASHELL_PACKAGE_PLATFORM "")
+  endif()
    
   set(CPACK_PACKAGE_DESCRIPTION "Metashell")
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C++ template metaprogramming shell")
@@ -162,13 +172,24 @@ endif()
   set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_MINOR "${MINOR_VERSION}")
   set(CPACK_PACKAGE_VERSION_PATCH "${PATCH_VERSION}")
-  set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}_${CMAKE_SYSTEM_PROCESSOR}")
+  set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}")
   set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}")
   seT(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
 
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
   set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+  if (SUSE_LINUX)
+    set(CPACK_RPM_PACKAGE_REQUIRES "libstdc++-devel, glibc-devel")
+  elseif (FEDORA_LINUX)
+    set(
+      CPACK_RPM_PACKAGE_REQUIRES
+      "libstdc++-devel, glibc-headers, glibc-devel"
+    )
+  elseif (UBUNTU_LINUX)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.8-dev")
+  endif ()
    
   set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
   set(CPACK_ALL_INSTALL_TYPES full noclang minimal)

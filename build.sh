@@ -28,20 +28,36 @@ then
   BUILD_THREADS=1
 fi
 
-# Detect config
-if \
-  [ -e /etc/redhat-release ] \
-  || [ -e /etc/fedora-release ] \
-  || [ -e /etc/SuSE-release ]
+# Detect platform
+if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
 then
-  PACKAGE_FORMAT=RPM
+  PLATFORM=fedora
+elif [ -e /etc/SuSE-release ]
+then
+  PLATFORM=opensuse
+elif [ `cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID` = "DISTRIB_ID=Ubuntu" ]
+then
+  PLATFORM=ubuntu
+elif [ `uname` = "FreeBSD" ]
+then
+  PLATFORM=freebsd
+elif [ `uname` = "OpenBSD" ]
+then
+  PLATFORM=openbsd
 else
-  PACKAGE_FORMAT=DEB
+  PLATFORM=unknown
+fi
+
+# Config
+if [ "${PLATFORM}" = "openbsd" ]
+then
+  export CC=egcc
+  export CXX=eg++
 fi
 
 # Show argument & config summary
 echo "Number of threads used: ${BUILD_THREADS}"
-echo "Package format for the installer: ${PACKAGE_FORMAT}"
+echo "Platform: ${PLATFORM}"
 
 # Build Clang
 cd templight
@@ -54,17 +70,15 @@ cd templight
 cd ..
 
 # Build & package Metashell
+if [ "${PLATFORM}" = "fedora" ] || [ "${PLATFORM}" = "opensuse" ]
+then
+  tools/clang_default_path --gcc=g++ > lib/extra_sysinclude.hpp
+fi
+
 mkdir bin; cd bin
-  if [ `uname` == "Linux" ]
-  then
-    cmake .. \
-      && make -j${BUILD_THREADS} \
-      && make test \
-      && cpack -G "${PACKAGE_FORMAT}"
-  else
-    cmake .. \
-      && make -j${BUILD_THREADS} \
-      && make test
-  fi
+  cmake .. \
+    && make -j${BUILD_THREADS} \
+    && make test \
+    && cpack
 cd ..
 
