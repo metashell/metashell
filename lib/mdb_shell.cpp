@@ -325,7 +325,6 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         );
     }
   );
-  mp->get_vertex_property(mp->get_root_vertex()).name = arg;
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {
