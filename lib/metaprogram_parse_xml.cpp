@@ -67,10 +67,7 @@ metaprogram_builder::metaprogram_builder(
     const std::string& root_name,
     const std::string& evaluation_result) :
   mp(root_name, evaluation_result)
-{
-  // Add root vertex
-  vertex_stack.push(mp.get_root_vertex());
-}
+{}
 
 void metaprogram_builder::handle_template_begin(
   instantiation_kind kind,
@@ -80,10 +77,10 @@ void metaprogram_builder::handle_template_begin(
   unsigned long long /* memory_usage */)
 {
   vertex_descriptor vertex = add_vertex(context);
-  if (!vertex_stack.empty()) {
-    vertex_descriptor top_vertex = vertex_stack.top();
-    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation);
-  }
+  vertex_descriptor top_vertex =
+    vertex_stack.empty() ? mp.get_root_vertex() : vertex_stack.top();
+
+  mp.add_edge(top_vertex, vertex, kind, point_of_instantiation);
   vertex_stack.push(vertex);
 }
 
@@ -92,15 +89,18 @@ void metaprogram_builder::handle_template_end(
   double /* timestamp */,
   unsigned long long /* memory_usage */)
 {
-  //TODO this check is not enough.
-  //The root vertex should always be in the stack
   if (vertex_stack.empty()) {
-    throw exception("Bad templight trace format");
+    throw exception(
+        "Mismatched Templight TemplateBegin and TemplateEnd events");
   }
   vertex_stack.pop();
 }
 
 const metaprogram& metaprogram_builder::get_metaprogram() const {
+  if (!vertex_stack.empty()) {
+    throw exception(
+        "Some Templight TemplateEnd events are missing");
+  }
   return mp;
 }
 
