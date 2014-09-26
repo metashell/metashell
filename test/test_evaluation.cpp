@@ -330,6 +330,18 @@ JUST_TEST_CASE(test_function_definition)
   JUST_ASSERT(metashell::is_environment_setup_command(command("void f() {}")));
 }
 
+JUST_TEST_CASE(test_is_environment_setup_with_leading_whitespace)
+{
+  using metashell::command;
+  JUST_ASSERT(!metashell::is_environment_setup_command(command(" int")));
+}
+
+JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
+{
+  using metashell::command;
+  JUST_ASSERT(!metashell::is_environment_setup_command(command("int")));
+}
+
 JUST_TEST_CASE(test_multiline_input)
 {
   test_shell sh;
