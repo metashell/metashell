@@ -174,3 +174,99 @@ JUST_TEST_CASE(test_mdb_continue_0_fibonacci_1_breakpoint) {
   JUST_ASSERT_EQUAL(sh.get_output(), "");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_minus_1_at_start) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("continue -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_minus_2_at_start) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("continue -2");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("rbreak fib<6>");
+  sh.line_available("rbreak fib<5>");
+
+  sh.clear_output();
+  sh.line_available("continue 2");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint reached\n"
+      "fib<5> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("continue -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint reached\n"
+      "fib<6> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("rbreak fib<5>");
+
+  sh.clear_output();
+  sh.line_available("continue 1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint reached\n"
+      "fib<5> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("continue -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("rbreak fib<5>");
+
+  sh.clear_output();
+  sh.line_available("continue 3");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
+
+  sh.clear_output();
+  sh.line_available("continue -3");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif

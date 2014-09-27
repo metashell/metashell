@@ -45,7 +45,8 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "[n]",
         "Continue program being debugged.",
         "The program is continued until the nth breakpoint or the end of the program\n"
-        "is reached. n defaults to 1 if not specified."},
+        "is reached. n defaults to 1 if not specified.\n"
+        "Negative n means continue the program backwards."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over] [n]",
         "Step the program.",
@@ -195,11 +196,11 @@ bool mdb_shell::require_running_metaprogram() const {
 }
 
 void mdb_shell::command_continue(const std::string& arg) {
-  if (!require_running_metaprogram()) {
+  if (!require_evaluated_metaprogram()) {
     return;
   }
 
-  using boost::spirit::qi::uint_;
+  using boost::spirit::qi::int_;
   using boost::spirit::ascii::space;
   using boost::phoenix::ref;
   using boost::spirit::qi::_1;
@@ -207,13 +208,13 @@ void mdb_shell::command_continue(const std::string& arg) {
   auto begin = arg.begin(),
        end = arg.end();
 
-  unsigned continue_count = 1;
+  int continue_count = 1;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -uint_ [ref(continue_count) = _1],
+        -int_[ref(continue_count) = _1],
 
         space
     );
@@ -227,12 +228,24 @@ void mdb_shell::command_continue(const std::string& arg) {
     return;
   }
 
-  for (unsigned i = 0; i < continue_count && !mp->is_finished(); ++i) {
-    continue_metaprogram();
+  if (continue_count > 0) {
+    for (int i = 0; i < continue_count && !mp->is_finished(); ++i) {
+      continue_metaprogram();
+    }
+  } else {
+    for (int i = 0; i < -continue_count && !mp->is_at_start(); ++i) {
+      continue_back_metaprogram();
+    }
   }
 
   if (mp->is_finished()) {
-    display_metaprogram_finished();
+    if (continue_count > 0) {
+      display_metaprogram_finished();
+    }
+  } else if (mp->is_at_start()) {
+    if (continue_count < 0) {
+      display_metaprogram_reached_the_beginning();
+    }
   } else {
     display_info("Breakpoint reached\n");
     display_current_frame();
@@ -261,7 +274,7 @@ void mdb_shell::command_step(const std::string& arg) {
         begin, end,
 
         -lit("over") [ref(has_over) = true] >>
-        -int_ [ref(step_count) = _1],
+        -int_[ref(step_count) = _1],
 
         space
     );
@@ -290,7 +303,7 @@ void mdb_shell::command_step(const std::string& arg) {
     }
   } else if (mp->is_at_start()) {
     if (step_count < 0) {
-      display_info("Metaprogram reached the beginning\n");
+      display_metaprogram_reached_the_beginning();
     }
   } else {
     display_current_frame();
@@ -486,12 +499,34 @@ boost::optional<std::string> mdb_shell::run_metaprogram(
   return res.output;
 }
 
+// TODO continue_metaprogram and continue_back_metaprogram need to be merged
+// into a single function
 void mdb_shell::continue_metaprogram() {
   assert(!mp->is_finished());
 
   while (true) {
     mp->step();
     if (mp->is_finished()) {
+      return;
+    }
+    for (const breakpoint_t& breakpoint : breakpoints) {
+      const std::string current_type =
+        mp->get_vertex_property(
+            mp->get_target(mp->get_current_frame())).name;
+
+      if (boost::regex_search(current_type, breakpoint)) {
+        return;
+      }
+    }
+  }
+}
+
+void mdb_shell::continue_back_metaprogram() {
+  assert(!mp->is_at_start());
+
+  while (true) {
+    mp->step_back();
+    if (mp->is_at_start()) {
       return;
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
@@ -696,6 +731,10 @@ void mdb_shell::display_backtrace() const {
 
 void mdb_shell::display_argument_parsing_failed() const {
   display_error("Argument parsing failed\n");
+}
+
+void mdb_shell::display_metaprogram_reached_the_beginning() const {
+  display("Metaprogram reached the beginning\n");
 }
 
 void mdb_shell::display_metaprogram_finished() const {

@@ -81,6 +81,7 @@ protected:
   boost::optional<std::string> run_metaprogram(const std::string& str);
 
   void continue_metaprogram();
+  void continue_back_metaprogram();
 
   void display_error(const std::string& str) const;
   void display_info(const std::string& str) const;
@@ -89,6 +90,7 @@ protected:
   void display_current_full_forwardtrace() const;
   void display_backtrace() const;
   void display_argument_parsing_failed() const;
+  void display_metaprogram_reached_the_beginning() const;
   void display_metaprogram_finished() const;
 
   config conf;
