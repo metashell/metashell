@@ -94,7 +94,7 @@ namespace
   }
 #endif
 
-#ifndef _WIN32
+#ifdef __OpenBSD__
   std::string current_working_directory()
   {
     std::vector<char> buff(1);
