@@ -270,9 +270,7 @@ bool metashell::is_environment_setup_command(
 {
   try
   {
-    while (begin_ != end_ && begin_->category() == token_category::whitespace) {
-      ++begin_;
-    }
+    begin_ = skip_whitespace(begin_, end_);
 
     if (begin_ == end_)
     {
