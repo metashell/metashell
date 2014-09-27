@@ -58,7 +58,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "int\n"
-      "` int (TemplateInstantiation)\n");
+      "` int (NonTemplateType)\n");
 }
 #endif
 
@@ -73,7 +73,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "int\n"
-      "` int (TemplateInstantiation)\n");
+      "` int (NonTemplateType)\n");
 }
 #endif
 

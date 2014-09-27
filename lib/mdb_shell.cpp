@@ -19,6 +19,7 @@
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
+#include <metashell/is_template_type.hpp>
 
 #if defined __clang__
 #  pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -361,6 +362,11 @@ void mdb_shell::command_evaluate(const std::string& arg) {
       name = trim_copy(name.substr(
           wrap_prefix.size(),
           name.size() - wrap_prefix.size() - wrap_suffix.size()));
+      if (!is_template_type(name)) {
+        for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
+          mp->get_edge_property(in_edge).kind = non_template_type;
+        }
+      }
     }
   }
 }
