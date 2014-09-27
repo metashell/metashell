@@ -31,7 +31,8 @@ enum instantiation_kind {
   prior_template_argument_substitution,
   default_template_argument_checking,
   exception_spec_instantiation,
-  memoization
+  memoization,
+  non_template_type // Used only if an evaluation result is not a template
 };
 
 std::ostream& operator<<(std::ostream& os, instantiation_kind kind);

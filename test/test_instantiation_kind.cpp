@@ -43,5 +43,7 @@ JUST_TEST_CASE(test_instantiation_kind_print)
       "ExceptionSpecInstantiation");
   JUST_ASSERT_EQUAL(to_string(memoization),
       "Memoization");
+  JUST_ASSERT_EQUAL(to_string(non_template_type),
+      "NonTemplateType");
 }
 

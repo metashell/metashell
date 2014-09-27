@@ -42,6 +42,8 @@ std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
         os << "ExceptionSpecInstantiation"; break;
     case memoization:
         os << "Memoization"; break;
+    case non_template_type:
+        os << "NonTemplateType"; break;
   }
   return os;
 }
