@@ -185,7 +185,7 @@ JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
   sh.line_available("#include <" + scalar_hpp + ">");
   sh.line_available("SCALAR(__METASHELL_MAJOR)");
 
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL("", sh.error());
 }
 
 JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
