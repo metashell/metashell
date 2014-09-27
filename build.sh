@@ -73,6 +73,9 @@ cd ..
 if [ "${PLATFORM}" = "fedora" ] || [ "${PLATFORM}" = "opensuse" ]
 then
   tools/clang_default_path --gcc=g++ > lib/extra_sysinclude.hpp
+elif [ "${PLATFORM}" = "openbsd" ]
+then
+  python2.7 tools/clang_default_path --gcc=eg++ > lib/extra_sysinclude.hpp
 fi
 
 mkdir bin; cd bin
