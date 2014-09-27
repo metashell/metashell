@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_shell.hpp"
+#include "argv0.hpp"
 
 #include <just/test.hpp>
 
@@ -56,7 +57,7 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
-  test_shell sh(metashell::empty_config(), 1024);
+  test_shell sh(metashell::empty_config(argv0::get()), 1024);
   sh.line_available("#pragma metashell evaluate int");
 
   JUST_ASSERT_EQUAL(

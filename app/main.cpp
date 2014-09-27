@@ -37,7 +37,7 @@ int main(int argc_, const char* argv_[])
     const parse_config_result
       r = parse_config(argc_, argv_, &std::cout, &std::cerr);
 
-    metashell::default_environment_detector det;
+    metashell::default_environment_detector det(argv_[0]);
     const metashell::config cfg = detect_config(r.cfg, det, std::cerr);
 
     if (r.should_run_shell())

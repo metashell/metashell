@@ -22,6 +22,7 @@
 #include <just/test.hpp>
 
 #include "test_shell.hpp"
+#include "argv0.hpp"
 
 #include <algorithm>
 
@@ -39,7 +40,7 @@ namespace
 
 JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
 {
-  const config cfg = empty_config();
+  const config cfg = empty_config(argv0::get());
 
   in_memory_environment env("foo", cfg);
 
@@ -48,7 +49,7 @@ JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
 
 JUST_TEST_CASE(test_append_text_to_in_memory_environment)
 {
-  const config cfg = empty_config();
+  const config cfg = empty_config(argv0::get());
 
   in_memory_environment env("foo", cfg);
 
@@ -57,7 +58,7 @@ JUST_TEST_CASE(test_append_text_to_in_memory_environment)
 
 JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 {
-  config cfg = empty_config();
+  config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg);
@@ -67,7 +68,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 
 JUST_TEST_CASE(test_append_text_to_header_file_environment)
 {
-  config cfg = empty_config();
+  config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg);

@@ -52,7 +52,7 @@ namespace metashell
     std::ostream& stderr_
   );
 
-  config empty_config();
+  config empty_config(const std::string& argv0_);
 }
 
 #endif

@@ -24,6 +24,8 @@ namespace metashell
   class default_environment_detector : public iface::environment_detector
   {
   public:
+    explicit default_environment_detector(const std::string& argv0_);
+
     virtual std::string search_clang_binary();
     virtual bool file_exists(const std::string& path_);
 
@@ -39,6 +41,9 @@ namespace metashell
     virtual std::string path_of_executable();
 
     virtual bool clang_binary_works_with_libclang(const config& clang_path_);
+
+  private:
+    std::string _argv0;
   };
 }
 

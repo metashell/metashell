@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_shell.hpp"
+#include "argv0.hpp"
 
 #include <metashell/config.hpp>
 #include <metashell/user_config.hpp>
@@ -38,7 +39,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
 
 JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
   test_shell sh(cfg, 80);
@@ -48,7 +49,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
 
 JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = false;
 
   test_shell sh(cfg, 80);
@@ -59,7 +60,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
 
 JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
   test_shell sh(cfg, 80);
@@ -85,7 +86,7 @@ JUST_TEST_CASE(test_shell_stopped_after_stop)
 
 JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   test_shell sh(cfg, 80);
@@ -95,7 +96,7 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
 
 JUST_TEST_CASE(test_shell_using_precompiled_headers)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
   test_shell sh(cfg, 80);
@@ -105,7 +106,7 @@ JUST_TEST_CASE(test_shell_using_precompiled_headers)
 
 JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   test_shell sh(cfg, 80);
@@ -116,7 +117,7 @@ JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
 
 JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
   test_shell sh(cfg, 80);
@@ -129,7 +130,7 @@ JUST_TEST_CASE(
   test_shell_with_enabled_precompiled_headers_uses_header_file_environment
 )
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   test_shell sh(cfg, 80);
@@ -145,7 +146,7 @@ JUST_TEST_CASE(
   test_shell_with_disabled_precompiled_headers_uses_in_memory_environment
 )
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
   test_shell sh(cfg, 80);
@@ -158,7 +159,7 @@ JUST_TEST_CASE(
 
 JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   test_shell sh(cfg, 80);
@@ -172,7 +173,7 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
 
 JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
 {
-  metashell::config cfg = metashell::empty_config();
+  metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
   test_shell sh(cfg, 80);

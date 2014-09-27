@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_shell.hpp"
+#include "argv0.hpp"
 
 using namespace metashell;
 
@@ -24,7 +25,7 @@ namespace
 
   config default_config()
   {
-    config cfg = empty_config();
+    config cfg = empty_config(argv0::get());
 #ifdef WINDOWS_HEADERS
     const std::string windows_headers = WINDOWS_HEADERS;
     cfg.include_path.push_back(windows_headers);

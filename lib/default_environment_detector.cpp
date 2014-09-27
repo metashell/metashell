@@ -23,9 +23,12 @@
 
 #include <just/environment.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <algorithm>
 #include <stdexcept>
 #include <fstream>
+#include <vector>
 
 #ifndef _WIN32
 #  include <unistd.h>
@@ -90,7 +93,25 @@ namespace
     return res == -1 ? path_ : std::string(buff.begin(), buff.begin() + res);
   }
 #endif
+
+#ifndef _WIN32
+  std::string current_working_directory()
+  {
+    std::vector<char> buff(1);
+    while (getcwd(buff.data(), buff.size()) == NULL)
+    {
+      buff.resize(buff.size() * 2);
+    }
+    return buff.data();
+  }
+#endif
 }
+
+default_environment_detector::default_environment_detector(
+  const std::string& argv0_
+) :
+  _argv0(argv0_)
+{}
 
 std::string default_environment_detector::search_clang_binary()
 {
@@ -139,6 +160,32 @@ std::string default_environment_detector::path_of_executable()
     cb = buff.size();
   }
   return std::string(buff.begin(), buff.begin() + cb);
+#elif defined __OpenBSD__
+  if (_argv0.empty() || _argv0[0] == '/')
+  {
+    return _argv0;
+  }
+  else if (_argv0.find('/') != std::string::npos)
+  {
+    // This code assumes that the application never changes the working
+    // directory
+    return current_working_directory() + "/" + _argv0;
+  }
+  else
+  {
+    const std::string p = just::environment::get("PATH");
+    std::vector<std::string> path;
+    boost::split(path, p, [](char c_) { return c_ == ';'; });
+    for (const auto& s : path)
+    {
+      const std::string fn = s + "/" + _argv0;
+      if (file_exists(fn))
+      {
+        return fn;
+      }
+    }
+    return "";
+  }
 #else
   return read_link("/proc/self/exe");
 #endif

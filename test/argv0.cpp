@@ -16,11 +16,18 @@
 
 #include "argv0.hpp"
 
-#include <just/test.hpp>
-
-int main(int argc_, char* argv_[])
+namespace
 {
-  argv0::set(argv_[0]);
-  return ::just::test::run(argc_, argv_);
+  std::string _argv0;
+}
+
+void argv0::set(const std::string& argv0_)
+{
+  _argv0 = argv0_;
+}
+
+std::string argv0::get()
+{
+  return _argv0;
 }
 

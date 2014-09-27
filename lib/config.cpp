@@ -261,9 +261,9 @@ config metashell::detect_config(
   return cfg;
 }
 
-config metashell::empty_config()
+config metashell::empty_config(const std::string& argv0_)
 {
-  default_environment_detector ed;
+  default_environment_detector ed(argv0_);
   std::ostringstream s;
   return detect_config(user_config(), ed, s);
 }

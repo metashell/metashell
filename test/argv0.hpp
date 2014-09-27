@@ -1,3 +1,6 @@
+#ifndef METASHELL_TEST_ARGV0_HPP
+#define METASHELL_TEST_ARGV0_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,13 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "argv0.hpp"
+#include <string>
 
-#include <just/test.hpp>
-
-int main(int argc_, char* argv_[])
+namespace argv0
 {
-  argv0::set(argv_[0]);
-  return ::just::test::run(argc_, argv_);
+  void set(const std::string& argv0_);
+  std::string get();
 }
+
+#endif
 

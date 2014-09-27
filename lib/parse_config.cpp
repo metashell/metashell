@@ -69,9 +69,9 @@ namespace
       << std::endl;
   }
 
-  void show_pragma_help()
+  void show_pragma_help(const std::string& argv0_)
   {
-    shell_stub sh;
+    shell_stub sh(argv0_);
     const pragma_handler_map m = pragma_handler_map::build_default(sh);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
@@ -231,7 +231,7 @@ parse_config_result metashell::parse_config(
     }
     else if (vm.count("show_pragma_help"))
     {
-      show_pragma_help();
+      show_pragma_help(argv_[0]);
       return parse_config_result::exit(false);
     }
     else if (vm.count("show_mdb_help"))

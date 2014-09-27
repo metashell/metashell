@@ -24,7 +24,7 @@ namespace metashell
   class shell_stub : public shell
   {
   public:
-    shell_stub();
+    explicit shell_stub(const std::string& argv0_);
 
     virtual void add_history(const std::string& s_);
 
