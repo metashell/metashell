@@ -39,6 +39,7 @@ public:
       metashell::colored_string::size_type length) const;
 
   virtual unsigned width() const;
+  void set_terminal_width(unsigned new_width);
 
   bool has_metaprogram() const;
   const metashell::metaprogram& get_metaprogram() const;
@@ -52,6 +53,7 @@ public:
 private:
   history_t history;
   mutable std::string output;
+  unsigned terminal_width = 80;
 };
 
 #endif

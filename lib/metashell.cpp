@@ -270,6 +270,8 @@ bool metashell::is_environment_setup_command(
 {
   try
   {
+    begin_ = skip_whitespace(begin_, end_);
+
     if (begin_ == end_)
     {
       // empty input is not a query

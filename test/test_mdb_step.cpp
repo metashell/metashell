@@ -169,6 +169,26 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "int (NonTemplateType)\n");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
   mdb_test_shell sh(fibonacci_mp);
 

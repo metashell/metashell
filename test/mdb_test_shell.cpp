@@ -44,7 +44,11 @@ void mdb_test_shell::display(
 }
 
 unsigned mdb_test_shell::width() const {
-  return 80;
+  return terminal_width;
+}
+
+void mdb_test_shell::set_terminal_width(unsigned new_width) {
+  terminal_width = new_width;
 }
 
 bool mdb_test_shell::has_metaprogram() const {

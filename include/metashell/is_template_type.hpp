@@ -1,5 +1,5 @@
-#ifndef METASHELL_INSTANTIATION_KIND_HPP
-#define METASHELL_INSTANTIATION_KIND_HPP
+#ifndef METASHELL_IS_TEMPLATE_TYPE_HPP
+#define METASHELL_IS_TEMPLATE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -18,26 +18,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
-#include <ostream>
 
 namespace metashell {
 
-enum instantiation_kind {
-  template_instantiation,
-  default_template_argument_instantiation,
-  default_function_argument_instantiation,
-  explicit_template_argument_substitution,
-  deduced_template_argument_substitution,
-  prior_template_argument_substitution,
-  default_template_argument_checking,
-  exception_spec_instantiation,
-  memoization,
-  non_template_type // Used only if an evaluation result is not a template
-};
-
-std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
-
-std::string to_string(instantiation_kind kind);
+bool is_template_type(const std::string& type);
 
 }
 
