@@ -147,6 +147,11 @@ public:
   vertex_descriptor get_source(const edge_descriptor& edge) const;
   vertex_descriptor get_target(const edge_descriptor& edge) const;
 
+  boost::iterator_range<in_edge_iterator> get_in_edges(
+      vertex_descriptor vertex) const;
+  boost::iterator_range<out_edge_iterator> get_out_edges(
+      vertex_descriptor vertex) const;
+
   const vertex_property& get_vertex_property(
       vertex_descriptor vertex) const;
   const edge_property& get_edge_property(

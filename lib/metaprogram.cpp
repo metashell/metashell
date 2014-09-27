@@ -109,8 +109,8 @@ void metaprogram::step() {
     state.discovered[current_vertex] = true;
     rollback.discovered_vertex = current_vertex;
 
-    auto reverse_edge_range = boost::make_iterator_range(
-          boost::out_edges(current_vertex, graph)) | boost::adaptors::reversed;
+    auto reverse_edge_range =
+      get_out_edges(current_vertex) |boost::adaptors::reversed;
 
     rollback.edge_stack_push_count = 0;
     for (edge_descriptor edge : reverse_edge_range) {
@@ -178,6 +178,16 @@ metaprogram::vertex_descriptor metaprogram::get_target(
     const edge_descriptor& edge) const
 {
   return boost::target(edge, graph);
+}
+
+boost::iterator_range<metaprogram::in_edge_iterator>
+metaprogram::get_in_edges(vertex_descriptor vertex) const {
+  return boost::in_edges(vertex, graph);
+}
+
+boost::iterator_range<metaprogram::out_edge_iterator>
+metaprogram::get_out_edges(vertex_descriptor vertex) const {
+  return boost::out_edges(vertex, graph);
 }
 
 const metaprogram::vertex_property& metaprogram::get_vertex_property(
