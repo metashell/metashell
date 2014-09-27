@@ -109,7 +109,11 @@ if (WIN32)
   add_definitions(-DBOOST_ALL_NO_LIB=1)
 else ()
   set(BOOST_ATOMIC_LIB boost_atomic)
-  find_package(Rt)
+  if (OPEN_BSD)
+    add_definitions(-DBOOST_HAS_STDINT_H)
+  else()
+    find_package(Rt)
+  endif()
 endif ()
 
 # Pthreads

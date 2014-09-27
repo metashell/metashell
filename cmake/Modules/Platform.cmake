@@ -19,6 +19,8 @@
 #  SUSE_LINUX on SuSE
 #  FEDORA_LINUX on Fedora and Red Hat
 #  UBUNTU_LINUX on Ubuntu
+#  FREE_BSD on FreeBSD
+#  OPEN_BSD on OpenBSD
 
 #  PLATFORM_CPACK_GENERATOR: the platform's native CPACK_GENERATOR value where
 #                            available
@@ -56,6 +58,16 @@ elseif (EXISTS "/etc/lsb-release")
     string(REGEX MATCH "DISTRIB_RELEASE=[^\n]*" D_R "${LSB_RELEASE}")
     string(REGEX MATCH "[0-9.]+" PLATFORM_VERSION "${D_R}")
   endif ()
+else()
+  execute_process(COMMAND uname OUTPUT_VARIABLE UN)
+  string(STRIP "${UN}" UNAME)
+  if ("${UNAME}" STREQUAL "FreeBSD")
+    set(FREE_BSD true)
+    set(PLATFORM_NAME "freebsd")
+  elseif ("${UNAME}" STREQUAL "OpenBSD")
+    set(OPEN_BSD true)
+    set(PLATFORM_NAME "openbsd")
+  endif()
 endif ()
 
 message(STATUS "Platform: ${PLATFORM_NAME} ${PLATFORM_VERSION}")
