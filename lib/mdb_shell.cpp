@@ -49,7 +49,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "is reached. n defaults to 1 if not specified.\n"
         "Negative n means continue the program backwards."},
       {{"step"}, repeatable, &mdb_shell::command_step,
-        "[over] [n]",
+        "[n]",
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
         "Negative n means step the program backwards."},
@@ -267,14 +267,12 @@ void mdb_shell::command_step(const std::string& arg) {
   auto begin = arg.begin(),
        end = arg.end();
 
-  bool has_over = false;
   int step_count = 1;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -lit("over") [ref(has_over) = true] >>
         -int_[ref(step_count) = _1],
 
         space
@@ -285,19 +283,16 @@ void mdb_shell::command_step(const std::string& arg) {
     return;
   }
 
-  if (has_over) {
-    display_error("Sorry, but step over is not supported yet\n");
+  if (step_count >= 0) {
+    for (int i = 0; i < step_count && !mp->is_finished(); ++i) {
+      mp->step();
+    }
   } else {
-    if (step_count >= 0) {
-      for (int i = 0; i < step_count && !mp->is_finished(); ++i) {
-        mp->step();
-      }
-    } else {
-      for (int i = 0; i < -step_count && !mp->is_at_start(); ++i) {
-        mp->step_back();
-      }
+    for (int i = 0; i < -step_count && !mp->is_at_start(); ++i) {
+      mp->step_back();
     }
   }
+
   if (mp->is_finished()) {
     if (step_count > 0) {
       display_metaprogram_finished();

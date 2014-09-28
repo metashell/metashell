@@ -789,7 +789,7 @@ The program is continued until the nth breakpoint or the end of the program
 is reached. n defaults to 1 if not specified.
 Negative n means continue the program backwards.
 
-* __`step [over] [n]`__ <br />
+* __`step [n]`__ <br />
 Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
 Negative n means step the program backwards.
