@@ -138,7 +138,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
   sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5>\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5> (Memoization)\n");
 }
 #endif
 
@@ -154,7 +154,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_full_from_memoization) {
   sh.line_available("forwardtrace full");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5>\n"
+      "fib<5> (Memoization)\n"
       "+ fib<3> (TemplateInstantiation)\n"
       "| + fib<1> (Memoization)\n"
       "| ` fib<2> (TemplateInstantiation)\n"
@@ -177,7 +177,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
   sh.line_available("forwardtrace");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5>\n"
+      "fib<5> (TemplateInstantiation)\n"
       "+ fib<3> (TemplateInstantiation)\n"
       "| + fib<1> (Memoization)\n"
       "| ` fib<2> (TemplateInstantiation)\n"

@@ -118,7 +118,7 @@ private:
       unsigned width) const;
 
   void display_trace_visit(
-      metaprogram::vertex_descriptor root_vertex,
+      metaprogram::optional_edge_descriptor root_edge,
       metaprogram::discovered_t& discovered,
       unsigned width) const;
 

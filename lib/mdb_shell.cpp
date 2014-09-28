@@ -619,9 +619,8 @@ void mdb_shell::display_trace_line(
   }
 }
 
-// Visits a single vertex and all of its children
 void mdb_shell::display_trace_visit(
-    metaprogram::vertex_descriptor root_vertex,
+    metaprogram::optional_edge_descriptor root_edge,
     metaprogram::discovered_t& discovered,
     unsigned width) const
 {
@@ -642,25 +641,33 @@ void mdb_shell::display_trace_visit(
   std::vector<unsigned> depth_counter(1);
 
   typedef std::tuple<
-    metaprogram::vertex_descriptor,
-    unsigned, // Depth
-    boost::optional<metaprogram::edge_property> > stack_element;
+    metaprogram::optional_edge_descriptor,
+    unsigned // Depth
+  > stack_element;
 
   // The usual stack for DFS
   std::stack<stack_element> to_visit;
 
-  // We don't care about the instantiation_kind for the source vertex
-  to_visit.push(std::make_tuple(root_vertex, 0, boost::none));
+  to_visit.push(std::make_tuple(root_edge, 0));
   ++depth_counter[0]; // This value is neved read
 
   while (!to_visit.empty()) {
+    metaprogram::optional_edge_descriptor edge;
     unsigned depth;
-    metaprogram::vertex_descriptor vertex;
-    boost::optional<metaprogram::edge_property> property;
-    std::tie(vertex, depth, property) = to_visit.top();
+    std::tie(edge, depth) = to_visit.top();
     to_visit.pop();
 
     --depth_counter[depth];
+
+    metaprogram::vertex_descriptor vertex = [&] {
+      if (edge) return mp->get_target(*edge);
+      return mp->get_root_vertex();
+    }();
+
+    auto property = [&]() -> boost::optional<metaprogram::edge_property> {
+      if (edge) return mp->get_edge_property(*edge);
+      return boost::none;
+    }();
 
     display_trace_line(vertex, depth, depth_counter, property, width);
 
@@ -685,8 +692,7 @@ void mdb_shell::display_trace_visit(
         edges | boost::adaptors::reversed)
     {
       if (mp->get_edge_property(edge).enabled) {
-        to_visit.push(std::make_tuple(
-              mp->get_target(edge), depth+1, mp->get_edge_property(edge)));
+        to_visit.push(std::make_tuple(edge, depth+1));
 
         ++depth_counter[depth+1];
       }
@@ -697,13 +703,13 @@ void mdb_shell::display_trace_visit(
 void mdb_shell::display_current_forwardtrace() const {
   metaprogram::discovered_t discovered = mp->get_state().discovered;
 
-  display_trace_visit(mp->get_current_vertex(), discovered, width());
+  display_trace_visit(mp->get_current_edge(), discovered, width());
 }
 
 void mdb_shell::display_current_full_forwardtrace() const {
   metaprogram::discovered_t discovered(mp->get_state().discovered.size());
 
-  display_trace_visit(mp->get_current_vertex(), discovered, width());
+  display_trace_visit(mp->get_current_edge(), discovered, width());
 }
 
 void mdb_shell::display_frame(const metaprogram::edge_descriptor& frame) const {
