@@ -135,6 +135,7 @@ public:
   void step_back();
 
   vertex_descriptor get_current_vertex() const;
+  optional_edge_descriptor get_current_edge() const;
   edge_descriptor get_current_frame() const;
   backtrace_t get_backtrace() const;
 

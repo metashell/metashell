@@ -234,6 +234,10 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
   return get_target(*edge);
 }
 
+metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
+  return state.edge_stack.top();
+}
+
 metaprogram::edge_descriptor metaprogram::get_current_frame() const {
   assert(!is_finished());
 
