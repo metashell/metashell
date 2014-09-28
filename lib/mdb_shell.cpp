@@ -354,9 +354,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         );
     }
   );
-  for (metaprogram::vertex_descriptor vertex :
-      boost::make_iterator_range(boost::vertices(mp->get_graph())))
-  {
+  for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
     std::string& name = mp->get_vertex_property(vertex).name;
     if (is_wrap_type(name)) {
       name = trim_copy(name.substr(

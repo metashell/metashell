@@ -190,6 +190,16 @@ metaprogram::get_out_edges(vertex_descriptor vertex) const {
   return boost::out_edges(vertex, graph);
 }
 
+boost::iterator_range<metaprogram::vertex_iterator>
+metaprogram::get_vertices() const {
+  return boost::vertices(graph);
+}
+
+boost::iterator_range<metaprogram::edge_iterator>
+metaprogram::get_edges() const {
+  return boost::edges(graph);
+}
+
 const metaprogram::vertex_property& metaprogram::get_vertex_property(
     vertex_descriptor vertex) const
 {

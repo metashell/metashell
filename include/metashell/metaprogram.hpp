@@ -152,6 +152,9 @@ public:
   boost::iterator_range<out_edge_iterator> get_out_edges(
       vertex_descriptor vertex) const;
 
+  boost::iterator_range<vertex_iterator> get_vertices() const;
+  boost::iterator_range<edge_iterator> get_edges() const;
+
   const vertex_property& get_vertex_property(
       vertex_descriptor vertex) const;
   const edge_property& get_edge_property(
@@ -176,9 +179,7 @@ private:
 
 template<class P>
 void metaprogram::disable_edges_if(P pred) {
-  for (edge_descriptor edge :
-      boost::make_iterator_range(boost::edges(graph)))
-  {
+  for (edge_descriptor edge : get_edges()) {
     if (pred(edge)) {
       get_edge_property(edge).enabled = false;
     }
