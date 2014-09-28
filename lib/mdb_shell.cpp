@@ -60,9 +60,12 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"forwardtrace", "ft"}, non_repeatable, &mdb_shell::command_forwardtrace,
-        "[full]",
+        "[full] [n]",
         "Print forwardtrace from the current point.",
-        "Use of the full qualifier will expand Memoizations."},
+        "Use of the full qualifier will expand Memoizations even if that instantiation\n"
+        "path has been visited before.\n\n"
+        "The n specifier limits the depth of the trace. If n is not specified, then the\n"
+        "trace depth is unlimited."},
       {{"backtrace", "bt"}, non_repeatable, &mdb_shell::command_backtrace,
         "",
         "Print backtrace from the current point.",
@@ -370,19 +373,24 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
   }
 
   using boost::spirit::qi::lit;
+  using boost::spirit::qi::uint_;
   using boost::spirit::ascii::space;
-  using boost::phoenix::ref;
+  using boost::spirit::qi::_1;
+
+  namespace phx = boost::phoenix;
 
   auto begin = arg.begin(),
        end = arg.end();
 
   bool has_full = false;
+  boost::optional<unsigned> max_depth;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -lit("full") [ref(has_full) = true],
+        -lit("full") [phx::ref(has_full) = true] >>
+        -uint_ [phx::ref(max_depth) =_1],
 
         space
     );
@@ -393,9 +401,9 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
   }
 
   if (has_full) {
-    display_current_full_forwardtrace();
+    display_current_full_forwardtrace(max_depth);
   } else {
-    display_current_forwardtrace();
+    display_current_forwardtrace(max_depth);
   }
 }
 
@@ -621,6 +629,7 @@ void mdb_shell::display_trace_line(
 
 void mdb_shell::display_trace_visit(
     metaprogram::optional_edge_descriptor root_edge,
+    boost::optional<unsigned> max_depth,
     metaprogram::discovered_t& discovered,
     unsigned width) const
 {
@@ -676,6 +685,10 @@ void mdb_shell::display_trace_visit(
     }
     discovered[vertex] = true;
 
+    if (max_depth && *max_depth <= depth) {
+      continue;
+    }
+
     metaprogram::out_edge_iterator begin, end;
     std::tie(begin, end) = boost::out_edges(vertex, graph);
 
@@ -700,16 +713,20 @@ void mdb_shell::display_trace_visit(
   }
 }
 
-void mdb_shell::display_current_forwardtrace() const {
+void mdb_shell::display_current_forwardtrace(
+    boost::optional<unsigned> max_depth) const
+{
   metaprogram::discovered_t discovered = mp->get_state().discovered;
 
-  display_trace_visit(mp->get_current_edge(), discovered, width());
+  display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
 }
 
-void mdb_shell::display_current_full_forwardtrace() const {
+void mdb_shell::display_current_full_forwardtrace(
+    boost::optional<unsigned> max_depth) const
+{
   metaprogram::discovered_t discovered(mp->get_state().discovered.size());
 
-  display_trace_visit(mp->get_current_edge(), discovered, width());
+  display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
 }
 
 void mdb_shell::display_frame(const metaprogram::edge_descriptor& frame) const {
