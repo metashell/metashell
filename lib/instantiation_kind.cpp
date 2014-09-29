@@ -24,25 +24,25 @@ std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
   switch (kind) {
     default:
         os << "UnknownKind"; break;
-    case template_instantiation:
+    case instantiation_kind::template_instantiation:
         os << "TemplateInstantiation"; break;
-    case default_template_argument_instantiation:
+    case instantiation_kind::default_template_argument_instantiation:
         os << "DefaultTemplateArgumentInstantiation"; break;
-    case default_function_argument_instantiation:
+    case instantiation_kind::default_function_argument_instantiation:
         os << "DefaultFunctionArgumentInstantiation"; break;
-    case explicit_template_argument_substitution:
+    case instantiation_kind::explicit_template_argument_substitution:
         os << "ExplicitTemplateArgumentSubstitution"; break;
-    case deduced_template_argument_substitution:
+    case instantiation_kind::deduced_template_argument_substitution:
         os << "DeducedTemplateArgumentSubstitution"; break;
-    case prior_template_argument_substitution:
+    case instantiation_kind::prior_template_argument_substitution:
         os << "PriorTemplateArgumentSubstitution"; break;
-    case default_template_argument_checking:
+    case instantiation_kind::default_template_argument_checking:
         os << "DefaultTemplateArgumentChecking"; break;
-    case exception_spec_instantiation:
+    case instantiation_kind::exception_spec_instantiation:
         os << "ExceptionSpecInstantiation"; break;
-    case memoization:
+    case instantiation_kind::memoization:
         os << "Memoization"; break;
-    case non_template_type:
+    case instantiation_kind::non_template_type:
         os << "NonTemplateType"; break;
   }
   return os;

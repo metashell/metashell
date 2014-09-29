@@ -81,58 +81,67 @@ JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_kinds)
 {
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "TemplateInstantiation", template_instantiation);
+      "TemplateInstantiation",
+       instantiation_kind::template_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "DefaultTemplateArgumentInstantiation", default_template_argument_instantiation);
+      "DefaultTemplateArgumentInstantiation",
+       instantiation_kind::default_template_argument_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "DefaultFunctionArgumentInstantiation", default_function_argument_instantiation);
+      "DefaultFunctionArgumentInstantiation",
+       instantiation_kind::default_function_argument_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "ExplicitTemplateArgumentSubstitution", explicit_template_argument_substitution);
+      "ExplicitTemplateArgumentSubstitution",
+       instantiation_kind::explicit_template_argument_substitution);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "DeducedTemplateArgumentSubstitution", deduced_template_argument_substitution);
+      "DeducedTemplateArgumentSubstitution",
+       instantiation_kind::deduced_template_argument_substitution);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "PriorTemplateArgumentSubstitution", prior_template_argument_substitution);
+      "PriorTemplateArgumentSubstitution",
+       instantiation_kind::prior_template_argument_substitution);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "DefaultTemplateArgumentChecking", default_template_argument_checking);
+      "DefaultTemplateArgumentChecking",
+       instantiation_kind::default_template_argument_checking);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "ExceptionSpecInstantiation", exception_spec_instantiation);
+      "ExceptionSpecInstantiation",
+       instantiation_kind::exception_spec_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
-      "Memoization", memoization);
+      "Memoization",
+       instantiation_kind::memoization);
 }
 
 JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_types)
 {
   test_single_node_templight_parsing(
       "metashell::foo&lt;10&gt;", "metashell::foo<10>",
-      "TemplateInstantiation", template_instantiation);
+      "TemplateInstantiation", instantiation_kind::template_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo&lt;&apos;a&apos;&gt;", "metashell::foo<'a'>",
-      "TemplateInstantiation", template_instantiation);
+      "TemplateInstantiation", instantiation_kind::template_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo&lt;&quot;foobar&quot;&gt;", "metashell::foo<\"foobar\">",
-      "TemplateInstantiation", template_instantiation);
+      "TemplateInstantiation", instantiation_kind::template_instantiation);
 
   test_single_node_templight_parsing(
       "metashell::foo&lt;3&amp;4&gt;", "metashell::foo<3&4>",
-      "TemplateInstantiation", template_instantiation);
+      "TemplateInstantiation", instantiation_kind::template_instantiation);
 }
 
 JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
@@ -181,12 +190,14 @@ JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
   std::tie(edge, found) = boost::lookup_edge(0, 1, mp.get_graph());
 
   JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
+  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind,
+      instantiation_kind::template_instantiation);
 
   std::tie(edge, found) = boost::lookup_edge(1, 2, mp.get_graph());
 
   JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
+  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind,
+      instantiation_kind::template_instantiation);
 }
 
 JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
@@ -235,11 +246,13 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
   std::tie(edge, found) = boost::lookup_edge(0, 1, mp.get_graph());
 
   JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
+  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind,
+      instantiation_kind::template_instantiation);
 
   std::tie(edge, found) = boost::lookup_edge(0, 2, mp.get_graph());
 
   JUST_ASSERT(found);
-  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, template_instantiation);
+  JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind,
+      instantiation_kind::template_instantiation);
 }
 

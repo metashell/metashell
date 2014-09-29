@@ -83,7 +83,8 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   metaprogram mp("some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, template_instantiation,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        instantiation_kind::template_instantiation,
         file_location("foo.cpp", 10, 20));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -91,7 +92,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
-      template_instantiation);
+      instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
       file_location("foo.cpp", 10, 20));
 
@@ -128,10 +129,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   metaprogram mp("some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, template_instantiation,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        instantiation_kind::template_instantiation,
         file_location("bar.cpp", 20, 10));
   metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, memoization,
+    mp.add_edge(mp.get_root_vertex(), vertex_a, instantiation_kind::memoization,
         file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -139,11 +141,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
-      template_instantiation);
+      instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
       file_location("bar.cpp", 20, 10));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
-      memoization);
+      instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
       file_location("foobar.cpp", 21, 11));
 
@@ -190,7 +192,8 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
   metaprogram mp("some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, template_instantiation,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        instantiation_kind::template_instantiation,
       file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -198,7 +201,7 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
-      template_instantiation);
+      instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
       file_location("foobar.cpp", 21, 11));
 
@@ -237,10 +240,11 @@ JUST_TEST_CASE(
   metaprogram mp("some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, template_instantiation,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        instantiation_kind::template_instantiation,
         file_location("xx.cpp", 1, 2));
   metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, memoization,
+    mp.add_edge(mp.get_root_vertex(), vertex_a, instantiation_kind::memoization,
         file_location("yy.cpp", 1, 2));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -248,11 +252,11 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
-      template_instantiation);
+      instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
       file_location("xx.cpp", 1, 2));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
-      memoization);
+      instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
       file_location("yy.cpp", 1, 2));
 

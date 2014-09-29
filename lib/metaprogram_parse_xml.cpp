@@ -135,15 +135,24 @@ file_location file_location_from_string(const std::string& str) {
 instantiation_kind instantiation_kind_from_string(const std::string& str) {
   //TODO boost::flat_map
   const static std::map<std::string, instantiation_kind> lookup = {
-     {"TemplateInstantiation", template_instantiation},
-     {"DefaultTemplateArgumentInstantiation", default_template_argument_instantiation},
-     {"DefaultFunctionArgumentInstantiation", default_function_argument_instantiation},
-     {"ExplicitTemplateArgumentSubstitution", explicit_template_argument_substitution},
-     {"DeducedTemplateArgumentSubstitution", deduced_template_argument_substitution},
-     {"PriorTemplateArgumentSubstitution", prior_template_argument_substitution},
-     {"DefaultTemplateArgumentChecking", default_template_argument_checking},
-     {"ExceptionSpecInstantiation", exception_spec_instantiation},
-     {"Memoization", memoization}
+     {"TemplateInstantiation",
+       instantiation_kind::template_instantiation},
+     {"DefaultTemplateArgumentInstantiation",
+       instantiation_kind::default_template_argument_instantiation},
+     {"DefaultFunctionArgumentInstantiation",
+       instantiation_kind::default_function_argument_instantiation},
+     {"ExplicitTemplateArgumentSubstitution",
+       instantiation_kind::explicit_template_argument_substitution},
+     {"DeducedTemplateArgumentSubstitution",
+       instantiation_kind::deduced_template_argument_substitution},
+     {"PriorTemplateArgumentSubstitution",
+       instantiation_kind::prior_template_argument_substitution},
+     {"DefaultTemplateArgumentChecking",
+       instantiation_kind::default_template_argument_checking},
+     {"ExceptionSpecInstantiation",
+       instantiation_kind::exception_spec_instantiation},
+     {"Memoization",
+       instantiation_kind::memoization}
   };
 
   auto it = lookup.find(str);

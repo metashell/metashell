@@ -348,7 +348,8 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         (
           edge_property.point_of_instantiation.name != internal_file_name ||
           edge_property.point_of_instantiation.row != line_number + 2 ||
-          (is_wrap_type(target_name) && edge_property.kind == memoization)
+          (is_wrap_type(target_name) && edge_property.kind ==
+           instantiation_kind::memoization)
         );
     }
   );
@@ -360,7 +361,8 @@ void mdb_shell::command_evaluate(const std::string& arg) {
           name.size() - wrap_prefix.size() - wrap_suffix.size()));
       if (!is_template_type(name)) {
         for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
-          mp->get_edge_property(in_edge).kind = non_template_type;
+          mp->get_edge_property(in_edge).kind =
+            instantiation_kind::non_template_type;
         }
       }
     }

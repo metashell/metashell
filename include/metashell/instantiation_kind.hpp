@@ -22,7 +22,7 @@
 
 namespace metashell {
 
-enum instantiation_kind {
+enum class instantiation_kind {
   template_instantiation,
   default_template_argument_instantiation,
   default_function_argument_instantiation,
