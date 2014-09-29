@@ -42,23 +42,27 @@ namespace metashell {
 const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
-      {{"continue"}, repeatable, &mdb_shell::command_continue,
-        "[n]",
-        "Continue program being debugged.",
-        "The program is continued until the nth breakpoint or the end of the program\n"
-        "is reached. n defaults to 1 if not specified.\n"
-        "Negative n means continue the program backwards."},
-      {{"step"}, repeatable, &mdb_shell::command_step,
-        "[n]",
-        "Step the program.",
-        "Argument n means step n times. n defaults to 1 if not specified.\n"
-        "Negative n means step the program backwards."},
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
         "<type>",
         "Evaluate and start debugging a new metaprogram.",
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+      {{"step"}, repeatable, &mdb_shell::command_step,
+        "[n]",
+        "Step the program.",
+        "Argument n means step n times. n defaults to 1 if not specified.\n"
+        "Negative n means step the program backwards."},
+      {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
+        "<regex>",
+        "Add breakpoint for all types matching `<regex>`.",
+        ""},
+      {{"continue"}, repeatable, &mdb_shell::command_continue,
+        "[n]",
+        "Continue program being debugged.",
+        "The program is continued until the nth breakpoint or the end of the program\n"
+        "is reached. n defaults to 1 if not specified.\n"
+        "Negative n means continue the program backwards."},
       {{"forwardtrace", "ft"}, non_repeatable, &mdb_shell::command_forwardtrace,
         "[full] [n]",
         "Print forwardtrace from the current point.",
@@ -69,10 +73,6 @@ const mdb_command_handler_map mdb_shell::command_handler =
       {{"backtrace", "bt"}, non_repeatable, &mdb_shell::command_backtrace,
         "",
         "Print backtrace from the current point.",
-        ""},
-      {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
-        "<regex>",
-        "Add breakpoint for all types matching `<regex>`.",
         ""},
       {{"help"}, non_repeatable, &mdb_shell::command_help,
         "[command]",

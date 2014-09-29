@@ -783,22 +783,25 @@ int_<13>
 ### Metadebugger command reference
 
 <!-- mdb_info -->
-* __`continue [n]`__ <br />
-Continue program being debugged. <br />
-The program is continued until the nth breakpoint or the end of the program
-is reached. n defaults to 1 if not specified.
-Negative n means continue the program backwards.
+* __`evaluate <type>`__ <br />
+Evaluate and start debugging a new metaprogram. <br />
+Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
+the debugged metaprogram with unrelated code. If you need formatting, you can
+explicitly enter `metashell::format< <type> >::type` for the same effect.
 
 * __`step [n]`__ <br />
 Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
 Negative n means step the program backwards.
 
-* __`evaluate <type>`__ <br />
-Evaluate and start debugging a new metaprogram. <br />
-Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
-the debugged metaprogram with unrelated code. If you need formatting, you can
-explicitly enter `metashell::format< <type> >::type` for the same effect.
+* __`rbreak <regex>`__ <br />
+Add breakpoint for all types matching `<regex>`.
+
+* __`continue [n]`__ <br />
+Continue program being debugged. <br />
+The program is continued until the nth breakpoint or the end of the program
+is reached. n defaults to 1 if not specified.
+Negative n means continue the program backwards.
 
 * __`forwardtrace|ft [full] [n]`__ <br />
 Print forwardtrace from the current point. <br />
@@ -810,9 +813,6 @@ trace depth is unlimited.
 
 * __`backtrace|bt `__ <br />
 Print backtrace from the current point.
-
-* __`rbreak <regex>`__ <br />
-Add breakpoint for all types matching `<regex>`.
 
 * __`help [command]`__ <br />
 Show help for commands. <br />
