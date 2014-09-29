@@ -38,6 +38,9 @@ then
 elif [ `cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID` = "DISTRIB_ID=Ubuntu" ]
 then
   PLATFORM=ubuntu
+elif [ -e /etc/debian_version ]
+then
+  PLATFORM=debian
 elif [ `uname` = "FreeBSD" ]
 then
   PLATFORM=freebsd

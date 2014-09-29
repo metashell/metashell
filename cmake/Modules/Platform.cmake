@@ -19,6 +19,7 @@
 #  SUSE_LINUX on SuSE
 #  FEDORA_LINUX on Fedora and Red Hat
 #  UBUNTU_LINUX on Ubuntu
+#  DEBIAN_LINUX on Debian
 #  FREE_BSD on FreeBSD
 #  OPEN_BSD on OpenBSD
 
@@ -58,6 +59,12 @@ elseif (EXISTS "/etc/lsb-release")
     string(REGEX MATCH "DISTRIB_RELEASE=[^\n]*" D_R "${LSB_RELEASE}")
     string(REGEX MATCH "[0-9.]+" PLATFORM_VERSION "${D_R}")
   endif ()
+elseif (EXISTS "/etc/debian_version")
+  set(DEBIAN_LINUX true)
+  set(PLATFORM_NAME "debian")
+  set(PLATFORM_CPACK_GENERATOR "DEB")
+  file(READ "/etc/debian_version" DEBIAN_VERSION)
+  string(REGEX MATCH "[^\n]+" PLATFORM_VERSION "${DEBIAN_VERSION}")
 else()
   execute_process(COMMAND uname OUTPUT_VARIABLE UN)
   string(STRIP "${UN}" UNAME)
