@@ -16,7 +16,7 @@
 
 #include "mdb_test_shell.hpp"
 
-#include "test_fibonacci.hpp"
+#include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
 
@@ -302,6 +302,29 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "fib<10> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
+  mdb_test_shell sh(template_specialization_mp);
+
+  sh.line_available("evaluate int_<foo<3, 1>::value>");
+  sh.clear_output();
+
+  std::string expected_output =
+    // "foo<N, 1> (DeducedTemplateArgumentSubstitution)\n"
+    "foo<3, 1> (TemplateInstantiation)\n"
+    "foo<3, 1> (Memoization)\n"
+    "int_<45> (TemplateInstantiation)\n"
+    "Metaprogram finished\n"
+    "int_<45>\n";
+
+  for (unsigned i = 0; i < 4; ++i) {
+    sh.line_available("step");
+  }
+
+  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
 }
 #endif
 

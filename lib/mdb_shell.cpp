@@ -343,14 +343,30 @@ void mdb_shell::command_evaluate(const std::string& arg) {
         mp->get_edge_property(edge);
       const std::string& target_name =
         mp->get_vertex_property(mp->get_target(edge)).name;
-      return
-        mp->get_source(edge) == mp->get_root_vertex() &&
-        (
-          edge_property.point_of_instantiation.name != internal_file_name ||
-          edge_property.point_of_instantiation.row != line_number + 2 ||
-          (is_wrap_type(target_name) && edge_property.kind ==
-           instantiation_kind::memoization)
-        );
+
+      if (mp->get_source(edge) == mp->get_root_vertex()) {
+        // Filter out edges, that is not instantiated by the entered type
+        if (edge_property.point_of_instantiation.name != internal_file_name) {
+          return true;
+        }
+        if (edge_property.point_of_instantiation.row != line_number + 2) {
+          return true;
+        }
+        // Filter out one of the events triggered by
+        // the metashell::wrap instantiation
+        if (is_wrap_type(target_name) &&
+            edge_property.kind == instantiation_kind::memoization)
+        {
+          return true;
+        }
+      }
+      // Filter out non template_instantiatio and non memoization events
+      if (edge_property.kind != instantiation_kind::template_instantiation &&
+         edge_property.kind != instantiation_kind::memoization)
+      {
+        return true;
+      }
+      return false;
     }
   );
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {

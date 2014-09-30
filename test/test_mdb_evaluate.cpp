@@ -18,7 +18,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "test_fibonacci.hpp"
+#include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
 

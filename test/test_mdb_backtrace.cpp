@@ -16,7 +16,7 @@
 
 #include "mdb_test_shell.hpp"
 
-#include "test_fibonacci.hpp"
+#include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
 
