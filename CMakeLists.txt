@@ -192,7 +192,23 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       "libstdc++-devel, glibc-headers, glibc-devel"
     )
   elseif (UBUNTU_LINUX)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.8-dev")
+    if ("${PLATFORM_VERSION}" STREQUAL "14.04")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.8-dev")
+    else()
+      message(
+        WARNING
+        "Unsupported Ubuntu version. Package dependencies will be invalid."
+      )
+    endif()
+  elseif (DEBIAN_LINUX)
+    if ("${PLATFORM_VERSION}" STREQUAL "7.6")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
+    else()
+      message(
+        WARNING
+        "Unsupported Debian version. Package dependencies will be invalid."
+      )
+    endif()
   endif ()
    
   set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
