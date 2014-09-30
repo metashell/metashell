@@ -13,6 +13,7 @@ shell.
 ## Table of contents
 
 - [Motivation](#motivation)
+- [Supported platforms](#supported-platforms)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux and FreeBSD](#building-metashell-on-linux-and-freebsd)
         - [Clang and Templight](#clang-and-templight)
@@ -63,6 +64,18 @@ simple problems look difficult.
 Metashell provides an interactive shell similar to the Python, Haskell and
 Erlang shells for template metaprogramming. It uses Clang to evaluate the
 metaprograms.
+
+## Supported platforms
+
+The following platforms are supported:
+
+* [Ubuntu](http://www.ubuntu.com/)
+* [Debian](http://www.debian.org/)
+* [Fedora](http://fedoraproject.org/)
+* [OpenSuSE](http://www.opensuse.org/)
+* [FreeBSD](http://www.freebsd.org/)
+* [OpenBSD](http://www.openbsd.org/)
+* [Windows](http://windows.microsoft.com)
 
 ## Building Metashell
 
