@@ -21,6 +21,8 @@
 #include <metashell/temporary_file.hpp>
 #include <metashell/is_template_type.hpp>
 
+#include <cmath>
+
 #if defined __clang__
 #  pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
@@ -49,10 +51,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"step"}, repeatable, &mdb_shell::command_step,
-        "[n]",
+        "[over] [n]",
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
-        "Negative n means step the program backwards."},
+        "Negative n means step the program backwards.\n\n"
+        "Use of the `over` qualifier will jump over sub instantiations."},
       {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
@@ -271,11 +274,13 @@ void mdb_shell::command_step(const std::string& arg) {
        end = arg.end();
 
   int step_count = 1;
+  enum { normal, over } step_type = normal;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
+        -lit("over")[ref(step_type) = over] >>
         -int_[ref(step_count) = _1],
 
         space
@@ -286,14 +291,35 @@ void mdb_shell::command_step(const std::string& arg) {
     return;
   }
 
-  if (step_count >= 0) {
-    for (int i = 0; i < step_count && !mp->is_finished(); ++i) {
-      mp->step();
-    }
-  } else {
-    for (int i = 0; i < -step_count && !mp->is_at_start(); ++i) {
-      mp->step_back();
-    }
+  auto until_pred = &metaprogram::is_finished;
+  auto step_func = &metaprogram::step;
+  if (step_count < 0) {
+    until_pred = &metaprogram::is_at_start;
+    step_func = &metaprogram::step_back;
+  }
+
+  int iteration_count = std::abs(step_count);
+
+  switch (step_type) {
+    case normal:
+      for (int i = 0; i < iteration_count && !((*mp).*until_pred)(); ++i) {
+        ((*mp).*step_func)();
+      }
+      break;
+    case over:
+      {
+        for (int i = 0; i < iteration_count && !((*mp).*until_pred)(); ++i) {
+          unsigned bt_depth = mp->get_backtrace().size();
+          do {
+            ((*mp).*step_func)();
+          } while (!((*mp).*until_pred)() &&
+              mp->get_backtrace().size() > bt_depth);
+        }
+      }
+      break;
+    default:
+      assert(false);
+      break;
   }
 
   if (mp->is_finished()) {

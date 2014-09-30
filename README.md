@@ -789,10 +789,12 @@ Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
 the debugged metaprogram with unrelated code. If you need formatting, you can
 explicitly enter `metashell::format< <type> >::type` for the same effect.
 
-* __`step [n]`__ <br />
+* __`step [over] [n]`__ <br />
 Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
 Negative n means step the program backwards.
+
+Use of the `over` qualifier will jump over sub instantiations.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.

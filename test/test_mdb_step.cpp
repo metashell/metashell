@@ -306,6 +306,69 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_fib_from_root) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step over");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step over");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (Memoization)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step over");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (Memoization)\n");
+
+  sh.clear_output();
+  sh.line_available("step over -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
   mdb_test_shell sh(template_specialization_mp);
 
