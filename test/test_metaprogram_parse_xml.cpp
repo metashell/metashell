@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/exception.hpp>
 #include <metashell/metaprogram.hpp>
 
 #include <boost/graph/lookup_edge.hpp>
@@ -256,3 +257,122 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
       instantiation_kind::template_instantiation);
 }
 
+JUST_TEST_CASE(test_parse_starting_with_template_end)
+{
+  const std::string xml =
+  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+  "<Trace>\n"
+  "<TemplateEnd>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<TimeStamp time = \"100.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateEnd>\n"
+  "<TemplateBegin>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<Context context = \"metashell::bar\"/>\n"
+  "<PointOfInstantiation>bar.hpp|20|30</PointOfInstantiation>\n"
+  "<TimeStamp time = \"60.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateBegin>\n"
+  "<TemplateEnd>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<TimeStamp time = \"70.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateEnd>\n"
+  "</Trace>\n";
+
+  JUST_ASSERT_THROWS(exception,
+      metaprogram::create_from_xml_string(
+        xml, "some_type", "the_result_type"));
+}
+
+JUST_TEST_CASE(test_parse_without_template_end)
+{
+  const std::string xml =
+  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+  "<Trace>\n"
+  "<TemplateBegin>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<Context context = \"metashell::bar\"/>\n"
+  "<PointOfInstantiation>bar.hpp|20|30</PointOfInstantiation>\n"
+  "<TimeStamp time = \"60.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateBegin>\n"
+  "</Trace>\n";
+
+  JUST_ASSERT_THROWS(exception,
+      metaprogram::create_from_xml_string(
+        xml, "some_type", "the_result_type"));
+}
+
+JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_1)
+{
+  const std::string xml =
+  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+  "<Trace>\n"
+  "<TemplateBegin>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<Context context = \"metashell::bar\"/>\n"
+  "<PointOfInstantiation>bar.hpp|2030</PointOfInstantiation>\n"
+  "<TimeStamp time = \"60.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateBegin>\n"
+  "<TemplateEnd>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<TimeStamp time = \"70.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateEnd>\n"
+  "</Trace>\n";
+
+  JUST_ASSERT_THROWS(exception,
+    metaprogram::create_from_xml_string(
+        xml, "some_type", "the_result_type"));
+}
+
+JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_2)
+{
+  const std::string xml =
+  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+  "<Trace>\n"
+  "<TemplateBegin>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<Context context = \"metashell::bar\"/>\n"
+  "<PointOfInstantiation>bar.hpp20|30</PointOfInstantiation>\n"
+  "<TimeStamp time = \"60.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateBegin>\n"
+  "<TemplateEnd>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<TimeStamp time = \"70.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateEnd>\n"
+  "</Trace>\n";
+
+  JUST_ASSERT_THROWS(exception,
+    metaprogram::create_from_xml_string(
+        xml, "some_type", "the_result_type"));
+}
+
+JUST_TEST_CASE(test_parse_syntax_error_unknown_kind)
+{
+  const std::string xml =
+  "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
+  "<Trace>\n"
+  "<TemplateBegin>\n"
+  "<Kind>SomeUnknownKind</Kind>\n"
+  "<Context context = \"metashell::bar\"/>\n"
+  "<PointOfInstantiation>bar.hpp20|30</PointOfInstantiation>\n"
+  "<TimeStamp time = \"60.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateBegin>\n"
+  "<TemplateEnd>\n"
+  "<Kind>TemplateInstantiation</Kind>\n"
+  "<TimeStamp time = \"70.0\"/>\n"
+  "<MemoryUsage bytes = \"0\"/>\n"
+  "</TemplateEnd>\n"
+  "</Trace>\n";
+
+  JUST_ASSERT_THROWS(exception,
+    metaprogram::create_from_xml_string(
+        xml, "some_type", "the_result_type"));
+}
