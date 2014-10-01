@@ -17,11 +17,11 @@
 #include <metashell/shell.hpp>
 #include <metashell/text_position.hpp>
 #include <metashell/headers.hpp>
+#include <metashell/exception.hpp>
 
 #include "cxtranslationunit.hpp"
 #include "cxdiagnostic.hpp"
 #include "cxcodecompleteresults.hpp"
-#include "exception.hpp"
 
 #include <clang-c/Index.h>
 

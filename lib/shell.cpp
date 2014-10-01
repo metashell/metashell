@@ -17,7 +17,6 @@
 #include <metashell/metashell.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include "indenter.hpp"
-#include "exception.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
@@ -26,6 +25,7 @@
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/command.hpp>
 #include <metashell/to_string.hpp>
+#include <metashell/exception.hpp>
 
 #include <cctype>
 #include <algorithm>

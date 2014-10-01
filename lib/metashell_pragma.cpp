@@ -16,7 +16,7 @@
 
 #include <metashell/metashell_pragma.hpp>
 
-#include "exception.hpp"
+#include <metashell/exception.hpp>
 
 #include <iostream>
 #include <sstream>

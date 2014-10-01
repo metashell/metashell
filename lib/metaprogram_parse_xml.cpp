@@ -26,7 +26,7 @@
 
 #include <metashell/metaprogram.hpp>
 
-#include "exception.hpp"
+#include <metashell/exception.hpp>
 
 namespace metashell {
 

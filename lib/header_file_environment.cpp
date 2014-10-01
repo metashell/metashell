@@ -18,8 +18,7 @@
 #include <metashell/headers.hpp>
 #include <metashell/config.hpp>
 #include <metashell/clang_binary.hpp>
-
-#include "exception.hpp"
+#include <metashell/exception.hpp>
 
 #include <just/process.hpp>
 

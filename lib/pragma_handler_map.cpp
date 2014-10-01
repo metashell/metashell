@@ -17,6 +17,7 @@
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/exception.hpp>
 
 #include <metashell/pragma_help.hpp>
 #include <metashell/pragma_switch.hpp>
@@ -30,8 +31,6 @@
 #include <metashell/pragma_environment_reload.hpp>
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/pragma_evaluate.hpp>
-
-#include "exception.hpp"
 
 #include <cassert>
 #include <iostream>

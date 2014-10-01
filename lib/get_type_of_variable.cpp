@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "get_type_of_variable.hpp"
-#include "exception.hpp"
+
+#include <metashell/exception.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 
