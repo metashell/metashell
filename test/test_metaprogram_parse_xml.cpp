@@ -62,7 +62,7 @@ void test_single_node_templight_parsing(
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge).kind, actual_kind);
 }
 
-JUST_TEST_CASE(test_parse_empty_templight_xml)
+JUST_TEST_CASE(test_templight_xml_parse_empty)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -78,7 +78,7 @@ JUST_TEST_CASE(test_parse_empty_templight_xml)
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
 }
 
-JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_kinds)
+JUST_TEST_CASE(test_templight_xml_parse_one_node_with_different_kinds)
 {
   test_single_node_templight_parsing(
       "metashell::foo", "metashell::foo",
@@ -126,7 +126,7 @@ JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_kinds)
        instantiation_kind::memoization);
 }
 
-JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_types)
+JUST_TEST_CASE(test_templight_xml_parse_one_node_with_different_types)
 {
   test_single_node_templight_parsing(
       "metashell::foo&lt;10&gt;", "metashell::foo<10>",
@@ -145,7 +145,7 @@ JUST_TEST_CASE(test_parse_one_node_templight_xml_with_different_types)
       "TemplateInstantiation", instantiation_kind::template_instantiation);
 }
 
-JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
+JUST_TEST_CASE(test_templight_xml_parse_two_nested_node)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -201,7 +201,7 @@ JUST_TEST_CASE(test_parse_two_nested_node_templight_xml)
       instantiation_kind::template_instantiation);
 }
 
-JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
+JUST_TEST_CASE(test_templight_xml_parse_two_sequential_node)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -257,7 +257,7 @@ JUST_TEST_CASE(test_parse_two_sequential_node_templight_xml)
       instantiation_kind::template_instantiation);
 }
 
-JUST_TEST_CASE(test_parse_starting_with_template_end)
+JUST_TEST_CASE(test_templight_xml_parse_starting_with_template_end)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -286,7 +286,7 @@ JUST_TEST_CASE(test_parse_starting_with_template_end)
         xml, "some_type", "the_result_type"));
 }
 
-JUST_TEST_CASE(test_parse_without_template_end)
+JUST_TEST_CASE(test_templight_xml_parse_without_template_end)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -305,7 +305,8 @@ JUST_TEST_CASE(test_parse_without_template_end)
         xml, "some_type", "the_result_type"));
 }
 
-JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_1)
+JUST_TEST_CASE(
+    test_templight_xml_parse_syntax_error_missing_pipe_in_file_location_1)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -329,7 +330,8 @@ JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_1)
         xml, "some_type", "the_result_type"));
 }
 
-JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_2)
+JUST_TEST_CASE(
+    test_templight_xml_parse_syntax_error_missing_pipe_in_file_location_2)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
@@ -353,7 +355,7 @@ JUST_TEST_CASE(test_parse_syntax_error_missing_pipe_in_file_location_2)
         xml, "some_type", "the_result_type"));
 }
 
-JUST_TEST_CASE(test_parse_syntax_error_unknown_kind)
+JUST_TEST_CASE(test_templight_xml_parse_syntax_error_unknown_kind)
 {
   const std::string xml =
   "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
