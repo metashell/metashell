@@ -235,17 +235,9 @@ metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
 }
 
 metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
-  return state.edge_stack.top();
-}
-
-metaprogram::edge_descriptor metaprogram::get_current_frame() const {
   assert(!is_finished());
 
-  vertex_descriptor current_vertex = get_current_vertex();
-
-  assert(state.parent_edge[current_vertex]);
-
-  return *state.parent_edge[current_vertex];
+  return state.edge_stack.top();
 }
 
 metaprogram::backtrace_t metaprogram::get_backtrace() const {

@@ -562,8 +562,7 @@ void mdb_shell::continue_metaprogram() {
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
       const std::string current_type =
-        mp->get_vertex_property(
-            mp->get_target(mp->get_current_frame())).name;
+        mp->get_vertex_property(mp->get_current_vertex()).name;
 
       if (boost::regex_search(current_type, breakpoint)) {
         return;
@@ -582,8 +581,7 @@ void mdb_shell::continue_back_metaprogram() {
     }
     for (const breakpoint_t& breakpoint : breakpoints) {
       const std::string current_type =
-        mp->get_vertex_property(
-            mp->get_target(mp->get_current_frame())).name;
+        mp->get_vertex_property(mp->get_current_vertex()).name;
 
       if (boost::regex_search(current_type, breakpoint)) {
         return;
@@ -602,7 +600,7 @@ void mdb_shell::display_info(const std::string& str) const {
 
 void mdb_shell::display_current_frame() const {
   assert(mp && !mp->is_at_start() && !mp->is_finished());
-  display_frame(mp->get_current_frame());
+  display_frame(*mp->get_current_edge());
 }
 
 void mdb_shell::display_trace_graph(
