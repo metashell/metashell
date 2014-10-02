@@ -309,11 +309,11 @@ void mdb_shell::command_step(const std::string& arg) {
     case over:
       {
         for (int i = 0; i < iteration_count && !((*mp).*until_pred)(); ++i) {
-          unsigned bt_depth = mp->get_backtrace().size();
+          unsigned bt_depth = mp->get_backtrace_length();
           do {
             ((*mp).*step_func)();
           } while (!((*mp).*until_pred)() &&
-              mp->get_backtrace().size() > bt_depth);
+              mp->get_backtrace_length() > bt_depth);
         }
       }
       break;

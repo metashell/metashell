@@ -137,6 +137,7 @@ public:
   vertex_descriptor get_current_vertex() const;
   optional_edge_descriptor get_current_edge() const;
   backtrace_t get_backtrace() const;
+  unsigned get_backtrace_length() const;
 
   const graph_t& get_graph() const;
   const state_t& get_state() const;

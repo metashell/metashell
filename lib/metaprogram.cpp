@@ -259,5 +259,24 @@ metaprogram::backtrace_t metaprogram::get_backtrace() const {
   return backtrace;
 }
 
+unsigned metaprogram::get_backtrace_length() const {
+  assert(!is_finished());
+
+  unsigned length = 0;
+
+  for (vertex_descriptor current_vertex = get_current_vertex();
+      current_vertex != get_root_vertex(); )
+  {
+    assert(state.parent_edge[current_vertex]);
+
+    edge_descriptor parent_edge = *state.parent_edge[current_vertex];
+    ++length;
+
+    current_vertex = get_source(parent_edge);
+  }
+
+  return length;
+}
+
 }
 
