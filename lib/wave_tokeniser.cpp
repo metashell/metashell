@@ -19,15 +19,6 @@
 #  pragma warning( disable: 4996 )
 #endif
 
-#if defined __GNUC__ && !defined __clang__
-#  pragma GCC diagnostic ignored "-Wpragmas"
-#  pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#endif
-
-#if defined __clang__
-#  pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 #include <metashell/wave_tokeniser.hpp>
 
 #include <boost/wave.hpp>

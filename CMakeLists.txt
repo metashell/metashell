@@ -134,6 +134,7 @@ else()
 endif()
 
 include_directories("include")
+include_directories(SYSTEM "boost_include")
 
 # Unit testing
 enable_testing()

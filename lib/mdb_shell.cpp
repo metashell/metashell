@@ -23,10 +23,6 @@
 
 #include <cmath>
 
-#if defined __clang__
-#  pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
@@ -34,10 +30,6 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/range/adaptor/reversed.hpp>
-
-#if defined __clang__
-#  pragma GCC diagnostic error "-Wunused-parameter"
-#endif
 
 namespace metashell {
 
