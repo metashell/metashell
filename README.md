@@ -796,8 +796,11 @@ int_<13>
 ### Metadebugger command reference
 
 <!-- mdb_info -->
-* __`evaluate <type>`__ <br />
+* __`evaluate [<type>]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
+If called with no arguments, then the last evaluated metaprogram will be
+reevaluated.
+
 Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
 the debugged metaprogram with unrelated code. If you need formatting, you can
 explicitly enter `metashell::format< <type> >::type` for the same effect.

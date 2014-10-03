@@ -16,12 +16,12 @@
 
 #include "mdb_test_shell.hpp"
 
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 
 #include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
-
 
 using namespace metashell;
 
@@ -50,24 +50,26 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_evaluate_no_arguments) {
+JUST_TEST_CASE(test_mdb_evaluate_no_arguments_no_evaluation) {
   mdb_test_shell sh;
 
   sh.line_available("evaluate");
 
   JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Nothing has been evaluated yet.\n");
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_evaluate_no_arguments_with_trailing_spaces) {
+JUST_TEST_CASE(
+    test_mdb_evaluate_no_arguments_with_trailing_spaces_no_evaluation)
+{
   mdb_test_shell sh;
 
   sh.line_available("evaluate  ");
 
   JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Nothing has been evaluated yet.\n");
 }
 #endif
 
@@ -97,7 +99,7 @@ JUST_TEST_CASE(test_mdb_evaluate_failure_will_reset_metaprogram_state) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_reset_metaprogram_state) {
+JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_run_last_metaprogram) {
   mdb_test_shell sh;
 
   sh.line_available("evaluate int");
@@ -108,13 +110,39 @@ JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_reset_metaprogram_state) 
   sh.clear_output();
   sh.line_available("evaluate");
 
-  JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+}
+#endif
 
-  sh.clear_output();
-  sh.line_available("evaluate int");
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(
+    test_mdb_evaluate_missing_argument_will_reset_metaprogram_state)
+{
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
 
   JUST_ASSERT(sh.has_metaprogram());
   JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  auto first_state = sh.get_metaprogram().get_state();
+
+  sh.line_available("step 5");
+
+  sh.clear_output();
+  sh.line_available("evaluate");
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  auto second_state = sh.get_metaprogram().get_state();
+
+  // Comparing only the discovered vector should be enough
+  JUST_ASSERT(first_state.discovered.size() == second_state.discovered.size());
+  JUST_ASSERT(
+      std::equal(
+        first_state.discovered.begin(),
+        first_state.discovered.end(),
+        second_state.discovered.begin()));
 }
 #endif

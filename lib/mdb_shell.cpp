@@ -37,8 +37,10 @@ const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
-        "<type>",
+        "[<type>]",
         "Evaluate and start debugging a new metaprogram.",
+        "If called with no arguments, then the last evaluated metaprogram will be\n"
+        "reevaluated.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
@@ -327,15 +329,18 @@ void mdb_shell::command_step(const std::string& arg) {
   }
 }
 
-void mdb_shell::command_evaluate(const std::string& arg) {
+void mdb_shell::command_evaluate(const std::string& arg_ref) {
   using boost::starts_with;
   using boost::ends_with;
   using boost::trim_copy;
 
+  std::string arg = arg_ref;
   if (arg.empty()) {
-    mp = boost::none;
-    display_error("Argument expected\n");
-    return;
+    if (!mp) {
+      display_error("Nothing has been evaluated yet.\n");
+      return;
+    }
+    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
   }
 
   if (!run_metaprogram_with_templight(arg)) {
