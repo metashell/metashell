@@ -29,6 +29,7 @@
 #include <boost/program_options/parsers.hpp>
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <string>
 #include <iostream>
@@ -84,6 +85,7 @@ namespace
   void show_mdb_help()
   {
     using boost::algorithm::join;
+    using boost::algorithm::replace_all_copy;
 
     mdb_command_handler_map::commands_t
       commands = mdb_shell::command_handler.get_commands();
@@ -95,7 +97,8 @@ namespace
         << cmd.get_usage() <<  "`__ <br />\n"
         << cmd.get_short_description();
       if (!cmd.get_long_description().empty()) {
-        std::cout << " <br />" << '\n' << cmd.get_long_description();
+        std::cout << " <br />" << '\n' <<
+          replace_all_copy(cmd.get_long_description(), "\n", "\n  ");
       }
       std::cout << '\n' << std::endl;
     }

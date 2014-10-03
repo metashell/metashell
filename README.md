@@ -799,18 +799,18 @@ int_<13>
 * __`evaluate [<type>]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
 If called with no arguments, then the last evaluated metaprogram will be
-reevaluated.
-
-Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
-the debugged metaprogram with unrelated code. If you need formatting, you can
-explicitly enter `metashell::format< <type> >::type` for the same effect.
+  reevaluated.
+  
+  Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
+  the debugged metaprogram with unrelated code. If you need formatting, you can
+  explicitly enter `metashell::format< <type> >::type` for the same effect.
 
 * __`step [over] [n]`__ <br />
 Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
-Negative n means step the program backwards.
-
-Use of the `over` qualifier will jump over sub instantiations.
+  Negative n means step the program backwards.
+  
+  Use of the `over` qualifier will jump over sub instantiations.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.
@@ -818,16 +818,16 @@ Add breakpoint for all types matching `<regex>`.
 * __`continue [n]`__ <br />
 Continue program being debugged. <br />
 The program is continued until the nth breakpoint or the end of the program
-is reached. n defaults to 1 if not specified.
-Negative n means continue the program backwards.
+  is reached. n defaults to 1 if not specified.
+  Negative n means continue the program backwards.
 
 * __`forwardtrace|ft [full] [n]`__ <br />
 Print forwardtrace from the current point. <br />
 Use of the full qualifier will expand Memoizations even if that instantiation
-path has been visited before.
-
-The n specifier limits the depth of the trace. If n is not specified, then the
-trace depth is unlimited.
+  path has been visited before.
+  
+  The n specifier limits the depth of the trace. If n is not specified, then the
+  trace depth is unlimited.
 
 * __`backtrace|bt `__ <br />
 Print backtrace from the current point.
