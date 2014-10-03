@@ -23,7 +23,7 @@ use_cpp11()
 target_link_libraries(metashell_test metashell_lib)
 
 # Boost for the unit tests
-add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/include\" )
+add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost_include\" )
 
 # Wave
 target_link_libraries(metashell_test
