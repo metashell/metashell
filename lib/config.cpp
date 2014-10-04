@@ -231,6 +231,7 @@ config metashell::detect_config(
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
   cfg.max_template_depth = ucfg_.max_template_depth;
+  cfg.saving_enabled = ucfg_.saving_enabled;
 
   if (env_detector_.on_windows())
   {

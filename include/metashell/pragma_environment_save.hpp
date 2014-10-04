@@ -1,3 +1,6 @@
+#ifndef METASHELL_PRAGMA_ENVIRONMENT_SAVE_HPP
+#define METASHELL_PRAGMA_ENVIRONMENT_SAVE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,27 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_quit.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/pragma_handler_interface.hpp>
 
-using namespace metashell;
+#include <string>
 
-pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments(shell_, "quit")
-{}
-
-pragma_handler_interface* pragma_quit::clone() const
+namespace metashell
 {
-  return new pragma_quit(get_shell());
+  class shell;
+
+  class pragma_environment_save : public pragma_handler_interface
+  {
+  public:
+    explicit pragma_environment_save(shell& shell_);
+
+    virtual pragma_handler_interface* clone() const;
+
+    virtual std::string arguments() const;
+    virtual std::string description() const;
+
+    virtual void run(
+      const command::iterator& args_begin_,
+      const command::iterator& args_end_
+    ) const;
+  private:
+    shell& _shell;
+  };
 }
 
-std::string pragma_quit::description() const
-{
-  return "Terminates the shell.";
-}
-
-void pragma_quit::run() const
-{
-  get_shell().stop();
-}
+#endif
 

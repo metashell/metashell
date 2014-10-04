@@ -148,3 +148,23 @@ JUST_TEST_CASE(test_only_template_depth_can_follow_f)
   );
 }
 
+JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
+{
+  const char* args[] = {"metashell"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(!r.cfg.saving_enabled);
+}
+
+JUST_TEST_CASE(test_enabling_saving)
+{
+  const char* args[] = {"metashell", "--enable_saving"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(r.cfg.saving_enabled);
+}
+

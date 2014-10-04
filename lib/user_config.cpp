@@ -11,6 +11,7 @@ user_config::user_config() :
   warnings_enabled(true),
   use_precompiled_headers(false),
   clang_path(),
-  max_template_depth(256)
+  max_template_depth(256),
+  saving_enabled(false)
 {}
 

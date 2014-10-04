@@ -660,6 +660,9 @@ Re-reads the included header files from disc.
 * __`#msh environment reset`__ <br />
 Resets the environment to its initial state. It does not change the environment stack.
 
+* __`#msh environment save <path>`__ <br />
+Saves the environment into a file. This is disabled by default. It can be enabled using the --enable_saving command line argument.
+
 * __`#msh environment stack`__ <br />
 Displays the size of the environment stack.
 

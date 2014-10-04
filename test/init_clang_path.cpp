@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "argv0.hpp"
+
 #include <metashell/config.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -36,7 +38,7 @@ namespace
     init_clang_path()
     {
 #ifdef _WIN32
-       const metashell::config cfg = metashell::empty_config();
+       const metashell::config cfg = metashell::empty_config(argv0::get());
 
       // To find libclang.dll
       if (!cfg.clang_path.empty())
