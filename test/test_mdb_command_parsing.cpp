@@ -22,17 +22,6 @@
 
 using namespace metashell;
 
-std::tuple<mdb_command, std::string> get_command_from_map(
-    const mdb_command_handler_map& map,
-    const std::string& line)
-{
-  auto opt_pair = map.get_command_for_line(line);
-
-  JUST_ASSERT(bool(opt_pair));
-
-  return *opt_pair;
-}
-
 JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
   mdb_command_handler_map::commands_t commands =

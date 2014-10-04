@@ -33,3 +33,13 @@ std::string get_output(const std::string& input_, const std::string& test_code_)
   return sh.output();
 }
 
+std::tuple<metashell::mdb_command, std::string> get_command_from_map(
+    const metashell::mdb_command_handler_map& map,
+    const std::string& line)
+{
+  auto opt_pair = map.get_command_for_line(line);
+
+  JUST_ASSERT(bool(opt_pair));
+
+  return *opt_pair;
+}

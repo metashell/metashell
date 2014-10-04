@@ -784,15 +784,16 @@ Breakpoint reached
 fib<3> (TemplateInstantiation)
 ```
 
-You can repeat the last command by simply hitting enter again:
+Commands can be abbreviated if unambigouos. For example you can use just `c`
+instead of `continue`:
 
 ```cpp
-(mdb)
+(mdb) c
 Breakpoint reached
 fib<3> (Memoization)
 ```
 
-And again:
+You can repeat the last command by simply hitting enter again:
 
 ```cpp
 (mdb)
