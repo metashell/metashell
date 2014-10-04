@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/readline_completion_function.hpp>
+
 #include <string>
 
 #include <boost/optional.hpp>
@@ -38,11 +40,11 @@ public:
   boost::optional<std::string> readline(const std::string& prompt);
   std::string get_edited_text();
   void add_history(const std::string& line);
-  void set_rl_attempted_completion_function(rl_completion_func_t func);
+  void set_rl_attempted_completion_function(readline_completion_function func);
   unsigned int width() const;
 
 private:
-  rl_completion_func_t *last_rl_attempted_completion_function;
+  readline_completion_function *last_rl_attempted_completion_function;
 };
 
 }

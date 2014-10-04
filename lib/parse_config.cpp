@@ -204,6 +204,10 @@ parse_config_result metashell::parse_config(
       value(&fvalue),
       "Feature optioni. Currently supported: -ftemplate-depth=<value>"
     )
+    (
+      "enable_saving",
+      "Enable saving the environment using the #msh environment save"
+    )
     ;
 
   try
@@ -218,6 +222,7 @@ parse_config_result metashell::parse_config(
     ucfg.standard_to_use = metashell::parse(cppstd);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
+    ucfg.saving_enabled = vm.count("enable_saving");
 
     if (!fvalue.empty())
     {

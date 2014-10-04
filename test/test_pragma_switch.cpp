@@ -64,3 +64,13 @@ JUST_TEST_CASE(test_pragma_switch_calls_updating_callback)
   test_callback_is_called<false>("0");
 }
 
+JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
+{
+  test_shell sh;
+
+  pragma_switch p("test", always<true>, [](bool) {}, sh);
+  run(p, "on foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+

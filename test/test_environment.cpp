@@ -20,11 +20,13 @@
 #include <metashell/config.hpp>
 
 #include <just/test.hpp>
+#include <just/temp.hpp>
 
 #include "test_shell.hpp"
 #include "argv0.hpp"
 
 #include <algorithm>
+#include <fstream>
 
 using namespace metashell;
 
@@ -35,6 +37,12 @@ namespace
     env_.append("#include <foo/bar.hpp>\n");
 
     JUST_ASSERT_EQUAL("#include <foo/bar.hpp>\n", env_.get_all());
+  }
+
+  bool file_exists(const std::string& path_)
+  {
+    std::ifstream f(path_.c_str());
+    return !(f.fail() || f.bad());
   }
 }
 
@@ -98,5 +106,123 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
   JUST_ASSERT(
     std::find(as.begin(), as.end(), "-ftemplate-depth=13") != as.end()
   );
+}
+
+JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment push");
+  sh.line_available("#msh environment pop foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment push foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment reload foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment stack foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment reset foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
+{
+  test_shell sh;
+
+  sh.line_available("#msh quit foo");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(
+  test_environment_save_displays_an_error_when_not_enabled_in_config
+)
+{
+  test_shell sh;
+
+  sh.line_available("#msh environment save");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(
+  test_environment_save_saves_the_environment_when_enabled_in_config
+)
+{
+  just::temp::directory d;
+  const std::string fn = d.path() + "/test.hpp";
+
+  metashell::config cfg = metashell::empty_config(argv0::get());
+  cfg.saving_enabled = true;
+  test_shell sh(cfg, 80);
+
+  sh.line_available("#msh environment save " + fn);
+
+  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT(file_exists(fn));
+}
+
+JUST_TEST_CASE(
+  test_environment_save_displays_an_error_when_filename_is_missing
+)
+{
+  metashell::config cfg = metashell::empty_config(argv0::get());
+  cfg.saving_enabled = true;
+  test_shell sh(cfg, 80);
+
+  sh.line_available("#msh environment save    ");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
+}
+
+JUST_TEST_CASE(
+  test_environment_save_displays_an_error_when_io_error_happens
+)
+{
+  metashell::config cfg = metashell::empty_config(argv0::get());
+  cfg.saving_enabled = true;
+  test_shell sh(cfg, 80);
+
+  sh.line_available("#msh environment save /foo *? bar");
+
+  JUST_ASSERT_NOT_EQUAL("", sh.error());
 }
 

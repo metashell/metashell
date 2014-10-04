@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/pragma_without_arguments.hpp>
 
 #include <string>
 
@@ -25,22 +25,16 @@ namespace metashell
 {
   class shell;
 
-  class pragma_environment_stack : public pragma_handler_interface
+  class pragma_environment_stack : public pragma_without_arguments
   {
   public:
     explicit pragma_environment_stack(shell& shell_);
 
     virtual pragma_handler_interface* clone() const;
 
-    virtual std::string arguments() const;
     virtual std::string description() const;
 
-    virtual void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_
-    ) const;
-  private:
-    shell& _shell;
+    virtual void run() const;
   };
 }
 

@@ -42,6 +42,7 @@ namespace metashell
     bool use_precompiled_headers;
     std::string clang_path;
     int max_template_depth;
+    bool saving_enabled;
 
     config();
   };

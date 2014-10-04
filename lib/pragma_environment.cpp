@@ -20,17 +20,12 @@
 using namespace metashell;
 
 pragma_environment::pragma_environment(shell& shell_) :
-  _shell(shell_)
+  pragma_without_arguments(shell_, "environment")
 {}
 
 pragma_handler_interface* pragma_environment::clone() const
 {
-  return new pragma_environment(_shell);
-}
-
-std::string pragma_environment::arguments() const
-{
-  return "";
+  return new pragma_environment(get_shell());
 }
 
 std::string pragma_environment::description() const
@@ -38,11 +33,8 @@ std::string pragma_environment::description() const
   return "Displays the entire content of the environment.";
 }
 
-void pragma_environment::run(
-  const command::iterator&,
-  const command::iterator&
-) const
+void pragma_environment::run() const
 {
-  _shell.display_normal(_shell.env().get_all());
+  get_shell().display_normal(get_shell().env().get_all());
 }
 

@@ -45,7 +45,7 @@ boost::optional<std::string> readline_environment::readline(
   if (line) {
     std::string str(line);
 
-#if defined __FreeBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
     free(line);
 #else
     rl_free(line);
@@ -79,7 +79,7 @@ void readline_environment::add_history(const std::string& line) {
 }
 
 void readline_environment::set_rl_attempted_completion_function(
-    rl_completion_func_t func)
+    readline_completion_function func)
 {
   rl_attempted_completion_function = func;
 }

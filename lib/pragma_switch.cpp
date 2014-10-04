@@ -91,7 +91,17 @@ void pragma_switch::run(
     const std::string v = i->value();
     if (valid_argument(v))
     {
-      _update(element_of(true_values, v));
+      ++i;
+      if (i == args_end_)
+      {
+        _update(element_of(true_values, v));
+      }
+      else
+      {
+        _shell.display_error(
+          "Invalid arguments after " + v + ": " + tokens_to_string(i, args_end_)
+        );
+      }
     }
     else
     {

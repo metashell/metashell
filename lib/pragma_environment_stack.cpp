@@ -20,17 +20,12 @@
 using namespace metashell;
 
 pragma_environment_stack::pragma_environment_stack(shell& shell_) :
-  _shell(shell_)
+  pragma_without_arguments(shell_, "environment stack")
 {}
 
 pragma_handler_interface* pragma_environment_stack::clone() const
 {
-  return new pragma_environment_stack(_shell);
-}
-
-std::string pragma_environment_stack::arguments() const
-{
-  return "";
+  return new pragma_environment_stack(get_shell());
 }
 
 std::string pragma_environment_stack::description() const
@@ -38,11 +33,8 @@ std::string pragma_environment_stack::description() const
   return "Displays the size of the environment stack.";
 }
 
-void pragma_environment_stack::run(
-  const command::iterator&,
-  const command::iterator&
-) const
+void pragma_environment_stack::run() const
 {
-  _shell.display_environment_stack_size();
+  get_shell().display_environment_stack_size();
 }
 

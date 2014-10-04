@@ -20,17 +20,12 @@
 using namespace metashell;
 
 pragma_environment_reload::pragma_environment_reload(shell& shell_) :
-  _shell(shell_)
+  pragma_without_arguments(shell_, "environment reload")
 {}
 
 pragma_handler_interface* pragma_environment_reload::clone() const
 {
-  return new pragma_environment_reload(_shell);
-}
-
-std::string pragma_environment_reload::arguments() const
-{
-  return "";
+  return new pragma_environment_reload(get_shell());
 }
 
 std::string pragma_environment_reload::description() const
@@ -38,11 +33,8 @@ std::string pragma_environment_reload::description() const
   return "Re-reads the included header files from disc.";
 }
 
-void pragma_environment_reload::run(
-  const command::iterator&,
-  const command::iterator&
-) const
+void pragma_environment_reload::run() const
 {
-  _shell.rebuild_environment();
+  get_shell().rebuild_environment();
 }
 

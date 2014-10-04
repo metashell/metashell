@@ -20,17 +20,12 @@
 using namespace metashell;
 
 pragma_environment_reset::pragma_environment_reset(shell& shell_) :
-  _shell(shell_)
+  pragma_without_arguments(shell_, "environment reset")
 {}
 
 pragma_handler_interface* pragma_environment_reset::clone() const
 {
-  return new pragma_environment_reset(_shell);
-}
-
-std::string pragma_environment_reset::arguments() const
-{
-  return "";
+  return new pragma_environment_reset(get_shell());
 }
 
 std::string pragma_environment_reset::description() const
@@ -40,11 +35,8 @@ std::string pragma_environment_reset::description() const
     " It does not change the environment stack.";
 }
 
-void pragma_environment_reset::run(
-  const command::iterator&,
-  const command::iterator&
-) const
+void pragma_environment_reset::run() const
 {
-  _shell.reset_environment();
+  get_shell().reset_environment();
 }
 

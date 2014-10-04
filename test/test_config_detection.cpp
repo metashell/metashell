@@ -686,3 +686,26 @@ JUST_TEST_CASE(test_detect_max_template_depth)
   JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
 }
 
+JUST_TEST_CASE(test_saving_is_disabled_by_default)
+{
+  mock_environment_detector envd;
+  
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+  
+  JUST_ASSERT(!cfg.saving_enabled);
+}
+
+JUST_TEST_CASE(test_saving_is_enabled_when_enabled_by_user_config)
+{
+  mock_environment_detector envd;
+  
+  user_config ucfg;
+  ucfg.saving_enabled = true;
+
+  std::ostringstream err;
+  const config cfg = detect_config(ucfg, envd, err);
+  
+  JUST_ASSERT(cfg.saving_enabled);
+}
+

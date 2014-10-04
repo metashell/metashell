@@ -1,3 +1,6 @@
+#ifndef METASHELL_READLINE_COMPLETION_FUNCTION_HPP
+#define METASHELL_READLINE_COMPLETION_FUNCTION_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,27 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_quit.hpp>
-#include <metashell/shell.hpp>
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#endif
 
-using namespace metashell;
-
-pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments(shell_, "quit")
-{}
-
-pragma_handler_interface* pragma_quit::clone() const
+namespace metashell
 {
-  return new pragma_quit(get_shell());
+#ifdef __APPLE__
+  typedef CPPFunction readline_completion_function;
+#else
+  typedef rl_completion_func_t readline_completion_function;
+#endif
 }
 
-std::string pragma_quit::description() const
-{
-  return "Terminates the shell.";
-}
-
-void pragma_quit::run() const
-{
-  get_shell().stop();
-}
+#endif
 

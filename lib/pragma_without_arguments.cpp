@@ -14,27 +14,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_quit.hpp>
+#include <metashell/pragma_without_arguments.hpp>
 #include <metashell/shell.hpp>
 
 using namespace metashell;
 
-pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments(shell_, "quit")
+pragma_without_arguments::pragma_without_arguments(
+  shell& shell_,
+  const std::string& name_
+) :
+  _shell(shell_),
+  _name(name_)
 {}
 
-pragma_handler_interface* pragma_quit::clone() const
+std::string pragma_without_arguments::arguments() const
 {
-  return new pragma_quit(get_shell());
+  return "";
 }
 
-std::string pragma_quit::description() const
+void pragma_without_arguments::run(
+  const command::iterator& args_begin_,
+  const command::iterator& args_end_
+) const
 {
-  return "Terminates the shell.";
+  if (args_begin_ == args_end_)
+  {
+    run();
+  }
+  else
+  {
+    _shell.display_error(
+      "Invalid arguments for #msh " + _name + ": "
+      + tokens_to_string(args_begin_, args_end_)
+    );
+  }
 }
 
-void pragma_quit::run() const
+shell& pragma_without_arguments::get_shell() const
 {
-  get_shell().stop();
+  return _shell;
 }
 
