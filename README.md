@@ -731,15 +731,22 @@ You'll see, that the prompt has changed to `(mdb)`. Now you can enter
 metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
 
 Metadebugger provides an interface similar to gdb. For example you can step
-the metaprogram forward two steps:
+the metaprogram forward three steps:
 
 ```cpp
-(mdb) step 2
-fib<5> (TemplateInstantiation)
+(mdb) step 3
+fib<4> (TemplateInstantiation)
 ```
 
 As you can see, metadebugger tells you that in this step `fib<5>` is getting
 instantiated in a TemplateInstantiation event.
+
+Stepping backwards is also trivial in a template metaprogram:
+
+```cpp
+(mdb) step -1
+fib<5> (TemplateInstantiation)
+```
 
 You can check the current backtrace:
 ```cpp
@@ -780,15 +787,16 @@ Breakpoint reached
 fib<3> (TemplateInstantiation)
 ```
 
-You can repeat the last command by simply hitting enter again:
+Commands can be abbreviated if unambigouos. For example you can use just `c`
+instead of `continue`:
 
 ```cpp
-(mdb)
+(mdb) c
 Breakpoint reached
 fib<3> (Memoization)
 ```
 
-And again:
+You can repeat the last command by simply hitting enter again:
 
 ```cpp
 (mdb)
