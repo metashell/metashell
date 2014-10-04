@@ -14,7 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-disable_warnings()
+subdirs(
+  program_options
+  regex
+  system
+  filesystem
+  thread
+  wave
+)
 
-subdirs(libs)
-
+if (NOT WIN32)
+  subdirs(atomic)
+endif()
