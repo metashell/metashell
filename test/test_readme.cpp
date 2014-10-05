@@ -18,6 +18,7 @@
 
 #include <just/test.hpp>
 
+#include "mdb_test_shell.hpp"
 #include "util.hpp"
 
 using namespace metashell;
@@ -34,4 +35,87 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   auto keys = command.get_keys();
 
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
+}
+
+JUST_TEST_CASE(test_readme_getting_started) {
+  mdb_test_shell sh(
+  "template <int N>"
+  "struct fib"
+  "{"
+  "  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value;"
+  "};"
+  "template <>"
+  "struct fib<0>"
+  "{ "
+  "  static constexpr int value = 1;"
+  "};"
+  "template <>"
+  "struct fib<1>"
+  "{"
+  "  static constexpr int value = 1;"
+  "};"
+  "template<int N>"
+  "struct int_ {};");
+
+  sh.line_available("evaluate int_<fib<6>::value>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("step 3");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "fib<4> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("bt");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "#0 fib<5> (TemplateInstantiation)\n"
+      "#1 fib<6> (TemplateInstantiation)\n"
+      "#2 int_<fib<6>::value>\n");
+
+  sh.clear_output();
+  sh.line_available("ft");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<5> (TemplateInstantiation)\n"
+      "+ fib<4> (TemplateInstantiation)\n"
+      "| + fib<3> (TemplateInstantiation)\n"
+      "| | + fib<2> (TemplateInstantiation)\n"
+      "| | | + fib<1> (Memoization)\n"
+      "| | | ` fib<0> (Memoization)\n"
+      "| | ` fib<1> (Memoization)\n"
+      "| ` fib<2> (Memoization)\n"
+      "` fib<3> (Memoization)\n");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib<3>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Break point \"fib<3>\" added\n");
+
+  sh.clear_output();
+  sh.line_available("continue");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<3>\" reached\n"
+      "fib<3> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("c");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<3>\" reached\n"
+      "fib<3> (Memoization)\n");
+
+  sh.clear_output();
+  sh.line_available("");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<13>\n");
 }

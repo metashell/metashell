@@ -761,7 +761,7 @@ the steps, we can also see the forwardtrace from any step:
 
 ```cpp
 (mdb) ft
-fib<5>
+fib<5> (TemplateInstantiation)
 + fib<4> (TemplateInstantiation)
 | + fib<3> (TemplateInstantiation)
 | | + fib<2> (TemplateInstantiation)
@@ -783,7 +783,7 @@ Now let's continue the execution until the first breakpoint:
 
 ```cpp
 (mdb) continue
-Breakpoint reached
+Breakpoint "fib<3>" reached
 fib<3> (TemplateInstantiation)
 ```
 
@@ -792,7 +792,7 @@ instead of `continue`:
 
 ```cpp
 (mdb) c
-Breakpoint reached
+Breakpoint "fib<3>" reached
 fib<3> (Memoization)
 ```
 
