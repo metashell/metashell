@@ -776,7 +776,7 @@ You can also create breakpoints:
 
 ```cpp
 (mdb) rbreak fib<3>
-Break point "fib<3>" added
+Breakpoint "fib<3>" added
 ```
 
 Now let's continue the execution until the first breakpoint:

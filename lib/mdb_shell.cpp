@@ -460,7 +460,7 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 void mdb_shell::command_rbreak(const std::string& arg) {
   try {
     breakpoints.push_back(std::make_tuple(arg, boost::regex(arg)));
-    display_info("Break point \"" + arg + "\" added\n");
+    display_info("Breakpoint \"" + arg + "\" added\n");
   } catch (const boost::regex_error&) {
     display_error("\"" + arg + "\" is not a valid regex\n");
   }

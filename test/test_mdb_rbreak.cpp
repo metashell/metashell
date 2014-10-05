@@ -40,6 +40,6 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex) {
   sh.line_available("rbreak xyz");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Break point \"xyz\" added\n");
+      "Breakpoint \"xyz\" added\n");
 }
 #endif

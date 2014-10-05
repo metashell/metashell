@@ -97,7 +97,7 @@ JUST_TEST_CASE(test_readme_getting_started) {
   sh.clear_output();
   sh.line_available("rbreak fib<3>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Break point \"fib<3>\" added\n");
+  JUST_ASSERT_EQUAL(sh.get_output(), "Breakpoint \"fib<3>\" added\n");
 
   sh.clear_output();
   sh.line_available("continue");
