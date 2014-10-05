@@ -70,7 +70,7 @@ public:
 
 protected:
   // breakpoint is simply a regex for now
-  typedef boost::regex breakpoint_t;
+  typedef std::tuple<std::string, boost::regex> breakpoint_t;
   typedef std::vector<breakpoint_t> breakpoints_t;
 
   bool require_empty_args(const std::string& args) const;
@@ -80,8 +80,8 @@ protected:
   bool run_metaprogram_with_templight(const std::string& str);
   boost::optional<std::string> run_metaprogram(const std::string& str);
 
-  void continue_metaprogram();
-  void continue_back_metaprogram();
+  breakpoints_t::iterator continue_metaprogram();
+  breakpoints_t::iterator continue_back_metaprogram();
 
   void display_error(const std::string& str) const;
   void display_info(const std::string& str) const;

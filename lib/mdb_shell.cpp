@@ -229,13 +229,14 @@ void mdb_shell::command_continue(const std::string& arg) {
     return;
   }
 
+  breakpoints_t::iterator breakpoint_it = breakpoints.end();
   if (continue_count > 0) {
     for (int i = 0; i < continue_count && !mp->is_finished(); ++i) {
-      continue_metaprogram();
+      breakpoint_it = continue_metaprogram();
     }
   } else {
     for (int i = 0; i < -continue_count && !mp->is_at_start(); ++i) {
-      continue_back_metaprogram();
+      breakpoint_it = continue_back_metaprogram();
     }
   }
 
@@ -248,7 +249,9 @@ void mdb_shell::command_continue(const std::string& arg) {
       display_metaprogram_reached_the_beginning();
     }
   } else {
-    display_info("Breakpoint reached\n");
+    assert(breakpoint_it != breakpoints.end());
+    display_info(
+        "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached\n");
     display_current_frame();
   }
 }
@@ -457,7 +460,7 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 
 void mdb_shell::command_rbreak(const std::string& arg) {
   try {
-    breakpoints.push_back(boost::regex(arg));
+    breakpoints.push_back(std::make_tuple(arg, boost::regex(arg)));
     display_info("Break point \"" + arg + "\" added\n");
   } catch (const boost::regex_error&) {
     display_error("\"" + arg + "\" is not a valid regex\n");
@@ -549,39 +552,39 @@ boost::optional<std::string> mdb_shell::run_metaprogram(
 
 // TODO continue_metaprogram and continue_back_metaprogram need to be merged
 // into a single function
-void mdb_shell::continue_metaprogram() {
+mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram() {
   assert(!mp->is_finished());
 
   while (true) {
     mp->step();
     if (mp->is_finished()) {
-      return;
+      return breakpoints.end();
     }
-    for (const breakpoint_t& breakpoint : breakpoints) {
+    for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
       const std::string current_type =
         mp->get_vertex_property(mp->get_current_vertex()).name;
 
-      if (boost::regex_search(current_type, breakpoint)) {
-        return;
+      if (boost::regex_search(current_type, std::get<1>(*it))) {
+        return it;
       }
     }
   }
 }
 
-void mdb_shell::continue_back_metaprogram() {
+mdb_shell::breakpoints_t::iterator mdb_shell::continue_back_metaprogram() {
   assert(!mp->is_at_start());
 
   while (true) {
     mp->step_back();
     if (mp->is_at_start()) {
-      return;
+      return breakpoints.end();
     }
-    for (const breakpoint_t& breakpoint : breakpoints) {
+    for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
       const std::string current_type =
         mp->get_vertex_property(mp->get_current_vertex()).name;
 
-      if (boost::regex_search(current_type, breakpoint)) {
-        return;
+      if (boost::regex_search(current_type, std::get<1>(*it))) {
+        return it;
       }
     }
   }

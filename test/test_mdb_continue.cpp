@@ -59,7 +59,7 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
   sh.line_available("continue");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<0>\" reached\n"
       "fib<0> (Memoization)\n");
 }
 #endif
@@ -75,7 +75,7 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
   sh.line_available("continue 2");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (Memoization)\n");
 }
 #endif
@@ -91,14 +91,14 @@ JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
   sh.line_available("continue");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (TemplateInstantiation)\n");
 
   sh.clear_output();
   sh.line_available("continue");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (Memoization)\n");
 }
 #endif
@@ -115,14 +115,14 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
   sh.line_available("continue");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<6>\" reached\n"
       "fib<6> (TemplateInstantiation)\n");
 
   sh.clear_output();
   sh.line_available("continue");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (TemplateInstantiation)\n");
 }
 #endif
@@ -139,7 +139,7 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
   sh.line_available("continue 2");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (TemplateInstantiation)\n");
 }
 #endif
@@ -215,14 +215,14 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
   sh.line_available("continue 2");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (TemplateInstantiation)\n");
 
   sh.clear_output();
   sh.line_available("continue -1");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<6>\" reached\n"
       "fib<6> (TemplateInstantiation)\n");
 }
 #endif
@@ -238,7 +238,7 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
   sh.line_available("continue 1");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint reached\n"
+      "Breakpoint \"fib<5>\" reached\n"
       "fib<5> (TemplateInstantiation)\n");
 
   sh.clear_output();
