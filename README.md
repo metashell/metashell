@@ -776,7 +776,7 @@ You can also create breakpoints:
 
 ```cpp
 (mdb) rbreak fib<3>
-Breakpoint "fib<3>" added
+Breakpoint "fib<3>" added to 2 locations
 ```
 
 Now let's continue the execution until the first breakpoint:
@@ -811,6 +811,8 @@ int_<13>
 Evaluate and start debugging a new metaprogram. <br />
 If called with no arguments, then the last evaluated metaprogram will be
   reevaluated.
+  
+  Previous breakpoints are cleared
   
   Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
   the debugged metaprogram with unrelated code. If you need formatting, you can

@@ -49,6 +49,24 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaulation_removes_breakpoints) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("rbreak fib<0>");
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("continue");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
   mdb_test_shell sh(fibonacci_mp);
 
