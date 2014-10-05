@@ -37,6 +37,7 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_readme_getting_started) {
   mdb_test_shell sh(
   "template <int N>"
@@ -119,3 +120,4 @@ JUST_TEST_CASE(test_readme_getting_started) {
       "Metaprogram finished\n"
       "int_<13>\n");
 }
+#endif
