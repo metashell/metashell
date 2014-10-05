@@ -18,6 +18,7 @@
 
 #include <just/test.hpp>
 
+#include "test_shell.hpp"
 #include "mdb_test_shell.hpp"
 #include "util.hpp"
 
@@ -37,8 +38,137 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }
 
+JUST_TEST_CASE(test_readme_msh_getting_started) {
+  test_shell sh;
+
+  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  sh.line_available("template <int N> \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("struct fib \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("{ \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("};");
+  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  sh.line_available("template <> \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("struct fib<0> \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("{ \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("  static constexpr int value = 1; \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("};");
+  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  sh.line_available("template <> \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("struct fib<1> \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("{ \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("  static constexpr int value = 1; \\");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  sh.line_available("};");
+  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("fib<6>::value");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.clear_output();
+
+  sh.line_available("#include <boost/mpl/int.hpp>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("boost::mpl::int_<fib<6>::value>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.output(), "mpl_::int_<13>");
+
+  sh.clear_output();
+
+  sh.line_available("#include <metashell/scalar.hpp>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("SCALAR(fib<6>::value)");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.output(), "std::integral_constant<int, 13>");
+
+  sh.clear_output();
+
+  sh.line_available("#include <boost/mpl/vector.hpp>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("using namespace boost::mpl;");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("vector<int, double, char>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.output(),
+      "boost::mpl::vector<int, double, char, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
+      "l_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
+      "l_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>");
+
+  sh.clear_output();
+
+  sh.line_available("#include <boost/mpl/push_front.hpp>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("push_front<vector<int, double, char>, void>::type");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.output(),
+      "boost::mpl::v_item<void, boost::mpl::vector<int, double, char, mpl_::na, mpl_::n"
+      "a, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::n"
+      "a, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>, 1>");
+
+  sh.clear_output();
+
+  sh.line_available("#include <metashell/formatter.hpp>");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT(sh.output().empty());
+
+  sh.line_available("push_front<vector<int, double, char>, void>::type");
+
+  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.output(),
+      "boost_::mpl::vector<void, int, double, char>");
+}
+
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_readme_getting_started) {
+JUST_TEST_CASE(test_readme_mdb_getting_started) {
   mdb_test_shell sh(
   "template <int N>"
   "struct fib"

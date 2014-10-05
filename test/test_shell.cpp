@@ -90,6 +90,13 @@ const std::string& test_shell::error() const
   return _error;
 }
 
+void test_shell::clear_output()
+{
+  _output.clear();
+  _info.clear();
+  _error.clear();
+}
+
 unsigned int test_shell::width() const
 {
   return _width;

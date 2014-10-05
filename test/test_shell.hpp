@@ -42,6 +42,7 @@ public:
   const std::string& output() const;
   const std::string& info() const;
   const std::string& error() const;
+  void clear_output();
 private:
   mutable std::string _output;
   mutable std::string _info;
