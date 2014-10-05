@@ -23,23 +23,82 @@
 using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex) {
+JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments) {
   mdb_test_shell sh;
 
-  sh.line_available("rbreak [");
+  sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "\"[\" is not a valid regex\n");
+  sh.clear_output();
+  sh.line_available("rbreak");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex) {
+JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments_with_trailing_whitespace) {
   mdb_test_shell sh;
 
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
+  sh.line_available("rbreak ");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
+  sh.line_available("rbreak [");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "\"[\" is not a valid regex\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
   sh.line_available("rbreak xyz");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Break point \"xyz\" added\n");
+      "Breakpoint \"xyz\" doesn't match any node\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
+  sh.line_available("rbreak int");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"int\" added to 1 location\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib<3>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<3>\" added to 2 locations\n");
 }
 #endif

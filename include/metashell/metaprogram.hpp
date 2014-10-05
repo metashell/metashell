@@ -89,6 +89,7 @@ public:
 
   typedef boost::graph_traits<graph_t>::vertices_size_type vertices_size_type;
   typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
+  typedef boost::graph_traits<graph_t>::degree_size_type degree_size_type;
 
   typedef boost::optional<vertex_descriptor> optional_vertex_descriptor;
   typedef boost::optional<edge_descriptor> optional_edge_descriptor;
@@ -149,6 +150,8 @@ public:
 
   vertices_size_type get_num_vertices() const;
   edges_size_type get_num_edges() const;
+  degree_size_type get_enabled_in_degree(vertex_descriptor vertex) const;
+  degree_size_type get_enabled_out_degree(vertex_descriptor vertex) const;
 
   vertex_descriptor get_source(const edge_descriptor& edge) const;
   vertex_descriptor get_target(const edge_descriptor& edge) const;

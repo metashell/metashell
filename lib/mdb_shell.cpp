@@ -41,6 +41,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Evaluate and start debugging a new metaprogram.",
         "If called with no arguments, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
+        "Previous breakpoints are cleared\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
@@ -166,6 +167,12 @@ void mdb_shell::line_available(const std::string& line_arg) {
   } catch (...) {
     display_error("Unknown error\n");
   }
+}
+bool mdb_shell::breakpoint_match(
+    metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint)
+{
+  return boost::regex_search(
+      mp->get_vertex_property(vertex).name, std::get<1>(breakpoint));
 }
 
 bool mdb_shell::require_empty_args(const std::string& args) const {
@@ -350,6 +357,8 @@ void mdb_shell::command_evaluate(const std::string& arg_ref) {
   }
   display_info("Metaprogram started\n");
 
+  breakpoints.clear();
+
   std::string env_buffer = env.get();
   int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
 
@@ -458,9 +467,31 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 }
 
 void mdb_shell::command_rbreak(const std::string& arg) {
+  if (arg.empty()) {
+    display_error("Argument expected\n");
+    return;
+  }
+  if (!require_running_metaprogram()) {
+    return;
+  }
   try {
+    breakpoint_t breakpoint = std::make_tuple(arg, boost::regex(arg));
     breakpoints.push_back(std::make_tuple(arg, boost::regex(arg)));
-    display_info("Break point \"" + arg + "\" added\n");
+
+    unsigned match_count = 0;
+    for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
+      if (breakpoint_match(vertex, breakpoints.back())) {
+        match_count += mp->get_enabled_in_degree(vertex);
+      }
+    }
+    if (match_count == 0) {
+      display_info("Breakpoint \"" + arg + "\" doesn't match any node\n");
+    } else {
+      display_info("Breakpoint \"" + arg + "\" added to " +
+          std::to_string(match_count) +
+          (match_count > 1 ? " locations" : " location") + "\n");
+      breakpoints.push_back(breakpoint);
+    }
   } catch (const boost::regex_error&) {
     display_error("\"" + arg + "\" is not a valid regex\n");
   }
@@ -560,10 +591,7 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
       return breakpoints.end();
     }
     for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
-      const std::string current_type =
-        mp->get_vertex_property(mp->get_current_vertex()).name;
-
-      if (boost::regex_search(current_type, std::get<1>(*it))) {
+      if (breakpoint_match(mp->get_current_vertex(), *it)) {
         return it;
       }
     }

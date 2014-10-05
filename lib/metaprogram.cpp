@@ -189,6 +189,30 @@ metaprogram::edges_size_type metaprogram::get_num_edges() const {
   return boost::num_edges(graph);
 }
 
+metaprogram::degree_size_type metaprogram::get_enabled_in_degree(
+    vertex_descriptor vertex) const
+{
+  degree_size_type result = 0;
+  for (edge_descriptor edge : get_in_edges(vertex)) {
+    if (get_edge_property(edge).enabled) {
+      ++result;
+    }
+  }
+  return result;
+}
+
+metaprogram::degree_size_type metaprogram::get_enabled_out_degree(
+    vertex_descriptor vertex) const
+{
+  degree_size_type result = 0;
+  for (edge_descriptor edge : get_out_edges(vertex)) {
+    if (get_edge_property(edge).enabled) {
+      ++result;
+    }
+  }
+  return result;
+}
+
 metaprogram::vertex_descriptor metaprogram::get_source(
     const edge_descriptor& edge) const
 {

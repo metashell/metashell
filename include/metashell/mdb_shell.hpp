@@ -73,6 +73,9 @@ protected:
   typedef std::tuple<std::string, boost::regex> breakpoint_t;
   typedef std::vector<breakpoint_t> breakpoints_t;
 
+  bool breakpoint_match(
+      metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint);
+
   bool require_empty_args(const std::string& args) const;
   bool require_evaluated_metaprogram() const;
   bool require_running_metaprogram() const;
