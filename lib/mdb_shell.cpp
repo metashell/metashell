@@ -229,15 +229,14 @@ void mdb_shell::command_continue(const std::string& arg) {
     return;
   }
 
+  metaprogram::direction_t direction =
+    continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+
   breakpoints_t::iterator breakpoint_it = breakpoints.end();
-  if (continue_count > 0) {
-    for (int i = 0; i < continue_count && !mp->is_finished(); ++i) {
-      breakpoint_it = continue_metaprogram();
-    }
-  } else {
-    for (int i = 0; i < -continue_count && !mp->is_at_start(); ++i) {
-      breakpoint_it = continue_back_metaprogram();
-    }
+  for (int i = 0;
+      i < std::abs(continue_count) && !mp->is_at_endpoint(direction); ++i)
+  {
+    breakpoint_it = continue_metaprogram(direction);
   }
 
   if (mp->is_finished()) {
@@ -288,28 +287,28 @@ void mdb_shell::command_step(const std::string& arg) {
     return;
   }
 
-  auto until_pred = &metaprogram::is_finished;
-  auto step_func = &metaprogram::step;
-  if (step_count < 0) {
-    until_pred = &metaprogram::is_at_start;
-    step_func = &metaprogram::step_back;
-  }
+  metaprogram::direction_t direction =
+    step_count >= 0 ? metaprogram::forward : metaprogram::backwards;
 
   int iteration_count = std::abs(step_count);
 
   switch (step_type) {
     case normal:
-      for (int i = 0; i < iteration_count && !((*mp).*until_pred)(); ++i) {
-        ((*mp).*step_func)();
+      for (int i = 0;
+          i < iteration_count && !mp->is_at_endpoint(direction); ++i)
+      {
+        mp->step(direction);
       }
       break;
     case over:
       {
-        for (int i = 0; i < iteration_count && !((*mp).*until_pred)(); ++i) {
+        for (int i = 0;
+            i < iteration_count && !mp->is_at_endpoint(direction); ++i)
+        {
           unsigned bt_depth = mp->get_backtrace_length();
           do {
-            ((*mp).*step_func)();
-          } while (!((*mp).*until_pred)() &&
+            mp->step(direction);
+          } while (!mp->is_at_endpoint(direction) &&
               mp->get_backtrace_length() > bt_depth);
         }
       }
@@ -550,33 +549,14 @@ boost::optional<std::string> mdb_shell::run_metaprogram(
   return res.output;
 }
 
-// TODO continue_metaprogram and continue_back_metaprogram need to be merged
-// into a single function
-mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram() {
-  assert(!mp->is_finished());
+mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
+    metaprogram::direction_t direction)
+{
+  assert(!mp->is_at_endpoint(direction));
 
   while (true) {
-    mp->step();
-    if (mp->is_finished()) {
-      return breakpoints.end();
-    }
-    for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
-      const std::string current_type =
-        mp->get_vertex_property(mp->get_current_vertex()).name;
-
-      if (boost::regex_search(current_type, std::get<1>(*it))) {
-        return it;
-      }
-    }
-  }
-}
-
-mdb_shell::breakpoints_t::iterator mdb_shell::continue_back_metaprogram() {
-  assert(!mp->is_at_start());
-
-  while (true) {
-    mp->step_back();
-    if (mp->is_at_start()) {
+    mp->step(direction);
+    if (mp->is_at_endpoint(direction)) {
       return breakpoints.end();
     }
     for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {

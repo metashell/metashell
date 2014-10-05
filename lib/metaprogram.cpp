@@ -85,6 +85,17 @@ void metaprogram::reset_state() {
   state_history = state_history_t();
 }
 
+bool metaprogram::is_at_endpoint(direction_t direction) const {
+  if (direction == forward) {
+    return is_finished();
+  } else if (direction == backwards) {
+    return is_at_start();
+  } else {
+    assert(false);
+    return true;
+  }
+}
+
 bool metaprogram::is_finished() const {
   return state.edge_stack.empty();
 }
@@ -95,6 +106,16 @@ bool metaprogram::is_at_start() const {
 
 metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
   return root_vertex;
+}
+
+void metaprogram::step(direction_t direction) {
+  if (direction == forward) {
+    step();
+  } else if (direction == backwards) {
+    step_back();
+  } else {
+    assert(false);
+  }
 }
 
 void metaprogram::step() {

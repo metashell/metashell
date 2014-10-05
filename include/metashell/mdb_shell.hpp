@@ -80,8 +80,8 @@ protected:
   bool run_metaprogram_with_templight(const std::string& str);
   boost::optional<std::string> run_metaprogram(const std::string& str);
 
-  breakpoints_t::iterator continue_metaprogram();
-  breakpoints_t::iterator continue_back_metaprogram();
+  breakpoints_t::iterator continue_metaprogram(
+      metaprogram::direction_t direction);
 
   void display_error(const std::string& str) const;
   void display_info(const std::string& str) const;

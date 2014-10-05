@@ -34,6 +34,8 @@ namespace metashell {
 class metaprogram {
 public:
 
+  enum direction_t { forward, backwards };
+
   // Creates empty metaprogram: single <root> vertex
   metaprogram(
       const std::string& root_name,
@@ -123,6 +125,8 @@ public:
   const std::string& get_evaluation_result() const;
 
   void reset_state();
+
+  bool is_at_endpoint(direction_t direction) const;
   bool is_finished() const;
   bool is_at_start() const;
 
@@ -131,6 +135,7 @@ public:
   template<class P>
   void disable_edges_if(P pred);
 
+  void step(direction_t direction);
   void step();
   void step_back();
 
