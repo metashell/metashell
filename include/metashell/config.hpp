@@ -26,7 +26,7 @@
 
 namespace metashell
 {
-  class user_config;
+  struct user_config;
 
   class config
   {
