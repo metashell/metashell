@@ -18,7 +18,7 @@ script:
   # Test the code
   - mkdir bin
   - cd bin
-  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_TEMPLIGHT_TESTS" -DCLANG_STATIC=false -DCLANG_DEBUG=true -DCLANG_LIBRARYDIR=/usr/local/clang-3.4/lib
+  - cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror -DMETASHELL_DISABLE_TEMPLIGHT_TESTS -DMETASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY" -DCLANG_STATIC=false -DCLANG_DEBUG=true -DCLANG_LIBRARYDIR=/usr/local/clang-3.4/lib
   - make -j2
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas and mdb commands is up to date

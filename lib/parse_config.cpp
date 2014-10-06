@@ -204,12 +204,14 @@ parse_config_result metashell::parse_config(
       value(&fvalue),
       "Feature option. Currently supported: -ftemplate-depth=<value>"
     )
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
     (
       "trace_capacity",
       value(&ucfg.templight_trace_capacity)->
       default_value(ucfg.templight_trace_capacity),
       "Set Templight trace capacity."
     )
+#endif
     (
       "enable_saving",
       "Enable saving the environment using the #msh environment save"

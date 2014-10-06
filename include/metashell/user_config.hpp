@@ -37,7 +37,9 @@ namespace metashell
     bool use_precompiled_headers = false;
     std::string clang_path;
     int max_template_depth = 256;
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
     unsigned templight_trace_capacity = 500000;
+#endif
     bool saving_enabled = false;
   };
 }
