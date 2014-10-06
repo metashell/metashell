@@ -12,6 +12,7 @@ user_config::user_config() :
   use_precompiled_headers(false),
   clang_path(),
   max_template_depth(256),
+  templight_trace_capacity(500000),
   saving_enabled(false)
 {}
 

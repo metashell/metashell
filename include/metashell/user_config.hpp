@@ -38,6 +38,7 @@ namespace metashell
     bool use_precompiled_headers;
     std::string clang_path;
     int max_template_depth;
+    unsigned templight_trace_capacity;
     bool saving_enabled;
 
     user_config();

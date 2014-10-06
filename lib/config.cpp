@@ -44,7 +44,7 @@ namespace
     p.remove_filename();
     return p.string();
   }
-  
+
   std::string clang_shipped_with_metashell(
     iface::environment_detector& env_detector_
   )
@@ -231,6 +231,7 @@ config metashell::detect_config(
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
 
   cfg.max_template_depth = ucfg_.max_template_depth;
+  cfg.templight_trace_capacity = ucfg_.templight_trace_capacity;
   cfg.saving_enabled = ucfg_.saving_enabled;
 
   if (env_detector_.on_windows())
