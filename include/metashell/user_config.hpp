@@ -24,24 +24,21 @@
 
 namespace metashell
 {
-  class user_config
+  struct user_config
   {
-  public:
     std::vector<std::string> include_path;
-    bool verbose;
-    bool syntax_highlight;
-    bool indent;
-    standard::type standard_to_use;
+    bool verbose = false;
+    bool syntax_highlight = true;
+    bool indent = true;
+    standard::type standard_to_use = standard::cpp11;
     std::vector<std::string> macros;
-    bool warnings_enabled;
+    bool warnings_enabled = true;
     std::vector<std::string> extra_clang_args;
-    bool use_precompiled_headers;
+    bool use_precompiled_headers = false;
     std::string clang_path;
-    int max_template_depth;
-    unsigned templight_trace_capacity;
-    bool saving_enabled;
-
-    user_config();
+    int max_template_depth = 256;
+    unsigned templight_trace_capacity = 500000;
+    bool saving_enabled = false;
   };
 }
 
