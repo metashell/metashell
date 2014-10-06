@@ -177,7 +177,7 @@ parse_config_result metashell::parse_config(
     ("no_highlight,H", "Disable syntax highlighting")
     ("indent", "Enable indenting (experimental)")
     (
-      "std", value(&cppstd),
+      "std", value(&cppstd)->default_value(cppstd),
       "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
     )
     ("no_warnings,w", "Disable warnings")
