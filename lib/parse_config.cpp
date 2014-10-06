@@ -202,7 +202,7 @@ parse_config_result metashell::parse_config(
     (
       ",f",
       value(&fvalue),
-      "Feature optioni. Currently supported: -ftemplate-depth=<value>"
+      "Feature option. Currently supported: -ftemplate-depth=<value>"
     )
     (
       "enable_saving",
