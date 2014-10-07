@@ -338,11 +338,99 @@ void mdb_shell::command_step(const std::string& arg) {
   }
 }
 
-void mdb_shell::command_evaluate(const std::string& arg_ref) {
+void mdb_shell::filter_metaprogram() {
+  assert(mp);
+
   using boost::starts_with;
   using boost::ends_with;
   using boost::trim_copy;
 
+  using vertex_descriptor = metaprogram::vertex_descriptor;
+  using edge_descriptor = metaprogram::edge_descriptor;
+  using edge_property = metaprogram::edge_property;
+  using discovered_t = metaprogram::discovered_t;
+
+  static const std::string wrap_prefix = "metashell::impl::wrap<";
+  static const std::string wrap_suffix = ">";
+
+  // TODO this check could be made more strict,
+  // since we now whats inside wrap<...> (mp->get_evaluation_result)
+  auto is_wrap_type = [](const std::string& type) {
+    return starts_with(type, wrap_prefix) && ends_with(type, wrap_suffix);
+  };
+
+  std::string env_buffer = env.get();
+  int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
+
+  // First disable everything
+  for (edge_descriptor edge : mp->get_edges()) {
+    mp->get_edge_property(edge).enabled = false;
+  }
+
+  // We will traverse the interesting edges later
+  std::stack<edge_descriptor> edge_stack;
+
+  // Enable the interesting root edges
+  for (edge_descriptor edge : mp->get_out_edges(mp->get_root_vertex())) {
+    edge_property& property = mp->get_edge_property(edge);
+    const std::string& target_name =
+      mp->get_vertex_property(mp->get_target(edge)).name;
+    // Filter out edges, that is not instantiated by the entered type
+    if (property.point_of_instantiation.name == internal_file_name &&
+        property.point_of_instantiation.row == line_number + 2 &&
+        (property.kind == instantiation_kind::template_instantiation ||
+        property.kind == instantiation_kind::memoization) &&
+        (!is_wrap_type(target_name) ||
+         property.kind != instantiation_kind::memoization))
+    {
+      property.enabled = true;
+      edge_stack.push(edge);
+    }
+  }
+
+  discovered_t discovered(mp->get_num_vertices());
+  // Traverse the graph to enable all edges which are reachable from the
+  // edges enabled above
+  while (!edge_stack.empty()) {
+    edge_descriptor edge = edge_stack.top();
+    edge_stack.pop();
+
+    assert(mp->get_edge_property(edge).enabled);
+
+    vertex_descriptor vertex = mp->get_target(edge);
+
+    if (discovered[vertex]) {
+      continue;
+    }
+
+    for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
+      edge_property& property = mp->get_edge_property(out_edge);
+      if (property.kind == instantiation_kind::template_instantiation ||
+         property.kind == instantiation_kind::memoization)
+      {
+        property.enabled = true;
+        edge_stack.push(out_edge);
+      }
+    }
+  }
+
+  for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
+    std::string& name = mp->get_vertex_property(vertex).name;
+    if (is_wrap_type(name)) {
+      name = trim_copy(name.substr(
+          wrap_prefix.size(),
+          name.size() - wrap_prefix.size() - wrap_suffix.size()));
+      if (!is_template_type(name)) {
+        for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
+          mp->get_edge_property(in_edge).kind =
+            instantiation_kind::non_template_type;
+        }
+      }
+    }
+  }
+}
+
+void mdb_shell::command_evaluate(const std::string& arg_ref) {
   std::string arg = arg_ref;
   if (arg.empty()) {
     if (!mp) {
@@ -359,64 +447,7 @@ void mdb_shell::command_evaluate(const std::string& arg_ref) {
 
   breakpoints.clear();
 
-  std::string env_buffer = env.get();
-  int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
-
-  static const std::string wrap_prefix = "metashell::impl::wrap<";
-  static const std::string wrap_suffix = ">";
-
-  // TODO this check could be made more strict,
-  // since we now whats inside wrap<...> (mp->get_evaluation_result)
-  auto is_wrap_type = [](const std::string& type) {
-    return starts_with(type, wrap_prefix) && ends_with(type, wrap_suffix);
-  };
-
-  mp->disable_edges_if(
-    [&](const metaprogram::edge_descriptor& edge) {
-      const metaprogram::edge_property& edge_property =
-        mp->get_edge_property(edge);
-      const std::string& target_name =
-        mp->get_vertex_property(mp->get_target(edge)).name;
-
-      if (mp->get_source(edge) == mp->get_root_vertex()) {
-        // Filter out edges, that is not instantiated by the entered type
-        if (edge_property.point_of_instantiation.name != internal_file_name) {
-          return true;
-        }
-        if (edge_property.point_of_instantiation.row != line_number + 2) {
-          return true;
-        }
-        // Filter out one of the events triggered by
-        // the metashell::wrap instantiation
-        if (is_wrap_type(target_name) &&
-            edge_property.kind == instantiation_kind::memoization)
-        {
-          return true;
-        }
-      }
-      // Filter out non template_instantiatio and non memoization events
-      if (edge_property.kind != instantiation_kind::template_instantiation &&
-         edge_property.kind != instantiation_kind::memoization)
-      {
-        return true;
-      }
-      return false;
-    }
-  );
-  for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-    std::string& name = mp->get_vertex_property(vertex).name;
-    if (is_wrap_type(name)) {
-      name = trim_copy(name.substr(
-          wrap_prefix.size(),
-          name.size() - wrap_prefix.size() - wrap_suffix.size()));
-      if (!is_template_type(name)) {
-        for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
-          mp->get_edge_property(in_edge).kind =
-            instantiation_kind::non_template_type;
-        }
-      }
-    }
-  }
+  filter_metaprogram();
 }
 
 void mdb_shell::command_forwardtrace(const std::string& arg) {

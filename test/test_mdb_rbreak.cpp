@@ -102,3 +102,19 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
       "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs) {
+  mdb_test_shell sh(fibonacci_mp + "int __x = fib<10>::value;");
+
+  sh.line_available("evaluate int_<fib<2>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib");
+
+  // When precompiled headers are used in the outer metashell,
+  // then there are 4 break locations
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib\" will stop the execution on 3 locations\n");
+}
+#endif
