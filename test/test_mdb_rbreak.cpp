@@ -71,7 +71,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match) {
   sh.line_available("rbreak xyz");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"xyz\" doesn't match any node\n");
+      "Breakpoint \"xyz\" will never stop the execution\n");
 }
 #endif
 
@@ -85,7 +85,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match) {
   sh.line_available("rbreak int");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"int\" added to 1 location\n");
+      "Breakpoint \"int\" will stop the execution on 1 location\n");
 }
 #endif
 
@@ -99,6 +99,6 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
   sh.line_available("rbreak fib<3>");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<3>\" added to 2 locations\n");
+      "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
 }
 #endif

@@ -378,7 +378,7 @@ You can also create breakpoints:
 
 ```cpp
 (mdb) rbreak fib<3>
-Breakpoint "fib<3>" added to 2 locations
+Breakpoint "fib<3>" will stop the execution on 2 locations
 ```
 
 Now let's continue the execution until the first breakpoint:

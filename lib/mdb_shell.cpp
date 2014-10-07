@@ -485,9 +485,11 @@ void mdb_shell::command_rbreak(const std::string& arg) {
       }
     }
     if (match_count == 0) {
-      display_info("Breakpoint \"" + arg + "\" doesn't match any node\n");
+      display_info(
+          "Breakpoint \"" + arg + "\" will never stop the execution\n");
     } else {
-      display_info("Breakpoint \"" + arg + "\" added to " +
+      display_info(
+          "Breakpoint \"" + arg + "\" will stop the execution on " +
           std::to_string(match_count) +
           (match_count > 1 ? " locations" : " location") + "\n");
       breakpoints.push_back(breakpoint);
