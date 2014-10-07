@@ -41,7 +41,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Evaluate and start debugging a new metaprogram.",
         "If called with no arguments, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
-        "Previous breakpoints are cleared\n\n"
+        "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},

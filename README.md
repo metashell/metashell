@@ -812,7 +812,7 @@ Evaluate and start debugging a new metaprogram. <br />
 If called with no arguments, then the last evaluated metaprogram will be
   reevaluated.
   
-  Previous breakpoints are cleared
+  Previous breakpoints are cleared.
   
   Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
   the debugged metaprogram with unrelated code. If you need formatting, you can
