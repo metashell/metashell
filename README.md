@@ -24,6 +24,7 @@ shell.
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
     - [How about Fibonacci?](#how-about-fibonacci)
+    - [Using the Metadebugger](#using-the-metadebugger)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
         - [Using specialisation](#using-specialisation)
@@ -34,9 +35,7 @@ shell.
     - [The environment stack](#the-environment-stack)
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
 - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
-- [Metadebugger](#metadebugger)
-    - [Getting started with mdb](#getting-started-with-mdb)
-    - [Metadebugger command reference](#metadebugger-command-reference)
+- [Metadebugger command reference](#metadebugger-command-reference)
 - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
 - [License](#license)
 
@@ -315,6 +314,104 @@ std::integral_constant<int, 13>
 
 The `SCALAR` macro instantiates `std::integral_constant` with the right
 arguments.
+
+### Using the Metadebugger
+
+Metadebugger lets you inspect step by step how the compiler runs your
+metaprograms.
+
+Let's debug the fibonacci metaprogram seen earlier. Start the metadebugger by
+entering:
+
+```cpp
+> #msh mdb int_<fib<6>::value>
+For help, type "help".
+Metaprogram started
+```
+
+You'll see, that the prompt has changed to `(mdb)`. Now you can enter
+metadebugger commands.
+
+Metadebugger provides an interface similar to gdb. For example you can step
+the metaprogram forward three steps:
+
+```cpp
+(mdb) step 3
+fib<4> (TemplateInstantiation)
+```
+
+As you can see, metadebugger tells you that in this step `fib<4>` is getting
+instantiated in a TemplateInstantiation event.
+
+Stepping backwards is also trivial in a template metaprogram:
+
+```cpp
+(mdb) step -1
+fib<5> (TemplateInstantiation)
+```
+
+You can check the current backtrace:
+```cpp
+(mdb) bt
+#0 fib<5> (TemplateInstantiation)
+#1 fib<6> (TemplateInstantiation)
+#2 int_<fib<6>::value>
+```
+
+Metadebugger can also see into the future, and print the forwardtrace from any
+step:
+
+```cpp
+(mdb) ft
+fib<5> (TemplateInstantiation)
++ fib<4> (TemplateInstantiation)
+| + fib<3> (TemplateInstantiation)
+| | + fib<2> (TemplateInstantiation)
+| | | + fib<1> (Memoization)
+| | | ` fib<0> (Memoization)
+| | ` fib<1> (Memoization)
+| ` fib<2> (Memoization)
+` fib<3> (Memoization)
+```
+
+You can also create breakpoints:
+
+```cpp
+(mdb) rbreak fib<3>
+Breakpoint "fib<3>" added to 2 locations
+```
+
+Now let's continue the execution until the first breakpoint:
+
+```cpp
+(mdb) continue
+Breakpoint "fib<3>" reached
+fib<3> (TemplateInstantiation)
+```
+
+Commands can be abbreviated if unambigouos. For example you can use just `c`
+instead of `continue`:
+
+```cpp
+(mdb) c
+Breakpoint "fib<3>" reached
+fib<3> (Memoization)
+```
+
+You can repeat the last command by simply hitting enter again:
+
+```cpp
+(mdb)
+Metaprogram finished
+int_<13>
+```
+
+To exit from metadebugger use Ctrl+D or the `quit` command.
+
+```cpp
+(mdb) quit
+>
+```
 
 ### Data structures of Boost.MPL
 
@@ -687,124 +784,7 @@ Turns verbose mode on or off. When no arguments are used, it displays if verbose
 
 <!-- pragma_info -->
 
-## Metadebugger
-
-### Getting started with mdb
-
-Metadebugger lets you inspect step by step how the compiler runs your
-metaprograms.
-
-Set up your environment by defining metaprograms and/or including header files.
-For demonstration purposes, we're going to use a simple fibonacci metaprogram:
-
-```cpp
-> template <int N> \
-...> struct fib \
-...> { \
-...>   static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \
-...> };
-> template <> \
-...> struct fib<0> \
-...> { \
-...>   static constexpr int value = 1; \
-...> };
-> template <> \
-...> struct fib<1> \
-...> { \
-...>   static constexpr int value = 1; \
-...> };
-> template<int N> \
-...> struct int_ {};
-```
-
-Now, you can start debugging a metaprogram by entering:
-
-```cpp
-> #msh mdb int_<fib<6>::value>
-Metaprogram started
-```
-
-This will start simulating the compilation steps of the entered metaprogram
-using the information gathered by [Templight](http://plc.inf.elte.hu/templight/).
-
-You'll see, that the prompt has changed to `(mdb)`. Now you can enter
-metadebugger commands. To exit from metadebugger use Ctrl+D or the quit command.
-
-Metadebugger provides an interface similar to gdb. For example you can step
-the metaprogram forward three steps:
-
-```cpp
-(mdb) step 3
-fib<4> (TemplateInstantiation)
-```
-
-As you can see, metadebugger tells you that in this step `fib<5>` is getting
-instantiated in a TemplateInstantiation event.
-
-Stepping backwards is also trivial in a template metaprogram:
-
-```cpp
-(mdb) step -1
-fib<5> (TemplateInstantiation)
-```
-
-You can check the current backtrace:
-```cpp
-(mdb) bt
-#0 fib<5> (TemplateInstantiation)
-#1 fib<6> (TemplateInstantiation)
-#2 int_<fib<6>::value>
-```
-
-And since the metaprogram is actually already ran, and we're just simulating
-the steps, we can also see the forwardtrace from any step:
-
-```cpp
-(mdb) ft
-fib<5> (TemplateInstantiation)
-+ fib<4> (TemplateInstantiation)
-| + fib<3> (TemplateInstantiation)
-| | + fib<2> (TemplateInstantiation)
-| | | + fib<1> (Memoization)
-| | | ` fib<0> (Memoization)
-| | ` fib<1> (Memoization)
-| ` fib<2> (Memoization)
-` fib<3> (Memoization)
-```
-
-You can also create breakpoints:
-
-```cpp
-(mdb) rbreak fib<3>
-Breakpoint "fib<3>" added to 2 locations
-```
-
-Now let's continue the execution until the first breakpoint:
-
-```cpp
-(mdb) continue
-Breakpoint "fib<3>" reached
-fib<3> (TemplateInstantiation)
-```
-
-Commands can be abbreviated if unambigouos. For example you can use just `c`
-instead of `continue`:
-
-```cpp
-(mdb) c
-Breakpoint "fib<3>" reached
-fib<3> (Memoization)
-```
-
-You can repeat the last command by simply hitting enter again:
-
-```cpp
-(mdb)
-Metaprogram finished
-int_<13>
-```
-
-### Metadebugger command reference
+## Metadebugger command reference
 
 <!-- mdb_info -->
 * __`evaluate [<type>]`__ <br />
