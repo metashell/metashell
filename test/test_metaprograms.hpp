@@ -27,6 +27,21 @@ const std::string fibonacci_mp =
   "template <> struct fib<1> { static constexpr int value = 1; };"
   "template <int N> struct int_ {};";
 
+const std::string multi_fibonacci_mp =
+  "template <int N>"
+  "struct multi_fib {"
+    "static constexpr int value ="
+        "multi_fib<N - 4>::value +"
+        "multi_fib<N - 2>::value +"
+        "multi_fib<N - 3>::value +"
+        "multi_fib<N - 1>::value;"
+  "};"
+  "template <> struct multi_fib<0> { static constexpr int value = 1; };"
+  "template <> struct multi_fib<1> { static constexpr int value = 1; };"
+  "template <> struct multi_fib<2> { static constexpr int value = 1; };"
+  "template <> struct multi_fib<3> { static constexpr int value = 1; };"
+  "template <int N> struct int_ {};";
+
 const std::string template_specialization_mp =
   "template<int N, int M> struct foo;"
   "template<int N> struct foo<N, 1> {"

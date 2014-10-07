@@ -369,6 +369,39 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
+  mdb_test_shell sh(multi_fibonacci_mp);
+
+  sh.line_available("evaluate int_<multi_fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("step 4");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "multi_fib<4> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step over");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "multi_fib<5> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step over");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "multi_fib<8> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("step over -1");
+
+  // step over -1 is not always the inverse of step over
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "multi_fib<6> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
   mdb_test_shell sh(template_specialization_mp);
 
