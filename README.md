@@ -358,6 +358,14 @@ You can check the current backtrace:
 #2 int_<fib<6>::value>
 ```
 
+This shows us that:
+
+* We started the template metaprogram execution by evaluating
+  `int_<fib<6>::value>`.
+* The evaluation of this expression has (at some point) called `fib<6>`.
+* The `fib` metafunction has (at some point) called `fib<5>`. This is where we
+  are in the execution of the metaprogram.
+
 Metadebugger can also see into the future, and print the forwardtrace from any
 step:
 
@@ -373,6 +381,10 @@ fib<5> (TemplateInstantiation)
 | ` fib<2> (Memoization)
 ` fib<3> (Memoization)
 ```
+
+This shows us what metafunctions the metaprogram *will* call after the current
+location. As you can see the output shows the relations between the function
+calls: which metafunction calls which other metafunctions.
 
 You can also create breakpoints:
 
