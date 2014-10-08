@@ -97,11 +97,13 @@ JUST_TEST_CASE(test_accept_two_space_input)
 JUST_TEST_CASE(test_macro_in_config)
 {
   metashell::config cfg;
+  cfg.max_template_depth = 20;
   cfg.macros.push_back("FOO=int");
   test_shell sh(cfg, 80);
 
   sh.line_available("FOO");
 
+  JUST_ASSERT_EQUAL("", sh.error());
   JUST_ASSERT_EQUAL("int", sh.output());
 }
 
@@ -287,6 +289,7 @@ JUST_TEST_CASE(test_extra_clang_arg)
 {
   metashell::config cfg;
   cfg.extra_clang_args.push_back("-DFOO=double");
+  cfg.max_template_depth = 20;
   test_shell sh(cfg, 80);
 
   sh.line_available("FOO");
