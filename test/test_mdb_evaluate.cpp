@@ -196,3 +196,28 @@ JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("rbreak int");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"int\" will stop the execution on 1 location\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
+
+  sh.clear_output();
+  sh.line_available("evaluate asd");
+
+  JUST_ASSERT(boost::algorithm::icontains(sh.get_output(), "error"));
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
+}
+#endif
