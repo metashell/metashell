@@ -30,6 +30,11 @@
 #include <fstream>
 #include <vector>
 
+#ifdef __APPLE__
+#  include <errno.h>
+#  include <libproc.h>
+#endif
+
 #ifndef _WIN32
 #  include <unistd.h>
 #endif
@@ -78,7 +83,7 @@ namespace
       );
   }
 
-#if !(defined _WIN32 || defined __FreeBSD__)
+#if !(defined _WIN32 || defined __FreeBSD__ || defined __APPLE__)
   std::string read_link(const std::string& path_)
   {
     const int step = 64;
@@ -186,6 +191,14 @@ std::string default_environment_detector::path_of_executable()
     }
     return "";
   }
+#elif defined __APPLE__
+  char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+  const pid_t pid = getpid();
+  if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) <= 0) {
+    std::cerr << "PID " << pid << ": proc_pidpath ();\n"
+	  << "   " << strerror(errno) << '\n';
+  }
+  return pathbuf;
 #else
   return read_link("/proc/self/exe");
 #endif
