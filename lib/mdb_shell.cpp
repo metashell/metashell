@@ -507,11 +507,10 @@ void mdb_shell::command_rbreak(const std::string& arg) {
   }
   try {
     breakpoint_t breakpoint = std::make_tuple(arg, boost::regex(arg));
-    breakpoints.push_back(std::make_tuple(arg, boost::regex(arg)));
 
     unsigned match_count = 0;
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-      if (breakpoint_match(vertex, breakpoints.back())) {
+      if (breakpoint_match(vertex, breakpoint)) {
         match_count += mp->get_enabled_in_degree(vertex);
       }
     }
