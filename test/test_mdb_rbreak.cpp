@@ -32,6 +32,8 @@ JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments) {
   sh.line_available("rbreak");
 
   JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
 #endif
 
@@ -45,6 +47,8 @@ JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments_with_trailing_whitespace) {
   sh.line_available("rbreak ");
 
   JUST_ASSERT_EQUAL(sh.get_output(), "Argument expected\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
 #endif
 
@@ -58,6 +62,8 @@ JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex) {
   sh.line_available("rbreak [");
 
   JUST_ASSERT_EQUAL(sh.get_output(), "\"[\" is not a valid regex\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
 #endif
 
@@ -72,6 +78,8 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"xyz\" will never stop the execution\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
 #endif
 
@@ -86,6 +94,8 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"int\" will stop the execution on 1 location\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 }
 #endif
 
@@ -100,5 +110,25 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs) {
+  mdb_test_shell sh(fibonacci_mp + "int __x = fib<10>::value;");
+
+  sh.line_available("evaluate int_<fib<2>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib");
+
+  // When precompiled headers are used in the outer metashell,
+  // then there are 4 break locations
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib\" will stop the execution on 3 locations\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 }
 #endif

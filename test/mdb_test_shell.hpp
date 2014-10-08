@@ -44,6 +44,8 @@ public:
   bool has_metaprogram() const;
   const metashell::metaprogram& get_metaprogram() const;
 
+  const breakpoints_t& get_breakpoints() const;
+
   const std::string& get_output() const;
   const history_t& get_history() const;
 
