@@ -25,6 +25,10 @@ shell.
     - [Evaluating simple expressions](#evaluating-simple-expressions)
     - [How about Fibonacci?](#how-about-fibonacci)
     - [Using the Metadebugger](#using-the-metadebugger)
+        - [Stepping](#stepping)
+        - [Backtrace](#backtrace)
+        - [Forwardtrace](#forwardtrace)
+        - [Breakpoints and continue](#breakpoints-and-continue)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
         - [Using specialisation](#using-specialisation)
@@ -332,6 +336,8 @@ Metaprogram started
 You'll see, that the prompt has changed to `(mdb)`. Now you can enter
 metadebugger commands.
 
+#### Stepping
+
 Metadebugger provides an interface similar to gdb. For example you can step
 the metaprogram forward three steps:
 
@@ -350,6 +356,8 @@ Stepping backwards is also trivial in a template metaprogram:
 fib<5> (TemplateInstantiation)
 ```
 
+#### Backtrace
+
 You can check the current backtrace:
 ```cpp
 (mdb) bt
@@ -365,6 +373,8 @@ This shows us that:
 * The evaluation of this expression has (at some point) called `fib<6>`.
 * The `fib` metafunction has (at some point) called `fib<5>`. This is where we
   are in the execution of the metaprogram.
+
+#### Forwardtrace
 
 Metadebugger can also see into the future, and print the forwardtrace from any
 step:
@@ -406,6 +416,8 @@ creates `fib<4>` in a TemplateInstantiation event, which in turn instantiates
 `fib<3>` also in a TemplateInstantiation event and so on. You can also see,
 that when `fib<5>` gets to the point to instantiate `fib<3>` it has already
 been instantiated by `fib<4>`, so only a Memoization event happens.
+
+#### Breakpoints and continue
 
 You can also create breakpoints:
 
