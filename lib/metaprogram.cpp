@@ -21,7 +21,6 @@
 #include <cassert>
 #include <algorithm>
 
-#include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 namespace metashell {
