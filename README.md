@@ -384,7 +384,28 @@ fib<5> (TemplateInstantiation)
 
 This shows us what metafunctions the metaprogram *will* call after the current
 location. As you can see the output shows the relations between the function
-calls: which metafunction calls which other metafunctions.
+calls: which metafunction calls which other metafunctions. The events in the
+output of forwardtrace happen in that order from the top down.
+
+You probably noticed that there are two kinds of events metadebugger shows you:
+* __TemplateInstantiation__ event happens when the compiler first encounters and
+  instantiates a new template type. During a TemplateInstantiation event the
+  compiler will instantiate every subtype it needs to get to the result
+* __Memoization__ event happens when a compiler encounters a type, which it had
+  already instantiated before. It won't go through the instantiation process
+  again, instead it uses technique called
+  [memoization](http://en.wikipedia.org/wiki/Memoization) to speed up the
+  compilation. This basically means that the compiler remembers every type it
+  had instantiated, and reuses them when it encounters them again.
+
+  Full template specializations (e.g. `fib<0>` and `fib<1>`) only appear in
+  Memoization events.
+
+For example, in the above forwardtrace output, you can see that `fib<5>`
+creates `fib<4>` in a TemplateInstantiation event, which in turn instantiates
+`fib<3>` also in a TemplateInstantiation event and so on. You can also see,
+that when `fib<5>` gets to the point to instantiate `fib<3>` it has already
+been instantiated by `fib<4>`, so only a Memoization event happens.
 
 You can also create breakpoints:
 
