@@ -38,9 +38,10 @@ shell.
     - [Extending the environment](#extending-the-environment)
     - [The environment stack](#the-environment-stack)
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
-- [The pragmas Metashell provides](#the-pragmas-metashell-provides)
-- [Metadebugger command reference](#metadebugger-command-reference)
-- [The full list of built-in header files](#the-full-list-of-built-in-header-files)
+- [Reference](#reference)
+    - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
+    - [Metadebugger command reference](#metadebugger-command-reference)
+    - [The full list of built-in header files](#the-full-list-of-built-in-header-files)
 - [License](#license)
 
 ## Motivation
@@ -767,7 +768,9 @@ following command in the shell:
 
 This command disables precompiled header usage in the current shell.
 
-## The pragmas Metashell provides
+## Reference
+
+### The pragmas Metashell provides
 
 Metashell provides a number of pragmas controlling the shell. Note that these
 pragmas are available only from the shell's command prompt. If you put them in a
@@ -829,7 +832,7 @@ Turns verbose mode on or off. When no arguments are used, it displays if verbose
 
 <!-- pragma_info -->
 
-## Metadebugger command reference
+### Metadebugger command reference
 
 <!-- mdb_info -->
 * __`evaluate [<type>]`__ <br />
@@ -880,7 +883,7 @@ Quit metadebugger.
 
 <!-- mdb_info -->
 
-## The full list of built-in header files
+### The full list of built-in header files
 
 These header files are available in Metashell:
 
