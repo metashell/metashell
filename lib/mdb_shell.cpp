@@ -414,6 +414,7 @@ void mdb_shell::filter_metaprogram() {
     }
   }
 
+  // Unwrap vertex names
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
     std::string& name = mp->get_vertex_property(vertex).name;
     if (is_wrap_type(name)) {
@@ -429,6 +430,8 @@ void mdb_shell::filter_metaprogram() {
     }
   }
 
+  // Clang sometimes produces equivalent instantiations events from the same
+  // point. Filter out all but one of each
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
     auto out_range = mp->get_out_edges(vertex);
     if (out_range.empty()) {
