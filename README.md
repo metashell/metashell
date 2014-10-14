@@ -873,9 +873,9 @@ Use of the full qualifier will expand Memoizations even if that instantiation
 * __`backtrace|bt `__ <br />
 Print backtrace from the current point.
 
-* __`help [command]`__ <br />
+* __`help [<command>]`__ <br />
 Show help for commands. <br />
-If no [command] is specified, show a list of all available commands.
+If <command> is not specified, show a list of all available commands.
 
 * __`quit `__ <br />
 Quit metadebugger.
