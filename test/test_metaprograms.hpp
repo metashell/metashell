@@ -27,6 +27,14 @@ const std::string fibonacci_mp =
   "template <> struct fib<1> { static constexpr int value = 1; };"
   "template <int N> struct int_ {};";
 
+const std::string fibonacci_with_enum_mp =
+  "template <int N> struct fib {"
+    "enum ENUM { value = fib<N - 2>::value + fib<N - 1>::value };"
+  "};"
+  "template <> struct fib<0> { enum ENUM { value = 0 }; };"
+  "template <> struct fib<1> { enum ENUM { value = 1 }; };"
+  "template <int N> struct int_ {};";
+
 const std::string multi_fibonacci_mp =
   "template <int N>"
   "struct multi_fib {"

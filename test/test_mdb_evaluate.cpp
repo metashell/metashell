@@ -148,6 +148,32 @@ JUST_TEST_CASE(
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
+  mdb_test_shell sh(fibonacci_with_enum_mp);
+
+  sh.line_available("evaluate int_<fib<2>::value>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  // Clang actually emits more than 50 fib<1>::ENUM and fib<0>::ENUM events
+  // These are filtered out
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int_<fib<2>::value>\n"
+      "+ fib<2> (TemplateInstantiation)\n"
+      "| + fib<0> (Memoization)\n"
+      "| + fib<1> (Memoization)\n"
+      "| + fib<1>::ENUM (Memoization)\n"
+      "| ` fib<0>::ENUM (Memoization)\n"
+      "+ fib<2> (Memoization)\n"
+      "+ fib<2>::ENUM (Memoization)\n"
+      "` int_<1> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
   mdb_test_shell sh;
 
