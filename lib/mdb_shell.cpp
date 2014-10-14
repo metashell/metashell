@@ -73,9 +73,9 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Print backtrace from the current point.",
         ""},
       {{"help"}, non_repeatable, &mdb_shell::command_help,
-        "[command]",
+        "[<command>]",
         "Show help for commands.",
-        "If no [command] is specified, show a list of all available commands."},
+        "If <command> is not specified, show a list of all available commands."},
       {{"quit"} , non_repeatable, &mdb_shell::command_quit,
         "",
         "Quit metadebugger.",
@@ -425,6 +425,33 @@ void mdb_shell::filter_metaprogram() {
           mp->get_edge_property(in_edge).kind =
             instantiation_kind::non_template_type;
         }
+      }
+    }
+  }
+
+  for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
+    auto out_range = mp->get_out_edges(vertex);
+    if (out_range.empty()) {
+      continue;
+    }
+    typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
+      set_element_t;
+    std::set<set_element_t> similar_edges;
+
+    for (metaprogram::edge_descriptor edge : mp->get_out_edges(vertex)) {
+      metaprogram::edge_property& edge_property =
+        mp->get_edge_property(edge);
+
+      set_element_t set_element = std::make_tuple(
+            edge_property.point_of_instantiation,
+            edge_property.kind,
+            mp->get_target(edge));
+
+      auto it = similar_edges.find(set_element);
+      if (it != similar_edges.end()) {
+        edge_property.enabled = false;
+      } else {
+        similar_edges.insert(set_element);
       }
     }
   }
