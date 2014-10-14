@@ -433,12 +433,10 @@ void mdb_shell::filter_metaprogram() {
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-    auto out_range = mp->get_out_edges(vertex);
-    if (out_range.empty()) {
-      continue;
-    }
+
     typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
       set_element_t;
+
     std::set<set_element_t> similar_edges;
 
     for (metaprogram::edge_descriptor edge : mp->get_out_edges(vertex)) {
