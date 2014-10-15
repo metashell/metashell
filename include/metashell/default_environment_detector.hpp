@@ -30,6 +30,7 @@ namespace metashell
     virtual bool file_exists(const std::string& path_);
 
     virtual bool on_windows();
+    virtual bool on_osx();
 
     virtual void append_to_path(const std::string& path_);
 

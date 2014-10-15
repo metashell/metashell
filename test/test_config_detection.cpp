@@ -321,11 +321,9 @@ JUST_TEST_CASE(
   std::ostringstream err;
   const config cfg = detect_config(user_config(), envd, err);
   
-  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[0]);
-  JUST_ASSERT_EQUAL(
-    "c:/program files\\windows_headers\\mingw32",
-    cfg.include_path[1]
+  JUST_ASSERT(contains("c:/program files\\windows_headers", cfg.include_path));
+  JUST_ASSERT(
+    contains("c:/program files\\windows_headers\\mingw32", cfg.include_path)
   );
 }
 
@@ -707,5 +705,22 @@ JUST_TEST_CASE(test_saving_is_enabled_when_enabled_by_user_config)
   const config cfg = detect_config(ucfg, envd, err);
   
   JUST_ASSERT(cfg.saving_enabled);
+}
+
+JUST_TEST_CASE(
+  test_adding_standard_headers_next_to_the_binary_to_include_path_on_osx
+)
+{
+  mock_environment_detector envd;
+  envd.on_osx_returns(true);
+  envd.path_of_executable_returns("/foo/bar/bin/metashell");
+  envd.file_exists_returns(false);
+
+  std::ostringstream err;
+  const config cfg = detect_config(user_config(), envd, err);
+  
+  JUST_ASSERT(
+    contains("/foo/bar/bin/../include/metashell/libcxx", cfg.include_path)
+  );
 }
 

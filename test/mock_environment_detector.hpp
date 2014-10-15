@@ -39,6 +39,10 @@ public:
   void on_windows_returns(bool result_);
   int on_windows_called_times() const;
 
+  virtual bool on_osx();
+  void on_osx_returns(bool result_);
+  int on_osx_called_times() const;
+
   virtual void append_to_path(const std::string& path_);
   int append_to_path_called_times() const;
   const std::string& append_to_path_last_arg() const;
@@ -74,6 +78,9 @@ private:
 
   bool _on_windows_returns;
   int _on_windows_called_times;
+
+  bool _on_osx_returns;
+  int _on_osx_called_times;
 
   int _append_to_path_called_times;
   std::string _append_to_path_last_arg;

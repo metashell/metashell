@@ -22,8 +22,21 @@ then
     PATCH=$(ls patch | sort | tail -1)
     REV=$(echo "$PATCH" | egrep -o '[0-9]*')
 
-    echo "Deleting current templight"
-    rm -rf build llvm
+    echo "Deleting current templight and libc++"
+    rm -rf build llvm libcxx
+
+    echo "Getting libc++ revision ${REV}"
+    svn co -r "${REV}" http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+    echo "Removing the unused parts of the libcxx source code"
+    rm -rf \
+      libcxx/.svn \
+      libcxx/cmake \
+      libcxx/CMakeLists.txt \
+      libcxx/lib \
+      libcxx/Makefile \
+      libcxx/src \
+      libcxx/test \
+      libcxx/www
 
     echo "Getting LLVM/Clang revision ${REV}"
     svn co -r "${REV}" http://llvm.org/svn/llvm-project/llvm/trunk llvm

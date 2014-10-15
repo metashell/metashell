@@ -183,6 +183,10 @@ namespace
     }
     else
     {
+      if (env_detector_.on_osx())
+      {
+        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
+      }
       result.push_back(dir_of_executable + "/../include/metashell/clang");
     }
 
