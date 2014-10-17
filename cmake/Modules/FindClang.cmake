@@ -156,10 +156,12 @@ execute_process(
   COMMAND ${CLANG_BINARY} -v -xc++ "${PROJECT_BINARY_DIR}/empty.hpp"
   ERROR_VARIABLE CLANG_OUTPUT
 )
-string(REGEX MATCHALL "\n[ ][^\r\n\"]*\n" LINES "${CLANG_OUTPUT}")
+string(REGEX MATCHALL "[^\r\n]*[\r\n]" LINES "${CLANG_OUTPUT}")
 foreach (L ${LINES})
-  string(STRIP "${L}" SL)
-  list(APPEND CLANG_INCLUDE_PATH ${SL})
+  if ("${L}" MATCHES "^[ ][^\"]*$")
+    string(STRIP "${L}" SL)
+    list(APPEND CLANG_INCLUDE_PATH ${SL})
+  endif()
 endforeach()
 
 find_path(CLANG_HEADERS NAMES altivec.h HINTS ${CLANG_INCLUDE_PATH})
