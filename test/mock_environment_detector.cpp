@@ -24,6 +24,8 @@ mock_environment_detector::mock_environment_detector() :
   _file_exists_called_times(0),
   _on_windows_returns(false),
   _on_windows_called_times(0),
+  _on_osx_returns(false),
+  _on_osx_called_times(0),
   _append_to_path_called_times(0),
   _default_clang_sysinclude_called_times(0),
   _extra_sysinclude_called_times(0),
@@ -85,6 +87,22 @@ void mock_environment_detector::on_windows_returns(bool result_)
 int mock_environment_detector::on_windows_called_times() const
 {
   return _on_windows_called_times;
+}
+
+bool mock_environment_detector::on_osx()
+{
+  ++_on_osx_called_times;
+  return _on_osx_returns;
+}
+
+void mock_environment_detector::on_osx_returns(bool result_)
+{
+  _on_osx_returns = result_;
+}
+
+int mock_environment_detector::on_osx_called_times() const
+{
+  return _on_osx_called_times;
 }
 
 void mock_environment_detector::append_to_path(const std::string& path_)

@@ -36,6 +36,7 @@ namespace metashell
 
       // Available as a runtime function for cross-platform unit testing
       virtual bool on_windows() = 0;
+      virtual bool on_osx() = 0;
 
       virtual void append_to_path(const std::string& path_) = 0;
 

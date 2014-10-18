@@ -137,6 +137,15 @@ bool default_environment_detector::on_windows()
 #endif
 }
 
+bool default_environment_detector::on_osx()
+{
+#ifdef __APPLE__
+  return true;
+#else
+  return false;
+#endif
+}
+
 void default_environment_detector::append_to_path(const std::string& path_)
 {
   just::environment::append_to_path(path_);

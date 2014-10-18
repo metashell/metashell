@@ -62,6 +62,31 @@ function(copy_all_files_to_binary_dir
   endforeach ()
 endfunction(copy_all_files_to_binary_dir)
 
+function(copy_all_files_to_include SRC_PATH INSTALL_PATH INSTALL_COPIED_FILES)
+  file(GLOB_RECURSE ABS_PATHS ${SRC_PATH}/*)
+  
+  foreach (P ${ABS_PATHS})
+    file(RELATIVE_PATH REL_PATH ${SRC_PATH} ${P})
+    get_filename_component(DST_DIR "${REL_PATH}" PATH)
+
+    # Make a copy for running from the build's output dir
+    configure_file(
+      "${P}"
+      "${CMAKE_CURRENT_BINARY_DIR}/../${INSTALL_PATH}/${REL_PATH}"
+      COPYONLY
+    )
+
+    # Install the headers on the target system
+    if (INSTALL_COPIED_FILES)
+      install(
+        FILES "${SRC_PATH}/${REL_PATH}"
+        DESTINATION "${INSTALL_PATH}/${DST_DIR}"
+        COMPONENT clang
+      )
+    endif()
+  endforeach ()
+endfunction()
+
 function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
   if (WIN32)
     # libclang.dll
@@ -94,28 +119,20 @@ function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
     endif()
 
     # Clang headers
-    file(GLOB_RECURSE ABS_PATHS ${CLANG_HEADERS}/*)
-    
-    foreach (P ${ABS_PATHS})
-      file(RELATIVE_PATH REL_PATH ${CLANG_HEADERS} ${P})
-      get_filename_component(DST_DIR "${REL_PATH}" PATH)
+    copy_all_files_to_include(
+      "${CLANG_HEADERS}"
+      "${CLANG_HEADER_INSTALL_PATH}"
+      ${INSTALL_COPIED_FILES}
+    )
 
-      # Make a copy for running from the build's output dir
-      configure_file(
-        "${P}"
-        "${CMAKE_CURRENT_BINARY_DIR}/../include/metashell/clang/${REL_PATH}"
-        COPYONLY
+    if (APPLE)
+      # Libcxx headers
+      copy_all_files_to_include(
+        "${CMAKE_SOURCE_DIR}/templight/libcxx/include"
+        "${LIBCXX_HEADER_INSTALL_PATH}"
+        ${INSTALL_COPIED_FILES}
       )
-
-      # Install the headers on the target system
-      if (INSTALL_COPIED_FILES)
-        install(
-          FILES "${CLANG_HEADERS}/${REL_PATH}"
-          DESTINATION "${CLANG_HEADER_INSTALL_PATH}/${DST_DIR}"
-          COMPONENT clang
-        )
-      endif()
-    endforeach ()
+    endif()
   endif()
 endfunction(copy_clang_next_to_binary)
 

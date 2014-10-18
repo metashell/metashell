@@ -104,6 +104,10 @@ if (NOT DEFINED CLANG_HEADER_INSTALL_PATH)
   set(CLANG_HEADER_INSTALL_PATH "include/metashell/clang")
 endif ()
 
+if (NOT DEFINED LIBCXX_HEADER_INSTALL_PATH)
+  set(LIBCXX_HEADER_INSTALL_PATH "include/metashell/libcxx")
+endif ()
+
 # Boost
 if (WIN32)
   add_definitions(-DBOOST_ALL_NO_LIB=1)
