@@ -62,10 +62,8 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "is reached. n defaults to 1 if not specified.\n"
         "Negative n means continue the program backwards."},
       {{"forwardtrace", "ft"}, non_repeatable, &mdb_shell::command_forwardtrace,
-        "[full] [n]",
+        "[n]",
         "Print forwardtrace from the current point.",
-        "Use of the full qualifier will expand Memoizations even if that instantiation\n"
-        "path has been visited before.\n\n"
         "The n specifier limits the depth of the trace. If n is not specified, then the\n"
         "trace depth is unlimited."},
       {{"backtrace", "bt"}, non_repeatable, &mdb_shell::command_backtrace,
@@ -493,14 +491,12 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
   auto begin = arg.begin(),
        end = arg.end();
 
-  bool has_full = false;
   boost::optional<unsigned> max_depth;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -lit("full") [phx::ref(has_full) = true] >>
         -uint_ [phx::ref(max_depth) =_1],
 
         space
@@ -511,11 +507,7 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
     return;
   }
 
-  if (has_full) {
-    display_current_full_forwardtrace(max_depth);
-  } else {
-    display_current_forwardtrace(max_depth);
-  }
+  display_current_forwardtrace(max_depth);
 }
 
 void mdb_shell::command_backtrace(const std::string& arg) {
@@ -827,14 +819,6 @@ void mdb_shell::display_current_forwardtrace(
     boost::optional<unsigned> max_depth) const
 {
   metaprogram::discovered_t discovered = mp->get_state().discovered;
-
-  display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
-}
-
-void mdb_shell::display_current_full_forwardtrace(
-    boost::optional<unsigned> max_depth) const
-{
-  metaprogram::discovered_t discovered(mp->get_state().discovered.size());
 
   display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
 }

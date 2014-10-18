@@ -862,12 +862,9 @@ The program is continued until the nth breakpoint or the end of the program
   is reached. n defaults to 1 if not specified.
   Negative n means continue the program backwards.
 
-* __`forwardtrace|ft [full] [n]`__ <br />
+* __`forwardtrace|ft [n]`__ <br />
 Print forwardtrace from the current point. <br />
-Use of the full qualifier will expand Memoizations even if that instantiation
-  path has been visited before.
-  
-  The n specifier limits the depth of the trace. If n is not specified, then the
+The n specifier limits the depth of the trace. If n is not specified, then the
   trace depth is unlimited.
 
 * __`backtrace|bt `__ <br />

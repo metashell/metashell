@@ -93,8 +93,6 @@ protected:
   void display_current_frame() const;
   void display_current_forwardtrace(
       boost::optional<unsigned> max_depth) const;
-  void display_current_full_forwardtrace(
-      boost::optional<unsigned> max_depth) const;
   void display_backtrace() const;
   void display_argument_parsing_failed() const;
   void display_metaprogram_reached_the_beginning() const;
