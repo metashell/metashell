@@ -38,21 +38,25 @@ public:
 
   // Creates empty metaprogram: single <root> vertex
   metaprogram(
+      bool full_mode,
       const std::string& root_name,
       const std::string& evaluation_result);
 
   static metaprogram create_from_xml_stream(
       std::istream& stream,
+      bool full_mode,
       const std::string& root_name,
       const std::string& evaluation_result);
 
   static metaprogram create_from_xml_file(
       const std::string& file,
+      bool full_mode,
       const std::string& root_name,
       const std::string& evaluation_result);
 
   static metaprogram create_from_xml_string(
       const std::string& string,
+      bool full_mode,
       const std::string& root_name,
       const std::string& evaluation_result);
 
@@ -127,6 +131,8 @@ public:
 
   void reset_state();
 
+  bool is_in_full_mode() const;
+
   bool is_at_endpoint(direction_t direction) const;
   bool is_finished() const;
   bool is_at_start() const;
@@ -179,6 +185,8 @@ private:
 
   state_t state;
   state_history_t state_history;
+
+  bool full_mode;
 
   // This should be generally 0
   vertex_descriptor root_vertex;

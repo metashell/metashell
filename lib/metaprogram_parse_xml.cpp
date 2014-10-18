@@ -33,6 +33,7 @@ namespace metashell {
 struct metaprogram_builder {
 
   metaprogram_builder(
+      bool full_mode,
       const std::string& root_name,
       const std::string& evaluation_result);
 
@@ -64,9 +65,10 @@ private:
 };
 
 metaprogram_builder::metaprogram_builder(
+    bool full_mode,
     const std::string& root_name,
     const std::string& evaluation_result) :
-  mp(root_name, evaluation_result)
+  mp(full_mode, root_name, evaluation_result)
 {}
 
 void metaprogram_builder::handle_template_begin(
@@ -164,6 +166,7 @@ instantiation_kind instantiation_kind_from_string(const std::string& str) {
 
 metaprogram metaprogram::create_from_xml_stream(
     std::istream& stream,
+    bool full_mode,
     const std::string& root_name,
     const std::string& evaluation_result)
 {
@@ -172,7 +175,7 @@ metaprogram metaprogram::create_from_xml_stream(
   ptree pt;
   read_xml(stream, pt);
 
-  metaprogram_builder builder(root_name, evaluation_result);
+  metaprogram_builder builder(full_mode, root_name, evaluation_result);
 
   for (const ptree::value_type& pt_event :
       boost::make_iterator_range(pt.get_child("Trace")))
@@ -201,6 +204,7 @@ metaprogram metaprogram::create_from_xml_stream(
 
 metaprogram metaprogram::create_from_xml_file(
     const std::string& file,
+    bool full_mode,
     const std::string& root_name,
     const std::string& evaluation_result)
 {
@@ -208,16 +212,17 @@ metaprogram metaprogram::create_from_xml_file(
   if (!in) {
     throw exception("Can't open templight file");
   }
-  return create_from_xml_stream(in, root_name, evaluation_result);
+  return create_from_xml_stream(in, full_mode, root_name, evaluation_result);
 }
 
 metaprogram metaprogram::create_from_xml_string(
     const std::string& string,
+    bool full_mode,
     const std::string& root_name,
     const std::string& evaluation_result)
 {
   std::istringstream ss(string);
-  return create_from_xml_stream(ss, root_name, evaluation_result);
+  return create_from_xml_stream(ss, full_mode, root_name, evaluation_result);
 }
 
 }

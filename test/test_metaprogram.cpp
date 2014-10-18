@@ -49,7 +49,7 @@ void assert_state_equal(
 }
 
 JUST_TEST_CASE(test_metaprogram_constuctor) {
-  metaprogram mp("some_type", "the_result_type");
+  metaprogram mp(false, "some_type", "the_result_type");
 
   JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
 
@@ -80,7 +80,10 @@ JUST_TEST_CASE(test_metaprogram_constuctor) {
 }
 
 JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
-  metaprogram mp("some_type", "the_result_type");
+  metaprogram mp(false, "some_type", "the_result_type");
+
+  JUST_ASSERT(!mp.is_in_full_mode());
+
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
@@ -126,7 +129,10 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
 }
 
 JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
-  metaprogram mp("some_type", "the_result_type");
+  metaprogram mp(false, "some_type", "the_result_type");
+
+  JUST_ASSERT(!mp.is_in_full_mode());
+
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
@@ -189,7 +195,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
 }
 
 JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
-  metaprogram mp("some_type", "the_result_type");
+  metaprogram mp(false, "some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
@@ -237,7 +243,7 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
 JUST_TEST_CASE(
     test_metaprogram_step_back_with_single_non_root_vertex_parallel_edge)
 {
-  metaprogram mp("some_type", "the_result_type");
+  metaprogram mp(false, "some_type", "the_result_type");
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
@@ -327,4 +333,16 @@ JUST_TEST_CASE(
     );
   JUST_ASSERT(mp.is_at_start());
   JUST_ASSERT(!mp.is_finished());
+}
+
+JUST_TEST_CASE(test_metaprogram_constuctor_full_mode_true) {
+  metaprogram mp(true, "some_type", "the_result_type");
+
+  JUST_ASSERT(mp.is_in_full_mode());
+}
+
+JUST_TEST_CASE(test_metaprogram_constuctor_full_mode_false) {
+  metaprogram mp(false, "some_type", "the_result_type");
+
+  JUST_ASSERT(!mp.is_in_full_mode());
 }

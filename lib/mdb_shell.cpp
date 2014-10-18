@@ -37,9 +37,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
-        "[<type>]",
+        "[-full] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
-        "If called with no arguments, then the last evaluated metaprogram will be\n"
+        "Evaluating a metaprogram using the `-full` qualifier will expand"
+        "Memoization all events."
+        "If called without <type>, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
@@ -456,19 +458,31 @@ void mdb_shell::filter_metaprogram() {
   }
 }
 
-void mdb_shell::command_evaluate(const std::string& arg_ref) {
-  std::string arg = arg_ref;
-  if (arg.empty()) {
+void mdb_shell::command_evaluate(const std::string& arg) {
+  // Easier not to use spirit here (or probably not...)
+
+  using boost::starts_with;
+
+  const std::string full_flag = "-full";
+
+  const bool has_full =
+      boost::starts_with(arg, full_flag) &&
+      (arg.size() == full_flag.size() || std::isspace(arg[full_flag.size()]));
+
+  std::string type =
+      boost::trim_copy(has_full ? arg.substr(full_flag.size()) : arg);
+
+  if (type.empty()) {
     if (!mp) {
       display_error("Nothing has been evaluated yet.\n");
       return;
     }
-    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
+    type = mp->get_vertex_property(mp->get_root_vertex()).name;
   }
 
   breakpoints.clear();
 
-  if (!run_metaprogram_with_templight(arg)) {
+  if (!run_metaprogram_with_templight(type, has_full)) {
     return;
   }
   display_info("Metaprogram started\n");
@@ -596,7 +610,7 @@ void mdb_shell::command_quit(const std::string& arg) {
 }
 
 bool mdb_shell::run_metaprogram_with_templight(
-    const std::string& str)
+    const std::string& str, bool full_mode)
 {
   temporary_file templight_xml_file("templight-%%%%-%%%%-%%%%-%%%%.xml");
   std::string xml_path = templight_xml_file.get_path().string();
@@ -610,7 +624,8 @@ bool mdb_shell::run_metaprogram_with_templight(
     return false;
   }
 
-  mp = metaprogram::create_from_xml_file(xml_path, str, *evaluation_result);
+  mp = metaprogram::create_from_xml_file(
+      xml_path, full_mode, str, *evaluation_result);
   return true;
 }
 
@@ -785,7 +800,9 @@ void mdb_shell::display_trace_visit(
     if (discovered[vertex]) {
       continue;
     }
-    discovered[vertex] = true;
+    if (!mp->is_in_full_mode()) {
+      discovered[vertex] = true;
+    }
 
     if (max_depth && *max_depth <= depth) {
       continue;

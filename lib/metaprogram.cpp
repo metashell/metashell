@@ -26,8 +26,10 @@
 namespace metashell {
 
 metaprogram::metaprogram(
+    bool full_mode,
     const std::string& root_name,
     const std::string& evaluation_result) :
+  full_mode(full_mode),
   evaluation_result(evaluation_result)
 {
   root_vertex = add_vertex(root_name);
@@ -84,6 +86,10 @@ void metaprogram::reset_state() {
   state_history = state_history_t();
 }
 
+bool metaprogram::is_in_full_mode() const {
+  return full_mode;
+}
+
 bool metaprogram::is_at_endpoint(direction_t direction) const {
   if (direction == forward) {
     return is_finished();
@@ -126,8 +132,10 @@ void metaprogram::step() {
   state.edge_stack.pop();
 
   if (!state.discovered[current_vertex]) {
-    state.discovered[current_vertex] = true;
-    rollback.discovered_vertex = current_vertex;
+    if (!full_mode) {
+      state.discovered[current_vertex] = true;
+      rollback.discovered_vertex = current_vertex;
+    }
 
     auto reverse_edge_range =
       get_out_edges(current_vertex) |boost::adaptors::reversed;
