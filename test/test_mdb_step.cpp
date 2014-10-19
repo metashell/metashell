@@ -229,6 +229,46 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(
+    test_mdb_step_over_the_whole_metaprogram_multiple_steps_in_full_mode)
+{
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<4>::value>");
+  sh.clear_output();
+
+  std::string expected_output =
+    "fib<4> (TemplateInstantiation)\n"
+    "fib<2> (TemplateInstantiation)\n"
+    "fib<0> (Memoization)\n"
+    "fib<1> (Memoization)\n"
+    "fib<3> (TemplateInstantiation)\n"
+    "fib<1> (Memoization)\n"
+    "fib<2> (Memoization)\n"
+    "fib<0> (Memoization)\n"
+    "fib<1> (Memoization)\n"
+    "fib<4> (Memoization)\n"
+    "fib<2> (TemplateInstantiation)\n"
+    "fib<0> (Memoization)\n"
+    "fib<1> (Memoization)\n"
+    "fib<3> (TemplateInstantiation)\n"
+    "fib<1> (Memoization)\n"
+    "fib<2> (Memoization)\n"
+    "fib<0> (Memoization)\n"
+    "fib<1> (Memoization)\n"
+    "int_<3> (TemplateInstantiation)\n"
+    "Metaprogram finished\n"
+    "int_<3>\n";
+
+  for (unsigned i = 0; i < 20; ++i) {
+    sh.line_available("step");
+  }
+
+  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_at_start) {
   mdb_test_shell sh(fibonacci_mp);
 
@@ -247,6 +287,21 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step) {
   mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("step 1");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_minus_1_after_step_in_full_mode) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<10>::value>");
   sh.line_available("step 1");
 
   sh.clear_output();
@@ -292,6 +347,21 @@ JUST_TEST_CASE(test_mdb_step_0_at_end) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<10>::value>");
+  sh.line_available("step 2");
+
+  sh.clear_output();
+  sh.line_available("step -1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<10> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2_in_full_mode) {
   mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
