@@ -103,6 +103,51 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int_<fib<5>::value>\n"
+      "+ fib<5> (TemplateInstantiation)\n"
+      "| + fib<3> (TemplateInstantiation)\n"
+      "| | + fib<1> (Memoization)\n"
+      "| | ` fib<2> (TemplateInstantiation)\n"
+      "| |   + fib<0> (Memoization)\n"
+      "| |   ` fib<1> (Memoization)\n"
+      "| ` fib<4> (TemplateInstantiation)\n"
+      "|   + fib<2> (Memoization)\n"
+      "|   | + fib<0> (Memoization)\n"
+      "|   | ` fib<1> (Memoization)\n"
+      "|   ` fib<3> (Memoization)\n"
+      "|     + fib<1> (Memoization)\n"
+      "|     ` fib<2> (TemplateInstantiation)\n"
+      "|       + fib<0> (Memoization)\n"
+      "|       ` fib<1> (Memoization)\n"
+      "+ fib<5> (Memoization)\n"
+      "| + fib<3> (TemplateInstantiation)\n"
+      "| | + fib<1> (Memoization)\n"
+      "| | ` fib<2> (TemplateInstantiation)\n"
+      "| |   + fib<0> (Memoization)\n"
+      "| |   ` fib<1> (Memoization)\n"
+      "| ` fib<4> (TemplateInstantiation)\n"
+      "|   + fib<2> (Memoization)\n"
+      "|   | + fib<0> (Memoization)\n"
+      "|   | ` fib<1> (Memoization)\n"
+      "|   ` fib<3> (Memoization)\n"
+      "|     + fib<1> (Memoization)\n"
+      "|     ` fib<2> (TemplateInstantiation)\n"
+      "|       + fib<0> (Memoization)\n"
+      "|       ` fib<1> (Memoization)\n"
+      "` int_<5> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
   mdb_test_shell sh(fibonacci_mp);
 
@@ -141,6 +186,35 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
+  sh.line_available("step");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<5> (TemplateInstantiation)\n"
+      "+ fib<3> (TemplateInstantiation)\n"
+      "| + fib<1> (Memoization)\n"
+      "| ` fib<2> (TemplateInstantiation)\n"
+      "|   + fib<0> (Memoization)\n"
+      "|   ` fib<1> (Memoization)\n"
+      "` fib<4> (TemplateInstantiation)\n"
+      "  + fib<2> (Memoization)\n"
+      "  | + fib<0> (Memoization)\n"
+      "  | ` fib<1> (Memoization)\n"
+      "  ` fib<3> (Memoization)\n"
+      "    + fib<1> (Memoization)\n"
+      "    ` fib<2> (TemplateInstantiation)\n"
+      "      + fib<0> (Memoization)\n"
+      "      ` fib<1> (Memoization)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
   mdb_test_shell sh(fibonacci_mp);
 
@@ -159,6 +233,25 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
   mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
+  sh.line_available("step");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace 1");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "fib<5> (TemplateInstantiation)\n"
+      "+ fib<3> (TemplateInstantiation)\n"
+      "` fib<4> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(
+    test_mdb_forwardtrace_ft_from_step_1_with_limit_1_in_full_mode)
+{
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
   sh.line_available("step");
 
   sh.clear_output();
