@@ -132,3 +132,52 @@ JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs) {
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib<3>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<3>\" will stop the execution on 4 locations\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_only_root) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak int_<fib<5>::value>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"int_<fib<5>::value>\" will never stop the execution\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_also_root) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak (int_<fib<5>::value>)|(fib<3>)");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" "
+      "will stop the execution on 4 locations\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
+}
+#endif
