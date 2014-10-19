@@ -39,8 +39,8 @@ const mdb_command_handler_map mdb_shell::command_handler =
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
         "[-full] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
-        "Evaluating a metaprogram using the `-full` qualifier will expand"
-        "Memoization all events."
+        "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
+        "Memoization events.\n\n"
         "If called without <type>, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"

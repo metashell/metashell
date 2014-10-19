@@ -837,7 +837,10 @@ Turns verbose mode on or off. When no arguments are used, it displays if verbose
 <!-- mdb_info -->
 * __`evaluate [-full] [<type>]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
-Evaluating a metaprogram using the `-full` qualifier will expandMemoization all events.If called without <type>, then the last evaluated metaprogram will be
+Evaluating a metaprogram using the `-full` qualifier will expand all
+  Memoization events.
+  
+  If called without <type>, then the last evaluated metaprogram will be
   reevaluated.
   
   Previous breakpoints are cleared.
