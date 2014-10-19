@@ -151,6 +151,8 @@ public:
   backtrace_t get_backtrace() const;
   unsigned get_backtrace_length() const;
 
+  unsigned get_traversal_count(vertex_descriptor vertex) const;
+
   const graph_t& get_graph() const;
   const state_t& get_state() const;
 
@@ -181,6 +183,12 @@ public:
       edge_descriptor edge);
 
 private:
+  typedef std::vector<boost::optional<unsigned>> traversal_counts_t;
+
+  unsigned get_full_traversal_count(vertex_descriptor vertex) const;
+  unsigned get_full_traversal_count_helper(
+      vertex_descriptor vertex, traversal_counts_t& traversal_counts) const;
+
   graph_t graph;
 
   state_t state;

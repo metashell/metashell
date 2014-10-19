@@ -330,5 +330,47 @@ unsigned metaprogram::get_backtrace_length() const {
   return length;
 }
 
+unsigned metaprogram::get_traversal_count(vertex_descriptor vertex) const {
+  if (full_mode) {
+    return get_full_traversal_count(vertex);
+  } else {
+    return get_enabled_in_degree(vertex);
+  }
+}
+
+unsigned metaprogram::get_full_traversal_count_helper(
+    vertex_descriptor vertex, traversal_counts_t& traversal_counts) const
+{
+  if (!traversal_counts[vertex]) {
+    if (vertex == get_root_vertex()) {
+      traversal_counts[vertex] = 1;
+    } else {
+      unsigned count = 0;
+      for (edge_descriptor edge : get_in_edges(vertex)) {
+        if (get_edge_property(edge).enabled) {
+          count += get_full_traversal_count_helper(
+              get_source(edge), traversal_counts);
+        }
+      }
+      traversal_counts[vertex] = count;
+    }
+  }
+
+  assert(traversal_counts[vertex]);
+  return *traversal_counts[vertex];
+}
+
+unsigned metaprogram::get_full_traversal_count(
+    vertex_descriptor vertex) const
+{
+  if (vertex == get_root_vertex()) {
+    return 0;
+  }
+
+  traversal_counts_t traversal_counts(get_num_vertices());
+
+  return get_full_traversal_count_helper(vertex, traversal_counts);
+}
+
 }
 

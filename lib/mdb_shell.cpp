@@ -545,7 +545,7 @@ void mdb_shell::command_rbreak(const std::string& arg) {
     unsigned match_count = 0;
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
       if (breakpoint_match(vertex, breakpoint)) {
-        match_count += mp->get_enabled_in_degree(vertex);
+        match_count += mp->get_traversal_count(vertex);
       }
     }
     if (match_count == 0) {
