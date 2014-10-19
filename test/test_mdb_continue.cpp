@@ -288,3 +288,59 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start) {
       "Metaprogram reached the beginning\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib<5>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<5>\" will stop the execution on 16 locations\n");
+
+  sh.clear_output();
+  sh.line_available("continue 17");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int_<55>\n");
+
+  sh.clear_output();
+  sh.line_available("continue -17");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(
+    test_mdb_continue_to_one_before_end_and_back_to_start_in_full_mode)
+{
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate -full int_<fib<10>::value>");
+
+  sh.clear_output();
+  sh.line_available("rbreak fib<5>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<5>\" will stop the execution on 16 locations\n");
+
+  sh.clear_output();
+  sh.line_available("continue 16");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Breakpoint \"fib<5>\" reached\n"
+      "fib<5> (TemplateInstantiation)\n");
+
+  sh.clear_output();
+  sh.line_available("continue -16");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram reached the beginning\n");
+}
+#endif
