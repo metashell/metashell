@@ -335,7 +335,7 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+      "fib<5>\n");
 
   sh.clear_output();
   sh.line_available("continue -16");

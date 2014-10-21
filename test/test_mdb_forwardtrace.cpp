@@ -113,37 +113,37 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "int_<fib<5>::value>\n"
-      "+ fib<5> (TemplateInstantiation)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<1> (Memoization)\n"
-      "| | ` fib<2> (TemplateInstantiation)\n"
-      "| |   + fib<0> (Memoization)\n"
-      "| |   ` fib<1> (Memoization)\n"
-      "| ` fib<4> (TemplateInstantiation)\n"
-      "|   + fib<2> (Memoization)\n"
-      "|   | + fib<0> (Memoization)\n"
-      "|   | ` fib<1> (Memoization)\n"
-      "|   ` fib<3> (Memoization)\n"
-      "|     + fib<1> (Memoization)\n"
-      "|     ` fib<2> (TemplateInstantiation)\n"
-      "|       + fib<0> (Memoization)\n"
-      "|       ` fib<1> (Memoization)\n"
-      "+ fib<5> (Memoization)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<1> (Memoization)\n"
-      "| | ` fib<2> (TemplateInstantiation)\n"
-      "| |   + fib<0> (Memoization)\n"
-      "| |   ` fib<1> (Memoization)\n"
-      "| ` fib<4> (TemplateInstantiation)\n"
-      "|   + fib<2> (Memoization)\n"
-      "|   | + fib<0> (Memoization)\n"
-      "|   | ` fib<1> (Memoization)\n"
-      "|   ` fib<3> (Memoization)\n"
-      "|     + fib<1> (Memoization)\n"
-      "|     ` fib<2> (TemplateInstantiation)\n"
-      "|       + fib<0> (Memoization)\n"
-      "|       ` fib<1> (Memoization)\n"
-      "` int_<5> (TemplateInstantiation)\n");
+      "+ fib<5>\n"
+      "| + fib<3>\n"
+      "| | + fib<1>\n"
+      "| | ` fib<2>\n"
+      "| |   + fib<0>\n"
+      "| |   ` fib<1>\n"
+      "| ` fib<4>\n"
+      "|   + fib<2>\n"
+      "|   | + fib<0>\n"
+      "|   | ` fib<1>\n"
+      "|   ` fib<3>\n"
+      "|     + fib<1>\n"
+      "|     ` fib<2>\n"
+      "|       + fib<0>\n"
+      "|       ` fib<1>\n"
+      "+ fib<5>\n"
+      "| + fib<3>\n"
+      "| | + fib<1>\n"
+      "| | ` fib<2>\n"
+      "| |   + fib<0>\n"
+      "| |   ` fib<1>\n"
+      "| ` fib<4>\n"
+      "|   + fib<2>\n"
+      "|   | + fib<0>\n"
+      "|   | ` fib<1>\n"
+      "|   ` fib<3>\n"
+      "|     + fib<1>\n"
+      "|     ` fib<2>\n"
+      "|       + fib<0>\n"
+      "|       ` fib<1>\n"
+      "` int_<5>\n");
 }
 #endif
 
@@ -196,21 +196,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
   sh.line_available("forwardtrace");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "| + fib<1> (Memoization)\n"
-      "| ` fib<2> (TemplateInstantiation)\n"
-      "|   + fib<0> (Memoization)\n"
-      "|   ` fib<1> (Memoization)\n"
-      "` fib<4> (TemplateInstantiation)\n"
-      "  + fib<2> (Memoization)\n"
-      "  | + fib<0> (Memoization)\n"
-      "  | ` fib<1> (Memoization)\n"
-      "  ` fib<3> (Memoization)\n"
-      "    + fib<1> (Memoization)\n"
-      "    ` fib<2> (TemplateInstantiation)\n"
-      "      + fib<0> (Memoization)\n"
-      "      ` fib<1> (Memoization)\n");
+      "fib<5>\n"
+      "+ fib<3>\n"
+      "| + fib<1>\n"
+      "| ` fib<2>\n"
+      "|   + fib<0>\n"
+      "|   ` fib<1>\n"
+      "` fib<4>\n"
+      "  + fib<2>\n"
+      "  | + fib<0>\n"
+      "  | ` fib<1>\n"
+      "  ` fib<3>\n"
+      "    + fib<1>\n"
+      "    ` fib<2>\n"
+      "      + fib<0>\n"
+      "      ` fib<1>\n");
 }
 #endif
 
@@ -258,9 +258,9 @@ JUST_TEST_CASE(
   sh.line_available("forwardtrace 1");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "` fib<4> (TemplateInstantiation)\n");
+      "fib<5>\n"
+      "+ fib<3>\n"
+      "` fib<4>\n");
 }
 #endif
 

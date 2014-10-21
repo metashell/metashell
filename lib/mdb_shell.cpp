@@ -837,10 +837,14 @@ colored_string mdb_shell::get_frame_string(
         mp->get_vertex_property(mp->get_root_vertex()).name);
   }
 
-  return
-      highlight_syntax(
-        mp->get_vertex_property(mp->get_target(*frame)).name) +
-      " (" + to_string(mp->get_edge_property(*frame).kind) + ")";
+  colored_string result =
+    highlight_syntax(mp->get_vertex_property(mp->get_target(*frame)).name);
+
+  if (!mp->is_in_full_mode()) {
+    result += " (" + to_string(mp->get_edge_property(*frame).kind) + ")";
+  }
+
+  return result;
 }
 
 void mdb_shell::display_backtrace() const {
