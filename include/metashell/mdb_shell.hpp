@@ -116,10 +116,9 @@ private:
       bool print_mark) const;
 
   void display_trace_line(
-      metaprogram::vertex_descriptor vertex,
+      metaprogram::optional_edge_descriptor edge,
       unsigned depth,
       const std::vector<unsigned>& depth_counter,
-      const boost::optional<metaprogram::edge_property>& property,
       unsigned width) const;
 
   void display_trace_visit(
@@ -128,7 +127,8 @@ private:
       metaprogram::discovered_t& discovered,
       unsigned width) const;
 
-  void display_frame(const metaprogram::edge_descriptor& frame) const;
+  colored_string get_frame_string(
+      metaprogram::optional_edge_descriptor frame) const;
 
   const static std::string internal_file_name;
 

@@ -675,7 +675,7 @@ void mdb_shell::display_info(const std::string& str) const {
 
 void mdb_shell::display_current_frame() const {
   assert(mp && !mp->is_at_start() && !mp->is_finished());
-  display_frame(*mp->get_current_edge());
+  display(get_frame_string(*mp->get_current_edge()) + "\n");
 }
 
 void mdb_shell::display_trace_graph(
@@ -709,19 +709,13 @@ void mdb_shell::display_trace_graph(
 }
 
 void mdb_shell::display_trace_line(
-    metaprogram::vertex_descriptor vertex,
+    metaprogram::optional_edge_descriptor edge,
     unsigned depth,
     const std::vector<unsigned>& depth_counter,
-    const boost::optional<metaprogram::edge_property>& property,
     unsigned width) const
 {
 
-  colored_string element_content =
-    highlight_syntax(mp->get_vertex_property(vertex).name);
-
-  if (property) {
-    element_content += " (" + to_string(property->kind) + ")";
-  }
+  colored_string element_content = get_frame_string(edge);
 
   unsigned non_content_length = 2*depth;
 
@@ -790,12 +784,7 @@ void mdb_shell::display_trace_visit(
       return mp->get_root_vertex();
     }();
 
-    auto property = [&]() -> boost::optional<metaprogram::edge_property> {
-      if (edge) return mp->get_edge_property(*edge);
-      return boost::none;
-    }();
-
-    display_trace_line(vertex, depth, depth_counter, property, width);
+    display_trace_line(edge, depth, depth_counter, width);
 
     if (discovered[vertex]) {
       continue;
@@ -820,11 +809,11 @@ void mdb_shell::display_trace_visit(
 
     // Reverse iteration, so types that got instantiated first
     // get on the top of the stack
-    for (const metaprogram::edge_descriptor& edge :
+    for (const metaprogram::edge_descriptor& out_edge :
         edges | boost::adaptors::reversed)
     {
-      if (mp->get_edge_property(edge).enabled) {
-        to_visit.push(std::make_tuple(edge, depth+1));
+      if (mp->get_edge_property(out_edge).enabled) {
+        to_visit.push(std::make_tuple(out_edge, depth+1));
 
         ++depth_counter[depth+1];
       }
@@ -840,12 +829,18 @@ void mdb_shell::display_current_forwardtrace(
   display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
 }
 
-void mdb_shell::display_frame(const metaprogram::edge_descriptor& frame) const {
-  display(
+colored_string mdb_shell::get_frame_string(
+    metaprogram::optional_edge_descriptor frame) const
+{
+  if (!frame) {
+    return highlight_syntax(
+        mp->get_vertex_property(mp->get_root_vertex()).name);
+  }
+
+  return
       highlight_syntax(
-        mp->get_vertex_property(mp->get_target(frame)).name) +
-      " (" + to_string(mp->get_edge_property(frame).kind) + ")\n"
-  );
+        mp->get_vertex_property(mp->get_target(*frame)).name) +
+      " (" + to_string(mp->get_edge_property(*frame).kind) + ")";
 }
 
 void mdb_shell::display_backtrace() const {
@@ -853,7 +848,7 @@ void mdb_shell::display_backtrace() const {
 
   for (unsigned i = 0; i < backtrace.size(); ++i) {
     display(colored_string("#" + std::to_string(i) + " ", color::white));
-    display_frame(backtrace[i]);
+    display(get_frame_string(backtrace[i]) + "\n");
   }
 
   display(colored_string(
