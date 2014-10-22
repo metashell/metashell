@@ -16,6 +16,7 @@
 
 #include "test_shell.hpp"
 #include "breaking_environment.hpp"
+#include "util.hpp"
 
 #include <metashell/metashell.hpp>
 #include <metashell/path_builder.hpp>
@@ -160,12 +161,16 @@ JUST_TEST_CASE(test_defining_constexpr_function)
   const std::string scalar_hpp =
     metashell::path_builder() / "metashell" / "scalar.hpp";
 
-  test_definition_and_query(
-    "#include <" + scalar_hpp + ">",
-    "constexpr int f() { return 13; }",
-    "SCALAR(f())",
-    "std::integral_constant<int, 13>"
-  );
+  test_shell sh;
+
+  sh.line_available("#include <" + scalar_hpp + ">");
+  sh.line_available("constexpr int f() { return 13; }");
+  JUST_ASSERT_EQUAL("", sh.output());
+  JUST_ASSERT_EQUAL("", sh.error());
+
+  sh.line_available("SCALAR(f())");
+  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT(is_integral_constant("int", "13", sh.output()));
 }
 
 JUST_TEST_CASE(

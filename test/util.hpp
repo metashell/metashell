@@ -37,5 +37,11 @@ bool equal(const C& c1, std::initializer_list<typename C::value_type> c2) {
   return boost::equal(c1, c2);
 }
 
+bool is_integral_constant(
+  const std::string& type_,
+  const std::string& value_,
+  const std::string& s_
+);
+
 #endif
 

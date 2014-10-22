@@ -19,6 +19,11 @@
 
 #include <just/test.hpp>
 
+#include <boost/regex.hpp>
+
+#include <sstream>
+#include <iostream>
+
 std::string get_output(const std::string& input_, const std::string& test_code_)
 {
   test_shell sh;
@@ -43,3 +48,19 @@ std::tuple<metashell::mdb_command, std::string> get_command_from_map(
 
   return *opt_pair;
 }
+
+bool is_integral_constant(
+  const std::string& type_,
+  const std::string& value_,
+  const std::string& s_
+)
+{
+  using boost::regex;
+  using boost::regex_match;
+
+  std::ostringstream s;
+  s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
+
+  return regex_match(s_, regex(s.str()));
+}
+

@@ -109,7 +109,7 @@ JUST_TEST_CASE(test_readme_msh_getting_started) {
 
   JUST_ASSERT(sh.info().empty());
   JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT_EQUAL(sh.output(), "std::integral_constant<int, 13>");
+  JUST_ASSERT(is_integral_constant("int", "13", sh.output()));
 
   sh.clear_output();
 
