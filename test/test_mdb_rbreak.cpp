@@ -23,6 +23,19 @@
 using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_rbreak_without_evaluated_metaprogram) {
+  mdb_test_shell sh;
+
+  sh.line_available("rbreak int");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram not evaluated yet\n");
+
+  JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments) {
   mdb_test_shell sh;
 
