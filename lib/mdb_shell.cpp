@@ -536,7 +536,7 @@ void mdb_shell::command_rbreak(const std::string& arg) {
     display_error("Argument expected\n");
     return;
   }
-  if (!require_running_metaprogram()) {
+  if (!require_evaluated_metaprogram()) {
     return;
   }
   try {
