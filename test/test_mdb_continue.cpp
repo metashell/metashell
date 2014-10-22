@@ -34,6 +34,20 @@ JUST_TEST_CASE(test_mdb_continue_without_evaluation) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_continue_garbage_argument) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+
+  sh.clear_output();
+  sh.line_available("continue asd");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Argument parsing failed\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
   mdb_test_shell sh(fibonacci_mp);
 
