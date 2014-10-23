@@ -90,6 +90,7 @@ The following platforms are supported:
 * [OpenBSD](http://www.openbsd.org/)
 * [Windows](http://windows.microsoft.com)
 * [Mac OSX](https://www.apple.com/osx/)
+  Thanks to Gabor Marton and Pavel Morozkin.
 
 ## Building Metashell
 
