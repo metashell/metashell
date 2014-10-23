@@ -485,7 +485,7 @@ Metaprogram started
 #### Full mode
 
 There are two modes which Metadebugger can operate in. The normal mode, which
-were shown in the previous chapters, and the full mode. To demonstrate the
+was shown in the previous chapters, and the full mode. To demonstrate the
 difference let's evaluate a metaprogram in full mode and print the forwardtrace:
 
 ```cpp
