@@ -15,7 +15,9 @@ shell.
 - [Motivation](#motivation)
 - [Supported platforms](#supported-platforms)
 - [Building Metashell](#building-metashell)
-    - [Building Metashell on Linux and FreeBSD](#building-metashell-on-linux-and-freebsd)
+    - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux,-freebsd-and-openbsd)
+        - [Using the helper scripts](#using-the-helper-scripts)
+        - [Building manually](#building-manually)
         - [Clang and Templight](#clang-and-templight)
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
@@ -87,10 +89,22 @@ The following platforms are supported:
 * [FreeBSD](http://www.freebsd.org/)
 * [OpenBSD](http://www.openbsd.org/)
 * [Windows](http://windows.microsoft.com)
+* [Mac OSX](https://www.apple.com/osx/)
 
 ## Building Metashell
 
-### Building Metashell on Linux and FreeBSD
+### Building Metashell on Linux, FreeBSD and OpenBSD
+
+#### Using the helper scripts
+
+* Download the source code from [github](http://github.com/sabel83/metashell).
+* Run `install_build_dependencies.sh` to install the dependent tools and
+  libaries
+* Run `build.sh` to build Clang with Templight and Metashell. To take advantage
+  of multicore systems, you can set the `BUILD_THREADS` environment variable to
+  the maximum number of concurrent builds. (eg. `BUILD_THREADS=4 ./build.sh`)
+
+#### Building manually
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent libraries:
@@ -226,7 +240,6 @@ WinEditLine to a newer version, you need to update these files.
 * To generate an installer package (.dmg):
     * Install the appropriate version of "Auxilary tools for Xcode" which contains the PackageMaker compiler. On Mavericks this will be the 2012 late july version.
     * `cpack`
-
 
 ## Getting started
 
