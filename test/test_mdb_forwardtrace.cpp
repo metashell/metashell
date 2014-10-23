@@ -63,6 +63,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -full int");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int\n"
+      "` int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
   mdb_test_shell sh;
 
