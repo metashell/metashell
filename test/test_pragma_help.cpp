@@ -36,7 +36,7 @@ JUST_TEST_CASE(test_pragma_help_with_no_arguments)
   sh.line_available("#pragma metashell help");
 
   JUST_ASSERT(!sh.output().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.error(), "");
 }
 
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
@@ -44,7 +44,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
   test_shell sh;
   sh.line_available("#pragma metashell help foo");
 
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.output(), "");
   JUST_ASSERT_EQUAL("Pragma foo not found.", sh.error());
 }
 
@@ -53,7 +53,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
   test_shell sh;
   sh.line_available("#pragma metashell help foo bar");
 
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.output(), "");
   JUST_ASSERT_EQUAL("Pragma foo bar not found.", sh.error());
 }
 
@@ -63,7 +63,7 @@ JUST_TEST_CASE(test_pragma_help_for_a_pragma)
   sh.line_available("#pragma metashell help help");
 
   JUST_ASSERT(!sh.output().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.error(), "");
 }
 
 JUST_TEST_CASE(

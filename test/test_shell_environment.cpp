@@ -198,6 +198,6 @@ JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
   sh.line_available("#pragma metashell environment pop");
   sh.line_available("foo");
 
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL("", sh.error());
 }
 

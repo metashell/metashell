@@ -73,62 +73,62 @@ JUST_TEST_CASE(test_readme_msh_getting_started) {
   sh.line_available("};");
   JUST_ASSERT_EQUAL(sh.prompt(), "> ");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("fib<6>::value");
 
-  JUST_ASSERT(sh.info().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
   JUST_ASSERT(!sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.clear_output();
 
   sh.line_available("#include <boost/mpl/int.hpp>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("boost::mpl::int_<fib<6>::value>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT_EQUAL(sh.output(), "mpl_::int_<13>");
 
   sh.clear_output();
 
   sh.line_available("#include <metashell/scalar.hpp>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("SCALAR(fib<6>::value)");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT(is_integral_constant("int", "13", sh.output()));
 
   sh.clear_output();
 
   sh.line_available("#include <boost/mpl/vector.hpp>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("using namespace boost::mpl;");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("vector<int, double, char>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT_EQUAL(sh.output(),
       "boost::mpl::vector<int, double, char, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
       "l_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
@@ -138,14 +138,14 @@ JUST_TEST_CASE(test_readme_msh_getting_started) {
 
   sh.line_available("#include <boost/mpl/push_front.hpp>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("push_front<vector<int, double, char>, void>::type");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT_EQUAL(sh.output(),
       "boost::mpl::v_item<void, boost::mpl::vector<int, double, char, mpl_::na, mpl_::n"
       "a, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::n"
@@ -155,14 +155,14 @@ JUST_TEST_CASE(test_readme_msh_getting_started) {
 
   sh.line_available("#include <metashell/formatter.hpp>");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
-  JUST_ASSERT(sh.output().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT_EQUAL(sh.output(), "");
 
   sh.line_available("push_front<vector<int, double, char>, void>::type");
 
-  JUST_ASSERT(sh.info().empty());
-  JUST_ASSERT(sh.error().empty());
+  JUST_ASSERT_EQUAL(sh.info(), "");
+  JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT_EQUAL(sh.output(),
       "boost_::mpl::vector<void, int, double, char>");
 }
