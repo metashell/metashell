@@ -250,5 +250,42 @@ JUST_TEST_CASE(test_readme_mdb_getting_started) {
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Metaprogram finished\n"
       "int_<13>\n");
+
+  sh.clear_output();
+  sh.line_available("e");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("evaluate -full int_<fib<4>::value>");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram started\n");
+
+  sh.clear_output();
+  sh.line_available("ft");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int_<fib<4>::value>\n"
+      "+ fib<4>\n"
+      "| + fib<3>\n"
+      "| | + fib<2>\n"
+      "| | | + fib<1>\n"
+      "| | | ` fib<0>\n"
+      "| | ` fib<1>\n"
+      "| ` fib<2>\n"
+      "|   + fib<1>\n"
+      "|   ` fib<0>\n"
+      "+ fib<4>\n"
+      "| + fib<3>\n"
+      "| | + fib<2>\n"
+      "| | | + fib<1>\n"
+      "| | | ` fib<0>\n"
+      "| | ` fib<1>\n"
+      "| ` fib<2>\n"
+      "|   + fib<1>\n"
+      "|   ` fib<0>\n"
+      "` int_<5>\n");
 }
 #endif
