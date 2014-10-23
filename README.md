@@ -20,6 +20,7 @@ shell.
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
+    - [Building Metashell on OSX](#building-metashell-on-osx)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -197,6 +198,32 @@ The content of the `src` directory of the WinEditLine source code can be found
 in the `wineditline` directory. The content of the original `CMakeLists.txt` has
 been changed to build the code together with Metashell. If you want to upgrade
 WinEditLine to a newer version, you need to update these files.
+
+### Building Metashell on OSX
+
+* Download the source code from [github](http://github.com/sabel83/metashell).
+* Install the dependent tools:
+    * CMake
+* Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
+    * `cd templight`
+    * `mkdir build`
+    * `cd build`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
+    * `make clang`
+    * `make libclang`
+    * `make libclang_static`
+* Now compile Metashell. In the source directory run the following commands:
+    * `mkdir bin`
+    * `cd bin`
+    * `cmake ..`
+        * Note: if you don't want to link staticly against libclang, you need to
+          add `-DCLANG_STATIC=false` to the above command line.
+    * `make`
+    * To install it on the host run `make install` as root.
+* To generate an installer package (.dmg):
+    * Install the appropriate version of "Auxilary tools for Xcode" which contains the PackageMaker compiler. On Mavericks this will be the 2012 late july version.
+    * `cpack`
+
 
 ## Getting started
 
