@@ -30,6 +30,9 @@ shell.
         - [Backtrace](#backtrace)
         - [Forwardtrace](#forwardtrace)
         - [Breakpoints and continue](#breakpoints-and-continue)
+        - [Reevaluation and precompiled headers](#reevaluation-and-precompiled-headers)
+        - [Full mode](#full-mode)
+        - [Quit Metadebugger](#quit-metadebugger)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
         - [Using specialisation](#using-specialisation)
@@ -482,6 +485,72 @@ Metaprogram finished
 int_<13>
 ```
 
+#### Reevaluation and precompiled headers
+
+Metadebugger never uses precompiled headers. This is because instantiation
+events which happened in the precompiled code, doesn't appear again, when a
+metaprogram is compiled using precompiled headers. This is expected, since this
+is one of the reasons PCH can speed up compilation.
+
+This might seem like bad news, but it has a very useful side effect. If you
+included files while you set up the compilation environment, you can actually
+modify those files on the fly without restarting Metashell. The modified file
+will be included every time you evaluate a metaprogram.
+
+This technique can be used outside Metadebugger, but you might have to
+explicitly turn off precompiled headers when starting Metashell with the
+`--no_precompiled_headers` command line option.
+
+To reevaulate the last metaprogram, you can simply enter `evaluate` (or `e` for
+short) without giving any expression as an argument:
+
+```cpp
+(mdb) e
+Metaprogram started
+```
+
+#### Full mode
+
+There are two modes which Metadebugger can operate in. The normal mode, which
+was shown in the previous chapters, and the full mode. To demonstrate the
+difference let's evaluate a metaprogram in full mode and print the forwardtrace:
+
+```cpp
+(mdb) evaluate -full int_<fib<4>::value>
+Metaprogram started
+(mdb) ft
+int_<fib<4>::value>
++ fib<4>
+| + fib<3>
+| | + fib<2>
+| | | + fib<1>
+| | | ` fib<0>
+| | ` fib<1>
+| ` fib<2>
+|   + fib<1>
+|   ` fib<0>
++ fib<4>
+| + fib<3>
+| | + fib<2>
+| | | + fib<1>
+| | | ` fib<0>
+| | ` fib<1>
+| ` fib<2>
+|   + fib<1>
+|   ` fib<0>
+` int_<5>
+```
+
+Full mode doesn't try to follow what the real complier does, but instead it
+tries to simulate a dumb compiler, which doesn't use memoizations to speed up
+compilation. For example, fib<2> and it's full sub call tree is visible four
+times. This mode can be useful, when the part of the trace you're intrested in
+is hidden under multiple layers of Memoizations in normal mode.
+
+Please note, that traces in full mode can get extremely long.
+
+#### Quit Metadebugger
+
 To exit from metadebugger use Ctrl+D or the `quit` command.
 
 ```cpp
@@ -884,8 +953,8 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
-* __`#msh mdb [<type>]`__ <br />
-Starts the metadebugger, and optionally evaluates type.
+* __`#msh mdb [-full] [<type>]`__ <br />
+Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
 
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.

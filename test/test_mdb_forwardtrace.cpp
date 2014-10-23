@@ -63,6 +63,53 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -full int");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int\n"
+      "` int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+  sh.line_available("continue");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -full int");
+  sh.line_available("continue");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
   mdb_test_shell sh;
 
@@ -341,5 +388,59 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal) {
       "+ fib<5> (Memoization)\n"
       "` int_<5> (TemplateInstan\n"
       "  tiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0) {
+  mdb_test_shell sh(fibonacci_mp);
+  sh.set_terminal_width(0);
+
+  sh.line_available("evaluate int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  // The algorithm just gives up, and prints without extra line breaks
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int_<fib<5>::value>\n"
+      "+ fib<5> (TemplateInstantiation)\n"
+      "| + fib<3> (TemplateInstantiation)\n"
+      "| | + fib<1> (Memoization)\n"
+      "| | ` fib<2> (TemplateInstantiation)\n"
+      "| |   + fib<0> (Memoization)\n"
+      "| |   ` fib<1> (Memoization)\n"
+      "| ` fib<4> (TemplateInstantiation)\n"
+      "|   + fib<2> (Memoization)\n"
+      "|   ` fib<3> (Memoization)\n"
+      "+ fib<5> (Memoization)\n"
+      "` int_<5> (TemplateInstantiation)\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1) {
+  mdb_test_shell sh(fibonacci_mp);
+  sh.set_terminal_width(1);
+
+  sh.line_available("evaluate int_<fib<5>::value>");
+
+  sh.clear_output();
+  sh.line_available("forwardtrace");
+
+  // The algorithm just gives up, and prints without extra line breaks
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "int_<fib<5>::value>\n"
+      "+ fib<5> (TemplateInstantiation)\n"
+      "| + fib<3> (TemplateInstantiation)\n"
+      "| | + fib<1> (Memoization)\n"
+      "| | ` fib<2> (TemplateInstantiation)\n"
+      "| |   + fib<0> (Memoization)\n"
+      "| |   ` fib<1> (Memoization)\n"
+      "| ` fib<4> (TemplateInstantiation)\n"
+      "|   + fib<2> (Memoization)\n"
+      "|   ` fib<3> (Memoization)\n"
+      "+ fib<5> (Memoization)\n"
+      "` int_<5> (TemplateInstantiation)\n");
 }
 #endif

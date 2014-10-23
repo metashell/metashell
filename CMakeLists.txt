@@ -151,7 +151,7 @@ set(CMAKE_INSTALL_PREFIX "/usr")
 
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   include(InstallRequiredSystemLibraries)
-   
+
   if(WIN32)
     set(
       CPACK_NSIS_MENU_LINKS
@@ -173,7 +173,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   else()
     set(METASHELL_PACKAGE_PLATFORM "")
   endif()
-   
+
   set(CPACK_PACKAGE_DESCRIPTION "Metashell")
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "It is an interactive C++ template metaprogramming shell")
   set(CPACK_PACKAGE_VENDOR "Abel Sinkovics")
@@ -215,7 +215,7 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       )
     endif()
   endif ()
-   
+
   set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
   set(CPACK_ALL_INSTALL_TYPES full noclang minimal)
 
@@ -240,6 +240,6 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   set(CPACK_COMPONENT_CLANG_INSTALL_TYPES full)
 
   include(CPack)
-   
+
 endif(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
 

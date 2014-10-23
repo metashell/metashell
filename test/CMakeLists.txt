@@ -88,7 +88,7 @@ if (ENABLE_CODE_COVERAGE)
     test_coverage
     metashell_test
     coverage
-    "'/usr/*';'test/*';'include/just/*'"
+    "'/usr/*';'test/*';'include/just/*';'boost/*'"
   )
 endif()
 

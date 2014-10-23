@@ -47,6 +47,38 @@ JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_backtrace_when_metaprogram_finished) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate int");
+  sh.line_available("continue");
+
+  sh.clear_output();
+  sh.line_available("backtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_backtrace_when_metaprogram_finished_in_full_mode) {
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -full int");
+  sh.line_available("continue");
+
+  sh.clear_output();
+  sh.line_available("backtrace");
+
+  JUST_ASSERT_EQUAL(sh.get_output(),
+      "Metaprogram finished\n"
+      "int\n");
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
   mdb_test_shell sh(fibonacci_mp);
 
