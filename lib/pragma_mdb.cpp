@@ -32,12 +32,13 @@ pragma_handler_interface* pragma_mdb::clone() const
 
 std::string pragma_mdb::arguments() const
 {
-  return "[<type>]";
+  return "[-full] [<type>]";
 }
 
 std::string pragma_mdb::description() const
 {
-  return "Starts the metadebugger, and optionally evaluates type.";
+  return "Starts the metadebugger. For more information see evaluate in the "
+    "Metadebugger command reference.";
 }
 
 void pragma_mdb::run(

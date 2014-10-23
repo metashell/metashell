@@ -926,8 +926,8 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
-* __`#msh mdb [<type>]`__ <br />
-Starts the metadebugger, and optionally evaluates type.
+* __`#msh mdb [-full] [<type>]`__ <br />
+Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
 
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
