@@ -17,6 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Needed for the OpenBSD build. Including this header after
+// <readline/readline.h> breaks.
+#include <boost/optional.hpp>
+
 #ifdef USE_EDITLINE
 #  include <editline/readline.h>
 #else

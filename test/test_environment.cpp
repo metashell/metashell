@@ -221,7 +221,11 @@ JUST_TEST_CASE(
   cfg.saving_enabled = true;
   test_shell sh(cfg, 80);
 
+#ifdef _WIN32
   sh.line_available("#msh environment save /foo *? bar");
+#else
+  sh.line_available("#msh environment save /");
+#endif
 
   JUST_ASSERT_NOT_EQUAL("", sh.error());
 }
