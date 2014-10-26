@@ -135,33 +135,46 @@ file_location file_location_from_string(const std::string& str) {
 }
 
 instantiation_kind instantiation_kind_from_string(const std::string& str) {
-  //TODO boost::flat_map
-  const static std::map<std::string, instantiation_kind> lookup = {
-     {"TemplateInstantiation",
-       instantiation_kind::template_instantiation},
-     {"DefaultTemplateArgumentInstantiation",
-       instantiation_kind::default_template_argument_instantiation},
-     {"DefaultFunctionArgumentInstantiation",
-       instantiation_kind::default_function_argument_instantiation},
-     {"ExplicitTemplateArgumentSubstitution",
-       instantiation_kind::explicit_template_argument_substitution},
-     {"DeducedTemplateArgumentSubstitution",
-       instantiation_kind::deduced_template_argument_substitution},
-     {"PriorTemplateArgumentSubstitution",
-       instantiation_kind::prior_template_argument_substitution},
-     {"DefaultTemplateArgumentChecking",
-       instantiation_kind::default_template_argument_checking},
-     {"ExceptionSpecInstantiation",
-       instantiation_kind::exception_spec_instantiation},
-     {"Memoization",
-       instantiation_kind::memoization}
-  };
-
-  auto it = lookup.find(str);
-  if (it == lookup.end()) {
+  if (str == "TemplateInstantiation")
+  {
+    return instantiation_kind::template_instantiation;
+  }
+  else if (str == "DefaultTemplateArgumentInstantiation")
+  {
+    return instantiation_kind::default_template_argument_instantiation;
+  }
+  else if (str == "DefaultFunctionArgumentInstantiation")
+  {
+    return instantiation_kind::default_function_argument_instantiation;
+  }
+  else if (str == "ExplicitTemplateArgumentSubstitution")
+  {
+    return instantiation_kind::explicit_template_argument_substitution;
+  }
+  else if (str == "DeducedTemplateArgumentSubstitution")
+  {
+    return instantiation_kind::deduced_template_argument_substitution;
+  }
+  else if (str == "PriorTemplateArgumentSubstitution")
+  {
+    return instantiation_kind::prior_template_argument_substitution;
+  }
+  else if (str == "DefaultTemplateArgumentChecking")
+  {
+    return instantiation_kind::default_template_argument_checking;
+  }
+  else if (str == "ExceptionSpecInstantiation")
+  {
+    return instantiation_kind::exception_spec_instantiation;
+  }
+  else if (str == "Memoization")
+  {
+    return instantiation_kind::memoization;
+  }
+  else
+  {
     throw exception("templight xml parse failed (invalid instantiation kind)");
   }
-  return it->second;
 }
 
 metaprogram metaprogram::create_from_xml_stream(
