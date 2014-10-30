@@ -44,6 +44,8 @@ shell.
     - [Extending the environment](#extending-the-environment)
     - [The environment stack](#the-environment-stack)
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
+- [How to...](#how-to)
+    - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
 - [Changelog](#changelog)
     - [Not in any release yet](#not-in-any-release-yet)
     - [Version 1.0.0](#version-100)
@@ -880,6 +882,53 @@ following command in the shell:
 ```
 
 This command disables precompiled header usage in the current shell.
+
+## How to...
+
+### see what happens during template argument deduction?
+
+If you call a function template without explicitly specifying all template
+arguments the compiler will deduce the missing template arguments from the
+function arguments.
+
+Suppose you have the following function in your environment:
+
+```cpp
+> template<class T> void foo(const T& t) { /* ... */ }
+```
+
+You want to find out what T will be, when you call `f(13)`. To find out, start
+mdb like this:
+
+```cpp
+> #msh mdb decltype(foo(13))
+Metaprogram started
+```
+
+Now, if you inspect the output of the ft command, you will be able to find the
+instantiation of the foo function:
+
+```cpp
+(mdb) ft
+decltype(foo(13))
++ foo<int> (TemplateInstantiation)
+` void (NonTemplateType)
+```
+
+Of course inspecting the forwardtrace output is not always feasible for
+nontrivial metaprograms. Here is another technique you can use, to see what
+T becomes when you call f with a template type like `std::vector` (don't forget
+to `#include <vector>` in your environment):
+
+```cpp
+(mdb) eval decltype(foo(std::vector<int>{}))
+Metaprogram started
+(mdb) rbreak foo
+Breakpoint "foo" will stop the execution on 1 location
+(mdb) continue
+Breakpoint "foo" reached
+foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
+```
 
 ## Changelog
 

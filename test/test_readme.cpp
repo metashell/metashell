@@ -270,3 +270,44 @@ JUST_TEST_CASE(test_readme_getting_started) {
       "` mpl_::int_<5>\n");
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_readme_how_to_template_argument_deduction) {
+  test_shell sh;
+
+  sh.line_available("#include <vector>");
+  sh.line_available("template<class T> void foo(const T& t) { /* ... */ }");
+
+  mdb_test_shell mdb_sh(sh);
+
+  mdb_sh.line_available("evaluate decltype(foo(13))");
+
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
+
+  mdb_sh.clear_output();
+  mdb_sh.line_available("ft");
+
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
+      "decltype(foo(13))\n"
+      "+ foo<int> (TemplateInstantiation)\n"
+      "` void (NonTemplateType)\n");
+
+  mdb_sh.clear_output();
+  mdb_sh.line_available("eval decltype(foo(std::vector<int>{}))");
+
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
+
+  mdb_sh.clear_output();
+  mdb_sh.line_available("rbreak foo");
+
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
+      "Breakpoint \"foo\" will stop the execution on 1 location\n");
+
+  mdb_sh.clear_output();
+  mdb_sh.line_available("continue");
+
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
+      "Breakpoint \"foo\" reached\n"
+      "foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)\n");
+}
+#endif
