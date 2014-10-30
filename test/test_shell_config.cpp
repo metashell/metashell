@@ -143,7 +143,7 @@ JUST_TEST_CASE(
 }
 
 JUST_TEST_CASE(
-  test_shell_with_disabled_precompiled_headers_uses_in_memory_environment
+  test_shell_with_disabled_precompiled_headers_uses_header_file_environment
 )
 {
   metashell::config cfg = metashell::empty_config(argv0::get());
@@ -153,7 +153,8 @@ JUST_TEST_CASE(
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(
-    dynamic_cast<const metashell::in_memory_environment*>(&sh.env()) != nullptr
+    dynamic_cast<const metashell::header_file_environment*>(&sh.env())
+    != nullptr
   );
 }
 
