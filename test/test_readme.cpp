@@ -26,6 +26,7 @@ using namespace metashell;
 
 // If one of these TCs fail, then README modification might be needed
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   mdb_command command;
   std::string args;
@@ -38,7 +39,7 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }
 
-JUST_TEST_CASE(test_readme_msh_getting_started) {
+JUST_TEST_CASE(test_readme_getting_started) {
   test_shell sh;
 
   JUST_ASSERT_EQUAL(sh.prompt(), "> ");
@@ -165,55 +166,35 @@ JUST_TEST_CASE(test_readme_msh_getting_started) {
   JUST_ASSERT_EQUAL(sh.error(), "");
   JUST_ASSERT_EQUAL(sh.output(),
       "boost_::mpl::vector<void, int, double, char>");
-}
 
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_readme_mdb_getting_started) {
-  mdb_test_shell sh(
-  "template <int N>"
-  "struct fib"
-  "{"
-  "  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value;"
-  "};"
-  "template <>"
-  "struct fib<0>"
-  "{ "
-  "  static constexpr int value = 1;"
-  "};"
-  "template <>"
-  "struct fib<1>"
-  "{"
-  "  static constexpr int value = 1;"
-  "};"
-  "template<int N>"
-  "struct int_ {};");
+  mdb_test_shell mdb_sh(sh);
 
-  sh.line_available("evaluate int_<fib<6>::value>");
+  mdb_sh.line_available("evaluate int_<fib<6>::value>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
 
-  sh.clear_output();
-  sh.line_available("step 3");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("step 3");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "fib<4> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "fib<4> (TemplateInstantiation)\n");
 
-  sh.clear_output();
-  sh.line_available("step -1");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "fib<5> (TemplateInstantiation)\n");
 
-  sh.clear_output();
-  sh.line_available("bt");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("bt");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "#0 fib<5> (TemplateInstantiation)\n"
       "#1 fib<6> (TemplateInstantiation)\n"
       "#2 int_<fib<6>::value>\n");
 
-  sh.clear_output();
-  sh.line_available("ft");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "fib<5> (TemplateInstantiation)\n"
       "+ fib<4> (TemplateInstantiation)\n"
       "| + fib<3> (TemplateInstantiation)\n"
@@ -224,49 +205,49 @@ JUST_TEST_CASE(test_readme_mdb_getting_started) {
       "| ` fib<2> (Memoization)\n"
       "` fib<3> (Memoization)\n");
 
-  sh.clear_output();
-  sh.line_available("rbreak fib<3>");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("rbreak fib<3>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
 
-  sh.clear_output();
-  sh.line_available("continue");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Breakpoint \"fib<3>\" reached\n"
       "fib<3> (TemplateInstantiation)\n");
 
-  sh.clear_output();
-  sh.line_available("c");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("c");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Breakpoint \"fib<3>\" reached\n"
       "fib<3> (Memoization)\n");
 
-  sh.clear_output();
-  sh.line_available("");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Metaprogram finished\n"
-      "int_<13>\n");
+      "mpl_::int_<13>\n");
 
-  sh.clear_output();
-  sh.line_available("e");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("e");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Metaprogram started\n");
 
-  sh.clear_output();
-  sh.line_available("evaluate -full int_<fib<4>::value>");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("evaluate -full int_<fib<4>::value>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "Metaprogram started\n");
 
-  sh.clear_output();
-  sh.line_available("ft");
+  mdb_sh.clear_output();
+  mdb_sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
+  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
       "int_<fib<4>::value>\n"
       "+ fib<4>\n"
       "| + fib<3>\n"
@@ -286,6 +267,6 @@ JUST_TEST_CASE(test_readme_mdb_getting_started) {
       "| ` fib<2>\n"
       "|   + fib<1>\n"
       "|   ` fib<0>\n"
-      "` int_<5>\n");
+      "` mpl_::int_<5>\n");
 }
 #endif

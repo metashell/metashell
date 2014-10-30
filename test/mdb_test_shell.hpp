@@ -26,6 +26,7 @@
 class mdb_test_shell : public metashell::mdb_shell {
 public:
   mdb_test_shell(const std::string& line = "");
+  mdb_test_shell(const metashell::shell& shell, const std::string& line = "");
 
   typedef std::vector<std::string> history_t;
 

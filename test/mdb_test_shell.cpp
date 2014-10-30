@@ -29,6 +29,16 @@ mdb_test_shell::mdb_test_shell(const std::string& line) :
   env.append(line);
 }
 
+mdb_test_shell::mdb_test_shell(
+    const metashell::shell& shell, const std::string& line) :
+  metashell::mdb_shell(
+      shell.get_config(),
+      shell.env()
+  )
+{
+  env.append(line);
+}
+
 void mdb_test_shell::run() {}
 
 void mdb_test_shell::add_history(const std::string& str) {

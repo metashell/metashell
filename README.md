@@ -496,7 +496,7 @@ You can repeat the last command by simply hitting enter again:
 ```cpp
 (mdb)
 Metaprogram finished
-int_<13>
+mpl_::int_<13>
 ```
 
 #### Reevaluation and precompiled headers
@@ -552,7 +552,7 @@ int_<fib<4>::value>
 | ` fib<2>
 |   + fib<1>
 |   ` fib<0>
-` int_<5>
+` mpl_::int_<5>
 ```
 
 Full mode doesn't try to follow what the real complier does, but instead it
