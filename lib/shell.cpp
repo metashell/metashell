@@ -20,7 +20,6 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
-#include <metashell/in_memory_environment.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/command.hpp>
@@ -368,14 +367,7 @@ const environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  if (_config.use_precompiled_headers)
-  {
-    _env.reset(new header_file_environment(_config));
-  }
-  else
-  {
-    _env.reset(new in_memory_environment("__metashell_internal", _config));
-  }
+  _env.reset(new header_file_environment(_config));
   if (!content_.empty())
   {
     _env->append(content_);
