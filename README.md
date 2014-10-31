@@ -897,8 +897,8 @@ Suppose you have the following function in your environment:
 > template<class T> void foo(const T& t) { /* ... */ }
 ```
 
-You want to find out what T will be, when you call `f(13)`. To find out, start
-mdb like this:
+You want to find out what T will be, when you call `foo(13)`. To find out,
+start mdb like this:
 
 ```cpp
 > #msh mdb decltype(foo(13))
