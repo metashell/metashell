@@ -917,8 +917,8 @@ decltype(foo(13))
 
 Of course inspecting the forwardtrace output is not always feasible for
 nontrivial metaprograms. Here is another technique you can use, to see what
-T becomes when you call f with a template type like `std::vector` (don't forget
-to `#include <vector>` in your environment):
+T becomes when you call foo with a template type like `std::vector`
+(don't forget to `#include <vector>` in your environment):
 
 ```cpp
 (mdb) eval decltype(foo(std::vector<int>{}))
