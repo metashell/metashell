@@ -306,8 +306,15 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction) {
   mdb_sh.clear_output();
   mdb_sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
+  const auto o = mdb_sh.get_output();
+  JUST_ASSERT(
+    o ==
       "Breakpoint \"foo\" reached\n"
-      "foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)\n");
+      "foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)\n"
+    ||
+    o ==
+      "Breakpoint \"foo\" reached\n"
+      "foo<std::__1::vector<int, std::__1::allocator<int> > > (TemplateInstantiation)\n"
+  );
 }
 #endif
