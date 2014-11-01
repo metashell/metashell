@@ -22,7 +22,7 @@ namespace metashell {
 templight_environment::templight_environment(
   const std::string& internal_dir,
   const config& config
-) : in_memory_environment(internal_dir, config)
+) : header_file_environment(config)
 {
   clang_arguments().push_back("-templight");
   clang_arguments().push_back("-templight-format");

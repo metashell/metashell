@@ -93,12 +93,20 @@ const std::vector<color> mdb_shell::colors =
     color::cyan
   };
 
+namespace {
+
+config set_pch_false(config c) {
+  c.use_precompiled_headers = false;
+  return c;
+}
+
+}
 
 mdb_shell::mdb_shell(
     const config& conf,
     const environment& env_arg) :
-  conf(conf),
-  env("__mdb_internal", conf)
+  conf(set_pch_false(conf)),
+  env("__mdb_internal", set_pch_false(conf))
 {
   env.append(env_arg.get_all());
 }
@@ -377,7 +385,7 @@ void mdb_shell::filter_metaprogram() {
       mp->get_vertex_property(mp->get_target(edge)).name;
     // Filter out edges, that is not instantiated by the entered type
     if (property.point_of_instantiation.name == internal_file_name &&
-        property.point_of_instantiation.row == line_number + 2 &&
+        property.point_of_instantiation.row == line_number + 1 &&
         (property.kind == instantiation_kind::template_instantiation ||
         property.kind == instantiation_kind::memoization) &&
         (!is_wrap_type(target_name) ||

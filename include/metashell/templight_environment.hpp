@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_environment.hpp>
+#include <metashell/header_file_environment.hpp>
 
 namespace metashell {
 
-class templight_environment : public in_memory_environment {
+class templight_environment : public header_file_environment {
 public:
   templight_environment(
     const std::string& internal_dir,
