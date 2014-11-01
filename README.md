@@ -46,6 +46,7 @@ shell.
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
 - [How to...](#how-to)
     - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
+    - [see what a type alias resolves to?](#see-what-a-type-alias-resolves-to)
 - [Changelog](#changelog)
     - [Not in any release yet](#not-in-any-release-yet)
     - [Version 1.0.0](#version-100)
@@ -929,6 +930,39 @@ Breakpoint "foo" will stop the execution on 1 location
 Breakpoint "foo" reached
 foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
 ```
+
+### see what a type alias resolves to?
+
+In some cases you need to know what a type alias resolves to. As an example,
+assume that you need to understand (and fix or improve) a piece of code that
+definesa  template class `a` and the following template function:
+
+```cpp
+template <class T>
+void fun()
+{
+  typename a<T>::handle h;
+}
+```
+
+When the type `typename a<T>::handle` is a type alias, to tell what the type of
+`h` is you need to resolve that type alias. This might not be a simple task as
+there can be specialisations for the template class `a`, it can inherit the
+`handle` type alias from another class (or instance of a template class), etc.
+
+Metashell can be used to display the type of `h`:
+
+```cpp
+> #include "fun.cpp" // the file the `fun` template function is defined in
+> a<double>::handle
+// the type handle resolves to gets displayed here...
+```
+
+You can include `cpp` files into Metashell as well, not just headers and then
+ask Metashell to resolve the type aliases you are interested in. To get the
+correct results, you need to make sure that you use the same include path and
+macro definitions (`-D` arguments) when you launch Metashell that you use to
+build your `fun.cpp` file.
 
 ## Changelog
 
