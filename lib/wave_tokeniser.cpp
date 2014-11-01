@@ -287,7 +287,7 @@ namespace
           );
         update_current_token();
       }
-      catch (const boost::wave::cpplexer::lexing_exception& e)
+      catch (const boost::wave::cpplexer::lexing_exception&)
       {
         error_flag = true;
         it = token_iterator();
@@ -308,7 +308,7 @@ namespace
           return false;
         }
       }
-      catch (const boost::wave::cpplexer::lexing_exception& e)
+      catch (const boost::wave::cpplexer::lexing_exception&)
       {
         error_flag = true;
         it = token_iterator();
@@ -333,7 +333,7 @@ namespace
           update_current_token();
         }
       }
-      catch (const boost::wave::cpplexer::lexing_exception& e)
+      catch (const boost::wave::cpplexer::lexing_exception&)
       {
         error_flag = true;
         it = token_iterator();
