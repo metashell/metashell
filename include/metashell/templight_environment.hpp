@@ -22,7 +22,6 @@ namespace metashell {
 class templight_environment : public header_file_environment {
 public:
   templight_environment(
-    const std::string& internal_dir,
     const config& config
   );
 

@@ -20,7 +20,6 @@
 namespace metashell {
 
 templight_environment::templight_environment(
-  const std::string& internal_dir,
   const config& config
 ) : header_file_environment(config)
 {

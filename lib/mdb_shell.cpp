@@ -103,10 +103,10 @@ config set_pch_false(config c) {
 }
 
 mdb_shell::mdb_shell(
-    const config& conf,
+    const config& conf_,
     const environment& env_arg) :
-  conf(set_pch_false(conf)),
-  env("__mdb_internal", set_pch_false(conf))
+  conf(set_pch_false(conf_)),
+  env(conf)
 {
   env.append(env_arg.get_all());
 }
