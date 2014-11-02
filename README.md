@@ -935,7 +935,7 @@ foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
 
 In some cases you need to know what a type alias resolves to. As an example,
 assume that you need to understand (and fix or improve) a piece of code that
-definesa  template class `a` and the following template function:
+defines a template class `a` and the following template function:
 
 ```cpp
 template <class T>
