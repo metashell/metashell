@@ -351,7 +351,7 @@ void mdb_shell::command_step(const std::string& arg) {
 
 bool mdb_shell::is_wrap_type(const std::string& type) {
   // TODO this check could be made more strict,
-  // since we now whats inside wrap<...> (mp->get_evaluation_result)
+  // since we know whats inside wrap<...> (mp->get_evaluation_result)
   return boost::starts_with(type, wrap_prefix) &&
          boost::ends_with(type, wrap_suffix);
 }
