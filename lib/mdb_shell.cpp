@@ -448,14 +448,26 @@ void mdb_shell::filter_similar_edges() {
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
 
+  typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
+    set_element_t;
+
+  using std::get;
+
+  auto comparator = mp->is_in_full_mode() ?
+    [](const set_element_t& lhs, const set_element_t& rhs) {
+      return
+        std::tie(get<0>(lhs), get<2>(lhs)) <
+        std::tie(get<0>(rhs), get<2>(rhs));
+    } :
+    [](const set_element_t& lhs, const set_element_t& rhs) {
+      return lhs < rhs;
+    };
+
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
   for (vertex_descriptor vertex : mp->get_vertices()) {
 
-    typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
-      set_element_t;
-
-    std::set<set_element_t> similar_edges;
+    std::set<set_element_t, decltype(comparator)> similar_edges(comparator);
 
     for (edge_descriptor edge : mp->get_out_edges(vertex)) {
       edge_property& edge_property = mp->get_edge_property(edge);

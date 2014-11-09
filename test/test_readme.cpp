@@ -258,15 +258,6 @@ JUST_TEST_CASE(test_readme_getting_started) {
       "| ` fib<2>\n"
       "|   + fib<1>\n"
       "|   ` fib<0>\n"
-      "+ fib<4>\n"
-      "| + fib<3>\n"
-      "| | + fib<2>\n"
-      "| | | + fib<1>\n"
-      "| | | ` fib<0>\n"
-      "| | ` fib<1>\n"
-      "| ` fib<2>\n"
-      "|   + fib<1>\n"
-      "|   ` fib<0>\n"
       "` mpl_::int_<5>\n");
 }
 #endif

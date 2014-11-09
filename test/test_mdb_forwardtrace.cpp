@@ -175,21 +175,6 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
       "|     ` fib<2>\n"
       "|       + fib<0>\n"
       "|       ` fib<1>\n"
-      "+ fib<5>\n"
-      "| + fib<3>\n"
-      "| | + fib<1>\n"
-      "| | ` fib<2>\n"
-      "| |   + fib<0>\n"
-      "| |   ` fib<1>\n"
-      "| ` fib<4>\n"
-      "|   + fib<2>\n"
-      "|   | + fib<0>\n"
-      "|   | ` fib<1>\n"
-      "|   ` fib<3>\n"
-      "|     + fib<1>\n"
-      "|     ` fib<2>\n"
-      "|       + fib<0>\n"
-      "|       ` fib<1>\n"
       "` int_<5>\n");
 }
 #endif

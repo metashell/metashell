@@ -156,7 +156,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode) {
   sh.line_available("rbreak fib<3>");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<3>\" will stop the execution on 4 locations\n");
+      "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 }
@@ -189,7 +189,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_also_root) {
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" "
-      "will stop the execution on 4 locations\n");
+      "will stop the execution on 2 locations\n");
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 }
