@@ -93,6 +93,9 @@ const std::vector<color> mdb_shell::colors =
     color::cyan
   };
 
+const std::string mdb_shell::wrap_prefix = "metashell::impl::wrap<";
+const std::string mdb_shell::wrap_suffix = ">";
+
 namespace {
 
 config set_pch_false(config c) {
@@ -346,34 +349,35 @@ void mdb_shell::command_step(const std::string& arg) {
   }
 }
 
-void mdb_shell::filter_metaprogram() {
-  assert(mp);
+bool mdb_shell::is_wrap_type(const std::string& type) {
+  // TODO this check could be made more strict,
+  // since we now whats inside wrap<...> (mp->get_evaluation_result)
+  return boost::starts_with(type, wrap_prefix) &&
+         boost::ends_with(type, wrap_suffix);
+}
 
-  using boost::starts_with;
-  using boost::ends_with;
-  using boost::trim_copy;
+std::string mdb_shell::trim_wrap_type(const std::string& type) {
+  assert(is_wrap_type(type));
+  return boost::trim_copy(type.substr(
+         wrap_prefix.size(),
+         type.size() - wrap_prefix.size() - wrap_suffix.size()));
+}
 
+void mdb_shell::filter_disable_everything() {
+  for (metaprogram::edge_descriptor edge : mp->get_edges()) {
+    mp->get_edge_property(edge).enabled = false;
+  }
+}
+
+
+void mdb_shell::filter_enable_reachable_from_current_line() {
   using vertex_descriptor = metaprogram::vertex_descriptor;
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
   using discovered_t = metaprogram::discovered_t;
 
-  static const std::string wrap_prefix = "metashell::impl::wrap<";
-  static const std::string wrap_suffix = ">";
-
-  // TODO this check could be made more strict,
-  // since we now whats inside wrap<...> (mp->get_evaluation_result)
-  auto is_wrap_type = [](const std::string& type) {
-    return starts_with(type, wrap_prefix) && ends_with(type, wrap_suffix);
-  };
-
   std::string env_buffer = env.get();
   int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
-
-  // First disable everything
-  for (edge_descriptor edge : mp->get_edges()) {
-    mp->get_edge_property(edge).enabled = false;
-  }
 
   // We will traverse the interesting edges later
   std::stack<edge_descriptor> edge_stack;
@@ -421,14 +425,13 @@ void mdb_shell::filter_metaprogram() {
       }
     }
   }
+}
 
-  // Unwrap vertex names
+void mdb_shell::filter_unwrap_vertices() {
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
     std::string& name = mp->get_vertex_property(vertex).name;
     if (is_wrap_type(name)) {
-      name = trim_copy(name.substr(
-          wrap_prefix.size(),
-          name.size() - wrap_prefix.size() - wrap_suffix.size()));
+      name = trim_wrap_type(name);
       if (!is_template_type(name)) {
         for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
           mp->get_edge_property(in_edge).kind =
@@ -437,33 +440,47 @@ void mdb_shell::filter_metaprogram() {
       }
     }
   }
+}
+
+void mdb_shell::filter_similar_edges() {
+
+  using vertex_descriptor = metaprogram::vertex_descriptor;
+  using edge_descriptor = metaprogram::edge_descriptor;
+  using edge_property = metaprogram::edge_property;
 
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
-  for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
+  for (vertex_descriptor vertex : mp->get_vertices()) {
 
     typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
       set_element_t;
 
     std::set<set_element_t> similar_edges;
 
-    for (metaprogram::edge_descriptor edge : mp->get_out_edges(vertex)) {
-      metaprogram::edge_property& edge_property =
-        mp->get_edge_property(edge);
+    for (edge_descriptor edge : mp->get_out_edges(vertex)) {
+      edge_property& edge_property = mp->get_edge_property(edge);
 
       set_element_t set_element = std::make_tuple(
             edge_property.point_of_instantiation,
             edge_property.kind,
             mp->get_target(edge));
 
-      auto it = similar_edges.find(set_element);
-      if (it != similar_edges.end()) {
+      if (similar_edges.count(set_element) > 0) {
         edge_property.enabled = false;
       } else {
         similar_edges.insert(set_element);
       }
     }
   }
+}
+
+void mdb_shell::filter_metaprogram() {
+  assert(mp);
+
+  filter_disable_everything();
+  filter_enable_reachable_from_current_line();
+  filter_unwrap_vertices();
+  filter_similar_edges();
 }
 
 void mdb_shell::command_evaluate(const std::string& arg) {
