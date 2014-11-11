@@ -92,7 +92,7 @@ The following platforms are supported:
 * [FreeBSD](http://www.freebsd.org/)
 * [OpenBSD](http://www.openbsd.org/)
 * [Windows](http://windows.microsoft.com)
-* [Mac OSX](https://www.apple.com/osx/) Tested on Mavericks.
+* [Mac OS X](https://www.apple.com/osx/) Tested on Mavericks.
   Thanks to Gabor Marton and Pavel Morozkin.
 
 ## Building Metashell
