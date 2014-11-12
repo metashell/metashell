@@ -22,7 +22,7 @@ shell.
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
-    - [Building Metashell on OS X](#building-metashell-on-osx)
+    - [Building Metashell on OS X](#building-metashell-on-os-x)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
