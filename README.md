@@ -22,7 +22,7 @@ shell.
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
-    - [Building Metashell on OSX](#building-metashell-on-osx)
+    - [Building Metashell on OS X](#building-metashell-on-osx)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -220,7 +220,7 @@ in the `wineditline` directory. The content of the original `CMakeLists.txt` has
 been changed to build the code together with Metashell. If you want to upgrade
 WinEditLine to a newer version, you need to update these files.
 
-### Building Metashell on OSX
+### Building Metashell on OS X
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools:
