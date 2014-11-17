@@ -14,6 +14,7 @@ shell.
 
 - [Motivation](#motivation)
 - [Supported platforms](#supported-platforms)
+- [Getting Metashell](#getting-metashell)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux,-freebsd-and-openbsd)
         - [Using the helper scripts](#using-the-helper-scripts)
@@ -96,6 +97,16 @@ The following platforms are supported:
 * [Windows](http://windows.microsoft.com)
 * [Mac OSX](https://www.apple.com/osx/) Tested on Mavericks.
   Thanks to Gabor Marton and Pavel Morozkin.
+
+## Getting Metashell
+
+To get Metashell, you can either get a [binary
+installer](https://github.com/sabel83/metashell/releases) or build the code
+yourself.
+
+Note that on Mac OSX Yosemite the binary distribution uses standard headers that
+come with XCode, therefore you need to install XCode as well for Metashell to
+work properly.
 
 ## Building Metashell
 
