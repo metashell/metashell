@@ -65,6 +65,14 @@ elseif (EXISTS "/etc/debian_version")
   set(PLATFORM_CPACK_GENERATOR "DEB")
   file(READ "/etc/debian_version" DEBIAN_VERSION)
   string(REGEX MATCH "[^\n]+" PLATFORM_VERSION "${DEBIAN_VERSION}")
+elseif (APPLE)
+  set(PLATFORM_NAME "osx")
+  execute_process(
+    COMMAND sw_vers -productVersion
+    OUTPUT_VARIABLE PV
+  )
+  string(STRIP "${PV}" PLATFORM_VERSION)
+  set(PLATFORM_CPACK_GENERATOR "DragNDrop")
 else()
   execute_process(COMMAND uname OUTPUT_VARIABLE UN)
   string(STRIP "${UN}" UNAME)
