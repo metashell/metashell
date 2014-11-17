@@ -35,7 +35,7 @@ then
 elif [ -e /etc/SuSE-release ]
 then
   PLATFORM=opensuse
-elif [ "$(uname)" == "Darwin" ]
+elif [ "$(uname)" = "Darwin" ]
 then
   PLATFORM=osx
   PLATFORM_VERSION=$(sw_vers -productVersion)
