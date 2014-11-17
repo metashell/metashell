@@ -23,6 +23,8 @@ shell.
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
     - [Building Metashell on OSX](#building-metashell-on-osx)
+        - [Using the helper scripts](#using-the-helper-scripts-1)
+        - [Building manually](#building-manually-1)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -222,9 +224,24 @@ WinEditLine to a newer version, you need to update these files.
 
 ### Building Metashell on OSX
 
+#### Using the helper scripts
+
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools:
     * CMake
+    * XCode
+    * The appropriate version of "Auxilary tools for Xcode" which contains the
+      PackageMaker compiler.
+* Run `build.sh` to build Clang with Templight and Metashell. To take advantage
+  of multicore systems, you can set the `BUILD_THREADS` environment variable to
+  the maximum number of concurrent builds. (eg. `BUILD_THREADS=4 ./build.sh`)
+
+#### Building manually
+
+* Download the source code from [github](http://github.com/sabel83/metashell).
+* Install the dependent tools:
+    * CMake
+    * XCode
 * Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
     * `cd templight`
     * `mkdir build`
@@ -242,7 +259,9 @@ WinEditLine to a newer version, you need to update these files.
     * `make`
     * To install it on the host run `make install` as root.
 * To generate an installer package (.dmg):
-    * Install the appropriate version of "Auxilary tools for Xcode" which contains the PackageMaker compiler. On Mavericks this will be the 2012 late july version.
+    * Install the appropriate version of "Auxilary tools for Xcode" which
+      contains the PackageMaker compiler. On Mavericks this will be the 2012
+      late july version.
     * `cpack`
 
 ## Getting started
