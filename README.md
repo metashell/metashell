@@ -51,7 +51,7 @@ shell.
     - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
     - [see what a type alias resolves to?](#see-what-a-type-alias-resolves-to)
 - [Changelog](#changelog)
-    - [Not in any release yet](#not-in-any-release-yet)
+    - [Version 2.0.0](#version-200)
     - [Version 1.0.0](#version-100)
 - [Reference](#reference)
     - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
@@ -987,7 +987,7 @@ build your `fun.cpp` file.
 
 ## Changelog
 
-### Not in any release yet
+### Version 2.0.0
 
 * New features
     * mdb, the template metaprogram debugger. (Andras Kucsma's contribution)
