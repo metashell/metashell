@@ -35,6 +35,10 @@ then
 elif [ -e /etc/SuSE-release ]
 then
   PLATFORM=opensuse
+elif [ "$(uname)" = "Darwin" ]
+then
+  PLATFORM=osx
+  PLATFORM_VERSION=$(sw_vers -productVersion)
 elif [ `cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID` = "DISTRIB_ID=Ubuntu" ]
 then
   PLATFORM=ubuntu
@@ -79,6 +83,9 @@ then
 elif [ "${PLATFORM}" = "openbsd" ]
 then
   python2.7 tools/clang_default_path --gcc=eg++ > lib/extra_sysinclude.hpp
+elif [ "${PLATFORM}" = "osx" ] && [ "${PLATFORM_VERSION}" = "10.10" ]
+then
+  tools/clang_default_path --gcc=clang > lib/extra_sysinclude.hpp
 fi
 
 mkdir bin; cd bin

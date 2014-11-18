@@ -14,6 +14,7 @@ shell.
 
 - [Motivation](#motivation)
 - [Supported platforms](#supported-platforms)
+- [Getting Metashell](#getting-metashell)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux,-freebsd-and-openbsd)
         - [Using the helper scripts](#using-the-helper-scripts)
@@ -23,6 +24,8 @@ shell.
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
     - [Building Metashell on OS X](#building-metashell-on-os-x)
+        - [Using the helper scripts](#using-the-helper-scripts-1)
+        - [Building manually](#building-manually-1)
 - [Getting started](#getting-started)
     - [Trying Metashell online](#trying-metashell-online)
     - [Evaluating simple expressions](#evaluating-simple-expressions)
@@ -92,8 +95,18 @@ The following platforms are supported:
 * [FreeBSD](http://www.freebsd.org/)
 * [OpenBSD](http://www.openbsd.org/)
 * [Windows](http://windows.microsoft.com)
-* [Mac OS X](https://www.apple.com/osx/) Tested on Mavericks.
+* [Mac OS X](https://www.apple.com/osx/) Tested on Mavericks and Yosemite.
   Thanks to Gabor Marton and Pavel Morozkin.
+
+## Getting Metashell
+
+To get Metashell, you can either get a [binary
+installer](https://github.com/sabel83/metashell/releases) or build the code
+yourself.
+
+Note that on Mac OSX Yosemite the binary distribution uses standard headers that
+come with XCode, therefore you need to install XCode as well for Metashell to
+work properly.
 
 ## Building Metashell
 
@@ -222,9 +235,24 @@ WinEditLine to a newer version, you need to update these files.
 
 ### Building Metashell on OS X
 
+#### Using the helper scripts
+
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install the dependent tools:
     * CMake
+    * XCode
+    * The appropriate version of "Auxilary tools for Xcode" which contains the
+      PackageMaker compiler.
+* Run `build.sh` to build Clang with Templight and Metashell. To take advantage
+  of multicore systems, you can set the `BUILD_THREADS` environment variable to
+  the maximum number of concurrent builds. (eg. `BUILD_THREADS=4 ./build.sh`)
+
+#### Building manually
+
+* Download the source code from [github](http://github.com/sabel83/metashell).
+* Install the dependent tools:
+    * CMake
+    * XCode
 * Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
     * `cd templight`
     * `mkdir build`
@@ -242,7 +270,9 @@ WinEditLine to a newer version, you need to update these files.
     * `make`
     * To install it on the host run `make install` as root.
 * To generate an installer package (.dmg):
-    * Install the appropriate version of "Auxilary tools for Xcode" which contains the PackageMaker compiler. On Mavericks this will be the 2012 late july version.
+    * Install the appropriate version of "Auxilary tools for Xcode" which
+      contains the PackageMaker compiler. On Mavericks this will be the 2012
+      late july version.
     * `cpack`
 
 ## Getting started
