@@ -313,17 +313,17 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
   sh.line_available("rbreak fib<5>");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" will stop the execution on 16 locations\n");
+      "Breakpoint \"fib<5>\" will stop the execution on 8 locations\n");
 
   sh.clear_output();
-  sh.line_available("continue 17");
+  sh.line_available("continue 9");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Metaprogram finished\n"
       "int_<55>\n");
 
   sh.clear_output();
-  sh.line_available("continue -17");
+  sh.line_available("continue -9");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Metaprogram reached the beginning\n");
@@ -342,17 +342,17 @@ JUST_TEST_CASE(
   sh.line_available("rbreak fib<5>");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" will stop the execution on 16 locations\n");
+      "Breakpoint \"fib<5>\" will stop the execution on 8 locations\n");
 
   sh.clear_output();
-  sh.line_available("continue 16");
+  sh.line_available("continue 8");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Breakpoint \"fib<5>\" reached\n"
       "fib<5>\n");
 
   sh.clear_output();
-  sh.line_available("continue -16");
+  sh.line_available("continue -8");
 
   JUST_ASSERT_EQUAL(sh.get_output(),
       "Metaprogram reached the beginning\n");

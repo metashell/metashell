@@ -83,6 +83,13 @@ protected:
   bool run_metaprogram_with_templight(const std::string& str, bool full_mode);
   boost::optional<std::string> run_metaprogram(const std::string& str);
 
+  bool is_wrap_type(const std::string& type);
+  std::string trim_wrap_type(const std::string& type);
+
+  void filter_disable_everything();
+  void filter_enable_reachable_from_current_line();
+  void filter_unwrap_vertices();
+  void filter_similar_edges();
   void filter_metaprogram();
 
   breakpoints_t::iterator continue_metaprogram(
@@ -133,6 +140,9 @@ private:
   const static std::string internal_file_name;
 
   const static std::vector<color> colors;
+
+  const static std::string wrap_prefix;
+  const static std::string wrap_suffix;
 };
 
 }

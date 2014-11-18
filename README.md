@@ -23,7 +23,7 @@ shell.
     - [Building Metashell on Windows](#building-metashell-on-windows)
         - [Standard header files on Windows](#standard-header-files-on-windows)
         - [WinEditLine](#wineditline)
-    - [Building Metashell on OSX](#building-metashell-on-osx)
+    - [Building Metashell on OS X](#building-metashell-on-os-x)
         - [Using the helper scripts](#using-the-helper-scripts-1)
         - [Building manually](#building-manually-1)
 - [Getting started](#getting-started)
@@ -95,7 +95,7 @@ The following platforms are supported:
 * [FreeBSD](http://www.freebsd.org/)
 * [OpenBSD](http://www.openbsd.org/)
 * [Windows](http://windows.microsoft.com)
-* [Mac OSX](https://www.apple.com/osx/) Tested on Mavericks and Yosemite.
+* [Mac OS X](https://www.apple.com/osx/) Tested on Mavericks and Yosemite.
   Thanks to Gabor Marton and Pavel Morozkin.
 
 ## Getting Metashell
@@ -233,7 +233,7 @@ in the `wineditline` directory. The content of the original `CMakeLists.txt` has
 been changed to build the code together with Metashell. If you want to upgrade
 WinEditLine to a newer version, you need to update these files.
 
-### Building Metashell on OSX
+### Building Metashell on OS X
 
 #### Using the helper scripts
 
@@ -567,15 +567,6 @@ difference let's evaluate a metaprogram in full mode and print the forwardtrace:
 Metaprogram started
 (mdb) ft
 int_<fib<4>::value>
-+ fib<4>
-| + fib<3>
-| | + fib<2>
-| | | + fib<1>
-| | | ` fib<0>
-| | ` fib<1>
-| ` fib<2>
-|   + fib<1>
-|   ` fib<0>
 + fib<4>
 | + fib<3>
 | | + fib<2>

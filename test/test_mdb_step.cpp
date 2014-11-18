@@ -247,20 +247,11 @@ JUST_TEST_CASE(
     "fib<2>\n"
     "fib<0>\n"
     "fib<1>\n"
-    "fib<4>\n"
-    "fib<2>\n"
-    "fib<0>\n"
-    "fib<1>\n"
-    "fib<3>\n"
-    "fib<1>\n"
-    "fib<2>\n"
-    "fib<0>\n"
-    "fib<1>\n"
     "int_<3>\n"
     "Metaprogram finished\n"
     "int_<3>\n";
 
-  for (unsigned i = 0; i < 20; ++i) {
+  for (unsigned i = 0; i < 11; ++i) {
     sh.line_available("step");
   }
 
