@@ -147,7 +147,9 @@ enable_testing()
 subdirs(lib app test boost)
 
 # Debian package
-set(CMAKE_INSTALL_PREFIX "/usr")
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/usr")
+endif()
 
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   include(InstallRequiredSystemLibraries)
