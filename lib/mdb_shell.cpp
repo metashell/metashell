@@ -31,6 +31,34 @@
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
+namespace
+{
+  typedef
+    std::tuple<
+      metashell::file_location,
+      metashell::instantiation_kind,
+      metashell::metaprogram::vertex_descriptor
+    >
+    set_element_t;
+
+  bool less_than(const set_element_t& lhs, const set_element_t& rhs)
+  {
+    return lhs < rhs;
+  }
+
+  bool less_than_ignore_instantiation_kind(
+    const set_element_t& lhs,
+    const set_element_t& rhs
+  )
+  {
+    using std::get;
+
+    return
+      std::tie(get<0>(lhs), get<2>(lhs)) <
+      std::tie(get<0>(rhs), get<2>(rhs));
+  }
+}
+
 namespace metashell {
 
 const mdb_command_handler_map mdb_shell::command_handler =
@@ -448,20 +476,8 @@ void mdb_shell::filter_similar_edges() {
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
 
-  typedef std::tuple<file_location, instantiation_kind, vertex_descriptor>
-    set_element_t;
-
-  using std::get;
-
-  auto comparator = mp->is_in_full_mode() ?
-    [](const set_element_t& lhs, const set_element_t& rhs) {
-      return
-        std::tie(get<0>(lhs), get<2>(lhs)) <
-        std::tie(get<0>(rhs), get<2>(rhs));
-    } :
-    [](const set_element_t& lhs, const set_element_t& rhs) {
-      return lhs < rhs;
-    };
+  auto comparator =
+    mp->is_in_full_mode() ? less_than_ignore_instantiation_kind : less_than;
 
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
