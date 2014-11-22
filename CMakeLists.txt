@@ -210,7 +210,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       )
     endif()
   elseif (DEBIAN_LINUX)
-    if ("${PLATFORM_VERSION}" STREQUAL "7.6")
+    if (
+      ("${PLATFORM_VERSION}" STREQUAL "7.6")
+      OR ("${PLATFORM_VERSION}" STREQUAL "7.7")
+    )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
     else()
       message(
