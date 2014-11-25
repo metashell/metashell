@@ -14,7 +14,13 @@ shell.
 
 - [Motivation](#motivation)
 - [Supported platforms](#supported-platforms)
-- [Getting Metashell](#getting-metashell)
+- [Binary installers](#binary-installers)
+    - [Version 2.0.0](#version-200)
+        - [Linux](#linux)
+        - [Windows](#windows)
+        - [OS X](#os-x)
+    - [Version 1.0.0](#version-100)
+        - [Linux](#linux-1)
 - [Building Metashell](#building-metashell)
     - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux,-freebsd-and-openbsd)
         - [Using the helper scripts](#using-the-helper-scripts)
@@ -51,8 +57,8 @@ shell.
     - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
     - [see what a type alias resolves to?](#see-what-a-type-alias-resolves-to)
 - [Changelog](#changelog)
-    - [Version 2.0.0](#version-200)
-    - [Version 1.0.0](#version-100)
+    - [Version 2.0.0](#version-200-1)
+    - [Version 1.0.0](#version-100-1)
 - [Reference](#reference)
     - [The pragmas Metashell provides](#the-pragmas-metashell-provides)
     - [Metadebugger command reference](#metadebugger-command-reference)
@@ -98,15 +104,67 @@ The following platforms are supported:
 * [Mac OS X](https://www.apple.com/osx/) Tested on Mavericks and Yosemite.
   Thanks to Gabor Marton and Pavel Morozkin.
 
-## Getting Metashell
+## Binary installers
 
-To get Metashell, you can either get a [binary
-installer](https://github.com/sabel83/metashell/releases) or build the code
-yourself.
+You can get binary installers for a number of platforms. If you can't or don't
+want to install them, you can build Metashell yourself.
 
-Note that on Mac OSX Yosemite the binary distribution uses standard headers that
-come with XCode, therefore you need to install XCode as well for Metashell to
-work properly.
+### Version 2.0.0
+
+#### Linux
+
+* Ubuntu
+    * Ubuntu 14.10:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_ubuntu14.10_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_ubuntu14.10_i686.deb)
+    * Ubuntu 14.04:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_ubuntu14.04_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_ubuntu14.04_i686.deb)
+* Debian
+    * Debian 7.7:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_debian7.7_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_debian7.7_i686.deb)
+    * Debian 7.6:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_debian7.6_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_debian7.6_i686.deb)
+* Fedora
+    * Fedora 20:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_fedora20_x86_64.rpm) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_fedora20_i686.rpm)
+* OpenSuSE
+    * OpenSuSE 13.2:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_opensuse13.2_x86_64.rpm) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_opensuse13.2_i686.rpm)
+    * OpenSuSE 13.1:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_opensuse13.1_x86_64.rpm) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_opensuse13.1_i686.rpm)
+
+#### Windows
+
+* [Windows installer](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_AMD64.exe)
+  tested on Windows 7 and Windows 8.1
+
+#### OS X
+
+* [Yosemite](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_osx10.10_x86_64.dmg)
+  Note that you need to install XCode for Metashell to work properly.
+
+### Version 1.0.0
+
+#### Linux
+
+* Ubuntu
+    * Ubuntu 13.10:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu13.10_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu13.10_i686.deb)
+    * Ubuntu 13.04:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu13.04_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu13.04_i686.deb)
+    * Ubuntu 12.04:
+      [64 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu12.04_x86_64.deb) |
+      [32 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_ubuntu12.04_i686.deb)
+* OpenSuSE
+    * OpenSuSE 13.3: [64 bit](https://github.com/sabel83/metashell/releases/download/v1.0.0/metashell_1.0.0_opensuse12.3_x86_64.rpm)
 
 ## Building Metashell
 
