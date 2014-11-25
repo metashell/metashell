@@ -639,7 +639,7 @@ int_<fib<4>::value>
 
 Full mode doesn't try to follow what the real complier does, but instead it
 tries to simulate a dumb compiler, which doesn't use memoizations to speed up
-compilation. For example, fib<2> and it's full sub call tree is visible four
+compilation. For example, `fib<2>` and it's full sub call tree is visible two
 times. This mode can be useful, when the part of the trace you're intrested in
 is hidden under multiple layers of Memoizations in normal mode.
 
