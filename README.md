@@ -241,7 +241,6 @@ used:
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install [CMake](http://cmake.org/)
-* Download the source code on your Windows host.
 * First you need to build Clang with
   [Templight](http://plc.inf.elte.hu/templight/).
     * Start a command line on your Windows host and go into the source directory
