@@ -22,7 +22,7 @@ shell.
     - [Version 1.0.0](#version-100)
         - [Linux](#linux-1)
 - [Building Metashell](#building-metashell)
-    - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux,-freebsd-and-openbsd)
+    - [Building Metashell on Linux, FreeBSD and OpenBSD](#building-metashell-on-linux-freebsd-and-openbsd)
         - [Using the helper scripts](#using-the-helper-scripts)
         - [Building manually](#building-manually)
         - [Clang and Templight](#clang-and-templight)
