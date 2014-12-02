@@ -265,7 +265,12 @@ used:
     * Run `cd bin`
     * Run `cmake .. -G "Visual Studio 12 2013"`.
     * CMake will generate a solution file for Metashell in the `bin` directory.
-      Open it with Visual Studio 2013 and build it.
+      Open it with Visual Studio 2013 and build it. You can do a debug or a
+      release build (or both) against the release build of the Templight-enabled
+      Clang.
+    * After a successful build you can find the Metashell executables in
+      `bin/app/Release/metashell.exe` or `bin/app/Debug/metashell.exe` depending
+      on the build type.
 * To generate an installer for Metashell:
     * Install [NSIS](http://nsis.sourceforge.net).
     * Build Metashell following the above instructions (make sure you build the
