@@ -543,7 +543,7 @@ output of forwardtrace happen in that order from the top down.
 You probably noticed that there are two kinds of events metadebugger shows you:
 * __TemplateInstantiation__ event happens when the compiler first encounters and
   instantiates a new template type. During a TemplateInstantiation event the
-  compiler will instantiate every subtype it needs to get to the result
+  compiler will instantiate every subtype it needs to get to the result.
 * __Memoization__ event happens when a compiler encounters a type, which it had
   already instantiated before. It won't go through the instantiation process
   again, instead it uses technique called
