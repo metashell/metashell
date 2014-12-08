@@ -48,7 +48,7 @@ void assert_state_equal(
   compare_stack_with_vector(state.edge_stack, edge_stack);
 }
 
-JUST_TEST_CASE(test_metaprogram_constuctor) {
+JUST_TEST_CASE(test_metaprogram_constructor) {
   metaprogram mp(false, "some_type", "the_result_type");
 
   JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
@@ -335,13 +335,13 @@ JUST_TEST_CASE(
   JUST_ASSERT(!mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_constuctor_full_mode_true) {
+JUST_TEST_CASE(test_metaprogram_constructor_full_mode_true) {
   metaprogram mp(true, "some_type", "the_result_type");
 
   JUST_ASSERT(mp.is_in_full_mode());
 }
 
-JUST_TEST_CASE(test_metaprogram_constuctor_full_mode_false) {
+JUST_TEST_CASE(test_metaprogram_constructor_full_mode_false) {
   metaprogram mp(false, "some_type", "the_result_type");
 
   JUST_ASSERT(!mp.is_in_full_mode());

@@ -63,7 +63,7 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaulation_removes_breakpoints) {
+JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaluation_removes_breakpoints) {
   mdb_test_shell sh(fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
