@@ -43,6 +43,7 @@ shell.
         - [Breakpoints and continue](#breakpoints-and-continue)
         - [Reevaluation and precompiled headers](#reevaluation-and-precompiled-headers)
         - [Full mode](#full-mode)
+        - [Using step over](#using-step-over)
         - [Quit Metadebugger](#quit-metadebugger)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
@@ -649,6 +650,77 @@ times. This mode can be useful, when the part of the trace you're interested in
 is hidden under multiple layers of Memoizations in normal mode.
 
 Please note, that traces in full mode can get extremely long.
+
+#### Using step over
+
+A special qualifier, `over` can be passed to the `step` command. Using
+`step over` will jump over sub instantiations. Let's take a look at an example:
+
+```cpp
+(mdb) evaluate int_<fib<5>::value>
+Metaprogram started
+(mdb) ft
+int_<fib<5>::value>
++ fib<5> (TemplateInstantiation)
+| + fib<4> (TemplateInstantiation)
+| | + fib<3> (TemplateInstantiation)     A
+| | | + fib<2> (TemplateInstantiation)
+| | | | + fib<1> (Memoization)
+| | | | ` fib<0> (Memoization)
+| | | ` fib<1> (Memoization)             B
+| | ` fib<2> (Memoization)               C
+| ` fib<3> (Memoization)
++ fib<5> (Memoization)
+` int_<5> (TemplateInstantiation)
+```
+
+Three instantiations are marked, so it is eaiser to talk about them. First,
+let's simply step forward to `A`:
+
+```cpp
+(mdb) step 3
+fib<3> (TemplateInstantiation)       A
+```
+
+Here, `step over` will jump over the types instantiated by `A` to `C`:
+
+```cpp
+(mdb) step over
+fib<2> (Memoization)       C
+```
+
+Of course, `step over -1` will do the reverse and bring us back to `A`:
+
+```cpp
+(mdb) step over -1
+fib<3> (TemplateInstantiation)       A
+```
+
+Be careful though, `step over -1` is not always the inverse of `step over`.
+Let's step forward to `B` to demonstrate this:
+
+
+```cpp
+(mdb) step 4
+fib<1> (Memoization)       B
+```
+
+Since there are no more sub instantiations to step over, from here `step over`
+has no other choice but to behave like a normal `step` command and jump out to
+`C`.
+
+```cpp
+(mdb) step over
+fib<2> (Memoization)       C
+```
+
+But from `C`, as we've seen earlier, `step over -1` will bring us back to `A`
+and not `B`.
+
+```cpp
+(mdb) step over -1
+fib<3> (TemplateInstantiation)       A
+```
 
 #### Quit Metadebugger
 
