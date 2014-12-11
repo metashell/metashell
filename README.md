@@ -58,6 +58,7 @@ shell.
     - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
     - [see what a type alias resolves to?](#see-what-a-type-alias-resolves-to)
 - [Changelog](#changelog)
+    - [Not in any release yet](#not-in-any-release-yet)
     - [Version 2.0.0](#version-200-1)
     - [Version 1.0.0](#version-100-1)
 - [Reference](#reference)
@@ -1121,6 +1122,10 @@ macro definitions (`-D` arguments) when you launch Metashell that you use to
 build your `fun.cpp` file.
 
 ## Changelog
+
+### Not in any release yet
+
+* New section about `step over` in Getting started.
 
 ### Version 2.0.0
 
