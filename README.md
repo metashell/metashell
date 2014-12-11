@@ -603,12 +603,13 @@ is one of the reasons PCH can speed up compilation.
 
 This might seem like bad news, but it has a very useful side effect. If you
 included files while you set up the compilation environment, you can actually
-modify those files on the fly without restarting Metashell. The modified file
-will be included every time you evaluate a metaprogram.
+modify those files on the fly without restarting Metadebugger and using
+`#msh environment reload`. The modified file will be included and reparsed
+every time you evaluate a metaprogram.
 
 This technique can be used outside Metadebugger, but you might have to
-explicitly turn off precompiled headers when starting Metashell with the
-`--no_precompiled_headers` command line option.
+explicitly turn off precompiled headers. See this section for more information:
+[What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
 
 To reevaulate the last metaprogram, you can simply enter `evaluate` (or `e` for
 short) without giving any expression as an argument:
