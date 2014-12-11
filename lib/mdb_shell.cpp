@@ -80,7 +80,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
         "Negative n means step the program backwards.\n\n"
-        "Use of the `over` qualifier will jump over sub instantiations."},
+        "Use of the `over` qualifier will jump over sub instantiations.\n"
+        "Please note that `step over -1` is not always the inverse of `step over`.\n"
+        "In particlar when there are no more instantiations that got instantiated\n"
+        "by the current parent, then `step over` will behave like a normal `step`,\n"
+        "and will step out of one or more instantiation frames."},
       {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",

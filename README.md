@@ -1171,6 +1171,10 @@ Argument n means step n times. n defaults to 1 if not specified.
   Negative n means step the program backwards.
   
   Use of the `over` qualifier will jump over sub instantiations.
+  Please note that `step over -1` is not always the inverse of `step over`.
+  In particlar when there are no more instantiations, that got instantiated
+  by the current parent, then `step over` will behave like a normal `step`,
+  and will step out of one or more instantiation frames.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.
