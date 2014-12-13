@@ -176,7 +176,7 @@ want to install them, you can build Metashell yourself.
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Run `install_build_dependencies.sh` to install the dependent tools and
-  libaries
+  libraries
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
   of multicore systems, you can set the `BUILD_THREADS` environment variable to
   the maximum number of concurrent builds. (eg. `BUILD_THREADS=4 ./build.sh`)
@@ -205,7 +205,7 @@ want to install them, you can build Metashell yourself.
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
-        * Note: if you don't want to link staticly against libclang, you need to
+        * Note: if you don't want to link statically against libclang, you need to
           add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install`
@@ -226,7 +226,7 @@ want to install them, you can build Metashell yourself.
     * `cmake .. -DENABLE_PROFILING=true`
     * `make`
     * The binaries will now generate profiling data to gmon.out.
-      Please see the gprof documentation for futher information.
+      Please see the gprof documentation for further information.
 
 #### Clang and Templight
 
@@ -305,7 +305,7 @@ WinEditLine to a newer version, you need to update these files.
 * Install the dependent tools:
     * CMake
     * XCode
-    * The appropriate version of "Auxilary tools for Xcode" which contains the
+    * The appropriate version of "Auxiliary tools for Xcode" which contains the
       PackageMaker compiler.
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
   of multicore systems, you can set the `BUILD_THREADS` environment variable to
@@ -329,14 +329,14 @@ WinEditLine to a newer version, you need to update these files.
     * `mkdir bin`
     * `cd bin`
     * `cmake ..`
-        * Note: if you don't want to link staticly against libclang, you need to
+        * Note: if you don't want to link statically against libclang, you need to
           add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install` as root.
 * To generate an installer package (.dmg):
-    * Install the appropriate version of "Auxilary tools for Xcode" which
+    * Install the appropriate version of "Auxiliary tools for Xcode" which
       contains the PackageMaker compiler. On Mavericks this will be the 2012
-      late july version.
+      late July version.
     * `cpack`
 
 ## Getting started
@@ -675,7 +675,7 @@ int_<fib<5>::value>
 ` int_<5> (TemplateInstantiation)
 ```
 
-Three instantiations are marked, so it is eaiser to talk about them. First,
+Three instantiations are marked, so it is easier to talk about them. First,
 let's simply step forward to `A`:
 
 ```cpp
@@ -1250,7 +1250,7 @@ Argument n means step n times. n defaults to 1 if not specified.
   
   Use of the `over` qualifier will jump over sub instantiations.
   Please note that `step over -1` is not always the inverse of `step over`.
-  In particlar when there are no more instantiations that got instantiated
+  In particular when there are no more instantiations that got instantiated
   by the current parent, then `step over` will behave like a normal `step`,
   and will step out of one or more instantiation frames.
 
