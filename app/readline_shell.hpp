@@ -39,9 +39,6 @@ public:
 private:
   metashell::readline_environment _readline_environment;
 
-  bool _syntax_highlight;
-  bool _indent;
-
   static char* tab_generator(const char* text_, int state_);
   static char** tab_completion(const char* text_, int start_, int end_);
 

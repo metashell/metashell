@@ -76,9 +76,7 @@ readline_shell::readline_shell(
   const metashell::config& config_,
   iface::displayer& displayer_
 ) :
-  shell(config_, displayer_),
-  _syntax_highlight(config_.syntax_highlight),
-  _indent(config_.indent)
+  shell(config_, displayer_)
 {
   assert(!_instance);
   _instance = this;
