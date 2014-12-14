@@ -14,28 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "util.hpp"
 #include "test_shell.hpp"
 
 #include <just/test.hpp>
 
-#include <boost/regex.hpp>
-
-#include <sstream>
-#include <iostream>
-
-std::string get_output(const std::string& input_, const std::string& test_code_)
+metashell::type get_output(
+  const std::string& input_,
+  const std::string& test_code_
+)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   if (!test_code_.empty())
   {
     const bool r = sh.store_in_buffer(test_code_);
     JUST_ASSERT(r);
   }
   sh.line_available(input_);
-  JUST_ASSERT_EQUAL("", sh.info());
-  JUST_ASSERT_EQUAL("", sh.error());
-  return sh.output();
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL(1u, d.types().size());
+  return d.types().front();
 }
 
 std::tuple<metashell::mdb_command, std::string> get_command_from_map(
@@ -47,20 +49,5 @@ std::tuple<metashell::mdb_command, std::string> get_command_from_map(
   JUST_ASSERT(bool(opt_pair));
 
   return *opt_pair;
-}
-
-bool is_integral_constant(
-  const std::string& type_,
-  const std::string& value_,
-  const std::string& s_
-)
-{
-  using boost::regex;
-  using boost::regex_match;
-
-  std::ostringstream s;
-  s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
-
-  return regex_match(s_, regex(s.str()));
 }
 

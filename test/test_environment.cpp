@@ -16,6 +16,7 @@
 
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_environment.hpp>
+#include <metashell/in_memory_displayer.hpp>
 
 #include <metashell/config.hpp>
 
@@ -86,7 +87,8 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
 
 JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   const environment* old_env_ptr = &sh.env();
 
   sh.line_available("#msh environment reload");
@@ -110,77 +112,85 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
 
 JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment push");
   sh.line_available("#msh environment pop foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment push foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment reload foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment stack foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment reset foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh quit foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(
   test_environment_save_displays_an_error_when_not_enabled_in_config
 )
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#msh environment save");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(
@@ -192,11 +202,12 @@ JUST_TEST_CASE(
 
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
-  test_shell sh(cfg, 80);
+  in_memory_displayer disp;
+  test_shell sh(cfg, disp);
 
   sh.line_available("#msh environment save " + fn);
 
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(disp.errors());
   JUST_ASSERT(file_exists(fn));
 }
 
@@ -206,11 +217,12 @@ JUST_TEST_CASE(
 {
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
-  test_shell sh(cfg, 80);
+  in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   sh.line_available("#msh environment save    ");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(
@@ -219,7 +231,8 @@ JUST_TEST_CASE(
 {
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
-  test_shell sh(cfg, 80);
+  in_memory_displayer d;
+  test_shell sh(cfg, d);
 
 #ifdef _WIN32
   sh.line_available("#msh environment save /foo *? bar");
@@ -227,6 +240,6 @@ JUST_TEST_CASE(
   sh.line_available("#msh environment save /");
 #endif
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 

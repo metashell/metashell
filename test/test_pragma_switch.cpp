@@ -16,7 +16,8 @@
 
 #include <metashell/pragma_switch.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include "test_shell.hpp"
+#include <metashell/in_memory_displayer.hpp>
+#include <metashell/pragma_handler.hpp>
 
 #include <just/test.hpp>
 
@@ -35,7 +36,7 @@ namespace
   {
     bool was_called = false;
     bool arg = !ExpectedResult;
-    test_shell sh;
+    in_memory_displayer d;
 
     pragma_switch
       p(
@@ -46,7 +47,7 @@ namespace
           was_called = true;
           arg = value_;
         },
-        sh
+        d
       );
     run(p, arg_);
 
@@ -66,11 +67,11 @@ JUST_TEST_CASE(test_pragma_switch_calls_updating_callback)
 
 JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
 {
-  test_shell sh;
+  in_memory_displayer d;
 
-  pragma_switch p("test", always<true>, [](bool) {}, sh);
+  pragma_switch p("test", always<true>, [](bool) {}, d);
   run(p, "on foo");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 

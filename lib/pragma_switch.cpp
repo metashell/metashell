@@ -19,7 +19,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/version.hpp>
-#include "indenter.hpp"
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -54,17 +53,17 @@ pragma_switch::pragma_switch(
   const std::string& name_,
   const std::function<bool()>& query_,
   const std::function<void(bool)>& update_,
-  shell& shell_
+  iface::displayer& displayer_
 ) :
   _query(query_),
   _update(update_),
   _name(name_),
-  _shell(shell_)
+  _displayer(displayer_)
 {}
 
-pragma_handler_interface* pragma_switch::clone() const
+iface::pragma_handler* pragma_switch::clone() const
 {
-  return new pragma_switch(_name, _query, _update, _shell);
+  return new pragma_switch(_name, _query, _update, _displayer);
 }
 
 std::string pragma_switch::arguments() const
@@ -98,22 +97,20 @@ void pragma_switch::run(
       }
       else
       {
-        _shell.display_error(
+        _displayer.show_error(
           "Invalid arguments after " + v + ": " + tokens_to_string(i, args_end_)
         );
       }
     }
     else
     {
-      _shell.display_error(
+      _displayer.show_error(
         "Invalid argument " + v + ". Valid values are: " + valid_arguments()
       );
     }
   }
-  _shell.display_normal(
-    indenter(_shell.width(), "// ")
-      .left_align(_name + " is " + (_query() ? "on" : "off"))
-      .str()
+  _displayer.show_comment(
+    text(_name + " is " + (_query() ? "on" : "off"))
   );
 }
 

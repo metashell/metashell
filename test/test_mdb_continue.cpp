@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "mdb_test_shell.hpp"
 
 #include "test_metaprograms.hpp"
@@ -24,309 +26,351 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_without_evaluation) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram not evaluated yet\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Metaprogram not evaluated yet"});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_garbage_argument) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue asd");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Argument parsing failed\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument parsing failed"});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaulation_removes_breakpoints) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<0>");
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<0>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<0>\" reached\n"
-      "fib<0> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<0>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<0>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
   sh.line_available("rbreak fib<6>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<6>\" reached\n"
-      "fib<6> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<6>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<6>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
   sh.line_available("rbreak fib<6>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
   sh.line_available("rbreak fib<6>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 10");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_0_fibonacci_1_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<6>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_minus_1_at_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_minus_2_at_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<6>");
   sh.line_available("rbreak fib<5>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<6>\" reached\n"
-      "fib<6> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<6>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<6>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("rbreak fib<5>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 3");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -3");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("rbreak fib<5>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" will stop the execution on 8 locations\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"fib<5>\" will stop the execution on 8 locations"},
+    d.raw_texts()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 9");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -9");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
@@ -334,27 +378,31 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
 JUST_TEST_CASE(
     test_mdb_continue_to_one_before_end_and_back_to_start_in_full_mode)
 {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("rbreak fib<5>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" will stop the execution on 8 locations\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"fib<5>\" will stop the execution on 8 locations"},
+    d.raw_texts()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue 8");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"fib<5>\" reached\n"
-      "fib<5>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({frame(type("fib<5>"))}, d.frames());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue -8");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif

@@ -1,5 +1,5 @@
-#ifndef METASHELL_INDENTER_HPP
-#define METASHELL_INDENTER_HPP
+#ifndef _METASHELL_INDENTER_HPP
+#define _METASHELL_INDENTER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)

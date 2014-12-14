@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "mdb_test_shell.hpp"
+#include "util.hpp"
 
 #include <algorithm>
-#include <boost/algorithm/string.hpp>
 
 #include "test_metaprograms.hpp"
 
@@ -27,36 +29,42 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_int) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), "int");
+  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), type("int"));
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), "int_<55>");
+  JUST_ASSERT_EQUAL(
+    sh.get_metaprogram().get_evaluation_result(),
+    type("int_<55>")
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments_no_evaluation) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate");
 
   JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Nothing has been evaluated yet.\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Nothing has been evaluated yet."});
 }
 #endif
 
@@ -64,54 +72,55 @@ JUST_TEST_CASE(test_mdb_evaluate_no_arguments_no_evaluation) {
 JUST_TEST_CASE(
     test_mdb_evaluate_no_arguments_with_trailing_spaces_no_evaluation)
 {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate  ");
 
   JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Nothing has been evaluated yet.\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Nothing has been evaluated yet."});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_failure_will_reset_metaprogram_state) {
-  using boost::algorithm::icontains;
-
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate in");
 
   JUST_ASSERT(!sh.has_metaprogram());
-  JUST_ASSERT(icontains(sh.get_output(), "error"));
+  JUST_ASSERT(!d.errors().empty());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate int");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_run_last_metaprogram) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 }
 #endif
 
@@ -119,21 +128,22 @@ JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_run_last_metaprogram) {
 JUST_TEST_CASE(
     test_mdb_evaluate_missing_argument_will_reset_metaprogram_state)
 {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
   auto first_state = sh.get_metaprogram().get_state();
 
   sh.line_available("step 5");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate");
 
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
   auto second_state = sh.get_metaprogram().get_state();
 
@@ -149,50 +159,59 @@ JUST_TEST_CASE(
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
-  mdb_test_shell sh(fibonacci_with_enum_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_with_enum_mp);
 
   sh.line_available("evaluate int_<fib<2>::value>");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("forwardtrace");
 
   // Clang actually emits more than 50 fib<1>::ENUM and fib<0>::ENUM events
   // These are filtered out
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<2>::value>\n"
-      "+ fib<2> (TemplateInstantiation)\n"
-      "| + fib<0> (Memoization)\n"
-      "| + fib<1> (Memoization)\n"
-      "| + fib<1>::ENUM (Memoization)\n"
-      "| ` fib<0>::ENUM (Memoization)\n"
-      "+ fib<2> (Memoization)\n"
-      "+ fib<2>::ENUM (Memoization)\n"
-      "` int_<1> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("int_<fib<2>::value>")), 0, 4},
+      {frame( fib<2>(), instantiation_kind::template_instantiation), 1, 4},
+      {frame(  fib<0>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<1>(), instantiation_kind::memoization), 2, 0},
+      {frame(  type("fib<1>::ENUM"), instantiation_kind::memoization), 2, 0},
+      {frame(  type("fib<0>::ENUM"), instantiation_kind::memoization), 2, 0},
+      {frame( fib<2>(), instantiation_kind::memoization), 1, 0},
+      {frame( type("fib<2>::ENUM"), instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<1>"), instantiation_kind::template_instantiation), 1,0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("rbreak int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"int\" will stop the execution on 1 location\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"int\" will stop the execution on 1 location"},
+    d.raw_texts()
+  );
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate float");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
@@ -200,24 +219,27 @@ JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("rbreak int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"int\" will stop the execution on 1 location\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"int\" will stop the execution on 1 location"},
+    d.raw_texts()
+  );
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }
@@ -225,24 +247,27 @@ JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("rbreak int");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Breakpoint \"int\" will stop the execution on 1 location\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"int\" will stop the execution on 1 location"},
+    d.raw_texts()
+  );
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 1u);
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("evaluate asd");
 
-  JUST_ASSERT(boost::algorithm::icontains(sh.get_output(), "error"));
+  JUST_ASSERT(!d.errors().empty());
 
   JUST_ASSERT_EQUAL(sh.get_breakpoints().size(), 0u);
 }

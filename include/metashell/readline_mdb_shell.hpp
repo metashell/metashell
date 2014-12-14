@@ -28,18 +28,12 @@ public:
 
   readline_mdb_shell(
       const config& conf,
-      const environment& env);
+      const environment& env,
+      iface::displayer& displayer_);
 
-  virtual void run();
+  virtual void run() override;
 
-  virtual void add_history(const std::string& str);
-
-  virtual void display(
-      const colored_string& cs,
-      colored_string::size_type first,
-      colored_string::size_type length) const;
-
-  virtual unsigned width() const;
+  virtual void add_history(const std::string& str) override;
 private:
 
   readline_environment readline_env;

@@ -46,16 +46,16 @@ namespace
   {
     if (!r_.info.empty())
     {
-      s_.display_info(r_.info);
+      s_.displayer().show_raw_text(r_.info);
     }
 
     for (const std::string& i : r_.errors)
     {
-      s_.display_error(i);
+      s_.displayer().show_error(i);
     }
-    if (!r_.has_errors())
+    if (!r_.has_errors() && !r_.output.empty())
     {
-      s_.display_normal(r_.output);
+      s_.displayer().show_type(type(r_.output));
     }
   }
 
@@ -133,19 +133,25 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_) :
+shell::shell(const config& config_, iface::displayer& displayer_) :
   _env(),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _displayer(displayer_)
 {
   rebuild_environment();
   init();
 }
 
-shell::shell(const config& config_, environment* env_) :
-  _env(env_),
+shell::shell(
+  const config& config_,
+  std::unique_ptr<environment> env_,
+  iface::displayer& displayer_
+) :
+  _env(std::move(env_)),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _displayer(displayer_)
 {
   init();
 }
@@ -154,76 +160,78 @@ shell::~shell() {}
 
 void shell::cancel_operation() {}
 
-void shell::display_splash() const
+void shell::display_splash()
 {
   const std::string version_desc =
     #include "version_desc.hpp"
   ;
 
-  indenter ind(width(), " * ");
-  ind
-    .raw("/*")
-    .left_align("Template metaprogramming shell " + version());
+  const paragraph empty_line("");
+
+  text splash_text;
+  splash_text.paragraphs.push_back(
+    paragraph("Template metaprogramming shell " + version())
+  );
 
   if (!version_desc.empty())
   {
-    ind.left_align(version_desc);
+    splash_text.paragraphs.push_back(paragraph(version_desc));
   }
 
-  display_normal(
-    ind
-      .empty_line()
-      .left_align(
-        "Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)"
-      )
-      .left_align(
-        "                             Andras Kucsma  (andras.kucsma@gmail.com)"
-      )
-      .left_align(
-        "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
-        " and you are welcome to redistribute it under certain conditions;"
-        " for details visit <http://www.gnu.org/licenses/>."
-      )
-      .empty_line()
-      .left_align("Based on")
-      .left_align(
-        metashell::libclang_version(),
-        " *              ",
-        " *   libclang   "
-      )
-      .left_align(
-        metashell::wave_version(),
-        " *              ",
-        " *   Boost.Wave "
-      )
-      .left_align(
-        metashell::readline_version(),
-        " *              ",
-#ifdef USE_EDITLINE
-        " *   Libedit    "
-#else
-        " *   Readline   "
-#endif
-      )
-      .empty_line()
-      .left_align(
-        _config.use_precompiled_headers ?
-          "Using precompiled headers" :
-          "Not using precompiled headers"
-      )
-      .left_align(max_template_depth_info(_config.max_template_depth))
-      .empty_line()
-      .left_align("Getting help: #msh help")
-      .raw(" */")
-      .str()
+  splash_text.paragraphs.push_back(empty_line);
+  splash_text.paragraphs.push_back(
+    paragraph("Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)")
   );
+  splash_text.paragraphs.push_back(
+    paragraph(
+      "                             Andras Kucsma  (andras.kucsma@gmail.com)"
+    )
+  );
+  splash_text.paragraphs.push_back(
+    paragraph(
+      "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
+      " and you are welcome to redistribute it under certain conditions; for"
+      " details visit <http://www.gnu.org/licenses/>."
+    )
+  );
+  splash_text.paragraphs.push_back(empty_line);
+  splash_text.paragraphs.push_back(paragraph("Based on"));
+  splash_text.paragraphs.push_back(
+    paragraph(metashell::libclang_version(), "             ", "  libclang   ")
+  );
+  splash_text.paragraphs.push_back(
+    paragraph(metashell::wave_version(), "             ", "  Boost.Wave ")
+  );
+  splash_text.paragraphs.push_back(
+    paragraph(
+      metashell::readline_version(),
+      "             ",
+#ifdef USE_EDITLINE
+      "  Libedit    "
+#else
+      "  Readline   "
+#endif
+    )
+  );
+  splash_text.paragraphs.push_back(empty_line);
+  splash_text.paragraphs.push_back(
+    paragraph(
+      _config.use_precompiled_headers ?
+        "Using precompiled headers" :
+        "Not using precompiled headers"
+    )
+  );
+  splash_text.paragraphs.push_back(
+    paragraph(max_template_depth_info(_config.max_template_depth))
+  );
+  splash_text.paragraphs.push_back(empty_line);
+  splash_text.paragraphs.push_back(paragraph("Getting help: #msh help"));
+
+  displayer().show_comment(splash_text);
+
   if (_config.verbose)
   {
-    display_normal(
-      indenter(width(), "// ")
-        .left_align("Verbose mode: ON")
-        .str()
-    );
+    displayer().show_comment(text("Verbose mode: ON"));
   }
 }
 
@@ -270,11 +278,11 @@ void shell::line_available(const std::string& s_)
   }
   catch (const std::exception& e)
   {
-    display_error(std::string("Error: ") + e.what());
+    _displayer.show_error(std::string("Error: ") + e.what());
   }
   catch (...)
   {
-    display_error("Unknown error");
+    _displayer.show_error("Unknown error");
   }
 }
 
@@ -295,7 +303,7 @@ bool shell::store_in_buffer(const std::string& s_)
     }
     catch (const std::exception& e)
     {
-      display_error(e.what());
+      _displayer.show_error(e.what());
       return false;
     }
   }
@@ -367,6 +375,11 @@ void shell::using_precompiled_headers(bool enabled_)
   rebuild_environment();
 }
 
+environment& shell::env()
+{
+  return *_env;
+}
+
 const environment& shell::env() const
 {
   return *_env;
@@ -408,19 +421,17 @@ void shell::display_environment_stack_size()
 {
   if (_environment_stack.empty())
   {
-    display_normal("// Environment stack is empty\n");
+    displayer().show_comment(text("Environment stack is empty"));
   }
   else if (_environment_stack.size() == 1)
   {
-    display_normal("// Environment stack has 1 entry\n");
+    displayer().show_comment(text("Environment stack has 1 entry"));
   }
   else
   {
     std::ostringstream s;
-    s
-      << "// Environment stack has " << _environment_stack.size()
-      << " entries\n";
-    display_normal(s.str());
+    s << "Environment stack has " << _environment_stack.size() << " entries";
+    displayer().show_comment(text(s.str()));
   }
 }
 
@@ -437,5 +448,10 @@ void shell::reset_environment()
 
 const config& shell::get_config() const {
   return _config;
+}
+
+iface::displayer& shell::displayer()
+{
+  return _displayer;
 }
 

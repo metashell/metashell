@@ -30,11 +30,13 @@ namespace metashell
   public:
     explicit pragma_environment_reload(shell& shell_);
 
-    virtual pragma_handler_interface* clone() const;
+    virtual iface::pragma_handler* clone() const override;
 
-    virtual std::string description() const;
+    virtual std::string description() const override;
 
-    virtual void run() const;
+    virtual void run() const override;
+  private:
+    shell& _shell;
   };
 }
 

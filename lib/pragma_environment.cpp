@@ -15,17 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_environment.hpp>
-#include <metashell/shell.hpp>
 
 using namespace metashell;
 
-pragma_environment::pragma_environment(shell& shell_) :
-  pragma_without_arguments(shell_, "environment")
+pragma_environment::pragma_environment(
+  iface::displayer& displayer_,
+  environment& env_
+) :
+  pragma_without_arguments(displayer_, "environment"),
+  _env(env_)
 {}
 
-pragma_handler_interface* pragma_environment::clone() const
+iface::pragma_handler* pragma_environment::clone() const
 {
-  return new pragma_environment(get_shell());
+  return new pragma_environment(displayer(), _env);
 }
 
 std::string pragma_environment::description() const
@@ -35,6 +38,6 @@ std::string pragma_environment::description() const
 
 void pragma_environment::run() const
 {
-  get_shell().display_normal(get_shell().env().get_all());
+  displayer().show_cpp_code(_env.get_all());
 }
 

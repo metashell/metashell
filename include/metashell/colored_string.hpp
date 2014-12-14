@@ -31,7 +31,9 @@ namespace metashell {
 // Bring color to metashell namespace
 using just::console::color;
 
-class colored_string : boost::addable<colored_string>
+class colored_string :
+  boost::addable<colored_string>,
+  boost::equality_comparable<colored_string>
 {
 public:
   typedef boost::optional<color> color_t;
@@ -49,16 +51,27 @@ public:
 
   size_type size() const;
 
+  colored_string substr(size_type pos_, size_type len_) const;
+
   const std::string& get_string() const;
   const colors_t& get_colors() const;
 
   void print_to_cout() const;
   void print_to_cout(size_type begin, size_type length) const;
 
+  void clear();
 private:
+  template <class CharIt, class ColorIt>
+  colored_string(CharIt sbegin_, CharIt send_, ColorIt cbegin_, ColorIt cend_) :
+    string(sbegin_, send_),
+    colors(cbegin_, cend_)
+  {}
+
   std::string string;
   colors_t colors;
 };
+
+bool operator==(const colored_string& a_, const colored_string& b_);
 
 inline
 colored_string operator+(const char *rhs, const colored_string& lhs) {

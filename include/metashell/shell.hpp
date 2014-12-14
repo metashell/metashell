@@ -21,37 +21,39 @@
 #include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
 
+#include <metashell/iface/displayer.hpp>
+
 #include <just/console.hpp>
 
 #include <boost/optional.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <string>
 #include <set>
 #include <map>
 #include <stack>
+#include <memory>
 
 namespace metashell
 {
   class shell
   {
   public:
-    explicit shell(const config& config_);
+    shell(const config& config_, iface::displayer& displayer_);
 
     // Takes ownership of env_
-    shell(const config& config_, environment* env_);
+    shell(
+      const config& config_,
+      std::unique_ptr<environment> env_,
+      iface::displayer& displayer_
+    );
 
     virtual ~shell();
 
     virtual void add_history(const std::string& s_) = 0;
 
-    virtual void display_normal(const std::string& s_) const = 0;
-    virtual void display_info(const std::string& s_) const = 0;
-    virtual void display_error(const std::string& s_) const = 0;
+    iface::displayer& displayer();
 
-    virtual unsigned int width() const = 0;
-
-    void display_splash() const;
+    void display_splash();
     void line_available(const std::string& s_);
     std::string prompt() const;
 
@@ -79,6 +81,7 @@ namespace metashell
     bool using_precompiled_headers() const;
 
     const environment& env() const;
+    environment& env();
 
     void reset_environment();
     void push_environment();
@@ -89,12 +92,13 @@ namespace metashell
     const config& get_config() const;
   private:
     std::string _line_prefix;
-    boost::scoped_ptr<environment> _env;
+    std::unique_ptr<environment> _env;
     config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
+    iface::displayer& _displayer;
 
     void init();
     void rebuild_environment(const std::string& content_);

@@ -19,6 +19,8 @@
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
 #include <metashell/default_environment_detector.hpp>
+#include <metashell/console_displayer.hpp>
+#include <metashell/stdout_console.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -42,7 +44,10 @@ int main(int argc_, const char* argv_[])
 
     if (r.should_run_shell())
     {
-      readline_shell shell(cfg);
+      metashell::stdout_console c;
+      metashell::console_displayer
+        displayer(c, cfg.indent, cfg.syntax_highlight);
+      readline_shell shell(cfg, displayer);
       shell.display_splash();
       shell.run();
     }

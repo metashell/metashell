@@ -20,12 +20,13 @@
 using namespace metashell;
 
 pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments(shell_, "quit")
+  pragma_without_arguments(shell_.displayer(), "quit"),
+  _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_quit::clone() const
+iface::pragma_handler* pragma_quit::clone() const
 {
-  return new pragma_quit(get_shell());
+  return new pragma_quit(_shell);
 }
 
 std::string pragma_quit::description() const
@@ -35,6 +36,6 @@ std::string pragma_quit::description() const
 
 void pragma_quit::run() const
 {
-  get_shell().stop();
+  _shell.stop();
 }
 

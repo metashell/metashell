@@ -28,10 +28,6 @@ namespace metashell
 
     virtual void add_history(const std::string& s_);
 
-    virtual void display_normal(const std::string& s_) const;
-    virtual void display_info(const std::string& s_) const;
-    virtual void display_error(const std::string& s_) const;
-
     virtual unsigned int width() const;
   };
 }

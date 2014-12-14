@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 #include <metashell/command.hpp>
 
 #include <boost/scoped_ptr.hpp>
@@ -28,7 +28,7 @@ namespace metashell
   {
   public:
     template <class Impl>
-      // requires: Impl publicly inherits from pragma_handler_interface
+      // requires: Impl publicly inherits from iface::pragma_handler
     pragma_handler(Impl impl_) : _body(new Impl(impl_)) {}
 
     pragma_handler(const pragma_handler& h_);
@@ -44,8 +44,10 @@ namespace metashell
       const command::iterator& args_end_
     ) const;
   private:
-    boost::scoped_ptr<pragma_handler_interface> _body;
+    boost::scoped_ptr<iface::pragma_handler> _body;
   };
+
+  void run(const iface::pragma_handler& handler_, const std::string& args_);
 }
 
 #endif

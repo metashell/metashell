@@ -25,38 +25,29 @@
 
 class mdb_test_shell : public metashell::mdb_shell {
 public:
-  mdb_test_shell(const std::string& line = "");
-  mdb_test_shell(const metashell::shell& shell, const std::string& line = "");
+  explicit mdb_test_shell(
+    metashell::iface::displayer& displayer_,
+    const std::string& line = ""
+  );
+  mdb_test_shell(metashell::shell& shell, const std::string& line = "");
 
   typedef std::vector<std::string> history_t;
 
-  virtual void run();
+  virtual void run() override;
 
-  virtual void add_history(const std::string& str);
-
-  virtual void display(
-      const metashell::colored_string& cs,
-      metashell::colored_string::size_type first,
-      metashell::colored_string::size_type length) const;
-
-  virtual unsigned width() const;
-  void set_terminal_width(unsigned new_width);
+  virtual void add_history(const std::string& str) override;
 
   bool has_metaprogram() const;
   const metashell::metaprogram& get_metaprogram() const;
 
   const breakpoints_t& get_breakpoints() const;
 
-  const std::string& get_output() const;
   const history_t& get_history() const;
 
-  void clear_output();
   void clear_history();
 
 private:
   history_t history;
-  mutable std::string output;
-  unsigned terminal_width = 80;
 };
 
 #endif

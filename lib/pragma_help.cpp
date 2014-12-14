@@ -18,7 +18,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/version.hpp>
-#include "indenter.hpp"
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -26,38 +25,42 @@ using namespace metashell;
 
 namespace
 {
-  void display_all(shell& shell_)
+  void display_all(
+    iface::displayer& displayer_,
+    const pragma_handler_map& pragma_handlers_
+  )
   {
     using boost::algorithm::join;
 
-    indenter ind(shell_.width(), " * ");
-    ind
-      .raw("/*")
-      .left_align("Metashell has the following built-in pragmas:");
+    text t;
+    t.paragraphs.push_back(
+      paragraph("Metashell has the following built-in pragmas:")
+    );
 
-    typedef std::pair<const std::vector<std::string>, pragma_handler> sp;
-    for (const sp& p : shell_.pragma_handlers())
+    for (const auto& p : pragma_handlers_)
     {
       const std::string args = p.second.arguments();
-      ind.left_align(
-        "#msh "
-          + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
-        " *   "
+      t.paragraphs.push_back(
+        paragraph(
+          "#msh "
+            + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
+          "  "
+        )
       );
     }
 
-    ind
-      .empty_line()
-      .left_align(
+    const paragraph empty_line("");
+
+    t.paragraphs.push_back(empty_line);
+    t.paragraphs.push_back(
+      paragraph(
         "#msh is the short form of #pragma metashell. Both forms are accepted"
       )
-      .left_align(
-        "To quit Metashell run \"#msh quit\""
-      )
-      .empty_line()
-      .raw(" */");
+    );
+    t.paragraphs.push_back(paragraph("To quit Metashell run \"#msh quit\""));
+    t.paragraphs.push_back(empty_line);
 
-    shell_.display_normal(ind.str());
+    displayer_.show_comment(t);
   }
 
   template <class It1, class It2>
@@ -75,13 +78,17 @@ namespace
   }
 }
 
-pragma_help::pragma_help(shell& shell_) :
-  _shell(shell_)
+pragma_help::pragma_help(
+  iface::displayer& displayer_,
+  const pragma_handler_map& pragma_handlers_
+) :
+  _displayer(displayer_),
+  _pragma_handlers(pragma_handlers_)
 {}
 
-pragma_handler_interface* pragma_help::clone() const
+iface::pragma_handler* pragma_help::clone() const
 {
-  return new pragma_help(_shell);
+  return new pragma_help(_displayer, _pragma_handlers);
 }
 
 std::string pragma_help::arguments() const
@@ -103,7 +110,7 @@ void pragma_help::run(
 
   if (args_begin_ == args_end_)
   {
-    display_all(_shell);
+    display_all(_displayer, _pragma_handlers);
   }
   else
   {
@@ -121,45 +128,41 @@ void pragma_help::run(
       }
     }
 
-    indenter ind(_shell.width(), " * ");
-    ind .raw("/*");
+    text help_text;
     bool was_pragma = false;
 
-    for (
-      std::map<std::vector<std::string>, pragma_handler>::const_iterator
-        i = _shell.pragma_handlers().begin(),
-        e = _shell.pragma_handlers().end();
-      i != e;
-      ++i
-    )
+    for (const auto& h : _pragma_handlers)
     {
-      if (prefix_of(args.begin(), args.end(), i->first.begin(), i->first.end()))
+      if (prefix_of(args.begin(), args.end(), h.first.begin(), h.first.end()))
       {
         if (was_pragma)
         {
-          ind.empty_line();
+          help_text.paragraphs.push_back(paragraph(""));
         }
         else
         {
           was_pragma = true;
         }
-        const std::string p_args = i->second.arguments();
-        ind
-          .left_align(
+        const std::string p_args = h.second.arguments();
+        help_text.paragraphs.push_back(
+          paragraph(
             "#msh "
-              + join(i->first, " ")
+              + join(h.first, " ")
               + (p_args.empty() ? std::string() : " " + p_args)
           )
-          .left_align(i->second.description(), " *     ");
+        );
+        help_text.paragraphs.push_back(
+          paragraph(h.second.description(), "    ")
+        );
       }
     }
     if (was_pragma)
     {
-      _shell.display_normal(ind.raw(" */").str());
+      _displayer.show_comment(help_text);
     }
     else
     {
-      _shell.display_error("Pragma " + join(args, " ") + " not found.");
+      _displayer.show_error("Pragma " + join(args, " ") + " not found.");
     }
   }
 }

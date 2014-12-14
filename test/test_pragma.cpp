@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metashell_pragma.hpp>
+#include <metashell/in_memory_displayer.hpp>
 #include "test_shell.hpp"
 
 #include <just/test.hpp>
@@ -71,35 +72,40 @@ JUST_TEST_CASE(test_name_of_pragma_is_missing)
 
 JUST_TEST_CASE(test_help_pragma_displays_message)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell help");
-  JUST_ASSERT(!sh.output().empty());
+  JUST_ASSERT(!d.comments().empty());
 }
 
 JUST_TEST_CASE(test_error_for_non_existing_pragma)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell foo_bar");
-  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_check_verbosity)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell verbose");
-  JUST_ASSERT_EQUAL("// verbose mode is off\n", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER({text("verbose mode is off")}, d.comments());
 }
 
 JUST_TEST_CASE(test_check_enabling_verbosity)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell verbose on");
-  JUST_ASSERT_EQUAL("// verbose mode is on\n", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER({text("verbose mode is on")}, d.comments());
 }
 
 JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   // should not throw
   sh.line_available("#pragma metashell");
@@ -107,7 +113,8 @@ JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
 
 JUST_TEST_CASE(test_quit)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell quit");
   JUST_ASSERT(sh.stopped());
 }

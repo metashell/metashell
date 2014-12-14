@@ -144,14 +144,14 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
 {
   return
     pragma_handler_map()
-      .add("help", pragma_help(shell_))
+      .add("help", pragma_help(shell_.displayer(), shell_.pragma_handlers()))
       .add(
         "verbose",
         pragma_switch(
           "verbose mode",
           [&shell_] () { return shell_.verbose(); },
           [&shell_] (bool v_) { shell_.verbose(v_); },
-          shell_
+          shell_.displayer()
         )
       )
       .add(
@@ -160,18 +160,29 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
           "precompiled header usage",
           [&shell_] () { return shell_.using_precompiled_headers(); },
           [&shell_] (bool v_) { shell_.using_precompiled_headers(v_); },
-          shell_
+          shell_.displayer()
         )
       )
-      .add("environment", pragma_environment(shell_))
+      .add("environment", pragma_environment(shell_.displayer(), shell_.env()))
       .add("environment", "push", pragma_environment_push(shell_))
       .add("environment", "pop", pragma_environment_pop(shell_))
       .add("environment", "stack", pragma_environment_stack(shell_))
       .add("environment", "add", pragma_environment_add(shell_))
       .add("environment", "reset", pragma_environment_reset(shell_))
       .add("environment", "reload", pragma_environment_reload(shell_))
-      .add("environment", "save", pragma_environment_save(shell_))
-      .add("mdb", pragma_mdb(shell_))
+      .add(
+        "environment",
+        "save",
+        pragma_environment_save(
+          shell_.displayer(),
+          shell_.get_config(),
+          shell_.env()
+        )
+      )
+      .add(
+        "mdb",
+        pragma_mdb(shell_.displayer(), shell_.get_config(), shell_.env())
+      )
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;

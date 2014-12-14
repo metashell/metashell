@@ -20,6 +20,7 @@
 #include <metashell/metashell.hpp>
 #include <metashell/temporary_file.hpp>
 #include <metashell/is_template_type.hpp>
+#include <metashell/forward_trace_iterator.hpp>
 
 #include <cmath>
 
@@ -29,10 +30,16 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/range/adaptor/reversed.hpp>
+
+#include <boost/range/iterator_range.hpp>
 
 namespace
 {
+  const std::string internal_file_name = "mdb-stdin";
+  
+  const std::string wrap_prefix = "metashell::impl::wrap<";
+  const std::string wrap_suffix = ">";
+
   typedef
     std::tuple<
       metashell::file_location,
@@ -110,20 +117,6 @@ const mdb_command_handler_map mdb_shell::command_handler =
         ""}
     });
 
-const std::string mdb_shell::internal_file_name = "mdb-stdin";
-
-const std::vector<color> mdb_shell::colors =
-  {
-    color::red,
-    color::green,
-    color::yellow,
-    color::blue,
-    color::cyan
-  };
-
-const std::string mdb_shell::wrap_prefix = "metashell::impl::wrap<";
-const std::string mdb_shell::wrap_suffix = ">";
-
 namespace {
 
 config set_pch_false(config c) {
@@ -135,18 +128,16 @@ config set_pch_false(config c) {
 
 mdb_shell::mdb_shell(
     const config& conf_,
-    const environment& env_arg) :
+    const environment& env_arg,
+    iface::displayer& displayer_) :
   conf(set_pch_false(conf_)),
-  env(conf)
+  env(conf),
+  _displayer(displayer_)
 {
   env.append(env_arg.get_all());
 }
 
 mdb_shell::~mdb_shell() {}
-
-void mdb_shell::display(const colored_string& cs) const {
-  display(cs, 0, cs.size());
-}
 
 std::string mdb_shell::prompt() const {
   return "(mdb) ";
@@ -157,9 +148,7 @@ bool mdb_shell::stopped() const {
 }
 
 void mdb_shell::display_splash() const {
-  display_info(
-      "For help, type \"help\".\n"
-  );
+  _displayer.show_raw_text("For help, type \"help\".");
 }
 
 void mdb_shell::line_available(const std::string& line_arg) {
@@ -189,7 +178,7 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     auto command_arg_pair = command_handler.get_command_for_line(line);
     if (!command_arg_pair) {
-      display_error("Command parsing failed\n");
+      _displayer.show_error("Command parsing failed\n");
       last_command_repeatable = false;
       return;
     }
@@ -202,9 +191,9 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     (this->*cmd.get_func())(args);
   } catch (const std::exception& ex) {
-    display_error(std::string("Error: ") + ex.what() + "\n");
+    _displayer.show_error(std::string("Error: ") + ex.what() + "\n");
   } catch (...) {
-    display_error("Unknown error\n");
+    _displayer.show_error("Unknown error\n");
   }
 }
 bool mdb_shell::breakpoint_match(
@@ -216,7 +205,7 @@ bool mdb_shell::breakpoint_match(
 
 bool mdb_shell::require_empty_args(const std::string& args) const {
   if (!args.empty()) {
-    display_error("This command doesn't accept arguments\n");
+    _displayer.show_error("This command doesn't accept arguments");
     return false;
   }
   return true;
@@ -224,7 +213,7 @@ bool mdb_shell::require_empty_args(const std::string& args) const {
 
 bool mdb_shell::require_evaluated_metaprogram() const {
   if (!mp) {
-    display_error("Metaprogram not evaluated yet\n");
+    _displayer.show_error("Metaprogram not evaluated yet");
     return false;
   }
   return true;
@@ -295,8 +284,8 @@ void mdb_shell::command_continue(const std::string& arg) {
     }
   } else {
     assert(breakpoint_it != breakpoints.end());
-    display_info(
-        "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached\n");
+    _displayer.show_raw_text(
+        "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
     display_current_frame();
   }
 }
@@ -527,7 +516,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
 
   if (type.empty()) {
     if (!mp) {
-      display_error("Nothing has been evaluated yet.\n");
+      _displayer.show_error("Nothing has been evaluated yet.");
       return;
     }
     type = mp->get_vertex_property(mp->get_root_vertex()).name;
@@ -538,7 +527,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
   if (!run_metaprogram_with_templight(type, has_full)) {
     return;
   }
-  display_info("Metaprogram started\n");
+  _displayer.show_raw_text("Metaprogram started");
 
   filter_metaprogram();
 }
@@ -558,7 +547,7 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
   auto begin = arg.begin(),
        end = arg.end();
 
-  boost::optional<unsigned> max_depth;
+  boost::optional<int> max_depth;
 
   bool result =
     boost::spirit::qi::phrase_parse(
@@ -586,7 +575,7 @@ void mdb_shell::command_backtrace(const std::string& arg) {
 
 void mdb_shell::command_rbreak(const std::string& arg) {
   if (arg.empty()) {
-    display_error("Argument expected\n");
+    _displayer.show_error("Argument expected");
     return;
   }
   if (!require_evaluated_metaprogram()) {
@@ -602,40 +591,39 @@ void mdb_shell::command_rbreak(const std::string& arg) {
       }
     }
     if (match_count == 0) {
-      display_info(
-          "Breakpoint \"" + arg + "\" will never stop the execution\n");
+      _displayer.show_raw_text(
+          "Breakpoint \"" + arg + "\" will never stop the execution");
     } else {
-      display_info(
+      _displayer.show_raw_text(
           "Breakpoint \"" + arg + "\" will stop the execution on " +
           std::to_string(match_count) +
-          (match_count > 1 ? " locations" : " location") + "\n");
+          (match_count > 1 ? " locations" : " location"));
       breakpoints.push_back(breakpoint);
     }
   } catch (const boost::regex_error&) {
-    display_error("\"" + arg + "\" is not a valid regex\n");
+    _displayer.show_error("\"" + arg + "\" is not a valid regex");
   }
 }
 
 void mdb_shell::command_help(const std::string& arg) {
   if (arg.empty()) {
-    display_info(
-        "List of available commands:\n\n");
+    _displayer.show_raw_text("List of available commands:");
+    _displayer.show_raw_text("");
     for (const mdb_command& cmd : command_handler.get_commands()) {
-      display_info(
+      _displayer.show_raw_text(
           cmd.get_keys().front() + " -- " +
-          cmd.get_short_description() + "\n");
+          cmd.get_short_description());
     }
-    display_info(
-        "\n"
-        "Type \"help\" followed by a command name for more information.\n"
-        "Command name abbreviations are allowed if unambiguous.\n"
-        "A blank line as an input will repeat the last command, if it makes sense.\n");
+    _displayer.show_raw_text("");
+    _displayer.show_raw_text("Type \"help\" followed by a command name for more information.");
+    _displayer.show_raw_text("Command name abbreviations are allowed if unambiguous.");
+    _displayer.show_raw_text("A blank line as an input will repeat the last command, if it makes sense.");
     return;
   }
 
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
-    display_error("Command not found\n");
+    _displayer.show_error("Command not found\n");
     return;
   }
 
@@ -646,13 +634,12 @@ void mdb_shell::command_help(const std::string& arg) {
   std::tie(cmd, command_args) = *command_arg_pair;
 
   if (!command_args.empty()) {
-    display_error("Only one argument expected\n");
+    _displayer.show_error("Only one argument expected\n");
     return;
   }
 
-  display_info(
-      join(cmd.get_keys(), "|") + " " + cmd.get_usage() + "\n" +
-      cmd.get_full_description() + "\n");
+  _displayer.show_raw_text(join(cmd.get_keys(), "|") + " " + cmd.get_usage());
+  _displayer.show_raw_text(cmd.get_full_description());
 }
 
 void mdb_shell::command_quit(const std::string& arg) {
@@ -670,7 +657,7 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   env.set_xml_location(xml_path);
 
-  boost::optional<std::string> evaluation_result = run_metaprogram(str);
+  boost::optional<type> evaluation_result = run_metaprogram(str);
 
   if (!evaluation_result) {
     mp = boost::none;
@@ -682,22 +669,22 @@ bool mdb_shell::run_metaprogram_with_templight(
   return true;
 }
 
-boost::optional<std::string> mdb_shell::run_metaprogram(
+boost::optional<type> mdb_shell::run_metaprogram(
     const std::string& str)
 {
   result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
 
   if (!res.info.empty()) {
-    display_info(res.info);
+    _displayer.show_raw_text(res.info);
   }
 
   if (res.has_errors()) {
     for (const std::string& e : res.errors) {
-      display_error(e + "\n");
+      _displayer.show_error(e);
     }
     return boost::none;
   }
-  return res.output;
+  return type(res.output);
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
@@ -718,214 +705,44 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
   }
 }
 
-void mdb_shell::display_error(const std::string& str) const {
-  display(colored_string(str, color::bright_red));
-}
-
-void mdb_shell::display_info(const std::string& str) const {
-  display(str);
-}
-
 void mdb_shell::display_current_frame() const {
-  assert(mp && !mp->is_at_start() && !mp->is_finished());
-  display(get_frame_string(*mp->get_current_edge()) + "\n");
-}
+  assert(mp);
+  assert(!mp->is_at_start());
+  assert(!mp->is_finished());
 
-void mdb_shell::display_trace_graph(
-    unsigned depth,
-    const std::vector<unsigned>& depth_counter,
-    bool print_mark) const
-{
-  assert(depth_counter.size() > depth);
-
-  if (depth > 0) {
-    //TODO respect the -H (no syntax highlight parameter)
-    for (unsigned i = 1; i < depth; ++i) {
-      display(colored_string(
-          depth_counter[i] > 0 ? "| " : "  ",
-          colors[i % colors.size()]));
-    }
-
-    color mark_color = colors[depth % colors.size()];
-    if (print_mark) {
-      if (depth_counter[depth] == 0) {
-        display(colored_string("` ", mark_color));
-      } else {
-        display(colored_string("+ ", mark_color));
-      }
-    } else if (depth_counter[depth] > 0) {
-      display(colored_string("| ", mark_color));
-    } else {
-      display("  ");
-    }
-  }
-}
-
-void mdb_shell::display_trace_line(
-    metaprogram::optional_edge_descriptor edge,
-    unsigned depth,
-    const std::vector<unsigned>& depth_counter,
-    unsigned width) const
-{
-
-  colored_string element_content = get_frame_string(edge);
-
-  unsigned non_content_length = 2*depth;
-
-  const unsigned pretty_print_threshold = 10;
-  if (width < pretty_print_threshold ||
-      non_content_length >= width - pretty_print_threshold)
-  {
-    // We have no chance to display the graph nicely :(
-    display_trace_graph(depth, depth_counter, true);
-
-    display(element_content);
-    display("\n");
-  } else {
-    unsigned content_width = width - non_content_length;
-    for (unsigned i = 0; i < element_content.size(); i += content_width) {
-      display_trace_graph(depth, depth_counter, i == 0);
-      display(element_content, i, content_width);
-      display("\n");
-    }
-  }
-}
-
-void mdb_shell::display_trace_visit(
-    metaprogram::optional_edge_descriptor root_edge,
-    boost::optional<unsigned> max_depth,
-    metaprogram::discovered_t& discovered,
-    unsigned width) const
-{
-
-  // -----
-  // Customized DFS
-  //   The algorithm only checks vertices which are reachable from root_vertex
-  // ----
-
-  // This vector counts how many elements are in the to_visit
-  // stack for each specific depth.
-  // The purpose is to not draw pipes, when a tree element
-  // doesn't have any more children.
-  // The 0th element is never read.
-
-  const metaprogram::graph_t& graph = mp->get_graph();
-
-  std::vector<unsigned> depth_counter(1);
-
-  typedef std::tuple<
-    metaprogram::optional_edge_descriptor,
-    unsigned // Depth
-  > stack_element;
-
-  // The usual stack for DFS
-  std::stack<stack_element> to_visit;
-
-  to_visit.push(std::make_tuple(root_edge, 0));
-  ++depth_counter[0]; // This value is neved read
-
-  while (!to_visit.empty()) {
-    metaprogram::optional_edge_descriptor edge;
-    unsigned depth;
-    std::tie(edge, depth) = to_visit.top();
-    to_visit.pop();
-
-    --depth_counter[depth];
-
-    metaprogram::vertex_descriptor vertex = [&] {
-      if (edge) return mp->get_target(*edge);
-      return mp->get_root_vertex();
-    }();
-
-    display_trace_line(edge, depth, depth_counter, width);
-
-    if (discovered[vertex]) {
-      continue;
-    }
-    if (!mp->is_in_full_mode()) {
-      discovered[vertex] = true;
-    }
-
-    if (max_depth && *max_depth <= depth) {
-      continue;
-    }
-
-    metaprogram::out_edge_iterator begin, end;
-    std::tie(begin, end) = boost::out_edges(vertex, graph);
-
-    typedef std::vector<metaprogram::edge_descriptor> edges_t;
-    edges_t edges(begin, end);
-
-    if (depth_counter.size() <= depth+1) {
-      depth_counter.resize(depth+1+1);
-    }
-
-    // Reverse iteration, so types that got instantiated first
-    // get on the top of the stack
-    for (const metaprogram::edge_descriptor& out_edge :
-        edges | boost::adaptors::reversed)
-    {
-      if (mp->get_edge_property(out_edge).enabled) {
-        to_visit.push(std::make_tuple(out_edge, depth+1));
-
-        ++depth_counter[depth+1];
-      }
-    }
-  }
+  _displayer.show_frame(mp->get_current_frame());
 }
 
 void mdb_shell::display_current_forwardtrace(
-    boost::optional<unsigned> max_depth) const
+    boost::optional<int> max_depth) const
 {
-  metaprogram::discovered_t discovered = mp->get_state().discovered;
-
-  display_trace_visit(mp->get_current_edge(), max_depth, discovered, width());
-}
-
-colored_string mdb_shell::get_frame_string(
-    metaprogram::optional_edge_descriptor frame) const
-{
-  if (!frame) {
-    return highlight_syntax(
-        mp->get_vertex_property(mp->get_root_vertex()).name);
-  }
-
-  colored_string result =
-    highlight_syntax(mp->get_vertex_property(mp->get_target(*frame)).name);
-
-  if (!mp->is_in_full_mode()) {
-    result += " (" + to_string(mp->get_edge_property(*frame).kind) + ")";
-  }
-
-  return result;
+  _displayer.show_call_graph(
+    boost::make_iterator_range(
+      forward_trace_iterator(*mp, max_depth),
+      forward_trace_iterator()
+    )
+  );
 }
 
 void mdb_shell::display_backtrace() const {
-  const metaprogram::backtrace_t& backtrace = mp->get_backtrace();
-
-  for (unsigned i = 0; i < backtrace.size(); ++i) {
-    display(colored_string("#" + std::to_string(i) + " ", color::white));
-    display(get_frame_string(backtrace[i]) + "\n");
-  }
-
-  display(colored_string(
-        "#" + std::to_string(backtrace.size()) + " ", color::white));
-  display(highlight_syntax(
-        mp->get_vertex_property(mp->get_root_vertex()).name) + "\n");
+  _displayer.show_backtrace(mp->get_backtrace());
 }
 
 void mdb_shell::display_argument_parsing_failed() const {
-  display_error("Argument parsing failed\n");
+  _displayer.show_error("Argument parsing failed");
 }
 
 void mdb_shell::display_metaprogram_reached_the_beginning() const {
-  display("Metaprogram reached the beginning\n");
+  _displayer.show_raw_text("Metaprogram reached the beginning");
 }
 
 void mdb_shell::display_metaprogram_finished() const {
-  display(
-      "Metaprogram finished\n" +
-      highlight_syntax(mp->get_evaluation_result()) + "\n");
+  _displayer.show_raw_text("Metaprogram finished");
+  _displayer.show_type(mp->get_evaluation_result());
+}
+
+iface::displayer& mdb_shell::displayer() {
+  return _displayer;
 }
 
 }

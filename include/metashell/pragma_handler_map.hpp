@@ -33,7 +33,7 @@ namespace metashell
   {
   public:
     template <class Handler>
-      // requires: Handler implements pragma_handler_interface
+      // requires: Handler implements iface::pragma_handler
     pragma_handler_map& add(const std::string& name_, Handler handler_)
     {
       add(std::vector<std::string>(1, name_), handler_);
@@ -41,7 +41,7 @@ namespace metashell
     }
 
     template <class Handler>
-      // requires: Handler implements pragma_handler_interface
+      // requires: Handler implements iface::pragma_handler
     pragma_handler_map& add(
       const std::string& name1_,
       const std::string& name2_,
@@ -59,7 +59,7 @@ namespace metashell
     }
 
     template <class Handler>
-      // requires: Handler implements pragma_handler_interface
+      // requires: Handler implements iface::pragma_handler
     pragma_handler_map& add(
       const std::string& name1_,
       const std::string& name2_,
@@ -79,7 +79,7 @@ namespace metashell
     }
 
     template <class Handler>
-      // requires: Handler implements pragma_handler_interface
+      // requires: Handler implements iface::pragma_handler
     pragma_handler_map& add(
       const std::vector<std::string>& names_,
       Handler handler_

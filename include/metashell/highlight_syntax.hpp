@@ -26,8 +26,6 @@ colored_string::color_t color_of_token(const token& t);
 
 colored_string highlight_syntax(const std::string& s);
 
-void display_syntax_highlighted(const token& t);
-
 }
 
 #endif

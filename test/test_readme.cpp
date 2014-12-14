@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/mdb_shell.hpp>
+#include <metashell/in_memory_displayer.hpp>
 
 #include <just/test.hpp>
 
@@ -40,7 +41,8 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
 }
 
 JUST_TEST_CASE(test_readme_getting_started) {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   JUST_ASSERT_EQUAL(sh.prompt(), "> ");
   sh.line_available("template <int N> \\");
@@ -74,197 +76,239 @@ JUST_TEST_CASE(test_readme_getting_started) {
   sh.line_available("};");
   JUST_ASSERT_EQUAL(sh.prompt(), "> ");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("fib<6>::value");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT(!sh.error().empty());
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT(!d.errors().empty());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
-  sh.clear_output();
+  d.clear();
 
   sh.line_available("#include <boost/mpl/int.hpp>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("boost::mpl::int_<fib<6>::value>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "mpl_::int_<13>");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER({type("mpl_::int_<13>")}, d.types());
 
-  sh.clear_output();
+  d.clear();
 
   sh.line_available("#include <metashell/scalar.hpp>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("SCALAR(fib<6>::value)");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT(is_integral_constant("int", "13", sh.output()));
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL(1u, d.types().size());
+  JUST_ASSERT(d.types().front().is_integral_constant(type("int"), "13"));
 
-  sh.clear_output();
+  d.clear();
 
   sh.line_available("#include <boost/mpl/vector.hpp>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("using namespace boost::mpl;");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("vector<int, double, char>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(),
-      "boost::mpl::vector<int, double, char, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
-      "l_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mp"
-      "l_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      type(
+        "boost::mpl::vector<int, double, char, mpl_::na, mpl_::na, mpl_::na,"
+        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
+        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>"
+      )
+    },
+    d.types()
+  );
 
-  sh.clear_output();
+  d.clear();
 
   sh.line_available("#include <boost/mpl/push_front.hpp>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("push_front<vector<int, double, char>, void>::type");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(),
-      "boost::mpl::v_item<void, boost::mpl::vector<int, double, char, mpl_::na, mpl_::n"
-      "a, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::n"
-      "a, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>, 1>");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      type(
+        "boost::mpl::v_item<void, boost::mpl::vector<int, double, char,"
+        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
+        " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na,"
+        " mpl_::na, mpl_::na, mpl_::na>, 1>"
+      )
+    },
+    d.types()
+  );
 
-  sh.clear_output();
+  d.clear();
 
   sh.line_available("#include <metashell/formatter.hpp>");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
 
   sh.line_available("push_front<vector<int, double, char>, void>::type");
 
-  JUST_ASSERT_EQUAL(sh.info(), "");
-  JUST_ASSERT_EQUAL(sh.error(), "");
-  JUST_ASSERT_EQUAL(sh.output(),
-      "boost_::mpl::vector<void, int, double, char>");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {type("boost_::mpl::vector<void, int, double, char>")},
+    d.types()
+  );
 
   mdb_test_shell mdb_sh(sh);
 
   mdb_sh.line_available("evaluate int_<fib<6>::value>");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("step 3");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "fib<4> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<4>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("bt");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "#0 fib<5> (TemplateInstantiation)\n"
-      "#1 fib<6> (TemplateInstantiation)\n"
-      "#2 int_<fib<6>::value>\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      backtrace{
+        frame(type("fib<5>"), instantiation_kind::template_instantiation),
+        frame(type("fib<6>"), instantiation_kind::template_instantiation),
+        frame(type("int_<fib<6>::value>"))
+      }
+    },
+    d.backtraces()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<4> (TemplateInstantiation)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<2> (TemplateInstantiation)\n"
-      "| | | + fib<1> (Memoization)\n"
-      "| | | ` fib<0> (Memoization)\n"
-      "| | ` fib<1> (Memoization)\n"
-      "| ` fib<2> (Memoization)\n"
-      "` fib<3> (Memoization)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<4>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<3>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<2>(), instantiation_kind::template_instantiation), 3, 2},
+      {frame(    fib<1>(), instantiation_kind::memoization), 4, 0},
+      {frame(    fib<0>(), instantiation_kind::memoization), 4, 0},
+      {frame(   fib<1>(), instantiation_kind::memoization), 3, 0},
+      {frame(  fib<2>(), instantiation_kind::memoization), 2, 0},
+      {frame( fib<3>(), instantiation_kind::memoization), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("rbreak fib<3>");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Breakpoint \"fib<3>\" will stop the execution on 2 locations\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"fib<3>\" will stop the execution on 2 locations"},
+    d.raw_texts()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Breakpoint \"fib<3>\" reached\n"
-      "fib<3> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<3>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<3>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("c");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Breakpoint \"fib<3>\" reached\n"
-      "fib<3> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<3>\" reached"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<3>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Metaprogram finished\n"
-      "mpl_::int_<13>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("mpl_::int_<13>")}, d.types());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("e");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("evaluate -full int_<fib<4>::value>");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "int_<fib<4>::value>\n"
-      "+ fib<4>\n"
-      "| + fib<3>\n"
-      "| | + fib<2>\n"
-      "| | | + fib<1>\n"
-      "| | | ` fib<0>\n"
-      "| | ` fib<1>\n"
-      "| ` fib<2>\n"
-      "|   + fib<1>\n"
-      "|   ` fib<0>\n"
-      "` mpl_::int_<5>\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("int_<fib<4>::value>")), 0, 2},
+      {frame( fib<4>()), 1, 2},
+      {frame(  fib<3>()), 2, 2},
+      {frame(   fib<2>()), 3, 2},
+      {frame(    fib<1>()), 4, 0},
+      {frame(    fib<0>()), 4, 0},
+      {frame(   fib<1>()), 3, 0},
+      {frame(  fib<2>()), 2, 2},
+      {frame(   fib<1>()), 3, 0},
+      {frame(   fib<0>()), 3, 0},
+      {frame( type("mpl_::int_<5>")), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_readme_how_to_template_argument_deduction) {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#include <vector>");
   sh.line_available("template<class T> void foo(const T& t) { /* ... */ }");
@@ -273,39 +317,52 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction) {
 
   mdb_sh.line_available("evaluate decltype(foo(13))");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "decltype(foo(13))\n"
-      "+ foo<int> (TemplateInstantiation)\n"
-      "` void (NonTemplateType)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("decltype(foo(13))")), 0, 2},
+      {frame( type("foo<int>"),instantiation_kind::template_instantiation),1,0},
+      {frame( type("void"), instantiation_kind::non_template_type), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("eval decltype(foo(std::vector<int>{}))");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(), "Metaprogram started\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("rbreak foo");
 
-  JUST_ASSERT_EQUAL(mdb_sh.get_output(),
-      "Breakpoint \"foo\" will stop the execution on 1 location\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Breakpoint \"foo\" will stop the execution on 1 location"},
+    d.raw_texts()
+  );
 
-  mdb_sh.clear_output();
+  d.clear();
   mdb_sh.line_available("continue");
 
-  const auto o = mdb_sh.get_output();
+  JUST_ASSERT_EQUAL(1u, d.raw_texts().size());
+  JUST_ASSERT_EQUAL("Breakpoint \"foo\" reached", d.raw_texts()[0]);
+
+  const auto fs = d.frames();
+  JUST_ASSERT_EQUAL(1u, fs.size());
+  JUST_ASSERT_EQUAL(
+    instantiation_kind::template_instantiation,
+    fs.front().kind()
+  );
   JUST_ASSERT(
-    o ==
-      "Breakpoint \"foo\" reached\n"
-      "foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)\n"
-    ||
-    o ==
-      "Breakpoint \"foo\" reached\n"
-      "foo<std::__1::vector<int, std::__1::allocator<int> > > (TemplateInstantiation)\n"
+    fs.front().name() ==
+      type("foo<std::vector<int, std::allocator<int> > >")
+    || fs.front().name() ==
+      type("foo<std::__1::vector<int, std::__1::allocator<int> > >")
   );
 }
 #endif
+

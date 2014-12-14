@@ -1,0 +1,52 @@
+#ifndef METASHELL_PARAGRAPH_HPP
+#define METASHELL_PARAGRAPH_HPP
+
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <boost/operators.hpp>
+
+#include <string>
+#include <iosfwd>
+
+namespace metashell
+{
+  class paragraph : boost::equality_comparable<paragraph>
+  {
+  public:
+    paragraph() = default;
+    explicit paragraph(
+      const std::string& content_,
+      const std::string& indentation_ = std::string()
+    );
+    paragraph(
+      const std::string& content_,
+      const std::string& indentation_,
+      const std::string& first_line_indentation_
+    );
+
+    bool operator==(const paragraph& p_) const;
+
+    std::string first_line_indentation;
+    std::string rest_of_lines_indentation;
+    std::string content;
+  };
+
+  std::ostream& operator<<(std::ostream& o_, const paragraph& p_);
+}
+
+#endif
+

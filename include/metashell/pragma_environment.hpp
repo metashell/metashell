@@ -18,21 +18,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_without_arguments.hpp>
+#include <metashell/environment.hpp>
 
 namespace metashell
 {
-  class shell;
-
   class pragma_environment : public pragma_without_arguments
   {
   public:
-    explicit pragma_environment(shell& shell_);
+    explicit pragma_environment(
+      iface::displayer& displayer_,
+      environment& env_
+    );
 
-    virtual pragma_handler_interface* clone() const;
+    virtual iface::pragma_handler* clone() const override;
 
-    virtual std::string description() const;
+    virtual std::string description() const override;
 
-    virtual void run() const;
+    virtual void run() const override;
+  private:
+    environment& _env;
   };
 }
 

@@ -25,8 +25,9 @@ namespace metashell {
 
 readline_mdb_shell::readline_mdb_shell(
     const config& conf,
-    const environment& env) :
-  mdb_shell(conf, env) {}
+    const environment& env,
+    iface::displayer& displayer_) :
+  mdb_shell(conf, env, displayer_) {}
 
 void readline_mdb_shell::run() {
   for (boost::optional<std::string> line;
@@ -34,23 +35,11 @@ void readline_mdb_shell::run() {
   {
     line_available(*line);
   }
-  std::cout << std::endl;
+  displayer().show_raw_text("");
 }
 
 void readline_mdb_shell::add_history(const std::string& str) {
   readline_env.add_history(str);
-}
-
-void readline_mdb_shell::display(
-    const colored_string& cs,
-    colored_string::size_type first,
-    colored_string::size_type length) const
-{
-  cs.print_to_cout(first, length);
-}
-
-unsigned readline_mdb_shell::width() const {
-  return readline_env.width();
 }
 
 }

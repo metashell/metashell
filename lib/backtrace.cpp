@@ -14,21 +14,52 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/command.hpp>
+#include <metashell/backtrace.hpp>
+
+#include <boost/range/algorithm/equal.hpp>
 
 using namespace metashell;
 
-void metashell::run(
-  const pragma_handler_interface& handler_,
-  const std::string& args_
-)
+backtrace::backtrace(const std::initializer_list<frame>& frames_) :
+  _frames(frames_)
+{}
+
+void backtrace::push_back(const frame& f_)
 {
-  const command cmd(args_);
-  handler_.run(
-    cmd.begin(),
-    end_of_pragma_argument_list(cmd.begin(), cmd.end())
-  );
+  _frames.push_back(f_);
+}
+
+backtrace::iterator backtrace::begin() const
+{
+  return _frames.begin();
+}
+
+backtrace::iterator backtrace::end() const
+{
+  return _frames.end();
+}
+
+std::ostream& metashell::operator<<(std::ostream& o_, const backtrace& t_)
+{
+  o_ << "backtrace{";
+  bool first = true;
+  for (const frame& f : t_)
+  {
+    if (first)
+    {
+      first = false;
+    }
+    else
+    {
+      o_ << ", ";
+    }
+    o_ << f;
+  }
+  return o_ << "}";
+}
+
+bool metashell::operator==(const backtrace& a_, const backtrace& b_)
+{
+  return boost::equal(a_, b_);
 }
 

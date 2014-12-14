@@ -28,6 +28,8 @@
 
 #include <metashell/file_location.hpp>
 #include <metashell/instantiation_kind.hpp>
+#include <metashell/backtrace.hpp>
+#include <metashell/type.hpp>
 
 namespace metashell {
 
@@ -40,25 +42,25 @@ public:
   metaprogram(
       bool full_mode,
       const std::string& root_name,
-      const std::string& evaluation_result);
+      const type& evaluation_result);
 
   static metaprogram create_from_xml_stream(
       std::istream& stream,
       bool full_mode,
       const std::string& root_name,
-      const std::string& evaluation_result);
+      const type& evaluation_result);
 
   static metaprogram create_from_xml_file(
       const std::string& file,
       bool full_mode,
       const std::string& root_name,
-      const std::string& evaluation_result);
+      const type& evaluation_result);
 
   static metaprogram create_from_xml_string(
       const std::string& string,
       bool full_mode,
       const std::string& root_name,
-      const std::string& evaluation_result);
+      const type& evaluation_result);
 
   struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
@@ -117,8 +119,6 @@ public:
 
   typedef std::stack<step_rollback_t> state_history_t;
 
-  typedef std::vector<edge_descriptor> backtrace_t;
-
   vertex_descriptor add_vertex(const std::string& element);
 
   edge_descriptor add_edge(
@@ -127,7 +127,7 @@ public:
       instantiation_kind kind,
       const file_location& point_of_instantiation);
 
-  const std::string& get_evaluation_result() const;
+  const type& get_evaluation_result() const;
 
   void reset_state();
 
@@ -147,8 +147,10 @@ public:
   void step_back();
 
   vertex_descriptor get_current_vertex() const;
-  optional_edge_descriptor get_current_edge() const;
-  backtrace_t get_backtrace() const;
+  optional_edge_descriptor get_current_edge() const; // TODO: ez kell?
+  frame get_current_frame() const;
+  frame get_root_frame() const;
+  backtrace get_backtrace() const;
   unsigned get_backtrace_length() const;
 
   unsigned get_traversal_count(vertex_descriptor vertex) const;
@@ -182,6 +184,8 @@ public:
   edge_property& get_edge_property(
       edge_descriptor edge);
 
+  frame to_frame(const edge_descriptor& e_) const;
+
 private:
   typedef std::vector<boost::optional<unsigned>> traversal_counts_t;
 
@@ -199,7 +203,7 @@ private:
   // This should be generally 0
   vertex_descriptor root_vertex;
 
-  std::string evaluation_result;
+  type evaluation_result;
 };
 
 template<class P>

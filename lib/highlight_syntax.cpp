@@ -50,9 +50,5 @@ colored_string highlight_syntax(const std::string& str) {
   return result;
 }
 
-void display_syntax_highlighted(const token& t) {
-  std::cout << colored_string(t.value(), color_of_token(t));
-}
-
 }
 

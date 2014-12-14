@@ -17,7 +17,6 @@
 #include <metashell/pragma_environment_add.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
-#include "indenter.hpp"
 
 using namespace metashell;
 
@@ -25,7 +24,7 @@ pragma_environment_add::pragma_environment_add(shell& shell_) :
   _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_environment_add::clone() const
+iface::pragma_handler* pragma_environment_add::clone() const
 {
   return new pragma_environment_add(_shell);
 }
@@ -53,29 +52,24 @@ void pragma_environment_add::run(
 
   if (is_environment_setup_command(args_begin_, args_end_))
   {
-    _shell.display_normal(
-      indenter(_shell.width(), "")
-        .left_align(
-          "You don't need the environment add pragma to add this to the"
-          " environment. The following command does this as well:",
-          "// "
-        )
-        .left_align(cmd)
-        .str()
+    _shell.displayer().show_comment(
+      text(
+        "You don't need the environment add pragma to add this to the"
+        " environment. The following command does this as well:"
+      )
     );
+    _shell.displayer().show_cpp_code(cmd);
   }
   else
   {
-    _shell.display_normal(
-      indenter(_shell.width(), "// ")
-        .left_align(
-          "Metashell (incorrectly) thinks that this command should execute a"
-          " metaprogram and would not add it to the environment without using"
-          " the \"environment add\" pragma. Please file a bug report containing"
-          " this command (" + cmd + ") at"
-          " https://github.com/sabel83/metashell/issues. Thank you."
-        )
-        .str()
+    _shell.displayer().show_comment(
+      text(
+        "Metashell (incorrectly) thinks that this command should execute a"
+        " metaprogram and would not add it to the environment without using"
+        " the \"environment add\" pragma. Please file a bug report containing"
+        " this command (" + cmd + ") at"
+        " https://github.com/sabel83/metashell/issues. Thank you."
+      )
     );
   }
 }

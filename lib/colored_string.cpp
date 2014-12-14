@@ -16,6 +16,10 @@
 
 #include <metashell/colored_string.hpp>
 
+#include <boost/range/algorithm/equal.hpp>
+
+#include <algorithm>
+
 namespace metashell {
 
 colored_string::colored_string(
@@ -91,6 +95,33 @@ std::ostream& operator<<(std::ostream& os, const colored_string& cs) {
     os << cs.get_string();
   }
   return os;
+}
+
+colored_string colored_string::substr(size_type pos_, size_type len_) const
+{
+  const auto b = std::min(pos_, size());
+  const auto e = std::min(b + len_, size());
+
+  return
+    colored_string(
+      string.begin() + b,
+      string.begin() + e,
+      colors.begin() + b,
+      colors.begin() + e
+    );
+}
+
+void colored_string::clear()
+{
+  string.clear();
+  colors.clear();
+}
+
+bool operator==(const colored_string& a_, const colored_string& b_)
+{
+  return
+    boost::equal(a_.get_string(), b_.get_string())
+    && boost::equal(a_.get_colors(), b_.get_colors());
 }
 
 }

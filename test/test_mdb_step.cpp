@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "mdb_test_shell.hpp"
 
 #include "test_metaprograms.hpp"
@@ -24,207 +26,239 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_without_evaluation) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram not evaluated yet\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Metaprogram not evaluated yet"});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<8> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<8>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<8> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<8>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<8> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<8>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_space_second_line) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available(" ");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT(d.empty());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_fibonacci_at_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 31");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "int (NonTemplateType)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("int"), instantiation_kind::non_template_type)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
-  sh.clear_output();
-
-  std::string expected_output =
-    "fib<10> (TemplateInstantiation)\n"
-    "fib<8> (TemplateInstantiation)\n"
-    "fib<6> (TemplateInstantiation)\n"
-    "fib<4> (TemplateInstantiation)\n"
-    "fib<2> (TemplateInstantiation)\n"
-    "fib<0> (Memoization)\n"
-    "fib<1> (Memoization)\n"
-    "fib<3> (TemplateInstantiation)\n"
-    "fib<1> (Memoization)\n"
-    "fib<2> (Memoization)\n"
-    "fib<5> (TemplateInstantiation)\n"
-    "fib<3> (Memoization)\n"
-    "fib<4> (Memoization)\n"
-    "fib<7> (TemplateInstantiation)\n"
-    "fib<5> (Memoization)\n"
-    "fib<6> (Memoization)\n"
-    "fib<9> (TemplateInstantiation)\n"
-    "fib<7> (Memoization)\n"
-    "fib<8> (Memoization)\n"
-    "fib<10> (Memoization)\n"
-    "int_<55> (TemplateInstantiation)\n"
-    "Metaprogram finished\n"
-    "int_<55>\n";
+  d.clear();
 
   for (unsigned i = 0; i < 22; ++i) {
     sh.line_available("step");
   }
 
-  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("fib<6>"), instantiation_kind::template_instantiation),
+      frame(type("fib<4>"), instantiation_kind::template_instantiation),
+      frame(type("fib<2>"), instantiation_kind::template_instantiation),
+      frame(type("fib<0>"), instantiation_kind::memoization),
+      frame(type("fib<1>"), instantiation_kind::memoization),
+      frame(type("fib<3>"), instantiation_kind::template_instantiation),
+      frame(type("fib<1>"), instantiation_kind::memoization),
+      frame(type("fib<2>"), instantiation_kind::memoization),
+      frame(type("fib<5>"), instantiation_kind::template_instantiation),
+      frame(type("fib<3>"), instantiation_kind::memoization),
+      frame(type("fib<4>"), instantiation_kind::memoization),
+      frame(type("fib<7>"), instantiation_kind::template_instantiation),
+      frame(type("fib<5>"), instantiation_kind::memoization),
+      frame(type("fib<6>"), instantiation_kind::memoization),
+      frame(type("fib<9>"), instantiation_kind::template_instantiation),
+      frame(type("fib<7>"), instantiation_kind::memoization),
+      frame(type("fib<8>"), instantiation_kind::memoization),
+      frame(type("fib<10>"), instantiation_kind::memoization),
+      frame(type("int_<55>"), instantiation_kind::template_instantiation)
+    },
+    d.frames()
+  );
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
@@ -232,269 +266,312 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 JUST_TEST_CASE(
     test_mdb_step_over_the_whole_metaprogram_multiple_steps_in_full_mode)
 {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<4>::value>");
-  sh.clear_output();
-
-  std::string expected_output =
-    "fib<4>\n"
-    "fib<2>\n"
-    "fib<0>\n"
-    "fib<1>\n"
-    "fib<3>\n"
-    "fib<1>\n"
-    "fib<2>\n"
-    "fib<0>\n"
-    "fib<1>\n"
-    "int_<3>\n"
-    "Metaprogram finished\n"
-    "int_<3>\n";
+  d.clear();
 
   for (unsigned i = 0; i < 11; ++i) {
     sh.line_available("step");
   }
 
-  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      frame(type("fib<4>")),
+      frame(type("fib<2>")),
+      frame(type("fib<0>")),
+      frame(type("fib<1>")),
+      frame(type("fib<3>")),
+      frame(type("fib<1>")),
+      frame(type("fib<2>")),
+      frame(type("fib<0>")),
+      frame(type("fib<1>")),
+      frame(type("int_<3>"))
+    },
+    d.frames()
+  );
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<3>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_at_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step 1");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_in_full_mode) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<10>::value>");
   sh.line_available("step 1");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram reached the beginning\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_at_start) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_0_at_end) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("continue");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "");
+  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step 2");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2_in_full_mode) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
   sh.line_available("step 2");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_fib_from_root) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int_<55>\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (Memoization)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::memoization)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over -1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<10> (TemplateInstantiation)\n");
-
-  sh.clear_output();
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<10>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
-  mdb_test_shell sh(multi_fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, multi_fibonacci_mp);
 
   sh.line_available("evaluate int_<multi_fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step 4");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "multi_fib<4> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("multi_fib<4>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "multi_fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("multi_fib<5>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "multi_fib<8> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("multi_fib<8>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step over -1");
 
   // step over -1 is not always the inverse of step over
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "multi_fib<6> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("multi_fib<6>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
-  mdb_test_shell sh(template_specialization_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, template_specialization_mp);
 
   sh.line_available("evaluate int_<foo<3, 1>::value>");
-  sh.clear_output();
-
-  std::string expected_output =
-    // "foo<N, 1> (DeducedTemplateArgumentSubstitution)\n"
-    "foo<3, 1> (TemplateInstantiation)\n"
-    "foo<3, 1> (Memoization)\n"
-    "int_<45> (TemplateInstantiation)\n"
-    "Metaprogram finished\n"
-    "int_<45>\n";
+  d.clear();
 
   for (unsigned i = 0; i < 4; ++i) {
     sh.line_available("step");
   }
 
-  JUST_ASSERT_EQUAL(sh.get_output(), expected_output);
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      frame(type("foo<3, 1>"), instantiation_kind::template_instantiation),
+      frame(type("foo<3, 1>"), instantiation_kind::memoization),
+      frame(type("int_<45>"), instantiation_kind::template_instantiation)
+    },
+    d.frames()
+  );
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<45>")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_garbage_argument) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<10>::value>");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("step asd");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Argument parsing failed\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument parsing failed"});
 }
 #endif
+

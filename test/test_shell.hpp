@@ -20,35 +20,30 @@
 #include <metashell/shell.hpp>
 
 #include <vector>
+#include <memory>
 
 class test_shell : public metashell::shell
 {
 public:
-  test_shell();
-  test_shell(const metashell::config& cfg_, int width_);
-  test_shell(std::vector<std::string>& history_);
+  explicit test_shell(metashell::iface::displayer& displayer_);
+  test_shell(
+    const metashell::config& cfg_,
+    metashell::iface::displayer& displayer_
+  );
+  test_shell(
+    std::vector<std::string>& history_,
+    metashell::iface::displayer& displayer_
+  );
 
   // Takes ownership of env_
-  test_shell(const metashell::config& cfg_, metashell::environment* env_);
+  test_shell(
+    const metashell::config& cfg_,
+    std::unique_ptr<metashell::environment> env_,
+    metashell::iface::displayer& displayer_
+  );
 
-  virtual void add_history(const std::string& s_);
-
-  virtual void display_normal(const std::string& s_) const;
-  virtual void display_info(const std::string& s_) const;
-  virtual void display_error(const std::string& s_) const;
-
-  virtual unsigned int width() const;
-
-  const std::string& output() const;
-  const std::string& info() const;
-  const std::string& error() const;
-  void clear_output();
+  virtual void add_history(const std::string& s_) override;
 private:
-  mutable std::string _output;
-  mutable std::string _info;
-  mutable std::string _error;
-
-  int _width;
   std::vector<std::string>* _history; // no ownership
 };
 

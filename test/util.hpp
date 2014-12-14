@@ -18,12 +18,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
-
-#include <boost/range/algorithm/equal.hpp>
+#include <tuple>
 
 #include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/type.hpp>
 
-std::string get_output(
+metashell::type get_output(
   const std::string& input_,
   const std::string& test_code_ = std::string()
 );
@@ -32,16 +32,11 @@ std::tuple<metashell::mdb_command, std::string> get_command_from_map(
     const metashell::mdb_command_handler_map& map,
     const std::string& line);
 
-template<class C>
-bool equal(const C& c1, std::initializer_list<typename C::value_type> c2) {
-  return boost::equal(c1, c2);
+template <int N>
+metashell::type fib()
+{
+  return metashell::type("fib<" + std::to_string(N) + ">");
 }
-
-bool is_integral_constant(
-  const std::string& type_,
-  const std::string& value_,
-  const std::string& s_
-);
 
 #endif
 

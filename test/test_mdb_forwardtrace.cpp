@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "mdb_test_shell.hpp"
+#include "util.hpp"
 
 #include "test_metaprograms.hpp"
 
@@ -24,256 +27,302 @@ using namespace metashell;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram not evaluated yet\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Metaprogram not evaluated yet"});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_garbage_argument) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
-
-  sh.clear_output();
   sh.line_available("forwardtrace asd");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Argument parsing failed\n");
+  JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument parsing failed"});
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int\n"
-      "` int (NonTemplateType)\n");
+  const type int_("int");
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(int_), 0, 1},
+      {frame(int_, instantiation_kind::non_template_type), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate -full int");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int\n"
-      "` int\n");
+  const type int_("int");
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(int_), 0, 1},
+      {frame(int_), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
   sh.line_available("continue");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate -full int");
   sh.line_available("continue");
 
-  sh.clear_output();
+  d.clear();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "Metaprogram finished\n"
-      "int\n");
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
-  mdb_test_shell sh;
+  in_memory_displayer d;
+  mdb_test_shell sh(d);
 
   sh.line_available("evaluate int");
-
-  sh.clear_output();
   sh.line_available("ft");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int\n"
-      "` int (NonTemplateType)\n");
+  const type int_("int");
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(int_), 0, 1},
+      {frame(int_, instantiation_kind::non_template_type), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<5>::value>\n"
-      "+ fib<5> (TemplateInstantiation)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<1> (Memoization)\n"
-      "| | ` fib<2> (TemplateInstantiation)\n"
-      "| |   + fib<0> (Memoization)\n"
-      "| |   ` fib<1> (Memoization)\n"
-      "| ` fib<4> (TemplateInstantiation)\n"
-      "|   + fib<2> (Memoization)\n"
-      "|   ` fib<3> (Memoization)\n"
-      "+ fib<5> (Memoization)\n"
-      "` int_<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("int_<fib<5>::value>")), 0, 3},
+      {frame( fib<5>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<3>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<1>(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<2>(), instantiation_kind::template_instantiation), 3, 2},
+      {frame(    fib<0>(), instantiation_kind::memoization), 4, 0},
+      {frame(    fib<1>(), instantiation_kind::memoization), 4, 0},
+      {frame(  fib<4>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<2>(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<3>(), instantiation_kind::memoization), 3, 0},
+      {frame( fib<5>(), instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<5>"), instantiation_kind::template_instantiation), 1,0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<5>::value>");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<5>::value>\n"
-      "+ fib<5>\n"
-      "| + fib<3>\n"
-      "| | + fib<1>\n"
-      "| | ` fib<2>\n"
-      "| |   + fib<0>\n"
-      "| |   ` fib<1>\n"
-      "| ` fib<4>\n"
-      "|   + fib<2>\n"
-      "|   | + fib<0>\n"
-      "|   | ` fib<1>\n"
-      "|   ` fib<3>\n"
-      "|     + fib<1>\n"
-      "|     ` fib<2>\n"
-      "|       + fib<0>\n"
-      "|       ` fib<1>\n"
-      "` int_<5>\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("int_<fib<5>::value>")), 0, 2},
+      {frame( fib<5>()), 1, 2},
+      {frame(  fib<3>()), 2, 2},
+      {frame(   fib<1>()), 3, 0},
+      {frame(   fib<2>()), 3, 2},
+      {frame(    fib<0>()), 4, 0},
+      {frame(    fib<1>()), 4, 0},
+      {frame(  fib<4>()), 2, 2},
+      {frame(   fib<2>()), 3, 2},
+      {frame(    fib<0>()), 4, 0},
+      {frame(    fib<1>()), 4, 0},
+      {frame(   fib<3>()), 3, 2},
+      {frame(    fib<1>()), 4, 0},
+      {frame(    fib<2>()), 4, 2},
+      {frame(     fib<0>()), 5, 0},
+      {frame(     fib<1>()), 5, 0},
+      {frame( type("int_<5>")), 1,0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("rbreak fib<5>");
   sh.line_available("continue 2");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5> (Memoization)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame( fib<5>(), instantiation_kind::memoization), 0, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "| + fib<1> (Memoization)\n"
-      "| ` fib<2> (TemplateInstantiation)\n"
-      "|   + fib<0> (Memoization)\n"
-      "|   ` fib<1> (Memoization)\n"
-      "` fib<4> (TemplateInstantiation)\n"
-      "  + fib<2> (Memoization)\n"
-      "  ` fib<3> (Memoization)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<0>(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<1>(), instantiation_kind::memoization), 3, 0},
+      {frame( fib<4>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), instantiation_kind::memoization), 2, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5>\n"
-      "+ fib<3>\n"
-      "| + fib<1>\n"
-      "| ` fib<2>\n"
-      "|   + fib<0>\n"
-      "|   ` fib<1>\n"
-      "` fib<4>\n"
-      "  + fib<2>\n"
-      "  | + fib<0>\n"
-      "  | ` fib<1>\n"
-      "  ` fib<3>\n"
-      "    + fib<1>\n"
-      "    ` fib<2>\n"
-      "      + fib<0>\n"
-      "      ` fib<1>\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>()), 0, 2},
+      {frame( fib<3>()), 1, 2},
+      {frame(  fib<1>()), 2, 0},
+      {frame(  fib<2>()), 2, 2},
+      {frame(   fib<0>()), 3, 0},
+      {frame(   fib<1>()), 3, 0},
+      {frame( fib<4>()), 1, 2},
+      {frame(  fib<2>()), 2, 2},
+      {frame(   fib<0>()), 3, 0},
+      {frame(   fib<1>()), 3, 0},
+      {frame(  fib<3>()), 2, 2},
+      {frame(   fib<1>()), 3, 0},
+      {frame(   fib<2>()), 3, 2},
+      {frame(    fib<0>()), 4, 0},
+      {frame(    fib<1>()), 4, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace 0");
 
-  JUST_ASSERT_EQUAL(sh.get_output(), "fib<5> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame( fib<5>(), instantiation_kind::template_instantiation), 0, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace 1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "` fib<4> (TemplateInstantiation)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), instantiation_kind::template_instantiation), 1, 0},
+      {frame( fib<4>(), instantiation_kind::template_instantiation), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
@@ -281,151 +330,74 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
 JUST_TEST_CASE(
     test_mdb_forwardtrace_ft_from_step_1_with_limit_1_in_full_mode)
 {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate -full int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace 1");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5>\n"
-      "+ fib<3>\n"
-      "` fib<4>\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>()), 0, 2},
+      {frame( fib<3>()), 1, 0},
+      {frame( fib<4>()), 1, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace 2");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "| + fib<1> (Memoization)\n"
-      "| ` fib<2> (TemplateInstantiation)\n"
-      "` fib<4> (TemplateInstantiation)\n"
-      "  + fib<2> (Memoization)\n"
-      "  ` fib<3> (Memoization)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), instantiation_kind::template_instantiation), 2, 0},
+      {frame( fib<4>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), instantiation_kind::memoization), 2, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
-  mdb_test_shell sh(fibonacci_mp);
+  in_memory_displayer d;
+  mdb_test_shell sh(d, fibonacci_mp);
 
   sh.line_available("evaluate int_<fib<5>::value>");
   sh.line_available("step");
-
-  sh.clear_output();
   sh.line_available("forwardtrace 100");
 
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "fib<5> (TemplateInstantiation)\n"
-      "+ fib<3> (TemplateInstantiation)\n"
-      "| + fib<1> (Memoization)\n"
-      "| ` fib<2> (TemplateInstantiation)\n"
-      "|   + fib<0> (Memoization)\n"
-      "|   ` fib<1> (Memoization)\n"
-      "` fib<4> (TemplateInstantiation)\n"
-      "  + fib<2> (Memoization)\n"
-      "  ` fib<3> (Memoization)\n");
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<0>(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<1>(), instantiation_kind::memoization), 3, 0},
+      {frame( fib<4>(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), instantiation_kind::memoization), 2, 0}
+    },
+    d.call_graphs().front()
+  );
 }
 #endif
 
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal) {
-  mdb_test_shell sh(fibonacci_mp);
-  sh.set_terminal_width(25);
-
-  sh.line_available("evaluate int_<fib<5>::value>");
-
-  sh.clear_output();
-  sh.line_available("forwardtrace");
-
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<5>::value>\n"
-      "+ fib<5> (TemplateInstant\n"
-      "| iation)\n"
-      "| + fib<3> (TemplateInsta\n"
-      "| | ntiation)\n"
-      "| | + fib<1> (Memoization\n"
-      "| | | )\n"
-      "| | ` fib<2> (TemplateIns\n"
-      "| |   tantiation)\n"
-      "| |   + fib<0> (Memoizati\n"
-      "| |   | on)\n"
-      "| |   ` fib<1> (Memoizati\n"
-      "| |     on)\n"
-      "| ` fib<4> (TemplateInsta\n"
-      "|   ntiation)\n"
-      "|   + fib<2> (Memoization\n"
-      "|   | )\n"
-      "|   ` fib<3> (Memoization\n"
-      "|     )\n"
-      "+ fib<5> (Memoization)\n"
-      "` int_<5> (TemplateInstan\n"
-      "  tiation)\n");
-}
-#endif
-
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0) {
-  mdb_test_shell sh(fibonacci_mp);
-  sh.set_terminal_width(0);
-
-  sh.line_available("evaluate int_<fib<5>::value>");
-
-  sh.clear_output();
-  sh.line_available("forwardtrace");
-
-  // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<5>::value>\n"
-      "+ fib<5> (TemplateInstantiation)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<1> (Memoization)\n"
-      "| | ` fib<2> (TemplateInstantiation)\n"
-      "| |   + fib<0> (Memoization)\n"
-      "| |   ` fib<1> (Memoization)\n"
-      "| ` fib<4> (TemplateInstantiation)\n"
-      "|   + fib<2> (Memoization)\n"
-      "|   ` fib<3> (Memoization)\n"
-      "+ fib<5> (Memoization)\n"
-      "` int_<5> (TemplateInstantiation)\n");
-}
-#endif
-
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1) {
-  mdb_test_shell sh(fibonacci_mp);
-  sh.set_terminal_width(1);
-
-  sh.line_available("evaluate int_<fib<5>::value>");
-
-  sh.clear_output();
-  sh.line_available("forwardtrace");
-
-  // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(sh.get_output(),
-      "int_<fib<5>::value>\n"
-      "+ fib<5> (TemplateInstantiation)\n"
-      "| + fib<3> (TemplateInstantiation)\n"
-      "| | + fib<1> (Memoization)\n"
-      "| | ` fib<2> (TemplateInstantiation)\n"
-      "| |   + fib<0> (Memoization)\n"
-      "| |   ` fib<1> (Memoization)\n"
-      "| ` fib<4> (TemplateInstantiation)\n"
-      "|   + fib<2> (Memoization)\n"
-      "|   ` fib<3> (Memoization)\n"
-      "+ fib<5> (Memoization)\n"
-      "` int_<5> (TemplateInstantiation)\n");
-}
-#endif

@@ -26,7 +26,7 @@ JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 {
   mdb_command x({"asdf"}, repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
   JUST_ASSERT(x.is_repeatable());
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
@@ -37,7 +37,7 @@ JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 {
   mdb_command x({"asdf"}, non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT(equal(x.get_keys(), {"asdf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
   JUST_ASSERT(!x.is_repeatable());
   JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
   JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
@@ -47,7 +47,7 @@ JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 {
   mdb_command x({"asdf", "xxx"}, non_repeatable, nullptr, "[asd]", "fd", "xx");
 
-  JUST_ASSERT(equal(x.get_keys(), {"asdf", "xxx"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asdf", "xxx"}, x.get_keys());
   JUST_ASSERT(!x.is_repeatable());
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fd");

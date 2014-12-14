@@ -41,7 +41,6 @@ public:
   std::string get_edited_text();
   void add_history(const std::string& line);
   void set_rl_attempted_completion_function(readline_completion_function func);
-  unsigned int width() const;
 
 private:
   readline_completion_function *last_rl_attempted_completion_function;

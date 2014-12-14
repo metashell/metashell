@@ -18,11 +18,6 @@
 #include <metashell/readline_environment.hpp>
 
 #include <cstdlib>
-
-#ifndef _WIN32
-#  include <sys/ioctl.h>
-#endif
-
 #include <vector>
 
 namespace metashell {
@@ -82,22 +77,6 @@ void readline_environment::set_rl_attempted_completion_function(
     readline_completion_function func)
 {
   rl_attempted_completion_function = func;
-}
-
-
-// This has nothing to do with readline, but it is better to have this
-// in one common place
-unsigned int readline_environment::width() const {
-#ifdef _WIN32
-  CONSOLE_SCREEN_BUFFER_INFO info;
-
-  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-  return info.srWindow.Right - info.srWindow.Left + 1;
-#else
-  struct winsize w;
-  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-  return w.ws_col;
-#endif
 }
 
 }

@@ -15,6 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler.hpp>
+#include <metashell/iface/pragma_handler.hpp>
+#include <metashell/metashell_pragma.hpp>
+#include <metashell/command.hpp>
 
 #include <cassert>
 
@@ -55,5 +58,17 @@ std::string pragma_handler::description() const
 {
   assert(_body);
   return _body->description();
+}
+
+void metashell::run(
+  const iface::pragma_handler& handler_,
+  const std::string& args_
+)
+{
+  const command cmd(args_);
+  handler_.run(
+    cmd.begin(),
+    end_of_pragma_argument_list(cmd.begin(), cmd.end())
+  );
 }
 

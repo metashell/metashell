@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler_map.hpp>
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <just/test.hpp>
 
@@ -23,12 +23,12 @@ using namespace metashell;
 
 namespace
 {
-  class test_handler : public pragma_handler_interface
+  class test_handler : public iface::pragma_handler
   {
   public:
     explicit test_handler(bool& run_flag_) : _run_flag(run_flag_) {}
 
-    virtual pragma_handler_interface* clone() const
+    virtual iface::pragma_handler* clone() const
     {
       return new test_handler(_run_flag);
     }

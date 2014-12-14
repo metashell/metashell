@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "test_shell.hpp"
 
 #include <just/test.hpp>
@@ -28,52 +30,71 @@ namespace
   {
     return s_.find(substr_) != std::string::npos;
   }
+
+  bool contains(const std::string& substr_, const std::vector<paragraph>& v_)
+  {
+    for (const auto& p : v_)
+    {
+      if (contains(substr_, p.content))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 JUST_TEST_CASE(test_pragma_help_with_no_arguments)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell help");
 
-  JUST_ASSERT(!sh.output().empty());
-  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT(!d.comments().empty());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell help foo");
 
-  JUST_ASSERT_EQUAL(sh.output(), "");
-  JUST_ASSERT_EQUAL("Pragma foo not found.", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.comments());
+  JUST_ASSERT_EQUAL_CONTAINER({"Pragma foo not found."}, d.errors());
 }
 
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell help foo bar");
 
-  JUST_ASSERT_EQUAL(sh.output(), "");
-  JUST_ASSERT_EQUAL("Pragma foo bar not found.", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.comments());
+  JUST_ASSERT_EQUAL_CONTAINER({"Pragma foo bar not found."}, d.errors());
 }
 
 JUST_TEST_CASE(test_pragma_help_for_a_pragma)
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell help help");
 
-  JUST_ASSERT(!sh.output().empty());
-  JUST_ASSERT_EQUAL(sh.error(), "");
+  JUST_ASSERT(!d.comments().empty());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(
   test_pragma_help_for_a_pragma_which_is_also_the_prefix_of_other_pragmas
 )
 {
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#msh help environment");
 
-  JUST_ASSERT(contains("#msh environment\n", sh.output()));
-  JUST_ASSERT(contains("#msh environment pop\n", sh.output()));
+  JUST_ASSERT_EQUAL(1u, d.comments().size());
+  const auto& ps = d.comments().front().paragraphs;
+  JUST_ASSERT(contains("#msh environment", ps));
+  JUST_ASSERT(contains("#msh environment pop", ps));
 }
 

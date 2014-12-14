@@ -28,7 +28,7 @@ namespace metashell {
 metaprogram::metaprogram(
     bool full_mode,
     const std::string& root_name,
-    const std::string& evaluation_result) :
+    const type& evaluation_result) :
   full_mode(full_mode),
   evaluation_result(evaluation_result)
 {
@@ -70,7 +70,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
-const std::string& metaprogram::get_evaluation_result() const {
+const type& metaprogram::get_evaluation_result() const {
   return evaluation_result;
 }
 
@@ -292,10 +292,26 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
   return state.edge_stack.top();
 }
 
-metaprogram::backtrace_t metaprogram::get_backtrace() const {
+frame metaprogram::to_frame(const edge_descriptor& e_) const
+{
+  const type t(get_vertex_property(get_target(e_)).name);
+  return is_in_full_mode() ? frame(t) : frame(t, get_edge_property(e_).kind);
+}
+
+frame metaprogram::get_current_frame() const {
   assert(!is_finished());
 
-  backtrace_t backtrace;
+  return to_frame(*state.edge_stack.top());
+}
+
+frame metaprogram::get_root_frame() const {
+  return frame(type(get_vertex_property(get_root_vertex()).name));
+}
+
+backtrace metaprogram::get_backtrace() const {
+  assert(!is_finished());
+
+  backtrace tr;
 
   for (vertex_descriptor current_vertex = get_current_vertex();
       current_vertex != get_root_vertex(); )
@@ -303,12 +319,13 @@ metaprogram::backtrace_t metaprogram::get_backtrace() const {
     assert(state.parent_edge[current_vertex]);
 
     edge_descriptor parent_edge = *state.parent_edge[current_vertex];
-    backtrace.push_back(parent_edge);
-
+    tr.push_back(to_frame(parent_edge));
     current_vertex = get_source(parent_edge);
   }
 
-  return backtrace;
+  tr.push_back(get_root_frame());
+
+  return tr;
 }
 
 unsigned metaprogram::get_backtrace_length() const {

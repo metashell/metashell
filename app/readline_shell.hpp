@@ -27,16 +27,13 @@
 class readline_shell : public metashell::shell
 {
 public:
-  readline_shell(const metashell::config& config_);
-  virtual ~readline_shell();
+  readline_shell(
+    const metashell::config& config_,
+    metashell::iface::displayer& displayer_
+  );
+  virtual ~readline_shell() override;
 
-  virtual void add_history(const std::string& s_);
-
-  virtual void display_normal(const std::string& s_) const;
-  virtual void display_info(const std::string& s_) const;
-  virtual void display_error(const std::string& s_) const;
-
-  virtual unsigned int width() const;
+  virtual void add_history(const std::string& s_) override;
 
   void run();
 private:

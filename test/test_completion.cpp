@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
+
 #include "string_set.hpp"
 #include "test_shell.hpp"
 
@@ -21,7 +23,8 @@
 
 JUST_TEST_CASE(test_simple_completion)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   JUST_ASSERT_EQUAL(string_set(), string_set(sh, "no_completion_for_this"));
   JUST_ASSERT_EQUAL(string_set("e"), string_set(sh, "doubl"));
@@ -32,7 +35,8 @@ JUST_TEST_CASE(test_simple_completion)
 
 JUST_TEST_CASE(test_member_completion)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.store_in_buffer(
     "struct foo"
     "{"
@@ -66,7 +70,8 @@ JUST_TEST_CASE(test_member_completion)
 
 JUST_TEST_CASE(test_template_member_completion)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.store_in_buffer(
     "template <class T>"
     "struct foo"
@@ -104,7 +109,8 @@ JUST_TEST_CASE(test_template_member_completion)
 
 JUST_TEST_CASE(test_included_completion)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.store_in_buffer("#include <vector>");
 
   JUST_ASSERT_EQUAL(string_set("r"), string_set(sh, "std::vecto"));

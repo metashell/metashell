@@ -28,6 +28,9 @@
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 
+#include <metashell/iface/call_graph.hpp>
+#include <metashell/iface/displayer.hpp>
+
 namespace metashell {
 
 class mdb_shell {
@@ -36,22 +39,14 @@ public:
 
   mdb_shell(
       const config& conf,
-      const environment& env);
+      const environment& env,
+      iface::displayer& displayer_);
 
   virtual ~mdb_shell();
 
   virtual void run() = 0;
 
   virtual void add_history(const std::string& str) = 0;
-
-  virtual void display(
-      const colored_string& cs,
-      colored_string::size_type first,
-      colored_string::size_type length) const = 0;
-
-  void display(const colored_string& cs) const;
-
-  virtual unsigned width() const = 0;
 
   std::string prompt() const;
   bool stopped() const;
@@ -68,6 +63,8 @@ public:
   void command_help(const std::string& arg);
   void command_quit(const std::string& arg);
 
+  iface::displayer& displayer();
+
 protected:
   // breakpoint is simply a regex for now
   typedef std::tuple<std::string, boost::regex> breakpoint_t;
@@ -81,7 +78,7 @@ protected:
   bool require_running_metaprogram() const;
 
   bool run_metaprogram_with_templight(const std::string& str, bool full_mode);
-  boost::optional<std::string> run_metaprogram(const std::string& str);
+  boost::optional<type> run_metaprogram(const std::string& str);
 
   bool is_wrap_type(const std::string& type);
   std::string trim_wrap_type(const std::string& type);
@@ -95,11 +92,8 @@ protected:
   breakpoints_t::iterator continue_metaprogram(
       metaprogram::direction_t direction);
 
-  void display_error(const std::string& str) const;
-  void display_info(const std::string& str) const;
   void display_current_frame() const;
-  void display_current_forwardtrace(
-      boost::optional<unsigned> max_depth) const;
+  void display_current_forwardtrace(boost::optional<int> max_depth) const;
   void display_backtrace() const;
   void display_argument_parsing_failed() const;
   void display_metaprogram_reached_the_beginning() const;
@@ -117,32 +111,7 @@ protected:
   bool is_stopped = false;
 
 private:
-  void display_trace_graph(
-      unsigned depth,
-      const std::vector<unsigned>& depth_counter,
-      bool print_mark) const;
-
-  void display_trace_line(
-      metaprogram::optional_edge_descriptor edge,
-      unsigned depth,
-      const std::vector<unsigned>& depth_counter,
-      unsigned width) const;
-
-  void display_trace_visit(
-      metaprogram::optional_edge_descriptor root_edge,
-      boost::optional<unsigned> max_depth,
-      metaprogram::discovered_t& discovered,
-      unsigned width) const;
-
-  colored_string get_frame_string(
-      metaprogram::optional_edge_descriptor frame) const;
-
-  const static std::string internal_file_name;
-
-  const static std::vector<color> colors;
-
-  const static std::string wrap_prefix;
-  const static std::string wrap_suffix;
+  iface::displayer& _displayer;
 };
 
 }

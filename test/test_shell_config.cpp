@@ -21,6 +21,7 @@
 #include <metashell/user_config.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_environment.hpp>
+#include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
 
 #include <just/test.hpp>
@@ -32,7 +33,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   metashell::config cfg;
   cfg.verbose = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -42,7 +44,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   JUST_ASSERT(sh.verbose());
 }
@@ -52,7 +55,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -63,7 +67,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -71,14 +76,16 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   JUST_ASSERT(!sh.stopped());
 }
 
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -89,7 +96,8 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
@@ -99,7 +107,8 @@ JUST_TEST_CASE(test_shell_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   JUST_ASSERT(sh.using_precompiled_headers());
 }
@@ -109,7 +118,8 @@ JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(sh.using_precompiled_headers());
@@ -120,7 +130,8 @@ JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
@@ -133,7 +144,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(
@@ -149,7 +161,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(
@@ -163,7 +176,8 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.store_in_buffer("typedef int foo;\n");
   const std::string env_before = sh.env().get_all();
 
@@ -177,7 +191,8 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.store_in_buffer("typedef int foo;\n");
   const std::string env_before = sh.env().get_all();
 

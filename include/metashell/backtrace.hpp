@@ -1,3 +1,6 @@
+#ifndef METASHELL_BACKTRACE_HPP
+#define METASHELL_BACKTRACE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,35 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <just/test.hpp>
+#include <metashell/frame.hpp>
 
-#include "util.hpp"
+#include <boost/operators.hpp>
 
-JUST_TEST_CASE(test_integral_constant)
+#include <vector>
+#include <iosfwd>
+
+namespace metashell
 {
-  JUST_ASSERT(!is_integral_constant("int", "13", ""));
+  class backtrace : boost::equality_comparable<backtrace>
+  {
+  public:
+    typedef std::vector<frame>::const_iterator iterator;
+    typedef iterator const_iterator;
 
-  JUST_ASSERT(
-    is_integral_constant("int", "13", "std::integral_constant<int, 13>")
-  );
+    backtrace() = default;
 
-  JUST_ASSERT(!is_integral_constant("int", "13", "int"));
+    backtrace(const std::initializer_list<frame>& frames_);
 
-  JUST_ASSERT(
-    is_integral_constant("int", "21", "std::integral_constant<int, 21>")
-  );
+    void push_back(const frame& f_);
 
-  JUST_ASSERT(
-    is_integral_constant(
-      "unsigned int",
-      "21",
-      "std::integral_constant<unsigned int, 21>"
-    )
-  );
-
-  JUST_ASSERT(
-    is_integral_constant("int", "13", "std::_1::integral_constant<int, 13>")
-  );
-
+    iterator begin() const;
+    iterator end() const;
+  private:
+    std::vector<frame> _frames;
+  };
+  
+  std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
+  bool operator==(const backtrace& a_, const backtrace& b_);
 }
+
+#endif
 

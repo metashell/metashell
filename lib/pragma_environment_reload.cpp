@@ -20,12 +20,13 @@
 using namespace metashell;
 
 pragma_environment_reload::pragma_environment_reload(shell& shell_) :
-  pragma_without_arguments(shell_, "environment reload")
+  pragma_without_arguments(shell_.displayer(), "environment reload"),
+  _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_environment_reload::clone() const
+iface::pragma_handler* pragma_environment_reload::clone() const
 {
-  return new pragma_environment_reload(get_shell());
+  return new pragma_environment_reload(_shell);
 }
 
 std::string pragma_environment_reload::description() const
@@ -35,6 +36,6 @@ std::string pragma_environment_reload::description() const
 
 void pragma_environment_reload::run() const
 {
-  get_shell().rebuild_environment();
+  _shell.rebuild_environment();
 }
 

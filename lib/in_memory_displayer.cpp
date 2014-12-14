@@ -1,0 +1,126 @@
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <metashell/in_memory_displayer.hpp>
+
+using namespace metashell;
+
+void in_memory_displayer::show_raw_text(const std::string& text_)
+{
+  _raw_texts.push_back(text_);
+}
+
+void in_memory_displayer::show_error(const std::string& msg_)
+{
+  _errors.push_back(msg_);
+}
+
+void in_memory_displayer::show_type(const type& type_)
+{
+  _types.push_back(type_);
+}
+
+void in_memory_displayer::show_comment(const text& msg_)
+{
+  _comments.push_back(msg_);
+}
+
+void in_memory_displayer::show_cpp_code(const std::string& code_)
+{
+  _cpp_codes.push_back(code_);
+}
+
+void in_memory_displayer::show_frame(const frame& frame_)
+{
+  _frames.push_back(frame_);
+}
+
+void in_memory_displayer::show_backtrace(const backtrace& trace_)
+{
+  _backtraces.push_back(trace_);
+}
+
+void in_memory_displayer::show_call_graph(const iface::call_graph& cg_)
+{
+  _call_graphs.push_back(call_graph(cg_.begin(), cg_.end()));
+}
+
+const std::vector<std::string>& in_memory_displayer::errors() const
+{
+  return _errors;
+}
+
+const std::vector<std::string>& in_memory_displayer::raw_texts() const
+{
+  return _raw_texts;
+}
+
+const std::vector<type>& in_memory_displayer::types() const
+{
+  return _types;
+}
+
+const std::vector<text>& in_memory_displayer::comments() const
+{
+  return _comments;
+}
+
+const std::vector<std::string>& in_memory_displayer::cpp_codes() const
+{
+  return _cpp_codes;
+}
+
+const std::vector<frame>& in_memory_displayer::frames() const
+{
+  return _frames;
+}
+
+const std::vector<backtrace>& in_memory_displayer::backtraces() const
+{
+  return _backtraces;
+}
+
+const std::vector<in_memory_displayer::call_graph>&
+  in_memory_displayer::call_graphs() const
+{
+  return _call_graphs;
+}
+
+void in_memory_displayer::clear()
+{
+  _errors.clear();
+  _raw_texts.clear();
+  _types.clear();
+  _comments.clear();
+  _cpp_codes.clear();
+  _frames.clear();
+  _backtraces.clear();
+  _call_graphs.clear();
+}
+
+bool in_memory_displayer::empty() const
+{
+  return
+    _errors.empty()
+    && _raw_texts.empty()
+    && _types.empty()
+    && _comments.empty()
+    && _cpp_codes.empty()
+    && _frames.empty()
+    && _backtraces.empty()
+    && _call_graphs.empty();
+}
+

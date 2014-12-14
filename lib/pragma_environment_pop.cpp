@@ -20,12 +20,13 @@
 using namespace metashell;
 
 pragma_environment_pop::pragma_environment_pop(shell& shell_) :
-  pragma_without_arguments(shell_, "environment pop")
+  pragma_without_arguments(shell_.displayer(), "environment pop"),
+  _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_environment_pop::clone() const
+iface::pragma_handler* pragma_environment_pop::clone() const
 {
-  return new pragma_environment_pop(get_shell());
+  return new pragma_environment_pop(_shell);
 }
 
 std::string pragma_environment_pop::description() const
@@ -35,7 +36,7 @@ std::string pragma_environment_pop::description() const
 
 void pragma_environment_pop::run() const
 {
-  get_shell().pop_environment();
-  get_shell().display_environment_stack_size();
+  _shell.pop_environment();
+  _shell.display_environment_stack_size();
 }
 

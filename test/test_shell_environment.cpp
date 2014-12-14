@@ -18,6 +18,7 @@
 #include "argv0.hpp"
 
 #include <metashell/path_builder.hpp>
+#include <metashell/in_memory_displayer.hpp>
 
 #include <just/test.hpp>
 
@@ -36,14 +37,16 @@ namespace
 
 JUST_TEST_CASE(test_popping_environment_from_empty_queue)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   JUST_ASSERT_THROWS_SOMETHING(sh.pop_environment());
 }
 
 JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -55,7 +58,8 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 
 JUST_TEST_CASE(test_more_pops_than_pushes_throws)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   sh.push_environment();
   sh.pop_environment();
@@ -64,7 +68,8 @@ JUST_TEST_CASE(test_more_pops_than_pushes_throws)
 
 JUST_TEST_CASE(test_env_two_level_environment_stack)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -81,29 +86,41 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
 
 JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.display_environment_stack_size();
 
-  JUST_ASSERT_EQUAL("// Environment stack is empty\n", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {metashell::text("Environment stack is empty")},
+    d.comments()
+  );
 }
 
 JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.push_environment();
   sh.display_environment_stack_size();
 
-  JUST_ASSERT_EQUAL("// Environment stack has 1 entry\n", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {metashell::text("Environment stack has 1 entry")},
+    d.comments()
+  );
 }
 
 JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.push_environment();
   sh.push_environment();
   sh.display_environment_stack_size();
 
-  JUST_ASSERT_EQUAL("// Environment stack has 2 entries\n", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {metashell::text("Environment stack has 2 entries")},
+    d.comments()
+  );
 }
 
 JUST_TEST_CASE(test_appended_since_when_nothing_appended)
@@ -118,7 +135,8 @@ JUST_TEST_CASE(test_appended_since_when_something_appended)
 
 JUST_TEST_CASE(test_extending_environment_with_pragma)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   const std::string original_env = sh.env().get_all();
 
   sh.line_available("#pragma metashell environment add typedef int x;");
@@ -132,7 +150,8 @@ JUST_TEST_CASE(test_extending_environment_with_pragma)
 
 JUST_TEST_CASE(test_environment_add_invalid_code_does_not_change_environment)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   const std::string original_env = sh.env().get_all();
 
   sh.line_available(
@@ -145,35 +164,42 @@ JUST_TEST_CASE(test_environment_add_invalid_code_does_not_change_environment)
 
 JUST_TEST_CASE(test_environment_add_invalid_code_displays_error)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available(
     "#pragma metashell environment add typedef nonexisting_type x;"
   );
 
-  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
 {
-  test_shell sh(metashell::empty_config(argv0::get()), 1024);
+  metashell::in_memory_displayer d;
+  test_shell sh(metashell::empty_config(argv0::get()), d);
   sh.line_available("#pragma metashell environment add typedef int x;");
 
-  JUST_ASSERT_EQUAL(
-    "// You don't need the environment add pragma to add this to the"
-    " environment. The following command does this as well:\n"
-    "typedef int x;\n",
-    sh.output()
+  JUST_ASSERT_EQUAL_CONTAINER({"typedef int x;"}, d.cpp_codes());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      metashell::text(
+        "You don't need the environment add pragma to add this to the"
+        " environment. The following command does this as well:"
+      )
+    },
+    d.comments()
   );
 }
 
 JUST_TEST_CASE(test_resetting_the_environment)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("typedef int foo;");
   sh.line_available("#pragma metashell environment reset");
   sh.line_available("foo");
 
-  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
@@ -181,23 +207,25 @@ JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
   const std::string scalar_hpp =
     metashell::path_builder() / "metashell" / "scalar.hpp";
 
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#pragma metashell environment reset");
   sh.line_available("#include <" + scalar_hpp + ">");
   sh.line_available("SCALAR(__METASHELL_MAJOR)");
 
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("typedef int foo;");
   sh.line_available("#pragma metashell environment push");
   sh.line_available("#pragma metashell environment reset");
   sh.line_available("#pragma metashell environment pop");
   sh.line_available("foo");
 
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 

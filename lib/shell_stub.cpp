@@ -15,23 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell_stub.hpp>
+#include <metashell/null_displayer.hpp>
 
 using namespace metashell;
 
+namespace
+{
+  iface::displayer& get_null_displayer()
+  {
+    static null_displayer nd;
+    return nd;
+  }
+}
+
 shell_stub::shell_stub(const std::string& argv0_) :
-  shell(empty_config(argv0_))
+  shell(empty_config(argv0_), get_null_displayer())
 {}
 
 void shell_stub::add_history(const std::string&)
-{}
-
-void shell_stub::display_normal(const std::string&) const
-{}
-
-void shell_stub::display_info(const std::string&) const
-{}
-
-void shell_stub::display_error(const std::string&) const
 {}
 
 unsigned int shell_stub::width() const

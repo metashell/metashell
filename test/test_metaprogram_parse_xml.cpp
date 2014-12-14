@@ -46,11 +46,11 @@ void test_single_node_templight_parsing(
   "</Trace>\n";
 
   metaprogram mp = metaprogram::create_from_xml_string(
-      xml, false, "some_type", "the_result_type");
+      xml, false, "some_type", type("the_result_type"));
 
   JUST_ASSERT(!mp.is_in_full_mode());
 
-  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), type("the_result_type"));
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -72,9 +72,9 @@ JUST_TEST_CASE(test_templight_xml_parse_empty)
   "</Trace>\n";
 
   metaprogram mp = metaprogram::create_from_xml_string(
-      xml, false, "some_type", "the_result_type");
+      xml, false, "some_type", type("the_result_type"));
 
-  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), type("the_result_type"));
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -179,11 +179,11 @@ JUST_TEST_CASE(test_templight_xml_parse_two_nested_node)
   "</Trace>\n";
 
   metaprogram mp = metaprogram::create_from_xml_string(
-      xml, true, "some_type", "the_result_type");
+      xml, true, "some_type", type("the_result_type"));
 
   JUST_ASSERT(mp.is_in_full_mode());
 
-  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), type("the_result_type"));
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -237,9 +237,9 @@ JUST_TEST_CASE(test_templight_xml_parse_two_sequential_node)
   "</Trace>\n";
 
   metaprogram mp = metaprogram::create_from_xml_string(
-      xml, false, "some_type", "the_result_type");
+      xml, false, "some_type", type("the_result_type"));
 
-  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), "the_result_type");
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), type("the_result_type"));
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 3u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
   JUST_ASSERT_EQUAL(mp.get_vertex_property(0).name, "some_type");
@@ -287,7 +287,7 @@ JUST_TEST_CASE(test_templight_xml_parse_starting_with_template_end)
 
   JUST_ASSERT_THROWS(exception,
       metaprogram::create_from_xml_string(
-        xml, false, "some_type", "the_result_type"));
+        xml, false, "some_type", type("the_result_type")));
 }
 
 JUST_TEST_CASE(test_templight_xml_parse_without_template_end)
@@ -306,7 +306,7 @@ JUST_TEST_CASE(test_templight_xml_parse_without_template_end)
 
   JUST_ASSERT_THROWS(exception,
       metaprogram::create_from_xml_string(
-        xml, false, "some_type", "the_result_type"));
+        xml, false, "some_type", type("the_result_type")));
 }
 
 JUST_TEST_CASE(
@@ -331,7 +331,7 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_THROWS(exception,
     metaprogram::create_from_xml_string(
-        xml, false, "some_type", "the_result_type"));
+        xml, false, "some_type", type("the_result_type")));
 }
 
 JUST_TEST_CASE(
@@ -356,7 +356,7 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_THROWS(exception,
     metaprogram::create_from_xml_string(
-        xml, false, "some_type", "the_result_type"));
+        xml, false, "some_type", type("the_result_type")));
 }
 
 JUST_TEST_CASE(test_templight_xml_parse_syntax_error_unknown_kind)
@@ -380,5 +380,5 @@ JUST_TEST_CASE(test_templight_xml_parse_syntax_error_unknown_kind)
 
   JUST_ASSERT_THROWS(exception,
     metaprogram::create_from_xml_string(
-        xml, false, "some_type", "the_result_type"));
+        xml, false, "some_type", type("the_result_type")));
 }

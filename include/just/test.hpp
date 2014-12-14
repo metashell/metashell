@@ -235,6 +235,125 @@ namespace just
     JUST_TEST_ASSERT_OP(assert_greater_equal, >=);
 
   #undef JUST_TEST_ASSERT_OP
+
+    template <class It>
+    static void show(It begin_, It end_, std::ostream& o_)
+    {
+      o_ << "[";
+      bool first = true;
+      for (It i = begin_; i != end_; ++i)
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          o_ << ", ";
+        }
+        o_ << *i;
+      }
+      o_ << "]";
+    }
+
+    template <class It1, class It2>
+    static bool equal(It1 b1_, It1 e1_, It2 b2_, It2 e2_)
+    {
+      while (b1_ != e1_ && b2_ != e2_ && *b1_ == *b2_)
+      {
+        ++b1_; ++b2_;
+      }
+      return b1_ == e1_ && b2_ == e2_;
+    }
+
+    class assert_equal_container
+    {
+    public:
+      assert_equal_container(const std::string& filename_, int line_) :
+        _assert_msg(filename_, line_)
+      {}
+      
+      template <class A, class B>
+      void operator()(const A& a_, const B& b_) const
+      {
+        run(a_, b_);
+      }
+
+      // This handles the case when the right operand is a brace initialised
+      // container in C++11. For example:
+      //   JUST_ASSERT_EQUAL_CONTAINER(some_container, {1, 2, 3})
+      // I need to convert it into a vector, because using
+      // std::initializer_list<T> would break in legacy C++98 mode.
+      // The special handling is needed because the compiler is not allowed to
+      // deduce std::initializer_list types.
+      template <class A>
+      void operator()(
+        const A& a_,
+        const std::vector<typename A::value_type>& b_
+      ) const
+      {
+        run(a_, b_);
+      }
+
+      // This handles the case when the left operand is a brace initialised
+      // container in C++11. For example:
+      //   JUST_ASSERT_EQUAL_CONTAINER({1, 2, 3}, some_container)
+      template <class B>
+      void operator()(
+        const std::vector<typename B::value_type>& a_,
+        const B& b_
+      ) const
+      {
+        run(a_, b_);
+      }
+
+      // This is needed to resolve ambiguity introduced by the
+      // initializer_list-related overloads
+      template <class T>
+      void operator()(const std::vector<T>& a_, const std::vector<T>& b_) const
+      {
+        run(a_, b_);
+      }
+    private:
+      assert_msg _assert_msg;
+
+      // When this is called the initializer_list arguments are converted into
+      // vectors.
+      template <class A, class B>
+      void run(const A& a_, const B& b_) const
+      {
+        std::ostringstream s;
+        s << "Expected: ";
+        show(a_.begin(), a_.end(), s);
+        s << " == ";
+        show(b_.begin(), b_.end(), s);
+
+        _assert_msg(
+          s.str(),
+          equal(a_.begin(), a_.end(), b_.begin(), b_.end())
+        );
+      }
+    };
+
+    class assert_empty_container
+    {
+    public:
+      assert_empty_container(const std::string& filename_, int line_) :
+        _assert_msg(filename_, line_)
+      {}
+      
+      template <class A>
+      void operator()(const A& a_) const
+      {
+        std::ostringstream s;
+        s << "Expected to be empty: ";
+        show(a_.begin(), a_.end(), s);
+
+        _assert_msg(s.str(), a_.empty());
+      }
+    private:
+      assert_msg _assert_msg;
+    };
   }
 }
 
@@ -273,6 +392,12 @@ namespace just
 #endif
 #define JUST_ASSERT_EQUAL ::just::test::assert_equal(__FILE__, __LINE__)
 
+#ifdef JUST_ASSERT_EQUAL_CONTAINER
+#  error JUST_ASSERT_EQUAL_CONTAINER already defined
+#endif
+#define JUST_ASSERT_EQUAL_CONTAINER \
+  ::just::test::assert_equal_container(__FILE__, __LINE__)
+
 #ifdef JUST_ASSERT_NOT_EQUAL
 #  error JUST_ASSERT_NOT_EQUAL already defined
 #endif
@@ -299,6 +424,12 @@ namespace just
 #endif
 #define JUST_ASSERT_GREATER_EQUAL \
   ::just::test::assert_greater_equal(__FILE__, __LINE__)
+
+#ifdef JUST_ASSERT_EMPTY_CONTAINER
+#  error JUST_ASSERT_EMPTY_CONTAINER already defined
+#endif
+#define JUST_ASSERT_EMPTY_CONTAINER \
+  ::just::test::assert_empty_container(__FILE__, __LINE__)
 
 #ifdef JUST_ASSERT_THROWS
 #  error JUST_ASSERT_THROWS

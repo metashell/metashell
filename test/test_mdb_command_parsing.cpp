@@ -37,22 +37,22 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 
   std::tie(command, args) = get_command_from_map(map, {"asd"});
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, {"efg"});
 
-  JUST_ASSERT(equal(command.get_keys(), {"efg"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"efg"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "e");
 
-  JUST_ASSERT(equal(command.get_keys(), {"efg"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"efg"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -71,12 +71,12 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "af");
 
-  JUST_ASSERT(equal(command.get_keys(), {"afg"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"afg"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -95,12 +95,12 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT(equal(command.get_keys(), {"a"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"a"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -134,17 +134,17 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 
   std::tie(command, args) = get_command_from_map(map, "asd");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd", "xyz"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "xyz");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asd", "xyz"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "asf");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -163,7 +163,7 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 
   std::tie(command, args) = get_command_from_map(map, "f");
 
-  JUST_ASSERT(equal(command.get_keys(), {"ft", "forwardtrace"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"ft", "forwardtrace"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -182,7 +182,10 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 
   std::tie(command, args) = get_command_from_map(map, "f");
 
-  JUST_ASSERT(equal(command.get_keys(), {"ft", "forwardtrace", "fff"}));
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"ft", "forwardtrace", "fff"},
+    command.get_keys()
+  );
   JUST_ASSERT_EQUAL(args, "");
 }
 
@@ -213,21 +216,21 @@ JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 
   std::tie(command, args) = get_command_from_map(map, "a abc");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "asf   abc");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "as   ab c");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "ab c");
 
   std::tie(command, args) = get_command_from_map(map, "a   ");
 
-  JUST_ASSERT(equal(command.get_keys(), {"asf"}));
+  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
   JUST_ASSERT_EQUAL(args, "");
 }

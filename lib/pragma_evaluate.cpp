@@ -17,7 +17,6 @@
 #include <metashell/pragma_evaluate.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
-#include "indenter.hpp"
 
 using namespace metashell;
 
@@ -25,7 +24,7 @@ pragma_evaluate::pragma_evaluate(shell& shell_) :
   _shell(shell_)
 {}
 
-pragma_handler_interface* pragma_evaluate::clone() const
+iface::pragma_handler* pragma_evaluate::clone() const
 {
   return new pragma_evaluate(_shell);
 }
@@ -53,32 +52,26 @@ void pragma_evaluate::run(
 
   if (!is_environment_setup_command(args_begin_, args_end_))
   {
-    _shell.display_normal(
-      indenter(_shell.width(), "")
-        .empty_line()
-        .left_align(
+    _shell.displayer().show_comment(
+      text{
+        paragraph(
           "You don't need the evaluate add pragma to evaluate this metaprogram."
-          " The following command does this as well:",
-          "// "
-        )
-        .left_align(cmd)
-        .str()
+          " The following command does this as well:"
+        ),
+        paragraph(cmd)
+      }
     );
   }
   else
   {
-    _shell.display_normal(
-      indenter(_shell.width(), "")
-        .empty_line()
-        .left_align(
-          "Metashell (incorrectly) thinks that this command should be added to"
-          " the environment and would not execute it as a metaprogram without"
-          " the \"evaluate\" pragma. Please file a bug report containing"
-          " this command (" + cmd + ") at"
-          " https://github.com/sabel83/metashell/issues. Thank you.",
-          "// "
-        )
-        .str()
+    _shell.displayer().show_comment(
+      text(
+        "Metashell (incorrectly) thinks that this command should be added to"
+        " the environment and would not execute it as a metaprogram without"
+        " the \"evaluate\" pragma. Please file a bug report containing"
+        " this command (" + cmd + ") at"
+        " https://github.com/sabel83/metashell/issues. Thank you."
+      )
     );
   }
 }

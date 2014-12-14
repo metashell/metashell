@@ -18,6 +18,7 @@
 #include "test_shell.hpp"
 
 #include <metashell/path_builder.hpp>
+#include <metashell/in_memory_displayer.hpp>
 
 #include <just/test.hpp>
 
@@ -26,7 +27,7 @@ using namespace metashell;
 JUST_TEST_CASE(test_basic_formatting)
 {
   JUST_ASSERT_EQUAL(
-    "double",
+    type("double"),
     get_output(
       "int",
       "namespace metashell"
@@ -44,7 +45,7 @@ JUST_TEST_CASE(test_basic_formatting)
 JUST_TEST_CASE(test_tag_dispatched_formatting)
 {
   JUST_ASSERT_EQUAL(
-    "char",
+    type("char"),
     get_output(
       "foo",
       "struct foo_tag {};"
@@ -78,16 +79,17 @@ JUST_TEST_CASE(test_formatting_disabled)
   cfg.indent = false;
   cfg.max_template_depth = 256;
 
-  test_shell sh(cfg, 10);
+  in_memory_displayer d;
+  test_shell sh(cfg, d);
   sh.line_available(
     "template <class... Ts> struct template_with_a_long_name {};"
   );
   sh.line_available("template_with_a_long_name<int, double, char>");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL(
-    "template_with_a_long_name<int, double, char>",
-    sh.output()
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {type("template_with_a_long_name<int, double, char>")},
+    d.types()
   );
 }
 
@@ -96,14 +98,15 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
   const std::string vector_hpp =
     metashell::path_builder() / "metashell" / "formatter" / "vector.hpp";
 
-  test_shell sh;
+  in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("#include <" + vector_hpp + ">");
   sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL(
-    "boost_::mpl::vector<boost_::mpl::vector<int> >",
-    sh.output()
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {type("boost_::mpl::vector<boost_::mpl::vector<int> >")},
+    d.types()
   );
 }
 

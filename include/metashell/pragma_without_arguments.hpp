@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_interface.hpp>
+#include <metashell/iface/displayer.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <string>
 
@@ -25,23 +26,26 @@ namespace metashell
 {
   class shell;
 
-  class pragma_without_arguments : public pragma_handler_interface
+  class pragma_without_arguments : public iface::pragma_handler
   {
   public:
-    pragma_without_arguments(shell& shell_, const std::string& name_);
+    pragma_without_arguments(
+      iface::displayer& displayer_,
+      const std::string& name_
+    );
 
-    virtual std::string arguments() const;
+    virtual std::string arguments() const override;
 
     virtual void run(
       const command::iterator& args_begin_,
       const command::iterator& args_end_
-    ) const;
+    ) const override;
 
     virtual void run() const = 0;
 
-    shell& get_shell() const;
+    iface::displayer& displayer() const;
   private:
-    shell& _shell;
+    iface::displayer& _displayer;
     std::string _name;
   };
 }

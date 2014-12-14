@@ -21,8 +21,6 @@ using namespace metashell;
 
 namespace
 {
-  const int default_width = 80;
-
   config default_config()
   {
     config cfg = empty_config(argv0::get());
@@ -39,71 +37,32 @@ namespace
   }
 }
 
-test_shell::test_shell() :
-  shell(default_config()),
-  _width(default_width),
+test_shell::test_shell(iface::displayer& displayer_) :
+  shell(default_config(), displayer_),
   _history(0)
 {}
 
-test_shell::test_shell(const config& cfg_, int width_) :
-  shell(cfg_),
-  _width(width_),
+test_shell::test_shell(const config& cfg_, iface::displayer& displayer_) :
+  shell(cfg_, displayer_),
   _history(0)
 {}
 
-test_shell::test_shell(std::vector<std::string>& history_) :
-  shell(default_config()),
-  _width(default_width),
+test_shell::test_shell(
+  std::vector<std::string>& history_,
+  iface::displayer& displayer_
+) :
+  shell(default_config(), displayer_),
   _history(&history_)
 {}
 
-test_shell::test_shell(const metashell::config& cfg_, environment* env_) :
-  shell(cfg_, env_),
-  _width(default_width),
+test_shell::test_shell(
+  const metashell::config& cfg_,
+  std::unique_ptr<environment> env_,
+  iface::displayer& displayer_
+) :
+  shell(cfg_, std::move(env_), displayer_),
   _history(0)
 {}
-
-void test_shell::display_normal(const std::string& s_) const
-{
-  _output += s_;
-}
-
-void test_shell::display_info(const std::string& s_) const
-{
-  _info += s_;
-}
-
-void test_shell::display_error(const std::string& s_) const
-{
-  _error += s_;
-}
-
-const std::string& test_shell::output() const
-{
-  return _output;
-}
-
-const std::string& test_shell::info() const
-{
-  return _info;
-}
-
-const std::string& test_shell::error() const
-{
-  return _error;
-}
-
-void test_shell::clear_output()
-{
-  _output.clear();
-  _info.clear();
-  _error.clear();
-}
-
-unsigned int test_shell::width() const
-{
-  return _width;
-}
 
 void test_shell::add_history(const std::string& s_)
 {

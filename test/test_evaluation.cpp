@@ -20,79 +20,89 @@
 
 #include <metashell/metashell.hpp>
 #include <metashell/path_builder.hpp>
+#include <metashell/in_memory_displayer.hpp>
 
 #include <just/test.hpp>
 
+using namespace metashell;
+
 JUST_TEST_CASE(test_non_existing_class)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("hello");
-  JUST_ASSERT_EQUAL("", sh.info());
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_accept_empty_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_space_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available(" ");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_tab_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("\t");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_vertical_tab_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("\v");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_new_line_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("\n");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_carrige_return_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("\r");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_two_space_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("  ");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_macro_in_config)
@@ -100,12 +110,13 @@ JUST_TEST_CASE(test_macro_in_config)
   metashell::config cfg;
   cfg.max_template_depth = 20;
   cfg.macros.push_back("FOO=int");
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   sh.line_available("FOO");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL("int", sh.output());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
 }
 
 namespace
@@ -114,25 +125,26 @@ namespace
     const std::string& init_line_,
     const std::string& definition_,
     const std::string& query_,
-    const std::string& expected_result_
+    const type& expected_result_
   )
   {
-    test_shell sh;
+    metashell::in_memory_displayer d;
+    test_shell sh(d);
 
     sh.line_available(init_line_);
     sh.line_available(definition_);
-    JUST_ASSERT_EQUAL("", sh.output());
-    JUST_ASSERT_EQUAL("", sh.error());
+    JUST_ASSERT_EMPTY_CONTAINER(d.types());
+    JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
     sh.line_available(query_);
-    JUST_ASSERT_EQUAL("", sh.error());
-    JUST_ASSERT_EQUAL(expected_result_, sh.output());
+    JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+    JUST_ASSERT_EQUAL_CONTAINER({expected_result_}, d.types());
   }
 
   void test_definition_and_query(
     const std::string& definition_,
     const std::string& query_,
-    const std::string& expected_result_
+    const type& expected_result_
   )
   {
     test_definition_and_query("", definition_, query_, expected_result_);
@@ -141,19 +153,27 @@ namespace
 
 JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
 {
-  test_definition_and_query("bool typedef * x;", "x", "bool *");
-  test_definition_and_query("char typedef * x;", "x", "char *");
-  test_definition_and_query("const typedef int x;", "x", "const int");
-  test_definition_and_query("double typedef * x;", "x", "double *");
-  test_definition_and_query("float typedef * x;", "x", "float *");
-  test_definition_and_query("int typedef * x;", "x", "int *");
-  test_definition_and_query("long typedef int x;", "x", "long");
-  test_definition_and_query("short typedef int x;", "x", "short");
-  test_definition_and_query("signed typedef int x;", "x", "int");
-  test_definition_and_query("unsigned typedef int x;", "x", "unsigned int");
-  test_definition_and_query("void typedef * x;", "x", "void *");
-  test_definition_and_query("volatile typedef int x;", "x", "volatile int");
-  test_definition_and_query("wchar_t typedef * x;", "x", "wchar_t *");
+  test_definition_and_query("bool typedef * x;", "x", type("bool *"));
+  test_definition_and_query("char typedef * x;", "x", type("char *"));
+  test_definition_and_query("const typedef int x;", "x", type("const int"));
+  test_definition_and_query("double typedef * x;", "x", type("double *"));
+  test_definition_and_query("float typedef * x;", "x", type("float *"));
+  test_definition_and_query("int typedef * x;", "x", type("int *"));
+  test_definition_and_query("long typedef int x;", "x", type("long"));
+  test_definition_and_query("short typedef int x;", "x", type("short"));
+  test_definition_and_query("signed typedef int x;", "x", type("int"));
+  test_definition_and_query(
+    "unsigned typedef int x;",
+    "x",
+    type("unsigned int")
+  );
+  test_definition_and_query("void typedef * x;", "x", type("void *"));
+  test_definition_and_query(
+    "volatile typedef int x;",
+    "x",
+    type("volatile int")
+  );
+  test_definition_and_query("wchar_t typedef * x;", "x", type("wchar_t *"));
 }
 
 JUST_TEST_CASE(test_defining_constexpr_function)
@@ -161,36 +181,40 @@ JUST_TEST_CASE(test_defining_constexpr_function)
   const std::string scalar_hpp =
     metashell::path_builder() / "metashell" / "scalar.hpp";
 
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("#include <" + scalar_hpp + ">");
   sh.line_available("constexpr int f() { return 13; }");
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
   sh.line_available("SCALAR(f())");
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT(is_integral_constant("int", "13", sh.output()));
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL(1u, d.types().size());
+  JUST_ASSERT(d.types().front().is_integral_constant(type("int"), "13"));
 }
 
 JUST_TEST_CASE(
   test_typedef_in_the_middle_of_a_line_starting_with_an_identifier
 )
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   sh.line_available("struct y;");
   sh.line_available("y typedef * x;");
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
   sh.line_available("x");
-  JUST_ASSERT_EQUAL("y *", sh.output());
+  JUST_ASSERT_EQUAL_CONTAINER({type("y *")}, d.types());
 }
 
 JUST_TEST_CASE(test_history_is_stored)
 {
   std::vector<std::string> history;
-  test_shell sh(history);
+  metashell::in_memory_displayer d;
+  test_shell sh(history, d);
 
   sh.line_available("int");
 
@@ -201,7 +225,8 @@ JUST_TEST_CASE(test_history_is_stored)
 JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
 {
   std::vector<std::string> history;
-  test_shell sh(history);
+  metashell::in_memory_displayer d;
+  test_shell sh(history, d);
 
   sh.line_available("");
 
@@ -213,7 +238,8 @@ JUST_TEST_CASE(
 )
 {
   std::vector<std::string> history;
-  test_shell sh(history);
+  metashell::in_memory_displayer d;
+  test_shell sh(history, d);
 
   sh.line_available(" ");
 
@@ -225,7 +251,8 @@ JUST_TEST_CASE(
 )
 {
   std::vector<std::string> history;
-  test_shell sh(history);
+  metashell::in_memory_displayer d;
+  test_shell sh(history, d);
 
   sh.line_available("int");
   sh.line_available("int");
@@ -236,26 +263,29 @@ JUST_TEST_CASE(
 
 JUST_TEST_CASE(test_accept_c_comment_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("/* some comment */");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_accept_cpp_comment_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("// some comment");
 
-  JUST_ASSERT_EQUAL("", sh.output());
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.types());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_comment_is_stored_in_history)
 {
   std::vector<std::string> history;
-  test_shell sh(history);
+  metashell::in_memory_displayer d;
+  test_shell sh(history, d);
 
   sh.line_available("// some comment");
 
@@ -272,22 +302,24 @@ namespace
 
 JUST_TEST_CASE(test_warnings)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
 
   generate_warning(sh);
 
-  JUST_ASSERT(!sh.error().empty());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_disabled_warnings)
 {
   metashell::config cfg;
   cfg.warnings_enabled = false;
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   generate_warning(sh);
 
-  JUST_ASSERT_EQUAL("", sh.error());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
 JUST_TEST_CASE(test_extra_clang_arg)
@@ -295,24 +327,26 @@ JUST_TEST_CASE(test_extra_clang_arg)
   metashell::config cfg;
   cfg.extra_clang_args.push_back("-DFOO=double");
   cfg.max_template_depth = 20;
-  test_shell sh(cfg, 80);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, d);
 
   sh.line_available("FOO");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL("double", sh.output());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER({type("double")}, d.types());
 }
 
 JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 {
   metashell::config cfg;
   breaking_environment* e = new breaking_environment(cfg);
-  test_shell sh(cfg, e);
+  metashell::in_memory_displayer d;
+  test_shell sh(cfg, std::unique_ptr<breaking_environment>(e), d);
   e->append_throw_from_now();
 
   sh.store_in_buffer("typedef int foo;");
 
-  JUST_ASSERT_NOT_EQUAL("", sh.error());
+  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
@@ -352,28 +386,31 @@ JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
 
 JUST_TEST_CASE(test_multiline_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("const \\");
   sh.line_available("int");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL("const int", sh.output());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER({type("const int")}, d.types());
 }
 
 JUST_TEST_CASE(test_three_line_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("const \\");
   sh.line_available("int \\");
   sh.line_available("*");
 
-  JUST_ASSERT_EQUAL("", sh.error());
-  JUST_ASSERT_EQUAL("const int *", sh.output());
+  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  JUST_ASSERT_EQUAL_CONTAINER({type("const int *")}, d.types());
 }
 
 JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
 {
-  test_shell sh;
+  metashell::in_memory_displayer d;
+  test_shell sh(d);
   sh.line_available("const \\");
 
   JUST_ASSERT_EQUAL("...> ", sh.prompt());

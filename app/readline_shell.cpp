@@ -72,8 +72,11 @@ readline_shell::~readline_shell()
   _instance = 0;
 }
 
-readline_shell::readline_shell(const metashell::config& config_) :
-  shell(config_),
+readline_shell::readline_shell(
+  const metashell::config& config_,
+  iface::displayer& displayer_
+) :
+  shell(config_, displayer_),
   _syntax_highlight(config_.syntax_highlight),
   _indent(config_.indent)
 {
@@ -140,60 +143,5 @@ char** readline_shell::tab_completion(const char* text_, int, int end_)
 {
   _completion_end = end_;
   return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
-}
-
-void readline_shell::display_normal(const std::string& s_) const
-{
-  if (s_ != "")
-  {
-    if (_indent)
-    {
-      if (_syntax_highlight)
-      {
-        indent(width(), 2, display_syntax_highlighted, s_, input_filename());
-      }
-      else
-      {
-        indent(
-          width(),
-          2,
-          mindent::stream_display(std::cout),
-          s_,
-          input_filename()
-        );
-      }
-    }
-    else
-    {
-      if (_syntax_highlight)
-      {
-        std::cout << highlight_syntax(s_);
-      }
-      else
-      {
-        std::cout << s_;
-      }
-    }
-    std::cout << std::endl;
-  }
-}
-
-void readline_shell::display_info(const std::string& s_) const
-{
-  std::cout << s_;
-}
-
-void readline_shell::display_error(const std::string& s_) const
-{
-  if (!s_.empty()) {
-    std::cout
-      << colored_string(s_, color::bright_red)
-      << std::endl;
-  }
-}
-
-unsigned int readline_shell::width() const
-{
-  return _readline_environment.width();
 }
 

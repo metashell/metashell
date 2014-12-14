@@ -1,6 +1,3 @@
-#ifndef METASHELL_PRAGMA_HANDLER_INTERFACE_HPP
-#define METASHELL_PRAGMA_HANDLER_INTERFACE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,30 +14,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command.hpp>
+#include <metashell/null_displayer.hpp>
 
-#include <string>
+using namespace metashell;
 
-namespace metashell
+void null_displayer::show_raw_text(const std::string&)
 {
-  class pragma_handler_interface
-  {
-  public:
-    virtual ~pragma_handler_interface() {}
-
-    virtual pragma_handler_interface* clone() const = 0;
-
-    virtual std::string arguments() const = 0;
-    virtual std::string description() const = 0;
-
-    virtual void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_
-    ) const = 0;
-  };
-
-  void run(const pragma_handler_interface& handler_, const std::string& args_);
+  // throw away
 }
 
-#endif
+void null_displayer::show_error(const std::string&)
+{
+  // throw away
+}
+
+void null_displayer::show_type(const type&)
+{
+  // throw away
+}
+
+void null_displayer::show_comment(const text&)
+{
+  // throw away
+}
+
+void null_displayer::show_cpp_code(const std::string&)
+{
+  // throw away
+}
+
+void null_displayer::show_frame(const frame&)
+{
+  // throw away
+}
+
+void null_displayer::show_backtrace(const backtrace&)
+{
+  // throw away
+}
+
+void null_displayer::show_call_graph(const iface::call_graph&)
+{
+  // throw away
+}
 
