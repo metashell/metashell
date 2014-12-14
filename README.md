@@ -43,6 +43,7 @@ shell.
         - [Breakpoints and continue](#breakpoints-and-continue)
         - [Reevaluation and precompiled headers](#reevaluation-and-precompiled-headers)
         - [Full mode](#full-mode)
+        - [Using step over](#using-step-over)
         - [Quit Metadebugger](#quit-metadebugger)
     - [Data structures of Boost.MPL](#data-structures-of-boostmpl)
     - [Writing custom formatters](#writing-custom-formatters)
@@ -57,6 +58,7 @@ shell.
     - [see what happens during template argument deduction?](#see-what-happens-during-template-argument-deduction)
     - [see what a type alias resolves to?](#see-what-a-type-alias-resolves-to)
 - [Changelog](#changelog)
+    - [Not in any release yet](#not-in-any-release-yet)
     - [Version 2.0.0](#version-200-1)
     - [Version 1.0.0](#version-100-1)
 - [Reference](#reference)
@@ -174,7 +176,7 @@ want to install them, you can build Metashell yourself.
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Run `install_build_dependencies.sh` to install the dependent tools and
-  libaries
+  libraries
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
   of multicore systems, you can set the `BUILD_THREADS` environment variable to
   the maximum number of concurrent builds. (eg. `BUILD_THREADS=4 ./build.sh`)
@@ -203,7 +205,7 @@ want to install them, you can build Metashell yourself.
           [libedit](http://thrysoee.dk/editline/) instead
           of [Readline](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
           add the `-DUSE_EDITLINE=true` argument to the above command line.
-        * Note: if you don't want to link staticly against libclang, you need to
+        * Note: if you don't want to link statically against libclang, you need to
           add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install`
@@ -224,7 +226,7 @@ want to install them, you can build Metashell yourself.
     * `cmake .. -DENABLE_PROFILING=true`
     * `make`
     * The binaries will now generate profiling data to gmon.out.
-      Please see the gprof documentation for futher information.
+      Please see the gprof documentation for further information.
 
 #### Clang and Templight
 
@@ -303,7 +305,7 @@ WinEditLine to a newer version, you need to update these files.
 * Install the dependent tools:
     * CMake
     * XCode
-    * The appropriate version of "Auxilary tools for Xcode" which contains the
+    * The appropriate version of "Auxiliary tools for Xcode" which contains the
       PackageMaker compiler.
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
   of multicore systems, you can set the `BUILD_THREADS` environment variable to
@@ -327,14 +329,14 @@ WinEditLine to a newer version, you need to update these files.
     * `mkdir bin`
     * `cd bin`
     * `cmake ..`
-        * Note: if you don't want to link staticly against libclang, you need to
+        * Note: if you don't want to link statically against libclang, you need to
           add `-DCLANG_STATIC=false` to the above command line.
     * `make`
     * To install it on the host run `make install` as root.
 * To generate an installer package (.dmg):
-    * Install the appropriate version of "Auxilary tools for Xcode" which
+    * Install the appropriate version of "Auxiliary tools for Xcode" which
       contains the PackageMaker compiler. On Mavericks this will be the 2012
-      late july version.
+      late July version.
     * `cpack`
 
 ## Getting started
@@ -543,7 +545,7 @@ output of forwardtrace happen in that order from the top down.
 You probably noticed that there are two kinds of events metadebugger shows you:
 * __TemplateInstantiation__ event happens when the compiler first encounters and
   instantiates a new template type. During a TemplateInstantiation event the
-  compiler will instantiate every subtype it needs to get to the result
+  compiler will instantiate every subtype it needs to get to the result.
 * __Memoization__ event happens when a compiler encounters a type, which it had
   already instantiated before. It won't go through the instantiation process
   again, instead it uses technique called
@@ -577,7 +579,7 @@ Breakpoint "fib<3>" reached
 fib<3> (TemplateInstantiation)
 ```
 
-Commands can be abbreviated if unambigouos. For example you can use just `c`
+Commands can be abbreviated if unambiguous. For example you can use just `c`
 instead of `continue`:
 
 ```cpp
@@ -603,12 +605,13 @@ is one of the reasons PCH can speed up compilation.
 
 This might seem like bad news, but it has a very useful side effect. If you
 included files while you set up the compilation environment, you can actually
-modify those files on the fly without restarting Metashell. The modified file
-will be included every time you evaluate a metaprogram.
+modify those files on the fly without restarting Metadebugger and using
+`#msh environment reload`. The modified file will be included and reparsed
+every time you evaluate a metaprogram.
 
 This technique can be used outside Metadebugger, but you might have to
-explicitly turn off precompiled headers when starting Metashell with the
-`--no_precompiled_headers` command line option.
+explicitly turn off precompiled headers. See this section for more information:
+[What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
 
 To reevaulate the last metaprogram, you can simply enter `evaluate` (or `e` for
 short) without giving any expression as an argument:
@@ -641,13 +644,84 @@ int_<fib<4>::value>
 ` mpl_::int_<5>
 ```
 
-Full mode doesn't try to follow what the real complier does, but instead it
+Full mode doesn't try to follow what the real compiler does, but instead it
 tries to simulate a dumb compiler, which doesn't use memoizations to speed up
 compilation. For example, `fib<2>` and its full sub call tree is visible two
-times. This mode can be useful, when the part of the trace you're intrested in
+times. This mode can be useful, when the part of the trace you're interested in
 is hidden under multiple layers of Memoizations in normal mode.
 
 Please note, that traces in full mode can get extremely long.
+
+#### Using step over
+
+A special qualifier, `over` can be passed to the `step` command. Using
+`step over` will jump over sub instantiations. Let's take a look at an example:
+
+```cpp
+(mdb) evaluate int_<fib<5>::value>
+Metaprogram started
+(mdb) ft
+int_<fib<5>::value>
++ fib<5> (TemplateInstantiation)
+| + fib<4> (TemplateInstantiation)
+| | + fib<3> (TemplateInstantiation)     A
+| | | + fib<2> (TemplateInstantiation)
+| | | | + fib<1> (Memoization)
+| | | | ` fib<0> (Memoization)
+| | | ` fib<1> (Memoization)             B
+| | ` fib<2> (Memoization)               C
+| ` fib<3> (Memoization)
++ fib<5> (Memoization)
+` int_<5> (TemplateInstantiation)
+```
+
+Three instantiations are marked, so it is easier to talk about them. First,
+let's simply step forward to `A`:
+
+```cpp
+(mdb) step 3
+fib<3> (TemplateInstantiation)       A
+```
+
+Here, `step over` will jump over the types instantiated by `A` to `C`:
+
+```cpp
+(mdb) step over
+fib<2> (Memoization)       C
+```
+
+Of course, `step over -1` will do the reverse and bring us back to `A`:
+
+```cpp
+(mdb) step over -1
+fib<3> (TemplateInstantiation)       A
+```
+
+Be careful though, `step over -1` is not always the inverse of `step over`.
+Let's step forward to `B` to demonstrate this:
+
+
+```cpp
+(mdb) step 4
+fib<1> (Memoization)       B
+```
+
+Since there are no more sub instantiations to step over, from here `step over`
+has no other choice but to behave like a normal `step` command and jump out to
+`C`.
+
+```cpp
+(mdb) step over
+fib<2> (Memoization)       C
+```
+
+But from `C`, as we've seen earlier, `step over -1` will bring us back to `A`
+and not `B`.
+
+```cpp
+(mdb) step over -1
+fib<3> (TemplateInstantiation)       A
+```
 
 #### Quit Metadebugger
 
@@ -1049,6 +1123,10 @@ build your `fun.cpp` file.
 
 ## Changelog
 
+### Not in any release yet
+
+* New section about `step over` in Getting started.
+
 ### Version 2.0.0
 
 * New features
@@ -1171,6 +1249,10 @@ Argument n means step n times. n defaults to 1 if not specified.
   Negative n means step the program backwards.
   
   Use of the `over` qualifier will jump over sub instantiations.
+  Please note that `step over -1` is not always the inverse of `step over`.
+  In particular when there are no more instantiations that got instantiated
+  by the current parent, then `step over` will behave like a normal `step`,
+  and will step out of one or more instantiation frames.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.
