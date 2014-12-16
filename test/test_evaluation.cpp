@@ -294,7 +294,7 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
 
   sh.line_available("// some comment");
 
-  JUST_ASSERT_EQUAL(1, h.commands().size());
+  JUST_ASSERT_EQUAL(1u, h.commands().size());
 }
 
 namespace
