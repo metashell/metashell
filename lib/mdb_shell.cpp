@@ -136,7 +136,8 @@ mdb_shell::mdb_shell(
     iface::displayer& displayer_) :
   conf(set_pch_false(conf_)),
   env(conf),
-  _displayer(displayer_)
+  _displayer(displayer_),
+  _history(nullptr)
 {
   env.append(env_arg.get_all());
 }
@@ -163,8 +164,8 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     std::string line = line_arg;
 
-    if (line != prev_line && !line.empty()) {
-      add_history(line);
+    if (_history && line != prev_line && !line.empty()) {
+      _history->add(line);
     }
 
     if (line.empty()) {
@@ -747,6 +748,10 @@ void mdb_shell::display_metaprogram_finished() const {
 
 iface::displayer& mdb_shell::displayer() {
   return _displayer;
+}
+
+void mdb_shell::history(iface::history& h_) {
+  _history = &h_;
 }
 
 }

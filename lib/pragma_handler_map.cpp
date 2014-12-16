@@ -179,10 +179,7 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
           shell_.env()
         )
       )
-      .add(
-        "mdb",
-        pragma_mdb(shell_.displayer(), shell_.get_config(), shell_.env())
-      )
+      .add("mdb", pragma_mdb(shell_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;

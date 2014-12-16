@@ -30,6 +30,7 @@
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/displayer.hpp>
+#include <metashell/iface/history.hpp>
 
 namespace metashell {
 
@@ -45,8 +46,6 @@ public:
   virtual ~mdb_shell();
 
   virtual void run() = 0;
-
-  virtual void add_history(const std::string& str) = 0;
 
   std::string prompt() const;
   bool stopped() const;
@@ -65,6 +64,7 @@ public:
 
   iface::displayer& displayer();
 
+  void history(iface::history& h_);
 protected:
   // breakpoint is simply a regex for now
   typedef std::tuple<std::string, boost::regex> breakpoint_t;
@@ -112,6 +112,7 @@ protected:
 
 private:
   iface::displayer& _displayer;
+  iface::history* _history; // not owning
 };
 
 }

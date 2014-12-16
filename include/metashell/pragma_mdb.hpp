@@ -17,10 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
+#include <metashell/shell.hpp>
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 
 #include <string>
 
@@ -29,11 +27,7 @@ namespace metashell
   class pragma_mdb : public iface::pragma_handler
   {
   public:
-    pragma_mdb(
-      iface::displayer& displayer_,
-      const config& config_,
-      environment& env_
-    );
+    explicit pragma_mdb(shell& shell_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -45,9 +39,7 @@ namespace metashell
       const command::iterator& args_end_
     ) const override;
   private:
-    iface::displayer& _displayer;
-    const config& _config;
-    environment& _env;
+    shell& _shell;
   };
 }
 

@@ -21,19 +21,13 @@
 
 using namespace metashell;
 
-pragma_mdb::pragma_mdb(
-  iface::displayer& displayer_,
-  const config& config_,
-  environment& env_
-) :
-  _displayer(displayer_),
-  _config(config_),
-  _env(env_)
+pragma_mdb::pragma_mdb(shell& shell_) :
+  _shell(shell_)
 {}
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_displayer, _config, _env);
+  return new pragma_mdb(_shell);
 }
 
 std::string pragma_mdb::arguments() const
@@ -54,7 +48,12 @@ void pragma_mdb::run(
 {
   std::string args = tokens_to_string(args_begin_, args_end_);
 
-  readline_mdb_shell mdb_shell(_config, _env, _displayer);
+  readline_mdb_shell
+    mdb_shell(_shell.get_config(), _shell.env(), _shell.displayer());
+  if (_shell.history())
+  {
+    mdb_shell.history(*_shell.history());
+  }
   mdb_shell.display_splash();
 
   if (!args.empty()) {

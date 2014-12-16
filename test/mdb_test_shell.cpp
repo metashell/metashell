@@ -58,10 +58,6 @@ mdb_test_shell::mdb_test_shell(
 
 void mdb_test_shell::run() {}
 
-void mdb_test_shell::add_history(const std::string& str) {
-  history.push_back(str);
-}
-
 bool mdb_test_shell::has_metaprogram() const {
   return static_cast<bool>(mp);
 }
@@ -73,14 +69,5 @@ const metashell::metaprogram& mdb_test_shell::get_metaprogram() const {
 const metashell::mdb_shell::breakpoints_t&
 mdb_test_shell::get_breakpoints() const {
   return breakpoints;
-}
-
-const mdb_test_shell::history_t&
-mdb_test_shell::get_history() const {
-  return history;
-}
-
-void mdb_test_shell::clear_history() {
-  history.clear();
 }
 

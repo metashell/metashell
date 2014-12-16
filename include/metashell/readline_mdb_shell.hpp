@@ -32,8 +32,6 @@ public:
       iface::displayer& displayer_);
 
   virtual void run() override;
-
-  virtual void add_history(const std::string& str) override;
 private:
 
   readline_environment readline_env;

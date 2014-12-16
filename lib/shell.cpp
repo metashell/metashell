@@ -458,8 +458,13 @@ iface::displayer& shell::displayer()
   return _displayer;
 }
 
-void shell::set_history(iface::history& h_)
+void shell::history(iface::history& h_)
 {
   _history = &h_;
+}
+
+iface::history* shell::history()
+{
+  return _history;
 }
 

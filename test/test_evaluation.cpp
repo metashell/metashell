@@ -218,7 +218,7 @@ JUST_TEST_CASE(test_history_is_stored)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config(), d);
-  sh.set_history(h);
+  sh.history(h);
 
   sh.line_available("int");
 
@@ -230,7 +230,7 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config(), d);
-  sh.set_history(h);
+  sh.history(h);
 
   sh.line_available("");
 
@@ -244,7 +244,7 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   shell sh(test_config(), d);
-  sh.set_history(h);
+  sh.history(h);
 
   sh.line_available(" ");
 
@@ -258,7 +258,7 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   shell sh(test_config(), d);
-  sh.set_history(h);
+  sh.history(h);
 
   sh.line_available("int");
   sh.line_available("int");
@@ -291,7 +291,7 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config(), d);
-  sh.set_history(h);
+  sh.history(h);
 
   sh.line_available("// some comment");
 

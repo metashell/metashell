@@ -87,7 +87,8 @@ namespace metashell
 
     const config& get_config() const;
 
-    void set_history(iface::history& h_);
+    void history(iface::history& h_);
+    iface::history* history();
   private:
     std::string _line_prefix;
     std::unique_ptr<environment> _env;

@@ -38,9 +38,5 @@ void readline_mdb_shell::run() {
   displayer().show_raw_text("");
 }
 
-void readline_mdb_shell::add_history(const std::string& str) {
-  readline_env.add_history(str);
-}
-
 }
 

@@ -31,23 +31,12 @@ public:
   );
   mdb_test_shell(metashell::shell& shell, const std::string& line = "");
 
-  typedef std::vector<std::string> history_t;
-
   virtual void run() override;
-
-  virtual void add_history(const std::string& str) override;
 
   bool has_metaprogram() const;
   const metashell::metaprogram& get_metaprogram() const;
 
   const breakpoints_t& get_breakpoints() const;
-
-  const history_t& get_history() const;
-
-  void clear_history();
-
-private:
-  history_t history;
 };
 
 #endif

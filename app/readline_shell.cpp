@@ -80,7 +80,7 @@ readline_shell::readline_shell(
 {
   assert(!_instance);
 
-  _shell.set_history(_history);
+  _shell.history(_history);
   _instance = this;
 
   _shell.display_splash();
