@@ -16,10 +16,11 @@
 
 #include <metashell/mdb_shell.hpp>
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
 #include <just/test.hpp>
 
-#include "test_shell.hpp"
+#include "test_config.hpp"
 #include "mdb_test_shell.hpp"
 #include "util.hpp"
 
@@ -42,7 +43,7 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
 
 JUST_TEST_CASE(test_readme_getting_started) {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   JUST_ASSERT_EQUAL(sh.prompt(), "> ");
   sh.line_available("template <int N> \\");
@@ -308,7 +309,7 @@ JUST_TEST_CASE(test_readme_getting_started) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_readme_how_to_template_argument_deduction) {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#include <vector>");
   sh.line_available("template<class T> void foo(const T& t) { /* ... */ }");

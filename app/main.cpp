@@ -48,7 +48,6 @@ int main(int argc_, const char* argv_[])
       metashell::console_displayer
         displayer(c, cfg.indent, cfg.syntax_highlight);
       readline_shell shell(cfg, displayer);
-      shell.display_splash();
       shell.run();
     }
     return r.should_error_at_exit() ? 1 : 0;

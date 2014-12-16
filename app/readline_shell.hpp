@@ -25,17 +25,19 @@
 #include <vector>
 #include <string>
 
-class readline_shell : public metashell::shell
+class readline_shell
 {
 public:
   readline_shell(
     const metashell::config& config_,
     metashell::iface::displayer& displayer_
   );
-  virtual ~readline_shell() override;
+
+  ~readline_shell();
 
   void run();
 private:
+  metashell::shell _shell;
   metashell::readline_history _history;
   metashell::readline_environment _readline_environment;
 

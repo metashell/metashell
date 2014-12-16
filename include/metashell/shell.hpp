@@ -47,8 +47,6 @@ namespace metashell
       iface::displayer& displayer_
     );
 
-    virtual ~shell();
-
     iface::displayer& displayer();
 
     void display_splash();

@@ -76,12 +76,14 @@ readline_shell::readline_shell(
   const metashell::config& config_,
   iface::displayer& displayer_
 ) :
-  shell(config_, displayer_)
+  _shell(config_, displayer_)
 {
   assert(!_instance);
 
-  set_history(_history);
+  _shell.set_history(_history);
   _instance = this;
+
+  _shell.display_splash();
 }
 
 void readline_shell::run()
@@ -89,12 +91,16 @@ void readline_shell::run()
   _readline_environment.set_rl_attempted_completion_function(
       tab_completion);
 
-  interrupt_handler_override ovr3([this]() { this->cancel_operation(); });
+  interrupt_handler_override
+    ovr3([this]() { this->_shell.cancel_operation(); });
 
-  for (boost::optional<std::string> line;
-      !stopped() && (line = _readline_environment.readline(prompt())); )
+  for (
+    boost::optional<std::string> line;
+    !_shell.stopped()
+    && (line = _readline_environment.readline(_shell.prompt()));
+  )
   {
-    line_available(*line);
+    _shell.line_available(*line);
   }
   std::cout << std::endl;
 }
@@ -111,7 +117,7 @@ char* readline_shell::tab_generator(const char* text_, int state_)
     const std::string edited_text =
       _instance->_readline_environment.get_edited_text();
 
-    _instance->code_complete(
+    _instance->_shell.code_complete(
       std::string(edited_text.begin(), edited_text.begin() + _completion_end),
       values
     );

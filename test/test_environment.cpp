@@ -17,13 +17,14 @@
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
 #include <metashell/config.hpp>
 
 #include <just/test.hpp>
 #include <just/temp.hpp>
 
-#include "test_shell.hpp"
+#include "test_config.hpp"
 #include "argv0.hpp"
 
 #include <algorithm>
@@ -88,7 +89,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
 JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
   const environment* old_env_ptr = &sh.env();
 
   sh.line_available("#msh environment reload");
@@ -113,7 +114,7 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
 JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment foo");
 
@@ -123,7 +124,7 @@ JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment push");
   sh.line_available("#msh environment pop foo");
@@ -134,7 +135,7 @@ JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment push foo");
 
@@ -144,7 +145,7 @@ JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment reload foo");
 
@@ -154,7 +155,7 @@ JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment stack foo");
 
@@ -164,7 +165,7 @@ JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment reset foo");
 
@@ -174,7 +175,7 @@ JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh quit foo");
 
@@ -186,7 +187,7 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
 
   sh.line_available("#msh environment save");
 
@@ -203,7 +204,7 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer disp;
-  test_shell sh(cfg, disp);
+  shell sh(cfg, disp);
 
   sh.line_available("#msh environment save " + fn);
 
@@ -218,7 +219,7 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  test_shell sh(cfg, d);
+  shell sh(cfg, d);
 
   sh.line_available("#msh environment save    ");
 
@@ -232,7 +233,7 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  test_shell sh(cfg, d);
+  shell sh(cfg, d);
 
 #ifdef _WIN32
   sh.line_available("#msh environment save /foo *? bar");

@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
 #include "util.hpp"
-#include "test_shell.hpp"
+#include "test_config.hpp"
 
 #include <just/test.hpp>
 
@@ -27,7 +28,7 @@ metashell::type get_output(
 )
 {
   metashell::in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   if (!test_code_.empty())
   {
     const bool r = sh.store_in_buffer(test_code_);

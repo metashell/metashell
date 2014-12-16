@@ -158,8 +158,6 @@ shell::shell(
   init();
 }
 
-shell::~shell() {}
-
 void shell::cancel_operation() {}
 
 void shell::display_splash()

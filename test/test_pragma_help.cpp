@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
-#include "test_shell.hpp"
+#include "test_config.hpp"
 
 #include <just/test.hpp>
 
@@ -47,7 +48,7 @@ namespace
 JUST_TEST_CASE(test_pragma_help_with_no_arguments)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.line_available("#pragma metashell help");
 
   JUST_ASSERT(!d.comments().empty());
@@ -57,7 +58,7 @@ JUST_TEST_CASE(test_pragma_help_with_no_arguments)
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.line_available("#pragma metashell help foo");
 
   JUST_ASSERT_EMPTY_CONTAINER(d.comments());
@@ -67,7 +68,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.line_available("#pragma metashell help foo bar");
 
   JUST_ASSERT_EMPTY_CONTAINER(d.comments());
@@ -77,7 +78,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
 JUST_TEST_CASE(test_pragma_help_for_a_pragma)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.line_available("#pragma metashell help help");
 
   JUST_ASSERT(!d.comments().empty());
@@ -89,7 +90,7 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.line_available("#msh help environment");
 
   JUST_ASSERT_EQUAL(1u, d.comments().size());

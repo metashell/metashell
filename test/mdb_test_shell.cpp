@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_shell.hpp"
+#include "test_config.hpp"
 #include "mdb_test_shell.hpp"
 
+#include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
@@ -26,7 +27,7 @@ namespace
   metashell::shell& get_shell()
   {
     static metashell::in_memory_displayer d;
-    static test_shell sh(d);
+    static metashell::shell sh(metashell::test_config(), d);
     return sh;
   }
 }

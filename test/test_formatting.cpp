@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util.hpp"
-#include "test_shell.hpp"
+#include "test_config.hpp"
 
+#include <metashell/shell.hpp>
 #include <metashell/path_builder.hpp>
 #include <metashell/in_memory_displayer.hpp>
 
@@ -80,7 +81,7 @@ JUST_TEST_CASE(test_formatting_disabled)
   cfg.max_template_depth = 256;
 
   in_memory_displayer d;
-  test_shell sh(cfg, d);
+  shell sh(cfg, d);
   sh.line_available(
     "template <class... Ts> struct template_with_a_long_name {};"
   );
@@ -99,7 +100,7 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
     metashell::path_builder() / "metashell" / "formatter" / "vector.hpp";
 
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
   sh.line_available("#include <" + vector_hpp + ">");
   sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
 

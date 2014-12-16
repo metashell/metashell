@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_shell.hpp"
+#include "test_config.hpp"
 #include "argv0.hpp"
 
+#include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/user_config.hpp>
 #include <metashell/header_file_environment.hpp>
@@ -34,7 +35,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   cfg.verbose = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -45,7 +46,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   cfg.verbose = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
 
   JUST_ASSERT(sh.verbose());
 }
@@ -56,7 +57,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   cfg.verbose = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -68,7 +69,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   cfg.verbose = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -77,7 +78,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
   metashell::in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
 
   JUST_ASSERT(!sh.stopped());
 }
@@ -85,7 +86,7 @@ JUST_TEST_CASE(test_new_shell_not_stopped)
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
   metashell::in_memory_displayer d;
-  test_shell sh(d);
+  metashell::shell sh(metashell::test_config(), d);
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -97,7 +98,7 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   cfg.use_precompiled_headers = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
@@ -108,7 +109,7 @@ JUST_TEST_CASE(test_shell_using_precompiled_headers)
   cfg.use_precompiled_headers = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
 
   JUST_ASSERT(sh.using_precompiled_headers());
 }
@@ -119,7 +120,7 @@ JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
   cfg.use_precompiled_headers = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(sh.using_precompiled_headers());
@@ -131,7 +132,7 @@ JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
   cfg.use_precompiled_headers = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
@@ -145,7 +146,7 @@ JUST_TEST_CASE(
   cfg.use_precompiled_headers = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(
@@ -162,7 +163,7 @@ JUST_TEST_CASE(
   cfg.use_precompiled_headers = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(
@@ -177,7 +178,7 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
   cfg.use_precompiled_headers = false;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.store_in_buffer("typedef int foo;\n");
   const std::string env_before = sh.env().get_all();
 
@@ -192,7 +193,7 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
   cfg.use_precompiled_headers = true;
 
   metashell::in_memory_displayer d;
-  test_shell sh(cfg, d);
+  metashell::shell sh(cfg, d);
   sh.store_in_buffer("typedef int foo;\n");
   const std::string env_before = sh.env().get_all();
 

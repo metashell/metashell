@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_displayer.hpp>
-#include "test_shell.hpp"
+#include <metashell/shell.hpp>
+#include "test_config.hpp"
 #include "argv0.hpp"
 
 #include <just/test.hpp>
@@ -27,7 +28,7 @@ using namespace metashell;
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
   sh.line_available("typedef int x;");
   sh.line_available("#pragma metashell evaluate x");
 
@@ -38,7 +39,7 @@ JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 {
   in_memory_displayer d;
-  test_shell sh(d);
+  shell sh(test_config(), d);
   sh.line_available("#pragma metashell evaluate nonexisting_type");
 
   JUST_ASSERT(!d.errors().empty());
@@ -47,7 +48,7 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
   in_memory_displayer d;
-  test_shell sh(metashell::empty_config(argv0::get()), d);
+  shell sh(metashell::empty_config(argv0::get()), d);
   sh.line_available("#pragma metashell evaluate int");
 
   JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
