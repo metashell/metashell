@@ -22,6 +22,7 @@
 #include <metashell/pragma_handler_map.hpp>
 
 #include <metashell/iface/displayer.hpp>
+#include <metashell/iface/history.hpp>
 
 #include <just/console.hpp>
 
@@ -40,7 +41,6 @@ namespace metashell
   public:
     shell(const config& config_, iface::displayer& displayer_);
 
-    // Takes ownership of env_
     shell(
       const config& config_,
       std::unique_ptr<environment> env_,
@@ -48,8 +48,6 @@ namespace metashell
     );
 
     virtual ~shell();
-
-    virtual void add_history(const std::string& s_) = 0;
 
     iface::displayer& displayer();
 
@@ -90,6 +88,8 @@ namespace metashell
     void rebuild_environment();
 
     const config& get_config() const;
+
+    void set_history(iface::history& h_);
   private:
     std::string _line_prefix;
     std::unique_ptr<environment> _env;
@@ -99,6 +99,7 @@ namespace metashell
     bool _stopped;
     std::stack<std::string> _environment_stack;
     iface::displayer& _displayer;
+    iface::history* _history; // not owning
 
     void init();
     void rebuild_environment(const std::string& content_);

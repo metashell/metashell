@@ -38,21 +38,11 @@ namespace
 }
 
 test_shell::test_shell(iface::displayer& displayer_) :
-  shell(default_config(), displayer_),
-  _history(0)
+  shell(default_config(), displayer_)
 {}
 
 test_shell::test_shell(const config& cfg_, iface::displayer& displayer_) :
-  shell(cfg_, displayer_),
-  _history(0)
-{}
-
-test_shell::test_shell(
-  std::vector<std::string>& history_,
-  iface::displayer& displayer_
-) :
-  shell(default_config(), displayer_),
-  _history(&history_)
+  shell(cfg_, displayer_)
 {}
 
 test_shell::test_shell(
@@ -60,15 +50,6 @@ test_shell::test_shell(
   std::unique_ptr<environment> env_,
   iface::displayer& displayer_
 ) :
-  shell(cfg_, std::move(env_), displayer_),
-  _history(0)
+  shell(cfg_, std::move(env_), displayer_)
 {}
-
-void test_shell::add_history(const std::string& s_)
-{
-  if (_history)
-  {
-    _history->push_back(s_);
-  }
-}
 

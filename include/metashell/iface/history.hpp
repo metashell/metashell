@@ -1,8 +1,8 @@
-#ifndef METASHELL_TEST_SHELL_HPP
-#define METASHELL_TEST_SHELL_HPP
+#ifndef METASHELL_IFACE_HISTORY_HPP
+#define METASHELL_IFACE_HISTORY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
+#include <string>
 
-#include <vector>
-#include <memory>
-
-class test_shell : public metashell::shell
+namespace metashell
 {
-public:
-  explicit test_shell(metashell::iface::displayer& displayer_);
-  test_shell(
-    const metashell::config& cfg_,
-    metashell::iface::displayer& displayer_
-  );
+  namespace iface
+  {
+    class history
+    {
+    public:
+      virtual ~history() {}
 
-  test_shell(
-    const metashell::config& cfg_,
-    std::unique_ptr<metashell::environment> env_,
-    metashell::iface::displayer& displayer_
-  );
-};
+      virtual void add(const std::string& cmd_) = 0;
+    };
+  }
+}
 
 #endif
 

@@ -1,5 +1,5 @@
-#ifndef METASHELL_SHELL_STUB_HPP
-#define METASHELL_SHELL_STUB_HPP
+#ifndef METASHELL_IN_MEMORY_HISTORY_HPP
+#define METASHELL_IN_MEMORY_HISTORY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,18 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
+#include <metashell/iface/history.hpp>
+
+#include <string>
+#include <vector>
 
 namespace metashell
 {
-  class shell_stub : public shell
+  class in_memory_history : public iface::history
   {
   public:
-    explicit shell_stub(const std::string& argv0_);
+    virtual void add(const std::string& cmd_) override;
 
-    virtual void add_history(const std::string& s_);
-
-    virtual unsigned int width() const;
+    const std::vector<std::string>& commands() const;
+  private:
+    std::vector<std::string> _cmds;
   };
 }
 

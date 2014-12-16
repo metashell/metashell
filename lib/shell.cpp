@@ -133,11 +133,12 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_, iface::displayer& displayer_) :
+shell::shell(const config& config_,iface::displayer& displayer_) :
   _env(),
   _config(config_),
   _stopped(false),
-  _displayer(displayer_)
+  _displayer(displayer_),
+  _history(nullptr)
 {
   rebuild_environment();
   init();
@@ -151,7 +152,8 @@ shell::shell(
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
-  _displayer(displayer_)
+  _displayer(displayer_),
+  _history(nullptr)
 {
   init();
 }
@@ -250,7 +252,10 @@ void shell::line_available(const std::string& s_)
       {
         if (_prev_line != s)
         {
-          add_history(s);
+          if (_history)
+          {
+            _history->add(s);
+          }
           _prev_line = s;
         }
 
@@ -453,5 +458,10 @@ const config& shell::get_config() const {
 iface::displayer& shell::displayer()
 {
   return _displayer;
+}
+
+void shell::set_history(iface::history& h_)
+{
+  _history = &h_;
 }
 

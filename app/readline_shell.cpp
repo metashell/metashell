@@ -79,12 +79,9 @@ readline_shell::readline_shell(
   shell(config_, displayer_)
 {
   assert(!_instance);
-  _instance = this;
-}
 
-void readline_shell::add_history(const std::string& s_)
-{
-  _readline_environment.add_history(s_);
+  set_history(_history);
+  _instance = this;
 }
 
 void readline_shell::run()

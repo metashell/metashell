@@ -1,3 +1,6 @@
+#ifndef METASHELL_READLINE_HISTORY_HPP
+#define METASHELL_READLINE_HISTORY_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,29 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell_stub.hpp>
-#include <metashell/null_displayer.hpp>
+#include <metashell/iface/history.hpp>
 
-using namespace metashell;
+#include <string>
 
-namespace
+namespace metashell
 {
-  iface::displayer& get_null_displayer()
+  class readline_history : public iface::history
   {
-    static null_displayer nd;
-    return nd;
-  }
+  public:
+    virtual void add(const std::string& cmd_) override;
+  };
 }
 
-shell_stub::shell_stub(const std::string& argv0_) :
-  shell(empty_config(argv0_), get_null_displayer())
-{}
-
-void shell_stub::add_history(const std::string&)
-{}
-
-unsigned int shell_stub::width() const
-{
-  return 80;
-}
+#endif
 

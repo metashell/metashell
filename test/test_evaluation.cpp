@@ -20,7 +20,9 @@
 
 #include <metashell/metashell.hpp>
 #include <metashell/path_builder.hpp>
+#include <metashell/null_displayer.hpp>
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/in_memory_history.hpp>
 
 #include <just/test.hpp>
 
@@ -28,7 +30,7 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_non_existing_class)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("hello");
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -37,7 +39,7 @@ JUST_TEST_CASE(test_non_existing_class)
 
 JUST_TEST_CASE(test_accept_empty_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("");
 
@@ -47,7 +49,7 @@ JUST_TEST_CASE(test_accept_empty_input)
 
 JUST_TEST_CASE(test_accept_space_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available(" ");
 
@@ -57,7 +59,7 @@ JUST_TEST_CASE(test_accept_space_input)
 
 JUST_TEST_CASE(test_accept_tab_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("\t");
 
@@ -67,7 +69,7 @@ JUST_TEST_CASE(test_accept_tab_input)
 
 JUST_TEST_CASE(test_accept_vertical_tab_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("\v");
 
@@ -77,7 +79,7 @@ JUST_TEST_CASE(test_accept_vertical_tab_input)
 
 JUST_TEST_CASE(test_accept_new_line_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("\n");
 
@@ -87,7 +89,7 @@ JUST_TEST_CASE(test_accept_new_line_input)
 
 JUST_TEST_CASE(test_accept_carrige_return_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("\r");
 
@@ -97,7 +99,7 @@ JUST_TEST_CASE(test_accept_carrige_return_input)
 
 JUST_TEST_CASE(test_accept_two_space_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("  ");
 
@@ -110,7 +112,7 @@ JUST_TEST_CASE(test_macro_in_config)
   metashell::config cfg;
   cfg.max_template_depth = 20;
   cfg.macros.push_back("FOO=int");
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(cfg, d);
 
   sh.line_available("FOO");
@@ -128,7 +130,7 @@ namespace
     const type& expected_result_
   )
   {
-    metashell::in_memory_displayer d;
+    in_memory_displayer d;
     test_shell sh(d);
 
     sh.line_available(init_line_);
@@ -181,7 +183,7 @@ JUST_TEST_CASE(test_defining_constexpr_function)
   const std::string scalar_hpp =
     metashell::path_builder() / "metashell" / "scalar.hpp";
 
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
 
   sh.line_available("#include <" + scalar_hpp + ">");
@@ -199,7 +201,7 @@ JUST_TEST_CASE(
   test_typedef_in_the_middle_of_a_line_starting_with_an_identifier
 )
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
 
   sh.line_available("struct y;");
@@ -212,58 +214,60 @@ JUST_TEST_CASE(
 
 JUST_TEST_CASE(test_history_is_stored)
 {
-  std::vector<std::string> history;
-  metashell::in_memory_displayer d;
-  test_shell sh(history, d);
+  null_displayer d;
+  in_memory_history h;
+  test_shell sh(d);
+  sh.set_history(h);
 
   sh.line_available("int");
 
-  JUST_ASSERT_EQUAL(1u, history.size());
-  JUST_ASSERT_EQUAL("int", history.front());
+  JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
 
 JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
 {
-  std::vector<std::string> history;
-  metashell::in_memory_displayer d;
-  test_shell sh(history, d);
+  null_displayer d;
+  in_memory_history h;
+  test_shell sh(d);
+  sh.set_history(h);
 
   sh.line_available("");
 
-  JUST_ASSERT_EQUAL(0u, history.size());
+  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
 
 JUST_TEST_CASE(
   test_line_containing_just_whitespace_is_not_stored_in_history
 )
 {
-  std::vector<std::string> history;
-  metashell::in_memory_displayer d;
-  test_shell sh(history, d);
+  null_displayer d;
+  in_memory_history h;
+  test_shell sh(d);
+  sh.set_history(h);
 
   sh.line_available(" ");
 
-  JUST_ASSERT_EQUAL(0u, history.size());
+  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
 
 JUST_TEST_CASE(
   test_the_same_thing_following_each_other_is_not_added_to_history_twice
 )
 {
-  std::vector<std::string> history;
-  metashell::in_memory_displayer d;
-  test_shell sh(history, d);
+  null_displayer d;
+  in_memory_history h;
+  test_shell sh(d);
+  sh.set_history(h);
 
   sh.line_available("int");
   sh.line_available("int");
 
-  JUST_ASSERT_EQUAL(1u, history.size());
-  JUST_ASSERT_EQUAL("int", history.front());
+  JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
 
 JUST_TEST_CASE(test_accept_c_comment_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("/* some comment */");
 
@@ -273,7 +277,7 @@ JUST_TEST_CASE(test_accept_c_comment_input)
 
 JUST_TEST_CASE(test_accept_cpp_comment_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("// some comment");
 
@@ -283,13 +287,14 @@ JUST_TEST_CASE(test_accept_cpp_comment_input)
 
 JUST_TEST_CASE(test_comment_is_stored_in_history)
 {
-  std::vector<std::string> history;
-  metashell::in_memory_displayer d;
-  test_shell sh(history, d);
+  null_displayer d;
+  in_memory_history h;
+  test_shell sh(d);
+  sh.set_history(h);
 
   sh.line_available("// some comment");
 
-  JUST_ASSERT_EQUAL(1u, history.size());
+  JUST_ASSERT_EQUAL(1, h.commands().size());
 }
 
 namespace
@@ -302,7 +307,7 @@ namespace
 
 JUST_TEST_CASE(test_warnings)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
 
   generate_warning(sh);
@@ -314,7 +319,7 @@ JUST_TEST_CASE(test_disabled_warnings)
 {
   metashell::config cfg;
   cfg.warnings_enabled = false;
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(cfg, d);
 
   generate_warning(sh);
@@ -327,7 +332,7 @@ JUST_TEST_CASE(test_extra_clang_arg)
   metashell::config cfg;
   cfg.extra_clang_args.push_back("-DFOO=double");
   cfg.max_template_depth = 20;
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(cfg, d);
 
   sh.line_available("FOO");
@@ -340,7 +345,7 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 {
   metashell::config cfg;
   breaking_environment* e = new breaking_environment(cfg);
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(cfg, std::unique_ptr<breaking_environment>(e), d);
   e->append_throw_from_now();
 
@@ -386,7 +391,7 @@ JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
 
 JUST_TEST_CASE(test_multiline_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("const \\");
   sh.line_available("int");
@@ -397,7 +402,7 @@ JUST_TEST_CASE(test_multiline_input)
 
 JUST_TEST_CASE(test_three_line_input)
 {
-  metashell::in_memory_displayer d;
+  in_memory_displayer d;
   test_shell sh(d);
   sh.line_available("const \\");
   sh.line_available("int \\");
@@ -409,7 +414,7 @@ JUST_TEST_CASE(test_three_line_input)
 
 JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
 {
-  metashell::in_memory_displayer d;
+  null_displayer d;
   test_shell sh(d);
   sh.line_available("const \\");
 
