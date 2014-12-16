@@ -17,21 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem.hpp>
+#include <just/temp.hpp>
 
 namespace metashell {
 
 class temporary_file {
 public:
-  explicit temporary_file(
-      const boost::filesystem::path& model = "%%%%-%%%%-%%%%");
+  explicit temporary_file(const std::string& file_name);
 
-  ~temporary_file();
-
-  boost::filesystem::path get_path() const;
+  std::string get_path() const;
 
 private:
-  boost::filesystem::path path;
+  just::temp::directory dir;
+  std::string file_name;
 };
 
 }
