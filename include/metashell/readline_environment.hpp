@@ -39,7 +39,6 @@ public:
 
   boost::optional<std::string> readline(const std::string& prompt);
   std::string get_edited_text();
-  void add_history(const std::string& line);
   void set_rl_attempted_completion_function(readline_completion_function func);
 
 private:

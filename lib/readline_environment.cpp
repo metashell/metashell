@@ -67,12 +67,6 @@ std::string readline_environment::get_edited_text() {
   return std::string(rl_line_buffer, rl_line_buffer + line_length());
 }
 
-void readline_environment::add_history(const std::string& line) {
-  //TODO save/restore history
-  std::vector<char> l(line.c_str(), line.c_str() + line.size() + 1);
-  ::add_history(l.data());
-}
-
 void readline_environment::set_rl_attempted_completion_function(
     readline_completion_function func)
 {
