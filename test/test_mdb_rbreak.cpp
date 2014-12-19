@@ -27,9 +27,9 @@ using namespace metashell;
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_without_evaluated_metaprogram) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("rbreak int");
+  sh.line_available("rbreak int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Metaprogram not evaluated yet"});
 
@@ -40,12 +40,12 @@ JUST_TEST_CASE(test_mdb_rbreak_without_evaluated_metaprogram) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
+  sh.line_available("evaluate int", d);
 
   d.clear();
-  sh.line_available("rbreak");
+  sh.line_available("rbreak", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument expected"});
 
@@ -56,12 +56,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments_with_trailing_whitespace) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
+  sh.line_available("evaluate int", d);
 
   d.clear();
-  sh.line_available("rbreak ");
+  sh.line_available("rbreak ", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument expected"});
 
@@ -72,12 +72,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments_with_trailing_whitespace) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
+  sh.line_available("evaluate int", d);
 
   d.clear();
-  sh.line_available("rbreak [");
+  sh.line_available("rbreak [", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"\"[\" is not a valid regex"});
 
@@ -88,12 +88,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
+  sh.line_available("evaluate int", d);
 
   d.clear();
-  sh.line_available("rbreak xyz");
+  sh.line_available("rbreak xyz", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {"Breakpoint \"xyz\" will never stop the execution"},
@@ -107,12 +107,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
+  sh.line_available("evaluate int", d);
 
   d.clear();
-  sh.line_available("rbreak int");
+  sh.line_available("rbreak int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {"Breakpoint \"int\" will stop the execution on 1 location"},
@@ -126,12 +126,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
 
   d.clear();
-  sh.line_available("rbreak fib<3>");
+  sh.line_available("rbreak fib<3>", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {"Breakpoint \"fib<3>\" will stop the execution on 2 locations"},
@@ -145,12 +145,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp + "int __x = fib<10>::value;");
+  mdb_test_shell sh(fibonacci_mp + "int __x = fib<10>::value;");
 
-  sh.line_available("evaluate int_<fib<2>::value>");
+  sh.line_available("evaluate int_<fib<2>::value>", d);
 
   d.clear();
-  sh.line_available("rbreak fib");
+  sh.line_available("rbreak fib", d);
 
   // When precompiled headers are used in the outer metashell,
   // then there are 4 break locations
@@ -166,12 +166,12 @@ JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
 
   d.clear();
-  sh.line_available("rbreak fib<3>");
+  sh.line_available("rbreak fib<3>", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {"Breakpoint \"fib<3>\" will stop the execution on 2 locations"},
@@ -185,12 +185,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_only_root) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
 
   d.clear();
-  sh.line_available("rbreak int_<fib<5>::value>");
+  sh.line_available("rbreak int_<fib<5>::value>", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {"Breakpoint \"int_<fib<5>::value>\" will never stop the execution"},
@@ -204,12 +204,12 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_only_root) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_also_root) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
 
   d.clear();
-  sh.line_available("rbreak (int_<fib<5>::value>)|(fib<3>)");
+  sh.line_available("rbreak (int_<fib<5>::value>)|(fib<3>)", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {

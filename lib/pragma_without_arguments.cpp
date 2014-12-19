@@ -19,11 +19,7 @@
 
 using namespace metashell;
 
-pragma_without_arguments::pragma_without_arguments(
-  iface::displayer& displayer_,
-  const std::string& name_
-) :
-  _displayer(displayer_),
+pragma_without_arguments::pragma_without_arguments(const std::string& name_) :
   _name(name_)
 {}
 
@@ -34,24 +30,20 @@ std::string pragma_without_arguments::arguments() const
 
 void pragma_without_arguments::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   if (args_begin_ == args_end_)
   {
-    run();
+    run(displayer_);
   }
   else
   {
-    _displayer.show_error(
+    displayer_.show_error(
       "Invalid arguments for #msh " + _name + ": "
       + tokens_to_string(args_begin_, args_end_)
     );
   }
-}
-
-iface::displayer& pragma_without_arguments::displayer() const
-{
-  return _displayer;
 }
 

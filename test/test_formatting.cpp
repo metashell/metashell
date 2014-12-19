@@ -81,11 +81,12 @@ JUST_TEST_CASE(test_formatting_disabled)
   cfg.max_template_depth = 256;
 
   in_memory_displayer d;
-  shell sh(cfg, d);
+  shell sh(cfg);
   sh.line_available(
-    "template <class... Ts> struct template_with_a_long_name {};"
+    "template <class... Ts> struct template_with_a_long_name {};",
+    d
   );
-  sh.line_available("template_with_a_long_name<int, double, char>");
+  sh.line_available("template_with_a_long_name<int, double, char>", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -100,9 +101,9 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
     metashell::path_builder() / "metashell" / "formatter" / "vector.hpp";
 
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("#include <" + vector_hpp + ">");
-  sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>");
+  shell sh(test_config());
+  sh.line_available("#include <" + vector_hpp + ">", d);
+  sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER(

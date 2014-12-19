@@ -28,10 +28,7 @@ namespace metashell
   class pragma_help : public iface::pragma_handler
   {
   public:
-    pragma_help(
-      iface::displayer& displayer_,
-      const pragma_handler_map& pragma_handlers_
-    );
+    explicit pragma_help(const pragma_handler_map& pragma_handlers_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -40,10 +37,10 @@ namespace metashell
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
   private:
-    iface::displayer& _displayer;
     const pragma_handler_map& _pragma_handlers;
   };
 }

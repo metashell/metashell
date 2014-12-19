@@ -1,8 +1,8 @@
-#ifndef INTERRUPT_HANDLER_OVERRIDE_HPP
-#define INTERRUPT_HANDLER_OVERRIDE_HPP
+#ifndef METASHELL_READLINE_INPUT_LOOP_HPP
+#define METASHELL_READLINE_INPUT_LOOP_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/utility.hpp>
+#include <metashell/command_processor_queue.hpp>
 
-#include <functional>
-
-class interrupt_handler_override : boost::noncopyable
+namespace metashell
 {
-public:
-  interrupt_handler_override(const std::function<void ()>& handler_);
-  ~interrupt_handler_override();
-};
+  void readline_input_loop(
+    command_processor_queue& processor_queue_,
+    iface::displayer& displayer_
+  );
+}
 
 #endif
 

@@ -43,16 +43,17 @@ std::string pragma_evaluate::description() const
 
 void pragma_evaluate::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   const std::string cmd = tokens_to_string(args_begin_, args_end_);
 
-  _shell.run_metaprogram(cmd);
+  _shell.run_metaprogram(cmd, displayer_);
 
   if (!is_environment_setup_command(args_begin_, args_end_))
   {
-    _shell.displayer().show_comment(
+    displayer_.show_comment(
       text{
         paragraph(
           "You don't need the evaluate add pragma to evaluate this metaprogram."
@@ -64,7 +65,7 @@ void pragma_evaluate::run(
   }
   else
   {
-    _shell.displayer().show_comment(
+    displayer_.show_comment(
       text(
         "Metashell (incorrectly) thinks that this command should be added to"
         " the environment and would not execute it as a metaprogram without"

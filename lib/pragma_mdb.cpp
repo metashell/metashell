@@ -19,15 +19,18 @@
 #include <metashell/shell.hpp>
 #include <metashell/readline_mdb_shell.hpp>
 
+#include <cassert>
+
 using namespace metashell;
 
-pragma_mdb::pragma_mdb(shell& shell_) :
-  _shell(shell_)
+pragma_mdb::pragma_mdb(shell& shell_, command_processor_queue* cpq_) :
+  _shell(shell_),
+  _cpq(cpq_)
 {}
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_shell);
+  return new pragma_mdb(_shell, _cpq);
 }
 
 std::string pragma_mdb::arguments() const
@@ -43,23 +46,26 @@ std::string pragma_mdb::description() const
 
 void pragma_mdb::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
+  assert(_cpq != nullptr);
+
   std::string args = tokens_to_string(args_begin_, args_end_);
 
-  readline_mdb_shell
-    mdb_shell(_shell.get_config(), _shell.env(), _shell.displayer());
-  if (_shell.history())
-  {
-    mdb_shell.history(*_shell.history());
+  std::unique_ptr<readline_mdb_shell>
+    mdb_shell(new readline_mdb_shell(_shell.get_config(), _shell.env()));
+
+  if (_shell.history()) {
+    mdb_shell->history(*_shell.history());
   }
-  mdb_shell.display_splash();
+  mdb_shell->display_splash(displayer_);
 
   if (!args.empty()) {
-    mdb_shell.command_evaluate(args);
+    mdb_shell->command_evaluate(args, displayer_);
   }
 
-  mdb_shell.run();
+  _cpq->push(move(mdb_shell));
 }
 

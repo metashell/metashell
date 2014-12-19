@@ -41,11 +41,12 @@ void pragma_handler::swap(pragma_handler& h_)
 
 void pragma_handler::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   assert(_body);
-  _body->run(args_begin_, args_end_);
+  _body->run(args_begin_, args_end_, displayer_);
 }
 
 std::string pragma_handler::arguments() const
@@ -62,13 +63,15 @@ std::string pragma_handler::description() const
 
 void metashell::run(
   const iface::pragma_handler& handler_,
-  const std::string& args_
+  const std::string& args_,
+  iface::displayer& displayer_
 )
 {
   const command cmd(args_);
   handler_.run(
     cmd.begin(),
-    end_of_pragma_argument_list(cmd.begin(), cmd.end())
+    end_of_pragma_argument_list(cmd.begin(), cmd.end()),
+    displayer_
   );
 }
 

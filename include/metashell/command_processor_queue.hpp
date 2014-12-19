@@ -1,3 +1,6 @@
+#ifndef METASHELL_COMMAND_PROCESSOR_QUEUE_HPP
+#define METASHELL_COMMAND_PROCESSOR_QUEUE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,28 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_environment_reload.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/iface/command_processor.hpp>
 
-using namespace metashell;
+#include <vector>
+#include <memory>
 
-pragma_environment_reload::pragma_environment_reload(shell& shell_) :
-  pragma_without_arguments("environment reload"),
-  _shell(shell_)
-{}
-
-iface::pragma_handler* pragma_environment_reload::clone() const
+namespace metashell
 {
-  return new pragma_environment_reload(_shell);
+  class command_processor_queue
+  {
+  public:
+    bool empty() const;
+    void push(std::unique_ptr<iface::command_processor> item_);
+    void pop();
+    void pop_stopped_processors();
+
+    void cancel_operation();
+    void line_available(const std::string& cmd_, iface::displayer& displayer_);
+    void code_complete(
+      const std::string& s_,
+      std::set<std::string>& out_
+    ) const;
+
+    std::string prompt() const;
+  private:
+    std::vector<std::unique_ptr<iface::command_processor>> _items;
+  };
 }
 
-std::string pragma_environment_reload::description() const
-{
-  return "Re-reads the included header files from disc.";
-}
-
-void pragma_environment_reload::run(iface::displayer&) const
-{
-  _shell.rebuild_environment();
-}
+#endif
 

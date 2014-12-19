@@ -25,15 +25,10 @@ namespace metashell {
 
 class readline_mdb_shell : public mdb_shell {
 public:
+  readline_mdb_shell(const config& conf, const environment& env);
 
-  readline_mdb_shell(
-      const config& conf,
-      const environment& env,
-      iface::displayer& displayer_);
-
-  virtual void run() override;
+  virtual void run(iface::displayer& displayer_) override;
 private:
-
   readline_environment readline_env;
 };
 

@@ -25,13 +25,10 @@
 
 class mdb_test_shell : public metashell::mdb_shell {
 public:
-  explicit mdb_test_shell(
-    metashell::iface::displayer& displayer_,
-    const std::string& line = ""
-  );
+  mdb_test_shell(const std::string& line = "");
   mdb_test_shell(metashell::shell& shell, const std::string& line = "");
 
-  virtual void run() override;
+  virtual void run(metashell::iface::displayer& displayer_) override;
 
   bool has_metaprogram() const;
   const metashell::metaprogram& get_metaprogram() const;

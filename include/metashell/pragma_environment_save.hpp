@@ -29,11 +29,7 @@ namespace metashell
   class pragma_environment_save : public iface::pragma_handler
   {
   public:
-    pragma_environment_save(
-      iface::displayer& displayer_,
-      const config& config_,
-      const environment& env_
-    );
+    pragma_environment_save(const config& config_, const environment& env_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -42,10 +38,10 @@ namespace metashell
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
   private:
-    iface::displayer& _displayer;
     const config& _config;
     const environment& _env;
   };

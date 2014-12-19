@@ -18,17 +18,14 @@
 
 using namespace metashell;
 
-pragma_environment::pragma_environment(
-  iface::displayer& displayer_,
-  environment& env_
-) :
-  pragma_without_arguments(displayer_, "environment"),
+pragma_environment::pragma_environment(environment& env_) :
+  pragma_without_arguments("environment"),
   _env(env_)
 {}
 
 iface::pragma_handler* pragma_environment::clone() const
 {
-  return new pragma_environment(displayer(), _env);
+  return new pragma_environment(_env);
 }
 
 std::string pragma_environment::description() const
@@ -36,8 +33,8 @@ std::string pragma_environment::description() const
   return "Displays the entire content of the environment.";
 }
 
-void pragma_environment::run() const
+void pragma_environment::run(iface::displayer& displayer_) const
 {
-  displayer().show_cpp_code(_env.get_all());
+  displayer_.show_cpp_code(_env.get_all());
 }
 

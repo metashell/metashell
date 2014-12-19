@@ -28,13 +28,13 @@ metashell::type get_output(
 )
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), d);
+  metashell::shell sh(metashell::test_config());
   if (!test_code_.empty())
   {
-    const bool r = sh.store_in_buffer(test_code_);
+    const bool r = sh.store_in_buffer(test_code_, d);
     JUST_ASSERT(r);
   }
-  sh.line_available(input_);
+  sh.line_available(input_, d);
   JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL(1u, d.types().size());

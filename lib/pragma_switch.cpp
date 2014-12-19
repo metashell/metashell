@@ -52,18 +52,16 @@ namespace
 pragma_switch::pragma_switch(
   const std::string& name_,
   const std::function<bool()>& query_,
-  const std::function<void(bool)>& update_,
-  iface::displayer& displayer_
+  const std::function<void(bool)>& update_
 ) :
   _query(query_),
   _update(update_),
-  _name(name_),
-  _displayer(displayer_)
+  _name(name_)
 {}
 
 iface::pragma_handler* pragma_switch::clone() const
 {
-  return new pragma_switch(_name, _query, _update, _displayer);
+  return new pragma_switch(_name, _query, _update);
 }
 
 std::string pragma_switch::arguments() const
@@ -80,7 +78,8 @@ std::string pragma_switch::description() const
 
 void pragma_switch::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   command::iterator i = args_begin_;
@@ -97,19 +96,19 @@ void pragma_switch::run(
       }
       else
       {
-        _displayer.show_error(
+        displayer_.show_error(
           "Invalid arguments after " + v + ": " + tokens_to_string(i, args_end_)
         );
       }
     }
     else
     {
-      _displayer.show_error(
+      displayer_.show_error(
         "Invalid argument " + v + ". Valid values are: " + valid_arguments()
       );
     }
   }
-  _displayer.show_comment(
+  displayer_.show_comment(
     text(_name + " is " + (_query() ? "on" : "off"))
   );
 }

@@ -20,7 +20,9 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
+#include <metashell/command_processor_queue.hpp>
 
+#include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 
@@ -36,41 +38,44 @@
 
 namespace metashell
 {
-  class shell
+  class shell : public iface::command_processor
   {
   public:
-    shell(const config& config_, iface::displayer& displayer_);
+    explicit shell(const config& config_);
+
+    shell(const config& config_, command_processor_queue& cpq_);
 
     shell(
       const config& config_,
       std::unique_ptr<environment> env_,
-      iface::displayer& displayer_
+      command_processor_queue& cpq_
     );
 
-    iface::displayer& displayer();
+    void display_splash(iface::displayer& displayer_);
+    virtual void line_available(
+      const std::string& s_,
+      iface::displayer& displayer_
+    ) override;
+    virtual std::string prompt() const override;
 
-    void display_splash();
-    void line_available(const std::string& s_);
-    std::string prompt() const;
+    virtual void cancel_operation() override;
 
-    void cancel_operation();
-
-    bool store_in_buffer(const std::string& s_);
-    void run_metaprogram(const std::string& s_);
+    bool store_in_buffer(const std::string& s_, iface::displayer& displayer_);
+    void run_metaprogram(const std::string& s_, iface::displayer& displayer_);
 
     static const char* input_filename();
 
-    void code_complete(
+    virtual void code_complete(
       const std::string& s_,
       std::set<std::string>& out_
-    ) const;
+    ) const override;
 
     const pragma_handler_map& pragma_handlers() const;
 
     void verbose(bool enabled_);
     bool verbose() const;
 
-    bool stopped() const;
+    virtual bool stopped() const override;
     void stop();
 
     void using_precompiled_headers(bool enabled_);
@@ -82,7 +87,7 @@ namespace metashell
     void reset_environment();
     void push_environment();
     void pop_environment();
-    void display_environment_stack_size();
+    void display_environment_stack_size(iface::displayer& displayer_);
     void rebuild_environment();
 
     const config& get_config() const;
@@ -97,10 +102,9 @@ namespace metashell
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
-    iface::displayer& _displayer;
     iface::history* _history; // not owning
 
-    void init();
+    void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);
   };
 }

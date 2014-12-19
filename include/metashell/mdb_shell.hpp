@@ -31,40 +31,48 @@
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
+#include <metashell/iface/command_processor.hpp>
 
 namespace metashell {
 
-class mdb_shell {
+class mdb_shell : public iface::command_processor {
 public:
   const static mdb_command_handler_map command_handler;
 
   mdb_shell(
       const config& conf,
-      const environment& env,
-      iface::displayer& displayer_);
+      const environment& env);
 
-  virtual ~mdb_shell();
+  virtual void run(iface::displayer& displayer_) = 0;
 
-  virtual void run() = 0;
+  virtual std::string prompt() const override;
+  virtual bool stopped() const override;
 
-  std::string prompt() const;
-  bool stopped() const;
+  void display_splash(iface::displayer& displayer_) const;
+  virtual void line_available(
+    const std::string& line,
+    iface::displayer& displayer_
+  ) override;
+  virtual void cancel_operation() override;
 
-  void display_splash() const;
-  void line_available(const std::string& line);
-
-  void command_continue(const std::string& arg);
-  void command_step(const std::string& arg);
-  void command_evaluate(const std::string& arg);
-  void command_forwardtrace(const std::string& arg);
-  void command_backtrace(const std::string& arg);
-  void command_rbreak(const std::string& arg);
-  void command_help(const std::string& arg);
-  void command_quit(const std::string& arg);
-
-  iface::displayer& displayer();
+  void command_continue(const std::string& arg, iface::displayer& displayer_);
+  void command_step(const std::string& arg, iface::displayer& displayer_);
+  void command_evaluate(const std::string& arg, iface::displayer& displayer_);
+  void command_forwardtrace(
+    const std::string& arg,
+    iface::displayer& displayer_
+  );
+  void command_backtrace(const std::string& arg, iface::displayer& displayer_);
+  void command_rbreak(const std::string& arg, iface::displayer& displayer_);
+  void command_help(const std::string& arg, iface::displayer& displayer_);
+  void command_quit(const std::string& arg, iface::displayer& displayer_);
 
   void history(iface::history& h_);
+
+  virtual void code_complete(
+    const std::string& s_,
+    std::set<std::string>& out_
+  ) const override;
 protected:
   // breakpoint is simply a regex for now
   typedef std::tuple<std::string, boost::regex> breakpoint_t;
@@ -73,12 +81,22 @@ protected:
   bool breakpoint_match(
       metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint);
 
-  bool require_empty_args(const std::string& args) const;
-  bool require_evaluated_metaprogram() const;
-  bool require_running_metaprogram() const;
+  bool require_empty_args(
+    const std::string& args,
+    iface::displayer& displayer_
+  ) const;
+  bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
+  bool require_running_metaprogram(iface::displayer& displayer_) const;
 
-  bool run_metaprogram_with_templight(const std::string& str, bool full_mode);
-  boost::optional<type> run_metaprogram(const std::string& str);
+  bool run_metaprogram_with_templight(
+    const std::string& str,
+    bool full_mode,
+    iface::displayer& displayer_
+  );
+  boost::optional<type> run_metaprogram(
+    const std::string& str,
+    iface::displayer& displayer_
+  );
 
   bool is_wrap_type(const std::string& type);
   std::string trim_wrap_type(const std::string& type);
@@ -92,12 +110,17 @@ protected:
   breakpoints_t::iterator continue_metaprogram(
       metaprogram::direction_t direction);
 
-  void display_current_frame() const;
-  void display_current_forwardtrace(boost::optional<int> max_depth) const;
-  void display_backtrace() const;
-  void display_argument_parsing_failed() const;
-  void display_metaprogram_reached_the_beginning() const;
-  void display_metaprogram_finished() const;
+  void display_current_frame(iface::displayer& displayer_) const;
+  void display_current_forwardtrace(
+    boost::optional<int> max_depth,
+    iface::displayer& displayer_
+  ) const;
+  void display_backtrace(iface::displayer& displayer_) const;
+  void display_argument_parsing_failed(iface::displayer& displayer_) const;
+  void display_metaprogram_reached_the_beginning(
+    iface::displayer& displayer_
+  ) const;
+  void display_metaprogram_finished(iface::displayer& displayer_) const;
 
   config conf;
   templight_environment env;
@@ -111,7 +134,6 @@ protected:
   bool is_stopped = false;
 
 private:
-  iface::displayer& _displayer;
   iface::history* _history; // not owning
 };
 

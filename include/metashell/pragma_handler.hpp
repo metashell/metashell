@@ -41,13 +41,18 @@ namespace metashell
 
     void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const;
   private:
     boost::scoped_ptr<iface::pragma_handler> _body;
   };
 
-  void run(const iface::pragma_handler& handler_, const std::string& args_);
+  void run(
+    const iface::pragma_handler& handler_,
+    const std::string& args_,
+    iface::displayer& displayer_
+  );
 }
 
 #endif

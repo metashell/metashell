@@ -29,23 +29,18 @@ namespace metashell
   class pragma_without_arguments : public iface::pragma_handler
   {
   public:
-    pragma_without_arguments(
-      iface::displayer& displayer_,
-      const std::string& name_
-    );
+    explicit pragma_without_arguments(const std::string& name_);
 
     virtual std::string arguments() const override;
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
 
-    virtual void run() const = 0;
-
-    iface::displayer& displayer() const;
+    virtual void run(iface::displayer& displayer_) const = 0;
   private:
-    iface::displayer& _displayer;
     std::string _name;
   };
 }

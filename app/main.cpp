@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "readline_shell.hpp"
-
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/console_displayer.hpp>
 #include <metashell/stdout_console.hpp>
+#include <metashell/readline_input_loop.hpp>
+#include <metashell/readline_history.hpp>
+#include <metashell/shell.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -47,8 +48,19 @@ int main(int argc_, const char* argv_[])
       metashell::stdout_console c;
       metashell::console_displayer
         displayer(c, cfg.indent, cfg.syntax_highlight);
-      readline_shell shell(cfg, displayer);
-      shell.run();
+      metashell::readline_history history;
+      metashell::command_processor_queue processor_queue;
+
+      std::unique_ptr<metashell::shell>
+        shell(new metashell::shell(cfg, processor_queue));
+
+      shell->history(history);
+      shell->display_splash(displayer);
+
+      processor_queue.push(move(shell));
+
+      metashell::readline_input_loop(processor_queue, displayer);
+      std::cout << std::endl;
     }
     return r.should_error_at_exit() ? 1 : 0;
   }

@@ -132,17 +132,13 @@ config set_pch_false(config c) {
 
 mdb_shell::mdb_shell(
     const config& conf_,
-    const environment& env_arg,
-    iface::displayer& displayer_) :
+    const environment& env_arg) :
   conf(set_pch_false(conf_)),
   env(conf),
-  _displayer(displayer_),
   _history(nullptr)
 {
   env.append(env_arg.get_all());
 }
-
-mdb_shell::~mdb_shell() {}
 
 std::string mdb_shell::prompt() const {
   return "(mdb) ";
@@ -152,11 +148,14 @@ bool mdb_shell::stopped() const {
   return is_stopped;
 }
 
-void mdb_shell::display_splash() const {
-  _displayer.show_raw_text("For help, type \"help\".");
+void mdb_shell::display_splash(iface::displayer& displayer_) const {
+  displayer_.show_raw_text("For help, type \"help\".");
 }
 
-void mdb_shell::line_available(const std::string& line_arg) {
+void mdb_shell::line_available(
+    const std::string& line_arg,
+    iface::displayer& displayer_)
+{
 
   try {
     using boost::algorithm::all;
@@ -183,7 +182,7 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     auto command_arg_pair = command_handler.get_command_for_line(line);
     if (!command_arg_pair) {
-      _displayer.show_error("Command parsing failed\n");
+      displayer_.show_error("Command parsing failed\n");
       last_command_repeatable = false;
       return;
     }
@@ -194,11 +193,11 @@ void mdb_shell::line_available(const std::string& line_arg) {
 
     last_command_repeatable = cmd.is_repeatable();
 
-    (this->*cmd.get_func())(args);
+    (this->*cmd.get_func())(args, displayer_);
   } catch (const std::exception& ex) {
-    _displayer.show_error(std::string("Error: ") + ex.what() + "\n");
+    displayer_.show_error(std::string("Error: ") + ex.what() + "\n");
   } catch (...) {
-    _displayer.show_error("Unknown error\n");
+    displayer_.show_error("Unknown error\n");
   }
 }
 bool mdb_shell::breakpoint_match(
@@ -208,36 +207,45 @@ bool mdb_shell::breakpoint_match(
       mp->get_vertex_property(vertex).name, std::get<1>(breakpoint));
 }
 
-bool mdb_shell::require_empty_args(const std::string& args) const {
+bool mdb_shell::require_empty_args(
+    const std::string& args,
+    iface::displayer& displayer_) const
+{
   if (!args.empty()) {
-    _displayer.show_error("This command doesn't accept arguments");
+    displayer_.show_error("This command doesn't accept arguments");
     return false;
   }
   return true;
 }
 
-bool mdb_shell::require_evaluated_metaprogram() const {
+bool mdb_shell::require_evaluated_metaprogram(
+    iface::displayer& displayer_) const
+{
   if (!mp) {
-    _displayer.show_error("Metaprogram not evaluated yet");
+    displayer_.show_error("Metaprogram not evaluated yet");
     return false;
   }
   return true;
 }
 
-bool mdb_shell::require_running_metaprogram() const {
-  if (!require_evaluated_metaprogram()) {
+bool mdb_shell::require_running_metaprogram(iface::displayer& displayer_) const
+{
+  if (!require_evaluated_metaprogram(displayer_)) {
     return false;
   }
 
   if (mp->is_finished()) {
-    display_metaprogram_finished();
+    display_metaprogram_finished(displayer_);
     return false;
   }
   return true;
 }
 
-void mdb_shell::command_continue(const std::string& arg) {
-  if (!require_evaluated_metaprogram()) {
+void mdb_shell::command_continue(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_evaluated_metaprogram(displayer_)) {
     return;
   }
 
@@ -261,7 +269,7 @@ void mdb_shell::command_continue(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_argument_parsing_failed();
+    display_argument_parsing_failed(displayer_);
     return;
   }
 
@@ -281,22 +289,25 @@ void mdb_shell::command_continue(const std::string& arg) {
 
   if (mp->is_finished()) {
     if (continue_count > 0) {
-      display_metaprogram_finished();
+      display_metaprogram_finished(displayer_);
     }
   } else if (mp->is_at_start()) {
     if (continue_count < 0) {
-      display_metaprogram_reached_the_beginning();
+      display_metaprogram_reached_the_beginning(displayer_);
     }
   } else {
     assert(breakpoint_it != breakpoints.end());
-    _displayer.show_raw_text(
+    displayer_.show_raw_text(
         "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
-    display_current_frame();
+    display_current_frame(displayer_);
   }
 }
 
-void mdb_shell::command_step(const std::string& arg) {
-  if (!require_evaluated_metaprogram()) {
+void mdb_shell::command_step(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_evaluated_metaprogram(displayer_)) {
     return;
   }
 
@@ -323,7 +334,7 @@ void mdb_shell::command_step(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_argument_parsing_failed();
+    display_argument_parsing_failed(displayer_);
     return;
   }
 
@@ -360,14 +371,14 @@ void mdb_shell::command_step(const std::string& arg) {
 
   if (mp->is_finished()) {
     if (step_count > 0) {
-      display_metaprogram_finished();
+      display_metaprogram_finished(displayer_);
     }
   } else if (mp->is_at_start()) {
     if (step_count < 0) {
-      display_metaprogram_reached_the_beginning();
+      display_metaprogram_reached_the_beginning(displayer_);
     }
   } else {
-    display_current_frame();
+    display_current_frame(displayer_);
   }
 }
 
@@ -505,7 +516,10 @@ void mdb_shell::filter_metaprogram() {
   filter_similar_edges();
 }
 
-void mdb_shell::command_evaluate(const std::string& arg) {
+void mdb_shell::command_evaluate(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
   // Easier not to use spirit here (or probably not...)
 
   using boost::starts_with;
@@ -521,7 +535,7 @@ void mdb_shell::command_evaluate(const std::string& arg) {
 
   if (type.empty()) {
     if (!mp) {
-      _displayer.show_error("Nothing has been evaluated yet.");
+      displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
     type = mp->get_vertex_property(mp->get_root_vertex()).name;
@@ -529,16 +543,19 @@ void mdb_shell::command_evaluate(const std::string& arg) {
 
   breakpoints.clear();
 
-  if (!run_metaprogram_with_templight(type, has_full)) {
+  if (!run_metaprogram_with_templight(type, has_full, displayer_)) {
     return;
   }
-  _displayer.show_raw_text("Metaprogram started");
+  displayer_.show_raw_text("Metaprogram started");
 
   filter_metaprogram();
 }
 
-void mdb_shell::command_forwardtrace(const std::string& arg) {
-  if (!require_running_metaprogram()) {
+void mdb_shell::command_forwardtrace(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_running_metaprogram(displayer_)) {
     return;
   }
 
@@ -564,26 +581,34 @@ void mdb_shell::command_forwardtrace(const std::string& arg) {
     );
 
   if (!result || begin != end) {
-    display_argument_parsing_failed();
+    display_argument_parsing_failed(displayer_);
     return;
   }
 
-  display_current_forwardtrace(max_depth);
+  display_current_forwardtrace(max_depth, displayer_);
 }
 
-void mdb_shell::command_backtrace(const std::string& arg) {
-  if (!require_empty_args(arg) || !require_running_metaprogram()) {
-    return;
+void mdb_shell::command_backtrace(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (
+    require_empty_args(arg, displayer_)
+    && require_running_metaprogram(displayer_)
+  ) {
+    display_backtrace(displayer_);
   }
-  display_backtrace();
 }
 
-void mdb_shell::command_rbreak(const std::string& arg) {
+void mdb_shell::command_rbreak(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
   if (arg.empty()) {
-    _displayer.show_error("Argument expected");
+    displayer_.show_error("Argument expected");
     return;
   }
-  if (!require_evaluated_metaprogram()) {
+  if (!require_evaluated_metaprogram(displayer_)) {
     return;
   }
   try {
@@ -596,39 +621,49 @@ void mdb_shell::command_rbreak(const std::string& arg) {
       }
     }
     if (match_count == 0) {
-      _displayer.show_raw_text(
+      displayer_.show_raw_text(
           "Breakpoint \"" + arg + "\" will never stop the execution");
     } else {
-      _displayer.show_raw_text(
+      displayer_.show_raw_text(
           "Breakpoint \"" + arg + "\" will stop the execution on " +
           std::to_string(match_count) +
           (match_count > 1 ? " locations" : " location"));
       breakpoints.push_back(breakpoint);
     }
   } catch (const boost::regex_error&) {
-    _displayer.show_error("\"" + arg + "\" is not a valid regex");
+    displayer_.show_error("\"" + arg + "\" is not a valid regex");
   }
 }
 
-void mdb_shell::command_help(const std::string& arg) {
+void mdb_shell::command_help(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
   if (arg.empty()) {
-    _displayer.show_raw_text("List of available commands:");
-    _displayer.show_raw_text("");
+    displayer_.show_raw_text("List of available commands:");
+    displayer_.show_raw_text("");
     for (const mdb_command& cmd : command_handler.get_commands()) {
-      _displayer.show_raw_text(
+      displayer_.show_raw_text(
           cmd.get_keys().front() + " -- " +
           cmd.get_short_description());
     }
-    _displayer.show_raw_text("");
-    _displayer.show_raw_text("Type \"help\" followed by a command name for more information.");
-    _displayer.show_raw_text("Command name abbreviations are allowed if unambiguous.");
-    _displayer.show_raw_text("A blank line as an input will repeat the last command, if it makes sense.");
+    displayer_.show_raw_text("");
+    displayer_.show_raw_text(
+      "Type \"help\" followed by a command name for more information."
+    );
+    displayer_.show_raw_text(
+      "Command name abbreviations are allowed if unambiguous."
+    );
+    displayer_.show_raw_text(
+      "A blank line as an input will repeat the last command,"
+      " if it makes sense."
+    );
     return;
   }
 
   auto command_arg_pair = command_handler.get_command_for_line(arg);
   if (!command_arg_pair) {
-    _displayer.show_error("Command not found\n");
+    displayer_.show_error("Command not found\n");
     return;
   }
 
@@ -639,30 +674,33 @@ void mdb_shell::command_help(const std::string& arg) {
   std::tie(cmd, command_args) = *command_arg_pair;
 
   if (!command_args.empty()) {
-    _displayer.show_error("Only one argument expected\n");
+    displayer_.show_error("Only one argument expected\n");
     return;
   }
 
-  _displayer.show_raw_text(join(cmd.get_keys(), "|") + " " + cmd.get_usage());
-  _displayer.show_raw_text(cmd.get_full_description());
+  displayer_.show_raw_text(join(cmd.get_keys(), "|") + " " + cmd.get_usage());
+  displayer_.show_raw_text(cmd.get_full_description());
 }
 
-void mdb_shell::command_quit(const std::string& arg) {
-  if (!require_empty_args(arg)) {
+void mdb_shell::command_quit(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_empty_args(arg, displayer_)) {
     return;
   }
   is_stopped = true;
 }
 
 bool mdb_shell::run_metaprogram_with_templight(
-    const std::string& str, bool full_mode)
+    const std::string& str, bool full_mode, iface::displayer& displayer_)
 {
   temporary_file templight_xml_file("templight.xml");
   std::string xml_path = templight_xml_file.get_path();
 
   env.set_xml_location(xml_path);
 
-  boost::optional<type> evaluation_result = run_metaprogram(str);
+  boost::optional<type> evaluation_result = run_metaprogram(str, displayer_);
 
   if (!evaluation_result) {
     mp = boost::none;
@@ -675,17 +713,18 @@ bool mdb_shell::run_metaprogram_with_templight(
 }
 
 boost::optional<type> mdb_shell::run_metaprogram(
-    const std::string& str)
+    const std::string& str,
+    iface::displayer& displayer_)
 {
   result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
 
   if (!res.info.empty()) {
-    _displayer.show_raw_text(res.info);
+    displayer_.show_raw_text(res.info);
   }
 
   if (res.has_errors()) {
     for (const std::string& e : res.errors) {
-      _displayer.show_error(e);
+      displayer_.show_error(e);
     }
     return boost::none;
   }
@@ -710,18 +749,19 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
   }
 }
 
-void mdb_shell::display_current_frame() const {
+void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
   assert(mp);
   assert(!mp->is_at_start());
   assert(!mp->is_finished());
 
-  _displayer.show_frame(mp->get_current_frame());
+  displayer_.show_frame(mp->get_current_frame());
 }
 
 void mdb_shell::display_current_forwardtrace(
-    boost::optional<int> max_depth) const
+    boost::optional<int> max_depth,
+    iface::displayer& displayer_) const
 {
-  _displayer.show_call_graph(
+  displayer_.show_call_graph(
     boost::make_iterator_range(
       forward_trace_iterator(*mp, max_depth),
       forward_trace_iterator()
@@ -729,29 +769,42 @@ void mdb_shell::display_current_forwardtrace(
   );
 }
 
-void mdb_shell::display_backtrace() const {
-  _displayer.show_backtrace(mp->get_backtrace());
+void mdb_shell::display_backtrace(iface::displayer& displayer_) const {
+  displayer_.show_backtrace(mp->get_backtrace());
 }
 
-void mdb_shell::display_argument_parsing_failed() const {
-  _displayer.show_error("Argument parsing failed");
+void mdb_shell::display_argument_parsing_failed(
+    iface::displayer& displayer_) const
+{
+  displayer_.show_error("Argument parsing failed");
 }
 
-void mdb_shell::display_metaprogram_reached_the_beginning() const {
-  _displayer.show_raw_text("Metaprogram reached the beginning");
+void mdb_shell::display_metaprogram_reached_the_beginning(
+    iface::displayer& displayer_) const
+{
+  displayer_.show_raw_text("Metaprogram reached the beginning");
 }
 
-void mdb_shell::display_metaprogram_finished() const {
-  _displayer.show_raw_text("Metaprogram finished");
-  _displayer.show_type(mp->get_evaluation_result());
-}
-
-iface::displayer& mdb_shell::displayer() {
-  return _displayer;
+void mdb_shell::display_metaprogram_finished(
+    iface::displayer& displayer_) const
+{
+  displayer_.show_raw_text("Metaprogram finished");
+  displayer_.show_type(mp->get_evaluation_result());
 }
 
 void mdb_shell::history(iface::history& h_) {
   _history = &h_;
+}
+
+void mdb_shell::cancel_operation() {
+  // TODO
+}
+
+void mdb_shell::code_complete(
+    const std::string&,
+    std::set<std::string>&) const
+{
+  // TODO
 }
 
 }

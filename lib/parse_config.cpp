@@ -73,9 +73,9 @@ namespace
   void show_pragma_help()
   {
     const config cfg;
-    null_displayer d;
-    shell sh(cfg, d);
-    const pragma_handler_map m = pragma_handler_map::build_default(sh);
+    command_processor_queue cpq;
+    shell sh(cfg, cpq);
+    const pragma_handler_map m = pragma_handler_map::build_default(sh, &cpq);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)

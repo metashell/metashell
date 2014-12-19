@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler_map.hpp>
+#include <metashell/null_displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <just/test.hpp>
@@ -28,15 +29,19 @@ namespace
   public:
     explicit test_handler(bool& run_flag_) : _run_flag(run_flag_) {}
 
-    virtual iface::pragma_handler* clone() const
+    virtual iface::pragma_handler* clone() const override
     {
       return new test_handler(_run_flag);
     }
 
-    virtual std::string arguments() const { return "a|b|c"; }
-    virtual std::string description() const { return "Foo bar"; }
+    virtual std::string arguments() const override { return "a|b|c"; }
+    virtual std::string description() const override { return "Foo bar"; }
 
-    virtual void run(const command::iterator&, const command::iterator&) const
+    virtual void run(
+      const command::iterator&,
+      const command::iterator&,
+      iface::displayer&
+    ) const override
     {
       _run_flag = true;
     }
@@ -47,8 +52,9 @@ namespace
 
 JUST_TEST_CASE(test_test_handler_sets_run_flag)
 {
+  null_displayer d;
   bool flag = false;
-  run(test_handler(flag), "foo");
+  run(test_handler(flag), "foo", d);
 
   JUST_ASSERT(flag);
 }
@@ -58,7 +64,8 @@ JUST_TEST_CASE(test_processing_non_existing_handler)
   pragma_handler_map m;
   const command cmd(/* #pragma metashell */ "foo");
 
-  JUST_ASSERT_THROWS_SOMETHING(m.process(cmd.begin(), cmd.end()));
+  null_displayer d;
+  JUST_ASSERT_THROWS_SOMETHING(m.process(cmd.begin(), cmd.end(), d));
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)
@@ -68,7 +75,8 @@ JUST_TEST_CASE(test_processing_existing_handler)
   m.add("foo", test_handler(foo_run));
   const command cmd(/* #pragma metashell */ "foo");
 
-  m.process(cmd.begin(), cmd.end());
+  null_displayer d;
+  m.process(cmd.begin(), cmd.end(), d);
 
   JUST_ASSERT(foo_run);
 }
@@ -80,7 +88,8 @@ JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
   m.add("foo", "bar", test_handler(foo_bar_run));
   const command cmd(/* #pragma metashell */ "foo bar");
 
-  m.process(cmd.begin(), cmd.end());
+  null_displayer d;
+  m.process(cmd.begin(), cmd.end(), d);
 
   JUST_ASSERT(foo_bar_run);
 }
@@ -96,7 +105,8 @@ JUST_TEST_CASE(
   m.add("foo", "bar", test_handler(foo_bar_run));
   const command cmd(/* #pragma metashell */ "foo bar");
 
-  m.process(cmd.begin(), cmd.end());
+  null_displayer d;
+  m.process(cmd.begin(), cmd.end(), d);
 
   JUST_ASSERT(!foo_run);
   JUST_ASSERT(foo_bar_run);
@@ -111,7 +121,8 @@ JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
   m.add("foo", "bar", test_handler(foo_bar_run));
   const command cmd(/* #pragma metashell */ "foo x");
 
-  m.process(cmd.begin(), cmd.end());
+  null_displayer d;
+  m.process(cmd.begin(), cmd.end(), d);
 
   JUST_ASSERT(foo_run);
   JUST_ASSERT(!foo_bar_run);

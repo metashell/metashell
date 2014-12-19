@@ -25,17 +25,16 @@ namespace metashell {
 
 readline_mdb_shell::readline_mdb_shell(
     const config& conf,
-    const environment& env,
-    iface::displayer& displayer_) :
-  mdb_shell(conf, env, displayer_) {}
+    const environment& env) :
+  mdb_shell(conf, env) {}
 
-void readline_mdb_shell::run() {
+void readline_mdb_shell::run(iface::displayer& displayer_) {
   for (boost::optional<std::string> line;
       !stopped() && (line = readline_env.readline(prompt())); )
   {
-    line_available(*line);
+    line_available(*line, displayer_);
   }
-  displayer().show_raw_text("");
+  displayer_.show_raw_text("");
 }
 
 }

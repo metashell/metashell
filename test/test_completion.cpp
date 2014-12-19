@@ -24,8 +24,7 @@
 
 JUST_TEST_CASE(test_simple_completion)
 {
-  metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), d);
+  metashell::shell sh(metashell::test_config());
 
   JUST_ASSERT_EQUAL(string_set(), string_set(sh, "no_completion_for_this"));
   JUST_ASSERT_EQUAL(string_set("e"), string_set(sh, "doubl"));
@@ -37,7 +36,7 @@ JUST_TEST_CASE(test_simple_completion)
 JUST_TEST_CASE(test_member_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), d);
+  metashell::shell sh(metashell::test_config());
   sh.store_in_buffer(
     "struct foo"
     "{"
@@ -46,7 +45,8 @@ JUST_TEST_CASE(test_member_completion)
 
       "double mem1;"
       "char mem2;"
-    "};"
+    "};",
+    d
   );
 
   const string_set members_of_foo("~foo", "mem2", "mem1", "foo", "operator=");
@@ -72,7 +72,7 @@ JUST_TEST_CASE(test_member_completion)
 JUST_TEST_CASE(test_template_member_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), d);
+  metashell::shell sh(metashell::test_config());
   sh.store_in_buffer(
     "template <class T>"
     "struct foo"
@@ -82,7 +82,8 @@ JUST_TEST_CASE(test_template_member_completion)
 
       "double mem1;"
       "char mem2;"
-    "};"
+    "};",
+    d
   );
 
   const string_set members_of_foo("~foo", "mem2", "mem1", "foo", "operator=");
@@ -111,8 +112,8 @@ JUST_TEST_CASE(test_template_member_completion)
 JUST_TEST_CASE(test_included_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), d);
-  sh.store_in_buffer("#include <vector>");
+  metashell::shell sh(metashell::test_config());
+  sh.store_in_buffer("#include <vector>", d);
 
   JUST_ASSERT_EQUAL(string_set("r"), string_set(sh, "std::vecto"));
 }

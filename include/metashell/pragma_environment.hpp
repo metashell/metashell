@@ -25,16 +25,13 @@ namespace metashell
   class pragma_environment : public pragma_without_arguments
   {
   public:
-    explicit pragma_environment(
-      iface::displayer& displayer_,
-      environment& env_
-    );
+    explicit pragma_environment(environment& env_);
 
     virtual iface::pragma_handler* clone() const override;
 
     virtual std::string description() const override;
 
-    virtual void run() const override;
+    virtual void run(iface::displayer& displayer_) const override;
   private:
     environment& _env;
   };

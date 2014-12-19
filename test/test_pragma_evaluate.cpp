@@ -28,9 +28,9 @@ using namespace metashell;
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("typedef int x;");
-  sh.line_available("#pragma metashell evaluate x");
+  shell sh(test_config());
+  sh.line_available("typedef int x;", d);
+  sh.line_available("#pragma metashell evaluate x", d);
 
   JUST_ASSERT(!d.types().empty());
   JUST_ASSERT_EQUAL(type("int"), d.types().front());
@@ -39,8 +39,8 @@ JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("#pragma metashell evaluate nonexisting_type");
+  shell sh(test_config());
+  sh.line_available("#pragma metashell evaluate nonexisting_type", d);
 
   JUST_ASSERT(!d.errors().empty());
 }
@@ -48,8 +48,8 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
   in_memory_displayer d;
-  shell sh(metashell::empty_config(argv0::get()), d);
-  sh.line_available("#pragma metashell evaluate int");
+  shell sh(metashell::empty_config(argv0::get()));
+  sh.line_available("#pragma metashell evaluate int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
   JUST_ASSERT_EQUAL_CONTAINER(

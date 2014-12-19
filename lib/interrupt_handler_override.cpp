@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "interrupt_handler_override.hpp"
+#include <metashell/interrupt_handler_override.hpp>
 
 #include <cassert>
 
 #ifndef _MSC_VER
   #include <signal.h>
 #endif
+
+using namespace metashell;
 
 namespace
 {

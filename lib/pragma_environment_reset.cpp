@@ -20,7 +20,7 @@
 using namespace metashell;
 
 pragma_environment_reset::pragma_environment_reset(shell& shell_) :
-  pragma_without_arguments(shell_.displayer(), "environment reset"),
+  pragma_without_arguments("environment reset"),
   _shell(shell_)
 {}
 
@@ -36,7 +36,7 @@ std::string pragma_environment_reset::description() const
     " It does not change the environment stack.";
 }
 
-void pragma_environment_reset::run() const
+void pragma_environment_reset::run(iface::displayer&) const
 {
   _shell.reset_environment();
 }

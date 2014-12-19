@@ -78,17 +78,13 @@ namespace
   }
 }
 
-pragma_help::pragma_help(
-  iface::displayer& displayer_,
-  const pragma_handler_map& pragma_handlers_
-) :
-  _displayer(displayer_),
+pragma_help::pragma_help(const pragma_handler_map& pragma_handlers_) :
   _pragma_handlers(pragma_handlers_)
 {}
 
 iface::pragma_handler* pragma_help::clone() const
 {
-  return new pragma_help(_displayer, _pragma_handlers);
+  return new pragma_help(_pragma_handlers);
 }
 
 std::string pragma_help::arguments() const
@@ -103,14 +99,15 @@ std::string pragma_help::description() const
 
 void pragma_help::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   using boost::algorithm::join;
 
   if (args_begin_ == args_end_)
   {
-    display_all(_displayer, _pragma_handlers);
+    display_all(displayer_, _pragma_handlers);
   }
   else
   {
@@ -158,11 +155,11 @@ void pragma_help::run(
     }
     if (was_pragma)
     {
-      _displayer.show_comment(help_text);
+      displayer_.show_comment(help_text);
     }
     else
     {
-      _displayer.show_error("Pragma " + join(args, " ") + " not found.");
+      displayer_.show_error("Pragma " + join(args, " ") + " not found.");
     }
   }
 }

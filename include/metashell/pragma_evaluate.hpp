@@ -37,7 +37,8 @@ namespace metashell
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
   private:
     shell& _shell;

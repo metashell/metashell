@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell.hpp>
+#include <metashell/command_processor_queue.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <string>
@@ -27,7 +28,7 @@ namespace metashell
   class pragma_mdb : public iface::pragma_handler
   {
   public:
-    explicit pragma_mdb(shell& shell_);
+    pragma_mdb(shell& shell_, command_processor_queue* cpq_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -36,10 +37,12 @@ namespace metashell
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
   private:
     shell& _shell;
+    command_processor_queue* _cpq;
   };
 }
 

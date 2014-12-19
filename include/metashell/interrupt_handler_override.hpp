@@ -1,5 +1,5 @@
-#ifndef READLINE_SHELL_HPP
-#define READLINE_SHELL_HPP
+#ifndef METASHELL_INTERRUPT_HANDLER_OVERRIDE_HPP
+#define METASHELL_INTERRUPT_HANDLER_OVERRIDE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,37 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
-#include <metashell/config.hpp>
-#include <metashell/readline_environment.hpp>
-#include <metashell/readline_history.hpp>
+#include <boost/utility.hpp>
 
-#include <vector>
-#include <string>
+#include <functional>
 
-class readline_shell
+namespace metashell
 {
-public:
-  readline_shell(
-    const metashell::config& config_,
-    metashell::iface::displayer& displayer_
-  );
-
-  ~readline_shell();
-
-  void run();
-private:
-  metashell::shell _shell;
-  metashell::readline_history _history;
-  metashell::readline_environment _readline_environment;
-
-  static char* tab_generator(const char* text_, int state_);
-  static char** tab_completion(const char* text_, int start_, int end_);
-
-  static readline_shell* _instance;
-
-  static int _completion_end;
-};
+  class interrupt_handler_override : boost::noncopyable
+  {
+  public:
+    interrupt_handler_override(const std::function<void ()>& handler_);
+    ~interrupt_handler_override();
+  };
+}
 
 #endif
 

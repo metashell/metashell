@@ -46,10 +46,9 @@ namespace
         {
           was_called = true;
           arg = value_;
-        },
-        d
+        }
       );
-    run(p, arg_);
+    run(p, arg_, d);
 
     JUST_ASSERT(was_called);
     JUST_ASSERT_EQUAL(ExpectedResult, arg);
@@ -69,8 +68,8 @@ JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
 {
   in_memory_displayer d;
 
-  pragma_switch p("test", always<true>, [](bool) {}, d);
-  run(p, "on foo");
+  pragma_switch p("test", always<true>, [](bool) {});
+  run(p, "on foo", d);
 
   JUST_ASSERT(!d.errors().empty());
 }

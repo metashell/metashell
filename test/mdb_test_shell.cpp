@@ -20,43 +20,30 @@
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
-#include <metashell/in_memory_displayer.hpp>
 
 namespace
 {
   metashell::shell& get_shell()
   {
-    static metashell::in_memory_displayer d;
-    static metashell::shell sh(metashell::test_config(), d);
+    static metashell::shell sh(metashell::test_config());
     return sh;
   }
 }
 
-mdb_test_shell::mdb_test_shell(
-  metashell::iface::displayer& displayer_,
-  const std::string& line
-) :
-  metashell::mdb_shell(
-      get_shell().get_config(),
-      get_shell().env(),
-      displayer_
-  )
+mdb_test_shell::mdb_test_shell(const std::string& line) :
+  metashell::mdb_shell(get_shell().get_config(), get_shell().env())
 {
   env.append(line);
 }
 
 mdb_test_shell::mdb_test_shell(
     metashell::shell& shell, const std::string& line) :
-  metashell::mdb_shell(
-      shell.get_config(),
-      shell.env(),
-      shell.displayer()
-  )
+  metashell::mdb_shell(shell.get_config(), shell.env())
 {
   env.append(line);
 }
 
-void mdb_test_shell::run() {}
+void mdb_test_shell::run(metashell::iface::displayer&) {}
 
 bool mdb_test_shell::has_metaprogram() const {
   return static_cast<bool>(mp);

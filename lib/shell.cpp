@@ -42,20 +42,20 @@ namespace
     return s.str();
   }
 
-  void display(const result& r_, shell& s_)
+  void display(const result& r_, iface::displayer& displayer_)
   {
     if (!r_.info.empty())
     {
-      s_.displayer().show_raw_text(r_.info);
+      displayer_.show_raw_text(r_.info);
     }
 
     for (const std::string& i : r_.errors)
     {
-      s_.displayer().show_error(i);
+      displayer_.show_error(i);
     }
     if (!r_.has_errors() && !r_.output.empty())
     {
-      s_.displayer().show_type(type(r_.output));
+      displayer_.show_type(type(r_.output));
     }
   }
 
@@ -133,34 +133,42 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_,iface::displayer& displayer_) :
+shell::shell(const config& config_) :
   _env(),
   _config(config_),
   _stopped(false),
-  _displayer(displayer_),
   _history(nullptr)
 {
   rebuild_environment();
-  init();
+  init(nullptr);
+}
+
+shell::shell(const config& config_, command_processor_queue& cpq_) :
+  _env(),
+  _config(config_),
+  _stopped(false),
+  _history(nullptr)
+{
+  rebuild_environment();
+  init(&cpq_);
 }
 
 shell::shell(
   const config& config_,
   std::unique_ptr<environment> env_,
-  iface::displayer& displayer_
+  command_processor_queue& cpq_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
-  _displayer(displayer_),
   _history(nullptr)
 {
-  init();
+  init(&cpq_);
 }
 
 void shell::cancel_operation() {}
 
-void shell::display_splash()
+void shell::display_splash(iface::displayer& displayer_)
 {
   const std::string version_desc =
     #include "version_desc.hpp"
@@ -227,15 +235,15 @@ void shell::display_splash()
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Getting help: #msh help"));
 
-  displayer().show_comment(splash_text);
+  displayer_.show_comment(splash_text);
 
   if (_config.verbose)
   {
-    displayer().show_comment(text("Verbose mode: ON"));
+    displayer_.show_comment(text("Verbose mode: ON"));
   }
 }
 
-void shell::line_available(const std::string& s_)
+void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   try
   {
@@ -261,15 +269,15 @@ void shell::line_available(const std::string& s_)
         {
           if (boost::optional<command::iterator> p = parse_pragma(cmd))
           {
-            _pragma_handlers.process(*p, cmd.end());
+            _pragma_handlers.process(*p, cmd.end(), displayer_);
           }
           else if (is_environment_setup_command(cmd))
           {
-            store_in_buffer(s);
+            store_in_buffer(s, displayer_);
           }
           else
           {
-            run_metaprogram(s);
+            run_metaprogram(s, displayer_);
           }
         }
       }
@@ -281,11 +289,11 @@ void shell::line_available(const std::string& s_)
   }
   catch (const std::exception& e)
   {
-    _displayer.show_error(std::string("Error: ") + e.what());
+    displayer_.show_error(std::string("Error: ") + e.what());
   }
   catch (...)
   {
-    _displayer.show_error("Unknown error");
+    displayer_.show_error("Unknown error");
   }
 }
 
@@ -294,7 +302,7 @@ std::string shell::prompt() const
   return _line_prefix.empty() ? "> " : "...> ";
 }
 
-bool shell::store_in_buffer(const std::string& s_)
+bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
   const result r = validate_code(s_, _config, *_env, input_filename());
   const bool success = !r.has_errors();
@@ -306,11 +314,11 @@ bool shell::store_in_buffer(const std::string& s_)
     }
     catch (const std::exception& e)
     {
-      _displayer.show_error(e.what());
+      displayer_.show_error(e.what());
       return false;
     }
   }
-  ::display(r, *this);
+  ::display(r, displayer_);
   return success;
 }
 
@@ -334,12 +342,12 @@ void shell::code_complete(
   }
 }
 
-void shell::init()
+void shell::init(command_processor_queue* cpq_)
 {
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this);
+  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -420,27 +428,27 @@ void shell::pop_environment()
   }
 }
 
-void shell::display_environment_stack_size()
+void shell::display_environment_stack_size(iface::displayer& displayer_)
 {
   if (_environment_stack.empty())
   {
-    displayer().show_comment(text("Environment stack is empty"));
+    displayer_.show_comment(text("Environment stack is empty"));
   }
   else if (_environment_stack.size() == 1)
   {
-    displayer().show_comment(text("Environment stack has 1 entry"));
+    displayer_.show_comment(text("Environment stack has 1 entry"));
   }
   else
   {
     std::ostringstream s;
     s << "Environment stack has " << _environment_stack.size() << " entries";
-    displayer().show_comment(text(s.str()));
+    displayer_.show_comment(text(s.str()));
   }
 }
 
-void shell::run_metaprogram(const std::string& s_)
+void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(eval_tmp_formatted(*_env, s_, _config, input_filename()), *this);
+  display(eval_tmp_formatted(*_env, s_, _config, input_filename()), displayer_);
 }
 
 void shell::reset_environment()
@@ -451,11 +459,6 @@ void shell::reset_environment()
 
 const config& shell::get_config() const {
   return _config;
-}
-
-iface::displayer& shell::displayer()
-{
-  return _displayer;
 }
 
 void shell::history(iface::history& h_)

@@ -34,7 +34,7 @@ namespace metashell
 
     virtual std::string description() const override;
 
-    virtual void run() const override;
+    virtual void run(iface::displayer& displayer_) const override;
   private:
     shell& _shell;
   };

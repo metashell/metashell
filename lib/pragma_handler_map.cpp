@@ -94,7 +94,8 @@ namespace
 
 void pragma_handler_map::process(
   const command::iterator& begin_,
-  const command::iterator& end_
+  const command::iterator& end_,
+  iface::displayer& displayer_
 ) const
 {
   using boost::optional;
@@ -122,7 +123,7 @@ void pragma_handler_map::process(
   }
   if (longest_fit_handler)
   {
-    longest_fit_handler->run(longest_fit_begin, e);
+    longest_fit_handler->run(longest_fit_begin, e, displayer_);
   }
   else
   {
@@ -140,18 +141,20 @@ pragma_handler_map::iterator pragma_handler_map::end() const
   return _handlers.end();
 }
 
-pragma_handler_map pragma_handler_map::build_default(shell& shell_)
+pragma_handler_map pragma_handler_map::build_default(
+  shell& shell_,
+  command_processor_queue* cpq_
+)
 {
   return
     pragma_handler_map()
-      .add("help", pragma_help(shell_.displayer(), shell_.pragma_handlers()))
+      .add("help", pragma_help(shell_.pragma_handlers()))
       .add(
         "verbose",
         pragma_switch(
           "verbose mode",
           [&shell_] () { return shell_.verbose(); },
-          [&shell_] (bool v_) { shell_.verbose(v_); },
-          shell_.displayer()
+          [&shell_] (bool v_) { shell_.verbose(v_); }
         )
       )
       .add(
@@ -159,11 +162,10 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
         pragma_switch(
           "precompiled header usage",
           [&shell_] () { return shell_.using_precompiled_headers(); },
-          [&shell_] (bool v_) { shell_.using_precompiled_headers(v_); },
-          shell_.displayer()
+          [&shell_] (bool v_) { shell_.using_precompiled_headers(v_); }
         )
       )
-      .add("environment", pragma_environment(shell_.displayer(), shell_.env()))
+      .add("environment", pragma_environment(shell_.env()))
       .add("environment", "push", pragma_environment_push(shell_))
       .add("environment", "pop", pragma_environment_pop(shell_))
       .add("environment", "stack", pragma_environment_stack(shell_))
@@ -173,13 +175,9 @@ pragma_handler_map pragma_handler_map::build_default(shell& shell_)
       .add(
         "environment",
         "save",
-        pragma_environment_save(
-          shell_.displayer(),
-          shell_.get_config(),
-          shell_.env()
-        )
+        pragma_environment_save(shell_.get_config(), shell_.env())
       )
-      .add("mdb", pragma_mdb(shell_))
+      .add("mdb", pragma_mdb(shell_, cpq_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;

@@ -43,26 +43,27 @@ std::string pragma_environment_add::description() const
 
 void pragma_environment_add::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   const std::string cmd = tokens_to_string(args_begin_, args_end_);
 
-  _shell.store_in_buffer(cmd);
+  _shell.store_in_buffer(cmd, displayer_);
 
   if (is_environment_setup_command(args_begin_, args_end_))
   {
-    _shell.displayer().show_comment(
+    displayer_.show_comment(
       text(
         "You don't need the environment add pragma to add this to the"
         " environment. The following command does this as well:"
       )
     );
-    _shell.displayer().show_cpp_code(cmd);
+    displayer_.show_cpp_code(cmd);
   }
   else
   {
-    _shell.displayer().show_comment(
+    displayer_.show_comment(
       text(
         "Metashell (incorrectly) thinks that this command should execute a"
         " metaprogram and would not add it to the environment without using"

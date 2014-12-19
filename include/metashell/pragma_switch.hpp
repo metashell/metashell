@@ -33,8 +33,7 @@ namespace metashell
     pragma_switch(
       const std::string& name_,
       const std::function<bool()>& query_,
-      const std::function<void(bool)>& update_,
-      iface::displayer& displayer_
+      const std::function<void(bool)>& update_
     );
 
     virtual iface::pragma_handler* clone() const override;
@@ -44,14 +43,13 @@ namespace metashell
 
     virtual void run(
       const command::iterator& args_begin_,
-      const command::iterator& args_end_
+      const command::iterator& args_end_,
+      iface::displayer& displayer_
     ) const override;
   private:
     std::function<bool()> _query;
     std::function<void(bool)> _update;
     std::string _name;
-
-    iface::displayer& _displayer;
   };
 }
 

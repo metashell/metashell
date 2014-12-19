@@ -25,18 +25,16 @@
 using namespace metashell;
 
 pragma_environment_save::pragma_environment_save(
-  iface::displayer& displayer_,
   const config& config_,
   const environment& env_
 ) :
-  _displayer(displayer_),
   _config(config_),
   _env(env_)
 {}
 
 iface::pragma_handler* pragma_environment_save::clone() const
 {
-  return new pragma_environment_save(_displayer, _config, _env);
+  return new pragma_environment_save(_config, _env);
 }
 
 std::string pragma_environment_save::arguments() const
@@ -53,7 +51,8 @@ std::string pragma_environment_save::description() const
 
 void pragma_environment_save::run(
   const command::iterator& args_begin_,
-  const command::iterator& args_end_
+  const command::iterator& args_end_,
+  iface::displayer& displayer_
 ) const
 {
   if (_config.saving_enabled)
@@ -63,7 +62,7 @@ void pragma_environment_save::run(
 
     if (fn.empty())
     {
-      _displayer.show_error(
+      displayer_.show_error(
         "Filename to save the environment into is missing."
       );
     }
@@ -73,13 +72,13 @@ void pragma_environment_save::run(
       f << _env.get_all() << std::endl;
       if (f.fail() || f.bad())
       {
-        _displayer.show_error("Failed to save the environment into file " + fn);
+        displayer_.show_error("Failed to save the environment into file " + fn);
       }
     }
   }
   else
   {
-    _displayer.show_error(
+    displayer_.show_error(
       "Saving is disabled. You can enable it using the --enable_saving"
       " command line argument."
     );

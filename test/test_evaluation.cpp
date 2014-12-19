@@ -32,8 +32,8 @@ using namespace metashell;
 JUST_TEST_CASE(test_non_existing_class)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("hello");
+  shell sh(test_config());
+  sh.line_available("hello", d);
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT(!d.errors().empty());
 }
@@ -41,8 +41,8 @@ JUST_TEST_CASE(test_non_existing_class)
 JUST_TEST_CASE(test_accept_empty_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("");
+  shell sh(test_config());
+  sh.line_available("", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -51,8 +51,8 @@ JUST_TEST_CASE(test_accept_empty_input)
 JUST_TEST_CASE(test_accept_space_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available(" ");
+  shell sh(test_config());
+  sh.line_available(" ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -61,8 +61,8 @@ JUST_TEST_CASE(test_accept_space_input)
 JUST_TEST_CASE(test_accept_tab_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("\t");
+  shell sh(test_config());
+  sh.line_available("\t", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -71,8 +71,8 @@ JUST_TEST_CASE(test_accept_tab_input)
 JUST_TEST_CASE(test_accept_vertical_tab_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("\v");
+  shell sh(test_config());
+  sh.line_available("\v", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -81,8 +81,8 @@ JUST_TEST_CASE(test_accept_vertical_tab_input)
 JUST_TEST_CASE(test_accept_new_line_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("\n");
+  shell sh(test_config());
+  sh.line_available("\n", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -91,8 +91,8 @@ JUST_TEST_CASE(test_accept_new_line_input)
 JUST_TEST_CASE(test_accept_carrige_return_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("\r");
+  shell sh(test_config());
+  sh.line_available("\r", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -101,8 +101,8 @@ JUST_TEST_CASE(test_accept_carrige_return_input)
 JUST_TEST_CASE(test_accept_two_space_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("  ");
+  shell sh(test_config());
+  sh.line_available("  ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -114,9 +114,9 @@ JUST_TEST_CASE(test_macro_in_config)
   cfg.max_template_depth = 20;
   cfg.macros.push_back("FOO=int");
   in_memory_displayer d;
-  shell sh(cfg, d);
+  shell sh(cfg);
 
-  sh.line_available("FOO");
+  sh.line_available("FOO", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
@@ -132,14 +132,14 @@ namespace
   )
   {
     in_memory_displayer d;
-    shell sh(test_config(), d);
+    shell sh(test_config());
 
-    sh.line_available(init_line_);
-    sh.line_available(definition_);
+    sh.line_available(init_line_, d);
+    sh.line_available(definition_, d);
     JUST_ASSERT_EMPTY_CONTAINER(d.types());
     JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
-    sh.line_available(query_);
+    sh.line_available(query_, d);
     JUST_ASSERT_EMPTY_CONTAINER(d.errors());
     JUST_ASSERT_EQUAL_CONTAINER({expected_result_}, d.types());
   }
@@ -185,14 +185,14 @@ JUST_TEST_CASE(test_defining_constexpr_function)
     metashell::path_builder() / "metashell" / "scalar.hpp";
 
   in_memory_displayer d;
-  shell sh(test_config(), d);
+  shell sh(test_config());
 
-  sh.line_available("#include <" + scalar_hpp + ">");
-  sh.line_available("constexpr int f() { return 13; }");
+  sh.line_available("#include <" + scalar_hpp + ">", d);
+  sh.line_available("constexpr int f() { return 13; }", d);
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
-  sh.line_available("SCALAR(f())");
+  sh.line_available("SCALAR(f())", d);
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL(1u, d.types().size());
   JUST_ASSERT(d.types().front().is_integral_constant(type("int"), "13"));
@@ -203,13 +203,13 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
+  shell sh(test_config());
 
-  sh.line_available("struct y;");
-  sh.line_available("y typedef * x;");
+  sh.line_available("struct y;", d);
+  sh.line_available("y typedef * x;", d);
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
-  sh.line_available("x");
+  sh.line_available("x", d);
   JUST_ASSERT_EQUAL_CONTAINER({type("y *")}, d.types());
 }
 
@@ -217,10 +217,10 @@ JUST_TEST_CASE(test_history_is_stored)
 {
   null_displayer d;
   in_memory_history h;
-  shell sh(test_config(), d);
+  shell sh(test_config());
   sh.history(h);
 
-  sh.line_available("int");
+  sh.line_available("int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
@@ -229,10 +229,10 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
-  shell sh(test_config(), d);
+  shell sh(test_config());
   sh.history(h);
 
-  sh.line_available("");
+  sh.line_available("", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
@@ -243,10 +243,10 @@ JUST_TEST_CASE(
 {
   null_displayer d;
   in_memory_history h;
-  shell sh(test_config(), d);
+  shell sh(test_config());
   sh.history(h);
 
-  sh.line_available(" ");
+  sh.line_available(" ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
@@ -257,11 +257,11 @@ JUST_TEST_CASE(
 {
   null_displayer d;
   in_memory_history h;
-  shell sh(test_config(), d);
+  shell sh(test_config());
   sh.history(h);
 
-  sh.line_available("int");
-  sh.line_available("int");
+  sh.line_available("int", d);
+  sh.line_available("int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
@@ -269,8 +269,8 @@ JUST_TEST_CASE(
 JUST_TEST_CASE(test_accept_c_comment_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("/* some comment */");
+  shell sh(test_config());
+  sh.line_available("/* some comment */", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -279,8 +279,8 @@ JUST_TEST_CASE(test_accept_c_comment_input)
 JUST_TEST_CASE(test_accept_cpp_comment_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("// some comment");
+  shell sh(test_config());
+  sh.line_available("// some comment", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
@@ -290,28 +290,28 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
-  shell sh(test_config(), d);
+  shell sh(test_config());
   sh.history(h);
 
-  sh.line_available("// some comment");
+  sh.line_available("// some comment", d);
 
   JUST_ASSERT_EQUAL(1u, h.commands().size());
 }
 
 namespace
 {
-  void generate_warning(metashell::shell& sh_)
+  void generate_warning(metashell::shell& sh_, iface::displayer& displayer_)
   {
-    sh_.line_available("#warning hello");
+    sh_.line_available("#warning hello", displayer_);
   }
 }
 
 JUST_TEST_CASE(test_warnings)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
+  shell sh(test_config());
 
-  generate_warning(sh);
+  generate_warning(sh, d);
 
   JUST_ASSERT(!d.errors().empty());
 }
@@ -321,9 +321,9 @@ JUST_TEST_CASE(test_disabled_warnings)
   metashell::config cfg;
   cfg.warnings_enabled = false;
   in_memory_displayer d;
-  shell sh(cfg, d);
+  shell sh(cfg);
 
-  generate_warning(sh);
+  generate_warning(sh, d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
@@ -334,9 +334,9 @@ JUST_TEST_CASE(test_extra_clang_arg)
   cfg.extra_clang_args.push_back("-DFOO=double");
   cfg.max_template_depth = 20;
   in_memory_displayer d;
-  shell sh(cfg, d);
+  shell sh(cfg);
 
-  sh.line_available("FOO");
+  sh.line_available("FOO", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({type("double")}, d.types());
@@ -347,10 +347,11 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   metashell::config cfg;
   breaking_environment* e = new breaking_environment(cfg);
   in_memory_displayer d;
-  shell sh(cfg, std::unique_ptr<breaking_environment>(e), d);
+  command_processor_queue cpq;
+  shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq);
   e->append_throw_from_now();
 
-  sh.store_in_buffer("typedef int foo;");
+  sh.store_in_buffer("typedef int foo;", d);
 
   JUST_ASSERT(!d.errors().empty());
 }
@@ -393,9 +394,9 @@ JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
 JUST_TEST_CASE(test_multiline_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("const \\");
-  sh.line_available("int");
+  shell sh(test_config());
+  sh.line_available("const \\", d);
+  sh.line_available("int", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({type("const int")}, d.types());
@@ -404,10 +405,10 @@ JUST_TEST_CASE(test_multiline_input)
 JUST_TEST_CASE(test_three_line_input)
 {
   in_memory_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("const \\");
-  sh.line_available("int \\");
-  sh.line_available("*");
+  shell sh(test_config());
+  sh.line_available("const \\", d);
+  sh.line_available("int \\", d);
+  sh.line_available("*", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({type("const int *")}, d.types());
@@ -416,8 +417,8 @@ JUST_TEST_CASE(test_three_line_input)
 JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
 {
   null_displayer d;
-  shell sh(test_config(), d);
-  sh.line_available("const \\");
+  shell sh(test_config());
+  sh.line_available("const \\", d);
 
   JUST_ASSERT_EQUAL("...> ", sh.prompt());
 }

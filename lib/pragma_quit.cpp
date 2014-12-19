@@ -20,7 +20,7 @@
 using namespace metashell;
 
 pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments(shell_.displayer(), "quit"),
+  pragma_without_arguments("quit"),
   _shell(shell_)
 {}
 
@@ -34,7 +34,7 @@ std::string pragma_quit::description() const
   return "Terminates the shell.";
 }
 
-void pragma_quit::run() const
+void pragma_quit::run(iface::displayer&) const
 {
   _shell.stop();
 }

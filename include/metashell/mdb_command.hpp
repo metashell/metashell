@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/displayer.hpp>
+
 #include <vector>
 #include <string>
 
@@ -32,7 +34,11 @@ enum repeatable_t {
 class mdb_command {
 public:
   typedef std::vector<std::string> keys_t;
-  typedef void (mdb_shell::*function)(const std::string& args);
+  typedef
+    void (mdb_shell::*function)(
+      const std::string& args,
+      iface::displayer& displayer_
+    );
 
   mdb_command() = default;
   mdb_command(

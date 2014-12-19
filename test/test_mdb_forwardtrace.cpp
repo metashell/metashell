@@ -28,9 +28,9 @@ using namespace metashell;
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("forwardtrace");
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Metaprogram not evaluated yet"});
 }
@@ -39,10 +39,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_garbage_argument) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
-  sh.line_available("forwardtrace asd");
+  sh.line_available("evaluate int", d);
+  sh.line_available("forwardtrace asd", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(d.errors(), {"Argument parsing failed"});
 }
@@ -51,10 +51,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_garbage_argument) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate int", d);
+  sh.line_available("forwardtrace", d);
 
   const type int_("int");
 
@@ -72,10 +72,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate -full int");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate -full int", d);
+  sh.line_available("forwardtrace", d);
 
   const type int_("int");
 
@@ -93,13 +93,13 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
-  sh.line_available("continue");
+  sh.line_available("evaluate int", d);
+  sh.line_available("continue", d);
 
   d.clear();
-  sh.line_available("forwardtrace");
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
@@ -109,13 +109,13 @@ JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate -full int");
-  sh.line_available("continue");
+  sh.line_available("evaluate -full int", d);
+  sh.line_available("continue", d);
 
   d.clear();
-  sh.line_available("forwardtrace");
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
@@ -125,10 +125,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
   in_memory_displayer d;
-  mdb_test_shell sh(d);
+  mdb_test_shell sh;
 
-  sh.line_available("evaluate int");
-  sh.line_available("ft");
+  sh.line_available("evaluate int", d);
+  sh.line_available("ft", d);
 
   const type int_("int");
 
@@ -146,10 +146,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -175,10 +175,10 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -209,12 +209,12 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("rbreak fib<5>");
-  sh.line_available("continue 2");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("rbreak fib<5>", d);
+  sh.line_available("continue 2", d);
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -229,11 +229,11 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -256,11 +256,11 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -289,11 +289,11 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace 0");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace 0", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -308,11 +308,11 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace 1");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace 1", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -331,11 +331,11 @@ JUST_TEST_CASE(
     test_mdb_forwardtrace_ft_from_step_1_with_limit_1_in_full_mode)
 {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate -full int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace 1");
+  sh.line_available("evaluate -full int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace 1", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -352,11 +352,11 @@ JUST_TEST_CASE(
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace 2");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace 2", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -377,11 +377,11 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
   in_memory_displayer d;
-  mdb_test_shell sh(d, fibonacci_mp);
+  mdb_test_shell sh(fibonacci_mp);
 
-  sh.line_available("evaluate int_<fib<5>::value>");
-  sh.line_available("step");
-  sh.line_available("forwardtrace 100");
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+  sh.line_available("forwardtrace 100", d);
 
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(

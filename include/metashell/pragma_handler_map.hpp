@@ -19,6 +19,7 @@
 
 #include <metashell/pragma_handler.hpp>
 #include <metashell/command.hpp>
+#include <metashell/command_processor_queue.hpp>
 
 #include <map>
 #include <vector>
@@ -94,7 +95,8 @@ namespace metashell
 
     void process(
       const command::iterator& p_,
-      const command::iterator& end_
+      const command::iterator& end_,
+      iface::displayer& displayer_
     ) const;
 
     typedef
@@ -106,7 +108,8 @@ namespace metashell
     iterator end() const;
     iterator find(const std::vector<std::string>& p_) const;
 
-    static pragma_handler_map build_default(shell& shell_);
+    static pragma_handler_map
+      build_default(shell& shell_, command_processor_queue* cpq_);
   private:
     std::map<std::vector<std::string>, pragma_handler> _handlers;
   };
