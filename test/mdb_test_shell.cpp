@@ -43,8 +43,6 @@ mdb_test_shell::mdb_test_shell(
   env.append(line);
 }
 
-void mdb_test_shell::run(metashell::iface::displayer&) {}
-
 bool mdb_test_shell::has_metaprogram() const {
   return static_cast<bool>(mp);
 }

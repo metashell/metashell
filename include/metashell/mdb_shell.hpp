@@ -43,8 +43,6 @@ public:
       const config& conf,
       const environment& env);
 
-  virtual void run(iface::displayer& displayer_) = 0;
-
   virtual std::string prompt() const override;
   virtual bool stopped() const override;
 

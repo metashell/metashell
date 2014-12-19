@@ -17,7 +17,7 @@
 
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/readline_mdb_shell.hpp>
+#include <metashell/mdb_shell.hpp>
 
 #include <cassert>
 
@@ -54,18 +54,18 @@ void pragma_mdb::run(
 
   std::string args = tokens_to_string(args_begin_, args_end_);
 
-  std::unique_ptr<readline_mdb_shell>
-    mdb_shell(new readline_mdb_shell(_shell.get_config(), _shell.env()));
+  std::unique_ptr<mdb_shell>
+    sh(new mdb_shell(_shell.get_config(), _shell.env()));
 
   if (_shell.history()) {
-    mdb_shell->history(*_shell.history());
+    sh->history(*_shell.history());
   }
-  mdb_shell->display_splash(displayer_);
+  sh->display_splash(displayer_);
 
   if (!args.empty()) {
-    mdb_shell->command_evaluate(args, displayer_);
+    sh->command_evaluate(args, displayer_);
   }
 
-  _cpq->push(move(mdb_shell));
+  _cpq->push(move(sh));
 }
 
