@@ -31,8 +31,8 @@ namespace metashell
 
     bool empty() const;
     void push(std::unique_ptr<iface::command_processor> item_);
-    void pop();
-    void pop_stopped_processors();
+    void pop(iface::displayer& displayer_);
+    void pop_stopped_processors(iface::displayer& displayer_);
 
     void cancel_operation();
     void line_available(const std::string& cmd_, iface::displayer& displayer_);

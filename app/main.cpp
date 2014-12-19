@@ -59,7 +59,6 @@ int main(int argc_, const char* argv_[])
       processor_queue.push(move(shell));
 
       metashell::readline_input_loop(processor_queue, displayer);
-      std::cout << std::endl;
     }
     return r.should_error_at_exit() ? 1 : 0;
   }

@@ -40,11 +40,12 @@ void command_processor_queue::code_complete(
   }
 }
 
-void command_processor_queue::pop()
+void command_processor_queue::pop(iface::displayer& displayer_)
 {
   assert(!empty());
 
   _items.pop_back();
+  displayer_.show_raw_text("");
 }
 
 void command_processor_queue::cancel_operation()
@@ -73,11 +74,13 @@ std::string command_processor_queue::prompt() const
   return _items.back()->prompt();
 }
 
-void command_processor_queue::pop_stopped_processors()
+void command_processor_queue::pop_stopped_processors(
+  iface::displayer& displayer_
+)
 {
   while (!empty() && _items.back()->stopped())
   {
-    pop();
+    pop(displayer_);
   }
 }
 

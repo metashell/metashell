@@ -165,7 +165,7 @@ void metashell::readline_input_loop(
 
   while (!processor_queue_.empty())
   {
-    processor_queue_.pop_stopped_processors();
+    processor_queue_.pop_stopped_processors(displayer_);
 
     if (!processor_queue_.empty())
     {
@@ -175,7 +175,7 @@ void metashell::readline_input_loop(
       }
       else
       {
-        processor_queue_.pop();
+        processor_queue_.pop(displayer_);
       }
     }
   }
