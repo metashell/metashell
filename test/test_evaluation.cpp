@@ -22,6 +22,7 @@
 #include <metashell/metashell.hpp>
 #include <metashell/path_builder.hpp>
 #include <metashell/null_displayer.hpp>
+#include <metashell/null_history.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/in_memory_history.hpp>
 
@@ -218,9 +219,8 @@ JUST_TEST_CASE(test_history_is_stored)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config());
-  sh.history(h);
 
-  sh.line_available("int", d);
+  sh.line_available("int", d, h);
 
   JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
@@ -230,9 +230,8 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config());
-  sh.history(h);
 
-  sh.line_available("", d);
+  sh.line_available("", d, h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
@@ -244,9 +243,8 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   shell sh(test_config());
-  sh.history(h);
 
-  sh.line_available(" ", d);
+  sh.line_available(" ", d, h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
@@ -258,10 +256,9 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   shell sh(test_config());
-  sh.history(h);
 
-  sh.line_available("int", d);
-  sh.line_available("int", d);
+  sh.line_available("int", d, h);
+  sh.line_available("int", d, h);
 
   JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
 }
@@ -291,9 +288,8 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
   null_displayer d;
   in_memory_history h;
   shell sh(test_config());
-  sh.history(h);
 
-  sh.line_available("// some comment", d);
+  sh.line_available("// some comment", d, h);
 
   JUST_ASSERT_EQUAL(1u, h.commands().size());
 }
@@ -347,7 +343,8 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   metashell::config cfg;
   breaking_environment* e = new breaking_environment(cfg);
   in_memory_displayer d;
-  command_processor_queue cpq;
+  null_history h;
+  command_processor_queue cpq(h);
   shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq);
   e->append_throw_from_now();
 

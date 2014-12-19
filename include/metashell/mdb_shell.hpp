@@ -49,8 +49,10 @@ public:
   void display_splash(iface::displayer& displayer_) const;
   virtual void line_available(
     const std::string& line,
-    iface::displayer& displayer_
+    iface::displayer& displayer_,
+    iface::history& history_
   ) override;
+  void line_available(const std::string& line, iface::displayer& displayer_);
   virtual void cancel_operation() override;
 
   void command_continue(const std::string& arg, iface::displayer& displayer_);
@@ -64,8 +66,6 @@ public:
   void command_rbreak(const std::string& arg, iface::displayer& displayer_);
   void command_help(const std::string& arg, iface::displayer& displayer_);
   void command_quit(const std::string& arg, iface::displayer& displayer_);
-
-  void history(iface::history& h_);
 
   virtual void code_complete(
     const std::string& s_,
@@ -130,9 +130,6 @@ protected:
   bool last_command_repeatable = false;
 
   bool is_stopped = false;
-
-private:
-  iface::history* _history; // not owning
 };
 
 }

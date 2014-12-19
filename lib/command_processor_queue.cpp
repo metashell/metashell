@@ -20,6 +20,10 @@
 
 using namespace metashell;
 
+command_processor_queue::command_processor_queue(iface::history& history_) :
+  _history(history_)
+{}
+
 bool command_processor_queue::empty() const
 {
   return _items.empty();
@@ -58,7 +62,7 @@ void command_processor_queue::line_available(
 {
   if (!empty())
   {
-    _items.back()->line_available(cmd_, displayer_);
+    _items.back()->line_available(cmd_, displayer_, _history);
   }
 }
 

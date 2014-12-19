@@ -57,9 +57,6 @@ void pragma_mdb::run(
   std::unique_ptr<mdb_shell>
     sh(new mdb_shell(_shell.get_config(), _shell.env()));
 
-  if (_shell.history()) {
-    sh->history(*_shell.history());
-  }
   sh->display_splash(displayer_);
 
   if (!args.empty()) {

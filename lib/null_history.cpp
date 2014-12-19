@@ -1,6 +1,3 @@
-#ifndef METASHELL_IFACE_COMMAND_PROCESSOR_HPP
-#define METASHELL_IFACE_COMMAND_PROCESSOR_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,38 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/history.hpp>
+#include <metashell/null_history.hpp>
 
-#include <string>
-#include <set>
+using namespace metashell;
 
-namespace metashell
+void null_history::add(const std::string&)
 {
-  namespace iface
-  {
-    class command_processor
-    {
-    public:
-      virtual ~command_processor() {}
-
-      virtual void line_available(
-        const std::string& cmd_,
-        iface::displayer& displayer_,
-        iface::history& history_
-      ) = 0;
-      virtual void cancel_operation() = 0;
-
-      virtual std::string prompt() const = 0;
-      virtual bool stopped() const = 0;
-
-      virtual void code_complete(
-        const std::string& s_,
-        std::set<std::string>& out_
-      ) const = 0;
-    };
-  }
+  // throw away
 }
-
-#endif
 

@@ -25,6 +25,7 @@
 #include <metashell/command.hpp>
 #include <metashell/to_string.hpp>
 #include <metashell/exception.hpp>
+#include <metashell/null_history.hpp>
 
 #include <cctype>
 #include <algorithm>
@@ -136,8 +137,7 @@ namespace
 shell::shell(const config& config_) :
   _env(),
   _config(config_),
-  _stopped(false),
-  _history(nullptr)
+  _stopped(false)
 {
   rebuild_environment();
   init(nullptr);
@@ -146,8 +146,7 @@ shell::shell(const config& config_) :
 shell::shell(const config& config_, command_processor_queue& cpq_) :
   _env(),
   _config(config_),
-  _stopped(false),
-  _history(nullptr)
+  _stopped(false)
 {
   rebuild_environment();
   init(&cpq_);
@@ -160,8 +159,7 @@ shell::shell(
 ) :
   _env(std::move(env_)),
   _config(config_),
-  _stopped(false),
-  _history(nullptr)
+  _stopped(false)
 {
   init(&cpq_);
 }
@@ -243,7 +241,11 @@ void shell::display_splash(iface::displayer& displayer_)
   }
 }
 
-void shell::line_available(const std::string& s_, iface::displayer& displayer_)
+void shell::line_available(
+  const std::string& s_,
+  iface::displayer& displayer_,
+  iface::history& history_
+)
 {
   try
   {
@@ -258,10 +260,7 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
       {
         if (_prev_line != s)
         {
-          if (_history)
-          {
-            _history->add(s);
-          }
+          history_.add(s);
           _prev_line = s;
         }
 
@@ -461,13 +460,9 @@ const config& shell::get_config() const {
   return _config;
 }
 
-void shell::history(iface::history& h_)
+void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
-  _history = &h_;
-}
-
-iface::history* shell::history()
-{
-  return _history;
+  null_history h;
+  line_available(s_, displayer_, h);
 }
 

@@ -34,23 +34,22 @@ JUST_TEST_CASE(test_mdb_shell_empty_lines) {
   in_memory_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
-  sh.history(h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 
-  sh.line_available("", d);
+  sh.line_available("", d, h);
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
   JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT(d.call_graphs().empty());
 
-  sh.line_available(" ", d);
+  sh.line_available(" ", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
   JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
   JUST_ASSERT(d.call_graphs().empty());
 
-  sh.line_available("\t", d);
+  sh.line_available("\t", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" ", "\t"}, h.commands());
   JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -61,20 +60,19 @@ JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
-  sh.history(h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 
-  sh.line_available("asd", d);
+  sh.line_available("asd", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"asd"}, h.commands());
 
-  sh.line_available("asd", d);
+  sh.line_available("asd", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"asd"}, h.commands());
 
-  sh.line_available("xyz", d);
+  sh.line_available("xyz", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, h.commands());
 
-  sh.line_available("asd", d);
+  sh.line_available("asd", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz", "asd"}, h.commands());
 }
 
@@ -82,20 +80,19 @@ JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history) {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
-  sh.history(h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 
-  sh.line_available(" ", d);
+  sh.line_available(" ", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
 
-  sh.line_available(" ", d);
+  sh.line_available(" ", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
 
-  sh.line_available("  ", d);
+  sh.line_available("  ", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" ", "  "}, h.commands());
 
-  sh.line_available(" ", d);
+  sh.line_available(" ", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({" ", "  ", " "}, h.commands());
 }
 
@@ -103,22 +100,20 @@ JUST_TEST_CASE(test_mdb_shell_skips_empty_lines) {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
-  sh.history(h);
 
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 
-  sh.line_available("ads", d);
+  sh.line_available("ads", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
 
-  sh.line_available("", d);
+  sh.line_available("", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
 
-  sh.line_available("ads", d);
+  sh.line_available("ads", d, h);
   JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
 }
 
 JUST_TEST_CASE(test_mdb_shell_prompt) {
-  null_displayer d;
   mdb_test_shell sh;
 
   JUST_ASSERT_EQUAL(sh.prompt(), "(mdb) ");

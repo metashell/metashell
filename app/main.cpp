@@ -49,12 +49,11 @@ int main(int argc_, const char* argv_[])
       metashell::console_displayer
         displayer(c, cfg.indent, cfg.syntax_highlight);
       metashell::readline_history history;
-      metashell::command_processor_queue processor_queue;
+      metashell::command_processor_queue processor_queue(history);
 
       std::unique_ptr<metashell::shell>
         shell(new metashell::shell(cfg, processor_queue));
 
-      shell->history(history);
       shell->display_splash(displayer);
 
       processor_queue.push(move(shell));

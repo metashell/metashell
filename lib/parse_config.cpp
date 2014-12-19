@@ -19,7 +19,7 @@
 #include <metashell/metashell.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/null_displayer.hpp>
+#include <metashell/null_history.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
@@ -73,7 +73,8 @@ namespace
   void show_pragma_help()
   {
     const config cfg;
-    command_processor_queue cpq;
+    null_history h;
+    command_processor_queue cpq(h);
     shell sh(cfg, cpq);
     const pragma_handler_map m = pragma_handler_map::build_default(sh, &cpq);
 

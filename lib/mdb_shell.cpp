@@ -21,6 +21,7 @@
 #include <metashell/temporary_file.hpp>
 #include <metashell/is_template_type.hpp>
 #include <metashell/forward_trace_iterator.hpp>
+#include <metashell/null_history.hpp>
 
 #include <cmath>
 
@@ -134,8 +135,7 @@ mdb_shell::mdb_shell(
     const config& conf_,
     const environment& env_arg) :
   conf(set_pch_false(conf_)),
-  env(conf),
-  _history(nullptr)
+  env(conf)
 {
   env.append(env_arg.get_all());
 }
@@ -154,7 +154,8 @@ void mdb_shell::display_splash(iface::displayer& displayer_) const {
 
 void mdb_shell::line_available(
     const std::string& line_arg,
-    iface::displayer& displayer_)
+    iface::displayer& displayer_,
+    iface::history& history_)
 {
 
   try {
@@ -163,8 +164,8 @@ void mdb_shell::line_available(
 
     std::string line = line_arg;
 
-    if (_history && line != prev_line && !line.empty()) {
-      _history->add(line);
+    if (line != prev_line && !line.empty()) {
+      history_.add(line);
     }
 
     if (line.empty()) {
@@ -792,10 +793,6 @@ void mdb_shell::display_metaprogram_finished(
   displayer_.show_type(mp->get_evaluation_result());
 }
 
-void mdb_shell::history(iface::history& h_) {
-  _history = &h_;
-}
-
 void mdb_shell::cancel_operation() {
   // TODO
 }
@@ -805,6 +802,13 @@ void mdb_shell::code_complete(
     std::set<std::string>&) const
 {
   // TODO
+}
+
+void mdb_shell::line_available(
+  const std::string& line, iface::displayer& displayer_)
+{
+  null_history h;
+  line_available(line, displayer_, h);
 }
 
 }

@@ -54,8 +54,10 @@ namespace metashell
     void display_splash(iface::displayer& displayer_);
     virtual void line_available(
       const std::string& s_,
-      iface::displayer& displayer_
+      iface::displayer& displayer_,
+      iface::history& history_
     ) override;
+    void line_available(const std::string& s_, iface::displayer& displayer_);
     virtual std::string prompt() const override;
 
     virtual void cancel_operation() override;
@@ -91,9 +93,6 @@ namespace metashell
     void rebuild_environment();
 
     const config& get_config() const;
-
-    void history(iface::history& h_);
-    iface::history* history();
   private:
     std::string _line_prefix;
     std::unique_ptr<environment> _env;
@@ -102,7 +101,6 @@ namespace metashell
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
-    iface::history* _history; // not owning
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);
