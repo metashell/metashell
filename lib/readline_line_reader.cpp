@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/readline_input_loop.hpp>
+#include <metashell/readline_line_reader.hpp>
 #include <metashell/readline_completion_function.hpp>
-#include <metashell/interrupt_handler_override.hpp>
+#include <metashell/line_reader.hpp>
 
 #ifdef USE_EDITLINE
 #  include <editline/readline.h>
@@ -25,8 +25,6 @@
 #  include <readline/history.h>
 #endif
 
-#include <boost/optional.hpp>
-
 #include <cassert>
 #include <algorithm>
 
@@ -34,27 +32,6 @@ using namespace metashell;
 
 namespace
 {
-  // single threaded
-  class single_entry_guard
-  {
-  public:
-    single_entry_guard()
-    {
-      assert(!_active);
-      _active = true;
-    }
-
-    ~single_entry_guard()
-    {
-      _active = false;
-    }
-  private:
-    static bool _active;
-  };
-
-  bool single_entry_guard::_active = false;
-
-
   int completion_end = 0;
 
   // not owning
@@ -129,8 +106,14 @@ namespace
     return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
   }
 
-  boost::optional<std::string> read_next_line(const std::string& prompt_)
+  boost::optional<std::string> read_next_line(
+    const std::string& prompt_,
+    command_processor_queue& processor_queue_
+  )
   {
+    processor_queue = &processor_queue_;
+    rl_attempted_completion_function = tab_completion;
+
     if (char *line = ::readline(prompt_.c_str()))
     {
       const std::string str(line);
@@ -149,35 +132,14 @@ namespace
   }
 }
 
-void metashell::readline_input_loop(
-  command_processor_queue& processor_queue_,
-  iface::displayer& displayer_
+line_reader metashell::readline_line_reader(
+  command_processor_queue& processor_queue_
 )
 {
-  single_entry_guard g;
-
-  processor_queue = &processor_queue_;
-
-  rl_attempted_completion_function = tab_completion;
-
-  interrupt_handler_override
-    ovr3( [&processor_queue_]() { processor_queue_.cancel_operation(); } );
-
-  while (!processor_queue_.empty())
-  {
-    processor_queue_.pop_stopped_processors(displayer_);
-
-    if (!processor_queue_.empty())
+  return
+    [&processor_queue_](const std::string& prompt_)
     {
-      if (const auto line = read_next_line(processor_queue_.prompt()))
-      {
-        processor_queue_.line_available(*line, displayer_);
-      }
-      else
-      {
-        processor_queue_.pop(displayer_);
-      }
-    }
-  }
+      return read_next_line(prompt_, processor_queue_);
+    };
 }
 

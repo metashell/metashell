@@ -19,7 +19,8 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/console_displayer.hpp>
 #include <metashell/stdout_console.hpp>
-#include <metashell/readline_input_loop.hpp>
+#include <metashell/readline_line_reader.hpp>
+#include <metashell/line_reader.hpp>
 #include <metashell/readline_history.hpp>
 #include <metashell/shell.hpp>
 
@@ -58,7 +59,11 @@ int main(int argc_, const char* argv_[])
 
       processor_queue.push(move(shell));
 
-      metashell::readline_input_loop(processor_queue, displayer);
+      metashell::input_loop(
+        processor_queue,
+        displayer,
+        metashell::readline_line_reader(processor_queue)
+      );
     }
     return r.should_error_at_exit() ? 1 : 0;
   }
