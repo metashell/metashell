@@ -166,7 +166,7 @@ void console_displayer::show_backtrace(const backtrace& trace_)
   {
     std::ostringstream s;
     s << "#" << i << " ";
-    _console->show(s.str());
+    _console->show(colored_string(s.str(), color::white));
     show_frame(f);
     ++i;
   }
