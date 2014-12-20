@@ -25,12 +25,12 @@ using namespace metashell;
 frame::frame(const type& name_) :
   _name(name_)
 {}
-    
+
 frame::frame(const type& name_, instantiation_kind kind_) :
   _name(name_),
   _kind(kind_)
 {}
-    
+
 const type& frame::name() const
 {
   return _name;

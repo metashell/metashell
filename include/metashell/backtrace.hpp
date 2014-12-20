@@ -43,7 +43,7 @@ namespace metashell
   private:
     std::vector<frame> _frames;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
   bool operator==(const backtrace& a_, const backtrace& b_);
 }

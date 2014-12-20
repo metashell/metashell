@@ -31,7 +31,7 @@ namespace metashell
     frame() = default;
     frame(const type& name_, instantiation_kind kind_);
     explicit frame(const type& name_);
-    
+
     const type& name() const;
 
     bool has_kind() const;
@@ -42,7 +42,7 @@ namespace metashell
     type _name;
     boost::optional<instantiation_kind> _kind;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const frame& f_);
   bool operator==(const frame& a_, const frame& b_);
 }

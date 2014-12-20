@@ -37,7 +37,7 @@
 namespace
 {
   const std::string internal_file_name = "mdb-stdin";
-  
+
   const std::string wrap_prefix = "metashell::impl::wrap<";
   const std::string wrap_suffix = ">";
 

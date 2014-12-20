@@ -194,7 +194,7 @@ namespace
   )
   {
     assert(depth_counter_.size() > static_cast<unsigned int>(depth_));
-  
+
     if (depth_ > 0)
     {
       //TODO respect the -H (no syntax highlight parameter)
@@ -204,7 +204,7 @@ namespace
           colored_string(depth_counter_[i] > 0 ? "| " : "  ", get_color(i))
         );
       }
-  
+
       const color mark_color = get_color(depth_);
       if (print_mark_)
       {
@@ -246,9 +246,9 @@ namespace
   )
   {
     const colored_string element_content = format_frame(node_.current_frame());
-  
+
     const int non_content_length = 2*node_.depth();
-  
+
     const int pretty_print_threshold = 10;
     if (
       width_ < pretty_print_threshold
@@ -257,7 +257,7 @@ namespace
     {
       // We have no chance to display the graph nicely :(
       display_trace_graph(node_.depth(), depth_counter_, true, console_);
-  
+
       console_.show(element_content);
       console_.new_line();
     }
