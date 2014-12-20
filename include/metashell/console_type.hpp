@@ -1,8 +1,8 @@
-#ifndef METASHELL_STANDARD_HPP
-#define METASHELL_STANDARD_HPP
+#ifndef METASHELL_CONSOLE_TYPE_HPP
+#define METASHELL_CONSOLE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,20 +18,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
+#include <iosfwd>
 
 namespace metashell
 {
-  namespace standard
+  enum class console_type
   {
-    enum type
-    {
-      cpp11,
-      cpp14
-    };
-  }
+    plain,
+    readline
+  };
 
-  standard::type parse_standard(const std::string& std_);
-  std::string clang_argument(standard::type std_);
+  std::ostream& operator<<(std::ostream& o_, console_type t_);
+
+  console_type parse_console_type(const std::string& con_type_);
 }
 
 #endif

@@ -1125,7 +1125,11 @@ build your `fun.cpp` file.
 
 ### Not in any release yet
 
-* New section about `step over` in Getting started.
+* New features
+    * Support different shell modes (plain, readline)
+
+* Documentation updates
+    * New section about `step over` in Getting started.
 
 ### Version 2.0.0
 

@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
+#include <metashell/console_type.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
 #include <string>
@@ -44,6 +45,7 @@ namespace metashell
     int max_template_depth;
     unsigned templight_trace_capacity;
     bool saving_enabled;
+    console_type con_type;
 
     config();
   };

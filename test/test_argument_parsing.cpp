@@ -168,3 +168,13 @@ JUST_TEST_CASE(test_enabling_saving)
   JUST_ASSERT(r.cfg.saving_enabled);
 }
 
+JUST_TEST_CASE(test_default_console_type_is_readline)
+{
+  const char* args[] = {"metashell"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT_EQUAL(metashell::console_type::readline, r.cfg.con_type);
+}
+

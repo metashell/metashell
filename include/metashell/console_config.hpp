@@ -1,5 +1,5 @@
-#ifndef METASHELL_COMMAND_PROCESSOR_QUEUE_HPP
-#define METASHELL_COMMAND_PROCESSOR_QUEUE_HPP
+#ifndef METASHELL_CONSOLE_CONFIG_HPP
+#define METASHELL_CONSOLE_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,34 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
+#include <metashell/console_type.hpp>
+#include <metashell/line_reader.hpp>
+#include <metashell/command_processor_queue.hpp>
 
-#include <vector>
+#include <metashell/iface/history.hpp>
+#include <metashell/iface/console.hpp>
+#include <metashell/iface/displayer.hpp>
+
 #include <memory>
 
 namespace metashell
 {
-  class command_processor_queue
+  class console_config
   {
   public:
-    bool empty() const;
-    void push(std::unique_ptr<iface::command_processor> item_);
-    void pop(iface::displayer& displayer_);
-    void pop_stopped_processors(iface::displayer& displayer_);
+    console_config(console_type type_, bool indent_, bool syntax_highlight_);
 
-    void cancel_operation();
-    void line_available(const std::string& cmd_, iface::displayer& displayer_);
-    void code_complete(
-      const std::string& s_,
-      std::set<std::string>& out_
-    ) const;
-
-    std::string prompt() const;
-
-    void history(iface::history& history_);
+    iface::displayer& displayer();
+    iface::history& history();
+    line_reader& reader();
+    command_processor_queue& processor_queue();
   private:
-    iface::history* _history; // not owning
-    std::vector<std::unique_ptr<iface::command_processor>> _items;
+    command_processor_queue _processor_queue;
+    std::unique_ptr<iface::console> _console;
+    std::unique_ptr<iface::displayer> _displayer;
+    std::unique_ptr<iface::history> _history;
+    line_reader _reader;
   };
 }
 

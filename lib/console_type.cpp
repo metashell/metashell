@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,36 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
+#include <metashell/console_type.hpp>
 
+#include <iostream>
 #include <stdexcept>
 
 using namespace metashell;
 
-standard::type metashell::parse_standard(const std::string& std_)
+std::ostream& metashell::operator<<(std::ostream& o_, console_type t_)
 {
-  if (std_ == "c++0x" || std_ == "c++11")
+  switch (t_)
   {
-    return standard::cpp11;
+  case console_type::plain: return o_ << "plain";
+  case console_type::readline: return o_ << "readline";
   }
-  else if (std_ == "c++1y" || std_ == "c++14")
+  return o_; // avoid "control reaches end of function" warnings
+}
+
+console_type metashell::parse_console_type(const std::string& con_type_)
+{
+  if (con_type_ == "plain")
   {
-    return standard::cpp14;
+    return console_type::plain;
+  }
+  else if (con_type_ == "readline")
+  {
+    return console_type::readline;
   }
   else
   {
-    throw std::runtime_error("Invalid standard version: " + std_);
+    throw std::runtime_error("Not supported console type " + con_type_);
   }
 }
-
-std::string metashell::clang_argument(standard::type std_)
-{
-  switch (std_)
-  {
-  case standard::cpp11: return "-std=c++0x";
-  case standard::cpp14: return "-std=c++1y";
-  }
-  throw std::runtime_error("Invalid standard value");
-}
-
 

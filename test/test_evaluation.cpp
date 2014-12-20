@@ -344,7 +344,8 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   breaking_environment* e = new breaking_environment(cfg);
   in_memory_displayer d;
   null_history h;
-  command_processor_queue cpq(h);
+  command_processor_queue cpq;
+  cpq.history(h);
   shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq);
   e->append_throw_from_now();
 

@@ -19,7 +19,6 @@
 #include <metashell/metashell.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/null_history.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
@@ -73,8 +72,7 @@ namespace
   void show_pragma_help()
   {
     const config cfg;
-    null_history h;
-    command_processor_queue cpq(h);
+    command_processor_queue cpq;
     shell sh(cfg, cpq);
     const pragma_handler_map m = pragma_handler_map::build_default(sh, &cpq);
 
@@ -168,6 +166,7 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string cppstd("c++0x");
+  std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
   std::string fvalue;
 
@@ -219,6 +218,10 @@ parse_config_result metashell::parse_config(
       "enable_saving",
       "Enable saving the environment using the #msh environment save"
     )
+    (
+      "console", value(&con_type)->default_value(con_type),
+      "Console type. Possible values: plain, readline"
+    )
     ;
 
   try
@@ -230,7 +233,8 @@ parse_config_result metashell::parse_config(
     ucfg.verbose = vm.count("verbose") || vm.count("V");
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     ucfg.indent = vm.count("indent") != 0;
-    ucfg.standard_to_use = metashell::parse(cppstd);
+    ucfg.standard_to_use = metashell::parse_standard(cppstd);
+    ucfg.con_type = metashell::parse_console_type(con_type);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");

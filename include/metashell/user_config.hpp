@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
+#include <metashell/console_type.hpp>
 
 #include <string>
 #include <vector>
@@ -41,6 +42,7 @@ namespace metashell
     unsigned templight_trace_capacity = 500000;
 #endif
     bool saving_enabled = false;
+    console_type con_type = console_type::plain;
   };
 }
 
