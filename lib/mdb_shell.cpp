@@ -322,13 +322,16 @@ void mdb_shell::command_step(
        end = arg.end();
 
   int step_count = 1;
-  enum { normal, over } step_type = normal;
+  enum { normal, over, out } step_type = normal;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -lit("over")[ref(step_type) = over] >>
+        -(
+          lit("over")[ref(step_type) = over] |
+          lit("out")[ref(step_type) = out]
+        ) >>
         -int_[ref(step_count) = _1],
 
         space
@@ -362,6 +365,20 @@ void mdb_shell::command_step(
             mp->step(direction);
           } while (!mp->is_at_endpoint(direction) &&
               mp->get_backtrace_length() > bt_depth);
+        }
+      }
+      break;
+    case out:
+      {
+        for (int i = 0;
+            i < iteration_count && !mp->is_at_endpoint(direction); ++i)
+        {
+          unsigned bt_depth = mp->get_backtrace_length();
+          while (!mp->is_at_endpoint(direction) &&
+              mp->get_backtrace_length()+1 > bt_depth)
+          {
+            mp->step(direction);
+          }
         }
       }
       break;
