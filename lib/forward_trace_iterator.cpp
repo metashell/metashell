@@ -64,7 +64,7 @@ void forward_trace_iterator::visit(
   int depth_
 )
 {
-  metaprogram::vertex_descriptor vertex = 
+  metaprogram::vertex_descriptor vertex =
     edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
 
   _current =

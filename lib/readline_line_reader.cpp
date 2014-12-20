@@ -71,11 +71,11 @@ namespace
 
     static std::set<std::string> values;
     static std::set<std::string>::const_iterator pos;
-  
+
     if (!state_) // init
     {
       const std::string edited_text = get_edited_text();
-  
+
       const auto eb = edited_text.begin();
       processor_queue->code_complete(
         std::string(eb, eb + completion_end),
@@ -83,7 +83,7 @@ namespace
       );
       pos = values.begin();
     }
-  
+
     if (pos == values.end())
     {
       return 0;
@@ -117,7 +117,7 @@ namespace
     if (char *line = ::readline(prompt_.c_str()))
     {
       const std::string str(line);
-  
+
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
       free(line);
 #else

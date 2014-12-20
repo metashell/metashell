@@ -28,7 +28,7 @@ type::type() {}
 type::type(const std::string& name_) :
   _name(name_)
 {}
-    
+
 const std::string& type::name() const
 {
   return _name;

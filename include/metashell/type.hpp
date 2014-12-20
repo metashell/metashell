@@ -39,7 +39,7 @@ namespace metashell
   private:
     std::string _name;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const type& t_);
   bool operator==(const type& a_, const type& b_);
 }

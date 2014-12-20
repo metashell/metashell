@@ -53,7 +53,7 @@ JUST_TEST_CASE(test_nothing_is_displayed_by_default)
 {
   mock_console c;
   console_displayer cd(c, false, false);
-  
+
   JUST_ASSERT_EQUAL("", c.content().get_string());
 }
 
@@ -62,7 +62,7 @@ JUST_TEST_CASE(test_raw_text_is_printed)
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_raw_text("Hello world!");
-  
+
   JUST_ASSERT_EQUAL("Hello world!\n", c.content().get_string());
 }
 
@@ -71,7 +71,7 @@ JUST_TEST_CASE(test_raw_text_with_new_line_is_printed)
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_raw_text("Hello\nworld!");
-  
+
   JUST_ASSERT_EQUAL("Hello\nworld!\n", c.content().get_string());
 }
 
@@ -80,7 +80,7 @@ JUST_TEST_CASE(test_error_with_no_colors_is_printed)
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_error("Something went wrong");
-  
+
   JUST_ASSERT_EQUAL(
     colored_string("Something went wrong\n", boost::none),
     c.content()
@@ -92,7 +92,7 @@ JUST_TEST_CASE(test_error_with_colors_is_printed_in_red)
   mock_console c;
   console_displayer cd(c, false, true);
   cd.show_error("Something went wrong");
-  
+
   JUST_ASSERT_EQUAL(
     colored_string("Something went wrong", color::bright_red) + "\n",
     c.content()
@@ -103,7 +103,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
 {
   mock_console c(25);
   console_displayer d(c, false, false);
-  
+
   d.show_call_graph(fib5_call_graph());
 
   JUST_ASSERT_EQUAL(
@@ -137,7 +137,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
-  
+
   d.show_call_graph(fib5_call_graph());
 
   // The algorithm just gives up, and prints without extra line breaks
@@ -162,7 +162,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
 {
   mock_console c(1);
   console_displayer d(c, false, false);
-  
+
   d.show_call_graph(fib5_call_graph());
 
   // The algorithm just gives up, and prints without extra line breaks
