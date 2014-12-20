@@ -333,7 +333,8 @@ struct SectionData {
   std::error_code load(SectionRef &Section) {
     if (auto Err = Section.getContents(Data))
       return Err;
-    return Section.getAddress(Address);
+    Address = Section.getAddress();
+    return instrprof_error::success;
   }
 
   std::error_code get(uint64_t Pointer, size_t Size, StringRef &Result) {
@@ -409,9 +410,9 @@ std::error_code readCoverageMappingData(
       // function name.
       // This is useful to ignore the redundant records for the functions
       // with ODR linkage.
-      if (UniqueFunctionMappingData.count(MappingRecord.FunctionNamePtr))
+      if (!UniqueFunctionMappingData.insert(MappingRecord.FunctionNamePtr)
+               .second)
         continue;
-      UniqueFunctionMappingData.insert(MappingRecord.FunctionNamePtr);
       StringRef FunctionName;
       if (auto Err =
               ProfileNames.get(MappingRecord.FunctionNamePtr,
@@ -484,7 +485,7 @@ ObjectFileCoverageMappingReader::ObjectFileCoverageMappingReader(
 }
 
 std::error_code ObjectFileCoverageMappingReader::readHeader() {
-  ObjectFile *OF = Object.getBinary().get();
+  const ObjectFile *OF = Object.getBinary();
   if (!OF)
     return getError();
   auto BytesInAddress = OF->getBytesInAddress();

@@ -110,8 +110,7 @@ X86ELFMCAsmInfo::X86ELFMCAsmInfo(const Triple &T) {
 
   // OpenBSD and Bitrig have buggy support for .quad in 32-bit mode, just split
   // into two .words.
-  if ((T.getOS() == Triple::OpenBSD || T.getOS() == Triple::Bitrig) &&
-       T.getArch() == Triple::x86)
+  if ((T.isOSOpenBSD() || T.isOSBitrig()) && T.getArch() == Triple::x86)
     Data64bitsDirective = nullptr;
 
   // Always enable the integrated assembler by default.
@@ -130,20 +129,15 @@ X86_64MCAsmInfoDarwin::getExprForPersonalitySymbol(const MCSymbol *Sym,
   return MCBinaryExpr::CreateAdd(Res, Four, Context);
 }
 
-const MCSection *X86ELFMCAsmInfo::
-getNonexecutableStackSection(MCContext &Ctx) const {
-  return Ctx.getELFSection(".note.GNU-stack", ELF::SHT_PROGBITS,
-                           0, SectionKind::getMetadata());
-}
-
 void X86MCAsmInfoMicrosoft::anchor() { }
 
 X86MCAsmInfoMicrosoft::X86MCAsmInfoMicrosoft(const Triple &Triple) {
   if (Triple.getArch() == Triple::x86_64) {
     PrivateGlobalPrefix = ".L";
+    PrivateLabelPrefix = ".L";
     PointerSize = 8;
     WinEHEncodingType = WinEH::EncodingType::Itanium;
-    ExceptionsType = ExceptionHandling::WinEH;
+    ExceptionsType = ExceptionHandling::ItaniumWinEH;
   }
 
   AssemblerDialect = AsmWriterFlavor;
@@ -161,9 +155,10 @@ X86MCAsmInfoGNUCOFF::X86MCAsmInfoGNUCOFF(const Triple &Triple) {
   assert(Triple.isOSWindows() && "Windows is the only supported COFF target");
   if (Triple.getArch() == Triple::x86_64) {
     PrivateGlobalPrefix = ".L";
+    PrivateLabelPrefix = ".L";
     PointerSize = 8;
     WinEHEncodingType = WinEH::EncodingType::Itanium;
-    ExceptionsType = ExceptionHandling::WinEH;
+    ExceptionsType = ExceptionHandling::ItaniumWinEH;
   } else {
     ExceptionsType = ExceptionHandling::DwarfCFI;
   }

@@ -404,13 +404,16 @@ public:
                                       MachineInstr* MI,
                                       unsigned OpNum,
                                       const SmallVectorImpl<MachineOperand> &MOs,
-                                      unsigned Size, unsigned Alignment) const;
+                                      unsigned Size, unsigned Alignment,
+                                      bool AllowCommute) const;
 
   void
   getUnconditionalBranch(MCInst &Branch,
                          const MCSymbolRefExpr *BranchTarget) const override;
 
   void getTrap(MCInst &MI) const override;
+
+  unsigned getJumpInstrTableEntryBound() const override;
 
   bool isHighLatencyDef(int opc) const override;
 

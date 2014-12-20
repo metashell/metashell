@@ -39,14 +39,6 @@ ReportLocation *SymbolizeData(uptr addr) {
   return 0;
 }
 
-ReportStack *NewReportStackEntry(uptr addr) {
-  ReportStack *ent = (ReportStack*)internal_alloc(MBlockReportStack,
-                                                  sizeof(ReportStack));
-  internal_memset(ent, 0, sizeof(*ent));
-  ent->pc = addr;
-  return ent;
-}
-
 void *internal_alloc(MBlockType typ, uptr sz) {
   return InternalAlloc(sz);
 }
@@ -67,21 +59,19 @@ struct SymbolizeContext {
 // Callback into Go.
 static void (*symbolize_cb)(SymbolizeContext *ctx);
 
-ReportStack *SymbolizeCode(uptr addr) {
-  ReportStack *s = (ReportStack*)internal_alloc(MBlockReportStack,
-                                                sizeof(ReportStack));
-  internal_memset(s, 0, sizeof(*s));
-  s->pc = addr;
+SymbolizedStack *SymbolizeCode(uptr addr) {
+  SymbolizedStack *s = SymbolizedStack::New(addr);
   SymbolizeContext ctx;
   internal_memset(&ctx, 0, sizeof(ctx));
   ctx.pc = addr;
   symbolize_cb(&ctx);
   if (ctx.res) {
-    s->offset = ctx.off;
-    s->func = internal_strdup(ctx.func ? ctx.func : "??");
-    s->file = internal_strdup(ctx.file ? ctx.file : "-");
-    s->line = ctx.line;
-    s->col = 0;
+    AddressInfo &info = s->info;
+    info.module_offset = ctx.off;
+    info.function = internal_strdup(ctx.func ? ctx.func : "??");
+    info.file = internal_strdup(ctx.file ? ctx.file : "-");
+    info.line = ctx.line;
+    info.column = 0;
   }
   return s;
 }

@@ -91,7 +91,6 @@ public:
   AArch64TargetStreamer(MCStreamer &S);
   ~AArch64TargetStreamer();
 
-
   void finish() override;
 
   /// Callback used to implement the ldr= pseudo.
@@ -102,6 +101,9 @@ public:
   /// Callback used to implemnt the .ltorg directive.
   /// Emit contents of constant pool for the current section.
   void emitCurrentConstantPool();
+
+  /// Callback used to implement the .inst directive.
+  virtual void emitInst(uint32_t Inst);
 
 private:
   std::unique_ptr<AssemblerConstantPools> ConstantPools;
@@ -344,8 +346,8 @@ public:
   /// @p Section.  This is required to update CurSection.
   ///
   /// This corresponds to assembler directives like .section, .text, etc.
-  void SwitchSection(const MCSection *Section,
-                     const MCExpr *Subsection = nullptr) {
+  virtual void SwitchSection(const MCSection *Section,
+                             const MCExpr *Subsection = nullptr) {
     assert(Section && "Cannot switch to a null section!");
     MCSectionSubPair curSection = SectionStack.back().first;
     SectionStack.back().second = curSection;
@@ -368,7 +370,7 @@ public:
   }
 
   /// Create the default sections and set the initial one.
-  virtual void InitSections();
+  virtual void InitSections(bool NoExecStack);
 
   /// AssignSection - Sets the symbol's section.
   ///
@@ -766,8 +768,8 @@ MCStreamer *createMachOStreamer(MCContext &Ctx, MCAsmBackend &TAB,
 /// createELFStreamer - Create a machine code streamer which will generate
 /// ELF format object files.
 MCStreamer *createELFStreamer(MCContext &Ctx, MCAsmBackend &TAB,
-                              raw_ostream &OS, MCCodeEmitter *CE, bool RelaxAll,
-                              bool NoExecStack);
+                              raw_ostream &OS, MCCodeEmitter *CE,
+                              bool RelaxAll);
 
 } // end namespace llvm
 

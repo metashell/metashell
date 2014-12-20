@@ -23,7 +23,11 @@ namespace llvm {
 
 class ARMBaseTargetMachine : public LLVMTargetMachine {
 protected:
+  std::unique_ptr<TargetLoweringObjectFile> TLOF;
   ARMSubtarget        Subtarget;
+  bool isLittle;
+  mutable StringMap<std::unique_ptr<ARMSubtarget>> SubtargetMap;
+
 public:
   ARMBaseTargetMachine(const Target &T, StringRef TT,
                        StringRef CPU, StringRef FS,
@@ -31,14 +35,20 @@ public:
                        Reloc::Model RM, CodeModel::Model CM,
                        CodeGenOpt::Level OL,
                        bool isLittle);
+  ~ARMBaseTargetMachine() override;
 
   const ARMSubtarget *getSubtargetImpl() const override { return &Subtarget; }
+  const ARMSubtarget *getSubtargetImpl(const Function &F) const override;
 
   /// \brief Register ARM analysis passes with a pass manager.
   void addAnalysisPasses(PassManagerBase &PM) override;
 
   // Pass Pipeline Configuration
   TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
+
+  TargetLoweringObjectFile *getObjFileLowering() const override {
+    return TLOF.get();
+  }
 };
 
 /// ARMTargetMachine - ARM target machine.

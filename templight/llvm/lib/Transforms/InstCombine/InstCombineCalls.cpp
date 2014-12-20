@@ -16,7 +16,9 @@
 #include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/PatternMatch.h"
+#include "llvm/IR/Statepoint.h"
 #include "llvm/Transforms/Utils/BuildLibCalls.h"
 #include "llvm/Transforms/Utils/Local.h"
 using namespace llvm;
@@ -518,6 +520,90 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       }
     }
     break;
+  case Intrinsic::minnum:
+  case Intrinsic::maxnum: {
+    Value *Arg0 = II->getArgOperand(0);
+    Value *Arg1 = II->getArgOperand(1);
+
+    // fmin(x, x) -> x
+    if (Arg0 == Arg1)
+      return ReplaceInstUsesWith(CI, Arg0);
+
+    const ConstantFP *C0 = dyn_cast<ConstantFP>(Arg0);
+    const ConstantFP *C1 = dyn_cast<ConstantFP>(Arg1);
+
+    // Canonicalize constants into the RHS.
+    if (C0 && !C1) {
+      II->setArgOperand(0, Arg1);
+      II->setArgOperand(1, Arg0);
+      return II;
+    }
+
+    // fmin(x, nan) -> x
+    if (C1 && C1->isNaN())
+      return ReplaceInstUsesWith(CI, Arg0);
+
+    // This is the value because if undef were NaN, we would return the other
+    // value and cannot return a NaN unless both operands are.
+    //
+    // fmin(undef, x) -> x
+    if (isa<UndefValue>(Arg0))
+      return ReplaceInstUsesWith(CI, Arg1);
+
+    // fmin(x, undef) -> x
+    if (isa<UndefValue>(Arg1))
+      return ReplaceInstUsesWith(CI, Arg0);
+
+    Value *X = nullptr;
+    Value *Y = nullptr;
+    if (II->getIntrinsicID() == Intrinsic::minnum) {
+      // fmin(x, fmin(x, y)) -> fmin(x, y)
+      // fmin(y, fmin(x, y)) -> fmin(x, y)
+      if (match(Arg1, m_FMin(m_Value(X), m_Value(Y)))) {
+        if (Arg0 == X || Arg0 == Y)
+          return ReplaceInstUsesWith(CI, Arg1);
+      }
+
+      // fmin(fmin(x, y), x) -> fmin(x, y)
+      // fmin(fmin(x, y), y) -> fmin(x, y)
+      if (match(Arg0, m_FMin(m_Value(X), m_Value(Y)))) {
+        if (Arg1 == X || Arg1 == Y)
+          return ReplaceInstUsesWith(CI, Arg0);
+      }
+
+      // TODO: fmin(nnan x, inf) -> x
+      // TODO: fmin(nnan ninf x, flt_max) -> x
+      if (C1 && C1->isInfinity()) {
+        // fmin(x, -inf) -> -inf
+        if (C1->isNegative())
+          return ReplaceInstUsesWith(CI, Arg1);
+      }
+    } else {
+      assert(II->getIntrinsicID() == Intrinsic::maxnum);
+      // fmax(x, fmax(x, y)) -> fmax(x, y)
+      // fmax(y, fmax(x, y)) -> fmax(x, y)
+      if (match(Arg1, m_FMax(m_Value(X), m_Value(Y)))) {
+        if (Arg0 == X || Arg0 == Y)
+          return ReplaceInstUsesWith(CI, Arg1);
+      }
+
+      // fmax(fmax(x, y), x) -> fmax(x, y)
+      // fmax(fmax(x, y), y) -> fmax(x, y)
+      if (match(Arg0, m_FMax(m_Value(X), m_Value(Y)))) {
+        if (Arg1 == X || Arg1 == Y)
+          return ReplaceInstUsesWith(CI, Arg0);
+      }
+
+      // TODO: fmax(nnan x, -inf) -> x
+      // TODO: fmax(nnan ninf x, -flt_max) -> x
+      if (C1 && C1->isInfinity()) {
+        // fmax(x, inf) -> inf
+        if (!C1->isNegative())
+          return ReplaceInstUsesWith(CI, Arg1);
+      }
+    }
+    break;
+  }
   case Intrinsic::ppc_altivec_lvx:
   case Intrinsic::ppc_altivec_lvxl:
     // Turn PPC lvx -> load if the pointer is known aligned.
@@ -528,6 +614,13 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       return new LoadInst(Ptr);
     }
     break;
+  case Intrinsic::ppc_vsx_lxvw4x:
+  case Intrinsic::ppc_vsx_lxvd2x: {
+    // Turn PPC VSX loads into normal loads.
+    Value *Ptr = Builder->CreateBitCast(II->getArgOperand(0),
+                                        PointerType::getUnqual(II->getType()));
+    return new LoadInst(Ptr, Twine(""), false, 1);
+  }
   case Intrinsic::ppc_altivec_stvx:
   case Intrinsic::ppc_altivec_stvxl:
     // Turn stvx -> store if the pointer is known aligned.
@@ -539,6 +632,13 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       return new StoreInst(II->getArgOperand(0), Ptr);
     }
     break;
+  case Intrinsic::ppc_vsx_stxvw4x:
+  case Intrinsic::ppc_vsx_stxvd2x: {
+    // Turn PPC VSX stores into normal stores.
+    Type *OpPtrTy = PointerType::getUnqual(II->getArgOperand(0)->getType());
+    Value *Ptr = Builder->CreateBitCast(II->getArgOperand(1), OpPtrTy);
+    return new StoreInst(II->getArgOperand(0), Ptr, false, 1);
+  }
   case Intrinsic::x86_sse_storeu_ps:
   case Intrinsic::x86_sse2_storeu_pd:
   case Intrinsic::x86_sse2_storeu_dq:
@@ -1016,6 +1116,34 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
                           II->getName());
       return EraseInstFromFunction(*II);
     }
+
+    // assume( (load addr) != null ) -> add 'nonnull' metadata to load
+    // (if assume is valid at the load)
+    if (ICmpInst* ICmp = dyn_cast<ICmpInst>(IIOperand)) {
+      Value *LHS = ICmp->getOperand(0);
+      Value *RHS = ICmp->getOperand(1);
+      if (ICmpInst::ICMP_NE == ICmp->getPredicate() &&
+          isa<LoadInst>(LHS) &&
+          isa<Constant>(RHS) &&
+          RHS->getType()->isPointerTy() &&
+          cast<Constant>(RHS)->isNullValue()) {
+        LoadInst* LI = cast<LoadInst>(LHS);
+        if (isValidAssumeForContext(II, LI, DL, DT)) {
+          MDNode* MD = MDNode::get(II->getContext(), ArrayRef<Value*>());
+          LI->setMetadata(LLVMContext::MD_nonnull, MD);
+          return EraseInstFromFunction(*II);
+        }
+      }
+      // TODO: apply nonnull return attributes to calls and invokes
+      // TODO: apply range metadata for range check patterns?
+    }
+    // If there is a dominating assume with the same condition as this one,
+    // then this one is redundant, and should be removed.
+    APInt KnownZero(1, 0), KnownOne(1, 0);
+    computeKnownBits(IIOperand, KnownZero, KnownOne, 0, II);
+    if (KnownOne.isAllOnesValue())
+      return EraseInstFromFunction(*II);
+
     break;
   }
   }
@@ -1036,6 +1164,14 @@ static bool isSafeToEliminateVarargsCast(const CallSite CS,
                                          const DataLayout * const DL,
                                          const int ix) {
   if (!CI->isLosslessCast())
+    return false;
+
+  // If this is a GC intrinsic, avoid munging types.  We need types for
+  // statepoint reconstruction in SelectionDAG.
+  // TODO: This is probably something which should be expanded to all
+  // intrinsics since the entire point of intrinsics is that
+  // they are understandable by the optimizer.
+  if (isStatepoint(CS) || isGCRelocate(CS) || isGCResult(CS))
     return false;
 
   // The size of ByVal or InAlloca arguments is derived from the type, so we
@@ -1277,7 +1413,7 @@ bool InstCombiner::transformConstExprCastCall(CallSite CS) {
       if (!Caller->use_empty() &&
           // void -> non-void is handled specially
           !NewRetTy->isVoidTy())
-      return false;   // Cannot transform this return value.
+        return false;   // Cannot transform this return value.
     }
 
     if (!CallerPAL.isEmpty() && !Caller->use_empty()) {
@@ -1496,8 +1632,14 @@ bool InstCombiner::transformConstExprCastCall(CallSite CS) {
 
   if (!Caller->use_empty())
     ReplaceInstUsesWith(*Caller, NV);
-  else if (Caller->hasValueHandle())
-    ValueHandleBase::ValueIsRAUWd(Caller, NV);
+  else if (Caller->hasValueHandle()) {
+    if (OldRetTy == NV->getType())
+      ValueHandleBase::ValueIsRAUWd(Caller, NV);
+    else
+      // We cannot call ValueIsRAUWd with a different type, and the
+      // actual tracked value will disappear.
+      ValueHandleBase::ValueIsDeleted(Caller);
+  }
 
   EraseInstFromFunction(*Caller);
   return true;

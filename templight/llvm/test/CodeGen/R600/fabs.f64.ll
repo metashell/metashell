@@ -7,9 +7,9 @@ declare double @llvm.fabs.f64(double) readnone
 declare <2 x double> @llvm.fabs.v2f64(<2 x double>) readnone
 declare <4 x double> @llvm.fabs.v4f64(<4 x double>) readnone
 
-; FUNC-LABEL: @v_fabs_f64
-; SI: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}v_fabs_f64:
+; SI: v_and_b32
+; SI: s_endpgm
 define void @v_fabs_f64(double addrspace(1)* %out, double addrspace(1)* %in) {
   %tid = call i32 @llvm.r600.read.tidig.x() nounwind readnone
   %tidext = sext i32 %tid to i64
@@ -20,43 +20,43 @@ define void @v_fabs_f64(double addrspace(1)* %out, double addrspace(1)* %in) {
   ret void
 }
 
-; FUNC-LABEL: @fabs_f64
-; SI: V_AND_B32
-; SI-NOT: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}fabs_f64:
+; SI: v_and_b32
+; SI-NOT: v_and_b32
+; SI: s_endpgm
 define void @fabs_f64(double addrspace(1)* %out, double %in) {
   %fabs = call double @llvm.fabs.f64(double %in)
   store double %fabs, double addrspace(1)* %out
   ret void
 }
 
-; FUNC-LABEL: @fabs_v2f64
-; SI: V_AND_B32
-; SI: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}fabs_v2f64:
+; SI: v_and_b32
+; SI: v_and_b32
+; SI: s_endpgm
 define void @fabs_v2f64(<2 x double> addrspace(1)* %out, <2 x double> %in) {
   %fabs = call <2 x double> @llvm.fabs.v2f64(<2 x double> %in)
   store <2 x double> %fabs, <2 x double> addrspace(1)* %out
   ret void
 }
 
-; FUNC-LABEL: @fabs_v4f64
-; SI: V_AND_B32
-; SI: V_AND_B32
-; SI: V_AND_B32
-; SI: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}fabs_v4f64:
+; SI: v_and_b32
+; SI: v_and_b32
+; SI: v_and_b32
+; SI: v_and_b32
+; SI: s_endpgm
 define void @fabs_v4f64(<4 x double> addrspace(1)* %out, <4 x double> %in) {
   %fabs = call <4 x double> @llvm.fabs.v4f64(<4 x double> %in)
   store <4 x double> %fabs, <4 x double> addrspace(1)* %out
   ret void
 }
 
-; SI-LABEL: @fabs_fold_f64
-; SI: S_LOAD_DWORDX2 [[ABS_VALUE:s\[[0-9]+:[0-9]+\]]], {{s\[[0-9]+:[0-9]+\]}}, 0xb
-; SI-NOT: AND
-; SI: V_MUL_F64 {{v\[[0-9]+:[0-9]+\]}}, |[[ABS_VALUE]]|, {{v\[[0-9]+:[0-9]+\]}}
-; SI: S_ENDPGM
+; SI-LABEL: {{^}}fabs_fold_f64:
+; SI: s_load_dwordx2 [[ABS_VALUE:s\[[0-9]+:[0-9]+\]]], {{s\[[0-9]+:[0-9]+\]}}, 0xb
+; SI-NOT: and
+; SI: v_mul_f64 {{v\[[0-9]+:[0-9]+\]}}, |[[ABS_VALUE]]|, {{v\[[0-9]+:[0-9]+\]}}
+; SI: s_endpgm
 define void @fabs_fold_f64(double addrspace(1)* %out, double %in0, double %in1) {
   %fabs = call double @llvm.fabs.f64(double %in0)
   %fmul = fmul double %fabs, %in1
@@ -64,11 +64,11 @@ define void @fabs_fold_f64(double addrspace(1)* %out, double %in0, double %in1) 
   ret void
 }
 
-; SI-LABEL: @fabs_fn_fold_f64
-; SI: S_LOAD_DWORDX2 [[ABS_VALUE:s\[[0-9]+:[0-9]+\]]], {{s\[[0-9]+:[0-9]+\]}}, 0xb
-; SI-NOT: AND
-; SI: V_MUL_F64 {{v\[[0-9]+:[0-9]+\]}}, |[[ABS_VALUE]]|, {{v\[[0-9]+:[0-9]+\]}}
-; SI: S_ENDPGM
+; SI-LABEL: {{^}}fabs_fn_fold_f64:
+; SI: s_load_dwordx2 [[ABS_VALUE:s\[[0-9]+:[0-9]+\]]], {{s\[[0-9]+:[0-9]+\]}}, 0xb
+; SI-NOT: and
+; SI: v_mul_f64 {{v\[[0-9]+:[0-9]+\]}}, |[[ABS_VALUE]]|, {{v\[[0-9]+:[0-9]+\]}}
+; SI: s_endpgm
 define void @fabs_fn_fold_f64(double addrspace(1)* %out, double %in0, double %in1) {
   %fabs = call double @fabs(double %in0)
   %fmul = fmul double %fabs, %in1
@@ -76,9 +76,9 @@ define void @fabs_fn_fold_f64(double addrspace(1)* %out, double %in0, double %in
   ret void
 }
 
-; FUNC-LABEL: @fabs_free_f64
-; SI: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}fabs_free_f64:
+; SI: v_and_b32
+; SI: s_endpgm
 define void @fabs_free_f64(double addrspace(1)* %out, i64 %in) {
   %bc= bitcast i64 %in to double
   %fabs = call double @llvm.fabs.f64(double %bc)
@@ -86,9 +86,9 @@ define void @fabs_free_f64(double addrspace(1)* %out, i64 %in) {
   ret void
 }
 
-; FUNC-LABEL: @fabs_fn_free_f64
-; SI: V_AND_B32
-; SI: S_ENDPGM
+; FUNC-LABEL: {{^}}fabs_fn_free_f64:
+; SI: v_and_b32
+; SI: s_endpgm
 define void @fabs_fn_free_f64(double addrspace(1)* %out, i64 %in) {
   %bc= bitcast i64 %in to double
   %fabs = call double @fabs(double %bc)

@@ -184,6 +184,23 @@ public:
     if ((Flags & ELF::EF_PPC64_ABI) == 0)
       MCA.setELFHeaderEFlags(Flags | 2);
   }
+  void emitAssignment(MCSymbol *Symbol, const MCExpr *Value) override {
+    // When encoding an assignment to set symbol A to symbol B, also copy
+    // the st_other bits encoding the local entry point offset.
+    if (Value->getKind() != MCExpr::SymbolRef)
+      return;
+    const MCSymbol &RhsSym =
+        static_cast<const MCSymbolRefExpr *>(Value)->getSymbol();
+    MCSymbolData &Data = getStreamer().getOrCreateSymbolData(&RhsSym);
+    MCSymbolData &SymbolData = getStreamer().getOrCreateSymbolData(Symbol);
+    // The "other" values are stored in the last 6 bits of the second byte.
+    // The traditional defines for STO values assume the full byte and thus
+    // the shift to pack it.
+    unsigned Other = MCELF::getOther(SymbolData) << 2;
+    Other &= ~ELF::STO_PPC64_LOCAL_MASK;
+    Other |= (MCELF::getOther(Data) << 2) & ELF::STO_PPC64_LOCAL_MASK;
+    MCELF::setOther(SymbolData, Other >> 2);
+  }
 };
 
 class PPCTargetMachOStreamer : public PPCTargetStreamer {
@@ -208,19 +225,15 @@ public:
 // This is duplicated code. Refactor this.
 static MCStreamer *createMCStreamer(const Target &T, StringRef TT,
                                     MCContext &Ctx, MCAsmBackend &MAB,
-                                    raw_ostream &OS,
-                                    MCCodeEmitter *Emitter,
-                                    const MCSubtargetInfo &STI,
-                                    bool RelaxAll,
-                                    bool NoExecStack) {
+                                    raw_ostream &OS, MCCodeEmitter *Emitter,
+                                    const MCSubtargetInfo &STI, bool RelaxAll) {
   if (Triple(TT).isOSDarwin()) {
     MCStreamer *S = createMachOStreamer(Ctx, MAB, OS, Emitter, RelaxAll);
     new PPCTargetMachOStreamer(*S);
     return S;
   }
 
-  MCStreamer *S =
-      createELFStreamer(Ctx, MAB, OS, Emitter, RelaxAll, NoExecStack);
+  MCStreamer *S = createELFStreamer(Ctx, MAB, OS, Emitter, RelaxAll);
   new PPCTargetELFStreamer(*S);
   return S;
 }

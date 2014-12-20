@@ -37,8 +37,10 @@ static void completeEphemeralValues(SmallVector<const Value *, 16> &WorkSet,
   // alive only by ephemeral values.
 
   while (!WorkSet.empty()) {
-    const Value *V = WorkSet.pop_back_val();
-    if (!Visited.insert(V))
+    const Value *V = WorkSet.front();
+    WorkSet.erase(WorkSet.begin());
+
+    if (!Visited.insert(V).second)
       continue;
 
     // If all uses of this value are ephemeral, then so is this value.

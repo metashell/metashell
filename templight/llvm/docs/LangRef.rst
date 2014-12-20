@@ -633,7 +633,8 @@ name, a (possibly empty) argument list (each with optional :ref:`parameter
 attributes <paramattrs>`), optional :ref:`function attributes <fnattrs>`,
 an optional section, an optional alignment,
 an optional :ref:`comdat <langref_comdats>`,
-an optional :ref:`garbage collector name <gc>`, an optional :ref:`prefix <prefixdata>`, an opening
+an optional :ref:`garbage collector name <gc>`, an optional :ref:`prefix <prefixdata>`,
+an optional :ref:`prologue <prologuedata>`, an opening
 curly brace, a list of basic blocks, and a closing curly brace.
 
 LLVM function declarations consist of the "``declare``" keyword, an
@@ -643,7 +644,8 @@ an optional :ref:`calling convention <callingconv>`,
 an optional ``unnamed_addr`` attribute, a return type, an optional
 :ref:`parameter attribute <paramattrs>` for the return type, a function
 name, a possibly empty list of arguments, an optional alignment, an optional
-:ref:`garbage collector name <gc>` and an optional :ref:`prefix <prefixdata>`.
+:ref:`garbage collector name <gc>`, an optional :ref:`prefix <prefixdata>`,
+and an optional :ref:`prologue <prologuedata>`.
 
 A function definition contains a list of basic blocks, forming the CFG (Control
 Flow Graph) for the function. Each basic block may optionally start with a label
@@ -680,7 +682,7 @@ Syntax::
            [cconv] [ret attrs]
            <ResultType> @<FunctionName> ([argument list])
            [unnamed_addr] [fn Attrs] [section "name"] [comdat $<ComdatName>]
-           [align N] [gc] [prefix Constant] { ... }
+           [align N] [gc] [prefix Constant] [prologue Constant] { ... }
 
 The argument list is a comma seperated sequence of arguments where each
 argument is of the following form
@@ -941,23 +943,26 @@ Currently, only the following parameter attributes are defined:
 .. _noalias:
 
 ``noalias``
-    This indicates that pointer values :ref:`based <pointeraliasing>` on
-    the argument or return value do not alias pointer values that are
-    not *based* on it, ignoring certain "irrelevant" dependencies. For a
-    call to the parent function, dependencies between memory references
-    from before or after the call and from those during the call are
-    "irrelevant" to the ``noalias`` keyword for the arguments and return
-    value used in that call. The caller shares the responsibility with
-    the callee for ensuring that these requirements are met. For further
-    details, please see the discussion of the NoAlias response in :ref:`alias
-    analysis <Must, May, or No>`.
+    This indicates that objects accessed via pointer values
+    :ref:`based <pointeraliasing>` on the argument or return value are not also
+    accessed, during the execution of the function, via pointer values not
+    *based* on the argument or return value. The attribute on a return value
+    also has additional semantics described below. The caller shares the
+    responsibility with the callee for ensuring that these requirements are met.
+    For further details, please see the discussion of the NoAlias response in
+    :ref:`alias analysis <Must, May, or No>`.
 
     Note that this definition of ``noalias`` is intentionally similar
-    to the definition of ``restrict`` in C99 for function arguments,
-    though it is slightly weaker.
+    to the definition of ``restrict`` in C99 for function arguments.
 
     For function return values, C99's ``restrict`` is not meaningful,
-    while LLVM's ``noalias`` is.
+    while LLVM's ``noalias`` is. Furthermore, the semantics of the ``noalias``
+    attribute on return values are stronger than the semantics of the attribute
+    when used on function arguments. On function return values, the ``noalias``
+    attribute indicates that the function acts like a system memory allocation
+    function, returning a pointer to allocated storage disjoint from the
+    storage for any other object accessible to the caller.
+
 ``nocapture``
     This indicates that the callee does not make any copies of the
     pointer that outlive the callee itself. This is not a valid
@@ -1018,47 +1023,79 @@ support the named garbage collection algorithm.
 Prefix Data
 -----------
 
-Prefix data is data associated with a function which the code generator
-will emit immediately before the function body.  The purpose of this feature
-is to allow frontends to associate language-specific runtime metadata with
-specific functions and make it available through the function pointer while
-still allowing the function pointer to be called.  To access the data for a
-given function, a program may bitcast the function pointer to a pointer to
-the constant's type.  This implies that the IR symbol points to the start
-of the prefix data.
+Prefix data is data associated with a function which the code
+generator will emit immediately before the function's entrypoint.
+The purpose of this feature is to allow frontends to associate
+language-specific runtime metadata with specific functions and make it
+available through the function pointer while still allowing the
+function pointer to be called.
 
-To maintain the semantics of ordinary function calls, the prefix data must
+To access the data for a given function, a program may bitcast the
+function pointer to a pointer to the constant's type and dereference
+index -1.  This implies that the IR symbol points just past the end of
+the prefix data. For instance, take the example of a function annotated
+with a single ``i32``,
+
+.. code-block:: llvm
+
+    define void @f() prefix i32 123 { ... }
+
+The prefix data can be referenced as,
+
+.. code-block:: llvm
+
+    %0 = bitcast *void () @f to *i32
+    %a = getelementptr inbounds *i32 %0, i32 -1
+    %b = load i32* %a
+
+Prefix data is laid out as if it were an initializer for a global variable
+of the prefix data's type.  The function will be placed such that the
+beginning of the prefix data is aligned. This means that if the size
+of the prefix data is not a multiple of the alignment size, the
+function's entrypoint will not be aligned. If alignment of the
+function's entrypoint is desired, padding must be added to the prefix
+data.
+
+A function may have prefix data but no body.  This has similar semantics
+to the ``available_externally`` linkage in that the data may be used by the
+optimizers but will not be emitted in the object file.
+
+.. _prologuedata:
+
+Prologue Data
+-------------
+
+The ``prologue`` attribute allows arbitrary code (encoded as bytes) to
+be inserted prior to the function body. This can be used for enabling
+function hot-patching and instrumentation.
+
+To maintain the semantics of ordinary function calls, the prologue data must
 have a particular format.  Specifically, it must begin with a sequence of
 bytes which decode to a sequence of machine instructions, valid for the
 module's target, which transfer control to the point immediately succeeding
-the prefix data, without performing any other visible action.  This allows
+the prologue data, without performing any other visible action.  This allows
 the inliner and other passes to reason about the semantics of the function
-definition without needing to reason about the prefix data.  Obviously this
-makes the format of the prefix data highly target dependent.
+definition without needing to reason about the prologue data.  Obviously this
+makes the format of the prologue data highly target dependent.
 
-Prefix data is laid out as if it were an initializer for a global variable
-of the prefix data's type.  No padding is automatically placed between the
-prefix data and the function body.  If padding is required, it must be part
-of the prefix data.
-
-A trivial example of valid prefix data for the x86 architecture is ``i8 144``,
+A trivial example of valid prologue data for the x86 architecture is ``i8 144``,
 which encodes the ``nop`` instruction:
 
 .. code-block:: llvm
 
-    define void @f() prefix i8 144 { ... }
+    define void @f() prologue i8 144 { ... }
 
-Generally prefix data can be formed by encoding a relative branch instruction
-which skips the metadata, as in this example of valid prefix data for the
+Generally prologue data can be formed by encoding a relative branch instruction
+which skips the metadata, as in this example of valid prologue data for the
 x86_64 architecture, where the first two bytes encode ``jmp .+10``:
 
 .. code-block:: llvm
 
     %0 = type <{ i8, i8, i8* }>
 
-    define void @f() prefix %0 <{ i8 235, i8 8, i8* @md}> { ... }
+    define void @f() prologue %0 <{ i8 235, i8 8, i8* @md}> { ... }
 
-A function may have prefix data but no body.  This has similar semantics
+A function may have prologue data but no body.  This has similar semantics
 to the ``available_externally`` linkage in that the data may be used by the
 optimizers but will not be emitted in the object file.
 
@@ -2395,7 +2432,7 @@ allowed to assume that the '``undef``' operand could be the same as
       %C = xor %B, %B
 
       %D = undef
-      %E = icmp lt %D, 4
+      %E = icmp slt %D, 4
       %F = icmp gte %D, 4
 
     Safe:
@@ -5157,7 +5194,7 @@ Syntax:
 
 ::
 
-      <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
+      <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>][, !nonnull !<index>]
       <result> = load atomic [volatile] <ty>* <pointer> [singlethread] <ordering>, align <alignment>
       !<index> = !{ i32 1 }
 
@@ -5208,10 +5245,19 @@ as the ``MOVNT`` instruction on x86.
 The optional ``!invariant.load`` metadata must reference a single
 metadata name ``<index>`` corresponding to a metadata node with no
 entries. The existence of the ``!invariant.load`` metadata on the
-instruction tells the optimizer and code generator that this load
-address points to memory which does not change value during program
-execution. The optimizer may then move this load around, for example, by
-hoisting it out of loops using loop invariant code motion.
+instruction tells the optimizer and code generator that the address
+operand to this load points to memory which can be assumed unchanged.
+Being invariant does not imply that a location is dereferenceable, 
+but it does imply that once the location is known dereferenceable 
+its value is henceforth unchanging.  
+
+The optional ``!nonnull`` metadata must reference a single
+metadata name ``<index>`` corresponding to a metadata node with no
+entries. The existence of the ``!nonnull`` metadata on the
+instruction tells the optimizer that the value loaded is known to
+never be null.  This is analogous to the ''nonnull'' attribute
+on parameters and return values.  This metadata can only be applied 
+to loads of a pointer type.  
 
 Semantics:
 """"""""""
@@ -6876,14 +6922,21 @@ variable argument handling intrinsic functions are used.
 
 .. code-block:: llvm
 
+    ; This struct is different for every platform. For most platforms,
+    ; it is merely an i8*.
+    %struct.va_list = type { i8* }
+
+    ; For Unix x86_64 platforms, va_list is the following struct:
+    ; %struct.va_list = type { i32, i32, i8*, i8* }
+
     define i32 @test(i32 %X, ...) {
       ; Initialize variable argument processing
-      %ap = alloca i8*
-      %ap2 = bitcast i8** %ap to i8*
+      %ap = alloca %struct.va_list
+      %ap2 = bitcast %struct.va_list* %ap to i8*
       call void @llvm.va_start(i8* %ap2)
 
       ; Read a single integer argument
-      %tmp = va_arg i8** %ap, i32
+      %tmp = va_arg i8* %ap2, i32
 
       ; Demonstrate usage of llvm.va_copy and llvm.va_end
       %aq = alloca i8*
@@ -8020,9 +8073,9 @@ all types however.
 
       declare float     @llvm.fabs.f32(float  %Val)
       declare double    @llvm.fabs.f64(double %Val)
-      declare x86_fp80  @llvm.fabs.f80(x86_fp80  %Val)
+      declare x86_fp80  @llvm.fabs.f80(x86_fp80 %Val)
       declare fp128     @llvm.fabs.f128(fp128 %Val)
-      declare ppc_fp128 @llvm.fabs.ppcf128(ppc_fp128  %Val)
+      declare ppc_fp128 @llvm.fabs.ppcf128(ppc_fp128 %Val)
 
 Overview:
 """""""""
@@ -8041,6 +8094,89 @@ Semantics:
 
 This function returns the same values as the libm ``fabs`` functions
 would, and handles error conditions in the same way.
+
+'``llvm.minnum.*``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+This is an overloaded intrinsic. You can use ``llvm.minnum`` on any
+floating point or vector of floating point type. Not all targets support
+all types however.
+
+::
+
+      declare float     @llvm.minnum.f32(float %Val0, float %Val1)
+      declare double    @llvm.minnum.f64(double %Val0, double %Val1)
+      declare x86_fp80  @llvm.minnum.f80(x86_fp80 %Val0, x86_fp80 %Val1)
+      declare fp128     @llvm.minnum.f128(fp128 %Val0, fp128 %Val1)
+      declare ppc_fp128 @llvm.minnum.ppcf128(ppc_fp128 %Val0, ppc_fp128 %Val1)
+
+Overview:
+"""""""""
+
+The '``llvm.minnum.*``' intrinsics return the minimum of the two
+arguments.
+
+
+Arguments:
+""""""""""
+
+The arguments and return value are floating point numbers of the same
+type.
+
+Semantics:
+""""""""""
+
+Follows the IEEE-754 semantics for minNum, which also match for libm's
+fmin.
+
+If either operand is a NaN, returns the other non-NaN operand. Returns
+NaN only if both operands are NaN. If the operands compare equal,
+returns a value that compares equal to both operands. This means that
+fmin(+/-0.0, +/-0.0) could return either -0.0 or 0.0.
+
+'``llvm.maxnum.*``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+This is an overloaded intrinsic. You can use ``llvm.maxnum`` on any
+floating point or vector of floating point type. Not all targets support
+all types however.
+
+::
+
+      declare float     @llvm.maxnum.f32(float  %Val0, float  %Val1l)
+      declare double    @llvm.maxnum.f64(double %Val0, double %Val1)
+      declare x86_fp80  @llvm.maxnum.f80(x86_fp80  %Val0, x86_fp80  %Val1)
+      declare fp128     @llvm.maxnum.f128(fp128 %Val0, fp128 %Val1)
+      declare ppc_fp128 @llvm.maxnum.ppcf128(ppc_fp128  %Val0, ppc_fp128  %Val1)
+
+Overview:
+"""""""""
+
+The '``llvm.maxnum.*``' intrinsics return the maximum of the two
+arguments.
+
+
+Arguments:
+""""""""""
+
+The arguments and return value are floating point numbers of the same
+type.
+
+Semantics:
+""""""""""
+Follows the IEEE-754 semantics for maxNum, which also match for libm's
+fmax.
+
+If either operand is a NaN, returns the other non-NaN operand. Returns
+NaN only if both operands are NaN. If the operands compare equal,
+returns a value that compares equal to both operands. This means that
+fmax(+/-0.0, +/-0.0) could return either -0.0 or 0.0.
 
 '``llvm.copysign.*``' Intrinsic
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -9541,8 +9677,9 @@ Syntax:
 Overview:
 """""""""
 
-The ``llvm.donothing`` intrinsic doesn't perform any operation. It's the
-only intrinsic that can be called with an invoke instruction.
+The ``llvm.donothing`` intrinsic doesn't perform any operation. It's one of only
+two intrinsics (besides ``llvm.experimental.patchpoint``) that can be called
+with an invoke instruction.
 
 Arguments:
 """"""""""

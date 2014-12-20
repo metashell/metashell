@@ -172,9 +172,12 @@ define i32 @load_breg_immoff_5(i64 %a) {
 
 ; Min un-supported scaled offset
 define i32 @load_breg_immoff_6(i64 %a) {
-; CHECK-LABEL: load_breg_immoff_6
-; CHECK:       add [[REG:x[0-9]+]], x0, #4, lsl #12
-; CHECK-NEXT:  ldr {{w[0-9]+}}, {{\[}}[[REG]]{{\]}}
+; SDAG-LABEL: load_breg_immoff_6
+; SDAG:       orr	w[[NUM:[0-9]+]], wzr, #0x4000
+; SDAG-NEXT:  ldr {{w[0-9]+}}, [x0, x[[NUM]]]
+; FAST-LABEL: load_breg_immoff_6
+; FAST:       add [[REG:x[0-9]+]], x0, #4, lsl #12
+; FAST-NEXT:  ldr {{w[0-9]+}}, {{\[}}[[REG]]{{\]}}
   %1 = add i64 %a, 16384
   %2 = inttoptr i64 %1 to i32*
   %3 = load i32* %2
@@ -235,9 +238,12 @@ define void @store_breg_immoff_5(i64 %a) {
 
 ; Min un-supported scaled offset
 define void @store_breg_immoff_6(i64 %a) {
-; CHECK-LABEL: store_breg_immoff_6
-; CHECK:       add [[REG:x[0-9]+]], x0, #4, lsl #12
-; CHECK-NEXT:  str wzr, {{\[}}[[REG]]{{\]}}
+; SDAG-LABEL: store_breg_immoff_6
+; SDAG:       orr	w[[NUM:[0-9]+]], wzr, #0x4000
+; SDAG-NEXT:  str wzr, [x0, x[[NUM]]]
+; FAST-LABEL: store_breg_immoff_6
+; FAST:       add [[REG:x[0-9]+]], x0, #4, lsl #12
+; FAST-NEXT:  str wzr, {{\[}}[[REG]]{{\]}}
   %1 = add i64 %a, 16384
   %2 = inttoptr i64 %1 to i32*
   store i32 0, i32* %2
@@ -298,8 +304,8 @@ define i64 @load_breg_offreg_immoff_1(i64 %a, i64 %b) {
 define i64 @load_breg_offreg_immoff_2(i64 %a, i64 %b) {
 ; SDAG-LABEL: load_breg_offreg_immoff_2
 ; SDAG:       add [[REG1:x[0-9]+]], x0, x1
-; SDAG-NEXT:  add [[REG2:x[0-9]+]], [[REG1]], #15, lsl #12
-; SDAG-NEXT:  ldr x0, {{\[}}[[REG2]]{{\]}}
+; SDAG-NEXT:  orr w[[NUM:[0-9]+]], wzr, #0xf000
+; SDAG-NEXT:  ldr x0, {{\[}}[[REG1]], x[[NUM]]]
 ; FAST-LABEL: load_breg_offreg_immoff_2
 ; FAST:       add [[REG:x[0-9]+]], x0, #15, lsl #12
 ; FAST-NEXT:  ldr x0, {{\[}}[[REG]], x1{{\]}}
@@ -591,5 +597,31 @@ define i64 @kill_reg(i64 %a) {
   %4 = load i64* %3
   %5 = add i64 %2, %4
   ret i64 %5
+}
+
+define void @store_fi(i64 %i) {
+; CHECK-LABEL: store_fi
+; CHECK:       mov [[REG:x[0-9]+]], sp
+; CHECK:       str {{w[0-9]+}}, {{\[}}[[REG]], x0, lsl #2{{\]}}
+  %1 = alloca [8 x i32]
+  %2 = ptrtoint [8 x i32]* %1 to i64
+  %3 = mul i64 %i, 4
+  %4 = add i64 %2, %3
+  %5 = inttoptr i64 %4 to i32*
+  store i32 47, i32* %5, align 4
+  ret void
+}
+
+define i32 @load_fi(i64 %i) {
+; CHECK-LABEL: load_fi
+; CHECK:       mov [[REG:x[0-9]+]], sp
+; CHECK:       ldr {{w[0-9]+}}, {{\[}}[[REG]], x0, lsl #2{{\]}}
+  %1 = alloca [8 x i32]
+  %2 = ptrtoint [8 x i32]* %1 to i64
+  %3 = mul i64 %i, 4
+  %4 = add i64 %2, %3
+  %5 = inttoptr i64 %4 to i32*
+  %6 = load i32* %5, align 4
+  ret i32 %6
 }
 

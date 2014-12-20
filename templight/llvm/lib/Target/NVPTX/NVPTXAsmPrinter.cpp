@@ -88,11 +88,8 @@ void VisitGlobalVariableForEmission(
     return;
 
   // Do we have a circular dependency?
-  if (Visiting.count(GV))
+  if (!Visiting.insert(GV).second)
     report_fatal_error("Circular dependency found in global variable set");
-
-  // Start visiting this global
-  Visiting.insert(GV);
 
   // Make sure we visit all dependents first
   DenseSet<const GlobalVariable *> Others;
@@ -795,11 +792,6 @@ static bool usedInOneFunc(const User *U, Function const *&oneFunc) {
     } else
       return false;
   }
-
-  if (const MDNode *md = dyn_cast<MDNode>(U))
-    if (md->hasName() && ((md->getName().str() == "llvm.dbg.gv") ||
-                          (md->getName().str() == "llvm.dbg.sp")))
-      return true;
 
   for (const User *UU : U->users())
     if (usedInOneFunc(UU, oneFunc) == false)

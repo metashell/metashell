@@ -27,7 +27,7 @@ using namespace CodeGen;
 
 void CodeGenPGO::setFuncName(StringRef Name,
                              llvm::GlobalValue::LinkageTypes Linkage) {
-  RawFuncName = Name;
+  StringRef RawFuncName = Name;
 
   // Function names may be prefixed with a binary '1' to indicate
   // that the backend should not modify the symbols due to any platform
@@ -35,20 +35,17 @@ void CodeGenPGO::setFuncName(StringRef Name,
   if (RawFuncName[0] == '\1')
     RawFuncName = RawFuncName.substr(1);
 
-  if (!llvm::GlobalValue::isLocalLinkage(Linkage)) {
-    PrefixedFuncName.reset(new std::string(RawFuncName));
-    return;
+  FuncName = RawFuncName;
+  if (llvm::GlobalValue::isLocalLinkage(Linkage)) {
+    // For local symbols, prepend the main file name to distinguish them.
+    // Do not include the full path in the file name since there's no guarantee
+    // that it will stay the same, e.g., if the files are checked out from
+    // version control in different locations.
+    if (CGM.getCodeGenOpts().MainFileName.empty())
+      FuncName = FuncName.insert(0, "<unknown>:");
+    else
+      FuncName = FuncName.insert(0, CGM.getCodeGenOpts().MainFileName + ":");
   }
-
-  // For local symbols, prepend the main file name to distinguish them.
-  // Do not include the full path in the file name since there's no guarantee
-  // that it will stay the same, e.g., if the files are checked out from
-  // version control in different locations.
-  PrefixedFuncName.reset(new std::string(CGM.getCodeGenOpts().MainFileName));
-  if (PrefixedFuncName->empty())
-    PrefixedFuncName->assign("<unknown>");
-  PrefixedFuncName->append(":");
-  PrefixedFuncName->append(RawFuncName);
 }
 
 void CodeGenPGO::setFuncName(llvm::Function *Fn) {
@@ -908,8 +905,7 @@ void CodeGenPGO::emitCounterRegionMapping(const Decl *D) {
   llvm::raw_string_ostream OS(CoverageMapping);
   CoverageMappingGen MappingGen(*CGM.getCoverageMapping(),
                                 CGM.getContext().getSourceManager(),
-                                CGM.getLangOpts(), RegionCounterMap.get(),
-                                NumRegionCounters);
+                                CGM.getLangOpts(), RegionCounterMap.get());
   MappingGen.emitCounterMapping(D, OS);
   OS.flush();
 }
@@ -992,9 +988,9 @@ void CodeGenPGO::emitCounterIncrement(CGBuilderTy &Builder, unsigned Counter) {
 void CodeGenPGO::loadRegionCounts(llvm::IndexedInstrProfReader *PGOReader,
                                   bool IsInMainFile) {
   CGM.getPGOStats().addVisited(IsInMainFile);
-  RegionCounts.reset(new std::vector<uint64_t>);
+  RegionCounts.clear();
   if (std::error_code EC = PGOReader->getFunctionCounts(
-          getFuncName(), FunctionHash, *RegionCounts)) {
+          getFuncName(), FunctionHash, RegionCounts)) {
     if (EC == llvm::instrprof_error::unknown_function)
       CGM.getPGOStats().addMissing(IsInMainFile);
     else if (EC == llvm::instrprof_error::hash_mismatch)
@@ -1002,14 +998,14 @@ void CodeGenPGO::loadRegionCounts(llvm::IndexedInstrProfReader *PGOReader,
     else if (EC == llvm::instrprof_error::malformed)
       // TODO: Consider a more specific warning for this case.
       CGM.getPGOStats().addMismatched(IsInMainFile);
-    RegionCounts.reset();
+    RegionCounts.clear();
   }
 }
 
 void CodeGenPGO::destroyRegionCounters() {
   RegionCounterMap.reset();
   StmtCountMap.reset();
-  RegionCounts.reset();
+  RegionCounts.clear();
   RegionCounters = nullptr;
 }
 

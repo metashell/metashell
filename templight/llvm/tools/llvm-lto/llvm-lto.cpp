@@ -38,6 +38,14 @@ static cl::opt<bool>
 DisableGVNLoadPRE("disable-gvn-loadpre", cl::init(false),
   cl::desc("Do not run the GVN load PRE pass"));
 
+static cl::opt<bool>
+DisableLTOVectorization("disable-lto-vectorization", cl::init(false),
+  cl::desc("Do not run loop or slp vectorization during LTO"));
+
+static cl::opt<bool>
+UseDiagnosticHandler("use-diagnostic-handler", cl::init(false),
+  cl::desc("Use a diagnostic handler to test the handler interface"));
+
 static cl::list<std::string>
 InputFilenames(cl::Positional, cl::OneOrMore,
   cl::desc("<input bitcode files>"));
@@ -63,6 +71,25 @@ struct ModuleInfo {
 };
 }
 
+void handleDiagnostics(lto_codegen_diagnostic_severity_t Severity,
+                       const char *Msg, void *) {
+  switch (Severity) {
+  case LTO_DS_NOTE:
+    errs() << "note: ";
+    break;
+  case LTO_DS_REMARK:
+    errs() << "remark: ";
+    break;
+  case LTO_DS_ERROR:
+    errs() << "error: ";
+    break;
+  case LTO_DS_WARNING:
+    errs() << "warning: ";
+    break;
+  }
+  errs() << Msg << "\n";
+}
+
 int main(int argc, char **argv) {
   // Print a stack trace if we signal out.
   sys::PrintStackTraceOnErrorSignal();
@@ -83,6 +110,9 @@ int main(int argc, char **argv) {
   unsigned BaseArg = 0;
 
   LTOCodeGenerator CodeGen;
+
+  if (UseDiagnosticHandler)
+    CodeGen.setDiagnosticHandler(handleDiagnostics, nullptr);
 
   switch (RelocModel) {
   case Reloc::Static:
@@ -117,12 +147,8 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-
-    if (!CodeGen.addModule(Module.get(), error)) {
-      errs() << argv[0] << ": error adding file '" << InputFilenames[i]
-             << "': " << error << "\n";
+    if (!CodeGen.addModule(Module.get()))
       return 1;
-    }
 
     unsigned NumSyms = Module->getSymbolCount();
     for (unsigned I = 0; I < NumSyms; ++I) {
@@ -157,8 +183,9 @@ int main(int argc, char **argv) {
   if (!OutputFilename.empty()) {
     size_t len = 0;
     std::string ErrorInfo;
-    const void *Code = CodeGen.compile(&len, DisableOpt, DisableInline,
-                                       DisableGVNLoadPRE, ErrorInfo);
+    const void *Code =
+        CodeGen.compile(&len, DisableOpt, DisableInline, DisableGVNLoadPRE,
+                        DisableLTOVectorization, ErrorInfo);
     if (!Code) {
       errs() << argv[0]
              << ": error compiling the code: " << ErrorInfo << "\n";
@@ -178,7 +205,8 @@ int main(int argc, char **argv) {
     std::string ErrorInfo;
     const char *OutputName = nullptr;
     if (!CodeGen.compile_to_file(&OutputName, DisableOpt, DisableInline,
-                                 DisableGVNLoadPRE, ErrorInfo)) {
+                                 DisableGVNLoadPRE, DisableLTOVectorization,
+                                 ErrorInfo)) {
       errs() << argv[0]
              << ": error compiling the code: " << ErrorInfo
              << "\n";

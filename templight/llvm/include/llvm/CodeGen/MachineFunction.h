@@ -80,8 +80,7 @@ class MachineFunction {
   const TargetSubtargetInfo *STI;
   MCContext &Ctx;
   MachineModuleInfo &MMI;
-  GCModuleInfo *GMI;
-  
+
   // RegInfo - Information about each register in use in the function.
   MachineRegisterInfo *RegInfo;
 
@@ -141,12 +140,10 @@ class MachineFunction {
   void operator=(const MachineFunction&) LLVM_DELETED_FUNCTION;
 public:
   MachineFunction(const Function *Fn, const TargetMachine &TM,
-                  unsigned FunctionNum, MachineModuleInfo &MMI,
-                  GCModuleInfo* GMI);
+                  unsigned FunctionNum, MachineModuleInfo &MMI);
   ~MachineFunction();
 
   MachineModuleInfo &getMMI() const { return MMI; }
-  GCModuleInfo *getGMI() const { return GMI; }
   MCContext &getContext() const { return Ctx; }
 
   /// getFunction - Return the LLVM function that this machine code represents
@@ -168,7 +165,7 @@ public:
   /// getSubtarget - Return the subtarget for which this machine code is being
   /// compiled.
   const TargetSubtargetInfo &getSubtarget() const { return *STI; }
-  void setSubtarget(TargetSubtargetInfo *ST) { STI = ST; }
+  void setSubtarget(const TargetSubtargetInfo *ST) { STI = ST; }
 
   /// getRegInfo - Return information about the registers currently in use.
   ///

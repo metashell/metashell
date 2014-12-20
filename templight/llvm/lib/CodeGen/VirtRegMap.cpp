@@ -124,7 +124,7 @@ void VirtRegMap::print(raw_ostream &OS, const Module*) const {
     if (Virt2PhysMap[Reg] != (unsigned)VirtRegMap::NO_PHYS_REG) {
       OS << '[' << PrintReg(Reg, TRI) << " -> "
          << PrintReg(Virt2PhysMap[Reg], TRI) << "] "
-         << MRI->getRegClass(Reg)->getName() << "\n";
+         << TRI->getRegClassName(MRI->getRegClass(Reg)) << "\n";
     }
   }
 
@@ -132,7 +132,7 @@ void VirtRegMap::print(raw_ostream &OS, const Module*) const {
     unsigned Reg = TargetRegisterInfo::index2VirtReg(i);
     if (Virt2StackSlotMap[Reg] != VirtRegMap::NO_STACK_SLOT) {
       OS << '[' << PrintReg(Reg, TRI) << " -> fi#" << Virt2StackSlotMap[Reg]
-         << "] " << MRI->getRegClass(Reg)->getName() << "\n";
+         << "] " << TRI->getRegClassName(MRI->getRegClass(Reg)) << "\n";
     }
   }
   OS << '\n';
@@ -206,8 +206,8 @@ void VirtRegRewriter::getAnalysisUsage(AnalysisUsage &AU) const {
 bool VirtRegRewriter::runOnMachineFunction(MachineFunction &fn) {
   MF = &fn;
   TM = &MF->getTarget();
-  TRI = TM->getSubtargetImpl()->getRegisterInfo();
-  TII = TM->getSubtargetImpl()->getInstrInfo();
+  TRI = MF->getSubtarget().getRegisterInfo();
+  TII = MF->getSubtarget().getInstrInfo();
   MRI = &MF->getRegInfo();
   Indexes = &getAnalysis<SlotIndexes>();
   LIS = &getAnalysis<LiveIntervals>();

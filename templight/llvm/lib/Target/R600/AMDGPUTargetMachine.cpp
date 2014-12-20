@@ -22,6 +22,7 @@
 #include "SIInstrInfo.h"
 #include "llvm/Analysis/Passes.h"
 #include "llvm/CodeGen/MachineFunctionAnalysis.h"
+#include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/IR/Verifier.h"
@@ -54,12 +55,14 @@ AMDGPUTargetMachine::AMDGPUTargetMachine(const Target &T, StringRef TT,
                                          CodeModel::Model CM,
                                          CodeGenOpt::Level OptLevel)
     : LLVMTargetMachine(T, TT, CPU, FS, Options, RM, CM, OptLevel),
+      TLOF(new TargetLoweringObjectFileELF()),
       Subtarget(TT, CPU, FS, *this), IntrinsicInfo() {
   setRequiresStructuredCFG(true);
   initAsmInfo();
 }
 
 AMDGPUTargetMachine::~AMDGPUTargetMachine() {
+  delete TLOF;
 }
 
 namespace {
@@ -80,6 +83,7 @@ public:
     return nullptr;
   }
 
+  void addIRPasses() override;
   void addCodeGenPrepare() override;
   bool addPreISel() override;
   bool addInstSelector() override;
@@ -104,6 +108,19 @@ void AMDGPUTargetMachine::addAnalysisPasses(PassManagerBase &PM) {
   // appropriate.
   PM.add(createBasicTargetTransformInfoPass(this));
   PM.add(createAMDGPUTargetTransformInfoPass(this));
+}
+
+void AMDGPUPassConfig::addIRPasses() {
+  // Function calls are not supported, so make sure we inline everything.
+  addPass(createAMDGPUAlwaysInlinePass());
+  addPass(createAlwaysInlinerPass());
+  // We need to add the barrier noop pass, otherwise adding the function
+  // inlining pass will cause all of the PassConfigs passes to be run
+  // one function at a time, which means if we have a nodule with two
+  // functions, then we will generate code for the first function
+  // without ever running any passes on the second.
+  addPass(createBarrierNoopPass());
+  TargetPassConfig::addIRPasses();
 }
 
 void AMDGPUPassConfig::addCodeGenPrepare() {
@@ -133,8 +150,16 @@ AMDGPUPassConfig::addPreISel() {
 }
 
 bool AMDGPUPassConfig::addInstSelector() {
+  const AMDGPUSubtarget &ST = TM->getSubtarget<AMDGPUSubtarget>();
+
   addPass(createAMDGPUISelDag(getAMDGPUTargetMachine()));
-  addPass(createSILowerI1CopiesPass());
+
+  if (ST.getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS) {
+    addPass(createSILowerI1CopiesPass());
+    addPass(createSIFixSGPRCopiesPass(*TM));
+    addPass(createSIFoldOperandsPass());
+  }
+
   return false;
 }
 
@@ -144,10 +169,16 @@ bool AMDGPUPassConfig::addPreRegAlloc() {
   if (ST.getGeneration() <= AMDGPUSubtarget::NORTHERN_ISLANDS) {
     addPass(createR600VectorRegMerger(*TM));
   } else {
-    addPass(createSIFixSGPRCopiesPass(*TM));
-    // SIFixSGPRCopies can generate a lot of duplicate instructions,
-    // so we need to run MachineCSE afterwards.
-    addPass(&MachineCSEID);
+     if (getOptLevel() > CodeGenOpt::None && ST.loadStoreOptEnabled()) {
+      // Don't do this with no optimizations since it throws away debug info by
+      // merging nonadjacent loads.
+
+      // This should be run after scheduling, but before register allocation. It
+      // also need extra copies to the address operand to be eliminated.
+      initializeSILoadStoreOptimizerPass(*PassRegistry::getPassRegistry());
+      insertPass(&MachineSchedulerID, &SILoadStoreOptimizerID);
+    }
+
     addPass(createSIShrinkInstructionsPass());
     addPass(createSIFixSGPRLiveRangesPass());
   }
@@ -157,9 +188,8 @@ bool AMDGPUPassConfig::addPreRegAlloc() {
 bool AMDGPUPassConfig::addPostRegAlloc() {
   const AMDGPUSubtarget &ST = TM->getSubtarget<AMDGPUSubtarget>();
 
-  addPass(createSIShrinkInstructionsPass());
   if (ST.getGeneration() > AMDGPUSubtarget::NORTHERN_ISLANDS) {
-    addPass(createSIInsertWaits(*TM));
+    addPass(createSIShrinkInstructionsPass());
   }
   return false;
 }
@@ -173,6 +203,9 @@ bool AMDGPUPassConfig::addPreSched2() {
     addPass(&IfConverterID);
   if (ST.getGeneration() <= AMDGPUSubtarget::NORTHERN_ISLANDS)
     addPass(createR600ClauseMergePass(*TM));
+  if (ST.getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS) {
+    addPass(createSIInsertWaits(*TM));
+  }
   return false;
 }
 

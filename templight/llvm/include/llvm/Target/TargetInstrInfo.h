@@ -16,7 +16,6 @@
 
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/CodeGen/DFAPacketizer.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineCombinerPattern.h"
 #include "llvm/MC/MCInstrInfo.h"
@@ -41,6 +40,7 @@ class TargetRegisterClass;
 class TargetRegisterInfo;
 class BranchProbability;
 class TargetSubtargetInfo;
+class DFAPacketizer;
 
 template<class T> class SmallVectorImpl;
 
@@ -426,6 +426,26 @@ public:
   /// getTrap - Get a machine trap instruction
   virtual void getTrap(MCInst &MI) const {
     llvm_unreachable("Target didn't implement TargetInstrInfo::getTrap!");
+  }
+
+  /// getJumpInstrTableEntryBound - Get a number of bytes that suffices to hold
+  /// either the instruction returned by getUnconditionalBranch or the
+  /// instruction returned by getTrap. This only makes sense because
+  /// getUnconditionalBranch returns a single, specific instruction. This
+  /// information is needed by the jumptable construction code, since it must
+  /// decide how many bytes to use for a jumptable entry so it can generate the
+  /// right mask.
+  ///
+  /// Note that if the jumptable instruction requires alignment, then that
+  /// alignment should be factored into this required bound so that the
+  /// resulting bound gives the right alignment for the instruction.
+  virtual unsigned getJumpInstrTableEntryBound() const {
+    // This method gets called by LLVMTargetMachine always, so it can't fail
+    // just because there happens to be no implementation for this target.
+    // Any code that tries to use a jumptable annotation without defining
+    // getUnconditionalBranch on the appropriate Target will fail anyway, and
+    // the value returned here won't matter in that case.
+    return 0;
   }
 
   /// isLegalToSplitMBBAt - Return true if it's legal to split the given basic
@@ -952,6 +972,7 @@ public:
                                     const MachineRegisterInfo *MRI) const {
     return false;
   }
+  virtual bool optimizeCondBranch(MachineInstr *MI) const { return false; }
 
   /// optimizeLoadInstr - Try to remove the load by folding it to a register
   /// operand at the use. We fold the load instructions if and only if the
@@ -1185,8 +1206,8 @@ public:
                             const TargetRegisterInfo *TRI) const {}
 
   /// Create machine specific model for scheduling.
-  virtual DFAPacketizer*
-    CreateTargetScheduleState(const TargetMachine*, const ScheduleDAG*) const {
+  virtual DFAPacketizer *
+  CreateTargetScheduleState(const TargetSubtargetInfo &) const {
     return nullptr;
   }
 

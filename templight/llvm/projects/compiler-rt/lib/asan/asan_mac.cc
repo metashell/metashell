@@ -114,7 +114,7 @@ void MaybeReexec() {
       internal_strlen(dyld_insert_libraries) : 0;
   uptr fname_len = internal_strlen(info.dli_fname);
   if (!dyld_insert_libraries ||
-      !REAL(strstr)(dyld_insert_libraries, info.dli_fname)) {
+      !REAL(strstr)(dyld_insert_libraries, StripModuleName(info.dli_fname))) {
     // DYLD_INSERT_LIBRARIES is not set or does not contain the runtime
     // library.
     char program_name[1024];
@@ -297,7 +297,7 @@ using namespace __asan;  // NOLINT
 // The caller retains control of the allocated context.
 extern "C"
 asan_block_context_t *alloc_asan_context(void *ctxt, dispatch_function_t func,
-                                         StackTrace *stack) {
+                                         BufferedStackTrace *stack) {
   asan_block_context_t *asan_ctxt =
       (asan_block_context_t*) asan_malloc(sizeof(asan_block_context_t), stack);
   asan_ctxt->block = ctxt;

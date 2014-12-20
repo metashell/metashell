@@ -444,7 +444,7 @@ void GetThreadStackAndTls(bool main, uptr *stk_addr, uptr *stk_size,
 }
 
 #if !SANITIZER_GO
-void StackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
+void BufferedStackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
   CHECK_GE(max_depth, 2);
   // FIXME: CaptureStackBackTrace might be too slow for us.
   // FIXME: Compare with StackWalk64.
@@ -459,8 +459,8 @@ void StackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
   PopStackFrames(pc_location);
 }
 
-void StackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
-                                            uptr max_depth) {
+void BufferedStackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
+                                                    uptr max_depth) {
   CONTEXT ctx = *(CONTEXT *)context;
   STACKFRAME64 stack_frame;
   memset(&stack_frame, 0, sizeof(stack_frame));
@@ -483,7 +483,7 @@ void StackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
                      &stack_frame, &ctx, NULL, &SymFunctionTableAccess64,
                      &SymGetModuleBase64, NULL) &&
          size < Min(max_depth, kStackTraceMax)) {
-    trace[size++] = (uptr)stack_frame.AddrPC.Offset;
+    trace_buffer[size++] = (uptr)stack_frame.AddrPC.Offset;
   }
 }
 #endif  // #if !SANITIZER_GO

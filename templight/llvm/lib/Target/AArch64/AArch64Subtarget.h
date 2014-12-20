@@ -69,7 +69,8 @@ public:
   /// This constructor initializes the data members to match that
   /// of the specified triple.
   AArch64Subtarget(const std::string &TT, const std::string &CPU,
-		   const std::string &FS, TargetMachine &TM, bool LittleEndian);
+                   const std::string &FS, const TargetMachine &TM,
+                   bool LittleEndian);
 
   const AArch64SelectionDAGInfo *getSelectionDAGInfo() const override {
     return &TSInfo;
@@ -114,7 +115,7 @@ public:
   bool isCortexA57() const { return CPUString == "cortex-a57"; }
   bool isCortexA53() const { return CPUString == "cortex-a53"; }
 
-  bool useAA() const override { return isCortexA53() || isCortexA57(); }
+  bool useAA() const override { return isCortexA53(); }
 
   /// getMaxInlineSizeThreshold - Returns the maximum memset / memcpy size
   /// that still makes it profitable to inline the call.
@@ -141,6 +142,8 @@ public:
                            unsigned NumRegionInstrs) const override;
 
   bool enableEarlyIfConversion() const override;
+
+  std::unique_ptr<PBQPRAConstraint> getCustomPBQPConstraints() const override;
 };
 } // End llvm namespace
 

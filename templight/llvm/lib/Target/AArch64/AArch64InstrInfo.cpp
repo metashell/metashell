@@ -261,8 +261,9 @@ void AArch64InstrInfo::instantiateCondBranch(
     BuildMI(&MBB, DL, get(AArch64::Bcc)).addImm(Cond[0].getImm()).addMBB(TBB);
   } else {
     // Folded compare-and-branch
+    // Note that we use addOperand instead of addReg to keep the flags.
     const MachineInstrBuilder MIB =
-        BuildMI(&MBB, DL, get(Cond[1].getImm())).addReg(Cond[2].getReg());
+        BuildMI(&MBB, DL, get(Cond[1].getImm())).addOperand(Cond[2]);
     if (Cond.size() > 3)
       MIB.addImm(Cond[3].getImm());
     MIB.addMBB(TBB);
@@ -740,34 +741,87 @@ static bool UpdateOperandRegClass(MachineInstr *Instr) {
   return true;
 }
 
-/// convertFlagSettingOpcode - return opcode that does not
-/// set flags when possible. The caller is responsible to do
-/// the actual substitution and legality checking.
-static unsigned convertFlagSettingOpcode(MachineInstr *MI) {
-    unsigned NewOpc;
-    switch (MI->getOpcode()) {
-    default:
-      return false;
-    case AArch64::ADDSWrr:      NewOpc = AArch64::ADDWrr; break;
-    case AArch64::ADDSWri:      NewOpc = AArch64::ADDWri; break;
-    case AArch64::ADDSWrs:      NewOpc = AArch64::ADDWrs; break;
-    case AArch64::ADDSWrx:      NewOpc = AArch64::ADDWrx; break;
-    case AArch64::ADDSXrr:      NewOpc = AArch64::ADDXrr; break;
-    case AArch64::ADDSXri:      NewOpc = AArch64::ADDXri; break;
-    case AArch64::ADDSXrs:      NewOpc = AArch64::ADDXrs; break;
-    case AArch64::ADDSXrx:      NewOpc = AArch64::ADDXrx; break;
-    case AArch64::SUBSWrr:      NewOpc = AArch64::SUBWrr; break;
-    case AArch64::SUBSWri:      NewOpc = AArch64::SUBWri; break;
-    case AArch64::SUBSWrs:      NewOpc = AArch64::SUBWrs; break;
-    case AArch64::SUBSWrx:      NewOpc = AArch64::SUBWrx; break;
-    case AArch64::SUBSXrr:      NewOpc = AArch64::SUBXrr; break;
-    case AArch64::SUBSXri:      NewOpc = AArch64::SUBXri; break;
-    case AArch64::SUBSXrs:      NewOpc = AArch64::SUBXrs; break;
-    case AArch64::SUBSXrx:      NewOpc = AArch64::SUBXrx; break;
-    }
-    return NewOpc;
+/// \brief Return the opcode that does not set flags when possible - otherwise
+/// return the original opcode. The caller is responsible to do the actual
+/// substitution and legality checking.
+static unsigned convertFlagSettingOpcode(const MachineInstr *MI) {
+  // Don't convert all compare instructions, because for some the zero register
+  // encoding becomes the sp register.
+  bool MIDefinesZeroReg = false;
+  if (MI->definesRegister(AArch64::WZR) || MI->definesRegister(AArch64::XZR))
+    MIDefinesZeroReg = true;
+
+  switch (MI->getOpcode()) {
+  default:
+    return MI->getOpcode();
+  case AArch64::ADDSWrr:
+    return AArch64::ADDWrr;
+  case AArch64::ADDSWri:
+    return MIDefinesZeroReg ? AArch64::ADDSWri : AArch64::ADDWri;
+  case AArch64::ADDSWrs:
+    return MIDefinesZeroReg ? AArch64::ADDSWrs : AArch64::ADDWrs;
+  case AArch64::ADDSWrx:
+    return AArch64::ADDWrx;
+  case AArch64::ADDSXrr:
+    return AArch64::ADDXrr;
+  case AArch64::ADDSXri:
+    return MIDefinesZeroReg ? AArch64::ADDSXri : AArch64::ADDXri;
+  case AArch64::ADDSXrs:
+    return MIDefinesZeroReg ? AArch64::ADDSXrs : AArch64::ADDXrs;
+  case AArch64::ADDSXrx:
+    return AArch64::ADDXrx;
+  case AArch64::SUBSWrr:
+    return AArch64::SUBWrr;
+  case AArch64::SUBSWri:
+    return MIDefinesZeroReg ? AArch64::SUBSWri : AArch64::SUBWri;
+  case AArch64::SUBSWrs:
+    return MIDefinesZeroReg ? AArch64::SUBSWrs : AArch64::SUBWrs;
+  case AArch64::SUBSWrx:
+    return AArch64::SUBWrx;
+  case AArch64::SUBSXrr:
+    return AArch64::SUBXrr;
+  case AArch64::SUBSXri:
+    return MIDefinesZeroReg ? AArch64::SUBSXri : AArch64::SUBXri;
+  case AArch64::SUBSXrs:
+    return MIDefinesZeroReg ? AArch64::SUBSXrs : AArch64::SUBXrs;
+  case AArch64::SUBSXrx:
+    return AArch64::SUBXrx;
+  }
 }
 
+/// True when condition code could be modified on the instruction
+/// trace starting at from and ending at to.
+static bool modifiesConditionCode(MachineInstr *From, MachineInstr *To,
+                                  const bool CheckOnlyCCWrites,
+                                  const TargetRegisterInfo *TRI) {
+  // We iterate backward starting \p To until we hit \p From
+  MachineBasicBlock::iterator I = To, E = From, B = To->getParent()->begin();
+
+  // Early exit if To is at the beginning of the BB.
+  if (I == B)
+    return true;
+
+  // Check whether the definition of SrcReg is in the same basic block as
+  // Compare. If not, assume the condition code gets modified on some path.
+  if (To->getParent() != From->getParent())
+    return true;
+
+  // Check that NZCV isn't set on the trace.
+  for (--I; I != E; --I) {
+    const MachineInstr &Instr = *I;
+
+    if (Instr.modifiesRegister(AArch64::NZCV, TRI) ||
+        (!CheckOnlyCCWrites && Instr.readsRegister(AArch64::NZCV, TRI)))
+      // This instruction modifies or uses NZCV after the one we want to
+      // change.
+      return true;
+    if (I == B)
+      // We currently don't allow the instruction trace to cross basic
+      // block boundaries
+      return true;
+  }
+  return false;
+}
 /// optimizeCompareInstr - Convert the instruction supplying the argument to the
 /// comparison into one that sets the zero bit in the flags register.
 bool AArch64InstrInfo::optimizeCompareInstr(
@@ -777,6 +831,11 @@ bool AArch64InstrInfo::optimizeCompareInstr(
   // Replace SUBSWrr with SUBWrr if NZCV is not used.
   int Cmp_NZCV = CmpInstr->findRegisterDefOperandIdx(AArch64::NZCV, true);
   if (Cmp_NZCV != -1) {
+    if (CmpInstr->definesRegister(AArch64::WZR) ||
+        CmpInstr->definesRegister(AArch64::XZR)) {
+      CmpInstr->eraseFromParent();
+      return true;
+    }
     unsigned Opc = CmpInstr->getOpcode();
     unsigned NewOpc = convertFlagSettingOpcode(CmpInstr);
     if (NewOpc == Opc)
@@ -806,36 +865,10 @@ bool AArch64InstrInfo::optimizeCompareInstr(
   if (!MI)
     return false;
 
-  // We iterate backward, starting from the instruction before CmpInstr and
-  // stop when reaching the definition of the source register or done with the
-  // basic block, to check whether NZCV is used or modified in between.
-  MachineBasicBlock::iterator I = CmpInstr, E = MI,
-                              B = CmpInstr->getParent()->begin();
-
-  // Early exit if CmpInstr is at the beginning of the BB.
-  if (I == B)
-    return false;
-
-  // Check whether the definition of SrcReg is in the same basic block as
-  // Compare. If not, we can't optimize away the Compare.
-  if (MI->getParent() != CmpInstr->getParent())
-    return false;
-
-  // Check that NZCV isn't set between the comparison instruction and the one we
-  // want to change.
+  bool CheckOnlyCCWrites = false;
   const TargetRegisterInfo *TRI = &getRegisterInfo();
-  for (--I; I != E; --I) {
-    const MachineInstr &Instr = *I;
-
-    if (Instr.modifiesRegister(AArch64::NZCV, TRI) ||
-        Instr.readsRegister(AArch64::NZCV, TRI))
-      // This instruction modifies or uses NZCV after the one we want to
-      // change. We can't do this transformation.
-      return false;
-    if (I == B)
-      // The 'and' is below the comparison instruction.
-      return false;
-  }
+  if (modifiesConditionCode(MI, CmpInstr, CheckOnlyCCWrites, TRI))
+    return false;
 
   unsigned NewOpc = MI->getOpcode();
   switch (MI->getOpcode()) {
@@ -1444,16 +1477,15 @@ bool AArch64InstrInfo::shouldScheduleAdjacent(MachineInstr *First,
   }
 }
 
-MachineInstr *AArch64InstrInfo::emitFrameIndexDebugValue(MachineFunction &MF,
-                                                         int FrameIx,
-                                                         uint64_t Offset,
-                                                         const MDNode *MDPtr,
-                                                         DebugLoc DL) const {
+MachineInstr *AArch64InstrInfo::emitFrameIndexDebugValue(
+    MachineFunction &MF, int FrameIx, uint64_t Offset, const MDNode *Var,
+    const MDNode *Expr, DebugLoc DL) const {
   MachineInstrBuilder MIB = BuildMI(MF, DL, get(AArch64::DBG_VALUE))
                                 .addFrameIndex(FrameIx)
                                 .addImm(0)
                                 .addImm(Offset)
-                                .addMetadata(MDPtr);
+                                .addMetadata(Var)
+                                .addMetadata(Expr);
   return &*MIB;
 }
 
@@ -2799,7 +2831,7 @@ void AArch64InstrInfo::genAlternativeCodeSequence(
       RC = &AArch64::GPR32RegClass;
     } else {
       OrrOpc = AArch64::ORRXri;
-      OrrRC = &AArch64::GPR64RegClass;
+      OrrRC = &AArch64::GPR64spRegClass;
       BitSize = 64;
       ZeroReg = AArch64::XZR;
       Opc = AArch64::MADDXrrr;
@@ -2830,4 +2862,99 @@ void AArch64InstrInfo::genAlternativeCodeSequence(
   DelInstrs.push_back(&Root);
 
   return;
+}
+
+/// \brief Replace csincr-branch sequence by simple conditional branch
+///
+/// Examples:
+/// 1.
+///   csinc  w9, wzr, wzr, <condition code>
+///   tbnz   w9, #0, 0x44
+/// to
+///   b.<inverted condition code>
+///
+/// 2.
+///   csinc w9, wzr, wzr, <condition code>
+///   tbz   w9, #0, 0x44
+/// to
+///   b.<condition code>
+///
+/// \param  MI Conditional Branch
+/// \return True when the simple conditional branch is generated
+///
+bool AArch64InstrInfo::optimizeCondBranch(MachineInstr *MI) const {
+  bool IsNegativeBranch = false;
+  bool IsTestAndBranch = false;
+  unsigned TargetBBInMI = 0;
+  switch (MI->getOpcode()) {
+  default:
+    llvm_unreachable("Unknown branch instruction?");
+  case AArch64::Bcc:
+    return false;
+  case AArch64::CBZW:
+  case AArch64::CBZX:
+    TargetBBInMI = 1;
+    break;
+  case AArch64::CBNZW:
+  case AArch64::CBNZX:
+    TargetBBInMI = 1;
+    IsNegativeBranch = true;
+    break;
+  case AArch64::TBZW:
+  case AArch64::TBZX:
+    TargetBBInMI = 2;
+    IsTestAndBranch = true;
+    break;
+  case AArch64::TBNZW:
+  case AArch64::TBNZX:
+    TargetBBInMI = 2;
+    IsNegativeBranch = true;
+    IsTestAndBranch = true;
+    break;
+  }
+  // So we increment a zero register and test for bits other
+  // than bit 0? Conservatively bail out in case the verifier
+  // missed this case.
+  if (IsTestAndBranch && MI->getOperand(1).getImm())
+    return false;
+
+  // Find Definition.
+  assert(MI->getParent() && "Incomplete machine instruciton\n");
+  MachineBasicBlock *MBB = MI->getParent();
+  MachineFunction *MF = MBB->getParent();
+  MachineRegisterInfo *MRI = &MF->getRegInfo();
+  unsigned VReg = MI->getOperand(0).getReg();
+  if (!TargetRegisterInfo::isVirtualRegister(VReg))
+    return false;
+
+  MachineInstr *DefMI = MRI->getVRegDef(VReg);
+
+  // Look for CSINC
+  if (!(DefMI->getOpcode() == AArch64::CSINCWr &&
+        DefMI->getOperand(1).getReg() == AArch64::WZR &&
+        DefMI->getOperand(2).getReg() == AArch64::WZR) &&
+      !(DefMI->getOpcode() == AArch64::CSINCXr &&
+        DefMI->getOperand(1).getReg() == AArch64::XZR &&
+        DefMI->getOperand(2).getReg() == AArch64::XZR))
+    return false;
+
+  if (DefMI->findRegisterDefOperandIdx(AArch64::NZCV, true) != -1)
+    return false;
+
+  AArch64CC::CondCode CC =
+      (AArch64CC::CondCode)DefMI->getOperand(3).getImm();
+  bool CheckOnlyCCWrites = true;
+  // Convert only when the condition code is not modified between
+  // the CSINC and the branch. The CC may be used by other
+  // instructions in between.
+  if (modifiesConditionCode(DefMI, MI, CheckOnlyCCWrites, &getRegisterInfo()))
+    return false;
+  MachineBasicBlock &RefToMBB = *MBB;
+  MachineBasicBlock *TBB = MI->getOperand(TargetBBInMI).getMBB();
+  DebugLoc DL = MI->getDebugLoc();
+  if (IsNegativeBranch)
+    CC = AArch64CC::getInvertedCondCode(CC);
+  BuildMI(RefToMBB, MI, DL, get(AArch64::Bcc)).addImm(CC).addMBB(TBB);
+  MI->eraseFromParent();
+  return true;
 }

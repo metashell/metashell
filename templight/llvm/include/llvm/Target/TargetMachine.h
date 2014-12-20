@@ -44,6 +44,7 @@ class ScalarTargetTransformInfo;
 class VectorTargetTransformInfo;
 class formatted_raw_ostream;
 class raw_ostream;
+class TargetLoweringObjectFile;
 
 // The old pass manager infrastructure is hidden in a legacy namespace now.
 namespace legacy {
@@ -99,8 +100,11 @@ public:
   virtual const TargetSubtargetInfo *getSubtargetImpl() const {
     return nullptr;
   }
-  virtual const TargetSubtargetInfo *getSubtargetImpl(const Function *) const {
+  virtual const TargetSubtargetInfo *getSubtargetImpl(const Function &) const {
     return getSubtargetImpl();
+  }
+  virtual TargetLoweringObjectFile *getObjFileLowering() const {
+    return nullptr;
   }
 
   /// getSubtarget - This method returns a pointer to the specified type of
@@ -114,7 +118,9 @@ public:
   }
 
   /// \brief Reset the target options based on the function's attributes.
-  void resetTargetOptions(const MachineFunction *MF) const;
+  // FIXME: Remove TargetOptions that affect per-function code generation
+  // from TargetMachine.
+  void resetTargetOptions(const Function &F) const;
 
   /// getMCAsmInfo - Return target specific asm information.
   ///

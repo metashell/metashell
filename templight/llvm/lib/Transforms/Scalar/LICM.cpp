@@ -444,7 +444,7 @@ bool LICM::canSinkOrHoistInst(Instruction &I) {
     // in the same alias set as something that ends up being modified.
     if (AA->pointsToConstantMemory(LI->getOperand(0)))
       return true;
-    if (LI->getMetadata("invariant.load"))
+    if (LI->getMetadata(LLVMContext::MD_invariant_load))
       return true;
 
     // Don't hoist loads which have may-aliased stores in loop.
@@ -810,6 +810,7 @@ void LICM::PromoteAliasSet(AliasSet &AS,
   // us to prove better alignment.
   unsigned Alignment = 1;
   AAMDNodes AATags;
+  bool HasDedicatedExits = CurLoop->hasDedicatedExits();
 
   // Check that all of the pointers in the alias set have the same type.  We
   // cannot (yet) promote a memory location that is loaded and stored in
@@ -843,6 +844,13 @@ void LICM::PromoteAliasSet(AliasSet &AS,
           continue;
         assert(!store->isVolatile() && "AST broken");
         if (!store->isSimple())
+          return;
+        // Don't sink stores from loops without dedicated block exits. Exits
+        // containing indirect branches are not transformed by loop simplify,
+        // make sure we catch that. An additional load may be generated in the
+        // preheader for SSA updater, so also avoid sinking when no preheader
+        // is available.
+        if (!HasDedicatedExits || !Preheader)
           return;
 
         // Note that we only check GuaranteedToExecute inside the store case

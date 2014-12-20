@@ -19,20 +19,19 @@ namespace __dsan {
 static Context *ctx;
 
 static u32 CurrentStackTrace(Thread *thr, uptr skip) {
-  StackTrace trace;
+  BufferedStackTrace stack;
   thr->ignore_interceptors = true;
-  trace.Unwind(1000, 0, 0, 0, 0, 0, false);
+  stack.Unwind(1000, 0, 0, 0, 0, 0, false);
   thr->ignore_interceptors = false;
-  if (trace.size <= skip)
+  if (stack.size <= skip)
     return 0;
-  return StackDepotPut(trace.trace + skip, trace.size - skip);
+  return StackDepotPut(StackTrace(stack.trace + skip, stack.size - skip));
 }
 
 static void PrintStackTrace(Thread *thr, u32 stk) {
-  uptr size = 0;
-  const uptr *trace = StackDepotGet(stk, &size);
+  StackTrace stack = StackDepotGet(stk);
   thr->ignore_interceptors = true;
-  StackTrace::PrintStack(trace, size);
+  stack.Print();
   thr->ignore_interceptors = false;
 }
 

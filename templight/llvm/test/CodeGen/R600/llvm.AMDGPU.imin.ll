@@ -1,7 +1,7 @@
 ; RUN: llc < %s -march=r600 -mcpu=verde -verify-machineinstrs | FileCheck -check-prefix=SI %s
 
-; SI-LABEL: @vector_imin
-; SI: V_MIN_I32_e32
+; SI-LABEL: {{^}}vector_imin:
+; SI: v_min_i32_e32
 define void @vector_imin(i32 %p0, i32 %p1, i32 addrspace(1)* %in) #0 {
 main_body:
   %load = load i32 addrspace(1)* %in, align 4
@@ -11,8 +11,8 @@ main_body:
   ret void
 }
 
-; SI-LABEL: @scalar_imin
-; SI: S_MIN_I32
+; SI-LABEL: {{^}}scalar_imin:
+; SI: s_min_i32
 define void @scalar_imin(i32 %p0, i32 %p1) #0 {
 entry:
   %min = call i32 @llvm.AMDGPU.imin(i32 %p0, i32 %p1)

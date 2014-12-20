@@ -3,6 +3,7 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_clang_library(clangSema
+  ActiveTemplateInst.cpp
   AnalysisBasedWarnings.cpp
   AttributeList.cpp
   CodeCompleteConsumer.cpp

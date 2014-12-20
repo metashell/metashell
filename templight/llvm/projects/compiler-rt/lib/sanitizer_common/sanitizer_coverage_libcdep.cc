@@ -12,14 +12,14 @@
 //
 // Compiler instrumentation:
 // For every interesting basic block the compiler injects the following code:
-// if (*Guard) {
-//    __sanitizer_cov();
-//    *Guard = 1;
+// if (Guard) {
+//    __sanitizer_cov(&Guard);
 // }
 // It's fine to call __sanitizer_cov more than once for a given block.
 //
 // Run-time:
 //  - __sanitizer_cov(): record that we've executed the PC (GET_CALLER_PC).
+//    and atomically set Guard to 1.
 //  - __sanitizer_cov_dump: dump the coverage data to disk.
 //  For every module of the current process that has coverage data
 //  this will create a file module_name.PID.sancov. The file format is simple:
@@ -38,9 +38,12 @@
 #include "sanitizer_mutex.h"
 #include "sanitizer_procmaps.h"
 #include "sanitizer_stacktrace.h"
+#include "sanitizer_symbolizer.h"
 #include "sanitizer_flags.h"
 
-atomic_uint32_t dump_once_guard;  // Ensure that CovDump runs only once.
+static atomic_uint32_t dump_once_guard;  // Ensure that CovDump runs only once.
+
+static atomic_uintptr_t coverage_counter;
 
 // pc_array is the array containing the covered PCs.
 // To make the pc_array thread- and async-signal-safe it has to be large enough.
@@ -62,7 +65,14 @@ class CoverageData {
   void BeforeFork();
   void AfterFork(int child_pid);
   void Extend(uptr npcs);
-  void Add(uptr pc);
+  void Add(uptr pc, u8 *guard);
+  void IndirCall(uptr caller, uptr callee, uptr callee_cache[],
+                 uptr cache_size);
+  void DumpCallerCalleePairs();
+  void DumpTrace();
+
+  ALWAYS_INLINE
+  void TraceBasicaBlock(uptr *cache);
 
   uptr *data();
   uptr size();
@@ -85,6 +95,34 @@ class CoverageData {
   uptr pc_array_mapped_size;
   // Descriptor of the file mapped pc array.
   int pc_fd;
+
+  // Caller-Callee (cc) array, size and current index.
+  static const uptr kCcArrayMaxSize = FIRST_32_SECOND_64(1 << 18, 1 << 24);
+  uptr **cc_array;
+  atomic_uintptr_t cc_array_index;
+  atomic_uintptr_t cc_array_size;
+
+  // Tracing (tr) pc and event arrays, their size and current index.
+  // We record all events (basic block entries) in a global buffer of u32
+  // values. Each such value is an index in the table of TracedPc objects.
+  // So far the tracing is highly experimental:
+  //   - not thread-safe;
+  //   - does not support long traces;
+  //   - not tuned for performance.
+  struct TracedPc {
+    uptr pc;
+    const char *module_name;
+    uptr module_offset;
+  };
+  static const uptr kTrEventArrayMaxSize = FIRST_32_SECOND_64(1 << 22, 1 << 30);
+  u32 *tr_event_array;
+  uptr tr_event_array_size;
+  uptr tr_event_array_index;
+  static const uptr kTrPcArrayMaxSize    = FIRST_32_SECOND_64(1 << 22, 1 << 27);
+  TracedPc *tr_pc_array;
+  uptr tr_pc_array_size;
+  uptr tr_pc_array_index;
+
   StaticSpinMutex mu;
 
   void DirectOpen();
@@ -94,7 +132,7 @@ class CoverageData {
 static CoverageData coverage_data;
 
 void CoverageData::DirectOpen() {
-  InternalScopedString path(1024);
+  InternalScopedString path(kMaxPathLength);
   internal_snprintf((char *)path.data(), path.size(), "%s/%zd.sancov.raw",
                     common_flags()->coverage_dir, internal_getpid());
   pc_fd = OpenFile(path.data(), true);
@@ -118,6 +156,22 @@ void CoverageData::Init() {
     atomic_store(&pc_array_size, kPcArrayMaxSize, memory_order_relaxed);
     atomic_store(&pc_array_index, 0, memory_order_relaxed);
   }
+
+  cc_array = reinterpret_cast<uptr **>(MmapNoReserveOrDie(
+      sizeof(uptr *) * kCcArrayMaxSize, "CovInit::cc_array"));
+  atomic_store(&cc_array_size, kCcArrayMaxSize, memory_order_relaxed);
+  atomic_store(&cc_array_index, 0, memory_order_relaxed);
+
+  tr_event_array = reinterpret_cast<u32 *>(
+      MmapNoReserveOrDie(sizeof(tr_event_array[0]) * kTrEventArrayMaxSize,
+                         "CovInit::tr_event_array"));
+  tr_event_array_size = kTrEventArrayMaxSize;
+  tr_event_array_index = 0;
+
+  tr_pc_array = reinterpret_cast<TracedPc *>(MmapNoReserveOrDie(
+      sizeof(tr_pc_array[0]) * kTrEventArrayMaxSize, "CovInit::tr_pc_array"));
+  tr_pc_array_size = kTrEventArrayMaxSize;
+  tr_pc_array_index = 0;
 }
 
 void CoverageData::ReInit() {
@@ -176,14 +230,53 @@ void CoverageData::Extend(uptr npcs) {
   atomic_store(&pc_array_size, size, memory_order_release);
 }
 
-// Simply add the pc into the vector under lock. If the function is called more
-// than once for a given PC it will be inserted multiple times, which is fine.
-void CoverageData::Add(uptr pc) {
+// Atomically add the pc to the vector. The atomically set the guard to 1.
+// If the function is called more than once for a given PC it will
+// be inserted multiple times, which is fine.
+void CoverageData::Add(uptr pc, u8 *guard) {
   if (!pc_array) return;
   uptr idx = atomic_fetch_add(&pc_array_index, 1, memory_order_relaxed);
   CHECK_LT(idx * sizeof(uptr),
            atomic_load(&pc_array_size, memory_order_acquire));
   pc_array[idx] = pc;
+  atomic_fetch_add(&coverage_counter, 1, memory_order_relaxed);
+  // Set the guard.
+  atomic_uint8_t *atomic_guard = reinterpret_cast<atomic_uint8_t*>(guard);
+  atomic_store(atomic_guard, 1, memory_order_relaxed);
+}
+
+// Registers a pair caller=>callee.
+// When a given caller is seen for the first time, the callee_cache is added
+// to the global array cc_array, callee_cache[0] is set to caller and
+// callee_cache[1] is set to cache_size.
+// Then we are trying to add callee to callee_cache [2,cache_size) if it is
+// not there yet.
+// If the cache is full we drop the callee (may want to fix this later).
+void CoverageData::IndirCall(uptr caller, uptr callee, uptr callee_cache[],
+                             uptr cache_size) {
+  if (!cc_array) return;
+  atomic_uintptr_t *atomic_callee_cache =
+      reinterpret_cast<atomic_uintptr_t *>(callee_cache);
+  uptr zero = 0;
+  if (atomic_compare_exchange_strong(&atomic_callee_cache[0], &zero, caller,
+                                     memory_order_seq_cst)) {
+    uptr idx = atomic_fetch_add(&cc_array_index, 1, memory_order_relaxed);
+    CHECK_LT(idx * sizeof(uptr),
+             atomic_load(&cc_array_size, memory_order_acquire));
+    callee_cache[1] = cache_size;
+    cc_array[idx] = callee_cache;
+  }
+  CHECK_EQ(atomic_load(&atomic_callee_cache[0], memory_order_relaxed), caller);
+  for (uptr i = 2; i < cache_size; i++) {
+    uptr was = 0;
+    if (atomic_compare_exchange_strong(&atomic_callee_cache[i], &was, callee,
+                                       memory_order_seq_cst)) {
+      atomic_fetch_add(&coverage_counter, 1, memory_order_relaxed);
+      return;
+    }
+    if (was == callee)  // Already have this callee.
+      return;
+  }
 }
 
 uptr *CoverageData::data() {
@@ -228,7 +321,7 @@ static void CovWritePacked(int pid, const char *module, const void *blob,
     internal_memcpy(block_pos, module, module_name_length);
     block_pos += module_name_length;
     char *block_data_begin = block_pos;
-    char *blob_pos = (char *)blob;
+    const char *blob_pos = (const char *)blob;
     while (blob_size > 0) {
       unsigned int payload_size = Min(blob_size, max_payload_size);
       blob_size -= payload_size;
@@ -246,19 +339,17 @@ static void CovWritePacked(int pid, const char *module, const void *blob,
 // If packed = true and name != 0: <name>.<sancov>.<packed> (name is
 // user-supplied).
 static int CovOpenFile(bool packed, const char* name) {
-  InternalScopedBuffer<char> path(1024);
+  InternalScopedString path(kMaxPathLength);
   if (!packed) {
     CHECK(name);
-    internal_snprintf((char *)path.data(), path.size(), "%s/%s.%zd.sancov",
-                      common_flags()->coverage_dir, name, internal_getpid());
+    path.append("%s/%s.%zd.sancov", common_flags()->coverage_dir, name,
+                internal_getpid());
   } else {
     if (!name)
-      internal_snprintf((char *)path.data(), path.size(),
-                        "%s/%zd.sancov.packed", common_flags()->coverage_dir,
-                        internal_getpid());
+      path.append("%s/%zd.sancov.packed", common_flags()->coverage_dir,
+                  internal_getpid());
     else
-      internal_snprintf((char *)path.data(), path.size(), "%s/%s.sancov.packed",
-                        common_flags()->coverage_dir, name);
+      path.append("%s/%s.sancov.packed", common_flags()->coverage_dir, name);
   }
   uptr fd = OpenFile(path.data(), true);
   if (internal_iserror(fd)) {
@@ -266,6 +357,97 @@ static int CovOpenFile(bool packed, const char* name) {
     return -1;
   }
   return fd;
+}
+
+// Dump trace PCs and trace events into two separate files.
+void CoverageData::DumpTrace() {
+  uptr max_idx = tr_event_array_index;
+  if (!max_idx) return;
+  auto sym = Symbolizer::GetOrInit();
+  if (!sym)
+    return;
+  InternalScopedString out(32 << 20);
+  for (uptr i = 0; i < max_idx; i++) {
+    u32 pc_idx = tr_event_array[i];
+    TracedPc *t = &tr_pc_array[pc_idx];
+    if (!t->module_name) {
+      const char *module_name = "<unknown>";
+      uptr module_address = 0;
+      sym->GetModuleNameAndOffsetForPC(t->pc, &module_name, &module_address);
+      t->module_name = internal_strdup(module_name);
+      t->module_offset = module_address;
+      out.append("%s 0x%zx\n", t->module_name, t->module_offset);
+    }
+  }
+  int fd = CovOpenFile(false, "trace-points");
+  if (fd < 0) return;
+  internal_write(fd, out.data(), out.length());
+  internal_close(fd);
+
+  fd = CovOpenFile(false, "trace-events");
+  if (fd < 0) return;
+  internal_write(fd, tr_event_array, max_idx * sizeof(tr_event_array[0]));
+  internal_close(fd);
+  VReport(1, " CovDump: Trace: %zd PCs written\n", tr_pc_array_index);
+  VReport(1, " CovDump: Trace: %zd Events written\n", tr_event_array_index);
+}
+
+// This function dumps the caller=>callee pairs into a file as a sequence of
+// lines like "module_name offset".
+void CoverageData::DumpCallerCalleePairs() {
+  uptr max_idx = atomic_load(&cc_array_index, memory_order_relaxed);
+  if (!max_idx) return;
+  auto sym = Symbolizer::GetOrInit();
+  if (!sym)
+    return;
+  InternalScopedString out(32 << 20);
+  uptr total = 0;
+  for (uptr i = 0; i < max_idx; i++) {
+    uptr *cc_cache = cc_array[i];
+    CHECK(cc_cache);
+    uptr caller = cc_cache[0];
+    uptr n_callees = cc_cache[1];
+    const char *caller_module_name = "<unknown>";
+    uptr caller_module_address = 0;
+    sym->GetModuleNameAndOffsetForPC(caller, &caller_module_name,
+                                     &caller_module_address);
+    for (uptr j = 2; j < n_callees; j++) {
+      uptr callee = cc_cache[j];
+      if (!callee) break;
+      total++;
+      const char *callee_module_name = "<unknown>";
+      uptr callee_module_address = 0;
+      sym->GetModuleNameAndOffsetForPC(callee, &callee_module_name,
+                                       &callee_module_address);
+      out.append("%s 0x%zx\n%s 0x%zx\n", caller_module_name,
+                 caller_module_address, callee_module_name,
+                 callee_module_address);
+    }
+  }
+  int fd = CovOpenFile(false, "caller-callee");
+  if (fd < 0) return;
+  internal_write(fd, out.data(), out.length());
+  internal_close(fd);
+  VReport(1, " CovDump: %zd caller-callee pairs written\n", total);
+}
+
+// Record the current PC into the event buffer.
+// Every event is a u32 value (index in tr_pc_array_index) so we compute
+// it once and then cache in the provided 'cache' storage.
+void CoverageData::TraceBasicaBlock(uptr *cache) {
+  CHECK(common_flags()->coverage);
+  uptr idx = *cache;
+  if (!idx) {
+    CHECK_LT(tr_pc_array_index, kTrPcArrayMaxSize);
+    idx = tr_pc_array_index++;
+    TracedPc *t = &tr_pc_array[idx];
+    t->pc = GET_CALLER_PC();
+    *cache = idx;
+    CHECK_LT(idx, 1U << 31);
+  }
+  CHECK_LT(tr_event_array_index, tr_event_array_size);
+  tr_event_array[tr_event_array_index] = static_cast<u32>(idx);
+  tr_event_array_index++;
 }
 
 // Dump the coverage on disk.
@@ -281,8 +463,8 @@ static void CovDump() {
   SortArray(vb, size);
   MemoryMappingLayout proc_maps(/*cache_enabled*/true);
   uptr mb, me, off, prot;
-  InternalScopedBuffer<char> module(4096);
-  InternalScopedBuffer<char> path(4096 * 2);
+  InternalScopedString module(kMaxPathLength);
+  InternalScopedString path(kMaxPathLength);
   for (int i = 0;
        proc_maps.Next(&mb, &me, &off, module.data(), module.size(), &prot);
        i++) {
@@ -299,7 +481,7 @@ static void CovDump() {
         CHECK_LE(diff, 0xffffffffU);
         offsets.push_back(static_cast<u32>(diff));
       }
-      char *module_name = StripModuleName(module.data());
+      const char *module_name = StripModuleName(module.data());
       if (cov_sandboxed) {
         if (cov_fd >= 0) {
           CovWritePacked(internal_getpid(), module_name, offsets.data(),
@@ -308,9 +490,9 @@ static void CovDump() {
         }
       } else {
         // One file per module per process.
-        internal_snprintf((char *)path.data(), path.size(), "%s/%s.%zd.sancov",
-                          common_flags()->coverage_dir, module_name,
-                          internal_getpid());
+        path.clear();
+        path.append("%s/%s.%zd.sancov", common_flags()->coverage_dir,
+                    module_name, internal_getpid());
         int fd = CovOpenFile(false /* packed */, module_name);
         if (fd > 0) {
           internal_write(fd, offsets.data(), offsets.size() * sizeof(u32));
@@ -319,11 +501,12 @@ static void CovDump() {
                   vb - old_vb);
         }
       }
-      InternalFree(module_name);
     }
   }
   if (cov_fd >= 0)
     internal_close(cov_fd);
+  coverage_data.DumpCallerCalleePairs();
+  coverage_data.DumpTrace();
 #endif  // !SANITIZER_WINDOWS
 }
 
@@ -356,8 +539,14 @@ void CovAfterFork(int child_pid) {
 }  // namespace __sanitizer
 
 extern "C" {
-SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov() {
-  coverage_data.Add(StackTrace::GetPreviousInstructionPc(GET_CALLER_PC()));
+SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov(u8 *guard) {
+  coverage_data.Add(StackTrace::GetPreviousInstructionPc(GET_CALLER_PC()),
+                    guard);
+}
+SANITIZER_INTERFACE_ATTRIBUTE void
+__sanitizer_cov_indir_call16(uptr callee, uptr callee_cache16[]) {
+  coverage_data.IndirCall(StackTrace::GetPreviousInstructionPc(GET_CALLER_PC()),
+                          callee, callee_cache16, 16);
 }
 SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov_dump() { CovDump(); }
 SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov_init() {
@@ -375,5 +564,18 @@ SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov_module_init(uptr npcs) {
 SANITIZER_INTERFACE_ATTRIBUTE
 sptr __sanitizer_maybe_open_cov_file(const char *name) {
   return MaybeOpenCovFile(name);
+}
+SANITIZER_INTERFACE_ATTRIBUTE
+uptr __sanitizer_get_total_unique_coverage() {
+  return atomic_load(&coverage_counter, memory_order_relaxed);
+}
+
+SANITIZER_INTERFACE_ATTRIBUTE
+void __sanitizer_cov_trace_func_enter(uptr *cache) {
+  coverage_data.TraceBasicaBlock(cache);
+}
+SANITIZER_INTERFACE_ATTRIBUTE
+void __sanitizer_cov_trace_basic_block(uptr *cache) {
+  coverage_data.TraceBasicaBlock(cache);
 }
 }  // extern "C"

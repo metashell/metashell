@@ -51,10 +51,10 @@ class Value;
 /// function that is used when lowering a region of the function.
 ///
 class FunctionLoweringInfo {
-  const TargetMachine &TM;
 public:
   const Function *Fn;
   MachineFunction *MF;
+  const TargetLowering *TLI;
   MachineRegisterInfo *RegInfo;
   BranchProbabilityInfo *BPI;
   /// CanLowerReturn - true iff the function's return value can be lowered to
@@ -87,6 +87,12 @@ public:
 
   /// RegFixups - Registers which need to be replaced after isel is done.
   DenseMap<unsigned, unsigned> RegFixups;
+
+  /// StatepointStackSlots - A list of temporary stack slots (frame indices) 
+  /// used to spill values at a statepoint.  We store them here to enable
+  /// reuse of the same stack slots across different statepoints in different
+  /// basic blocks.
+  SmallVector<unsigned, 50> StatepointStackSlots;
 
   /// MBB - The current block.
   MachineBasicBlock *MBB;
@@ -126,8 +132,6 @@ public:
   /// selector registers are copied into these virtual registers by
   /// SelectionDAGISel::PrepareEHLandingPad().
   unsigned ExceptionPointerVirtReg, ExceptionSelectorVirtReg;
-
-  explicit FunctionLoweringInfo(const TargetMachine &TM) : TM(TM) {}
 
   /// set - Initialize this FunctionLoweringInfo with the given Function
   /// and its associated MachineFunction.

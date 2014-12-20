@@ -11,6 +11,7 @@ public:
 
 static int sii;
 #pragma omp threadprivate(sii) // expected-note {{defined as threadprivate or thread local}}
+static int globalii;
 
 int test_iteration_spaces() {
   const int N = 100;
@@ -264,6 +265,21 @@ int test_iteration_spaces() {
       c[sii] = a[sii];
   }
 
+  {
+// expected-error@+2 {{loop iteration variable in the associated loop of 'omp parallel for simd' directive may not be a variable with global storage without being explicitly marked as linear}}
+#pragma omp parallel for simd
+    for (globalii = 0; globalii < 10; globalii += 1)
+      c[globalii] = a[globalii];
+  }
+
+  {
+// expected-error@+3 {{loop iteration variable in the associated loop of 'omp parallel for simd' directive may not be a variable with global storage without being explicitly marked as lastprivate}}
+#pragma omp parallel for simd collapse(2)
+    for (ii = 0; ii < 10; ii += 1)
+    for (globalii = 0; globalii < 10; globalii += 1)
+      c[globalii] += a[globalii] + ii;
+  }
+
 // expected-error@+2 {{statement after '#pragma omp parallel for simd' must be a for loop}}
 #pragma omp parallel for simd
   for (auto &item : a) {
@@ -310,6 +326,8 @@ public:
   Iter0 operator--() { return *this; }
   bool operator<(Iter0 a) { return true; }
 };
+// expected-note@+2 {{candidate function not viable: no known conversion from 'GoodIter' to 'Iter0' for 1st argument}}
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter1' to 'Iter0' for 1st argument}}
 int operator-(Iter0 a, Iter0 b) { return 0; }
 class Iter1 {
 public:
@@ -338,11 +356,20 @@ public:
   typedef int difference_type;
   typedef std::random_access_iterator_tag iterator_category;
 };
+// expected-note@+2 {{candidate function not viable: no known conversion from 'const Iter0' to 'GoodIter' for 2nd argument}}
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter1' to 'GoodIter' for 1st argument}}
 int operator-(GoodIter a, GoodIter b) { return 0; }
+// expected-note@+1 3 {{candidate function not viable: requires single argument 'a', but 2 arguments were provided}}
 GoodIter operator-(GoodIter a) { return a; }
+// expected-note@+2 {{candidate function not viable: no known conversion from 'const Iter0' to 'int' for 2nd argument}}
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter1' to 'GoodIter' for 1st argument}}
 GoodIter operator-(GoodIter a, int v) { return GoodIter(); }
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter0' to 'GoodIter' for 1st argument}}
 GoodIter operator+(GoodIter a, int v) { return GoodIter(); }
+// expected-note@+2 {{candidate function not viable: no known conversion from 'GoodIter' to 'int' for 1st argument}}
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter1' to 'int' for 1st argument}}
 GoodIter operator-(int v, GoodIter a) { return GoodIter(); }
+// expected-note@+1 2 {{candidate function not viable: no known conversion from 'Iter0' to 'int' for 1st argument}}
 GoodIter operator+(int v, GoodIter a) { return GoodIter(); }
 
 int test_with_random_access_iterator() {
@@ -377,6 +404,8 @@ int test_with_random_access_iterator() {
 #pragma omp parallel for simd
   for (begin = GoodIter(0); begin < end; ++begin)
     ++begin;
+// expected-error@+3 {{invalid operands to binary expression ('GoodIter' and 'const Iter0')}}
+// expected-error@+2 {{could not calculate number of iterations calling 'operator-' with upper and lower loop bounds}}
 #pragma omp parallel for simd
   for (begin = begin0; begin < end; ++begin)
     ++begin;
@@ -420,15 +449,19 @@ int test_with_random_access_iterator() {
 #pragma omp parallel for simd
   for (GoodIter I = begin; I >= end; I = 2 - I)
     ++I;
+// expected-error@+2 {{invalid operands to binary expression ('Iter0' and 'int')}}
 #pragma omp parallel for simd
   for (Iter0 I = begin0; I < end0; ++I)
     ++I;
 // Initializer is constructor without params.
+// expected-error@+3 {{invalid operands to binary expression ('Iter0' and 'int')}}
 // expected-warning@+2 {{initialization clause of OpenMP for loop is not in canonical form ('var = init' or 'T var = init')}}
 #pragma omp parallel for simd
   for (Iter0 I; I < end0; ++I)
     ++I;
   Iter1 begin1, end1;
+// expected-error@+3 {{invalid operands to binary expression ('Iter1' and 'Iter1')}}
+// expected-error@+2 {{could not calculate number of iterations calling 'operator-' with upper and lower loop bounds}}
 #pragma omp parallel for simd
   for (Iter1 I = begin1; I < end1; ++I)
     ++I;
@@ -437,6 +470,8 @@ int test_with_random_access_iterator() {
 #pragma omp parallel for simd
   for (Iter1 I = begin1; I >= end1; ++I)
     ++I;
+// expected-error@+5 {{invalid operands to binary expression ('Iter1' and 'Iter1')}}
+// expected-error@+4 {{could not calculate number of iterations calling 'operator-' with upper and lower loop bounds}}
 // Initializer is constructor with all default params.
 // expected-warning@+2 {{initialization clause of OpenMP for loop is not in canonical form ('var = init' or 'T var = init')}}
 #pragma omp parallel for simd

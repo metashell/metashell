@@ -31,6 +31,8 @@
 using namespace clang;
 using namespace llvm::opt;
 
+namespace clang {
+
 static FrontendAction *CreateFrontendBaseAction(CompilerInstance &CI) {
   using namespace clang::frontend;
   StringRef Action("unknown");
@@ -113,7 +115,7 @@ static FrontendAction *CreateFrontendBaseAction(CompilerInstance &CI) {
 #endif
 }
 
-static FrontendAction *CreateFrontendAction(CompilerInstance &CI) {
+FrontendAction *CreateFrontendAction(CompilerInstance &CI) {
   // Create the underlying action.
   FrontendAction *Act = CreateFrontendBaseAction(CI);
   if (!Act)
@@ -161,7 +163,7 @@ static FrontendAction *CreateFrontendAction(CompilerInstance &CI) {
   return Act;
 }
 
-bool clang::ExecuteCompilerInvocation(CompilerInstance *Clang) {
+bool ExecuteCompilerInvocation(CompilerInstance *Clang) {
   // Honor -help.
   if (Clang->getFrontendOpts().ShowHelp) {
     std::unique_ptr<OptTable> Opts(driver::createDriverOptTable());
@@ -223,4 +225,6 @@ bool clang::ExecuteCompilerInvocation(CompilerInstance *Clang) {
   if (Clang->getFrontendOpts().DisableFree)
     BuryPointer(std::move(Act));
   return Success;
+}
+
 }

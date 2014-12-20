@@ -30,6 +30,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/ScopeInfo.h"
 #include "clang/Sema/Template.h"
+#include "clang/Sema/TemplateInstObserver.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -107,6 +108,7 @@ static void diagnoseBadTypeAttribute(Sema &S, const AttributeList &attr,
     case AttributeList::AT_StdCall: \
     case AttributeList::AT_ThisCall: \
     case AttributeList::AT_Pascal: \
+    case AttributeList::AT_VectorCall: \
     case AttributeList::AT_MSABI: \
     case AttributeList::AT_SysVABI: \
     case AttributeList::AT_Regparm: \
@@ -660,26 +662,27 @@ static void maybeSynthesizeBlockSignature(TypeProcessingState &state,
   // ...and *prepend* it to the declarator.
   SourceLocation NoLoc;
   declarator.AddInnermostTypeInfo(DeclaratorChunk::getFunction(
-                             /*HasProto=*/true,
-                             /*IsAmbiguous=*/false,
-                             /*LParenLoc=*/NoLoc,
-                             /*ArgInfo=*/nullptr,
-                             /*NumArgs=*/0,
-                             /*EllipsisLoc=*/NoLoc,
-                             /*RParenLoc=*/NoLoc,
-                             /*TypeQuals=*/0,
-                             /*RefQualifierIsLvalueRef=*/true,
-                             /*RefQualifierLoc=*/NoLoc,
-                             /*ConstQualifierLoc=*/NoLoc,
-                             /*VolatileQualifierLoc=*/NoLoc,
-                             /*MutableLoc=*/NoLoc,
-                             EST_None,
-                             /*ESpecLoc=*/NoLoc,
-                             /*Exceptions=*/nullptr,
-                             /*ExceptionRanges=*/nullptr,
-                             /*NumExceptions=*/0,
-                             /*NoexceptExpr=*/nullptr,
-                             loc, loc, declarator));
+      /*HasProto=*/true,
+      /*IsAmbiguous=*/false,
+      /*LParenLoc=*/NoLoc,
+      /*ArgInfo=*/nullptr,
+      /*NumArgs=*/0,
+      /*EllipsisLoc=*/NoLoc,
+      /*RParenLoc=*/NoLoc,
+      /*TypeQuals=*/0,
+      /*RefQualifierIsLvalueRef=*/true,
+      /*RefQualifierLoc=*/NoLoc,
+      /*ConstQualifierLoc=*/NoLoc,
+      /*VolatileQualifierLoc=*/NoLoc,
+      /*RestrictQualifierLoc=*/NoLoc,
+      /*MutableLoc=*/NoLoc, EST_None,
+      /*ESpecLoc=*/NoLoc,
+      /*Exceptions=*/nullptr,
+      /*ExceptionRanges=*/nullptr,
+      /*NumExceptions=*/0,
+      /*NoexceptExpr=*/nullptr,
+      /*ExceptionSpecTokens=*/nullptr,
+      loc, loc, declarator));
 
   // For consistency, make sure the state still has us as processing
   // the decl spec.
@@ -1033,7 +1036,7 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
       LSI->AutoTemplateParams.push_back(CorrespondingTemplateParam);
       // Replace the 'auto' in the function parameter with this invented 
       // template type parameter.
-      Result = QualType(CorrespondingTemplateParam->getTypeForDecl(), 0);  
+      Result = QualType(CorrespondingTemplateParam->getTypeForDecl(), 0);
     } else {
       Result = Context.getAutoType(QualType(), /*decltype(auto)*/false, false);
     }
@@ -2989,7 +2992,8 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
           NoexceptExpr = FTI.NoexceptExpr;
         }
 
-        S.checkExceptionSpecification(FTI.getExceptionSpecType(),
+        S.checkExceptionSpecification(D.isFunctionDeclarationContext(),
+                                      FTI.getExceptionSpecType(),
                                       DynamicExceptions,
                                       DynamicExceptionRanges,
                                       NoexceptExpr,
@@ -3021,6 +3025,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
         case NestedNameSpecifier::Namespace:
         case NestedNameSpecifier::NamespaceAlias:
         case NestedNameSpecifier::Global:
+        case NestedNameSpecifier::Super:
           llvm_unreachable("Nested-name-specifier must name a type");
 
         case NestedNameSpecifier::TypeSpec:
@@ -3120,9 +3125,8 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
           RemovalLocs.push_back(Chunk.Fun.getConstQualifierLoc());
         if (Chunk.Fun.TypeQuals & Qualifiers::Volatile)
           RemovalLocs.push_back(Chunk.Fun.getVolatileQualifierLoc());
-        // FIXME: We do not track the location of the __restrict qualifier.
-        //if (Chunk.Fun.TypeQuals & Qualifiers::Restrict)
-        //  RemovalLocs.push_back(Chunk.Fun.getRestrictQualifierLoc());
+        if (Chunk.Fun.TypeQuals & Qualifiers::Restrict)
+          RemovalLocs.push_back(Chunk.Fun.getRestrictQualifierLoc());
         if (!RemovalLocs.empty()) {
           std::sort(RemovalLocs.begin(), RemovalLocs.end(),
                     BeforeThanCompare<SourceLocation>(S.getSourceManager()));
@@ -3417,6 +3421,8 @@ static AttributeList::Kind getAttrListKind(AttributedType::Kind kind) {
     return AttributeList::AT_ThisCall;
   case AttributedType::attr_pascal:
     return AttributeList::AT_Pascal;
+  case AttributedType::attr_vectorcall:
+    return AttributeList::AT_VectorCall;
   case AttributedType::attr_pcs:
   case AttributedType::attr_pcs_vfp:
     return AttributeList::AT_Pcs;
@@ -3717,6 +3723,7 @@ namespace {
       case NestedNameSpecifier::Namespace:
       case NestedNameSpecifier::NamespaceAlias:
       case NestedNameSpecifier::Global:
+      case NestedNameSpecifier::Super:
         llvm_unreachable("Nested-name-specifier must name a type");
       }
 
@@ -3975,6 +3982,8 @@ static void HandleAddressSpaceTypeAttribute(QualType &Type,
       ASIdx = LangAS::opencl_local; break;
     case AttributeList::AT_OpenCLConstantAddressSpace:
       ASIdx = LangAS::opencl_constant; break;
+    case AttributeList::AT_OpenCLGenericAddressSpace:
+      ASIdx = LangAS::opencl_generic; break;
     default:
       assert(Attr.getKind() == AttributeList::AT_OpenCLPrivateAddressSpace);
       ASIdx = 0; break;
@@ -4432,6 +4441,8 @@ static AttributedType::Kind getCCTypeAttrKind(AttributeList &Attr) {
     return AttributedType::attr_thiscall;
   case AttributeList::AT_Pascal:
     return AttributedType::attr_pascal;
+  case AttributeList::AT_VectorCall:
+    return AttributedType::attr_vectorcall;
   case AttributeList::AT_Pcs: {
     // The attribute may have had a fixit applied where we treated an
     // identifier as a string literal.  The contents of the string are valid,
@@ -4549,7 +4560,7 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state,
   }
 
   // Diagnose use of callee-cleanup calling convention on variadic functions.
-  if (isCalleeCleanup(CC)) {
+  if (!supportsVariadicCall(CC)) {
     const FunctionProtoType *FnP = dyn_cast<FunctionProtoType>(fn);
     if (FnP && FnP->isVariadic()) {
       unsigned DiagID = diag::err_cconv_varargs;
@@ -4884,6 +4895,7 @@ static void processTypeAttrs(TypeProcessingState &state, QualType &type,
     case AttributeList::AT_OpenCLGlobalAddressSpace:
     case AttributeList::AT_OpenCLLocalAddressSpace:
     case AttributeList::AT_OpenCLConstantAddressSpace:
+    case AttributeList::AT_OpenCLGenericAddressSpace:
     case AttributeList::AT_AddressSpace:
       HandleAddressSpaceTypeAttribute(type, attr, state.getSema());
       attr.setUsedAsTypeAttr();
@@ -5083,31 +5095,9 @@ static bool hasVisibleDefinition(Sema &S, NamedDecl *D, NamedDecl **Suggested) {
 
   // If this definition was instantiated from a template, map back to the
   // pattern from which it was instantiated.
-  //
-  // FIXME: There must be a better place for this to live.
   if (auto *RD = dyn_cast<CXXRecordDecl>(D)) {
-    if (auto *TD = dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
-      auto From = TD->getInstantiatedFrom();
-      if (auto *CTD = From.dyn_cast<ClassTemplateDecl*>()) {
-        while (auto *NewCTD = CTD->getInstantiatedFromMemberTemplate()) {
-          if (NewCTD->isMemberSpecialization())
-            break;
-          CTD = NewCTD;
-        }
-        RD = CTD->getTemplatedDecl();
-      } else if (auto *CTPSD = From.dyn_cast<
-                     ClassTemplatePartialSpecializationDecl *>()) {
-        while (auto *NewCTPSD = CTPSD->getInstantiatedFromMember()) {
-          if (NewCTPSD->isMemberSpecialization())
-            break;
-          CTPSD = NewCTPSD;
-        }
-        RD = CTPSD;
-      }
-    } else if (isTemplateInstantiation(RD->getTemplateSpecializationKind())) {
-      while (auto *NewRD = RD->getInstantiatedFromMemberClass())
-        RD = NewRD;
-    }
+    if (auto *Pattern = RD->getTemplateInstantiationPattern())
+      RD = Pattern;
     D = RD->getDefinition();
   } else if (auto *ED = dyn_cast<EnumDecl>(D)) {
     while (auto *NewED = ED->getInstantiatedFromMemberEnum())
@@ -5196,11 +5186,16 @@ bool Sema::RequireCompleteTypeImpl(SourceLocation Loc, QualType T,
       // Try to recover by implicitly importing this module.
       createImplicitModuleImportForErrorRecovery(Loc, Owner);
     }
-    // BEGIN TEMPLIGHT
-    else if (Def && getTemplightFlag()) {
-      traceMemoization(Def, Loc);
+    else if (Def && TemplateInstObserverChain) {
+      ActiveTemplateInstantiation TempInst;
+      TempInst.Kind = ActiveTemplateInstantiation::Memoization;
+      TempInst.Template = Def;
+      TempInst.Entity = Def;
+      TempInst.PointOfInstantiation = Loc;
+      TemplateInstObserverChain->atTemplateBegin(*this, TempInst);
+      TemplateInstObserverChain->atTemplateEnd(*this, TempInst);
     }
-    // END TEMPLIGHT
+
     // We lock in the inheritance model once somebody has asked us to ensure
     // that a pointer-to-member type is complete.
     if (Context.getTargetInfo().getCXXABI().isMicrosoft()) {
@@ -5491,6 +5486,8 @@ static QualType getDecltypeForExpr(Sema &S, Expr *E) {
   } else if (const ObjCPropertyRefExpr *PR = dyn_cast<ObjCPropertyRefExpr>(E)) {
     if (PR->isExplicitProperty())
       return PR->getExplicitProperty()->getType();
+  } else if (auto *PE = dyn_cast<PredefinedExpr>(E)) {
+    return PE->getType();
   }
   
   // C++11 [expr.lambda.prim]p18:

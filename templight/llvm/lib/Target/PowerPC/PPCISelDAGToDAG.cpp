@@ -27,6 +27,7 @@
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -172,10 +173,20 @@ namespace {
     /// a register.  The case of adding a (possibly relocatable) constant to a
     /// register can be improved, but it is wrong to substitute Reg+Reg for
     /// Reg in an asm, because the load or store opcode would have to change.
-   bool SelectInlineAsmMemoryOperand(const SDValue &Op,
+    bool SelectInlineAsmMemoryOperand(const SDValue &Op,
                                       char ConstraintCode,
                                       std::vector<SDValue> &OutOps) override {
-      OutOps.push_back(Op);
+      // We need to make sure that this one operand does not end up in r0
+      // (because we might end up lowering this as 0(%op)).
+      const TargetRegisterInfo *TRI = TM.getSubtargetImpl()->getRegisterInfo();
+      const TargetRegisterClass *TRC = TRI->getPointerRegClass(*MF, /*Kind=*/1);
+      SDValue RC = CurDAG->getTargetConstant(TRC->getID(), MVT::i32);
+      SDValue NewOp =
+        SDValue(CurDAG->getMachineNode(TargetOpcode::COPY_TO_REGCLASS,
+                                       SDLoc(Op), Op.getValueType(),
+                                       Op, RC), 0);
+
+      OutOps.push_back(NewOp);
       return false;
     }
 
@@ -273,23 +284,29 @@ SDNode *PPCDAGToDAGISel::getGlobalBaseReg() {
     // Insert the set of GlobalBaseReg into the first MBB of the function
     MachineBasicBlock &FirstMBB = MF->front();
     MachineBasicBlock::iterator MBBI = FirstMBB.begin();
+    const Module *M = MF->getFunction()->getParent();
     DebugLoc dl;
 
     if (PPCLowering->getPointerTy() == MVT::i32) {
-      if (PPCSubTarget->isTargetELF())
+      if (PPCSubTarget->isTargetELF()) {
         GlobalBaseReg = PPC::R30;
-      else
+        if (M->getPICLevel() == PICLevel::Small) {
+          BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MoveGOTtoLR));
+          BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MFLR), GlobalBaseReg);
+        } else {
+          BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MovePCtoLR));
+          BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MFLR), GlobalBaseReg);
+          unsigned TempReg = RegInfo->createVirtualRegister(&PPC::GPRCRegClass);
+          BuildMI(FirstMBB, MBBI, dl,
+                  TII.get(PPC::UpdateGBR)).addReg(GlobalBaseReg)
+                  .addReg(TempReg, RegState::Define).addReg(GlobalBaseReg);
+          MF->getInfo<PPCFunctionInfo>()->setUsesPICBase(true);
+        }
+      } else {
         GlobalBaseReg =
           RegInfo->createVirtualRegister(&PPC::GPRC_NOR0RegClass);
-      BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MovePCtoLR));
-      BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MFLR), GlobalBaseReg);
-      if (PPCSubTarget->isTargetELF()) {
-        unsigned TempReg = RegInfo->createVirtualRegister(&PPC::GPRCRegClass);
-        BuildMI(FirstMBB, MBBI, dl,
-                TII.get(PPC::GetGBRO), TempReg).addReg(GlobalBaseReg);
-        BuildMI(FirstMBB, MBBI, dl,
-                TII.get(PPC::UpdateGBR)).addReg(GlobalBaseReg).addReg(TempReg);
-        MF->getInfo<PPCFunctionInfo>()->setUsesPICBase(true);
+        BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MovePCtoLR));
+        BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MFLR), GlobalBaseReg);
       }
     } else {
       GlobalBaseReg = RegInfo->createVirtualRegister(&PPC::G8RC_NOX0RegClass);
@@ -1019,6 +1036,11 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
                                   N->getOperand(0), InFlag);
   }
 
+  case PPCISD::READ_TIME_BASE: {
+    return CurDAG->getMachineNode(PPC::ReadTB, dl, MVT::i32, MVT::i32,
+                                  MVT::Other, N->getOperand(0));
+  }
+
   case ISD::SDIV: {
     // FIXME: since this depends on the setting of the carry flag from the srawi
     //        we should really be making notes about that for the scheduler.
@@ -1322,7 +1344,13 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
     else if (N->getValueType(0) == MVT::f32)
       SelectCCOp = PPC::SELECT_CC_F4;
     else if (N->getValueType(0) == MVT::f64)
-      SelectCCOp = PPC::SELECT_CC_F8;
+      if (PPCSubTarget->hasVSX())
+        SelectCCOp = PPC::SELECT_CC_VSFRC;
+      else
+        SelectCCOp = PPC::SELECT_CC_F8;
+    else if (N->getValueType(0) == MVT::v2f64 ||
+             N->getValueType(0) == MVT::v2i64)
+      SelectCCOp = PPC::SELECT_CC_VSRC;
     else
       SelectCCOp = PPC::SELECT_CC_VRRC;
 
@@ -1436,17 +1464,17 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
     return CurDAG->SelectNodeTo(N, Reg, MVT::Other, Chain);
   }
   case PPCISD::TOC_ENTRY: {
+    assert ((PPCSubTarget->isPPC64() || PPCSubTarget->isSVR4ABI()) &&
+            "Only supported for 64-bit ABI and 32-bit SVR4");
     if (PPCSubTarget->isSVR4ABI() && !PPCSubTarget->isPPC64()) {
       SDValue GA = N->getOperand(0);
       return CurDAG->getMachineNode(PPC::LWZtoc, dl, MVT::i32, GA,
                                     N->getOperand(1));
     }
-    assert (PPCSubTarget->isPPC64() &&
-            "Only supported for 64-bit ABI and 32-bit SVR4");
 
     // For medium and large code model, we generate two instructions as
     // described below.  Otherwise we allow SelectCodeCommon to handle this,
-    // selecting one of LDtoc, LDtocJTI, and LDtocCPT.
+    // selecting one of LDtoc, LDtocJTI, LDtocCPT, and LDtocBA.
     CodeModel::Model CModel = TM.getCodeModel();
     if (CModel != CodeModel::Medium && CModel != CodeModel::Large)
       break;
@@ -1463,7 +1491,8 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
     SDNode *Tmp = CurDAG->getMachineNode(PPC::ADDIStocHA, dl, MVT::i64,
                                         TOCbase, GA);
 
-    if (isa<JumpTableSDNode>(GA) || CModel == CodeModel::Large)
+    if (isa<JumpTableSDNode>(GA) || isa<BlockAddressSDNode>(GA) ||
+        CModel == CodeModel::Large)
       return CurDAG->getMachineNode(PPC::LDtocL, dl, MVT::i64, GA,
                                     SDValue(Tmp, 0));
 
@@ -1686,7 +1715,9 @@ void PPCDAGToDAGISel::PeepholeCROps() {
       case PPC::SELECT_I8:
       case PPC::SELECT_F4:
       case PPC::SELECT_F8:
-      case PPC::SELECT_VRRC: {
+      case PPC::SELECT_VRRC:
+      case PPC::SELECT_VSFRC:
+      case PPC::SELECT_VSRC: {
         SDValue Op = MachineNode->getOperand(0);
         if (Op.isMachineOpcode()) {
           if (Op.getMachineOpcode() == PPC::CRSET)
@@ -1992,6 +2023,8 @@ void PPCDAGToDAGISel::PeepholeCROps() {
       case PPC::SELECT_F4:
       case PPC::SELECT_F8:
       case PPC::SELECT_VRRC:
+      case PPC::SELECT_VSFRC:
+      case PPC::SELECT_VSRC:
         if (Op1Set)
           ResNode = MachineNode->getOperand(1).getNode();
         else if (Op1Unset)

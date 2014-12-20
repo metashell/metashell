@@ -70,6 +70,9 @@ extern "C" {
   // descriptor. Returns -1 on failure, or if coverage dumping is disabled.
   // This is intended for use by sandboxing code.
   intptr_t __sanitizer_maybe_open_cov_file(const char *name);
+  // Get the number of total unique covered entities (blocks, edges, calls).
+  // This can be useful for coverage-directed in-process fuzzers.
+  uintptr_t __sanitizer_get_total_unique_coverage();
 
   // Annotate the current state of a contiguous container, such as
   // std::vector, std::string or similar.
@@ -105,7 +108,7 @@ extern "C" {
                                                  const void *end,
                                                  const void *old_mid,
                                                  const void *new_mid);
-  // Returns true if the contiguous container [beg, end) ir properly poisoned
+  // Returns true if the contiguous container [beg, end) is properly poisoned
   // (e.g. with __sanitizer_annotate_contiguous_container), i.e. if
   //  - [beg, mid) is addressable,
   //  - [mid, end) is unaddressable.

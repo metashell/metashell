@@ -41,3 +41,9 @@ compile_commands.json
 # Polly, which is tracked independently.
 # Sphinx build tree, if building in-source dir.
 docs/_build
+
+#==============================================================================#
+# Files created in tree by the Go bindings.
+#==============================================================================#
+bindings/go/llvm/llvm_config.go
+bindings/go/llvm/workdir

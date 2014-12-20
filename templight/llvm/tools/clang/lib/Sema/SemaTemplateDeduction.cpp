@@ -262,8 +262,7 @@ checkDeducedTemplateArguments(ASTContext &Context,
     // If we deduced two declarations, make sure they they refer to the
     // same declaration.
     if (Y.getKind() == TemplateArgument::Declaration &&
-        isSameDeclaration(X.getAsDecl(), Y.getAsDecl()) &&
-        X.isDeclForReferenceParam() == Y.isDeclForReferenceParam())
+        isSameDeclaration(X.getAsDecl(), Y.getAsDecl()))
       return X;
 
     // All other combinations are incompatible.
@@ -384,7 +383,7 @@ DeduceNonTypeTemplateArgument(Sema &S,
          "Cannot deduce non-type template argument with depth > 0");
 
   D = D ? cast<ValueDecl>(D->getCanonicalDecl()) : nullptr;
-  TemplateArgument New(D, NTTP->getType()->isReferenceType());
+  TemplateArgument New(D, NTTP->getType());
   DeducedTemplateArgument NewDeduced(New);
   DeducedTemplateArgument Result = checkDeducedTemplateArguments(S.Context,
                                                      Deduced[NTTP->getIndex()],
@@ -1494,7 +1493,7 @@ DeduceTemplateArgumentsByTypeMatch(Sema &S,
             const RecordType *NextT = ToVisit.pop_back_val();
 
             // If we have already seen this type, skip it.
-            if (!Visited.insert(NextT))
+            if (!Visited.insert(NextT).second)
               continue;
 
             // If this is a base class, try to perform template argument
@@ -1728,8 +1727,7 @@ DeduceTemplateArguments(Sema &S,
 
   case TemplateArgument::Declaration:
     if (Arg.getKind() == TemplateArgument::Declaration &&
-        isSameDeclaration(Param.getAsDecl(), Arg.getAsDecl()) &&
-        Param.isDeclForReferenceParam() == Arg.isDeclForReferenceParam())
+        isSameDeclaration(Param.getAsDecl(), Arg.getAsDecl()))
       return Sema::TDK_Success;
 
     Info.FirstArg = Param;
@@ -1964,8 +1962,7 @@ static bool isSameTemplateArg(ASTContext &Context,
              Context.getCanonicalType(Y.getAsType());
 
     case TemplateArgument::Declaration:
-      return isSameDeclaration(X.getAsDecl(), Y.getAsDecl()) &&
-             X.isDeclForReferenceParam() == Y.isDeclForReferenceParam();
+      return isSameDeclaration(X.getAsDecl(), Y.getAsDecl());
 
     case TemplateArgument::NullPtr:
       return Context.hasSameType(X.getNullPtrType(), Y.getNullPtrType());

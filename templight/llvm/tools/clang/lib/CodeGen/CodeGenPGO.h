@@ -31,8 +31,7 @@ class RegionCounter;
 class CodeGenPGO {
 private:
   CodeGenModule &CGM;
-  std::unique_ptr<std::string> PrefixedFuncName;
-  StringRef RawFuncName;
+  std::string FuncName;
   llvm::GlobalValue::LinkageTypes VarLinkage;
 
   unsigned NumRegionCounters;
@@ -40,7 +39,7 @@ private:
   llvm::GlobalVariable *RegionCounters;
   std::unique_ptr<llvm::DenseMap<const Stmt *, unsigned>> RegionCounterMap;
   std::unique_ptr<llvm::DenseMap<const Stmt *, uint64_t>> StmtCountMap;
-  std::unique_ptr<std::vector<uint64_t>> RegionCounts;
+  std::vector<uint64_t> RegionCounts;
   uint64_t CurrentRegionCount;
   std::string CoverageMapping;
   /// \brief A flag that is set to true when this function doesn't need
@@ -56,13 +55,13 @@ public:
   /// Whether or not we have PGO region data for the current function. This is
   /// false both when we have no data at all and when our data has been
   /// discarded.
-  bool haveRegionCounts() const { return RegionCounts != nullptr; }
+  bool haveRegionCounts() const { return !RegionCounts.empty(); }
 
   /// Get the string used to identify this function in the profile data.
   /// For functions with local linkage, this includes the main file name.
-  StringRef getFuncName() const { return StringRef(*PrefixedFuncName); }
+  StringRef getFuncName() const { return StringRef(FuncName); }
   std::string getFuncVarName(StringRef VarName) const {
-    return ("__llvm_profile_" + VarName + "_" + RawFuncName).str();
+    return ("__llvm_profile_" + VarName + "_" + FuncName).str();
   }
 
   /// Return the counter value of the current region.
@@ -151,7 +150,7 @@ private:
   uint64_t getRegionCount(unsigned Counter) {
     if (!haveRegionCounts())
       return 0;
-    return (*RegionCounts)[Counter];
+    return RegionCounts[Counter];
   }
 
   friend class RegionCounter;

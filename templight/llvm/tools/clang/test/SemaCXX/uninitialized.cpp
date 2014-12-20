@@ -50,6 +50,7 @@ int x = x++; // expected-warning {{variable 'x' is uninitialized when used withi
 int y = ((s ? (y, v) : (77, y))++, sizeof(y)); // expected-warning {{variable 'y' is uninitialized when used within its own initialization}}
 int z = ++ref(z); // expected-warning {{variable 'z' is uninitialized when used within its own initialization}}
 int aa = (ref(aa) += 10); // expected-warning {{variable 'aa' is uninitialized when used within its own initialization}}
+int bb = bb ? x : y; // expected-warning {{variable 'bb' is uninitialized when used within its own initialization}}
 
 void test_stuff () {
   int a = a; // no-warning: used to signal intended lack of initialization.
@@ -83,6 +84,8 @@ void test_stuff () {
   int y = ((s ? (y, v) : (77, y))++, sizeof(y)); // expected-warning {{variable 'y' is uninitialized when used within its own initialization}}
   int z = ++ref(z);                              // expected-warning {{variable 'z' is uninitialized when used within its own initialization}}
   int aa = (ref(aa) += 10); // expected-warning {{variable 'aa' is uninitialized when used within its own initialization}}
+  int bb = bb ? x : y; // expected-warning {{variable 'bb' is uninitialized when used within its own initialization}}
+
 
   for (;;) {
     int a = a; // no-warning: used to signal intended lack of initialization.
@@ -116,8 +119,50 @@ void test_stuff () {
     int y = ((s ? (y, v) : (77, y))++, sizeof(y)); // expected-warning {{variable 'y' is uninitialized when used within its own initialization}}
     int z = ++ref(z);                              // expected-warning {{variable 'z' is uninitialized when used within its own initialization}}
     int aa = (ref(aa) += 10); // expected-warning {{variable 'aa' is uninitialized when used within its own initialization}}
+    int bb = bb ? x : y; // expected-warning {{variable 'bb' is uninitialized when used within its own initialization}}
+
   }
 }
+
+// Also test similar constructs in a field's initializer.
+struct S {
+  int x;
+  int y;
+  const int z = 5;
+  void *ptr;
+
+  S(bool (*)[1]) : x(x) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(bool (*)[2]) : x(x + 1) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(bool (*)[3]) : x(x + x) {} // expected-warning 2{{field 'x' is uninitialized when used here}}
+  S(bool (*)[4]) : x(static_cast<long>(x) + 1) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(bool (*)[5]) : x(foo(x)) {} // expected-warning {{field 'x' is uninitialized when used here}}
+
+  // These don't actually require the value of x and so shouldn't warn.
+  S(char (*)[1]) : x(sizeof(x)) {} // rdar://8610363
+  S(char (*)[2]) : ptr(&ptr) {}
+  S(char (*)[3]) : x(bar(&x)) {}
+  S(char (*)[4]) : x(boo(x)) {}
+  S(char (*)[5]) : x(far(x)) {}
+  S(char (*)[6]) : x(__alignof__(x)) {}
+
+  S(int (*)[1]) : x(0), y(x ? y : y) {} // expected-warning 2{{field 'y' is uninitialized when used here}}
+  S(int (*)[2]) : x(0), y(1 + (x ? y : y)) {} // expected-warning 2{{field 'y' is uninitialized when used here}}
+  S(int (*)[3]) : x(-x) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[4]) : x(std::move(x)) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[5]) : z(std::move(z)) {} // expected-warning {{field 'z' is uninitialized when used here}}
+  S(int (*)[6]) : x(moved(std::move(x))) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[7]) : x(0), y(std::move((x ? x : (18, y)))) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[8]) : x(0), y(x ?: y) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[9]) : x(0), y(y ?: x) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[10]) : x(0), y((foo(y), x)) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[11]) : x(0), y(x += y) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[12]) : x(x += 10) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[13]) : x(x++) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[14]) : x(0), y(((x ? (y, x) : (77, y))++, sizeof(y))) {} // expected-warning {{field 'y' is uninitialized when used here}}
+  S(int (*)[15]) : x(++ref(x)) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[16]) : x((ref(x) += 10)) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  S(int (*)[17]) : x(0), y(y ? x : x) {} // expected-warning {{field 'y' is uninitialized when used here}}
+};
 
 // Test self-references with record types.
 class A {
@@ -128,7 +173,7 @@ class A {
     static int count;
     int get() const { return num; }
     int get2() { return num; }
-    void set(int x) { num = x; }
+    int set(int x) { num = x; return num; }
     static int zero() { return 0; }
 
     A() {}
@@ -138,13 +183,18 @@ class A {
     A(A *a) {}
     A(A &&a) {}
     ~A();
+    bool operator!();
+    bool operator!=(const A&);
 };
+
+bool operator!=(int, const A&);
 
 A getA() { return A(); }
 A getA(int x) { return A(); }
 A getA(A* a) { return A(); }
 A getA(A a) { return A(); }
 A moveA(A&& a) { return A(); }
+A const_refA(const A& a) { return A(); }
 
 void setupA(bool x) {
   A a1;
@@ -190,6 +240,24 @@ void setupA(bool x) {
   A a33 = A(std::move(a33));   // expected-warning {{variable 'a33' is uninitialized when used within its own initialization}}
   A a34(std::move(a34));   // expected-warning {{variable 'a34' is uninitialized when used within its own initialization}}
   A a35 = std::move(x ? a34 : (37, a35));  // expected-warning {{variable 'a35' is uninitialized when used within its own initialization}}
+
+  A a36 = const_refA(a36);
+  A a37(const_refA(a37));
+
+  A a38({a38});  // expected-warning {{variable 'a38' is uninitialized when used within its own initialization}}
+  A a39 = {a39};  // expected-warning {{variable 'a39' is uninitialized when used within its own initialization}}
+  A a40 = A({a40});  // expected-warning {{variable 'a40' is uninitialized when used within its own initialization}}
+
+  A a41 = !a41;  // expected-warning {{variable 'a41' is uninitialized when used within its own initialization}}
+  A a42 = !(a42);  // expected-warning {{variable 'a42' is uninitialized when used within its own initialization}}
+  A a43 = a43 != a42;  // expected-warning {{variable 'a43' is uninitialized when used within its own initialization}}
+  A a44 = a43 != a44;  // expected-warning {{variable 'a44' is uninitialized when used within its own initialization}}
+  A a45 = a45 != a45;  // expected-warning 2{{variable 'a45' is uninitialized when used within its own initialization}}
+  A a46 = 0 != a46;  // expected-warning {{variable 'a46' is uninitialized when used within its own initialization}}
+
+  A a47(a47.set(a47.num));  // expected-warning 2{{variable 'a47' is uninitialized when used within its own initialization}}
+  A a48(a47.set(a48.num));  // expected-warning {{variable 'a48' is uninitialized when used within its own initialization}}
+  A a49(a47.set(a48.num));
 }
 
 bool cond;
@@ -234,6 +302,93 @@ A a32 = moveA(std::move(a32));  // expected-warning {{variable 'a32' is uninitia
 A a33 = A(std::move(a33));   // expected-warning {{variable 'a33' is uninitialized when used within its own initialization}}
 A a34(std::move(a34));   // expected-warning {{variable 'a34' is uninitialized when used within its own initialization}}
 A a35 = std::move(x ? a34 : (37, a35));  // expected-warning {{variable 'a35' is uninitialized when used within its own initialization}}
+
+A a36 = const_refA(a36);
+A a37(const_refA(a37));
+
+A a38({a38});  // expected-warning {{variable 'a38' is uninitialized when used within its own initialization}}
+A a39 = {a39};  // expected-warning {{variable 'a39' is uninitialized when used within its own initialization}}
+A a40 = A({a40});  // expected-warning {{variable 'a40' is uninitialized when used within its own initialization}}
+
+A a41 = !a41;  // expected-warning {{variable 'a41' is uninitialized when used within its own initialization}}
+A a42 = !(a42);  // expected-warning {{variable 'a42' is uninitialized when used within its own initialization}}
+A a43 = a43 != a42;  // expected-warning {{variable 'a43' is uninitialized when used within its own initialization}}
+A a44 = a43 != a44;  // expected-warning {{variable 'a44' is uninitialized when used within its own initialization}}
+A a45 = a45 != a45;  // expected-warning 2{{variable 'a45' is uninitialized when used within its own initialization}}
+
+A a46 = 0 != a46;  // expected-warning {{variable 'a46' is uninitialized when used within its own initialization}}
+
+A a47(a47.set(a47.num));  // expected-warning 2{{variable 'a47' is uninitialized when used within its own initialization}}
+A a48(a47.set(a48.num));  // expected-warning {{variable 'a48' is uninitialized when used within its own initialization}}
+A a49(a47.set(a48.num));
+
+class T {
+  A a, a2;
+  const A c_a;
+  A* ptr_a;
+
+  T() {}
+  T(bool (*)[1]) : a() {}
+  T(bool (*)[2]) : a2(a.get()) {}
+  T(bool (*)[3]) : a2(a) {}
+  T(bool (*)[4]) : a(&a) {}
+  T(bool (*)[5]) : a(a.zero()) {}
+  T(bool (*)[6]) : a(a.ONE) {}
+  T(bool (*)[7]) : a(getA()) {}
+  T(bool (*)[8]) : a2(getA(a.TWO)) {}
+  T(bool (*)[9]) : a(getA(&a)) {}
+  T(bool (*)[10]) : a(a.count) {}
+
+  T(bool (*)[11]) : a(a) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[12]) : a(a.get()) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[13]) : a(a.num) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[14]) : a(A(a)) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[15]) : a(getA(a.num)) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[16]) : a(&a.num) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[17]) : a(a.get2()) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[18]) : a2(cond ? a2 : a) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+  T(bool (*)[19]) : a2(cond ? a2 : a) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+  T(bool (*)[20]) : a{a} {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[21]) : a({a}) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+
+  T(bool (*)[22]) : ptr_a(new A(ptr_a->count)) {}
+  T(bool (*)[23]) : ptr_a(new A(ptr_a->ONE)) {}
+  T(bool (*)[24]) : ptr_a(new A(ptr_a->TWO)) {}
+  T(bool (*)[25]) : ptr_a(new A(ptr_a->zero())) {}
+
+  T(bool (*)[26]) : ptr_a(new A(ptr_a->get())) {}  // expected-warning {{field 'ptr_a' is uninitialized when used here}}
+  T(bool (*)[27]) : ptr_a(new A(ptr_a->get2())) {}  // expected-warning {{field 'ptr_a' is uninitialized when used here}}
+  T(bool (*)[28]) : ptr_a(new A(ptr_a->num)) {}  // expected-warning {{field 'ptr_a' is uninitialized when used here}}
+
+  T(bool (*)[29]) : c_a(c_a) {}  // expected-warning {{field 'c_a' is uninitialized when used here}}
+  T(bool (*)[30]) : c_a(A(c_a)) {}  // expected-warning {{field 'c_a' is uninitialized when used here}}
+
+  T(bool (*)[31]) : a(std::move(a)) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[32]) : a(moveA(std::move(a))) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[33]) : a(A(std::move(a))) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[34]) : a(A(std::move(a))) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[35]) : a2(std::move(x ? a : (37, a2))) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+
+  T(bool (*)[36]) : a(const_refA(a)) {}
+  T(bool (*)[37]) : a(A(const_refA(a))) {}
+
+  T(bool (*)[38]) : a({a}) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[39]) : a{a} {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[40]) : a({a}) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+
+  T(bool (*)[41]) : a(!a) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[42]) : a(!(a)) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+  T(bool (*)[43]) : a(), a2(a2 != a) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+  T(bool (*)[44]) : a(), a2(a != a2) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+  T(bool (*)[45]) : a(a != a) {}  // expected-warning 2{{field 'a' is uninitialized when used here}}
+  T(bool (*)[46]) : a(0 != a) {}  // expected-warning {{field 'a' is uninitialized when used here}}
+
+  T(bool (*)[47]) : a2(a2.set(a2.num)) {}  // expected-warning 2{{field 'a2' is uninitialized when used here}}
+  T(bool (*)[48]) : a2(a.set(a2.num)) {}  // expected-warning {{field 'a2' is uninitialized when used here}}
+  T(bool (*)[49]) : a2(a.set(a.num)) {}
+
+};
+
 struct B {
   // POD struct.
   int x;
@@ -322,33 +477,42 @@ B b22 = moveB(std::move(b22));  // expected-warning {{variable 'b22' is uninitia
 B b23 = B(std::move(b23));   // expected-warning {{variable 'b23' is uninitialized when used within its own initialization}}
 B b24 = std::move(x ? b23 : (18, b24));  // expected-warning {{variable 'b24' is uninitialized when used within its own initialization}}
 
-// Also test similar constructs in a field's initializer.
-struct S {
-  int x;
-  int y;
-  void *ptr;
+class U {
+  B b1, b2;
+  B *ptr1, *ptr2;
+  const B constb = {};
 
-  S(bool (*)[1]) : x(x) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(bool (*)[2]) : x(x + 1) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(bool (*)[3]) : x(x + x) {} // expected-warning 2{{field 'x' is uninitialized when used here}}
-  S(bool (*)[4]) : x(static_cast<long>(x) + 1) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(bool (*)[5]) : x(foo(x)) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  U() {}
+  U(bool (*)[1]) : b1() {}
+  U(bool (*)[2]) : b2(b1) {}
+  U(bool (*)[3]) : b1{ 5, &b1.x } {}
+  U(bool (*)[4]) : b1(getB()) {}
+  U(bool (*)[5]) : b1(getB(&b1)) {}
+  U(bool (*)[6]) : b1(getB(&b1.x)) {}
 
-  // These don't actually require the value of x and so shouldn't warn.
-  S(char (*)[1]) : x(sizeof(x)) {} // rdar://8610363
-  S(char (*)[2]) : ptr(&ptr) {}
-  S(char (*)[3]) : x(__alignof__(x)) {}
-  S(char (*)[4]) : x(bar(&x)) {}
-  S(char (*)[5]) : x(boo(x)) {}
-  S(char (*)[6]) : x(far(x)) {}
+  U(bool (*)[7]) : b1(b1) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[8]) : b1(getB(b1.x)) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[9]) : b1(getB(b1.y)) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[10]) : b1(getB(-b1.x)) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
 
-  S(char (*)[7]) : x(0), y((foo(y), x)) {} // expected-warning {{field 'y' is uninitialized when used here}}
-  S(char (*)[8]) : x(0), y(x += y) {} // expected-warning {{field 'y' is uninitialized when used here}}
-  S(char (*)[9]) : x(x += 10) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(char (*)[10]) : x(x++) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(char (*)[11]) : x(0), y(((x ? (y, x) : (77, y))++, sizeof(y))) {} // expected-warning {{field 'y' is uninitialized when used here}}
-  S(char (*)[12]) : x(++ref(x)) {} // expected-warning {{field 'x' is uninitialized when used here}}
-  S(char (*)[13]) : x(ref(x) += 10) {} // expected-warning {{field 'x' is uninitialized when used here}}
+  U(bool (*)[11]) : ptr1(0) {}
+  U(bool (*)[12]) : ptr1(0), ptr2(ptr1) {}
+  U(bool (*)[13]) : ptr1(getPtrB()) {}
+  U(bool (*)[14]) : ptr1(getPtrB(&ptr1)) {}
+
+  U(bool (*)[15]) : ptr1(getPtrB(ptr1->x)) {}  // expected-warning {{field 'ptr1' is uninitialized when used here}}
+  U(bool (*)[16]) : ptr2(getPtrB(ptr2->y)) {}  // expected-warning {{field 'ptr2' is uninitialized when used here}}
+
+  U(bool (*)[17]) : b1 { b1.x = 5, b1.y = 0 } {}
+  U(bool (*)[18]) : b1 { b1.x + 1, b1.y } {}  // expected-warning 2{{field 'b1' is uninitialized when used here}}
+
+  U(bool (*)[19]) : constb(constb) {}  // expected-warning {{field 'constb' is uninitialized when used here}}
+  U(bool (*)[20]) : constb(B(constb)) {}  // expected-warning {{field 'constb' is uninitialized when used here}}
+
+  U(bool (*)[21]) : b1(std::move(b1)) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[22]) : b1(moveB(std::move(b1))) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[23]) : b1(B(std::move(b1))) {}  // expected-warning {{field 'b1' is uninitialized when used here}}
+  U(bool (*)[24]) : b2(std::move(x ? b1 : (18, b2))) {}  // expected-warning {{field 'b2' is uninitialized when used here}}
 };
 
 struct C { char a[100], *e; } car = { .e = car.a };
@@ -522,6 +686,8 @@ namespace statics {
   static int y = ((s ? (y, v) : (77, y))++, sizeof(y)); // expected-warning {{variable 'y' is uninitialized when used within its own initialization}}
   static int z = ++ref(z); // expected-warning {{variable 'z' is uninitialized when used within its own initialization}}
   static int aa = (ref(aa) += 10); // expected-warning {{variable 'aa' is uninitialized when used within its own initialization}}
+  static int bb = bb ? x : y; // expected-warning {{variable 'bb' is uninitialized when used within its own initialization}}
+
 
   void test() {
     static int a = a; // no-warning: used to signal intended lack of initialization.
@@ -555,7 +721,9 @@ namespace statics {
     static int y = ((s ? (y, v) : (77, y))++, sizeof(y));  // expected-warning {{static variable 'y' is suspiciously used within its own initialization}}
     static int z = ++ref(z); // expected-warning {{static variable 'z' is suspiciously used within its own initialization}}
     static int aa = (ref(aa) += 10); // expected-warning {{static variable 'aa' is suspiciously used within its own initialization}}
-   for (;;) {
+    static int bb = bb ? x : y; // expected-warning {{static variable 'bb' is suspiciously used within its own initialization}}
+
+    for (;;) {
       static int a = a; // no-warning: used to signal intended lack of initialization.
       static int b = b + 1; // expected-warning {{static variable 'b' is suspiciously used within its own initialization}}
       static int c = (c + c); // expected-warning 2{{static variable 'c' is suspiciously used within its own initialization}}
@@ -587,6 +755,7 @@ namespace statics {
       static int y = ((s ? (y, v) : (77, y))++, sizeof(y));  // expected-warning {{static variable 'y' is suspiciously used within its own initialization}}
       static int z = ++ref(z); // expected-warning {{static variable 'z' is suspiciously used within its own initialization}}
       static int aa = (ref(aa) += 10); // expected-warning {{static variable 'aa' is suspiciously used within its own initialization}}
+      static int bb = bb ? x : y; // expected-warning {{static variable 'bb' is suspiciously used within its own initialization}}
     }
   }
 }
@@ -981,4 +1150,238 @@ namespace init_list {
   D d1 = { num, num };
   D d2 = { num, d2.a };
   D d3 = { d3.b, num };  // expected-warning{{uninitialized}}
+
+  // Same as above in member initializer form.
+  struct Awrapper {
+    A a1{1,2};
+    A a2{a2.i1 + 2};  // expected-warning{{uninitialized}}
+    A a3 = {a3.i1 + 2};  // expected-warning{{uninitialized}}
+    A a4 = A{a4.i2 + 2};  // expected-warning{{uninitialized}}
+    Awrapper() {}  // expected-note 3{{in this constructor}}
+    Awrapper(int) :
+      a1{1,2},
+      a2{a2.i1 + 2},  // expected-warning{{uninitialized}}
+      a3{a3.i1 + 2},  // expected-warning{{uninitialized}}
+      a4{a4.i2 + 2}  // expected-warning{{uninitialized}}
+    {}
+  };
+
+  struct Bwrapper {
+    B b1 = { {}, {} };
+    B b2 = { {}, b2.a1 };
+    B b3 = { b3.a1 };  // expected-warning{{uninitialized}}
+    B b4 = { {}, b4.a2} ;  // expected-warning{{uninitialized}}
+    B b5 = { b5.a2 };  // expected-warning{{uninitialized}}
+
+    B b6 = { {b6.a1.i1} };  // expected-warning{{uninitialized}}
+    B b7 = { {0, b7.a1.i1} };
+    B b8 = { {}, {b8.a1.i1} };
+    B b9 = { {}, {0, b9.a1.i1} };
+
+    B b10 = { {b10.a1.i2} };  // expected-warning{{uninitialized}}
+    B b11 = { {0, b11.a1.i2} };  // expected-warning{{uninitialized}}
+    B b12 = { {}, {b12.a1.i2} };
+    B b13 = { {}, {0, b13.a1.i2} };
+
+    B b14 = { {b14.a2.i1} };  // expected-warning{{uninitialized}}
+    B b15 = { {0, b15.a2.i1} };  // expected-warning{{uninitialized}}
+    B b16 = { {}, {b16.a2.i1} };  // expected-warning{{uninitialized}}
+    B b17 = { {}, {0, b17.a2.i1} };
+
+    B b18 = { {b18.a2.i2} };  // expected-warning{{uninitialized}}
+    B b19 = { {0, b19.a2.i2} };  // expected-warning{{uninitialized}}
+    B b20 = { {}, {b20.a2.i2} };  // expected-warning{{uninitialized}}
+    B b21 = { {}, {0, b21.a2.i2} };  // expected-warning{{uninitialized}}
+
+    B b22 = { {b18.a2.i2 + 5} };
+    Bwrapper() {}  // expected-note 13{{in this constructor}}
+    Bwrapper(int) :
+      b1{ {}, {} },
+      b2{ {}, b2.a1 },
+      b3{ b3.a1 },  // expected-warning{{uninitialized}}
+      b4{ {}, b4.a2}, // expected-warning{{uninitialized}}
+      b5{ b5.a2 },  // expected-warning{{uninitialized}}
+
+      b6{ {b6.a1.i1} },  // expected-warning{{uninitialized}}
+      b7{ {0, b7.a1.i1} },
+      b8{ {}, {b8.a1.i1} },
+      b9{ {}, {0, b9.a1.i1} },
+
+      b10{ {b10.a1.i2} },  // expected-warning{{uninitialized}}
+      b11{ {0, b11.a1.i2} },  // expected-warning{{uninitialized}}
+      b12{ {}, {b12.a1.i2} },
+      b13{ {}, {0, b13.a1.i2} },
+
+      b14{ {b14.a2.i1} },  // expected-warning{{uninitialized}}
+      b15{ {0, b15.a2.i1} },  // expected-warning{{uninitialized}}
+      b16{ {}, {b16.a2.i1} },  // expected-warning{{uninitialized}}
+      b17{ {}, {0, b17.a2.i1} },
+
+      b18{ {b18.a2.i2} },  // expected-warning{{uninitialized}}
+      b19{ {0, b19.a2.i2} },  // expected-warning{{uninitialized}}
+      b20{ {}, {b20.a2.i2} },  // expected-warning{{uninitialized}}
+      b21{ {}, {0, b21.a2.i2} },  // expected-warning{{uninitialized}}
+
+      b22{ {b18.a2.i2 + 5} }
+    {}
+  };
+
+  struct Cwrapper {
+    C c1 = { 0, num, 0 };
+    C c2 = { 1, num, c2.b };
+    C c3 = { c3.b, num };  // expected-warning{{uninitialized}}
+    C c4 = { 0, c4.b, 0 };  // expected-warning{{uninitialized}}
+    C c5 = { 0, c5.c, 0 };
+    C c6 = { c6.b, num, 0 };  // expected-warning{{uninitialized}}
+    C c7 = { 0, c7.a, 0 };
+
+    Cwrapper() {} // expected-note 3{{in this constructor}}
+    Cwrapper(int) :
+      c1{ 0, num, 0 },
+      c2{ 1, num, c2.b },
+      c3{ c3.b, num },  // expected-warning{{uninitialized}}
+      c4{ 0, c4.b, 0 },  // expected-warning{{uninitialized}}
+      c5{ 0, c5.c, 0 },
+      c6{ c6.b, num, 0 },  // expected-warning{{uninitialized}}
+      c7{ 0, c7.a, 0 }
+    {}
+  };
+
+  struct Dwrapper {
+    D d1 = { num, num };
+    D d2 = { num, d2.a };
+    D d3 = { d3.b, num }; // expected-warning{{uninitialized}}
+    Dwrapper() {}  // expected-note{{in this constructor}}
+    Dwrapper(int) :
+      d1{ num, num },
+      d2{ num, d2.a },
+      d3{ d3.b, num } // expected-warning{{uninitialized}}
+    {}
+  };
+}
+
+namespace template_class {
+class Foo {
+ public:
+    int *Create() { return nullptr; }
 };
+
+template <typename T>
+class A {
+public:
+  // Don't warn on foo here.
+  A() : ptr(foo->Create()) {}
+
+private:
+  Foo *foo = new Foo;
+  int *ptr;
+};
+
+template <typename T>
+class B {
+public:
+  // foo is uninitialized here, but class B is never instantiated.
+  B() : ptr(foo->Create()) {}
+
+private:
+  Foo *foo;
+  int *ptr;
+};
+
+template <typename T>
+class C {
+public:
+  C() : ptr(foo->Create()) {}
+  // expected-warning@-1 {{field 'foo' is uninitialized when used here}}
+private:
+  Foo *foo;
+  int *ptr;
+};
+
+C<int> c;
+// expected-note@-1 {{in instantiation of member function 'template_class::C<int>::C' requested here}}
+
+}
+
+namespace base_class_access {
+struct A {
+  A();
+  A(int);
+
+  int i;
+  int foo();
+
+  static int bar();
+};
+
+struct B : public A {
+  B(int (*)[1]) : A() {}
+  B(int (*)[2]) : A(bar()) {}
+
+  B(int (*)[3]) : A(i) {}
+  // expected-warning@-1 {{base class 'base_class_access::A' is uninitialized when used here to access 'base_class_access::A::i'}}
+
+  B(int (*)[4]) : A(foo()) {}
+  // expected-warning@-1 {{base_class_access::A' is uninitialized when used here to access 'base_class_access::A::foo'}}
+};
+
+struct C {
+  C(int) {}
+};
+
+struct D : public C, public A {
+  D(int (*)[1]) : C(0) {}
+  D(int (*)[2]) : C(bar()) {}
+
+  D(int (*)[3]) : C(i) {}
+  // expected-warning@-1 {{base class 'base_class_access::A' is uninitialized when used here to access 'base_class_access::A::i'}}
+
+  D(int (*)[4]) : C(foo()) {}
+  // expected-warning@-1 {{base_class_access::A' is uninitialized when used here to access 'base_class_access::A::foo'}}
+};
+
+}
+
+namespace value {
+template <class T> T move(T t);
+template <class T> T notmove(T t);
+}
+namespace lvalueref {
+template <class T> T move(T& t);
+template <class T> T notmove(T& t);
+}
+namespace rvalueref {
+template <class T> T move(T&& t);
+template <class T> T notmove(T&& t);
+}
+
+namespace move_test {
+int a1 = std::move(a1); // expected-warning {{uninitialized}}
+int a2 = value::move(a2); // expected-warning {{uninitialized}}
+int a3 = value::notmove(a3); // expected-warning {{uninitialized}}
+int a4 = lvalueref::move(a4);
+int a5 = lvalueref::notmove(a5);
+int a6 = rvalueref::move(a6);
+int a7 = rvalueref::notmove(a7);
+
+void test() {
+  int a1 = std::move(a1); // expected-warning {{uninitialized}}
+  int a2 = value::move(a2); // expected-warning {{uninitialized}}
+  int a3 = value::notmove(a3); // expected-warning {{uninitialized}}
+  int a4 = lvalueref::move(a4);
+  int a5 = lvalueref::notmove(a5);
+  int a6 = rvalueref::move(a6);
+  int a7 = rvalueref::notmove(a7);
+}
+
+class A {
+  int a;
+  A(int (*) [1]) : a(std::move(a)) {} // expected-warning {{uninitialized}}
+  A(int (*) [2]) : a(value::move(a)) {} // expected-warning {{uninitialized}}
+  A(int (*) [3]) : a(value::notmove(a)) {} // expected-warning {{uninitialized}}
+  A(int (*) [4]) : a(lvalueref::move(a)) {}
+  A(int (*) [5]) : a(lvalueref::notmove(a)) {}
+  A(int (*) [6]) : a(rvalueref::move(a)) {}
+  A(int (*) [7]) : a(rvalueref::notmove(a)) {}
+};
+}

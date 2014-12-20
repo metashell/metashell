@@ -1,6 +1,7 @@
 // RUN: %clang_cc1 -std=c++98 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 // RUN: %clang_cc1 -std=c++11 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
-// RUN: %clang_cc1 -std=c++1y %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
+// RUN: %clang_cc1 -std=c++14 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
+// RUN: %clang_cc1 -std=c++1z %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 
 namespace dr300 { // dr300: yes
   template<typename R, typename A> void f(R (&)(A)) {}
@@ -181,9 +182,15 @@ namespace dr308 { // dr308: yes
 
 namespace dr311 { // dr311: yes
   namespace X { namespace Y {} }
-  namespace X::Y {} // expected-error {{must define each namespace separately}}
+  namespace X::Y {}
+#if __cplusplus <= 201402L
+  // expected-error@-2 {{define each namespace separately}}
+#endif
   namespace X {
-    namespace X::Y {} // expected-error {{must define each namespace separately}}
+    namespace X::Y {}
+#if __cplusplus <= 201402L
+  // expected-error@-2 {{define each namespace separately}}
+#endif
   }
   // FIXME: The diagnostics here are not very good.
   namespace ::dr311::X {} // expected-error 2+{{}} // expected-warning {{extra qual}}
@@ -698,7 +705,7 @@ namespace dr354 { // dr354: yes c++11
   // FIXME: Should we allow this in C++98 too?
   struct S {};
 
-  template<int*> struct ptr {}; // expected-note +{{here}}
+  template<int*> struct ptr {}; // expected-note 0-4{{here}}
   ptr<0> p0;
   ptr<(int*)0> p1;
   ptr<(float*)0> p2;
@@ -708,11 +715,16 @@ namespace dr354 { // dr354: yes c++11
   // expected-error@-5 {{does not refer to any decl}}
   // expected-error@-5 {{does not refer to any decl}}
   // expected-error@-5 {{does not refer to any decl}}
-#else
+#elif __cplusplus <= 201402L
   // expected-error@-10 {{must be cast}}
   // ok
   // expected-error@-10 {{does not match}}
   // expected-error@-10 {{does not match}}
+#else
+  // expected-error@-15 {{conversion from 'int' to 'int *' is not allowed}}
+  // ok
+  // expected-error@-15 {{'float *' is not implicitly convertible to 'int *'}}
+  // expected-error@-15 {{'int dr354::S::*' is not implicitly convertible to 'int *'}}
 #endif
 
   template<int*> int both();
@@ -725,7 +737,7 @@ namespace dr354 { // dr354: yes c++11
   // expected-note@-6 {{candidate}}
 #endif
 
-  template<int S::*> struct ptr_mem {}; // expected-note +{{here}}
+  template<int S::*> struct ptr_mem {}; // expected-note 0-4{{here}}
   ptr_mem<0> m0;
   ptr_mem<(int S::*)0> m1;
   ptr_mem<(float S::*)0> m2;
@@ -735,11 +747,16 @@ namespace dr354 { // dr354: yes c++11
   // expected-error@-5 {{is not a pointer to member constant}}
   // expected-error@-5 {{cannot be converted}}
   // expected-error@-5 {{cannot be converted}}
-#else
+#elif __cplusplus <= 201402L
   // expected-error@-10 {{must be cast}}
   // ok
   // expected-error@-10 {{does not match}}
   // expected-error@-10 {{does not match}}
+#else
+  // expected-error@-15 {{conversion from 'int' to 'int dr354::S::*' is not allowed}}
+  // ok
+  // expected-error@-15 {{'float dr354::S::*' is not implicitly convertible to 'int dr354::S::*'}}
+  // expected-error@-15 {{'int *' is not implicitly convertible to 'int dr354::S::*'}}
 #endif
 }
 

@@ -699,9 +699,10 @@ static const LangAS::Map *getAddressSpaceMap(const TargetInfo &T,
       1, // opencl_global
       2, // opencl_local
       3, // opencl_constant
-      4, // cuda_device
-      5, // cuda_constant
-      6  // cuda_shared
+      4, // opencl_generic
+      5, // cuda_device
+      6, // cuda_constant
+      7  // cuda_shared
     };
     return &FakeAddrSpaceMap;
   } else {
@@ -722,35 +723,28 @@ static bool isAddrSpaceMapManglingEnabled(const TargetInfo &TI,
   llvm_unreachable("getAddressSpaceMapMangling() doesn't cover anything.");
 }
 
-ASTContext::ASTContext(LangOptions& LOpts, SourceManager &SM,
+ASTContext::ASTContext(LangOptions &LOpts, SourceManager &SM,
                        IdentifierTable &idents, SelectorTable &sels,
                        Builtin::Context &builtins)
-  : FunctionProtoTypes(this_()),
-    TemplateSpecializationTypes(this_()),
-    DependentTemplateSpecializationTypes(this_()),
-    SubstTemplateTemplateParmPacks(this_()),
-    GlobalNestedNameSpecifier(nullptr),
-    Int128Decl(nullptr), UInt128Decl(nullptr), Float128StubDecl(nullptr),
-    BuiltinVaListDecl(nullptr),
-    ObjCIdDecl(nullptr), ObjCSelDecl(nullptr), ObjCClassDecl(nullptr),
-    ObjCProtocolClassDecl(nullptr), BOOLDecl(nullptr),
-    CFConstantStringTypeDecl(nullptr), ObjCInstanceTypeDecl(nullptr),
-    FILEDecl(nullptr),
-    jmp_bufDecl(nullptr), sigjmp_bufDecl(nullptr), ucontext_tDecl(nullptr),
-    BlockDescriptorType(nullptr), BlockDescriptorExtendedType(nullptr),
-    cudaConfigureCallDecl(nullptr),
-    NullTypeSourceInfo(QualType()), 
-    FirstLocalImport(), LastLocalImport(),
-    SourceMgr(SM), LangOpts(LOpts), 
-    AddrSpaceMap(nullptr), Target(nullptr), PrintingPolicy(LOpts),
-    Idents(idents), Selectors(sels),
-    BuiltinInfo(builtins),
-    DeclarationNames(*this),
-    ExternalSource(nullptr), Listener(nullptr),
-    Comments(SM), CommentsLoaded(false),
-    CommentCommandTraits(BumpAlloc, LOpts.CommentOpts),
-    LastSDM(nullptr, 0)
-{
+    : FunctionProtoTypes(this_()), TemplateSpecializationTypes(this_()),
+      DependentTemplateSpecializationTypes(this_()),
+      SubstTemplateTemplateParmPacks(this_()),
+      GlobalNestedNameSpecifier(nullptr), Int128Decl(nullptr),
+      UInt128Decl(nullptr), Float128StubDecl(nullptr),
+      BuiltinVaListDecl(nullptr), ObjCIdDecl(nullptr), ObjCSelDecl(nullptr),
+      ObjCClassDecl(nullptr), ObjCProtocolClassDecl(nullptr), BOOLDecl(nullptr),
+      CFConstantStringTypeDecl(nullptr), ObjCInstanceTypeDecl(nullptr),
+      FILEDecl(nullptr), jmp_bufDecl(nullptr), sigjmp_bufDecl(nullptr),
+      ucontext_tDecl(nullptr), BlockDescriptorType(nullptr),
+      BlockDescriptorExtendedType(nullptr), cudaConfigureCallDecl(nullptr),
+      NullTypeSourceInfo(QualType()), FirstLocalImport(), LastLocalImport(),
+      SourceMgr(SM), LangOpts(LOpts),
+      SanitizerBL(new SanitizerBlacklist(LangOpts.SanitizerBlacklistFile, SM)),
+      AddrSpaceMap(nullptr), Target(nullptr), PrintingPolicy(LOpts),
+      Idents(idents), Selectors(sels), BuiltinInfo(builtins),
+      DeclarationNames(*this), ExternalSource(nullptr), Listener(nullptr),
+      Comments(SM), CommentsLoaded(false),
+      CommentCommandTraits(BumpAlloc, LOpts.CommentOpts), LastSDM(nullptr, 0) {
   TUDecl = TranslationUnitDecl::Create(*this);
 }
 
@@ -2116,6 +2110,62 @@ void ASTContext::adjustDeducedFunctionResultType(FunctionDecl *FD,
   }
   if (ASTMutationListener *L = getASTMutationListener())
     L->DeducedReturnType(FD, ResultType);
+}
+
+/// Get a function type and produce the equivalent function type with the
+/// specified exception specification. Type sugar that can be present on a
+/// declaration of a function with an exception specification is permitted
+/// and preserved. Other type sugar (for instance, typedefs) is not.
+static QualType getFunctionTypeWithExceptionSpec(
+    ASTContext &Context, QualType Orig,
+    const FunctionProtoType::ExceptionSpecInfo &ESI) {
+  // Might have some parens.
+  if (auto *PT = dyn_cast<ParenType>(Orig))
+    return Context.getParenType(
+        getFunctionTypeWithExceptionSpec(Context, PT->getInnerType(), ESI));
+
+  // Might have a calling-convention attribute.
+  if (auto *AT = dyn_cast<AttributedType>(Orig))
+    return Context.getAttributedType(
+        AT->getAttrKind(),
+        getFunctionTypeWithExceptionSpec(Context, AT->getModifiedType(), ESI),
+        getFunctionTypeWithExceptionSpec(Context, AT->getEquivalentType(),
+                                         ESI));
+
+  // Anything else must be a function type. Rebuild it with the new exception
+  // specification.
+  const FunctionProtoType *Proto = cast<FunctionProtoType>(Orig);
+  return Context.getFunctionType(
+      Proto->getReturnType(), Proto->getParamTypes(),
+      Proto->getExtProtoInfo().withExceptionSpec(ESI));
+}
+
+void ASTContext::adjustExceptionSpec(
+    FunctionDecl *FD, const FunctionProtoType::ExceptionSpecInfo &ESI,
+    bool AsWritten) {
+  // Update the type.
+  QualType Updated =
+      getFunctionTypeWithExceptionSpec(*this, FD->getType(), ESI);
+  FD->setType(Updated);
+
+  if (!AsWritten)
+    return;
+
+  // Update the type in the type source information too.
+  if (TypeSourceInfo *TSInfo = FD->getTypeSourceInfo()) {
+    // If the type and the type-as-written differ, we may need to update
+    // the type-as-written too.
+    if (TSInfo->getType() != FD->getType())
+      Updated = getFunctionTypeWithExceptionSpec(*this, TSInfo->getType(), ESI);
+
+    // FIXME: When we get proper type location information for exceptions,
+    // we'll also have to rebuild the TypeSourceInfo. For now, we just patch
+    // up the TypeSourceInfo;
+    assert(TypeLoc::getFullDataSizeForType(Updated) ==
+               TypeLoc::getFullDataSizeForType(TSInfo->getType()) &&
+           "TypeLoc size mismatch from updating exception specification");
+    TSInfo->overrideType(Updated);
+  }
 }
 
 /// getComplexType - Return the uniqued reference to the type for a complex
@@ -4106,7 +4156,7 @@ ASTContext::getCanonicalTemplateArgument(const TemplateArgument &Arg) const {
 
     case TemplateArgument::Declaration: {
       ValueDecl *D = cast<ValueDecl>(Arg.getAsDecl()->getCanonicalDecl());
-      return TemplateArgument(D, Arg.isDeclForReferenceParam());
+      return TemplateArgument(D, Arg.getParamTypeForDecl());
     }
 
     case TemplateArgument::NullPtr:
@@ -4195,7 +4245,8 @@ ASTContext::getCanonicalNestedNameSpecifier(NestedNameSpecifier *NNS) const {
   }
 
   case NestedNameSpecifier::Global:
-    // The global specifier is canonical and unique.
+  case NestedNameSpecifier::Super:
+    // The global specifier and __super specifer are canonical and unique.
     return NNS;
   }
 
@@ -6741,58 +6792,40 @@ bool ASTContext::canAssignObjCInterfaces(const ObjCObjectType *LHS,
   if (LHS->getNumProtocols() == 0)
     return true;
 
-  // Okay, we know the LHS has protocol qualifiers.  If the RHS doesn't, 
-  // more detailed analysis is required.
-  if (RHS->getNumProtocols() == 0) {
-    // OK, if LHS is a superclass of RHS *and*
-    // this superclass is assignment compatible with LHS.
-    // false otherwise.
-    bool IsSuperClass = 
-      LHS->getInterface()->isSuperClassOf(RHS->getInterface());
-    if (IsSuperClass) {
-      // OK if conversion of LHS to SuperClass results in narrowing of types
-      // ; i.e., SuperClass may implement at least one of the protocols
-      // in LHS's protocol list. Example, SuperObj<P1> = lhs<P1,P2> is ok.
-      // But not SuperObj<P1,P2,P3> = lhs<P1,P2>.
-      llvm::SmallPtrSet<ObjCProtocolDecl *, 8> SuperClassInheritedProtocols;
-      CollectInheritedProtocols(RHS->getInterface(), SuperClassInheritedProtocols);
-      // If super class has no protocols, it is not a match.
-      if (SuperClassInheritedProtocols.empty())
-        return false;
-      
-      for (const auto *LHSProto : LHS->quals()) {
-        bool SuperImplementsProtocol = false;        
-        for (auto *SuperClassProto : SuperClassInheritedProtocols) {
-          if (SuperClassProto->lookupProtocolNamed(LHSProto->getIdentifier())) {
-            SuperImplementsProtocol = true;
-            break;
-          }
-        }
-        if (!SuperImplementsProtocol)
-          return false;
-      }
-      return true;
-    }
-    return false;
-  }
-
-  for (const auto *LHSPI : LHS->quals()) {
-    bool RHSImplementsProtocol = false;
-
-    // If the RHS doesn't implement the protocol on the left, the types
-    // are incompatible.
-    for (auto *RHSPI : RHS->quals()) {
-      if (RHSPI->lookupProtocolNamed(LHSPI->getIdentifier())) {
-        RHSImplementsProtocol = true;
-        break;
-      }
-    }
-    // FIXME: For better diagnostics, consider passing back the protocol name.
-    if (!RHSImplementsProtocol)
+  // Okay, we know the LHS has protocol qualifiers. But RHS may or may not.
+  // More detailed analysis is required.
+  // OK, if LHS is same or a superclass of RHS *and*
+  // this LHS, or as RHS's super class is assignment compatible with LHS.
+  bool IsSuperClass =
+    LHS->getInterface()->isSuperClassOf(RHS->getInterface());
+  if (IsSuperClass) {
+    // OK if conversion of LHS to SuperClass results in narrowing of types
+    // ; i.e., SuperClass may implement at least one of the protocols
+    // in LHS's protocol list. Example, SuperObj<P1> = lhs<P1,P2> is ok.
+    // But not SuperObj<P1,P2,P3> = lhs<P1,P2>.
+    llvm::SmallPtrSet<ObjCProtocolDecl *, 8> SuperClassInheritedProtocols;
+    CollectInheritedProtocols(RHS->getInterface(), SuperClassInheritedProtocols);
+    // Also, if RHS has explicit quelifiers, include them for comparing with LHS's
+    // qualifiers.
+    for (auto *RHSPI : RHS->quals())
+      SuperClassInheritedProtocols.insert(RHSPI->getCanonicalDecl());
+    // If there is no protocols associated with RHS, it is not a match.
+    if (SuperClassInheritedProtocols.empty())
       return false;
+      
+    for (const auto *LHSProto : LHS->quals()) {
+      bool SuperImplementsProtocol = false;
+      for (auto *SuperClassProto : SuperClassInheritedProtocols)
+        if (SuperClassProto->lookupProtocolNamed(LHSProto->getIdentifier())) {
+          SuperImplementsProtocol = true;
+          break;
+        }
+      if (!SuperImplementsProtocol)
+        return false;
+    }
+    return true;
   }
-  // The RHS implements all protocols listed on the LHS.
-  return true;
+  return false;
 }
 
 bool ASTContext::areComparableObjCPointerTypes(QualType LHS, QualType RHS) {
@@ -7928,7 +7961,9 @@ bool ASTContext::DeclMustBeEmitted(const Decl *D) {
     // We never need to emit an uninstantiated function template.
     if (FD->getTemplatedKind() == FunctionDecl::TK_FunctionTemplate)
       return false;
-  } else
+  } else if (isa<OMPThreadPrivateDecl>(D))
+    return true;
+  else
     return false;
 
   // If this is a member of a class template, we do not need to emit it.
@@ -8269,7 +8304,7 @@ namespace {
 
 } // end namespace
 
-ASTContext::ParentVector
+ArrayRef<ast_type_traits::DynTypedNode>
 ASTContext::getParents(const ast_type_traits::DynTypedNode &Node) {
   assert(Node.getMemoizationData() &&
          "Invariant broken: only nodes that support memoization may be "
@@ -8282,13 +8317,12 @@ ASTContext::getParents(const ast_type_traits::DynTypedNode &Node) {
   }
   ParentMap::const_iterator I = AllParents->find(Node.getMemoizationData());
   if (I == AllParents->end()) {
-    return ParentVector();
+    return None;
   }
-  if (I->second.is<ast_type_traits::DynTypedNode *>()) {
-    return ParentVector(1, *I->second.get<ast_type_traits::DynTypedNode *>());
+  if (auto *N = I->second.dyn_cast<ast_type_traits::DynTypedNode *>()) {
+    return llvm::makeArrayRef(N, 1);
   }
-  const auto &Parents = *I->second.get<ParentVector *>();
-  return ParentVector(Parents.begin(), Parents.end());
+  return *I->second.get<ParentVector *>();
 }
 
 bool

@@ -24,10 +24,12 @@
 #include "llvm/TableGen/Record.h"
 #include "llvm/TableGen/SetTheory.h"
 #include <cstdlib>
+#include <list>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+#include <deque>
 
 namespace llvm {
   class CodeGenRegBank;
@@ -42,7 +44,7 @@ namespace llvm {
     uint16_t Size;
     uint16_t Offset;
     const unsigned EnumValue;
-    unsigned LaneMask;
+    mutable unsigned LaneMask;
 
     // Are all super-registers containing this SubRegIndex covered by their
     // sub-registers?
@@ -101,7 +103,7 @@ namespace llvm {
     const CompMap &getComposites() const { return Composed; }
 
     // Compute LaneMask from Composed. Return LaneMask.
-    unsigned computeLaneMask();
+    unsigned computeLaneMask() const;
 
   private:
     CompMap Composed;
@@ -257,15 +259,16 @@ namespace llvm {
 
     // Map SubRegIndex -> sub-class.  This is the largest sub-class where all
     // registers have a SubRegIndex sub-register.
-    DenseMap<CodeGenSubRegIndex*, CodeGenRegisterClass*> SubClassWithSubReg;
+    DenseMap<const CodeGenSubRegIndex *, CodeGenRegisterClass *>
+        SubClassWithSubReg;
 
     // Map SubRegIndex -> set of super-reg classes.  This is all register
     // classes SuperRC such that:
     //
     //   R:SubRegIndex in this RC for all R in SuperRC.
     //
-    DenseMap<CodeGenSubRegIndex*,
-             SmallPtrSet<CodeGenRegisterClass*, 8> > SuperRegClasses;
+    DenseMap<const CodeGenSubRegIndex *, SmallPtrSet<CodeGenRegisterClass *, 8>>
+        SuperRegClasses;
 
     // Bit vector of TopoSigs for the registers in this class. This will be
     // very sparse on regular architectures.
@@ -314,19 +317,20 @@ namespace llvm {
 
     // getSubClassWithSubReg - Returns the largest sub-class where all
     // registers have a SubIdx sub-register.
-    CodeGenRegisterClass*
-    getSubClassWithSubReg(CodeGenSubRegIndex *SubIdx) const {
+    CodeGenRegisterClass *
+    getSubClassWithSubReg(const CodeGenSubRegIndex *SubIdx) const {
       return SubClassWithSubReg.lookup(SubIdx);
     }
 
-    void setSubClassWithSubReg(CodeGenSubRegIndex *SubIdx,
+    void setSubClassWithSubReg(const CodeGenSubRegIndex *SubIdx,
                                CodeGenRegisterClass *SubRC) {
       SubClassWithSubReg[SubIdx] = SubRC;
     }
 
     // getSuperRegClasses - Returns a bit vector of all register classes
     // containing only SubIdx super-registers of this class.
-    void getSuperRegClasses(CodeGenSubRegIndex *SubIdx, BitVector &Out) const;
+    void getSuperRegClasses(const CodeGenSubRegIndex *SubIdx,
+                            BitVector &Out) const;
 
     // addSuperRegClass - Add a class containing only SudIdx super-registers.
     void addSuperRegClass(CodeGenSubRegIndex *SubIdx,
@@ -446,8 +450,7 @@ namespace llvm {
   class CodeGenRegBank {
     SetTheory Sets;
 
-    // SubRegIndices.
-    std::vector<CodeGenSubRegIndex*> SubRegIndices;
+    std::deque<CodeGenSubRegIndex> SubRegIndices;
     DenseMap<Record*, CodeGenSubRegIndex*> Def2SubRegIdx;
 
     CodeGenSubRegIndex *createSubRegIndex(StringRef Name, StringRef NameSpace);
@@ -457,7 +460,7 @@ namespace llvm {
     ConcatIdxMap ConcatIdx;
 
     // Registers.
-    std::vector<CodeGenRegister*> Registers;
+    std::deque<CodeGenRegister> Registers;
     StringMap<CodeGenRegister*> RegistersByName;
     DenseMap<Record*, CodeGenRegister*> Def2Reg;
     unsigned NumNativeRegUnits;
@@ -468,7 +471,7 @@ namespace llvm {
     SmallVector<RegUnit, 8> RegUnits;
 
     // Register classes.
-    std::vector<CodeGenRegisterClass*> RegClasses;
+    std::list<CodeGenRegisterClass> RegClasses;
     DenseMap<Record*, CodeGenRegisterClass*> Def2RC;
     typedef std::map<CodeGenRegisterClass::Key, CodeGenRegisterClass*> RCKeyMap;
     RCKeyMap Key2RC;
@@ -501,8 +504,13 @@ namespace llvm {
     void computeInferredRegisterClasses();
     void inferCommonSubClass(CodeGenRegisterClass *RC);
     void inferSubClassWithSubReg(CodeGenRegisterClass *RC);
-    void inferMatchingSuperRegClass(CodeGenRegisterClass *RC,
-                                    unsigned FirstSubRegRC = 0);
+    void inferMatchingSuperRegClass(CodeGenRegisterClass *RC) {
+      inferMatchingSuperRegClass(RC, RegClasses.begin());
+    }
+
+    void inferMatchingSuperRegClass(
+        CodeGenRegisterClass *RC,
+        std::list<CodeGenRegisterClass>::iterator FirstSubRegRC);
 
     // Iteratively prune unit sets.
     void pruneUnitSets();
@@ -527,7 +535,9 @@ namespace llvm {
     // Sub-register indices. The first NumNamedIndices are defined by the user
     // in the .td files. The rest are synthesized such that all sub-registers
     // have a unique name.
-    ArrayRef<CodeGenSubRegIndex*> getSubRegIndices() { return SubRegIndices; }
+    const std::deque<CodeGenSubRegIndex> &getSubRegIndices() const {
+      return SubRegIndices;
+    }
 
     // Find a SubRegIndex form its Record def.
     CodeGenSubRegIndex *getSubRegIdx(Record*);
@@ -547,7 +557,7 @@ namespace llvm {
       ConcatIdx.insert(std::make_pair(Parts, Idx));
     }
 
-    const std::vector<CodeGenRegister*> &getRegisters() { return Registers; }
+    const std::deque<CodeGenRegister> &getRegisters() { return Registers; }
     const StringMap<CodeGenRegister*> &getRegistersByName() {
       return RegistersByName;
     }
@@ -604,7 +614,9 @@ namespace llvm {
     RegUnit &getRegUnit(unsigned RUID) { return RegUnits[RUID]; }
     const RegUnit &getRegUnit(unsigned RUID) const { return RegUnits[RUID]; }
 
-    ArrayRef<CodeGenRegisterClass*> getRegClasses() const {
+    std::list<CodeGenRegisterClass> &getRegClasses() { return RegClasses; }
+
+    const std::list<CodeGenRegisterClass> &getRegClasses() const {
       return RegClasses;
     }
 

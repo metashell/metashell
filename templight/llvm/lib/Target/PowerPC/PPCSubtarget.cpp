@@ -74,13 +74,12 @@ PPCSubtarget &PPCSubtarget::initializeSubtargetDependencies(StringRef CPU,
 }
 
 PPCSubtarget::PPCSubtarget(const std::string &TT, const std::string &CPU,
-                           const std::string &FS, PPCTargetMachine &TM,
-                           CodeGenOpt::Level OptLevel)
+                           const std::string &FS, const PPCTargetMachine &TM)
     : PPCGenSubtargetInfo(TT, CPU, FS), TargetTriple(TT),
       DL(getDataLayoutString(TargetTriple)),
       IsPPC64(TargetTriple.getArch() == Triple::ppc64 ||
               TargetTriple.getArch() == Triple::ppc64le),
-      OptLevel(OptLevel), TargetABI(PPC_ABI_UNKNOWN),
+      TargetABI(PPC_ABI_UNKNOWN),
       FrameLowering(initializeSubtargetDependencies(CPU, FS)), InstrInfo(*this),
       TLInfo(TM), TSInfo(&DL) {}
 
@@ -95,6 +94,7 @@ void PPCSubtarget::initializeEnvironment() {
   HasSPE = false;
   HasQPX = false;
   HasVSX = false;
+  HasP8Vector = false;
   HasFCPSGN = false;
   HasFSQRT = false;
   HasFRE = false;
@@ -110,6 +110,7 @@ void PPCSubtarget::initializeEnvironment() {
   HasPOPCNTD = false;
   HasLDBRX = false;
   IsBookE = false;
+  HasOnlyMSYNC = false;
   IsPPC4xx = false;
   IsPPC6xx = false;
   IsE500 = false;
@@ -132,35 +133,13 @@ void PPCSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   // Initialize scheduling itinerary for the specified CPU.
   InstrItins = getInstrItineraryForCPU(CPUName);
 
-  // Make sure 64-bit features are available when CPUname is generic
-  std::string FullFS = FS;
-
-  // If we are generating code for ppc64, verify that options make sense.
-  if (IsPPC64) {
-    Has64BitSupport = true;
-    // Silently force 64-bit register use on ppc64.
-    Use64BitRegs = true;
-    if (!FullFS.empty())
-      FullFS = "+64bit," + FullFS;
-    else
-      FullFS = "+64bit";
-  }
-
-  // At -O2 and above, track CR bits as individual registers.
-  if (OptLevel >= CodeGenOpt::Default) {
-    if (!FullFS.empty())
-      FullFS = "+crbits," + FullFS;
-    else
-      FullFS = "+crbits";
-  }
-
   // Parse features string.
-  ParseSubtargetFeatures(CPUName, FullFS);
+  ParseSubtargetFeatures(CPUName, FS);
 
   // If the user requested use of 64-bit regs, but the cpu selected doesn't
   // support it, ignore.
-  if (use64BitRegs() && !has64BitSupport())
-    Use64BitRegs = false;
+  if (IsPPC64 && has64BitSupport())
+    Use64BitRegs = true;
 
   // Set up darwin-specific properties.
   if (isDarwin())
@@ -177,8 +156,10 @@ void PPCSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
 
   // FIXME: For now, we disable VSX in little-endian mode until endian
   // issues in those instructions can be addressed.
-  if (IsLittleEndian)
+  if (IsLittleEndian) {
     HasVSX = false;
+    HasP8Vector = false;
+  }
 
   // Determine default ABI.
   if (TargetABI == PPC_ABI_UNKNOWN) {
@@ -199,9 +180,7 @@ bool PPCSubtarget::hasLazyResolverStub(const GlobalValue *GV,
   // We never have stubs if HasLazyResolverStubs=false or if in static mode.
   if (!HasLazyResolverStubs || TM.getRelocationModel() == Reloc::Static)
     return false;
-  // If symbol visibility is hidden, the extra load is not needed if
-  // the symbol is definitely defined in the current translation unit.
-  bool isDecl = GV->isDeclaration() && !GV->isMaterializable();
+  bool isDecl = GV->isDeclaration();
   if (GV->hasHiddenVisibility() && !isDecl && !GV->hasCommonLinkage())
     return false;
   return GV->hasWeakLinkage() || GV->hasLinkOnceLinkage() ||

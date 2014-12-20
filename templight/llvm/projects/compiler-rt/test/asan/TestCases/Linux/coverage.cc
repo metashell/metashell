@@ -1,5 +1,5 @@
-// RUN: %clangxx_asan -mllvm -asan-coverage=1 -DSHARED %s -shared -o %T/libcoverage_test.so -fPIC
-// RUN: %clangxx_asan -mllvm -asan-coverage=1 %s   -o %t -Wl,-R,\$ORIGIN -L%T -lcoverage_test
+// RUN: %clangxx_asan -fsanitize-coverage=1 -DSHARED %s -shared -o %T/libcoverage_test.so -fPIC
+// RUN: %clangxx_asan -fsanitize-coverage=1 %s   -o %t -Wl,-R,\$ORIGIN -L%T -lcoverage_test
 // RUN: export ASAN_OPTIONS=coverage=1:verbosity=1
 // RUN: mkdir -p %T/coverage && cd %T/coverage
 // RUN: %run %t 2>&1         | FileCheck %s --check-prefix=CHECK-main
@@ -13,6 +13,8 @@
 // https://code.google.com/p/address-sanitizer/issues/detail?id=263
 // XFAIL: android
 
+#include "sanitizer/common_interface_defs.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,8 +31,12 @@ int G[4];
 int main(int argc, char **argv) {
   fprintf(stderr, "PID: %d\n", getpid());
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "foo"))
+    if (!strcmp(argv[i], "foo")) {
+      uintptr_t old_coverage = __sanitizer_get_total_unique_coverage();
       foo();
+      uintptr_t new_coverage = __sanitizer_get_total_unique_coverage();
+      assert(new_coverage > old_coverage);
+    }
     if (!strcmp(argv[i], "bar"))
       bar();
   }

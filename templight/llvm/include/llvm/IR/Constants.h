@@ -264,6 +264,9 @@ public:
   /// isNegative - Return true if the sign bit is set.
   bool isNegative() const { return Val.isNegative(); }
 
+  /// isInfinity - Return true if the value is infinity
+  bool isInfinity() const { return Val.isInfinity(); }
+
   /// isNaN - Return true if the value is a NaN.
   bool isNaN() const { return Val.isNaN(); }
 
@@ -383,7 +386,7 @@ protected:
 public:
   // ConstantStruct accessors
   static Constant *get(StructType *T, ArrayRef<Constant*> V);
-  static Constant *get(StructType *T, ...) END_WITH_NULL;
+  static Constant *get(StructType *T, ...) LLVM_END_WITH_NULL;
 
   /// getAnon - Return an anonymous struct that has the specified
   /// elements.  If the struct is possibly empty, then you must specify a

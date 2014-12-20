@@ -667,7 +667,9 @@ void ARMAsmPrinter::emitAttributes() {
                         ARMBuildAttrs::AllowNeonARMv8);
   } else {
     if (Subtarget->hasFPARMv8())
-      ATS.emitFPU(ARM::FP_ARMV8);
+      // FPv5 and FP-ARMv8 have the same instructions, so are modeled as one
+      // FPU, but there are two different names for it depending on the CPU.
+      ATS.emitFPU(Subtarget->hasD16() ? ARM::FPV5_D16 : ARM::FP_ARMV8);
     else if (Subtarget->hasVFP4())
       ATS.emitFPU(Subtarget->hasD16() ? ARM::VFPV4_D16 : ARM::VFPV4);
     else if (Subtarget->hasVFP3())
@@ -692,9 +694,40 @@ void ARMAsmPrinter::emitAttributes() {
 
   // Signal various FP modes.
   if (!TM.Options.UnsafeFPMath) {
-    ATS.emitAttribute(ARMBuildAttrs::ABI_FP_denormal, ARMBuildAttrs::Allowed);
+    ATS.emitAttribute(ARMBuildAttrs::ABI_FP_denormal,
+                      ARMBuildAttrs::IEEEDenormals);
     ATS.emitAttribute(ARMBuildAttrs::ABI_FP_exceptions,
                       ARMBuildAttrs::Allowed);
+
+    // If the user has permitted this code to choose the IEEE 754
+    // rounding at run-time, emit the rounding attribute.
+    if (TM.Options.HonorSignDependentRoundingFPMathOption)
+      ATS.emitAttribute(ARMBuildAttrs::ABI_FP_rounding,
+                        ARMBuildAttrs::Allowed);
+  } else {
+    if (!Subtarget->hasVFP2()) {
+      // When the target doesn't have an FPU (by design or
+      // intention), the assumptions made on the software support
+      // mirror that of the equivalent hardware support *if it
+      // existed*. For v7 and better we indicate that denormals are
+      // flushed preserving sign, and for V6 we indicate that
+      // denormals are flushed to positive zero.
+      if (Subtarget->hasV7Ops())
+        ATS.emitAttribute(ARMBuildAttrs::ABI_FP_denormal,
+                          ARMBuildAttrs::PreserveFPSign);
+    } else if (Subtarget->hasVFP3()) {
+      // In VFPv4, VFPv4U, VFPv3, or VFPv3U, it is preserved. That is,
+      // the sign bit of the zero matches the sign bit of the input or
+      // result that is being flushed to zero.
+      ATS.emitAttribute(ARMBuildAttrs::ABI_FP_denormal,
+                        ARMBuildAttrs::PreserveFPSign);
+    }
+    // For VFPv2 implementations it is implementation defined as
+    // to whether denormals are flushed to positive zero or to
+    // whatever the sign of zero is (ARM v7AR ARM 2.7.5). Historically
+    // LLVM has chosen to flush this to positive zero (most likely for
+    // GCC compatibility), so that's the chosen value here (the
+    // absence of its emission implies zero).
   }
 
   if (TM.Options.NoInfsFPMath && TM.Options.NoNaNsFPMath)
@@ -703,6 +736,13 @@ void ARMAsmPrinter::emitAttributes() {
   else
     ATS.emitAttribute(ARMBuildAttrs::ABI_FP_number_model,
                       ARMBuildAttrs::AllowIEE754);
+
+  if (Subtarget->allowsUnalignedMem())
+    ATS.emitAttribute(ARMBuildAttrs::CPU_unaligned_access,
+                      ARMBuildAttrs::Allowed);
+  else
+    ATS.emitAttribute(ARMBuildAttrs::CPU_unaligned_access,
+                      ARMBuildAttrs::Not_Allowed);
 
   // FIXME: add more flags to ARMBuildAttributes.h
   // 8-bytes alignment stuff.
@@ -1583,6 +1623,9 @@ void ARMAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     EmitJumpTable(MI);
     return;
   }
+  case ARM::SPACE:
+    OutStreamer.EmitZeros(MI->getOperand(1).getImm());
+    return;
   case ARM::TRAP: {
     // Non-Darwin binutils don't yet support the "trap" mnemonic.
     // FIXME: Remove this special case when they do.

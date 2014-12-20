@@ -15,6 +15,7 @@
 #include "sanitizer_platform.h"
 #if SANITIZER_FREEBSD || SANITIZER_LINUX
 
+#include "sanitizer_allocator_internal.h"
 #include "sanitizer_common.h"
 #include "sanitizer_flags.h"
 #include "sanitizer_internal_defs.h"
@@ -283,17 +284,15 @@ uptr internal_execve(const char *filename, char *const argv[],
 
 // ----------------- sanitizer_common.h
 bool FileExists(const char *filename) {
+  struct stat st;
 #if SANITIZER_USES_CANONICAL_LINUX_SYSCALLS
-  struct stat st;
   if (internal_syscall(SYSCALL(newfstatat), AT_FDCWD, filename, &st, 0))
-    return false;
 #else
-  struct stat st;
   if (internal_stat(filename, &st))
+#endif
     return false;
   // Sanity check: filename is a regular file.
   return S_ISREG(st.st_mode);
-#endif
 }
 
 uptr GetTid() {
@@ -537,7 +536,7 @@ int internal_sigaction_norestorer(int signum, const void *act, void *oldact) {
   __sanitizer_kernel_sigaction_t k_act, k_oldact;
   internal_memset(&k_act, 0, sizeof(__sanitizer_kernel_sigaction_t));
   internal_memset(&k_oldact, 0, sizeof(__sanitizer_kernel_sigaction_t));
-  const __sanitizer_sigaction *u_act = (__sanitizer_sigaction *)act;
+  const __sanitizer_sigaction *u_act = (const __sanitizer_sigaction *)act;
   __sanitizer_sigaction *u_oldact = (__sanitizer_sigaction *)oldact;
   if (u_act) {
     k_act.handler = u_act->handler;

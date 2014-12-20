@@ -1124,9 +1124,9 @@ public:
       } else {
         continue;
       }
-      Instruction *DbgVal =
-        DIB->insertDbgValueIntrinsic(Arg, 0, DIVariable(DVI->getVariable()),
-                                     Inst);
+      Instruction *DbgVal = DIB->insertDbgValueIntrinsic(
+          Arg, 0, DIVariable(DVI->getVariable()),
+          DIExpression(DVI->getExpression()), Inst);
       DbgVal->setDebugLoc(DVI->getDebugLoc());
     }
   }
@@ -1669,7 +1669,7 @@ void SROA::isSafePHISelectUseForScalarRepl(Instruction *I, uint64_t Offset,
                                            AllocaInfo &Info) {
   // If we've already checked this PHI, don't do it again.
   if (PHINode *PN = dyn_cast<PHINode>(I))
-    if (!Info.CheckedPHIs.insert(PN))
+    if (!Info.CheckedPHIs.insert(PN).second)
       return;
 
   for (User *U : I->users()) {

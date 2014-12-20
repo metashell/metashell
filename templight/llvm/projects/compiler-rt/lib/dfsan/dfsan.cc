@@ -74,6 +74,14 @@ static atomic_dfsan_label *union_table(dfsan_label l1, dfsan_label l2) {
   return &(*(dfsan_union_table_t *) kUnionTableAddr)[l1][l2];
 }
 
+// Checks we do not run out of labels.
+static void dfsan_check_label(dfsan_label label) {
+  if (label == kInitializingLabel) {
+    Report("FATAL: DataFlowSanitizer: out of labels\n");
+    Die();
+  }
+}
+
 // Resolves the union of two unequal labels.  Nonequality is a precondition for
 // this function (the instrumentation pass inlines the equality test).
 extern "C" SANITIZER_INTERFACE_ATTRIBUTE
@@ -106,7 +114,7 @@ dfsan_label __dfsan_union(dfsan_label l1, dfsan_label l2) {
     } else {
       label =
         atomic_fetch_add(&__dfsan_last_label, 1, memory_order_relaxed) + 1;
-      CHECK_NE(label, kInitializingLabel);
+      dfsan_check_label(label);
       __dfsan_label_info[label].l1 = l1;
       __dfsan_label_info[label].l2 = l2;
     }
@@ -147,6 +155,15 @@ extern "C" SANITIZER_INTERFACE_ATTRIBUTE void __dfsan_nonzero_label() {
     Report("WARNING: DataFlowSanitizer: saw nonzero label\n");
 }
 
+// Indirect call to an uninstrumented vararg function. We don't have a way of
+// handling these at the moment.
+extern "C" SANITIZER_INTERFACE_ATTRIBUTE void
+__dfsan_vararg_wrapper(const char *fname) {
+  Report("FATAL: DataFlowSanitizer: unsupported indirect call to vararg "
+         "function %s\n", fname);
+  Die();
+}
+
 // Like __dfsan_union, but for use from the client or custom functions.  Hence
 // the equality comparison is done here before calling __dfsan_union.
 SANITIZER_INTERFACE_ATTRIBUTE dfsan_label
@@ -160,7 +177,7 @@ extern "C" SANITIZER_INTERFACE_ATTRIBUTE
 dfsan_label dfsan_create_label(const char *desc, void *userdata) {
   dfsan_label label =
     atomic_fetch_add(&__dfsan_last_label, 1, memory_order_relaxed) + 1;
-  CHECK_NE(label, kInitializingLabel);
+  dfsan_check_label(label);
   __dfsan_label_info[label].l1 = __dfsan_label_info[label].l2 = 0;
   __dfsan_label_info[label].desc = desc;
   __dfsan_label_info[label].userdata = userdata;
@@ -250,14 +267,50 @@ dfsan_get_label_count(void) {
   return static_cast<uptr>(max_label_allocated);
 }
 
+extern "C" SANITIZER_INTERFACE_ATTRIBUTE void
+dfsan_dump_labels(int fd) {
+  dfsan_label last_label =
+      atomic_load(&__dfsan_last_label, memory_order_relaxed);
+
+  for (uptr l = 1; l <= last_label; ++l) {
+    char buf[64];
+    internal_snprintf(buf, sizeof(buf), "%u %u %u ", l,
+                      __dfsan_label_info[l].l1, __dfsan_label_info[l].l2);
+    internal_write(fd, buf, internal_strlen(buf));
+    if (__dfsan_label_info[l].l1 == 0 && __dfsan_label_info[l].desc) {
+      internal_write(fd, __dfsan_label_info[l].desc,
+                     internal_strlen(__dfsan_label_info[l].desc));
+    }
+    internal_write(fd, "\n", 1);
+  }
+}
+
 static void InitializeFlags(Flags &f, const char *env) {
   f.warn_unimplemented = true;
   f.warn_nonzero_labels = false;
   f.strict_data_dependencies = true;
+  f.dump_labels_at_exit = "";
 
   ParseFlag(env, &f.warn_unimplemented, "warn_unimplemented", "");
   ParseFlag(env, &f.warn_nonzero_labels, "warn_nonzero_labels", "");
   ParseFlag(env, &f.strict_data_dependencies, "strict_data_dependencies", "");
+  ParseFlag(env, &f.dump_labels_at_exit, "dump_labels_at_exit", "");
+}
+
+static void dfsan_fini() {
+  if (internal_strcmp(flags().dump_labels_at_exit, "") != 0) {
+    fd_t fd = OpenFile(flags().dump_labels_at_exit, true /* write */);
+    if (fd == kInvalidFd) {
+      Report("WARNING: DataFlowSanitizer: unable to open output file %s\n",
+             flags().dump_labels_at_exit);
+      return;
+    }
+
+    Report("INFO: DataFlowSanitizer: dumping labels to %s\n",
+           flags().dump_labels_at_exit);
+    dfsan_dump_labels(fd);
+    internal_close(fd);
+  }
 }
 
 #ifdef DFSAN_NOLIBC
@@ -279,6 +332,13 @@ static void dfsan_init(int argc, char **argv, char **envp) {
   InitializeFlags(flags(), GetEnv("DFSAN_OPTIONS"));
 
   InitializeInterceptors();
+
+  // Register the fini callback to run when the program terminates successfully
+  // or it is killed by the runtime.
+  Atexit(dfsan_fini);
+  SetDieCallback(dfsan_fini);
+
+  __dfsan_label_info[kInitializingLabel].desc = "<init label>";
 }
 
 #if !defined(DFSAN_NOLIBC) && SANITIZER_CAN_USE_PREINIT_ARRAY

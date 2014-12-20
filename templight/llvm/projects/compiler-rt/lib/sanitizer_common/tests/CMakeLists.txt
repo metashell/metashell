@@ -21,6 +21,7 @@ set(SANITIZER_UNITTESTS
   sanitizer_printf_test.cc
   sanitizer_procmaps_test.cc
   sanitizer_stackdepot_test.cc
+  sanitizer_stacktrace_printer_test.cc
   sanitizer_stacktrace_test.cc
   sanitizer_stoptheworld_test.cc
   sanitizer_suppressions_test.cc
@@ -57,8 +58,13 @@ if(NOT MSVC)
   list(APPEND SANITIZER_TEST_LINK_FLAGS_COMMON --driver-mode=g++)
 endif()
 
-append_if(COMPILER_RT_HAS_LIBDL -ldl SANITIZER_TEST_LINK_FLAGS_COMMON)
-append_if(COMPILER_RT_HAS_LIBPTHREAD -pthread SANITIZER_TEST_LINK_FLAGS_COMMON)
+set(SANITIZER_TEST_LINK_LIBS)
+append_list_if(ANDROID log SANITIZER_TEST_LINK_LIBS)
+# NDK r10 requires -latomic almost always.
+append_list_if(ANDROID atomic SANITIZER_TEST_LINK_LIBS)
+
+append_list_if(COMPILER_RT_HAS_LIBDL -ldl SANITIZER_TEST_LINK_FLAGS_COMMON)
+append_list_if(COMPILER_RT_HAS_LIBPTHREAD -pthread SANITIZER_TEST_LINK_FLAGS_COMMON)
 # x86_64 FreeBSD 9.2 additionally requires libc++ to build the tests. Also,
 # 'libm' shall be specified explicitly to build i386 tests.
 if(CMAKE_SYSTEM MATCHES "FreeBSD-9.2-RELEASE")
@@ -172,20 +178,21 @@ if(COMPILER_RT_CAN_EXECUTE_TESTS AND NOT ANDROID)
 endif()
 
 if(ANDROID)
-  # We assume that unit tests on Android are built in a build
-  # tree with fresh Clang as a host compiler.
-  add_executable(SanitizerTest
-    ${SANITIZER_UNITTESTS}
-    ${COMPILER_RT_GTEST_SOURCE}
-    $<TARGET_OBJECTS:RTSanitizerCommon.arm.android>)
-  set_target_compile_flags(SanitizerTest
-    ${SANITIZER_COMMON_CFLAGS}
-    ${SANITIZER_TEST_CFLAGS_COMMON})
-  # Setup correct output directory and link flags.
-  set_target_properties(SanitizerTest PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  set_target_link_flags(SanitizerTest ${SANITIZER_TEST_LINK_FLAGS_COMMON})
-  target_link_libraries(SanitizerTest log)
-  # Add unit test to test suite.
-  add_dependencies(SanitizerUnitTests SanitizerTest)
+  foreach(arch ${SANITIZER_COMMON_SUPPORTED_ARCH})
+    add_executable(SanitizerTest
+      ${SANITIZER_UNITTESTS}
+      ${COMPILER_RT_GTEST_SOURCE}
+      $<TARGET_OBJECTS:RTSanitizerCommon.${arch}>
+      $<TARGET_OBJECTS:RTSanitizerCommonLibc.${arch}>)
+    set_target_compile_flags(SanitizerTest
+      ${SANITIZER_COMMON_CFLAGS}
+      ${SANITIZER_TEST_CFLAGS_COMMON})
+    # Setup correct output directory and link flags.
+    set_target_properties(SanitizerTest PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    set_target_link_flags(SanitizerTest ${SANITIZER_TEST_LINK_FLAGS_COMMON})
+    target_link_libraries(SanitizerTest ${SANITIZER_TEST_LINK_LIBS})
+    # Add unit test to test suite.
+    add_dependencies(SanitizerUnitTests SanitizerTest)
+  endforeach()
 endif()

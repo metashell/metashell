@@ -56,7 +56,7 @@ std::error_code BitcodeReader::materializeForwardReferencedFunctions() {
       return Error(BitcodeError::NeverResolvedFunctionFromBlockAddress);
 
     // Try to materialize F.
-    if (std::error_code EC = Materialize(F))
+    if (std::error_code EC = materialize(F))
       return EC;
   }
   assert(BasicBlockFwdRefs.empty() && "Function missing from queue");
@@ -280,7 +280,7 @@ namespace {
 
 
     /// Provide fast operand accessors
-    //DECLARE_TRANSPARENT_OPERAND_ACCESSORS(Value);
+    DECLARE_TRANSPARENT_OPERAND_ACCESSORS(Value);
   };
 }
 
@@ -289,6 +289,7 @@ template <>
 struct OperandTraits<ConstantPlaceHolder> :
   public FixedNumOperandTraits<ConstantPlaceHolder, 1> {
 };
+DEFINE_TRANSPARENT_OPERAND_ACCESSORS(ConstantPlaceHolder, Value)
 }
 
 
@@ -486,7 +487,20 @@ Type *BitcodeReader::getTypeByID(unsigned ID) {
 
   // If we have a forward reference, the only possible case is when it is to a
   // named struct.  Just create a placeholder for now.
-  return TypeList[ID] = StructType::create(Context);
+  return TypeList[ID] = createIdentifiedStructType(Context);
+}
+
+StructType *BitcodeReader::createIdentifiedStructType(LLVMContext &Context,
+                                                      StringRef Name) {
+  auto *Ret = StructType::create(Context, Name);
+  IdentifiedStructTypes.push_back(Ret);
+  return Ret;
+}
+
+StructType *BitcodeReader::createIdentifiedStructType(LLVMContext &Context) {
+  auto *Ret = StructType::create(Context);
+  IdentifiedStructTypes.push_back(Ret);
+  return Ret;
 }
 
 
@@ -921,7 +935,7 @@ std::error_code BitcodeReader::ParseTypeTableBody() {
         Res->setName(TypeName);
         TypeList[NumRecords] = nullptr;
       } else  // Otherwise, create a new struct.
-        Res = StructType::create(Context, TypeName);
+        Res = createIdentifiedStructType(Context, TypeName);
       TypeName.clear();
 
       SmallVector<Type*, 8> EltTys;
@@ -950,7 +964,7 @@ std::error_code BitcodeReader::ParseTypeTableBody() {
         Res->setName(TypeName);
         TypeList[NumRecords] = nullptr;
       } else  // Otherwise, create a new struct with no body.
-        Res = StructType::create(Context, TypeName);
+        Res = createIdentifiedStructType(Context, TypeName);
       TypeName.clear();
       ResultTy = Res;
       break;
@@ -1151,10 +1165,12 @@ std::error_code BitcodeReader::ResolveGlobalAndAliasInits() {
   std::vector<std::pair<GlobalVariable*, unsigned> > GlobalInitWorklist;
   std::vector<std::pair<GlobalAlias*, unsigned> > AliasInitWorklist;
   std::vector<std::pair<Function*, unsigned> > FunctionPrefixWorklist;
+  std::vector<std::pair<Function*, unsigned> > FunctionPrologueWorklist;
 
   GlobalInitWorklist.swap(GlobalInits);
   AliasInitWorklist.swap(AliasInits);
   FunctionPrefixWorklist.swap(FunctionPrefixes);
+  FunctionPrologueWorklist.swap(FunctionPrologues);
 
   while (!GlobalInitWorklist.empty()) {
     unsigned ValID = GlobalInitWorklist.back().second;
@@ -1194,6 +1210,19 @@ std::error_code BitcodeReader::ResolveGlobalAndAliasInits() {
         return Error(BitcodeError::ExpectedConstant);
     }
     FunctionPrefixWorklist.pop_back();
+  }
+
+  while (!FunctionPrologueWorklist.empty()) {
+    unsigned ValID = FunctionPrologueWorklist.back().second;
+    if (ValID >= ValueList.size()) {
+      FunctionPrologues.push_back(FunctionPrologueWorklist.back());
+    } else {
+      if (Constant *C = dyn_cast_or_null<Constant>(ValueList[ValID]))
+        FunctionPrologueWorklist.back().first->setPrologueData(C);
+      else
+        return Error(BitcodeError::ExpectedConstant);
+    }
+    FunctionPrologueWorklist.pop_back();
   }
 
   return std::error_code();
@@ -2010,7 +2039,7 @@ std::error_code BitcodeReader::ParseModule(bool Resume) {
     }
     // FUNCTION:  [type, callingconv, isproto, linkage, paramattr,
     //             alignment, section, visibility, gc, unnamed_addr,
-    //             dllstorageclass]
+    //             prologuedata, dllstorageclass, comdat, prefixdata]
     case bitc::MODULE_CODE_FUNCTION: {
       if (Record.size() < 8)
         return Error(BitcodeError::InvalidRecord);
@@ -2052,7 +2081,7 @@ std::error_code BitcodeReader::ParseModule(bool Resume) {
         UnnamedAddr = Record[9];
       Func->setUnnamedAddr(UnnamedAddr);
       if (Record.size() > 10 && Record[10] != 0)
-        FunctionPrefixes.push_back(std::make_pair(Func, Record[10]-1));
+        FunctionPrologues.push_back(std::make_pair(Func, Record[10]-1));
 
       if (Record.size() > 11)
         Func->setDLLStorageClass(GetDecodedDLLStorageClass(Record[11]));
@@ -2065,13 +2094,18 @@ std::error_code BitcodeReader::ParseModule(bool Resume) {
           Func->setComdat(ComdatList[ComdatID - 1]);
         }
 
+      if (Record.size() > 13 && Record[13] != 0)
+        FunctionPrefixes.push_back(std::make_pair(Func, Record[13]-1));
+
       ValueList.push_back(Func);
 
       // If this is a function with a body, remember the prototype we are
       // creating now, so that we can match up the body with them later.
       if (!isProto) {
+        Func->setIsMaterializable(true);
         FunctionsWithBodies.push_back(Func);
-        if (LazyStreamer) DeferredFunctionInfo[Func] = 0;
+        if (LazyStreamer)
+          DeferredFunctionInfo[Func] = 0;
       }
       break;
     }
@@ -2100,9 +2134,9 @@ std::error_code BitcodeReader::ParseModule(bool Resume) {
       else
         UpgradeDLLImportExportLinkage(NewGA, Record[2]);
       if (Record.size() > 5)
-	NewGA->setThreadLocalMode(GetDecodedThreadLocalMode(Record[5]));
+        NewGA->setThreadLocalMode(GetDecodedThreadLocalMode(Record[5]));
       if (Record.size() > 6)
-	NewGA->setUnnamedAddr(Record[6]);
+        NewGA->setUnnamedAddr(Record[6]);
       ValueList.push_back(NewGA);
       AliasInits.push_back(std::make_pair(NewGA, Record[1]));
       break;
@@ -3280,15 +3314,7 @@ std::error_code BitcodeReader::FindFunctionInStream(
 
 void BitcodeReader::releaseBuffer() { Buffer.release(); }
 
-bool BitcodeReader::isMaterializable(const GlobalValue *GV) const {
-  if (const Function *F = dyn_cast<Function>(GV)) {
-    return F->isDeclaration() &&
-      DeferredFunctionInfo.count(const_cast<Function*>(F));
-  }
-  return false;
-}
-
-std::error_code BitcodeReader::Materialize(GlobalValue *GV) {
+std::error_code BitcodeReader::materialize(GlobalValue *GV) {
   Function *F = dyn_cast<Function>(GV);
   // If it's not a function or is already material, ignore the request.
   if (!F || !F->isMaterializable())
@@ -3307,6 +3333,7 @@ std::error_code BitcodeReader::Materialize(GlobalValue *GV) {
 
   if (std::error_code EC = ParseFunctionBody(F))
     return EC;
+  F->setIsMaterializable(false);
 
   // Upgrade any old intrinsic calls in the function.
   for (UpgradedIntrinsicMap::iterator I = UpgradedIntrinsics.begin(),
@@ -3348,6 +3375,7 @@ void BitcodeReader::Dematerialize(GlobalValue *GV) {
 
   // Just forget the function body, we can remat it later.
   F->dropAllReferences();
+  F->setIsMaterializable(true);
 }
 
 std::error_code BitcodeReader::MaterializeModule(Module *M) {
@@ -3361,10 +3389,8 @@ std::error_code BitcodeReader::MaterializeModule(Module *M) {
   // disk.
   for (Module::iterator F = TheModule->begin(), E = TheModule->end();
        F != E; ++F) {
-    if (F->isMaterializable()) {
-      if (std::error_code EC = Materialize(F))
-        return EC;
-    }
+    if (std::error_code EC = materialize(F))
+      return EC;
   }
   // At this point, if there are any function bodies, the current bit is
   // pointing to the END_BLOCK record after them. Now make sure the rest
@@ -3403,6 +3429,10 @@ std::error_code BitcodeReader::MaterializeModule(Module *M) {
   return std::error_code();
 }
 
+std::vector<StructType *> BitcodeReader::getIdentifiedStructTypes() const {
+  return IdentifiedStructTypes;
+}
+
 std::error_code BitcodeReader::InitStream() {
   if (LazyStreamer)
     return InitLazyStream();
@@ -3423,7 +3453,7 @@ std::error_code BitcodeReader::InitStreamFromBuffer() {
       return Error(BitcodeError::InvalidBitcodeWrapperHeader);
 
   StreamFile.reset(new BitstreamReader(BufPtr, BufEnd));
-  Stream.init(*StreamFile);
+  Stream.init(&*StreamFile);
 
   return std::error_code();
 }
@@ -3433,10 +3463,10 @@ std::error_code BitcodeReader::InitLazyStream() {
   // see it.
   StreamingMemoryObject *Bytes = new StreamingMemoryObject(LazyStreamer);
   StreamFile.reset(new BitstreamReader(Bytes));
-  Stream.init(*StreamFile);
+  Stream.init(&*StreamFile);
 
   unsigned char buf[16];
-  if (Bytes->readBytes(0, 16, buf) == -1)
+  if (Bytes->readBytes(buf, 16, 0) != 16)
     return Error(BitcodeError::InvalidBitcodeSignature);
 
   if (!isBitcode(buf, buf + 16))

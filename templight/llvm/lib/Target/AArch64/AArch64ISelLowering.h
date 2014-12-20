@@ -169,6 +169,9 @@ enum {
   /// mode without emitting such REV instructions.
   NVCAST,
 
+  SMULL,
+  UMULL,
+
   // NEON Load/Store with post-increment base updates
   LD2post = ISD::FIRST_TARGET_MEMORY_OPCODE,
   LD3post,
@@ -204,7 +207,7 @@ class AArch64TargetLowering : public TargetLowering {
   bool RequireStrictAlign;
 
 public:
-  explicit AArch64TargetLowering(TargetMachine &TM);
+  explicit AArch64TargetLowering(const TargetMachine &TM);
 
   /// Selects the correct CCAssignFn for a given CallingConvention value.
   CCAssignFn *CCAssignFnForCall(CallingConv::ID CC, bool IsVarArg) const;
@@ -437,6 +440,7 @@ private:
 
   SDValue BuildSDIVPow2(SDNode *N, const APInt &Divisor, SelectionDAG &DAG,
                         std::vector<SDNode *> *Created) const override;
+  bool combineRepeatedFPDivisors(unsigned NumUsers) const override;
 
   ConstraintType
   getConstraintType(const std::string &Constraint) const override;
@@ -469,6 +473,10 @@ private:
 
   void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
                           SelectionDAG &DAG) const override;
+
+  bool functionArgumentNeedsConsecutiveRegisters(Type *Ty,
+                                                 CallingConv::ID CallConv,
+                                                 bool isVarArg) const override;
 };
 
 namespace AArch64 {

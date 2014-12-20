@@ -355,9 +355,7 @@ static void ClassifyAllChunks(SuspendedThreadsList const &suspended_threads) {
 
 static void PrintStackTraceById(u32 stack_trace_id) {
   CHECK(stack_trace_id);
-  uptr size = 0;
-  const uptr *trace = StackDepotGet(stack_trace_id, &size);
-  StackTrace::PrintStack(trace, size);
+  StackDepotGet(stack_trace_id).Print();
 }
 
 // ForEachChunk callback. Aggregates information about unreachable chunks into
@@ -372,10 +370,9 @@ static void CollectLeaksCb(uptr chunk, void *arg) {
     uptr resolution = flags()->resolution;
     u32 stack_trace_id = 0;
     if (resolution > 0) {
-      uptr size = 0;
-      const uptr *trace = StackDepotGet(m.stack_trace_id(), &size);
-      size = Min(size, resolution);
-      stack_trace_id = StackDepotPut(trace, size);
+      StackTrace stack = StackDepotGet(m.stack_trace_id());
+      stack.size = Min(stack.size, resolution);
+      stack_trace_id = StackDepotPut(stack);
     } else {
       stack_trace_id = m.stack_trace_id();
     }
@@ -451,44 +448,43 @@ void DoLeakCheck() {
     PrintMatchedSuppressions();
   if (unsuppressed_count > 0) {
     param.leak_report.PrintSummary();
-    if (flags()->exitcode)
+    if (flags()->exitcode) {
+      if (common_flags()->coverage)
+        __sanitizer_cov_dump();
       internal__exit(flags()->exitcode);
+    }
   }
 }
 
 static Suppression *GetSuppressionForAddr(uptr addr) {
-  Suppression *s;
+  Suppression *s = nullptr;
 
   // Suppress by module name.
   const char *module_name;
   uptr module_offset;
-  if (Symbolizer::GetOrInit()
-          ->GetModuleNameAndOffsetForPC(addr, &module_name, &module_offset) &&
+  if (Symbolizer::GetOrInit()->GetModuleNameAndOffsetForPC(addr, &module_name,
+                                                           &module_offset) &&
       SuppressionContext::Get()->Match(module_name, SuppressionLeak, &s))
     return s;
 
   // Suppress by file or function name.
-  static const uptr kMaxAddrFrames = 16;
-  InternalScopedBuffer<AddressInfo> addr_frames(kMaxAddrFrames);
-  for (uptr i = 0; i < kMaxAddrFrames; i++) new (&addr_frames[i]) AddressInfo();
-  uptr addr_frames_num = Symbolizer::GetOrInit()->SymbolizePC(
-      addr, addr_frames.data(), kMaxAddrFrames);
-  for (uptr i = 0; i < addr_frames_num; i++) {
-    if (SuppressionContext::Get()->Match(addr_frames[i].function,
-                                         SuppressionLeak, &s) ||
-        SuppressionContext::Get()->Match(addr_frames[i].file, SuppressionLeak,
-                                         &s))
-      return s;
+  SymbolizedStack *frames = Symbolizer::GetOrInit()->SymbolizePC(addr);
+  for (SymbolizedStack *cur = frames; cur; cur = cur->next) {
+    if (SuppressionContext::Get()->Match(cur->info.function, SuppressionLeak,
+                                         &s) ||
+        SuppressionContext::Get()->Match(cur->info.file, SuppressionLeak, &s)) {
+      break;
+    }
   }
-  return 0;
+  frames->ClearAll();
+  return s;
 }
 
 static Suppression *GetSuppressionForStack(u32 stack_trace_id) {
-  uptr size = 0;
-  const uptr *trace = StackDepotGet(stack_trace_id, &size);
-  for (uptr i = 0; i < size; i++) {
-    Suppression *s =
-        GetSuppressionForAddr(StackTrace::GetPreviousInstructionPc(trace[i]));
+  StackTrace stack = StackDepotGet(stack_trace_id);
+  for (uptr i = 0; i < stack.size; i++) {
+    Suppression *s = GetSuppressionForAddr(
+        StackTrace::GetPreviousInstructionPc(stack.trace[i]));
     if (s) return s;
   }
   return 0;
@@ -594,10 +590,9 @@ void LeakReport::PrintSummary() {
       bytes += leaks_[i].total_size;
       allocations += leaks_[i].hit_count;
   }
-  InternalScopedBuffer<char> summary(kMaxSummaryLength);
-  internal_snprintf(summary.data(), summary.size(),
-                    "%zu byte(s) leaked in %zu allocation(s).", bytes,
-                    allocations);
+  InternalScopedString summary(kMaxSummaryLength);
+  summary.append("%zu byte(s) leaked in %zu allocation(s).", bytes,
+                 allocations);
   ReportErrorSummary(summary.data());
 }
 

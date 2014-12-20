@@ -47,6 +47,11 @@ EnableNoAliasConversion("enable-noalias-to-md-conversion", cl::init(true),
   cl::Hidden,
   cl::desc("Convert noalias attributes to metadata during inlining."));
 
+static cl::opt<bool>
+PreserveAlignmentAssumptions("preserve-alignment-assumptions-during-inlining",
+  cl::init(true), cl::Hidden,
+  cl::desc("Convert align attributes to assumptions during inlining."));
+
 bool llvm::InlineFunction(CallInst *CI, InlineFunctionInfo &IFI,
                           bool InsertLifetime) {
   return InlineFunction(CallSite(CI), IFI, InsertLifetime);
@@ -360,12 +365,12 @@ static void CloneAliasScopeMetadata(CallSite CS, ValueToValueMapTy &VMap) {
       // which instructions inside it might belong), propagate those scopes to
       // the inlined instructions.
       if (MDNode *CSM =
-          CS.getInstruction()->getMetadata(LLVMContext::MD_alias_scope))
+              CS.getInstruction()->getMetadata(LLVMContext::MD_alias_scope))
         NewMD = MDNode::concatenate(NewMD, CSM);
       NI->setMetadata(LLVMContext::MD_alias_scope, NewMD);
     } else if (NI->mayReadOrWriteMemory()) {
       if (MDNode *M =
-          CS.getInstruction()->getMetadata(LLVMContext::MD_alias_scope))
+              CS.getInstruction()->getMetadata(LLVMContext::MD_alias_scope))
         NI->setMetadata(LLVMContext::MD_alias_scope, M);
     }
 
@@ -375,12 +380,11 @@ static void CloneAliasScopeMetadata(CallSite CS, ValueToValueMapTy &VMap) {
       // which instructions inside it don't alias), propagate those scopes to
       // the inlined instructions.
       if (MDNode *CSM =
-          CS.getInstruction()->getMetadata(LLVMContext::MD_noalias))
+              CS.getInstruction()->getMetadata(LLVMContext::MD_noalias))
         NewMD = MDNode::concatenate(NewMD, CSM);
       NI->setMetadata(LLVMContext::MD_noalias, NewMD);
     } else if (NI->mayReadOrWriteMemory()) {
-      if (MDNode *M =
-          CS.getInstruction()->getMetadata(LLVMContext::MD_noalias))
+      if (MDNode *M = CS.getInstruction()->getMetadata(LLVMContext::MD_noalias))
         NI->setMetadata(LLVMContext::MD_noalias, M);
     }
   }
@@ -584,9 +588,10 @@ static void AddAliasScopeMetadata(CallSite CS, ValueToValueMapTy &VMap,
       }
 
       if (!NoAliases.empty())
-        NI->setMetadata(LLVMContext::MD_noalias, MDNode::concatenate(
-          NI->getMetadata(LLVMContext::MD_noalias),
-            MDNode::get(CalledFunc->getContext(), NoAliases)));
+        NI->setMetadata(LLVMContext::MD_noalias,
+                        MDNode::concatenate(
+                            NI->getMetadata(LLVMContext::MD_noalias),
+                            MDNode::get(CalledFunc->getContext(), NoAliases)));
 
       // Next, we want to figure out all of the sets to which we might belong.
       // We might belong to a set if the noalias argument is in the set of
@@ -609,9 +614,45 @@ static void AddAliasScopeMetadata(CallSite CS, ValueToValueMapTy &VMap,
         }
 
       if (!Scopes.empty())
-        NI->setMetadata(LLVMContext::MD_alias_scope, MDNode::concatenate(
-          NI->getMetadata(LLVMContext::MD_alias_scope),
-            MDNode::get(CalledFunc->getContext(), Scopes)));
+        NI->setMetadata(
+            LLVMContext::MD_alias_scope,
+            MDNode::concatenate(NI->getMetadata(LLVMContext::MD_alias_scope),
+                                MDNode::get(CalledFunc->getContext(), Scopes)));
+    }
+  }
+}
+
+/// If the inlined function has non-byval align arguments, then
+/// add @llvm.assume-based alignment assumptions to preserve this information.
+static void AddAlignmentAssumptions(CallSite CS, InlineFunctionInfo &IFI) {
+  if (!PreserveAlignmentAssumptions || !IFI.DL)
+    return;
+
+  // To avoid inserting redundant assumptions, we should check for assumptions
+  // already in the caller. To do this, we might need a DT of the caller.
+  DominatorTree DT;
+  bool DTCalculated = false;
+
+  const Function *CalledFunc = CS.getCalledFunction();
+  for (Function::const_arg_iterator I = CalledFunc->arg_begin(),
+       E = CalledFunc->arg_end(); I != E; ++I) {
+    unsigned Align = I->getType()->isPointerTy() ? I->getParamAlignment() : 0;
+    if (Align && !I->hasByValOrInAllocaAttr() && !I->hasNUses(0)) {
+      if (!DTCalculated) {
+        DT.recalculate(const_cast<Function&>(*CS.getInstruction()->getParent()
+                                               ->getParent()));
+        DTCalculated = true;
+      }
+
+      // If we can already prove the asserted alignment in the context of the
+      // caller, then don't bother inserting the assumption.
+      Value *Arg = CS.getArgument(I->getArgNo());
+      if (getKnownAlignment(Arg, IFI.DL, IFI.AT, CS.getInstruction(),
+                            &DT) >= Align)
+        continue;
+
+      IRBuilder<>(CS.getInstruction()).CreateAlignmentAssumption(*IFI.DL, Arg,
+                                                                 Align);
     }
   }
 }
@@ -816,6 +857,12 @@ static void fixupLineNumbers(Function *Fn, Function::iterator FI,
         // originates from the call location. This is important for
         // ((__always_inline__, __nodebug__)) functions which must use caller
         // location for all instructions in their function body.
+
+        // Don't update static allocas, as they may get moved later.
+        if (auto *AI = dyn_cast<AllocaInst>(BI))
+          if (isa<Constant>(AI->getArraySize()))
+            continue;
+
         BI->setDebugLoc(TheCallDL);
       } else {
         BI->setDebugLoc(updateInlinedAtInfo(DL, TheCallDL, BI->getContext()));
@@ -942,6 +989,11 @@ bool llvm::InlineFunction(CallSite CS, InlineFunctionInfo &IFI,
 
       VMap[I] = ActualArg;
     }
+
+    // Add alignment assumptions if necessary. We do this before the inlined
+    // instructions are actually cloned into the caller so that we can easily
+    // check what will be known at the start of the inlined code.
+    AddAlignmentAssumptions(CS, IFI);
 
     // We want the inliner to prune the code as it copies.  We would LOVE to
     // have no dead or constant instructions leftover after inlining occurs

@@ -22,6 +22,7 @@
 #include "llvm/ADT/ilist_node.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/IR/Value.h"
+#include "llvm/Support/ErrorHandling.h"
 
 namespace llvm {
 class LLVMContext;
@@ -31,73 +32,90 @@ template<typename ValueSubClass, typename ItemParentClass>
 
 
 enum LLVMConstants : uint32_t {
-  DEBUG_METADATA_VERSION = 1  // Current debug info version number.
+  DEBUG_METADATA_VERSION = 2  // Current debug info version number.
+};
+
+/// \brief Root of the metadata hierarchy.
+///
+/// This is a root class for typeless data in the IR.
+///
+/// TODO: Detach from the Value hierarchy.
+class Metadata : public Value {
+protected:
+  Metadata(LLVMContext &Context, unsigned ID);
+
+public:
+  static bool classof(const Value *V) {
+    return V->getValueID() == GenericMDNodeVal ||
+           V->getValueID() == MDNodeFwdDeclVal ||
+           V->getValueID() == MDStringVal;
+  }
 };
 
 //===----------------------------------------------------------------------===//
-/// MDString - a single uniqued string.
+/// \brief A single uniqued string.
+///
 /// These are used to efficiently contain a byte sequence for metadata.
 /// MDString is always unnamed.
-class MDString : public Value {
+class MDString : public Metadata {
+  friend class StringMapEntry<MDString>;
+
   virtual void anchor();
   MDString(const MDString &) LLVM_DELETED_FUNCTION;
 
-  explicit MDString(LLVMContext &C);
+  explicit MDString(LLVMContext &Context)
+      : Metadata(Context, Value::MDStringVal) {}
+
+  /// \brief Shadow Value::getName() to prevent its use.
+  StringRef getName() const LLVM_DELETED_FUNCTION;
+
 public:
   static MDString *get(LLVMContext &Context, StringRef Str);
   static MDString *get(LLVMContext &Context, const char *Str) {
     return get(Context, Str ? StringRef(Str) : StringRef());
   }
 
-  StringRef getString() const { return getName(); }
+  StringRef getString() const;
 
-  unsigned getLength() const { return (unsigned)getName().size(); }
+  unsigned getLength() const { return (unsigned)getString().size(); }
 
   typedef StringRef::iterator iterator;
 
-  /// begin() - Pointer to the first byte of the string.
-  iterator begin() const { return getName().begin(); }
+  /// \brief Pointer to the first byte of the string.
+  iterator begin() const { return getString().begin(); }
 
-  /// end() - Pointer to one byte past the end of the string.
-  iterator end() const { return getName().end(); }
+  /// \brief Pointer to one byte past the end of the string.
+  iterator end() const { return getString().end(); }
 
-  /// Methods for support type inquiry through isa, cast, and dyn_cast:
+  /// \brief Methods for support type inquiry through isa, cast, and dyn_cast.
   static bool classof(const Value *V) {
     return V->getValueID() == MDStringVal;
   }
 };
 
-/// AAMDNodes - A collection of metadata nodes that might be associated with a
+/// \brief A collection of metadata nodes that might be associated with a
 /// memory access used by the alias-analysis infrastructure.
 struct AAMDNodes {
-  AAMDNodes(MDNode *T = nullptr, MDNode *S = nullptr, MDNode *N = nullptr)
-    : TBAA(T), Scope(S), NoAlias(N) {}
+  explicit AAMDNodes(MDNode *T = nullptr, MDNode *S = nullptr,
+                     MDNode *N = nullptr)
+      : TBAA(T), Scope(S), NoAlias(N) {}
 
-  bool operator == (const AAMDNodes &A) const {
-    return equals(A);
-  }
-
-  bool operator != (const AAMDNodes &A) const {
-    return !equals(A);
-  }
-
-  operator bool() const {
-    return TBAA || Scope || NoAlias;
-  }
-
-  /// TBAA - The tag for type-based alias analysis.
-  MDNode *TBAA;
-
-  /// Scope - The tag for alias scope specification (used with noalias).
-  MDNode *Scope;
-
-  /// NoAlias - The tag specifying the noalias scope.
-  MDNode *NoAlias;
-
-protected:
-  bool equals(const AAMDNodes &A) const {
+  bool operator==(const AAMDNodes &A) const {
     return TBAA == A.TBAA && Scope == A.Scope && NoAlias == A.NoAlias;
   }
+
+  bool operator!=(const AAMDNodes &A) const { return !(*this == A); }
+
+  LLVM_EXPLICIT operator bool() const { return TBAA || Scope || NoAlias; }
+
+  /// \brief The tag for type-based alias analysis.
+  MDNode *TBAA;
+
+  /// \brief The tag for alias scope specification (used with noalias).
+  MDNode *Scope;
+
+  /// \brief The tag specifying the noalias scope.
+  MDNode *NoAlias;
 };
 
 // Specialize DenseMapInfo for AAMDNodes.
@@ -122,22 +140,31 @@ struct DenseMapInfo<AAMDNodes> {
 class MDNodeOperand;
 
 //===----------------------------------------------------------------------===//
-/// MDNode - a tuple of other values.
-class MDNode : public Value, public FoldingSetNode {
+/// \brief Tuple of metadata.
+class MDNode : public Metadata {
   MDNode(const MDNode &) LLVM_DELETED_FUNCTION;
   void operator=(const MDNode &) LLVM_DELETED_FUNCTION;
   friend class MDNodeOperand;
   friend class LLVMContextImpl;
-  friend struct FoldingSetTrait<MDNode>;
+  void *operator new(size_t) LLVM_DELETED_FUNCTION;
 
-  /// Hash - If the MDNode is uniqued cache the hash to speed up lookup.
-  unsigned Hash;
+protected:
+  void *operator new(size_t Size, unsigned NumOps);
 
-  /// NumOperands - This many 'MDNodeOperand' items are co-allocated onto the
-  /// end of this MDNode.
-  unsigned NumOperands;
+  /// \brief Required by std, but never called.
+  void operator delete(void *Mem);
 
-  // Subclass data enums.
+  /// \brief Required by std, but never called.
+  void operator delete(void *, unsigned) {
+    llvm_unreachable("Constructor throws?");
+  }
+
+  /// \brief Required by std, but never called.
+  void operator delete(void *, unsigned, bool) {
+    llvm_unreachable("Constructor throws?");
+  }
+
+  /// \brief Subclass data enums.
   enum {
     /// FunctionLocalBit - This bit is set if this MDNode is function local.
     /// This is true when it (potentially transitively) contains a reference to
@@ -146,92 +173,88 @@ class MDNode : public Value, public FoldingSetNode {
 
     /// NotUniquedBit - This is set on MDNodes that are not uniqued because they
     /// have a null operand.
-    NotUniquedBit    = 1 << 1,
-
-    /// DestroyFlag - This bit is set by destroy() so the destructor can assert
-    /// that the node isn't being destroyed with a plain 'delete'.
-    DestroyFlag      = 1 << 2
+    NotUniquedBit    = 1 << 1
   };
 
-  // FunctionLocal enums.
+  /// \brief FunctionLocal enums.
   enum FunctionLocalness {
     FL_Unknown = -1,
     FL_No = 0,
     FL_Yes = 1
   };
 
-  /// replaceOperand - Replace each instance of F from the operand list of this
-  /// node with T.
+  /// \brief Replace each instance of the given operand with a new value.
   void replaceOperand(MDNodeOperand *Op, Value *NewVal);
-  ~MDNode();
 
-  MDNode(LLVMContext &C, ArrayRef<Value*> Vals, bool isFunctionLocal);
+  MDNode(LLVMContext &C, unsigned ID, ArrayRef<Value *> Vals,
+         bool isFunctionLocal);
+  ~MDNode() {}
 
   static MDNode *getMDNode(LLVMContext &C, ArrayRef<Value*> Vals,
                            FunctionLocalness FL, bool Insert = true);
 public:
-  // Constructors and destructors.
   static MDNode *get(LLVMContext &Context, ArrayRef<Value*> Vals);
-  // getWhenValsUnresolved - Construct MDNode determining function-localness
-  // from isFunctionLocal argument, not by analyzing Vals.
+  /// \brief Construct MDNode with an explicit function-localness.
+  ///
+  /// Don't analyze Vals; trust isFunctionLocal.
   static MDNode *getWhenValsUnresolved(LLVMContext &Context,
                                        ArrayRef<Value*> Vals,
                                        bool isFunctionLocal);
 
   static MDNode *getIfExists(LLVMContext &Context, ArrayRef<Value*> Vals);
 
-  /// getTemporary - Return a temporary MDNode, for use in constructing
-  /// cyclic MDNode structures. A temporary MDNode is not uniqued,
-  /// may be RAUW'd, and must be manually deleted with deleteTemporary.
+  /// \brief Return a temporary MDNode
+  ///
+  /// For use in constructing cyclic MDNode structures. A temporary MDNode is
+  /// not uniqued, may be RAUW'd, and must be manually deleted with
+  /// deleteTemporary.
   static MDNode *getTemporary(LLVMContext &Context, ArrayRef<Value*> Vals);
 
-  /// deleteTemporary - Deallocate a node created by getTemporary. The
-  /// node must not have any users.
+  /// \brief Deallocate a node created by getTemporary.
+  ///
+  /// The node must not have any users.
   static void deleteTemporary(MDNode *N);
 
-  /// replaceOperandWith - Replace a specific operand.
+  /// \brief Replace a specific operand.
   void replaceOperandWith(unsigned i, Value *NewVal);
 
-  /// getOperand - Return specified operand.
+  /// \brief Return specified operand.
   Value *getOperand(unsigned i) const LLVM_READONLY;
 
-  /// getNumOperands - Return number of MDNode operands.
+  /// \brief Return number of MDNode operands.
   unsigned getNumOperands() const { return NumOperands; }
 
-  /// isFunctionLocal - Return whether MDNode is local to a function.
+  /// \brief Return whether MDNode is local to a function.
   bool isFunctionLocal() const {
     return (getSubclassDataFromValue() & FunctionLocalBit) != 0;
   }
 
-  // getFunction - If this metadata is function-local and recursively has a
-  // function-local operand, return the first such operand's parent function.
-  // Otherwise, return null. getFunction() should not be used for performance-
-  // critical code because it recursively visits all the MDNode's operands.
+  /// \brief Return the first function-local operand's function.
+  ///
+  /// If this metadata is function-local and recursively has a function-local
+  /// operand, return the first such operand's parent function.  Otherwise,
+  /// return null. getFunction() should not be used for performance- critical
+  /// code because it recursively visits all the MDNode's operands.
   const Function *getFunction() const;
 
-  /// Profile - calculate a unique identifier for this MDNode to collapse
-  /// duplicates
-  void Profile(FoldingSetNodeID &ID) const;
-
-  /// Methods for support type inquiry through isa, cast, and dyn_cast:
+  /// \brief Methods for support type inquiry through isa, cast, and dyn_cast:
   static bool classof(const Value *V) {
-    return V->getValueID() == MDNodeVal;
+    return V->getValueID() == GenericMDNodeVal ||
+           V->getValueID() == MDNodeFwdDeclVal;
   }
 
-  /// Check whether MDNode is a vtable access.
+  /// \brief Check whether MDNode is a vtable access.
   bool isTBAAVtableAccess() const;
 
-  /// Methods for metadata merging.
+  /// \brief Methods for metadata merging.
   static MDNode *concatenate(MDNode *A, MDNode *B);
   static MDNode *intersect(MDNode *A, MDNode *B);
   static MDNode *getMostGenericTBAA(MDNode *A, MDNode *B);
   static AAMDNodes getMostGenericAA(const AAMDNodes &A, const AAMDNodes &B);
   static MDNode *getMostGenericFPMath(MDNode *A, MDNode *B);
   static MDNode *getMostGenericRange(MDNode *A, MDNode *B);
-private:
-  // destroy - Delete this node.  Only when there are no uses.
-  void destroy();
 
+protected:
   bool isNotUniqued() const {
     return (getSubclassDataFromValue() & NotUniquedBit) != 0;
   }
@@ -244,10 +267,62 @@ private:
   }
 };
 
+/// \brief Generic metadata node.
+///
+/// Generic metadata nodes, with opt-out support for uniquing.
+///
+/// Although nodes are uniqued by default, \a GenericMDNode has no support for
+/// RAUW.  If an operand change (due to RAUW or otherwise) causes a uniquing
+/// collision, the uniquing bit is dropped.
+///
+/// TODO: Make uniquing opt-out (status: mandatory, sometimes dropped).
+/// TODO: Drop support for RAUW.
+class GenericMDNode : public MDNode {
+  friend class MDNode;
+  friend class LLVMContextImpl;
+
+  unsigned Hash;
+
+  GenericMDNode(LLVMContext &C, ArrayRef<Value *> Vals, bool isFunctionLocal)
+      : MDNode(C, GenericMDNodeVal, Vals, isFunctionLocal), Hash(0) {}
+  ~GenericMDNode();
+
+  void dropAllReferences();
+
+public:
+  /// \brief Get the hash, if any.
+  unsigned getHash() const { return Hash; }
+
+  static bool classof(const Value *V) {
+    return V->getValueID() == GenericMDNodeVal;
+  }
+};
+
+/// \brief Forward declaration of metadata.
+///
+/// Forward declaration of metadata, in the form of a metadata node.  Unlike \a
+/// GenericMDNode, this class has support for RAUW and is suitable for forward
+/// references.
+class MDNodeFwdDecl : public MDNode {
+  friend class MDNode;
+
+  MDNodeFwdDecl(LLVMContext &C, ArrayRef<Value *> Vals, bool isFunctionLocal)
+      : MDNode(C, MDNodeFwdDeclVal, Vals, isFunctionLocal) {}
+  ~MDNodeFwdDecl() {}
+
+public:
+  static bool classof(const Value *V) {
+    return V->getValueID() == MDNodeFwdDeclVal;
+  }
+};
+
 //===----------------------------------------------------------------------===//
-/// NamedMDNode - a tuple of MDNodes. Despite its name, a NamedMDNode isn't
-/// itself an MDNode. NamedMDNodes belong to modules, have names, and contain
-/// lists of MDNodes.
+/// \brief A tuple of MDNodes.
+///
+/// Despite its name, a NamedMDNode isn't itself an MDNode. NamedMDNodes belong
+/// to modules, have names, and contain lists of MDNodes.
+///
+/// TODO: Inherit from Metadata.
 class NamedMDNode : public ilist_node<NamedMDNode> {
   friend class SymbolTableListTraits<NamedMDNode, Module>;
   friend struct ilist_traits<NamedMDNode>;
@@ -300,46 +375,33 @@ class NamedMDNode : public ilist_node<NamedMDNode> {
   };
 
 public:
-  /// eraseFromParent - Drop all references and remove the node from parent
-  /// module.
+  /// \brief Drop all references and remove the node from parent module.
   void eraseFromParent();
 
-  /// dropAllReferences - Remove all uses and clear node vector.
+  /// \brief Remove all uses and clear node vector.
   void dropAllReferences();
 
-  /// ~NamedMDNode - Destroy NamedMDNode.
   ~NamedMDNode();
 
-  /// getParent - Get the module that holds this named metadata collection.
+  /// \brief Get the module that holds this named metadata collection.
   inline Module *getParent() { return Parent; }
   inline const Module *getParent() const { return Parent; }
 
-  /// getOperand - Return specified operand.
   MDNode *getOperand(unsigned i) const;
-
-  /// getNumOperands - Return the number of NamedMDNode operands.
   unsigned getNumOperands() const;
-
-  /// addOperand - Add metadata operand.
   void addOperand(MDNode *M);
-
-  /// getName - Return a constant reference to this named metadata's name.
   StringRef getName() const;
-
-  /// print - Implement operator<< on NamedMDNode.
   void print(raw_ostream &ROS) const;
-
-  /// dump() - Allow printing of NamedMDNodes from the debugger.
   void dump() const;
 
   // ---------------------------------------------------------------------------
   // Operand Iterator interface...
   //
-  typedef op_iterator_impl<MDNode*, MDNode> op_iterator;
+  typedef op_iterator_impl<MDNode *, MDNode> op_iterator;
   op_iterator op_begin() { return op_iterator(this, 0); }
   op_iterator op_end()   { return op_iterator(this, getNumOperands()); }
 
-  typedef op_iterator_impl<const MDNode*, MDNode> const_op_iterator;
+  typedef op_iterator_impl<const MDNode *, MDNode> const_op_iterator;
   const_op_iterator op_begin() const { return const_op_iterator(this, 0); }
   const_op_iterator op_end()   const { return const_op_iterator(this, getNumOperands()); }
 

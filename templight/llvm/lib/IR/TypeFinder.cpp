@@ -40,12 +40,15 @@ void TypeFinder::run(const Module &M, bool onlyNamed) {
   }
 
   // Get types from functions.
-  SmallVector<std::pair<unsigned, MDNode*>, 4> MDForInst;
+  SmallVector<std::pair<unsigned, MDNode *>, 4> MDForInst;
   for (Module::const_iterator FI = M.begin(), E = M.end(); FI != E; ++FI) {
     incorporateType(FI->getType());
 
     if (FI->hasPrefixData())
       incorporateValue(FI->getPrefixData());
+
+    if (FI->hasPrologueData())
+      incorporateValue(FI->getPrologueData());
 
     // First incorporate the arguments.
     for (Function::const_arg_iterator AI = FI->arg_begin(),

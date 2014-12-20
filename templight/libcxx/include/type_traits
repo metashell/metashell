@@ -197,7 +197,9 @@ namespace std
     template <class F, class... ArgTypes>
       using result_of_t       = typename result_of<F(ArgTypes...)>::type;  // C++14
 
-}  // std
+    template <class...>
+      using void_t = void;
+}  // C++17
 
 */
 #include <__config>
@@ -209,6 +211,11 @@ namespace std
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+#ifndef _LIBCPP_HAS_NO_VARIADICS
+template <class...> 
+struct __void_t { typedef void type; };
+#endif
+
 template <bool _Bp, class _If, class _Then>
     struct _LIBCPP_TYPE_VIS_ONLY conditional {typedef _If type;};
 template <class _If, class _Then>
@@ -217,6 +224,9 @@ template <class _If, class _Then>
 #if _LIBCPP_STD_VER > 11
 template <bool _Bp, class _If, class _Then> using conditional_t = typename conditional<_Bp, _If, _Then>::type;
 #endif
+
+template <bool, class _Tp> struct _LIBCPP_TYPE_VIS_ONLY __lazy_enable_if {};
+template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY __lazy_enable_if<true, _Tp> {typedef typename _Tp::type type;};
 
 template <bool, class _Tp = void> struct _LIBCPP_TYPE_VIS_ONLY enable_if {};
 template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY enable_if<true, _Tp> {typedef _Tp type;};
@@ -1208,42 +1218,45 @@ template <class _A1, class _A2 = void, class _A3 = void,
           bool = __numeric_type<_A1>::value &&
                  __numeric_type<_A2>::value &&
                  __numeric_type<_A3>::value>
-class __promote
+class __promote_imp
 {
+public:
     static const bool value = false;
 };
 
 template <class _A1, class _A2, class _A3>
-class __promote<_A1, _A2, _A3, true>
+class __promote_imp<_A1, _A2, _A3, true>
 {
 private:
-    typedef typename __promote<_A1>::type __type1;
-    typedef typename __promote<_A2>::type __type2;
-    typedef typename __promote<_A3>::type __type3;
+    typedef typename __promote_imp<_A1>::type __type1;
+    typedef typename __promote_imp<_A2>::type __type2;
+    typedef typename __promote_imp<_A3>::type __type3;
 public:
     typedef decltype(__type1() + __type2() + __type3()) type;
     static const bool value = true;
 };
 
 template <class _A1, class _A2>
-class __promote<_A1, _A2, void, true>
+class __promote_imp<_A1, _A2, void, true>
 {
 private:
-    typedef typename __promote<_A1>::type __type1;
-    typedef typename __promote<_A2>::type __type2;
+    typedef typename __promote_imp<_A1>::type __type1;
+    typedef typename __promote_imp<_A2>::type __type2;
 public:
     typedef decltype(__type1() + __type2()) type;
     static const bool value = true;
 };
 
 template <class _A1>
-class __promote<_A1, void, void, true>
+class __promote_imp<_A1, void, void, true>
 {
 public:
     typedef typename __numeric_type<_A1>::type type;
     static const bool value = true;
-    static const bool __does_not_throw = _NOEXCEPT_OR_FALSE(static_cast<type>(declval<_A1>()));
 };
+
+template <class _A1, class _A2 = void, class _A3 = void>
+class __promote : public __promote_imp<_A1, _A2, _A3> {};
 
 #ifdef _LIBCPP_STORE_AS_OPTIMIZATION
 
@@ -1537,11 +1550,11 @@ template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_move_assignable
 
 // is_destructible
 
-//	if it's a reference, return true
-//	if it's a function, return false
-//	if it's   void,     return false
-//	if it's an array of unknown bound, return false
-//	Otherwise, return "std::declval<_Up&>().~_Up()" is well-formed
+//  if it's a reference, return true
+//  if it's a function, return false
+//  if it's   void,     return false
+//  if it's an array of unknown bound, return false
+//  Otherwise, return "std::declval<_Up&>().~_Up()" is well-formed
 //    where _Up is remove_all_extents<_Tp>::type
 
 template <class>
@@ -1549,15 +1562,15 @@ struct __is_destructible_apply { typedef int type; };
 
 template <typename _Tp>
 struct __is_destructor_wellformed {
-	template <typename _Tp1>
-	static char  __test (
+    template <typename _Tp1>
+    static char  __test (
         typename __is_destructible_apply<decltype(_VSTD::declval<_Tp1&>().~_Tp1())>::type
     );
 
-	template <typename _Tp1>
-	static __two __test (...);
-	
-	static const bool value = sizeof(__test<_Tp>(12)) == sizeof(char);
+    template <typename _Tp1>
+    static __two __test (...);
+    
+    static const bool value = sizeof(__test<_Tp>(12)) == sizeof(char);
 };
 
 template <class _Tp, bool>
@@ -2888,29 +2901,38 @@ struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible
 
 #if __has_feature(cxx_noexcept) || (_GNUC_VER >= 407 && __cplusplus >= 201103L)
 
-template <bool, class _Tp, class... _Args> struct __libcpp_is_nothrow_constructible;
+template <bool, bool, class _Tp, class... _Args> struct __libcpp_is_nothrow_constructible;
 
 template <class _Tp, class... _Args>
-struct __libcpp_is_nothrow_constructible<true, _Tp, _Args...>
+struct __libcpp_is_nothrow_constructible</*is constructible*/true, /*is reference*/false, _Tp, _Args...>
     : public integral_constant<bool, noexcept(_Tp(declval<_Args>()...))>
 {
 };
 
-template <class _Tp, class... _Args>
-struct __libcpp_is_nothrow_constructible<false, _Tp, _Args...>
+template <class _Tp>
+void __implicit_conversion_to(_Tp) noexcept { }
+
+template <class _Tp, class _Arg>
+struct __libcpp_is_nothrow_constructible</*is constructible*/true, /*is reference*/true, _Tp, _Arg>
+    : public integral_constant<bool, noexcept(__implicit_conversion_to<_Tp>(declval<_Arg>()))>
+{
+};
+
+template <class _Tp, bool _IsReference, class... _Args>
+struct __libcpp_is_nothrow_constructible</*is constructible*/false, _IsReference, _Tp, _Args...>
     : public false_type
 {
 };
 
 template <class _Tp, class... _Args>
 struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible
-    : __libcpp_is_nothrow_constructible<is_constructible<_Tp, _Args...>::value, _Tp, _Args...>
+    : __libcpp_is_nothrow_constructible<is_constructible<_Tp, _Args...>::value, is_reference<_Tp>::value, _Tp, _Args...>
 {
 };
 
 template <class _Tp, size_t _Ns>
 struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible<_Tp[_Ns]>
-    : __libcpp_is_nothrow_constructible<is_constructible<_Tp>::value, _Tp>
+    : __libcpp_is_nothrow_constructible<is_constructible<_Tp>::value, is_reference<_Tp>::value, _Tp>
 {
 };
 
@@ -3627,23 +3649,40 @@ struct underlying_type
 #ifndef _LIBCPP_HAS_NO_ADVANCED_SFINAE
 
 template <class _Tp>
-struct __has_operator_addressof_imp
+struct __has_operator_addressof_member_imp
 {
-    template <class>
-        static auto __test(__any) -> false_type;
     template <class _Up>
-        static auto __test(_Up* __u)
-            -> typename __select_2nd<decltype(__u->operator&()), true_type>::type;
+        static auto __test(int)
+            -> typename __select_2nd<decltype(_VSTD::declval<_Up>().operator&()), true_type>::type;
+    template <class>
+        static auto __test(long) -> false_type;
 
-    static const bool value = decltype(__test<_Tp>(nullptr))::value;
+    static const bool value = decltype(__test<_Tp>(0))::value;
+};
+
+template <class _Tp>
+struct __has_operator_addressof_free_imp
+{
+    template <class _Up>
+        static auto __test(int)
+            -> typename __select_2nd<decltype(operator&(_VSTD::declval<_Up>())), true_type>::type;
+    template <class>
+        static auto __test(long) -> false_type;
+
+    static const bool value = decltype(__test<_Tp>(0))::value;
 };
 
 template <class _Tp>
 struct __has_operator_addressof
-    : public integral_constant<bool, __has_operator_addressof_imp<_Tp>::value>
+    : public integral_constant<bool, __has_operator_addressof_member_imp<_Tp>::value
+                                  || __has_operator_addressof_free_imp<_Tp>::value>
 {};
 
 #endif  // _LIBCPP_HAS_NO_ADVANCED_SFINAE
+
+#if _LIBCPP_STD_VER > 14
+template <class...> using void_t = void;
+#endif
 
 _LIBCPP_END_NAMESPACE_STD
 

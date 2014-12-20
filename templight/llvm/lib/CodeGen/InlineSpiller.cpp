@@ -34,7 +34,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetInstrInfo.h"
-#include "llvm/Target/TargetMachine.h"
 
 using namespace llvm;
 
@@ -185,11 +184,16 @@ private:
 }
 
 namespace llvm {
+
+Spiller::~Spiller() { }
+void Spiller::anchor() { }
+
 Spiller *createInlineSpiller(MachineFunctionPass &pass,
                              MachineFunction &mf,
                              VirtRegMap &vrm) {
   return new InlineSpiller(pass, mf, vrm);
 }
+
 }
 
 //===----------------------------------------------------------------------===//
@@ -819,7 +823,7 @@ void InlineSpiller::markValueUsed(LiveInterval *LI, VNInfo *VNI) {
   WorkList.push_back(std::make_pair(LI, VNI));
   do {
     std::tie(LI, VNI) = WorkList.pop_back_val();
-    if (!UsedValues.insert(VNI))
+    if (!UsedValues.insert(VNI).second)
       continue;
 
     if (VNI->isPHIDef()) {
@@ -1084,7 +1088,8 @@ foldMemoryOperand(ArrayRef<std::pair<MachineInstr*, unsigned> > Ops,
   bool WasCopy = MI->isCopy();
   unsigned ImpReg = 0;
 
-  bool SpillSubRegs = (MI->getOpcode() == TargetOpcode::PATCHPOINT ||
+  bool SpillSubRegs = (MI->getOpcode() == TargetOpcode::STATEPOINT ||
+                       MI->getOpcode() == TargetOpcode::PATCHPOINT ||
                        MI->getOpcode() == TargetOpcode::STACKMAP);
 
   // TargetInstrInfo::foldMemoryOperand only expects explicit, non-tied
@@ -1224,12 +1229,16 @@ void InlineSpiller::spillAroundUses(unsigned Reg) {
       // Modify DBG_VALUE now that the value is in a spill slot.
       bool IsIndirect = MI->isIndirectDebugValue();
       uint64_t Offset = IsIndirect ? MI->getOperand(1).getImm() : 0;
-      const MDNode *MDPtr = MI->getOperand(2).getMetadata();
+      const MDNode *Var = MI->getDebugVariable();
+      const MDNode *Expr = MI->getDebugExpression();
       DebugLoc DL = MI->getDebugLoc();
       DEBUG(dbgs() << "Modifying debug info due to spill:" << "\t" << *MI);
       MachineBasicBlock *MBB = MI->getParent();
       BuildMI(*MBB, MBB->erase(MI), DL, TII.get(TargetOpcode::DBG_VALUE))
-          .addFrameIndex(StackSlot).addImm(Offset).addMetadata(MDPtr);
+          .addFrameIndex(StackSlot)
+          .addImm(Offset)
+          .addMetadata(Var)
+          .addMetadata(Expr);
       continue;
     }
 
@@ -1369,7 +1378,7 @@ void InlineSpiller::spill(LiveRangeEdit &edit) {
   StackInt = nullptr;
 
   DEBUG(dbgs() << "Inline spilling "
-               << MRI.getRegClass(edit.getReg())->getName()
+               << TRI.getRegClassName(MRI.getRegClass(edit.getReg()))
                << ':' << edit.getParent()
                << "\nFrom original " << PrintReg(Original) << '\n');
   assert(edit.getParent().isSpillable() &&

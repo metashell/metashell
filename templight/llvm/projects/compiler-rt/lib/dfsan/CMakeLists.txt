@@ -7,14 +7,14 @@ set(DFSAN_RTL_SOURCES
   dfsan_interceptors.cc)
 set(DFSAN_COMMON_CFLAGS ${SANITIZER_COMMON_CFLAGS})
 # Prevent clang from generating libc calls.
-append_if(COMPILER_RT_HAS_FFREESTANDING_FLAG -ffreestanding DFSAN_COMMON_CFLAGS)
+append_list_if(COMPILER_RT_HAS_FFREESTANDING_FLAG -ffreestanding DFSAN_COMMON_CFLAGS)
 
 # Static runtime library.
 add_custom_target(dfsan)
 set(arch "x86_64")
 if(CAN_TARGET_${arch})
   set(DFSAN_CFLAGS ${DFSAN_COMMON_CFLAGS})
-  append_if(COMPILER_RT_HAS_FPIE_FLAG -fPIE DFSAN_CFLAGS)
+  append_list_if(COMPILER_RT_HAS_FPIE_FLAG -fPIE DFSAN_CFLAGS)
   add_compiler_rt_runtime(clang_rt.dfsan-${arch} ${arch} STATIC
     SOURCES ${DFSAN_RTL_SOURCES}
             $<TARGET_OBJECTS:RTInterception.${arch}>
@@ -39,9 +39,9 @@ add_custom_command(OUTPUT ${dfsan_abilist_filename}
                    VERBATIM
                    COMMAND
                      cat ${CMAKE_CURRENT_SOURCE_DIR}/done_abilist.txt
-                         ${CMAKE_CURRENT_SOURCE_DIR}/libc_ubuntu1204_abilist.txt
+                         ${CMAKE_CURRENT_SOURCE_DIR}/libc_ubuntu1404_abilist.txt
                          > ${dfsan_abilist_filename}
-                   DEPENDS done_abilist.txt libc_ubuntu1204_abilist.txt)
+                   DEPENDS done_abilist.txt libc_ubuntu1404_abilist.txt)
 add_dependencies(dfsan dfsan_abilist)
 install(FILES ${dfsan_abilist_filename}
         DESTINATION ${COMPILER_RT_INSTALL_PATH})

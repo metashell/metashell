@@ -101,6 +101,11 @@ static OrderMap orderModule(const Module *M) {
     if (F.hasPrefixData())
       if (!isa<GlobalValue>(F.getPrefixData()))
         orderValue(F.getPrefixData(), OM);
+
+    if (F.hasPrologueData())
+      if (!isa<GlobalValue>(F.getPrologueData()))
+        orderValue(F.getPrologueData(), OM);
+
     orderValue(&F, OM);
 
     if (F.isDeclaration())
@@ -282,9 +287,11 @@ static void PrintCallingConv(unsigned cc, raw_ostream &Out) {
   case CallingConv::AnyReg:        Out << "anyregcc"; break;
   case CallingConv::PreserveMost:  Out << "preserve_mostcc"; break;
   case CallingConv::PreserveAll:   Out << "preserve_allcc"; break;
+  case CallingConv::GHC:           Out << "ghccc"; break;
   case CallingConv::X86_StdCall:   Out << "x86_stdcallcc"; break;
   case CallingConv::X86_FastCall:  Out << "x86_fastcallcc"; break;
   case CallingConv::X86_ThisCall:  Out << "x86_thiscallcc"; break;
+  case CallingConv::X86_VectorCall:Out << "x86_vectorcallcc"; break;
   case CallingConv::Intel_OCL_BI:  Out << "intel_ocl_bicc"; break;
   case CallingConv::ARM_APCS:      Out << "arm_apcscc"; break;
   case CallingConv::ARM_AAPCS:     Out << "arm_aapcscc"; break;
@@ -717,7 +724,7 @@ void SlotTracker::processFunction() {
 
   ST_DEBUG("Inserting Instructions:\n");
 
-  SmallVector<std::pair<unsigned, MDNode*>, 4> MDForInst;
+  SmallVector<std::pair<unsigned, MDNode *>, 4> MDForInst;
 
   // Add all of the basic blocks and instructions with no names.
   for (Function::const_iterator BB = TheFunction->begin(),
@@ -1900,6 +1907,11 @@ void AssemblyWriter::printFunction(const Function *F) {
     Out << " prefix ";
     writeOperand(F->getPrefixData(), true);
   }
+  if (F->hasPrologueData()) {
+    Out << " prologue ";
+    writeOperand(F->getPrologueData(), true);
+  }
+
   if (F->isDeclaration()) {
     Out << '\n';
   } else {
@@ -2314,7 +2326,7 @@ void AssemblyWriter::printInstruction(const Instruction &I) {
   }
 
   // Print Metadata info.
-  SmallVector<std::pair<unsigned, MDNode*>, 4> InstMD;
+  SmallVector<std::pair<unsigned, MDNode *>, 4> InstMD;
   I.getAllMetadata(InstMD);
   if (!InstMD.empty()) {
     SmallVector<StringRef, 8> MDNames;
@@ -2340,7 +2352,7 @@ static void WriteMDNodeComment(const MDNode *Node,
     return;
 
   Value *Op = Node->getOperand(0);
-  if (!Op || !isa<ConstantInt>(Op) || cast<ConstantInt>(Op)->getBitWidth() < 32)
+  if (!Op || !isa<MDString>(Op))
     return;
 
   DIDescriptor Desc(Node);

@@ -107,8 +107,8 @@ public:
                               MachineInstr *Second) const override;
 
   MachineInstr *emitFrameIndexDebugValue(MachineFunction &MF, int FrameIx,
-                                         uint64_t Offset, const MDNode *MDPtr,
-                                         DebugLoc DL) const;
+                                         uint64_t Offset, const MDNode *Var,
+                                         const MDNode *Expr, DebugLoc DL) const;
   void copyPhysRegTuple(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
                         DebugLoc DL, unsigned DestReg, unsigned SrcReg,
                         bool KillSrc, unsigned Opcode,
@@ -165,6 +165,7 @@ public:
   bool optimizeCompareInstr(MachineInstr *CmpInstr, unsigned SrcReg,
                             unsigned SrcReg2, int CmpMask, int CmpValue,
                             const MachineRegisterInfo *MRI) const override;
+  bool optimizeCondBranch(MachineInstr *MI) const override;
   /// hasPattern - return true when there is potentially a faster code sequence
   /// for an instruction chain ending in <Root>. All potential patterns are
   /// listed

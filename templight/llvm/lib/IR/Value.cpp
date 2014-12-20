@@ -45,7 +45,8 @@ static inline Type *checkType(Type *Ty) {
 
 Value::Value(Type *ty, unsigned scid)
     : VTy(checkType(ty)), UseList(nullptr), Name(nullptr), SubclassID(scid),
-      HasValueHandle(0), SubclassOptionalData(0), SubclassData(0) {
+      HasValueHandle(0), SubclassOptionalData(0), SubclassData(0),
+      NumOperands(0) {
   // FIXME: Why isn't this in the subclass gunk??
   // Note, we cannot call isa<CallInst> before the CallInst has been
   // constructed.
@@ -88,8 +89,6 @@ Value::~Value() {
   LeakDetector::removeGarbageObject(this);
 }
 
-/// hasNUses - Return true if this Value has exactly N users.
-///
 bool Value::hasNUses(unsigned N) const {
   const_use_iterator UI = use_begin(), E = use_end();
 
@@ -98,9 +97,6 @@ bool Value::hasNUses(unsigned N) const {
   return UI == E;
 }
 
-/// hasNUsesOrMore - Return true if this value has N users or more.  This is
-/// logically equivalent to getNumUses() >= N.
-///
 bool Value::hasNUsesOrMore(unsigned N) const {
   const_use_iterator UI = use_begin(), E = use_end();
 
@@ -110,8 +106,6 @@ bool Value::hasNUsesOrMore(unsigned N) const {
   return true;
 }
 
-/// isUsedInBasicBlock - Return true if this value is used in the specified
-/// basic block.
 bool Value::isUsedInBasicBlock(const BasicBlock *BB) const {
   // This can be computed either by scanning the instructions in BB, or by
   // scanning the use list of this Value. Both lists can be very long, but
@@ -133,10 +127,6 @@ bool Value::isUsedInBasicBlock(const BasicBlock *BB) const {
   return false;
 }
 
-
-/// getNumUses - This method computes the number of uses of this Value.  This
-/// is a linear time operation.  Use hasOneUse or hasNUses to check for specific
-/// values.
 unsigned Value::getNumUses() const {
   return (unsigned)std::distance(use_begin(), use_end());
 }
@@ -236,9 +226,6 @@ void Value::setName(const Twine &NewName) {
   Name = ST->createValueName(NameRef, this);
 }
 
-
-/// takeName - transfer the name from V to this value, setting V's name to
-/// empty.  It is an error to call V->takeName(V).
 void Value::takeName(Value *V) {
   assert(SubclassID != MDStringVal && "Cannot take the name of an MDString!");
 
@@ -305,7 +292,7 @@ void Value::takeName(Value *V) {
 #ifndef NDEBUG
 static bool contains(SmallPtrSetImpl<ConstantExpr *> &Cache, ConstantExpr *Expr,
                      Constant *C) {
-  if (!Cache.insert(Expr))
+  if (!Cache.insert(Expr).second)
     return false;
 
   for (auto &O : Expr->operands()) {
@@ -366,6 +353,28 @@ void Value::replaceAllUsesWith(Value *New) {
     BB->replaceSuccessorsPhiUsesWith(cast<BasicBlock>(New));
 }
 
+// Like replaceAllUsesWith except it does not handle constants or basic blocks.
+// This routine leaves uses within BB.
+void Value::replaceUsesOutsideBlock(Value *New, BasicBlock *BB) {
+  assert(New && "Value::replaceUsesOutsideBlock(<null>, BB) is invalid!");
+  assert(!contains(New, this) &&
+         "this->replaceUsesOutsideBlock(expr(this), BB) is NOT valid!");
+  assert(New->getType() == getType() &&
+         "replaceUses of value with new value of different type!");
+  assert(BB && "Basic block that may contain a use of 'New' must be defined\n");
+
+  use_iterator UI = use_begin(), E = use_end();
+  for (; UI != E;) {
+    Use &U = *UI;
+    ++UI;
+    auto *Usr = dyn_cast<Instruction>(U.getUser());
+    if (Usr && Usr->getParent() == BB)
+      continue;
+    U.set(New);
+  }
+  return;
+}
+
 namespace {
 // Various metrics for how much to strip off of pointers.
 enum PointerStripKind {
@@ -414,7 +423,7 @@ static Value *stripPointerCastsAndOffsets(Value *V) {
       return V;
     }
     assert(V->getType()->isPointerTy() && "Unexpected operand type!");
-  } while (Visited.insert(V));
+  } while (Visited.insert(V).second);
 
   return V;
 }
@@ -464,7 +473,7 @@ Value *Value::stripAndAccumulateInBoundsConstantOffsets(const DataLayout &DL,
       return V;
     }
     assert(V->getType()->isPointerTy() && "Unexpected operand type!");
-  } while (Visited.insert(V));
+  } while (Visited.insert(V).second);
 
   return V;
 }
@@ -473,8 +482,10 @@ Value *Value::stripInBoundsOffsets() {
   return stripPointerCastsAndOffsets<PSK_InBounds>(this);
 }
 
-/// isDereferenceablePointer - Test if this value is always a pointer to
-/// allocated and suitably aligned memory for a simple load or store.
+/// \brief Check if Value is always a dereferenceable pointer.
+///
+/// Test if V is always a pointer to allocated and suitably aligned memory for
+/// a simple load or store.
 static bool isDereferenceablePointer(const Value *V, const DataLayout *DL,
                                      SmallPtrSetImpl<const Value *> &Visited) {
   // Note that it is not safe to speculate into a malloc'd region because
@@ -533,7 +544,7 @@ static bool isDereferenceablePointer(const Value *V, const DataLayout *DL,
   // For GEPs, determine if the indexing lands within the allocated object.
   if (const GEPOperator *GEP = dyn_cast<GEPOperator>(V)) {
     // Conservatively require that the base pointer be fully dereferenceable.
-    if (!Visited.insert(GEP->getOperand(0)))
+    if (!Visited.insert(GEP->getOperand(0)).second)
       return false;
     if (!isDereferenceablePointer(GEP->getOperand(0), DL, Visited))
       return false;
@@ -572,8 +583,6 @@ static bool isDereferenceablePointer(const Value *V, const DataLayout *DL,
   return false;
 }
 
-/// isDereferenceablePointer - Test if this value is always a pointer to
-/// allocated and suitably aligned memory for a simple load or store.
 bool Value::isDereferenceablePointer(const DataLayout *DL) const {
   // When dereferenceability information is provided by a dereferenceable
   // attribute, we know exactly how many bytes are dereferenceable. If we can
@@ -600,10 +609,6 @@ bool Value::isDereferenceablePointer(const DataLayout *DL) const {
   return ::isDereferenceablePointer(this, DL, Visited);
 }
 
-/// DoPHITranslation - If this value is a PHI node with CurBB as its parent,
-/// return the value in the PHI node corresponding to PredBB.  If not, return
-/// ourself.  This is useful if you want to know the value something has in a
-/// predecessor block.
 Value *Value::DoPHITranslation(const BasicBlock *CurBB,
                                const BasicBlock *PredBB) {
   PHINode *PN = dyn_cast<PHINode>(this);
@@ -637,8 +642,6 @@ void Value::reverseUseList() {
 //                             ValueHandleBase Class
 //===----------------------------------------------------------------------===//
 
-/// AddToExistingUseList - Add this ValueHandle to the use list for VP, where
-/// List is known to point into the existing use list.
 void ValueHandleBase::AddToExistingUseList(ValueHandleBase **List) {
   assert(List && "Handle list is null?");
 
@@ -662,7 +665,6 @@ void ValueHandleBase::AddToExistingUseListAfter(ValueHandleBase *List) {
     Next->setPrevPtr(&Next);
 }
 
-/// AddToUseList - Add this ValueHandle to the use list for VP.
 void ValueHandleBase::AddToUseList() {
   assert(VP.getPointer() && "Null pointer doesn't have a use list!");
 
@@ -706,7 +708,6 @@ void ValueHandleBase::AddToUseList() {
   }
 }
 
-/// RemoveFromUseList - Remove this ValueHandle from its current use list.
 void ValueHandleBase::RemoveFromUseList() {
   assert(VP.getPointer() && VP.getPointer()->HasValueHandle &&
          "Pointer doesn't have a use list!");
@@ -794,6 +795,8 @@ void ValueHandleBase::ValueIsDeleted(Value *V) {
 void ValueHandleBase::ValueIsRAUWd(Value *Old, Value *New) {
   assert(Old->HasValueHandle &&"Should only be called if ValueHandles present");
   assert(Old != New && "Changing value into itself!");
+  assert(Old->getType() == New->getType() &&
+         "replaceAllUses of value with new value of different type!");
 
   // Get the linked list base, which is guaranteed to exist since the
   // HasValueHandle flag is set.

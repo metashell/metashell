@@ -27,16 +27,25 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/PatternMatch.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Transforms/Utils/BuildLibCalls.h"
 
 using namespace llvm;
+using namespace PatternMatch;
 
 static cl::opt<bool>
     ColdErrorCalls("error-reporting-is-cold", cl::init(true), cl::Hidden,
                    cl::desc("Treat error-reporting calls as cold"));
+
+static cl::opt<bool>
+    EnableUnsafeFPShrink("enable-double-float-shrink", cl::Hidden,
+                         cl::init(false),
+                         cl::desc("Enable unsafe double to float "
+                                  "shrinking for math lib calls"));
+
 
 //===----------------------------------------------------------------------===//
 // Helper Functions
@@ -750,8 +759,8 @@ Value *LibCallSimplifier::optimizeStrPBrk(CallInst *CI, IRBuilder<> &B) {
   bool HasS1 = getConstantStringInfo(CI->getArgOperand(0), S1);
   bool HasS2 = getConstantStringInfo(CI->getArgOperand(1), S2);
 
-  // strpbrk(s, "") -> NULL
-  // strpbrk("", s) -> NULL
+  // strpbrk(s, "") -> nullptr
+  // strpbrk("", s) -> nullptr
   if ((HasS1 && S1.empty()) || (HasS2 && S2.empty()))
     return Constant::getNullValue(CI->getType());
 
@@ -1022,6 +1031,28 @@ Value *LibCallSimplifier::optimizeMemSet(CallInst *CI, IRBuilder<> &B) {
 // Math Library Optimizations
 //===----------------------------------------------------------------------===//
 
+/// Return a variant of Val with float type.
+/// Currently this works in two cases: If Val is an FPExtension of a float
+/// value to something bigger, simply return the operand.
+/// If Val is a ConstantFP but can be converted to a float ConstantFP without
+/// loss of precision do so.
+static Value *valueHasFloatPrecision(Value *Val) {
+  if (FPExtInst *Cast = dyn_cast<FPExtInst>(Val)) {
+    Value *Op = Cast->getOperand(0);
+    if (Op->getType()->isFloatTy())
+      return Op;
+  }
+  if (ConstantFP *Const = dyn_cast<ConstantFP>(Val)) {
+    APFloat F = Const->getValueAPF();
+    bool losesInfo;
+    (void)F.convert(APFloat::IEEEsingle, APFloat::rmNearestTiesToEven,
+                    &losesInfo);
+    if (!losesInfo)
+      return ConstantFP::get(Const->getContext(), F);
+  }
+  return nullptr;
+}
+
 //===----------------------------------------------------------------------===//
 // Double -> Float Shrinking Optimizations for Unary Functions like 'floor'
 
@@ -1043,13 +1074,21 @@ Value *LibCallSimplifier::optimizeUnaryDoubleFP(CallInst *CI, IRBuilder<> &B,
   }
 
   // If this is something like 'floor((double)floatval)', convert to floorf.
-  FPExtInst *Cast = dyn_cast<FPExtInst>(CI->getArgOperand(0));
-  if (!Cast || !Cast->getOperand(0)->getType()->isFloatTy())
+  Value *V = valueHasFloatPrecision(CI->getArgOperand(0));
+  if (V == nullptr)
     return nullptr;
 
   // floor((double)floatval) -> (double)floorf(floatval)
-  Value *V = Cast->getOperand(0);
-  V = EmitUnaryFloatFnCall(V, Callee->getName(), B, Callee->getAttributes());
+  if (Callee->isIntrinsic()) {
+    Module *M = CI->getParent()->getParent()->getParent();
+    Intrinsic::ID IID = (Intrinsic::ID) Callee->getIntrinsicID();
+    Function *F = Intrinsic::getDeclaration(M, IID, B.getFloatTy());
+    V = B.CreateCall(F, V);
+  } else {
+    // The call is a library call rather than an intrinsic.
+    V = EmitUnaryFloatFnCall(V, Callee->getName(), B, Callee->getAttributes());
+  }
+
   return B.CreateFPExt(V, B.getDoubleTy());
 }
 
@@ -1065,20 +1104,19 @@ Value *LibCallSimplifier::optimizeBinaryDoubleFP(CallInst *CI, IRBuilder<> &B) {
     return nullptr;
 
   // If this is something like 'fmin((double)floatval1, (double)floatval2)',
-  // we convert it to fminf.
-  FPExtInst *Cast1 = dyn_cast<FPExtInst>(CI->getArgOperand(0));
-  FPExtInst *Cast2 = dyn_cast<FPExtInst>(CI->getArgOperand(1));
-  if (!Cast1 || !Cast1->getOperand(0)->getType()->isFloatTy() || !Cast2 ||
-      !Cast2->getOperand(0)->getType()->isFloatTy())
+  // or fmin(1.0, (double)floatval), then we convert it to fminf.
+  Value *V1 = valueHasFloatPrecision(CI->getArgOperand(0));
+  if (V1 == nullptr)
+    return nullptr;
+  Value *V2 = valueHasFloatPrecision(CI->getArgOperand(1));
+  if (V2 == nullptr)
     return nullptr;
 
   // fmin((double)floatval1, (double)floatval2)
-  //                      -> (double)fmin(floatval1, floatval2)
-  Value *V = nullptr;
-  Value *V1 = Cast1->getOperand(0);
-  Value *V2 = Cast2->getOperand(0);
-  V = EmitBinaryFloatFnCall(V1, V2, Callee->getName(), B,
-                            Callee->getAttributes());
+  //                      -> (double)fminf(floatval1, floatval2)
+  // TODO: Handle intrinsics in the same way as in optimizeUnaryDoubleFP().
+  Value *V = EmitBinaryFloatFnCall(V1, V2, Callee->getName(), B,
+                                   Callee->getAttributes());
   return B.CreateFPExt(V, B.getDoubleTy());
 }
 
@@ -1219,12 +1257,114 @@ Value *LibCallSimplifier::optimizeExp2(CallInst *CI, IRBuilder<> &B) {
       Module *M = Caller->getParent();
       Value *Callee =
           M->getOrInsertFunction(TLI->getName(LdExp), Op->getType(),
-                                 Op->getType(), B.getInt32Ty(), NULL);
+                                 Op->getType(), B.getInt32Ty(), nullptr);
       CallInst *CI = B.CreateCall2(Callee, One, LdExpArg);
       if (const Function *F = dyn_cast<Function>(Callee->stripPointerCasts()))
         CI->setCallingConv(F->getCallingConv());
 
       return CI;
+    }
+  }
+  return Ret;
+}
+
+Value *LibCallSimplifier::optimizeFabs(CallInst *CI, IRBuilder<> &B) {
+  Function *Callee = CI->getCalledFunction();
+
+  Value *Ret = nullptr;
+  if (Callee->getName() == "fabs" && TLI->has(LibFunc::fabsf)) {
+    Ret = optimizeUnaryDoubleFP(CI, B, false);
+  }
+
+  FunctionType *FT = Callee->getFunctionType();
+  // Make sure this has 1 argument of FP type which matches the result type.
+  if (FT->getNumParams() != 1 || FT->getReturnType() != FT->getParamType(0) ||
+      !FT->getParamType(0)->isFloatingPointTy())
+    return Ret;
+
+  Value *Op = CI->getArgOperand(0);
+  if (Instruction *I = dyn_cast<Instruction>(Op)) {
+    // Fold fabs(x * x) -> x * x; any squared FP value must already be positive.
+    if (I->getOpcode() == Instruction::FMul)
+      if (I->getOperand(0) == I->getOperand(1))
+        return Op;
+  }
+  return Ret;
+}
+
+Value *LibCallSimplifier::optimizeSqrt(CallInst *CI, IRBuilder<> &B) {
+  Function *Callee = CI->getCalledFunction();
+  
+  Value *Ret = nullptr;
+  if (TLI->has(LibFunc::sqrtf) && (Callee->getName() == "sqrt" ||
+                                   Callee->getIntrinsicID() == Intrinsic::sqrt))
+    Ret = optimizeUnaryDoubleFP(CI, B, true);
+
+  // FIXME: For finer-grain optimization, we need intrinsics to have the same
+  // fast-math flag decorations that are applied to FP instructions. For now,
+  // we have to rely on the function-level unsafe-fp-math attribute to do this
+  // optimization because there's no other way to express that the sqrt can be
+  // reassociated.
+  Function *F = CI->getParent()->getParent();
+  if (F->hasFnAttribute("unsafe-fp-math")) {
+    // Check for unsafe-fp-math = true.
+    Attribute Attr = F->getFnAttribute("unsafe-fp-math");
+    if (Attr.getValueAsString() != "true")
+      return Ret;
+  }
+  Value *Op = CI->getArgOperand(0);
+  if (Instruction *I = dyn_cast<Instruction>(Op)) {
+    if (I->getOpcode() == Instruction::FMul && I->hasUnsafeAlgebra()) {
+      // We're looking for a repeated factor in a multiplication tree,
+      // so we can do this fold: sqrt(x * x) -> fabs(x);
+      // or this fold: sqrt(x * x * y) -> fabs(x) * sqrt(y).
+      Value *Op0 = I->getOperand(0);
+      Value *Op1 = I->getOperand(1);
+      Value *RepeatOp = nullptr;
+      Value *OtherOp = nullptr;
+      if (Op0 == Op1) {
+        // Simple match: the operands of the multiply are identical.
+        RepeatOp = Op0;
+      } else {
+        // Look for a more complicated pattern: one of the operands is itself
+        // a multiply, so search for a common factor in that multiply.
+        // Note: We don't bother looking any deeper than this first level or for
+        // variations of this pattern because instcombine's visitFMUL and/or the
+        // reassociation pass should give us this form.
+        Value *OtherMul0, *OtherMul1;
+        if (match(Op0, m_FMul(m_Value(OtherMul0), m_Value(OtherMul1)))) {
+          // Pattern: sqrt((x * y) * z)
+          if (OtherMul0 == OtherMul1) {
+            // Matched: sqrt((x * x) * z)
+            RepeatOp = OtherMul0;
+            OtherOp = Op1;
+          }
+        }
+      }
+      if (RepeatOp) {
+        // Fast math flags for any created instructions should match the sqrt
+        // and multiply.
+        // FIXME: We're not checking the sqrt because it doesn't have
+        // fast-math-flags (see earlier comment).
+        IRBuilder<true, ConstantFolder,
+          IRBuilderDefaultInserter<true> >::FastMathFlagGuard Guard(B);
+        B.SetFastMathFlags(I->getFastMathFlags());
+        // If we found a repeated factor, hoist it out of the square root and
+        // replace it with the fabs of that factor.
+        Module *M = Callee->getParent();
+        Type *ArgType = Op->getType();
+        Value *Fabs = Intrinsic::getDeclaration(M, Intrinsic::fabs, ArgType);
+        Value *FabsCall = B.CreateCall(Fabs, RepeatOp, "fabs");
+        if (OtherOp) {
+          // If we found a non-repeated factor, we still need to get its square
+          // root. We then multiply that by the value that was simplified out
+          // of the square root calculation.
+          Value *Sqrt = Intrinsic::getDeclaration(M, Intrinsic::sqrt, ArgType);
+          Value *SqrtCall = B.CreateCall(Sqrt, OtherOp, "sqrt");
+          return B.CreateFMul(FabsCall, SqrtCall);
+        }
+        return FabsCall;
+      }
     }
   }
   return Ret;
@@ -1342,15 +1482,15 @@ void insertSinCosCall(IRBuilder<> &B, Function *OrigCallee, Value *Arg,
     // xmm0 and xmm1, which isn't what a real struct would do.
     ResTy = T.getArch() == Triple::x86_64
                 ? static_cast<Type *>(VectorType::get(ArgTy, 2))
-                : static_cast<Type *>(StructType::get(ArgTy, ArgTy, NULL));
+                : static_cast<Type *>(StructType::get(ArgTy, ArgTy, nullptr));
   } else {
     Name = "__sincospi_stret";
-    ResTy = StructType::get(ArgTy, ArgTy, NULL);
+    ResTy = StructType::get(ArgTy, ArgTy, nullptr);
   }
 
   Module *M = OrigCallee->getParent();
   Value *Callee = M->getOrInsertFunction(Name, OrigCallee->getAttributes(),
-                                         ResTy, ArgTy, NULL);
+                                         ResTy, ArgTy, nullptr);
 
   if (Instruction *ArgInst = dyn_cast<Instruction>(Arg)) {
     // If the argument is an instruction, it must dominate all uses so put our
@@ -1884,7 +2024,21 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
   IRBuilder<> Builder(CI);
   bool isCallingConvC = CI->getCallingConv() == llvm::CallingConv::C;
 
-  // Next check for intrinsics.
+  // Command-line parameter overrides function attribute.
+  if (EnableUnsafeFPShrink.getNumOccurrences() > 0)
+    UnsafeFPShrink = EnableUnsafeFPShrink;
+  else if (Callee->hasFnAttribute("unsafe-fp-math")) {
+    // FIXME: This is the same problem as described in optimizeSqrt().
+    // If calls gain access to IR-level FMF, then use that instead of a
+    // function attribute.
+
+    // Check for unsafe-fp-math = true.
+    Attribute Attr = Callee->getFnAttribute("unsafe-fp-math");
+    if (Attr.getValueAsString() == "true")
+      UnsafeFPShrink = true;
+  }
+
+  // First, check for intrinsics.
   if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(CI)) {
     if (!isCallingConvC)
       return nullptr;
@@ -1893,6 +2047,10 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
       return optimizePow(CI, Builder);
     case Intrinsic::exp2:
       return optimizeExp2(CI, Builder);
+    case Intrinsic::fabs:
+      return optimizeFabs(CI, Builder);
+    case Intrinsic::sqrt:
+      return optimizeSqrt(CI, Builder);
     default:
       return nullptr;
     }
@@ -1965,6 +2123,14 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
     case LibFunc::exp2:
     case LibFunc::exp2f:
       return optimizeExp2(CI, Builder);
+    case LibFunc::fabsf:
+    case LibFunc::fabs:
+    case LibFunc::fabsl:
+      return optimizeFabs(CI, Builder);
+    case LibFunc::sqrtf:
+    case LibFunc::sqrt:
+    case LibFunc::sqrtl:
+      return optimizeSqrt(CI, Builder);
     case LibFunc::ffs:
     case LibFunc::ffsl:
     case LibFunc::ffsll:
@@ -1999,7 +2165,6 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
     case LibFunc::fputc:
       return optimizeErrorReporting(CI, Builder, 1);
     case LibFunc::ceil:
-    case LibFunc::fabs:
     case LibFunc::floor:
     case LibFunc::rint:
     case LibFunc::round:
@@ -2026,12 +2191,12 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
     case LibFunc::logb:
     case LibFunc::sin:
     case LibFunc::sinh:
-    case LibFunc::sqrt:
     case LibFunc::tan:
     case LibFunc::tanh:
       if (UnsafeFPShrink && hasFloatVersion(FuncName))
         return optimizeUnaryDoubleFP(CI, Builder, true);
       return nullptr;
+    case LibFunc::copysign:
     case LibFunc::fmin:
     case LibFunc::fmax:
       if (hasFloatVersion(FuncName))
@@ -2039,39 +2204,30 @@ Value *LibCallSimplifier::optimizeCall(CallInst *CI) {
       return nullptr;
     case LibFunc::memcpy_chk:
       return optimizeMemCpyChk(CI, Builder);
+    case LibFunc::memmove_chk:
+      return optimizeMemMoveChk(CI, Builder);
+    case LibFunc::memset_chk:
+      return optimizeMemSetChk(CI, Builder);
+    case LibFunc::strcpy_chk:
+      return optimizeStrCpyChk(CI, Builder);
+    case LibFunc::stpcpy_chk:
+      return optimizeStpCpyChk(CI, Builder);
+    case LibFunc::stpncpy_chk:
+    case LibFunc::strncpy_chk:
+      return optimizeStrNCpyChk(CI, Builder);
     default:
       return nullptr;
     }
-  }
-
-  if (!isCallingConvC)
-    return nullptr;
-
-  // Finally check for fortified library calls.
-  if (FuncName.endswith("_chk")) {
-    if (FuncName == "__memmove_chk")
-      return optimizeMemMoveChk(CI, Builder);
-    else if (FuncName == "__memset_chk")
-      return optimizeMemSetChk(CI, Builder);
-    else if (FuncName == "__strcpy_chk")
-      return optimizeStrCpyChk(CI, Builder);
-    else if (FuncName == "__stpcpy_chk")
-      return optimizeStpCpyChk(CI, Builder);
-    else if (FuncName == "__strncpy_chk")
-      return optimizeStrNCpyChk(CI, Builder);
-    else if (FuncName == "__stpncpy_chk")
-      return optimizeStrNCpyChk(CI, Builder);
   }
 
   return nullptr;
 }
 
 LibCallSimplifier::LibCallSimplifier(const DataLayout *DL,
-                                     const TargetLibraryInfo *TLI,
-                                     bool UnsafeFPShrink) :
+                                     const TargetLibraryInfo *TLI) :
                                      DL(DL),
                                      TLI(TLI),
-                                     UnsafeFPShrink(UnsafeFPShrink) {
+                                     UnsafeFPShrink(false) {
 }
 
 void LibCallSimplifier::replaceAllUsesWith(Instruction *I, Value *With) const {
