@@ -23,16 +23,18 @@ templight_environment::templight_environment(
   const config& config
 ) : header_file_environment(config)
 {
-  clang_arguments().push_back("-templight");
-  clang_arguments().push_back("-templight-format");
-  clang_arguments().push_back("xml");
-  clang_arguments().push_back("-templight-output");
-  clang_arguments().push_back("TEMPLIGHT_XML_LOCATION_IS_NOT_SET");
-  xml_path_index = clang_arguments().size() - 1;
+  clang_arguments().push_back("-Xtemplight");
+  clang_arguments().push_back("-profiler");
+  clang_arguments().push_back("-Xtemplight");
+  clang_arguments().push_back("-output");
+  clang_arguments().push_back("TEMPLIGHT_OUTPUT_LOCATION_IS_NOT_SET");
+  output_path_index = clang_arguments().size() - 1;
 }
 
-void templight_environment::set_xml_location(const std::string& xml_location) {
-  clang_arguments()[xml_path_index] = xml_location;
+void templight_environment::set_output_location(
+    const std::string& output_location)
+{
+  clang_arguments()[output_path_index] = output_location;
 }
 
 }

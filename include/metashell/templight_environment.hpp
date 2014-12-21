@@ -27,11 +27,11 @@ public:
 
   // This should be called before the first evaluation
   // with this environment
-  void set_xml_location(const std::string& xml_location);
+  void set_output_location(const std::string& output_location);
 
 private:
   // Indexes into clang_arguments()
-  std::size_t xml_path_index;
+  std::size_t output_path_index;
 };
 
 }

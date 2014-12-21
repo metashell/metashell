@@ -696,10 +696,10 @@ void mdb_shell::command_quit(
 bool mdb_shell::run_metaprogram_with_templight(
     const std::string& str, bool full_mode, iface::displayer& displayer_)
 {
-  temporary_file templight_xml_file("templight.xml");
-  std::string xml_path = templight_xml_file.get_path();
+  temporary_file templight_output_file("templight.pb");
+  std::string output_path = templight_output_file.get_path();
 
-  env.set_xml_location(xml_path);
+  env.set_output_location(output_path);
 
   boost::optional<type> evaluation_result = run_metaprogram(str, displayer_);
 
@@ -709,7 +709,7 @@ bool mdb_shell::run_metaprogram_with_templight(
   }
 
   mp = metaprogram::create_from_xml_file(
-      xml_path, full_mode, str, *evaluation_result);
+      output_path, full_mode, str, *evaluation_result);
   return true;
 }
 
