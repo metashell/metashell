@@ -52,6 +52,57 @@ static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
   return make_unique<ARMElfTargetObjectFile>();
 }
 
+static ARMBaseTargetMachine::ARMABI
+computeTargetABI(const Triple &TT, StringRef CPU,
+                 const TargetOptions &Options) {
+  if (Options.getABIName().startswith("aapcs"))
+    return ARMBaseTargetMachine::ARM_ABI_AAPCS;
+  else if (Options.getABIName().startswith("apcs"))
+    return ARMBaseTargetMachine::ARM_ABI_APCS;
+
+  assert(Options.getABIName().empty() && "Unknown target-abi option!");
+
+  ARMBaseTargetMachine::ARMABI TargetABI =
+      ARMBaseTargetMachine::ARM_ABI_UNKNOWN;
+
+  // FIXME: This is duplicated code from the front end and should be unified.
+  if (TT.isOSBinFormatMachO()) {
+    if (TT.getEnvironment() == llvm::Triple::EABI ||
+        (TT.getOS() == llvm::Triple::UnknownOS &&
+         TT.getObjectFormat() == llvm::Triple::MachO) ||
+        CPU.startswith("cortex-m")) {
+      TargetABI = ARMBaseTargetMachine::ARM_ABI_AAPCS;
+    } else {
+      TargetABI = ARMBaseTargetMachine::ARM_ABI_APCS;
+    }
+  } else if (TT.isOSWindows()) {
+    // FIXME: this is invalid for WindowsCE
+    TargetABI = ARMBaseTargetMachine::ARM_ABI_AAPCS;
+  } else {
+    // Select the default based on the platform.
+    switch (TT.getEnvironment()) {
+    case llvm::Triple::Android:
+    case llvm::Triple::GNUEABI:
+    case llvm::Triple::GNUEABIHF:
+    case llvm::Triple::EABIHF:
+    case llvm::Triple::EABI:
+      TargetABI = ARMBaseTargetMachine::ARM_ABI_AAPCS;
+      break;
+    case llvm::Triple::GNU:
+      TargetABI = ARMBaseTargetMachine::ARM_ABI_APCS;
+      break;
+    default:
+      if (TT.getOS() == llvm::Triple::NetBSD)
+	TargetABI = ARMBaseTargetMachine::ARM_ABI_APCS;
+      else
+	TargetABI = ARMBaseTargetMachine::ARM_ABI_AAPCS;
+      break;
+    }
+  }
+
+  return TargetABI;
+}
+
 /// TargetMachine ctor - Create an ARM architecture model.
 ///
 ARMBaseTargetMachine::ARMBaseTargetMachine(const Target &T, StringRef TT,
@@ -60,6 +111,7 @@ ARMBaseTargetMachine::ARMBaseTargetMachine(const Target &T, StringRef TT,
                                            Reloc::Model RM, CodeModel::Model CM,
                                            CodeGenOpt::Level OL, bool isLittle)
     : LLVMTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL),
+      TargetABI(computeTargetABI(Triple(TT), CPU, Options)),
       TLOF(createTLOF(Triple(getTargetTriple()))),
       Subtarget(TT, CPU, FS, *this, isLittle), isLittle(isLittle) {
 
@@ -197,9 +249,9 @@ public:
   void addIRPasses() override;
   bool addPreISel() override;
   bool addInstSelector() override;
-  bool addPreRegAlloc() override;
-  bool addPreSched2() override;
-  bool addPreEmitPass() override;
+  void addPreRegAlloc() override;
+  void addPreSched2() override;
+  void addPreEmitPass() override;
 };
 } // namespace
 
@@ -241,7 +293,7 @@ bool ARMPassConfig::addInstSelector() {
   return false;
 }
 
-bool ARMPassConfig::addPreRegAlloc() {
+void ARMPassConfig::addPreRegAlloc() {
   if (getOptLevel() != CodeGenOpt::None)
     addPass(createARMLoadStoreOptimizationPass(true));
   if (getOptLevel() != CodeGenOpt::None && getARMSubtarget().isCortexA9())
@@ -252,13 +304,11 @@ bool ARMPassConfig::addPreRegAlloc() {
     getARMSubtarget().hasNEON() && !DisableA15SDOptimization) {
     addPass(createA15SDOptimizerPass());
   }
-  return true;
 }
 
-bool ARMPassConfig::addPreSched2() {
+void ARMPassConfig::addPreSched2() {
   if (getOptLevel() != CodeGenOpt::None) {
     addPass(createARMLoadStoreOptimizationPass());
-    printAndVerify("After ARM load / store optimizer");
 
     if (getARMSubtarget().hasNEON())
       addPass(createExecutionDependencyFixPass(&ARM::DPRRegClass));
@@ -279,11 +329,9 @@ bool ARMPassConfig::addPreSched2() {
   }
   if (getARMSubtarget().isThumb2())
     addPass(createThumb2ITBlockPass());
-
-  return true;
 }
 
-bool ARMPassConfig::addPreEmitPass() {
+void ARMPassConfig::addPreEmitPass() {
   if (getARMSubtarget().isThumb2()) {
     if (!getARMSubtarget().prefers32BitThumb())
       addPass(createThumb2SizeReductionPass());
@@ -294,6 +342,4 @@ bool ARMPassConfig::addPreEmitPass() {
 
   addPass(createARMOptimizeBarriersPass());
   addPass(createARMConstantIslandPass());
-
-  return true;
 }

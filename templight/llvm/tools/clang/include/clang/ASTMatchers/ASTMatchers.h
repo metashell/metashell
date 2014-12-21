@@ -3159,12 +3159,10 @@ AST_POLYMORPHIC_MATCHER(
 /// \endcode
 /// functionDecl(isInstantiated())
 ///   matches 'A(int) {...};' and 'A(unsigned) {...}'.
-AST_MATCHER(Decl, isInstantiated) {
+AST_MATCHER_FUNCTION(internal::Matcher<Decl>, isInstantiated) {
   auto IsInstantiation = decl(anyOf(recordDecl(isTemplateInstantiation()),
                                     functionDecl(isTemplateInstantiation())));
-  auto InnerMatcher =
-      decl(anyOf(IsInstantiation, hasAncestor(IsInstantiation)));
-  return InnerMatcher.matches(Node, Finder, Builder);
+  return decl(anyOf(IsInstantiation, hasAncestor(IsInstantiation)));
 }
 
 /// \brief Matches statements inside of a template instantiation.
@@ -3181,11 +3179,10 @@ AST_MATCHER(Decl, isInstantiated) {
 /// unless(stmt(isInTemplateInstantiation()))
 ///   will NOT match j += 42; as it's shared between the template definition and
 ///   instantiation.
-AST_MATCHER(Stmt, isInTemplateInstantiation) {
-  auto InnerMatcher =
-      stmt(hasAncestor(decl(anyOf(recordDecl(isTemplateInstantiation()),
-                                  functionDecl(isTemplateInstantiation())))));
-  return InnerMatcher.matches(Node, Finder, Builder);
+AST_MATCHER_FUNCTION(internal::Matcher<Stmt>, isInTemplateInstantiation) {
+  return stmt(
+      hasAncestor(decl(anyOf(recordDecl(isTemplateInstantiation()),
+                             functionDecl(isTemplateInstantiation())))));
 }
 
 /// \brief Matches explicit template specializations of function, class, or
@@ -3212,6 +3209,18 @@ AST_MATCHER_FUNCTION_P_OVERLOAD(internal::BindableMatcher<TypeLoc>, loc,
                                 internal::Matcher<QualType>, InnerMatcher, 0) {
   return internal::BindableMatcher<TypeLoc>(
       new internal::TypeLocTypeMatcher(InnerMatcher));
+}
+
+/// \brief Matches type \c void.
+///
+/// Given
+/// \code
+///  struct S { void func(); };
+/// \endcode
+/// functionDecl(returns(voidType()))
+///   matches "void func();"
+AST_MATCHER(Type, voidType) {
+  return Node.isVoidType();
 }
 
 /// \brief Matches builtin Types.

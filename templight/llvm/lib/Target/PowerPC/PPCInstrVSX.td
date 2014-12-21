@@ -25,6 +25,23 @@ def vsfrc : RegisterOperand<VSFRC> {
   let ParserMatchClass = PPCRegVSFRCAsmOperand;
 }
 
+// Little-endian-specific nodes.
+def SDT_PPClxvd2x : SDTypeProfile<1, 1, [
+  SDTCisVT<0, v2f64>, SDTCisPtrTy<1>
+]>;
+def SDT_PPCstxvd2x : SDTypeProfile<0, 2, [
+  SDTCisVT<0, v2f64>, SDTCisPtrTy<1>
+]>;
+def SDT_PPCxxswapd : SDTypeProfile<1, 1, [
+  SDTCisSameAs<0, 1>
+]>;
+
+def PPClxvd2x  : SDNode<"PPCISD::LXVD2X", SDT_PPClxvd2x,
+                        [SDNPHasChain, SDNPMayLoad]>;
+def PPCstxvd2x : SDNode<"PPCISD::STXVD2X", SDT_PPCstxvd2x,
+                        [SDNPHasChain, SDNPMayStore]>;
+def PPCxxswapd : SDNode<"PPCISD::XXSWAPD", SDT_PPCxxswapd, [SDNPHasChain]>;
+
 multiclass XX3Form_Rcr<bits<6> opcode, bits<7> xo, dag OOL, dag IOL,
                     string asmbase, string asmstr, InstrItinClass itin,
                     list<dag> pattern> {
@@ -40,6 +57,9 @@ multiclass XX3Form_Rcr<bits<6> opcode, bits<7> xo, dag OOL, dag IOL,
 }
 
 def HasVSX : Predicate<"PPCSubTarget->hasVSX()">;
+def IsLittleEndian : Predicate<"PPCSubTarget->isLittleEndian()">;
+def IsBigEndian : Predicate<"!PPCSubTarget->isLittleEndian()">;
+
 let Predicates = [HasVSX] in {
 let AddedComplexity = 400 in { // Prefer VSX patterns over non-VSX patterns.
 let hasSideEffects = 0 in { // VSX instructions don't have side effects.
@@ -773,6 +793,8 @@ def : InstAlias<"xxswapd $XT, $XB",
                 (XXPERMDI vsrc:$XT, vsrc:$XB, vsrc:$XB, 2)>;
 
 let AddedComplexity = 400 in { // Prefer VSX patterns over non-VSX patterns.
+
+let Predicates = [IsBigEndian] in {
 def : Pat<(v2f64 (scalar_to_vector f64:$A)),
           (v2f64 (SUBREG_TO_REG (i64 1), $A, sub_64))>;
 
@@ -780,6 +802,18 @@ def : Pat<(f64 (vector_extract v2f64:$S, 0)),
           (f64 (EXTRACT_SUBREG $S, sub_64))>;
 def : Pat<(f64 (vector_extract v2f64:$S, 1)),
           (f64 (EXTRACT_SUBREG (XXPERMDI $S, $S, 2), sub_64))>;
+}
+
+let Predicates = [IsLittleEndian] in {
+def : Pat<(v2f64 (scalar_to_vector f64:$A)),
+          (v2f64 (XXPERMDI (SUBREG_TO_REG (i64 1), $A, sub_64),
+                           (SUBREG_TO_REG (i64 1), $A, sub_64), 0))>;
+
+def : Pat<(f64 (vector_extract v2f64:$S, 0)),
+          (f64 (EXTRACT_SUBREG (XXPERMDI $S, $S, 2), sub_64))>;
+def : Pat<(f64 (vector_extract v2f64:$S, 1)),
+          (f64 (EXTRACT_SUBREG $S, sub_64))>;
+}
 
 // Additional fnmsub patterns: -a*c + b == -(a*c - b)
 def : Pat<(fma (fneg f64:$A), f64:$C, f64:$B),
@@ -854,11 +888,19 @@ def : Pat<(v2f64 (sint_to_fp (sext_inreg v2i64:$C, v2i32))),
 def : Pat<(v2f64 (load xoaddr:$src)), (LXVD2X xoaddr:$src)>;
 def : Pat<(v2i64 (load xoaddr:$src)), (LXVD2X xoaddr:$src)>;
 def : Pat<(v4i32 (load xoaddr:$src)), (LXVW4X xoaddr:$src)>;
+def : Pat<(v2f64 (PPClxvd2x xoaddr:$src)), (LXVD2X xoaddr:$src)>;
 
 // Stores.
 def : Pat<(store v2f64:$rS, xoaddr:$dst), (STXVD2X $rS, xoaddr:$dst)>;
 def : Pat<(store v2i64:$rS, xoaddr:$dst), (STXVD2X $rS, xoaddr:$dst)>;
 def : Pat<(store v4i32:$rS, xoaddr:$dst), (STXVW4X $rS, xoaddr:$dst)>;
+def : Pat<(PPCstxvd2x v2f64:$rS, xoaddr:$dst), (STXVD2X $rS, xoaddr:$dst)>;
+
+// Permutes.
+def : Pat<(v2f64 (PPCxxswapd v2f64:$src)), (XXPERMDI $src, $src, 2)>;
+def : Pat<(v2i64 (PPCxxswapd v2i64:$src)), (XXPERMDI $src, $src, 2)>;
+def : Pat<(v4f32 (PPCxxswapd v4f32:$src)), (XXPERMDI $src, $src, 2)>;
+def : Pat<(v4i32 (PPCxxswapd v4i32:$src)), (XXPERMDI $src, $src, 2)>;
 
 // Selects.
 def : Pat<(v2f64 (selectcc i1:$lhs, i1:$rhs, v2f64:$tval, v2f64:$fval, SETLT)),

@@ -22,7 +22,7 @@
 #include "llvm/MC/MCInstrItineraries.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Target/TargetSubtargetInfo.h"
-#include "MipsABIInfo.h"
+#include "MCTargetDesc/MipsABIInfo.h"
 #include <string>
 
 #define GET_SUBTARGETINFO_HEADER
@@ -223,7 +223,6 @@ public:
   bool hasDSP() const { return HasDSP; }
   bool hasDSPR2() const { return HasDSPR2; }
   bool hasMSA() const { return HasMSA; }
-  bool isLinux() const { return IsLinux; }
   bool useSmallSection() const { return UseSmallSection; }
 
   bool hasStandardEncoding() const { return !inMips16Mode(); }

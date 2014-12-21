@@ -366,6 +366,12 @@ void EmitAssemblyHelper::CreatePasses() {
       MPM->add(createStripSymbolsPass(true));
   }
 
+  if (CodeGenOpts.ProfileInstrGenerate) {
+    InstrProfOptions Options;
+    Options.NoRedZone = CodeGenOpts.DisableRedZone;
+    MPM->add(createInstrProfilingPass(Options));
+  }
+
   PMBuilder.populateModulePassManager(*MPM);
 }
 
@@ -496,6 +502,7 @@ TargetMachine *EmitAssemblyHelper::CreateTargetMachine(bool MustCreateTM) {
   Options.StackAlignmentOverride = CodeGenOpts.StackAlignment;
   Options.DisableTailCalls = CodeGenOpts.DisableTailCalls;
   Options.TrapFuncName = CodeGenOpts.TrapFuncName;
+  Options.ABIName = TargetOpts.ABI;
   Options.PositionIndependentExecutable = LangOpts.PIELevel != 0;
   Options.FunctionSections = CodeGenOpts.FunctionSections;
   Options.DataSections = CodeGenOpts.DataSections;

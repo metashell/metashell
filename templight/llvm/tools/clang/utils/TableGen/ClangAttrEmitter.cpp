@@ -1387,6 +1387,7 @@ static bool isIdentifierArgument(Record *Arg) {
     llvm::StringSwitch<bool>(Arg->getSuperClasses().back()->getName())
     .Case("IdentifierArgument", true)
     .Case("EnumArgument", true)
+    .Case("VariadicEnumArgument", true)
     .Default(false);
 }
 
@@ -1920,9 +1921,6 @@ void EmitClangAttrHasAttrImpl(RecordKeeper &Records, raw_ostream &OS) {
   }
 
   OS << "switch (Syntax) {\n";
-  OS << "case AttrSyntax::Generic:\n";
-  OS << "  return llvm::StringSwitch<int>(Name)\n";
-  GenerateHasAttrSpellingStringSwitch(Attrs, OS);
   OS << "case AttrSyntax::GNU:\n";
   OS << "  return llvm::StringSwitch<int>(Name)\n";
   GenerateHasAttrSpellingStringSwitch(GNU, OS, "GNU");

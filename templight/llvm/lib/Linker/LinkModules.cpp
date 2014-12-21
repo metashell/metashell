@@ -19,6 +19,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/LLVMContext.h"
@@ -365,13 +366,13 @@ class ModuleLinker;
 class ValueMaterializerTy : public ValueMaterializer {
   TypeMapTy &TypeMap;
   Module *DstM;
-  std::vector<Function *> &LazilyLinkFunctions;
+  std::vector<GlobalValue *> &LazilyLinkGlobalValues;
 
 public:
   ValueMaterializerTy(TypeMapTy &TypeMap, Module *DstM,
-                      std::vector<Function *> &LazilyLinkFunctions)
+                      std::vector<GlobalValue *> &LazilyLinkGlobalValues)
       : ValueMaterializer(), TypeMap(TypeMap), DstM(DstM),
-        LazilyLinkFunctions(LazilyLinkFunctions) {}
+        LazilyLinkGlobalValues(LazilyLinkGlobalValues) {}
 
   Value *materializeValueFor(Value *V) override;
 };
@@ -413,8 +414,11 @@ class ModuleLinker {
   // Set of items not to link in from source.
   SmallPtrSet<const Value *, 16> DoNotLinkFromSource;
 
-  // Vector of functions to lazily link in.
-  std::vector<Function *> LazilyLinkFunctions;
+  // Vector of GlobalValues to lazily link in.
+  std::vector<GlobalValue *> LazilyLinkGlobalValues;
+
+  /// Functions that have replaced other functions.
+  SmallPtrSet<const Function *, 16> OverridingFunctions;
 
   Linker::DiagnosticHandlerFunction DiagnosticHandler;
 
@@ -422,7 +426,7 @@ public:
   ModuleLinker(Module *dstM, Linker::IdentifiedStructTypeSet &Set, Module *srcM,
                Linker::DiagnosticHandlerFunction DiagnosticHandler)
       : DstM(dstM), SrcM(srcM), TypeMap(Set),
-        ValMaterializer(TypeMap, DstM, LazilyLinkFunctions),
+        ValMaterializer(TypeMap, DstM, LazilyLinkGlobalValues),
         DiagnosticHandler(DiagnosticHandler) {}
 
   bool run();
@@ -484,20 +488,17 @@ private:
                              const GlobalVariable *SrcGV);
 
   bool linkGlobalValueProto(GlobalValue *GV);
-  GlobalValue *linkGlobalVariableProto(const GlobalVariable *SGVar,
-                                       GlobalValue *DGV, bool LinkFromSrc);
-  GlobalValue *linkFunctionProto(const Function *SF, GlobalValue *DGV,
-                                 bool LinkFromSrc);
-  GlobalValue *linkGlobalAliasProto(const GlobalAlias *SGA, GlobalValue *DGV,
-                                    bool LinkFromSrc);
-
   bool linkModuleFlagsMetadata();
 
   void linkAppendingVarInit(const AppendingVarInfo &AVI);
-  void linkGlobalInits();
-  void linkFunctionBody(Function *Dst, Function *Src);
-  void linkAliasBodies();
+
+  void linkGlobalInit(GlobalVariable &Dst, GlobalVariable &Src);
+  bool linkFunctionBody(Function &Dst, Function &Src);
+  void linkAliasBody(GlobalAlias &Dst, GlobalAlias &Src);
+  bool linkGlobalValueBody(GlobalValue &Src);
+
   void linkNamedMDNodes();
+  void stripReplacedSubprograms();
 };
 }
 
@@ -525,17 +526,7 @@ static void forceRenaming(GlobalValue *GV, StringRef Name) {
 /// copy additional attributes (those not needed to construct a GlobalValue)
 /// from the SrcGV to the DestGV.
 static void copyGVAttributes(GlobalValue *DestGV, const GlobalValue *SrcGV) {
-  // Use the maximum alignment, rather than just copying the alignment of SrcGV.
-  auto *DestGO = dyn_cast<GlobalObject>(DestGV);
-  unsigned Alignment;
-  if (DestGO)
-    Alignment = std::max(DestGO->getAlignment(), SrcGV->getAlignment());
-
   DestGV->copyAttributesFrom(SrcGV);
-
-  if (DestGO)
-    DestGO->setAlignment(Alignment);
-
   forceRenaming(DestGV, SrcGV->getName());
 }
 
@@ -552,22 +543,71 @@ static bool isLessConstraining(GlobalValue::VisibilityTypes a,
   return false;
 }
 
+/// Loop through the global variables in the src module and merge them into the
+/// dest module.
+static GlobalVariable *copyGlobalVariableProto(TypeMapTy &TypeMap, Module &DstM,
+                                               const GlobalVariable *SGVar) {
+  // No linking to be performed or linking from the source: simply create an
+  // identical version of the symbol over in the dest module... the
+  // initializer will be filled in later by LinkGlobalInits.
+  GlobalVariable *NewDGV = new GlobalVariable(
+      DstM, TypeMap.get(SGVar->getType()->getElementType()),
+      SGVar->isConstant(), SGVar->getLinkage(), /*init*/ nullptr,
+      SGVar->getName(), /*insertbefore*/ nullptr, SGVar->getThreadLocalMode(),
+      SGVar->getType()->getAddressSpace());
+
+  return NewDGV;
+}
+
+/// Link the function in the source module into the destination module if
+/// needed, setting up mapping information.
+static Function *copyFunctionProto(TypeMapTy &TypeMap, Module &DstM,
+                                   const Function *SF) {
+  // If there is no linkage to be performed or we are linking from the source,
+  // bring SF over.
+  return Function::Create(TypeMap.get(SF->getFunctionType()), SF->getLinkage(),
+                          SF->getName(), &DstM);
+}
+
+/// Set up prototypes for any aliases that come over from the source module.
+static GlobalAlias *copyGlobalAliasProto(TypeMapTy &TypeMap, Module &DstM,
+                                         const GlobalAlias *SGA) {
+  // If there is no linkage to be performed or we're linking from the source,
+  // bring over SGA.
+  auto *PTy = cast<PointerType>(TypeMap.get(SGA->getType()));
+  return GlobalAlias::create(PTy->getElementType(), PTy->getAddressSpace(),
+                             SGA->getLinkage(), SGA->getName(), &DstM);
+}
+
+static GlobalValue *copyGlobalValueProto(TypeMapTy &TypeMap, Module &DstM,
+                                         const GlobalValue *SGV) {
+  GlobalValue *NewGV;
+  if (auto *SGVar = dyn_cast<GlobalVariable>(SGV))
+    NewGV = copyGlobalVariableProto(TypeMap, DstM, SGVar);
+  else if (auto *SF = dyn_cast<Function>(SGV))
+    NewGV = copyFunctionProto(TypeMap, DstM, SF);
+  else
+    NewGV = copyGlobalAliasProto(TypeMap, DstM, cast<GlobalAlias>(SGV));
+  copyGVAttributes(NewGV, SGV);
+  return NewGV;
+}
+
 Value *ValueMaterializerTy::materializeValueFor(Value *V) {
-  Function *SF = dyn_cast<Function>(V);
-  if (!SF)
+  auto *SGV = dyn_cast<GlobalValue>(V);
+  if (!SGV)
     return nullptr;
 
-  Function *DF = Function::Create(TypeMap.get(SF->getFunctionType()),
-                                  SF->getLinkage(), SF->getName(), DstM);
-  copyGVAttributes(DF, SF);
+  GlobalValue *DGV = copyGlobalValueProto(TypeMap, *DstM, SGV);
 
-  if (Comdat *SC = SF->getComdat()) {
-    Comdat *DC = DstM->getOrInsertComdat(SC->getName());
-    DF->setComdat(DC);
+  if (Comdat *SC = SGV->getComdat()) {
+    if (auto *DGO = dyn_cast<GlobalObject>(DGV)) {
+      Comdat *DC = DstM->getOrInsertComdat(SC->getName());
+      DGO->setComdat(DC);
+    }
   }
 
-  LazilyLinkFunctions.push_back(SF);
-  return DF;
+  LazilyLinkGlobalValues.push_back(SGV);
+  return DGV;
 }
 
 bool ModuleLinker::getComdatLeader(Module *M, StringRef ComdatName,
@@ -1031,118 +1071,53 @@ bool ModuleLinker::linkGlobalValueProto(GlobalValue *SGV) {
     return false;
 
   GlobalValue *NewGV;
-  if (auto *SGVar = dyn_cast<GlobalVariable>(SGV)) {
-    NewGV = linkGlobalVariableProto(SGVar, DGV, LinkFromSrc);
-    if (!NewGV)
-      return true;
-  } else if (auto *SF = dyn_cast<Function>(SGV)) {
-    NewGV = linkFunctionProto(SF, DGV, LinkFromSrc);
+  if (!LinkFromSrc) {
+    NewGV = DGV;
   } else {
-    NewGV = linkGlobalAliasProto(cast<GlobalAlias>(SGV), DGV, LinkFromSrc);
+    // If the GV is to be lazily linked, don't create it just yet.
+    // The ValueMaterializerTy will deal with creating it if it's used.
+    if (!DGV && (SGV->hasLocalLinkage() || SGV->hasLinkOnceLinkage() ||
+                 SGV->hasAvailableExternallyLinkage())) {
+      DoNotLinkFromSource.insert(SGV);
+      return false;
+    }
+
+    NewGV = copyGlobalValueProto(TypeMap, *DstM, SGV);
+
+    if (DGV && isa<Function>(DGV))
+      if (auto *NewF = dyn_cast<Function>(NewGV))
+        OverridingFunctions.insert(NewF);
   }
 
-  if (NewGV) {
-    if (NewGV != DGV)
-      copyGVAttributes(NewGV, SGV);
+  NewGV->setUnnamedAddr(HasUnnamedAddr);
+  NewGV->setVisibility(Visibility);
 
-    NewGV->setUnnamedAddr(HasUnnamedAddr);
-    NewGV->setVisibility(Visibility);
+  if (auto *NewGO = dyn_cast<GlobalObject>(NewGV)) {
+    if (C)
+      NewGO->setComdat(C);
 
-    if (auto *NewGO = dyn_cast<GlobalObject>(NewGV)) {
-      if (C)
-        NewGO->setComdat(C);
+    if (DGV && DGV->hasCommonLinkage() && SGV->hasCommonLinkage())
+      NewGO->setAlignment(std::max(DGV->getAlignment(), SGV->getAlignment()));
+  }
+
+  if (auto *NewGVar = dyn_cast<GlobalVariable>(NewGV)) {
+    auto *DGVar = dyn_cast_or_null<GlobalVariable>(DGV);
+    auto *SGVar = dyn_cast<GlobalVariable>(SGV);
+    if (DGVar && SGVar && DGVar->isDeclaration() && SGVar->isDeclaration() &&
+        (!DGVar->isConstant() || !SGVar->isConstant()))
+      NewGVar->setConstant(false);
+  }
+
+  // Make sure to remember this mapping.
+  if (NewGV != DGV) {
+    if (DGV) {
+      DGV->replaceAllUsesWith(ConstantExpr::getBitCast(NewGV, DGV->getType()));
+      DGV->eraseFromParent();
     }
-
-    // Make sure to remember this mapping.
-    if (NewGV != DGV) {
-      if (DGV) {
-        DGV->replaceAllUsesWith(
-            ConstantExpr::getBitCast(NewGV, DGV->getType()));
-        DGV->eraseFromParent();
-      }
-      ValueMap[SGV] = NewGV;
-    }
+    ValueMap[SGV] = NewGV;
   }
 
   return false;
-}
-
-/// Loop through the global variables in the src module and merge them into the
-/// dest module.
-GlobalValue *ModuleLinker::linkGlobalVariableProto(const GlobalVariable *SGVar,
-                                                   GlobalValue *DGV,
-                                                   bool LinkFromSrc) {
-  unsigned Alignment = 0;
-  bool ClearConstant = false;
-
-  if (DGV) {
-    if (DGV->hasCommonLinkage() && SGVar->hasCommonLinkage())
-      Alignment = std::max(SGVar->getAlignment(), DGV->getAlignment());
-
-    auto *DGVar = dyn_cast<GlobalVariable>(DGV);
-    if (!SGVar->isConstant() || (DGVar && !DGVar->isConstant()))
-      ClearConstant = true;
-  }
-
-  if (!LinkFromSrc) {
-    if (auto *NewGVar = dyn_cast<GlobalVariable>(DGV)) {
-      if (Alignment)
-        NewGVar->setAlignment(Alignment);
-      if (NewGVar->isDeclaration() && ClearConstant)
-        NewGVar->setConstant(false);
-    }
-    return DGV;
-  }
-
-  // No linking to be performed or linking from the source: simply create an
-  // identical version of the symbol over in the dest module... the
-  // initializer will be filled in later by LinkGlobalInits.
-  GlobalVariable *NewDGV = new GlobalVariable(
-      *DstM, TypeMap.get(SGVar->getType()->getElementType()),
-      SGVar->isConstant(), SGVar->getLinkage(), /*init*/ nullptr,
-      SGVar->getName(), /*insertbefore*/ nullptr, SGVar->getThreadLocalMode(),
-      SGVar->getType()->getAddressSpace());
-
-  if (Alignment)
-    NewDGV->setAlignment(Alignment);
-
-  return NewDGV;
-}
-
-/// Link the function in the source module into the destination module if
-/// needed, setting up mapping information.
-GlobalValue *ModuleLinker::linkFunctionProto(const Function *SF,
-                                             GlobalValue *DGV,
-                                             bool LinkFromSrc) {
-  if (!LinkFromSrc)
-    return DGV;
-
-  // If the function is to be lazily linked, don't create it just yet.
-  // The ValueMaterializerTy will deal with creating it if it's used.
-  if (!DGV && (SF->hasLocalLinkage() || SF->hasLinkOnceLinkage() ||
-               SF->hasAvailableExternallyLinkage())) {
-    DoNotLinkFromSource.insert(SF);
-    return nullptr;
-  }
-
-  // If there is no linkage to be performed or we are linking from the source,
-  // bring SF over.
-  return Function::Create(TypeMap.get(SF->getFunctionType()), SF->getLinkage(),
-                          SF->getName(), DstM);
-}
-
-/// Set up prototypes for any aliases that come over from the source module.
-GlobalValue *ModuleLinker::linkGlobalAliasProto(const GlobalAlias *SGA,
-                                                GlobalValue *DGV,
-                                                bool LinkFromSrc) {
-  if (!LinkFromSrc)
-    return DGV;
-
-  // If there is no linkage to be performed or we're linking from the source,
-  // bring over SGA.
-  auto *PTy = cast<PointerType>(TypeMap.get(SGA->getType()));
-  return GlobalAlias::create(PTy->getElementType(), PTy->getAddressSpace(),
-                             SGA->getLinkage(), SGA->getName(), DstM);
 }
 
 static void getArrayElements(const Constant *C,
@@ -1187,70 +1162,80 @@ void ModuleLinker::linkAppendingVarInit(const AppendingVarInfo &AVI) {
 
 /// Update the initializers in the Dest module now that all globals that may be
 /// referenced are in Dest.
-void ModuleLinker::linkGlobalInits() {
-  // Loop over all of the globals in the src module, mapping them over as we go
-  for (Module::const_global_iterator I = SrcM->global_begin(),
-       E = SrcM->global_end(); I != E; ++I) {
-
-    // Only process initialized GV's or ones not already in dest.
-    if (!I->hasInitializer() || DoNotLinkFromSource.count(I)) continue;
-
-    // Grab destination global variable.
-    GlobalVariable *DGV = cast<GlobalVariable>(ValueMap[I]);
-    // Figure out what the initializer looks like in the dest module.
-    DGV->setInitializer(MapValue(I->getInitializer(), ValueMap,
-                                 RF_None, &TypeMap, &ValMaterializer));
-  }
+void ModuleLinker::linkGlobalInit(GlobalVariable &Dst, GlobalVariable &Src) {
+  // Figure out what the initializer looks like in the dest module.
+  Dst.setInitializer(MapValue(Src.getInitializer(), ValueMap, RF_None, &TypeMap,
+                              &ValMaterializer));
 }
 
 /// Copy the source function over into the dest function and fix up references
 /// to values. At this point we know that Dest is an external function, and
 /// that Src is not.
-void ModuleLinker::linkFunctionBody(Function *Dst, Function *Src) {
-  assert(Src && Dst && Dst->isDeclaration() && !Src->isDeclaration());
+bool ModuleLinker::linkFunctionBody(Function &Dst, Function &Src) {
+  assert(Dst.isDeclaration() && !Src.isDeclaration());
+
+  // Materialize if needed.
+  if (std::error_code EC = Src.materialize())
+    return emitError(EC.message());
+
+  // Link in the prefix data.
+  if (Src.hasPrefixData())
+    Dst.setPrefixData(MapValue(Src.getPrefixData(), ValueMap, RF_None, &TypeMap,
+                               &ValMaterializer));
+
+  // Link in the prologue data.
+  if (Src.hasPrologueData())
+    Dst.setPrologueData(MapValue(Src.getPrologueData(), ValueMap, RF_None,
+                                 &TypeMap, &ValMaterializer));
 
   // Go through and convert function arguments over, remembering the mapping.
-  Function::arg_iterator DI = Dst->arg_begin();
-  for (Function::arg_iterator I = Src->arg_begin(), E = Src->arg_end();
-       I != E; ++I, ++DI) {
-    DI->setName(I->getName());  // Copy the name over.
+  Function::arg_iterator DI = Dst.arg_begin();
+  for (Argument &Arg : Src.args()) {
+    DI->setName(Arg.getName());  // Copy the name over.
 
     // Add a mapping to our mapping.
-    ValueMap[I] = DI;
+    ValueMap[&Arg] = DI;
+    ++DI;
   }
 
   // Splice the body of the source function into the dest function.
-  Dst->getBasicBlockList().splice(Dst->end(), Src->getBasicBlockList());
+  Dst.getBasicBlockList().splice(Dst.end(), Src.getBasicBlockList());
 
   // At this point, all of the instructions and values of the function are now
   // copied over.  The only problem is that they are still referencing values in
   // the Source function as operands.  Loop through all of the operands of the
   // functions and patch them up to point to the local versions.
-  for (Function::iterator BB = Dst->begin(), BE = Dst->end(); BB != BE; ++BB)
-    for (BasicBlock::iterator I = BB->begin(), E = BB->end(); I != E; ++I)
-      RemapInstruction(I, ValueMap, RF_IgnoreMissingEntries, &TypeMap,
+  for (BasicBlock &BB : Dst)
+    for (Instruction &I : BB)
+      RemapInstruction(&I, ValueMap, RF_IgnoreMissingEntries, &TypeMap,
                        &ValMaterializer);
 
   // There is no need to map the arguments anymore.
-  for (Function::arg_iterator I = Src->arg_begin(), E = Src->arg_end();
-       I != E; ++I)
-    ValueMap.erase(I);
+  for (Argument &Arg : Src.args())
+    ValueMap.erase(&Arg);
 
+  Src.Dematerialize();
+  return false;
 }
 
-/// Insert all of the aliases in Src into the Dest module.
-void ModuleLinker::linkAliasBodies() {
-  for (Module::alias_iterator I = SrcM->alias_begin(), E = SrcM->alias_end();
-       I != E; ++I) {
-    if (DoNotLinkFromSource.count(I))
-      continue;
-    if (Constant *Aliasee = I->getAliasee()) {
-      GlobalAlias *DA = cast<GlobalAlias>(ValueMap[I]);
-      Constant *Val =
-          MapValue(Aliasee, ValueMap, RF_None, &TypeMap, &ValMaterializer);
-      DA->setAliasee(Val);
-    }
+void ModuleLinker::linkAliasBody(GlobalAlias &Dst, GlobalAlias &Src) {
+  Constant *Aliasee = Src.getAliasee();
+  Constant *Val =
+      MapValue(Aliasee, ValueMap, RF_None, &TypeMap, &ValMaterializer);
+  Dst.setAliasee(Val);
+}
+
+bool ModuleLinker::linkGlobalValueBody(GlobalValue &Src) {
+  Value *Dst = ValueMap[&Src];
+  assert(Dst);
+  if (auto *F = dyn_cast<Function>(&Src))
+    return linkFunctionBody(cast<Function>(*Dst), *F);
+  if (auto *GVar = dyn_cast<GlobalVariable>(&Src)) {
+    linkGlobalInit(cast<GlobalVariable>(*Dst), *GVar);
+    return false;
   }
+  linkAliasBody(cast<GlobalAlias>(*Dst), cast<GlobalAlias>(Src));
+  return false;
 }
 
 /// Insert all of the named MDNodes in Src into the Dest module.
@@ -1263,8 +1248,50 @@ void ModuleLinker::linkNamedMDNodes() {
     NamedMDNode *DestNMD = DstM->getOrInsertNamedMetadata(I->getName());
     // Add Src elements into Dest node.
     for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i)
-      DestNMD->addOperand(MapValue(I->getOperand(i), ValueMap,
-                                   RF_None, &TypeMap, &ValMaterializer));
+      DestNMD->addOperand(MapMetadata(I->getOperand(i), ValueMap, RF_None,
+                                      &TypeMap, &ValMaterializer));
+  }
+}
+
+/// Drop DISubprograms that have been superseded.
+///
+/// FIXME: this creates an asymmetric result: we strip losing subprograms from
+/// DstM, but leave losing subprograms in SrcM.  Instead we should also strip
+/// losers from SrcM, but this requires extra plumbing in MapMetadata.
+void ModuleLinker::stripReplacedSubprograms() {
+  // Avoid quadratic runtime by returning early when there's nothing to do.
+  if (OverridingFunctions.empty())
+    return;
+
+  // Move the functions now, so the set gets cleared even on early returns.
+  auto Functions = std::move(OverridingFunctions);
+  OverridingFunctions.clear();
+
+  // Drop subprograms whose functions have been overridden by the new compile
+  // unit.
+  NamedMDNode *CompileUnits = DstM->getNamedMetadata("llvm.dbg.cu");
+  if (!CompileUnits)
+    return;
+  for (unsigned I = 0, E = CompileUnits->getNumOperands(); I != E; ++I) {
+    DICompileUnit CU(CompileUnits->getOperand(I));
+    assert(CU && "Expected valid compile unit");
+
+    DITypedArray<DISubprogram> SPs(CU.getSubprograms());
+    assert(SPs && "Expected valid subprogram array");
+
+    SmallVector<Metadata *, 16> NewSPs;
+    NewSPs.reserve(SPs.getNumElements());
+    for (unsigned S = 0, SE = SPs.getNumElements(); S != SE; ++S) {
+      DISubprogram SP = SPs.getElement(S);
+      if (SP && SP.getFunction() && Functions.count(SP.getFunction()))
+        continue;
+
+      NewSPs.push_back(SP);
+    }
+
+    // Redirect operand to the overriding subprogram.
+    if (NewSPs.size() != SPs.getNumElements())
+      CU.replaceSubprograms(DIArray(MDNode::get(DstM->getContext(), NewSPs)));
   }
 }
 
@@ -1289,7 +1316,7 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
   SmallSetVector<MDNode*, 16> Requirements;
   for (unsigned I = 0, E = DstModFlags->getNumOperands(); I != E; ++I) {
     MDNode *Op = DstModFlags->getOperand(I);
-    ConstantInt *Behavior = cast<ConstantInt>(Op->getOperand(0));
+    ConstantInt *Behavior = mdconst::extract<ConstantInt>(Op->getOperand(0));
     MDString *ID = cast<MDString>(Op->getOperand(1));
 
     if (Behavior->getZExtValue() == Module::Require) {
@@ -1304,7 +1331,8 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
   bool HasErr = false;
   for (unsigned I = 0, E = SrcModFlags->getNumOperands(); I != E; ++I) {
     MDNode *SrcOp = SrcModFlags->getOperand(I);
-    ConstantInt *SrcBehavior = cast<ConstantInt>(SrcOp->getOperand(0));
+    ConstantInt *SrcBehavior =
+        mdconst::extract<ConstantInt>(SrcOp->getOperand(0));
     MDString *ID = cast<MDString>(SrcOp->getOperand(1));
     MDNode *DstOp = Flags.lookup(ID);
     unsigned SrcBehaviorValue = SrcBehavior->getZExtValue();
@@ -1327,7 +1355,8 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
     }
 
     // Otherwise, perform a merge.
-    ConstantInt *DstBehavior = cast<ConstantInt>(DstOp->getOperand(0));
+    ConstantInt *DstBehavior =
+        mdconst::extract<ConstantInt>(DstOp->getOperand(0));
     unsigned DstBehaviorValue = DstBehavior->getZExtValue();
 
     // If either flag has override behavior, handle it first.
@@ -1341,7 +1370,7 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
       continue;
     } else if (SrcBehaviorValue == Module::Override) {
       // Update the destination flag to that of the source.
-      DstOp->replaceOperandWith(0, SrcBehavior);
+      DstOp->replaceOperandWith(0, ConstantAsMetadata::get(SrcBehavior));
       DstOp->replaceOperandWith(2, SrcOp->getOperand(2));
       continue;
     }
@@ -1376,29 +1405,26 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
     case Module::Append: {
       MDNode *DstValue = cast<MDNode>(DstOp->getOperand(2));
       MDNode *SrcValue = cast<MDNode>(SrcOp->getOperand(2));
-      unsigned NumOps = DstValue->getNumOperands() + SrcValue->getNumOperands();
-      Value **VP, **Values = VP = new Value*[NumOps];
-      for (unsigned i = 0, e = DstValue->getNumOperands(); i != e; ++i, ++VP)
-        *VP = DstValue->getOperand(i);
-      for (unsigned i = 0, e = SrcValue->getNumOperands(); i != e; ++i, ++VP)
-        *VP = SrcValue->getOperand(i);
-      DstOp->replaceOperandWith(2, MDNode::get(DstM->getContext(),
-                                               ArrayRef<Value*>(Values,
-                                                                NumOps)));
-      delete[] Values;
+      SmallVector<Metadata *, 8> MDs;
+      MDs.reserve(DstValue->getNumOperands() + SrcValue->getNumOperands());
+      for (unsigned i = 0, e = DstValue->getNumOperands(); i != e; ++i)
+        MDs.push_back(DstValue->getOperand(i));
+      for (unsigned i = 0, e = SrcValue->getNumOperands(); i != e; ++i)
+        MDs.push_back(SrcValue->getOperand(i));
+      DstOp->replaceOperandWith(2, MDNode::get(DstM->getContext(), MDs));
       break;
     }
     case Module::AppendUnique: {
-      SmallSetVector<Value*, 16> Elts;
+      SmallSetVector<Metadata *, 16> Elts;
       MDNode *DstValue = cast<MDNode>(DstOp->getOperand(2));
       MDNode *SrcValue = cast<MDNode>(SrcOp->getOperand(2));
       for (unsigned i = 0, e = DstValue->getNumOperands(); i != e; ++i)
         Elts.insert(DstValue->getOperand(i));
       for (unsigned i = 0, e = SrcValue->getNumOperands(); i != e; ++i)
         Elts.insert(SrcValue->getOperand(i));
-      DstOp->replaceOperandWith(2, MDNode::get(DstM->getContext(),
-                                               ArrayRef<Value*>(Elts.begin(),
-                                                                Elts.end())));
+      DstOp->replaceOperandWith(
+          2, MDNode::get(DstM->getContext(),
+                         makeArrayRef(Elts.begin(), Elts.end())));
       break;
     }
     }
@@ -1408,7 +1434,7 @@ bool ModuleLinker::linkModuleFlagsMetadata() {
   for (unsigned I = 0, E = Requirements.size(); I != E; ++I) {
     MDNode *Requirement = Requirements[I];
     MDString *Flag = cast<MDString>(Requirement->getOperand(0));
-    Value *ReqValue = Requirement->getOperand(1);
+    Metadata *ReqValue = Requirement->getOperand(1);
 
     MDNode *Op = Flags[Flag];
     if (!Op || Op->getOperand(2) != ReqValue) {
@@ -1503,38 +1529,39 @@ bool ModuleLinker::run() {
   for (unsigned i = 0, e = AppendingVars.size(); i != e; ++i)
     linkAppendingVarInit(AppendingVars[i]);
 
+  for (const auto &Entry : DstM->getComdatSymbolTable()) {
+    const Comdat &C = Entry.getValue();
+    if (C.getSelectionKind() == Comdat::Any)
+      continue;
+    const GlobalValue *GV = SrcM->getNamedValue(C.getName());
+    assert(GV);
+    MapValue(GV, ValueMap, RF_None, &TypeMap, &ValMaterializer);
+  }
+
   // Link in the function bodies that are defined in the source module into
   // DstM.
-  for (Module::iterator SF = SrcM->begin(), E = SrcM->end(); SF != E; ++SF) {
-    // Skip if not linking from source.
-    if (DoNotLinkFromSource.count(SF)) continue;
-
-    Function *DF = cast<Function>(ValueMap[SF]);
-
-    // Link in the prefix data.
-    if (SF->hasPrefixData())
-      DF->setPrefixData(MapValue(
-          SF->getPrefixData(), ValueMap, RF_None, &TypeMap, &ValMaterializer));
-
-    // Link in the prologue data.
-    if (SF->hasPrologueData())
-      DF->setPrologueData(MapValue(
-          SF->getPrologueData(), ValueMap, RF_None, &TypeMap, &ValMaterializer));
-
-    // Materialize if needed.
-    if (std::error_code EC = SF->materialize())
-      return emitError(EC.message());
-
+  for (Function &SF : *SrcM) {
     // Skip if no body (function is external).
-    if (SF->isDeclaration())
+    if (SF.isDeclaration())
       continue;
 
-    linkFunctionBody(DF, SF);
-    SF->Dematerialize();
+    // Skip if not linking from source.
+    if (DoNotLinkFromSource.count(&SF))
+      continue;
+
+    if (linkGlobalValueBody(SF))
+      return true;
   }
 
   // Resolve all uses of aliases with aliasees.
-  linkAliasBodies();
+  for (GlobalAlias &Src : SrcM->aliases()) {
+    if (DoNotLinkFromSource.count(&Src))
+      continue;
+    linkGlobalValueBody(Src);
+  }
+
+  // Strip replaced subprograms before linking together compile units.
+  stripReplacedSubprograms();
 
   // Remap all of the named MDNodes in Src into the DstM module. We do this
   // after linking GlobalValues so that MDNodes that reference GlobalValues
@@ -1547,51 +1574,22 @@ bool ModuleLinker::run() {
 
   // Update the initializers in the DstM module now that all globals that may
   // be referenced are in DstM.
-  linkGlobalInits();
+  for (GlobalVariable &Src : SrcM->globals()) {
+    // Only process initialized GV's or ones not already in dest.
+    if (!Src.hasInitializer() || DoNotLinkFromSource.count(&Src))
+      continue;
+    linkGlobalValueBody(Src);
+  }
 
   // Process vector of lazily linked in functions.
-  bool LinkedInAnyFunctions;
-  do {
-    LinkedInAnyFunctions = false;
+  while (!LazilyLinkGlobalValues.empty()) {
+    GlobalValue *SGV = LazilyLinkGlobalValues.back();
+    LazilyLinkGlobalValues.pop_back();
 
-    for(std::vector<Function*>::iterator I = LazilyLinkFunctions.begin(),
-        E = LazilyLinkFunctions.end(); I != E; ++I) {
-      Function *SF = *I;
-      if (!SF)
-        continue;
-
-      Function *DF = cast<Function>(ValueMap[SF]);
-      if (SF->hasPrefixData()) {
-        // Link in the prefix data.
-        DF->setPrefixData(MapValue(SF->getPrefixData(),
-                                   ValueMap,
-                                   RF_None,
-                                   &TypeMap,
-                                   &ValMaterializer));
-      }
-
-      // Materialize if needed.
-      if (std::error_code EC = SF->materialize())
-        return emitError(EC.message());
-
-      // Skip if no body (function is external).
-      if (SF->isDeclaration())
-        continue;
-
-      // Erase from vector *before* the function body is linked - linkFunctionBody could
-      // invalidate I.
-      LazilyLinkFunctions.erase(I);
-
-      // Link in function body.
-      linkFunctionBody(DF, SF);
-      SF->Dematerialize();
-
-      // Set flag to indicate we may have more functions to lazily link in
-      // since we linked in a function.
-      LinkedInAnyFunctions = true;
-      break;
-    }
-  } while (LinkedInAnyFunctions);
+    assert(!SGV->isDeclaration() && "users should not pass down decls");
+    if (linkGlobalValueBody(*SGV))
+      return true;
+  }
 
   return false;
 }
@@ -1651,8 +1649,7 @@ bool Linker::StructTypeKeyInfo::isEqual(const StructType *LHS,
 
 void Linker::IdentifiedStructTypeSet::addNonOpaque(StructType *Ty) {
   assert(!Ty->isOpaque());
-  bool &Entry = NonOpaqueStructTypes[Ty];
-  Entry = true;
+  NonOpaqueStructTypes.insert(Ty);
 }
 
 void Linker::IdentifiedStructTypeSet::addOpaque(StructType *Ty) {
@@ -1667,7 +1664,7 @@ Linker::IdentifiedStructTypeSet::findNonOpaque(ArrayRef<Type *> ETypes,
   auto I = NonOpaqueStructTypes.find_as(Key);
   if (I == NonOpaqueStructTypes.end())
     return nullptr;
-  return I->first;
+  return *I;
 }
 
 bool Linker::IdentifiedStructTypeSet::hasType(StructType *Ty) {
@@ -1676,7 +1673,7 @@ bool Linker::IdentifiedStructTypeSet::hasType(StructType *Ty) {
   auto I = NonOpaqueStructTypes.find(Ty);
   if (I == NonOpaqueStructTypes.end())
     return false;
-  return I->first == Ty;
+  return *I == Ty;
 }
 
 void Linker::init(Module *M, DiagnosticHandlerFunction DiagnosticHandler) {

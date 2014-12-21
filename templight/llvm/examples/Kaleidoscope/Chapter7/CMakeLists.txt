@@ -7,7 +7,8 @@ set(LLVM_LINK_COMPONENTS
   ScalarOpts
   Support
   TransformUtils
-  nativecodegen
+  native
+  mcjit
   )
 
 set(LLVM_REQUIRES_RTTI 1)

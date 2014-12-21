@@ -143,7 +143,6 @@ CodeGenTarget::CodeGenTarget(RecordKeeper &records)
 }
 
 CodeGenTarget::~CodeGenTarget() {
-  DeleteContainerSeconds(Instructions);
 }
 
 const std::string &CodeGenTarget::getName() const {
@@ -151,11 +150,11 @@ const std::string &CodeGenTarget::getName() const {
 }
 
 std::string CodeGenTarget::getInstNamespace() const {
-  for (inst_iterator i = inst_begin(), e = inst_end(); i != e; ++i) {
+  for (const CodeGenInstruction *Inst : instructions()) {
     // Make sure not to pick up "TargetOpcode" by accidentally getting
     // the namespace off the PHI instruction or something.
-    if ((*i)->Namespace != "TargetOpcode")
-      return (*i)->Namespace;
+    if (Inst->Namespace != "TargetOpcode")
+      return Inst->Namespace;
   }
 
   return "";
@@ -270,20 +269,20 @@ void CodeGenTarget::ReadInstructions() const {
 
   // Parse the instructions defined in the .td file.
   for (unsigned i = 0, e = Insts.size(); i != e; ++i)
-    Instructions[Insts[i]] = new CodeGenInstruction(Insts[i]);
+    Instructions[Insts[i]] = llvm::make_unique<CodeGenInstruction>(Insts[i]);
 }
 
 static const CodeGenInstruction *
 GetInstByName(const char *Name,
-              const DenseMap<const Record*, CodeGenInstruction*> &Insts,
+              const DenseMap<const Record*,
+                             std::unique_ptr<CodeGenInstruction>> &Insts,
               RecordKeeper &Records) {
   const Record *Rec = Records.getDef(Name);
 
-  DenseMap<const Record*, CodeGenInstruction*>::const_iterator
-    I = Insts.find(Rec);
+  const auto I = Insts.find(Rec);
   if (!Rec || I == Insts.end())
     PrintFatalError(Twine("Could not find '") + Name + "' instruction!");
-  return I->second;
+  return I->second.get();
 }
 
 /// \brief Return all of the instructions defined by the target, ordered by
@@ -298,7 +297,7 @@ void CodeGenTarget::ComputeInstrsByEnum() const {
       "LIFETIME_END", "STACKMAP",      "PATCHPOINT",       "LOAD_STACK_GUARD",
       "STATEPOINT",
       nullptr};
-  const DenseMap<const Record*, CodeGenInstruction*> &Insts = getInstructions();
+  const auto &Insts = getInstructions();
   for (const char *const *p = FixedInstrs; *p; ++p) {
     const CodeGenInstruction *Instr = GetInstByName(*p, Insts, Records);
     assert(Instr && "Missing target independent instruction");
@@ -307,9 +306,8 @@ void CodeGenTarget::ComputeInstrsByEnum() const {
   }
   unsigned EndOfPredefines = InstrsByEnum.size();
 
-  for (DenseMap<const Record*, CodeGenInstruction*>::const_iterator
-       I = Insts.begin(), E = Insts.end(); I != E; ++I) {
-    const CodeGenInstruction *CGI = I->second;
+  for (const auto &I : Insts) {
+    const CodeGenInstruction *CGI = I.second.get();
     if (CGI->Namespace != "TargetOpcode")
       InstrsByEnum.push_back(CGI);
   }
@@ -339,9 +337,7 @@ void CodeGenTarget::reverseBitsForLittleEndianEncoding() {
     return;
 
   std::vector<Record*> Insts = Records.getAllDerivedDefinitions("Instruction");
-  for (std::vector<Record*>::iterator I = Insts.begin(), E = Insts.end();
-       I != E; ++I) {
-    Record *R = *I;
+  for (Record *R : Insts) {
     if (R->getValueAsString("Namespace") == "TargetOpcode" ||
         R->getValueAsBit("isPseudo"))
       continue;

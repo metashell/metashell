@@ -409,8 +409,9 @@ struct FormatToken {
   /// list that should be indented with a block indent.
   bool opensBlockTypeList(const FormatStyle &Style) const {
     return is(TT_ArrayInitializerLSquare) ||
-           (is(tok::l_brace) && (BlockKind == BK_Block || is(TT_DictLiteral) ||
-                                 !Style.Cpp11BracedListStyle));
+           (is(tok::l_brace) &&
+            (BlockKind == BK_Block || is(TT_DictLiteral) ||
+             (!Style.Cpp11BracedListStyle && NestingLevel == 0)));
   }
 
   /// \brief Same as opensBlockTypeList, but for the closing token.
@@ -535,7 +536,10 @@ private:
 struct AdditionalKeywords {
   AdditionalKeywords(IdentifierTable &IdentTable) {
     kw_in = &IdentTable.get("in");
+    kw_CF_ENUM = &IdentTable.get("CF_ENUM");
+    kw_CF_OPTIONS = &IdentTable.get("CF_OPTIONS");
     kw_NS_ENUM = &IdentTable.get("NS_ENUM");
+    kw_NS_OPTIONS = &IdentTable.get("NS_OPTIONS");
 
     kw_finally = &IdentTable.get("finally");
     kw_function = &IdentTable.get("function");
@@ -560,7 +564,10 @@ struct AdditionalKeywords {
 
   // ObjC context sensitive keywords.
   IdentifierInfo *kw_in;
+  IdentifierInfo *kw_CF_ENUM;
+  IdentifierInfo *kw_CF_OPTIONS;
   IdentifierInfo *kw_NS_ENUM;
+  IdentifierInfo *kw_NS_OPTIONS;
 
   // JavaScript keywords.
   IdentifierInfo *kw_finally;

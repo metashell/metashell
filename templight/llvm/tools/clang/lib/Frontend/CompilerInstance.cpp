@@ -371,6 +371,14 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
     AttachHeaderIncludeGen(*PP, /*ShowAllHeaders=*/false, /*OutputPath=*/"",
                            /*ShowDepth=*/true, /*MSStyle=*/true);
   }
+
+  // Load all explictly-specified module map files.
+  for (const auto &Filename : getFrontendOpts().ModuleMapFiles) {
+    if (auto *File = getFileManager().getFile(Filename))
+      PP->getHeaderSearchInfo().loadModuleMapFile(File, /*IsSystem*/false);
+    else
+      getDiagnostics().Report(diag::err_module_map_not_found) << Filename;
+  }
 }
 
 // ASTContext
@@ -1292,7 +1300,9 @@ bool CompilerInstance::loadModuleFile(StringRef FileName) {
         TopFileIsModule = true;
 
       auto &ModuleFile = CI.ModuleFileOverrides[ModuleName];
-      if (!ModuleFile.empty() && ModuleFile != ModuleFileStack.back())
+      if (!ModuleFile.empty() &&
+          CI.getFileManager().getFile(ModuleFile) !=
+              CI.getFileManager().getFile(ModuleFileStack.back()))
         CI.getDiagnostics().Report(SourceLocation(),
                                    diag::err_conflicting_module_files)
             << ModuleName << ModuleFile << ModuleFileStack.back();

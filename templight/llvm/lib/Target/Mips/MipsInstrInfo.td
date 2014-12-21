@@ -156,6 +156,8 @@ def HasMips3     :    Predicate<"Subtarget->hasMips3()">,
                       AssemblerPredicate<"FeatureMips3">;
 def HasMips4_32  :    Predicate<"Subtarget->hasMips4_32()">,
                       AssemblerPredicate<"FeatureMips4_32">;
+def NotMips4_32  :    Predicate<"!Subtarget->hasMips4_32()">,
+                      AssemblerPredicate<"FeatureMips4_32">;
 def HasMips4_32r2 :   Predicate<"Subtarget->hasMips4_32r2()">,
                       AssemblerPredicate<"FeatureMips4_32r2">;
 def HasMips5_32r2 :   Predicate<"Subtarget->hasMips5_32r2()">,
@@ -220,6 +222,9 @@ class GPR_64 { list<Predicate> GPRPredicates = [IsGP64bit]; }
 //        subtractive predicate will hopefully keep us under the 32 predicate
 //        limit long enough to develop an alternative way to handle P1||P2
 //        predicates.
+class ISA_MIPS1_NOT_4_32 {
+  list<Predicate> InsnPredicates = [NotMips4_32];
+}
 class ISA_MIPS1_NOT_32R6_64R6 {
   list<Predicate> InsnPredicates = [NotMips32r6, NotMips64r6];
 }
@@ -1654,10 +1659,12 @@ class StoreRegImmPat<Instruction StoreInst, ValueType ValTy> :
   MipsPat<(store ValTy:$v, addrRegImm:$a), (StoreInst ValTy:$v, addrRegImm:$a)>;
 
 // Small immediates
+let AdditionalPredicates = [NotInMicroMips] in {
 def : MipsPat<(i32 immSExt16:$in),
               (ADDiu ZERO, imm:$in)>;
 def : MipsPat<(i32 immZExt16:$in),
               (ORi ZERO, imm:$in)>;
+}
 def : MipsPat<(i32 immLow16Zero:$in),
               (LUi (HI16 imm:$in))>;
 

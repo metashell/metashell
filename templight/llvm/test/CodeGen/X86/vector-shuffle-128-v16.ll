@@ -573,23 +573,11 @@ define <16 x i8> @shuffle_v16i8_zz_zz_zz_zz_zz_16_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz(
 }
 
 define <16 x i8> @shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16(i8 %i) {
-; SSE2-LABEL: shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16:
-; SSE2:       # BB#0:
-; SSE2-NEXT:    movd %edi, %xmm0
-; SSE2-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0]
-; SSE2-NEXT:    retq
-;
-; SSSE3-LABEL: shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16:
-; SSSE3:       # BB#0:
-; SSSE3-NEXT:    movd %edi, %xmm0
-; SSSE3-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0]
-; SSSE3-NEXT:    retq
-;
-; SSE41-LABEL: shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16:
-; SSE41:       # BB#0:
-; SSE41-NEXT:    movd %edi, %xmm0
-; SSE41-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0]
-; SSE41-NEXT:    retq
+; SSE-LABEL: shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16:
+; SSE:       # BB#0:
+; SSE-NEXT:    movd %edi, %xmm0
+; SSE-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0]
+; SSE-NEXT:    retq
 ;
 ; AVX-LABEL: shuffle_v16i8_zz_uu_uu_zz_uu_uu_zz_zz_zz_zz_zz_zz_zz_zz_zz_16:
 ; AVX:       # BB#0:
@@ -644,20 +632,10 @@ define <16 x i8> @shuffle_v16i8_zz_zz_19_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz(
 }
 
 define <16 x i8> @shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu(<16 x i8> %a) {
-; SSE2-LABEL: shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu:
-; SSE2:       # BB#0:
-; SSE2-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0,1,2,3]
-; SSE2-NEXT:    retq
-;
-; SSSE3-LABEL: shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu:
-; SSSE3:       # BB#0:
-; SSSE3-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0,1,2,3]
-; SSSE3-NEXT:    retq
-;
-; SSE41-LABEL: shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu:
-; SSE41:       # BB#0:
-; SSE41-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0,1,2,3]
-; SSE41-NEXT:    retq
+; SSE-LABEL: shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu:
+; SSE:       # BB#0:
+; SSE-NEXT:    pslldq {{.*#+}} xmm0 = zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,xmm0[0,1,2,3]
+; SSE-NEXT:    retq
 ;
 ; AVX-LABEL: shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu:
 ; AVX:       # BB#0:
@@ -668,20 +646,10 @@ define <16 x i8> @shuffle_v16i8_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_16_uu_18_uu(
 }
 
 define <16 x i8> @shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz(<16 x i8> %a) {
-; SSE2-LABEL: shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz:
-; SSE2:       # BB#0:
-; SSE2-NEXT:    psrldq {{.*#+}} xmm0 = xmm0[12,13,14,15],zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero
-; SSE2-NEXT:    retq
-;
-; SSSE3-LABEL: shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz:
-; SSSE3:       # BB#0:
-; SSSE3-NEXT:    psrldq {{.*#+}} xmm0 = xmm0[12,13,14,15],zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero
-; SSSE3-NEXT:    retq
-;
-; SSE41-LABEL: shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz:
-; SSE41:       # BB#0:
-; SSE41-NEXT:    psrldq {{.*#+}} xmm0 = xmm0[12,13,14,15],zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero
-; SSE41-NEXT:    retq
+; SSE-LABEL: shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz:
+; SSE:       # BB#0:
+; SSE-NEXT:    psrldq {{.*#+}} xmm0 = xmm0[12,13,14,15],zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,zero
+; SSE-NEXT:    retq
 ;
 ; AVX-LABEL: shuffle_v16i8_28_uu_30_31_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz_zz:
 ; AVX:       # BB#0:
@@ -1098,13 +1066,25 @@ entry:
   ret <16 x i8> %s.2.0
 }
 
-define void @constant_gets_selected() {
-; ALL-LABEL: constant_gets_selected:
-; ALL-NOT movd $0, {{%xmm[0-9]+}}
+define void @constant_gets_selected(<4 x i32>* %ptr1, <4 x i32>* %ptr2) {
+; SSE-LABEL: constant_gets_selected:
+; SSE:       # BB#0: # %entry
+; SSE-NEXT:    xorps %xmm0, %xmm0
+; SSE-NEXT:    movaps %xmm0, (%rdi)
+; SSE-NEXT:    movaps %xmm0, (%rsi)
+; SSE-NEXT:    retq
+;
+; AVX-LABEL: constant_gets_selected:
+; AVX:       # BB#0: # %entry
+; AVX-NEXT:    vxorps %xmm0, %xmm0, %xmm0
+; AVX-NEXT:    vmovaps %xmm0, (%rdi)
+; AVX-NEXT:    vmovaps %xmm0, (%rsi)
+; AVX-NEXT:    retq
+entry:
   %weird_zero = bitcast <4 x i32> zeroinitializer to <16 x i8>
   %shuffle.i = shufflevector <16 x i8> <i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 undef, i8 0, i8 0, i8 0, i8 0>, <16 x i8> %weird_zero, <16 x i32> <i32 12, i32 13, i32 14, i32 15, i32 16, i32 17, i32 18, i32 19, i32 20, i32 21, i32 22, i32 23, i32 24, i32 25, i32 26, i32 27>
   %weirder_zero = bitcast <16 x i8> %shuffle.i to <4 x i32>
-  store <4 x i32> %weirder_zero, <4 x i32>* undef, align 16
-  store <4 x i32> zeroinitializer, <4 x i32>* undef, align 16
+  store <4 x i32> %weirder_zero, <4 x i32>* %ptr1, align 16
+  store <4 x i32> zeroinitializer, <4 x i32>* %ptr2, align 16
   ret void
 }

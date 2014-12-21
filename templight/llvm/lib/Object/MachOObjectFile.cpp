@@ -316,6 +316,12 @@ std::error_code MachOObjectFile::getSymbolName(DataRefImpl Symb,
   return object_error::success;
 }
 
+unsigned MachOObjectFile::getSectionType(SectionRef Sec) const {
+  DataRefImpl DRI = Sec.getRawDataRefImpl();
+  uint32_t Flags = getSectionFlags(this, DRI);
+  return Flags & MachO::SECTION_TYPE;
+}
+
 // getIndirectName() returns the name of the alias'ed symbol who's string table
 // index is in the n_value field.
 std::error_code MachOObjectFile::getIndirectName(DataRefImpl Symb,
@@ -575,28 +581,7 @@ bool MachOObjectFile::isSectionBSS(DataRefImpl Sec) const {
           SectionType == MachO::S_GB_ZEROFILL);
 }
 
-bool MachOObjectFile::isSectionRequiredForExecution(DataRefImpl Sect) const {
-  // FIXME: Unimplemented.
-  return true;
-}
-
 bool MachOObjectFile::isSectionVirtual(DataRefImpl Sec) const {
-  // FIXME: Unimplemented.
-  return false;
-}
-
-bool MachOObjectFile::isSectionZeroInit(DataRefImpl Sec) const {
-  uint32_t Flags = getSectionFlags(this, Sec);
-  unsigned SectionType = Flags & MachO::SECTION_TYPE;
-  return SectionType == MachO::S_ZEROFILL ||
-         SectionType == MachO::S_GB_ZEROFILL;
-}
-
-bool MachOObjectFile::isSectionReadOnlyData(DataRefImpl Sec) const {
-  // Consider using the code from isSectionText to look for __const sections.
-  // Alternately, emit S_ATTR_PURE_INSTRUCTIONS and/or S_ATTR_SOME_INSTRUCTIONS
-  // to use section attributes to distinguish code from data.
-
   // FIXME: Unimplemented.
   return false;
 }
@@ -1655,7 +1640,10 @@ void ExportEntry::moveNext() {
 iterator_range<export_iterator> 
 MachOObjectFile::exports(ArrayRef<uint8_t> Trie) {
   ExportEntry Start(Trie);
-  Start.moveToFirst();
+  if (Trie.size() == 0)
+    Start.moveToEnd();
+  else
+    Start.moveToFirst();
 
   ExportEntry Finish(Trie);
   Finish.moveToEnd();
@@ -2269,9 +2257,9 @@ MachOObjectFile::getSegment64LoadCommand(const LoadCommandInfo &L) const {
   return getStruct<MachO::segment_command_64>(this, L.Ptr);
 }
 
-MachO::linker_options_command
-MachOObjectFile::getLinkerOptionsLoadCommand(const LoadCommandInfo &L) const {
-  return getStruct<MachO::linker_options_command>(this, L.Ptr);
+MachO::linker_option_command
+MachOObjectFile::getLinkerOptionLoadCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::linker_option_command>(this, L.Ptr);
 }
 
 MachO::version_min_command
@@ -2314,6 +2302,45 @@ MachOObjectFile::getEntryPointCommand(const LoadCommandInfo &L) const {
   return getStruct<MachO::entry_point_command>(this, L.Ptr);
 }
 
+MachO::encryption_info_command
+MachOObjectFile::getEncryptionInfoCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::encryption_info_command>(this, L.Ptr);
+}
+
+MachO::encryption_info_command_64
+MachOObjectFile::getEncryptionInfoCommand64(const LoadCommandInfo &L) const {
+  return getStruct<MachO::encryption_info_command_64>(this, L.Ptr);
+}
+
+MachO::sub_framework_command
+MachOObjectFile::getSubFrameworkCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::sub_framework_command>(this, L.Ptr);
+}
+
+MachO::sub_umbrella_command
+MachOObjectFile::getSubUmbrellaCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::sub_umbrella_command>(this, L.Ptr);
+}
+
+MachO::sub_library_command
+MachOObjectFile::getSubLibraryCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::sub_library_command>(this, L.Ptr);
+}
+
+MachO::sub_client_command
+MachOObjectFile::getSubClientCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::sub_client_command>(this, L.Ptr);
+}
+
+MachO::routines_command
+MachOObjectFile::getRoutinesCommand(const LoadCommandInfo &L) const {
+  return getStruct<MachO::routines_command>(this, L.Ptr);
+}
+
+MachO::routines_command_64
+MachOObjectFile::getRoutinesCommand64(const LoadCommandInfo &L) const {
+  return getStruct<MachO::routines_command_64>(this, L.Ptr);
+}
 
 MachO::any_relocation_info
 MachOObjectFile::getRelocation(DataRefImpl Rel) const {

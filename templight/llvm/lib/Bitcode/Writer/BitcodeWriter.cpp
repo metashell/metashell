@@ -737,44 +737,57 @@ static uint64_t GetOptimizationFlags(const Value *V) {
   return Flags;
 }
 
+static void WriteValueAsMetadata(const ValueAsMetadata *MD,
+                                 const ValueEnumerator &VE,
+                                 BitstreamWriter &Stream,
+                                 SmallVectorImpl<uint64_t> &Record) {
+  // Mimic an MDNode with a value as one operand.
+  Value *V = MD->getValue();
+  Record.push_back(VE.getTypeID(V->getType()));
+  Record.push_back(VE.getValueID(V));
+  Stream.EmitRecord(bitc::METADATA_VALUE, Record, 0);
+  Record.clear();
+}
+
 static void WriteMDNode(const MDNode *N,
                         const ValueEnumerator &VE,
                         BitstreamWriter &Stream,
                         SmallVectorImpl<uint64_t> &Record) {
   for (unsigned i = 0, e = N->getNumOperands(); i != e; ++i) {
-    if (N->getOperand(i)) {
-      Record.push_back(VE.getTypeID(N->getOperand(i)->getType()));
-      Record.push_back(VE.getValueID(N->getOperand(i)));
-    } else {
-      Record.push_back(VE.getTypeID(Type::getVoidTy(N->getContext())));
+    Metadata *MD = N->getOperand(i);
+    if (!MD) {
       Record.push_back(0);
+      continue;
     }
+    assert(!isa<LocalAsMetadata>(MD) && "Unexpected function-local metadata");
+    Record.push_back(VE.getMetadataID(MD) + 1);
   }
-  unsigned MDCode = N->isFunctionLocal() ? bitc::METADATA_FN_NODE :
-                                           bitc::METADATA_NODE;
-  Stream.EmitRecord(MDCode, Record, 0);
+  Stream.EmitRecord(bitc::METADATA_NODE, Record);
   Record.clear();
 }
 
 static void WriteModuleMetadata(const Module *M,
                                 const ValueEnumerator &VE,
                                 BitstreamWriter &Stream) {
-  const auto &Vals = VE.getMDValues();
+  const auto &MDs = VE.getMDs();
   bool StartedMetadataBlock = false;
   unsigned MDSAbbrev = 0;
   SmallVector<uint64_t, 64> Record;
-  for (unsigned i = 0, e = Vals.size(); i != e; ++i) {
-
-    if (const MDNode *N = dyn_cast<MDNode>(Vals[i])) {
-      if (!N->isFunctionLocal() || !N->getFunction()) {
-        if (!StartedMetadataBlock) {
-          Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
-          StartedMetadataBlock = true;
-        }
-        WriteMDNode(N, VE, Stream, Record);
+  for (unsigned i = 0, e = MDs.size(); i != e; ++i) {
+    if (const MDNode *N = dyn_cast<MDNode>(MDs[i])) {
+      if (!StartedMetadataBlock) {
+        Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
+        StartedMetadataBlock = true;
       }
-    } else if (const MDString *MDS = dyn_cast<MDString>(Vals[i])) {
-      if (!StartedMetadataBlock)  {
+      WriteMDNode(N, VE, Stream, Record);
+    } else if (const auto *MDC = dyn_cast<ConstantAsMetadata>(MDs[i])) {
+      if (!StartedMetadataBlock) {
+        Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
+        StartedMetadataBlock = true;
+      }
+      WriteValueAsMetadata(MDC, VE, Stream, Record);
+    } else if (const MDString *MDS = dyn_cast<MDString>(MDs[i])) {
+      if (!StartedMetadataBlock) {
         Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
 
         // Abbrev for METADATA_STRING.
@@ -787,7 +800,7 @@ static void WriteModuleMetadata(const Module *M,
       }
 
       // Code: [strchar x N]
-      Record.append(MDS->begin(), MDS->end());
+      Record.append(MDS->bytes_begin(), MDS->bytes_end());
 
       // Emit the finished record.
       Stream.EmitRecord(bitc::METADATA_STRING, Record, MDSAbbrev);
@@ -813,7 +826,7 @@ static void WriteModuleMetadata(const Module *M,
 
     // Write named metadata operands.
     for (unsigned i = 0, e = NMD->getNumOperands(); i != e; ++i)
-      Record.push_back(VE.getValueID(NMD->getOperand(i)));
+      Record.push_back(VE.getMetadataID(NMD->getOperand(i)));
     Stream.EmitRecord(bitc::METADATA_NAMED_NODE, Record, 0);
     Record.clear();
   }
@@ -827,16 +840,16 @@ static void WriteFunctionLocalMetadata(const Function &F,
                                        BitstreamWriter &Stream) {
   bool StartedMetadataBlock = false;
   SmallVector<uint64_t, 64> Record;
-  const SmallVectorImpl<const MDNode *> &Vals = VE.getFunctionLocalMDValues();
-  for (unsigned i = 0, e = Vals.size(); i != e; ++i)
-    if (const MDNode *N = Vals[i])
-      if (N->isFunctionLocal() && N->getFunction() == &F) {
-        if (!StartedMetadataBlock) {
-          Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
-          StartedMetadataBlock = true;
-        }
-        WriteMDNode(N, VE, Stream, Record);
-      }
+  const SmallVectorImpl<const LocalAsMetadata *> &MDs =
+      VE.getFunctionLocalMDs();
+  for (unsigned i = 0, e = MDs.size(); i != e; ++i) {
+    assert(MDs[i] && "Expected valid function-local metadata");
+    if (!StartedMetadataBlock) {
+      Stream.EnterSubblock(bitc::METADATA_BLOCK_ID, 3);
+      StartedMetadataBlock = true;
+    }
+    WriteValueAsMetadata(MDs[i], VE, Stream, Record);
+  }
 
   if (StartedMetadataBlock)
     Stream.ExitBlock();
@@ -866,7 +879,7 @@ static void WriteMetadataAttachment(const Function &F,
 
       for (unsigned i = 0, e = MDs.size(); i != e; ++i) {
         Record.push_back(MDs[i].first);
-        Record.push_back(VE.getValueID(MDs[i].second));
+        Record.push_back(VE.getMetadataID(MDs[i].second));
       }
       Stream.EmitRecord(bitc::METADATA_ATTACHMENT, Record, 0);
       Record.clear();
@@ -1686,11 +1699,12 @@ static void WriteFunction(const Function &F, ValueEnumerator &VE,
       } else {
         MDNode *Scope, *IA;
         DL.getScopeAndInlinedAt(Scope, IA, I->getContext());
+        assert(Scope && "Expected valid scope");
 
         Vals.push_back(DL.getLine());
         Vals.push_back(DL.getCol());
-        Vals.push_back(Scope ? VE.getValueID(Scope)+1 : 0);
-        Vals.push_back(IA ? VE.getValueID(IA)+1 : 0);
+        Vals.push_back(Scope ? VE.getMetadataID(Scope) + 1 : 0);
+        Vals.push_back(IA ? VE.getMetadataID(IA) + 1 : 0);
         Stream.EmitRecord(bitc::FUNC_CODE_DEBUG_LOC, Vals);
         Vals.clear();
 

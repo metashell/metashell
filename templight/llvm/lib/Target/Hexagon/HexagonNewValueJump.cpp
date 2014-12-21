@@ -176,7 +176,7 @@ static bool commonChecksToProhibitNewValueJump(bool afterRA,
     return false;
 
   // if call in path, bail out.
-  if (MII->getOpcode() == Hexagon::CALLv3)
+  if (MII->getOpcode() == Hexagon::J2_call)
     return false;
 
   // if NVJ is running prior to RA, do the following checks.
@@ -412,12 +412,12 @@ bool HexagonNewValueJump::runOnMachineFunction(MachineFunction &MF) {
       DEBUG(dbgs() << "Instr: "; MI->dump(); dbgs() << "\n");
 
       if (!foundJump &&
-         (MI->getOpcode() == Hexagon::JMP_t ||
-          MI->getOpcode() == Hexagon::JMP_f ||
-          MI->getOpcode() == Hexagon::JMP_tnew_t ||
-          MI->getOpcode() == Hexagon::JMP_tnew_nt ||
-          MI->getOpcode() == Hexagon::JMP_fnew_t ||
-          MI->getOpcode() == Hexagon::JMP_fnew_nt)) {
+         (MI->getOpcode() == Hexagon::J2_jumpt ||
+          MI->getOpcode() == Hexagon::J2_jumpf ||
+          MI->getOpcode() == Hexagon::J2_jumptnewpt ||
+          MI->getOpcode() == Hexagon::J2_jumptnew ||
+          MI->getOpcode() == Hexagon::J2_jumpfnewpt ||
+          MI->getOpcode() == Hexagon::J2_jumpfnew)) {
         // This is where you would insert your compare and
         // instr that feeds compare
         jmpPos = MII;
@@ -453,9 +453,9 @@ bool HexagonNewValueJump::runOnMachineFunction(MachineFunction &MF) {
 
         jmpTarget = MI->getOperand(1).getMBB();
         foundJump = true;
-        if (MI->getOpcode() == Hexagon::JMP_f ||
-            MI->getOpcode() == Hexagon::JMP_fnew_t ||
-            MI->getOpcode() == Hexagon::JMP_fnew_nt) {
+        if (MI->getOpcode() == Hexagon::J2_jumpf ||
+            MI->getOpcode() == Hexagon::J2_jumpfnewpt ||
+            MI->getOpcode() == Hexagon::J2_jumpfnew) {
           invertPredicate = true;
         }
         continue;

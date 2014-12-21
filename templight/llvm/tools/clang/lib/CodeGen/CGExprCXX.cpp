@@ -187,6 +187,8 @@ RValue CodeGenFunction::EmitCXXMemberOrOperatorMemberCallExpr(
         unsigned ArgsToSkip = isa<CXXOperatorCallExpr>(CE) ? 1 : 0;
         llvm::Value *RHS =
             EmitLValue(*(CE->arg_begin() + ArgsToSkip)).getAddress();
+        if (auto *DI = getDebugInfo())
+          DI->EmitLocation(Builder, CE->getLocStart());
         EmitAggregateAssign(This, RHS, CE->getType());
         return RValue::get(This);
       }
@@ -752,14 +754,15 @@ static llvm::Value *EmitCXXNewAllocSize(CodeGenFunction &CGF,
 }
 
 static void StoreAnyExprIntoOneUnit(CodeGenFunction &CGF, const Expr *Init,
-                                    QualType AllocType, llvm::Value *NewPtr) {
+                                    QualType AllocType, llvm::Value *NewPtr,
+                                    SourceLocation DbgLoc = SourceLocation()) {
   // FIXME: Refactor with EmitExprAsInit.
   CharUnits Alignment = CGF.getContext().getTypeAlignInChars(AllocType);
   switch (CGF.getEvaluationKind(AllocType)) {
   case TEK_Scalar:
-    CGF.EmitScalarInit(Init, nullptr, CGF.MakeAddrLValue(NewPtr, AllocType,
-                                                         Alignment),
-                       false);
+    CGF.EmitScalarInit(Init, nullptr,
+                       CGF.MakeAddrLValue(NewPtr, AllocType, Alignment), false,
+                       DbgLoc);
     return;
   case TEK_Complex:
     CGF.EmitComplexExprIntoLValue(Init, CGF.MakeAddrLValue(NewPtr, AllocType,
@@ -1021,7 +1024,8 @@ static void EmitNewInitializer(CodeGenFunction &CGF, const CXXNewExpr *E,
     CGF.EmitNewArrayInitializer(E, ElementType, NewPtr, NumElements,
                                 AllocSizeWithoutCookie);
   else if (const Expr *Init = E->getInitializer())
-    StoreAnyExprIntoOneUnit(CGF, Init, E->getAllocatedType(), NewPtr);
+    StoreAnyExprIntoOneUnit(CGF, Init, E->getAllocatedType(), NewPtr,
+                            E->getStartLoc());
 }
 
 /// Emit a call to an operator new or operator delete function, as implicitly
@@ -1033,9 +1037,9 @@ static RValue EmitNewDeleteCall(CodeGenFunction &CGF,
   llvm::Instruction *CallOrInvoke;
   llvm::Value *CalleeAddr = CGF.CGM.GetAddrOfFunction(Callee);
   RValue RV =
-      CGF.EmitCall(CGF.CGM.getTypes().arrangeFreeFunctionCall(Args, CalleeType),
-                   CalleeAddr, ReturnValueSlot(), Args,
-                   Callee, &CallOrInvoke);
+      CGF.EmitCall(CGF.CGM.getTypes().arrangeFreeFunctionCall(
+                       Args, CalleeType, /*chainCall=*/false),
+                   CalleeAddr, ReturnValueSlot(), Args, Callee, &CallOrInvoke);
 
   /// C++1y [expr.new]p10:
   ///   [In a new-expression,] an implementation is allowed to omit a call
@@ -1264,6 +1268,9 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
   EmitCallArgs(allocatorArgs, allocatorType, E->placement_arg_begin(),
                E->placement_arg_end(), /* CalleeDecl */ nullptr,
                /*ParamsToSkip*/ 1);
+
+  if (auto *DI = getDebugInfo())
+    DI->EmitLocation(Builder, E->getLocStart());
 
   // Emit the allocation call.  If the allocator is a global placement
   // operator, just "inline" it directly.

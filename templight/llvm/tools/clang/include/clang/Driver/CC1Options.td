@@ -279,6 +279,8 @@ def ftemplate_backtrace_limit : Separate<["-"], "ftemplate-backtrace-limit">, Me
   HelpText<"Set the maximum number of entries to print in a template instantiation backtrace (0 = no limit).">;
 def fconstexpr_backtrace_limit : Separate<["-"], "fconstexpr-backtrace-limit">, MetaVarName<"<N>">,
   HelpText<"Set the maximum number of entries to print in a constexpr evaluation backtrace (0 = no limit).">;
+def fspell_checking_limit : Separate<["-"], "fspell-checking-limit">, MetaVarName<"<N>">,
+  HelpText<"Set the maximum number of times to perform spell checking on unrecognized identifiers (0 = no limit).">;
 def fmessage_length : Separate<["-"], "fmessage-length">, MetaVarName<"<N>">,
   HelpText<"Format message diagnostics so that they fit within N columns or fewer, when possible.">;
 def verify : Flag<["-"], "verify">,
@@ -337,6 +339,9 @@ def fno_modules_error_recovery : Flag<["-"], "fno-modules-error-recovery">,
 def fmodule_implementation_of : Separate<["-"], "fmodule-implementation-of">,
   MetaVarName<"<name>">,
   HelpText<"Specify the name of the module whose implementation file this is">;
+def fmodule_map_file_home_is_cwd : Flag<["-"], "fmodule-map-file-home-is-cwd">,
+  HelpText<"Use the current working directory as the home directory of "
+           "module maps specified by -fmodule-map-file=<FILE>">;
 
 let Group = Action_Group in {
 
@@ -575,6 +580,8 @@ def cl_finite_math_only : Flag<["-"], "cl-finite-math-only">,
   HelpText<"OpenCL only. Allow floating-point optimizations that assume arguments and results are not NaNs or +-Inf.">;
 def cl_kernel_arg_info : Flag<["-"], "cl-kernel-arg-info">,
   HelpText<"OpenCL only. Generate kernel argument metadata.">;
+def cl_no_signed_zeros : Flag<["-"], "cl-no-signed-zeros">,
+  HelpText<"OpenCL only. Allow optimizations to ignore the signedness of the floating-point zero.">;
 def cl_unsafe_math_optimizations : Flag<["-"], "cl-unsafe-math-optimizations">,
   HelpText<"OpenCL only. Allow unsafe floating-point optimizations.  Also implies -cl-no-signed-zeros and -cl-mad-enable">;
 def cl_fast_relaxed_math : Flag<["-"], "cl-fast-relaxed-math">,

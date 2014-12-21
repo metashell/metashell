@@ -31,6 +31,17 @@
 #include <asm/param.h>
 #endif
 
+// For mips64, syscall(__NR_stat) fills the buffer in the 'struct kernel_stat'
+// format. Struct kernel_stat is defined as 'struct stat' in asm/stat.h. To
+// access stat from asm/stat.h, without conflicting with definition in
+// sys/stat.h, we use this trick.
+#if defined(__mips64)
+#include <sys/types.h>
+#define stat kernel_stat
+#include <asm/stat.h>
+#undef stat
+#endif
+
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -179,6 +190,26 @@ static void stat64_to_stat(struct stat64 *in, struct stat *out) {
 }
 #endif
 
+#if defined(__mips64)
+static void kernel_stat_to_stat(struct kernel_stat *in, struct stat *out) {
+  internal_memset(out, 0, sizeof(*out));
+  out->st_dev = in->st_dev;
+  out->st_ino = in->st_ino;
+  out->st_mode = in->st_mode;
+  out->st_nlink = in->st_nlink;
+  out->st_uid = in->st_uid;
+  out->st_gid = in->st_gid;
+  out->st_rdev = in->st_rdev;
+  out->st_size = in->st_size;
+  out->st_blksize = in->st_blksize;
+  out->st_blocks = in->st_blocks;
+  out->st_atime = in->st_atime_nsec;
+  out->st_mtime = in->st_mtime_nsec;
+  out->st_ctime = in->st_ctime_nsec;
+  out->st_ino = in->st_ino;
+}
+#endif
+
 uptr internal_stat(const char *path, void *buf) {
 #if SANITIZER_FREEBSD
   return internal_syscall(SYSCALL(stat), path, buf);
@@ -186,7 +217,15 @@ uptr internal_stat(const char *path, void *buf) {
   return internal_syscall(SYSCALL(newfstatat), AT_FDCWD, (uptr)path,
                           (uptr)buf, 0);
 #elif SANITIZER_LINUX_USES_64BIT_SYSCALLS
+# if defined(__mips64)
+  // For mips64, stat syscall fills buffer in the format of kernel_stat
+  struct kernel_stat kbuf;
+  int res = internal_syscall(SYSCALL(stat), path, &kbuf);
+  kernel_stat_to_stat(&kbuf, (struct stat *)buf);
+  return res;
+# else
   return internal_syscall(SYSCALL(stat), (uptr)path, (uptr)buf);
+# endif
 #else
   struct stat64 buf64;
   int res = internal_syscall(SYSCALL(stat64), path, &buf64);
@@ -380,6 +419,33 @@ static void ReadNullSepFileToArray(const char *path, char ***arr,
   (*arr)[count] = 0;
 }
 #endif
+
+uptr GetRSS() {
+  uptr fd = OpenFile("/proc/self/statm", false);
+  if ((sptr)fd < 0)
+    return 0;
+  char buf[64];
+  uptr len = internal_read(fd, buf, sizeof(buf) - 1);
+  internal_close(fd);
+  if ((sptr)len <= 0)
+    return 0;
+  buf[len] = 0;
+  // The format of the file is:
+  // 1084 89 69 11 0 79 0
+  // We need the second number which is RSS in pages.
+  char *pos = buf;
+  // Skip the first number.
+  while (*pos >= '0' && *pos <= '9')
+    pos++;
+  // Skip whitespaces.
+  while (!(*pos >= '0' && *pos <= '9') && *pos != 0)
+    pos++;
+  // Read the number.
+  uptr rss = 0;
+  while (*pos >= '0' && *pos <= '9')
+    rss = rss * 10 + *pos++ - '0';
+  return rss * GetPageSizeCached();
+}
 
 static void GetArgsAndEnv(char*** argv, char*** envp) {
 #if !SANITIZER_GO
@@ -870,6 +936,21 @@ void GetExtraActivationFlags(char *buf, uptr size) {
 
 bool IsDeadlySignal(int signum) {
   return (signum == SIGSEGV) && common_flags()->handle_segv;
+}
+
+void *internal_start_thread(void(*func)(void *arg), void *arg) {
+  // Start the thread with signals blocked, otherwise it can steal user signals.
+  __sanitizer_sigset_t set, old;
+  internal_sigfillset(&set);
+  internal_sigprocmask(SIG_SETMASK, &set, &old);
+  void *th;
+  real_pthread_create(&th, 0, (void*(*)(void *arg))func, arg);
+  internal_sigprocmask(SIG_SETMASK, &old, 0);
+  return th;
+}
+
+void internal_join_thread(void *th) {
+  real_pthread_join(th, 0);
 }
 
 }  // namespace __sanitizer

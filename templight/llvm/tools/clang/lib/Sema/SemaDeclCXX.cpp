@@ -2656,13 +2656,14 @@ void Sema::ActOnFinishCXXInClassMemberInitializer(Decl *D,
   // Pop the notional constructor scope we created earlier.
   PopFunctionScopeInfo(nullptr, D);
 
-  FieldDecl *FD = cast<FieldDecl>(D);
-  assert(FD->getInClassInitStyle() != ICIS_NoInit &&
+  FieldDecl *FD = dyn_cast<FieldDecl>(D);
+  assert((isa<MSPropertyDecl>(D) || FD->getInClassInitStyle() != ICIS_NoInit) &&
          "must set init style when field is created");
 
   if (!InitExpr) {
-    FD->setInvalidDecl();
-    FD->removeInClassInitializer();
+    D->setInvalidDecl();
+    if (FD)
+      FD->removeInClassInitializer();
     return;
   }
 
@@ -2813,6 +2814,11 @@ Sema::BuildMemInitializer(Decl *ConstructorD,
                           SourceLocation IdLoc,
                           Expr *Init,
                           SourceLocation EllipsisLoc) {
+  ExprResult Res = CorrectDelayedTyposInExpr(Init);
+  if (!Res.isUsable())
+    return true;
+  Init = Res.get();
+
   if (!ConstructorD)
     return true;
 
@@ -4742,7 +4748,7 @@ static void checkDLLAttribute(Sema &S, CXXRecordDecl *Class) {
 
     if (MD && ClassExported) {
       if (MD->isUserProvided()) {
-        // Instantiate non-default methods..
+        // Instantiate non-default class member functions ...
 
         // .. except for certain kinds of template specializations.
         if (TSK == TSK_ExplicitInstantiationDeclaration)
@@ -4751,16 +4757,21 @@ static void checkDLLAttribute(Sema &S, CXXRecordDecl *Class) {
           continue;
 
         S.MarkFunctionReferenced(Class->getLocation(), MD);
+
+        // The function will be passed to the consumer when its definition is
+        // encountered.
       } else if (!MD->isTrivial() || MD->isExplicitlyDefaulted() ||
                  MD->isCopyAssignmentOperator() ||
                  MD->isMoveAssignmentOperator()) {
-        // Instantiate non-trivial or explicitly defaulted methods, and the
-        // copy assignment / move assignment operators.
+        // Synthesize and instantiate non-trivial implicit methods, explicitly
+        // defaulted methods, and the copy and move assignment operators. The
+        // latter are exported even if they are trivial, because the address of
+        // an operator can be taken and should compare equal accross libraries.
         S.MarkFunctionReferenced(Class->getLocation(), MD);
-        // Resolve its exception specification; CodeGen needs it.
-        auto *FPT = MD->getType()->getAs<FunctionProtoType>();
-        S.ResolveExceptionSpec(Class->getLocation(), FPT);
-        S.ActOnFinishInlineMethodDef(MD);
+
+        // There is no later point when we will see the definition of this
+        // function, so pass it to the consumer now.
+        S.Consumer.HandleTopLevelDecl(DeclGroupRef(MD));
       }
     }
   }
@@ -4882,42 +4893,6 @@ void Sema::CheckCompletedCXXClass(CXXRecordDecl *Record) {
     // Diagnose all other overridden methods which do not have 'override' specified on them.
     for (auto *M : Record->methods())
       DiagnoseAbsenceOfOverrideControl(M);
-  }
-  // C++11 [dcl.constexpr]p8: A constexpr specifier for a non-static member
-  // function that is not a constructor declares that member function to be
-  // const. [...] The class of which that function is a member shall be
-  // a literal type.
-  //
-  // If the class has virtual bases, any constexpr members will already have
-  // been diagnosed by the checks performed on the member declaration, so
-  // suppress this (less useful) diagnostic.
-  //
-  // We delay this until we know whether an explicitly-defaulted (or deleted)
-  // destructor for the class is trivial.
-  if (LangOpts.CPlusPlus11 && !Record->isDependentType() &&
-      !Record->isLiteral() && !Record->getNumVBases()) {
-    for (const auto *M : Record->methods()) {
-      if (M->isConstexpr() && M->isInstance() && !isa<CXXConstructorDecl>(M)) {
-        switch (Record->getTemplateSpecializationKind()) {
-        case TSK_ImplicitInstantiation:
-        case TSK_ExplicitInstantiationDeclaration:
-        case TSK_ExplicitInstantiationDefinition:
-          // If a template instantiates to a non-literal type, but its members
-          // instantiate to constexpr functions, the template is technically
-          // ill-formed, but we allow it for sanity.
-          continue;
-
-        case TSK_Undeclared:
-        case TSK_ExplicitSpecialization:
-          RequireLiteralType(M->getLocation(), Context.getRecordType(Record),
-                             diag::err_constexpr_method_non_literal);
-          break;
-        }
-
-        // Only produce one error per class.
-        break;
-      }
-    }
   }
 
   // ms_struct is a request to use the same ABI rules as MSVC.  Check
@@ -6821,6 +6796,22 @@ QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
   return Context.getFunctionType(Context.VoidTy, None, EPI);
 }
 
+static void extendLeft(SourceRange &R, const SourceRange &Before) {
+  if (Before.isInvalid())
+    return;
+  R.setBegin(Before.getBegin());
+  if (R.getEnd().isInvalid())
+    R.setEnd(Before.getEnd());
+}
+
+static void extendRight(SourceRange &R, const SourceRange &After) {
+  if (After.isInvalid())
+    return;
+  if (R.getBegin().isInvalid())
+    R.setBegin(After.getBegin());
+  R.setEnd(After.getEnd());
+}
+
 /// CheckConversionDeclarator - Called by ActOnDeclarator to check the
 /// well-formednes of the conversion function declarator @p D with
 /// type @p R. If there are any errors in the declarator, this routine
@@ -6842,7 +6833,9 @@ void Sema::CheckConversionDeclarator(Declarator &D, QualType &R,
     SC = SC_None;
   }
 
-  QualType ConvType = GetTypeFromParser(D.getName().ConversionFunctionId);
+  TypeSourceInfo *ConvTSI = nullptr;
+  QualType ConvType =
+      GetTypeFromParser(D.getName().ConversionFunctionId, &ConvTSI);
 
   if (D.getDeclSpec().hasTypeSpecifier() && !D.isInvalidType()) {
     // Conversion functions don't have return types, but the parser will
@@ -6876,9 +6869,75 @@ void Sema::CheckConversionDeclarator(Declarator &D, QualType &R,
   // Diagnose "&operator bool()" and other such nonsense.  This
   // is actually a gcc extension which we don't support.
   if (Proto->getReturnType() != ConvType) {
-    Diag(D.getIdentifierLoc(), diag::err_conv_function_with_complex_decl)
-        << Proto->getReturnType();
-    D.setInvalidType();
+    bool NeedsTypedef = false;
+    SourceRange Before, After;
+
+    // Walk the chunks and extract information on them for our diagnostic.
+    bool PastFunctionChunk = false;
+    for (auto &Chunk : D.type_objects()) {
+      switch (Chunk.Kind) {
+      case DeclaratorChunk::Function:
+        if (!PastFunctionChunk) {
+          if (Chunk.Fun.HasTrailingReturnType) {
+            TypeSourceInfo *TRT = nullptr;
+            GetTypeFromParser(Chunk.Fun.getTrailingReturnType(), &TRT);
+            if (TRT) extendRight(After, TRT->getTypeLoc().getSourceRange());
+          }
+          PastFunctionChunk = true;
+          break;
+        }
+        // Fall through.
+      case DeclaratorChunk::Array:
+        NeedsTypedef = true;
+        extendRight(After, Chunk.getSourceRange());
+        break;
+
+      case DeclaratorChunk::Pointer:
+      case DeclaratorChunk::BlockPointer:
+      case DeclaratorChunk::Reference:
+      case DeclaratorChunk::MemberPointer:
+        extendLeft(Before, Chunk.getSourceRange());
+        break;
+
+      case DeclaratorChunk::Paren:
+        extendLeft(Before, Chunk.Loc);
+        extendRight(After, Chunk.EndLoc);
+        break;
+      }
+    }
+
+    SourceLocation Loc = Before.isValid() ? Before.getBegin() :
+                         After.isValid()  ? After.getBegin() :
+                                            D.getIdentifierLoc();
+    auto &&DB = Diag(Loc, diag::err_conv_function_with_complex_decl);
+    DB << Before << After;
+
+    if (!NeedsTypedef) {
+      DB << /*don't need a typedef*/0;
+
+      // If we can provide a correct fix-it hint, do so.
+      if (After.isInvalid() && ConvTSI) {
+        SourceLocation InsertLoc =
+            PP.getLocForEndOfToken(ConvTSI->getTypeLoc().getLocEnd());
+        DB << FixItHint::CreateInsertion(InsertLoc, " ")
+           << FixItHint::CreateInsertionFromRange(
+                  InsertLoc, CharSourceRange::getTokenRange(Before))
+           << FixItHint::CreateRemoval(Before);
+      }
+    } else if (!Proto->getReturnType()->isDependentType()) {
+      DB << /*typedef*/1 << Proto->getReturnType();
+    } else if (getLangOpts().CPlusPlus11) {
+      DB << /*alias template*/2 << Proto->getReturnType();
+    } else {
+      DB << /*might not be fixable*/3;
+    }
+
+    // Recover by incorporating the other type chunks into the result type.
+    // Note, this does *not* change the name of the function. This is compatible
+    // with the GCC extension:
+    //   struct S { &operator int(); } s;
+    //   int &r = s.operator int(); // ok in GCC
+    //   S::operator int&() {} // error in GCC, function name is 'operator int'.
     ConvType = Proto->getReturnType();
   }
 
@@ -8184,7 +8243,7 @@ bool Sema::CheckUsingDeclQualifier(SourceLocation UsingLoc,
     // If we weren't able to compute a valid scope, it must be a
     // dependent class scope.
     if (!NamedContext || NamedContext->isRecord()) {
-      auto *RD = dyn_cast<CXXRecordDecl>(NamedContext);
+      auto *RD = dyn_cast_or_null<CXXRecordDecl>(NamedContext);
       if (RD && RequireCompleteDeclContext(const_cast<CXXScopeSpec&>(SS), RD))
         RD = nullptr;
 

@@ -27,6 +27,11 @@ namespace __asan {
 
 // AsanThreadContext implementation.
 
+struct CreateThreadContextArgs {
+  AsanThread *thread;
+  StackTrace *stack;
+};
+
 void AsanThreadContext::OnCreated(void *arg) {
   CreateThreadContextArgs *args = static_cast<CreateThreadContextArgs*>(arg);
   if (args->stack)
@@ -75,13 +80,17 @@ AsanThreadContext *GetThreadContextByTidLocked(u32 tid) {
 
 // AsanThread implementation.
 
-AsanThread *AsanThread::Create(thread_callback_t start_routine,
-                               void *arg) {
+AsanThread *AsanThread::Create(thread_callback_t start_routine, void *arg,
+                               u32 parent_tid, StackTrace *stack,
+                               bool detached) {
   uptr PageSize = GetPageSizeCached();
   uptr size = RoundUpTo(sizeof(AsanThread), PageSize);
   AsanThread *thread = (AsanThread*)MmapOrDie(size, __func__);
   thread->start_routine_ = start_routine;
   thread->arg_ = arg;
+  CreateThreadContextArgs args = { thread, stack };
+  asanThreadRegistry().CreateThread(*reinterpret_cast<uptr *>(thread), detached,
+                                    parent_tid, &args);
 
   return thread;
 }
@@ -155,9 +164,13 @@ void AsanThread::Init() {
   AsanPlatformThreadInit();
 }
 
-thread_return_t AsanThread::ThreadStart(uptr os_id) {
+thread_return_t AsanThread::ThreadStart(
+    uptr os_id, atomic_uintptr_t *signal_thread_is_registered) {
   Init();
   asanThreadRegistry().StartThread(tid(), os_id, 0);
+  if (signal_thread_is_registered)
+    atomic_store(signal_thread_is_registered, 1, memory_order_release);
+
   if (common_flags()->use_sigaltstack) SetAlternateSignalStack();
 
   if (!start_routine_) {

@@ -94,6 +94,12 @@ namespace llvm {
       /// code.
       SRL, SRA, SHL,
 
+      /// The combination of sra[wd]i and addze used to implemented signed
+      /// integer division by a power of 2. The first operand is the dividend,
+      /// and the second is the constant shift amount (representing the
+      /// divisor).
+      SRA_ADDZE,
+
       /// CALL - A direct function call.
       /// CALL_NOP is a call with the special NOP which follows 64-bit
       /// SVR4 calls.
@@ -254,6 +260,13 @@ namespace llvm {
       /// operand identifies the operating system entry point.
       SC,
 
+      /// VSRC, CHAIN = XXSWAPD CHAIN, VSRC - Occurs only for little
+      /// endian.  Maps to an xxswapd instruction that corrects an lxvd2x
+      /// or stxvd2x instruction.  The chain is necessary because the
+      /// sequence replaces a load and needs to provide the same number
+      /// of outputs.
+      XXSWAPD,
+
       /// CHAIN = STBRX CHAIN, GPRC, Ptr, Type - This is a
       /// byte-swapping store instruction.  It byte-swaps the low "Type" bits of
       /// the GPRC input, then stores it through Ptr.  Type can be either i16 or
@@ -293,7 +306,17 @@ namespace llvm {
       /// G8RC = ADDI_TOC_L G8RReg, Symbol - For medium code model, produces
       /// an ADDI8 instruction that adds G8RReg to sym\@toc\@l.
       /// Preceded by an ADDIS_TOC_HA to form a full 32-bit offset.
-      ADDI_TOC_L
+      ADDI_TOC_L,
+
+      /// VSRC, CHAIN = LXVD2X_LE CHAIN, Ptr - Occurs only for little endian.
+      /// Maps directly to an lxvd2x instruction that will be followed by
+      /// an xxswapd.
+      LXVD2X,
+
+      /// CHAIN = STXVD2X CHAIN, VSRC, Ptr - Occurs only for little endian.
+      /// Maps directly to an stxvd2x instruction that will be preceded by
+      /// an xxswapd.
+      STXVD2X
     };
   }
 
@@ -403,7 +426,13 @@ namespace llvm {
     void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue>&Results,
                             SelectionDAG &DAG) const override;
 
+    SDValue expandVSXLoadForLE(SDNode *N, DAGCombinerInfo &DCI) const;
+    SDValue expandVSXStoreForLE(SDNode *N, DAGCombinerInfo &DCI) const;
+
     SDValue PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const override;
+
+    SDValue BuildSDIVPow2(SDNode *N, const APInt &Divisor, SelectionDAG &DAG,
+                          std::vector<SDNode *> *Created) const override;
 
     unsigned getRegisterByName(const char* RegName, EVT VT) const override;
 

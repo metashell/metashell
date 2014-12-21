@@ -262,6 +262,10 @@ TEST_F(FormatTestJava, Annotations) {
 
   verifyFormat("@SomeAnnotation(\"With some really looooooooooooooong text\")\n"
                "private static final long something = 0L;");
+  verifyFormat("@Mock\n"
+               "DataLoader loooooooooooooooooooooooader =\n"
+               "    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;",
+               getStyleWithColumns(60));
 }
 
 TEST_F(FormatTestJava, Generics) {
@@ -369,6 +373,11 @@ TEST_F(FormatTestJava, NeverAlignAfterReturn) {
                "    .bbbbbbbbbbbbbbbbbbb()\n"
                "    .ccccccccccccccccccc();",
                getStyleWithColumns(40));
+  verifyFormat("return aaaaaaaaaaaaaaaaaaa()\n"
+               "    .bbbbbbbbbbbbbbbbbbb(\n"
+               "         ccccccccccccccc)\n"
+               "    .ccccccccccccccccccc();",
+               getStyleWithColumns(40));
 }
 
 TEST_F(FormatTestJava, FormatsInnerBlocks) {
@@ -407,6 +416,13 @@ TEST_F(FormatTestJava, FormatsLambdas) {
   verifyFormat("Runnable someLambda =\n"
                "    (int aaaaa) -> DoSomething(aaaaa);",
                getStyleWithColumns(40));
+}
+
+TEST_F(FormatTestJava, BreaksStringLiterals) {
+  // FIXME: String literal breaking is currently disabled for Java and JS, as it
+  // requires strings to be merged using "+" which we don't support.
+  EXPECT_EQ("\"some text other\";",
+            format("\"some text other\";", getStyleWithColumns(14)));
 }
 
 } // end namespace tooling

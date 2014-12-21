@@ -614,6 +614,42 @@ void Parser::ParseMicrosoftTypeAttributes(ParsedAttributes &attrs) {
   }
 }
 
+void Parser::DiagnoseAndSkipExtendedMicrosoftTypeAttributes() {
+  SourceLocation StartLoc = Tok.getLocation();
+  SourceLocation EndLoc = SkipExtendedMicrosoftTypeAttributes();
+
+  if (EndLoc.isValid()) {
+    SourceRange Range(StartLoc, EndLoc);
+    Diag(StartLoc, diag::warn_microsoft_qualifiers_ignored) << Range;
+  }
+}
+
+SourceLocation Parser::SkipExtendedMicrosoftTypeAttributes() {
+  SourceLocation EndLoc;
+
+  while (true) {
+    switch (Tok.getKind()) {
+    case tok::kw_const:
+    case tok::kw_volatile:
+    case tok::kw___fastcall:
+    case tok::kw___stdcall:
+    case tok::kw___thiscall:
+    case tok::kw___cdecl:
+    case tok::kw___vectorcall:
+    case tok::kw___ptr32:
+    case tok::kw___ptr64:
+    case tok::kw___w64:
+    case tok::kw___unaligned:
+    case tok::kw___sptr:
+    case tok::kw___uptr:
+      EndLoc = ConsumeToken();
+      break;
+    default:
+      return EndLoc;
+    }
+  }
+}
+
 void Parser::ParseBorlandTypeAttributes(ParsedAttributes &attrs) {
   // Treat these like attributes
   while (Tok.is(tok::kw___pascal)) {
@@ -1430,7 +1466,7 @@ Parser::ParseSimpleDeclaration(unsigned Context,
   }
 
   DS.takeAttributesFrom(Attrs);
-  return ParseDeclGroup(DS, Context, /*FunctionDefs=*/ false, &DeclEnd, FRI);
+  return ParseDeclGroup(DS, Context, &DeclEnd, FRI);
 }
 
 /// Returns true if this might be the start of a declarator, or a common typo
@@ -1585,7 +1621,6 @@ void Parser::SkipMalformedDecl() {
 /// result.
 Parser::DeclGroupPtrTy Parser::ParseDeclGroup(ParsingDeclSpec &DS,
                                               unsigned Context,
-                                              bool AllowFunctionDefinitions,
                                               SourceLocation *DeclEnd,
                                               ForRangeInit *FRI) {
   // Parse the first declarator.
@@ -1633,7 +1668,10 @@ Parser::DeclGroupPtrTy Parser::ParseDeclGroup(ParsingDeclSpec &DS,
       // start of a function definition in GCC-extended K&R C.
       !isDeclarationAfterDeclarator()) {
 
-    if (AllowFunctionDefinitions) {
+    // Function definitions are only allowed at file scope and in C++ classes.
+    // The C++ inline method definition case is handled elsewhere, so we only
+    // need to handle the file scope definition case.
+    if (Context == Declarator::FileContext) {
       if (isStartOfFunctionDefinition(D)) {
         if (DS.getStorageClassSpec() == DeclSpec::SCS_typedef) {
           Diag(Tok, diag::err_function_declared_typedef);
@@ -1731,6 +1769,10 @@ Parser::DeclGroupPtrTy Parser::ParseDeclGroup(ParsingDeclSpec &DS,
     //    short var __attribute__((common));    -> declarator
     //    short x, __attribute__((common)) var;    -> declarator
     MaybeParseGNUAttributes(D);
+
+    // MSVC parses but ignores qualifiers after the comma as an extension.
+    if (getLangOpts().MicrosoftExt)
+      DiagnoseAndSkipExtendedMicrosoftTypeAttributes();
 
     ParseDeclarator(D);
     if (!D.isInvalidType()) {
@@ -4683,7 +4725,7 @@ void Parser::ParseDeclaratorInternal(Declarator &D,
       // Sema will have to catch (syntactically invalid) pointers into global
       // scope. It has to catch pointers into namespace scope anyway.
       D.AddTypeInfo(DeclaratorChunk::getMemberPointer(SS,DS.getTypeQualifiers(),
-                                                      Loc),
+                                                      DS.getLocEnd()),
                     DS.getAttributes(),
                     /* Don't replace range end. */SourceLocation());
       return;
@@ -5890,8 +5932,8 @@ void Parser::ParseTypeofSpecifier(DeclSpec &DS) {
   bool isCastExpr;
   ParsedType CastTy;
   SourceRange CastRange;
-  ExprResult Operand = ParseExprAfterUnaryExprOrTypeTrait(OpTok, isCastExpr,
-                                                          CastTy, CastRange);
+  ExprResult Operand = Actions.CorrectDelayedTyposInExpr(
+      ParseExprAfterUnaryExprOrTypeTrait(OpTok, isCastExpr, CastTy, CastRange));
   if (hasParens)
     DS.setTypeofParensRange(CastRange);
 

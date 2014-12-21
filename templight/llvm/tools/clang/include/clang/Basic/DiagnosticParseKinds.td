@@ -108,6 +108,9 @@ def ext_alignof_expr : ExtWarn<
 def warn_microsoft_dependent_exists : Warning<
   "dependent %select{__if_not_exists|__if_exists}0 declarations are ignored">, 
   InGroup<DiagGroup<"microsoft-exists">>;
+def warn_microsoft_qualifiers_ignored : Warning<
+  "qualifiers after comma in declarator list are ignored">,
+  InGroup<IgnoredAttributes>;
 
 def ext_c11_generic_selection : Extension<
   "generic selections are a C11-specific feature">, InGroup<C11>;
@@ -599,6 +602,8 @@ def err_ms_property_expected_accessor_name : Error<
   "expected name of accessor method">;
 def err_ms_property_expected_comma_or_rparen : Error<
   "expected ',' or ')' at end of property accessor list">;
+def err_ms_property_initializer : Error<
+  "property declaration cannot have an in-class initializer">;
 
 /// C++ Templates
 def err_expected_template : Error<"expected template">;

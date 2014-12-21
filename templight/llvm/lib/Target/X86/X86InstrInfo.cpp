@@ -65,6 +65,7 @@ enum {
   TB_INDEX_1    = 1,
   TB_INDEX_2    = 2,
   TB_INDEX_3    = 3,
+  TB_INDEX_4    = 4,
   TB_INDEX_MASK = 0xf,
 
   // Do not insert the reverse map (MemOp -> RegOp) into the table.
@@ -450,6 +451,7 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::CVTSS2SIrr,      X86::CVTSS2SIrm,          0 },
     { X86::CVTDQ2PSrr,      X86::CVTDQ2PSrm,          TB_ALIGN_16 },
     { X86::CVTPD2DQrr,      X86::CVTPD2DQrm,          TB_ALIGN_16 },
+    { X86::CVTPD2PSrr,      X86::CVTPD2PSrm,          TB_ALIGN_16 },
     { X86::CVTPS2DQrr,      X86::CVTPS2DQrm,          TB_ALIGN_16 },
     { X86::CVTTPD2DQrr,     X86::CVTTPD2DQrm,         TB_ALIGN_16 },
     { X86::CVTTPS2DQrr,     X86::CVTTPS2DQrm,         TB_ALIGN_16 },
@@ -531,6 +533,7 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VCVTSS2SIrr,     X86::VCVTSS2SIrm,         0 },
     { X86::VCVTDQ2PSrr,     X86::VCVTDQ2PSrm,         0 },
     { X86::VCVTPD2DQrr,     X86::VCVTPD2DQXrm,        0 },
+    { X86::VCVTPD2PSrr,     X86::VCVTPD2PSXrm,        0 },
     { X86::VCVTPS2DQrr,     X86::VCVTPS2DQrm,         0 },
     { X86::VCVTTPD2DQrr,    X86::VCVTTPD2DQXrm,       0 },
     { X86::VCVTTPS2DQrr,    X86::VCVTTPS2DQrm,        0 },
@@ -569,6 +572,7 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     // AVX 256-bit foldable instructions
     { X86::VCVTDQ2PSYrr,    X86::VCVTDQ2PSYrm,        0 },
     { X86::VCVTPD2DQYrr,    X86::VCVTPD2DQYrm,        0 },
+    { X86::VCVTPD2PSYrr,    X86::VCVTPD2PSYrm,        0 },
     { X86::VCVTPS2DQYrr,    X86::VCVTPS2DQYrm,        0 },
     { X86::VCVTTPD2DQYrr,   X86::VCVTTPD2DQYrm,       0 },
     { X86::VCVTTPS2DQYrr,   X86::VCVTTPS2DQYrm,       0 },
@@ -659,6 +663,8 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VMOVUPSZrr,      X86::VMOVUPSZrm,          0 },
     { X86::VPABSDZrr,       X86::VPABSDZrm,           0 },
     { X86::VPABSQZrr,       X86::VPABSQZrm,           0 },
+    { X86::VBROADCASTSSZr,  X86::VBROADCASTSSZm,      TB_NO_REVERSE },
+    { X86::VBROADCASTSDZr,  X86::VBROADCASTSDZm,      TB_NO_REVERSE },
     // AVX-512 foldable instructions (256-bit versions)
     { X86::VMOVAPDZ256rr,      X86::VMOVAPDZ256rm,          TB_ALIGN_32 },
     { X86::VMOVAPSZ256rr,      X86::VMOVAPSZ256rm,          TB_ALIGN_32 },
@@ -670,6 +676,8 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VMOVDQU64Z256rr,    X86::VMOVDQU64Z256rm,        0 },
     { X86::VMOVUPDZ256rr,      X86::VMOVUPDZ256rm,          0 },
     { X86::VMOVUPSZ256rr,      X86::VMOVUPSZ256rm,          0 },
+    { X86::VBROADCASTSSZ256r,  X86::VBROADCASTSSZ256m,      TB_NO_REVERSE },
+    { X86::VBROADCASTSDZ256r,  X86::VBROADCASTSDZ256m,      TB_NO_REVERSE },
     // AVX-512 foldable instructions (256-bit versions)
     { X86::VMOVAPDZ128rr,      X86::VMOVAPDZ128rm,          TB_ALIGN_16 },
     { X86::VMOVAPSZ128rr,      X86::VMOVAPSZ128rm,          TB_ALIGN_16 },
@@ -681,6 +689,7 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VMOVDQU64Z128rr,    X86::VMOVDQU64Z128rm,        0 },
     { X86::VMOVUPDZ128rr,      X86::VMOVUPDZ128rm,          0 },
     { X86::VMOVUPSZ128rr,      X86::VMOVUPSZ128rm,          0 },
+    { X86::VBROADCASTSSZ128r,  X86::VBROADCASTSSZ128m,      TB_NO_REVERSE },
 
     // AES foldable instructions
     { X86::AESIMCrr,              X86::AESIMCrm,              TB_ALIGN_16 },
@@ -1321,6 +1330,19 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VALIGNQrri,        X86::VALIGNQrmi,          0 },
     { X86::VALIGNDrri,        X86::VALIGNDrmi,          0 },
     { X86::VPMULUDQZrr,       X86::VPMULUDQZrm,         0 },
+    { X86::VBROADCASTSSZrkz,  X86::VBROADCASTSSZmkz,    TB_NO_REVERSE },
+    { X86::VBROADCASTSDZrkz,  X86::VBROADCASTSDZmkz,    TB_NO_REVERSE },
+
+    // AVX-512{F,VL} foldable instructions
+    { X86::VBROADCASTSSZ256rkz,  X86::VBROADCASTSSZ256mkz,      TB_NO_REVERSE },
+    { X86::VBROADCASTSDZ256rkz,  X86::VBROADCASTSDZ256mkz,      TB_NO_REVERSE },
+    { X86::VBROADCASTSSZ128rkz,  X86::VBROADCASTSSZ128mkz,      TB_NO_REVERSE },
+
+    // AVX-512{F,VL} foldable instructions
+    { X86::VADDPDZ128rr,      X86::VADDPDZ128rm,        0 },
+    { X86::VADDPDZ256rr,      X86::VADDPDZ256rm,        0 },
+    { X86::VADDPSZ128rr,      X86::VADDPSZ128rm,        0 },
+    { X86::VADDPSZ256rr,      X86::VADDPSZ256rm,        0 },
 
     // AES foldable instructions
     { X86::AESDECLASTrr,      X86::AESDECLASTrm,        TB_ALIGN_16 },
@@ -1501,7 +1523,51 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
     { X86::VBLENDMPDZrr,          X86::VBLENDMPDZrm,          0 },
     { X86::VBLENDMPSZrr,          X86::VBLENDMPSZrm,          0 },
     { X86::VPBLENDMDZrr,          X86::VPBLENDMDZrm,          0 },
-    { X86::VPBLENDMQZrr,          X86::VPBLENDMQZrm,          0 }
+    { X86::VPBLENDMQZrr,          X86::VPBLENDMQZrm,          0 },
+    { X86::VBROADCASTSSZrk,       X86::VBROADCASTSSZmk,       TB_NO_REVERSE },
+    { X86::VBROADCASTSDZrk,       X86::VBROADCASTSDZmk,       TB_NO_REVERSE },
+    { X86::VBROADCASTSSZ256rk,    X86::VBROADCASTSSZ256mk,    TB_NO_REVERSE },
+    { X86::VBROADCASTSDZ256rk,    X86::VBROADCASTSDZ256mk,    TB_NO_REVERSE },
+    { X86::VBROADCASTSSZ128rk,    X86::VBROADCASTSSZ128mk,    TB_NO_REVERSE },
+     // AVX-512 arithmetic instructions
+    { X86::VADDPSZrrkz,           X86::VADDPSZrmkz,           0 },
+    { X86::VADDPDZrrkz,           X86::VADDPDZrmkz,           0 },
+    { X86::VSUBPSZrrkz,           X86::VSUBPSZrmkz,           0 },
+    { X86::VSUBPDZrrkz,           X86::VSUBPDZrmkz,           0 },
+    { X86::VMULPSZrrkz,           X86::VMULPSZrmkz,           0 },
+    { X86::VMULPDZrrkz,           X86::VMULPDZrmkz,           0 },
+    { X86::VDIVPSZrrkz,           X86::VDIVPSZrmkz,           0 },
+    { X86::VDIVPDZrrkz,           X86::VDIVPDZrmkz,           0 },
+    { X86::VMINPSZrrkz,           X86::VMINPSZrmkz,           0 },
+    { X86::VMINPDZrrkz,           X86::VMINPDZrmkz,           0 },
+    { X86::VMAXPSZrrkz,           X86::VMAXPSZrmkz,           0 },
+    { X86::VMAXPDZrrkz,           X86::VMAXPDZrmkz,           0 },
+    // AVX-512{F,VL} arithmetic instructions 256-bit
+    { X86::VADDPSZ256rrkz,        X86::VADDPSZ256rmkz,        0 },
+    { X86::VADDPDZ256rrkz,        X86::VADDPDZ256rmkz,        0 },
+    { X86::VSUBPSZ256rrkz,        X86::VSUBPSZ256rmkz,        0 },
+    { X86::VSUBPDZ256rrkz,        X86::VSUBPDZ256rmkz,        0 },
+    { X86::VMULPSZ256rrkz,        X86::VMULPSZ256rmkz,        0 },
+    { X86::VMULPDZ256rrkz,        X86::VMULPDZ256rmkz,        0 },
+    { X86::VDIVPSZ256rrkz,        X86::VDIVPSZ256rmkz,        0 },
+    { X86::VDIVPDZ256rrkz,        X86::VDIVPDZ256rmkz,        0 },
+    { X86::VMINPSZ256rrkz,        X86::VMINPSZ256rmkz,        0 },
+    { X86::VMINPDZ256rrkz,        X86::VMINPDZ256rmkz,        0 },
+    { X86::VMAXPSZ256rrkz,        X86::VMAXPSZ256rmkz,        0 },
+    { X86::VMAXPDZ256rrkz,        X86::VMAXPDZ256rmkz,        0 },
+    // AVX-512{F,VL} arithmetic instructions 128-bit
+    { X86::VADDPSZ128rrkz,        X86::VADDPSZ128rmkz,        0 },
+    { X86::VADDPDZ128rrkz,        X86::VADDPDZ128rmkz,        0 },
+    { X86::VSUBPSZ128rrkz,        X86::VSUBPSZ128rmkz,        0 },
+    { X86::VSUBPDZ128rrkz,        X86::VSUBPDZ128rmkz,        0 },
+    { X86::VMULPSZ128rrkz,        X86::VMULPSZ128rmkz,        0 },
+    { X86::VMULPDZ128rrkz,        X86::VMULPDZ128rmkz,        0 },
+    { X86::VDIVPSZ128rrkz,        X86::VDIVPSZ128rmkz,        0 },
+    { X86::VDIVPDZ128rrkz,        X86::VDIVPDZ128rmkz,        0 },
+    { X86::VMINPSZ128rrkz,        X86::VMINPSZ128rmkz,        0 },
+    { X86::VMINPDZ128rrkz,        X86::VMINPDZ128rmkz,        0 },
+    { X86::VMAXPSZ128rrkz,        X86::VMAXPSZ128rmkz,        0 },
+    { X86::VMAXPDZ128rrkz,        X86::VMAXPDZ128rmkz,        0 }
   };
 
   for (unsigned i = 0, e = array_lengthof(OpTbl3); i != e; ++i) {
@@ -1514,6 +1580,57 @@ X86InstrInfo::X86InstrInfo(X86Subtarget &STI)
                   Flags | TB_INDEX_3 | TB_FOLDED_LOAD);
   }
 
+  static const X86OpTblEntry OpTbl4[] = {
+     // AVX-512 foldable instructions
+    { X86::VADDPSZrrk,         X86::VADDPSZrmk,           0 },
+    { X86::VADDPDZrrk,         X86::VADDPDZrmk,           0 },
+    { X86::VSUBPSZrrk,         X86::VSUBPSZrmk,           0 },
+    { X86::VSUBPDZrrk,         X86::VSUBPDZrmk,           0 },
+    { X86::VMULPSZrrk,         X86::VMULPSZrmk,           0 },
+    { X86::VMULPDZrrk,         X86::VMULPDZrmk,           0 },
+    { X86::VDIVPSZrrk,         X86::VDIVPSZrmk,           0 },
+    { X86::VDIVPDZrrk,         X86::VDIVPDZrmk,           0 },
+    { X86::VMINPSZrrk,         X86::VMINPSZrmk,           0 },
+    { X86::VMINPDZrrk,         X86::VMINPDZrmk,           0 },
+    { X86::VMAXPSZrrk,         X86::VMAXPSZrmk,           0 },
+    { X86::VMAXPDZrrk,         X86::VMAXPDZrmk,           0 },
+    // AVX-512{F,VL} foldable instructions 256-bit
+    { X86::VADDPSZ256rrk,      X86::VADDPSZ256rmk,        0 },
+    { X86::VADDPDZ256rrk,      X86::VADDPDZ256rmk,        0 },
+    { X86::VSUBPSZ256rrk,      X86::VSUBPSZ256rmk,        0 },
+    { X86::VSUBPDZ256rrk,      X86::VSUBPDZ256rmk,        0 },
+    { X86::VMULPSZ256rrk,      X86::VMULPSZ256rmk,        0 },
+    { X86::VMULPDZ256rrk,      X86::VMULPDZ256rmk,        0 },
+    { X86::VDIVPSZ256rrk,      X86::VDIVPSZ256rmk,        0 },
+    { X86::VDIVPDZ256rrk,      X86::VDIVPDZ256rmk,        0 },
+    { X86::VMINPSZ256rrk,      X86::VMINPSZ256rmk,        0 },
+    { X86::VMINPDZ256rrk,      X86::VMINPDZ256rmk,        0 },
+    { X86::VMAXPSZ256rrk,      X86::VMAXPSZ256rmk,        0 },
+    { X86::VMAXPDZ256rrk,      X86::VMAXPDZ256rmk,        0 },
+    // AVX-512{F,VL} foldable instructions 128-bit
+    { X86::VADDPSZ128rrk,      X86::VADDPSZ128rmk,        0 },
+    { X86::VADDPDZ128rrk,      X86::VADDPDZ128rmk,        0 },
+    { X86::VSUBPSZ128rrk,      X86::VSUBPSZ128rmk,        0 },
+    { X86::VSUBPDZ128rrk,      X86::VSUBPDZ128rmk,        0 },
+    { X86::VMULPSZ128rrk,      X86::VMULPSZ128rmk,        0 },
+    { X86::VMULPDZ128rrk,      X86::VMULPDZ128rmk,        0 },
+    { X86::VDIVPSZ128rrk,      X86::VDIVPSZ128rmk,        0 },
+    { X86::VDIVPDZ128rrk,      X86::VDIVPDZ128rmk,        0 },
+    { X86::VMINPSZ128rrk,      X86::VMINPSZ128rmk,        0 },
+    { X86::VMINPDZ128rrk,      X86::VMINPDZ128rmk,        0 },
+    { X86::VMAXPSZ128rrk,      X86::VMAXPSZ128rmk,        0 },
+    { X86::VMAXPDZ128rrk,      X86::VMAXPDZ128rmk,        0 }
+  };
+
+  for (unsigned i = 0, e = array_lengthof(OpTbl4); i != e; ++i) {
+    unsigned RegOp = OpTbl4[i].RegOp;
+    unsigned MemOp = OpTbl4[i].MemOp;
+    unsigned Flags = OpTbl4[i].Flags;
+    AddTableEntry(RegOp2MemOpTable4, MemOp2RegOpTable,
+                  RegOp, MemOp,
+                  // Index 4, folded load
+                  Flags | TB_INDEX_4 | TB_FOLDED_LOAD);
+  }
 }
 
 void
@@ -4229,6 +4346,8 @@ X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
     OpcodeTablePtr = &RegOp2MemOpTable2;
   } else if (i == 3) {
     OpcodeTablePtr = &RegOp2MemOpTable3;
+  } else if (i == 4) {
+    OpcodeTablePtr = &RegOp2MemOpTable4;
   }
 
   // If table selected...
@@ -4362,23 +4481,43 @@ X86InstrInfo::foldMemoryOperandImpl(MachineFunction &MF,
 static bool hasPartialRegUpdate(unsigned Opcode) {
   switch (Opcode) {
   case X86::CVTSI2SSrr:
+  case X86::CVTSI2SSrm:
   case X86::CVTSI2SS64rr:
+  case X86::CVTSI2SS64rm:
   case X86::CVTSI2SDrr:
+  case X86::CVTSI2SDrm:
   case X86::CVTSI2SD64rr:
+  case X86::CVTSI2SD64rm:
   case X86::CVTSD2SSrr:
+  case X86::CVTSD2SSrm:
   case X86::Int_CVTSD2SSrr:
+  case X86::Int_CVTSD2SSrm:
   case X86::CVTSS2SDrr:
+  case X86::CVTSS2SDrm:
   case X86::Int_CVTSS2SDrr:
+  case X86::Int_CVTSS2SDrm:
   case X86::RCPSSr:
+  case X86::RCPSSm:
   case X86::RCPSSr_Int:
+  case X86::RCPSSm_Int:
   case X86::ROUNDSDr:
+  case X86::ROUNDSDm:
   case X86::ROUNDSDr_Int:
   case X86::ROUNDSSr:
+  case X86::ROUNDSSm:
   case X86::ROUNDSSr_Int:
   case X86::RSQRTSSr:
+  case X86::RSQRTSSm:
   case X86::RSQRTSSr_Int:
+  case X86::RSQRTSSm_Int:
   case X86::SQRTSSr:
+  case X86::SQRTSSm:
   case X86::SQRTSSr_Int:
+  case X86::SQRTSSm_Int:
+  case X86::SQRTSDr:
+  case X86::SQRTSDm:
+  case X86::SQRTSDr_Int:
+  case X86::SQRTSDm_Int:
     return true;
   }
 

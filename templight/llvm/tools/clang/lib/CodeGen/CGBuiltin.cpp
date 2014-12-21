@@ -20,7 +20,9 @@
 #include "clang/Basic/TargetBuiltins.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/CodeGen/CGFunctionInfo.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Intrinsics.h"
 
 using namespace clang;
@@ -185,7 +187,8 @@ static llvm::Value *EmitOverflowIntrinsic(CodeGenFunction &CGF,
 }
 
 RValue CodeGenFunction::EmitBuiltinExpr(const FunctionDecl *FD,
-                                        unsigned BuiltinID, const CallExpr *E) {
+                                        unsigned BuiltinID, const CallExpr *E,
+                                        ReturnValueSlot ReturnValue) {
   // See if we can constant fold this builtin.  If so, don't emit it at all.
   Expr::EvalResult Result;
   if (E->EvaluateAsRValue(Result, CGM.getContext()) &&
@@ -1566,6 +1569,13 @@ RValue CodeGenFunction::EmitBuiltinExpr(const FunctionDecl *FD,
   case Builtin::BI__noop:
     // __noop always evaluates to an integer literal zero.
     return RValue::get(ConstantInt::get(IntTy, 0));
+  case Builtin::BI__builtin_call_with_static_chain: {
+    const CallExpr *Call = cast<CallExpr>(E->getArg(0));
+    const Expr *Chain = E->getArg(1);
+    return EmitCall(Call->getCallee()->getType(),
+                    EmitScalarExpr(Call->getCallee()), Call, ReturnValue,
+                    Call->getCalleeDecl(), EmitScalarExpr(Chain));
+  }
   case Builtin::BI_InterlockedExchange:
   case Builtin::BI_InterlockedExchangePointer:
     return EmitBinaryAtomic(*this, llvm::AtomicRMWInst::Xchg, E);
@@ -3156,6 +3166,26 @@ Value *CodeGenFunction::EmitARMBuiltinExpr(unsigned BuiltinID,
                                            const CallExpr *E) {
   if (auto Hint = GetValueForARMHint(BuiltinID))
     return Hint;
+
+  if (BuiltinID == ARM::BI__emit) {
+    bool IsThumb = getTarget().getTriple().getArch() == llvm::Triple::thumb;
+    llvm::FunctionType *FTy =
+        llvm::FunctionType::get(VoidTy, /*Variadic=*/false);
+
+    APSInt Value;
+    if (!E->getArg(0)->EvaluateAsInt(Value, CGM.getContext()))
+      llvm_unreachable("Sema will ensure that the parameter is constant");
+
+    uint64_t ZExtValue = Value.zextOrTrunc(IsThumb ? 16 : 32).getZExtValue();
+
+    llvm::InlineAsm *Emit =
+        IsThumb ? InlineAsm::get(FTy, ".inst.n 0x" + utohexstr(ZExtValue), "",
+                                 /*SideEffects=*/true)
+                : InlineAsm::get(FTy, ".inst 0x" + utohexstr(ZExtValue), "",
+                                 /*SideEffects=*/true);
+
+    return Builder.CreateCall(Emit);
+  }
 
   if (BuiltinID == ARM::BI__builtin_arm_dbg) {
     Value *Option = EmitScalarExpr(E->getArg(0));
@@ -5932,8 +5962,8 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
   case X86::BI__builtin_ia32_movntdq256:
   case X86::BI__builtin_ia32_movnti:
   case X86::BI__builtin_ia32_movnti64: {
-    llvm::MDNode *Node = llvm::MDNode::get(getLLVMContext(),
-                                           Builder.getInt32(1));
+    llvm::MDNode *Node = llvm::MDNode::get(
+        getLLVMContext(), llvm::ConstantAsMetadata::get(Builder.getInt32(1)));
 
     // Convert the type of the pointer to a pointer to the stored type.
     Value *BC = Builder.CreateBitCast(Ops[0],

@@ -17,21 +17,6 @@
 
 namespace __sanitizer {
 
-uptr StackTrace::GetPreviousInstructionPc(uptr pc) {
-#if defined(__arm__)
-  // Cancel Thumb bit.
-  pc = pc & (~1);
-#endif
-#if defined(__powerpc__) || defined(__powerpc64__)
-  // PCs are always 4 byte aligned.
-  return pc - 4;
-#elif defined(__sparc__) || defined(__mips__)
-  return pc - 8;
-#else
-  return pc - 1;
-#endif
-}
-
 uptr StackTrace::GetNextInstructionPc(uptr pc) {
 #if defined(__mips__)
   return pc + 8;
@@ -120,7 +105,7 @@ void BufferedStackTrace::PopStackFrames(uptr count) {
 uptr BufferedStackTrace::LocatePcInTrace(uptr pc) {
   // Use threshold to find PC in stack trace, as PC we want to unwind from may
   // slightly differ from return address in the actual unwinded stack trace.
-  const int kPcThreshold = 288;
+  const int kPcThreshold = 304;
   for (uptr i = 0; i < size; ++i) {
     if (MatchPc(pc, trace[i], kPcThreshold))
       return i;

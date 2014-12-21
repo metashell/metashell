@@ -87,7 +87,7 @@ void FillProfileCallback(uptr p, uptr rss, bool file,
     mem[MemShadow] += rss;
   else if (p >= kMetaShadowBeg && p < kMetaShadowEnd)
     mem[MemMeta] += rss;
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
   else if (p >= kHeapMemBeg && p < kHeapMemEnd)
     mem[MemHeap] += rss;
   else if (p >= kLoAppMemBeg && p < kLoAppMemEnd)
@@ -118,33 +118,6 @@ void WriteMemoryProfile(char *buf, uptr buf_size, uptr nthread, uptr nlive) {
       nlive, nthread);
 }
 
-uptr GetRSS() {
-  uptr fd = OpenFile("/proc/self/statm", false);
-  if ((sptr)fd < 0)
-    return 0;
-  char buf[64];
-  uptr len = internal_read(fd, buf, sizeof(buf) - 1);
-  internal_close(fd);
-  if ((sptr)len <= 0)
-    return 0;
-  buf[len] = 0;
-  // The format of the file is:
-  // 1084 89 69 11 0 79 0
-  // We need the second number which is RSS in 4K units.
-  char *pos = buf;
-  // Skip the first number.
-  while (*pos >= '0' && *pos <= '9')
-    pos++;
-  // Skip whitespaces.
-  while (!(*pos >= '0' && *pos <= '9') && *pos != 0)
-    pos++;
-  // Read the number.
-  uptr rss = 0;
-  while (*pos >= '0' && *pos <= '9')
-    rss = rss * 10 + *pos++ - '0';
-  return rss * 4096;
-}
-
 #if SANITIZER_LINUX
 void FlushShadowMemoryCallback(
     const SuspendedThreadsList &suspended_threads_list,
@@ -159,7 +132,7 @@ void FlushShadowMemory() {
 #endif
 }
 
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
 static void ProtectRange(uptr beg, uptr end) {
   CHECK_LE(beg, end);
   if (beg == end)
@@ -324,10 +297,13 @@ static void CheckAndProtect() {
   ProtectRange(kLoAppMemEnd, kShadowBeg);
   ProtectRange(kShadowEnd, kMetaShadowBeg);
   ProtectRange(kMetaShadowEnd, kTraceMemBeg);
+  // Memory for traces is mapped lazily in MapThreadTrace.
+  // Protect the whole range for now, so that user does not map something here.
+  ProtectRange(kTraceMemBeg, kTraceMemEnd);
   ProtectRange(kTraceMemEnd, kHeapMemBeg);
   ProtectRange(kHeapMemEnd + PrimaryAllocator::AdditionalSize(), kHiAppMemBeg);
 }
-#endif  // #ifndef TSAN_GO
+#endif  // #ifndef SANITIZER_GO
 
 void InitializePlatform() {
   DisableCoreDumperIfNecessary();
@@ -361,7 +337,7 @@ void InitializePlatform() {
       ReExec();
   }
 
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
   CheckAndProtect();
   InitTlsSize();
   InitDataSeg();
@@ -372,7 +348,7 @@ bool IsGlobalVar(uptr addr) {
   return g_data_start && addr >= g_data_start && addr < g_data_end;
 }
 
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
 // Extract file descriptors passed to glibc internal __res_iclose function.
 // This is required to properly "close" the fds, because we do not see internal
 // closes within glibc. The code is a pure hack.

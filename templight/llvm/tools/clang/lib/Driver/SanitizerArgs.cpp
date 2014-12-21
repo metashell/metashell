@@ -83,12 +83,6 @@ static unsigned parseValue(const char *Value);
 static unsigned parseArgValues(const Driver &D, const llvm::opt::Arg *A,
                                bool DiagnoseErrors);
 
-/// Parse a single flag of the form -f[no]sanitize=.
-/// Sets the masks defining required change of the set of sanitizers.
-/// Returns true if the flag was parsed successfully.
-static bool parseArgument(const Driver &D, const llvm::opt::Arg *A,
-                          unsigned &Add, unsigned &Remove, bool DiagnoseErrors);
-
 /// Produce an argument string from ArgList \p Args, which shows how it
 /// provides some sanitizer kind from \p Mask. For example, the argument list
 /// "-fsanitize=thread,vptr -fsanitize=address" with mask \c NeedsUbsanRt
@@ -174,35 +168,38 @@ SanitizerArgs::SanitizerArgs(const ToolChain &TC,
   const Driver &D = TC.getDriver();
   for (ArgList::const_reverse_iterator I = Args.rbegin(), E = Args.rend();
        I != E; ++I) {
-    unsigned Add, Remove;
-    if (!parseArgument(D, *I, Add, Remove, true))
-      continue;
-    (*I)->claim();
+    const auto *Arg = *I;
+    if (Arg->getOption().matches(options::OPT_fsanitize_EQ)) {
+      Arg->claim();
+      unsigned Add = parseArgValues(D, Arg, true);
 
-    AllRemove |= expandGroups(Remove);
+      // Avoid diagnosing any sanitizer which is disabled later.
+      Add &= ~AllRemove;
+      // At this point we have not expanded groups, so any unsupported
+      // sanitizers in Add are those which have been explicitly enabled.
+      // Diagnose them.
+      if (unsigned KindsToDiagnose = Add & NotSupported & ~DiagnosedKinds) {
+        // Only diagnose the new kinds.
+        std::string Desc = describeSanitizeArg(*I, KindsToDiagnose);
+        D.Diag(diag::err_drv_unsupported_opt_for_target)
+            << Desc << TC.getTriple().str();
+        DiagnosedKinds |= KindsToDiagnose;
+      }
+      Add &= ~NotSupported;
 
-    // Avoid diagnosing any sanitizer which is disabled later.
-    Add &= ~AllRemove;
+      Add = expandGroups(Add);
+      // Group expansion may have enabled a sanitizer which is disabled later.
+      Add &= ~AllRemove;
+      // Silently discard any unsupported sanitizers implicitly enabled through
+      // group expansion.
+      Add &= ~NotSupported;
 
-    // At this point we have not expanded groups, so any unsupported sanitizers
-    // in Add are those which have been explicitly enabled. Diagnose them.
-    if (unsigned KindsToDiagnose = Add & NotSupported & ~DiagnosedKinds) {
-      // Only diagnose the new kinds.
-      std::string Desc = describeSanitizeArg(*I, KindsToDiagnose);
-      D.Diag(diag::err_drv_unsupported_opt_for_target) << Desc
-                                                       << TC.getTriple().str();
-      DiagnosedKinds |= KindsToDiagnose;
+      Kinds |= Add;
+    } else if (Arg->getOption().matches(options::OPT_fno_sanitize_EQ)) {
+      Arg->claim();
+      unsigned Remove = parseArgValues(D, Arg, true);
+      AllRemove |= expandGroups(Remove);
     }
-    Add &= ~NotSupported;
-
-    Add = expandGroups(Add);
-    // Group expansion may have enabled a sanitizer which is disabled later.
-    Add &= ~AllRemove;
-    // Silently discard any unsupported sanitizers implicitly enabled through
-    // group expansion.
-    Add &= ~NotSupported;
-
-    Kinds |= Add;
   }
   addAllOf(Sanitizers, Kinds);
 
@@ -297,8 +294,8 @@ SanitizerArgs::SanitizerArgs(const ToolChain &TC,
     }
   }
 
-  // Parse -fsanitize-coverage=N
-  if (NeedsAsan || NeedsMsan) {  // Currently asan or msan is required.
+  // Parse -fsanitize-coverage=N. Currently one of asan/msan/lsan is required.
+  if (NeedsAsan || NeedsMsan || NeedsLsan) {
     if (Arg *A = Args.getLastArg(options::OPT_fsanitize_coverage)) {
       StringRef S = A->getValue();
       // Legal values are 0..4.
@@ -427,30 +424,27 @@ unsigned expandGroups(unsigned Kinds) {
 
 unsigned parseArgValues(const Driver &D, const llvm::opt::Arg *A,
                         bool DiagnoseErrors) {
-  unsigned Kind = 0;
+  assert((A->getOption().matches(options::OPT_fsanitize_EQ) ||
+          A->getOption().matches(options::OPT_fno_sanitize_EQ)) &&
+         "Invalid argument in parseArgValues!");
+  unsigned Kinds = 0;
   for (unsigned I = 0, N = A->getNumValues(); I != N; ++I) {
-    if (unsigned K = parseValue(A->getValue(I)))
-      Kind |= K;
+    const char *Value = A->getValue(I);
+    unsigned Kind;
+    // Special case: don't accept -fsanitize=all.
+    if (A->getOption().matches(options::OPT_fsanitize_EQ) &&
+        0 == strcmp("all", Value))
+      Kind = 0;
+    else
+      Kind = parseValue(Value);
+
+    if (Kind)
+      Kinds |= Kind;
     else if (DiagnoseErrors)
       D.Diag(clang::diag::err_drv_unsupported_option_argument)
-        << A->getOption().getName() << A->getValue(I);
+          << A->getOption().getName() << Value;
   }
-  return Kind;
-}
-
-bool parseArgument(const Driver &D, const llvm::opt::Arg *A, unsigned &Add,
-                   unsigned &Remove, bool DiagnoseErrors) {
-  Add = 0;
-  Remove = 0;
-  if (A->getOption().matches(options::OPT_fsanitize_EQ)) {
-    Add = parseArgValues(D, A, DiagnoseErrors);
-    return true;
-  }
-  if (A->getOption().matches(options::OPT_fno_sanitize_EQ)) {
-    Remove = parseArgValues(D, A, DiagnoseErrors);
-    return true;
-  }
-  return false;
+  return Kinds;
 }
 
 std::string lastArgumentForMask(const Driver &D, const llvm::opt::ArgList &Args,
@@ -458,11 +452,15 @@ std::string lastArgumentForMask(const Driver &D, const llvm::opt::ArgList &Args,
   for (llvm::opt::ArgList::const_reverse_iterator I = Args.rbegin(),
                                                   E = Args.rend();
        I != E; ++I) {
-    unsigned Add, Remove;
-    if (parseArgument(D, *I, Add, Remove, false) &&
-        (expandGroups(Add) & Mask))
-      return describeSanitizeArg(*I, Mask);
-    Mask &= ~Remove;
+    const auto *Arg = *I;
+    if (Arg->getOption().matches(options::OPT_fsanitize_EQ)) {
+      unsigned AddKinds = expandGroups(parseArgValues(D, Arg, false));
+      if (AddKinds & Mask)
+        return describeSanitizeArg(Arg, Mask);
+    } else if (Arg->getOption().matches(options::OPT_fno_sanitize_EQ)) {
+      unsigned RemoveKinds = expandGroups(parseArgValues(D, Arg, false));
+      Mask &= ~RemoveKinds;
+    }
   }
   llvm_unreachable("arg list didn't provide expected value");
 }

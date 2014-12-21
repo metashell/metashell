@@ -566,6 +566,7 @@ static void getCopyToPartsVector(SelectionDAG &DAG, SDLoc DL,
   } else if (NumParts > 0) {
     // If the intermediate type was expanded, split each the value into
     // legal parts.
+    assert(NumIntermediates != 0 && "division by zero");
     assert(NumParts % NumIntermediates == 0 &&
            "Must expand into a divisible number of parts!");
     unsigned Factor = NumParts / NumIntermediates;
@@ -1408,7 +1409,7 @@ SelectionDAGBuilder::EmitBranchForMergedCondition(const Value *Cond,
         if (TM.Options.NoNaNsFPMath)
           Condition = getFCmpCodeWithoutNaN(Condition);
       } else {
-        Condition = ISD::SETEQ; // silence warning.
+        (void)Condition; // silence warning.
         llvm_unreachable("Unknown compare instruction");
       }
 
@@ -2698,32 +2699,55 @@ void SelectionDAGBuilder::visitSwitch(const SwitchInst &SI) {
   if (SwitchMBB + 1 != FuncInfo.MF->end())
     NextBlock = SwitchMBB + 1;
 
+
+  // Create a vector of Cases, sorted so that we can efficiently create a binary
+  // search tree from them.
+  CaseVector Cases;
+  Clusterify(Cases, SI);
+
+  // Get the default destination MBB.
   MachineBasicBlock *Default = FuncInfo.MBBMap[SI.getDefaultDest()];
 
-  // If there is only the default destination, branch to it if it is not the
-  // next basic block.  Otherwise, just fall through.
-  if (!SI.getNumCases()) {
+  if (isa<UnreachableInst>(SI.getDefaultDest()->getFirstNonPHIOrDbg()) &&
+      !Cases.empty()) {
+    // Replace an unreachable default destination with the most popular case
+    // destination.
+    DenseMap<const BasicBlock *, unsigned> Popularity;
+    unsigned MaxPop = 0;
+    const BasicBlock *MaxBB = nullptr;
+    for (auto I : SI.cases()) {
+      const BasicBlock *BB = I.getCaseSuccessor();
+      if (++Popularity[BB] > MaxPop) {
+        MaxPop = Popularity[BB];
+        MaxBB = BB;
+      }
+    }
+
+    // Set new default.
+    assert(MaxPop > 0);
+    assert(MaxBB);
+    Default = FuncInfo.MBBMap[MaxBB];
+
+    // Remove cases that were pointing to the destination that is now the default.
+    Cases.erase(std::remove_if(Cases.begin(), Cases.end(),
+                               [&](const Case &C) { return C.BB == Default; }),
+                Cases.end());
+  }
+
+  // If there is only the default destination, go there directly.
+  if (Cases.empty()) {
     // Update machine-CFG edges.
     SwitchMBB->addSuccessor(Default);
 
     // If this is not a fall-through branch, emit the branch.
-    if (Default != NextBlock)
-      DAG.setRoot(DAG.getNode(ISD::BR, getCurSDLoc(),
-                              MVT::Other, getControlRoot(),
-                              DAG.getBasicBlock(Default)));
-
+    if (Default != NextBlock) {
+      DAG.setRoot(DAG.getNode(ISD::BR, getCurSDLoc(), MVT::Other,
+                              getControlRoot(), DAG.getBasicBlock(Default)));
+    }
     return;
   }
 
-  // If there are any non-default case statements, create a vector of Cases
-  // representing each one, and sort the vector so that we can efficiently
-  // create a binary search tree from them.
-  CaseVector Cases;
-  Clusterify(Cases, SI);
-
-  // Get the Value to be switched on and default basic blocks, which will be
-  // inserted into CaseBlock records, representing basic blocks in the binary
-  // search tree.
+  // Get the Value to be switched on.
   const Value *SV = SI.getCondition();
 
   // Push the initial CaseRec onto the worklist
@@ -4691,7 +4715,8 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
     return nullptr;
   case Intrinsic::read_register: {
     Value *Reg = I.getArgOperand(0);
-    SDValue RegName = DAG.getMDNode(cast<MDNode>(Reg));
+    SDValue RegName =
+        DAG.getMDNode(cast<MDNode>(cast<MetadataAsValue>(Reg)->getMetadata()));
     EVT VT = TLI.getValueType(I.getType());
     setValue(&I, DAG.getNode(ISD::READ_REGISTER, sdl, VT, RegName));
     return nullptr;
@@ -4700,7 +4725,8 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
     Value *Reg = I.getArgOperand(0);
     Value *RegValue = I.getArgOperand(1);
     SDValue Chain = getValue(RegValue).getOperand(0);
-    SDValue RegName = DAG.getMDNode(cast<MDNode>(Reg));
+    SDValue RegName =
+        DAG.getMDNode(cast<MDNode>(cast<MetadataAsValue>(Reg)->getMetadata()));
     DAG.setRoot(DAG.getNode(ISD::WRITE_REGISTER, sdl, MVT::Other, Chain,
                             RegName, getValue(RegValue)));
     return nullptr;
@@ -5547,6 +5573,8 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
     visitGCRelocate(I);
     return nullptr;
   }
+  case Intrinsic::instrprof_increment:
+    llvm_unreachable("instrprof failed to lower an increment");
   }
 }
 

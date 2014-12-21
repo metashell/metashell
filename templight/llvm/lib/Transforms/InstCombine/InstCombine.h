@@ -285,6 +285,7 @@ private:
   bool WillNotOverflowUnsignedAdd(Value *LHS, Value *RHS, Instruction *CxtI);
   bool WillNotOverflowSignedSub(Value *LHS, Value *RHS, Instruction *CxtI);
   bool WillNotOverflowUnsignedSub(Value *LHS, Value *RHS, Instruction *CxtI);
+  bool WillNotOverflowSignedMul(Value *LHS, Value *RHS, Instruction *CxtI);
   Value *EmitGEPOffset(User *GEP);
   Instruction *scalarizePHI(ExtractElementInst &EI, PHINode *PN);
   Value *EvaluateInDifferentElementOrder(Value *V, ArrayRef<int> Mask);
@@ -331,6 +332,20 @@ public:
     return &I;
   }
 
+  /// Creates a result tuple for an overflow intrinsic \p II with a given
+  /// \p Result and a constant \p Overflow value. If \p ReUseName is true the
+  /// \p Result's name is taken from \p II.
+  Instruction *CreateOverflowTuple(IntrinsicInst *II, Value *Result,
+                                    bool Overflow, bool ReUseName = true) {
+    if (ReUseName)
+      Result->takeName(II);
+    Constant *V[] = { UndefValue::get(Result->getType()),
+                      Overflow ? Builder->getTrue() : Builder->getFalse() };
+    StructType *ST = cast<StructType>(II->getType());
+    Constant *Struct = ConstantStruct::get(ST, V);
+    return InsertValueInst::Create(Struct, Result, 0);
+  }
+        
   // EraseInstFromFunction - When dealing with an instruction that has side
   // effects or produces a void value, we can't rely on DCE to delete the
   // instruction.  Instead, visit methods should return the value returned by

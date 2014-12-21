@@ -54,6 +54,7 @@ struct CommonFlags {
   bool intercept_tls_get_addr;
   bool help;
   uptr mmap_limit_mb;
+  uptr hard_rss_limit_mb;
   bool coverage;
   bool coverage_direct;
   const char *coverage_dir;
@@ -63,15 +64,24 @@ struct CommonFlags {
   bool disable_coredump;
   bool symbolize_inline_frames;
   const char *stack_trace_format;
+
+  void SetDefaults();
+  void ParseFromString(const char *str);
 };
 
+// Functions to get/set global CommonFlags shared by all sanitizer runtimes:
+extern CommonFlags common_flags_dont_use;
 inline CommonFlags *common_flags() {
-  extern CommonFlags common_flags_dont_use;
   return &common_flags_dont_use;
 }
 
-void SetCommonFlagsDefaults(CommonFlags *f);
-void ParseCommonFlagsFromString(CommonFlags *f, const char *str);
+inline void SetCommonFlagsDefaults() {
+  common_flags_dont_use.SetDefaults();
+}
+
+inline void ParseCommonFlagsFromString(const char *str) {
+  common_flags_dont_use.ParseFromString(str);
+}
 void PrintFlagDescriptions();
 
 }  // namespace __sanitizer

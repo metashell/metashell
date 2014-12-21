@@ -149,7 +149,7 @@ else()
   elseif("${COMPILER_RT_TEST_TARGET_ARCH}" MATCHES "aarch32")
     test_target_arch(aarch32 "-march=armv8-a")
   elseif("${COMPILER_RT_TEST_TARGET_ARCH}" MATCHES "aarch64")
-    test_target_arch(aarch64 "-march=aarch64")
+    test_target_arch(aarch64 "-march=armv8-a")
   endif()
   set(COMPILER_RT_OS_SUFFIX "")
 endif()
@@ -173,7 +173,7 @@ filter_available_targets(SANITIZER_COMMON_SUPPORTED_ARCH
   x86_64 i386 i686 powerpc64 powerpc64le arm aarch64 mips mips64 mipsel mips64el)
 filter_available_targets(ASAN_SUPPORTED_ARCH
   x86_64 i386 i686 powerpc64 powerpc64le arm mips mipsel mips64 mips64el)
-filter_available_targets(DFSAN_SUPPORTED_ARCH x86_64)
+filter_available_targets(DFSAN_SUPPORTED_ARCH x86_64 mips64 mips64el)
 filter_available_targets(LSAN_SUPPORTED_ARCH x86_64)
 # LSan common files should be available on all architectures supported
 # by other sanitizers (even if they build into dummy object files).
@@ -183,7 +183,7 @@ filter_available_targets(MSAN_SUPPORTED_ARCH x86_64 mips64 mips64el)
 filter_available_targets(PROFILE_SUPPORTED_ARCH x86_64 i386 i686 arm mips mips64
   mipsel mips64el aarch64 powerpc64 powerpc64le)
 filter_available_targets(TSAN_SUPPORTED_ARCH x86_64)
-filter_available_targets(UBSAN_SUPPORTED_ARCH x86_64 i386 i686 arm aarch64 mips mipsel)
+filter_available_targets(UBSAN_SUPPORTED_ARCH x86_64 i386 i686 arm aarch64 mips mipsel mips64 mips64el)
 
 if(ANDROID)
   set(OS_NAME "Android")
@@ -203,6 +203,12 @@ if (COMPILER_RT_HAS_SANITIZER_COMMON AND ASAN_SUPPORTED_ARCH)
   set(COMPILER_RT_HAS_ASAN TRUE)
 else()
   set(COMPILER_RT_HAS_ASAN FALSE)
+endif()
+
+if (OS_NAME MATCHES "Linux|FreeBSD")
+  set(COMPILER_RT_ASAN_HAS_STATIC_RUNTIME TRUE)
+else()
+  set(COMPILER_RT_ASAN_HAS_STATIC_RUNTIME FALSE)
 endif()
 
 # TODO: Add builtins support.

@@ -1095,6 +1095,7 @@ bool Parser::isValidAfterTypeSpecifier(bool CouldBeBitfield) {
   case tok::kw_volatile:        // struct foo {...} volatile  x;
   case tok::kw_restrict:        // struct foo {...} restrict  x;
   case tok::kw__Atomic:         // struct foo {...} _Atomic   x;
+  case tok::kw___unaligned:     // struct foo {...} __unaligned *x;
   // Function specifiers
   // Note, no 'explicit'. An explicit function must be either a conversion
   // operator or a constructor. Either way, it can't have a return type.
@@ -2607,7 +2608,10 @@ ExprResult Parser::ParseCXXMemberInitializer(Decl *D, bool IsFunction,
         Diag(ConsumeToken(), diag::err_default_special_members);
       return ExprError();
     }
-
+  }
+  if (const auto *PD = dyn_cast_or_null<MSPropertyDecl>(D)) {
+    Diag(Tok, diag::err_ms_property_initializer) << PD;
+    return ExprError();
   }
   return ParseInitializer();
 }
@@ -3465,7 +3469,6 @@ bool Parser::ParseCXX11AttributeArgs(IdentifierInfo *AttrName,
       if (Attr->getMaxArgs() && !NumArgs) {
         // The attribute was allowed to have arguments, but none were provided
         // even though the attribute parsed successfully. This is an error.
-        // FIXME: This is a good place for a fixit which removes the parens.
         Diag(LParenLoc, diag::err_attribute_requires_arguments) << AttrName;
         return false;
       } else if (!Attr->getMaxArgs()) {
@@ -3473,7 +3476,8 @@ bool Parser::ParseCXX11AttributeArgs(IdentifierInfo *AttrName,
         // arguments. It doesn't matter whether any were provided -- the
         // presence of the argument list (even if empty) is diagnosed.
         Diag(LParenLoc, diag::err_cxx11_attribute_forbids_arguments)
-            << AttrName;
+            << AttrName
+            << FixItHint::CreateRemoval(SourceRange(LParenLoc, *EndLoc));
         return false;
       }
     }

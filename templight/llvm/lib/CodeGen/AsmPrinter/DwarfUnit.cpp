@@ -401,7 +401,7 @@ void DwarfUnit::addSourceLine(DIE &Die, DINameSpace NS) {
 /// addRegisterOp - Add register operand.
 // FIXME: Ideally, this would share the implementation with
 // AsmPrinter::EmitDwarfRegOpPiece.
-void DwarfUnit::addRegisterOpPiece(DIELoc &TheDie, unsigned Reg,
+bool DwarfUnit::addRegisterOpPiece(DIELoc &TheDie, unsigned Reg,
                                    unsigned SizeInBits, unsigned OffsetInBits) {
   const TargetRegisterInfo *RI = Asm->TM.getSubtargetImpl()->getRegisterInfo();
   int DWReg = RI->getDwarfRegNum(Reg, false);
@@ -416,11 +416,8 @@ void DwarfUnit::addRegisterOpPiece(DIELoc &TheDie, unsigned Reg,
       Idx = RI->getSubRegIndex(*SR, Reg);
   }
 
-  if (DWReg < 0) {
-    DEBUG(dbgs() << "Invalid Dwarf register number.\n");
-    addUInt(TheDie, dwarf::DW_FORM_data1, dwarf::DW_OP_nop);
-    return;
-  }
+  if (DWReg < 0)
+    return false;
 
   // Emit register.
   if (DWReg < 32)
@@ -460,14 +457,17 @@ void DwarfUnit::addRegisterOpPiece(DIELoc &TheDie, unsigned Reg,
       addUInt(TheDie, dwarf::DW_FORM_data1, PieceSizeInBits/SizeOfByte);
     }
   }
+  return true;
 }
 
 /// addRegisterOffset - Add register offset.
-void DwarfUnit::addRegisterOffset(DIELoc &TheDie, unsigned Reg,
+bool DwarfUnit::addRegisterOffset(DIELoc &TheDie, unsigned Reg,
                                   int64_t Offset) {
-  const TargetRegisterInfo *RI = Asm->TM.getSubtargetImpl()->getRegisterInfo();
-  unsigned DWReg = RI->getDwarfRegNum(Reg, false);
   const TargetRegisterInfo *TRI = Asm->TM.getSubtargetImpl()->getRegisterInfo();
+  int DWReg = TRI->getDwarfRegNum(Reg, false);
+  if (DWReg < 0)
+    return false;
+
   if (Reg == TRI->getFrameRegister(*Asm->MF))
     // If variable offset is based in frame register then use fbreg.
     addUInt(TheDie, dwarf::DW_FORM_data1, dwarf::DW_OP_fbreg);
@@ -478,6 +478,7 @@ void DwarfUnit::addRegisterOffset(DIELoc &TheDie, unsigned Reg,
     addUInt(TheDie, dwarf::DW_FORM_udata, DWReg);
   }
   addSInt(TheDie, dwarf::DW_FORM_sdata, Offset);
+  return true;
 }
 
 /* Byref variables, in Blocks, are declared by the programmer as "SomeType
@@ -581,10 +582,14 @@ void DwarfUnit::addBlockByrefAddress(const DbgVariable &DV, DIE &Die,
   // variable's location.
   DIELoc *Loc = new (DIEValueAllocator) DIELoc();
 
+  bool validReg;
   if (Location.isReg())
-    addRegisterOpPiece(*Loc, Location.getReg());
+    validReg = addRegisterOpPiece(*Loc, Location.getReg());
   else
-    addRegisterOffset(*Loc, Location.getReg(), Location.getOffset());
+    validReg = addRegisterOffset(*Loc, Location.getReg(), Location.getOffset());
+
+  if (!validReg)
+    return;
 
   // If we started with a pointer to the __Block_byref... struct, then
   // the first thing we need to do is dereference the pointer (DW_OP_deref).
@@ -649,11 +654,14 @@ static bool isUnsignedDIType(DwarfDebug *DD, DIType Ty) {
           Encoding == dwarf::DW_ATE_unsigned_char ||
           Encoding == dwarf::DW_ATE_signed ||
           Encoding == dwarf::DW_ATE_signed_char ||
-          Encoding == dwarf::DW_ATE_UTF || Encoding == dwarf::DW_ATE_boolean) &&
+          Encoding == dwarf::DW_ATE_UTF || Encoding == dwarf::DW_ATE_boolean ||
+          (Ty.getTag() == dwarf::DW_TAG_unspecified_type &&
+           Ty.getName() == "decltype(nullptr)")) &&
          "Unsupported encoding");
   return (Encoding == dwarf::DW_ATE_unsigned ||
           Encoding == dwarf::DW_ATE_unsigned_char ||
-          Encoding == dwarf::DW_ATE_UTF || Encoding == dwarf::DW_ATE_boolean);
+          Encoding == dwarf::DW_ATE_UTF || Encoding == dwarf::DW_ATE_boolean ||
+          Ty.getTag() == dwarf::DW_TAG_unspecified_type);
 }
 
 /// If this type is derived from a base type then return base type size.
@@ -1110,6 +1118,8 @@ void DwarfUnit::constructTypeDIE(DIE &Buffer, DICompositeType CTy) {
     if (CTy.isAppleBlockExtension())
       addFlag(Buffer, dwarf::DW_AT_APPLE_block);
 
+    // This is outside the DWARF spec, but GDB expects a DW_AT_containing_type
+    // inside C++ composite types to point to the base class with the vtable.
     DICompositeType ContainingType(resolve(CTy.getContainingType()));
     if (ContainingType)
       addDIEEntry(Buffer, dwarf::DW_AT_containing_type,
@@ -1187,10 +1197,10 @@ DwarfUnit::constructTemplateValueParameterDIE(DIE &Buffer,
     addType(ParamDIE, resolve(VP.getType()));
   if (!VP.getName().empty())
     addString(ParamDIE, dwarf::DW_AT_name, VP.getName());
-  if (Value *Val = VP.getValue()) {
-    if (ConstantInt *CI = dyn_cast<ConstantInt>(Val))
+  if (Metadata *Val = VP.getValue()) {
+    if (ConstantInt *CI = mdconst::dyn_extract<ConstantInt>(Val))
       addConstantValue(ParamDIE, CI, resolve(VP.getType()));
-    else if (GlobalValue *GV = dyn_cast<GlobalValue>(Val)) {
+    else if (GlobalValue *GV = mdconst::dyn_extract<GlobalValue>(Val)) {
       // For declaration non-type template parameters (such as global values and
       // functions)
       DIELoc *Loc = new (DIEValueAllocator) DIELoc();

@@ -58,8 +58,6 @@ extern cl::opt<bool> ANDIGlueBug;
 PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     : TargetLowering(TM),
       Subtarget(*TM.getSubtargetImpl()) {
-  setPow2SDivIsCheap();
-
   // Use _setjmp/_longjmp instead of setjmp/longjmp.
   setUseUnderscoreSetJmp(true);
   setUseUnderscoreLongJmp(true);
@@ -639,6 +637,8 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     setTargetDAGCombine(ISD::BRCOND);
   setTargetDAGCombine(ISD::BSWAP);
   setTargetDAGCombine(ISD::INTRINSIC_WO_CHAIN);
+  setTargetDAGCombine(ISD::INTRINSIC_W_CHAIN);
+  setTargetDAGCombine(ISD::INTRINSIC_VOID);
 
   setTargetDAGCombine(ISD::SIGN_EXTEND);
   setTargetDAGCombine(ISD::ZERO_EXTEND);
@@ -8127,6 +8127,10 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
     }
   }
 
+  // The operands of a select that must be truncated when the select is
+  // promoted because the operand is actually part of the to-be-promoted set.
+  DenseMap<SDNode *, EVT> SelectTruncOp[2];
+
   // Make sure that this is a self-contained cluster of operations (which
   // is not quite the same thing as saying that everything has only one
   // use).
@@ -8141,18 +8145,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       if (User != N && !Visited.count(User))
         return SDValue();
 
-      // Make sure that we're not going to promote the non-output-value
-      // operand(s) or SELECT or SELECT_CC.
-      // FIXME: Although we could sometimes handle this, and it does occur in
-      // practice that one of the condition inputs to the select is also one of
-      // the outputs, we currently can't deal with this.
+      // If we're going to promote the non-output-value operand(s) or SELECT or
+      // SELECT_CC, record them for truncation.
       if (User->getOpcode() == ISD::SELECT) {
         if (User->getOperand(0) == Inputs[i])
-          return SDValue();
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
       } else if (User->getOpcode() == ISD::SELECT_CC) {
-        if (User->getOperand(0) == Inputs[i] ||
-            User->getOperand(1) == Inputs[i])
-          return SDValue();
+        if (User->getOperand(0) == Inputs[i])
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
+        if (User->getOperand(1) == Inputs[i])
+          SelectTruncOp[1].insert(std::make_pair(User,
+                                    User->getOperand(1).getValueType()));
       }
     }
   }
@@ -8165,18 +8170,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       if (User != N && !Visited.count(User))
         return SDValue();
 
-      // Make sure that we're not going to promote the non-output-value
-      // operand(s) or SELECT or SELECT_CC.
-      // FIXME: Although we could sometimes handle this, and it does occur in
-      // practice that one of the condition inputs to the select is also one of
-      // the outputs, we currently can't deal with this.
+      // If we're going to promote the non-output-value operand(s) or SELECT or
+      // SELECT_CC, record them for truncation.
       if (User->getOpcode() == ISD::SELECT) {
         if (User->getOperand(0) == PromOps[i])
-          return SDValue();
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
       } else if (User->getOpcode() == ISD::SELECT_CC) {
-        if (User->getOperand(0) == PromOps[i] ||
-            User->getOperand(1) == PromOps[i])
-          return SDValue();
+        if (User->getOperand(0) == PromOps[i])
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
+        if (User->getOperand(1) == PromOps[i])
+          SelectTruncOp[1].insert(std::make_pair(User,
+                                    User->getOperand(1).getValueType()));
       }
     }
   }
@@ -8257,6 +8263,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       continue;
     }
 
+    // For SELECT and SELECT_CC nodes, we do a similar check for any
+    // to-be-promoted comparison inputs.
+    if (PromOp.getOpcode() == ISD::SELECT ||
+        PromOp.getOpcode() == ISD::SELECT_CC) {
+      if ((SelectTruncOp[0].count(PromOp.getNode()) &&
+           PromOp.getOperand(0).getValueType() != N->getValueType(0)) ||
+          (SelectTruncOp[1].count(PromOp.getNode()) &&
+           PromOp.getOperand(1).getValueType() != N->getValueType(0))) {
+        PromOps.insert(PromOps.begin(), PromOp);
+        continue;
+      }
+    }
+
     SmallVector<SDValue, 3> Ops(PromOp.getNode()->op_begin(),
                                 PromOp.getNode()->op_end());
 
@@ -8273,6 +8292,18 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
         Ops[C+i] = DAG.getZExtOrTrunc(Ops[C+i], dl, N->getValueType(0));
       else
         Ops[C+i] = DAG.getAnyExtOrTrunc(Ops[C+i], dl, N->getValueType(0));
+    }
+
+    // If we've promoted the comparison inputs of a SELECT or SELECT_CC,
+    // truncate them again to the original value type.
+    if (PromOp.getOpcode() == ISD::SELECT ||
+        PromOp.getOpcode() == ISD::SELECT_CC) {
+      auto SI0 = SelectTruncOp[0].find(PromOp.getNode());
+      if (SI0 != SelectTruncOp[0].end())
+        Ops[0] = DAG.getNode(ISD::TRUNCATE, dl, SI0->second, Ops[0]);
+      auto SI1 = SelectTruncOp[1].find(PromOp.getNode());
+      if (SI1 != SelectTruncOp[1].end())
+        Ops[1] = DAG.getNode(ISD::TRUNCATE, dl, SI1->second, Ops[1]);
     }
 
     DAG.ReplaceAllUsesOfValueWith(PromOp,
@@ -8299,6 +8330,105 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
   return DAG.getNode(ISD::SRA, dl, N->getValueType(0), 
                      DAG.getNode(ISD::SHL, dl, N->getValueType(0),
                                  N->getOperand(0), ShiftCst), ShiftCst);
+}
+
+// expandVSXLoadForLE - Convert VSX loads (which may be intrinsics for
+// builtins) into loads with swaps.
+SDValue PPCTargetLowering::expandVSXLoadForLE(SDNode *N,
+                                              DAGCombinerInfo &DCI) const {
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  SDValue Chain;
+  SDValue Base;
+  MachineMemOperand *MMO;
+
+  switch (N->getOpcode()) {
+  default:
+    llvm_unreachable("Unexpected opcode for little endian VSX load");
+  case ISD::LOAD: {
+    LoadSDNode *LD = cast<LoadSDNode>(N);
+    Chain = LD->getChain();
+    Base = LD->getBasePtr();
+    MMO = LD->getMemOperand();
+    // If the MMO suggests this isn't a load of a full vector, leave
+    // things alone.  For a built-in, we have to make the change for
+    // correctness, so if there is a size problem that will be a bug.
+    if (MMO->getSize() < 16)
+      return SDValue();
+    break;
+  }
+  case ISD::INTRINSIC_W_CHAIN: {
+    MemIntrinsicSDNode *Intrin = cast<MemIntrinsicSDNode>(N);
+    Chain = Intrin->getChain();
+    Base = Intrin->getBasePtr();
+    MMO = Intrin->getMemOperand();
+    break;
+  }
+  }
+
+  MVT VecTy = N->getValueType(0).getSimpleVT();
+  SDValue LoadOps[] = { Chain, Base };
+  SDValue Load = DAG.getMemIntrinsicNode(PPCISD::LXVD2X, dl,
+                                         DAG.getVTList(VecTy, MVT::Other),
+                                         LoadOps, VecTy, MMO);
+  DCI.AddToWorklist(Load.getNode());
+  Chain = Load.getValue(1);
+  SDValue Swap = DAG.getNode(PPCISD::XXSWAPD, dl,
+                             DAG.getVTList(VecTy, MVT::Other), Chain, Load);
+  DCI.AddToWorklist(Swap.getNode());
+  return Swap;
+}
+
+// expandVSXStoreForLE - Convert VSX stores (which may be intrinsics for
+// builtins) into stores with swaps.
+SDValue PPCTargetLowering::expandVSXStoreForLE(SDNode *N,
+                                               DAGCombinerInfo &DCI) const {
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  SDValue Chain;
+  SDValue Base;
+  unsigned SrcOpnd;
+  MachineMemOperand *MMO;
+
+  switch (N->getOpcode()) {
+  default:
+    llvm_unreachable("Unexpected opcode for little endian VSX store");
+  case ISD::STORE: {
+    StoreSDNode *ST = cast<StoreSDNode>(N);
+    Chain = ST->getChain();
+    Base = ST->getBasePtr();
+    MMO = ST->getMemOperand();
+    SrcOpnd = 1;
+    // If the MMO suggests this isn't a store of a full vector, leave
+    // things alone.  For a built-in, we have to make the change for
+    // correctness, so if there is a size problem that will be a bug.
+    if (MMO->getSize() < 16)
+      return SDValue();
+    break;
+  }
+  case ISD::INTRINSIC_VOID: {
+    MemIntrinsicSDNode *Intrin = cast<MemIntrinsicSDNode>(N);
+    Chain = Intrin->getChain();
+    // Intrin->getBasePtr() oddly does not get what we want.
+    Base = Intrin->getOperand(3);
+    MMO = Intrin->getMemOperand();
+    SrcOpnd = 2;
+    break;
+  }
+  }
+
+  SDValue Src = N->getOperand(SrcOpnd);
+  MVT VecTy = Src.getValueType().getSimpleVT();
+  SDValue Swap = DAG.getNode(PPCISD::XXSWAPD, dl,
+                             DAG.getVTList(VecTy, MVT::Other), Chain, Src);
+  DCI.AddToWorklist(Swap.getNode());
+  Chain = Swap.getValue(1);
+  SDValue StoreOps[] = { Chain, Swap, Base };
+  SDValue Store = DAG.getMemIntrinsicNode(PPCISD::STXVD2X, dl,
+                                          DAG.getVTList(MVT::Other),
+                                          StoreOps, VecTy, MMO);
+  DCI.AddToWorklist(Store.getNode());
+  return Store;
 }
 
 SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
@@ -8366,7 +8496,7 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
       }
     }
     break;
-  case ISD::STORE:
+  case ISD::STORE: {
     // Turn STORE (FP_TO_SINT F) -> STFIWX(FCTIWZ(F)).
     if (TM.getSubtarget<PPCSubtarget>().hasSTFIWX() &&
         !cast<StoreSDNode>(N)->isTruncatingStore() &&
@@ -8417,10 +8547,33 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
                                 Ops, cast<StoreSDNode>(N)->getMemoryVT(),
                                 cast<StoreSDNode>(N)->getMemOperand());
     }
+
+    // For little endian, VSX stores require generating xxswapd/lxvd2x.
+    EVT VT = N->getOperand(1).getValueType();
+    if (VT.isSimple()) {
+      MVT StoreVT = VT.getSimpleVT();
+      if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+          TM.getSubtarget<PPCSubtarget>().isLittleEndian() &&
+          (StoreVT == MVT::v2f64 || StoreVT == MVT::v2i64 ||
+           StoreVT == MVT::v4f32 || StoreVT == MVT::v4i32))
+        return expandVSXStoreForLE(N, DCI);
+    }
     break;
+  }
   case ISD::LOAD: {
     LoadSDNode *LD = cast<LoadSDNode>(N);
     EVT VT = LD->getValueType(0);
+
+    // For little endian, VSX loads require generating lxvd2x/xxswapd.
+    if (VT.isSimple()) {
+      MVT LoadVT = VT.getSimpleVT();
+      if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+          TM.getSubtarget<PPCSubtarget>().isLittleEndian() &&
+          (LoadVT == MVT::v2f64 || LoadVT == MVT::v2i64 ||
+           LoadVT == MVT::v4f32 || LoadVT == MVT::v4i32))
+        return expandVSXLoadForLE(N, DCI);
+    }
+
     Type *Ty = LD->getMemoryVT().getTypeForEVT(*DAG.getContext());
     unsigned ABIAlignment = getDataLayout()->getABITypeAlignment(Ty);
     if (ISD::isNON_EXTLoad(N) && VT.isVector() &&
@@ -8569,6 +8722,34 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
     }
 
     break;
+  case ISD::INTRINSIC_W_CHAIN: {
+    // For little endian, VSX loads require generating lxvd2x/xxswapd.
+    if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+        TM.getSubtarget<PPCSubtarget>().isLittleEndian()) {
+      switch (cast<ConstantSDNode>(N->getOperand(1))->getZExtValue()) {
+      default:
+        break;
+      case Intrinsic::ppc_vsx_lxvw4x:
+      case Intrinsic::ppc_vsx_lxvd2x:
+        return expandVSXLoadForLE(N, DCI);
+      }
+    }
+    break;
+  }
+  case ISD::INTRINSIC_VOID: {
+    // For little endian, VSX stores require generating xxswapd/stxvd2x.
+    if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+        TM.getSubtarget<PPCSubtarget>().isLittleEndian()) {
+      switch (cast<ConstantSDNode>(N->getOperand(1))->getZExtValue()) {
+      default:
+        break;
+      case Intrinsic::ppc_vsx_stxvw4x:
+      case Intrinsic::ppc_vsx_stxvd2x:
+        return expandVSXStoreForLE(N, DCI);
+      }
+    }
+    break;
+  }
   case ISD::BSWAP:
     // Turn BSWAP (LOAD) -> lhbrx/lwbrx.
     if (ISD::isNON_EXTLoad(N->getOperand(0).getNode()) &&
@@ -8779,6 +8960,36 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
   return SDValue();
 }
 
+SDValue
+PPCTargetLowering::BuildSDIVPow2(SDNode *N, const APInt &Divisor,
+                                  SelectionDAG &DAG,
+                                  std::vector<SDNode *> *Created) const {
+  // fold (sdiv X, pow2)
+  EVT VT = N->getValueType(0);
+  if ((VT != MVT::i32 && VT != MVT::i64) ||
+      !(Divisor.isPowerOf2() || (-Divisor).isPowerOf2()))
+    return SDValue();
+
+  SDLoc DL(N);
+  SDValue N0 = N->getOperand(0);
+
+  bool IsNegPow2 = (-Divisor).isPowerOf2();
+  unsigned Lg2 = (IsNegPow2 ? -Divisor : Divisor).countTrailingZeros();
+  SDValue ShiftAmt = DAG.getConstant(Lg2, VT);
+
+  SDValue Op = DAG.getNode(PPCISD::SRA_ADDZE, DL, VT, N0, ShiftAmt);
+  if (Created)
+    Created->push_back(Op.getNode());
+
+  if (IsNegPow2) {
+    Op = DAG.getNode(ISD::SUB, DL, VT, DAG.getConstant(0, VT), Op);
+    if (Created)
+      Created->push_back(Op.getNode());
+  }
+
+  return Op;
+}
+
 //===----------------------------------------------------------------------===//
 // Inline Assembly Support
 //===----------------------------------------------------------------------===//
@@ -8957,6 +9168,12 @@ PPCTargetLowering::getRegForInlineAsmConstraint(const std::string &Constraint,
     return std::make_pair(TRI->getMatchingSuperReg(R.first,
                             PPC::sub_32, &PPC::G8RCRegClass),
                           &PPC::G8RCRegClass);
+  }
+
+  // GCC accepts 'cc' as an alias for 'cr0', and we need to do the same.
+  if (!R.second && StringRef("{cc}").equals_lower(Constraint)) {
+    R.first = PPC::CR0;
+    R.second = &PPC::CRRCRegClass;
   }
 
   return R;

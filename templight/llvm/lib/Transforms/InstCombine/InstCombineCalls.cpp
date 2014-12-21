@@ -119,15 +119,14 @@ Instruction *InstCombiner::SimplifyMemTransfer(MemIntrinsic *MI) {
         // If the memcpy has metadata describing the members, see if we can
         // get the TBAA tag describing our copy.
         if (MDNode *M = MI->getMetadata(LLVMContext::MD_tbaa_struct)) {
-          if (M->getNumOperands() == 3 &&
-              M->getOperand(0) &&
-              isa<ConstantInt>(M->getOperand(0)) &&
-              cast<ConstantInt>(M->getOperand(0))->isNullValue() &&
+          if (M->getNumOperands() == 3 && M->getOperand(0) &&
+              mdconst::hasa<ConstantInt>(M->getOperand(0)) &&
+              mdconst::extract<ConstantInt>(M->getOperand(0))->isNullValue() &&
               M->getOperand(1) &&
-              isa<ConstantInt>(M->getOperand(1)) &&
-              cast<ConstantInt>(M->getOperand(1))->getValue() == Size &&
-              M->getOperand(2) &&
-              isa<MDNode>(M->getOperand(2)))
+              mdconst::hasa<ConstantInt>(M->getOperand(1)) &&
+              mdconst::extract<ConstantInt>(M->getOperand(1))->getValue() ==
+                  Size &&
+              M->getOperand(2) && isa<MDNode>(M->getOperand(2)))
             CopyMD = cast<MDNode>(M->getOperand(2));
         }
       }
@@ -370,29 +369,14 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       if (LHSKnownNegative && RHSKnownNegative) {
         // The sign bit is set in both cases: this MUST overflow.
         // Create a simple add instruction, and insert it into the struct.
-        Value *Add = Builder->CreateAdd(LHS, RHS);
-        Add->takeName(&CI);
-        Constant *V[] = {
-          UndefValue::get(LHS->getType()),
-          ConstantInt::getTrue(II->getContext())
-        };
-        StructType *ST = cast<StructType>(II->getType());
-        Constant *Struct = ConstantStruct::get(ST, V);
-        return InsertValueInst::Create(Struct, Add, 0);
+        return CreateOverflowTuple(II, Builder->CreateAdd(LHS, RHS), true,
+                                    /*ReUseName*/true);
       }
 
       if (LHSKnownPositive && RHSKnownPositive) {
         // The sign bit is clear in both cases: this CANNOT overflow.
         // Create a simple add instruction, and insert it into the struct.
-        Value *Add = Builder->CreateNUWAdd(LHS, RHS);
-        Add->takeName(&CI);
-        Constant *V[] = {
-          UndefValue::get(LHS->getType()),
-          ConstantInt::getFalse(II->getContext())
-        };
-        StructType *ST = cast<StructType>(II->getType());
-        Constant *Struct = ConstantStruct::get(ST, V);
-        return InsertValueInst::Create(Struct, Add, 0);
+        return CreateOverflowTuple(II, Builder->CreateNUWAdd(LHS, RHS), false);
       }
     }
   }
@@ -414,13 +398,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     if (ConstantInt *RHS = dyn_cast<ConstantInt>(II->getArgOperand(1))) {
       // X + 0 -> {X, false}
       if (RHS->isZero()) {
-        Constant *V[] = {
-          UndefValue::get(II->getArgOperand(0)->getType()),
-          ConstantInt::getFalse(II->getContext())
-        };
-        Constant *Struct =
-          ConstantStruct::get(cast<StructType>(II->getType()), V);
-        return InsertValueInst::Create(Struct, II->getArgOperand(0), 0);
+        return CreateOverflowTuple(II, II->getArgOperand(0), false,
+                                    /*ReUseName*/false);
       }
     }
 
@@ -429,37 +408,36 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     if (II->getIntrinsicID() == Intrinsic::sadd_with_overflow) {
       Value *LHS = II->getArgOperand(0), *RHS = II->getArgOperand(1);
       if (WillNotOverflowSignedAdd(LHS, RHS, II)) {
-        Value *Add = Builder->CreateNSWAdd(LHS, RHS);
-        Add->takeName(&CI);
-        Constant *V[] = {UndefValue::get(Add->getType()), Builder->getFalse()};
-        StructType *ST = cast<StructType>(II->getType());
-        Constant *Struct = ConstantStruct::get(ST, V);
-        return InsertValueInst::Create(Struct, Add, 0);
+        return CreateOverflowTuple(II, Builder->CreateNSWAdd(LHS, RHS), false);
       }
     }
 
     break;
   case Intrinsic::usub_with_overflow:
-  case Intrinsic::ssub_with_overflow:
+  case Intrinsic::ssub_with_overflow: {
+    Value *LHS = II->getArgOperand(0), *RHS = II->getArgOperand(1);
     // undef - X -> undef
     // X - undef -> undef
-    if (isa<UndefValue>(II->getArgOperand(0)) ||
-        isa<UndefValue>(II->getArgOperand(1)))
+    if (isa<UndefValue>(LHS) || isa<UndefValue>(RHS))
       return ReplaceInstUsesWith(CI, UndefValue::get(II->getType()));
 
-    if (ConstantInt *RHS = dyn_cast<ConstantInt>(II->getArgOperand(1))) {
+    if (ConstantInt *ConstRHS = dyn_cast<ConstantInt>(RHS)) {
       // X - 0 -> {X, false}
-      if (RHS->isZero()) {
-        Constant *V[] = {
-          UndefValue::get(II->getArgOperand(0)->getType()),
-          ConstantInt::getFalse(II->getContext())
-        };
-        Constant *Struct =
-          ConstantStruct::get(cast<StructType>(II->getType()), V);
-        return InsertValueInst::Create(Struct, II->getArgOperand(0), 0);
+      if (ConstRHS->isZero()) {
+        return CreateOverflowTuple(II, LHS, false, /*ReUseName*/false);
+      }
+    }
+    if (II->getIntrinsicID() == Intrinsic::ssub_with_overflow) {
+      if (WillNotOverflowSignedSub(LHS, RHS, II)) {
+        return CreateOverflowTuple(II, Builder->CreateNSWSub(LHS, RHS), false);
+      }
+    } else {
+      if (WillNotOverflowUnsignedSub(LHS, RHS, II)) {
+        return CreateOverflowTuple(II, Builder->CreateNUWSub(LHS, RHS), false);
       }
     }
     break;
+  }
   case Intrinsic::umul_with_overflow: {
     Value *LHS = II->getArgOperand(0), *RHS = II->getArgOperand(1);
     unsigned BitWidth = cast<IntegerType>(LHS->getType())->getBitWidth();
@@ -480,13 +458,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     bool Overflow;
     LHSMax.umul_ov(RHSMax, Overflow);
     if (!Overflow) {
-      Value *Mul = Builder->CreateNUWMul(LHS, RHS, "umul_with_overflow");
-      Constant *V[] = {
-        UndefValue::get(LHS->getType()),
-        Builder->getFalse()
-      };
-      Constant *Struct = ConstantStruct::get(cast<StructType>(II->getType()),V);
-      return InsertValueInst::Create(Struct, Mul, 0);
+      return CreateOverflowTuple(II, Builder->CreateNUWMul(LHS, RHS), false);
     }
   } // FALL THROUGH
   case Intrinsic::smul_with_overflow:
@@ -510,13 +482,14 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
 
       // X * 1 -> {X, false}
       if (RHSI->equalsInt(1)) {
-        Constant *V[] = {
-          UndefValue::get(II->getArgOperand(0)->getType()),
-          ConstantInt::getFalse(II->getContext())
-        };
-        Constant *Struct =
-          ConstantStruct::get(cast<StructType>(II->getType()), V);
-        return InsertValueInst::Create(Struct, II->getArgOperand(0), 0);
+        return CreateOverflowTuple(II, II->getArgOperand(0), false,
+                                    /*ReUseName*/false);
+      }
+    }
+    if (II->getIntrinsicID() == Intrinsic::smul_with_overflow) {
+      Value *LHS = II->getArgOperand(0), *RHS = II->getArgOperand(1);
+      if (WillNotOverflowSignedMul(LHS, RHS, II)) {
+        return CreateOverflowTuple(II, Builder->CreateNSWMul(LHS, RHS), false);
       }
     }
     break;
@@ -775,7 +748,22 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // TODO: eventually we should lower this intrinsic to IR
     if (auto CIWidth = dyn_cast<ConstantInt>(II->getArgOperand(2))) {
       if (auto CIStart = dyn_cast<ConstantInt>(II->getArgOperand(3))) {
-        if (CIWidth->equalsInt(64) && CIStart->isZero()) {
+        unsigned Index = CIStart->getZExtValue();
+        // From AMD documentation: "a value of zero in the field length is
+        // defined as length of 64".
+        unsigned Length = CIWidth->equalsInt(0) ? 64 : CIWidth->getZExtValue();
+
+        // From AMD documentation: "If the sum of the bit index + length field
+        // is greater than 64, the results are undefined".
+
+        // Note that both field index and field length are 8-bit quantities.
+        // Since variables 'Index' and 'Length' are unsigned values
+        // obtained from zero-extending field index and field length
+        // respectively, their sum should never wrap around.
+        if ((Index + Length) > 64)
+          return ReplaceInstUsesWith(CI, UndefValue::get(II->getType()));
+
+        if (Length == 64 && Index == 0) {
           Value *Vec = II->getArgOperand(1);
           Value *Undef = UndefValue::get(Vec->getType());
           const uint32_t Mask[] = { 0, 2 };
@@ -1129,7 +1117,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
           cast<Constant>(RHS)->isNullValue()) {
         LoadInst* LI = cast<LoadInst>(LHS);
         if (isValidAssumeForContext(II, LI, DL, DT)) {
-          MDNode* MD = MDNode::get(II->getContext(), ArrayRef<Value*>());
+          MDNode *MD = MDNode::get(II->getContext(), None);
           LI->setMetadata(LLVMContext::MD_nonnull, MD);
           return EraseInstFromFunction(*II);
         }

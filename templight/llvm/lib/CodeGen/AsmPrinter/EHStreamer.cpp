@@ -195,9 +195,22 @@ bool EHStreamer::callToNoUnwindFunction(const MachineInstr *MI) {
 /// table.  Entries must be ordered by try-range address.
 void EHStreamer::
 computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
-                     const RangeMapType &PadMap,
                      const SmallVectorImpl<const LandingPadInfo *> &LandingPads,
                      const SmallVectorImpl<unsigned> &FirstActions) {
+  // Invokes and nounwind calls have entries in PadMap (due to being bracketed
+  // by try-range labels when lowered).  Ordinary calls do not, so appropriate
+  // try-ranges for them need be deduced so we can put them in the LSDA.
+  RangeMapType PadMap;
+  for (unsigned i = 0, N = LandingPads.size(); i != N; ++i) {
+    const LandingPadInfo *LandingPad = LandingPads[i];
+    for (unsigned j = 0, E = LandingPad->BeginLabels.size(); j != E; ++j) {
+      MCSymbol *BeginLabel = LandingPad->BeginLabels[j];
+      assert(!PadMap.count(BeginLabel) && "Duplicate landing pad labels!");
+      PadRange P = { i, j };
+      PadMap[BeginLabel] = P;
+    }
+  }
+
   // The end label of the previous invoke or nounwind try-range.
   MCSymbol *LastLabel = nullptr;
 
@@ -207,6 +220,8 @@ computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
 
   // Whether the last CallSite entry was for an invoke.
   bool PreviousIsInvoke = false;
+
+  bool IsSJLJ = Asm->MAI->getExceptionHandlingType() == ExceptionHandling::SjLj;
 
   // Visit all instructions in order of address.
   for (const auto &MBB : *Asm->MF) {
@@ -237,7 +252,7 @@ computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
       // instruction between the previous try-range and this one may throw,
       // create a call-site entry with no landing pad for the region between the
       // try-ranges.
-      if (SawPotentiallyThrowing && Asm->MAI->usesItaniumLSDAForExceptions()) {
+      if (SawPotentiallyThrowing && !IsSJLJ) {
         CallSiteEntry Site = { LastLabel, BeginLabel, nullptr, 0 };
         CallSites.push_back(Site);
         PreviousIsInvoke = false;
@@ -259,7 +274,7 @@ computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
         };
 
         // Try to merge with the previous call-site. SJLJ doesn't do this
-        if (PreviousIsInvoke && Asm->MAI->usesItaniumLSDAForExceptions()) {
+        if (PreviousIsInvoke && !IsSJLJ) {
           CallSiteEntry &Prev = CallSites.back();
           if (Site.PadLabel == Prev.PadLabel && Site.Action == Prev.Action) {
             // Extend the range of the previous entry.
@@ -269,7 +284,7 @@ computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
         }
 
         // Otherwise, create a new call-site.
-        if (Asm->MAI->usesItaniumLSDAForExceptions())
+        if (!IsSJLJ)
           CallSites.push_back(Site);
         else {
           // SjLj EH must maintain the call sites in the order assigned
@@ -287,7 +302,7 @@ computeCallSiteTable(SmallVectorImpl<CallSiteEntry> &CallSites,
   // If some instruction between the previous try-range and the end of the
   // function may throw, create a call-site entry with no landing pad for the
   // region following the try-range.
-  if (SawPotentiallyThrowing && Asm->MAI->usesItaniumLSDAForExceptions()) {
+  if (SawPotentiallyThrowing && !IsSJLJ) {
     CallSiteEntry Site = { LastLabel, nullptr, nullptr, 0 };
     CallSites.push_back(Site);
   }
@@ -338,23 +353,9 @@ void EHStreamer::emitExceptionTable() {
   unsigned SizeActions =
     computeActionsTable(LandingPads, Actions, FirstActions);
 
-  // Invokes and nounwind calls have entries in PadMap (due to being bracketed
-  // by try-range labels when lowered).  Ordinary calls do not, so appropriate
-  // try-ranges for them need be deduced when using DWARF exception handling.
-  RangeMapType PadMap;
-  for (unsigned i = 0, N = LandingPads.size(); i != N; ++i) {
-    const LandingPadInfo *LandingPad = LandingPads[i];
-    for (unsigned j = 0, E = LandingPad->BeginLabels.size(); j != E; ++j) {
-      MCSymbol *BeginLabel = LandingPad->BeginLabels[j];
-      assert(!PadMap.count(BeginLabel) && "Duplicate landing pad labels!");
-      PadRange P = { i, j };
-      PadMap[BeginLabel] = P;
-    }
-  }
-
   // Compute the call-site table.
   SmallVector<CallSiteEntry, 64> CallSites;
-  computeCallSiteTable(CallSites, PadMap, LandingPads, FirstActions);
+  computeCallSiteTable(CallSites, LandingPads, FirstActions);
 
   // Final tallies.
 
@@ -519,8 +520,7 @@ void EHStreamer::emitExceptionTable() {
       Asm->EmitULEB128(S.Action);
     }
   } else {
-    // DWARF Exception handling
-    assert(Asm->MAI->usesItaniumLSDAForExceptions());
+    // Itanium LSDA exception handling
 
     // The call-site table is a list of all call sites that may throw an
     // exception (including C++ 'throw' statements) in the procedure

@@ -18,6 +18,7 @@
 #include "ARMSelectionDAGInfo.h"
 #include "ARMSubtarget.h"
 #include "ARMMachineFunctionInfo.h"
+#include "ARMTargetMachine.h"
 #include "Thumb1FrameLowering.h"
 #include "Thumb1InstrInfo.h"
 #include "Thumb2InstrInfo.h"
@@ -147,11 +148,11 @@ ARMSubtarget &ARMSubtarget::initializeSubtargetDependencies(StringRef CPU,
 }
 
 ARMSubtarget::ARMSubtarget(const std::string &TT, const std::string &CPU,
-                           const std::string &FS, const TargetMachine &TM,
+                           const std::string &FS, const ARMBaseTargetMachine &TM,
                            bool IsLittle)
     : ARMGenSubtargetInfo(TT, CPU, FS), ARMProcFamily(Others),
       ARMProcClass(None), stackAlignment(4), CPUString(CPU), IsLittle(IsLittle),
-      TargetTriple(TT), Options(TM.Options), TargetABI(ARM_ABI_UNKNOWN),
+      TargetTriple(TT), Options(TM.Options), TM(TM),
       DL(computeDataLayout(initializeSubtargetDependencies(CPU, FS))),
       TSInfo(DL),
       InstrInfo(isThumb1Only()
@@ -215,7 +216,7 @@ void ARMSubtarget::initializeEnvironment() {
 
 void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   if (CPUString.empty()) {
-    if (isTargetIOS() && TargetTriple.getArchName().endswith("v7s"))
+    if (isTargetDarwin() && TargetTriple.getArchName().endswith("v7s"))
       // Default to the Swift CPU when targeting armv7s/thumbv7s.
       CPUString = "swift";
     else
@@ -225,8 +226,8 @@ void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   // Insert the architecture feature derived from the target triple into the
   // feature string. This is important for setting features that are implied
   // based on the architecture version.
-  std::string ArchFS = ARM_MC::ParseARMTriple(TargetTriple.getTriple(),
-                                              CPUString);
+  std::string ArchFS =
+      ARM_MC::ParseARMTriple(TargetTriple.getTriple(), CPUString);
   if (!FS.empty()) {
     if (!ArchFS.empty())
       ArchFS = ArchFS + "," + FS.str();
@@ -245,30 +246,9 @@ void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   // Initialize scheduling itinerary for the specified CPU.
   InstrItins = getInstrItineraryForCPU(CPUString);
 
-  if (TargetABI == ARM_ABI_UNKNOWN) {
-    switch (TargetTriple.getEnvironment()) {
-    case Triple::Android:
-    case Triple::EABI:
-    case Triple::EABIHF:
-    case Triple::GNUEABI:
-    case Triple::GNUEABIHF:
-      TargetABI = ARM_ABI_AAPCS;
-      break;
-    default:
-      if (TargetTriple.isOSBinFormatMachO() &&
-          TargetTriple.getOS() == Triple::UnknownOS)
-        TargetABI = ARM_ABI_AAPCS;
-      else
-        TargetABI = ARM_ABI_APCS;
-      break;
-    }
-  }
-
   // FIXME: this is invalid for WindowsCE
-  if (isTargetWindows()) {
-    TargetABI = ARM_ABI_AAPCS;
+  if (isTargetWindows())
     NoARM = true;
-  }
 
   if (isAAPCS_ABI())
     stackAlignment = 8;
@@ -328,6 +308,15 @@ void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   if ((Bits & ARM::ProcA5 || Bits & ARM::ProcA8) && // Where this matters
       (Options.UnsafeFPMath || isTargetDarwin()))
     UseNEONForSinglePrecisionFP = true;
+}
+
+bool ARMSubtarget::isAPCS_ABI() const {
+  assert(TM.TargetABI != ARMBaseTargetMachine::ARM_ABI_UNKNOWN);
+  return TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_APCS;
+}
+bool ARMSubtarget::isAAPCS_ABI() const {
+  assert(TM.TargetABI != ARMBaseTargetMachine::ARM_ABI_UNKNOWN);
+  return TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_AAPCS;
 }
 
 /// GVIsIndirectSymbol - true if the GV will be accessed via an indirect symbol.

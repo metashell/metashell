@@ -945,6 +945,25 @@ MipsTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
         MI, *BB, *getTargetMachine().getSubtargetImpl()->getInstrInfo(), true);
   case Mips::SEL_D:
     return emitSEL_D(MI, BB);
+
+  case Mips::PseudoSELECT_I:
+  case Mips::PseudoSELECT_I64:
+  case Mips::PseudoSELECT_S:
+  case Mips::PseudoSELECT_D32:
+  case Mips::PseudoSELECT_D64:
+    return emitPseudoSELECT(MI, BB, false, Mips::BNE);
+  case Mips::PseudoSELECTFP_F_I:
+  case Mips::PseudoSELECTFP_F_I64:
+  case Mips::PseudoSELECTFP_F_S:
+  case Mips::PseudoSELECTFP_F_D32:
+  case Mips::PseudoSELECTFP_F_D64:
+    return emitPseudoSELECT(MI, BB, true, Mips::BC1F);
+  case Mips::PseudoSELECTFP_T_I:
+  case Mips::PseudoSELECTFP_T_I64:
+  case Mips::PseudoSELECTFP_T_S:
+  case Mips::PseudoSELECTFP_T_D32:
+  case Mips::PseudoSELECTFP_T_D64:
+    return emitPseudoSELECT(MI, BB, true, Mips::BC1T);
   }
 }
 
@@ -1178,7 +1197,8 @@ MachineBasicBlock *MipsTargetLowering::emitAtomicBinaryPartword(
   //   beq     success,$0,loopMBB
 
   BB = loopMBB;
-  BuildMI(BB, DL, TII->get(Mips::LL), OldVal).addReg(AlignedAddr).addImm(0);
+  unsigned LL = isMicroMips ? Mips::LL_MM : Mips::LL;
+  BuildMI(BB, DL, TII->get(LL), OldVal).addReg(AlignedAddr).addImm(0);
   if (Nand) {
     //  and andres, oldval, incr2
     //  nor binopres, $0, andres
@@ -1201,7 +1221,8 @@ MachineBasicBlock *MipsTargetLowering::emitAtomicBinaryPartword(
     .addReg(OldVal).addReg(Mask2);
   BuildMI(BB, DL, TII->get(Mips::OR), StoreVal)
     .addReg(MaskedOldVal0).addReg(NewVal);
-  BuildMI(BB, DL, TII->get(Mips::SC), Success)
+  unsigned SC = isMicroMips ? Mips::SC_MM : Mips::SC;
+  BuildMI(BB, DL, TII->get(SC), Success)
     .addReg(StoreVal).addReg(AlignedAddr).addImm(0);
   BuildMI(BB, DL, TII->get(Mips::BEQ))
     .addReg(Success).addReg(Mips::ZERO).addMBB(loopMBB);
@@ -1412,7 +1433,8 @@ MipsTargetLowering::emitAtomicCmpSwapPartword(MachineInstr *MI,
   //    and     maskedoldval0,oldval,mask
   //    bne     maskedoldval0,shiftedcmpval,sinkMBB
   BB = loop1MBB;
-  BuildMI(BB, DL, TII->get(Mips::LL), OldVal).addReg(AlignedAddr).addImm(0);
+  unsigned LL = isMicroMips ? Mips::LL_MM : Mips::LL;
+  BuildMI(BB, DL, TII->get(LL), OldVal).addReg(AlignedAddr).addImm(0);
   BuildMI(BB, DL, TII->get(Mips::AND), MaskedOldVal0)
     .addReg(OldVal).addReg(Mask);
   BuildMI(BB, DL, TII->get(Mips::BNE))
@@ -1428,7 +1450,8 @@ MipsTargetLowering::emitAtomicCmpSwapPartword(MachineInstr *MI,
     .addReg(OldVal).addReg(Mask2);
   BuildMI(BB, DL, TII->get(Mips::OR), StoreVal)
     .addReg(MaskedOldVal1).addReg(ShiftedNewVal);
-  BuildMI(BB, DL, TII->get(Mips::SC), Success)
+  unsigned SC = isMicroMips ? Mips::SC_MM : Mips::SC;
+  BuildMI(BB, DL, TII->get(SC), Success)
       .addReg(StoreVal).addReg(AlignedAddr).addImm(0);
   BuildMI(BB, DL, TII->get(Mips::BEQ))
       .addReg(Success).addReg(Mips::ZERO).addMBB(loop1MBB);
@@ -3735,4 +3758,81 @@ void MipsTargetLowering::HandleByVal(CCState *State, unsigned &Size,
   }
 
   State->addInRegsParamInfo(FirstReg, FirstReg + NumRegs);
+}
+
+MachineBasicBlock *
+MipsTargetLowering::emitPseudoSELECT(MachineInstr *MI, MachineBasicBlock *BB,
+                                     bool isFPCmp, unsigned Opc) const {
+  assert(!(Subtarget.hasMips4() || Subtarget.hasMips32()) &&
+         "Subtarget already supports SELECT nodes with the use of"
+         "conditional-move instructions.");
+
+  const TargetInstrInfo *TII =
+      getTargetMachine().getSubtargetImpl()->getInstrInfo();
+  DebugLoc DL = MI->getDebugLoc();
+
+  // To "insert" a SELECT instruction, we actually have to insert the
+  // diamond control-flow pattern.  The incoming instruction knows the
+  // destination vreg to set, the condition code register to branch on, the
+  // true/false values to select between, and a branch opcode to use.
+  const BasicBlock *LLVM_BB = BB->getBasicBlock();
+  MachineFunction::iterator It = BB;
+  ++It;
+
+  //  thisMBB:
+  //  ...
+  //   TrueVal = ...
+  //   setcc r1, r2, r3
+  //   bNE   r1, r0, copy1MBB
+  //   fallthrough --> copy0MBB
+  MachineBasicBlock *thisMBB  = BB;
+  MachineFunction *F = BB->getParent();
+  MachineBasicBlock *copy0MBB = F->CreateMachineBasicBlock(LLVM_BB);
+  MachineBasicBlock *sinkMBB  = F->CreateMachineBasicBlock(LLVM_BB);
+  F->insert(It, copy0MBB);
+  F->insert(It, sinkMBB);
+
+  // Transfer the remainder of BB and its successor edges to sinkMBB.
+  sinkMBB->splice(sinkMBB->begin(), BB,
+                  std::next(MachineBasicBlock::iterator(MI)), BB->end());
+  sinkMBB->transferSuccessorsAndUpdatePHIs(BB);
+
+  // Next, add the true and fallthrough blocks as its successors.
+  BB->addSuccessor(copy0MBB);
+  BB->addSuccessor(sinkMBB);
+
+  if (isFPCmp) {
+    // bc1[tf] cc, sinkMBB
+    BuildMI(BB, DL, TII->get(Opc))
+      .addReg(MI->getOperand(1).getReg())
+      .addMBB(sinkMBB);
+  } else {
+    // bne rs, $0, sinkMBB
+    BuildMI(BB, DL, TII->get(Opc))
+      .addReg(MI->getOperand(1).getReg())
+      .addReg(Mips::ZERO)
+      .addMBB(sinkMBB);
+  }
+
+  //  copy0MBB:
+  //   %FalseValue = ...
+  //   # fallthrough to sinkMBB
+  BB = copy0MBB;
+
+  // Update machine-CFG edges
+  BB->addSuccessor(sinkMBB);
+
+  //  sinkMBB:
+  //   %Result = phi [ %TrueValue, thisMBB ], [ %FalseValue, copy0MBB ]
+  //  ...
+  BB = sinkMBB;
+
+  BuildMI(*BB, BB->begin(), DL,
+          TII->get(Mips::PHI), MI->getOperand(0).getReg())
+    .addReg(MI->getOperand(2).getReg()).addMBB(thisMBB)
+    .addReg(MI->getOperand(3).getReg()).addMBB(copy0MBB);
+
+  MI->eraseFromParent();   // The pseudo instruction is gone now.
+
+  return BB;
 }

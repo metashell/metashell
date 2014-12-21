@@ -258,9 +258,7 @@ namespace TypeDeduction {
   void f() {
     const S s {};
     S &&t = [&] { return s; } ();
-#if __cplusplus <= 201103L
-    // expected-error@-2 {{drops qualifiers}}
-#else
+#if __cplusplus > 201103L
     S &&u = [&] () -> auto { return s; } ();
 #endif
   }
@@ -424,4 +422,18 @@ namespace lambda_in_default_mem_init {
     struct S { int n = [](int n){ return n; }(0); };
   }
   template void g<int>();
+}
+
+namespace error_in_transform_prototype {
+  template<class T>
+  void f(T t) {
+    // expected-error@+2 {{type 'int' cannot be used prior to '::' because it has no members}}
+    // expected-error@+1 {{no member named 'ns' in 'error_in_transform_prototype::S'}}
+    auto x = [](typename T::ns::type &k) {};
+  }
+  class S {};
+  void foo() {
+    f(5); // expected-note {{requested here}}
+    f(S()); // expected-note {{requested here}}
+  }
 }

@@ -118,7 +118,7 @@ def V4_A4_rcmpeqi : ALU32_ri<(outs IntRegs:$Rd),
 // Preserve the TSTBIT generation
 def : Pat <(i32 (zext (i1 (setne (i32 (and (i32 (shl 1, (i32 IntRegs:$src2))),
                                            (i32 IntRegs:$src1))), 0)))),
-      (i32 (MUX_ii (i1 (TSTBIT_rr (i32 IntRegs:$src1), (i32 IntRegs:$src2))),
+      (i32 (C2_muxii (i1 (S2_tstbit_r (i32 IntRegs:$src1), (i32 IntRegs:$src2))),
                    1, 0))>;
 
 // Interfered with tstbit generation, above pattern preserves, see : tstbit.ll
@@ -205,6 +205,32 @@ def COMBINE_iI_V4 : ALU32_ii<(outs DoubleRegs:$dst),
 //===----------------------------------------------------------------------===//
 // ALU32/PERM +
 //===----------------------------------------------------------------------===//
+
+// Combine a word and an immediate into a register pair.
+let hasSideEffects = 0, isExtentSigned = 1, isExtendable = 1,
+    opExtentBits = 8 in
+class T_Combine1 <bits<2> MajOp, dag ins, string AsmStr>
+  : ALU32Inst <(outs DoubleRegs:$Rdd), ins, AsmStr> {
+    bits<5> Rdd;
+    bits<5> Rs;
+    bits<8> s8;
+
+    let IClass      = 0b0111;
+    let Inst{27-24} = 0b0011;
+    let Inst{22-21} = MajOp;
+    let Inst{20-16} = Rs;
+    let Inst{13}    = 0b1;
+    let Inst{12-5}  = s8;
+    let Inst{4-0}   = Rdd;
+  }
+
+let opExtendable = 2, isCodeGenOnly = 0 in
+def A4_combineri : T_Combine1<0b00, (ins IntRegs:$Rs, s8Ext:$s8),
+                                    "$Rdd = combine($Rs, #$s8)">;
+
+let opExtendable = 1, isCodeGenOnly = 0 in
+def A4_combineir : T_Combine1<0b01, (ins s8Ext:$s8, IntRegs:$Rs),
+                                    "$Rdd = combine(#$s8, $Rs)">;
 
 //===----------------------------------------------------------------------===//
 // LD +
@@ -377,7 +403,7 @@ def : Pat <(i32 (load (add IntRegs:$src1, IntRegs:$src2))),
 
 // zext i1->i64
 def : Pat <(i64 (zext (i1 PredRegs:$src1))),
-      (i64 (COMBINE_Ir_V4 0, (MUX_ii (i1 PredRegs:$src1), 1, 0)))>,
+      (i64 (COMBINE_Ir_V4 0, (C2_muxii (i1 PredRegs:$src1), 1, 0)))>,
       Requires<[HasV4T]>;
 
 // zext i32->i64
@@ -2204,7 +2230,7 @@ def CMPbEQri_V4 : MInst<(outs PredRegs:$dst),
 
 def : Pat <(brcond (i1 (setne (and (i32 IntRegs:$src1), 255), u8ImmPred:$src2)),
                        bb:$offset),
-      (JMP_f (CMPbEQri_V4 (i32 IntRegs:$src1), u8ImmPred:$src2),
+      (J2_jumpf (CMPbEQri_V4 (i32 IntRegs:$src1), u8ImmPred:$src2),
                 bb:$offset)>,
       Requires<[HasV4T]>;
 
@@ -2449,7 +2475,7 @@ def : Pat <(i32 (zext (i1 (setle (i32 IntRegs:$Rs), (i32 IntRegs:$Rt))))),
 let AddedComplexity = 139 in
 def : Pat <(i32 (zext (i1 (setult (i32 (and (i32 IntRegs:$src1), 255)),
                                   u7StrictPosImmPred:$src2)))),
-  (i32 (MUX_ii (i1 (CMPbGTUri_V4 (i32 IntRegs:$src1),
+  (i32 (C2_muxii (i1 (CMPbGTUri_V4 (i32 IntRegs:$src1),
                                  (DEC_CONST_BYTE u7StrictPosImmPred:$src2))),
                    0, 1))>,
                    Requires<[HasV4T]>;
@@ -2874,7 +2900,7 @@ def : Pat<(truncstorei8 (i32 IntRegs:$src1),
 //       to "r0 = 1; memw(#foo) = r0"
 let AddedComplexity = 100 in
 def : Pat<(store (i1 -1), (HexagonCONST32_GP tglobaladdr:$global)),
-          (STb_GP_V4 tglobaladdr:$global, (TFRI 1))>;
+          (STb_GP_V4 tglobaladdr:$global, (A2_tfrsi 1))>;
 
 def : Pat<(atomic_store_16 (HexagonCONST32_GP tglobaladdr:$global),
                            (i32 IntRegs:$src1)),
@@ -3016,7 +3042,7 @@ def : Pat <(i64 (load (HexagonCONST32_GP tglobaladdr:$global))),
 // Map from Pd = load(globaladdress) -> Rd = memb(globaladdress), Pd = Rd
 let AddedComplexity = 100 in
 def : Pat <(i1 (load (HexagonCONST32_GP tglobaladdr:$global))),
-           (i1 (TFR_PdRs (i32 (LDb_GP_V4 tglobaladdr:$global))))>;
+           (i1 (C2_tfrrp (i32 (LDb_GP_V4 tglobaladdr:$global))))>;
 
 // When the Interprocedural Global Variable optimizer realizes that a certain
 // global variable takes only two constant values, it shrinks the global to
@@ -3223,7 +3249,7 @@ def:  Pat <(i64 (zextloadi8 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
       (i64 (COMBINE_Ir_V4 0, (LDriub_abs_V4 tglobaladdr:$addr)))>;
 
 def:  Pat <(i64 (sextloadi8 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
-      (i64 (SXTW (LDrib_abs_V4 tglobaladdr:$addr)))>;
+      (i64 (A2_sxtw (LDrib_abs_V4 tglobaladdr:$addr)))>;
 
 def:  Pat <(i64 (extloadi8 FoldGlobalAddr:$addr)),
       (i64 (COMBINE_Ir_V4 0, (LDrib_abs_V4 FoldGlobalAddr:$addr)))>;
@@ -3232,7 +3258,7 @@ def:  Pat <(i64 (zextloadi8 FoldGlobalAddr:$addr)),
       (i64 (COMBINE_Ir_V4 0, (LDriub_abs_V4 FoldGlobalAddr:$addr)))>;
 
 def:  Pat <(i64 (sextloadi8 FoldGlobalAddr:$addr)),
-      (i64 (SXTW (LDrib_abs_V4 FoldGlobalAddr:$addr)))>;
+      (i64 (A2_sxtw (LDrib_abs_V4 FoldGlobalAddr:$addr)))>;
 }
 // i16 -> i64 loads
 // We need a complexity of 120 here to override preceding handling of
@@ -3247,7 +3273,7 @@ def:  Pat <(i64 (zextloadi16 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (sextloadi16 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
-      (i64 (SXTW (LDrih_abs_V4 tglobaladdr:$addr)))>,
+      (i64 (A2_sxtw (LDrih_abs_V4 tglobaladdr:$addr)))>,
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (extloadi16 FoldGlobalAddr:$addr)),
@@ -3259,7 +3285,7 @@ def:  Pat <(i64 (zextloadi16 FoldGlobalAddr:$addr)),
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (sextloadi16 FoldGlobalAddr:$addr)),
-      (i64 (SXTW (LDrih_abs_V4 FoldGlobalAddr:$addr)))>,
+      (i64 (A2_sxtw (LDrih_abs_V4 FoldGlobalAddr:$addr)))>,
       Requires<[HasV4T]>;
 }
 // i32->i64 loads
@@ -3275,7 +3301,7 @@ def:  Pat <(i64 (zextloadi32 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (sextloadi32 (NumUsesBelowThresCONST32 tglobaladdr:$addr))),
-      (i64 (SXTW (LDriw_abs_V4 tglobaladdr:$addr)))>,
+      (i64 (A2_sxtw (LDriw_abs_V4 tglobaladdr:$addr)))>,
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (extloadi32 FoldGlobalAddr:$addr)),
@@ -3287,7 +3313,7 @@ def:  Pat <(i64 (zextloadi32 FoldGlobalAddr:$addr)),
       Requires<[HasV4T]>;
 
 def:  Pat <(i64 (sextloadi32 FoldGlobalAddr:$addr)),
-      (i64 (SXTW (LDriw_abs_V4 FoldGlobalAddr:$addr)))>,
+      (i64 (A2_sxtw (LDriw_abs_V4 FoldGlobalAddr:$addr)))>,
       Requires<[HasV4T]>;
 }
 

@@ -379,6 +379,10 @@ namespace llvm {
       FMADDSUB,
       FMSUBADD,
 
+      // Compress and expand
+      COMPRESS,
+      EXPAND,
+
       // Save xmm argument registers to the stack, according to %al. An operator
       // is needed so that this can be expanded with control flow.
       VASTART_SAVE_XMM_REGS,
@@ -786,6 +790,10 @@ namespace llvm {
     /// to just the constant itself.
     bool shouldConvertConstantLoadToIntImm(const APInt &Imm,
                                            Type *Ty) const override;
+
+    /// Return true if EXTRACT_SUBVECTOR is cheap for this result type
+    /// with this index.
+    bool isExtractSubvectorCheap(EVT ResVT, unsigned Index) const override;
 
     /// Intel processors have a unified instruction and data cache
     const char * getClearCacheBuiltinName() const override {

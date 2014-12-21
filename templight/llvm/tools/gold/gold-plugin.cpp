@@ -261,6 +261,14 @@ static const GlobalObject *getBaseObject(const GlobalValue &GV) {
   return cast<GlobalObject>(&GV);
 }
 
+static bool shouldSkip(uint32_t Symflags) {
+  if (!(Symflags & object::BasicSymbolRef::SF_Global))
+    return true;
+  if (Symflags & object::BasicSymbolRef::SF_FormatSpecific)
+    return true;
+  return false;
+}
+
 /// Called by gold to see whether this file is one that our plugin can handle.
 /// We'll try to open it and register all the symbols with add_symbol if
 /// possible.
@@ -295,7 +303,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
   }
 
   ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
-      object::IRObjectFile::createIRObjectFile(BufferRef, Context);
+      object::IRObjectFile::create(BufferRef, Context);
   std::error_code EC = ObjOrErr.getError();
   if (EC == BitcodeError::InvalidBitcodeSignature ||
       EC == object::object_error::invalid_file_type ||
@@ -318,10 +326,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
 
   for (auto &Sym : Obj->symbols()) {
     uint32_t Symflags = Sym.getFlags();
-    if (!(Symflags & object::BasicSymbolRef::SF_Global))
-      continue;
-
-    if (Symflags & object::BasicSymbolRef::SF_FormatSpecific)
+    if (shouldSkip(Symflags))
       continue;
 
     cf.syms.push_back(ld_plugin_symbol());
@@ -475,51 +480,10 @@ static const char *getResolutionName(ld_plugin_symbol_resolution R) {
   llvm_unreachable("Unknown resolution");
 }
 
-static GlobalObject *makeInternalReplacement(GlobalObject *GO) {
-  Module *M = GO->getParent();
-  GlobalObject *Ret;
-  if (auto *F = dyn_cast<Function>(GO)) {
-    if (F->materialize())
-      message(LDPL_FATAL, "LLVM gold plugin has failed to read a function");
-
-    auto *NewF = Function::Create(F->getFunctionType(), F->getLinkage(),
-                                  F->getName(), M);
-
-    ValueToValueMapTy VM;
-    Function::arg_iterator NewI = NewF->arg_begin();
-    for (auto &Arg : F->args()) {
-      NewI->setName(Arg.getName());
-      VM[&Arg] = NewI;
-      ++NewI;
-    }
-
-    NewF->getBasicBlockList().splice(NewF->end(), F->getBasicBlockList());
-    for (auto &BB : *NewF) {
-      for (auto &Inst : BB)
-        RemapInstruction(&Inst, VM, RF_IgnoreMissingEntries);
-    }
-
-    Ret = NewF;
-    F->deleteBody();
-  } else {
-    auto *Var = cast<GlobalVariable>(GO);
-    Ret = new GlobalVariable(
-        *M, Var->getType()->getElementType(), Var->isConstant(),
-        Var->getLinkage(), Var->getInitializer(), Var->getName(),
-        nullptr, Var->getThreadLocalMode(), Var->getType()->getAddressSpace(),
-        Var->isExternallyInitialized());
-    Var->setInitializer(nullptr);
-  }
-  Ret->copyAttributesFrom(GO);
-  Ret->setLinkage(GlobalValue::InternalLinkage);
-  Ret->setComdat(GO->getComdat());
-
-  return Ret;
-}
-
 namespace {
 class LocalValueMaterializer : public ValueMaterializer {
   DenseSet<GlobalValue *> &Dropped;
+  DenseMap<GlobalObject *, GlobalObject *> LocalVersions;
 
 public:
   LocalValueMaterializer(DenseSet<GlobalValue *> &Dropped) : Dropped(Dropped) {}
@@ -528,13 +492,39 @@ public:
 }
 
 Value *LocalValueMaterializer::materializeValueFor(Value *V) {
-  auto *GV = dyn_cast<GlobalValue>(V);
-  if (!GV)
+  auto *GO = dyn_cast<GlobalObject>(V);
+  if (!GO)
     return nullptr;
-  if (!Dropped.count(GV))
+
+  auto I = LocalVersions.find(GO);
+  if (I != LocalVersions.end())
+    return I->second;
+
+  if (!Dropped.count(GO))
     return nullptr;
-  assert(!isa<GlobalAlias>(GV) && "Found alias point to weak alias.");
-  return makeInternalReplacement(cast<GlobalObject>(GV));
+
+  Module &M = *GO->getParent();
+  GlobalValue::LinkageTypes L = GO->getLinkage();
+  GlobalObject *Declaration;
+  if (auto *F = dyn_cast<Function>(GO)) {
+    Declaration = Function::Create(F->getFunctionType(), L, "", &M);
+  } else {
+    auto *Var = cast<GlobalVariable>(GO);
+    Declaration = new GlobalVariable(M, Var->getType()->getElementType(),
+                                     Var->isConstant(), L,
+                                     /*Initializer*/ nullptr);
+  }
+  Declaration->takeName(GO);
+  Declaration->copyAttributesFrom(GO);
+
+  GO->setLinkage(GlobalValue::InternalLinkage);
+  GO->setName(Declaration->getName());
+  Dropped.erase(GO);
+  GO->replaceAllUsesWith(Declaration);
+
+  LocalVersions[Declaration] = GO;
+
+  return GO;
 }
 
 static Constant *mapConstantToLocalCopy(Constant *C, ValueToValueMapTy &VM,
@@ -556,40 +546,41 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
   if (get_view(F.handle, &View) != LDPS_OK)
     message(LDPL_FATAL, "Failed to get a view of file");
 
-  llvm::ErrorOr<MemoryBufferRef> MBOrErr =
-      object::IRObjectFile::findBitcodeInMemBuffer(
-          MemoryBufferRef(StringRef((const char *)View, File.filesize), ""));
-  if (std::error_code EC = MBOrErr.getError())
+  MemoryBufferRef BufferRef(StringRef((const char *)View, File.filesize), "");
+  ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
+      object::IRObjectFile::create(BufferRef, Context);
+
+  if (std::error_code EC = ObjOrErr.getError())
     message(LDPL_FATAL, "Could not read bitcode from file : %s",
             EC.message().c_str());
-
-  std::unique_ptr<MemoryBuffer> Buffer =
-      MemoryBuffer::getMemBuffer(MBOrErr->getBuffer(), "", false);
 
   if (release_input_file(F.handle) != LDPS_OK)
     message(LDPL_FATAL, "Failed to release file information");
 
-  ErrorOr<Module *> MOrErr = getLazyBitcodeModule(std::move(Buffer), Context);
+  object::IRObjectFile &Obj = **ObjOrErr;
 
-  if (std::error_code EC = MOrErr.getError())
-    message(LDPL_FATAL, "Could not read bitcode from file : %s",
-            EC.message().c_str());
-
-  std::unique_ptr<Module> M(MOrErr.get());
+  Module &M = Obj.getModule();
 
   SmallPtrSet<GlobalValue *, 8> Used;
-  collectUsedGlobalVariables(*M, Used, /*CompilerUsed*/ false);
+  collectUsedGlobalVariables(M, Used, /*CompilerUsed*/ false);
 
   DenseSet<GlobalValue *> Drop;
   std::vector<GlobalAlias *> KeptAliases;
-  for (ld_plugin_symbol &Sym : F.syms) {
+
+  unsigned SymNum = 0;
+  for (auto &ObjSym : Obj.symbols()) {
+    if (shouldSkip(ObjSym.getFlags()))
+      continue;
+    ld_plugin_symbol &Sym = F.syms[SymNum];
+    ++SymNum;
+
     ld_plugin_symbol_resolution Resolution =
         (ld_plugin_symbol_resolution)Sym.resolution;
 
     if (options::generate_api_file)
       *ApiFile << Sym.name << ' ' << getResolutionName(Resolution) << '\n';
 
-    GlobalValue *GV = M->getNamedValue(Sym.name);
+    GlobalValue *GV = Obj.getSymbolGV(ObjSym.getRawDataRefImpl());
     if (!GV)
       continue; // Asm symbol.
 
@@ -619,7 +610,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
         // Since we use the regular lib/Linker, we cannot just internalize GV
         // now or it will not be copied to the merged module. Instead we force
         // it to be copied and then internalize it.
-        Internalize.insert(Sym.name);
+        Internalize.insert(GV->getName());
       }
       break;
     }
@@ -632,7 +623,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
       // Gold might have selected a linkonce_odr and preempted a weak_odr.
       // In that case we have to make sure we don't end up internalizing it.
       if (!GV->isDiscardableIfUnused())
-        Maybe.erase(Sym.name);
+        Maybe.erase(GV->getName());
 
       // fall-through
     case LDPR_PREEMPTED_REG:
@@ -645,7 +636,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
       // and in that module the address might be significant, but that
       // copy will be LDPR_PREEMPTED_IR.
       if (GV->hasLinkOnceODRLinkage())
-        Maybe.insert(Sym.name);
+        Maybe.insert(GV->getName());
       keepGlobalValue(*GV, KeptAliases);
       break;
     }
@@ -664,14 +655,13 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     // expression is being dropped. If that is the case, that GV must be copied.
     Constant *Aliasee = GA->getAliasee();
     Constant *Replacement = mapConstantToLocalCopy(Aliasee, VM, &Materializer);
-    if (Aliasee != Replacement)
-      GA->setAliasee(Replacement);
+    GA->setAliasee(Replacement);
   }
 
   for (auto *GV : Drop)
     drop(*GV);
 
-  return M;
+  return Obj.takeModule();
 }
 
 static void runLTOPasses(Module &M, TargetMachine &TM) {

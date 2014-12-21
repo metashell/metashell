@@ -64,7 +64,7 @@ static void srcMgrDiagHandler(const SMDiagnostic &Diag, void *diagInfo) {
 
     if (LocInfo->getNumOperands() != 0)
       if (const ConstantInt *CI =
-          dyn_cast<ConstantInt>(LocInfo->getOperand(ErrorLine)))
+              mdconst::dyn_extract<ConstantInt>(LocInfo->getOperand(ErrorLine)))
         LocCookie = CI->getZExtValue();
   }
 
@@ -90,6 +90,7 @@ void AsmPrinter::EmitInlineAsm(StringRef Str, const MDNode *LocMDNode,
   assert(MCAI && "No MCAsmInfo");
   if (!MCAI->useIntegratedAssembler() &&
       !OutStreamer.isIntegratedAssemblerRequired()) {
+    emitInlineAsmStart(TM.getSubtarget<MCSubtargetInfo>());
     OutStreamer.EmitRawText(Str);
     emitInlineAsmEnd(TM.getSubtarget<MCSubtargetInfo>(), nullptr);
     return;
@@ -152,6 +153,7 @@ void AsmPrinter::EmitInlineAsm(StringRef Str, const MDNode *LocMDNode,
     TAP->SetFrameRegister(TRI->getFrameRegister(*MF));
   }
 
+  emitInlineAsmStart(STIOrig);
   // Don't implicitly switch to the text section before the asm.
   int Res = Parser->Run(/*NoInitialTextSection*/ true,
                         /*NoFinalize*/ true);
@@ -467,7 +469,8 @@ void AsmPrinter::EmitInlineAsm(const MachineInstr *MI) const {
     if (MI->getOperand(i-1).isMetadata() &&
         (LocMD = MI->getOperand(i-1).getMetadata()) &&
         LocMD->getNumOperands() != 0) {
-      if (const ConstantInt *CI = dyn_cast<ConstantInt>(LocMD->getOperand(0))) {
+      if (const ConstantInt *CI =
+              mdconst::dyn_extract<ConstantInt>(LocMD->getOperand(0))) {
         LocCookie = CI->getZExtValue();
         break;
       }
@@ -565,6 +568,8 @@ bool AsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
   // Target doesn't support this yet!
   return true;
 }
+
+void AsmPrinter::emitInlineAsmStart(const MCSubtargetInfo &StartInfo) const {}
 
 void AsmPrinter::emitInlineAsmEnd(const MCSubtargetInfo &StartInfo,
                                   const MCSubtargetInfo *EndInfo) const {}

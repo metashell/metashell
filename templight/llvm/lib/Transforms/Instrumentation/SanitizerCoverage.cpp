@@ -37,6 +37,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/Module.h"
@@ -107,6 +108,7 @@ class SanitizerCoverageModule : public ModulePass {
   Function *SanCovIndirCallFunction;
   Function *SanCovModuleInit;
   Function *SanCovTraceEnter, *SanCovTraceBB;
+  InlineAsm *EmptyAsm;
   Type *IntptrTy;
   LLVMContext *C;
 
@@ -146,6 +148,10 @@ bool SanitizerCoverageModule::runOnModule(Module &M) {
   SanCovModuleInit = checkInterfaceFunction(M.getOrInsertFunction(
       kSanCovModuleInitName, Type::getVoidTy(*C), IntptrTy, nullptr));
   SanCovModuleInit->setLinkage(Function::ExternalLinkage);
+  // We insert an empty inline asm after cov callbacks to avoid callback merge.
+  EmptyAsm = InlineAsm::get(FunctionType::get(IRB.getVoidTy(), false),
+                            StringRef(""), StringRef(""),
+                            /*hasSideEffects=*/true);
 
   if (ClExperimentalTracing) {
     SanCovTraceEnter = checkInterfaceFunction(
@@ -165,10 +171,8 @@ bool SanitizerCoverageModule::runOnModule(Module &M) {
 
 bool SanitizerCoverageModule::runOnFunction(Function &F) {
   if (F.empty()) return false;
-  // For now instrument only functions that will also be asan-instrumented.
-  if (!F.hasFnAttribute(Attribute::SanitizeAddress) &&
-      !F.hasFnAttribute(Attribute::SanitizeMemory))
-    return false;
+  if (F.getName().find(".module_ctor") != std::string::npos)
+    return false;  // Should not instrument sanitizer init functions.
   if (CoverageLevel >= 3)
     SplitAllCriticalEdges(F, this);
   SmallVector<Instruction*, 8> IndirCalls;
@@ -275,7 +279,7 @@ void SanitizerCoverageModule::InjectCoverageAtBlock(Function &F,
   Load->setAtomic(Monotonic);
   Load->setAlignment(1);
   Load->setMetadata(F.getParent()->getMDKindID("nosanitize"),
-                    MDNode::get(*C, ArrayRef<llvm::Value *>()));
+                    MDNode::get(*C, None));
   Value *Cmp = IRB.CreateICmpEQ(Constant::getNullValue(Int8Ty), Load);
   Instruction *Ins = SplitBlockAndInsertIfThen(
       Cmp, IP, false, MDBuilder(*C).createBranchWeights(1, 100000));
@@ -283,6 +287,7 @@ void SanitizerCoverageModule::InjectCoverageAtBlock(Function &F,
   IRB.SetCurrentDebugLocation(EntryLoc);
   // __sanitizer_cov gets the PC of the instruction using GET_CALLER_PC.
   IRB.CreateCall(SanCovFunction, Guard);
+  IRB.CreateCall(EmptyAsm);  // Avoids callback merge.
 }
 
 char SanitizerCoverageModule::ID = 0;

@@ -30,6 +30,7 @@
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/IR/ValueHandle.h"
 #include "llvm/IR/ValueMap.h"
@@ -90,6 +91,16 @@ static cl::opt<bool> StressStoreExtract(
     "stress-cgp-store-extract", cl::Hidden, cl::init(false),
     cl::desc("Stress test store(extract) optimizations in CodeGenPrepare"));
 
+static cl::opt<bool> DisableExtLdPromotion(
+    "disable-cgp-ext-ld-promotion", cl::Hidden, cl::init(false),
+    cl::desc("Disable ext(promotable(ld)) -> promoted(ext(ld)) optimization in "
+             "CodeGenPrepare"));
+
+static cl::opt<bool> StressExtLdPromotion(
+    "stress-cgp-ext-ld-promotion", cl::Hidden, cl::init(false),
+    cl::desc("Stress test ext(promotable(ld)) -> promoted(ext(ld)) "
+             "optimization in CodeGenPrepare"));
+
 namespace {
 typedef SmallPtrSet<Instruction *, 16> SetOfInstrs;
 struct TypeIsSExt {
@@ -98,6 +109,7 @@ struct TypeIsSExt {
   TypeIsSExt(Type *Ty, bool IsSExt) : Ty(Ty), IsSExt(IsSExt) {}
 };
 typedef DenseMap<Instruction *, TypeIsSExt> InstrToOrigTy;
+class TypePromotionTransaction;
 
   class CodeGenPrepare : public FunctionPass {
     /// TLI - Keep a pointer of a TargetLowering to consult for determining
@@ -157,7 +169,7 @@ typedef DenseMap<Instruction *, TypeIsSExt> InstrToOrigTy;
     bool OptimizeMemoryInst(Instruction *I, Value *Addr, Type *AccessTy);
     bool OptimizeInlineAsmInst(CallInst *CS);
     bool OptimizeCallInst(CallInst *CI);
-    bool MoveExtToFormExtLoad(Instruction *I);
+    bool MoveExtToFormExtLoad(Instruction *&I);
     bool OptimizeExtUses(Instruction *I);
     bool OptimizeSelectInst(SelectInst *SI);
     bool OptimizeShuffleVectorInst(ShuffleVectorInst *SI);
@@ -165,6 +177,11 @@ typedef DenseMap<Instruction *, TypeIsSExt> InstrToOrigTy;
     bool DupRetToEnableTailCallOpts(BasicBlock *BB);
     bool PlaceDbgValues(Function &F);
     bool sinkAndCmp(Function &F);
+    bool ExtLdPromotion(TypePromotionTransaction &TPT, LoadInst *&LI,
+                        Instruction *&Inst,
+                        const SmallVectorImpl<Instruction *> &Exts,
+                        unsigned CreatedInst);
+    bool splitBranchCondition(Function &F);
   };
 }
 
@@ -218,8 +235,10 @@ bool CodeGenPrepare::runOnFunction(Function &F) {
   // into a single target instruction, push the mask and compare into branch
   // users. Do this before OptimizeBlock -> OptimizeInst ->
   // OptimizeCmpExpression, which perturbs the pattern being searched for.
-  if (!DisableBranchOpts)
+  if (!DisableBranchOpts) {
     EverMadeChange |= sinkAndCmp(F);
+    EverMadeChange |= splitBranchCondition(F);
+  }
 
   bool MadeChange = true;
   while (MadeChange) {
@@ -1718,6 +1737,23 @@ static bool MightBeFoldableInst(Instruction *I) {
   }
 }
 
+/// \brief Check whether or not \p Val is a legal instruction for \p TLI.
+/// \note \p Val is assumed to be the product of some type promotion.
+/// Therefore if \p Val has an undefined state in \p TLI, this is assumed
+/// to be legal, as the non-promoted value would have had the same state.
+static bool isPromotedInstructionLegal(const TargetLowering &TLI, Value *Val) {
+  Instruction *PromotedInst = dyn_cast<Instruction>(Val);
+  if (!PromotedInst)
+    return false;
+  int ISDOpcode = TLI.InstructionOpcodeToISD(PromotedInst->getOpcode());
+  // If the ISDOpcode is undefined, it was undefined before the promotion.
+  if (!ISDOpcode)
+    return true;
+  // Otherwise, check if the promoted instruction is legal or not.
+  return TLI.isOperationLegalOrCustom(
+      ISDOpcode, TLI.getValueType(PromotedInst->getType()));
+}
+
 /// \brief Hepler class to perform type promotion.
 class TypePromotionHelper {
   /// \brief Utility function to check whether or not a sign or zero extension
@@ -1747,46 +1783,59 @@ class TypePromotionHelper {
   /// \p PromotedInsts maps the instructions to their type before promotion.
   /// \p CreatedInsts[out] contains how many non-free instructions have been
   /// created to promote the operand of Ext.
+  /// Newly added extensions are inserted in \p Exts.
+  /// Newly added truncates are inserted in \p Truncs.
   /// Should never be called directly.
   /// \return The promoted value which is used instead of Ext.
-  static Value *promoteOperandForTruncAndAnyExt(Instruction *Ext,
-                                                TypePromotionTransaction &TPT,
-                                                InstrToOrigTy &PromotedInsts,
-                                                unsigned &CreatedInsts);
+  static Value *promoteOperandForTruncAndAnyExt(
+      Instruction *Ext, TypePromotionTransaction &TPT,
+      InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts,
+      SmallVectorImpl<Instruction *> *Exts,
+      SmallVectorImpl<Instruction *> *Truncs);
 
   /// \brief Utility function to promote the operand of \p Ext when this
   /// operand is promotable and is not a supported trunc or sext.
   /// \p PromotedInsts maps the instructions to their type before promotion.
   /// \p CreatedInsts[out] contains how many non-free instructions have been
   /// created to promote the operand of Ext.
+  /// Newly added extensions are inserted in \p Exts.
+  /// Newly added truncates are inserted in \p Truncs.
   /// Should never be called directly.
   /// \return The promoted value which is used instead of Ext.
-  static Value *promoteOperandForOther(Instruction *Ext,
-                                       TypePromotionTransaction &TPT,
-                                       InstrToOrigTy &PromotedInsts,
-                                       unsigned &CreatedInsts, bool IsSExt);
+  static Value *
+  promoteOperandForOther(Instruction *Ext, TypePromotionTransaction &TPT,
+                         InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts,
+                         SmallVectorImpl<Instruction *> *Exts,
+                         SmallVectorImpl<Instruction *> *Truncs, bool IsSExt);
 
   /// \see promoteOperandForOther.
-  static Value *signExtendOperandForOther(Instruction *Ext,
-                                          TypePromotionTransaction &TPT,
-                                          InstrToOrigTy &PromotedInsts,
-                                          unsigned &CreatedInsts) {
-    return promoteOperandForOther(Ext, TPT, PromotedInsts, CreatedInsts, true);
+  static Value *
+  signExtendOperandForOther(Instruction *Ext, TypePromotionTransaction &TPT,
+                            InstrToOrigTy &PromotedInsts,
+                            unsigned &CreatedInsts,
+                            SmallVectorImpl<Instruction *> *Exts,
+                            SmallVectorImpl<Instruction *> *Truncs) {
+    return promoteOperandForOther(Ext, TPT, PromotedInsts, CreatedInsts, Exts,
+                                  Truncs, true);
   }
 
   /// \see promoteOperandForOther.
-  static Value *zeroExtendOperandForOther(Instruction *Ext,
-                                          TypePromotionTransaction &TPT,
-                                          InstrToOrigTy &PromotedInsts,
-                                          unsigned &CreatedInsts) {
-    return promoteOperandForOther(Ext, TPT, PromotedInsts, CreatedInsts, false);
+  static Value *
+  zeroExtendOperandForOther(Instruction *Ext, TypePromotionTransaction &TPT,
+                            InstrToOrigTy &PromotedInsts,
+                            unsigned &CreatedInsts,
+                            SmallVectorImpl<Instruction *> *Exts,
+                            SmallVectorImpl<Instruction *> *Truncs) {
+    return promoteOperandForOther(Ext, TPT, PromotedInsts, CreatedInsts, Exts,
+                                  Truncs, false);
   }
 
 public:
   /// Type for the utility function that promotes the operand of Ext.
   typedef Value *(*Action)(Instruction *Ext, TypePromotionTransaction &TPT,
-                           InstrToOrigTy &PromotedInsts,
-                           unsigned &CreatedInsts);
+                           InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts,
+                           SmallVectorImpl<Instruction *> *Exts,
+                           SmallVectorImpl<Instruction *> *Truncs);
   /// \brief Given a sign/zero extend instruction \p Ext, return the approriate
   /// action to promote the operand of \p Ext instead of using Ext.
   /// \return NULL if no promotable action is possible with the current
@@ -1805,6 +1854,12 @@ bool TypePromotionHelper::canGetThrough(const Instruction *Inst,
                                         Type *ConsideredExtType,
                                         const InstrToOrigTy &PromotedInsts,
                                         bool IsSExt) {
+  // The promotion helper does not know how to deal with vector types yet.
+  // To be able to fix that, we would need to fix the places where we
+  // statically extend, e.g., constants and such.
+  if (Inst->getType()->isVectorTy())
+    return false;
+
   // We can always get through zext.
   if (isa<ZExtInst>(Inst))
     return true;
@@ -1830,8 +1885,9 @@ bool TypePromotionHelper::canGetThrough(const Instruction *Inst,
   // Check if we can use this operand in the extension.
   // If the type is larger than the result type of the extension,
   // we cannot.
-  if (OpndVal->getType()->getIntegerBitWidth() >
-      ConsideredExtType->getIntegerBitWidth())
+  if (!OpndVal->getType()->isIntegerTy() ||
+      OpndVal->getType()->getIntegerBitWidth() >
+          ConsideredExtType->getIntegerBitWidth())
     return false;
 
   // If the operand of the truncate is not an instruction, we will not have
@@ -1896,7 +1952,9 @@ TypePromotionHelper::Action TypePromotionHelper::getAction(
 
 Value *TypePromotionHelper::promoteOperandForTruncAndAnyExt(
     llvm::Instruction *SExt, TypePromotionTransaction &TPT,
-    InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts) {
+    InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts,
+    SmallVectorImpl<Instruction *> *Exts,
+    SmallVectorImpl<Instruction *> *Truncs) {
   // By construction, the operand of SExt is an instruction. Otherwise we cannot
   // get through it and this method should not be called.
   Instruction *SExtOpnd = cast<Instruction>(SExt->getOperand(0));
@@ -1922,8 +1980,11 @@ Value *TypePromotionHelper::promoteOperandForTruncAndAnyExt(
 
   // Check if the extension is still needed.
   Instruction *ExtInst = dyn_cast<Instruction>(ExtVal);
-  if (!ExtInst || ExtInst->getType() != ExtInst->getOperand(0)->getType())
+  if (!ExtInst || ExtInst->getType() != ExtInst->getOperand(0)->getType()) {
+    if (ExtInst && Exts)
+      Exts->push_back(ExtInst);
     return ExtVal;
+  }
 
   // At this point we have: ext ty opnd to ty.
   // Reassign the uses of ExtInst to the opnd and remove ExtInst.
@@ -1934,7 +1995,9 @@ Value *TypePromotionHelper::promoteOperandForTruncAndAnyExt(
 
 Value *TypePromotionHelper::promoteOperandForOther(
     Instruction *Ext, TypePromotionTransaction &TPT,
-    InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts, bool IsSExt) {
+    InstrToOrigTy &PromotedInsts, unsigned &CreatedInsts,
+    SmallVectorImpl<Instruction *> *Exts,
+    SmallVectorImpl<Instruction *> *Truncs, bool IsSExt) {
   // By construction, the operand of Ext is an instruction. Otherwise we cannot
   // get through it and this method should not be called.
   Instruction *ExtOpnd = cast<Instruction>(Ext->getOperand(0));
@@ -1949,6 +2012,8 @@ Value *TypePromotionHelper::promoteOperandForOther(
       ITrunc->removeFromParent();
       // Insert it just after the definition.
       ITrunc->insertAfter(ExtOpnd);
+      if (Truncs)
+        Truncs->push_back(ITrunc);
     }
 
     TPT.replaceAllUsesWith(ExtOpnd, Trunc);
@@ -2009,7 +2074,8 @@ Value *TypePromotionHelper::promoteOperandForOther(
                                    : TPT.createZExt(Ext, Opnd, Ext->getType()));
       ++CreatedInsts;
     }
-
+    if (Exts)
+      Exts->push_back(ExtForOpnd);
     TPT.setOperand(ExtForOpnd, 0, Opnd);
 
     // Move the sign extension before the insertion point.
@@ -2047,16 +2113,7 @@ AddressingModeMatcher::IsPromotionProfitable(unsigned MatchedSize,
   // The promotion is neutral but it may help folding the sign extension in
   // loads for instance.
   // Check that we did not create an illegal instruction.
-  Instruction *PromotedInst = dyn_cast<Instruction>(PromotedOperand);
-  if (!PromotedInst)
-    return false;
-  int ISDOpcode = TLI.InstructionOpcodeToISD(PromotedInst->getOpcode());
-  // If the ISDOpcode is undefined, it was undefined before the promotion.
-  if (!ISDOpcode)
-    return true;
-  // Otherwise, check if the promoted instruction is legal or not.
-  return TLI.isOperationLegalOrCustom(
-      ISDOpcode, TLI.getValueType(PromotedInst->getType()));
+  return isPromotedInstructionLegal(TLI, PromotedOperand);
 }
 
 /// MatchOperationAddr - Given an instruction or constant expr, see if we can
@@ -2250,7 +2307,8 @@ bool AddressingModeMatcher::MatchOperationAddr(User *AddrInst, unsigned Opcode,
     TypePromotionTransaction::ConstRestorationPt LastKnownGood =
         TPT.getRestorationPoint();
     unsigned CreatedInsts = 0;
-    Value *PromotedOperand = TPH(Ext, TPT, PromotedInsts, CreatedInsts);
+    Value *PromotedOperand =
+        TPH(Ext, TPT, PromotedInsts, CreatedInsts, nullptr, nullptr);
     // SExt has been moved away.
     // Thus either it will be rematched later in the recursive calls or it is
     // gone. Anyway, we must not fold it into the addressing mode at this point.
@@ -2949,26 +3007,186 @@ bool CodeGenPrepare::OptimizeInlineAsmInst(CallInst *CS) {
   return MadeChange;
 }
 
+/// \brief Check if all the uses of \p Inst are equivalent (or free) zero or
+/// sign extensions.
+static bool hasSameExtUse(Instruction *Inst, const TargetLowering &TLI) {
+  assert(!Inst->use_empty() && "Input must have at least one use");
+  const Instruction *FirstUser = cast<Instruction>(*Inst->user_begin());
+  bool IsSExt = isa<SExtInst>(FirstUser);
+  Type *ExtTy = FirstUser->getType();
+  for (const User *U : Inst->users()) {
+    const Instruction *UI = cast<Instruction>(U);
+    if ((IsSExt && !isa<SExtInst>(UI)) || (!IsSExt && !isa<ZExtInst>(UI)))
+      return false;
+    Type *CurTy = UI->getType();
+    // Same input and output types: Same instruction after CSE.
+    if (CurTy == ExtTy)
+      continue;
+
+    // If IsSExt is true, we are in this situation:
+    // a = Inst
+    // b = sext ty1 a to ty2
+    // c = sext ty1 a to ty3
+    // Assuming ty2 is shorter than ty3, this could be turned into:
+    // a = Inst
+    // b = sext ty1 a to ty2
+    // c = sext ty2 b to ty3
+    // However, the last sext is not free.
+    if (IsSExt)
+      return false;
+
+    // This is a ZExt, maybe this is free to extend from one type to another.
+    // In that case, we would not account for a different use.
+    Type *NarrowTy;
+    Type *LargeTy;
+    if (ExtTy->getScalarType()->getIntegerBitWidth() >
+        CurTy->getScalarType()->getIntegerBitWidth()) {
+      NarrowTy = CurTy;
+      LargeTy = ExtTy;
+    } else {
+      NarrowTy = ExtTy;
+      LargeTy = CurTy;
+    }
+
+    if (!TLI.isZExtFree(NarrowTy, LargeTy))
+      return false;
+  }
+  // All uses are the same or can be derived from one another for free.
+  return true;
+}
+
+/// \brief Try to form ExtLd by promoting \p Exts until they reach a
+/// load instruction.
+/// If an ext(load) can be formed, it is returned via \p LI for the load
+/// and \p Inst for the extension.
+/// Otherwise LI == nullptr and Inst == nullptr.
+/// When some promotion happened, \p TPT contains the proper state to
+/// revert them.
+///
+/// \return true when promoting was necessary to expose the ext(load)
+/// opportunity, false otherwise.
+///
+/// Example:
+/// \code
+/// %ld = load i32* %addr
+/// %add = add nuw i32 %ld, 4
+/// %zext = zext i32 %add to i64
+/// \endcode
+/// =>
+/// \code
+/// %ld = load i32* %addr
+/// %zext = zext i32 %ld to i64
+/// %add = add nuw i64 %zext, 4
+/// \encode
+/// Thanks to the promotion, we can match zext(load i32*) to i64.
+bool CodeGenPrepare::ExtLdPromotion(TypePromotionTransaction &TPT,
+                                    LoadInst *&LI, Instruction *&Inst,
+                                    const SmallVectorImpl<Instruction *> &Exts,
+                                    unsigned CreatedInsts = 0) {
+  // Iterate over all the extensions to see if one form an ext(load).
+  for (auto I : Exts) {
+    // Check if we directly have ext(load).
+    if ((LI = dyn_cast<LoadInst>(I->getOperand(0)))) {
+      Inst = I;
+      // No promotion happened here.
+      return false;
+    }
+    // Check whether or not we want to do any promotion.
+    if (!TLI || !TLI->enableExtLdPromotion() || DisableExtLdPromotion)
+      continue;
+    // Get the action to perform the promotion.
+    TypePromotionHelper::Action TPH = TypePromotionHelper::getAction(
+        I, InsertedTruncsSet, *TLI, PromotedInsts);
+    // Check if we can promote.
+    if (!TPH)
+      continue;
+    // Save the current state.
+    TypePromotionTransaction::ConstRestorationPt LastKnownGood =
+        TPT.getRestorationPoint();
+    SmallVector<Instruction *, 4> NewExts;
+    unsigned NewCreatedInsts = 0;
+    // Promote.
+    Value *PromotedVal =
+        TPH(I, TPT, PromotedInsts, NewCreatedInsts, &NewExts, nullptr);
+    assert(PromotedVal &&
+           "TypePromotionHelper should have filtered out those cases");
+
+    // We would be able to merge only one extension in a load.
+    // Therefore, if we have more than 1 new extension we heuristically
+    // cut this search path, because it means we degrade the code quality.
+    // With exactly 2, the transformation is neutral, because we will merge
+    // one extension but leave one. However, we optimistically keep going,
+    // because the new extension may be removed too.
+    unsigned TotalCreatedInsts = CreatedInsts + NewCreatedInsts;
+    if (!StressExtLdPromotion &&
+        (TotalCreatedInsts > 1 ||
+         !isPromotedInstructionLegal(*TLI, PromotedVal))) {
+      // The promotion is not profitable, rollback to the previous state.
+      TPT.rollback(LastKnownGood);
+      continue;
+    }
+    // The promotion is profitable.
+    // Check if it exposes an ext(load).
+    (void)ExtLdPromotion(TPT, LI, Inst, NewExts, TotalCreatedInsts);
+    if (LI && (StressExtLdPromotion || NewCreatedInsts == 0 ||
+               // If we have created a new extension, i.e., now we have two
+               // extensions. We must make sure one of them is merged with
+               // the load, otherwise we may degrade the code quality.
+               (LI->hasOneUse() || hasSameExtUse(LI, *TLI))))
+      // Promotion happened.
+      return true;
+    // If this does not help to expose an ext(load) then, rollback.
+    TPT.rollback(LastKnownGood);
+  }
+  // None of the extension can form an ext(load).
+  LI = nullptr;
+  Inst = nullptr;
+  return false;
+}
+
 /// MoveExtToFormExtLoad - Move a zext or sext fed by a load into the same
 /// basic block as the load, unless conditions are unfavorable. This allows
 /// SelectionDAG to fold the extend into the load.
+/// \p I[in/out] the extension may be modified during the process if some
+/// promotions apply.
 ///
-bool CodeGenPrepare::MoveExtToFormExtLoad(Instruction *I) {
+bool CodeGenPrepare::MoveExtToFormExtLoad(Instruction *&I) {
+  // Try to promote a chain of computation if it allows to form
+  // an extended load.
+  TypePromotionTransaction TPT;
+  TypePromotionTransaction::ConstRestorationPt LastKnownGood =
+    TPT.getRestorationPoint();
+  SmallVector<Instruction *, 1> Exts;
+  Exts.push_back(I);
   // Look for a load being extended.
-  LoadInst *LI = dyn_cast<LoadInst>(I->getOperand(0));
-  if (!LI) return false;
+  LoadInst *LI = nullptr;
+  Instruction *OldExt = I;
+  bool HasPromoted = ExtLdPromotion(TPT, LI, I, Exts);
+  if (!LI || !I) {
+    assert(!HasPromoted && !LI && "If we did not match any load instruction "
+                                  "the code must remain the same");
+    I = OldExt;
+    return false;
+  }
 
   // If they're already in the same block, there's nothing to do.
-  if (LI->getParent() == I->getParent())
+  // Make the cheap checks first if we did not promote.
+  // If we promoted, we need to check if it is indeed profitable.
+  if (!HasPromoted && LI->getParent() == I->getParent())
     return false;
+
+  EVT VT = TLI->getValueType(I->getType());
+  EVT LoadVT = TLI->getValueType(LI->getType());
 
   // If the load has other users and the truncate is not free, this probably
   // isn't worthwhile.
-  if (!LI->hasOneUse() &&
-      TLI && (TLI->isTypeLegal(TLI->getValueType(LI->getType())) ||
-              !TLI->isTypeLegal(TLI->getValueType(I->getType()))) &&
-      !TLI->isTruncateFree(I->getType(), LI->getType()))
+  if (!LI->hasOneUse() && TLI &&
+      (TLI->isTypeLegal(LoadVT) || !TLI->isTypeLegal(VT)) &&
+      !TLI->isTruncateFree(I->getType(), LI->getType())) {
+    I = OldExt;
+    TPT.rollback(LastKnownGood);
     return false;
+  }
 
   // Check whether the target supports casts folded into loads.
   unsigned LType;
@@ -2978,11 +3196,15 @@ bool CodeGenPrepare::MoveExtToFormExtLoad(Instruction *I) {
     assert(isa<SExtInst>(I) && "Unexpected ext type!");
     LType = ISD::SEXTLOAD;
   }
-  if (TLI && !TLI->isLoadExtLegal(LType, TLI->getValueType(LI->getType())))
+  if (TLI && !TLI->isLoadExtLegal(LType, LoadVT)) {
+    I = OldExt;
+    TPT.rollback(LastKnownGood);
     return false;
+  }
 
   // Move the extend into the same block as the load, so that SelectionDAG
   // can fold it.
+  TPT.commit();
   I->removeFromParent();
   I->insertAfter(LI);
   ++NumExtsMoved;
@@ -3790,6 +4012,236 @@ bool CodeGenPrepare::sinkAndCmp(Function &F) {
       ++NumAndCmpsMoved;
       DEBUG(BrccUser->getParent()->dump());
     }
+  }
+  return MadeChange;
+}
+
+/// \brief Retrieve the probabilities of a conditional branch. Returns true on
+/// success, or returns false if no or invalid metadata was found.
+static bool extractBranchMetadata(BranchInst *BI,
+                                  uint64_t &ProbTrue, uint64_t &ProbFalse) {
+  assert(BI->isConditional() &&
+         "Looking for probabilities on unconditional branch?");
+  auto *ProfileData = BI->getMetadata(LLVMContext::MD_prof);
+  if (!ProfileData || ProfileData->getNumOperands() != 3)
+    return false;
+
+  const auto *CITrue =
+      mdconst::dyn_extract<ConstantInt>(ProfileData->getOperand(1));
+  const auto *CIFalse =
+      mdconst::dyn_extract<ConstantInt>(ProfileData->getOperand(2));
+  if (!CITrue || !CIFalse)
+    return false;
+
+  ProbTrue = CITrue->getValue().getZExtValue();
+  ProbFalse = CIFalse->getValue().getZExtValue();
+
+  return true;
+}
+
+/// \brief Scale down both weights to fit into uint32_t.
+static void scaleWeights(uint64_t &NewTrue, uint64_t &NewFalse) {
+  uint64_t NewMax = (NewTrue > NewFalse) ? NewTrue : NewFalse;
+  uint32_t Scale = (NewMax / UINT32_MAX) + 1;
+  NewTrue = NewTrue / Scale;
+  NewFalse = NewFalse / Scale;
+}
+
+/// \brief Some targets prefer to split a conditional branch like:
+/// \code
+///   %0 = icmp ne i32 %a, 0
+///   %1 = icmp ne i32 %b, 0
+///   %or.cond = or i1 %0, %1
+///   br i1 %or.cond, label %TrueBB, label %FalseBB
+/// \endcode
+/// into multiple branch instructions like:
+/// \code
+///   bb1:
+///     %0 = icmp ne i32 %a, 0
+///     br i1 %0, label %TrueBB, label %bb2
+///   bb2:
+///     %1 = icmp ne i32 %b, 0
+///     br i1 %1, label %TrueBB, label %FalseBB
+/// \endcode
+/// This usually allows instruction selection to do even further optimizations
+/// and combine the compare with the branch instruction. Currently this is
+/// applied for targets which have "cheap" jump instructions.
+///
+/// FIXME: Remove the (equivalent?) implementation in SelectionDAG.
+///
+bool CodeGenPrepare::splitBranchCondition(Function &F) {
+  if (!TM || TM->Options.EnableFastISel != true ||
+      !TLI || TLI->isJumpExpensive())
+    return false;
+
+  bool MadeChange = false;
+  for (auto &BB : F) {
+    // Does this BB end with the following?
+    //   %cond1 = icmp|fcmp|binary instruction ...
+    //   %cond2 = icmp|fcmp|binary instruction ...
+    //   %cond.or = or|and i1 %cond1, cond2
+    //   br i1 %cond.or label %dest1, label %dest2"
+    BinaryOperator *LogicOp;
+    BasicBlock *TBB, *FBB;
+    if (!match(BB.getTerminator(), m_Br(m_OneUse(m_BinOp(LogicOp)), TBB, FBB)))
+      continue;
+
+    unsigned Opc;
+    Value *Cond1, *Cond2;
+    if (match(LogicOp, m_And(m_OneUse(m_Value(Cond1)),
+                             m_OneUse(m_Value(Cond2)))))
+      Opc = Instruction::And;
+    else if (match(LogicOp, m_Or(m_OneUse(m_Value(Cond1)),
+                                 m_OneUse(m_Value(Cond2)))))
+      Opc = Instruction::Or;
+    else
+      continue;
+
+    if (!match(Cond1, m_CombineOr(m_Cmp(), m_BinOp())) ||
+        !match(Cond2, m_CombineOr(m_Cmp(), m_BinOp()))   )
+      continue;
+
+    DEBUG(dbgs() << "Before branch condition splitting\n"; BB.dump());
+
+    // Create a new BB.
+    auto *InsertBefore = std::next(Function::iterator(BB))
+        .getNodePtrUnchecked();
+    auto TmpBB = BasicBlock::Create(BB.getContext(),
+                                    BB.getName() + ".cond.split",
+                                    BB.getParent(), InsertBefore);
+
+    // Update original basic block by using the first condition directly by the
+    // branch instruction and removing the no longer needed and/or instruction.
+    auto *Br1 = cast<BranchInst>(BB.getTerminator());
+    Br1->setCondition(Cond1);
+    LogicOp->eraseFromParent();
+
+    // Depending on the conditon we have to either replace the true or the false
+    // successor of the original branch instruction.
+    if (Opc == Instruction::And)
+      Br1->setSuccessor(0, TmpBB);
+    else
+      Br1->setSuccessor(1, TmpBB);
+
+    // Fill in the new basic block.
+    auto *Br2 = IRBuilder<>(TmpBB).CreateCondBr(Cond2, TBB, FBB);
+    if (auto *I = dyn_cast<Instruction>(Cond2)) {
+      I->removeFromParent();
+      I->insertBefore(Br2);
+    }
+
+    // Update PHI nodes in both successors. The original BB needs to be
+    // replaced in one succesor's PHI nodes, because the branch comes now from
+    // the newly generated BB (NewBB). In the other successor we need to add one
+    // incoming edge to the PHI nodes, because both branch instructions target
+    // now the same successor. Depending on the original branch condition
+    // (and/or) we have to swap the successors (TrueDest, FalseDest), so that
+    // we perfrom the correct update for the PHI nodes.
+    // This doesn't change the successor order of the just created branch
+    // instruction (or any other instruction).
+    if (Opc == Instruction::Or)
+      std::swap(TBB, FBB);
+
+    // Replace the old BB with the new BB.
+    for (auto &I : *TBB) {
+      PHINode *PN = dyn_cast<PHINode>(&I);
+      if (!PN)
+        break;
+      int i;
+      while ((i = PN->getBasicBlockIndex(&BB)) >= 0)
+        PN->setIncomingBlock(i, TmpBB);
+    }
+
+    // Add another incoming edge form the new BB.
+    for (auto &I : *FBB) {
+      PHINode *PN = dyn_cast<PHINode>(&I);
+      if (!PN)
+        break;
+      auto *Val = PN->getIncomingValueForBlock(&BB);
+      PN->addIncoming(Val, TmpBB);
+    }
+
+    // Update the branch weights (from SelectionDAGBuilder::
+    // FindMergedConditions).
+    if (Opc == Instruction::Or) {
+      // Codegen X | Y as:
+      // BB1:
+      //   jmp_if_X TBB
+      //   jmp TmpBB
+      // TmpBB:
+      //   jmp_if_Y TBB
+      //   jmp FBB
+      //
+
+      // We have flexibility in setting Prob for BB1 and Prob for NewBB.
+      // The requirement is that
+      //   TrueProb for BB1 + (FalseProb for BB1 * TrueProb for TmpBB)
+      //     = TrueProb for orignal BB.
+      // Assuming the orignal weights are A and B, one choice is to set BB1's
+      // weights to A and A+2B, and set TmpBB's weights to A and 2B. This choice
+      // assumes that
+      //   TrueProb for BB1 == FalseProb for BB1 * TrueProb for TmpBB.
+      // Another choice is to assume TrueProb for BB1 equals to TrueProb for
+      // TmpBB, but the math is more complicated.
+      uint64_t TrueWeight, FalseWeight;
+      if (extractBranchMetadata(Br1, TrueWeight, FalseWeight)) {
+        uint64_t NewTrueWeight = TrueWeight;
+        uint64_t NewFalseWeight = TrueWeight + 2 * FalseWeight;
+        scaleWeights(NewTrueWeight, NewFalseWeight);
+        Br1->setMetadata(LLVMContext::MD_prof, MDBuilder(Br1->getContext())
+                         .createBranchWeights(TrueWeight, FalseWeight));
+
+        NewTrueWeight = TrueWeight;
+        NewFalseWeight = 2 * FalseWeight;
+        scaleWeights(NewTrueWeight, NewFalseWeight);
+        Br2->setMetadata(LLVMContext::MD_prof, MDBuilder(Br2->getContext())
+                         .createBranchWeights(TrueWeight, FalseWeight));
+      }
+    } else {
+      // Codegen X & Y as:
+      // BB1:
+      //   jmp_if_X TmpBB
+      //   jmp FBB
+      // TmpBB:
+      //   jmp_if_Y TBB
+      //   jmp FBB
+      //
+      //  This requires creation of TmpBB after CurBB.
+
+      // We have flexibility in setting Prob for BB1 and Prob for TmpBB.
+      // The requirement is that
+      //   FalseProb for BB1 + (TrueProb for BB1 * FalseProb for TmpBB)
+      //     = FalseProb for orignal BB.
+      // Assuming the orignal weights are A and B, one choice is to set BB1's
+      // weights to 2A+B and B, and set TmpBB's weights to 2A and B. This choice
+      // assumes that
+      //   FalseProb for BB1 == TrueProb for BB1 * FalseProb for TmpBB.
+      uint64_t TrueWeight, FalseWeight;
+      if (extractBranchMetadata(Br1, TrueWeight, FalseWeight)) {
+        uint64_t NewTrueWeight = 2 * TrueWeight + FalseWeight;
+        uint64_t NewFalseWeight = FalseWeight;
+        scaleWeights(NewTrueWeight, NewFalseWeight);
+        Br1->setMetadata(LLVMContext::MD_prof, MDBuilder(Br1->getContext())
+                         .createBranchWeights(TrueWeight, FalseWeight));
+
+        NewTrueWeight = 2 * TrueWeight;
+        NewFalseWeight = FalseWeight;
+        scaleWeights(NewTrueWeight, NewFalseWeight);
+        Br2->setMetadata(LLVMContext::MD_prof, MDBuilder(Br2->getContext())
+                         .createBranchWeights(TrueWeight, FalseWeight));
+      }
+    }
+
+    // Request DOM Tree update.
+    // Note: No point in getting fancy here, since the DT info is never
+    // available to CodeGenPrepare and the existing update code is broken
+    // anyways.
+    ModifiedDT = true;
+
+    MadeChange = true;
+
+    DEBUG(dbgs() << "After branch condition splitting\n"; BB.dump();
+          TmpBB->dump());
   }
   return MadeChange;
 }

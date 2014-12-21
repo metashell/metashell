@@ -55,12 +55,14 @@ COMPILER_CHECK(sizeof(AsanThreadContext) <= 256);
 // AsanThread are stored in TSD and destroyed when the thread dies.
 class AsanThread {
  public:
-  static AsanThread *Create(thread_callback_t start_routine, void *arg);
+  static AsanThread *Create(thread_callback_t start_routine, void *arg,
+                            u32 parent_tid, StackTrace *stack, bool detached);
   static void TSDDtor(void *tsd);
   void Destroy();
 
   void Init();  // Should be called from the thread itself.
-  thread_return_t ThreadStart(uptr os_id);
+  thread_return_t ThreadStart(uptr os_id,
+                              atomic_uintptr_t *signal_thread_is_registered);
 
   uptr stack_top() { return stack_top_; }
   uptr stack_bottom() { return stack_bottom_; }
@@ -164,11 +166,6 @@ class ScopedDeadlySignal {
 
  private:
   AsanThread *thread;
-};
-
-struct CreateThreadContextArgs {
-  AsanThread *thread;
-  StackTrace *stack;
 };
 
 // Returns a single instance of registry.

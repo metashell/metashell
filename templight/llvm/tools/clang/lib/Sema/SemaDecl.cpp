@@ -2154,6 +2154,12 @@ static bool mergeDeclAttribute(Sema &S, NamedDecl *D,
     NewAttr = S.mergeMSInheritanceAttr(D, IA->getRange(), IA->getBestCase(),
                                        AttrSpellingListIndex,
                                        IA->getSemanticSpelling());
+  else if (const auto *AA = dyn_cast<AlwaysInlineAttr>(Attr))
+    NewAttr = S.mergeAlwaysInlineAttr(D, AA->getRange(), AttrSpellingListIndex);
+  else if (const auto *MA = dyn_cast<MinSizeAttr>(Attr))
+    NewAttr = S.mergeMinSizeAttr(D, MA->getRange(), AttrSpellingListIndex);
+  else if (const auto *OA = dyn_cast<OptimizeNoneAttr>(Attr))
+    NewAttr = S.mergeOptimizeNoneAttr(D, OA->getRange(), AttrSpellingListIndex);
   else if (isa<AlignedAttr>(Attr))
     // AlignedAttrs are handled separately, because we need to handle all
     // such attributes on a declaration at the same time.
@@ -8800,12 +8806,10 @@ void Sema::AddInitializerToDecl(Decl *RealDecl, Expr *Init,
       Args = MultiExprArg(CXXDirectInit->getExprs(),
                           CXXDirectInit->getNumExprs());
 
-    // Try to correct any TypoExprs if there might be some in the initialization
-    // arguments (TypoExprs are marked as type-dependent).
-    // TODO: Handle typo correction when there's more than one argument?
-    if (Args.size() == 1 && Expr::hasAnyTypeDependentArguments(Args)) {
+    // Try to correct any TypoExprs in the initialization arguments.
+    for (size_t Idx = 0; Idx < Args.size(); ++Idx) {
       ExprResult Res =
-          CorrectDelayedTyposInExpr(Args[0], [this, Entity, Kind](Expr *E) {
+          CorrectDelayedTyposInExpr(Args[Idx], [this, Entity, Kind](Expr *E) {
             InitializationSequence Init(*this, Entity, Kind, MultiExprArg(E));
             return Init.Failed() ? ExprError() : E;
           });
@@ -8813,8 +8817,8 @@ void Sema::AddInitializerToDecl(Decl *RealDecl, Expr *Init,
         VDecl->setInvalidDecl();
         return;
       }
-      if (Res.get() != Args[0])
-        Args[0] = Res.get();
+      if (Res.get() != Args[Idx])
+        Args[Idx] = Res.get();
     }
 
     InitializationSequence InitSeq(*this, Entity, Kind, Args);
@@ -10175,7 +10179,7 @@ static void RebuildLambdaScopeInfo(CXXMethodDecl *CallOperator,
       QualType CaptureType = VD->getType();
       const bool ByRef = C.getCaptureKind() == LCK_ByRef;
       LSI->addCapture(VD, /*IsBlock*/false, ByRef, 
-          /*RefersToEnclosingLocal*/true, C.getLocation(),
+          /*RefersToCapturedVariable*/true, C.getLocation(),
           /*EllipsisLoc*/C.isPackExpansion() 
                          ? C.getEllipsisLoc() : SourceLocation(),
           CaptureType, /*Expr*/ nullptr);

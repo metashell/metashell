@@ -212,7 +212,7 @@ protected:
     unsigned HasTemplateKWAndArgsInfo : 1;
     unsigned HasFoundDecl : 1;
     unsigned HadMultipleCandidates : 1;
-    unsigned RefersToEnclosingLocal : 1;
+    unsigned RefersToCapturedVariable : 1;
   };
 
   class CastExprBitfields {
@@ -1015,7 +1015,7 @@ public:
 
   SourceLocation getLocStart() const LLVM_READONLY { return SwitchLoc; }
   SourceLocation getLocEnd() const LLVM_READONLY {
-    return SubExprs[BODY]->getLocEnd();
+    return SubExprs[BODY] ? SubExprs[BODY]->getLocEnd() : SubExprs[COND]->getLocEnd();
   }
 
   // Iterators

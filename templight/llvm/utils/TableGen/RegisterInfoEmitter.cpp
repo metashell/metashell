@@ -62,6 +62,8 @@ private:
                            const std::string &ClassName);
   void emitComposeSubRegIndices(raw_ostream &OS, CodeGenRegBank &RegBank,
                                 const std::string &ClassName);
+  void emitComposeSubRegIndexLaneMask(raw_ostream &OS, CodeGenRegBank &RegBank,
+                                      const std::string &ClassName);
 };
 } // End anonymous namespace
 
@@ -566,6 +568,7 @@ static void printSubRegIndex(raw_ostream &OS, const CodeGenSubRegIndex *Idx) {
 // 0 differential which means we can't encode repeated elements.
 
 typedef SmallVector<uint16_t, 4> DiffVec;
+typedef SmallVector<unsigned, 4> MaskVec;
 
 // Differentially encode a sequence of numbers into V. The starting value and
 // terminating 0 are not added to V, so it will have the same size as List.
@@ -596,6 +599,10 @@ DiffVec &diffEncode(DiffVec &V, unsigned InitVal, Iter Begin, Iter End) {
 
 static void printDiff16(raw_ostream &OS, uint16_t Val) {
   OS << Val;
+}
+
+static void printMask(raw_ostream &OS, unsigned Val) {
+  OS << format("0x%08X", Val);
 }
 
 // Try to combine Idx's compose map into Vec if it is compatible.
@@ -687,6 +694,95 @@ RegisterInfoEmitter::emitComposeSubRegIndices(raw_ostream &OS,
   OS << "}\n\n";
 }
 
+void
+RegisterInfoEmitter::emitComposeSubRegIndexLaneMask(raw_ostream &OS,
+                                                    CodeGenRegBank &RegBank,
+                                                    const std::string &ClName) {
+  // See the comments in computeSubRegLaneMasks() for our goal here.
+  const auto &SubRegIndices = RegBank.getSubRegIndices();
+
+  // Create a list of Mask+Rotate operations, with equivalent entries merged.
+  SmallVector<unsigned, 4> SubReg2SequenceIndexMap;
+  SmallVector<SmallVector<MaskRolPair, 1>, 4> Sequences;
+  for (const auto &Idx : SubRegIndices) {
+    const SmallVector<MaskRolPair, 1> &IdxSequence
+      = Idx.CompositionLaneMaskTransform;
+
+    unsigned Found = ~0u;
+    unsigned SIdx = 0;
+    unsigned NextSIdx;
+    for (size_t s = 0, se = Sequences.size(); s != se; ++s, SIdx = NextSIdx) {
+      SmallVectorImpl<MaskRolPair> &Sequence = Sequences[s];
+      NextSIdx = SIdx + Sequence.size() + 1;
+      if (Sequence.size() != IdxSequence.size())
+        continue;
+      bool Identical = true;
+      for (size_t o = 0, oe = Sequence.size(); o != oe; ++o) {
+        if (Sequence[o] != IdxSequence[o]) {
+          Identical = false;
+          break;
+        }
+      }
+      if (Identical) {
+        Found = SIdx;
+        break;
+      }
+    }
+    if (Found == ~0u) {
+      Sequences.push_back(IdxSequence);
+      Found = SIdx;
+    }
+    SubReg2SequenceIndexMap.push_back(Found);
+  }
+
+  OS << "unsigned " << ClName
+     << "::composeSubRegIndexLaneMaskImpl(unsigned IdxA, unsigned LaneMask)"
+        " const {\n";
+
+  OS << "  struct MaskRolOp {\n"
+        "    unsigned Mask;\n"
+        "    uint8_t  RotateLeft;\n"
+        "  };\n"
+        "  static const MaskRolOp Seqs[] = {\n";
+  unsigned Idx = 0;
+  for (size_t s = 0, se = Sequences.size(); s != se; ++s) {
+    OS << "    ";
+    const SmallVectorImpl<MaskRolPair> &Sequence = Sequences[s];
+    for (size_t p = 0, pe = Sequence.size(); p != pe; ++p) {
+      const MaskRolPair &P = Sequence[p];
+      OS << format("{ 0x%08X, %2u }, ", P.Mask, P.RotateLeft);
+    }
+    OS << "{ 0, 0 }";
+    if (s+1 != se)
+      OS << ", ";
+    OS << "  // Sequence " << Idx << "\n";
+    Idx += Sequence.size() + 1;
+  }
+  OS << "  };\n"
+        "  static const MaskRolOp *CompositeSequences[] = {\n";
+  for (size_t i = 0, e = SubRegIndices.size(); i != e; ++i) {
+    OS << "    ";
+    unsigned Idx = SubReg2SequenceIndexMap[i];
+    OS << format("&Seqs[%u]", Idx);
+    if (i+1 != e)
+      OS << ",";
+    OS << " // to " << SubRegIndices[i].getName() << "\n";
+  }
+  OS << "  };\n\n";
+
+  OS << "  --IdxA; assert(IdxA < " << SubRegIndices.size()
+     << " && \"Subregister index out of bounds\");\n"
+        "  unsigned Result = 0;\n"
+        "  for (const MaskRolOp *Ops = CompositeSequences[IdxA]; Ops->Mask != 0; ++Ops)"
+        " {\n"
+        "    unsigned Masked = LaneMask & Ops->Mask;\n"
+        "    Result |= (Masked << Ops->RotateLeft) & 0xFFFFFFFF;\n"
+        "    Result |= (Masked >> ((32 - Ops->RotateLeft) & 0x1F));\n"
+        "  }\n"
+        "  return Result;\n"
+        "}\n";
+}
+
 //
 // runMCDesc - Print out MC register descriptions.
 //
@@ -712,6 +808,10 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
   SmallVector<DiffVec, 4> RegUnitLists(Regs.size());
   SmallVector<unsigned, 4> RegUnitInitScale(Regs.size());
 
+  // List of lane masks accompanying register unit sequences.
+  SequenceToOffsetTable<MaskVec> LaneMaskSeqs;
+  SmallVector<MaskVec, 4> RegUnitLaneMasks(Regs.size());
+
   // Keep track of sub-register names as well. These are not differentially
   // encoded.
   typedef SmallVector<const CodeGenSubRegIndex*, 4> SubRegIdxVec;
@@ -722,7 +822,7 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
 
   // Precompute register lists for the SequenceToOffsetTable.
   unsigned i = 0;
-  for (auto I = Regs.begin(), E = Regs.end(); I != E; ++I) {
+  for (auto I = Regs.begin(), E = Regs.end(); I != E; ++I, ++i) {
     const auto &Reg = *I;
     RegStrings.add(Reg.getName());
 
@@ -769,11 +869,23 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
       Scale = 0;
     RegUnitInitScale[i] = Scale;
     DiffSeqs.add(diffEncode(RegUnitLists[i], Scale * Reg.EnumValue, RUs));
-    ++i;
+
+    const auto &RUMasks = Reg.getRegUnitLaneMasks();
+    MaskVec &LaneMaskVec = RegUnitLaneMasks[i];
+    assert(LaneMaskVec.empty());
+    LaneMaskVec.insert(LaneMaskVec.begin(), RUMasks.begin(), RUMasks.end());
+    // Terminator mask should not be used inside of the list.
+#ifndef NDEBUG
+    for (unsigned M : LaneMaskVec) {
+      assert(M != ~0u && "terminator mask should not be part of the list");
+    }
+#endif
+    LaneMaskSeqs.add(LaneMaskVec);
   }
 
   // Compute the final layout of the sequence table.
   DiffSeqs.layout();
+  LaneMaskSeqs.layout();
   SubRegIdxSeqs.layout();
 
   OS << "namespace llvm {\n\n";
@@ -783,6 +895,11 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
   // Emit the shared table of differential lists.
   OS << "extern const MCPhysReg " << TargetName << "RegDiffLists[] = {\n";
   DiffSeqs.emit(OS, printDiff16);
+  OS << "};\n\n";
+
+  // Emit the shared table of regunit lane mask sequences.
+  OS << "extern const unsigned " << TargetName << "LaneMaskLists[] = {\n";
+  LaneMaskSeqs.emit(OS, printMask, "~0u");
   OS << "};\n\n";
 
   // Emit the table of sub-register indexes.
@@ -808,7 +925,7 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
 
   OS << "extern const MCRegisterDesc " << TargetName
      << "RegDesc[] = { // Descriptors\n";
-  OS << "  { " << RegStrings.get("") << ", 0, 0, 0, 0 },\n";
+  OS << "  { " << RegStrings.get("") << ", 0, 0, 0, 0, 0 },\n";
 
   // Emit the register descriptors now.
   i = 0;
@@ -816,7 +933,8 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
     OS << "  { " << RegStrings.get(Reg.getName()) << ", "
        << DiffSeqs.get(SubRegLists[i]) << ", " << DiffSeqs.get(SuperRegLists[i])
        << ", " << SubRegIdxSeqs.get(SubRegIdxLists[i]) << ", "
-       << (DiffSeqs.get(RegUnitLists[i]) * 16 + RegUnitInitScale[i]) << " },\n";
+       << (DiffSeqs.get(RegUnitLists[i]) * 16 + RegUnitInitScale[i]) << ", "
+       << LaneMaskSeqs.get(RegUnitLaneMasks[i]) << " },\n";
     ++i;
   }
   OS << "};\n\n";      // End of register descriptors...
@@ -930,8 +1048,8 @@ RegisterInfoEmitter::runMCDesc(raw_ostream &OS, CodeGenTarget &Target,
      << Regs.size() + 1 << ", RA, PC, " << TargetName << "MCRegisterClasses, "
      << RegisterClasses.size() << ", " << TargetName << "RegUnitRoots, "
      << RegBank.getNumNativeRegUnits() << ", " << TargetName << "RegDiffLists, "
-     << TargetName << "RegStrings, " << TargetName << "RegClassStrings, "
-     << TargetName << "SubRegIdxLists, "
+     << TargetName << "LaneMaskLists, " << TargetName << "RegStrings, "
+     << TargetName << "RegClassStrings, " << TargetName << "SubRegIdxLists, "
      << (std::distance(SubRegIndices.begin(), SubRegIndices.end()) + 1) << ",\n"
      << TargetName << "SubRegIdxRanges, " << TargetName
      << "RegEncodingTable);\n\n";
@@ -966,6 +1084,8 @@ RegisterInfoEmitter::runTargetHeader(raw_ostream &OS, CodeGenTarget &Target,
      << "     { return false; }\n";
   if (!RegBank.getSubRegIndices().empty()) {
     OS << "  unsigned composeSubRegIndicesImpl"
+       << "(unsigned, unsigned) const override;\n"
+       << "  unsigned composeSubRegIndexLaneMaskImpl"
        << "(unsigned, unsigned) const override;\n"
        << "  const TargetRegisterClass *getSubClassWithSubReg"
        << "(const TargetRegisterClass*, unsigned) const override;\n";
@@ -1171,7 +1291,8 @@ RegisterInfoEmitter::runTargetDesc(raw_ostream &OS, CodeGenTarget &Target,
          << "MCRegisterClasses[" << RC.getName() << "RegClassID],\n    "
          << "VTLists + " << VTSeqs.get(RC.VTs) << ",\n    " << RC.getName()
          << "SubClassMask,\n    SuperRegIdxSeqs + "
-         << SuperRegIdxSeqs.get(SuperRegIdxLists[RC.EnumValue]) << ",\n    ";
+         << SuperRegIdxSeqs.get(SuperRegIdxLists[RC.EnumValue]) << ",\n    "
+         << format("0x%08x,\n    ", RC.LaneMask);
       if (RC.getSuperClasses().empty())
         OS << "NullRegClasses,\n    ";
       else
@@ -1213,8 +1334,10 @@ RegisterInfoEmitter::runTargetDesc(raw_ostream &OS, CodeGenTarget &Target,
   auto SubRegIndicesSize =
       std::distance(SubRegIndices.begin(), SubRegIndices.end());
 
-  if (!SubRegIndices.empty())
+  if (!SubRegIndices.empty()) {
     emitComposeSubRegIndices(OS, RegBank, ClassName);
+    emitComposeSubRegIndexLaneMask(OS, RegBank, ClassName);
+  }
 
   // Emit getSubClassWithSubReg.
   if (!SubRegIndices.empty()) {
@@ -1253,6 +1376,7 @@ RegisterInfoEmitter::runTargetDesc(raw_ostream &OS, CodeGenTarget &Target,
   // Emit the constructor of the class...
   OS << "extern const MCRegisterDesc " << TargetName << "RegDesc[];\n";
   OS << "extern const MCPhysReg " << TargetName << "RegDiffLists[];\n";
+  OS << "extern const unsigned " << TargetName << "LaneMaskLists[];\n";
   OS << "extern const char " << TargetName << "RegStrings[];\n";
   OS << "extern const char " << TargetName << "RegClassStrings[];\n";
   OS << "extern const MCPhysReg " << TargetName << "RegUnitRoots[][2];\n";
@@ -1276,6 +1400,7 @@ RegisterInfoEmitter::runTargetDesc(raw_ostream &OS, CodeGenTarget &Target,
      << "                     " << TargetName << "RegUnitRoots,\n"
      << "                     " << RegBank.getNumNativeRegUnits() << ",\n"
      << "                     " << TargetName << "RegDiffLists,\n"
+     << "                     " << TargetName << "LaneMaskLists,\n"
      << "                     " << TargetName << "RegStrings,\n"
      << "                     " << TargetName << "RegClassStrings,\n"
      << "                     " << TargetName << "SubRegIdxLists,\n"

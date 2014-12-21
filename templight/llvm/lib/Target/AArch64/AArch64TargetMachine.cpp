@@ -181,10 +181,10 @@ public:
   bool addPreISel() override;
   bool addInstSelector() override;
   bool addILPOpts() override;
-  bool addPreRegAlloc() override;
-  bool addPostRegAlloc() override;
-  bool addPreSched2() override;
-  bool addPreEmitPass() override;
+  void addPreRegAlloc() override;
+  void addPostRegAlloc() override;
+  void addPreSched2() override;
+  void addPreEmitPass() override;
 };
 } // namespace
 
@@ -267,7 +267,7 @@ bool AArch64PassConfig::addILPOpts() {
   return true;
 }
 
-bool AArch64PassConfig::addPreRegAlloc() {
+void AArch64PassConfig::addPreRegAlloc() {
   // Use AdvSIMD scalar instructions whenever profitable.
   if (TM->getOptLevel() != CodeGenOpt::None && EnableAdvSIMDScalar) {
     addPass(createAArch64AdvSIMDScalar());
@@ -275,10 +275,9 @@ bool AArch64PassConfig::addPreRegAlloc() {
     // be register coaleascer friendly.
     addPass(&PeepholeOptimizerID);
   }
-  return true;
 }
 
-bool AArch64PassConfig::addPostRegAlloc() {
+void AArch64PassConfig::addPostRegAlloc() {
   // Change dead register definitions to refer to the zero register.
   if (TM->getOptLevel() != CodeGenOpt::None && EnableDeadRegisterElimination)
     addPass(createAArch64DeadRegisterDefinitions());
@@ -288,19 +287,17 @@ bool AArch64PassConfig::addPostRegAlloc() {
       usingDefaultRegAlloc())
     // Improve performance for some FP/SIMD code for A57.
     addPass(createAArch64A57FPLoadBalancing());
-  return true;
 }
 
-bool AArch64PassConfig::addPreSched2() {
+void AArch64PassConfig::addPreSched2() {
   // Expand some pseudo instructions to allow proper scheduling.
   addPass(createAArch64ExpandPseudoPass());
   // Use load/store pair instructions when possible.
   if (TM->getOptLevel() != CodeGenOpt::None && EnableLoadStoreOpt)
     addPass(createAArch64LoadStoreOptimizationPass());
-  return true;
 }
 
-bool AArch64PassConfig::addPreEmitPass() {
+void AArch64PassConfig::addPreEmitPass() {
   if (EnableA53Fix835769)
     addPass(createAArch64A53Fix835769());
   // Relax conditional branch instructions if they're otherwise out of
@@ -309,5 +306,4 @@ bool AArch64PassConfig::addPreEmitPass() {
   if (TM->getOptLevel() != CodeGenOpt::None && EnableCollectLOH &&
       TM->getSubtarget<AArch64Subtarget>().isTargetMachO())
     addPass(createAArch64CollectLOHPass());
-  return true;
 }

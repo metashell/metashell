@@ -432,6 +432,29 @@ bool AMDGPUTargetLowering::ShouldShrinkFPConstant(EVT VT) const {
   return (ScalarVT != MVT::f32 && ScalarVT != MVT::f64);
 }
 
+bool AMDGPUTargetLowering::shouldReduceLoadWidth(SDNode *N,
+                                                 ISD::LoadExtType,
+                                                 EVT NewVT) const {
+
+  unsigned NewSize = NewVT.getStoreSizeInBits();
+
+  // If we are reducing to a 32-bit load, this is always better.
+  if (NewSize == 32)
+    return true;
+
+  EVT OldVT = N->getValueType(0);
+  unsigned OldSize = OldVT.getStoreSizeInBits();
+
+  // Don't produce extloads from sub 32-bit types. SI doesn't have scalar
+  // extloads, so doing one requires using a buffer_load. In cases where we
+  // still couldn't use a scalar load, using the wider load shouldn't really
+  // hurt anything.
+
+  // If the old size already had to be an extload, there's no harm in continuing
+  // to reduce the width.
+  return (OldSize < 32);
+}
+
 bool AMDGPUTargetLowering::isLoadBitCastBeneficial(EVT LoadTy,
                                                    EVT CastTy) const {
   if (LoadTy.getSizeInBits() != CastTy.getSizeInBits())
@@ -892,7 +915,19 @@ SDValue AMDGPUTargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
       return DAG.getNode(AMDGPUISD::RSQ_LEGACY, DL, VT, Op.getOperand(1));
 
     case Intrinsic::AMDGPU_rsq_clamped:
-      return DAG.getNode(AMDGPUISD::RSQ_CLAMPED, DL, VT, Op.getOperand(1));
+      if (Subtarget->getGeneration() >= AMDGPUSubtarget::VOLCANIC_ISLANDS) {
+        Type *Type = VT.getTypeForEVT(*DAG.getContext());
+        APFloat Max = APFloat::getLargest(Type->getFltSemantics());
+        APFloat Min = APFloat::getLargest(Type->getFltSemantics(), true);
+
+        SDValue Rsq = DAG.getNode(AMDGPUISD::RSQ, DL, VT, Op.getOperand(1));
+        SDValue Tmp = DAG.getNode(ISD::FMINNUM, DL, VT, Rsq,
+                                  DAG.getConstantFP(Max, VT));
+        return DAG.getNode(ISD::FMAXNUM, DL, VT, Tmp,
+                           DAG.getConstantFP(Min, VT));
+      } else {
+        return DAG.getNode(AMDGPUISD::RSQ_CLAMPED, DL, VT, Op.getOperand(1));
+      }
 
     case Intrinsic::AMDGPU_ldexp:
       return DAG.getNode(AMDGPUISD::LDEXP, DL, VT, Op.getOperand(1),
@@ -1003,17 +1038,21 @@ SDValue AMDGPUTargetLowering::LowerIntrinsicLRP(SDValue Op,
 }
 
 /// \brief Generate Min/Max node
-SDValue AMDGPUTargetLowering::CombineFMinMax(SDLoc DL,
-                                             EVT VT,
-                                             SDValue LHS,
-                                             SDValue RHS,
-                                             SDValue True,
-                                             SDValue False,
-                                             SDValue CC,
-                                             SelectionDAG &DAG) const {
+SDValue AMDGPUTargetLowering::CombineFMinMaxLegacy(SDLoc DL,
+                                                   EVT VT,
+                                                   SDValue LHS,
+                                                   SDValue RHS,
+                                                   SDValue True,
+                                                   SDValue False,
+                                                   SDValue CC,
+                                                   DAGCombinerInfo &DCI) const {
+  if (Subtarget->getGeneration() >= AMDGPUSubtarget::VOLCANIC_ISLANDS)
+    return SDValue();
+
   if (!(LHS == True && RHS == False) && !(LHS == False && RHS == True))
     return SDValue();
 
+  SelectionDAG &DAG = DCI.DAG;
   ISD::CondCode CCOpcode = cast<CondCodeSDNode>(CC)->get();
   switch (CCOpcode) {
   case ISD::SETOEQ:
@@ -1030,27 +1069,47 @@ SDValue AMDGPUTargetLowering::CombineFMinMax(SDLoc DL,
   case ISD::SETO:
     break;
   case ISD::SETULE:
-  case ISD::SETULT:
-  case ISD::SETOLE:
-  case ISD::SETOLT:
-  case ISD::SETLE:
-  case ISD::SETLT: {
-    // We need to permute the operands to get the correct NaN behavior. The
-    // selected operand is the second one based on the failing compare with NaN,
-    // so permute it based on the compare type the hardware uses.
+  case ISD::SETULT: {
     if (LHS == True)
       return DAG.getNode(AMDGPUISD::FMIN_LEGACY, DL, VT, RHS, LHS);
     return DAG.getNode(AMDGPUISD::FMAX_LEGACY, DL, VT, LHS, RHS);
   }
-  case ISD::SETGT:
-  case ISD::SETGE:
+  case ISD::SETOLE:
+  case ISD::SETOLT:
+  case ISD::SETLE:
+  case ISD::SETLT: {
+    // Ordered. Assume ordered for undefined.
+
+    // Only do this after legalization to avoid interfering with other combines
+    // which might occur.
+    if (DCI.getDAGCombineLevel() < AfterLegalizeDAG &&
+        !DCI.isCalledByLegalizer())
+      return SDValue();
+
+    // We need to permute the operands to get the correct NaN behavior. The
+    // selected operand is the second one based on the failing compare with NaN,
+    // so permute it based on the compare type the hardware uses.
+    if (LHS == True)
+      return DAG.getNode(AMDGPUISD::FMIN_LEGACY, DL, VT, LHS, RHS);
+    return DAG.getNode(AMDGPUISD::FMAX_LEGACY, DL, VT, RHS, LHS);
+  }
   case ISD::SETUGE:
-  case ISD::SETOGE:
-  case ISD::SETUGT:
-  case ISD::SETOGT: {
+  case ISD::SETUGT: {
     if (LHS == True)
       return DAG.getNode(AMDGPUISD::FMAX_LEGACY, DL, VT, RHS, LHS);
     return DAG.getNode(AMDGPUISD::FMIN_LEGACY, DL, VT, LHS, RHS);
+  }
+  case ISD::SETGT:
+  case ISD::SETGE:
+  case ISD::SETOGE:
+  case ISD::SETOGT: {
+    if (DCI.getDAGCombineLevel() < AfterLegalizeDAG &&
+        !DCI.isCalledByLegalizer())
+      return SDValue();
+
+    if (LHS == True)
+      return DAG.getNode(AMDGPUISD::FMAX_LEGACY, DL, VT, LHS, RHS);
+    return DAG.getNode(AMDGPUISD::FMIN_LEGACY, DL, VT, RHS, LHS);
   }
   case ISD::SETCC_INVALID:
     llvm_unreachable("Invalid setcc condcode!");
@@ -2235,27 +2294,9 @@ SDValue AMDGPUTargetLowering::PerformDAGCombine(SDNode *N,
       simplifyI24(N1, DCI);
       return SDValue();
     }
-  case ISD::SELECT_CC: {
-    SDLoc DL(N);
-    EVT VT = N->getValueType(0);
-
-    if (VT == MVT::f32 ||
-        (VT == MVT::f64 &&
-         Subtarget->getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS)) {
-      SDValue LHS = N->getOperand(0);
-      SDValue RHS = N->getOperand(1);
-      SDValue True = N->getOperand(2);
-      SDValue False = N->getOperand(3);
-      SDValue CC = N->getOperand(4);
-
-      return CombineFMinMax(DL, VT, LHS, RHS, True, False, CC, DAG);
-    }
-
-    break;
-  }
   case ISD::SELECT: {
     SDValue Cond = N->getOperand(0);
-    if (Cond.getOpcode() == ISD::SETCC) {
+    if (Cond.getOpcode() == ISD::SETCC && Cond.hasOneUse()) {
       SDLoc DL(N);
       EVT VT = N->getValueType(0);
       SDValue LHS = Cond.getOperand(0);
@@ -2265,11 +2306,8 @@ SDValue AMDGPUTargetLowering::PerformDAGCombine(SDNode *N,
       SDValue True = N->getOperand(1);
       SDValue False = N->getOperand(2);
 
-      if (VT == MVT::f32 ||
-          (VT == MVT::f64 &&
-           Subtarget->getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS)) {
-        return CombineFMinMax(DL, VT, LHS, RHS, True, False, CC, DAG);
-      }
+      if (VT == MVT::f32)
+        return CombineFMinMaxLegacy(DL, VT, LHS, RHS, True, False, CC, DCI);
 
       // TODO: Implement min / max Evergreen instructions.
       if (VT == MVT::i32 &&

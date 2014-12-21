@@ -112,3 +112,43 @@ void test_paren_suffix() {
   foo::bar({5, 6});  // expected-error-re {{no member named 'bar' in namespace 'foo'{{$}}}} \
                      // expected-error {{expected expression}}
 }
+
+const int kNum = 10;  // expected-note {{'kNum' declared here}}
+class SomeClass {
+  int Kind;
+public:
+  explicit SomeClass() : Kind(kSum) {}  // expected-error {{use of undeclared identifier 'kSum'; did you mean 'kNum'?}}
+};
+
+// There used to be an issue with typo resolution inside overloads.
+struct AssertionResult { ~AssertionResult(); };
+AssertionResult Overload(const char *a);
+AssertionResult Overload(int a);
+void UseOverload() {
+  // expected-note@+1 {{'result' declared here}}
+  const char *result;
+  // expected-error@+1 {{use of undeclared identifier 'resulta'; did you mean 'result'?}}
+  Overload(resulta);
+}
+
+namespace PR21925 {
+struct X {
+  int get() { return 7; }  // expected-note {{'get' declared here}}
+};
+void test() {
+  X variable;  // expected-note {{'variable' declared here}}
+
+  // expected-error@+2 {{use of undeclared identifier 'variableX'; did you mean 'variable'?}}
+  // expected-error@+1 {{no member named 'getX' in 'PR21925::X'; did you mean 'get'?}}
+  int x = variableX.getX();
+}
+}
+
+namespace PR21905 {
+int (*a) () = (void)Z;  // expected-error-re {{use of undeclared identifier 'Z'{{$}}}}
+}
+
+namespace PR21947 {
+int blue;  // expected-note {{'blue' declared here}}
+__typeof blur y;  // expected-error {{use of undeclared identifier 'blur'; did you mean 'blue'?}}
+}

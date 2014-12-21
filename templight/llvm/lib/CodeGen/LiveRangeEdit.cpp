@@ -60,9 +60,7 @@ bool LiveRangeEdit::checkRematerializable(VNInfo *VNI,
 }
 
 void LiveRangeEdit::scanRemattable(AliasAnalysis *aa) {
-  for (LiveInterval::vni_iterator I = getParent().vni_begin(),
-       E = getParent().vni_end(); I != E; ++I) {
-    VNInfo *VNI = *I;
+  for (VNInfo *VNI : getParent().valnos) {
     if (VNI->isUnused())
       continue;
     MachineInstr *DefMI = LIS.getInstructionFromIndex(VNI->def);
@@ -286,8 +284,15 @@ void LiveRangeEdit::eliminateDeadDef(MachineInstr *MI, ToShrinkSet &ToShrink) {
         if (TheDelegate)
           TheDelegate->LRE_WillShrinkVirtReg(LI.reg);
         LI.removeValNo(VNI);
-        if (LI.empty())
+        if (LI.empty()) {
           RegsToErase.push_back(Reg);
+        } else {
+          // Also remove the value in subranges.
+          for (LiveInterval::SubRange &S : LI.subranges()) {
+            if (VNInfo *SVNI = S.getVNInfoAt(Idx))
+              S.removeValNo(SVNI);
+          }
+        }
       }
     }
   }

@@ -1401,7 +1401,10 @@ public:
                              const CXXScopeSpec &SS, QualType T);
 
   QualType BuildTypeofExprType(Expr *E, SourceLocation Loc);
-  QualType BuildDecltypeType(Expr *E, SourceLocation Loc);
+  /// If AsUnevaluated is false, E is treated as though it were an evaluated
+  /// context, such as when building a type for decltype(auto).
+  QualType BuildDecltypeType(Expr *E, SourceLocation Loc,
+                             bool AsUnevaluated = true);
   QualType BuildUnaryTransformType(QualType BaseType,
                                    UnaryTransformType::UTTKind UKind,
                                    SourceLocation Loc);
@@ -2007,6 +2010,12 @@ public:
                               int FirstArg, unsigned AttrSpellingListIndex);
   SectionAttr *mergeSectionAttr(Decl *D, SourceRange Range, StringRef Name,
                                 unsigned AttrSpellingListIndex);
+  AlwaysInlineAttr *mergeAlwaysInlineAttr(Decl *D, SourceRange Range,
+                                          unsigned AttrSpellingListIndex);
+  MinSizeAttr *mergeMinSizeAttr(Decl *D, SourceRange Range,
+                                unsigned AttrSpellingListIndex);
+  OptimizeNoneAttr *mergeOptimizeNoneAttr(Decl *D, SourceRange Range,
+                                          unsigned AttrSpellingListIndex);
 
   /// \brief Describes the kind of merge to perform for availability
   /// attributes (including "deprecated", "unavailable", and "availability").
@@ -2626,7 +2635,7 @@ private:
                              std::unique_ptr<CorrectionCandidateCallback> CCC,
                              DeclContext *MemberContext, bool EnteringContext,
                              const ObjCObjectPointerType *OPT,
-                             bool ErrorRecovery, bool &IsUnqualifiedLookup);
+                             bool ErrorRecovery);
 
 public:
   const TypoExprState &getTypoExprState(TypoExpr *TE) const;
@@ -2981,10 +2990,7 @@ private:
 
   /// \brief Record the typo correction failure and return an empty correction.
   TypoCorrection FailedCorrection(IdentifierInfo *Typo, SourceLocation TypoLoc,
-                                  bool RecordFailure = true,
-                                  bool IsUnqualifiedLookup = false) {
-    if (IsUnqualifiedLookup)
-      (void)UnqualifiedTyposCorrected[Typo];
+                                  bool RecordFailure = true) {
     if (RecordFailure)
       TypoCorrectionFailures[Typo].insert(TypoLoc);
     return TypoCorrection();
@@ -3101,6 +3107,18 @@ public:
 
   private:
     Sema &S;
+  };
+
+  /// An RAII helper that pops function a function scope on exit.
+  struct FunctionScopeRAII {
+    Sema &S;
+    bool Active;
+    FunctionScopeRAII(Sema &S) : S(S), Active(true) {}
+    ~FunctionScopeRAII() {
+      if (Active)
+        S.PopFunctionScopeInfo();
+    }
+    void disable() { Active = false; }
   };
 
   StmtResult ActOnDeclStmt(DeclGroupPtrTy Decl,
@@ -3431,6 +3449,9 @@ public:
   bool tryCaptureVariable(VarDecl *Var, SourceLocation Loc,
                           TryCaptureKind Kind = TryCapture_Implicit,
                           SourceLocation EllipsisLoc = SourceLocation());
+
+  /// \brief Checks if the variable must be captured.
+  bool NeedToCaptureVariable(VarDecl *Var, SourceLocation Loc);
 
   /// \brief Given a variable, determine the type that a reference to that
   /// variable will have in the given scope.
@@ -6563,17 +6584,6 @@ public:
   /// \brief The number of typos corrected by CorrectTypo.
   unsigned TyposCorrected;
 
-  typedef llvm::DenseMap<IdentifierInfo *, TypoCorrection>
-    UnqualifiedTyposCorrectedMap;
-
-  /// \brief A cache containing the results of typo correction for unqualified
-  /// name lookup.
-  ///
-  /// The string is the string that we corrected to (which may be empty, if
-  /// there was no correction), while the boolean will be true when the
-  /// string represents a keyword.
-  UnqualifiedTyposCorrectedMap UnqualifiedTyposCorrected;
-
   typedef llvm::SmallSet<SourceLocation, 2> SrcLocSet;
   typedef llvm::DenseMap<IdentifierInfo *, SrcLocSet> IdentifierSourceLocations;
 
@@ -7360,6 +7370,10 @@ private:
   void DestroyDataSharingAttributesStack();
   ExprResult VerifyPositiveIntegerConstantInClause(Expr *Op,
                                                    OpenMPClauseKind CKind);
+  /// \brief Checks if the specified variable is used in one of the private
+  /// clauses in OpenMP constructs.
+  bool IsOpenMPCapturedVar(VarDecl *VD);
+
 public:
   ExprResult PerformOpenMPImplicitIntegerConversion(SourceLocation OpLoc,
                                                     Expr *Op);
@@ -8195,9 +8209,6 @@ public:
   };
 
   CUDAFunctionTarget IdentifyCUDATarget(const FunctionDecl *D);
-
-  bool CheckCUDATarget(CUDAFunctionTarget CallerTarget,
-                       CUDAFunctionTarget CalleeTarget);
 
   bool CheckCUDATarget(const FunctionDecl *Caller, const FunctionDecl *Callee);
 

@@ -264,7 +264,7 @@ bool HexagonPacketizer::runOnMachineFunction(MachineFunction &Fn) {
 
 
 static bool IsIndirectCall(MachineInstr* MI) {
-  return ((MI->getOpcode() == Hexagon::CALLR) ||
+  return ((MI->getOpcode() == Hexagon::J2_callr) ||
           (MI->getOpcode() == Hexagon::CALLRv3));
 }
 
@@ -366,7 +366,7 @@ static bool IsRegDependence(const SDep::Kind DepType) {
 }
 
 static bool IsDirectJump(MachineInstr* MI) {
-  return (MI->getOpcode() == Hexagon::JMP);
+  return (MI->getOpcode() == Hexagon::J2_jump);
 }
 
 static bool IsSchedBarrier(MachineInstr* MI) {
@@ -382,8 +382,8 @@ static bool IsControlFlow(MachineInstr* MI) {
 }
 
 static bool IsLoopN(MachineInstr *MI) {
-  return (MI->getOpcode() == Hexagon::LOOP0_i ||
-          MI->getOpcode() == Hexagon::LOOP0_r);
+  return (MI->getOpcode() == Hexagon::J2_loop0i ||
+          MI->getOpcode() == Hexagon::J2_loop0r);
 }
 
 /// DoesModifyCalleeSavedReg - Returns true if the instruction modifies a

@@ -339,7 +339,7 @@ private:
   void UnconsumeToken(Token &Consumed) {
       Token Next = Tok;
       PP.EnterToken(Consumed);
-      ConsumeToken();
+      PP.Lex(Tok);
       PP.EnterToken(Next);
   }
 
@@ -1728,7 +1728,6 @@ private:
                                         ForRangeInit *FRI = nullptr);
   bool MightBeDeclarator(unsigned Context);
   DeclGroupPtrTy ParseDeclGroup(ParsingDeclSpec &DS, unsigned Context,
-                                bool AllowFunctionDefinitions,
                                 SourceLocation *DeclEnd = nullptr,
                                 ForRangeInit *FRI = nullptr);
   Decl *ParseDeclarationAfterDeclarator(Declarator &D,
@@ -2094,6 +2093,8 @@ private:
                                   SourceLocation AttrNameLoc,
                                   ParsedAttributes &Attrs);
   void ParseMicrosoftTypeAttributes(ParsedAttributes &attrs);
+  void DiagnoseAndSkipExtendedMicrosoftTypeAttributes();
+  SourceLocation SkipExtendedMicrosoftTypeAttributes();
   void ParseMicrosoftInheritanceClassAttributes(ParsedAttributes &attrs);
   void ParseBorlandTypeAttributes(ParsedAttributes &attrs);
   void ParseOpenCLAttributes(ParsedAttributes &attrs);

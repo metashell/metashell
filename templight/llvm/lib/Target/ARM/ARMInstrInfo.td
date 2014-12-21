@@ -263,8 +263,6 @@ def IsNotMClass      : Predicate<"!Subtarget->isMClass()">,
                                                     "!armv*m">;
 def IsARM            : Predicate<"!Subtarget->isThumb()">,
                                  AssemblerPredicate<"!ModeThumb", "arm-mode">;
-def IsIOS            : Predicate<"Subtarget->isTargetIOS()">;
-def IsNotIOS         : Predicate<"!Subtarget->isTargetIOS()">;
 def IsMachO          : Predicate<"Subtarget->isTargetMachO()">;
 def IsNotMachO       : Predicate<"!Subtarget->isTargetMachO()">;
 def IsNaCl           : Predicate<"Subtarget->isTargetNaCl()">;
@@ -3165,11 +3163,12 @@ let hasSideEffects = 0 in {
 
 let mayLoad = 1, hasExtraDefRegAllocReq = 1 in
 defm LDM : arm_ldst_mult<"ldm", "", 1, 0, LdStMulFrm, IIC_iLoad_m,
-                         IIC_iLoad_mu>;
+                         IIC_iLoad_mu>, ComplexDeprecationPredicate<"ARMLoad">;
 
 let mayStore = 1, hasExtraSrcRegAllocReq = 1 in
 defm STM : arm_ldst_mult<"stm", "", 0, 0, LdStMulFrm, IIC_iStore_m,
-                         IIC_iStore_mu>;
+                         IIC_iStore_mu>,
+           ComplexDeprecationPredicate<"ARMStore">;
 
 } // hasSideEffects
 
@@ -5262,7 +5261,7 @@ let isBarrier = 1, hasSideEffects = 1, isTerminator = 1,
 def Int_eh_sjlj_longjmp : PseudoInst<(outs), (ins GPR:$src, GPR:$scratch),
                              NoItinerary,
                          [(ARMeh_sjlj_longjmp GPR:$src, GPR:$scratch)]>,
-                                Requires<[IsARM, IsIOS]>;
+                                Requires<[IsARM]>;
 }
 
 // eh.sjlj.dispatchsetup pseudo-instruction.
@@ -5315,6 +5314,7 @@ def LDRLIT_ga_pcrel : PseudoInst<(outs GPR:$dst), (ins i32imm:$addr),
                                        (ARMWrapperPIC tglobaladdr:$addr))]>,
                       Requires<[IsARM, DontUseMovt]>;
 
+let AddedComplexity = 10 in
 def LDRLIT_ga_pcrel_ldr : PseudoInst<(outs GPR:$dst), (ins i32imm:$addr),
                               NoItinerary,
                               [(set GPR:$dst,

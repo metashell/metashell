@@ -106,6 +106,7 @@ else()
       libclangRewrite.a
       libclangSerialization.a
       libclangTooling.a
+      libclangToolingCore.a
       libLLVMBitReader.a
       libLLVMTransformUtils.a
       libLLVMCore.a

@@ -511,7 +511,8 @@ private:
       parseTemplateDeclaration();
       break;
     case tok::identifier:
-      if (Line.First->is(tok::kw_for) && Tok->is(Keywords.kw_in))
+      if (Line.First->is(tok::kw_for) && Tok->is(Keywords.kw_in) &&
+          Tok->Previous->isNot(tok::colon))
         Tok->Type = TT_ObjCForIn;
       break;
     case tok::comma:
@@ -1474,8 +1475,6 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
     return 0;
 
   if (Style.Language == FormatStyle::LK_Java) {
-    if (Left.is(TT_LeadingJavaAnnotation))
-      return 1;
     if (Right.isOneOf(Keywords.kw_extends, Keywords.kw_throws))
       return 1;
     if (Right.is(Keywords.kw_implements))

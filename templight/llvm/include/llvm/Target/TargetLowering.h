@@ -264,6 +264,11 @@ public:
     return MaskAndBranchFoldingIsLegal;
   }
 
+  /// \brief Return true if the target wants to use the optimization that
+  /// turns ext(promotableInst1(...(promotableInstN(load)))) into
+  /// promotedInst1(...(promotedInstN(ext(load)))).
+  bool enableExtLdPromotion() const { return EnableExtLdPromotion; }
+
   /// Return true if the target can combine store(extractelement VectorTy,
   /// Idx).
   /// \p Cost[out] gives the cost of that transformation when this is true.
@@ -752,6 +757,16 @@ public:
   /// of the specified type to a smaller type in order to save space and / or
   /// reduce runtime.
   virtual bool ShouldShrinkFPConstant(EVT) const { return true; }
+
+  // Return true if it is profitable to reduce the given load node to a smaller
+  // type.
+  //
+  // e.g. (i16 (trunc (i32 (load x))) -> i16 load x should be performed
+  virtual bool shouldReduceLoadWidth(SDNode *Load,
+                                     ISD::LoadExtType ExtTy,
+                                     EVT NewVT) const {
+    return true;
+  }
 
   /// When splitting a value of the specified type into parts, does the Lo
   /// or Hi part come first?  This usually follows the endianness, except
@@ -1516,6 +1531,15 @@ public:
                                                  Type *Ty) const {
     return false;
   }
+
+  /// Return true if EXTRACT_SUBVECTOR is cheap for this result type
+  /// with this index. This is needed because EXTRACT_SUBVECTOR usually
+  /// has custom lowering that depends on the index of the first element,
+  /// and only the target knows which lowering is cheap.
+  virtual bool isExtractSubvectorCheap(EVT ResVT, unsigned Index) const {
+    return false;
+  }
+
   //===--------------------------------------------------------------------===//
   // Runtime Library hooks
   //
@@ -1943,6 +1967,9 @@ protected:
   /// MaskAndBranchFoldingIsLegal - Indicates if the target supports folding
   /// a mask of a single bit, a compare, and a branch into a single instruction.
   bool MaskAndBranchFoldingIsLegal;
+
+  /// \see enableExtLdPromotion.
+  bool EnableExtLdPromotion;
 
 protected:
   /// Return true if the value types that can be represented by the specified

@@ -2683,6 +2683,8 @@ SDValue SelectionDAG::getNode(unsigned Opcode, SDLoc DL,
       return getConstantFP(apf, VT);
     }
     case ISD::BITCAST:
+      if (VT == MVT::f16 && C->getValueType(0) == MVT::i16)
+        return getConstantFP(APFloat(APFloat::IEEEhalf, Val), VT);
       if (VT == MVT::f32 && C->getValueType(0) == MVT::i32)
         return getConstantFP(APFloat(APFloat::IEEEsingle, Val), VT);
       else if (VT == MVT::f64 && C->getValueType(0) == MVT::i64)
@@ -2756,7 +2758,9 @@ SDValue SelectionDAG::getNode(unsigned Opcode, SDLoc DL,
       return getConstant(api, VT);
     }
     case ISD::BITCAST:
-      if (VT == MVT::i32 && C->getValueType(0) == MVT::f32)
+      if (VT == MVT::i16 && C->getValueType(0) == MVT::f16)
+        return getConstant((uint16_t)V.bitcastToAPInt().getZExtValue(), VT);
+      else if (VT == MVT::i32 && C->getValueType(0) == MVT::f32)
         return getConstant((uint32_t)V.bitcastToAPInt().getZExtValue(), VT);
       else if (VT == MVT::i64 && C->getValueType(0) == MVT::f64)
         return getConstant(V.bitcastToAPInt().getZExtValue(), VT);
@@ -6549,11 +6553,25 @@ bool SelectionDAG::isConsecutiveLoad(LoadSDNode *LD, LoadSDNode *Base,
     return MFI->getObjectOffset(FI) == (MFI->getObjectOffset(BFI) + Dist*Bytes);
   }
 
-  // Handle X+C
-  if (isBaseWithConstantOffset(Loc) && Loc.getOperand(0) == BaseLoc &&
-      cast<ConstantSDNode>(Loc.getOperand(1))->getSExtValue() == Dist*Bytes)
-    return true;
-
+  // Handle X + C.
+  if (isBaseWithConstantOffset(Loc)) {
+    int64_t LocOffset = cast<ConstantSDNode>(Loc.getOperand(1))->getSExtValue();
+    if (Loc.getOperand(0) == BaseLoc) {
+      // If the base location is a simple address with no offset itself, then
+      // the second load's first add operand should be the base address.
+      if (LocOffset == Dist * (int)Bytes)
+        return true;
+    } else if (isBaseWithConstantOffset(BaseLoc)) {
+      // The base location itself has an offset, so subtract that value from the
+      // second load's offset before comparing to distance * size.
+      int64_t BOffset =
+        cast<ConstantSDNode>(BaseLoc.getOperand(1))->getSExtValue();
+      if (Loc.getOperand(0) == BaseLoc.getOperand(0)) {
+        if ((LocOffset - BOffset) == Dist * (int)Bytes)
+          return true;
+      }
+    }
+  }
   const GlobalValue *GV1 = nullptr;
   const GlobalValue *GV2 = nullptr;
   int64_t Offset1 = 0;

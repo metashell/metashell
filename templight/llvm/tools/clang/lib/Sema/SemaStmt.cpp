@@ -730,9 +730,10 @@ Sema::ActOnFinishSwitchStmt(SourceLocation SwitchLoc, Stmt *Switch,
   assert(SS == getCurFunction()->SwitchStack.back() &&
          "switch stack missing push/pop!");
 
+  getCurFunction()->SwitchStack.pop_back();
+
   if (!BodyStmt) return StmtError();
   SS->setBody(BodyStmt, SwitchLoc);
-  getCurFunction()->SwitchStack.pop_back();
 
   Expr *CondExpr = SS->getCond();
   if (!CondExpr) return StmtError();
@@ -2483,7 +2484,7 @@ VarDecl *Sema::getCopyElisionCandidate(QualType ReturnType,
   // - in a return statement in a function [where] ...
   // ... the expression is the name of a non-volatile automatic object ...
   DeclRefExpr *DR = dyn_cast<DeclRefExpr>(E->IgnoreParens());
-  if (!DR || DR->refersToEnclosingLocal())
+  if (!DR || DR->refersToCapturedVariable())
     return nullptr;
   VarDecl *VD = dyn_cast<VarDecl>(DR->getDecl());
   if (!VD)
@@ -2651,8 +2652,12 @@ Sema::ActOnCapScopeReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp) {
         return StmtError();
       RetValExp = Result.get();
 
+      // DR1048: even prior to C++14, we should use the 'auto' deduction rules
+      // when deducing a return type for a lambda-expression (or by extension
+      // for a block). These rules differ from the stated C++11 rules only in
+      // that they remove top-level cv-qualifiers.
       if (!CurContext->isDependentContext())
-        FnRetType = RetValExp->getType();
+        FnRetType = RetValExp->getType().getUnqualifiedType();
       else
         FnRetType = CurCap->ReturnType = Context.DependentTy;
     } else {
@@ -3039,14 +3044,26 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp) {
 
     Result = new (Context) ReturnStmt(ReturnLoc, RetValExp, nullptr);
   } else if (!RetValExp && !HasDependentReturnType) {
-    unsigned DiagID = diag::warn_return_missing_expr;  // C90 6.6.6.4p4
-    // C99 6.8.6.4p1 (ext_ since GCC warns)
-    if (getLangOpts().C99) DiagID = diag::ext_return_missing_expr;
+    FunctionDecl *FD = getCurFunctionDecl();
 
-    if (FunctionDecl *FD = getCurFunctionDecl())
+    unsigned DiagID;
+    if (getLangOpts().CPlusPlus11 && FD && FD->isConstexpr()) {
+      // C++11 [stmt.return]p2
+      DiagID = diag::err_constexpr_return_missing_expr;
+      FD->setInvalidDecl();
+    } else if (getLangOpts().C99) {
+      // C99 6.8.6.4p1 (ext_ since GCC warns)
+      DiagID = diag::ext_return_missing_expr;
+    } else {
+      // C90 6.6.6.4p4
+      DiagID = diag::warn_return_missing_expr;
+    }
+
+    if (FD)
       Diag(ReturnLoc, DiagID) << FD->getIdentifier() << 0/*fn*/;
     else
       Diag(ReturnLoc, DiagID) << getCurMethodDecl()->getDeclName() << 1/*meth*/;
+
     Result = new (Context) ReturnStmt(ReturnLoc);
   } else {
     assert(RetValExp || HasDependentReturnType);

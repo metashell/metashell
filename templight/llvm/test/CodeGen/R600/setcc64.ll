@@ -57,11 +57,8 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_one:
-; SI-DAG: v_cmp_o_f64_e32 vcc
-; SI-DAG: v_cmp_neq_f64_e64 [[CMP1:s\[[0-9]+:[0-9]+\]]]
-; SI: s_and_b64 [[AND:s\[[0-9]+:[0-9]+\]]], [[CMP1]], vcc
-; SI: v_cndmask_b32_e64 [[VRESULT:v[0-9]+]], 0, -1, [[AND]]
-; SI: buffer_store_dword [[VRESULT]]
+; SI: v_cmp_lg_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_one(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp one double %a, %b
@@ -81,10 +78,8 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_ueq:
-; SI: v_cmp_u_f64
-; SI: v_cmp_eq_f64
-; SI: s_or_b64
-; SI: v_cndmask_b32
+; SI: v_cmp_nlg_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_ueq(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp ueq double %a, %b
@@ -94,10 +89,9 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_ugt:
-; SI: v_cmp_u_f64
-; SI: v_cmp_gt_f64
-; SI: s_or_b64
-; SI: v_cndmask_b32
+
+; SI: v_cmp_nle_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_ugt(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp ugt double %a, %b
@@ -107,10 +101,8 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_uge:
-; SI: v_cmp_u_f64
-; SI: v_cmp_ge_f64
-; SI: s_or_b64
-; SI: v_cndmask_b32
+; SI: v_cmp_nlt_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_uge(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp uge double %a, %b
@@ -120,10 +112,8 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_ult:
-; SI: v_cmp_u_f64
-; SI: v_cmp_lt_f64
-; SI: s_or_b64
-; SI: v_cndmask_b32
+; SI: v_cmp_nge_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_ult(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp ult double %a, %b
@@ -133,10 +123,8 @@ entry:
 }
 
 ; FUNC-LABEL: {{^}}f64_ule:
-; SI: v_cmp_u_f64
-; SI: v_cmp_le_f64
-; SI: s_or_b64
-; SI: v_cndmask_b32
+; SI: v_cmp_ngt_f64_e32 vcc
+; SI-NEXT: v_cndmask_b32_e64 {{v[0-9]+}}, 0, -1, vcc
 define void @f64_ule(i32 addrspace(1)* %out, double %a, double %b) {
 entry:
   %0 = fcmp ule double %a, %b
