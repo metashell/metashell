@@ -26,15 +26,14 @@ templight_environment::templight_environment(
   clang_arguments().push_back("-Xtemplight");
   clang_arguments().push_back("-profiler");
   clang_arguments().push_back("-Xtemplight");
-  clang_arguments().push_back("-output");
-  clang_arguments().push_back("TEMPLIGHT_OUTPUT_LOCATION_IS_NOT_SET");
+  clang_arguments().push_back("-output=TEMPLIGHT_OUTPUT_LOCATION_IS_NOT_SET");
   output_path_index = clang_arguments().size() - 1;
 }
 
 void templight_environment::set_output_location(
     const std::string& output_location)
 {
-  clang_arguments()[output_path_index] = output_location;
+  clang_arguments()[output_path_index] = "-output=" + output_location;
 }
 
 }
