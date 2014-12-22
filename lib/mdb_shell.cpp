@@ -84,7 +84,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
         "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"step"}, repeatable, &mdb_shell::command_step,
-        "[over] [n]",
+        "[over|out] [n]",
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
         "Negative n means step the program backwards.\n\n"
@@ -92,7 +92,9 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Please note that `step over -1` is not always the inverse of `step over`.\n"
         "In particular when there are no more instantiations that got instantiated\n"
         "by the current parent, then `step over` will behave like a normal `step`,\n"
-        "and will step out of one or more instantiation frames."},
+        "and will step out of one or more instantiation frames.\n\n"
+        "Use of the `out` qualifier will jump out of the current instantiation frame.\n"
+        "Similarly to `step out`, `step out -1` is not always the inverse of `step out`."},
       {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
