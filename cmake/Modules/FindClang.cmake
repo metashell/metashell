@@ -114,7 +114,6 @@ else()
       libLLVMMCParser.a
       libLLVMOption.a
       libLLVMSupport.a
-      libtemplight-static.a
       dl
       tinfo
     )
