@@ -1,0 +1,87 @@
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <metashell/json_line_reader.hpp>
+#include <metashell/rapid_object_handler.hpp>
+
+#include <rapidjson/reader.h>
+
+#include <map>
+#include <cassert>
+
+using namespace metashell;
+
+namespace
+{
+  boost::optional<std::string> json_line_reader(
+    const line_reader& line_reader_,
+    iface::displayer& displayer_
+  )
+  {
+    while (const boost::optional<std::string> s = line_reader_(""))
+    {
+      rapid_object_handler handler(displayer_);
+      rapidjson::Reader reader;
+      rapidjson::StringStream string_stream(s->c_str());
+      reader.Parse(string_stream, handler);
+      if (!handler.failed())
+      {
+        if (handler.empty())
+        {
+          return std::string();
+        }
+        else if (const auto type = handler.field("type"))
+        {
+          if (*type == "cmd")
+          {
+            if (const auto cmd = handler.field("cmd"))
+            {
+              return *cmd;
+            }
+            else
+            {
+              displayer_.show_error(
+                "The cmd field of the cmd command is missing"
+              );
+            }
+          }
+          else
+          {
+            displayer_.show_error("Unknown command type: " + *type);
+          }
+        }
+        else
+        {
+          displayer_.show_error("Command without a type: " + *s);
+        }
+      }
+    }
+    return boost::none;
+  }
+}
+
+line_reader metashell::build_json_line_reader(
+  const line_reader& line_reader_,
+  iface::displayer& displayer_
+)
+{
+  return
+    [line_reader_, &displayer_](const std::string&)
+    {
+      return json_line_reader(line_reader_, displayer_);
+    };
+}
+

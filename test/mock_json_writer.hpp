@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_MOCK_JSON_WRITER_HPP
+#define METASHELL_MOCK_JSON_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,22 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/json_writer.hpp>
+
+#include <vector>
 #include <string>
-#include <iosfwd>
 
-namespace metashell
+class mock_json_writer : public metashell::iface::json_writer
 {
-  enum class console_type
-  {
-    plain,
-    readline,
-    json
-  };
+public:
+  virtual void string(const std::string& value_) override;
+  virtual void int_(int value_) override;
 
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
+  virtual void start_object() override;
+  virtual void key(const std::string& key_) override;
+  virtual void end_object() override;
 
-  console_type parse_console_type(const std::string& con_type_);
-}
+  virtual void start_array() override;
+  virtual void end_array() override;
+
+  virtual void end_document() override;
+
+  const std::vector<std::string>& calls() const;
+private:
+  std::vector<std::string> _calls;
+};
 
 #endif
 

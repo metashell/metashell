@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_IFACE_JSON_WRITER_HPP
+#define METASHELL_IFACE_JSON_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -18,20 +18,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
-#include <iosfwd>
 
 namespace metashell
 {
-  enum class console_type
+  namespace iface
   {
-    plain,
-    readline,
-    json
-  };
+    class json_writer
+    {
+    public:
+      virtual ~json_writer() {}
 
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
+      virtual void string(const std::string& value_) = 0;
+      virtual void int_(int value_) = 0;
 
-  console_type parse_console_type(const std::string& con_type_);
+      virtual void start_object() = 0;
+      virtual void key(const std::string& key_) = 0;
+      virtual void end_object() = 0;
+
+      virtual void start_array() = 0;
+      virtual void end_array() = 0;
+
+      virtual void end_document() = 0;
+    };
+  }
 }
 
 #endif

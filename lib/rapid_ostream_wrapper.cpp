@@ -14,38 +14,59 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
+#include <metashell/rapid_ostream_wrapper.hpp>
 
-#include <just/test.hpp>
-
-#include <stdexcept>
 #include <iostream>
-#include <sstream>
+#include <cassert>
 
 using namespace metashell;
 
-namespace
+rapid_ostream_wrapper::rapid_ostream_wrapper(std::ostream& os_) :
+  _os(os_)
+{}
+
+void rapid_ostream_wrapper::Put(Ch c_)
 {
-  std::string display_on_stream(console_type t_)
-  {
-    std::ostringstream s;
-    s << t_;
-    return s.str();
-  }
+  _os.put(c_);
 }
 
-JUST_TEST_CASE(test_parsing_console_type)
+void rapid_ostream_wrapper::Flush()
 {
-  JUST_ASSERT_EQUAL(console_type::plain, parse_console_type("plain"));
-  JUST_ASSERT_EQUAL(console_type::readline, parse_console_type("readline"));
-  JUST_ASSERT_EQUAL(console_type::json, parse_console_type("json"));
-  JUST_ASSERT_THROWS(std::exception, parse_console_type("foo"));
+  _os.flush();
 }
 
-JUST_TEST_CASE(test_displaying_console_type)
+rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Peek() const
 {
-  JUST_ASSERT_EQUAL("plain", display_on_stream(console_type::plain));
-  JUST_ASSERT_EQUAL("readline", display_on_stream(console_type::readline));
-  JUST_ASSERT_EQUAL("json", display_on_stream(console_type::json));
+  assert(false);
+  return '\0';
+}
+
+rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Take()
+{
+  assert(false);
+  return '\0';
+}
+
+size_t rapid_ostream_wrapper::Tell() const
+{
+  assert(false);
+  return 0;
+}
+
+rapid_ostream_wrapper::Ch* rapid_ostream_wrapper::PutBegin()
+{
+  assert(false);
+  return nullptr;
+}
+
+size_t rapid_ostream_wrapper::PutEnd(Ch*)
+{
+  assert(false);
+  return 0;
+}
+
+void rapid_ostream_wrapper::new_line()
+{
+  _os << std::endl;
 }
 

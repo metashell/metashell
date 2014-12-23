@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_CONFIG_HPP
-#define METASHELL_CONSOLE_CONFIG_HPP
+#ifndef METASHELL_JSON_DISPLAYER_HPP
+#define METASHELL_JSON_DISPLAYER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,36 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
-#include <metashell/line_reader.hpp>
-#include <metashell/command_processor_queue.hpp>
-
-#include <metashell/iface/history.hpp>
-#include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/json_writer.hpp>
 
-#include <memory>
-
 namespace metashell
 {
-  class console_config
+  class json_displayer : public iface::displayer
   {
   public:
-    console_config(console_type type_, bool indent_, bool syntax_highlight_);
+    explicit json_displayer(iface::json_writer& w_);
 
-    iface::displayer& displayer();
-    iface::history& history();
-    line_reader& reader();
-    command_processor_queue& processor_queue();
+    virtual void show_raw_text(const std::string& text_) override;
+    virtual void show_error(const std::string& msg_) override;
+    virtual void show_type(const type& type_) override;
+    virtual void show_comment(const text& msg_) override;
+    virtual void show_cpp_code(const std::string& code_) override;
+
+    virtual void show_frame(const frame& frame_) override;
+    virtual void show_backtrace(const backtrace& trace_) override;
+    virtual void show_call_graph(const iface::call_graph& cg_) override;
   private:
-    command_processor_queue _processor_queue;
-    std::unique_ptr<iface::console> _console;
-    std::unique_ptr<iface::displayer> _displayer;
-    std::unique_ptr<iface::history> _history;
-    line_reader _reader;
-
-    std::unique_ptr<iface::json_writer> _json_writer;
+    iface::json_writer& _writer;
   };
 }
 

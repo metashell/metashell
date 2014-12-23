@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_JSON_LINE_READER_HPP
+#define METASHELL_JSON_LINE_READER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
-#include <iosfwd>
+#include <metashell/line_reader.hpp>
+#include <metashell/iface/displayer.hpp>
 
 namespace metashell
 {
-  enum class console_type
-  {
-    plain,
-    readline,
-    json
-  };
-
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
+  line_reader build_json_line_reader(
+    const line_reader& line_reader_,
+    iface::displayer& displayer_
+  );
 }
 
 #endif

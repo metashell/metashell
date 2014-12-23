@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_RAPID_JSON_WRITER_HPP
+#define METASHELL_RAPID_JSON_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include <metashell/iface/json_writer.hpp>
+#include <metashell/rapid_ostream_wrapper.hpp>
+
+#include <rapidjson/writer.h>
+
 #include <iosfwd>
 
 namespace metashell
 {
-  enum class console_type
+  class rapid_json_writer : public iface::json_writer
   {
-    plain,
-    readline,
-    json
+  public:
+    explicit rapid_json_writer(std::ostream& out_);
+
+    virtual void string(const std::string& value_) override;
+    virtual void int_(int value_) override;
+
+    virtual void start_object() override;
+    virtual void key(const std::string& key_) override;
+    virtual void end_object() override;
+
+    virtual void start_array() override;
+    virtual void end_array() override;
+
+    virtual void end_document() override;
+  private:
+    rapid_ostream_wrapper _os;
+    rapidjson::Writer<rapid_ostream_wrapper> _writer;
   };
-
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
 }
 
 #endif

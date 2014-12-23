@@ -27,6 +27,7 @@ std::ostream& metashell::operator<<(std::ostream& o_, console_type t_)
   {
   case console_type::plain: return o_ << "plain";
   case console_type::readline: return o_ << "readline";
+  case console_type::json: return o_ << "json";
   }
   return o_; // avoid "control reaches end of function" warnings
 }
@@ -40,6 +41,10 @@ console_type metashell::parse_console_type(const std::string& con_type_)
   else if (con_type_ == "readline")
   {
     return console_type::readline;
+  }
+  else if (con_type_ == "json")
+  {
+    return console_type::json;
   }
   else
   {

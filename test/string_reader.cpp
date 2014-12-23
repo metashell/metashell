@@ -1,6 +1,3 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,22 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
-#include <iosfwd>
+#include "string_reader.hpp"
 
-namespace metashell
+string_reader::string_reader(std::initializer_list<std::string> strings_) :
+  _strings(strings_),
+  _next(0)
+{}
+
+boost::optional<std::string> string_reader::operator()(const std::string&)
 {
-  enum class console_type
+  if (_next == _strings.size())
   {
-    plain,
-    readline,
-    json
-  };
-
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
+    return boost::none;
+  }
+  else
+  {
+    return _strings[_next++];
+  }
 }
-
-#endif
 

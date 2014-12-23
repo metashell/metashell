@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_RAPID_OSTREAM_WRAPPER_HPP
+#define METASHELL_RAPID_OSTREAM_WRAPPER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
 #include <iosfwd>
 
 namespace metashell
 {
-  enum class console_type
-  {
-    plain,
-    readline,
-    json
+  // Based on RapidJSON's documentation
+  // http://miloyip.github.io/rapidjson/md_doc_stream.html#CustomStream
+  class rapid_ostream_wrapper {
+  public:
+    typedef char Ch;
+
+    rapid_ostream_wrapper(std::ostream& os_);
+
+    void Put(Ch c_);
+    void Flush();
+
+    void new_line();
+
+    Ch Peek() const;
+    Ch Take();
+    size_t Tell() const;
+    Ch* PutBegin();
+    size_t PutEnd(Ch*);
+  private:
+    std::ostream& _os;
   };
-
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
 }
 
 #endif

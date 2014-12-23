@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_TEST_STRING_READER_HPP
+#define METASHELL_TEST_STRING_READER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,22 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
-#include <iosfwd>
+#include <boost/optional.hpp>
 
-namespace metashell
+#include <vector>
+
+class string_reader
 {
-  enum class console_type
-  {
-    plain,
-    readline,
-    json
-  };
+public:
+  explicit string_reader(std::initializer_list<std::string> strings_);
 
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
-}
+  boost::optional<std::string> operator()(const std::string&);
+private:
+  std::vector<std::string> _strings;
+  // storing the index instead of an iterator makes the default copy
+  // constructor work
+  std::vector<std::string>::size_type _next;
+};
 
 #endif
 

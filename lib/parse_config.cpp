@@ -220,7 +220,7 @@ parse_config_result metashell::parse_config(
     )
     (
       "console", value(&con_type)->default_value(con_type),
-      "Console type. Possible values: plain, readline"
+      "Console type. Possible values: plain, readline, json"
     )
     ;
 

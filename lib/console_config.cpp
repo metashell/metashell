@@ -18,10 +18,13 @@
 
 #include <metashell/stdout_console.hpp>
 #include <metashell/stream_console.hpp>
+#include <metashell/json_displayer.hpp>
 #include <metashell/console_displayer.hpp>
 #include <metashell/readline_history.hpp>
 #include <metashell/null_history.hpp>
 #include <metashell/readline_line_reader.hpp>
+#include <metashell/json_line_reader.hpp>
+#include <metashell/rapid_json_writer.hpp>
 
 #include <iostream>
 
@@ -66,6 +69,12 @@ console_config::console_config(
     );
     _history.reset(new readline_history);
     _reader = metashell::readline_line_reader(_processor_queue);
+    break;
+  case console_type::json:
+    _json_writer.reset(new rapid_json_writer(std::cout));
+    _displayer.reset(new json_displayer(*_json_writer));
+    _history.reset(new null_history);
+    _reader = build_json_line_reader(plain_line_reader, *_displayer);
     break;
   }
 
