@@ -30,6 +30,7 @@
 #   CLANG_DLL (only on Windows)
 #   CLANG_HEADERS (the path to the headers used by clang)
 #   CLANG_BINARY
+#   TEMPLIGHT_BINARY
 
 if (NOT $ENV{CLANG_INCLUDEDIR} STREQUAL "" )
   set(CLANG_INCLUDEDIR $ENV{CLANG_INCLUDEDIR})
@@ -145,11 +146,12 @@ find_package_handle_standard_args(
   CLANG DEFAULT_MSG CLANG_LIBRARY CLANG_INCLUDE_DIR
 )
 
-# The clang binary
+# The clang and templight binary
 if (WIN32)
   set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${CLANG_LIBRARYDIR}")
 endif ()
 find_program(CLANG_BINARY clang HINTS ${CLANG_BINARYDIR})
+find_program(TEMPLIGHT_BINARY templight HINTS ${CLANG_BINARYDIR})
 
 # The standard Clang header files
 file(WRITE "${PROJECT_BINARY_DIR}/empty.hpp" "")
@@ -178,6 +180,7 @@ if (CLANG_DEBUG)
     message(STATUS "  CLANG_INCLUDE_DIR = ${CLANG_INCLUDE_DIR}")
     message(STATUS "  CLANG_LIBRARY = ${CLANG_LIBRARY}")
     message(STATUS "  CLANG_BINARY = ${CLANG_BINARY}")
+    message(STATUS "  TEMPLIGHT_BINARY = ${TEMPLIGHT_BINARY}")
     message(STATUS "  CLANG_HEADERS = ${CLANG_HEADERS}")
     if (WIN32)
       message(STATUS "  CLANG_DLL = ${CLANG_DLL}")

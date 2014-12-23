@@ -102,13 +102,17 @@ function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
   
     # clang compiler
     copy_file_to_binary_dir("${CLANG_BINARY}" "clang/clang.exe" true clang)
+    # templight compiler
+    copy_file_to_binary_dir("${CLANG_BINARY}" "clang/templight.exe" true clang)
   else()
     # Clang binary
     set(MY_CLANG "${CMAKE_CURRENT_BINARY_DIR}/clang_metashell")
+    set(MY_TEMPLIGHT "${CMAKE_CURRENT_BINARY_DIR}/templight_metashell")
     configure_file("${CLANG_BINARY}" "${MY_CLANG}" COPYONLY)
+    configure_file("${TEMPLIGHT_BINARY}" "${MY_TEMPLIGHT}" COPYONLY)
     if (INSTALL_COPIED_FILES)
       install(
-        FILES "${MY_CLANG}"
+        FILES "${MY_CLANG}" "${MY_TEMPLIGHT}"
         DESTINATION bin
         PERMISSIONS
           OWNER_READ OWNER_EXECUTE
