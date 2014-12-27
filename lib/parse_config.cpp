@@ -222,6 +222,7 @@ parse_config_result metashell::parse_config(
       "console", value(&con_type)->default_value(con_type),
       "Console type. Possible values: plain, readline, json"
     )
+    ("nosplash", "Disable the splash messages")
     ;
 
   try
@@ -238,6 +239,7 @@ parse_config_result metashell::parse_config(
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");
+    ucfg.splash_enabled = vm.count("nosplash") == 0;
 
     if (!fvalue.empty())
     {

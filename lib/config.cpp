@@ -209,7 +209,8 @@ config::config() :
   warnings_enabled(true),
   use_precompiled_headers(false),
   clang_path(),
-  con_type(console_type::plain)
+  con_type(console_type::plain),
+  splash_enabled(true)
 {}
 
 config metashell::detect_config(
@@ -268,6 +269,7 @@ config metashell::detect_config(
     );
 
   cfg.con_type = ucfg_.con_type;
+  cfg.splash_enabled = ucfg_.splash_enabled;
 
   return cfg;
 }

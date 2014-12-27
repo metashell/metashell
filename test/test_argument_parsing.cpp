@@ -208,3 +208,23 @@ JUST_TEST_CASE(test_setting_console_type_to_json)
   JUST_ASSERT_EQUAL(metashell::console_type::json, r.cfg.con_type);
 }
 
+JUST_TEST_CASE(test_splash_is_enabled_by_default)
+{
+  const char* args[] = {"metashell"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(r.cfg.splash_enabled);
+}
+
+JUST_TEST_CASE(test_disabling_splash)
+{
+  const char* args[] = {"metashell", "--nosplash"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(!r.cfg.splash_enabled);
+}
+

@@ -57,7 +57,10 @@ void pragma_mdb::run(
   std::unique_ptr<mdb_shell>
     sh(new mdb_shell(_shell.get_config(), _shell.env()));
 
-  sh->display_splash(displayer_);
+  if (_shell.get_config().splash_enabled)
+  {
+    sh->display_splash(displayer_);
+  }
 
   if (!args.empty()) {
     sh->command_evaluate(args, displayer_);

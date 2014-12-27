@@ -46,6 +46,7 @@ namespace metashell
     unsigned templight_trace_capacity;
     bool saving_enabled;
     console_type con_type;
+    bool splash_enabled;
 
     config();
   };

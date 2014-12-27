@@ -1128,6 +1128,8 @@ build your `fun.cpp` file.
 * New features
     * Support different shell modes (plain, readline)
     * New MDB command: `step out`
+    * New command-line arguments:
+        * `--nosplash` for disabling the splash at (sub)shell startup
 
 * Documentation updates
     * New section about `step over` in Getting started.

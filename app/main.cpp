@@ -44,7 +44,10 @@ int main(int argc_, const char* argv_[])
       std::unique_ptr<metashell::shell>
         shell(new metashell::shell(cfg, ccfg.processor_queue()));
 
-      shell->display_splash(ccfg.displayer());
+      if (cfg.splash_enabled)
+      {
+        shell->display_splash(ccfg.displayer());
+      }
 
       ccfg.processor_queue().push(move(shell));
 

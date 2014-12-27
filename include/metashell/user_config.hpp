@@ -43,6 +43,7 @@ namespace metashell
 #endif
     bool saving_enabled = false;
     console_type con_type = console_type::plain;
+    bool splash_enabled = true;
   };
 }
 
