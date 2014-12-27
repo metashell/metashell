@@ -195,6 +195,7 @@ JUST_TEST_CASE(test_rapid_object_handler_whitelisted_fields)
 {
   test_whitelisted_field("type");
   test_whitelisted_field("cmd");
+  test_whitelisted_field("code");
 }
 
 JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_nested_object)

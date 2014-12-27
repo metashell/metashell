@@ -38,7 +38,7 @@ namespace
 
   bool whitelisted(const std::string& field_)
   {
-    return field_ == "type" || field_ == "cmd";
+    return field_ == "type" || field_ == "cmd" || field_ == "code";
   }
 }
 

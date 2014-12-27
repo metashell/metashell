@@ -78,7 +78,12 @@ console_config::console_config(
     _displayer.reset(new json_displayer(*_json_writer));
     _history.reset(new null_history);
     _reader =
-      build_json_line_reader(plain_line_reader, *_displayer, *_json_writer);
+      build_json_line_reader(
+        plain_line_reader,
+        *_displayer,
+        *_json_writer,
+        _processor_queue
+      );
     break;
   }
 

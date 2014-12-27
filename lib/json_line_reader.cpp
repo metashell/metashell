@@ -26,6 +26,28 @@ using namespace metashell;
 
 namespace
 {
+  void show_code_complete_result(
+    iface::json_writer& writer_,
+    const std::set<std::string>& completions_
+  )
+  {
+    writer_.start_object();
+
+    writer_.key("type");
+    writer_.string("code_completion");
+
+    writer_.key("completions");
+    writer_.start_array();
+    for (const std::string& c : completions_)
+    {
+      writer_.string(c);
+    }
+    writer_.end_array();
+
+    writer_.end_object();
+    writer_.end_document();
+  }
+
   void show_prompt(iface::json_writer& writer_, const std::string& prompt_)
   {
     writer_.start_object();
@@ -42,24 +64,23 @@ namespace
 
   boost::optional<std::string> read_next_line(
     const line_reader& line_reader_,
-    iface::json_writer& prompt_displayer_,
+    iface::json_writer& json_writer_,
     const std::string& prompt_
   )
   {
-    show_prompt(prompt_displayer_, prompt_);
+    show_prompt(json_writer_, prompt_);
     return line_reader_("");
   }
 
   boost::optional<std::string> json_line_reader(
     const line_reader& line_reader_,
     iface::displayer& displayer_,
-    iface::json_writer& prompt_displayer_,
+    iface::json_writer& json_writer_,
+    command_processor_queue& command_processor_queue_,
     const std::string& prompt_
   )
   {
-    while (
-      const auto s = read_next_line(line_reader_, prompt_displayer_, prompt_)
-    )
+    while (const auto s = read_next_line(line_reader_, json_writer_, prompt_))
     {
       rapid_object_handler handler(displayer_);
       rapidjson::Reader reader;
@@ -86,6 +107,21 @@ namespace
               );
             }
           }
+          else if (*type == "code_completion")
+          {
+            if (const auto code = handler.field("code"))
+            {
+              std::set<std::string> cc;
+              command_processor_queue_.code_complete(*code, cc);
+              show_code_complete_result(json_writer_, cc);
+            }
+            else
+            {
+              displayer_.show_error(
+                "The code field of the code_completion command is missing"
+              );
+            }
+          }
           else
           {
             displayer_.show_error("Unknown command type: " + *type);
@@ -104,14 +140,23 @@ namespace
 line_reader metashell::build_json_line_reader(
   const line_reader& line_reader_,
   iface::displayer& displayer_,
-  iface::json_writer& prompt_displayer_
+  iface::json_writer& json_writer_,
+  command_processor_queue& command_processor_queue_
 )
 {
   return
-    [line_reader_, &displayer_, &prompt_displayer_](const std::string& prompt_)
+    [line_reader_, &displayer_, &json_writer_, &command_processor_queue_](
+      const std::string& prompt_
+    )
     {
       return
-        json_line_reader(line_reader_, displayer_, prompt_displayer_, prompt_);
+        json_line_reader(
+          line_reader_,
+          displayer_,
+          json_writer_,
+          command_processor_queue_,
+          prompt_
+        );
     };
 }
 

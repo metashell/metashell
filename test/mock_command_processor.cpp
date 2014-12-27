@@ -1,6 +1,3 @@
-#ifndef METASHELL_JSON_LINE_READER_HPP
-#define METASHELL_JSON_LINE_READER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,20 +14,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_reader.hpp>
-#include <metashell/command_processor_queue.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/json_writer.hpp>
+#include "mock_command_processor.hpp"
 
-namespace metashell
+using namespace metashell;
+
+mock_command_processor::mock_command_processor() :
+  code_complete_callback([](const std::string&, std::set<std::string>&) {})
+{}
+
+void mock_command_processor::line_available(
+  const std::string&,
+  iface::displayer&,
+  iface::history&
+)
 {
-  line_reader build_json_line_reader(
-    const line_reader& line_reader_,
-    iface::displayer& displayer_,
-    iface::json_writer& json_writer_,
-    command_processor_queue& command_processor_queue_
-  );
+  // ignore
 }
 
-#endif
+void mock_command_processor::cancel_operation()
+{
+  // ignore
+}
+
+std::string mock_command_processor::prompt() const
+{
+  return ">";
+}
+
+bool mock_command_processor::stopped() const
+{
+  return false;
+}
+
+void mock_command_processor::code_complete(
+  const std::string& s_,
+  std::set<std::string>& out_
+) const
+{
+  code_complete_callback(s_, out_);
+}
 
