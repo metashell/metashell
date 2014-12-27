@@ -139,7 +139,7 @@ line_reader metashell::readline_line_reader(
   return
     [&processor_queue_](const std::string& prompt_)
     {
-      return read_next_line(prompt_, processor_queue_);
+      return read_next_line(prompt_ + " ", processor_queue_);
     };
 }
 

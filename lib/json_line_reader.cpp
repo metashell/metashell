@@ -26,12 +26,40 @@ using namespace metashell;
 
 namespace
 {
-  boost::optional<std::string> json_line_reader(
+  void show_prompt(iface::json_writer& writer_, const std::string& prompt_)
+  {
+    writer_.start_object();
+
+    writer_.key("type");
+    writer_.string("prompt");
+
+    writer_.key("prompt");
+    writer_.string(prompt_);
+
+    writer_.end_object();
+    writer_.end_document();
+  }
+
+  boost::optional<std::string> read_next_line(
     const line_reader& line_reader_,
-    iface::displayer& displayer_
+    iface::json_writer& prompt_displayer_,
+    const std::string& prompt_
   )
   {
-    while (const boost::optional<std::string> s = line_reader_(""))
+    show_prompt(prompt_displayer_, prompt_);
+    return line_reader_("");
+  }
+
+  boost::optional<std::string> json_line_reader(
+    const line_reader& line_reader_,
+    iface::displayer& displayer_,
+    iface::json_writer& prompt_displayer_,
+    const std::string& prompt_
+  )
+  {
+    while (
+      const auto s = read_next_line(line_reader_, prompt_displayer_, prompt_)
+    )
     {
       rapid_object_handler handler(displayer_);
       rapidjson::Reader reader;
@@ -75,13 +103,15 @@ namespace
 
 line_reader metashell::build_json_line_reader(
   const line_reader& line_reader_,
-  iface::displayer& displayer_
+  iface::displayer& displayer_,
+  iface::json_writer& prompt_displayer_
 )
 {
   return
-    [line_reader_, &displayer_](const std::string&)
+    [line_reader_, &displayer_, &prompt_displayer_](const std::string& prompt_)
     {
-      return json_line_reader(line_reader_, displayer_);
+      return
+        json_line_reader(line_reader_, displayer_, prompt_displayer_, prompt_);
     };
 }
 

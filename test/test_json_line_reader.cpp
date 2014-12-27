@@ -16,8 +16,10 @@
 
 #include <metashell/json_line_reader.hpp>
 #include <metashell/null_displayer.hpp>
+#include <metashell/null_json_writer.hpp>
 #include <metashell/in_memory_displayer.hpp>
 
+#include "mock_json_writer.hpp"
 #include "string_reader.hpp"
 
 #include <just/test.hpp>
@@ -26,16 +28,18 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_end_of_input_with_json_line_reader)
 {
+  null_json_writer jw;
   null_displayer d;
-  const line_reader r = build_json_line_reader(string_reader{}, d);
+  const line_reader r = build_json_line_reader(string_reader{}, d, jw);
 
   JUST_ASSERT(boost::none == r(">"));
 }
 
 JUST_TEST_CASE(test_reading_empty_json)
 {
+  null_json_writer jw;
   null_displayer d;
-  const line_reader r = build_json_line_reader(string_reader{""}, d);
+  const line_reader r = build_json_line_reader(string_reader{""}, d, jw);
 
   const boost::optional<std::string> l = r(">");
 
@@ -45,11 +49,13 @@ JUST_TEST_CASE(test_reading_empty_json)
 
 JUST_TEST_CASE(test_getting_line_with_json_line_reader)
 {
+  null_json_writer jw;
   null_displayer d;
   const line_reader r =
     build_json_line_reader(
       string_reader{"{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d
+      d,
+      jw
     );
 
   const boost::optional<std::string> l = r(">");
@@ -60,11 +66,13 @@ JUST_TEST_CASE(test_getting_line_with_json_line_reader)
 
 JUST_TEST_CASE(test_rejected_json_is_skipped)
 {
+  null_json_writer jw;
   null_displayer d;
   const line_reader r =
     build_json_line_reader(
       string_reader{"\"invalid_json\"", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d
+      d,
+      jw
     );
 
   const boost::optional<std::string> l = r(">");
@@ -75,11 +83,13 @@ JUST_TEST_CASE(test_rejected_json_is_skipped)
 
 JUST_TEST_CASE(test_command_without_type)
 {
+  null_json_writer jw;
   in_memory_displayer d;
   const line_reader r =
     build_json_line_reader(
       string_reader{"{}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d
+      d,
+      jw
     );
 
   const boost::optional<std::string> l = r(">");
@@ -94,6 +104,7 @@ JUST_TEST_CASE(test_command_without_type)
 
 JUST_TEST_CASE(test_command_of_unknown_type)
 {
+  null_json_writer jw;
   in_memory_displayer d;
   const line_reader r =
     build_json_line_reader(
@@ -101,7 +112,8 @@ JUST_TEST_CASE(test_command_of_unknown_type)
         "{\"type\":\"some unknown type\"}",
         "{\"type\":\"cmd\",\"cmd\":\"int\"}"
       },
-      d
+      d,
+      jw
     );
 
   const boost::optional<std::string> l = r(">");
@@ -119,11 +131,13 @@ JUST_TEST_CASE(test_command_of_unknown_type)
 
 JUST_TEST_CASE(test_cmd_command_without_cmd_field)
 {
+  null_json_writer jw;
   in_memory_displayer d;
   const line_reader r =
     build_json_line_reader(
       string_reader{"{\"type\":\"cmd\"}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d
+      d,
+      jw
     );
 
   const boost::optional<std::string> l = r(">");
@@ -137,5 +151,26 @@ JUST_TEST_CASE(test_cmd_command_without_cmd_field)
   // skipped
   JUST_ASSERT(boost::none != l);
   JUST_ASSERT_EQUAL("int", *l);
+}
+
+JUST_TEST_CASE(test_json_line_reader_displays_prompt)
+{
+  mock_json_writer jw;
+  null_displayer d;
+
+  const line_reader r = build_json_line_reader(string_reader{}, d, jw);
+
+  r(">");
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      "start_object",
+        "key type", "string prompt",
+        "key prompt", "string >",
+      "end_object",
+      "end_document"
+    },
+    jw.calls()
+  );
 }
 

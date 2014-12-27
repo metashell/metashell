@@ -418,6 +418,6 @@ JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
   shell sh(test_config());
   sh.line_available("const \\", d);
 
-  JUST_ASSERT_EQUAL("...> ", sh.prompt());
+  JUST_ASSERT_EQUAL("...>", sh.prompt());
 }
 

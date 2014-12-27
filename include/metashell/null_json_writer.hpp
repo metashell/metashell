@@ -1,5 +1,5 @@
-#ifndef METASHELL_JSON_LINE_READER_HPP
-#define METASHELL_JSON_LINE_READER_HPP
+#ifndef METASHELL_NULL_JSON_WRITER_HPP
+#define METASHELL_NULL_JSON_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,17 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_reader.hpp>
-#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/json_writer.hpp>
 
 namespace metashell
 {
-  line_reader build_json_line_reader(
-    const line_reader& line_reader_,
-    iface::displayer& displayer_,
-    iface::json_writer& prompt_displayer_
-  );
+  class null_json_writer : public iface::json_writer
+  {
+  public:
+    virtual void string(const std::string& value_) override;
+    virtual void int_(int value_) override;
+
+    virtual void start_object() override;
+    virtual void key(const std::string& key_) override;
+    virtual void end_object() override;
+
+    virtual void start_array() override;
+    virtual void end_array() override;
+
+    virtual void end_document() override;
+  };
 }
 
 #endif

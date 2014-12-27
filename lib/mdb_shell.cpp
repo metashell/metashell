@@ -143,7 +143,7 @@ mdb_shell::mdb_shell(
 }
 
 std::string mdb_shell::prompt() const {
-  return "(mdb) ";
+  return "(mdb)";
 }
 
 bool mdb_shell::stopped() const {

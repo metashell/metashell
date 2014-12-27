@@ -34,7 +34,10 @@ namespace
 {
   boost::optional<std::string> plain_line_reader(const std::string& prompt_)
   {
-    std::cout << prompt_;
+    if (!prompt_.empty())
+    {
+      std::cout << prompt_ << ' ';
+    }
     std::cin >> std::noskipws;
     std::string cmd;
     if (std::getline(std::cin, cmd))
@@ -74,7 +77,8 @@ console_config::console_config(
     _json_writer.reset(new rapid_json_writer(std::cout));
     _displayer.reset(new json_displayer(*_json_writer));
     _history.reset(new null_history);
-    _reader = build_json_line_reader(plain_line_reader, *_displayer);
+    _reader =
+      build_json_line_reader(plain_line_reader, *_displayer, *_json_writer);
     break;
   }
 
