@@ -14,5 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(unit system)
+aux_source_directory(. SOURCES)
+add_executable(metashell_system_test ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+# Boost for the unit tests
+add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost/include\" )
 
