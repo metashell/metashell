@@ -548,6 +548,15 @@ namespace just
 
         error_reporting.output.close();
 
+        //TODO
+        //pipe's buffer is (1 << 16), so we need to read from it multiple
+        //times while the process runs.
+        //This is hackish, since we don't care about stderr
+        std::string standard_output_string;
+        while (!standard_output.input.eof()) {
+          standard_output_string += standard_output.input.read();
+        }
+
         int status;
         waitpid(pid, &status, 0);
 
@@ -555,7 +564,7 @@ namespace just
         if (err.empty())
         {
           return
-            output(standard_output.input.read(), standard_error.input.read());
+            output(standard_output_string, standard_error.input.read());
         }
         else
         {
