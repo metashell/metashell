@@ -19,7 +19,9 @@
 #include "cxindex.hpp"
 
 #include <metashell/command.hpp>
+#include <metashell/clang_binary.hpp>
 
+#include <boost/regex.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <fstream>
@@ -147,6 +149,41 @@ result metashell::eval_tmp_formatted(
       config_.verbose ? final_pair.second : ""
     );
 }
+
+evaluation_result metashell::eval_tmp(
+  const environment& env_,
+  const std::string& tmp_exp_,
+  const config& config_)
+{
+  //lot of hacking and duplication just to make things work. TODO refactor
+
+  auto clang_args = env_.clang_arguments();
+  clang_args.push_back("-"); //Compile from stdin
+
+  const just::process::output output =
+    clang_binary(config_.clang_path).run(
+        clang_args,
+        env_.get_appended(
+          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));
+
+  // TODO assume compilation was successful for now
+  // TODO implement returing of the exit value of a process in just::process
+
+  const std::string& standard_output = output.standard_output();
+  std::string last_line = standard_output.substr(
+      standard_output.find_last_of('\n', standard_output.size() - 2) + 1);
+
+  boost::regex reg(
+      ".*':'struct metashell::impl::wrap<(?:class |struct |union )?(.*)>' "
+      "'void \\(void\\) noexcept'.*");
+  boost::smatch match;
+  if (!boost::regex_match(last_line, match, reg)) {
+    assert(false); // TODO fail nicely?
+  }
+
+  return evaluation_result{match[1], output.standard_error()};
+}
+
 
 result metashell::eval_tmp_unformatted(
   const environment& env_,

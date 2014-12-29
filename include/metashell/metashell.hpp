@@ -43,6 +43,17 @@ namespace metashell
     const std::string& input_filename_
   );
 
+  //TODO clear stuff up here as well
+  struct evaluation_result {
+    std::string comp_stdout;
+    std::string comp_stderr;
+  };
+
+  evaluation_result eval_tmp(
+    const environment& env_,
+    const std::string& tmp_exp_,
+    const config& config_);
+
   result validate_code(
     const std::string& s_,
     const config& config_,
