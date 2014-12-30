@@ -20,7 +20,7 @@
 
 using namespace metashell;
 
-standard::type metashell::parse(const std::string& std_)
+standard::type metashell::parse_standard(const std::string& std_)
 {
   if (std_ == "c++0x" || std_ == "c++11")
   {

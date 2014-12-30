@@ -139,6 +139,7 @@ endif()
 
 include_directories("include")
 include_directories(SYSTEM "boost/include")
+include_directories(SYSTEM "3rd/rapidjson/include")
 
 # Unit testing
 enable_testing()

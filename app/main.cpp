@@ -17,19 +17,11 @@
 #include <metashell/parse_config.hpp>
 #include <metashell/config.hpp>
 #include <metashell/default_environment_detector.hpp>
-#include <metashell/console_displayer.hpp>
-#include <metashell/stdout_console.hpp>
-#include <metashell/readline_line_reader.hpp>
-#include <metashell/line_reader.hpp>
-#include <metashell/readline_history.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/console_config.hpp>
 
 #include <iostream>
 #include <stdexcept>
-
-#ifdef _WIN32
-#  include <windows.h>
-#endif
 
 int main(int argc_, const char* argv_[])
 {
@@ -46,23 +38,23 @@ int main(int argc_, const char* argv_[])
 
     if (r.should_run_shell())
     {
-      metashell::stdout_console c;
-      metashell::console_displayer
-        displayer(c, cfg.indent, cfg.syntax_highlight);
-      metashell::readline_history history;
-      metashell::command_processor_queue processor_queue(history);
+      metashell::console_config
+        ccfg(cfg.con_type, cfg.indent, cfg.syntax_highlight);
 
       std::unique_ptr<metashell::shell>
-        shell(new metashell::shell(cfg, processor_queue));
+        shell(new metashell::shell(cfg, ccfg.processor_queue()));
 
-      shell->display_splash(displayer);
+      if (cfg.splash_enabled)
+      {
+        shell->display_splash(ccfg.displayer());
+      }
 
-      processor_queue.push(move(shell));
+      ccfg.processor_queue().push(move(shell));
 
       metashell::input_loop(
-        processor_queue,
-        displayer,
-        metashell::readline_line_reader(processor_queue)
+        ccfg.processor_queue(),
+        ccfg.displayer(),
+        ccfg.reader()
       );
     }
     return r.should_error_at_exit() ? 1 : 0;

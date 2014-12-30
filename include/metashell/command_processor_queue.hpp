@@ -27,8 +27,6 @@ namespace metashell
   class command_processor_queue
   {
   public:
-    explicit command_processor_queue(iface::history& history_);
-
     bool empty() const;
     void push(std::unique_ptr<iface::command_processor> item_);
     void pop(iface::displayer& displayer_);
@@ -42,8 +40,10 @@ namespace metashell
     ) const;
 
     std::string prompt() const;
+
+    void history(iface::history& history_);
   private:
-    iface::history& _history;
+    iface::history* _history; // not owning
     std::vector<std::unique_ptr<iface::command_processor>> _items;
   };
 }

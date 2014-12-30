@@ -298,7 +298,7 @@ void shell::line_available(
 
 std::string shell::prompt() const
 {
-  return _line_prefix.empty() ? "> " : "...> ";
+  return _line_prefix.empty() ? ">" : "...>";
 }
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)

@@ -116,6 +116,6 @@ JUST_TEST_CASE(test_mdb_shell_skips_empty_lines) {
 JUST_TEST_CASE(test_mdb_shell_prompt) {
   mdb_test_shell sh;
 
-  JUST_ASSERT_EQUAL(sh.prompt(), "(mdb) ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "(mdb)");
 }
 

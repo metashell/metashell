@@ -30,7 +30,7 @@ namespace metashell
     };
   }
 
-  standard::type parse(const std::string& std_);
+  standard::type parse_standard(const std::string& std_);
   std::string clang_argument(standard::type std_);
 }
 

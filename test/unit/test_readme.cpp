@@ -45,40 +45,40 @@ JUST_TEST_CASE(test_readme_getting_started) {
   in_memory_displayer d;
   shell sh(test_config());
 
-  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), ">");
   sh.line_available("template <int N> \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("struct fib \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("{ \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available(
     "  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \\",
     d
   );
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("};", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), ">");
   sh.line_available("template <> \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("struct fib<0> \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("{ \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("  static constexpr int value = 1; \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("};", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), ">");
   sh.line_available("template <> \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("struct fib<1> \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("{ \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("  static constexpr int value = 1; \\", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "...> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), "...>");
   sh.line_available("};", d);
-  JUST_ASSERT_EQUAL(sh.prompt(), "> ");
+  JUST_ASSERT_EQUAL(sh.prompt(), ">");
 
   JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());

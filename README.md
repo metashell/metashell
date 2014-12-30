@@ -1125,7 +1125,14 @@ build your `fun.cpp` file.
 
 ### Not in any release yet
 
-* New section about `step over` in Getting started.
+* New features
+    * Support different shell modes (plain, readline)
+    * New MDB command: `step out`
+    * New command-line arguments:
+        * `--nosplash` for disabling the splash at (sub)shell startup
+
+* Documentation updates
+    * New section about `step over` in Getting started.
 
 ### Version 2.0.0
 
@@ -1243,7 +1250,7 @@ Evaluating a metaprogram using the `-full` qualifier will expand all
   the debugged metaprogram with unrelated code. If you need formatting, you can
   explicitly enter `metashell::format< <type> >::type` for the same effect.
 
-* __`step [over] [n]`__ <br />
+* __`step [over|out] [n]`__ <br />
 Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
   Negative n means step the program backwards.
@@ -1253,6 +1260,9 @@ Argument n means step n times. n defaults to 1 if not specified.
   In particular when there are no more instantiations that got instantiated
   by the current parent, then `step over` will behave like a normal `step`,
   and will step out of one or more instantiation frames.
+  
+  Use of the `out` qualifier will jump out of the current instantiation frame.
+  Similarly to `step out`, `step out -1` is not always the inverse of `step out`.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.

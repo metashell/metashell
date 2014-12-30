@@ -536,6 +536,158 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_from_root) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+
+  d.clear();
+  sh.line_available("step out", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_after_one_step) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step", d);
+
+  d.clear();
+  sh.line_available("step out", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_after_two_steps) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 2", d);
+
+  d.clear();
+  sh.line_available("step out", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    d.frames()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 3", d);
+
+  d.clear();
+  sh.line_available("step out", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<4>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 5", d);
+
+  d.clear();
+  sh.line_available("step out 2", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    d.frames()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_three_after_five_steps) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 5", d);
+
+  d.clear();
+  sh.line_available("step out 3", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_fib_four_after_five_steps) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 5", d);
+
+  d.clear();
+  sh.line_available("step out 4", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_minus_1_at_root_of_fib) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+
+  d.clear();
+  sh.line_available("step out -1", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {"Metaprogram reached the beginning"},
+    d.raw_texts()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_out_minus_1_after_step_4_in_fib) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("step 4", d);
+
+  d.clear();
+  sh.line_available("step out -1", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {frame(type("fib<3>"), instantiation_kind::template_instantiation)},
+    d.frames()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
   in_memory_displayer d;
   mdb_test_shell sh(template_specialization_mp);

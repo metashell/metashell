@@ -168,3 +168,63 @@ JUST_TEST_CASE(test_enabling_saving)
   JUST_ASSERT(r.cfg.saving_enabled);
 }
 
+JUST_TEST_CASE(test_default_console_type_is_readline)
+{
+  const char* args[] = {"metashell"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT_EQUAL(metashell::console_type::readline, r.cfg.con_type);
+}
+
+JUST_TEST_CASE(test_setting_console_type_to_plain)
+{
+  const char* args[] = {"metashell", "--console", "plain"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT_EQUAL(metashell::console_type::plain, r.cfg.con_type);
+}
+
+JUST_TEST_CASE(test_setting_console_type_to_readline)
+{
+  const char* args[] = {"metashell", "--console", "readline"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT_EQUAL(metashell::console_type::readline, r.cfg.con_type);
+}
+
+JUST_TEST_CASE(test_setting_console_type_to_json)
+{
+  const char* args[] = {"metashell", "--console", "json"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT_EQUAL(metashell::console_type::json, r.cfg.con_type);
+}
+
+JUST_TEST_CASE(test_splash_is_enabled_by_default)
+{
+  const char* args[] = {"metashell"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(r.cfg.splash_enabled);
+}
+
+JUST_TEST_CASE(test_disabling_splash)
+{
+  const char* args[] = {"metashell", "--nosplash"};
+
+  std::ostringstream err;
+  const metashell::parse_config_result r = parse_config(args, nullptr, &err);
+
+  JUST_ASSERT(!r.cfg.splash_enabled);
+}
+

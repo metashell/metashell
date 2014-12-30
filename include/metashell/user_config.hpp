@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
+#include <metashell/console_type.hpp>
 
 #include <string>
 #include <vector>
@@ -38,6 +39,8 @@ namespace metashell
     std::string clang_path;
     int max_template_depth = 256;
     bool saving_enabled = false;
+    console_type con_type = console_type::plain;
+    bool splash_enabled = true;
   };
 }
 
