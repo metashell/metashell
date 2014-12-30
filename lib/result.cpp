@@ -20,6 +20,12 @@ using namespace metashell;
 
 result::result() {}
 
+result::result(
+  const std::string& output_,
+  const std::string& error_,
+  const std::string& info_) :
+    output(output_), errors(error_.empty() ? 0 : 1, error_), info(info_) {}
+
 bool result::has_errors() const
 {
   return !errors.empty();

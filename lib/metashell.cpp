@@ -150,7 +150,7 @@ result metashell::eval_tmp_formatted(
     );
 }
 
-evaluation_result metashell::eval_tmp(
+result metashell::eval_tmp(
   const environment& env_,
   const std::string& tmp_exp_,
   const config& config_)
@@ -181,7 +181,7 @@ evaluation_result metashell::eval_tmp(
     assert(false); // TODO fail nicely?
   }
 
-  return evaluation_result{match[1], output.standard_error()};
+  return result{match[1], output.standard_error(), ""};
 }
 
 
