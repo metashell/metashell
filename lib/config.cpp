@@ -17,6 +17,8 @@
 #include <metashell/config.hpp>
 #include <metashell/user_config.hpp>
 #include <metashell/default_environment_detector.hpp>
+#include <metashell/null_displayer.hpp>
+#include <metashell/fstream_file_writer.hpp>
 
 #include <metashell/metashell.hpp>
 
@@ -38,6 +40,25 @@ namespace
       #include "default_clang_search_path.hpp"
     };
 
+  std::string default_clang_search_path_to_string()
+  {
+    std::ostringstream s;
+    bool first = true;
+    for (auto p : default_clang_search_path)
+    {
+      if (first)
+      {
+        first = false;
+      }
+      else
+      {
+        s << ", ";
+      }
+      s << p;
+    }
+    return s.str();
+  }
+
   std::string directory_of_file(const std::string& path_)
   {
     boost::filesystem::path p(path_);
@@ -57,24 +78,45 @@ namespace
   std::string detect_clang_binary(
     const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
-    std::ostream& stderr_
+    std::ostream& stderr_,
+    logger& logger_
   )
   {
+    METASHELL_LOG(logger_, "Searching Clang binary");
     if (user_defined_path_.empty())
     {
+      METASHELL_LOG(logger_, "No user override for Clang binary path.");
+
       const std::string clang_metashell =
         clang_shipped_with_metashell(env_detector_);
 
+      METASHELL_LOG(
+        logger_,
+        "Path of Clang shipped with Metashell: " + clang_metashell
+      );
+
       if (env_detector_.file_exists(clang_metashell))
       {
+        METASHELL_LOG(
+          logger_,
+          "Clang shipped with Metashell is there. Choosing that."
+        );
         return clang_metashell;
       }
       else
       {
+        METASHELL_LOG(
+          logger_,
+          "Clang binary shipped with Metashell is missing. Searching for"
+          " another Clang binary at the following locations: "
+          + default_clang_search_path_to_string()
+        );
         const std::string clang = env_detector_.search_clang_binary();
 
         if (clang.empty())
         {
+          METASHELL_LOG(logger_, "No Clang binary found.");
+
           stderr_
             << "Error: clang++ not found. Checked:" << std::endl
             << clang_metashell << std::endl;
@@ -85,21 +127,38 @@ namespace
             std::ostream_iterator<std::string>(stderr_, "\n")
           );
         }
+        else
+        {
+          METASHELL_LOG(logger_, "Clang binary found: " + clang);
+        }
 
         return clang;
       }
     }
-    else if (env_detector_.file_exists(user_defined_path_))
-    {
-      return user_defined_path_;
-    }
     else
     {
-      stderr_
-        << "Error: clang++ not found. Checked:" << std::endl
-        << user_defined_path_ << std::endl;
+      METASHELL_LOG(
+        logger_,
+        "User override for Clang binary: " + user_defined_path_
+      );
 
-      return std::string();
+      if (env_detector_.file_exists(user_defined_path_))
+      {
+        METASHELL_LOG(
+          logger_,
+          "User defined Clang binary exists. Choosing that."
+        );
+        return user_defined_path_;
+      }
+      else
+      {
+        METASHELL_LOG(logger_, "User defined Clang binary not found.");
+        stderr_
+          << "Error: clang++ not found. Checked:" << std::endl
+          << user_defined_path_ << std::endl;
+
+        return std::string();
+      }
     }
   }
 
@@ -213,9 +272,12 @@ config::config() :
 config metashell::detect_config(
   const user_config& ucfg_,
   iface::environment_detector& env_detector_,
-  std::ostream& stderr_
+  std::ostream& stderr_,
+  logger& logger_
 )
 {
+  METASHELL_LOG(logger_, "Detecting config");
+
   config cfg;
 
   cfg.verbose = ucfg_.verbose;
@@ -226,7 +288,7 @@ config metashell::detect_config(
     determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
 
   cfg.clang_path =
-    detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_);
+    detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_, logger_);
 
   cfg.include_path =
     determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
@@ -265,13 +327,18 @@ config metashell::detect_config(
 
   cfg.splash_enabled = ucfg_.splash_enabled;
 
+  METASHELL_LOG(logger_, "Config detection completed");
+
   return cfg;
 }
 
 config metashell::empty_config(const std::string& argv0_)
 {
+  null_displayer d;
+  fstream_file_writer w;
+  logger no_logging(d, w);
   default_environment_detector ed(argv0_);
   std::ostringstream s;
-  return detect_config(user_config(), ed, s);
+  return detect_config(user_config(), ed, s, no_logging);
 }
 

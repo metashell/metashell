@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
+#include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
 #include <string>
@@ -50,7 +51,8 @@ namespace metashell
   config detect_config(
     const user_config& ucfg_,
     iface::environment_detector& env_detector_,
-    std::ostream& stderr_
+    std::ostream& stderr_,
+    logger& logger_
   );
 
   config empty_config(const std::string& argv0_);
