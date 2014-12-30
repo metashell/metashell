@@ -29,7 +29,9 @@ namespace metashell
   public:
     explicit clang_binary(const std::string& path_);
 
-    just::process::output run(const std::vector<std::string>& args_) const;
+    just::process::output run(
+        const std::vector<std::string>& args_,
+        const std::string& stdin = "") const;
   private:
     std::string _path;
   };

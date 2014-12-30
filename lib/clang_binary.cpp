@@ -48,7 +48,8 @@ clang_binary::clang_binary(const std::string& path_) :
 {}
 
 just::process::output clang_binary::run(
-  const std::vector<std::string>& args_
+  const std::vector<std::string>& args_,
+  const std::string& stdin
 ) const
 {
   std::vector<std::string> cmd(args_.size() + 1);
@@ -58,7 +59,7 @@ just::process::output clang_binary::run(
   ++i;
   std::transform(args_.begin(), args_.end(), i, quote_argument);
 
-  return just::process::run(cmd, "");
+  return just::process::run(cmd, stdin);
 }
 
 std::vector<std::string> metashell::default_sysinclude(
