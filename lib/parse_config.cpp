@@ -223,6 +223,10 @@ parse_config_result metashell::parse_config(
       "Console type. Possible values: plain, readline, json"
     )
     ("nosplash", "Disable the splash messages")
+    (
+      "log", value(&ucfg.log_file),
+      "Log into a file. When it is set to -, it logs into the console."
+    )
     ;
 
   try
@@ -240,6 +244,15 @@ parse_config_result metashell::parse_config(
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");
     ucfg.splash_enabled = vm.count("nosplash") == 0;
+    if (vm.count("log") == 0)
+    {
+      ucfg.log_mode = logging_mode::none;
+    }
+    else
+    {
+      ucfg.log_mode =
+        (ucfg.log_file == "-") ? logging_mode::console : logging_mode::file;
+    }
 
     if (!fvalue.empty())
     {

@@ -203,13 +203,10 @@ namespace
 config::config() :
   include_path(),
   verbose(false),
-  syntax_highlight(true),
-  indent(true),
   standard_to_use(standard::cpp11),
   warnings_enabled(true),
   use_precompiled_headers(false),
   clang_path(),
-  con_type(console_type::plain),
   splash_enabled(true)
 {}
 
@@ -222,8 +219,6 @@ config metashell::detect_config(
   config cfg;
 
   cfg.verbose = ucfg_.verbose;
-  cfg.syntax_highlight = ucfg_.syntax_highlight;
-  cfg.indent = ucfg_.indent;
   cfg.standard_to_use = ucfg_.standard_to_use;
   cfg.macros = ucfg_.macros;
   cfg.warnings_enabled = ucfg_.warnings_enabled;
@@ -268,7 +263,6 @@ config metashell::detect_config(
       stderr_
     );
 
-  cfg.con_type = ucfg_.con_type;
   cfg.splash_enabled = ucfg_.splash_enabled;
 
   return cfg;

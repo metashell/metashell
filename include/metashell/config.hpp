@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/standard.hpp>
-#include <metashell/console_type.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
 #include <string>
@@ -34,8 +33,6 @@ namespace metashell
   public:
     std::vector<std::string> include_path;
     bool verbose;
-    bool syntax_highlight;
-    bool indent;
     standard::type standard_to_use;
     std::vector<std::string> macros;
     bool warnings_enabled;
@@ -45,7 +42,6 @@ namespace metashell
     int max_template_depth;
     unsigned templight_trace_capacity;
     bool saving_enabled;
-    console_type con_type;
     bool splash_enabled;
 
     config();

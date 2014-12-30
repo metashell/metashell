@@ -79,16 +79,6 @@ JUST_TEST_CASE(test_verbosity_is_kept)
   check_flag_is_kept(&user_config::verbose, &config::verbose);
 }
 
-JUST_TEST_CASE(test_syntax_highlighting_is_kept)
-{
-  check_flag_is_kept(&user_config::syntax_highlight, &config::syntax_highlight);
-}
-
-JUST_TEST_CASE(test_indent_is_kept)
-{
-  check_flag_is_kept(&user_config::indent, &config::indent);
-}
-
 JUST_TEST_CASE(test_warnings_enabled_is_kept)
 {
   check_flag_is_kept(&user_config::warnings_enabled, &config::warnings_enabled);
@@ -726,20 +716,7 @@ JUST_TEST_CASE(
 
 JUST_TEST_CASE(test_default_constructed_config_has_plain_console_type)
 {
-  JUST_ASSERT_EQUAL(console_type::plain, config().con_type);
   JUST_ASSERT_EQUAL(console_type::plain, user_config().con_type);
-}
-
-JUST_TEST_CASE(test_console_type_is_copied_from_user_config)
-{
-  user_config ucfg;
-  ucfg.con_type = console_type::readline;
-
-  mock_environment_detector envd;
-  std::ostringstream err;
-  const config cfg = detect_config(ucfg, envd, err);
-  
-  JUST_ASSERT_EQUAL(console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)

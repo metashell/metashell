@@ -19,6 +19,7 @@
 
 #include <metashell/standard.hpp>
 #include <metashell/console_type.hpp>
+#include <metashell/logging_mode.hpp>
 
 #include <string>
 #include <vector>
@@ -44,6 +45,8 @@ namespace metashell
     bool saving_enabled = false;
     console_type con_type = console_type::plain;
     bool splash_enabled = true;
+    logging_mode log_mode = logging_mode::none;
+    std::string log_file;
   };
 }
 
