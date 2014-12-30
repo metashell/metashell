@@ -709,7 +709,7 @@ bool mdb_shell::run_metaprogram_with_templight(
   }
 
   mp = metaprogram::create_from_xml_file(
-      output_path, full_mode, str, *evaluation_result);
+      output_path + ".trace.pbf", full_mode, str, *evaluation_result);
   return true;
 }
 
@@ -717,7 +717,7 @@ boost::optional<type> mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
-  result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
+  result res = eval_tmp(env, str, conf);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
