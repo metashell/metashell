@@ -41,6 +41,7 @@ target_link_libraries(metashell_unit_test
   boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
+  protobuf
 )
 
 # Program_options
