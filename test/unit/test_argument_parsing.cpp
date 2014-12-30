@@ -47,15 +47,6 @@ namespace
   {
     return first_line_of(s_.str());
   }
-
-  user_config config_without_arguments()
-  {
-    std::ostringstream err;
-    const auto r = parse_config({}, nullptr, &err);
-    
-    JUST_ASSERT_EQUAL("", err.str());
-    return r.cfg;
-  }
 }
 
 JUST_TEST_CASE(test_recognising_extra_clang_arg)
