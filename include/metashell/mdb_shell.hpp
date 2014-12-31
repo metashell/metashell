@@ -27,6 +27,7 @@
 #include <metashell/colored_string.hpp>
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/logger.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/displayer.hpp>

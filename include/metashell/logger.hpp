@@ -48,11 +48,12 @@ namespace metashell
 #ifdef METASHELL_LOG
 #  error METASHELL_LOG already defined
 #endif
-#define METASHELL_LOG(logger, msg) \
+#define METASHELL_LOG(logger_ptr, msg) \
   { \
-    if ((logger).logging()) \
+    ::metashell::logger* l = (logger_ptr); \
+    if (l != nullptr && l->logging()) \
     { \
-      (logger).log(msg); \
+      l->log(msg); \
     } \
   }
 

@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/logger.hpp>
+
 #include <just/process.hpp>
 
 #include <string>
@@ -27,14 +29,18 @@ namespace metashell
   class clang_binary
   {
   public:
-    explicit clang_binary(const std::string& path_);
+    clang_binary(const std::string& path_, logger* logger_);
 
     just::process::output run(const std::vector<std::string>& args_) const;
   private:
     std::string _path;
+    logger* _logger;
   };
 
-  std::vector<std::string> default_sysinclude(const clang_binary& clang_);
+  std::vector<std::string> default_sysinclude(
+    const clang_binary& clang_,
+    logger* logger_
+  );
 }
 
 #endif

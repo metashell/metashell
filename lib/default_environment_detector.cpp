@@ -113,9 +113,11 @@ namespace
 }
 
 default_environment_detector::default_environment_detector(
-  const std::string& argv0_
+  const std::string& argv0_,
+  logger* logger_
 ) :
-  _argv0(argv0_)
+  _argv0(argv0_),
+  _logger(logger_)
 {}
 
 std::string default_environment_detector::search_clang_binary()
@@ -155,7 +157,7 @@ std::vector<std::string> default_environment_detector::default_clang_sysinclude(
   const std::string& clang_path_
 )
 {
-  return default_sysinclude(clang_binary(clang_path_));
+  return default_sysinclude(clang_binary(clang_path_, _logger), _logger);
 }
 
 std::string default_environment_detector::path_of_executable()
@@ -234,7 +236,7 @@ bool default_environment_detector::clang_binary_works_with_libclang(
 
   try
   {
-    header_file_environment env(cfg);
+    header_file_environment env(cfg, _logger);
     env.append("struct foo {};");
 
     cxindex index;

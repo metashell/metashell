@@ -27,20 +27,20 @@ namespace metashell
   class header_file_environment : public environment
   {
   public:
-    explicit header_file_environment(const config& config_);
+    header_file_environment(const config& config_, logger* logger_);
 
-    virtual void append(const std::string& s_);
-    virtual std::string get() const;
-    virtual std::string get_appended(const std::string& s_) const;
+    virtual void append(const std::string& s_) override;
+    virtual std::string get() const override;
+    virtual std::string get_appended(const std::string& s_) const override;
 
-    virtual std::string internal_dir() const;
+    virtual std::string internal_dir() const override;
 
-    virtual std::vector<std::string>& clang_arguments();
-    virtual const std::vector<std::string>& clang_arguments() const;
+    virtual std::vector<std::string>& clang_arguments() override;
+    virtual const std::vector<std::string>& clang_arguments() const override;
 
-    virtual const headers& get_headers() const;
+    virtual const headers& get_headers() const override;
 
-    virtual std::string get_all() const;
+    virtual std::string get_all() const override;
   private:
     just::temp::directory _dir;
     in_memory_environment _buffer;

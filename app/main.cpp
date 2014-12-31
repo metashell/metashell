@@ -53,14 +53,14 @@ int main(int argc_, const char* argv_[])
       break;
     }
 
-    METASHELL_LOG(logger, "Start logging");
+    METASHELL_LOG(&logger, "Start logging");
 
-    metashell::default_environment_detector det(argv_[0]);
-    const metashell::config cfg = detect_config(r.cfg, det, std::cerr, logger);
+    metashell::default_environment_detector det(argv_[0], &logger);
+    const metashell::config cfg = detect_config(r.cfg, det, std::cerr, &logger);
 
     if (r.should_run_shell())
     {
-      METASHELL_LOG(logger, "Running shell");
+      METASHELL_LOG(&logger, "Running shell");
 
       std::unique_ptr<metashell::shell>
         shell(new metashell::shell(cfg, ccfg.processor_queue()));
@@ -72,7 +72,7 @@ int main(int argc_, const char* argv_[])
 
       ccfg.processor_queue().push(move(shell));
 
-      METASHELL_LOG(logger, "Starting input loop");
+      METASHELL_LOG(&logger, "Starting input loop");
       
       metashell::input_loop(
         ccfg.processor_queue(),
@@ -80,11 +80,11 @@ int main(int argc_, const char* argv_[])
         ccfg.reader()
       );
 
-      METASHELL_LOG(logger, "Input loop finished");
+      METASHELL_LOG(&logger, "Input loop finished");
     }
     else
     {
-      METASHELL_LOG(logger, "Not running shell");
+      METASHELL_LOG(&logger, "Not running shell");
     }
     return r.should_error_at_exit() ? 1 : 0;
   }

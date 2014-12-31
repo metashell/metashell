@@ -30,18 +30,13 @@ using namespace metashell;
 
 namespace
 {
-  using metashell::detect_config;
-
   metashell::config detect_config(
     const metashell::user_config& ucfg_,
     metashell::iface::environment_detector& env_detector_
   )
   {
     std::ostringstream s;
-    null_displayer d;
-    fstream_file_writer w;
-    logger l(d, w);
-    return detect_config(ucfg_, env_detector_, s, l);
+    return metashell::detect_config(ucfg_, env_detector_, s, nullptr);
   }
 
   template <class T, class Ts>
@@ -191,10 +186,7 @@ JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
   ucfg.clang_path = "/foo/clang";
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(ucfg, envd, err, l);
+  metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(!err.str().empty());
 }
@@ -207,10 +199,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(!err.str().empty());
 }
@@ -223,10 +212,7 @@ JUST_TEST_CASE(
   envd.search_clang_binary_returns("/foo/bar/clang");
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL("", err.str());
 }
@@ -240,10 +226,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_disabled_when_no_clang_is_found)
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(!cfg.use_precompiled_headers);
   JUST_ASSERT(
@@ -260,10 +243,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(cfg.use_precompiled_headers);
 }
@@ -276,10 +256,7 @@ JUST_TEST_CASE(test_directory_of_binary_is_added_to_path_on_windows)
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1, envd.append_to_path_called_times());
   JUST_ASSERT_EQUAL("/foo/bar", envd.append_to_path_last_arg());
@@ -300,10 +277,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("/user/1");
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
@@ -320,10 +294,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
 }
@@ -338,10 +309,8 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(contains("c:/program files\\windows_headers", cfg.include_path));
   JUST_ASSERT(
@@ -361,10 +330,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("c:\\foo\\bar");
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(!cfg.include_path.empty());
   JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
@@ -381,10 +347,8 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
@@ -408,10 +372,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("/user/1");
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
@@ -430,10 +391,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1, envd.append_to_path_called_times());
   JUST_ASSERT_EQUAL("c:/program files\\clang", envd.append_to_path_last_arg());
@@ -452,10 +410,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("/user/1");
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\clang\\include", cfg.include_path[2]);
@@ -473,10 +428,7 @@ JUST_TEST_CASE(
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(ucfg, envd, err, l);
+  metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(0, envd.clang_binary_works_with_libclang_called_times());
 }
@@ -492,10 +444,7 @@ JUST_TEST_CASE(
   ucfg.use_precompiled_headers = false;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(ucfg, envd, err, l);
+  metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(0, envd.clang_binary_works_with_libclang_called_times());
 }
@@ -519,10 +468,7 @@ JUST_TEST_CASE(test_when_clang_binary_is_set_it_is_tested_against_libclang)
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(ucfg, envd, err, l);
+  metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1, envd.clang_binary_works_with_libclang_called_times());
   JUST_ASSERT_EQUAL("/foo/bar/clang", clang_binary_works_with_libclang_arg);
@@ -549,10 +495,7 @@ JUST_TEST_CASE(
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(ucfg, envd, err, l);
+  metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1, append_to_path_called_times);
 }
@@ -572,10 +515,7 @@ JUST_TEST_CASE(
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(cfg.use_precompiled_headers);
 }
@@ -595,10 +535,7 @@ JUST_TEST_CASE(
   ucfg.use_precompiled_headers = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(!cfg.use_precompiled_headers);
 }
@@ -614,10 +551,8 @@ JUST_TEST_CASE(
   envd.on_windows_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL("/usr/local/bin/clang_metashell", cfg.clang_path);
 }
@@ -633,10 +568,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(
     err.str().find("/usr/local/bin/clang_metashell") != std::string::npos
@@ -654,10 +586,8 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL("c:/foo/bar\\clang\\clang.exe", cfg.clang_path);
 }
@@ -673,10 +603,8 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1, envd.append_to_path_called_times());
   JUST_ASSERT_EQUAL("c:/foo/bar\\clang", envd.append_to_path_last_arg());
@@ -692,10 +620,8 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(contains("c:/foo/bar\\clang\\include", cfg.include_path));
 }
@@ -710,10 +636,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  detect_config(user_config(), envd, err, l);
+  metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
 }
@@ -724,10 +647,8 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
   envd.on_windows_returns(true);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
   JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
@@ -741,10 +662,8 @@ JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(1u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("/usr/bin/../include/metashell/clang", cfg.include_path[0]);
@@ -758,10 +677,7 @@ JUST_TEST_CASE(test_detect_max_template_depth)
   ucfg.max_template_depth = 13;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
 }
@@ -771,10 +687,8 @@ JUST_TEST_CASE(test_saving_is_disabled_by_default)
   mock_environment_detector envd;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(!cfg.saving_enabled);
 }
@@ -787,10 +701,7 @@ JUST_TEST_CASE(test_saving_is_enabled_when_enabled_by_user_config)
   ucfg.saving_enabled = true;
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
 
   JUST_ASSERT(cfg.saving_enabled);
 }
@@ -805,10 +716,8 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(user_config(), envd, err, l);
+  const config
+    cfg = metashell::detect_config(user_config(), envd, err, nullptr);
 
   JUST_ASSERT(
     contains("/foo/bar/bin/../include/metashell/libcxx", cfg.include_path)
@@ -827,10 +736,7 @@ JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)
 
   mock_environment_detector envd;
   std::ostringstream err;
-  null_displayer d;
-  fstream_file_writer w;
-  logger l(d, w);
-  const config cfg = detect_config(ucfg, envd, err, l);
+  const config cfg = metashell::detect_config(ucfg, envd, err, nullptr);
   
   JUST_ASSERT(!cfg.splash_enabled);
 }

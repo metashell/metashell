@@ -52,7 +52,7 @@ namespace metashell
     const user_config& ucfg_,
     iface::environment_detector& env_detector_,
     std::ostream& stderr_,
-    logger& logger_
+    logger* logger_
   );
 
   config empty_config(const std::string& argv0_);

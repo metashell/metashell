@@ -137,7 +137,8 @@ namespace
 shell::shell(const config& config_) :
   _env(),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(nullptr)
 {
   rebuild_environment();
   init(nullptr);
@@ -146,7 +147,8 @@ shell::shell(const config& config_) :
 shell::shell(const config& config_, command_processor_queue& cpq_) :
   _env(),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(nullptr)
 {
   rebuild_environment();
   init(&cpq_);
@@ -159,7 +161,8 @@ shell::shell(
 ) :
   _env(std::move(env_)),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(nullptr)
 {
   init(&cpq_);
 }
@@ -397,7 +400,7 @@ const environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(_config));
+  _env.reset(new header_file_environment(_config, _logger));
   if (!content_.empty())
   {
     _env->append(content_);
@@ -464,5 +467,10 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   null_history h;
   line_available(s_, displayer_, h);
+}
+
+void shell::set_logger(logger& logger_)
+{
+  _logger = &logger_;
 }
 

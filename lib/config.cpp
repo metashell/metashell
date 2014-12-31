@@ -23,6 +23,7 @@
 #include <metashell/metashell.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <fstream>
 #include <algorithm>
@@ -79,7 +80,7 @@ namespace
     const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
     std::ostream& stderr_,
-    logger& logger_
+    logger* logger_
   )
   {
     METASHELL_LOG(logger_, "Searching Clang binary");
@@ -185,16 +186,30 @@ namespace
 
   std::vector<std::string> clang_sysinclude(
     const std::string& clang_binary_path_,
-    iface::environment_detector& env_detector_
+    iface::environment_detector& env_detector_,
+    logger* logger_
   )
   {
-    return
-      (
-        clang_binary_path_.empty() ||
-        clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
-      ) ?
-        env_detector_.extra_sysinclude() :
-        env_detector_.default_clang_sysinclude(clang_binary_path_);
+    METASHELL_LOG(logger_, "Determining Clang's sysinclude");
+
+    if (clang_binary_path_.empty())
+    {
+      METASHELL_LOG(logger_, "No Clang binary is specified.");
+      return env_detector_.extra_sysinclude();
+    }
+    else if (clang_binary_path_ == clang_shipped_with_metashell(env_detector_))
+    {
+      METASHELL_LOG(logger_, "Using the Clang binary shipped with Metashell.");
+      return env_detector_.extra_sysinclude();
+    }
+    else
+    {
+      METASHELL_LOG(
+        logger_,
+        "Getting the sysinclude of the Clang binary being used."
+      );
+      return env_detector_.default_clang_sysinclude(clang_binary_path_);
+    }
   }
 
   std::vector<std::string> determine_extra_clang_args(
@@ -213,11 +228,17 @@ namespace
   std::vector<std::string> determine_include_path(
     const std::string& clang_binary_path_,
     const std::vector<std::string>& user_include_path_,
-    iface::environment_detector& env_detector_
+    iface::environment_detector& env_detector_,
+    logger* logger_
   )
   {
+    METASHELL_LOG(
+      logger_,
+      "Determining include path of Clang: " + clang_binary_path_
+    );
+
     std::vector<std::string> result =
-      clang_sysinclude(clang_binary_path_, env_detector_);
+      clang_sysinclude(clang_binary_path_, env_detector_, logger_);
 
     const std::string dir_of_executable =
       directory_of_file(env_detector_.path_of_executable());
@@ -255,6 +276,11 @@ namespace
       user_include_path_.end()
     );
 
+    METASHELL_LOG(
+      logger_,
+      "Include path determined: " + boost::algorithm::join(result, ";")
+    );
+
     return result;
   }
 }
@@ -273,7 +299,7 @@ config metashell::detect_config(
   const user_config& ucfg_,
   iface::environment_detector& env_detector_,
   std::ostream& stderr_,
-  logger& logger_
+  logger* logger_
 )
 {
   METASHELL_LOG(logger_, "Detecting config");
@@ -291,7 +317,12 @@ config metashell::detect_config(
     detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_, logger_);
 
   cfg.include_path =
-    determine_include_path(cfg.clang_path, ucfg_.include_path, env_detector_);
+    determine_include_path(
+      cfg.clang_path,
+      ucfg_.include_path,
+      env_detector_,
+      logger_
+    );
 
   cfg.max_template_depth = ucfg_.max_template_depth;
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
@@ -334,11 +365,8 @@ config metashell::detect_config(
 
 config metashell::empty_config(const std::string& argv0_)
 {
-  null_displayer d;
-  fstream_file_writer w;
-  logger no_logging(d, w);
-  default_environment_detector ed(argv0_);
+  default_environment_detector ed(argv0_, nullptr);
   std::ostringstream s;
-  return detect_config(user_config(), ed, s, no_logging);
+  return detect_config(user_config(), ed, s, nullptr);
 }
 

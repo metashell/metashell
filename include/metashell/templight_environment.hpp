@@ -15,14 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/logger.hpp>
 #include <metashell/header_file_environment.hpp>
 
 namespace metashell {
 
 class templight_environment : public header_file_environment {
 public:
-  templight_environment(
-    const config& config
+  explicit templight_environment(
+    const config& config,
+    logger* logger_ = nullptr
   );
 
   // This should be called before the first evaluation
