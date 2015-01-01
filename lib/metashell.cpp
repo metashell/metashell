@@ -172,7 +172,8 @@ result metashell::eval_tmp_formatted(
 result metashell::eval_tmp(
   const environment& env_,
   const std::string& tmp_exp_,
-  const config& config_)
+  const config& config_,
+  logger* logger_)
 {
   //lot of hacking and duplication just to make things work. TODO refactor
 
@@ -180,7 +181,7 @@ result metashell::eval_tmp(
   clang_args.push_back("-"); //Compile from stdin
 
   const just::process::output output =
-    clang_binary(config_.clang_path).run(
+    clang_binary(config_.clang_path, logger_).run(
         clang_args,
         env_.get_appended(
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));

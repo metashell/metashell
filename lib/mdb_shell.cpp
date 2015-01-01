@@ -738,8 +738,7 @@ boost::optional<type> mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
-  // TODO add logger
-  result res = eval_tmp(env, str, conf);
+  result res = eval_tmp(env, str, conf, _logger);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
