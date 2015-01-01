@@ -22,6 +22,7 @@
 #include <metashell/clang_binary.hpp>
 
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <fstream>
@@ -201,7 +202,8 @@ result metashell::eval_tmp(
     assert(false); // TODO fail nicely?
   }
 
-  return result{match[1], output.standard_error(), ""};
+  return result{boost::trim_copy(std::string(match[1])),
+    output.standard_error(), ""};
 }
 
 
