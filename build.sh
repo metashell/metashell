@@ -72,7 +72,8 @@ cd templight
     cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON \
       && make clang -j${BUILD_THREADS} \
       && make libclang -j${BUILD_THREADS} \
-      && make libclang_static -j${BUILD_THREADS}
+      && make libclang_static -j${BUILD_THREADS} \
+      && make templight -j${BUILD_THREADS}
   cd ..
 cd ..
 

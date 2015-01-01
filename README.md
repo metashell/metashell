@@ -197,6 +197,7 @@ want to install them, you can build Metashell yourself.
     * `make clang`
     * `make libclang`
     * `make libclang_static`
+    * `make templight`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
@@ -325,6 +326,7 @@ WinEditLine to a newer version, you need to update these files.
     * `make clang`
     * `make libclang`
     * `make libclang_static`
+    * `make templight`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
