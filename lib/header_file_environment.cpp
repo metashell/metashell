@@ -49,6 +49,8 @@ namespace
   {
     using boost::algorithm::trim_copy;
 
+    METASHELL_LOG(logger_, "Generating percompiled header for " + fn_);
+
     std::vector<std::string> args(clang_args_);
     extend_to_find_headers_in_local_dir(args);
     args.push_back("-w");
