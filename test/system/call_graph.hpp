@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
+#ifndef METASHELL_SYSTEM_TEST_CALL_GRAPH_HPP
+#define METASHELL_SYSTEM_TEST_CALL_GRAPH_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "call_graph_node.hpp"
+#include "json_string.hpp"
+
+#include <vector>
 
 namespace metashell_system_test
 {
-  namespace system_test_config
+  class call_graph
   {
-    void metashell_binary(const std::string& path_);
-    std::string metashell_binary();
-  }
+  public:
+    explicit call_graph(std::vector<call_graph_node> call_graph_nodes_);
+  
+    typedef std::vector<call_graph_node>::const_iterator iterator;
+    typedef iterator const_iterator;
+  
+    iterator begin() const;
+    iterator end() const;
+  private:
+    std::vector<call_graph_node> _call_graph_nodes;
+  };
+  
+  std::ostream& operator<<(std::ostream& o_, const call_graph& c_);
+
+  json_string to_json_string(const call_graph& c_);
+
+  bool operator==(const call_graph& c_, const json_string& s_);
 }
 
 #endif

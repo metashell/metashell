@@ -16,6 +16,8 @@
 
 #include "system_test_config.hpp"
 
+using namespace metashell_system_test;
+
 namespace
 {
   std::string metashell_binary_path;

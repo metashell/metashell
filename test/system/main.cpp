@@ -21,6 +21,8 @@
 #include <iostream>
 #include <vector>
 
+using namespace metashell_system_test;
+
 int main(int argc_, char* argv_[])
 {
   if (argc_ < 3 || argv_[2] != std::string("--"))

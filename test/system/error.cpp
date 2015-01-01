@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,40 +14,55 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "json_generator.hpp"
+#include "error.hpp"
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
-#include <map>
+#include <iostream>
 
 using namespace metashell_system_test;
 
-namespace
+error::error(const std::string& msg_) :
+  _msg(msg_)
+{}
+
+const std::string& error::message() const
 {
-  json_string json_object(
-    std::initializer_list<std::pair<std::string, std::string>> values_
-  )
-  {
-    rapidjson::StringBuffer buff;
-    rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-    w.StartObject();
-
-    for (const auto& p : values_)
-    {
-      w.Key(p.first.c_str());
-      w.String(p.second.c_str());
-    }
-
-    w.EndObject();
-
-    return json_string(buff.GetString());
-  }
+  return _msg;
 }
 
-json_string metashell_system_test::command(const std::string& cmd_)
+std::ostream& metashell_system_test::operator<<(
+  std::ostream& out_,
+  const error& error_
+)
 {
-  return json_object({{"type", "cmd"}, {"cmd", cmd_}});
+  return out_ << to_json_string(error_);
+}
+
+json_string metashell_system_test::to_json_string(const error& e_)
+{
+  rapidjson::StringBuffer buff;
+  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+  w.StartObject();
+
+  w.Key("type");
+  w.String("error");
+
+  w.Key("msg");
+  w.String(e_.message().c_str());
+
+  w.EndObject();
+
+  return json_string(buff.GetString());
+}
+
+bool metashell_system_test::operator==(
+  const error& error_,
+  const json_string& s_
+)
+{
+  return to_json_string(error_) == s_;
 }
 

@@ -1,8 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "json_string.hpp"
 
-namespace metashell_system_test
+#include <iostream>
+
+using namespace metashell_system_test;
+
+json_string::json_string(const std::string& json_) :
+  _json(json_)
+{}
+
+const std::string& json_string::get() const
 {
-  namespace system_test_config
-  {
-    void metashell_binary(const std::string& path_);
-    std::string metashell_binary();
-  }
+  return _json;
 }
 
-#endif
+bool metashell_system_test::operator==(
+  const json_string& a_,
+  const json_string& b_
+)
+{
+  return a_.get() == b_.get();
+}
+
+std::ostream& metashell_system_test::operator<<(
+  std::ostream& out_,
+  const json_string& s_
+)
+{
+  return out_ << s_.get();
+}
 

@@ -17,13 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "json_string.hpp"
+
 #include <string>
 
-std::string command(const std::string& cmd_);
-
-std::string prompt(const std::string& prompt_);
-std::string type(const std::string& name_);
-std::string raw_text(const std::string& value_);
+namespace metashell_system_test
+{
+  json_string command(const std::string& cmd_);
+}
 
 #endif
 

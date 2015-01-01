@@ -1,8 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "call_graph_node.hpp"
 
-namespace metashell_system_test
+using namespace metashell_system_test;
+
+call_graph_node::call_graph_node(
+  const frame& frame_,
+  int depth_,
+  int number_of_children_
+) :
+  _frame(frame_),
+  _depth(depth_),
+  _number_of_children(number_of_children_)
+{}
+
+const frame& call_graph_node::current_frame() const
 {
-  namespace system_test_config
-  {
-    void metashell_binary(const std::string& path_);
-    std::string metashell_binary();
-  }
+  return _frame;
 }
 
-#endif
+int call_graph_node::depth() const
+{
+  return _depth;
+}
+
+int call_graph_node::number_of_children() const
+{
+  return _number_of_children;
+}
 

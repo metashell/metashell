@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
+#ifndef METASHELL_SYSTEM_TEST_BACKTRACE_HPP
+#define METASHELL_SYSTEM_TEST_BACKTRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "frame.hpp"
+#include "json_string.hpp"
+
+#include <vector>
 
 namespace metashell_system_test
 {
-  namespace system_test_config
+  class backtrace
   {
-    void metashell_binary(const std::string& path_);
-    std::string metashell_binary();
-  }
+  public:
+    explicit backtrace(std::vector<frame> frames_);
+  
+    typedef std::vector<frame>::const_iterator iterator;
+    typedef iterator const_iterator;
+  
+    iterator begin() const;
+    iterator end() const;
+  private:
+    std::vector<frame> _frames;
+  };
+  
+  std::ostream& operator<<(std::ostream& o_, const backtrace& c_);
+
+  json_string to_json_string(const backtrace& c_);
+
+  bool operator==(const backtrace& c_, const json_string& s_);
 }
 
 #endif

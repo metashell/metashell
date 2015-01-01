@@ -17,14 +17,19 @@
 #include "run_metashell.hpp"
 #include "json_generator.hpp"
 #include "system_test_config.hpp"
+#include "prompt.hpp"
+#include "raw_text.hpp"
 
 #include <just/process.hpp>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
 
 #include <cassert>
+#include <sstream>
+#include <iostream>
+
+using namespace metashell_system_test;
 
 namespace
 {
@@ -34,13 +39,31 @@ namespace
     assert(v_.back() == item_);
     v_.pop_back();
   }
+
+  std::string join(std::initializer_list<json_string> commands_)
+  {
+    std::ostringstream s;
+    bool first = true;
+    for (const json_string& js : commands_)
+    {
+      if (first)
+      {
+        first = false;
+      }
+      else
+      {
+        s << '\n';
+      }
+      s << js;
+    }
+    return s.str();
+  }
 }
 
-std::vector<std::string> run_metashell(
-  std::initializer_list<std::string> commands_
+std::vector<json_string> metashell_system_test::run_metashell(
+  std::initializer_list<json_string> commands_
 )
 {
-  using boost::algorithm::join;
   using boost::algorithm::is_any_of;
   using boost::algorithm::split;
 
@@ -50,28 +73,33 @@ std::vector<std::string> run_metashell(
     cmd{system_test_config::metashell_binary(), "--console=json", "--nosplash"};
 
   std::vector<std::string> rsp;
-  split(
-    rsp,
-    run(cmd, join(commands_, "\n")).standard_output(),
-    is_any_of("\n")
-  );
+  split(rsp, run(cmd, join(commands_)).standard_output(), is_any_of("\n"));
 
   // The result of the new line at the end of the last response
   pop_item("", rsp);
 
   // The result of the end of the input
-  pop_item(raw_text(""), rsp);
-  pop_item(prompt(">"), rsp);
+  pop_item(to_json_string(raw_text("")).get(), rsp);
+  pop_item(to_json_string(prompt(">")).get(), rsp);
 
-  return rsp;
+  std::vector<json_string> jv;
+  jv.reserve(rsp.size());
+  for (const std::string& s : rsp)
+  {
+    jv.push_back(json_string(s));
+  }
+
+  return jv;
 }
 
-std::string run_metashell_command(const std::string& command_)
+json_string metashell_system_test::run_metashell_command(
+  const std::string& command_
+)
 {
   const auto r = run_metashell({command(command_)});
 
   assert(r.size() == 2);
-  assert(r.front() == prompt(">"));
+  assert(r.front() == to_json_string(prompt(">")));
 
   return r.back();
 }

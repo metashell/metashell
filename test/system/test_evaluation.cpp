@@ -14,13 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "json_generator.hpp"
+#include "type.hpp"
 #include "run_metashell.hpp"
 
 #include <just/test.hpp>
 
+using namespace metashell_system_test;
+
 JUST_TEST_CASE(test_evaluating_int)
 {
-  JUST_ASSERT_EQUAL(type("int"), run_metashell_command("int"));
+  const auto r = run_metashell_command("int");
+  JUST_ASSERT_EQUAL(type("int"), r);
 }
 

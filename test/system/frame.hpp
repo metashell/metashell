@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_RUN_METASHELL_HPP
-#define METASHELL_SYSTEM_TEST_RUN_METASHELL_HPP
+#ifndef METASHELL_SYSTEM_TEST_FRAME_HPP
+#define METASHELL_SYSTEM_TEST_FRAME_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,18 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "type.hpp"
+#include "instantiation_kind.hpp"
 #include "json_string.hpp"
 
-#include <vector>
-#include <string>
+#include <boost/optional.hpp>
+
+#include <iosfwd>
 
 namespace metashell_system_test
 {
-  std::vector<json_string> run_metashell(
-    std::initializer_list<json_string> commands_
-  );
+  class frame
+  {
+  public:
+    explicit frame(const type& name_);
+    frame(const type& name_, instantiation_kind kind_);
   
-  json_string run_metashell_command(const std::string& command_);
+    const type& name() const;
+  
+    bool has_kind() const;
+  
+    // precondition: has_kind()
+    instantiation_kind kind() const;
+  private:
+    type _name;
+    boost::optional<instantiation_kind> _kind;
+  };
+  
+  std::ostream& operator<<(std::ostream& o_, const frame& f_);
+
+  json_string to_json_string(const frame& f_);
+
+  bool operator==(const frame& frame_, const json_string& s_);
 }
 
 #endif
