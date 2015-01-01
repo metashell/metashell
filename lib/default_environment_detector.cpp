@@ -150,6 +150,7 @@ bool default_environment_detector::on_osx()
 
 void default_environment_detector::append_to_path(const std::string& path_)
 {
+  METASHELL_LOG(_logger, "Appending to PATH: " + path_);
   just::environment::append_to_path(path_);
 }
 
@@ -229,6 +230,11 @@ bool default_environment_detector::clang_binary_works_with_libclang(
   const config& cfg_
 )
 {
+  METASHELL_LOG(
+    _logger,
+    "Checking if libclang can use the Clang binary's precompiled headers."
+  );
+
   config cfg(cfg_);
   cfg.use_precompiled_headers = true;
 
@@ -239,7 +245,7 @@ bool default_environment_detector::clang_binary_works_with_libclang(
     header_file_environment env(cfg, _logger);
     env.append("struct foo {};");
 
-    cxindex index;
+    cxindex index(_logger);
     std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env);
     return tu->errors_begin() == tu->errors_end();
   }

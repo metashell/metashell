@@ -23,14 +23,19 @@
 
 using namespace metashell;
 
-pragma_mdb::pragma_mdb(shell& shell_, command_processor_queue* cpq_) :
+pragma_mdb::pragma_mdb(
+  shell& shell_,
+  command_processor_queue* cpq_,
+  logger* logger_
+) :
   _shell(shell_),
-  _cpq(cpq_)
+  _cpq(cpq_),
+  _logger(logger_)
 {}
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_shell, _cpq);
+  return new pragma_mdb(_shell, _cpq, _logger);
 }
 
 std::string pragma_mdb::arguments() const
@@ -55,7 +60,7 @@ void pragma_mdb::run(
   std::string args = tokens_to_string(args_begin_, args_end_);
 
   std::unique_ptr<mdb_shell>
-    sh(new mdb_shell(_shell.get_config(), _shell.env()));
+    sh(new mdb_shell(_shell.get_config(), _shell.env(), _logger));
 
   if (_shell.get_config().splash_enabled)
   {

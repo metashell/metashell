@@ -306,7 +306,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r = validate_code(s_, _config, *_env, input_filename());
+  const result r = validate_code(s_, _config, *_env, input_filename(), _logger);
   const bool success = !r.has_errors();
   if (success)
   {
@@ -336,7 +336,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(*_env, s_, input_filename(), out_);
+    metashell::code_complete(*_env, s_, input_filename(), out_, _logger);
   }
   catch (...)
   {
@@ -349,7 +349,7 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_);
+  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -450,7 +450,10 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(eval_tmp_formatted(*_env, s_, _config, input_filename()), displayer_);
+  display(
+    eval_tmp_formatted(*_env, s_, _config, input_filename(), _logger),
+    displayer_
+  );
 }
 
 void shell::reset_environment()

@@ -135,9 +135,11 @@ config set_pch_false(config c) {
 
 mdb_shell::mdb_shell(
     const config& conf_,
-    const environment& env_arg) :
+    const environment& env_arg,
+    logger* logger_) :
   conf(set_pch_false(conf_)),
-  env(conf)
+  env(conf),
+  _logger(logger_)
 {
   env.append(env_arg.get_all());
 }
@@ -736,7 +738,8 @@ boost::optional<type> mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
-  result res = eval_tmp_unformatted(env, str, conf, internal_file_name);
+  result
+    res = eval_tmp_unformatted(env, str, conf, internal_file_name, _logger);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);

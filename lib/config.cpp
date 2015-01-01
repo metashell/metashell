@@ -167,19 +167,29 @@ namespace
     bool user_wants_precompiled_headers_,
     iface::environment_detector& env_detector_,
     const config& cfg_,
-    std::ostream& stderr_
+    std::ostream& stderr_,
+    logger* logger_
   )
   {
     if (user_wants_precompiled_headers_)
     {
-      if (!cfg_.clang_path.empty())
+      METASHELL_LOG(logger_, "Checking if precompiled headers can be used.");
+      if (cfg_.clang_path.empty())
       {
-        return env_detector_.clang_binary_works_with_libclang(cfg_);
+        stderr_ << "Disabling precompiled headers" << std::endl;
+        METASHELL_LOG(
+          logger_,
+          "Disabling precompiled headers: no Clang binary is available."
+        );
       }
       else
       {
-        stderr_ << "Disabling precompiled headers" << std::endl;
+        return env_detector_.clang_binary_works_with_libclang(cfg_);
       }
+    }
+    else
+    {
+      METASHELL_LOG(logger_, "User disabled precompiled header usage.");
     }
     return false;
   }
@@ -353,7 +363,8 @@ config metashell::detect_config(
       ucfg_.use_precompiled_headers,
       env_detector_,
       cfg,
-      stderr_
+      stderr_,
+      logger_
     );
 
   cfg.splash_enabled = ucfg_.splash_enabled;

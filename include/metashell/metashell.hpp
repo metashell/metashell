@@ -20,6 +20,7 @@
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/command.hpp>
+#include <metashell/logger.hpp>
 
 #include "result.hpp"
 
@@ -33,28 +34,32 @@ namespace metashell
     const environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
-    const std::string& input_filename_
+    const std::string& input_filename_,
+    logger* logger_
   );
 
   result eval_tmp_formatted(
     const environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
-    const std::string& input_filename_
+    const std::string& input_filename_,
+    logger* logger_
   );
 
   result validate_code(
     const std::string& s_,
     const config& config_,
     const environment& env_,
-    const std::string& intput_filename_
+    const std::string& intput_filename_,
+    logger* logger_
   );
 
   void code_complete(
     const environment& env_,
     const std::string& src_,
     const std::string& input_filename_,
-    std::set<std::string>& out_
+    std::set<std::string>& out_,
+    logger* logger_
   );
 
   bool is_environment_setup_command(
