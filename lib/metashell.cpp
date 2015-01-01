@@ -19,6 +19,7 @@
 #include "cxindex.hpp"
 
 #include <metashell/command.hpp>
+#include <metashell/exception.hpp>
 #include <metashell/clang_binary.hpp>
 
 #include <boost/regex.hpp>
@@ -187,8 +188,9 @@ result metashell::eval_tmp(
         env_.get_appended(
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));
 
-  // TODO assume compilation was successful for now
-  // TODO implement returing of the exit value of a process in just::process
+  if (output.exit_code() != 0) {
+    return result{"", output.standard_error(), ""};
+  }
 
   const std::string& standard_output = output.standard_output();
   std::string last_line = standard_output.substr(
@@ -197,13 +199,13 @@ result metashell::eval_tmp(
   boost::regex reg(
       ".*':'struct metashell::impl::wrap<(?:class |struct |union )?(.*)>' "
       "'void \\(void\\) noexcept'.*");
+
   boost::smatch match;
   if (!boost::regex_match(last_line, match, reg)) {
-    assert(false); // TODO fail nicely?
+    throw exception("Unexpected ast format");
   }
 
-  return result{boost::trim_copy(std::string(match[1])),
-    output.standard_error(), ""};
+  return result{boost::trim_copy(std::string(match[1])), "", ""};
 }
 
 

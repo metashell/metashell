@@ -379,14 +379,19 @@ namespace just
     class output
     {
     public:
-      output(const std::string& stdout_, const std::string& stderr_) :
+      output(
+        int exit_code_,
+        const std::string& stdout_, const std::string& stderr_) :
+        _exit_code(exit_code_),
         _out(stdout_),
         _err(stderr_)
       {}
 
+      int exit_code() const { return _exit_code; }
       const std::string& standard_output() const { return _out; }
       const std::string& standard_error() const { return _err; }
     private:
+      int _exit_code;
       std::string _out;
       std::string _err;
     };
@@ -509,7 +514,7 @@ namespace just
       switch (pid)
       {
       case -1:
-        return output("", "");
+        return output(-1, "", "");
       case 0: // in child
         standard_input.output.close();
         standard_output.input.close();
@@ -560,11 +565,13 @@ namespace just
         int status;
         waitpid(pid, &status, 0);
 
+        assert(WIFEXITED(status) && "child didn't exit normally");
+
         const std::string err = error_reporting.input.read();
         if (err.empty())
         {
-          return
-            output(standard_output_string, standard_error.input.read());
+          return output(WEXITSTATUS(status),
+            standard_output_string, standard_error.input.read());
         }
         else
         {
