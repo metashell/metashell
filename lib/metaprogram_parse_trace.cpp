@@ -17,17 +17,20 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 #include <sstream>
+#include <iostream>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 
 #include <metashell/metaprogram.hpp>
 #include <metashell/type.hpp>
 
 #include <metashell/exception.hpp>
+
+#include "templight_messages.pb.h"
 
 namespace metashell {
 
@@ -41,14 +44,9 @@ struct metaprogram_builder {
   void handle_template_begin(
     instantiation_kind kind,
     const std::string& context,
-    const file_location& location,
-    double timestamp,
-    unsigned long long memory_usage);
+    const file_location& location);
 
-  void handle_template_end(
-    instantiation_kind kind,
-    double timestamp,
-    unsigned long long memory_usage);
+  void handle_template_end();
 
   const metaprogram& get_metaprogram() const;
 
@@ -75,9 +73,7 @@ metaprogram_builder::metaprogram_builder(
 void metaprogram_builder::handle_template_begin(
   instantiation_kind kind,
   const std::string& context,
-  const file_location& point_of_instantiation,
-  double /* timestamp */,
-  unsigned long long /* memory_usage */)
+  const file_location& point_of_instantiation)
 {
   vertex_descriptor vertex = add_vertex(context);
   vertex_descriptor top_vertex =
@@ -87,11 +83,7 @@ void metaprogram_builder::handle_template_begin(
   vertex_stack.push(vertex);
 }
 
-void metaprogram_builder::handle_template_end(
-  instantiation_kind /* kind */,
-  double /* timestamp */,
-  unsigned long long /* memory_usage */)
-{
+void metaprogram_builder::handle_template_end() {
   if (vertex_stack.empty()) {
     throw exception(
         "Mismatched Templight TemplateBegin and TemplateEnd events");
@@ -122,53 +114,61 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
   return pos->second;
 }
 
-file_location file_location_from_string(const std::string& str) {
-  std::vector<std::string> parts;
-  boost::algorithm::split(parts, str, boost::algorithm::is_any_of("|"));
+typedef std::map<unsigned, std::string> file_dictionary;
 
-  if (parts.size() != 3) {
-    throw exception("templight xml parse failed (invalid file location)");
+file_location file_location_from_protobuf(
+    const TemplightEntry::SourceLocation& source_location,
+    file_dictionary& dict)
+{
+  if (source_location.has_file_name()) {
+    dict[source_location.file_id()] = source_location.file_name();
   }
+
+  int col = source_location.has_column() ? source_location.column() : -1;
+
   return file_location(
-      parts[0],
-      boost::lexical_cast<int>(parts[1]),
-      boost::lexical_cast<int>(parts[2]));
+      dict[source_location.file_id()],
+      source_location.line(),
+      col);
 }
 
-instantiation_kind instantiation_kind_from_string(const std::string& str) {
-  if (str == "TemplateInstantiation")
+instantiation_kind instantiation_kind_from_protobuf(
+    const TemplightEntry::InstantiationKind& kind)
+{
+  //TODO switch case
+  if (kind == TemplightEntry::TemplateInstantiation)
   {
     return instantiation_kind::template_instantiation;
   }
-  else if (str == "DefaultTemplateArgumentInstantiation")
+  else if (kind == TemplightEntry::DefaultTemplateArgumentInstantiation)
   {
     return instantiation_kind::default_template_argument_instantiation;
   }
-  else if (str == "DefaultFunctionArgumentInstantiation")
+  else if (kind == TemplightEntry::DefaultFunctionArgumentInstantiation)
   {
     return instantiation_kind::default_function_argument_instantiation;
   }
-  else if (str == "ExplicitTemplateArgumentSubstitution")
+  else if (kind == TemplightEntry::ExplicitTemplateArgumentSubstitution)
   {
     return instantiation_kind::explicit_template_argument_substitution;
   }
-  else if (str == "DeducedTemplateArgumentSubstitution")
+  else if (kind == TemplightEntry::DeducedTemplateArgumentSubstitution)
   {
     return instantiation_kind::deduced_template_argument_substitution;
   }
-  else if (str == "PriorTemplateArgumentSubstitution")
+  else if (kind == TemplightEntry::PriorTemplateArgumentSubstitution)
   {
     return instantiation_kind::prior_template_argument_substitution;
   }
-  else if (str == "DefaultTemplateArgumentChecking")
+  else if (kind == TemplightEntry::DefaultTemplateArgumentChecking)
   {
     return instantiation_kind::default_template_argument_checking;
   }
-  else if (str == "ExceptionSpecInstantiation")
+  else if (kind == TemplightEntry::ExceptionSpecInstantiation)
   {
     return instantiation_kind::exception_spec_instantiation;
   }
-  else if (str == "Memoization")
+  else if (kind == TemplightEntry::Memoization)
   {
     return instantiation_kind::memoization;
   }
@@ -178,45 +178,92 @@ instantiation_kind instantiation_kind_from_string(const std::string& str) {
   }
 }
 
-metaprogram metaprogram::create_from_xml_stream(
+//TODO this is probably very slow
+std::string resolve_name(int id, const TemplightTrace& trace) {
+
+  if (id >= trace.names_size()) {
+    throw exception("id out of range");
+  }
+
+  const DictionaryEntry& entry = trace.names(id);
+  int marker_idx = 0;
+
+  std::stringstream ss;
+
+  for (char ch : entry.marked_name()) {
+    if (ch != '\0') {
+      ss << ch;
+    } else {
+      ss << resolve_name(entry.marker_ids(marker_idx++), trace);
+    }
+  }
+
+  return ss.str();
+}
+
+//TODO type instead of std::string
+std::string type_from_protobuf(
+    const TemplightEntry::TemplateName& name,
+    const TemplightTrace& trace) //For the dictionary
+{
+  if (name.has_name()) {
+    return name.name();
+  }
+  if (name.has_dict_id()) {
+    return resolve_name(static_cast<int>(name.dict_id()), trace);
+  }
+  if (!name.has_compressed_name()) {
+    throw exception("TemplateName has no name, dict_id and compressed_name");
+  }
+  return "?????";
+}
+
+metaprogram metaprogram::create_from_protobuf_stream(
     std::istream& stream,
     bool full_mode,
     const std::string& root_name,
     const type& evaluation_result)
 {
-  typedef boost::property_tree::ptree ptree;
 
-  ptree pt;
-  read_xml(stream, pt);
+  TemplightTraceCollection traces;
+
+  if (!traces.ParseFromIstream(&stream)) {
+    throw exception("Can't parse protobuf trace file");
+  }
+
+  if (traces.traces_size() != 1) {
+    throw exception("There are more than one trace in the protobuf trace file");
+  }
+
+  const TemplightTrace& trace = traces.traces(0);
 
   metaprogram_builder builder(full_mode, root_name, evaluation_result);
+  file_dictionary dict;
 
-  for (const ptree::value_type& pt_event :
-      boost::make_iterator_range(pt.get_child("Trace")))
-  {
-    if (pt_event.first == "TemplateBegin") {
+  for (int i = 0; i < trace.entries_size(); ++i) {
+    const TemplightEntry& entry = trace.entries(i);
+    if (entry.has_begin() && entry.has_end()) {
+      throw exception("TemplightEntry has both begin and end object");
+    }
+
+    if (entry.has_begin()) {
+      const TemplightEntry::Begin& begin = entry.begin();
       builder.handle_template_begin(
-          instantiation_kind_from_string(
-            pt_event.second.get<std::string>("Kind")),
-          pt_event.second.get<std::string>("Context.<xmlattr>.context"),
-          file_location_from_string(
-            pt_event.second.get<std::string>("PointOfInstantiation")),
-          pt_event.second.get<double>("TimeStamp.<xmlattr>.time"),
-          pt_event.second.get<unsigned long long>("MemoryUsage.<xmlattr>.bytes"));
-    } else if (pt_event.first == "TemplateEnd") {
-      builder.handle_template_end(
-          instantiation_kind_from_string(
-            pt_event.second.get<std::string>("Kind")),
-          pt_event.second.get<double>("TimeStamp.<xmlattr>.time"),
-          pt_event.second.get<unsigned long long>("MemoryUsage.<xmlattr>.bytes"));
+          instantiation_kind_from_protobuf(begin.kind()),
+          type_from_protobuf(begin.name(), trace),
+          file_location_from_protobuf(begin.location(), dict)
+      );
+    } else if (entry.has_end()) {
+      builder.handle_template_end();
     } else {
-      throw exception("Unknown templight xml node \"" + pt_event.first + "\"");
+      throw exception("TemplightEntry has no begin and end object");
     }
   }
+
   return builder.get_metaprogram();
 }
 
-metaprogram metaprogram::create_from_xml_file(
+metaprogram metaprogram::create_from_protobuf_file(
     const std::string& file,
     bool full_mode,
     const std::string& root_name,
@@ -226,17 +273,17 @@ metaprogram metaprogram::create_from_xml_file(
   if (!in) {
     throw exception("Can't open templight file");
   }
-  return create_from_xml_stream(in, full_mode, root_name, evaluation_result);
+  return create_from_protobuf_stream(in, full_mode, root_name, evaluation_result);
 }
 
-metaprogram metaprogram::create_from_xml_string(
+metaprogram metaprogram::create_from_protobuf_string(
     const std::string& string,
     bool full_mode,
     const std::string& root_name,
     const type& evaluation_result)
 {
   std::istringstream ss(string);
-  return create_from_xml_stream(ss, full_mode, root_name, evaluation_result);
+  return create_from_protobuf_stream(ss, full_mode, root_name, evaluation_result);
 }
 
 }

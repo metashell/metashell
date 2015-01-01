@@ -36,7 +36,8 @@
 
 namespace
 {
-  const std::string internal_file_name = "mdb-stdin";
+  //Note: this how clang calls the file when the input comes from stdin
+  const std::string stdin_name = "<stdin>";
 
   const std::string wrap_prefix = "metashell::impl::wrap<";
   const std::string wrap_suffix = ">";
@@ -443,7 +444,7 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     const std::string& target_name =
       mp->get_vertex_property(mp->get_target(edge)).name;
     // Filter out edges, that is not instantiated by the entered type
-    if (property.point_of_instantiation.name == internal_file_name &&
+    if (property.point_of_instantiation.name == stdin_name &&
         property.point_of_instantiation.row == line_number + 1 &&
         (property.kind == instantiation_kind::template_instantiation ||
         property.kind == instantiation_kind::memoization) &&
@@ -729,7 +730,7 @@ bool mdb_shell::run_metaprogram_with_templight(
     return false;
   }
 
-  mp = metaprogram::create_from_xml_file(
+  mp = metaprogram::create_from_protobuf_file(
       output_path + ".trace.pbf", full_mode, str, *evaluation_result);
   return true;
 }
