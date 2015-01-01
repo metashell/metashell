@@ -1,5 +1,5 @@
-#ifndef METASHELL_USER_CONFIG_HPP
-#define METASHELL_USER_CONFIG_HPP
+#ifndef METASHELL_LOGGER_HPP
+#define METASHELL_LOGGER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
-#include <metashell/console_type.hpp>
 #include <metashell/logging_mode.hpp>
+#include <metashell/iface/displayer.hpp>
+#include <metashell/iface/file_writer.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
-  struct user_config
+  class logger
   {
-    std::vector<std::string> include_path;
-    bool verbose = false;
-    bool syntax_highlight = true;
-    bool indent = true;
-    standard::type standard_to_use = standard::cpp11;
-    std::vector<std::string> macros;
-    bool warnings_enabled = true;
-    std::vector<std::string> extra_clang_args;
-    bool use_precompiled_headers = false;
-    std::string clang_path;
-    int max_template_depth = 256;
-    bool saving_enabled = false;
-    console_type con_type = console_type::plain;
-    bool splash_enabled = true;
-    logging_mode log_mode = logging_mode::none;
-    std::string log_file;
+  public:
+    logger(iface::displayer& displayer_, iface::file_writer& fwriter_);
+
+    bool logging() const;
+    logging_mode mode() const;
+
+    void log_into_file(const std::string& filename_);
+    void log_to_console();
+    void stop_logging();
+
+    void log(const std::string& msg_);
+  private:
+    logging_mode _mode;
+    iface::file_writer& _fwriter;
+    iface::displayer& _displayer;
   };
 }
+
+#ifdef METASHELL_LOG
+#  error METASHELL_LOG already defined
+#endif
+#define METASHELL_LOG(logger_ptr, msg) \
+  { \
+    ::metashell::logger* l = (logger_ptr); \
+    if (l != nullptr && l->logging()) \
+    { \
+      l->log(msg); \
+    } \
+  }
 
 #endif
 

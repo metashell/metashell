@@ -19,6 +19,7 @@
 #include <boost/algorithm/string/trim_all.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <boost/assign/list_of.hpp>
 
@@ -43,8 +44,9 @@ namespace
   }
 }
 
-clang_binary::clang_binary(const std::string& path_) :
-  _path(path_)
+clang_binary::clang_binary(const std::string& path_, logger* logger_) :
+  _path(path_),
+  _logger(logger_)
 {}
 
 just::process::output clang_binary::run(
@@ -59,11 +61,19 @@ just::process::output clang_binary::run(
   ++i;
   std::transform(args_.begin(), args_.end(), i, quote_argument);
 
-  return just::process::run(cmd, stdin);
+  METASHELL_LOG(_logger, "Running Clang: " + boost::algorithm::join(cmd, " "));
+
+  const just::process::output o = just::process::run(cmd, stdin);
+
+  METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output());
+  METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error());
+
+  return o;
 }
 
 std::vector<std::string> metashell::default_sysinclude(
-  const clang_binary& clang_
+  const clang_binary& clang_,
+  logger* logger_
 )
 {
   using boost::algorithm::trim_all_copy;
@@ -73,6 +83,8 @@ std::vector<std::string> metashell::default_sysinclude(
 
   using std::vector;
   using std::string;
+
+  METASHELL_LOG(logger_, "Determining Clang's sysinclude.");
 
   const just::process::output o =
     clang_.run(list_of<string>("-v")("-xc++")("-"));
@@ -94,7 +106,7 @@ std::vector<std::string> metashell::default_sysinclude(
       }
       else
       {
-        return result;
+        break;
       }
     }
     else if (starts_with(line, "#include <"))
@@ -103,6 +115,10 @@ std::vector<std::string> metashell::default_sysinclude(
     }
   }
 
+  METASHELL_LOG(
+    logger_,
+    "Clang's sysinclude: " + boost::algorithm::join(result, ";")
+  );
   return result;
 }
 

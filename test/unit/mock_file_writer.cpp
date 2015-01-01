@@ -1,6 +1,3 @@
-#ifndef METASHELL_TEST_STRING_READER_HPP
-#define METASHELL_TEST_STRING_READER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,23 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
+#include "mock_file_writer.hpp"
 
-#include <vector>
-#include <string>
+mock_file_writer::mock_file_writer() :
+  open_callback([](const std::string&) { return false; }),
+  close_callback([] {}),
+  is_open_callback([] { return false; }),
+  write_callback([](const std::string&) { return false; })
+{}
 
-class string_reader
+bool mock_file_writer::open(const std::string& filename_)
 {
-public:
-  explicit string_reader(std::initializer_list<std::string> strings_);
+  return open_callback(filename_);
+}
 
-  boost::optional<std::string> operator()(const std::string&);
-private:
-  std::vector<std::string> _strings;
-  // storing the index instead of an iterator makes the default copy
-  // constructor work
-  std::vector<std::string>::size_type _next;
-};
+void mock_file_writer::close()
+{
+  close_callback();
+}
 
-#endif
+bool mock_file_writer::is_open() const
+{
+  return is_open_callback();
+}
+
+bool mock_file_writer::write(const std::string& content_)
+{
+  return write_callback(content_);
+}
 

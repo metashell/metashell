@@ -143,7 +143,8 @@ pragma_handler_map::iterator pragma_handler_map::end() const
 
 pragma_handler_map pragma_handler_map::build_default(
   shell& shell_,
-  command_processor_queue* cpq_
+  command_processor_queue* cpq_,
+  logger* logger_
 )
 {
   return
@@ -177,7 +178,7 @@ pragma_handler_map pragma_handler_map::build_default(
         "save",
         pragma_environment_save(shell_.get_config(), shell_.env())
       )
-      .add("mdb", pragma_mdb(shell_, cpq_))
+      .add("mdb", pragma_mdb(shell_, cpq_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("quit", pragma_quit(shell_))
     ;

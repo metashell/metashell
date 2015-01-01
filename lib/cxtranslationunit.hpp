@@ -20,6 +20,7 @@
 #include <metashell/environment.hpp>
 #include <metashell/text_position.hpp>
 #include <metashell/unsaved_file.hpp>
+#include <metashell/logger.hpp>
 
 #include "cxcursor.hpp"
 #include "indexing_iterator.hpp"
@@ -46,7 +47,8 @@ namespace metashell
     cxtranslationunit(
       const environment& env_,
       const unsaved_file& src_,
-      CXIndex index_
+      CXIndex index_,
+      logger* logger_
     );
     ~cxtranslationunit();
 
@@ -62,6 +64,7 @@ namespace metashell
     unsaved_file _src;
     std::vector<CXUnsavedFile> _unsaved_files;
     CXTranslationUnit _tu;
+    logger* _logger;
   };
 }
 

@@ -20,7 +20,10 @@
 
 using namespace metashell;
 
-cxindex::cxindex() : _index(clang_createIndex(0, 0)) {}
+cxindex::cxindex(logger* logger_) :
+  _index(clang_createIndex(0, 0)),
+  _logger(logger_)
+{}
 
 cxindex::~cxindex()
 {
@@ -34,7 +37,7 @@ std::unique_ptr<cxtranslationunit> cxindex::parse_code(
 {
   return
     std::unique_ptr<cxtranslationunit>(
-      new cxtranslationunit(env_, src_, _index)
+      new cxtranslationunit(env_, src_, _index, _logger)
     );
 }
 

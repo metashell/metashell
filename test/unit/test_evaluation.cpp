@@ -359,8 +359,8 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   metashell::config cfg;
   breaking_environment e(cfg);
   e.get_appended_throw_from_now();
-  const metashell::result
-    r = metashell::validate_code("typedef int foo;", cfg, e, "<input>");
+  const metashell::result r =
+    metashell::validate_code("typedef int foo;", cfg, e, "<input>", nullptr);
 
   JUST_ASSERT(!r.errors.empty());
 }

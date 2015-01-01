@@ -19,6 +19,7 @@
 
 #include <metashell/environment.hpp>
 #include <metashell/headers.hpp>
+#include <metashell/logger.hpp>
 
 #include <string>
 
@@ -32,27 +33,31 @@ namespace metashell
     in_memory_environment(
       const std::string& internal_dir_,
       const config& config_,
-      const std::string& clang_extra_arg_ = ""
+      const std::string& clang_extra_arg_ = "",
+      logger* logger = nullptr
     );
 
-    virtual void append(const std::string& s_);
-    virtual std::string get() const;
-    virtual std::string get_appended(const std::string& s_) const;
+    virtual void append(const std::string& s_) override;
+    virtual std::string get() const override;
+    virtual std::string get_appended(const std::string& s_) const override;
 
-    virtual std::string internal_dir() const;
+    virtual std::string internal_dir() const override;
 
-    virtual std::vector<std::string>& clang_arguments();
-    virtual const std::vector<std::string>& clang_arguments() const;
+    virtual std::vector<std::string>& clang_arguments() override;
+    virtual const std::vector<std::string>& clang_arguments() const override;
 
-    virtual const headers& get_headers() const;
+    virtual const headers& get_headers() const override;
 
     void add_clang_arg(const std::string& arg_);
 
-    virtual std::string get_all() const;
+    virtual std::string get_all() const override;
+
+    logger* get_logger();
   private:
     std::string _buffer;
     headers _headers;
     std::vector<std::string> _clang_args;
+    logger* _logger;
   };
 }
 

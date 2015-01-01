@@ -1,6 +1,3 @@
-#ifndef METASHELL_TEST_STRING_READER_HPP
-#define METASHELL_TEST_STRING_READER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,23 +14,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
+#include <metashell/fstream_file_writer.hpp>
 
-#include <vector>
-#include <string>
+using namespace metashell;
 
-class string_reader
+namespace
 {
-public:
-  explicit string_reader(std::initializer_list<std::string> strings_);
+  bool was_error(const std::ostream& s_)
+  {
+    return s_.fail() || s_.bad();
+  }
+}
 
-  boost::optional<std::string> operator()(const std::string&);
-private:
-  std::vector<std::string> _strings;
-  // storing the index instead of an iterator makes the default copy
-  // constructor work
-  std::vector<std::string>::size_type _next;
-};
+bool fstream_file_writer::open(const std::string& filename_)
+{
+  _f.open(filename_.c_str());
+  return !was_error(_f);
+}
 
-#endif
+void fstream_file_writer::close()
+{
+  _f.close();
+}
+
+bool fstream_file_writer::is_open() const
+{
+  return _f.is_open();
+}
+
+bool fstream_file_writer::write(const std::string& content_)
+{
+  _f << content_;
+  return !was_error(_f);
+}
 

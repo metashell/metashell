@@ -26,8 +26,11 @@
 #include <clang-c/Index.h>
 
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <functional>
+#include <sstream>
+#include <iostream>
 
 using namespace metashell;
 
@@ -55,17 +58,47 @@ namespace
   {
     return s_.c_str();
   }
+
+  std::string log_libclang_invocation(
+    const std::string& filename_,
+    const std::vector<CXUnsavedFile>& unsaved_files_,
+    const std::vector<std::string>& clang_args_
+  )
+  {
+    std::ostringstream s;
+
+    s
+      << "Building syntax tree with libclang. The source code to compile is "
+      << filename_ << std::endl
+      << "The unsaved files passed to libclang:" << std::endl;
+
+    for (const CXUnsavedFile& f : unsaved_files_)
+    {
+      s
+        << "  Filename: " << f.Filename << std::endl
+        << "  Content: " << std::string(f.Contents, f.Length) << std::endl;
+    }
+
+    s
+      << "The command line arguments passed to libclang: "
+      << boost::algorithm::join(clang_args_, " ");
+
+    return s.str();
+  }
 }
 
 cxtranslationunit::cxtranslationunit(
   const environment& env_,
   const unsaved_file& src_,
-  CXIndex index_
+  CXIndex index_,
+  logger* logger_
 ) :
   _src(src_),
-  _unsaved_files()
+  _unsaved_files(),
+  _logger(logger_)
 {
   using boost::transform_iterator;
+  using boost::algorithm::join;
 
   using std::string;
   using std::vector;
@@ -89,6 +122,15 @@ cxtranslationunit::cxtranslationunit(
     c_str_it(env_.clang_arguments().end())
   );
 
+  METASHELL_LOG(
+    _logger,
+    log_libclang_invocation(
+      src_.filename(),
+      _unsaved_files,
+      env_.clang_arguments()
+    )
+  );
+
   _tu =
     clang_parseTranslationUnit(
       index_,
@@ -99,8 +141,13 @@ cxtranslationunit::cxtranslationunit(
       _unsaved_files.size(),
       CXTranslationUnit_None
     );
-  if (!_tu)
+  if (_tu)
   {
+    METASHELL_LOG(_logger, "Syntax tree construction succeeded.");
+  }
+  else
+  {
+    METASHELL_LOG(_logger, "Syntax tree construction failed.");
     throw
       exception(
         "Error parsing source code (" + src_.filename() + ": "

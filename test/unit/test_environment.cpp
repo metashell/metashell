@@ -71,7 +71,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
   config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  header_file_environment env(cfg);
+  header_file_environment env(cfg, nullptr);
 
   JUST_ASSERT_EQUAL("", env.get_all());
 }
@@ -81,7 +81,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
   config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  header_file_environment env(cfg);
+  header_file_environment env(cfg, nullptr);
 
   test_append_text_to_environment(env);
 }

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
 namespace metashell
@@ -24,27 +25,29 @@ namespace metashell
   class default_environment_detector : public iface::environment_detector
   {
   public:
-    explicit default_environment_detector(const std::string& argv0_);
+    default_environment_detector(const std::string& argv0_, logger* logger_);
 
-    virtual std::string search_clang_binary();
-    virtual bool file_exists(const std::string& path_);
+    virtual std::string search_clang_binary() override;
+    virtual bool file_exists(const std::string& path_) override;
 
-    virtual bool on_windows();
-    virtual bool on_osx();
+    virtual bool on_windows() override;
+    virtual bool on_osx() override;
 
-    virtual void append_to_path(const std::string& path_);
+    virtual void append_to_path(const std::string& path_) override;
 
     virtual std::vector<std::string> default_clang_sysinclude(
       const std::string& clang_path_
-    );
-    virtual std::vector<std::string> extra_sysinclude();
+    ) override;
+    virtual std::vector<std::string> extra_sysinclude() override;
 
-    virtual std::string path_of_executable();
+    virtual std::string path_of_executable() override;
 
-    virtual bool clang_binary_works_with_libclang(const config& clang_path_);
-
+    virtual bool clang_binary_works_with_libclang(
+      const config& clang_path_
+    ) override;
   private:
     std::string _argv0;
+    logger* _logger;
   };
 }
 

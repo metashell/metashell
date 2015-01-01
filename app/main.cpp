@@ -19,6 +19,8 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/console_config.hpp>
+#include <metashell/logger.hpp>
+#include <metashell/fstream_file_writer.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -33,16 +35,35 @@ int main(int argc_, const char* argv_[])
     const parse_config_result
       r = parse_config(argc_, argv_, &std::cout, &std::cerr);
 
-    metashell::default_environment_detector det(argv_[0]);
-    const metashell::config cfg = detect_config(r.cfg, det, std::cerr);
+    metashell::console_config
+      ccfg(r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
+
+    metashell::fstream_file_writer file_writer;
+    metashell::logger logger(ccfg.displayer(), file_writer);
+    switch (r.cfg.log_mode)
+    {
+    case metashell::logging_mode::none:
+      // do nothing
+      break;
+    case metashell::logging_mode::console:
+      logger.log_to_console();
+      break;
+    case metashell::logging_mode::file:
+      logger.log_into_file(r.cfg.log_file);
+      break;
+    }
+
+    METASHELL_LOG(&logger, "Start logging");
+
+    metashell::default_environment_detector det(argv_[0], &logger);
+    const metashell::config cfg = detect_config(r.cfg, det, std::cerr, &logger);
 
     if (r.should_run_shell())
     {
-      metashell::console_config
-        ccfg(cfg.con_type, cfg.indent, cfg.syntax_highlight);
+      METASHELL_LOG(&logger, "Running shell");
 
       std::unique_ptr<metashell::shell>
-        shell(new metashell::shell(cfg, ccfg.processor_queue()));
+        shell(new metashell::shell(cfg, ccfg.processor_queue(), &logger));
 
       if (cfg.splash_enabled)
       {
@@ -51,11 +72,19 @@ int main(int argc_, const char* argv_[])
 
       ccfg.processor_queue().push(move(shell));
 
+      METASHELL_LOG(&logger, "Starting input loop");
+      
       metashell::input_loop(
         ccfg.processor_queue(),
         ccfg.displayer(),
         ccfg.reader()
       );
+
+      METASHELL_LOG(&logger, "Input loop finished");
+    }
+    else
+    {
+      METASHELL_LOG(&logger, "Not running shell");
     }
     return r.should_error_at_exit() ? 1 : 0;
   }

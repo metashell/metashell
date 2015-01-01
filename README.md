@@ -1127,8 +1127,10 @@ build your `fun.cpp` file.
 
 * New features
     * Support different shell modes (plain, readline)
+    * Optional logging of what Metashell is doing in the background.
     * New MDB command: `step out`
     * New command-line arguments:
+        * `--log` for enabling logging
         * `--nosplash` for disabling the splash at (sub)shell startup
 
 * Documentation updates

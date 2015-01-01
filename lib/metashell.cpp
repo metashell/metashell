@@ -87,13 +87,16 @@ result metashell::validate_code(
   const std::string& src_,
   const config& config_,
   const environment& env_,
-  const std::string& input_filename_
+  const std::string& input_filename_,
+  logger* logger_
 )
 {
+  METASHELL_LOG(logger_, "Validating code " + src_);
+
   try
   {
     const unsaved_file src(input_filename_, env_.get_appended(src_));
-    cxindex index;
+    cxindex index(logger_);
     std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env_);
     return
       result(
@@ -114,7 +117,8 @@ result metashell::eval_tmp_formatted(
   const environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
-  const std::string& input_filename_
+  const std::string& input_filename_,
+  logger* logger_
 )
 {
   using std::string;
@@ -122,9 +126,24 @@ result metashell::eval_tmp_formatted(
 
   typedef std::unique_ptr<cxtranslationunit> tup;
 
-  cxindex index;
+  METASHELL_LOG(
+    logger_,
+    "Checking if metaprogram can be evaluated without metashell::format: "
+    + tmp_exp_
+  );
+
+  cxindex index(logger_);
 
   pair<tup, string> simple = parse_expr(index, input_filename_, env_, tmp_exp_);
+
+  METASHELL_LOG(
+    logger_,
+    simple.first->has_errors() ?
+      "Errors occured during metaprogram evaluation. Displaying errors coming"
+      " from the metaprogram without metashell::format" :
+      "No errors occured during metaprogram evaluation. Re-evaluating it with"
+      " metashell::format"
+  );
 
   const pair<tup, string> final_pair =
     simple.first->has_errors() ?
@@ -189,7 +208,8 @@ result metashell::eval_tmp_unformatted(
   const environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
-  const std::string& input_filename_
+  const std::string& input_filename_,
+  logger* logger_
 )
 {
   using std::string;
@@ -197,7 +217,12 @@ result metashell::eval_tmp_unformatted(
 
   typedef std::unique_ptr<cxtranslationunit> tup;
 
-  cxindex index;
+  METASHELL_LOG(
+    logger_,
+    "Evaluating template metaprogram without metashell:format: " + tmp_exp_
+  );
+
+  cxindex index(logger_);
 
   pair<tup, string> final_pair =
     parse_expr(index, input_filename_, env_, tmp_exp_);
@@ -269,7 +294,8 @@ void metashell::code_complete(
   const environment& env_,
   const std::string& src_,
   const std::string& input_filename_,
-  std::set<std::string>& out_
+  std::set<std::string>& out_,
+  logger* logger_
 )
 {
   using boost::starts_with;
@@ -277,6 +303,8 @@ void metashell::code_complete(
   using std::pair;
   using std::string;
   using std::set;
+
+  METASHELL_LOG(logger_, "Code completion of " + src_);
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
@@ -287,7 +315,7 @@ void metashell::code_complete(
   );
 
   set<string> c;
-  cxindex().parse_code(src, env_)->code_complete(c);
+  cxindex(logger_).parse_code(src, env_)->code_complete(c);
 
   out_.clear();
   const int prefix_len = completion_start.second.length();

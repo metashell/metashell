@@ -1,5 +1,5 @@
-#ifndef METASHELL_TEST_STRING_READER_HPP
-#define METASHELL_TEST_STRING_READER_HPP
+#ifndef METASHELL_IFACE_FILE_WRITER_HPP
+#define METASHELL_IFACE_FILE_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,23 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
-
-#include <vector>
 #include <string>
 
-class string_reader
+namespace metashell
 {
-public:
-  explicit string_reader(std::initializer_list<std::string> strings_);
+  namespace iface
+  {
+    class file_writer
+    {
+    public:
+      virtual ~file_writer() {}
 
-  boost::optional<std::string> operator()(const std::string&);
-private:
-  std::vector<std::string> _strings;
-  // storing the index instead of an iterator makes the default copy
-  // constructor work
-  std::vector<std::string>::size_type _next;
-};
+      virtual bool open(const std::string& filename_) = 0;
+      virtual void close() = 0;
+      virtual bool is_open() const = 0;
+
+      virtual bool write(const std::string& content_) = 0;
+    };
+  }
+}
 
 #endif
 

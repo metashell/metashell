@@ -134,19 +134,25 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_) :
+shell::shell(const config& config_, logger* logger_) :
   _env(),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(logger_)
 {
   rebuild_environment();
   init(nullptr);
 }
 
-shell::shell(const config& config_, command_processor_queue& cpq_) :
+shell::shell(
+  const config& config_,
+  command_processor_queue& cpq_,
+  logger* logger_
+) :
   _env(),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(logger_)
 {
   rebuild_environment();
   init(&cpq_);
@@ -155,11 +161,13 @@ shell::shell(const config& config_, command_processor_queue& cpq_) :
 shell::shell(
   const config& config_,
   std::unique_ptr<environment> env_,
-  command_processor_queue& cpq_
+  command_processor_queue& cpq_,
+  logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
-  _stopped(false)
+  _stopped(false),
+  _logger(logger_)
 {
   init(&cpq_);
 }
@@ -303,7 +311,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r = validate_code(s_, _config, *_env, input_filename());
+  const result r = validate_code(s_, _config, *_env, input_filename(), _logger);
   const bool success = !r.has_errors();
   if (success)
   {
@@ -333,7 +341,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(*_env, s_, input_filename(), out_);
+    metashell::code_complete(*_env, s_, input_filename(), out_, _logger);
   }
   catch (...)
   {
@@ -346,7 +354,7 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_);
+  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -397,7 +405,7 @@ const environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(_config));
+  _env.reset(new header_file_environment(_config, _logger));
   if (!content_.empty())
   {
     _env->append(content_);
@@ -447,7 +455,10 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(eval_tmp_formatted(*_env, s_, _config, input_filename()), displayer_);
+  display(
+    eval_tmp_formatted(*_env, s_, _config, input_filename(), _logger),
+    displayer_
+  );
 }
 
 void shell::reset_environment()

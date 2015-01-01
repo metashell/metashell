@@ -1,6 +1,3 @@
-#ifndef METASHELL_TEST_STRING_READER_HPP
-#define METASHELL_TEST_STRING_READER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,23 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
+#include <metashell/logging_mode.hpp>
 
-#include <vector>
-#include <string>
+#include <iostream>
 
-class string_reader
+using namespace metashell;
+
+std::ostream& metashell::operator<<(std::ostream& out_, logging_mode m_)
 {
-public:
-  explicit string_reader(std::initializer_list<std::string> strings_);
-
-  boost::optional<std::string> operator()(const std::string&);
-private:
-  std::vector<std::string> _strings;
-  // storing the index instead of an iterator makes the default copy
-  // constructor work
-  std::vector<std::string>::size_type _next;
-};
-
-#endif
+  switch (m_)
+  {
+  case logging_mode::none: return out_ << "none";
+  case logging_mode::console: return out_ << "console";
+  case logging_mode::file: return out_ << "file";
+  }
+  return out_;
+}
 

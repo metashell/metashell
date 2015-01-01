@@ -43,10 +43,13 @@ namespace
   void precompile(
     const std::string& clang_path_,
     const std::vector<std::string>& clang_args_,
-    const std::string& fn_
+    const std::string& fn_,
+    logger* logger_
   )
   {
     using boost::algorithm::trim_copy;
+
+    METASHELL_LOG(logger_, "Generating percompiled header for " + fn_);
 
     std::vector<std::string> args(clang_args_);
     extend_to_find_headers_in_local_dir(args);
@@ -55,7 +58,8 @@ namespace
     args.push_back(fn_ + ".pch");
     args.push_back(fn_);
 
-    const just::process::output o = clang_binary(clang_path_).run(args);
+    const just::process::output
+      o = clang_binary(clang_path_, logger_).run(args);
     const std::string err = o.standard_output() + o.standard_error();
     if (
       !err.empty()
@@ -69,9 +73,12 @@ namespace
   }
 }
 
-header_file_environment::header_file_environment(const config& config_) :
+header_file_environment::header_file_environment(
+  const config& config_,
+  logger* logger_
+) :
   _dir(),
-  _buffer(_dir.path(), config_, "-I" + _dir.path()),
+  _buffer(_dir.path(), config_, "-I" + _dir.path(), logger_),
   _clang_args(),
   _empty_headers(_buffer.internal_dir(), true),
   _use_precompiled_headers(config_.use_precompiled_headers),
@@ -142,7 +149,12 @@ void header_file_environment::save()
 
   if (_use_precompiled_headers)
   {
-    precompile(_clang_path, _buffer.clang_arguments(), fn);
+    precompile(
+      _clang_path,
+      _buffer.clang_arguments(),
+      fn,
+      _buffer.get_logger()
+    );
   }
 }
 

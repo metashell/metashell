@@ -56,11 +56,13 @@ namespace
 in_memory_environment::in_memory_environment(
   const std::string& internal_dir_,
   const config& config_,
-  const std::string& clang_extra_arg_
+  const std::string& clang_extra_arg_,
+  logger* logger_
 ) :
   _buffer(),
   _headers(internal_dir_),
-  _clang_args()
+  _clang_args(),
+  _logger(logger_)
 {
   assert(!internal_dir_.empty());
 
@@ -134,5 +136,10 @@ void in_memory_environment::add_clang_arg(const std::string& arg_)
 std::string in_memory_environment::get_all() const
 {
   return _buffer;
+}
+
+logger* in_memory_environment::get_logger()
+{
+  return _logger;
 }
 

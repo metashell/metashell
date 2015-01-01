@@ -21,6 +21,7 @@
 #include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/command_processor_queue.hpp>
+#include <metashell/logger.hpp>
 
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -41,14 +42,19 @@ namespace metashell
   class shell : public iface::command_processor
   {
   public:
-    explicit shell(const config& config_);
+    explicit shell(const config& config_, logger* logger_ = nullptr);
 
-    shell(const config& config_, command_processor_queue& cpq_);
+    shell(
+      const config& config_,
+      command_processor_queue& cpq_,
+      logger* logger_ = nullptr
+    );
 
     shell(
       const config& config_,
       std::unique_ptr<environment> env_,
-      command_processor_queue& cpq_
+      command_processor_queue& cpq_,
+      logger* logger_ = nullptr
     );
 
     void display_splash(iface::displayer& displayer_);
@@ -101,6 +107,7 @@ namespace metashell
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
+    logger* _logger;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

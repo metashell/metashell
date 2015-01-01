@@ -19,6 +19,7 @@
 
 #include "cxtranslationunit.hpp"
 
+#include <metashell/logger.hpp>
 #include <metashell/environment.hpp>
 #include <metashell/unsaved_file.hpp>
 
@@ -33,7 +34,7 @@ namespace metashell
   class cxindex : boost::noncopyable
   {
   public:
-    cxindex();
+    explicit cxindex(logger* logger_);
     ~cxindex();
 
     std::unique_ptr<cxtranslationunit> parse_code(
@@ -42,6 +43,7 @@ namespace metashell
     );
   private:
     CXIndex _index;
+    logger* _logger;
   };
 }
 

@@ -27,6 +27,7 @@
 #include <metashell/colored_string.hpp>
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/logger.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -41,7 +42,8 @@ public:
 
   mdb_shell(
       const config& conf,
-      const environment& env);
+      const environment& env,
+      logger* logger_);
 
   virtual std::string prompt() const override;
   virtual bool stopped() const override;
@@ -130,6 +132,7 @@ protected:
   bool last_command_repeatable = false;
 
   bool is_stopped = false;
+  logger* _logger;
 };
 
 }

@@ -77,7 +77,6 @@ JUST_TEST_CASE(test_tag_dispatched_formatting)
 JUST_TEST_CASE(test_formatting_disabled)
 {
   config cfg;
-  cfg.indent = false;
   cfg.max_template_depth = 256;
 
   in_memory_displayer d;

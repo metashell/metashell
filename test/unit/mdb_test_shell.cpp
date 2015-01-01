@@ -31,14 +31,14 @@ namespace
 }
 
 mdb_test_shell::mdb_test_shell(const std::string& line) :
-  metashell::mdb_shell(get_shell().get_config(), get_shell().env())
+  metashell::mdb_shell(get_shell().get_config(), get_shell().env(), nullptr)
 {
   env.append(line);
 }
 
 mdb_test_shell::mdb_test_shell(
     metashell::shell& shell, const std::string& line) :
-  metashell::mdb_shell(shell.get_config(), shell.env())
+  metashell::mdb_shell(shell.get_config(), shell.env(), nullptr)
 {
   env.append(line);
 }
