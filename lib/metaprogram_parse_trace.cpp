@@ -21,14 +21,9 @@
 #include <sstream>
 #include <iostream>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-
-#include <metashell/metaprogram.hpp>
 #include <metashell/type.hpp>
-
 #include <metashell/exception.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include "templight_messages.pb.h"
 
