@@ -42,17 +42,20 @@ namespace metashell
   class shell : public iface::command_processor
   {
   public:
-    explicit shell(const config& config_);
+    explicit shell(const config& config_, logger* logger_ = nullptr);
 
-    shell(const config& config_, command_processor_queue& cpq_);
+    shell(
+      const config& config_,
+      command_processor_queue& cpq_,
+      logger* logger_ = nullptr
+    );
 
     shell(
       const config& config_,
       std::unique_ptr<environment> env_,
-      command_processor_queue& cpq_
+      command_processor_queue& cpq_,
+      logger* logger_ = nullptr
     );
-
-    void set_logger(logger& logger_);
 
     void display_splash(iface::displayer& displayer_);
     virtual void line_available(

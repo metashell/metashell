@@ -63,7 +63,7 @@ int main(int argc_, const char* argv_[])
       METASHELL_LOG(&logger, "Running shell");
 
       std::unique_ptr<metashell::shell>
-        shell(new metashell::shell(cfg, ccfg.processor_queue()));
+        shell(new metashell::shell(cfg, ccfg.processor_queue(), &logger));
 
       if (cfg.splash_enabled)
       {

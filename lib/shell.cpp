@@ -134,21 +134,25 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_) :
+shell::shell(const config& config_, logger* logger_) :
   _env(),
   _config(config_),
   _stopped(false),
-  _logger(nullptr)
+  _logger(logger_)
 {
   rebuild_environment();
   init(nullptr);
 }
 
-shell::shell(const config& config_, command_processor_queue& cpq_) :
+shell::shell(
+  const config& config_,
+  command_processor_queue& cpq_,
+  logger* logger_
+) :
   _env(),
   _config(config_),
   _stopped(false),
-  _logger(nullptr)
+  _logger(logger_)
 {
   rebuild_environment();
   init(&cpq_);
@@ -157,12 +161,13 @@ shell::shell(const config& config_, command_processor_queue& cpq_) :
 shell::shell(
   const config& config_,
   std::unique_ptr<environment> env_,
-  command_processor_queue& cpq_
+  command_processor_queue& cpq_,
+  logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
-  _logger(nullptr)
+  _logger(logger_)
 {
   init(&cpq_);
 }
@@ -470,10 +475,5 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   null_history h;
   line_available(s_, displayer_, h);
-}
-
-void shell::set_logger(logger& logger_)
-{
-  _logger = &logger_;
 }
 
