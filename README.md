@@ -54,6 +54,7 @@ shell.
     - [Extending the environment](#extending-the-environment)
     - [The environment stack](#the-environment-stack)
     - [What happens to files included to the environment?](#what-happens-to-files-included-to-the-environment)
+- [Troubleshooting](#troubleshooting)
 - [Embedding Metashell into other applications](#embedding-metashell-into-other-applications)
     - [Supported commands](#supported-commands)
     - [Supported output documents](#supported-output-documents)
@@ -1043,6 +1044,19 @@ following command in the shell:
 ```
 
 This command disables precompiled header usage in the current shell.
+
+## Troubleshooting
+
+When you are having difficulties with setting up Metashell or you would like to
+know more about how it works internally, you can enable logging by starting
+Metashell with the `--log -` command line argument. This tells Metashell to
+display in the console (in comments) what it is doing in the background (eg.
+compiling some code with Clang, searching for standard headers, etc).
+
+To save the logs into a file instead of displaying them in the console, you need
+to start Metashell with the `--log <filename>` argument.
+
+If you can't fix things using the logs, please contact the authors of Metashell.
 
 ## Embedding Metashell into other applications
 
