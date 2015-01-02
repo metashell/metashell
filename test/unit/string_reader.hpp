@@ -20,6 +20,7 @@
 #include <boost/optional.hpp>
 
 #include <vector>
+#include <string>
 
 class string_reader
 {
