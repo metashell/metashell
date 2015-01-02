@@ -130,46 +130,28 @@ file_location file_location_from_protobuf(
 instantiation_kind instantiation_kind_from_protobuf(
     const TemplightEntry::InstantiationKind& kind)
 {
-  //TODO switch case
-  if (kind == TemplightEntry::TemplateInstantiation)
-  {
-    return instantiation_kind::template_instantiation;
-  }
-  else if (kind == TemplightEntry::DefaultTemplateArgumentInstantiation)
-  {
-    return instantiation_kind::default_template_argument_instantiation;
-  }
-  else if (kind == TemplightEntry::DefaultFunctionArgumentInstantiation)
-  {
-    return instantiation_kind::default_function_argument_instantiation;
-  }
-  else if (kind == TemplightEntry::ExplicitTemplateArgumentSubstitution)
-  {
-    return instantiation_kind::explicit_template_argument_substitution;
-  }
-  else if (kind == TemplightEntry::DeducedTemplateArgumentSubstitution)
-  {
-    return instantiation_kind::deduced_template_argument_substitution;
-  }
-  else if (kind == TemplightEntry::PriorTemplateArgumentSubstitution)
-  {
-    return instantiation_kind::prior_template_argument_substitution;
-  }
-  else if (kind == TemplightEntry::DefaultTemplateArgumentChecking)
-  {
-    return instantiation_kind::default_template_argument_checking;
-  }
-  else if (kind == TemplightEntry::ExceptionSpecInstantiation)
-  {
-    return instantiation_kind::exception_spec_instantiation;
-  }
-  else if (kind == TemplightEntry::Memoization)
-  {
-    return instantiation_kind::memoization;
-  }
-  else
-  {
-    throw exception("templight xml parse failed (invalid instantiation kind)");
+  switch (kind) {
+    case TemplightEntry::TemplateInstantiation:
+      return instantiation_kind::template_instantiation;
+    case TemplightEntry::DefaultTemplateArgumentInstantiation:
+      return instantiation_kind::default_template_argument_instantiation;
+    case TemplightEntry::DefaultFunctionArgumentInstantiation:
+      return instantiation_kind::default_function_argument_instantiation;
+    case TemplightEntry::ExplicitTemplateArgumentSubstitution:
+      return instantiation_kind::explicit_template_argument_substitution;
+    case TemplightEntry::DeducedTemplateArgumentSubstitution:
+      return instantiation_kind::deduced_template_argument_substitution;
+    case TemplightEntry::PriorTemplateArgumentSubstitution:
+      return instantiation_kind::prior_template_argument_substitution;
+    case TemplightEntry::DefaultTemplateArgumentChecking:
+      return instantiation_kind::default_template_argument_checking;
+    case TemplightEntry::ExceptionSpecInstantiation:
+      return instantiation_kind::exception_spec_instantiation;
+    case TemplightEntry::Memoization:
+      return instantiation_kind::memoization;
+    default:
+      throw exception(
+          "templight xml parse failed (invalid instantiation kind)");
   }
 }
 
