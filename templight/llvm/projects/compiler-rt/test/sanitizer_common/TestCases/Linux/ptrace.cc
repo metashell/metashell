@@ -1,5 +1,4 @@
 // RUN: %clangxx -O0 %s -o %t && %run %t
-// XFAIL: arm-linux-gnueabi
 
 #include <assert.h>
 #include <signal.h>
@@ -18,8 +17,10 @@ int main(void) {
     execl("/bin/true", "true", NULL);
   } else {
     wait(NULL);
-    user_regs_struct regs;
     int res;
+
+#if __x86_64__
+    user_regs_struct regs;
     res = ptrace(PTRACE_GETREGS, pid, NULL, &regs);
     assert(!res);
     if (regs.rip)
@@ -30,6 +31,21 @@ int main(void) {
     assert(!res);
     if (fpregs.mxcsr)
       printf("%x\n", fpregs.mxcsr);
+#endif // __x86_64__
+
+#if __powerpc64__
+    struct pt_regs regs;
+    res = ptrace((enum __ptrace_request)PTRACE_GETREGS, pid, NULL, &regs);
+    assert(!res);
+    if (regs.nip)
+      printf("%lx\n", regs.nip);
+
+    elf_fpregset_t fpregs;
+    res = ptrace((enum __ptrace_request)PTRACE_GETFPREGS, pid, NULL, &fpregs);
+    assert(!res);
+    if ((elf_greg_t)fpregs[32]) // fpscr
+      printf("%lx\n", (elf_greg_t)fpregs[32]);
+#endif // __powerpc64__
 
     siginfo_t siginfo;
     res = ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo);

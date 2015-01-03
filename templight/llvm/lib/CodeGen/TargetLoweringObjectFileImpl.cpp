@@ -464,14 +464,15 @@ emitModuleFlags(MCStreamer &Streamer,
       continue;
 
     StringRef Key = MFE.Key->getString();
-    Value *Val = MFE.Val;
+    Metadata *Val = MFE.Val;
 
     if (Key == "Objective-C Image Info Version") {
-      VersionVal = cast<ConstantInt>(Val)->getZExtValue();
+      VersionVal = mdconst::extract<ConstantInt>(Val)->getZExtValue();
     } else if (Key == "Objective-C Garbage Collection" ||
                Key == "Objective-C GC Only" ||
-               Key == "Objective-C Is Simulated") {
-      ImageInfoFlags |= cast<ConstantInt>(Val)->getZExtValue();
+               Key == "Objective-C Is Simulated" ||
+               Key == "Objective-C Image Swift Version") {
+      ImageInfoFlags |= mdconst::extract<ConstantInt>(Val)->getZExtValue();
     } else if (Key == "Objective-C Image Info Section") {
       SectionVal = cast<MDString>(Val)->getString();
     } else if (Key == "Linker Options") {
@@ -584,8 +585,27 @@ bool TargetLoweringObjectFileMachO::isSectionAtomizableBySymbols(
     if (SMO.getKind().isMergeable1ByteCString())
       return false;
 
+    if (SMO.getSegmentName() == "__TEXT" &&
+        SMO.getSectionName() == "__objc_classname" &&
+        SMO.getType() == MachO::S_CSTRING_LITERALS)
+      return false;
+
+    if (SMO.getSegmentName() == "__TEXT" &&
+        SMO.getSectionName() == "__objc_methname" &&
+        SMO.getType() == MachO::S_CSTRING_LITERALS)
+      return false;
+
+    if (SMO.getSegmentName() == "__TEXT" &&
+        SMO.getSectionName() == "__objc_methtype" &&
+        SMO.getType() == MachO::S_CSTRING_LITERALS)
+      return false;
+
     if (SMO.getSegmentName() == "__DATA" &&
         SMO.getSectionName() == "__cfstring")
+      return false;
+
+    // no_dead_strip sections are not atomized in practice.
+    if (SMO.hasAttribute(MachO::S_ATTR_NO_DEAD_STRIP))
       return false;
 
     switch (SMO.getType()) {
@@ -946,7 +966,7 @@ emitModuleFlags(MCStreamer &Streamer,
        i = ModuleFlags.begin(), e = ModuleFlags.end(); i != e; ++i) {
     const Module::ModuleFlagEntry &MFE = *i;
     StringRef Key = MFE.Key->getString();
-    Value *Val = MFE.Val;
+    Metadata *Val = MFE.Val;
     if (Key == "Linker Options") {
       LinkerOptions = cast<MDNode>(Val);
       break;

@@ -122,7 +122,7 @@ X86RegisterInfo::getMatchingSuperRegClass(const TargetRegisterClass *A,
 const TargetRegisterClass*
 X86RegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC) const{
   // Don't allow super-classes of GR8_NOREX.  This class is only used after
-  // extrating sub_8bit_hi sub-registers.  The H sub-registers cannot be copied
+  // extracting sub_8bit_hi sub-registers.  The H sub-registers cannot be copied
   // to the full GR8 register class in 64-bit mode, so we cannot allow the
   // reigster class inflation.
   //
@@ -533,6 +533,14 @@ X86RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 unsigned X86RegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   const TargetFrameLowering *TFI = MF.getSubtarget().getFrameLowering();
   return TFI->hasFP(MF) ? FramePtr : StackPtr;
+}
+
+unsigned X86RegisterInfo::getPtrSizedFrameRegister(
+    const MachineFunction &MF) const {
+  unsigned FrameReg = getFrameRegister(MF);
+  if (Subtarget.isTarget64BitILP32())
+    FrameReg = getX86SubSuperRegister(FrameReg, MVT::i32, false);
+  return FrameReg;
 }
 
 namespace llvm {

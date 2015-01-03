@@ -2,6 +2,7 @@
 # define a handy helper function for it. The compile flags setting in CMake
 # has serious issues that make its syntax challenging at best.
 function(set_target_compile_flags target)
+  set(argstring "")
   foreach(arg ${ARGN})
     set(argstring "${argstring} ${arg}")
   endforeach()
@@ -9,22 +10,11 @@ function(set_target_compile_flags target)
 endfunction()
 
 function(set_target_link_flags target)
+  set(argstring "")
   foreach(arg ${ARGN})
     set(argstring "${argstring} ${arg}")
   endforeach()
   set_property(TARGET ${target} PROPERTY LINK_FLAGS "${argstring}")
-endfunction()
-
-# Check if a given flag is present in a space-separated flag_string.
-# Store the result in out_var.
-function(find_flag_in_string flag_string flag out_var)
-  string(REPLACE " " ";" flag_list "${flag_string}")
-  list(FIND flag_list ${flag} flag_pos)
-  if(NOT flag_pos EQUAL -1)
-    set(${out_var} TRUE PARENT_SCOPE)
-  else()
-    set(${out_var} FALSE PARENT_SCOPE)
-  endif()
 endfunction()
 
 # Set the variable var_PYBOOL to True if var holds a true-ish string,
@@ -38,7 +28,7 @@ macro(pythonize_bool var)
 endmacro()
 
 # Appends value to all lists in ARGN, if the condition is true.
-macro(append_if condition value)
+macro(append_list_if condition value)
   if(${condition})
     foreach(list ${ARGN})
       list(APPEND ${list} ${value})
@@ -56,6 +46,6 @@ macro(append_string_if condition value)
 endmacro()
 
 macro(append_no_rtti_flag list)
-  append_if(COMPILER_RT_HAS_FNO_RTTI_FLAG -fno-rtti ${list})
-  append_if(COMPILER_RT_HAS_GR_FLAG /GR- ${list})
+  append_list_if(COMPILER_RT_HAS_FNO_RTTI_FLAG -fno-rtti ${list})
+  append_list_if(COMPILER_RT_HAS_GR_FLAG /GR- ${list})
 endmacro()

@@ -1663,7 +1663,7 @@ raw_ostream &operator<<(raw_ostream &OS, const Record &R);
 
 struct MultiClass {
   Record Rec;  // Placeholder for template args and Name.
-  typedef std::vector<Record*> RecordVector;
+  typedef std::vector<std::unique_ptr<Record>> RecordVector;
   RecordVector DefPrototypes;
 
   void dump() const;
@@ -1688,15 +1688,13 @@ public:
     auto I = Defs.find(Name);
     return I == Defs.end() ? nullptr : I->second.get();
   }
-  void addClass(Record *_R) {
-    std::unique_ptr<Record> R(_R);
+  void addClass(std::unique_ptr<Record> R) {
     bool Ins = Classes.insert(std::make_pair(R->getName(),
                                              std::move(R))).second;
     (void)Ins;
     assert(Ins && "Class already exists");
   }
-  void addDef(Record *_R) {
-    std::unique_ptr<Record> R(_R);
+  void addDef(std::unique_ptr<Record> R) {
     bool Ins = Defs.insert(std::make_pair(R->getName(),
                                           std::move(R))).second;
     (void)Ins;

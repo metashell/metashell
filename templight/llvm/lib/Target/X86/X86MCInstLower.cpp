@@ -264,7 +264,8 @@ MCOperand X86MCInstLower::LowerSymbolOperand(const MachineOperand &MO,
     Expr = MCBinaryExpr::CreateSub(Expr,
                             MCSymbolRefExpr::Create(MF.getPICBaseSymbol(), Ctx),
                                    Ctx);
-    if (MO.isJTI() && MAI.hasSetDirective()) {
+    if (MO.isJTI()) {
+      assert(MAI.doesSetDirectiveSuppressesReloc());
       // If .set directive is supported, use it to reduce the number of
       // relocations the assembler will generate for differences between
       // local labels. This is only safe when the symbols are in the same
@@ -389,9 +390,8 @@ static void SimplifyShortMoveForm(X86AsmPrinter &Printer, MCInst &Inst,
   Inst.addOperand(Seg);
 }
 
-static unsigned getRetOpcode(const X86Subtarget &Subtarget)
-{
-	return Subtarget.is64Bit() ? X86::RETQ : X86::RETL;
+static unsigned getRetOpcode(const X86Subtarget &Subtarget) {
+  return Subtarget.is64Bit() ? X86::RETQ : X86::RETL;
 }
 
 void X86MCInstLower::Lower(const MachineInstr *MI, MCInst &OutMI) const {
@@ -807,6 +807,58 @@ static void EmitNops(MCStreamer &OS, unsigned NumBytes, bool Is64Bit, const MCSu
   } // while (NumBytes)
 }
 
+static void LowerSTATEPOINT(MCStreamer &OS, StackMaps &SM,
+                            const MachineInstr &MI, bool Is64Bit,
+                            const TargetMachine& TM,
+                            const MCSubtargetInfo& STI,
+                            X86MCInstLower &MCInstLowering) {
+  assert(Is64Bit && "Statepoint currently only supports X86-64");
+
+  // Lower call target and choose correct opcode
+  const MachineOperand &call_target = StatepointOpers(&MI).getCallTarget();
+  MCOperand call_target_mcop;
+  unsigned call_opcode;
+  switch (call_target.getType()) {
+  case MachineOperand::MO_GlobalAddress:
+  case MachineOperand::MO_ExternalSymbol:
+    call_target_mcop = MCInstLowering.LowerSymbolOperand(
+      call_target,
+      MCInstLowering.GetSymbolFromOperand(call_target));
+    call_opcode = X86::CALL64pcrel32;
+    // Currently, we only support relative addressing with statepoints.
+    // Otherwise, we'll need a scratch register to hold the target
+    // address.  You'll fail asserts during load & relocation if this
+    // symbol is to far away. (TODO: support non-relative addressing)
+    break;
+  case MachineOperand::MO_Immediate:
+    call_target_mcop = MCOperand::CreateImm(call_target.getImm());
+    call_opcode = X86::CALL64pcrel32;
+    // Currently, we only support relative addressing with statepoints.
+    // Otherwise, we'll need a scratch register to hold the target
+    // immediate.  You'll fail asserts during load & relocation if this
+    // address is to far away. (TODO: support non-relative addressing)
+    break;
+  case MachineOperand::MO_Register:
+    call_target_mcop = MCOperand::CreateReg(call_target.getReg());
+    call_opcode = X86::CALL64r;
+    break;
+  default:
+    llvm_unreachable("Unsupported operand type in statepoint call target");
+    break;
+  }
+
+  // Emit call
+  MCInst call_inst;
+  call_inst.setOpcode(call_opcode);
+  call_inst.addOperand(call_target_mcop);
+  OS.EmitInstruction(call_inst, STI);
+
+  // Record our statepoint node in the same section used by STACKMAP
+  // and PATCHPOINT
+  SM.recordStatepoint(MI);
+}
+
+
 // Lower a stackmap of the form:
 // <id>, <shadowBytes>, ...
 void X86AsmPrinter::LowerSTACKMAP(const MachineInstr &MI) {
@@ -1029,6 +1081,9 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
       .addExpr(DotExpr));
     return;
   }
+  case TargetOpcode::STATEPOINT:
+    return LowerSTATEPOINT(OutStreamer, SM, *MI, Subtarget->is64Bit(), TM,
+                           getSubtargetInfo(), MCInstLowering);
 
   case TargetOpcode::STACKMAP:
     return LowerSTACKMAP(*MI);
@@ -1208,5 +1263,21 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
+
+  // Stackmap shadows cannot include branch targets, so we can count the bytes
+  // in a call towards the shadow, but must ensure that the no thread returns
+  // in to the stackmap shadow.  The only way to achieve this is if the call
+  // is at the end of the shadow.
+  if (MI->isCall()) {
+    // Count then size of the call towards the shadow
+    SMShadowTracker.count(TmpInst, getSubtargetInfo());
+    // Then flush the shadow so that we fill with nops before the call, not
+    // after it.
+    SMShadowTracker.emitShadowPadding(OutStreamer, getSubtargetInfo());
+    // Then emit the call
+    OutStreamer.EmitInstruction(TmpInst, getSubtargetInfo());
+    return;
+  }
+
   EmitAndCountInstruction(TmpInst);
 }

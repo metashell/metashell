@@ -30,6 +30,11 @@ namespace metashell
 
     result();
 
+    result(
+      const std::string& output_,
+      const std::string& error_,
+      const std::string& info_);
+
     template <class InputIt>
     result(
       const std::string& output_,

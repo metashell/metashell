@@ -75,6 +75,32 @@ static bool isOperandMentioned(unsigned OpNo,
   return false;
 }
 
+static bool CheckNakedParmReference(Expr *E, Sema &S) {
+  FunctionDecl *Func = dyn_cast<FunctionDecl>(S.CurContext);
+  if (!Func)
+    return false;
+  if (!Func->hasAttr<NakedAttr>())
+    return false;
+
+  SmallVector<Expr*, 4> WorkList;
+  WorkList.push_back(E);
+  while (WorkList.size()) {
+    Expr *E = WorkList.pop_back_val();
+    if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(E)) {
+      if (isa<ParmVarDecl>(DRE->getDecl())) {
+        S.Diag(DRE->getLocStart(), diag::err_asm_naked_parm_ref);
+        S.Diag(Func->getAttr<NakedAttr>()->getLocation(), diag::note_attribute);
+        return true;
+      }
+    }
+    for (Stmt *Child : E->children()) {
+      if (Expr *E = dyn_cast_or_null<Expr>(Child))
+        WorkList.push_back(E);
+    }
+  }
+  return false;
+}
+
 StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
                                  bool IsVolatile, unsigned NumOutputs,
                                  unsigned NumInputs, IdentifierInfo **Names,
@@ -90,15 +116,11 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
   SmallVector<TargetInfo::ConstraintInfo, 4> OutputConstraintInfos;
 
   // The parser verifies that there is a string literal here.
-  if (!AsmString->isAscii())
-    return StmtError(Diag(AsmString->getLocStart(),diag::err_asm_wide_character)
-      << AsmString->getSourceRange());
+  assert(AsmString->isAscii());
 
   for (unsigned i = 0; i != NumOutputs; i++) {
     StringLiteral *Literal = Constraints[i];
-    if (!Literal->isAscii())
-      return StmtError(Diag(Literal->getLocStart(),diag::err_asm_wide_character)
-        << Literal->getSourceRange());
+    assert(Literal->isAscii());
 
     StringRef OutputName;
     if (Names[i])
@@ -116,6 +138,10 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
       return StmtError(Diag(OutputExpr->getLocStart(),
                             diag::err_asm_invalid_lvalue_in_output)
                        << OutputExpr->getSourceRange());
+
+    // Referring to parameters is not allowed in naked functions.
+    if (CheckNakedParmReference(OutputExpr, *this))
+      return StmtError();
 
     if (RequireCompleteType(OutputExpr->getLocStart(), Exprs[i]->getType(),
                             diag::err_dereference_incomplete_type))
@@ -142,9 +168,7 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
 
   for (unsigned i = NumOutputs, e = NumOutputs + NumInputs; i != e; i++) {
     StringLiteral *Literal = Constraints[i];
-    if (!Literal->isAscii())
-      return StmtError(Diag(Literal->getLocStart(),diag::err_asm_wide_character)
-        << Literal->getSourceRange());
+    assert(Literal->isAscii());
 
     StringRef InputName;
     if (Names[i])
@@ -159,6 +183,10 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
     }
 
     Expr *InputExpr = Exprs[i];
+
+    // Referring to parameters is not allowed in naked functions.
+    if (CheckNakedParmReference(InputExpr, *this))
+      return StmtError();
 
     // Only allow void types for memory constraints.
     if (Info.allowsMemory() && !Info.allowsRegister()) {
@@ -206,9 +234,7 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
   // Check that the clobbers are valid.
   for (unsigned i = 0; i != NumClobbers; i++) {
     StringLiteral *Literal = Clobbers[i];
-    if (!Literal->isAscii())
-      return StmtError(Diag(Literal->getLocStart(),diag::err_asm_wide_character)
-        << Literal->getSourceRange());
+    assert(Literal->isAscii());
 
     StringRef Clobber = Literal->getString();
 
@@ -421,17 +447,8 @@ ExprResult Sema::LookupInlineAsmIdentifier(CXXScopeSpec &SS,
   if (!Result.isUsable()) return Result;
 
   // Referring to parameters is not allowed in naked functions.
-  if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(Result.get())) {
-    if (ParmVarDecl *Parm = dyn_cast<ParmVarDecl>(DRE->getDecl())) {
-      if (FunctionDecl *Func = dyn_cast<FunctionDecl>(Parm->getDeclContext())) {
-        if (Func->hasAttr<NakedAttr>()) {
-          Diag(Id.getLocStart(), diag::err_asm_naked_parm_ref);
-          Diag(Func->getAttr<NakedAttr>()->getLocation(), diag::note_attribute);
-          return ExprError();
-        }
-      }
-    }
-  }
+  if (CheckNakedParmReference(Result.get(), *this))
+    return ExprError();
 
   QualType T = Result.get()->getType();
 
@@ -536,7 +553,10 @@ LabelDecl *Sema::GetOrCreateMSAsmLabel(StringRef ExternalLabelName,
   LabelDecl* Label = LookupOrCreateLabel(PP.getIdentifierInfo(ExternalLabelName),
                                          Location);
 
-  if (!Label->isMSAsmLabel()) {
+  if (Label->isMSAsmLabel()) {
+    // If we have previously created this label implicitly, mark it as used.
+    Label->markUsed(Context);
+  } else {
     // Otherwise, insert it, but only resolve it if we have seen the label itself.
     std::string InternalName;
     llvm::raw_string_ostream OS(InternalName);

@@ -12,11 +12,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "interception/interception.h"
 #include "sanitizer_common/sanitizer_allocator.h"
 #include "sanitizer_common/sanitizer_atomic.h"
 #include "sanitizer_common/sanitizer_common.h"
 #include "sanitizer_common/sanitizer_flags.h"
-#include "sanitizer_common/sanitizer_interception.h"
 #include "sanitizer_common/sanitizer_internal_defs.h"
 #include "sanitizer_common/sanitizer_linux.h"
 #include "sanitizer_common/sanitizer_platform_limits_posix.h"
@@ -215,9 +215,9 @@ extern "C" void *__lsan_thread_start_func(void *arg) {
   int tid = 0;
   while ((tid = atomic_load(&p->tid, memory_order_acquire)) == 0)
     internal_sched_yield();
-  atomic_store(&p->tid, 0, memory_order_release);
   SetCurrentThread(tid);
   ThreadStart(tid, GetTid());
+  atomic_store(&p->tid, 0, memory_order_release);
   return callback(param);
 }
 

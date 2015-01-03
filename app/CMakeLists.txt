@@ -32,6 +32,7 @@ target_link_libraries(metashell
   boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
+  ${PROTOBUF_LIBRARY}
 )
 
 # Readline

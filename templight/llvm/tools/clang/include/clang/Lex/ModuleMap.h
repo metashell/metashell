@@ -65,19 +65,21 @@ private:
   llvm::StringMap<Module *> Modules;
 
 public:
-  /// \brief Describes the role of a module header.
+  /// \brief Flags describing the role of a module header.
   enum ModuleHeaderRole {
     /// \brief This header is normally included in the module.
-    NormalHeader,
+    NormalHeader  = 0x0,
     /// \brief This header is included but private.
-    PrivateHeader,
-    /// \brief This header is explicitly excluded from the module.
-    ExcludedHeader
+    PrivateHeader = 0x1,
+    /// \brief This header is part of the module (for layering purposes) but
+    /// should be textually included.
+    TextualHeader = 0x2,
     // Caution: Adding an enumerator needs other changes.
     // Adjust the number of bits for KnownHeader::Storage.
     // Adjust the bitfield HeaderFileInfo::HeaderRole size.
     // Adjust the HeaderFileInfoTrait::ReadData streaming.
     // Adjust the HeaderFileInfoTrait::EmitData streaming.
+    // Adjust ModuleMap::addHeader.
   };
 
   /// \brief A header that is known to reside within a given module,
@@ -96,8 +98,8 @@ public:
     ModuleHeaderRole getRole() const { return Storage.getInt(); }
 
     /// \brief Whether this header is available in the module.
-    bool isAvailable() const { 
-      return getRole() != ExcludedHeader && getModule()->isAvailable(); 
+    bool isAvailable() const {
+      return getModule()->isAvailable();
     }
 
     // \brief Whether this known header is valid (i.e., it has an
@@ -249,11 +251,16 @@ public:
   /// used from.  Used to disambiguate if a header is present in multiple
   /// modules.
   ///
+  /// \param IncludeTextualHeaders If \c true, also find textual headers. By
+  /// default, these are treated like excluded headers and result in no known
+  /// header being found.
+  ///
   /// \returns The module KnownHeader, which provides the module that owns the
   /// given header file.  The KnownHeader is default constructed to indicate
   /// that no module owns this header file.
   KnownHeader findModuleForHeader(const FileEntry *File,
-                                  Module *RequestingModule = nullptr);
+                                  Module *RequestingModule = nullptr,
+                                  bool IncludeTextualHeaders = false);
 
   /// \brief Reports errors if a module must not include a specific file.
   ///
@@ -433,8 +440,11 @@ public:
 
   /// \brief Adds this header to the given module.
   /// \param Role The role of the header wrt the module.
-  void addHeader(Module *Mod, const FileEntry *Header,
+  void addHeader(Module *Mod, Module::Header Header,
                  ModuleHeaderRole Role);
+
+  /// \brief Marks this header as being excluded from the given module.
+  void excludeHeader(Module *Mod, Module::Header Header);
 
   /// \brief Parse the given module map file, and record any modules we 
   /// encounter.
@@ -444,8 +454,12 @@ public:
   /// \param IsSystem Whether this module map file is in a system header
   /// directory, and therefore should be considered a system module.
   ///
+  /// \param HomeDir The directory in which relative paths within this module
+  ///        map file will be resolved.
+  ///
   /// \returns true if an error occurred, false otherwise.
-  bool parseModuleMapFile(const FileEntry *File, bool IsSystem);
+  bool parseModuleMapFile(const FileEntry *File, bool IsSystem,
+                          const DirectoryEntry *HomeDir);
     
   /// \brief Dump the contents of the module map, for debugging purposes.
   void dump();

@@ -54,7 +54,7 @@ class ScopedAnnotation {
     StatInc(thr, StatAnnotation); \
     StatInc(thr, Stat##typ); \
     ScopedAnnotation sa(thr, __func__, f, l, caller_pc); \
-    const uptr pc = __sanitizer::StackTrace::GetCurrentPc(); \
+    const uptr pc = StackTrace::GetCurrentPc(); \
     (void)pc; \
 /**/
 
@@ -454,4 +454,6 @@ const char INTERFACE_ATTRIBUTE* ThreadSanitizerQuery(const char *query) {
 
 void INTERFACE_ATTRIBUTE
 AnnotateMemoryIsInitialized(char *f, int l, uptr mem, uptr sz) {}
+void INTERFACE_ATTRIBUTE
+AnnotateMemoryIsUninitialized(char *f, int l, uptr mem, uptr sz) {}
 }  // extern "C"

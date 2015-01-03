@@ -18,6 +18,9 @@
 namespace clang {
 
 class CompilerInstance;
+class FrontendAction;
+
+FrontendAction *CreateFrontendAction(CompilerInstance &CI);
 
 /// ExecuteCompilerInvocation - Execute the given actions described by the
 /// compiler invocation object in the given compiler instance.

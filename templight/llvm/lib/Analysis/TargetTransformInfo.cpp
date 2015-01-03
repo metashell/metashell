@@ -101,6 +101,17 @@ bool TargetTransformInfo::isLegalICmpImmediate(int64_t Imm) const {
   return PrevTTI->isLegalICmpImmediate(Imm);
 }
 
+bool TargetTransformInfo::isLegalMaskedLoad(Type *DataType,
+                                            int Consecutive) const {
+  return false;
+}
+
+bool TargetTransformInfo::isLegalMaskedStore(Type *DataType,
+                                             int Consecutive) const {
+  return false;
+}
+
+
 bool TargetTransformInfo::isLegalAddressingMode(Type *Ty, GlobalValue *BaseGV,
                                                 int64_t BaseOffset,
                                                 bool HasBaseReg,
@@ -392,6 +403,7 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
       // FIXME: This is wrong for libc intrinsics.
       return TCC_Basic;
 
+    case Intrinsic::annotation:
     case Intrinsic::assume:
     case Intrinsic::dbg_declare:
     case Intrinsic::dbg_value:
@@ -402,6 +414,10 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     case Intrinsic::objectsize:
     case Intrinsic::ptr_annotation:
     case Intrinsic::var_annotation:
+    case Intrinsic::experimental_gc_result_int:
+    case Intrinsic::experimental_gc_result_float:
+    case Intrinsic::experimental_gc_result_ptr:
+    case Intrinsic::experimental_gc_relocate:
       // These intrinsics don't actually represent code after lowering.
       return TCC_Free;
     }
@@ -474,6 +490,8 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     // These will all likely lower to a single selection DAG node.
     if (Name == "copysign" || Name == "copysignf" || Name == "copysignl" ||
         Name == "fabs" || Name == "fabsf" || Name == "fabsl" || Name == "sin" ||
+        Name == "fmin" || Name == "fminf" || Name == "fminl" ||
+        Name == "fmax" || Name == "fmaxf" || Name == "fmaxl" ||
         Name == "sinf" || Name == "sinl" || Name == "cos" || Name == "cosf" ||
         Name == "cosl" || Name == "sqrt" || Name == "sqrtf" || Name == "sqrtl")
       return false;

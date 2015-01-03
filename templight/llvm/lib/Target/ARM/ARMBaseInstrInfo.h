@@ -156,6 +156,13 @@ public:
   unsigned isStoreToStackSlotPostFE(const MachineInstr *MI,
                                     int &FrameIndex) const override;
 
+  void copyToCPSR(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
+                  unsigned SrcReg, bool KillSrc,
+                  const ARMSubtarget &Subtarget) const;
+  void copyFromCPSR(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
+                    unsigned DestReg, bool KillSrc,
+                    const ARMSubtarget &Subtarget) const;
+
   void copyPhysReg(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
                    DebugLoc DL, unsigned DestReg, unsigned SrcReg,
                    bool KillSrc) const override;
@@ -281,12 +288,6 @@ public:
                                       const TargetRegisterInfo*) const override;
   void breakPartialRegDependency(MachineBasicBlock::iterator, unsigned,
                                  const TargetRegisterInfo *TRI) const override;
-
-  void
-  getUnconditionalBranch(MCInst &Branch,
-                         const MCSymbolRefExpr *BranchTarget) const override;
-
-  void getTrap(MCInst &MI) const override;
 
   /// Get the number of addresses by LDM or VLDM or zero for unknown.
   unsigned getNumLDMAddresses(const MachineInstr *MI) const;

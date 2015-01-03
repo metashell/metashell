@@ -122,10 +122,15 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
 
   // EXTLOAD should be the same as ZEXTLOAD. It is legal for some address
   // spaces, so it is custom lowered to handle those where it isn't.
+  setLoadExtAction(ISD::SEXTLOAD, MVT::i1, Promote);
   setLoadExtAction(ISD::SEXTLOAD, MVT::i8, Custom);
   setLoadExtAction(ISD::SEXTLOAD, MVT::i16, Custom);
+
+  setLoadExtAction(ISD::ZEXTLOAD, MVT::i1, Promote);
   setLoadExtAction(ISD::ZEXTLOAD, MVT::i8, Custom);
   setLoadExtAction(ISD::ZEXTLOAD, MVT::i16, Custom);
+
+  setLoadExtAction(ISD::EXTLOAD, MVT::i1, Promote);
   setLoadExtAction(ISD::EXTLOAD, MVT::i8, Custom);
   setLoadExtAction(ISD::EXTLOAD, MVT::i16, Custom);
 
@@ -181,8 +186,6 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
     setOperationAction(ISD::SUBE, VT, Expand);
   }
 
-  setBooleanContents(ZeroOrNegativeOneBooleanContent);
-  setBooleanVectorContents(ZeroOrNegativeOneBooleanContent);
   setSchedulingPreference(Sched::Source);
 }
 
@@ -809,6 +812,9 @@ SDValue R600TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const 
     case Intrinsic::r600_read_local_size_z:
       return LowerImplicitParameter(DAG, VT, DL, 8);
 
+    case Intrinsic::AMDGPU_read_workdim:
+      return LowerImplicitParameter(DAG, VT, DL, MFI->ABIArgOffset / 4);
+
     case Intrinsic::r600_read_tgid_x:
       return CreateLiveInRegister(DAG, &AMDGPU::R600_TReg32RegClass,
                                   AMDGPU::T1_X, VT);
@@ -904,74 +910,7 @@ void R600TargetLowering::ReplaceNodeResults(SDNode *N,
   }
   case ISD::UDIVREM: {
     SDValue Op = SDValue(N, 0);
-    SDLoc DL(Op);
-    EVT VT = Op.getValueType();
-    EVT HalfVT = VT.getHalfSizedIntegerVT(*DAG.getContext());
-
-    SDValue one = DAG.getConstant(1, HalfVT);
-    SDValue zero = DAG.getConstant(0, HalfVT);
-
-    //HiLo split
-    SDValue LHS = N->getOperand(0);
-    SDValue LHS_Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, LHS, zero);
-    SDValue LHS_Hi = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, LHS, one);
-
-    SDValue RHS = N->getOperand(1);
-    SDValue RHS_Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, RHS, zero);
-    SDValue RHS_Hi = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, RHS, one);
-
-    // Get Speculative values
-    SDValue DIV_Part = DAG.getNode(ISD::UDIV, DL, HalfVT, LHS_Hi, RHS_Lo);
-    SDValue REM_Part = DAG.getNode(ISD::UREM, DL, HalfVT, LHS_Hi, RHS_Lo);
-
-    SDValue REM_Hi = zero;
-    SDValue REM_Lo = DAG.getSelectCC(DL, RHS_Hi, zero, REM_Part, LHS_Hi, ISD::SETEQ);
-
-    SDValue DIV_Hi = DAG.getSelectCC(DL, RHS_Hi, zero, DIV_Part, zero, ISD::SETEQ);
-    SDValue DIV_Lo = zero;
-
-    const unsigned halfBitWidth = HalfVT.getSizeInBits();
-
-    for (unsigned i = 0; i < halfBitWidth; ++i) {
-      SDValue POS = DAG.getConstant(halfBitWidth - i - 1, HalfVT);
-      // Get Value of high bit
-      SDValue HBit;
-      if (halfBitWidth == 32 && Subtarget->hasBFE()) {
-        HBit = DAG.getNode(AMDGPUISD::BFE_U32, DL, HalfVT, LHS_Lo, POS, one);
-      } else {
-        HBit = DAG.getNode(ISD::SRL, DL, HalfVT, LHS_Lo, POS);
-        HBit = DAG.getNode(ISD::AND, DL, HalfVT, HBit, one);
-      }
-
-      SDValue Carry = DAG.getNode(ISD::SRL, DL, HalfVT, REM_Lo,
-        DAG.getConstant(halfBitWidth - 1, HalfVT));
-      REM_Hi = DAG.getNode(ISD::SHL, DL, HalfVT, REM_Hi, one);
-      REM_Hi = DAG.getNode(ISD::OR, DL, HalfVT, REM_Hi, Carry);
-
-      REM_Lo = DAG.getNode(ISD::SHL, DL, HalfVT, REM_Lo, one);
-      REM_Lo = DAG.getNode(ISD::OR, DL, HalfVT, REM_Lo, HBit);
-
-
-      SDValue REM = DAG.getNode(ISD::BUILD_PAIR, DL, VT, REM_Lo, REM_Hi);
-
-      SDValue BIT = DAG.getConstant(1 << (halfBitWidth - i - 1), HalfVT);
-      SDValue realBIT = DAG.getSelectCC(DL, REM, RHS, BIT, zero, ISD::SETGE);
-
-      DIV_Lo = DAG.getNode(ISD::OR, DL, HalfVT, DIV_Lo, realBIT);
-
-      // Update REM
-
-      SDValue REM_sub = DAG.getNode(ISD::SUB, DL, VT, REM, RHS);
-
-      REM = DAG.getSelectCC(DL, REM, RHS, REM_sub, REM, ISD::SETGE);
-      REM_Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, REM, zero);
-      REM_Hi = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, HalfVT, REM, one);
-    }
-
-    SDValue REM = DAG.getNode(ISD::BUILD_PAIR, DL, VT, REM_Lo, REM_Hi);
-    SDValue DIV = DAG.getNode(ISD::BUILD_PAIR, DL, VT, DIV_Lo, DIV_Hi);
-    Results.push_back(DIV);
-    Results.push_back(REM);
+    LowerUDIVREM64(Op, DAG, Results);
     break;
   }
   }
@@ -1178,6 +1117,13 @@ SDValue R600TargetLowering::LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const 
   SDValue False = Op.getOperand(3);
   SDValue CC = Op.getOperand(4);
   SDValue Temp;
+
+  if (VT == MVT::f32) {
+    DAGCombinerInfo DCI(DAG, AfterLegalizeVectorOps, true, nullptr);
+    SDValue MinMax = CombineFMinMaxLegacy(DL, VT, LHS, RHS, True, False, CC, DCI);
+    if (MinMax)
+      return MinMax;
+  }
 
   // LHS and RHS are guaranteed to be the same value type
   EVT CompareVT = LHS.getValueType();
@@ -1698,7 +1644,7 @@ SDValue R600TargetLowering::LowerFormalArguments(
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs,
                  *DAG.getContext());
   MachineFunction &MF = DAG.getMachineFunction();
-  unsigned ShaderType = MF.getInfo<R600MachineFunctionInfo>()->getShaderType();
+  R600MachineFunctionInfo *MFI = MF.getInfo<R600MachineFunctionInfo>();
 
   SmallVector<ISD::InputArg, 8> LocalIns;
 
@@ -1716,7 +1662,7 @@ SDValue R600TargetLowering::LowerFormalArguments(
       MemVT = MemVT.getVectorElementType();
     }
 
-    if (ShaderType != ShaderType::COMPUTE) {
+    if (MFI->getShaderType() != ShaderType::COMPUTE) {
       unsigned Reg = MF.addLiveIn(VA.getLocReg(), &AMDGPU::R600_Reg128RegClass);
       SDValue Register = DAG.getCopyFromReg(Chain, DL, Reg, VT);
       InVals.push_back(Register);
@@ -1748,16 +1694,18 @@ SDValue R600TargetLowering::LowerFormalArguments(
 
     unsigned ValBase = ArgLocs[In.OrigArgIndex].getLocMemOffset();
     unsigned PartOffset = VA.getLocMemOffset();
+    unsigned Offset = 36 + VA.getLocMemOffset();
 
     MachinePointerInfo PtrInfo(UndefValue::get(PtrTy), PartOffset - ValBase);
     SDValue Arg = DAG.getLoad(ISD::UNINDEXED, Ext, VT, DL, Chain,
-                              DAG.getConstant(36 + PartOffset, MVT::i32),
+                              DAG.getConstant(Offset, MVT::i32),
                               DAG.getUNDEF(MVT::i32),
                               PtrInfo,
                               MemVT, false, true, true, 4);
 
     // 4 is the preferred alignment for the CONSTANT memory space.
     InVals.push_back(Arg);
+    MFI->ABIArgOffset = Offset + MemVT.getStoreSize();
   }
   return Chain;
 }

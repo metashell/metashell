@@ -71,6 +71,14 @@ ALWAYS_INLINE void PoisonRedZones(const Global &g) {
   }
 }
 
+const uptr kMinimalDistanceFromAnotherGlobal = 64;
+
+bool IsAddressNearGlobal(uptr addr, const __asan_global &g) {
+  if (addr <= g.beg - kMinimalDistanceFromAnotherGlobal) return false;
+  if (addr >= g.beg + g.size_with_redzone) return false;
+  return true;
+}
+
 static void ReportGlobal(const Global &g, const char *prefix) {
   Report("%s Global[%p]: beg=%p size=%zu/%zu name=%s module=%s dyn_init=%zu\n",
          prefix, &g, (void *)g.beg, g.size, g.size_with_redzone, g.name,
@@ -82,17 +90,43 @@ static void ReportGlobal(const Global &g, const char *prefix) {
   }
 }
 
-bool DescribeAddressIfGlobal(uptr addr, uptr size) {
+static bool DescribeOrGetInfoIfGlobal(uptr addr, uptr size, bool print,
+                                      Global *output_global) {
   if (!flags()->report_globals) return false;
   BlockingMutexLock lock(&mu_for_globals);
   bool res = false;
   for (ListOfGlobals *l = list_of_all_globals; l; l = l->next) {
     const Global &g = *l->g;
-    if (flags()->report_globals >= 2)
-      ReportGlobal(g, "Search");
-    res |= DescribeAddressRelativeToGlobal(addr, size, g);
+    if (print) {
+      if (flags()->report_globals >= 2)
+        ReportGlobal(g, "Search");
+      res |= DescribeAddressRelativeToGlobal(addr, size, g);
+    } else {
+      if (IsAddressNearGlobal(addr, g)) {
+        CHECK(output_global);
+        *output_global = g;
+        return true;
+      }
+    }
   }
   return res;
+}
+
+bool DescribeAddressIfGlobal(uptr addr, uptr size) {
+  return DescribeOrGetInfoIfGlobal(addr, size, /* print */ true,
+                                   /* output_global */ nullptr);
+}
+
+bool GetInfoForAddressIfGlobal(uptr addr, AddressDescription *descr) {
+  Global g = {};
+  if (DescribeOrGetInfoIfGlobal(addr, /* size */ 1, /* print */ false, &g)) {
+    internal_strncpy(descr->name, g.name, descr->name_size);
+    descr->region_address = g.beg;
+    descr->region_size = g.size;
+    descr->region_kind = "global";
+    return true;
+  }
+  return false;
 }
 
 u32 FindRegistrationSite(const Global *g) {
@@ -130,7 +164,7 @@ static void RegisterGlobal(const Global *g) {
       }
     }
   }
-  if (flags()->poison_heap)
+  if (CanPoisonMemory())
     PoisonRedZones(*g);
   ListOfGlobals *l = new(allocator_for_globals) ListOfGlobals;
   l->g = g;
@@ -152,7 +186,7 @@ static void UnregisterGlobal(const Global *g) {
   CHECK(AddrIsInMem(g->beg));
   CHECK(AddrIsAlignedByGranularity(g->beg));
   CHECK(AddrIsAlignedByGranularity(g->size_with_redzone));
-  if (flags()->poison_heap)
+  if (CanPoisonMemory())
     PoisonShadowForGlobal(g, 0);
   // We unpoison the shadow memory for the global but we do not remove it from
   // the list because that would require O(n^2) time with the current list
@@ -183,7 +217,7 @@ using namespace __asan;  // NOLINT
 void __asan_register_globals(__asan_global *globals, uptr n) {
   if (!flags()->report_globals) return;
   GET_STACK_TRACE_FATAL_HERE;
-  u32 stack_id = StackDepotPut(stack.trace, stack.size);
+  u32 stack_id = StackDepotPut(stack);
   BlockingMutexLock lock(&mu_for_globals);
   if (!global_registration_site_vector)
     global_registration_site_vector =
@@ -215,7 +249,7 @@ void __asan_unregister_globals(__asan_global *globals, uptr n) {
 // initializer can only touch global variables in the same TU.
 void __asan_before_dynamic_init(const char *module_name) {
   if (!flags()->check_initialization_order ||
-      !flags()->poison_heap)
+      !CanPoisonMemory())
     return;
   bool strict_init_order = flags()->strict_init_order;
   CHECK(dynamic_init_globals);
@@ -241,7 +275,7 @@ void __asan_before_dynamic_init(const char *module_name) {
 // TU are poisoned.  It simply unpoisons all dynamically initialized globals.
 void __asan_after_dynamic_init() {
   if (!flags()->check_initialization_order ||
-      !flags()->poison_heap)
+      !CanPoisonMemory())
     return;
   CHECK(asan_inited);
   BlockingMutexLock lock(&mu_for_globals);

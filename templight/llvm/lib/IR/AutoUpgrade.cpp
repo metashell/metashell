@@ -17,6 +17,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DiagnosticInfo.h"
+#include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
@@ -106,6 +107,20 @@ static bool UpgradeIntrinsicFunction1(Function *F, Function *&NewFn) {
     }
     break;
   }
+  case 'd': {
+    if (Name.startswith("dbg.declare") && F->arg_size() == 2) {
+      F->setName(Name + ".old");
+      NewFn = Intrinsic::getDeclaration(F->getParent(), Intrinsic::dbg_declare);
+      return true;
+    }
+    if (Name.startswith("dbg.value") && F->arg_size() == 3) {
+      F->setName(Name + ".old");
+      NewFn = Intrinsic::getDeclaration(F->getParent(), Intrinsic::dbg_value);
+      return true;
+    }
+    break;
+  }
+
   case 'o':
     // We only need to change the name to match the mangling including the
     // address space.
@@ -239,6 +254,23 @@ bool llvm::UpgradeGlobalVariable(GlobalVariable *GV) {
   return false;
 }
 
+static MDNode *getNodeField(const MDNode *DbgNode, unsigned Elt) {
+  if (!DbgNode || Elt >= DbgNode->getNumOperands())
+    return nullptr;
+  return dyn_cast_or_null<MDNode>(DbgNode->getOperand(Elt));
+}
+
+static MetadataAsValue *getExpression(Value *VarOperand, Function *F) {
+  // Old-style DIVariables have an optional expression as the 8th element.
+  DIExpression Expr(getNodeField(
+      cast<MDNode>(cast<MetadataAsValue>(VarOperand)->getMetadata()), 8));
+  if (!Expr) {
+    DIBuilder DIB(*F->getParent(), /*AllowUnresolved*/ false);
+    Expr = DIB.createExpression();
+  }
+  return MetadataAsValue::get(F->getContext(), Expr);
+}
+
 // UpgradeIntrinsicCall - Upgrade a call to an old intrinsic to be a call the
 // upgraded intrinsic. All argument and return casting must be provided in
 // order to seamlessly integrate with existing context.
@@ -275,8 +307,9 @@ void llvm::UpgradeIntrinsicCall(CallInst *CI, Function *NewFn) {
       Builder.SetInsertPoint(CI->getParent(), CI);
 
       Module *M = F->getParent();
-      SmallVector<Value *, 1> Elts;
-      Elts.push_back(ConstantInt::get(Type::getInt32Ty(C), 1));
+      SmallVector<Metadata *, 1> Elts;
+      Elts.push_back(
+          ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(C), 1)));
       MDNode *Node = MDNode::get(C, Elts);
 
       Value *Arg0 = CI->getArgOperand(0);
@@ -402,12 +435,32 @@ void llvm::UpgradeIntrinsicCall(CallInst *CI, Function *NewFn) {
   }
 
   std::string Name = CI->getName().str();
-  CI->setName(Name + ".old");
+  if (!Name.empty())
+    CI->setName(Name + ".old");
 
   switch (NewFn->getIntrinsicID()) {
   default:
     llvm_unreachable("Unknown function for CallInst upgrade.");
 
+  // Upgrade debug intrinsics to use an additional DIExpression argument.
+  case Intrinsic::dbg_declare: {
+    auto NewCI =
+        Builder.CreateCall3(NewFn, CI->getArgOperand(0), CI->getArgOperand(1),
+                            getExpression(CI->getArgOperand(1), F), Name);
+    NewCI->setDebugLoc(CI->getDebugLoc());
+    CI->replaceAllUsesWith(NewCI);
+    CI->eraseFromParent();
+    return;
+  }
+  case Intrinsic::dbg_value: {
+    auto NewCI = Builder.CreateCall4(
+        NewFn, CI->getArgOperand(0), CI->getArgOperand(1), CI->getArgOperand(2),
+        getExpression(CI->getArgOperand(2), F), Name);
+    NewCI->setDebugLoc(CI->getDebugLoc());
+    CI->replaceAllUsesWith(NewCI);
+    CI->eraseFromParent();
+    return;
+  }
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
     assert(CI->getNumArgOperands() == 1 &&
@@ -425,14 +478,6 @@ void llvm::UpgradeIntrinsicCall(CallInst *CI, Function *NewFn) {
     CI->eraseFromParent();
     return;
 
-  case Intrinsic::arm_neon_vclz: {
-    // Change name from llvm.arm.neon.vclz.* to llvm.ctlz.*
-    CI->replaceAllUsesWith(Builder.CreateCall2(NewFn, CI->getArgOperand(0),
-                                               Builder.getFalse(),
-                                               "llvm.ctlz." + Name.substr(14)));
-    CI->eraseFromParent();
-    return;
-  }
   case Intrinsic::ctpop: {
     CI->replaceAllUsesWith(Builder.CreateCall(NewFn, CI->getArgOperand(0)));
     CI->eraseFromParent();
@@ -535,22 +580,18 @@ void llvm::UpgradeInstWithTBAATag(Instruction *I) {
     return;
 
   if (MD->getNumOperands() == 3) {
-    Value *Elts[] = {
-      MD->getOperand(0),
-      MD->getOperand(1)
-    };
+    Metadata *Elts[] = {MD->getOperand(0), MD->getOperand(1)};
     MDNode *ScalarType = MDNode::get(I->getContext(), Elts);
     // Create a MDNode <ScalarType, ScalarType, offset 0, const>
-    Value *Elts2[] = {
-      ScalarType, ScalarType,
-      Constant::getNullValue(Type::getInt64Ty(I->getContext())),
-      MD->getOperand(2)
-    };
+    Metadata *Elts2[] = {ScalarType, ScalarType,
+                         ConstantAsMetadata::get(Constant::getNullValue(
+                             Type::getInt64Ty(I->getContext()))),
+                         MD->getOperand(2)};
     I->setMetadata(LLVMContext::MD_tbaa, MDNode::get(I->getContext(), Elts2));
   } else {
     // Create a MDNode <MD, MD, offset 0>
-    Value *Elts[] = {MD, MD,
-      Constant::getNullValue(Type::getInt64Ty(I->getContext()))};
+    Metadata *Elts[] = {MD, MD, ConstantAsMetadata::get(Constant::getNullValue(
+                                    Type::getInt64Ty(I->getContext())))};
     I->setMetadata(LLVMContext::MD_tbaa, MDNode::get(I->getContext(), Elts));
   }
 }

@@ -751,8 +751,7 @@ Value *FAddCombine::createNaryFAdd
   return LastVal;
 }
 
-Value *FAddCombine::createFSub
-  (Value *Opnd0, Value *Opnd1) {
+Value *FAddCombine::createFSub(Value *Opnd0, Value *Opnd1) {
   Value *V = Builder->CreateFSub(Opnd0, Opnd1);
   if (Instruction *I = dyn_cast<Instruction>(V))
     createInstPostProc(I);
@@ -760,15 +759,14 @@ Value *FAddCombine::createFSub
 }
 
 Value *FAddCombine::createFNeg(Value *V) {
-  Value *Zero = cast<Value>(ConstantFP::get(V->getType(), 0.0));
+  Value *Zero = cast<Value>(ConstantFP::getZeroValueForNegation(V->getType()));
   Value *NewV = createFSub(Zero, V);
   if (Instruction *I = dyn_cast<Instruction>(NewV))
     createInstPostProc(I, true); // fneg's don't receive instruction numbers.
   return NewV;
 }
 
-Value *FAddCombine::createFAdd
-  (Value *Opnd0, Value *Opnd1) {
+Value *FAddCombine::createFAdd(Value *Opnd0, Value *Opnd1) {
   Value *V = Builder->CreateFAdd(Opnd0, Opnd1);
   if (Instruction *I = dyn_cast<Instruction>(V))
     createInstPostProc(I);
@@ -789,8 +787,7 @@ Value *FAddCombine::createFDiv(Value *Opnd0, Value *Opnd1) {
   return V;
 }
 
-void FAddCombine::createInstPostProc(Instruction *NewInstr,
-                                     bool NoNumber) {
+void FAddCombine::createInstPostProc(Instruction *NewInstr, bool NoNumber) {
   NewInstr->setDebugLoc(Instr->getDebugLoc());
 
   // Keep track of the number of instruction created.
@@ -840,8 +837,7 @@ unsigned FAddCombine::calcInstrNumber(const AddendVect &Opnds) {
 // <C, V>             "fmul V, C"      false
 //
 // NOTE: Keep this function in sync with FAddCombine::calcInstrNumber.
-Value *FAddCombine::createAddendVal
-  (const FAddend &Opnd, bool &NeedNeg) {
+Value *FAddCombine::createAddendVal(const FAddend &Opnd, bool &NeedNeg) {
   const FAddendCoef &Coeff = Opnd.getCoef();
 
   if (Opnd.isConstant()) {
@@ -1005,6 +1001,51 @@ bool InstCombiner::WillNotOverflowUnsignedSub(Value *LHS, Value *RHS,
   if (LHSKnownNegative && RHSKnownNonNegative)
     return true;
 
+  return false;
+}
+
+/// \brief Return true if we can prove that:
+///    (mul LHS, RHS)  === (mul nsw LHS, RHS)
+bool InstCombiner::WillNotOverflowSignedMul(Value *LHS, Value *RHS,
+                                            Instruction *CxtI) {
+  if (IntegerType *IT = dyn_cast<IntegerType>(LHS->getType())) {
+
+    // Multiplying n * m significant bits yields a result of n + m significant
+    // bits. If the total number of significant bits does not exceed the
+    // result bit width (minus 1), there is no overflow.
+    // This means if we have enough leading sign bits in the operands
+    // we can guarantee that the result does not overflow.
+    // Ref: "Hacker's Delight" by Henry Warren
+    unsigned BitWidth = IT->getBitWidth();
+
+    // Note that underestimating the number of sign bits gives a more
+    // conservative answer.
+    unsigned SignBits = ComputeNumSignBits(LHS, 0, CxtI) +
+                        ComputeNumSignBits(RHS, 0, CxtI);
+
+    // First handle the easy case: if we have enough sign bits there's
+    // definitely no overflow. 
+    if (SignBits > BitWidth + 1)
+      return true;
+    
+    // There are two ambiguous cases where there can be no overflow:
+    //   SignBits == BitWidth + 1    and
+    //   SignBits == BitWidth    
+    // The second case is difficult to check, therefore we only handle the
+    // first case.
+    if (SignBits == BitWidth + 1) {
+      // It overflows only when both arguments are negative and the true
+      // product is exactly the minimum negative number.
+      // E.g. mul i16 with 17 sign bits: 0xff00 * 0xff80 = 0x8000
+      // For simplicity we just check if at least one side is not negative.
+      bool LHSNonNegative, LHSNegative;
+      bool RHSNonNegative, RHSNegative;
+      ComputeSignBit(LHS, LHSNonNegative, LHSNegative, DL, 0, AT, CxtI, DT);
+      ComputeSignBit(RHS, RHSNonNegative, RHSNegative, DL, 0, AT, CxtI, DT);
+      if (LHSNonNegative || RHSNonNegative)
+        return true;
+    }
+  }
   return false;
 }
 
@@ -1431,11 +1472,11 @@ Instruction *InstCombiner::visitFAdd(BinaryOperator &I) {
             Z2 = dyn_cast<Constant>(B2); B = B1;
         } else if (match(B1, m_AnyZero()) && match(A2, m_AnyZero())) {
             Z1 = dyn_cast<Constant>(B1); B = B2;
-            Z2 = dyn_cast<Constant>(A2); A = A1; 
+            Z2 = dyn_cast<Constant>(A2); A = A1;
         }
-        
-        if (Z1 && Z2 && 
-            (I.hasNoSignedZeros() || 
+
+        if (Z1 && Z2 &&
+            (I.hasNoSignedZeros() ||
              (Z1->isNegativeZeroValue() && Z2->isNegativeZeroValue()))) {
           return SelectInst::Create(C, A, B);
         }
@@ -1522,7 +1563,6 @@ Value *InstCombiner::OptimizePointerDifference(Value *LHS, Value *RHS,
   return Builder->CreateIntCast(Result, Ty, true);
 }
 
-
 Instruction *InstCombiner::visitSub(BinaryOperator &I) {
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
 
@@ -1595,21 +1635,23 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
     // -(X >>u 31) -> (X >>s 31)
     // -(X >>s 31) -> (X >>u 31)
     if (C->isZero()) {
-      Value *X; ConstantInt *CI;
+      Value *X;
+      ConstantInt *CI;
       if (match(Op1, m_LShr(m_Value(X), m_ConstantInt(CI))) &&
           // Verify we are shifting out everything but the sign bit.
-          CI->getValue() == I.getType()->getPrimitiveSizeInBits()-1)
+          CI->getValue() == I.getType()->getPrimitiveSizeInBits() - 1)
         return BinaryOperator::CreateAShr(X, CI);
 
       if (match(Op1, m_AShr(m_Value(X), m_ConstantInt(CI))) &&
           // Verify we are shifting out everything but the sign bit.
-          CI->getValue() == I.getType()->getPrimitiveSizeInBits()-1)
+          CI->getValue() == I.getType()->getPrimitiveSizeInBits() - 1)
         return BinaryOperator::CreateLShr(X, CI);
     }
   }
 
 
-  { Value *Y;
+  {
+    Value *Y;
     // X-(X+Y) == -Y    X-(Y+X) == -Y
     if (match(Op1, m_Add(m_Specific(Op0), m_Value(Y))) ||
         match(Op1, m_Add(m_Value(Y), m_Specific(Op0))))
@@ -1618,6 +1660,24 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
     // (X-Y)-X == -Y
     if (match(Op0, m_Sub(m_Specific(Op1), m_Value(Y))))
       return BinaryOperator::CreateNeg(Y);
+  }
+
+  // (sub (or A, B) (xor A, B)) --> (and A, B)
+  {
+    Value *A = nullptr, *B = nullptr;
+    if (match(Op1, m_Xor(m_Value(A), m_Value(B))) &&
+        (match(Op0, m_Or(m_Specific(A), m_Specific(B))) ||
+         match(Op0, m_Or(m_Specific(B), m_Specific(A)))))
+      return BinaryOperator::CreateAnd(A, B);
+  }
+
+  if (Op0->hasOneUse()) {
+    Value *Y = nullptr;
+    // ((X | Y) - X) --> (~X & Y)
+    if (match(Op0, m_Or(m_Value(Y), m_Specific(Op1))) ||
+        match(Op0, m_Or(m_Specific(Op1), m_Value(Y))))
+      return BinaryOperator::CreateAnd(
+          Y, Builder->CreateNot(Op1, Op1->getName() + ".not"));
   }
 
   if (Op1->hasOneUse()) {

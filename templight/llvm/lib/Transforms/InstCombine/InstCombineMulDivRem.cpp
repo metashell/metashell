@@ -36,14 +36,11 @@ static Value *simplifyValueKnownNonZero(Value *V, InstCombiner &IC,
 
   // ((1 << A) >>u B) --> (1 << (A-B))
   // Because V cannot be zero, we know that B is less than A.
-  Value *A = nullptr, *B = nullptr, *PowerOf2 = nullptr;
-  if (match(V, m_LShr(m_OneUse(m_Shl(m_Value(PowerOf2), m_Value(A))),
-                      m_Value(B))) &&
-      // The "1" can be any value known to be a power of 2.
-      isKnownToBeAPowerOfTwo(PowerOf2, false, 0, IC.getAssumptionTracker(),
-                             CxtI, IC.getDominatorTree())) {
+  Value *A = nullptr, *B = nullptr, *One = nullptr;
+  if (match(V, m_LShr(m_OneUse(m_Shl(m_Value(One), m_Value(A))), m_Value(B))) &&
+      match(One, m_One())) {
     A = IC.Builder->CreateSub(A, B);
-    return IC.Builder->CreateShl(PowerOf2, A);
+    return IC.Builder->CreateShl(One, A);
   }
 
   // (PowerOfTwo >>u B) --> isExact since shifting out the result would make it
@@ -81,25 +78,15 @@ static Value *simplifyValueKnownNonZero(Value *V, InstCombiner &IC,
 
 /// MultiplyOverflows - True if the multiply can not be expressed in an int
 /// this size.
-static bool MultiplyOverflows(ConstantInt *C1, ConstantInt *C2, bool sign) {
-  uint32_t W = C1->getBitWidth();
-  APInt LHSExt = C1->getValue(), RHSExt = C2->getValue();
-  if (sign) {
-    LHSExt = LHSExt.sext(W * 2);
-    RHSExt = RHSExt.sext(W * 2);
-  } else {
-    LHSExt = LHSExt.zext(W * 2);
-    RHSExt = RHSExt.zext(W * 2);
-  }
+static bool MultiplyOverflows(const APInt &C1, const APInt &C2, APInt &Product,
+                              bool IsSigned) {
+  bool Overflow;
+  if (IsSigned)
+    Product = C1.smul_ov(C2, Overflow);
+  else
+    Product = C1.umul_ov(C2, Overflow);
 
-  APInt MulExt = LHSExt * RHSExt;
-
-  if (!sign)
-    return MulExt.ugt(APInt::getLowBitsSet(W * 2, W));
-
-  APInt Min = APInt::getSignedMinValue(W).sext(W * 2);
-  APInt Max = APInt::getSignedMaxValue(W).sext(W * 2);
-  return MulExt.slt(Min) || MulExt.sgt(Max);
+  return Overflow;
 }
 
 /// \brief True if C2 is a multiple of C1. Quotient contains C2/C1.
@@ -149,8 +136,13 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
   if (Value *V = SimplifyUsingDistributiveLaws(I))
     return ReplaceInstUsesWith(I, V);
 
-  if (match(Op1, m_AllOnes()))  // X * -1 == 0 - X
-    return BinaryOperator::CreateNeg(Op0, I.getName());
+  // X * -1 == 0 - X
+  if (match(Op1, m_AllOnes())) {
+    BinaryOperator *BO = BinaryOperator::CreateNeg(Op0, I.getName());
+    if (I.hasNoSignedWrap())
+      BO->setHasNoSignedWrap();
+    return BO;
+  }
 
   // Also allow combining multiply instructions on vectors.
   {
@@ -159,9 +151,18 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
     const APInt *IVal;
     if (match(&I, m_Mul(m_Shl(m_Value(NewOp), m_Constant(C2)),
                         m_Constant(C1))) &&
-        match(C1, m_APInt(IVal)))
-      // ((X << C1)*C2) == (X * (C2 << C1))
-      return BinaryOperator::CreateMul(NewOp, ConstantExpr::getShl(C1, C2));
+        match(C1, m_APInt(IVal))) {
+      // ((X << C2)*C1) == (X * (C1 << C2))
+      Constant *Shl = ConstantExpr::getShl(C1, C2);
+      BinaryOperator *Mul = cast<BinaryOperator>(I.getOperand(0));
+      BinaryOperator *BO = BinaryOperator::CreateMul(NewOp, Shl);
+      if (I.hasNoUnsignedWrap() && Mul->hasNoUnsignedWrap())
+        BO->setHasNoUnsignedWrap();
+      if (I.hasNoSignedWrap() && Mul->hasNoSignedWrap() &&
+          Shl->isNotMinSignedValue())
+        BO->setHasNoSignedWrap();
+      return BO;
+    }
 
     if (match(&I, m_Mul(m_Value(NewOp), m_Constant(C1)))) {
       Constant *NewCst = nullptr;
@@ -175,8 +176,12 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
 
       if (NewCst) {
         BinaryOperator *Shl = BinaryOperator::CreateShl(NewOp, NewCst);
-        if (I.hasNoSignedWrap()) Shl->setHasNoSignedWrap();
-        if (I.hasNoUnsignedWrap()) Shl->setHasNoUnsignedWrap();
+
+        if (I.hasNoUnsignedWrap())
+          Shl->setHasNoUnsignedWrap();
+        if (I.hasNoSignedWrap() && NewCst->isNotMinSignedValue())
+          Shl->setHasNoSignedWrap();
+
         return Shl;
       }
     }
@@ -232,9 +237,16 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
     }
   }
 
-  if (Value *Op0v = dyn_castNegVal(Op0))     // -X * -Y = X*Y
-    if (Value *Op1v = dyn_castNegVal(Op1))
-      return BinaryOperator::CreateMul(Op0v, Op1v);
+  if (Value *Op0v = dyn_castNegVal(Op0)) {   // -X * -Y = X*Y
+    if (Value *Op1v = dyn_castNegVal(Op1)) {
+      BinaryOperator *BO = BinaryOperator::CreateMul(Op0v, Op1v);
+      if (I.hasNoSignedWrap() &&
+          match(Op0, m_NSWSub(m_Value(), m_Value())) &&
+          match(Op1, m_NSWSub(m_Value(), m_Value())))
+        BO->setHasNoSignedWrap();
+      return BO;
+    }
+  }
 
   // (X / Y) *  Y = X - (X % Y)
   // (X / Y) * -Y = (X % Y) - X
@@ -283,10 +295,22 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
   // (1 << Y)*X --> X << Y
   {
     Value *Y;
-    if (match(Op0, m_Shl(m_One(), m_Value(Y))))
-      return BinaryOperator::CreateShl(Op1, Y);
-    if (match(Op1, m_Shl(m_One(), m_Value(Y))))
-      return BinaryOperator::CreateShl(Op0, Y);
+    BinaryOperator *BO = nullptr;
+    bool ShlNSW = false;
+    if (match(Op0, m_Shl(m_One(), m_Value(Y)))) {
+      BO = BinaryOperator::CreateShl(Op1, Y);
+      ShlNSW = cast<BinaryOperator>(Op0)->hasNoSignedWrap();
+    } else if (match(Op1, m_Shl(m_One(), m_Value(Y)))) {
+      BO = BinaryOperator::CreateShl(Op0, Y);
+      ShlNSW = cast<BinaryOperator>(Op1)->hasNoSignedWrap();
+    }
+    if (BO) {
+      if (I.hasNoUnsignedWrap())
+        BO->setHasNoUnsignedWrap();
+      if (I.hasNoSignedWrap() && ShlNSW)
+        BO->setHasNoSignedWrap();
+      return BO;
+    }
   }
 
   // If one of the operands of the multiply is a cast from a boolean value, then
@@ -312,40 +336,32 @@ Instruction *InstCombiner::visitMul(BinaryOperator &I) {
   return Changed ? &I : nullptr;
 }
 
-//
-// Detect pattern:
-//
-// log2(Y*0.5)
-//
-// And check for corresponding fast math flags
-//
-
+/// Detect pattern log2(Y * 0.5) with corresponding fast math flags.
 static void detectLog2OfHalf(Value *&Op, Value *&Y, IntrinsicInst *&Log2) {
+  if (!Op->hasOneUse())
+    return;
 
-   if (!Op->hasOneUse())
-     return;
+  IntrinsicInst *II = dyn_cast<IntrinsicInst>(Op);
+  if (!II)
+    return;
+  if (II->getIntrinsicID() != Intrinsic::log2 || !II->hasUnsafeAlgebra())
+    return;
+  Log2 = II;
 
-   IntrinsicInst *II = dyn_cast<IntrinsicInst>(Op);
-   if (!II)
-     return;
-   if (II->getIntrinsicID() != Intrinsic::log2 || !II->hasUnsafeAlgebra())
-     return;
-   Log2 = II;
+  Value *OpLog2Of = II->getArgOperand(0);
+  if (!OpLog2Of->hasOneUse())
+    return;
 
-   Value *OpLog2Of = II->getArgOperand(0);
-   if (!OpLog2Of->hasOneUse())
-     return;
+  Instruction *I = dyn_cast<Instruction>(OpLog2Of);
+  if (!I)
+    return;
+  if (I->getOpcode() != Instruction::FMul || !I->hasUnsafeAlgebra())
+    return;
 
-   Instruction *I = dyn_cast<Instruction>(OpLog2Of);
-   if (!I)
-     return;
-   if (I->getOpcode() != Instruction::FMul || !I->hasUnsafeAlgebra())
-     return;
-
-   if (match(I->getOperand(0), m_SpecificFP(0.5)))
-     Y = I->getOperand(1);
-   else if (match(I->getOperand(1), m_SpecificFP(0.5)))
-     Y = I->getOperand(0);
+  if (match(I->getOperand(0), m_SpecificFP(0.5)))
+    Y = I->getOperand(1);
+  else if (match(I->getOperand(1), m_SpecificFP(0.5)))
+    Y = I->getOperand(0);
 }
 
 static bool isFiniteNonZeroFp(Constant *C) {
@@ -531,10 +547,15 @@ Instruction *InstCombiner::visitFMul(BinaryOperator &I) {
     }
   }
 
+  // sqrt(X) * sqrt(X) -> X
+  if (AllowReassociate && (Op0 == Op1))
+    if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(Op0))
+      if (II->getIntrinsicID() == Intrinsic::sqrt)
+        return ReplaceInstUsesWith(I, II->getOperand(0));
 
   // Under unsafe algebra do:
   // X * log2(0.5*Y) = X*log2(Y) - X
-  if (I.hasUnsafeAlgebra()) {
+  if (AllowReassociate) {
     Value *OpX = nullptr;
     Value *OpY = nullptr;
     IntrinsicInst *Log2;
@@ -715,83 +736,83 @@ Instruction *InstCombiner::commonIDivTransforms(BinaryOperator &I) {
   if (isa<SelectInst>(Op1) && SimplifyDivRemOfSelect(I))
     return &I;
 
-  if (ConstantInt *RHS = dyn_cast<ConstantInt>(Op1)) {
-    if (Instruction *LHS = dyn_cast<Instruction>(Op0)) {
-      // (X / C1) / C2  -> X / (C1*C2)
-      if (Instruction::BinaryOps(LHS->getOpcode()) == I.getOpcode())
-        if (ConstantInt *LHSRHS = dyn_cast<ConstantInt>(LHS->getOperand(1))) {
-          if (MultiplyOverflows(RHS, LHSRHS,
-                                I.getOpcode() == Instruction::SDiv))
-            return ReplaceInstUsesWith(I, Constant::getNullValue(I.getType()));
-          return BinaryOperator::Create(I.getOpcode(), LHS->getOperand(0),
-                                        ConstantExpr::getMul(RHS, LHSRHS));
-        }
-
+  if (Instruction *LHS = dyn_cast<Instruction>(Op0)) {
+    const APInt *C2;
+    if (match(Op1, m_APInt(C2))) {
       Value *X;
-      const APInt *C1, *C2;
-      if (match(RHS, m_APInt(C2))) {
-        bool IsSigned = I.getOpcode() == Instruction::SDiv;
-        if ((IsSigned && match(LHS, m_NSWMul(m_Value(X), m_APInt(C1)))) ||
-            (!IsSigned && match(LHS, m_NUWMul(m_Value(X), m_APInt(C1))))) {
-          APInt Quotient(C1->getBitWidth(), /*Val=*/0ULL, IsSigned);
+      const APInt *C1;
+      bool IsSigned = I.getOpcode() == Instruction::SDiv;
 
-          // (X * C1) / C2 -> X / (C2 / C1) if C2 is a multiple of C1.
-          if (IsMultiple(*C2, *C1, Quotient, IsSigned)) {
-            BinaryOperator *BO = BinaryOperator::Create(
-                I.getOpcode(), X, ConstantInt::get(X->getType(), Quotient));
-            BO->setIsExact(I.isExact());
-            return BO;
-          }
+      // (X / C1) / C2  -> X / (C1*C2)
+      if ((IsSigned && match(LHS, m_SDiv(m_Value(X), m_APInt(C1)))) ||
+          (!IsSigned && match(LHS, m_UDiv(m_Value(X), m_APInt(C1))))) {
+        APInt Product(C1->getBitWidth(), /*Val=*/0ULL, IsSigned);
+        if (!MultiplyOverflows(*C1, *C2, Product, IsSigned))
+          return BinaryOperator::Create(I.getOpcode(), X,
+                                        ConstantInt::get(I.getType(), Product));
+      }
 
-          // (X * C1) / C2 -> X * (C1 / C2) if C1 is a multiple of C2.
-          if (IsMultiple(*C1, *C2, Quotient, IsSigned)) {
-            BinaryOperator *BO = BinaryOperator::Create(
-                Instruction::Mul, X, ConstantInt::get(X->getType(), Quotient));
-            BO->setHasNoUnsignedWrap(
-                !IsSigned &&
-                cast<OverflowingBinaryOperator>(LHS)->hasNoUnsignedWrap());
-            BO->setHasNoSignedWrap(
-                cast<OverflowingBinaryOperator>(LHS)->hasNoSignedWrap());
-            return BO;
-          }
+      if ((IsSigned && match(LHS, m_NSWMul(m_Value(X), m_APInt(C1)))) ||
+          (!IsSigned && match(LHS, m_NUWMul(m_Value(X), m_APInt(C1))))) {
+        APInt Quotient(C1->getBitWidth(), /*Val=*/0ULL, IsSigned);
+
+        // (X * C1) / C2 -> X / (C2 / C1) if C2 is a multiple of C1.
+        if (IsMultiple(*C2, *C1, Quotient, IsSigned)) {
+          BinaryOperator *BO = BinaryOperator::Create(
+              I.getOpcode(), X, ConstantInt::get(X->getType(), Quotient));
+          BO->setIsExact(I.isExact());
+          return BO;
         }
 
-        if ((IsSigned && match(LHS, m_NSWShl(m_Value(X), m_APInt(C1)))) ||
-            (!IsSigned && match(LHS, m_NUWShl(m_Value(X), m_APInt(C1))))) {
-          APInt Quotient(C1->getBitWidth(), /*Val=*/0ULL, IsSigned);
-          APInt C1Shifted = APInt::getOneBitSet(
-              C1->getBitWidth(), static_cast<unsigned>(C1->getLimitedValue()));
-
-          // (X << C1) / C2 -> X / (C2 >> C1) if C2 is a multiple of C1.
-          if (IsMultiple(*C2, C1Shifted, Quotient, IsSigned)) {
-            BinaryOperator *BO = BinaryOperator::Create(
-                I.getOpcode(), X, ConstantInt::get(X->getType(), Quotient));
-            BO->setIsExact(I.isExact());
-            return BO;
-          }
-
-          // (X << C1) / C2 -> X * (C2 >> C1) if C1 is a multiple of C2.
-          if (IsMultiple(C1Shifted, *C2, Quotient, IsSigned)) {
-            BinaryOperator *BO = BinaryOperator::Create(
-                Instruction::Mul, X, ConstantInt::get(X->getType(), Quotient));
-            BO->setHasNoUnsignedWrap(
-                !IsSigned &&
-                cast<OverflowingBinaryOperator>(LHS)->hasNoUnsignedWrap());
-            BO->setHasNoSignedWrap(
-                cast<OverflowingBinaryOperator>(LHS)->hasNoSignedWrap());
-            return BO;
-          }
+        // (X * C1) / C2 -> X * (C1 / C2) if C1 is a multiple of C2.
+        if (IsMultiple(*C1, *C2, Quotient, IsSigned)) {
+          BinaryOperator *BO = BinaryOperator::Create(
+              Instruction::Mul, X, ConstantInt::get(X->getType(), Quotient));
+          BO->setHasNoUnsignedWrap(
+              !IsSigned &&
+              cast<OverflowingBinaryOperator>(LHS)->hasNoUnsignedWrap());
+          BO->setHasNoSignedWrap(
+              cast<OverflowingBinaryOperator>(LHS)->hasNoSignedWrap());
+          return BO;
         }
       }
-    }
 
-    if (!RHS->isZero()) { // avoid X udiv 0
-      if (SelectInst *SI = dyn_cast<SelectInst>(Op0))
-        if (Instruction *R = FoldOpIntoSelect(I, SI))
-          return R;
-      if (isa<PHINode>(Op0))
-        if (Instruction *NV = FoldOpIntoPhi(I))
-          return NV;
+      if ((IsSigned && match(LHS, m_NSWShl(m_Value(X), m_APInt(C1))) &&
+           *C1 != C1->getBitWidth() - 1) ||
+          (!IsSigned && match(LHS, m_NUWShl(m_Value(X), m_APInt(C1))))) {
+        APInt Quotient(C1->getBitWidth(), /*Val=*/0ULL, IsSigned);
+        APInt C1Shifted = APInt::getOneBitSet(
+            C1->getBitWidth(), static_cast<unsigned>(C1->getLimitedValue()));
+
+        // (X << C1) / C2 -> X / (C2 >> C1) if C2 is a multiple of C1.
+        if (IsMultiple(*C2, C1Shifted, Quotient, IsSigned)) {
+          BinaryOperator *BO = BinaryOperator::Create(
+              I.getOpcode(), X, ConstantInt::get(X->getType(), Quotient));
+          BO->setIsExact(I.isExact());
+          return BO;
+        }
+
+        // (X << C1) / C2 -> X * (C2 >> C1) if C1 is a multiple of C2.
+        if (IsMultiple(C1Shifted, *C2, Quotient, IsSigned)) {
+          BinaryOperator *BO = BinaryOperator::Create(
+              Instruction::Mul, X, ConstantInt::get(X->getType(), Quotient));
+          BO->setHasNoUnsignedWrap(
+              !IsSigned &&
+              cast<OverflowingBinaryOperator>(LHS)->hasNoUnsignedWrap());
+          BO->setHasNoSignedWrap(
+              cast<OverflowingBinaryOperator>(LHS)->hasNoSignedWrap());
+          return BO;
+        }
+      }
+
+      if (*C2 != 0) { // avoid X udiv 0
+        if (SelectInst *SI = dyn_cast<SelectInst>(Op0))
+          if (Instruction *R = FoldOpIntoSelect(I, SI))
+            return R;
+        if (isa<PHINode>(Op0))
+          if (Instruction *NV = FoldOpIntoPhi(I))
+            return NV;
+      }
     }
   }
 
@@ -877,7 +898,8 @@ static Instruction *foldUDivPow2Cst(Value *Op0, Value *Op1,
   const APInt &C = cast<Constant>(Op1)->getUniqueInteger();
   BinaryOperator *LShr = BinaryOperator::CreateLShr(
       Op0, ConstantInt::get(Op0->getType(), C.logBase2()));
-  if (I.isExact()) LShr->setIsExact();
+  if (I.isExact())
+    LShr->setIsExact();
   return LShr;
 }
 
@@ -905,7 +927,8 @@ static Instruction *foldUDivShl(Value *Op0, Value *Op1, const BinaryOperator &I,
   if (ZExtInst *Z = dyn_cast<ZExtInst>(Op1))
     N = IC.Builder->CreateZExt(N, Z->getDestTy());
   BinaryOperator *LShr = BinaryOperator::CreateLShr(Op0, N);
-  if (I.isExact()) LShr->setIsExact();
+  if (I.isExact())
+    LShr->setIsExact();
   return LShr;
 }
 
@@ -966,19 +989,30 @@ Instruction *InstCombiner::visitUDiv(BinaryOperator &I) {
     return Common;
 
   // (x lshr C1) udiv C2 --> x udiv (C2 << C1)
-  if (Constant *C2 = dyn_cast<Constant>(Op1)) {
+  {
     Value *X;
-    Constant *C1;
-    if (match(Op0, m_LShr(m_Value(X), m_Constant(C1))))
-      return BinaryOperator::CreateUDiv(X, ConstantExpr::getShl(C2, C1));
+    const APInt *C1, *C2;
+    if (match(Op0, m_LShr(m_Value(X), m_APInt(C1))) &&
+        match(Op1, m_APInt(C2))) {
+      bool Overflow;
+      APInt C2ShlC1 = C2->ushl_ov(*C1, Overflow);
+      if (!Overflow) {
+        bool IsExact = I.isExact() && match(Op0, m_Exact(m_Value()));
+        BinaryOperator *BO = BinaryOperator::CreateUDiv(
+            X, ConstantInt::get(X->getType(), C2ShlC1));
+        if (IsExact)
+          BO->setIsExact();
+        return BO;
+      }
+    }
   }
 
   // (zext A) udiv (zext B) --> zext (A udiv B)
   if (ZExtInst *ZOp0 = dyn_cast<ZExtInst>(Op0))
     if (Value *ZOp1 = dyn_castZExtVal(Op1, ZOp0->getSrcTy()))
-      return new ZExtInst(Builder->CreateUDiv(ZOp0->getOperand(0), ZOp1, "div",
-                                              I.isExact()),
-                          I.getType());
+      return new ZExtInst(
+          Builder->CreateUDiv(ZOp0->getOperand(0), ZOp1, "div", I.isExact()),
+          I.getType());
 
   // (LHS udiv (select (select (...)))) -> (LHS >> (select (select (...))))
   SmallVector<UDivFoldAction, 6> UDivActions;
@@ -1047,10 +1081,12 @@ Instruction *InstCombiner::visitSDiv(BinaryOperator &I) {
       return new ZExtInst(Builder->CreateICmpEQ(Op0, Op1), I.getType());
 
     // -X/C  -->  X/-C  provided the negation doesn't overflow.
-    if (SubOperator *Sub = dyn_cast<SubOperator>(Op0))
-      if (match(Sub->getOperand(0), m_Zero()) && Sub->hasNoSignedWrap())
-        return BinaryOperator::CreateSDiv(Sub->getOperand(1),
-                                          ConstantExpr::getNeg(RHS));
+    Value *X;
+    if (match(Op0, m_NSWSub(m_Zero(), m_Value(X)))) {
+      auto *BO = BinaryOperator::CreateSDiv(X, ConstantExpr::getNeg(RHS));
+      BO->setIsExact(I.isExact());
+      return BO;
+    }
   }
 
   // If the sign bits of both operands are zero (i.e. we can prove they are
@@ -1060,15 +1096,19 @@ Instruction *InstCombiner::visitSDiv(BinaryOperator &I) {
     if (MaskedValueIsZero(Op0, Mask, 0, &I)) {
       if (MaskedValueIsZero(Op1, Mask, 0, &I)) {
         // X sdiv Y -> X udiv Y, iff X and Y don't have sign bit set
-        return BinaryOperator::CreateUDiv(Op0, Op1, I.getName());
+        auto *BO = BinaryOperator::CreateUDiv(Op0, Op1, I.getName());
+        BO->setIsExact(I.isExact());
+        return BO;
       }
 
-      if (match(Op1, m_Shl(m_Power2(), m_Value()))) {
+      if (isKnownToBeAPowerOfTwo(Op1, /*OrZero*/true, 0, AT, &I, DT)) {
         // X sdiv (1 << Y) -> X udiv (1 << Y) ( -> X u>> Y)
         // Safe because the only negative value (1 << Y) can take on is
         // INT_MIN, and X sdiv INT_MIN == X udiv INT_MIN == 0 if X doesn't have
         // the sign bit set.
-        return BinaryOperator::CreateUDiv(Op0, Op1, I.getName());
+        auto *BO = BinaryOperator::CreateUDiv(Op0, Op1, I.getName());
+        BO->setIsExact(I.isExact());
+        return BO;
       }
     }
   }
@@ -1083,8 +1123,7 @@ Instruction *InstCombiner::visitSDiv(BinaryOperator &I) {
 /// If the conversion was successful, the simplified expression "X * 1/C" is
 /// returned; otherwise, NULL is returned.
 ///
-static Instruction *CvtFDivConstToReciprocal(Value *Dividend,
-                                             Constant *Divisor,
+static Instruction *CvtFDivConstToReciprocal(Value *Dividend, Constant *Divisor,
                                              bool AllowReciprocal) {
   if (!isa<ConstantFP>(Divisor)) // TODO: handle vectors.
     return nullptr;
@@ -1320,15 +1359,15 @@ Instruction *InstCombiner::visitSRem(BinaryOperator &I) {
   if (Instruction *Common = commonIRemTransforms(I))
     return Common;
 
-  if (Value *RHSNeg = dyn_castNegVal(Op1))
-    if (!isa<Constant>(RHSNeg) ||
-        (isa<ConstantInt>(RHSNeg) &&
-         cast<ConstantInt>(RHSNeg)->getValue().isStrictlyPositive())) {
-      // X % -Y -> X % Y
+  {
+    const APInt *Y;
+    // X % -Y -> X % Y
+    if (match(Op1, m_APInt(Y)) && Y->isNegative() && !Y->isMinSignedValue()) {
       Worklist.AddValue(I.getOperand(1));
-      I.setOperand(1, RHSNeg);
+      I.setOperand(1, ConstantInt::get(I.getType(), -*Y));
       return &I;
     }
+  }
 
   // If the sign bits of both operands are zero (i.e. we can prove they are
   // unsigned inputs), turn this into a urem.

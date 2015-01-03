@@ -32,10 +32,12 @@ add_llvm_library(LLVMCore
   MDBuilder.cpp
   Mangler.cpp
   Metadata.cpp
+  MetadataTracking.cpp
   Module.cpp
   Pass.cpp
   PassManager.cpp
   PassRegistry.cpp
+  Statepoint.cpp
   Type.cpp
   TypeFinder.cpp
   Use.cpp

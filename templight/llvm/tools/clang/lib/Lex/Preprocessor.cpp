@@ -71,7 +71,7 @@ Preprocessor::Preprocessor(IntrusiveRefCntPtr<PreprocessorOptions> PPOpts,
       CodeComplete(nullptr), CodeCompletionFile(nullptr),
       CodeCompletionOffset(0), LastTokenWasAt(false),
       ModuleImportExpectsIdentifier(false), CodeCompletionReached(0),
-      SkipMainFilePreamble(0, true), CurPPLexer(nullptr),
+      MainFileDir(nullptr), SkipMainFilePreamble(0, true), CurPPLexer(nullptr),
       CurDirLookup(nullptr), CurLexerKind(CLK_Lexer), CurSubmodule(nullptr),
       Callbacks(nullptr), MacroArgCache(nullptr), Record(nullptr),
       MIChainHead(nullptr), DeserialMIChainHead(nullptr) {
@@ -385,20 +385,28 @@ bool Preprocessor::SetCodeCompletionPoint(const FileEntry *File,
 
   Position += CompleteColumn - 1;
 
-  // Insert '\0' at the code-completion point.
-  if (Position < Buffer->getBufferEnd()) {
-    CodeCompletionFile = File;
-    CodeCompletionOffset = Position - Buffer->getBufferStart();
-
-    std::unique_ptr<MemoryBuffer> NewBuffer =
-        MemoryBuffer::getNewUninitMemBuffer(Buffer->getBufferSize() + 1,
-                                            Buffer->getBufferIdentifier());
-    char *NewBuf = const_cast<char*>(NewBuffer->getBufferStart());
-    char *NewPos = std::copy(Buffer->getBufferStart(), Position, NewBuf);
-    *NewPos = '\0';
-    std::copy(Position, Buffer->getBufferEnd(), NewPos+1);
-    SourceMgr.overrideFileContents(File, std::move(NewBuffer));
+  // If pointing inside the preamble, adjust the position at the beginning of
+  // the file after the preamble.
+  if (SkipMainFilePreamble.first &&
+      SourceMgr.getFileEntryForID(SourceMgr.getMainFileID()) == File) {
+    if (Position - Buffer->getBufferStart() < SkipMainFilePreamble.first)
+      Position = Buffer->getBufferStart() + SkipMainFilePreamble.first;
   }
+
+  if (Position > Buffer->getBufferEnd())
+    Position = Buffer->getBufferEnd();
+
+  CodeCompletionFile = File;
+  CodeCompletionOffset = Position - Buffer->getBufferStart();
+
+  std::unique_ptr<MemoryBuffer> NewBuffer =
+      MemoryBuffer::getNewUninitMemBuffer(Buffer->getBufferSize() + 1,
+                                          Buffer->getBufferIdentifier());
+  char *NewBuf = const_cast<char*>(NewBuffer->getBufferStart());
+  char *NewPos = std::copy(Buffer->getBufferStart(), Position, NewBuf);
+  *NewPos = '\0';
+  std::copy(Position, Buffer->getBufferEnd(), NewPos+1);
+  SourceMgr.overrideFileContents(File, std::move(NewBuffer));
 
   return false;
 }
@@ -664,7 +672,8 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   // keyword when we're in a caching lexer, because caching lexers only get
   // used in contexts where import declarations are disallowed.
   if (LastTokenWasAt && II.isModulesImport() && !InMacroArgs && 
-      !DisableMacroExpansion && getLangOpts().Modules && 
+      !DisableMacroExpansion &&
+      (getLangOpts().Modules || getLangOpts().DebuggerSupport) && 
       CurLexerKind != CLK_CachingLexer) {
     ModuleImportLoc = Identifier.getLocation();
     ModuleImportPath.clear();
@@ -737,12 +746,14 @@ void Preprocessor::LexAfterModuleImport(Token &Result) {
   }
 
   // If we have a non-empty module path, load the named module.
-  if (!ModuleImportPath.empty() && getLangOpts().Modules) {
-    Module *Imported = TheModuleLoader.loadModule(ModuleImportLoc,
-                                                  ModuleImportPath,
-                                                  Module::MacrosVisible,
-                                                  /*IsIncludeDirective=*/false);
-    if (Callbacks)
+  if (!ModuleImportPath.empty()) {
+    Module *Imported = nullptr;
+    if (getLangOpts().Modules)
+      Imported = TheModuleLoader.loadModule(ModuleImportLoc,
+                                            ModuleImportPath,
+                                            Module::MacrosVisible,
+                                            /*IsIncludeDirective=*/false);
+    if (Callbacks && (getLangOpts().Modules || getLangOpts().DebuggerSupport))
       Callbacks->moduleImport(ModuleImportLoc, ModuleImportPath, Imported);
   }
 }

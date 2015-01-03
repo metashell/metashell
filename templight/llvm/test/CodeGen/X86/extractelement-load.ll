@@ -1,5 +1,6 @@
 ; RUN: llc < %s -march=x86 -mattr=+sse2 -mcpu=yonah | FileCheck %s
 ; RUN: llc < %s -march=x86-64 -mattr=+sse2 -mcpu=core2 | FileCheck %s
+; RUN: llc < %s -march=x86-64 -mattr=+avx -mcpu=btver2 | FileCheck %s
 
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 
@@ -29,16 +30,15 @@ undef, i32 7, i32 9, i32 undef, i32 13, i32 15, i32 1, i32 3>
 ; This case could easily end up inf-looping in the DAG combiner due to an
 ; low alignment load of the vector which prevents us from reliably forming a
 ; narrow load.
-; FIXME: It would be nice to detect whether the target has fast and legal
-; unaligned loads and use them here.
+
+; The expected codegen is identical for the AVX case except
+; load/store instructions will have a leading 'v', so we don't
+; need to special-case the checks.
+
 define void @t3() {
 ; CHECK-LABEL: t3:
-;
-; This movs the entire vector, shuffling the high double down. If we fixed the
-; FIXME above it would just move the high double directly.
-; CHECK: movups
-; CHECK: movhlps
-; CHECK: movlps
+; CHECK: movupd
+; CHECK: movhpd
 
 bb:
   %tmp13 = load <2 x double>* undef, align 1
@@ -46,3 +46,19 @@ bb:
   store double %.sroa.3.24.vec.extract, double* undef, align 8
   unreachable
 }
+
+; Case where a load is unary shuffled, then bitcast (to a type with the same
+; number of elements) before extractelement.
+; This is testing for an assertion - the extraction was assuming that the undef
+; second shuffle operand was a post-bitcast type instead of a pre-bitcast type.
+define i64 @t4(<2 x double>* %a) {
+; CHECK-LABEL: t4:
+; CHECK: mov
+; CHECK: ret
+  %b = load <2 x double>* %a, align 16
+  %c = shufflevector <2 x double> %b, <2 x double> %b, <2 x i32> <i32 1, i32 0>
+  %d = bitcast <2 x double> %c to <2 x i64>
+  %e = extractelement <2 x i64> %d, i32 1
+  ret i64 %e
+}
+

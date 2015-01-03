@@ -51,7 +51,7 @@ ARMELFObjectWriter::~ARMELFObjectWriter() {}
 
 bool ARMELFObjectWriter::needsRelocateWithSymbol(const MCSymbolData &SD,
                                                  unsigned Type) const {
-  // FIXME: This is extremelly conservative. This really needs to use a
+  // FIXME: This is extremely conservative. This really needs to use a
   // whitelist with a clear explanation for why each realocation needs to
   // point to the symbol, not to the section.
   switch (Type) {
@@ -102,7 +102,7 @@ unsigned ARMELFObjectWriter::GetRelocTypeInner(const MCValue &Target,
     case ARM::fixup_arm_uncondbl:
       switch (Modifier) {
       case MCSymbolRefExpr::VK_PLT:
-        Type = ELF::R_ARM_PLT32;
+        Type = ELF::R_ARM_CALL;
         break;
       case MCSymbolRefExpr::VK_ARM_TLSCALL:
         Type = ELF::R_ARM_TLS_CALL;

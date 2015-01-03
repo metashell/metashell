@@ -67,7 +67,7 @@ MachOUniversalBinary::ObjectForArch::ObjectForArch(
   }
 }
 
-ErrorOr<std::unique_ptr<ObjectFile>>
+ErrorOr<std::unique_ptr<MachOObjectFile>>
 MachOUniversalBinary::ObjectForArch::getAsObjectFile() const {
   if (Parent) {
     StringRef ParentData = Parent->getData();
@@ -79,20 +79,16 @@ MachOUniversalBinary::ObjectForArch::getAsObjectFile() const {
   return object_error::parse_failed;
 }
 
-std::error_code MachOUniversalBinary::ObjectForArch::getAsArchive(
-    std::unique_ptr<Archive> &Result) const {
-  if (Parent) {
-    StringRef ParentData = Parent->getData();
-    StringRef ObjectData = ParentData.substr(Header.offset, Header.size);
-    StringRef ObjectName = Parent->getFileName();
-    MemoryBufferRef ObjBuffer(ObjectData, ObjectName);
-    ErrorOr<std::unique_ptr<Archive>> Obj = Archive::create(ObjBuffer);
-    if (std::error_code EC = Obj.getError())
-      return EC;
-    Result = std::move(Obj.get());
-    return object_error::success;
-  }
-  return object_error::parse_failed;
+ErrorOr<std::unique_ptr<Archive>>
+MachOUniversalBinary::ObjectForArch::getAsArchive() const {
+  if (!Parent)
+    return object_error::parse_failed;
+
+  StringRef ParentData = Parent->getData();
+  StringRef ObjectData = ParentData.substr(Header.offset, Header.size);
+  StringRef ObjectName = Parent->getFileName();
+  MemoryBufferRef ObjBuffer(ObjectData, ObjectName);
+  return Archive::create(ObjBuffer);
 }
 
 void MachOUniversalBinary::anchor() { }
@@ -139,7 +135,7 @@ static bool getCTMForArch(Triple::ArchType Arch, MachO::CPUType &CTM) {
   }
 }
 
-ErrorOr<std::unique_ptr<ObjectFile>>
+ErrorOr<std::unique_ptr<MachOObjectFile>>
 MachOUniversalBinary::getObjectForArch(Triple::ArchType Arch) const {
   MachO::CPUType CTM;
   if (!getCTMForArch(Arch, CTM))

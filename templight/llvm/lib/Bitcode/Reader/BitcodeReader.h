@@ -19,7 +19,9 @@
 #include "llvm/Bitcode/LLVMBitCodes.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/GVMaterializer.h"
+#include "llvm/IR/Metadata.h"
 #include "llvm/IR/OperandTraits.h"
+#include "llvm/IR/TrackingMDRef.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/ValueHandle.h"
 #include <deque>
@@ -95,22 +97,25 @@ public:
 //===----------------------------------------------------------------------===//
 
 class BitcodeReaderMDValueList {
-  std::vector<WeakVH> MDValuePtrs;
+  unsigned NumFwdRefs;
+  bool AnyFwdRefs;
+  std::vector<TrackingMDRef> MDValuePtrs;
 
   LLVMContext &Context;
 public:
-  BitcodeReaderMDValueList(LLVMContext& C) : Context(C) {}
+  BitcodeReaderMDValueList(LLVMContext &C)
+      : NumFwdRefs(0), AnyFwdRefs(false), Context(C) {}
 
   // vector compatibility methods
   unsigned size() const       { return MDValuePtrs.size(); }
   void resize(unsigned N)     { MDValuePtrs.resize(N); }
-  void push_back(Value *V)    { MDValuePtrs.push_back(V);  }
+  void push_back(Metadata *MD) { MDValuePtrs.emplace_back(MD); }
   void clear()                { MDValuePtrs.clear();  }
-  Value *back() const         { return MDValuePtrs.back(); }
+  Metadata *back() const      { return MDValuePtrs.back(); }
   void pop_back()             { MDValuePtrs.pop_back(); }
   bool empty() const          { return MDValuePtrs.empty(); }
 
-  Value *operator[](unsigned i) const {
+  Metadata *operator[](unsigned i) const {
     assert(i < MDValuePtrs.size());
     return MDValuePtrs[i];
   }
@@ -120,8 +125,9 @@ public:
     MDValuePtrs.resize(N);
   }
 
-  Value *getValueFwdRef(unsigned Idx);
-  void AssignValue(Value *V, unsigned Idx);
+  Metadata *getValueFwdRef(unsigned Idx);
+  void AssignValue(Metadata *MD, unsigned Idx);
+  void tryToResolveCycles();
 };
 
 class BitcodeReader : public GVMaterializer {
@@ -143,6 +149,7 @@ class BitcodeReader : public GVMaterializer {
   std::vector<std::pair<GlobalVariable*, unsigned> > GlobalInits;
   std::vector<std::pair<GlobalAlias*, unsigned> > AliasInits;
   std::vector<std::pair<Function*, unsigned> > FunctionPrefixes;
+  std::vector<std::pair<Function*, unsigned> > FunctionPrologues;
 
   SmallVector<Instruction*, 64> InstsWithTBAATag;
 
@@ -223,10 +230,10 @@ public:
 
   void releaseBuffer();
 
-  bool isMaterializable(const GlobalValue *GV) const override;
   bool isDematerializable(const GlobalValue *GV) const override;
-  std::error_code Materialize(GlobalValue *GV) override;
+  std::error_code materialize(GlobalValue *GV) override;
   std::error_code MaterializeModule(Module *M) override;
+  std::vector<StructType *> getIdentifiedStructTypes() const override;
   void Dematerialize(GlobalValue *GV) override;
 
   /// @brief Main interface to parsing a bitcode buffer.
@@ -240,11 +247,18 @@ public:
   static uint64_t decodeSignRotatedValue(uint64_t V);
 
 private:
+  std::vector<StructType *> IdentifiedStructTypes;
+  StructType *createIdentifiedStructType(LLVMContext &Context, StringRef Name);
+  StructType *createIdentifiedStructType(LLVMContext &Context);
+
   Type *getTypeByID(unsigned ID);
   Value *getFnValueByID(unsigned ID, Type *Ty) {
     if (Ty && Ty->isMetadataTy())
-      return MDValueList.getValueFwdRef(ID);
+      return MetadataAsValue::get(Ty->getContext(), getFnMetadataByID(ID));
     return ValueList.getValueFwdRef(ID, Ty);
+  }
+  Metadata *getFnMetadataByID(unsigned ID) {
+    return MDValueList.getValueFwdRef(ID);
   }
   BasicBlock *getBasicBlock(unsigned ID) const {
     if (ID >= FunctionBBs.size()) return nullptr; // Invalid ID

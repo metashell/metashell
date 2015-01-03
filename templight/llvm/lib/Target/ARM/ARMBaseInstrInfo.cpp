@@ -594,16 +594,6 @@ template <> bool IsCPSRDead<MachineInstr>(MachineInstr *MI) {
 }
 }
 
-/// FIXME: Works around a gcc miscompilation with -fstrict-aliasing.
-LLVM_ATTRIBUTE_NOINLINE
-static unsigned getNumJTEntries(const std::vector<MachineJumpTableEntry> &JT,
-                                unsigned JTI);
-static unsigned getNumJTEntries(const std::vector<MachineJumpTableEntry> &JT,
-                                unsigned JTI) {
-  assert(JTI < JT.size());
-  return JT[JTI].MBBs.size();
-}
-
 /// GetInstSize - Return the size of the specified MachineInstr.
 ///
 unsigned ARMBaseInstrInfo::GetInstSizeInBytes(const MachineInstr *MI) const {
@@ -676,7 +666,7 @@ unsigned ARMBaseInstrInfo::GetInstSizeInBytes(const MachineInstr *MI) const {
     // bytes, we can use 16-bit entries instead. Then there won't be an
     // alignment issue.
     unsigned InstSize = (Opc == ARM::tBR_JTr || Opc == ARM::t2BR_JT) ? 2 : 4;
-    unsigned NumEntries = getNumJTEntries(JT, JTI);
+    unsigned NumEntries = JT[JTI].MBBs.size();
     if (Opc == ARM::t2TBB_JT && (NumEntries & 1))
       // Make sure the instruction that follows TBB is 2-byte aligned.
       // FIXME: Constant island pass should insert an "ALIGN" instruction
@@ -684,6 +674,8 @@ unsigned ARMBaseInstrInfo::GetInstSizeInBytes(const MachineInstr *MI) const {
       ++NumEntries;
     return NumEntries * EntrySize + InstSize;
   }
+  case ARM::SPACE:
+    return MI->getOperand(1).getImm();
   }
 }
 
@@ -696,6 +688,49 @@ unsigned ARMBaseInstrInfo::getInstBundleLength(const MachineInstr *MI) const {
     Size += GetInstSizeInBytes(&*I);
   }
   return Size;
+}
+
+void ARMBaseInstrInfo::copyFromCPSR(MachineBasicBlock &MBB,
+                                    MachineBasicBlock::iterator I,
+                                    unsigned DestReg, bool KillSrc,
+                                    const ARMSubtarget &Subtarget) const {
+  unsigned Opc = Subtarget.isThumb()
+                     ? (Subtarget.isMClass() ? ARM::t2MRS_M : ARM::t2MRS_AR)
+                     : ARM::MRS;
+
+  MachineInstrBuilder MIB =
+      BuildMI(MBB, I, I->getDebugLoc(), get(Opc), DestReg);
+
+  // There is only 1 A/R class MRS instruction, and it always refers to
+  // APSR. However, there are lots of other possibilities on M-class cores.
+  if (Subtarget.isMClass())
+    MIB.addImm(0x800);
+
+  AddDefaultPred(MIB);
+
+  MIB.addReg(ARM::CPSR, RegState::Implicit | getKillRegState(KillSrc));
+}
+
+void ARMBaseInstrInfo::copyToCPSR(MachineBasicBlock &MBB,
+                                  MachineBasicBlock::iterator I,
+                                  unsigned SrcReg, bool KillSrc,
+                                  const ARMSubtarget &Subtarget) const {
+  unsigned Opc = Subtarget.isThumb()
+                     ? (Subtarget.isMClass() ? ARM::t2MSR_M : ARM::t2MSR_AR)
+                     : ARM::MSR;
+
+  MachineInstrBuilder MIB = BuildMI(MBB, I, I->getDebugLoc(), get(Opc));
+
+  if (Subtarget.isMClass())
+    MIB.addImm(0x800);
+  else
+    MIB.addImm(8);
+
+  MIB.addReg(SrcReg, getKillRegState(KillSrc));
+
+  AddDefaultPred(MIB);
+
+  MIB.addReg(ARM::CPSR, RegState::Implicit | RegState::Define);
 }
 
 void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
@@ -785,6 +820,12 @@ void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     Opc = ARM::VMOVS;
     BeginIdx = ARM::ssub_0;
     SubRegs = 2;
+  } else if (SrcReg == ARM::CPSR) {
+    copyFromCPSR(MBB, I, DestReg, KillSrc, Subtarget);
+    return;
+  } else if (DestReg == ARM::CPSR) {
+    copyToCPSR(MBB, I, SrcReg, KillSrc, Subtarget);
+    return;
   }
 
   assert(Opc && "Impossible reg-to-reg copy");
@@ -4448,29 +4489,6 @@ breakPartialRegDependency(MachineBasicBlock::iterator MI,
   AddDefaultPred(BuildMI(*MI->getParent(), MI, MI->getDebugLoc(),
                          get(ARM::FCONSTD), DReg).addImm(96));
   MI->addRegisterKilled(DReg, TRI, true);
-}
-
-void ARMBaseInstrInfo::getUnconditionalBranch(
-    MCInst &Branch, const MCSymbolRefExpr *BranchTarget) const {
-  if (Subtarget.isThumb())
-    Branch.setOpcode(ARM::tB);
-  else if (Subtarget.isThumb2())
-    Branch.setOpcode(ARM::t2B);
-  else
-    Branch.setOpcode(ARM::Bcc);
-
-  Branch.addOperand(MCOperand::CreateExpr(BranchTarget));
-  Branch.addOperand(MCOperand::CreateImm(ARMCC::AL));
-  Branch.addOperand(MCOperand::CreateReg(0));
-}
-
-void ARMBaseInstrInfo::getTrap(MCInst &MI) const {
-  if (Subtarget.isThumb())
-    MI.setOpcode(ARM::tTRAP);
-  else if (Subtarget.useNaClTrap())
-    MI.setOpcode(ARM::TRAPNaCl);
-  else
-    MI.setOpcode(ARM::TRAP);
 }
 
 bool ARMBaseInstrInfo::hasNOP() const {

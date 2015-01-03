@@ -19,10 +19,10 @@
 #include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/ExecutionEngine/ObjectImage.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -140,7 +140,7 @@ protected:
     TheJIT.reset(EngineBuilder(std::move(TheModule))
       .setEngineKind(EngineKind::JIT)
       .setErrorStr(&Error)
-      .setMCJITMemoryManager(MemMgr)
+      .setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>(MemMgr))
       .create());
     if (Error.empty() == false)
       errs() << Error;

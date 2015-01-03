@@ -23,8 +23,8 @@
 
 namespace __sanitizer {
 
-// Depending on allocator_may_return_null either return 0 or crash.
-void *AllocatorReturnNull();
+// Prints error message and kills the program.
+void NORETURN ReportAllocatorCannotReturnNull();
 
 // SizeClassMap maps allocation sizes into size classes and back.
 // Class 0 corresponds to size 0.
@@ -211,6 +211,7 @@ class AllocatorStats {
   void Init() {
     internal_memset(this, 0, sizeof(*this));
   }
+  void InitLinkerInitialized() {}
 
   void Add(AllocatorStat i, uptr v) {
     v += atomic_load(&stats_[i], memory_order_relaxed);
@@ -240,10 +241,13 @@ class AllocatorStats {
 // Global stats, used for aggregation and querying.
 class AllocatorGlobalStats : public AllocatorStats {
  public:
-  void Init() {
-    internal_memset(this, 0, sizeof(*this));
+  void InitLinkerInitialized() {
     next_ = this;
     prev_ = this;
+  }
+  void Init() {
+    internal_memset(this, 0, sizeof(*this));
+    InitLinkerInitialized();
   }
 
   void Register(AllocatorStats *s) {
@@ -461,6 +465,11 @@ class SizeClassAllocator64 {
     }
   }
 
+  static uptr AdditionalSize() {
+    return RoundUpTo(sizeof(RegionInfo) * kNumClassesRounded,
+                     GetPageSizeCached());
+  }
+
   typedef SizeClassMap SizeClassMapT;
   static const uptr kNumClasses = SizeClassMap::kNumClasses;
   static const uptr kNumClassesRounded = SizeClassMap::kNumClassesRounded;
@@ -489,11 +498,6 @@ class SizeClassAllocator64 {
     uptr n_allocated, n_freed;  // Just stats.
   };
   COMPILER_CHECK(sizeof(RegionInfo) >= kCacheLineSize);
-
-  static uptr AdditionalSize() {
-    return RoundUpTo(sizeof(RegionInfo) * kNumClassesRounded,
-                     GetPageSizeCached());
-  }
 
   RegionInfo *GetRegionInfo(uptr class_id) {
     CHECK_LT(class_id, kNumClasses);
@@ -1002,9 +1006,14 @@ struct SizeClassAllocatorLocalCache {
 template <class MapUnmapCallback = NoOpMapUnmapCallback>
 class LargeMmapAllocator {
  public:
-  void Init() {
-    internal_memset(this, 0, sizeof(*this));
+  void InitLinkerInitialized(bool may_return_null) {
     page_size_ = GetPageSizeCached();
+    atomic_store(&may_return_null_, may_return_null, memory_order_relaxed);
+  }
+
+  void Init(bool may_return_null) {
+    internal_memset(this, 0, sizeof(*this));
+    InitLinkerInitialized(may_return_null);
   }
 
   void *Allocate(AllocatorStats *stat, uptr size, uptr alignment) {
@@ -1012,15 +1021,20 @@ class LargeMmapAllocator {
     uptr map_size = RoundUpMapSize(size);
     if (alignment > page_size_)
       map_size += alignment;
-    if (map_size < size) return AllocatorReturnNull();  // Overflow.
+    // Overflow.
+    if (map_size < size)
+      return ReturnNullOrDie();
     uptr map_beg = reinterpret_cast<uptr>(
         MmapOrDie(map_size, "LargeMmapAllocator"));
+    CHECK(IsAligned(map_beg, page_size_));
     MapUnmapCallback().OnMap(map_beg, map_size);
     uptr map_end = map_beg + map_size;
     uptr res = map_beg + page_size_;
     if (res & (alignment - 1))  // Align.
       res += alignment - (res & (alignment - 1));
-    CHECK_EQ(0, res & (alignment - 1));
+    CHECK(IsAligned(res, alignment));
+    CHECK(IsAligned(res, page_size_));
+    CHECK_GE(res + size, map_beg);
     CHECK_LE(res + size, map_end);
     Header *h = GetHeader(res);
     h->size = size;
@@ -1043,6 +1057,16 @@ class LargeMmapAllocator {
       stat->Add(AllocatorStatMapped, map_size);
     }
     return reinterpret_cast<void*>(res);
+  }
+
+  void *ReturnNullOrDie() {
+    if (atomic_load(&may_return_null_, memory_order_acquire))
+      return 0;
+    ReportAllocatorCannotReturnNull();
+  }
+
+  void SetMayReturnNull(bool may_return_null) {
+    atomic_store(&may_return_null_, may_return_null, memory_order_release);
   }
 
   void Deallocate(AllocatorStats *stat, void *p) {
@@ -1223,6 +1247,7 @@ class LargeMmapAllocator {
   struct Stats {
     uptr n_allocs, n_frees, currently_allocated, max_allocated, by_size_log[64];
   } stats;
+  atomic_uint8_t may_return_null_;
   SpinMutex mutex_;
 };
 
@@ -1236,10 +1261,21 @@ template <class PrimaryAllocator, class AllocatorCache,
           class SecondaryAllocator>  // NOLINT
 class CombinedAllocator {
  public:
-  void Init() {
+  void InitCommon(bool may_return_null) {
     primary_.Init();
-    secondary_.Init();
+    atomic_store(&may_return_null_, may_return_null, memory_order_relaxed);
+  }
+
+  void InitLinkerInitialized(bool may_return_null) {
+    secondary_.InitLinkerInitialized(may_return_null);
+    stats_.InitLinkerInitialized();
+    InitCommon(may_return_null);
+  }
+
+  void Init(bool may_return_null) {
+    secondary_.Init(may_return_null);
     stats_.Init();
+    InitCommon(may_return_null);
   }
 
   void *Allocate(AllocatorCache *cache, uptr size, uptr alignment,
@@ -1248,7 +1284,7 @@ class CombinedAllocator {
     if (size == 0)
       size = 1;
     if (size + alignment < size)
-      return AllocatorReturnNull();
+      return ReturnNullOrDie();
     if (alignment > 8)
       size = RoundUpTo(size, alignment);
     void *res;
@@ -1262,6 +1298,21 @@ class CombinedAllocator {
     if (cleared && res && from_primary)
       internal_bzero_aligned16(res, RoundUpTo(size, 16));
     return res;
+  }
+
+  bool MayReturnNull() const {
+    return atomic_load(&may_return_null_, memory_order_acquire);
+  }
+
+  void *ReturnNullOrDie() {
+    if (MayReturnNull())
+      return 0;
+    ReportAllocatorCannotReturnNull();
+  }
+
+  void SetMayReturnNull(bool may_return_null) {
+    secondary_.SetMayReturnNull(may_return_null);
+    atomic_store(&may_return_null_, may_return_null, memory_order_release);
   }
 
   void Deallocate(AllocatorCache *cache, void *p) {
@@ -1376,6 +1427,7 @@ class CombinedAllocator {
   PrimaryAllocator primary_;
   SecondaryAllocator secondary_;
   AllocatorGlobalStats stats_;
+  atomic_uint8_t may_return_null_;
 };
 
 // Returns true if calloc(size, n) should return 0 due to overflow in size*n.

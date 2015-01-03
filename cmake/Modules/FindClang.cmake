@@ -106,6 +106,7 @@ else()
       libclangRewrite.a
       libclangSerialization.a
       libclangTooling.a
+      libclangToolingCore.a
       libLLVMBitReader.a
       libLLVMTransformUtils.a
       libLLVMCore.a
@@ -144,11 +145,15 @@ find_package_handle_standard_args(
   CLANG DEFAULT_MSG CLANG_LIBRARY CLANG_INCLUDE_DIR
 )
 
-# The clang binary
+# The clang/templight binary
 if (WIN32)
   set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${CLANG_LIBRARYDIR}")
 endif ()
-find_program(CLANG_BINARY clang HINTS ${CLANG_BINARYDIR})
+if (NO_TEMPLIGHT)
+  find_program(CLANG_BINARY clang HINTS ${CLANG_BINARYDIR})
+else()
+  find_program(CLANG_BINARY templight HINTS ${CLANG_BINARYDIR})
+endif ()
 
 # The standard Clang header files
 file(WRITE "${PROJECT_BINARY_DIR}/empty.hpp" "")

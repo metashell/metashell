@@ -46,6 +46,12 @@ namespace metashell
     logger* logger_
   );
 
+  result eval_tmp(
+    const environment& env_,
+    const std::string& tmp_exp_,
+    const config& config_,
+    logger* logger_);
+
   result validate_code(
     const std::string& s_,
     const config& config_,

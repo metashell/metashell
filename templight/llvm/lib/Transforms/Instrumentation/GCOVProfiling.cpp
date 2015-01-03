@@ -310,11 +310,15 @@ namespace {
 
       Function *F = SP.getFunction();
       DEBUG(dbgs() << "Function: " << getFunctionName(SP) << "\n");
-      uint32_t i = 0;
-      for (Function::iterator BB = F->begin(), E = F->end(); BB != E; ++BB) {
+
+      Function::iterator BB = F->begin(), E = F->end();
+      Blocks[BB++] = new GCOVBlock(0, os);
+      ReturnBlock = new GCOVBlock(1, os);
+
+      uint32_t i = 2;
+      for (; BB != E; ++BB) {
         Blocks[BB] = new GCOVBlock(i++, os);
       }
-      ReturnBlock = new GCOVBlock(i++, os);
 
       std::string FunctionNameAndLine;
       raw_string_ostream FNLOS(FunctionNameAndLine);
@@ -485,6 +489,7 @@ void GCOVProfiler::emitProfileNotes() {
     std::string EdgeDestinations;
 
     DIArray SPs = CU.getSubprograms();
+    unsigned FunctionIdent = 0;
     for (unsigned i = 0, e = SPs.getNumElements(); i != e; ++i) {
       DISubprogram SP(SPs.getElement(i));
       assert((!SP || SP.isSubprogram()) &&
@@ -504,8 +509,8 @@ void GCOVProfiler::emitProfileNotes() {
         ++It;
       EntryBlock.splitBasicBlock(It);
 
-      Funcs.push_back(
-          make_unique<GCOVFunction>(SP, &out, i, Options.UseCfgChecksum));
+      Funcs.push_back(make_unique<GCOVFunction>(SP, &out, FunctionIdent++,
+                                                Options.UseCfgChecksum));
       GCOVFunction &Func = *Funcs.back();
 
       for (Function::iterator BB = F->begin(), E = F->end(); BB != E; ++BB) {

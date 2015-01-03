@@ -27,14 +27,13 @@ typedef VerifyDiagnosticConsumer::Directive Directive;
 typedef VerifyDiagnosticConsumer::DirectiveList DirectiveList;
 typedef VerifyDiagnosticConsumer::ExpectedData ExpectedData;
 
-VerifyDiagnosticConsumer::VerifyDiagnosticConsumer(DiagnosticsEngine &_Diags)
-  : Diags(_Diags),
-    PrimaryClient(Diags.getClient()), OwnsPrimaryClient(Diags.ownsClient()),
+VerifyDiagnosticConsumer::VerifyDiagnosticConsumer(DiagnosticsEngine &Diags_)
+  : Diags(Diags_),
+    PrimaryClient(Diags.getClient()), PrimaryClientOwner(Diags.takeClient()),
     Buffer(new TextDiagnosticBuffer()), CurrentPreprocessor(nullptr),
     LangOpts(nullptr), SrcManager(nullptr), ActiveSourceFiles(0),
     Status(HasNoDirectives)
 {
-  Diags.takeClient();
   if (Diags.hasSourceManager())
     setSourceManager(Diags.getSourceManager());
 }
@@ -43,10 +42,8 @@ VerifyDiagnosticConsumer::~VerifyDiagnosticConsumer() {
   assert(!ActiveSourceFiles && "Incomplete parsing of source files!");
   assert(!CurrentPreprocessor && "CurrentPreprocessor should be invalid!");
   SrcManager = nullptr;
-  CheckDiagnostics();  
-  Diags.takeClient();
-  if (OwnsPrimaryClient)
-    delete PrimaryClient;
+  CheckDiagnostics();
+  Diags.takeClient().release();
 }
 
 #ifndef NDEBUG
@@ -402,8 +399,9 @@ static bool ParseDirective(StringRef S, ExpectedData *ED, SourceManager &SM,
 
         // Lookup file via Preprocessor, like a #include.
         const DirectoryLookup *CurDir;
-        const FileEntry *FE = PP->LookupFile(Pos, Filename, false, nullptr,
-                                             CurDir, nullptr, nullptr, nullptr);
+        const FileEntry *FE =
+            PP->LookupFile(Pos, Filename, false, nullptr, nullptr, CurDir,
+                           nullptr, nullptr, nullptr);
         if (!FE) {
           Diags.Report(Pos.getLocWithOffset(PH.C-PH.Begin),
                        diag::err_verify_missing_file) << Filename << KindStr;
@@ -801,8 +799,8 @@ void VerifyDiagnosticConsumer::UpdateParsedFileStatus(SourceManager &SM,
 
 void VerifyDiagnosticConsumer::CheckDiagnostics() {
   // Ensure any diagnostics go to the primary client.
-  bool OwnsCurClient = Diags.ownsClient();
-  DiagnosticConsumer *CurClient = Diags.takeClient();
+  DiagnosticConsumer *CurClient = Diags.getClient();
+  std::unique_ptr<DiagnosticConsumer> Owner = Diags.takeClient();
   Diags.setClient(PrimaryClient, false);
 
 #ifndef NDEBUG
@@ -864,8 +862,7 @@ void VerifyDiagnosticConsumer::CheckDiagnostics() {
                                   Buffer->note_end(), "note"));
   }
 
-  Diags.takeClient();
-  Diags.setClient(CurClient, OwnsCurClient);
+  Diags.setClient(CurClient, Owner.release() != nullptr);
 
   // Reset the buffer, we have processed all the diagnostics in it.
   Buffer.reset(new TextDiagnosticBuffer());

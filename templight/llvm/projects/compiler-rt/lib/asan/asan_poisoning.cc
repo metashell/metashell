@@ -15,13 +15,24 @@
 #include "asan_poisoning.h"
 #include "asan_report.h"
 #include "asan_stack.h"
+#include "sanitizer_common/sanitizer_atomic.h"
 #include "sanitizer_common/sanitizer_libc.h"
 #include "sanitizer_common/sanitizer_flags.h"
 
 namespace __asan {
 
+static atomic_uint8_t can_poison_memory;
+
+void SetCanPoisonMemory(bool value) {
+  atomic_store(&can_poison_memory, value, memory_order_release);
+}
+
+bool CanPoisonMemory() {
+  return atomic_load(&can_poison_memory, memory_order_acquire);
+}
+
 void PoisonShadow(uptr addr, uptr size, u8 value) {
-  if (!flags()->poison_heap) return;
+  if (!CanPoisonMemory()) return;
   CHECK(AddrIsAlignedByGranularity(addr));
   CHECK(AddrIsInMem(addr));
   CHECK(AddrIsAlignedByGranularity(addr + size));
@@ -34,7 +45,7 @@ void PoisonShadowPartialRightRedzone(uptr addr,
                                      uptr size,
                                      uptr redzone_size,
                                      u8 value) {
-  if (!flags()->poison_heap) return;
+  if (!CanPoisonMemory()) return;
   CHECK(AddrIsAlignedByGranularity(addr));
   CHECK(AddrIsInMem(addr));
   FastPoisonShadowPartialRightRedzone(addr, size, redzone_size, value);
@@ -59,6 +70,27 @@ void FlushUnneededASanShadowMemory(uptr p, uptr size) {
     uptr shadow_beg = RoundUpTo(MemToShadow(p), page_size);
     uptr shadow_end = RoundDownTo(MemToShadow(p + size), page_size);
     FlushUnneededShadowMemory(shadow_beg, shadow_end - shadow_beg);
+}
+
+void AsanPoisonOrUnpoisonIntraObjectRedzone(uptr ptr, uptr size, bool poison) {
+  uptr end = ptr + size;
+  if (common_flags()->verbosity) {
+    Printf("__asan_%spoison_intra_object_redzone [%p,%p) %zd\n",
+           poison ? "" : "un", ptr, end, size);
+    if (common_flags()->verbosity >= 2)
+      PRINT_CURRENT_STACK();
+  }
+  CHECK(size);
+  CHECK_LE(size, 4096);
+  CHECK(IsAligned(end, SHADOW_GRANULARITY));
+  if (!IsAligned(ptr, SHADOW_GRANULARITY)) {
+    *(u8 *)MemToShadow(ptr) =
+        poison ? static_cast<u8>(ptr % SHADOW_GRANULARITY) : 0;
+    ptr |= SHADOW_GRANULARITY - 1;
+    ptr++;
+  }
+  for (; ptr < end; ptr += SHADOW_GRANULARITY)
+    *(u8*)MemToShadow(ptr) = poison ? kAsanIntraObjectRedzone : 0;
 }
 
 }  // namespace __asan
@@ -252,7 +284,8 @@ uptr __asan_load_cxx_array_cookie(uptr *p) {
            "expect a double-free report\n");
     return 0;
   }
-  // FIXME: apparently it can be something else; need to find a reproducer.
+  // The cookie may remain unpoisoned if e.g. it comes from a custom
+  // operator new defined inside a class.
   return *p;
 }
 
@@ -374,6 +407,17 @@ int __sanitizer_verify_contiguous_container(const void *beg_p,
       return 0;
   return 1;
 }
+
+extern "C" SANITIZER_INTERFACE_ATTRIBUTE
+void __asan_poison_intra_object_redzone(uptr ptr, uptr size) {
+  AsanPoisonOrUnpoisonIntraObjectRedzone(ptr, size, true);
+}
+
+extern "C" SANITIZER_INTERFACE_ATTRIBUTE
+void __asan_unpoison_intra_object_redzone(uptr ptr, uptr size) {
+  AsanPoisonOrUnpoisonIntraObjectRedzone(ptr, size, false);
+}
+
 // --- Implementation of LSan-specific functions --- {{{1
 namespace __lsan {
 bool WordIsPoisoned(uptr addr) {

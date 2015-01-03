@@ -65,7 +65,15 @@ then
     else
       echo "Patching LLVM/Clang is disabled"
     fi
+    cd llvm/tools/clang/tools
+      git clone 'https://github.com/mikael-s-persson/templight.git'
+      sed -i '1iadd_subdirectory(templight)' CMakeLists.txt
+    cd ../../../..
   cd ..
+  echo "Running protoc"
+  protoc --cpp_out=lib \
+    -I=templight/llvm/tools/clang/tools/templight \
+    templight/llvm/tools/clang/tools/templight/templight_messages.proto
 else
   echo "Please run this script from the root directory of the Metashell source code"
 fi

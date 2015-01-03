@@ -24,16 +24,24 @@ templight_environment::templight_environment(
   logger* logger_
 ) : header_file_environment(config, logger_)
 {
-  clang_arguments().push_back("-templight");
-  clang_arguments().push_back("-templight-format");
-  clang_arguments().push_back("xml");
-  clang_arguments().push_back("-templight-output");
-  clang_arguments().push_back("TEMPLIGHT_XML_LOCATION_IS_NOT_SET");
-  xml_path_index = clang_arguments().size() - 1;
+  clang_arguments().push_back("-Xclang");
+  clang_arguments().push_back("-ast-dump");
+  clang_arguments().push_back("-Xtemplight");
+  clang_arguments().push_back("-profiler");
+
+  // templight can't be forced to generate output file with
+  // -Xtemplight -output=<file> for some reason
+  // A workaround is to specify a standard output location with -o
+  // then append ".trace.pbf" to the specified file (on the calling side)
+  clang_arguments().push_back("-o");
+  clang_arguments().push_back("TEMPLIGHT_OUTPUT_LOCATION_IS_NOT_SET");
+  output_path_index = clang_arguments().size() - 1;
 }
 
-void templight_environment::set_xml_location(const std::string& xml_location) {
-  clang_arguments()[xml_path_index] = xml_location;
+void templight_environment::set_output_location(
+    const std::string& output_location)
+{
+  clang_arguments()[output_path_index] = output_location;
 }
 
 }

@@ -602,8 +602,8 @@ entry:
 	%C = load i8** %B, align 8
 	ret i8* %C
 ; CHECK-LABEL: @test34(
-; CHECK: %V.c = inttoptr i64 %V to i8*
-; CHECK: ret i8* %V.c
+; CHECK: %[[C:.*]] = inttoptr i64 %V to i8*
+; CHECK: ret i8* %[[C]]
 }
 
 %t0 = type { i8*, [19 x i8] }
@@ -703,7 +703,7 @@ define void @test39(%struct.ham* %arg, i8 %arg1) nounwind {
 
 ; CHECK-LABEL: @test39(
 ; CHECK: getelementptr inbounds %struct.ham* %arg, i64 0, i32 2
-; CHECK: getelementptr inbounds i8* %tmp3, i64 -8
+; CHECK: getelementptr inbounds i8* %{{.+}}, i64 -8
 }
 
 define i1 @pr16483([1 x i8]* %a, [1 x i8]* %b) {

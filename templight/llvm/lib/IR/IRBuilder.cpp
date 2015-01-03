@@ -172,3 +172,40 @@ CallInst *IRBuilderBase::CreateLifetimeEnd(Value *Ptr, ConstantInt *Size) {
   Value *TheFn = Intrinsic::getDeclaration(M, Intrinsic::lifetime_end);
   return createCallHelper(TheFn, Ops, this);
 }
+
+CallInst *IRBuilderBase::CreateAssumption(Value *Cond) {
+  assert(Cond->getType() == getInt1Ty() &&
+         "an assumption condition must be of type i1");
+
+  Value *Ops[] = { Cond };
+  Module *M = BB->getParent()->getParent();
+  Value *FnAssume = Intrinsic::getDeclaration(M, Intrinsic::assume);
+  return createCallHelper(FnAssume, Ops, this);
+}
+
+/// Create a call to a Masked Load intrinsic.
+/// Ops - an array of operands.
+CallInst *IRBuilderBase::CreateMaskedLoad(ArrayRef<Value *> Ops) {
+  // The only one overloaded type - the type of passthru value in this case
+  Type *DataTy = Ops[1]->getType();
+  return CreateMaskedIntrinsic(Intrinsic::masked_load, Ops, DataTy);
+}
+
+/// Create a call to a Masked Store intrinsic.
+/// Ops - an array of operands.
+CallInst *IRBuilderBase::CreateMaskedStore(ArrayRef<Value *> Ops) {
+  // DataTy - type of the data to be stored - the only one overloaded type
+  Type *DataTy = Ops[1]->getType();
+  return CreateMaskedIntrinsic(Intrinsic::masked_store, Ops, DataTy);
+}
+
+/// Create a call to a Masked intrinsic, with given intrinsic Id,
+/// an array of operands - Ops, and one overloaded type - DataTy
+CallInst *IRBuilderBase::CreateMaskedIntrinsic(unsigned Id,
+                                               ArrayRef<Value *> Ops,
+                                               Type *DataTy) {
+  Module *M = BB->getParent()->getParent();
+  Type *OverloadedTypes[] = { DataTy };
+  Value *TheFn = Intrinsic::getDeclaration(M, (Intrinsic::ID)Id, OverloadedTypes);
+  return createCallHelper(TheFn, Ops, this);
+}

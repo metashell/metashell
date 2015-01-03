@@ -23,6 +23,8 @@ class AMDGPUInst <dag outs, dag ins, string asm, list<dag> pattern> : Instructio
   let Pattern = pattern;
   let Itinerary = NullALU;
 
+  let isCodeGenOnly = 1;
+
   let TSFlags{63} = isRegisterLoad;
   let TSFlags{62} = isRegisterStore;
 }
@@ -71,6 +73,11 @@ def COND_OEQ : PatLeaf <
   [{return N->get() == ISD::SETOEQ || N->get() == ISD::SETEQ;}]
 >;
 
+def COND_ONE : PatLeaf <
+  (cond),
+  [{return N->get() == ISD::SETONE || N->get() == ISD::SETNE;}]
+>;
+
 def COND_OGT : PatLeaf <
   (cond),
   [{return N->get() == ISD::SETOGT || N->get() == ISD::SETGT;}]
@@ -91,22 +98,27 @@ def COND_OLE : PatLeaf <
   [{return N->get() == ISD::SETOLE || N->get() == ISD::SETLE;}]
 >;
 
-def COND_UNE : PatLeaf <
-  (cond),
-  [{return N->get() == ISD::SETUNE || N->get() == ISD::SETNE;}]
->;
 
 def COND_O : PatLeaf <(cond), [{return N->get() == ISD::SETO;}]>;
 def COND_UO : PatLeaf <(cond), [{return N->get() == ISD::SETUO;}]>;
 
 //===----------------------------------------------------------------------===//
-// PatLeafs for unsigned comparisons
+// PatLeafs for unsigned / unordered comparisons
 //===----------------------------------------------------------------------===//
 
+def COND_UEQ : PatLeaf <(cond), [{return N->get() == ISD::SETUEQ;}]>;
+def COND_UNE : PatLeaf <(cond), [{return N->get() == ISD::SETUNE;}]>;
 def COND_UGT : PatLeaf <(cond), [{return N->get() == ISD::SETUGT;}]>;
 def COND_UGE : PatLeaf <(cond), [{return N->get() == ISD::SETUGE;}]>;
 def COND_ULT : PatLeaf <(cond), [{return N->get() == ISD::SETULT;}]>;
 def COND_ULE : PatLeaf <(cond), [{return N->get() == ISD::SETULE;}]>;
+
+// XXX - For some reason R600 version is preferring to use unordered
+// for setne?
+def COND_UNE_NE : PatLeaf <
+  (cond),
+  [{return N->get() == ISD::SETUNE || N->get() == ISD::SETNE;}]
+>;
 
 //===----------------------------------------------------------------------===//
 // PatLeafs for signed comparisons
@@ -380,6 +392,23 @@ def mskor_flat : PatFrag<(ops node:$val, node:$ptr),
   return dyn_cast<MemSDNode>(N)->getAddressSpace() == AMDGPUAS::FLAT_ADDRESS;
 }]>;
 
+class global_binary_atomic_op<SDNode atomic_op> : PatFrag<
+  (ops node:$ptr, node:$value),
+  (atomic_op node:$ptr, node:$value),
+  [{return cast<MemSDNode>(N)->getAddressSpace() == AMDGPUAS::GLOBAL_ADDRESS;}]
+>;
+
+def atomic_swap_global : global_binary_atomic_op<atomic_swap>;
+def atomic_add_global : global_binary_atomic_op<atomic_load_add>;
+def atomic_and_global : global_binary_atomic_op<atomic_load_and>;
+def atomic_max_global : global_binary_atomic_op<atomic_load_max>;
+def atomic_min_global : global_binary_atomic_op<atomic_load_min>;
+def atomic_or_global : global_binary_atomic_op<atomic_load_or>;
+def atomic_sub_global : global_binary_atomic_op<atomic_load_sub>;
+def atomic_umax_global : global_binary_atomic_op<atomic_load_umax>;
+def atomic_umin_global : global_binary_atomic_op<atomic_load_umin>;
+def atomic_xor_global : global_binary_atomic_op<atomic_load_xor>;
+
 //===----------------------------------------------------------------------===//
 // Misc Pattern Fragments
 //===----------------------------------------------------------------------===//
@@ -507,8 +536,9 @@ class DwordAddrPat<ValueType vt, RegisterClass rc> : Pat <
 
 // BFI_INT patterns
 
-multiclass BFIPatterns <Instruction BFI_INT, Instruction LoadImm32> {
-
+multiclass BFIPatterns <Instruction BFI_INT,
+                        Instruction LoadImm32,
+                        RegisterClass RC64> {
   // Definition from ISA doc:
   // (y & x) | (z & ~x)
   def : Pat <
@@ -530,8 +560,8 @@ multiclass BFIPatterns <Instruction BFI_INT, Instruction LoadImm32> {
 
   def : Pat <
     (f64 (fcopysign f64:$src0, f64:$src1)),
-      (INSERT_SUBREG (INSERT_SUBREG (f64 (IMPLICIT_DEF)),
-      (i32 (EXTRACT_SUBREG $src0, sub0)), sub0),
+    (REG_SEQUENCE RC64,
+      (i32 (EXTRACT_SUBREG $src0, sub0)), sub0,
       (BFI_INT (LoadImm32 0x7fffffff),
                (i32 (EXTRACT_SUBREG $src0, sub1)),
                (i32 (EXTRACT_SUBREG $src1, sub1))), sub1)

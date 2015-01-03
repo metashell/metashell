@@ -1,6 +1,7 @@
 // RUN: %clang_cc1 -std=c++98 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 // RUN: %clang_cc1 -std=c++11 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
-// RUN: %clang_cc1 -std=c++1y %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
+// RUN: %clang_cc1 -std=c++14 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
+// RUN: %clang_cc1 -std=c++1z %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 
 // FIXME: This is included to avoid a diagnostic with no source location
 // pointing at the implicit operator new. We can't match such a diagnostic
@@ -797,7 +798,7 @@ namespace dr575 { // dr575: yes
 }
 
 namespace dr576 { // dr576: yes
-  typedef void f() {} // expected-error {{function definition is not allowed}}
+  typedef void f() {} // expected-error {{function definition declared 'typedef'}}
   void f(typedef int n); // expected-error {{invalid storage class}}
   void f(char c) { typedef int n; }
 }

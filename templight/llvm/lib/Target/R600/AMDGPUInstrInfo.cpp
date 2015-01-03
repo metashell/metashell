@@ -86,21 +86,6 @@ AMDGPUInstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
 // TODO: Implement this function
   return nullptr;
 }
-bool AMDGPUInstrInfo::getNextBranchInstr(MachineBasicBlock::iterator &iter,
-                                        MachineBasicBlock &MBB) const {
-  while (iter != MBB.end()) {
-    switch (iter->getOpcode()) {
-    default:
-      break;
-    case AMDGPU::BRANCH_COND_i32:
-    case AMDGPU::BRANCH_COND_f32:
-    case AMDGPU::BRANCH:
-      return true;
-    };
-    ++iter;
-  }
-  return false;
-}
 
 void
 AMDGPUInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
@@ -352,12 +337,12 @@ int AMDGPUInstrInfo::getMaskedMIMGOp(uint16_t Opcode, unsigned Channels) const {
 }
 
 // Wrapper for Tablegen'd function.  enum Subtarget is not defined in any
-// header files, so we need to wrap it in a function that takes unsigned 
+// header files, so we need to wrap it in a function that takes unsigned
 // instead.
 namespace llvm {
 namespace AMDGPU {
 int getMCOpcode(uint16_t Opcode, unsigned Gen) {
-  return getMCOpcode(Opcode);
+  return getMCOpcodeGen(Opcode, (enum Subtarget)Gen);
 }
 }
 }

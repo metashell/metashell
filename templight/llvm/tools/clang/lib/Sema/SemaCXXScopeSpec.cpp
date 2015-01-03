@@ -148,6 +148,9 @@ DeclContext *Sema::computeDeclContext(const CXXScopeSpec &SS,
 
   case NestedNameSpecifier::Global:
     return Context.getTranslationUnitDecl();
+
+  case NestedNameSpecifier::Super:
+    return NNS->getAsRecordDecl();
   }
 
   llvm_unreachable("Invalid NestedNameSpecifier::Kind!");
@@ -240,9 +243,40 @@ bool Sema::RequireCompleteDeclContext(CXXScopeSpec &SS,
   return true;
 }
 
-bool Sema::ActOnCXXGlobalScopeSpecifier(Scope *S, SourceLocation CCLoc,
+bool Sema::ActOnCXXGlobalScopeSpecifier(SourceLocation CCLoc,
                                         CXXScopeSpec &SS) {
   SS.MakeGlobal(Context, CCLoc);
+  return false;
+}
+
+bool Sema::ActOnSuperScopeSpecifier(SourceLocation SuperLoc,
+                                    SourceLocation ColonColonLoc,
+                                    CXXScopeSpec &SS) {
+  CXXRecordDecl *RD = nullptr;
+  for (Scope *S = getCurScope(); S; S = S->getParent()) {
+    if (S->isFunctionScope()) {
+      if (CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(S->getEntity()))
+        RD = MD->getParent();
+      break;
+    }
+    if (S->isClassScope()) {
+      RD = cast<CXXRecordDecl>(S->getEntity());
+      break;
+    }
+  }
+
+  if (!RD) {
+    Diag(SuperLoc, diag::err_invalid_super_scope);
+    return true;
+  } else if (RD->isLambda()) {
+    Diag(SuperLoc, diag::err_super_in_lambda_unsupported);
+    return true;
+  } else if (RD->getNumBases() == 0) {
+    Diag(SuperLoc, diag::err_no_base_classes) << RD->getName();
+    return true;
+  }
+
+  SS.MakeSuper(Context, RD, SuperLoc, ColonColonLoc);
   return false;
 }
 
@@ -541,12 +575,11 @@ bool Sema::BuildCXXNestedNameSpecifier(Scope *S,
     // We haven't found anything, and we're not recovering from a
     // different kind of error, so look for typos.
     DeclarationName Name = Found.getLookupName();
-    NestedNameSpecifierValidatorCCC Validator(*this);
     Found.clear();
-    if (TypoCorrection Corrected =
-            CorrectTypo(Found.getLookupNameInfo(), Found.getLookupKind(), S,
-                        &SS, Validator, CTK_ErrorRecovery, LookupCtx,
-                        EnteringContext)) {
+    if (TypoCorrection Corrected = CorrectTypo(
+            Found.getLookupNameInfo(), Found.getLookupKind(), S, &SS,
+            llvm::make_unique<NestedNameSpecifierValidatorCCC>(*this),
+            CTK_ErrorRecovery, LookupCtx, EnteringContext)) {
       if (LookupCtx) {
         bool DroppedSpecifier =
             Corrected.WillReplaceSpecifier() &&
@@ -619,6 +652,10 @@ bool Sema::BuildCXXNestedNameSpecifier(Scope *S,
     // don't extend the nested-name-specifier. Just return now.
     if (ErrorRecoveryLookup)
       return false;
+
+    // The use of a nested name specifier may trigger deprecation warnings.
+    DiagnoseUseOfDecl(SD, CCLoc);
+
     
     if (NamespaceDecl *Namespace = dyn_cast<NamespaceDecl>(SD)) {
       SS.Extend(Context, Namespace, IdentifierLoc, CCLoc);
@@ -953,6 +990,7 @@ bool Sema::ShouldEnterDeclaratorScope(Scope *S, const CXXScopeSpec &SS) {
   case NestedNameSpecifier::Identifier:
   case NestedNameSpecifier::TypeSpec:
   case NestedNameSpecifier::TypeSpecWithTemplate:
+  case NestedNameSpecifier::Super:
     // These are never namespace scopes.
     return true;
   }
