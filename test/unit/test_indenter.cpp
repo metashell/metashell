@@ -54,6 +54,13 @@ JUST_TEST_CASE(test_left_aligning_two_liner)
   JUST_ASSERT_EQUAL(".foo foo\n-foo\n", ind.str());
 }
 
+JUST_TEST_CASE(test_removing_extra_whitespace_at_line_break)
+{
+  indenter ind(10);
+  ind.left_align("foo foo                  foo", "-", ".");
+  JUST_ASSERT_EQUAL(".foo foo\n-foo\n", ind.str());
+}
+
 JUST_TEST_CASE(test_left_aligning_two_liner_word)
 {
   indenter ind(10);
@@ -66,5 +73,33 @@ JUST_TEST_CASE(test_left_aligning_three_liner_word)
   indenter ind(10);
   ind.left_align("foofoofoobarbarbarxyz", "-", ".");
   JUST_ASSERT_EQUAL(".foofoofoo\n-barbarbar\n-xyz\n", ind.str());
+}
+
+JUST_TEST_CASE(test_left_aligning_with_new_line)
+{
+  indenter ind(10);
+  ind.left_align("foo\nbar xyz", "-", ".");
+  JUST_ASSERT_EQUAL(".foo\n-bar xyz\n", ind.str());
+}
+
+JUST_TEST_CASE(test_left_aligning_text_shorter_than_the_width_with_new_line)
+{
+  indenter ind(10);
+  ind.left_align("foo\nbar", "-", ".");
+  JUST_ASSERT_EQUAL(".foo\n-bar\n", ind.str());
+}
+
+JUST_TEST_CASE(test_left_aligning_text_starting_with_whitespace)
+{
+  indenter ind(10);
+  ind.left_align(" foo", "-", ".");
+  JUST_ASSERT_EQUAL(". foo\n", ind.str());
+}
+
+JUST_TEST_CASE(test_left_aligning_text_with_trailing_whitespace)
+{
+  indenter ind(10);
+  ind.left_align("foo ", "-", ".");
+  JUST_ASSERT_EQUAL(".foo\n", ind.str());
 }
 
