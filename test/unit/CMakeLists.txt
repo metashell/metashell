@@ -23,7 +23,7 @@ use_cpp11()
 target_link_libraries(metashell_unit_test metashell_lib)
 
 # Boost for the unit tests
-add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost/include\" )
+add_definitions(-DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/3rd/boost/include\")
 
 # Libc++ for the unit tests
 if (APPLE)
@@ -91,7 +91,7 @@ if (ENABLE_CODE_COVERAGE)
     test_coverage
     metashell_unit_test
     coverage
-    "'/usr/*';'test/*';'include/just/*';'boost/*'"
+    "'/usr/*';'test/*';'include/just/*';'3rd/*'"
   )
 endif()
 
