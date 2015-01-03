@@ -23,6 +23,9 @@ use_cpp11()
 # Metashell
 target_link_libraries(metashell metashell_lib)
 
+# Protobuf
+link_directories(../3rd/protobuf/lib)
+
 # Wave
 target_link_libraries(metashell
   boost_system

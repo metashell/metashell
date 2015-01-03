@@ -32,6 +32,9 @@ if (APPLE)
   )
 endif()
 
+# Protobuf
+link_directories(../3rd/protobuf/lib)
+
 # Wave
 target_link_libraries(metashell_unit_test
   boost_system
