@@ -297,9 +297,9 @@ Metashell uses [WinEditLine](http://mingweditline.sourceforge.net/) on Windows.
 To simplify the Windows build, the source code of WindEditLine is redistributed
 as part of the Metashell source code and built together with Metashell.
 The content of the `src` directory of the WinEditLine source code can be found
-in the `wineditline` directory. The content of the original `CMakeLists.txt` has
-been changed to build the code together with Metashell. If you want to upgrade
-WinEditLine to a newer version, you need to update these files.
+in the `3rd/wineditline` directory. The content of the original `CMakeLists.txt`
+has been changed to build the code together with Metashell. If you want to
+upgrade WinEditLine to a newer version, you need to update these files.
 
 ### Building Metashell on OS X
 

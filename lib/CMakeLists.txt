@@ -23,7 +23,7 @@ use_cpp11()
 # Readline
 if (WIN32)
   add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/wineditline")
+  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
 else()
   if (USE_EDITLINE)
     include_directories(${EDITLINE_INCLUDE_DIR})

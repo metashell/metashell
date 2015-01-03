@@ -126,9 +126,7 @@ if (NOT WIN32)
 endif()
 
 # Readline
-if (WIN32)
-  subdirs(wineditline)
-else()
+if (NOT WIN32)
   if (USE_EDITLINE)
     find_package(Editline)
   else()

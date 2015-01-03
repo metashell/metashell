@@ -18,3 +18,7 @@ disable_warnings()
 
 subdirs(boost)
 
+if (WIN32)
+  subdirs(wineditline)
+endif()
+

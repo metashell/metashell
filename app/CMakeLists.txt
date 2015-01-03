@@ -38,7 +38,7 @@ target_link_libraries(metashell
 if (WIN32)
   target_link_libraries(metashell edit_static)
   add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/wineditline")
+  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
 else()
   if (USE_EDITLINE)
     include_directories(${EDITLINE_INCLUDE_DIR})
