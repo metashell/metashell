@@ -138,14 +138,14 @@ else()
 endif()
 
 include_directories("include")
-include_directories(SYSTEM "boost/include")
+include_directories(SYSTEM "3rd/boost/include")
 include_directories(SYSTEM "3rd/rapidjson/include")
 
 # Unit testing
 enable_testing()
 
 # Recursing
-subdirs(lib app test boost)
+subdirs(lib app test 3rd)
 
 # Debian package
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
