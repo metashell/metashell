@@ -21,93 +21,13 @@
 #include <sstream>
 #include <iostream>
 
-#include <metashell/type.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/metaprogram.hpp>
+#include <metashell/metaprogram_builder.hpp>
 
 #include "templight_messages.pb.h"
 
 namespace metashell {
-
-struct metaprogram_builder {
-
-  metaprogram_builder(
-      bool full_mode,
-      const std::string& root_name,
-      const type& evaluation_result);
-
-  void handle_template_begin(
-    instantiation_kind kind,
-    const std::string& context,
-    const file_location& location);
-
-  void handle_template_end();
-
-  const metaprogram& get_metaprogram() const;
-
-private:
-  typedef metaprogram::vertex_descriptor vertex_descriptor;
-  typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
-
-  vertex_descriptor add_vertex(const std::string& context);
-
-  metaprogram mp;
-
-  std::stack<vertex_descriptor> vertex_stack;
-
-  element_vertex_map_t element_vertex_map;
-};
-
-metaprogram_builder::metaprogram_builder(
-    bool full_mode,
-    const std::string& root_name,
-    const type& evaluation_result) :
-  mp(full_mode, root_name, evaluation_result)
-{}
-
-void metaprogram_builder::handle_template_begin(
-  instantiation_kind kind,
-  const std::string& context,
-  const file_location& point_of_instantiation)
-{
-  vertex_descriptor vertex = add_vertex(context);
-  vertex_descriptor top_vertex =
-    vertex_stack.empty() ? mp.get_root_vertex() : vertex_stack.top();
-
-  mp.add_edge(top_vertex, vertex, kind, point_of_instantiation);
-  vertex_stack.push(vertex);
-}
-
-void metaprogram_builder::handle_template_end() {
-  if (vertex_stack.empty()) {
-    throw exception(
-        "Mismatched Templight TemplateBegin and TemplateEnd events");
-  }
-  vertex_stack.pop();
-}
-
-const metaprogram& metaprogram_builder::get_metaprogram() const {
-  if (!vertex_stack.empty()) {
-    throw exception(
-        "Some Templight TemplateEnd events are missing");
-  }
-  return mp;
-}
-
-metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const std::string& context)
-{
-  element_vertex_map_t::iterator pos;
-  bool inserted;
-
-  std::tie(pos, inserted) = element_vertex_map.insert(
-      std::make_pair(context, vertex_descriptor()));
-
-  if (inserted) {
-    pos->second = mp.add_vertex(context);
-  }
-  return pos->second;
-}
 
 typedef std::map<unsigned, std::string> file_dictionary;
 
