@@ -25,8 +25,30 @@
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
+#include <string>
+#include <sstream>
+
 namespace metashell
 {
+  class indenter
+  {
+  public:
+    explicit indenter(int width_);
+
+    indenter& left_align(
+      const std::string& s_,
+      const std::string& line_prefix_,
+      const std::string& first_line_prefix_
+    );
+
+    indenter& raw(const std::string& s_);
+
+    std::string str() const;
+  private:
+    int _width;
+    std::ostringstream _buff;
+  };
+
   template <class DisplayF>
   DisplayF indent(
     int width_,

@@ -16,7 +16,6 @@
 
 #include <metashell/metashell.hpp>
 #include <metashell/wave_tokeniser.hpp>
-#include "indenter.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "indenter.hpp"
+#include <metashell/indenter.hpp>
 
 #include <vector>
 #include <cassert>
@@ -29,44 +29,43 @@ namespace
   }
 
   void word_wrap(
-    const std::string& s_,
-    unsigned int width_,
+    std::string s_,
+    int width_,
     std::vector<std::string>& out_
   )
   {
-    for (std::string s(s_); !s.empty();)
+    while (!s_.empty())
     {
-      if (s.length() > width_)
+      if (static_cast<int>(s_.length()) > width_)
       {
         int i = width_;
-        while (i != -1 && !is_whitespace(s[i]))
+        while (i != -1 && !is_whitespace(s_[i]))
         {
           --i;
         }
 
         if (i == -1)
         {
-          out_.push_back(std::string(s.begin(), s.begin() + width_));
-          s = std::string(s.begin() + width_, s.end());
+          out_.push_back(s_.substr(0, width_));
+          s_ = s_.substr(width_);
         }
         else
         {
-          out_.push_back(std::string(s.begin(), s.begin() + i));
-          s = std::string(s.begin() + (i + 1), s.end());
+          out_.push_back(s_.substr(0, i));
+          s_ = s_.substr(i + 1);
         }
       }
       else
       {
-        out_.push_back(s);
-        s = std::string();
+        out_.push_back(s_);
+        s_.clear();
       }
     }
   }
 }
 
-indenter::indenter(unsigned int width_, const std::string& default_prefix_) :
-  _width(width_),
-  _default_prefix(default_prefix_)
+indenter::indenter(int width_) :
+  _width(width_)
 {}
 
 std::string indenter::str() const
@@ -78,24 +77,6 @@ indenter& indenter::raw(const std::string& s_)
 {
   _buff << s_ << "\n";
   return *this;
-}
-
-indenter& indenter::empty_line()
-{
-  return raw(_default_prefix);
-}
-
-indenter& indenter::left_align(const std::string& s_)
-{
-  return left_align(s_, _default_prefix, _default_prefix);
-}
-
-indenter& indenter::left_align(
-  const std::string& s_,
-  const std::string& line_prefix_
-)
-{
-  return left_align(s_, line_prefix_, line_prefix_);
 }
 
 indenter& indenter::left_align(

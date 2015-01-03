@@ -19,8 +19,6 @@
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/indenter.hpp>
 
-#include "indenter.hpp"
-
 #include <mindent/stream_display.hpp>
 
 #include <functional>
@@ -68,7 +66,7 @@ void console_displayer::show_type(const type& type_)
 void console_displayer::show_comment(const text& msg_)
 {
   // TODO: handle one-liners differently (with //)
-  indenter ind(_console->width(), " * ");
+  indenter ind(_console->width());
 
   ind.raw("/*");
 
@@ -76,7 +74,7 @@ void console_displayer::show_comment(const text& msg_)
   {
     if (p.content.empty())
     {
-      ind.empty_line();
+      ind.raw(" * ");
     }
     else
     {
