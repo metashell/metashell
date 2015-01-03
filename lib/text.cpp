@@ -21,7 +21,7 @@
 using namespace metashell;
 
 text::text(const std::string& s_) :
-  paragraphs{paragraph(s_)}
+  paragraphs(1, paragraph(s_))
 {}
 
 text::text(const std::initializer_list<paragraph>& paragraphs_) :
