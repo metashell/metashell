@@ -13,6 +13,8 @@ install:
       libncurses5-dev
       clang
   - if [ "$CXX" == "g++" ]; then sudo apt-get install -y g++-4.8; export CXX="g++-4.8"; fi
+  # Install protobuf
+  - tools/get_protobuf.sh
 script:
   # Test that the TOC of the description is up to date
   - tools/gen_toc -i README.md -o - -t github | diff README.md -
