@@ -137,6 +137,9 @@ else()
   endif()
 endif()
 
+# Protobuf
+find_library(PROTOBUF_LIBRARY NAMES libprotobuf.a HINTS "3rd/protobuf/lib")
+
 include_directories("include")
 include_directories(SYSTEM "boost/include")
 include_directories(SYSTEM "3rd/rapidjson/include")

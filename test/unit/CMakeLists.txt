@@ -32,9 +32,6 @@ if (APPLE)
   )
 endif()
 
-# Protobuf
-link_directories(../3rd/protobuf/lib)
-
 # Wave
 target_link_libraries(metashell_unit_test
   boost_system
@@ -44,7 +41,7 @@ target_link_libraries(metashell_unit_test
   boost_wave
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
-  protobuf
+  ${PROTOBUF_LIBRARY}
 )
 
 # Program_options
