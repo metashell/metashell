@@ -112,6 +112,10 @@ static cl::opt<std::string> BlackListFilename("blacklist",
   cl::desc("Use regex expressions in <file> to filter out undesirable traces."),
   cl::cat(ClangTemplightCategory));
 
+static cl::opt<bool> TraceTemplateOrigins("trace-origins",
+  cl::desc("Include, in the trace file, the origin (file location) of the templates from which the template instantiations occur."),
+  cl::cat(ClangTemplightCategory));
+
 
 static cl::Option* TemplightOptions[] = {
     &OutputToStdOut,
@@ -122,7 +126,8 @@ static cl::Option* TemplightOptions[] = {
     &InteractiveDebug,
     &OutputFilename,
     &OutputFormat,
-    &BlackListFilename };
+    &BlackListFilename,
+    &TraceTemplateOrigins};
 
 void PrintTemplightHelp() {
   // Compute the maximum argument length...
@@ -378,11 +383,12 @@ int ExecuteTemplightInvocation(CompilerInstance *Clang) {
     return 1;
   
   // Setting up templight action object parameters...
+  Act->InstProfiler = InstProfiler;
   Act->OutputToStdOut = OutputToStdOut;
   Act->MemoryProfile = MemoryProfile;
+  Act->TraceTemplateOrigins = TraceTemplateOrigins;
   Act->OutputInSafeMode = OutputInSafeMode;
   Act->IgnoreSystemInst = IgnoreSystemInst;
-  Act->InstProfiler = InstProfiler;
   Act->InteractiveDebug = InteractiveDebug;
   Act->OutputFormat = OutputFormat;
   Act->BlackListFilename = BlackListFilename;
@@ -511,9 +517,13 @@ int main(int argc_, const char **argv_) {
         (strcmp(argv[i], "-Xtemplight") == 0)) {
       while( i < size - 1 && argv[++i] == nullptr ) /* skip EOLs */ ;
       templight_argv.push_back(argv[i]);   // the word after -Xtemplight
+      if( i == size - 1 ) // was this the last argument?
+        break;
       while( i < size - 1 && argv[++i] == nullptr ) /* skip EOLs */ ;
     } else {
-      if ((argv[i] != nullptr) && (strcmp(argv[i], "-help") == 0)) {
+      if ((argv[i] != nullptr) && 
+          ((strcmp(argv[i], "-help") == 0) || 
+           (strcmp(argv[i], "--help") == 0))) {
         // Print the help for the templight options:
         PrintTemplightHelp();
       }

@@ -479,6 +479,15 @@ class TemplightEntry_Begin : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 memory_usage() const;
   inline void set_memory_usage(::google::protobuf::uint64 value);
 
+  // optional .TemplightEntry.SourceLocation template_origin = 6;
+  inline bool has_template_origin() const;
+  inline void clear_template_origin();
+  static const int kTemplateOriginFieldNumber = 6;
+  inline const ::TemplightEntry_SourceLocation& template_origin() const;
+  inline ::TemplightEntry_SourceLocation* mutable_template_origin();
+  inline ::TemplightEntry_SourceLocation* release_template_origin();
+  inline void set_allocated_template_origin(::TemplightEntry_SourceLocation* template_origin);
+
   // @@protoc_insertion_point(class_scope:TemplightEntry.Begin)
  private:
   inline void set_has_kind();
@@ -491,6 +500,8 @@ class TemplightEntry_Begin : public ::google::protobuf::Message {
   inline void clear_has_time_stamp();
   inline void set_has_memory_usage();
   inline void clear_has_memory_usage();
+  inline void set_has_template_origin();
+  inline void clear_has_template_origin();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -500,6 +511,7 @@ class TemplightEntry_Begin : public ::google::protobuf::Message {
   ::TemplightEntry_SourceLocation* location_;
   double time_stamp_;
   ::google::protobuf::uint64 memory_usage_;
+  ::TemplightEntry_SourceLocation* template_origin_;
   int kind_;
   friend void  protobuf_AddDesc_templight_5fmessages_2eproto();
   friend void protobuf_AssignDesc_templight_5fmessages_2eproto();
@@ -1608,6 +1620,47 @@ inline void TemplightEntry_Begin::set_memory_usage(::google::protobuf::uint64 va
   set_has_memory_usage();
   memory_usage_ = value;
   // @@protoc_insertion_point(field_set:TemplightEntry.Begin.memory_usage)
+}
+
+// optional .TemplightEntry.SourceLocation template_origin = 6;
+inline bool TemplightEntry_Begin::has_template_origin() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void TemplightEntry_Begin::set_has_template_origin() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void TemplightEntry_Begin::clear_has_template_origin() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void TemplightEntry_Begin::clear_template_origin() {
+  if (template_origin_ != NULL) template_origin_->::TemplightEntry_SourceLocation::Clear();
+  clear_has_template_origin();
+}
+inline const ::TemplightEntry_SourceLocation& TemplightEntry_Begin::template_origin() const {
+  // @@protoc_insertion_point(field_get:TemplightEntry.Begin.template_origin)
+  return template_origin_ != NULL ? *template_origin_ : *default_instance_->template_origin_;
+}
+inline ::TemplightEntry_SourceLocation* TemplightEntry_Begin::mutable_template_origin() {
+  set_has_template_origin();
+  if (template_origin_ == NULL) template_origin_ = new ::TemplightEntry_SourceLocation;
+  // @@protoc_insertion_point(field_mutable:TemplightEntry.Begin.template_origin)
+  return template_origin_;
+}
+inline ::TemplightEntry_SourceLocation* TemplightEntry_Begin::release_template_origin() {
+  clear_has_template_origin();
+  ::TemplightEntry_SourceLocation* temp = template_origin_;
+  template_origin_ = NULL;
+  return temp;
+}
+inline void TemplightEntry_Begin::set_allocated_template_origin(::TemplightEntry_SourceLocation* template_origin) {
+  delete template_origin_;
+  template_origin_ = template_origin;
+  if (template_origin) {
+    set_has_template_origin();
+  } else {
+    clear_has_template_origin();
+  }
+  // @@protoc_insertion_point(field_set_allocated:TemplightEntry.Begin.template_origin)
 }
 
 // -------------------------------------------------------------------

@@ -124,12 +124,13 @@ void protobuf_AssignDesc_templight_5fmessages_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(TemplightEntry_SourceLocation));
   TemplightEntry_Begin_descriptor_ = TemplightEntry_descriptor_->nested_type(2);
-  static const int TemplightEntry_Begin_offsets_[5] = {
+  static const int TemplightEntry_Begin_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, kind_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, location_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, time_stamp_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, memory_usage_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TemplightEntry_Begin, template_origin_),
   };
   TemplightEntry_Begin_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -271,33 +272,35 @@ void protobuf_AddDesc_templight_5fmessages_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\030templight_messages.proto\"7\n\017TemplightH"
     "eader\022\017\n\007version\030\001 \002(\r\022\023\n\013source_file\030\002 "
-    "\001(\t\"\275\006\n\016TemplightEntry\022$\n\005begin\030\001 \001(\0132\025."
+    "\001(\t\"\366\006\n\016TemplightEntry\022$\n\005begin\030\001 \001(\0132\025."
     "TemplightEntry.Begin\022 \n\003end\030\002 \001(\0132\023.Temp"
     "lightEntry.End\032F\n\014TemplateName\022\014\n\004name\030\001"
     " \001(\t\022\027\n\017compressed_name\030\002 \001(\014\022\017\n\007dict_id"
     "\030\003 \001(\r\032R\n\016SourceLocation\022\021\n\tfile_name\030\001 "
     "\001(\t\022\017\n\007file_id\030\002 \002(\r\022\014\n\004line\030\003 \002(\r\022\016\n\006co"
-    "lumn\030\004 \001(\r\032\300\001\n\005Begin\022/\n\004kind\030\001 \002(\0162!.Tem"
+    "lumn\030\004 \001(\r\032\371\001\n\005Begin\022/\n\004kind\030\001 \002(\0162!.Tem"
     "plightEntry.InstantiationKind\022*\n\004name\030\002 "
     "\002(\0132\034.TemplightEntry.TemplateName\0220\n\010loc"
     "ation\030\003 \002(\0132\036.TemplightEntry.SourceLocat"
     "ion\022\022\n\ntime_stamp\030\004 \001(\001\022\024\n\014memory_usage\030"
-    "\005 \001(\004\032/\n\003End\022\022\n\ntime_stamp\030\001 \001(\001\022\024\n\014memo"
-    "ry_usage\030\002 \001(\004\"\322\002\n\021InstantiationKind\022\031\n\025"
-    "TemplateInstantiation\020\000\022(\n$DefaultTempla"
-    "teArgumentInstantiation\020\001\022(\n$DefaultFunc"
-    "tionArgumentInstantiation\020\002\022(\n$ExplicitT"
-    "emplateArgumentSubstitution\020\003\022\'\n#Deduced"
-    "TemplateArgumentSubstitution\020\004\022%\n!PriorT"
-    "emplateArgumentSubstitution\020\005\022#\n\037Default"
-    "TemplateArgumentChecking\020\006\022\036\n\032ExceptionS"
-    "pecInstantiation\020\007\022\017\n\013Memoization\020\010\":\n\017D"
-    "ictionaryEntry\022\023\n\013marked_name\030\001 \002(\t\022\022\n\nm"
-    "arker_ids\030\002 \003(\r\"u\n\016TemplightTrace\022 \n\006hea"
-    "der\030\001 \002(\0132\020.TemplightHeader\022 \n\007entries\030\002"
-    " \003(\0132\017.TemplightEntry\022\037\n\005names\030\003 \003(\0132\020.D"
-    "ictionaryEntry\";\n\030TemplightTraceCollecti"
-    "on\022\037\n\006traces\030\001 \003(\0132\017.TemplightTrace", 1155);
+    "\005 \001(\004\0227\n\017template_origin\030\006 \001(\0132\036.Templig"
+    "htEntry.SourceLocation\032/\n\003End\022\022\n\ntime_st"
+    "amp\030\001 \001(\001\022\024\n\014memory_usage\030\002 \001(\004\"\322\002\n\021Inst"
+    "antiationKind\022\031\n\025TemplateInstantiation\020\000"
+    "\022(\n$DefaultTemplateArgumentInstantiation"
+    "\020\001\022(\n$DefaultFunctionArgumentInstantiati"
+    "on\020\002\022(\n$ExplicitTemplateArgumentSubstitu"
+    "tion\020\003\022\'\n#DeducedTemplateArgumentSubstit"
+    "ution\020\004\022%\n!PriorTemplateArgumentSubstitu"
+    "tion\020\005\022#\n\037DefaultTemplateArgumentCheckin"
+    "g\020\006\022\036\n\032ExceptionSpecInstantiation\020\007\022\017\n\013M"
+    "emoization\020\010\":\n\017DictionaryEntry\022\023\n\013marke"
+    "d_name\030\001 \002(\t\022\022\n\nmarker_ids\030\002 \003(\r\"u\n\016Temp"
+    "lightTrace\022 \n\006header\030\001 \002(\0132\020.TemplightHe"
+    "ader\022 \n\007entries\030\002 \003(\0132\017.TemplightEntry\022\037"
+    "\n\005names\030\003 \003(\0132\020.DictionaryEntry\";\n\030Templ"
+    "ightTraceCollection\022\037\n\006traces\030\001 \003(\0132\017.Te"
+    "mplightTrace", 1212);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "templight_messages.proto", &protobuf_RegisterTypes);
   TemplightHeader::default_instance_ = new TemplightHeader();
@@ -1362,6 +1365,7 @@ const int TemplightEntry_Begin::kNameFieldNumber;
 const int TemplightEntry_Begin::kLocationFieldNumber;
 const int TemplightEntry_Begin::kTimeStampFieldNumber;
 const int TemplightEntry_Begin::kMemoryUsageFieldNumber;
+const int TemplightEntry_Begin::kTemplateOriginFieldNumber;
 #endif  // !_MSC_VER
 
 TemplightEntry_Begin::TemplightEntry_Begin()
@@ -1373,6 +1377,7 @@ TemplightEntry_Begin::TemplightEntry_Begin()
 void TemplightEntry_Begin::InitAsDefaultInstance() {
   name_ = const_cast< ::TemplightEntry_TemplateName*>(&::TemplightEntry_TemplateName::default_instance());
   location_ = const_cast< ::TemplightEntry_SourceLocation*>(&::TemplightEntry_SourceLocation::default_instance());
+  template_origin_ = const_cast< ::TemplightEntry_SourceLocation*>(&::TemplightEntry_SourceLocation::default_instance());
 }
 
 TemplightEntry_Begin::TemplightEntry_Begin(const TemplightEntry_Begin& from)
@@ -1389,6 +1394,7 @@ void TemplightEntry_Begin::SharedCtor() {
   location_ = NULL;
   time_stamp_ = 0;
   memory_usage_ = GOOGLE_ULONGLONG(0);
+  template_origin_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1401,6 +1407,7 @@ void TemplightEntry_Begin::SharedDtor() {
   if (this != default_instance_) {
     delete name_;
     delete location_;
+    delete template_origin_;
   }
 }
 
@@ -1436,13 +1443,17 @@ void TemplightEntry_Begin::Clear() {
     ::memset(&first, 0, n);                                \
   } while (0)
 
-  if (_has_bits_[0 / 32] & 31) {
-    ZR_(time_stamp_, kind_);
+  if (_has_bits_[0 / 32] & 63) {
+    ZR_(time_stamp_, memory_usage_);
+    kind_ = 0;
     if (has_name()) {
       if (name_ != NULL) name_->::TemplightEntry_TemplateName::Clear();
     }
     if (has_location()) {
       if (location_ != NULL) location_->::TemplightEntry_SourceLocation::Clear();
+    }
+    if (has_template_origin()) {
+      if (template_origin_ != NULL) template_origin_->::TemplightEntry_SourceLocation::Clear();
     }
   }
 
@@ -1534,6 +1545,19 @@ bool TemplightEntry_Begin::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
+        if (input->ExpectTag(50)) goto parse_template_origin;
+        break;
+      }
+
+      // optional .TemplightEntry.SourceLocation template_origin = 6;
+      case 6: {
+        if (tag == 50) {
+         parse_template_origin:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_template_origin()));
+        } else {
+          goto handle_unusual;
+        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -1591,6 +1615,12 @@ void TemplightEntry_Begin::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteUInt64(5, this->memory_usage(), output);
   }
 
+  // optional .TemplightEntry.SourceLocation template_origin = 6;
+  if (has_template_origin()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      6, this->template_origin(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -1629,6 +1659,13 @@ void TemplightEntry_Begin::SerializeWithCachedSizes(
   // optional uint64 memory_usage = 5;
   if (has_memory_usage()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(5, this->memory_usage(), target);
+  }
+
+  // optional .TemplightEntry.SourceLocation template_origin = 6;
+  if (has_template_origin()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        6, this->template_origin(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1675,6 +1712,13 @@ int TemplightEntry_Begin::ByteSize() const {
           this->memory_usage());
     }
 
+    // optional .TemplightEntry.SourceLocation template_origin = 6;
+    if (has_template_origin()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->template_origin());
+    }
+
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -1717,6 +1761,9 @@ void TemplightEntry_Begin::MergeFrom(const TemplightEntry_Begin& from) {
     if (from.has_memory_usage()) {
       set_memory_usage(from.memory_usage());
     }
+    if (from.has_template_origin()) {
+      mutable_template_origin()->::TemplightEntry_SourceLocation::MergeFrom(from.template_origin());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -1739,6 +1786,9 @@ bool TemplightEntry_Begin::IsInitialized() const {
   if (has_location()) {
     if (!this->location().IsInitialized()) return false;
   }
+  if (has_template_origin()) {
+    if (!this->template_origin().IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -1749,6 +1799,7 @@ void TemplightEntry_Begin::Swap(TemplightEntry_Begin* other) {
     std::swap(location_, other->location_);
     std::swap(time_stamp_, other->time_stamp_);
     std::swap(memory_usage_, other->memory_usage_);
+    std::swap(template_origin_, other->template_origin_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
