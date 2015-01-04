@@ -22,9 +22,6 @@
 
 #include <just/process.hpp>
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-
 #include <cassert>
 #include <sstream>
 #include <iostream>
@@ -58,22 +55,66 @@ namespace
     }
     return s.str();
   }
+
+  void split_at_new_lines(const std::string& s_, std::vector<std::string>& out_)
+  {
+    bool was_r = false;
+    auto from = s_.begin();
+    for (auto i = s_.begin(), e = s_.end(); i != e; ++i)
+    {
+      switch (*i)
+      {
+      case '\r':
+        if (was_r)
+        {
+          out_.push_back(std::string(from, i - 1));
+          from = i;
+          // was_r remains true
+        }
+        else
+        {
+          was_r = true;
+        }
+        break;
+      case '\n':
+        if (was_r)
+        {
+          out_.push_back(std::string(from, i - 1));
+          was_r = false;
+        }
+        else
+        {
+          out_.push_back(std::string(from, i));
+        }
+        from = i + 1;
+        break;
+      default:
+        if (was_r)
+        {
+          out_.push_back(std::string(from, i - 1));
+          from = i;
+          was_r = false;
+        }
+      }
+    }
+
+    assert(!was_r || from != s_.end());
+
+    out_.push_back(std::string(from, was_r ? s_.end() - 1 : s_.end()));
+  }
 }
 
 std::vector<json_string> metashell_system_test::run_metashell(
   std::initializer_list<json_string> commands_
 )
 {
-  using boost::algorithm::is_any_of;
-  using boost::algorithm::split;
-
   using just::process::run;
 
   const std::vector<std::string>
     cmd{system_test_config::metashell_binary(), "--console=json", "--nosplash"};
 
   std::vector<std::string> rsp;
-  split(rsp, run(cmd, join(commands_)).standard_output(), is_any_of("\n"));
+  split_at_new_lines(run(cmd, join(commands_)).standard_output(), rsp);
 
   // The result of the new line at the end of the last response
   pop_item("", rsp);
