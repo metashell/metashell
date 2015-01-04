@@ -71,7 +71,7 @@ then
     cd ../../../..
   cd ..
   echo "Running protoc"
-  ../3rd/protobuf/bin/protoc --cpp_out=lib \
+  3rd/protobuf/bin/protoc --cpp_out=lib \
     -I=templight/llvm/tools/clang/tools/templight \
     templight/llvm/tools/clang/tools/templight/templight_messages.proto
 else
