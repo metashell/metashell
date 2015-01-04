@@ -266,6 +266,9 @@ namespace just
       return b1_ == e1_ && b2_ == e2_;
     }
 
+    template <class T>
+    struct differentiate_from_other_vectors : std::allocator<T> {};
+
     class assert_equal_container
     {
     public:
@@ -289,7 +292,10 @@ namespace just
       template <class A>
       void operator()(
         const A& a_,
-        const std::vector<typename A::value_type>& b_
+        const std::vector<
+          typename A::value_type,
+          differentiate_from_other_vectors<typename A::value_type>
+        >& b_
       ) const
       {
         run(a_, b_);
@@ -300,17 +306,12 @@ namespace just
       //   JUST_ASSERT_EQUAL_CONTAINER({1, 2, 3}, some_container)
       template <class B>
       void operator()(
-        const std::vector<typename B::value_type>& a_,
+        const std::vector<
+          typename B::value_type,
+          differentiate_from_other_vectors<typename B::value_type>
+        >& a_,
         const B& b_
       ) const
-      {
-        run(a_, b_);
-      }
-
-      // This is needed to resolve ambiguity introduced by the
-      // initializer_list-related overloads
-      template <class T>
-      void operator()(const std::vector<T>& a_, const std::vector<T>& b_) const
       {
         run(a_, b_);
       }
