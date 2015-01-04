@@ -193,7 +193,7 @@ want to install them, you can build Metashell yourself.
     * Termcap
 * Install the dependent tools:
     * CMake
-* Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
+* Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
     * `cd templight`
     * `mkdir build`
     * `cd build`
@@ -236,8 +236,8 @@ want to install them, you can build Metashell yourself.
 #### Clang and Templight
 
 The source code of Metashell contains the source code of LLVM/Clang patched with
-[Templight](http://plc.inf.elte.hu/templight/). The Templight patch can be found
-in the `templight/patch` directory. The naming convention is
+[Templight](https://github.com/mikael-s-persson/templight). The Templight patch
+can be found in the `templight/patch` directory. The naming convention is
 `templight_patch_r<SVN release it patches>.diff`. To update the Clang version
 used:
 
@@ -249,7 +249,7 @@ used:
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install [CMake](http://cmake.org/)
 * First you need to build Clang with
-  [Templight](http://plc.inf.elte.hu/templight/).
+  [Templight](https://github.com/mikael-s-persson/templight).
     * Start a command line on your Windows host and go into the source directory
     * Run `cd templight`
     * Run `md build`
@@ -322,7 +322,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
 * Install the dependent tools:
     * CMake
     * XCode
-* Build Clang with [Templight](http://plc.inf.elte.hu/templight/)
+* Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
     * `cd templight`
     * `mkdir build`
     * `cd build`
