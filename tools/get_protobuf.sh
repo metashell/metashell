@@ -31,7 +31,9 @@ cd 3rd
   mkdir -p protobuf
   cd protobuf
     echo "Downloading protobuf 2.6.0"
-    wget 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz'
+    curl 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz' \
+      -o protobuf-2.6.0.tar.gz
+
     tar xvzf protobuf-2.6.0.tar.gz
 
     echo "Installing protobuf"
