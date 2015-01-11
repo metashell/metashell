@@ -93,7 +93,7 @@ protected:
     bool full_mode,
     iface::displayer& displayer_
   );
-  boost::optional<type> run_metaprogram(
+  boost::optional<data::type> run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_
   );

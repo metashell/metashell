@@ -25,7 +25,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <metashell/metaprogram.hpp>
-#include <metashell/type.hpp>
+#include <metashell/data/type.hpp>
 
 #include <metashell/exception.hpp>
 
@@ -36,7 +36,7 @@ struct metaprogram_builder {
   metaprogram_builder(
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   void handle_template_begin(
     data::instantiation_kind kind,
@@ -68,7 +68,7 @@ private:
 metaprogram_builder::metaprogram_builder(
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result) :
+    const data::type& evaluation_result) :
   mp(full_mode, root_name, evaluation_result)
 {}
 
@@ -183,7 +183,7 @@ metaprogram metaprogram::create_from_xml_stream(
     std::istream& stream,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
   typedef boost::property_tree::ptree ptree;
 
@@ -221,7 +221,7 @@ metaprogram metaprogram::create_from_xml_file(
     const std::string& file,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
   std::ifstream in(file);
   if (!in) {
@@ -234,7 +234,7 @@ metaprogram metaprogram::create_from_xml_string(
     const std::string& string,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
   std::istringstream ss(string);
   return create_from_xml_stream(ss, full_mode, root_name, evaluation_result);

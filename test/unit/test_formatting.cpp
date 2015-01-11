@@ -28,7 +28,7 @@ using namespace metashell;
 JUST_TEST_CASE(test_basic_formatting)
 {
   JUST_ASSERT_EQUAL(
-    type("double"),
+    data::type("double"),
     get_output(
       "int",
       "namespace metashell"
@@ -46,7 +46,7 @@ JUST_TEST_CASE(test_basic_formatting)
 JUST_TEST_CASE(test_tag_dispatched_formatting)
 {
   JUST_ASSERT_EQUAL(
-    type("char"),
+    data::type("char"),
     get_output(
       "foo",
       "struct foo_tag {};"
@@ -89,7 +89,7 @@ JUST_TEST_CASE(test_formatting_disabled)
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {type("template_with_a_long_name<int, double, char>")},
+    {data::type("template_with_a_long_name<int, double, char>")},
     d.types()
   );
 }
@@ -106,7 +106,7 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {type("boost_::mpl::vector<boost_::mpl::vector<int> >")},
+    {data::type("boost_::mpl::vector<boost_::mpl::vector<int> >")},
     d.types()
   );
 }

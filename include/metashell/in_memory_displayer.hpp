@@ -30,7 +30,7 @@ namespace metashell
 
     virtual void show_raw_text(const std::string& text_) override;
     virtual void show_error(const std::string& msg_) override;
-    virtual void show_type(const type& type_) override;
+    virtual void show_type(const data::type& type_) override;
     virtual void show_comment(const text& msg_) override;
     virtual void show_cpp_code(const std::string& code_) override;
 
@@ -40,7 +40,7 @@ namespace metashell
 
     const std::vector<std::string>& errors() const;
     const std::vector<std::string>& raw_texts() const;
-    const std::vector<type>& types() const;
+    const std::vector<data::type>& types() const;
     const std::vector<text>& comments() const;
     const std::vector<std::string>& cpp_codes() const;
 
@@ -53,7 +53,7 @@ namespace metashell
   private:
     std::vector<std::string> _errors;
     std::vector<std::string> _raw_texts;
-    std::vector<type> _types;
+    std::vector<data::type> _types;
     std::vector<text> _comments;
     std::vector<std::string> _cpp_codes;
     std::vector<frame> _frames;

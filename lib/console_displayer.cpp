@@ -86,7 +86,7 @@ void console_displayer::show_error(const std::string& msg_)
   }
 }
 
-void console_displayer::show_type(const type& type_)
+void console_displayer::show_type(const data::type& type_)
 {
   show_cpp_code(type_.name());
 }

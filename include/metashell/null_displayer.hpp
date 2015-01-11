@@ -26,7 +26,7 @@ namespace metashell
   public:
     virtual void show_raw_text(const std::string& text_) override;
     virtual void show_error(const std::string& msg_) override;
-    virtual void show_type(const type& type_) override;
+    virtual void show_type(const data::type& type_) override;
     virtual void show_comment(const text& msg_) override;
     virtual void show_cpp_code(const std::string& code_) override;
 

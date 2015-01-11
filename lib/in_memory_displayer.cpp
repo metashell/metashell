@@ -28,7 +28,7 @@ void in_memory_displayer::show_error(const std::string& msg_)
   _errors.push_back(msg_);
 }
 
-void in_memory_displayer::show_type(const type& type_)
+void in_memory_displayer::show_type(const data::type& type_)
 {
   _types.push_back(type_);
 }
@@ -68,7 +68,7 @@ const std::vector<std::string>& in_memory_displayer::raw_texts() const
   return _raw_texts;
 }
 
-const std::vector<type>& in_memory_displayer::types() const
+const std::vector<data::type>& in_memory_displayer::types() const
 {
   return _types;
 }

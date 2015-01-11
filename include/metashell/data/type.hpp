@@ -24,24 +24,27 @@
 
 namespace metashell
 {
-  class type : boost::equality_comparable<type>
+  namespace data
   {
-  public:
-    type();
-    explicit type(const std::string& name_);
+    class type : boost::equality_comparable<type>
+    {
+    public:
+      type();
+      explicit type(const std::string& name_);
 
-    const std::string& name() const;
+      const std::string& name() const;
 
-    bool is_integral_constant(
-      const type& type_,
-      const std::string& value_
-    ) const;
-  private:
-    std::string _name;
-  };
+      bool is_integral_constant(
+        const type& type_,
+        const std::string& value_
+      ) const;
+    private:
+      std::string _name;
+    };
 
-  std::ostream& operator<<(std::ostream& o_, const type& t_);
-  bool operator==(const type& a_, const type& b_);
+    std::ostream& operator<<(std::ostream& o_, const type& t_);
+    bool operator==(const type& a_, const type& b_);
+  }
 }
 
 #endif

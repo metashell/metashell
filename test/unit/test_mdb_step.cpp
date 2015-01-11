@@ -46,7 +46,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -63,7 +68,12 @@ JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
   sh.line_available("step 2", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<8>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<8>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -80,7 +90,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -88,7 +103,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<8>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<8>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -105,7 +125,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -113,7 +138,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
   sh.line_available("", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<8>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<8>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -130,7 +160,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_space_second_line) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -166,7 +201,12 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -174,7 +214,12 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
   sh.line_available("step 0", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -191,7 +236,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_one_step) {
   sh.line_available("step 31", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<55>")}, d.types());
 }
 #endif
 
@@ -206,7 +251,7 @@ JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("int"), data::instantiation_kind::non_template_type)},
+    {frame(data::type("int"), data::instantiation_kind::non_template_type)},
     d.frames()
   );
 
@@ -214,12 +259,15 @@ JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());
 }
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
+  using data::instantiation_kind;
+  using data::type;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -232,27 +280,27 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(type("fib<10>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<8>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<6>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<4>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<2>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<0>"), data::instantiation_kind::memoization),
-      frame(type("fib<1>"), data::instantiation_kind::memoization),
-      frame(type("fib<3>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<1>"), data::instantiation_kind::memoization),
-      frame(type("fib<2>"), data::instantiation_kind::memoization),
-      frame(type("fib<5>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<3>"), data::instantiation_kind::memoization),
-      frame(type("fib<4>"), data::instantiation_kind::memoization),
-      frame(type("fib<7>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<5>"), data::instantiation_kind::memoization),
-      frame(type("fib<6>"), data::instantiation_kind::memoization),
-      frame(type("fib<9>"), data::instantiation_kind::template_instantiation),
-      frame(type("fib<7>"), data::instantiation_kind::memoization),
-      frame(type("fib<8>"), data::instantiation_kind::memoization),
-      frame(type("fib<10>"), data::instantiation_kind::memoization),
-      frame(type("int_<55>"), data::instantiation_kind::template_instantiation)
+      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("fib<6>"), instantiation_kind::template_instantiation),
+      frame(type("fib<4>"), instantiation_kind::template_instantiation),
+      frame(type("fib<2>"), instantiation_kind::template_instantiation),
+      frame(type("fib<0>"), instantiation_kind::memoization),
+      frame(type("fib<1>"), instantiation_kind::memoization),
+      frame(type("fib<3>"), instantiation_kind::template_instantiation),
+      frame(type("fib<1>"), instantiation_kind::memoization),
+      frame(type("fib<2>"), instantiation_kind::memoization),
+      frame(type("fib<5>"), instantiation_kind::template_instantiation),
+      frame(type("fib<3>"), instantiation_kind::memoization),
+      frame(type("fib<4>"), instantiation_kind::memoization),
+      frame(type("fib<7>"), instantiation_kind::template_instantiation),
+      frame(type("fib<5>"), instantiation_kind::memoization),
+      frame(type("fib<6>"), instantiation_kind::memoization),
+      frame(type("fib<9>"), instantiation_kind::template_instantiation),
+      frame(type("fib<7>"), instantiation_kind::memoization),
+      frame(type("fib<8>"), instantiation_kind::memoization),
+      frame(type("fib<10>"), instantiation_kind::memoization),
+      frame(type("int_<55>"), instantiation_kind::template_instantiation)
     },
     d.frames()
   );
@@ -278,22 +326,22 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(type("fib<4>")),
-      frame(type("fib<2>")),
-      frame(type("fib<0>")),
-      frame(type("fib<1>")),
-      frame(type("fib<3>")),
-      frame(type("fib<1>")),
-      frame(type("fib<2>")),
-      frame(type("fib<0>")),
-      frame(type("fib<1>")),
-      frame(type("int_<3>"))
+      frame(data::type("fib<4>")),
+      frame(data::type("fib<2>")),
+      frame(data::type("fib<0>")),
+      frame(data::type("fib<1>")),
+      frame(data::type("fib<3>")),
+      frame(data::type("fib<1>")),
+      frame(data::type("fib<2>")),
+      frame(data::type("fib<0>")),
+      frame(data::type("fib<1>")),
+      frame(data::type("int_<3>"))
     },
     d.frames()
   );
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<3>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<3>")}, d.types());
 }
 #endif
 
@@ -375,7 +423,7 @@ JUST_TEST_CASE(test_mdb_step_0_at_end) {
   sh.line_available("continue", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<55>")}, d.types());
 
   d.clear();
   sh.line_available("step 0", d);
@@ -396,7 +444,12 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
   sh.line_available("step -1", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -414,7 +467,12 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2_in_full_mode) {
   sh.line_available("step -1", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -431,7 +489,7 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_root) {
   sh.line_available("step over", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<55>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<55>")}, d.types());
 }
 #endif
 
@@ -446,7 +504,12 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -454,7 +517,7 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
   sh.line_available("step over", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::memoization)},
+    {frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -471,7 +534,12 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 
@@ -479,7 +547,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
   sh.line_available("step over", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::memoization)},
+    {frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 
@@ -487,7 +555,12 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
   sh.line_available("step over -1", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<10>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<10>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -505,7 +578,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(type("multi_fib<4>"),
+      frame(data::type("multi_fib<4>"),
       data::instantiation_kind::template_instantiation)
     },
     d.frames()
@@ -517,7 +590,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       frame(
-        type("multi_fib<5>"),
+        data::type("multi_fib<5>"),
         data::instantiation_kind::template_instantiation
       )
     },
@@ -530,7 +603,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       frame(
-        type("multi_fib<8>"),
+        data::type("multi_fib<8>"),
         data::instantiation_kind::template_instantiation
       )
     },
@@ -544,7 +617,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       frame(
-        type("multi_fib<6>"),
+        data::type("multi_fib<6>"),
         data::instantiation_kind::template_instantiation
       )
     },
@@ -564,7 +637,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_from_root) {
   sh.line_available("step out", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<5>")}, d.types());
 }
 #endif
 
@@ -580,7 +653,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_one_step) {
   sh.line_available("step out", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<5>")}, d.types());
 }
 #endif
 
@@ -596,7 +669,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_two_steps) {
   sh.line_available("step out", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), data::instantiation_kind::memoization)},
+    {frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -614,7 +687,12 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps) {
   sh.line_available("step out", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<4>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<4>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -632,7 +710,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps) {
   sh.line_available("step out 2", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), data::instantiation_kind::memoization)},
+    {frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -650,7 +728,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_three_after_five_steps) {
   sh.line_available("step out 3", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<5>")}, d.types());
 }
 #endif
 
@@ -666,7 +744,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_four_after_five_steps) {
   sh.line_available("step out 4", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<5>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<5>")}, d.types());
 }
 #endif
 
@@ -699,7 +777,12 @@ JUST_TEST_CASE(test_mdb_step_out_minus_1_after_step_4_in_fib) {
   sh.line_available("step out -1", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<3>"), data::instantiation_kind::template_instantiation)},
+    {
+      frame(
+        data::type("fib<3>"),
+        data::instantiation_kind::template_instantiation
+      )
+    },
     d.frames()
   );
 }
@@ -720,17 +803,20 @@ JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       frame(
-        type("foo<3, 1>"),
+        data::type("foo<3, 1>"),
         data::instantiation_kind::template_instantiation
       ),
-      frame(type("foo<3, 1>"), data::instantiation_kind::memoization),
-      frame(type("int_<45>"), data::instantiation_kind::template_instantiation)
+      frame(data::type("foo<3, 1>"), data::instantiation_kind::memoization),
+      frame(
+        data::type("int_<45>"),
+        data::instantiation_kind::template_instantiation
+      )
     },
     d.frames()
   );
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int_<45>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<45>")}, d.types());
 }
 #endif
 

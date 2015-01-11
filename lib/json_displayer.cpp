@@ -67,7 +67,7 @@ void json_displayer::show_error(const std::string& msg_)
   _writer.end_document();
 }
 
-void json_displayer::show_type(const type& type_)
+void json_displayer::show_type(const data::type& type_)
 {
   show_object(_writer, {{"type", "type"}, {"name", type_.name()}});
   _writer.end_document();

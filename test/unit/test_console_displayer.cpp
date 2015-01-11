@@ -32,6 +32,7 @@ namespace
   call_grph fib5_call_graph()
   {
     using metashell::data::instantiation_kind;
+    using metashell::data::type;
 
     return
       call_grph{

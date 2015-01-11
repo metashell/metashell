@@ -19,6 +19,7 @@
 #include <just/test.hpp>
 
 using namespace metashell;
+using data::type;
 
 JUST_TEST_CASE(test_basic_type_pretty_printing)
 {

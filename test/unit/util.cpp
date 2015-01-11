@@ -22,7 +22,7 @@
 
 #include <just/test.hpp>
 
-metashell::type get_output(
+metashell::data::type get_output(
   const std::string& input_,
   const std::string& test_code_
 )

@@ -722,7 +722,8 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   env.set_xml_location(xml_path);
 
-  boost::optional<type> evaluation_result = run_metaprogram(str, displayer_);
+  boost::optional<data::type>
+    evaluation_result = run_metaprogram(str, displayer_);
 
   if (!evaluation_result) {
     mp = boost::none;
@@ -734,7 +735,7 @@ bool mdb_shell::run_metaprogram_with_templight(
   return true;
 }
 
-boost::optional<type> mdb_shell::run_metaprogram(
+boost::optional<data::type> mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
@@ -751,7 +752,7 @@ boost::optional<type> mdb_shell::run_metaprogram(
     }
     return boost::none;
   }
-  return type(res.output);
+  return data::type(res.output);
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(

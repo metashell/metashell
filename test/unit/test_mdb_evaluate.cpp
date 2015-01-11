@@ -36,7 +36,10 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
   JUST_ASSERT(sh.has_metaprogram());
-  JUST_ASSERT_EQUAL(sh.get_metaprogram().get_evaluation_result(), type("int"));
+  JUST_ASSERT_EQUAL(
+    sh.get_metaprogram().get_evaluation_result(),
+    data::type("int")
+  );
 }
 #endif
 
@@ -51,7 +54,7 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
   JUST_ASSERT(sh.has_metaprogram());
   JUST_ASSERT_EQUAL(
     sh.get_metaprogram().get_evaluation_result(),
-    type("int_<55>")
+    data::type("int_<55>")
   );
 }
 #endif
@@ -160,6 +163,7 @@ JUST_TEST_CASE(
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
   using data::instantiation_kind;
+  using data::type;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_with_enum_mp);
