@@ -33,7 +33,7 @@ JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
   sh.line_available("#pragma metashell evaluate x", d);
 
   JUST_ASSERT(!d.types().empty());
-  JUST_ASSERT_EQUAL(type("int"), d.types().front());
+  JUST_ASSERT_EQUAL(data::type("int"), d.types().front());
 }
 
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
@@ -51,7 +51,7 @@ JUST_TEST_CASE(test_pragma_evaluate_warns)
   shell sh(metashell::empty_config(argv0::get()));
   sh.line_available("#pragma metashell evaluate int", d);
 
-  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       text{

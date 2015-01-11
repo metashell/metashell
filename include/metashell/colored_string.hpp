@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/color.hpp>
+
 #include <string>
 #include <vector>
 #include <ostream>
@@ -24,12 +26,7 @@
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
 
-#include <just/console.hpp>
-
 namespace metashell {
-
-// Bring color to metashell namespace
-using just::console::color;
 
 class colored_string :
   boost::addable<colored_string>,
@@ -56,9 +53,6 @@ public:
   const std::string& get_string() const;
   const colors_t& get_colors() const;
 
-  void print_to_cout() const;
-  void print_to_cout(size_type begin, size_type length) const;
-
   void clear();
 private:
   template <class CharIt, class ColorIt>
@@ -70,6 +64,8 @@ private:
   std::string string;
   colors_t colors;
 };
+
+void print_to_cout(const colored_string& s_);
 
 bool operator==(const colored_string& a_, const colored_string& b_);
 

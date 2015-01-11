@@ -24,6 +24,7 @@
 #include <just/test.hpp>
 
 using namespace metashell;
+using namespace metashell::data;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {

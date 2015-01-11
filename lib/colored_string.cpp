@@ -16,9 +16,43 @@
 
 #include <metashell/colored_string.hpp>
 
+#include <just/console.hpp>
+
 #include <boost/range/algorithm/equal.hpp>
 
 #include <algorithm>
+#include <cassert>
+
+namespace
+{
+  just::console::color console_color(metashell::color c_)
+  {
+    using metashell::color;
+
+    switch (c_)
+    {
+    case color::black: return just::console::color::black;
+    case color::red: return just::console::color::red;
+    case color::bright_red: return just::console::color::bright_red;
+    case color::green: return just::console::color::green;
+    case color::bright_green: return just::console::color::bright_green;
+    case color::yellow: return just::console::color::yellow;
+    case color::bright_yellow: return just::console::color::bright_yellow;
+    case color::blue: return just::console::color::blue;
+    case color::bright_blue: return just::console::color::bright_blue;
+    case color::magenta: return just::console::color::magenta;
+    case color::bright_magenta: return just::console::color::bright_magenta;
+    case color::cyan: return just::console::color::cyan;
+    case color::bright_cyan: return just::console::color::bright_cyan;
+    case color::gray: return just::console::color::gray;
+    case color::white: return just::console::color::white;
+    }
+
+    // Avoid that the compiler thinks that there is no return value
+    assert(false);
+    return just::console::color::black;
+  }
+}
 
 namespace metashell {
 
@@ -61,27 +95,25 @@ const colored_string::colors_t& colored_string::get_colors() const {
   return colors;
 }
 
-void colored_string::print_to_cout() const {
-  print_to_cout(0, string.size());
-}
+void print_to_cout(const colored_string& s_) {
+  colored_string::color_t prev_color = boost::none;
+  auto color_it = s_.get_colors().begin();
 
-void colored_string::print_to_cout(size_type begin, size_type length) const {
-  assert(string.size() == colors.size());
-
-  size_type full_length = string.size();
-  color_t prev_color = boost::none;
-  for (size_type i = 0; i < length && begin + i < full_length; ++i) {
-    const color_t& color = colors[begin + i];
-    if (color != prev_color) {
+  for (
+    auto char_it = s_.get_string().begin(), e = s_.get_string().end();
+    char_it != e;
+    ++char_it, ++color_it
+  ) {
+    if (*color_it != prev_color) {
       if (prev_color) {
         just::console::reset();
       }
-      if (color) {
-        just::console::text_color(*color);
+      if (*color_it) {
+        just::console::text_color(console_color(**color_it));
       }
-      prev_color = color;
+      prev_color = *color_it;
     }
-    std::cout << string[begin + i];
+    std::cout << *char_it;
   }
   if (prev_color) {
     just::console::reset();
@@ -89,12 +121,7 @@ void colored_string::print_to_cout(size_type begin, size_type length) const {
 }
 
 std::ostream& operator<<(std::ostream& os, const colored_string& cs) {
-  if (&os == &std::cout) {
-    cs.print_to_cout();
-  } else {
-    os << cs.get_string();
-  }
-  return os;
+  return os << cs.get_string();
 }
 
 colored_string colored_string::substr(size_type pos_, size_type len_) const

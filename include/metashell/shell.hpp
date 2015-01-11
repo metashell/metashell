@@ -27,8 +27,6 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 
-#include <just/console.hpp>
-
 #include <boost/optional.hpp>
 
 #include <string>

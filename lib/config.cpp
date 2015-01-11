@@ -79,7 +79,7 @@ namespace
   std::string detect_clang_binary(
     const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
-    std::ostream& stderr_,
+    iface::displayer& displayer_,
     logger* logger_
   )
   {
@@ -118,15 +118,18 @@ namespace
         {
           METASHELL_LOG(logger_, "No Clang binary found.");
 
-          stderr_
-            << "Error: clang++ not found. Checked:" << std::endl
+          std::ostringstream s;
+          s
+            << "clang++ not found. Checked:" << std::endl
             << clang_metashell << std::endl;
           std::copy(
             default_clang_search_path + 1,
             default_clang_search_path
               + sizeof(default_clang_search_path) / sizeof(const char*),
-            std::ostream_iterator<std::string>(stderr_, "\n")
+            std::ostream_iterator<std::string>(s, "\n")
           );
+
+          displayer_.show_error(s.str());
         }
         else
         {
@@ -154,9 +157,9 @@ namespace
       else
       {
         METASHELL_LOG(logger_, "User defined Clang binary not found.");
-        stderr_
-          << "Error: clang++ not found. Checked:" << std::endl
-          << user_defined_path_ << std::endl;
+        displayer_.show_error(
+          "clang++ not found. Checked:\n" + user_defined_path_ + "\n"
+        );
 
         return std::string();
       }
@@ -167,7 +170,7 @@ namespace
     bool user_wants_precompiled_headers_,
     iface::environment_detector& env_detector_,
     const config& cfg_,
-    std::ostream& stderr_,
+    iface::displayer& displayer_,
     logger* logger_
   )
   {
@@ -176,7 +179,7 @@ namespace
       METASHELL_LOG(logger_, "Checking if precompiled headers can be used.");
       if (cfg_.clang_path.empty())
       {
-        stderr_ << "Disabling precompiled headers" << std::endl;
+        displayer_.show_error("Disabling precompiled headers");
         METASHELL_LOG(
           logger_,
           "Disabling precompiled headers: no Clang binary is available."
@@ -308,7 +311,7 @@ config::config() :
 config metashell::detect_config(
   const user_config& ucfg_,
   iface::environment_detector& env_detector_,
-  std::ostream& stderr_,
+  iface::displayer& displayer_,
   logger* logger_
 )
 {
@@ -324,7 +327,7 @@ config metashell::detect_config(
     determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
 
   cfg.clang_path =
-    detect_clang_binary(ucfg_.clang_path, env_detector_, stderr_, logger_);
+    detect_clang_binary(ucfg_.clang_path, env_detector_, displayer_, logger_);
 
   cfg.include_path =
     determine_include_path(
@@ -360,7 +363,7 @@ config metashell::detect_config(
       ucfg_.use_precompiled_headers,
       env_detector_,
       cfg,
-      stderr_,
+      displayer_,
       logger_
     );
 
@@ -374,7 +377,7 @@ config metashell::detect_config(
 config metashell::empty_config(const std::string& argv0_)
 {
   default_environment_detector ed(argv0_, nullptr);
-  std::ostringstream s;
-  return detect_config(user_config(), ed, s, nullptr);
+  null_displayer d;
+  return detect_config(user_config(), ed, d, nullptr);
 }
 

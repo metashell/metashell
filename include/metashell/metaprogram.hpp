@@ -27,9 +27,9 @@
 #include <boost/graph/adjacency_list.hpp>
 
 #include <metashell/file_location.hpp>
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/data/instantiation_kind.hpp>
 #include <metashell/backtrace.hpp>
-#include <metashell/type.hpp>
+#include <metashell/data/type.hpp>
 
 namespace metashell {
 
@@ -42,25 +42,25 @@ public:
   metaprogram(
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   static metaprogram create_from_protobuf_file(
       const std::string& file,
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
@@ -73,7 +73,7 @@ public:
     std::string name;
   };
   struct edge_property {
-    instantiation_kind kind;
+    data::instantiation_kind kind;
     file_location point_of_instantiation;
     bool enabled = true;
   };
@@ -124,10 +124,10 @@ public:
   edge_descriptor add_edge(
       vertex_descriptor from,
       vertex_descriptor to,
-      instantiation_kind kind,
+      data::instantiation_kind kind,
       const file_location& point_of_instantiation);
 
-  const type& get_evaluation_result() const;
+  const data::type& get_evaluation_result() const;
 
   void reset_state();
 
@@ -203,7 +203,7 @@ private:
   // This should be generally 0
   vertex_descriptor root_vertex;
 
-  type evaluation_result;
+  data::type evaluation_result;
 };
 
 template<class P>

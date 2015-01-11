@@ -49,9 +49,9 @@ void assert_state_equal(
 }
 
 JUST_TEST_CASE(test_metaprogram_constructor) {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
 
-  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), type("the_result_type"));
+  JUST_ASSERT_EQUAL(mp.get_evaluation_result(), data::type("the_result_type"));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 1u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 0u);
@@ -80,14 +80,14 @@ JUST_TEST_CASE(test_metaprogram_constructor) {
 }
 
 JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
 
   JUST_ASSERT(!mp.is_in_full_mode());
 
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
-        instantiation_kind::template_instantiation,
+        data::instantiation_kind::template_instantiation,
         file_location("foo.cpp", 10, 20));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -95,7 +95,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
-      instantiation_kind::template_instantiation);
+      data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
       file_location("foo.cpp", 10, 20));
 
@@ -129,17 +129,18 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
 }
 
 JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
 
   JUST_ASSERT(!mp.is_in_full_mode());
 
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
-        instantiation_kind::template_instantiation,
+        data::instantiation_kind::template_instantiation,
         file_location("bar.cpp", 20, 10));
   metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, instantiation_kind::memoization,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        data::instantiation_kind::memoization,
         file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -147,11 +148,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
-      instantiation_kind::template_instantiation);
+      data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
       file_location("bar.cpp", 20, 10));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
-      instantiation_kind::memoization);
+      data::instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
       file_location("foobar.cpp", 21, 11));
 
@@ -195,11 +196,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
 }
 
 JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
-        instantiation_kind::template_instantiation,
+        data::instantiation_kind::template_instantiation,
       file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -207,7 +208,7 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
-      instantiation_kind::template_instantiation);
+      data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
       file_location("foobar.cpp", 21, 11));
 
@@ -243,14 +244,15 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
 JUST_TEST_CASE(
     test_metaprogram_step_back_with_single_non_root_vertex_parallel_edge)
 {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
   metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
-        instantiation_kind::template_instantiation,
+        data::instantiation_kind::template_instantiation,
         file_location("xx.cpp", 1, 2));
   metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a, instantiation_kind::memoization,
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        data::instantiation_kind::memoization,
         file_location("yy.cpp", 1, 2));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
@@ -258,11 +260,11 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_EQUAL(mp.get_vertex_property(vertex_a).name, "A");
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
-      instantiation_kind::template_instantiation);
+      data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
       file_location("xx.cpp", 1, 2));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
-      instantiation_kind::memoization);
+      data::instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
       file_location("yy.cpp", 1, 2));
 
@@ -336,13 +338,13 @@ JUST_TEST_CASE(
 }
 
 JUST_TEST_CASE(test_metaprogram_constructor_full_mode_true) {
-  metaprogram mp(true, "some_type", type("the_result_type"));
+  metaprogram mp(true, "some_type", data::type("the_result_type"));
 
   JUST_ASSERT(mp.is_in_full_mode());
 }
 
 JUST_TEST_CASE(test_metaprogram_constructor_full_mode_false) {
-  metaprogram mp(false, "some_type", type("the_result_type"));
+  metaprogram mp(false, "some_type", data::type("the_result_type"));
 
   JUST_ASSERT(!mp.is_in_full_mode());
 }

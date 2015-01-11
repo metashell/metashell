@@ -28,7 +28,7 @@ void null_displayer::show_error(const std::string&)
   // throw away
 }
 
-void null_displayer::show_type(const type&)
+void null_displayer::show_type(const data::type&)
 {
   // throw away
 }

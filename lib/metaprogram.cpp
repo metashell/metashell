@@ -28,7 +28,7 @@ namespace metashell {
 metaprogram::metaprogram(
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result) :
+    const data::type& evaluation_result) :
   full_mode(full_mode),
   evaluation_result(evaluation_result)
 {
@@ -55,7 +55,7 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
 metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
-    instantiation_kind kind,
+    data::instantiation_kind kind,
     const file_location& point_of_instantiation)
 {
   edge_descriptor edge;
@@ -70,7 +70,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
-const type& metaprogram::get_evaluation_result() const {
+const data::type& metaprogram::get_evaluation_result() const {
   return evaluation_result;
 }
 
@@ -294,7 +294,7 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
 
 frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
-  const type t(get_vertex_property(get_target(e_)).name);
+  const data::type t(get_vertex_property(get_target(e_)).name);
   return is_in_full_mode() ? frame(t) : frame(t, get_edge_property(e_).kind);
 }
 
@@ -305,7 +305,7 @@ frame metaprogram::get_current_frame() const {
 }
 
 frame metaprogram::get_root_frame() const {
-  return frame(type(get_vertex_property(get_root_vertex()).name));
+  return frame(data::type(get_vertex_property(get_root_vertex()).name));
 }
 
 backtrace metaprogram::get_backtrace() const {

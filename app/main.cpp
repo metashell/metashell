@@ -56,7 +56,8 @@ int main(int argc_, const char* argv_[])
     METASHELL_LOG(&logger, "Start logging");
 
     metashell::default_environment_detector det(argv_[0], &logger);
-    const metashell::config cfg = detect_config(r.cfg, det, std::cerr, &logger);
+    const metashell::config
+      cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 
     if (r.should_run_shell())
     {

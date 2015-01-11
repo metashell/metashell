@@ -120,7 +120,7 @@ JUST_TEST_CASE(test_macro_in_config)
   sh.line_available("FOO", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
-  JUST_ASSERT_EQUAL_CONTAINER({type("int")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());
 }
 
 namespace
@@ -129,7 +129,7 @@ namespace
     const std::string& init_line_,
     const std::string& definition_,
     const std::string& query_,
-    const type& expected_result_
+    const data::type& expected_result_
   )
   {
     in_memory_displayer d;
@@ -148,7 +148,7 @@ namespace
   void test_definition_and_query(
     const std::string& definition_,
     const std::string& query_,
-    const type& expected_result_
+    const data::type& expected_result_
   )
   {
     test_definition_and_query("", definition_, query_, expected_result_);
@@ -157,6 +157,8 @@ namespace
 
 JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
 {
+  using data::type;
+
   test_definition_and_query("bool typedef * x;", "x", type("bool *"));
   test_definition_and_query("char typedef * x;", "x", type("char *"));
   test_definition_and_query("const typedef int x;", "x", type("const int"));
@@ -196,7 +198,7 @@ JUST_TEST_CASE(test_defining_constexpr_function)
   sh.line_available("SCALAR(f())", d);
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL(1u, d.types().size());
-  JUST_ASSERT(d.types().front().is_integral_constant(type("int"), "13"));
+  JUST_ASSERT(d.types().front().is_integral_constant(data::type("int"), "13"));
 }
 
 JUST_TEST_CASE(
@@ -211,7 +213,7 @@ JUST_TEST_CASE(
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 
   sh.line_available("x", d);
-  JUST_ASSERT_EQUAL_CONTAINER({type("y *")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("y *")}, d.types());
 }
 
 JUST_TEST_CASE(test_history_is_stored)
@@ -335,7 +337,7 @@ JUST_TEST_CASE(test_extra_clang_arg)
   sh.line_available("FOO", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
-  JUST_ASSERT_EQUAL_CONTAINER({type("double")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("double")}, d.types());
 }
 
 JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
@@ -397,7 +399,7 @@ JUST_TEST_CASE(test_multiline_input)
   sh.line_available("int", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
-  JUST_ASSERT_EQUAL_CONTAINER({type("const int")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("const int")}, d.types());
 }
 
 JUST_TEST_CASE(test_three_line_input)
@@ -409,7 +411,7 @@ JUST_TEST_CASE(test_three_line_input)
   sh.line_available("*", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
-  JUST_ASSERT_EQUAL_CONTAINER({type("const int *")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({data::type("const int *")}, d.types());
 }
 
 JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)

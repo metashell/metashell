@@ -30,7 +30,7 @@ namespace
   }
 
   template <class It>
-  It last_non_whitespace(It begin_, It end_)
+  It pos_after_last_non_whitespace(It begin_, It end_)
   {
     if (begin_ == end_)
     {
@@ -42,7 +42,7 @@ namespace
       {
         if (!is_whitespace(*i))
         {
-          return i;
+          return i + 1;
         }
       }
 
@@ -60,9 +60,11 @@ namespace
   template <class It>
   void word_wrap(It begin_, It end_, int width_, std::vector<std::string>& out_)
   {
+    assert(width_ > 0);
+
     for (auto i = begin_; i != end_;)
     {
-      const auto max = std::min(end_, i + width_);
+      const auto max = i + std::min<int>(end_ - i, width_);
       auto break_at = i;
       auto last_whitespace = end_;
       for (; break_at != max && *break_at != '\n'; ++break_at)
@@ -74,12 +76,16 @@ namespace
       }
 
       const auto bp =
-        (break_at == i + width_ && last_whitespace != end_) ?
+        (static_cast<int>(break_at - i) == width_ && last_whitespace != end_) ?
           last_whitespace :
           break_at;
 
-      out_.push_back(std::string(i, last_non_whitespace(i, bp) + 1));
-      i = first_non_whitespace(bp, end_);
+      out_.push_back(std::string(i, pos_after_last_non_whitespace(i, bp)));
+
+      // i moves forward in each iteration
+      auto new_i = first_non_whitespace(bp, end_);
+      assert(i < new_i);
+      i = new_i;
     }
   }
 }

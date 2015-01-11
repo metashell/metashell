@@ -20,11 +20,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/wave_tokeniser.hpp>
 
-#include <mindent/display.hpp>
-#include <mindent/parser.hpp>
-#include <mindent/syntax_node.hpp>
-#include <mindent/syntax_node_list.hpp>
-
 #include <string>
 #include <sstream>
 
@@ -48,27 +43,6 @@ namespace metashell
     int _width;
     std::ostringstream _buff;
   };
-
-  template <class DisplayF>
-  DisplayF indent(
-    int width_,
-    int indent_step_,
-    DisplayF f_,
-    const std::string& s_,
-    const std::string& input_filename_
-  )
-  {
-    std::unique_ptr<iface::tokeniser>
-      tokeniser = create_wave_tokeniser(s_, input_filename_);
-
-    return
-      mindent::display(
-        mindent::parse_syntax_node_list(*tokeniser),
-        width_,
-        indent_step_,
-        f_
-      );
-  }
 }
 
 #endif

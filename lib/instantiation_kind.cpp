@@ -14,45 +14,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/data/instantiation_kind.hpp>
 
 #include <sstream>
 
 namespace metashell {
+namespace data {
 
-std::ostream& operator<<(std::ostream& os, instantiation_kind kind) {
+std::ostream& operator<<(std::ostream& os, data::instantiation_kind kind) {
   switch (kind) {
     default:
         os << "UnknownKind"; break;
-    case instantiation_kind::template_instantiation:
+    case data::instantiation_kind::template_instantiation:
         os << "TemplateInstantiation"; break;
-    case instantiation_kind::default_template_argument_instantiation:
+    case data::instantiation_kind::default_template_argument_instantiation:
         os << "DefaultTemplateArgumentInstantiation"; break;
-    case instantiation_kind::default_function_argument_instantiation:
+    case data::instantiation_kind::default_function_argument_instantiation:
         os << "DefaultFunctionArgumentInstantiation"; break;
-    case instantiation_kind::explicit_template_argument_substitution:
+    case data::instantiation_kind::explicit_template_argument_substitution:
         os << "ExplicitTemplateArgumentSubstitution"; break;
-    case instantiation_kind::deduced_template_argument_substitution:
+    case data::instantiation_kind::deduced_template_argument_substitution:
         os << "DeducedTemplateArgumentSubstitution"; break;
-    case instantiation_kind::prior_template_argument_substitution:
+    case data::instantiation_kind::prior_template_argument_substitution:
         os << "PriorTemplateArgumentSubstitution"; break;
-    case instantiation_kind::default_template_argument_checking:
+    case data::instantiation_kind::default_template_argument_checking:
         os << "DefaultTemplateArgumentChecking"; break;
-    case instantiation_kind::exception_spec_instantiation:
+    case data::instantiation_kind::exception_spec_instantiation:
         os << "ExceptionSpecInstantiation"; break;
-    case instantiation_kind::memoization:
+    case data::instantiation_kind::memoization:
         os << "Memoization"; break;
-    case instantiation_kind::non_template_type:
+    case data::instantiation_kind::non_template_type:
         os << "NonTemplateType"; break;
   }
   return os;
 }
 
-std::string to_string(instantiation_kind kind) {
+std::string to_string(data::instantiation_kind kind) {
   std::stringstream ss;
   ss << kind;
   return ss.str();
 }
 
+}
 }
 

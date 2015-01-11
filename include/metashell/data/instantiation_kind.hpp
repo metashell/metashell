@@ -21,6 +21,7 @@
 #include <ostream>
 
 namespace metashell {
+namespace data {
 
 enum class instantiation_kind {
   template_instantiation,
@@ -39,6 +40,7 @@ std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
 
 std::string to_string(instantiation_kind kind);
 
+}
 }
 
 #endif

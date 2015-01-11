@@ -21,9 +21,9 @@
 #include <tuple>
 
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/type.hpp>
+#include <metashell/data/type.hpp>
 
-metashell::type get_output(
+metashell::data::type get_output(
   const std::string& input_,
   const std::string& test_code_ = std::string()
 );
@@ -33,9 +33,9 @@ std::tuple<metashell::mdb_command, std::string> get_command_from_map(
     const std::string& line);
 
 template <int N>
-metashell::type fib()
+metashell::data::type fib()
 {
-  return metashell::type("fib<" + std::to_string(N) + ">");
+  return metashell::data::type("fib<" + std::to_string(N) + ">");
 }
 
 #endif

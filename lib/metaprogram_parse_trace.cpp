@@ -47,28 +47,28 @@ file_location file_location_from_protobuf(
       col);
 }
 
-instantiation_kind instantiation_kind_from_protobuf(
+data::instantiation_kind instantiation_kind_from_protobuf(
     const TemplightEntry::InstantiationKind& kind)
 {
   switch (kind) {
     case TemplightEntry::TemplateInstantiation:
-      return instantiation_kind::template_instantiation;
+      return data::instantiation_kind::template_instantiation;
     case TemplightEntry::DefaultTemplateArgumentInstantiation:
-      return instantiation_kind::default_template_argument_instantiation;
+      return data::instantiation_kind::default_template_argument_instantiation;
     case TemplightEntry::DefaultFunctionArgumentInstantiation:
-      return instantiation_kind::default_function_argument_instantiation;
+      return data::instantiation_kind::default_function_argument_instantiation;
     case TemplightEntry::ExplicitTemplateArgumentSubstitution:
-      return instantiation_kind::explicit_template_argument_substitution;
+      return data::instantiation_kind::explicit_template_argument_substitution;
     case TemplightEntry::DeducedTemplateArgumentSubstitution:
-      return instantiation_kind::deduced_template_argument_substitution;
+      return data::instantiation_kind::deduced_template_argument_substitution;
     case TemplightEntry::PriorTemplateArgumentSubstitution:
-      return instantiation_kind::prior_template_argument_substitution;
+      return data::instantiation_kind::prior_template_argument_substitution;
     case TemplightEntry::DefaultTemplateArgumentChecking:
-      return instantiation_kind::default_template_argument_checking;
+      return data::instantiation_kind::default_template_argument_checking;
     case TemplightEntry::ExceptionSpecInstantiation:
-      return instantiation_kind::exception_spec_instantiation;
+      return data::instantiation_kind::exception_spec_instantiation;
     case TemplightEntry::Memoization:
-      return instantiation_kind::memoization;
+      return data::instantiation_kind::memoization;
     default:
       throw exception(
           "templight xml parse failed (invalid instantiation kind)");
@@ -119,7 +119,7 @@ metaprogram metaprogram::create_from_protobuf_stream(
     std::istream& stream,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
 
   TemplightTraceCollection traces;
@@ -164,7 +164,7 @@ metaprogram metaprogram::create_from_protobuf_file(
     const std::string& file,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
   std::ifstream in(file);
   if (!in) {
@@ -177,7 +177,7 @@ metaprogram metaprogram::create_from_protobuf_string(
     const std::string& string,
     bool full_mode,
     const std::string& root_name,
-    const type& evaluation_result)
+    const data::type& evaluation_result)
 {
   std::istringstream ss(string);
   return create_from_protobuf_stream(ss, full_mode, root_name, evaluation_result);

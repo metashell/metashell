@@ -65,7 +65,7 @@ JUST_TEST_CASE(test_processing_non_existing_handler)
   const command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
-  JUST_ASSERT_THROWS_SOMETHING(m.process(cmd.begin(), cmd.end(), d));
+  JUST_ASSERT_THROWS([&m, &cmd, &d] { m.process(cmd.begin(), cmd.end(), d); });
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)

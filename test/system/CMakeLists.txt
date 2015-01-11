@@ -23,3 +23,7 @@ use_cpp11()
 # Boost for the unit tests
 add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost/include\" )
 
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_process/include")
+

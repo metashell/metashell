@@ -55,7 +55,7 @@ namespace
     }
     if (!r_.has_errors() && !r_.output.empty())
     {
-      displayer_.show_type(type(r_.output));
+      displayer_.show_type(data::type(r_.output));
     }
   }
 

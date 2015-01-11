@@ -66,7 +66,7 @@ JUST_TEST_CASE(test_json_display_of_type)
   mock_json_writer w;
   json_displayer d(w);
 
-  d.show_type(type("const fib_c<3>"));
+  d.show_type(data::type("const fib_c<3>"));
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
@@ -151,7 +151,7 @@ JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
   mock_json_writer w;
   json_displayer d(w);
 
-  d.show_frame(frame(type("fib_c<13>::type")));
+  d.show_frame(frame(data::type("fib_c<13>::type")));
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
@@ -168,14 +168,14 @@ JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
 namespace
 {
   void test_frame_with_instantiation_kind(
-    instantiation_kind kind_,
+    data::instantiation_kind kind_,
     const std::string& kind_in_json_
   )
   {
     mock_json_writer w;
     json_displayer d(w);
   
-    d.show_frame(frame(type("fib_c<13>::type"), kind_));
+    d.show_frame(frame(data::type("fib_c<13>::type"), kind_));
   
     JUST_ASSERT_EQUAL_CONTAINER(
       {
@@ -194,43 +194,43 @@ namespace
 JUST_TEST_CASE(test_json_display_of_frame_with_instantiation_kind)
 {
   test_frame_with_instantiation_kind(
-    instantiation_kind::template_instantiation,
+    data::instantiation_kind::template_instantiation,
     "TemplateInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_template_argument_instantiation,
+    data::instantiation_kind::default_template_argument_instantiation,
     "DefaultTemplateArgumentInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_function_argument_instantiation,
+    data::instantiation_kind::default_function_argument_instantiation,
     "DefaultFunctionArgumentInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::explicit_template_argument_substitution,
+    data::instantiation_kind::explicit_template_argument_substitution,
     "ExplicitTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::deduced_template_argument_substitution,
+    data::instantiation_kind::deduced_template_argument_substitution,
     "DeducedTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::prior_template_argument_substitution,
+    data::instantiation_kind::prior_template_argument_substitution,
     "PriorTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_template_argument_checking,
+    data::instantiation_kind::default_template_argument_checking,
     "DefaultTemplateArgumentChecking"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::exception_spec_instantiation,
+    data::instantiation_kind::exception_spec_instantiation,
     "ExceptionSpecInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::memoization,
+    data::instantiation_kind::memoization,
     "Memoization"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::non_template_type,
+    data::instantiation_kind::non_template_type,
     "NonTemplateType"
   );
 }
@@ -242,8 +242,8 @@ JUST_TEST_CASE(test_json_display_of_backtrace)
 
   d.show_backtrace(
     backtrace{
-      frame(type("fib_c<13>::type")),
-      frame(type("fib<int_<13>>::type")),
+      frame(data::type("fib_c<13>::type")),
+      frame(data::type("fib<int_<13>>::type")),
     }
   );
 
@@ -272,7 +272,7 @@ JUST_TEST_CASE(test_json_display_of_call_graph)
   mock_json_writer w;
   json_displayer d(w);
 
-  const type int_("int");
+  const data::type int_("int");
 
   const std::vector<call_graph_node>
     cg{

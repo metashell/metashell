@@ -29,10 +29,10 @@ struct metaprogram_builder {
   metaprogram_builder(
       bool full_mode,
       const std::string& root_name,
-      const type& evaluation_result);
+      const data::type& evaluation_result);
 
   void handle_template_begin(
-    instantiation_kind kind,
+    data::instantiation_kind kind,
     const std::string& context,
     const file_location& location);
 

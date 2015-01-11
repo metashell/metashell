@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/type.hpp>
+#include <metashell/data/type.hpp>
 
 #include <just/test.hpp>
 
 #include "util.hpp"
 
-using namespace metashell;
+using namespace metashell::data;
 
 JUST_TEST_CASE(test_integral_constant)
 {

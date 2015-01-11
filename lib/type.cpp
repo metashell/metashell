@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/type.hpp>
+#include <metashell/data/type.hpp>
 
 #include <boost/regex.hpp>
 
 #include <iostream>
 #include <sstream>
 
-using namespace metashell;
+using namespace metashell::data;
 
 type::type() {}
 
@@ -48,12 +48,12 @@ bool type::is_integral_constant(
   return regex_match(name(), regex(s.str()));
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const type& t_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, const type& t_)
 {
   return o_ << t_.name();
 }
 
-bool metashell::operator==(const type& a_, const type& b_)
+bool metashell::data::operator==(const type& a_, const type& b_)
 {
   return a_.name() == b_.name();
 }

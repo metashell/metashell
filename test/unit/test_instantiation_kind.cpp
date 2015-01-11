@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/data/instantiation_kind.hpp>
 
 #include <just/test.hpp>
 
@@ -25,6 +25,8 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_instantiation_kind_print)
 {
+  using data::instantiation_kind;
+
   JUST_ASSERT_EQUAL(to_string(instantiation_kind::template_instantiation),
       "TemplateInstantiation");
   JUST_ASSERT_EQUAL(to_string(instantiation_kind::default_template_argument_instantiation),
