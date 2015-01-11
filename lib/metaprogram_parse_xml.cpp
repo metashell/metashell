@@ -39,14 +39,14 @@ struct metaprogram_builder {
       const type& evaluation_result);
 
   void handle_template_begin(
-    instantiation_kind kind,
+    data::instantiation_kind kind,
     const std::string& context,
     const file_location& location,
     double timestamp,
     unsigned long long memory_usage);
 
   void handle_template_end(
-    instantiation_kind kind,
+    data::instantiation_kind kind,
     double timestamp,
     unsigned long long memory_usage);
 
@@ -73,7 +73,7 @@ metaprogram_builder::metaprogram_builder(
 {}
 
 void metaprogram_builder::handle_template_begin(
-  instantiation_kind kind,
+  data::instantiation_kind kind,
   const std::string& context,
   const file_location& point_of_instantiation,
   double /* timestamp */,
@@ -88,7 +88,7 @@ void metaprogram_builder::handle_template_begin(
 }
 
 void metaprogram_builder::handle_template_end(
-  instantiation_kind /* kind */,
+  data::instantiation_kind /* kind */,
   double /* timestamp */,
   unsigned long long /* memory_usage */)
 {
@@ -135,42 +135,43 @@ file_location file_location_from_string(const std::string& str) {
       boost::lexical_cast<int>(parts[2]));
 }
 
-instantiation_kind instantiation_kind_from_string(const std::string& str) {
+data::instantiation_kind instantiation_kind_from_string(const std::string& str)
+{
   if (str == "TemplateInstantiation")
   {
-    return instantiation_kind::template_instantiation;
+    return data::instantiation_kind::template_instantiation;
   }
   else if (str == "DefaultTemplateArgumentInstantiation")
   {
-    return instantiation_kind::default_template_argument_instantiation;
+    return data::instantiation_kind::default_template_argument_instantiation;
   }
   else if (str == "DefaultFunctionArgumentInstantiation")
   {
-    return instantiation_kind::default_function_argument_instantiation;
+    return data::instantiation_kind::default_function_argument_instantiation;
   }
   else if (str == "ExplicitTemplateArgumentSubstitution")
   {
-    return instantiation_kind::explicit_template_argument_substitution;
+    return data::instantiation_kind::explicit_template_argument_substitution;
   }
   else if (str == "DeducedTemplateArgumentSubstitution")
   {
-    return instantiation_kind::deduced_template_argument_substitution;
+    return data::instantiation_kind::deduced_template_argument_substitution;
   }
   else if (str == "PriorTemplateArgumentSubstitution")
   {
-    return instantiation_kind::prior_template_argument_substitution;
+    return data::instantiation_kind::prior_template_argument_substitution;
   }
   else if (str == "DefaultTemplateArgumentChecking")
   {
-    return instantiation_kind::default_template_argument_checking;
+    return data::instantiation_kind::default_template_argument_checking;
   }
   else if (str == "ExceptionSpecInstantiation")
   {
-    return instantiation_kind::exception_spec_instantiation;
+    return data::instantiation_kind::exception_spec_instantiation;
   }
   else if (str == "Memoization")
   {
-    return instantiation_kind::memoization;
+    return data::instantiation_kind::memoization;
   }
   else
   {

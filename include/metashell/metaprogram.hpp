@@ -27,7 +27,7 @@
 #include <boost/graph/adjacency_list.hpp>
 
 #include <metashell/file_location.hpp>
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/data/instantiation_kind.hpp>
 #include <metashell/backtrace.hpp>
 #include <metashell/type.hpp>
 
@@ -73,7 +73,7 @@ public:
     std::string name;
   };
   struct edge_property {
-    instantiation_kind kind;
+    data::instantiation_kind kind;
     file_location point_of_instantiation;
     bool enabled = true;
   };
@@ -124,7 +124,7 @@ public:
   edge_descriptor add_edge(
       vertex_descriptor from,
       vertex_descriptor to,
-      instantiation_kind kind,
+      data::instantiation_kind kind,
       const file_location& point_of_instantiation);
 
   const type& get_evaluation_result() const;

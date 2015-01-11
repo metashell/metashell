@@ -95,7 +95,7 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<0>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<0>"), instantiation_kind::memoization)},
+    {frame(type("fib<0>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -114,7 +114,7 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    {frame(type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -133,7 +133,7 @@ JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<5>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 
@@ -142,7 +142,7 @@ JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::memoization)},
+    {frame(type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -162,7 +162,7 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<6>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<6>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<6>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 
@@ -171,7 +171,7 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<5>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 }
@@ -191,7 +191,7 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<5>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 }
@@ -277,7 +277,7 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<5>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 
@@ -286,7 +286,7 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<6>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<6>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<6>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 }
@@ -305,7 +305,7 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
 
   JUST_ASSERT_EQUAL_CONTAINER({"Breakpoint \"fib<5>\" reached"}, d.raw_texts());
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(type("fib<5>"), instantiation_kind::template_instantiation)},
+    {frame(type("fib<5>"), data::instantiation_kind::template_instantiation)},
     d.frames()
   );
 

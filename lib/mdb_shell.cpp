@@ -44,7 +44,7 @@ namespace
   typedef
     std::tuple<
       metashell::file_location,
-      metashell::instantiation_kind,
+      metashell::data::instantiation_kind,
       metashell::metaprogram::vertex_descriptor
     >
     set_element_t;
@@ -445,10 +445,10 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     // Filter out edges, that is not instantiated by the entered type
     if (property.point_of_instantiation.name == internal_file_name &&
         property.point_of_instantiation.row == line_number + 1 &&
-        (property.kind == instantiation_kind::template_instantiation ||
-        property.kind == instantiation_kind::memoization) &&
+        (property.kind == data::instantiation_kind::template_instantiation ||
+        property.kind == data::instantiation_kind::memoization) &&
         (!is_wrap_type(target_name) ||
-         property.kind != instantiation_kind::memoization))
+         property.kind != data::instantiation_kind::memoization))
     {
       property.enabled = true;
       edge_stack.push(edge);
@@ -472,8 +472,8 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
-      if (property.kind == instantiation_kind::template_instantiation ||
-         property.kind == instantiation_kind::memoization)
+      if (property.kind == data::instantiation_kind::template_instantiation ||
+         property.kind == data::instantiation_kind::memoization)
       {
         property.enabled = true;
         edge_stack.push(out_edge);
@@ -490,7 +490,7 @@ void mdb_shell::filter_unwrap_vertices() {
       if (!is_template_type(name)) {
         for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
           mp->get_edge_property(in_edge).kind =
-            instantiation_kind::non_template_type;
+            data::instantiation_kind::non_template_type;
         }
       }
     }

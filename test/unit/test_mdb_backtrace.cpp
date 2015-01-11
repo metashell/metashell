@@ -86,6 +86,8 @@ JUST_TEST_CASE(test_mdb_backtrace_when_metaprogram_finished_in_full_mode) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
+  using data::instantiation_kind;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -109,6 +111,8 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
+  using data::instantiation_kind;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -133,6 +137,8 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
+  using data::instantiation_kind;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -173,6 +179,8 @@ JUST_TEST_CASE(test_mdb_backtrace_garbage_argument) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
+  using data::instantiation_kind;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -204,3 +212,4 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   );
 }
 #endif
+

@@ -31,6 +31,8 @@ namespace
 
   call_grph fib5_call_graph()
   {
+    using metashell::data::instantiation_kind;
+
     return
       call_grph{
         {frame(type("int_<fib<5>::value>")), 0, 3},

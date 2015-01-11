@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/type.hpp>
-#include <metashell/instantiation_kind.hpp>
+#include <metashell/data/instantiation_kind.hpp>
 
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
@@ -29,7 +29,7 @@ namespace metashell
   {
   public:
     frame() = default;
-    frame(const type& name_, instantiation_kind kind_);
+    frame(const type& name_, data::instantiation_kind kind_);
     explicit frame(const type& name_);
 
     const type& name() const;
@@ -37,10 +37,10 @@ namespace metashell
     bool has_kind() const;
 
     // precondition: has_kind()
-    instantiation_kind kind() const;
+    data::instantiation_kind kind() const;
   private:
     type _name;
-    boost::optional<instantiation_kind> _kind;
+    boost::optional<data::instantiation_kind> _kind;
   };
 
   std::ostream& operator<<(std::ostream& o_, const frame& f_);

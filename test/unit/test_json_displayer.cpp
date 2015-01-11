@@ -168,7 +168,7 @@ JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
 namespace
 {
   void test_frame_with_instantiation_kind(
-    instantiation_kind kind_,
+    data::instantiation_kind kind_,
     const std::string& kind_in_json_
   )
   {
@@ -194,43 +194,43 @@ namespace
 JUST_TEST_CASE(test_json_display_of_frame_with_instantiation_kind)
 {
   test_frame_with_instantiation_kind(
-    instantiation_kind::template_instantiation,
+    data::instantiation_kind::template_instantiation,
     "TemplateInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_template_argument_instantiation,
+    data::instantiation_kind::default_template_argument_instantiation,
     "DefaultTemplateArgumentInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_function_argument_instantiation,
+    data::instantiation_kind::default_function_argument_instantiation,
     "DefaultFunctionArgumentInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::explicit_template_argument_substitution,
+    data::instantiation_kind::explicit_template_argument_substitution,
     "ExplicitTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::deduced_template_argument_substitution,
+    data::instantiation_kind::deduced_template_argument_substitution,
     "DeducedTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::prior_template_argument_substitution,
+    data::instantiation_kind::prior_template_argument_substitution,
     "PriorTemplateArgumentSubstitution"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::default_template_argument_checking,
+    data::instantiation_kind::default_template_argument_checking,
     "DefaultTemplateArgumentChecking"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::exception_spec_instantiation,
+    data::instantiation_kind::exception_spec_instantiation,
     "ExceptionSpecInstantiation"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::memoization,
+    data::instantiation_kind::memoization,
     "Memoization"
   );
   test_frame_with_instantiation_kind(
-    instantiation_kind::non_template_type,
+    data::instantiation_kind::non_template_type,
     "NonTemplateType"
   );
 }
