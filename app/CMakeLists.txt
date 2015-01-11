@@ -50,6 +50,9 @@ else()
   endif()
 endif()
 
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
+
 # Program_options
 target_link_libraries(metashell boost_program_options)
 
