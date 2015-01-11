@@ -56,9 +56,6 @@ public:
   const std::string& get_string() const;
   const colors_t& get_colors() const;
 
-  void print_to_cout() const;
-  void print_to_cout(size_type begin, size_type length) const;
-
   void clear();
 private:
   template <class CharIt, class ColorIt>
@@ -70,6 +67,8 @@ private:
   std::string string;
   colors_t colors;
 };
+
+void print_to_cout(const colored_string& s_);
 
 bool operator==(const colored_string& a_, const colored_string& b_);
 

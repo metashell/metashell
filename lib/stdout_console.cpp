@@ -26,7 +26,7 @@ using namespace metashell;
 
 void stdout_console::show(const colored_string& s_)
 {
-  std::cout << s_;
+  print_to_cout(s_);
 }
 
 void stdout_console::new_line()

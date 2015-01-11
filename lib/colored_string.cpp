@@ -61,27 +61,25 @@ const colored_string::colors_t& colored_string::get_colors() const {
   return colors;
 }
 
-void colored_string::print_to_cout() const {
-  print_to_cout(0, string.size());
-}
+void print_to_cout(const colored_string& s_) {
+  colored_string::color_t prev_color = boost::none;
+  auto color_it = s_.get_colors().begin();
 
-void colored_string::print_to_cout(size_type begin, size_type length) const {
-  assert(string.size() == colors.size());
-
-  size_type full_length = string.size();
-  color_t prev_color = boost::none;
-  for (size_type i = 0; i < length && begin + i < full_length; ++i) {
-    const color_t& color = colors[begin + i];
-    if (color != prev_color) {
+  for (
+    auto char_it = s_.get_string().begin(), e = s_.get_string().end();
+    char_it != e;
+    ++char_it, ++color_it
+  ) {
+    if (*color_it != prev_color) {
       if (prev_color) {
         just::console::reset();
       }
-      if (color) {
-        just::console::text_color(*color);
+      if (*color_it) {
+        just::console::text_color(**color_it);
       }
-      prev_color = color;
+      prev_color = *color_it;
     }
-    std::cout << string[begin + i];
+    std::cout << *char_it;
   }
   if (prev_color) {
     just::console::reset();
@@ -89,12 +87,7 @@ void colored_string::print_to_cout(size_type begin, size_type length) const {
 }
 
 std::ostream& operator<<(std::ostream& os, const colored_string& cs) {
-  if (&os == &std::cout) {
-    cs.print_to_cout();
-  } else {
-    os << cs.get_string();
-  }
-  return os;
+  return os << cs.get_string();
 }
 
 colored_string colored_string::substr(size_type pos_, size_type len_) const
