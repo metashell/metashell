@@ -41,3 +41,6 @@ if (MSVC)
 endif()
 target_link_libraries(metashell_lib ${CLANG_LIBRARY})
 
+# mIndent
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")
+

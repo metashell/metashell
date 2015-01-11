@@ -20,12 +20,40 @@
 #include <metashell/indenter.hpp>
 
 #include <mindent/stream_display.hpp>
+#include <mindent/display.hpp>
+#include <mindent/parser.hpp>
+#include <mindent/syntax_node.hpp>
+#include <mindent/syntax_node_list.hpp>
+
 
 #include <functional>
 #include <iostream>
 #include <sstream>
 
 using namespace metashell;
+
+namespace
+{
+  template <class DisplayF>
+  void indent(
+    int width_,
+    int indent_step_,
+    DisplayF f_,
+    const std::string& s_,
+    const std::string& input_filename_
+  )
+  {
+    std::unique_ptr<iface::tokeniser>
+      tokeniser = create_wave_tokeniser(s_, input_filename_);
+
+    mindent::display(
+      mindent::parse_syntax_node_list(*tokeniser),
+      width_,
+      indent_step_,
+      f_
+    );
+  }
+}
 
 console_displayer::console_displayer(
   iface::console& console_,
