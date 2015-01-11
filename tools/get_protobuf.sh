@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+function realpath() {
+  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
 if [ ! -d 3rd ]
 then
   echo "Please run this script from the root directory of the Metashell source code"
@@ -31,12 +35,20 @@ cd 3rd
   mkdir -p protobuf
   cd protobuf
     echo "Downloading protobuf 2.6.0"
-    wget 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz'
+    curl 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz' \
+      -o protobuf-2.6.0.tar.gz
+
     tar xvzf protobuf-2.6.0.tar.gz
 
-    echo "Installing protobuf"
     cd protobuf-2.6.0
-      ./configure --prefix="$(readlink -f ..)" && \
+      prefix=""
+      if [ "$(uname)" == "Darwin" ]; then
+        prefix="$(realpath ..)"
+      else
+        prefix="$(readlink -f ..)"
+      fi
+      echo "Installing protobuf to ${prefix}"
+      ./configure --prefix="${prefix}" && \
       make && \
       make install
     cd ..
