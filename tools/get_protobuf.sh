@@ -35,8 +35,12 @@ cd 3rd
   mkdir -p protobuf
   cd protobuf
     echo "Downloading protobuf 2.6.0"
-    curl 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz' \
-      -o protobuf-2.6.0.tar.gz
+    if [ "$(uname)" == "Darwin" ]; then
+      curl 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz' \
+        -o protobuf-2.6.0.tar.gz
+    else
+      wget 'https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz'
+    fi
 
     tar xvzf protobuf-2.6.0.tar.gz
 
