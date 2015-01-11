@@ -41,7 +41,7 @@ JUST_TEST_CASE(test_breaking_environment_append_throws)
   breaking_environment e(cfg);
   e.append_throw_from_now();
 
-  JUST_ASSERT_THROWS_SOMETHING(e.append("foo"));
+  JUST_ASSERT_THROWS([&e] { e.append("foo"); });
   e.get();
   e.get_appended("bar");
   e.internal_dir();
@@ -57,7 +57,7 @@ JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
 
   e.append("foo");
   e.get();
-  JUST_ASSERT_THROWS_SOMETHING(e.get_appended("bar"));
+  JUST_ASSERT_THROWS([&e] { e.get_appended("bar"); });
   e.internal_dir();
   e.clang_arguments();
   e.get_headers();

@@ -65,12 +65,12 @@ JUST_TEST_CASE(test_name_of_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS_SOMETHING(parse_pragma(command("#pragma metashell 13")));
+  JUST_ASSERT_THROWS([] { parse_pragma(command("#pragma metashell 13")); });
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS_SOMETHING(parse_pragma(command("#pragma metashell")));
+  JUST_ASSERT_THROWS([] { parse_pragma(command("#pragma metashell")); });
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)

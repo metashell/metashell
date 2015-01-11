@@ -285,9 +285,12 @@ JUST_TEST_CASE(test_templight_xml_parse_starting_with_template_end)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  JUST_ASSERT_THROWS(exception,
+  JUST_ASSERT_THROWS<exception>(
+    [&xml] {
       metaprogram::create_from_xml_string(
-        xml, false, "some_type", type("the_result_type")));
+        xml, false, "some_type", type("the_result_type"));
+    }
+  );
 }
 
 JUST_TEST_CASE(test_templight_xml_parse_without_template_end)
@@ -304,9 +307,12 @@ JUST_TEST_CASE(test_templight_xml_parse_without_template_end)
   "</TemplateBegin>\n"
   "</Trace>\n";
 
-  JUST_ASSERT_THROWS(exception,
+  JUST_ASSERT_THROWS<exception>(
+    [&xml] {
       metaprogram::create_from_xml_string(
-        xml, false, "some_type", type("the_result_type")));
+        xml, false, "some_type", type("the_result_type"));
+    }
+  );
 }
 
 JUST_TEST_CASE(
@@ -329,9 +335,12 @@ JUST_TEST_CASE(
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  JUST_ASSERT_THROWS(exception,
-    metaprogram::create_from_xml_string(
-        xml, false, "some_type", type("the_result_type")));
+  JUST_ASSERT_THROWS<exception>(
+    [&xml] {
+      metaprogram::create_from_xml_string(
+          xml, false, "some_type", type("the_result_type"));
+    }
+  );
 }
 
 JUST_TEST_CASE(
@@ -354,9 +363,12 @@ JUST_TEST_CASE(
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  JUST_ASSERT_THROWS(exception,
-    metaprogram::create_from_xml_string(
-        xml, false, "some_type", type("the_result_type")));
+  JUST_ASSERT_THROWS<exception>(
+    [&xml] {
+      metaprogram::create_from_xml_string(
+          xml, false, "some_type", type("the_result_type"));
+    }
+  );
 }
 
 JUST_TEST_CASE(test_templight_xml_parse_syntax_error_unknown_kind)
@@ -378,7 +390,11 @@ JUST_TEST_CASE(test_templight_xml_parse_syntax_error_unknown_kind)
   "</TemplateEnd>\n"
   "</Trace>\n";
 
-  JUST_ASSERT_THROWS(exception,
-    metaprogram::create_from_xml_string(
-        xml, false, "some_type", type("the_result_type")));
+  JUST_ASSERT_THROWS<exception>(
+    [&xml] {
+      metaprogram::create_from_xml_string(
+          xml, false, "some_type", type("the_result_type"));
+    }
+  );
 }
+

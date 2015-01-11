@@ -355,6 +355,212 @@ namespace just
     private:
       assert_msg _assert_msg;
     };
+
+    namespace impl
+    {
+      class no_checks
+      {
+      public:
+        template <class E>
+        void operator()(const E&) {}
+      };
+
+      template <class C1, class C2>
+      class check_sequence
+      {
+      public:
+        check_sequence(const C1& c1_, const C2& c2_) :
+          _c1(c1_),
+          _c2(c2_)
+        {}
+
+        template <class E>
+        void operator()(const E& e_)
+        {
+          _c1(e_);
+          _c2(e_);
+        }
+      private:
+        C1 _c1;
+        C2 _c2;
+      };
+
+      class UNTYPED_EXCEPTION_OBJECT_CAN_NOT_BE_ACCESSED;
+
+      class nothing_to_run
+      {
+      public:
+        template <class NextCheckExceptionF>
+        // name is expected to be shown in error reports
+        UNTYPED_EXCEPTION_OBJECT_CAN_NOT_BE_ACCESSED************************
+        check_exception(const NextCheckExceptionF&);
+      };
+
+      template <class ExpectedException, class F, class CheckExceptionF>
+      class assert_throw
+      {
+      public:
+        friend class assert_throw_runner;
+
+        assert_throw(
+          const assert_msg& assert_msg_,
+          const F& f_,
+          const CheckExceptionF& check_exception_
+        ) :
+          _assert_msg(assert_msg_),
+          _f(f_),
+          _check_exception(check_exception_)
+        {}
+
+        template <class NextCheckExceptionF>
+        assert_throw<
+          ExpectedException,
+          F,
+          check_sequence<CheckExceptionF, NextCheckExceptionF>
+        >
+        check_exception(const NextCheckExceptionF& f_)
+        {
+          return
+            assert_throw<
+              ExpectedException,
+              F,
+              check_sequence<CheckExceptionF, NextCheckExceptionF>
+            >(
+              _assert_msg,
+              _f,
+              check_sequence<CheckExceptionF, NextCheckExceptionF>(
+                _check_exception,
+                f_
+              )
+            );
+        }
+      private:
+        assert_msg _assert_msg;
+        F _f;
+        CheckExceptionF _check_exception;
+
+        void run()
+        {
+          std::string reason;
+          try
+          {
+            _f();
+            reason = "Expression did not throw.";
+          }
+          catch (const ExpectedException& e_)
+          {
+            _check_exception(e_);
+            return;
+          }
+          catch (...)
+          {
+            reason =
+              "Expression threw a different exception than what was expected.";
+          }
+
+          _assert_msg(reason, false);
+        }
+      };
+
+      class assert_throw_runner
+      {
+      public:
+        template <class ExpectedException, class F, class CheckExceptionF>
+        void operator=(assert_throw<ExpectedException, F, CheckExceptionF> at_)
+        {
+          at_.run();
+        }
+
+        void operator=(const nothing_to_run&) {}
+      };
+    }
+
+    class assert_throw
+    {
+    public:
+      assert_throw(const std::string& filename_, int line_) :
+        _assert_msg(filename_, line_)
+      {}
+      
+      template <class ExpectedException, class F>
+      impl::assert_throw<ExpectedException, F, impl::no_checks> run(F f_) const
+      {
+        return
+          impl::assert_throw<ExpectedException, F, impl::no_checks>(
+            _assert_msg,
+            f_,
+            impl::no_checks()
+          );
+      }
+
+      template <class F>
+      impl::nothing_to_run run(F f_) const
+      {
+        try
+        {
+          f_();
+        }
+        catch (...)
+        {
+          return impl::nothing_to_run();
+        }
+
+        _assert_msg("Expression did not throw.", false);
+
+        return impl::nothing_to_run();
+      }
+    private:
+      assert_msg _assert_msg;
+    };
+
+    /*
+     * what_returns (Functor for checking exception)
+     */
+    class what_returns
+    {
+    public:
+      what_returns(
+        const std::string& filename_,
+        int line_,
+        const std::string& expected_what_
+      ) :
+        _assert_msg(filename_, line_),
+        _expected_what(expected_what_)
+      {}
+
+      template <class E>
+      void operator()(const E& e_)
+      {
+        const std::string w = e_.what();
+
+        std::ostringstream s;
+        s
+          << ".what() of the exception returned \"" << w << "\" but \""
+          << _expected_what << "\" was expected.";
+
+        _assert_msg(s.str(), w == _expected_what);
+      }
+
+      class builder
+      {
+      public:
+        builder(const std::string& filename_, int line_) :
+          _filename(filename_),
+          _line(line_)
+        {}
+
+        what_returns operator()(const std::string& expected_what_)
+        {
+          return what_returns(_filename, _line, expected_what_);
+        }
+      private:
+        std::string _filename;
+        int _line;
+      };
+    private:
+      assert_msg _assert_msg;
+      std::string _expected_what;
+    };
   }
 }
 
@@ -435,59 +641,15 @@ namespace just
 #ifdef JUST_ASSERT_THROWS
 #  error JUST_ASSERT_THROWS
 #endif
-#define JUST_ASSERT_THROWS(exc, expr) \
-  { \
-    bool __just_test_expression_threw = false; \
-    try \
-    { \
-      (expr); \
-    } \
-    catch (const exc&) \
-    { \
-      __just_test_expression_threw = true; \
-    } \
-    catch (...) \
-    { \
-      throw ::just::test::assertion_failed( \
-        "Expected to throw " #exc " but threw something else.", \
-        __FILE__, \
-        __LINE__ \
-      ); \
-    } \
-    if (!__just_test_expression_threw) \
-    { \
-      throw \
-        ::just::test::assertion_failed( \
-          "Expected to throw " #exc, \
-          __FILE__, \
-          __LINE__ \
-        ); \
-    } \
-  }
+#define JUST_ASSERT_THROWS \
+  just::test::impl::assert_throw_runner() = \
+    ::just::test::assert_throw(__FILE__, __LINE__).run
 
-#ifdef JUST_ASSERT_THROWS_SOMETHING
-#  error JUST_ASSERT_THROWS_SOMETHING
-#endif
-#define JUST_ASSERT_THROWS_SOMETHING(expr) \
-  { \
-    bool __just_test_expression_threw = false; \
-    try \
-    { \
-      (expr); \
-    } \
-    catch (...) { \
-      __just_test_expression_threw = true; \
-    } \
-    if (!__just_test_expression_threw) \
-    { \
-      throw \
-        ::just::test::assertion_failed( \
-          "Expected to throw ", \
-          __FILE__, \
-          __LINE__ \
-        ); \
-    } \
-  }
+#    ifdef JUST_WHAT_RETURNS
+#      error JUST_WHAT_RETURNS already defined
+#    endif
+#    define JUST_WHAT_RETURNS \
+      ::just::test::what_returns::builder(__FILE__, __LINE__)
 
 /*
  * Macro for defining a main function
