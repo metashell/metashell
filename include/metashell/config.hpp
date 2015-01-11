@@ -20,6 +20,7 @@
 #include <metashell/standard.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
+#include <metashell/iface/displayer.hpp>
 
 #include <string>
 #include <vector>
@@ -51,7 +52,7 @@ namespace metashell
   config detect_config(
     const user_config& ucfg_,
     iface::environment_detector& env_detector_,
-    std::ostream& stderr_,
+    iface::displayer& displayer_,
     logger* logger_
   );
 
