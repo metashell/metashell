@@ -51,7 +51,6 @@ target_link_libraries(metashell_unit_test boost_regex)
 
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 

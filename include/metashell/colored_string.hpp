@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/color.hpp>
+
 #include <string>
 #include <vector>
 #include <ostream>
@@ -24,12 +26,7 @@
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
 
-#include <just/console.hpp>
-
 namespace metashell {
-
-// Bring color to metashell namespace
-using just::console::color;
 
 class colored_string :
   boost::addable<colored_string>,
