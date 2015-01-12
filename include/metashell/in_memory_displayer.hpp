@@ -26,7 +26,7 @@ namespace metashell
   class in_memory_displayer : public iface::displayer
   {
   public:
-    typedef std::vector<call_graph_node> call_graph;
+    typedef std::vector<data::call_graph_node> call_graph;
 
     virtual void show_raw_text(const std::string& text_) override;
     virtual void show_error(const std::string& msg_) override;

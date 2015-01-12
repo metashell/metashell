@@ -274,7 +274,7 @@ JUST_TEST_CASE(test_json_display_of_call_graph)
 
   const data::type int_("int");
 
-  const std::vector<call_graph_node>
+  const std::vector<data::call_graph_node>
     cg{
       {data::frame(int_), 0, 1},
       {data::frame(int_), 1, 0}

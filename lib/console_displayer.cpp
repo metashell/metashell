@@ -265,7 +265,7 @@ namespace
   }
 
   void display_node(
-    const call_graph_node& node_,
+    const data::call_graph_node& node_,
     const std::vector<int>& depth_counter_,
     int width_,
     iface::console& console_
@@ -308,7 +308,7 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
 
   ++depth_counter[0]; // This value is neved read
 
-  for (const call_graph_node& n : cg_)
+  for (const data::call_graph_node& n : cg_)
   {
     --depth_counter[n.depth()];
 

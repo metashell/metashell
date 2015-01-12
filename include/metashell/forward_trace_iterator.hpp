@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metaprogram.hpp>
-#include <metashell/call_graph_node.hpp>
+#include <metashell/data/call_graph_node.hpp>
 
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
@@ -35,7 +35,7 @@ namespace metashell
   class forward_trace_iterator :
     public boost::forward_iterator_helper<
       forward_trace_iterator,
-      const call_graph_node
+      const data::call_graph_node
     >
   {
   public:
@@ -50,14 +50,14 @@ namespace metashell
 
     bool operator==(const forward_trace_iterator& i_) const;
 
-    const call_graph_node& operator*() const;
+    const data::call_graph_node& operator*() const;
   private:
     typedef std::tuple<
       metaprogram::optional_edge_descriptor,
       int // Depth
     > stack_element;
 
-    call_graph_node _current;
+    data::call_graph_node _current;
     bool _finished;
 
     boost::optional<int> _max_depth;

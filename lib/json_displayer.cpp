@@ -154,7 +154,7 @@ void json_displayer::show_call_graph(const iface::call_graph& cg_)
 
   _writer.key("nodes");
   _writer.start_array();
-  for (const call_graph_node& n : cg_)
+  for (const data::call_graph_node& n : cg_)
   {
     _writer.start_object();
 

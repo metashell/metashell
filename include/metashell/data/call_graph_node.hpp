@@ -25,27 +25,26 @@
 
 namespace metashell
 {
-  class call_graph_node : boost::equality_comparable<call_graph_node>
+  namespace data
   {
-  public:
-    call_graph_node() = default;
-    call_graph_node(
-      const data::frame& frame_,
-      int depth_,
-      int number_of_children_
-    );
+    class call_graph_node : boost::equality_comparable<call_graph_node>
+    {
+    public:
+      call_graph_node() = default;
+      call_graph_node(const frame& frame_, int depth_, int number_of_children_);
 
-    const data::frame& current_frame() const;
-    int depth() const;
-    int number_of_children() const;
-  private:
-    data::frame _frame;
-    int _depth;
-    int _number_of_children;
-  };
+      const frame& current_frame() const;
+      int depth() const;
+      int number_of_children() const;
+    private:
+      frame _frame;
+      int _depth;
+      int _number_of_children;
+    };
 
-  bool operator==(const call_graph_node& a_, const call_graph_node& b_);
-  std::ostream& operator<<(std::ostream& o_, const call_graph_node& n_);
+    bool operator==(const call_graph_node& a_, const call_graph_node& b_);
+    std::ostream& operator<<(std::ostream& o_, const call_graph_node& n_);
+  }
 }
 
 #endif

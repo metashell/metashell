@@ -27,7 +27,7 @@ using namespace metashell;
 
 namespace
 {
-  typedef std::vector<call_graph_node> call_grph;
+  typedef std::vector<data::call_graph_node> call_grph;
 
   call_grph fib5_call_graph()
   {

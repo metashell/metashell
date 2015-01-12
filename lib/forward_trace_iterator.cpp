@@ -68,7 +68,7 @@ void forward_trace_iterator::visit(
     edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
 
   _current =
-    call_graph_node(
+    data::call_graph_node(
       edge_ ? _mp->to_frame(*edge_) : _mp->get_root_frame(),
       depth_,
       (_discovered[vertex] || (_max_depth && *_max_depth <= depth_)) ?
@@ -122,7 +122,7 @@ forward_trace_iterator& forward_trace_iterator::operator++()
   return *this;
 }
 
-const call_graph_node& forward_trace_iterator::operator*() const
+const data::call_graph_node& forward_trace_iterator::operator*() const
 {
   return _current;
 }

@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/call_graph_node.hpp>
+#include <metashell/data/call_graph_node.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
 call_graph_node::call_graph_node(
-  const data::frame& frame_,
+  const frame& frame_,
   int depth_,
   int number_of_children_
 ) :
@@ -28,7 +28,7 @@ call_graph_node::call_graph_node(
   _number_of_children(number_of_children_)
 {}
 
-const data::frame& call_graph_node::current_frame() const
+const frame& call_graph_node::current_frame() const
 {
   return _frame;
 }
@@ -43,7 +43,10 @@ int call_graph_node::number_of_children() const
   return _number_of_children;
 }
 
-bool metashell::operator==(const call_graph_node& a_, const call_graph_node& b_)
+bool metashell::data::operator==(
+  const call_graph_node& a_,
+  const call_graph_node& b_
+)
 {
   return
     a_.number_of_children() == b_.number_of_children()
@@ -51,7 +54,10 @@ bool metashell::operator==(const call_graph_node& a_, const call_graph_node& b_)
     && a_.current_frame() == b_.current_frame();
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const call_graph_node& n_)
+std::ostream& metashell::data::operator<<(
+  std::ostream& o_,
+  const call_graph_node& n_
+)
 {
   return
     o_

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/call_graph_node.hpp>
+#include <metashell/data/call_graph_node.hpp>
 
 #include <boost/range/adaptor/type_erased.hpp>
 #include <boost/iterator/iterator_categories.hpp>
@@ -30,7 +30,7 @@ namespace metashell
   {
     typedef
       boost::any_range<
-        const call_graph_node,
+        const data::call_graph_node,
         boost::forward_traversal_tag
       >
       call_graph;
