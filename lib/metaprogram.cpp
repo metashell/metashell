@@ -292,20 +292,23 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
   return state.edge_stack.top();
 }
 
-frame metaprogram::to_frame(const edge_descriptor& e_) const
+data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
   const data::type t(get_vertex_property(get_target(e_)).name);
-  return is_in_full_mode() ? frame(t) : frame(t, get_edge_property(e_).kind);
+  return
+    is_in_full_mode() ?
+      data::frame(t) :
+      data::frame(t, get_edge_property(e_).kind);
 }
 
-frame metaprogram::get_current_frame() const {
+data::frame metaprogram::get_current_frame() const {
   assert(!is_finished());
 
   return to_frame(*state.edge_stack.top());
 }
 
-frame metaprogram::get_root_frame() const {
-  return frame(data::type(get_vertex_property(get_root_vertex()).name));
+data::frame metaprogram::get_root_frame() const {
+  return data::frame(data::type(get_vertex_property(get_root_vertex()).name));
 }
 
 backtrace metaprogram::get_backtrace() const {

@@ -19,7 +19,7 @@
 using namespace metashell;
 
 call_graph_node::call_graph_node(
-  const frame& frame_,
+  const data::frame& frame_,
   int depth_,
   int number_of_children_
 ) :
@@ -28,7 +28,7 @@ call_graph_node::call_graph_node(
   _number_of_children(number_of_children_)
 {}
 
-const frame& call_graph_node::current_frame() const
+const data::frame& call_graph_node::current_frame() const
 {
   return _frame;
 }

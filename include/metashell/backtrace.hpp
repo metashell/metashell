@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/frame.hpp>
+#include <metashell/data/frame.hpp>
 
 #include <boost/operators.hpp>
 
@@ -29,19 +29,19 @@ namespace metashell
   class backtrace : boost::equality_comparable<backtrace>
   {
   public:
-    typedef std::vector<frame>::const_iterator iterator;
+    typedef std::vector<data::frame>::const_iterator iterator;
     typedef iterator const_iterator;
 
     backtrace() = default;
 
-    backtrace(const std::initializer_list<frame>& frames_);
+    backtrace(const std::initializer_list<data::frame>& frames_);
 
-    void push_back(const frame& f_);
+    void push_back(const data::frame& f_);
 
     iterator begin() const;
     iterator end() const;
   private:
-    std::vector<frame> _frames;
+    std::vector<data::frame> _frames;
   };
 
   std::ostream& operator<<(std::ostream& o_, const backtrace& t_);

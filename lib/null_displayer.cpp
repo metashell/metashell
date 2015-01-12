@@ -43,7 +43,7 @@ void null_displayer::show_cpp_code(const std::string&)
   // throw away
 }
 
-void null_displayer::show_frame(const frame&)
+void null_displayer::show_frame(const data::frame&)
 {
   // throw away
 }

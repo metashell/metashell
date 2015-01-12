@@ -147,9 +147,9 @@ public:
   void step_back();
 
   vertex_descriptor get_current_vertex() const;
-  optional_edge_descriptor get_current_edge() const; // TODO: ez kell?
-  frame get_current_frame() const;
-  frame get_root_frame() const;
+  optional_edge_descriptor get_current_edge() const;
+  data::frame get_current_frame() const;
+  data::frame get_root_frame() const;
   backtrace get_backtrace() const;
   unsigned get_backtrace_length() const;
 
@@ -184,7 +184,7 @@ public:
   edge_property& get_edge_property(
       edge_descriptor edge);
 
-  frame to_frame(const edge_descriptor& e_) const;
+  data::frame to_frame(const edge_descriptor& e_) const;
 
 private:
   typedef std::vector<boost::optional<unsigned>> traversal_counts_t;

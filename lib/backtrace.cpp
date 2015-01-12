@@ -20,11 +20,11 @@
 
 using namespace metashell;
 
-backtrace::backtrace(const std::initializer_list<frame>& frames_) :
+backtrace::backtrace(const std::initializer_list<data::frame>& frames_) :
   _frames(frames_)
 {}
 
-void backtrace::push_back(const frame& f_)
+void backtrace::push_back(const data::frame& f_)
 {
   _frames.push_back(f_);
 }
@@ -43,7 +43,7 @@ std::ostream& metashell::operator<<(std::ostream& o_, const backtrace& t_)
 {
   o_ << "backtrace{";
   bool first = true;
-  for (const frame& f : t_)
+  for (const data::frame& f : t_)
   {
     if (first)
     {

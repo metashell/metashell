@@ -33,7 +33,7 @@ namespace metashell
     virtual void show_comment(const text& msg_) override;
     virtual void show_cpp_code(const std::string& code_) override;
 
-    virtual void show_frame(const frame& frame_) override;
+    virtual void show_frame(const data::frame& frame_) override;
     virtual void show_backtrace(const backtrace& trace_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
   private:

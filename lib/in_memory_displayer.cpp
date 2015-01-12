@@ -43,7 +43,7 @@ void in_memory_displayer::show_cpp_code(const std::string& code_)
   _cpp_codes.push_back(code_);
 }
 
-void in_memory_displayer::show_frame(const frame& frame_)
+void in_memory_displayer::show_frame(const data::frame& frame_)
 {
   _frames.push_back(frame_);
 }
@@ -83,7 +83,7 @@ const std::vector<std::string>& in_memory_displayer::cpp_codes() const
   return _cpp_codes;
 }
 
-const std::vector<frame>& in_memory_displayer::frames() const
+const std::vector<data::frame>& in_memory_displayer::frames() const
 {
   return _frames;
 }

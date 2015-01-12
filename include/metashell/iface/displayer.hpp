@@ -19,7 +19,7 @@
 
 #include <metashell/text.hpp>
 #include <metashell/backtrace.hpp>
-#include <metashell/frame.hpp>
+#include <metashell/data/frame.hpp>
 #include <metashell/data/type.hpp>
 
 #include <metashell/iface/call_graph.hpp>
@@ -41,7 +41,7 @@ namespace metashell
       virtual void show_comment(const text& msg_) = 0;
       virtual void show_cpp_code(const std::string& code_) = 0;
 
-      virtual void show_frame(const frame& frame_) = 0;
+      virtual void show_frame(const data::frame& frame_) = 0;
       virtual void show_backtrace(const backtrace& trace_) = 0;
       virtual void show_call_graph(const iface::call_graph& cg_) = 0;
     };

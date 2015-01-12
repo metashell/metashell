@@ -173,7 +173,7 @@ void console_displayer::display_code(const std::string& code_)
   }
 }
 
-void console_displayer::show_frame(const frame& frame_)
+void console_displayer::show_frame(const data::frame& frame_)
 {
   display_code(frame_.name().name());
   if (frame_.has_kind())
@@ -188,7 +188,7 @@ void console_displayer::show_frame(const frame& frame_)
 void console_displayer::show_backtrace(const backtrace& trace_)
 {
   int i = 0;
-  for (const frame& f : trace_)
+  for (const data::frame& f : trace_)
   {
     std::ostringstream s;
     s << "#" << i << " ";
@@ -254,7 +254,7 @@ namespace
     }
   }
 
-  colored_string format_frame(const frame& f_)
+  colored_string format_frame(const data::frame& f_)
   {
     std::ostringstream s;
     if (f_.has_kind())

@@ -33,6 +33,7 @@ namespace
   {
     using metashell::data::instantiation_kind;
     using metashell::data::type;
+    using metashell::data::frame;
 
     return
       call_grph{

@@ -47,7 +47,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -69,7 +69,7 @@ JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<8>"),
         data::instantiation_kind::template_instantiation
       )
@@ -91,7 +91,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -104,7 +104,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<8>"),
         data::instantiation_kind::template_instantiation
       )
@@ -126,7 +126,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -139,7 +139,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<8>"),
         data::instantiation_kind::template_instantiation
       )
@@ -161,7 +161,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_space_second_line) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -202,7 +202,7 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -215,7 +215,7 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -251,7 +251,12 @@ JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
   sh.line_available("step", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(data::type("int"), data::instantiation_kind::non_template_type)},
+    {
+      data::frame(
+        data::type("int"),
+        data::instantiation_kind::non_template_type
+      )
+    },
     d.frames()
   );
 
@@ -267,6 +272,7 @@ JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
 JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
   using data::instantiation_kind;
   using data::type;
+  using data::frame;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
@@ -314,6 +320,9 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
 JUST_TEST_CASE(
     test_mdb_step_over_the_whole_metaprogram_multiple_steps_in_full_mode)
 {
+  using data::frame;
+  using data::type;
+
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
 
@@ -326,16 +335,16 @@ JUST_TEST_CASE(
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(data::type("fib<4>")),
-      frame(data::type("fib<2>")),
-      frame(data::type("fib<0>")),
-      frame(data::type("fib<1>")),
-      frame(data::type("fib<3>")),
-      frame(data::type("fib<1>")),
-      frame(data::type("fib<2>")),
-      frame(data::type("fib<0>")),
-      frame(data::type("fib<1>")),
-      frame(data::type("int_<3>"))
+      frame(type("fib<4>")),
+      frame(type("fib<2>")),
+      frame(type("fib<0>")),
+      frame(type("fib<1>")),
+      frame(type("fib<3>")),
+      frame(type("fib<1>")),
+      frame(type("fib<2>")),
+      frame(type("fib<0>")),
+      frame(type("fib<1>")),
+      frame(type("int_<3>"))
     },
     d.frames()
   );
@@ -445,7 +454,7 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -468,7 +477,7 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2_in_full_mode) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -505,7 +514,7 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -517,7 +526,7 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
   sh.line_available("step over", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
+    {data::frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -535,7 +544,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -547,7 +556,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
   sh.line_available("step over", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
+    {data::frame(data::type("fib<10>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 
@@ -556,7 +565,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<10>"),
         data::instantiation_kind::template_instantiation
       )
@@ -578,7 +587,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(data::type("multi_fib<4>"),
+      data::frame(data::type("multi_fib<4>"),
       data::instantiation_kind::template_instantiation)
     },
     d.frames()
@@ -589,7 +598,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("multi_fib<5>"),
         data::instantiation_kind::template_instantiation
       )
@@ -602,7 +611,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("multi_fib<8>"),
         data::instantiation_kind::template_instantiation
       )
@@ -616,7 +625,7 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
   // step over -1 is not always the inverse of step over
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("multi_fib<6>"),
         data::instantiation_kind::template_instantiation
       )
@@ -669,7 +678,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_two_steps) {
   sh.line_available("step out", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
+    {data::frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -688,7 +697,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<4>"),
         data::instantiation_kind::template_instantiation
       )
@@ -710,7 +719,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps) {
   sh.line_available("step out 2", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
+    {data::frame(data::type("fib<5>"), data::instantiation_kind::memoization)},
     d.frames()
   );
 }
@@ -778,7 +787,7 @@ JUST_TEST_CASE(test_mdb_step_out_minus_1_after_step_4_in_fib) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
+      data::frame(
         data::type("fib<3>"),
         data::instantiation_kind::template_instantiation
       )
@@ -790,6 +799,10 @@ JUST_TEST_CASE(test_mdb_step_out_minus_1_after_step_4_in_fib) {
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
+  using data::frame;
+  using data::type;
+  using data::instantiation_kind;
+
   in_memory_displayer d;
   mdb_test_shell sh(template_specialization_mp);
 
@@ -802,21 +815,15 @@ JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      frame(
-        data::type("foo<3, 1>"),
-        data::instantiation_kind::template_instantiation
-      ),
-      frame(data::type("foo<3, 1>"), data::instantiation_kind::memoization),
-      frame(
-        data::type("int_<45>"),
-        data::instantiation_kind::template_instantiation
-      )
+      frame(type("foo<3, 1>"), instantiation_kind::template_instantiation),
+      frame(type("foo<3, 1>"), instantiation_kind::memoization),
+      frame(type("int_<45>"), instantiation_kind::template_instantiation)
     },
     d.frames()
   );
 
   JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
-  JUST_ASSERT_EQUAL_CONTAINER({data::type("int_<45>")}, d.types());
+  JUST_ASSERT_EQUAL_CONTAINER({type("int_<45>")}, d.types());
 }
 #endif
 

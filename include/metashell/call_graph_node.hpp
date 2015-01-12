@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/frame.hpp>
+#include <metashell/data/frame.hpp>
 
 #include <boost/operators.hpp>
 
@@ -29,13 +29,17 @@ namespace metashell
   {
   public:
     call_graph_node() = default;
-    call_graph_node(const frame& frame_, int depth_, int number_of_children_);
+    call_graph_node(
+      const data::frame& frame_,
+      int depth_,
+      int number_of_children_
+    );
 
-    const frame& current_frame() const;
+    const data::frame& current_frame() const;
     int depth() const;
     int number_of_children() const;
   private:
-    frame _frame;
+    data::frame _frame;
     int _depth;
     int _number_of_children;
   };

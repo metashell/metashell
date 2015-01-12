@@ -38,7 +38,7 @@ namespace
     writer_.end_object();
   }
 
-  void show_frame_fields(iface::json_writer& writer_, const frame& frame_)
+  void show_frame_fields(iface::json_writer& writer_, const data::frame& frame_)
   {
     writer_.key("name");
     writer_.string(frame_.name().name());
@@ -109,7 +109,7 @@ void json_displayer::show_cpp_code(const std::string& code_)
   _writer.end_document();
 }
 
-void json_displayer::show_frame(const frame& frame_)
+void json_displayer::show_frame(const data::frame& frame_)
 {
   _writer.start_object();
 
@@ -131,7 +131,7 @@ void json_displayer::show_backtrace(const backtrace& trace_)
 
   _writer.key("frames");
   _writer.start_array();
-  for (const frame& f : trace_)
+  for (const data::frame& f : trace_)
   {
     _writer.start_object();
 

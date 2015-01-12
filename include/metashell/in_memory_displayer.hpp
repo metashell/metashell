@@ -35,7 +35,7 @@ namespace metashell
     virtual void show_cpp_code(const std::string& code_) override;
 
     virtual void show_backtrace(const backtrace& trace_) override;
-    virtual void show_frame(const frame& frame_) override;
+    virtual void show_frame(const data::frame& frame_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
 
     const std::vector<std::string>& errors() const;
@@ -44,7 +44,7 @@ namespace metashell
     const std::vector<text>& comments() const;
     const std::vector<std::string>& cpp_codes() const;
 
-    const std::vector<frame>& frames() const;
+    const std::vector<data::frame>& frames() const;
     const std::vector<backtrace>& backtraces() const;
     const std::vector<call_graph>& call_graphs() const;
 
@@ -56,7 +56,7 @@ namespace metashell
     std::vector<data::type> _types;
     std::vector<text> _comments;
     std::vector<std::string> _cpp_codes;
-    std::vector<frame> _frames;
+    std::vector<data::frame> _frames;
     std::vector<backtrace> _backtraces;
     std::vector<call_graph> _call_graphs;
   };

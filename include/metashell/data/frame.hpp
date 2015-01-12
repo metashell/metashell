@@ -25,26 +25,29 @@
 
 namespace metashell
 {
-  class frame : boost::equality_comparable<frame>
+  namespace data
   {
-  public:
-    frame() = default;
-    frame(const data::type& name_, data::instantiation_kind kind_);
-    explicit frame(const data::type& name_);
+    class frame : boost::equality_comparable<frame>
+    {
+    public:
+      frame() = default;
+      frame(const type& name_, instantiation_kind kind_);
+      explicit frame(const type& name_);
 
-    const data::type& name() const;
+      const type& name() const;
 
-    bool has_kind() const;
+      bool has_kind() const;
 
-    // precondition: has_kind()
-    data::instantiation_kind kind() const;
-  private:
-    data::type _name;
-    boost::optional<data::instantiation_kind> _kind;
-  };
+      // precondition: has_kind()
+      instantiation_kind kind() const;
+    private:
+      type _name;
+      boost::optional<data::instantiation_kind> _kind;
+    };
 
-  std::ostream& operator<<(std::ostream& o_, const frame& f_);
-  bool operator==(const frame& a_, const frame& b_);
+    std::ostream& operator<<(std::ostream& o_, const frame& f_);
+    bool operator==(const frame& a_, const frame& b_);
+  }
 }
 
 #endif

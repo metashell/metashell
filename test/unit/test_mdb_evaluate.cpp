@@ -164,6 +164,7 @@ JUST_TEST_CASE(
 JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
   using data::instantiation_kind;
   using data::type;
+  using data::frame;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_with_enum_mp);

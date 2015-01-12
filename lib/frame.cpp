@@ -14,24 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/frame.hpp>
+#include <metashell/data/frame.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <cassert>
 
-using namespace metashell;
+using namespace metashell::data;
 
-frame::frame(const data::type& name_) :
+frame::frame(const type& name_) :
   _name(name_)
 {}
 
-frame::frame(const data::type& name_, data::instantiation_kind kind_) :
+frame::frame(const type& name_, instantiation_kind kind_) :
   _name(name_),
   _kind(kind_)
 {}
 
-const data::type& frame::name() const
+const type& frame::name() const
 {
   return _name;
 }
@@ -41,13 +41,13 @@ bool frame::has_kind() const
   return bool(_kind);
 }
 
-data::instantiation_kind frame::kind() const
+instantiation_kind frame::kind() const
 {
   assert(has_kind());
   return *_kind;
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const frame& f_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, const frame& f_)
 {
   o_ << "frame(\"" << f_.name() << "\"";
   if (f_.has_kind())
@@ -58,7 +58,7 @@ std::ostream& metashell::operator<<(std::ostream& o_, const frame& f_)
   return o_;
 }
 
-bool metashell::operator==(const frame& a_, const frame& b_)
+bool metashell::data::operator==(const frame& a_, const frame& b_)
 {
   return
     a_.name() == b_.name()

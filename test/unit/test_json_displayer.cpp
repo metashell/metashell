@@ -151,7 +151,7 @@ JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
   mock_json_writer w;
   json_displayer d(w);
 
-  d.show_frame(frame(data::type("fib_c<13>::type")));
+  d.show_frame(data::frame(data::type("fib_c<13>::type")));
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
@@ -175,7 +175,7 @@ namespace
     mock_json_writer w;
     json_displayer d(w);
   
-    d.show_frame(frame(data::type("fib_c<13>::type"), kind_));
+    d.show_frame(data::frame(data::type("fib_c<13>::type"), kind_));
   
     JUST_ASSERT_EQUAL_CONTAINER(
       {
@@ -242,8 +242,8 @@ JUST_TEST_CASE(test_json_display_of_backtrace)
 
   d.show_backtrace(
     backtrace{
-      frame(data::type("fib_c<13>::type")),
-      frame(data::type("fib<int_<13>>::type")),
+      data::frame(data::type("fib_c<13>::type")),
+      data::frame(data::type("fib<int_<13>>::type")),
     }
   );
 
@@ -276,8 +276,8 @@ JUST_TEST_CASE(test_json_display_of_call_graph)
 
   const std::vector<call_graph_node>
     cg{
-      {frame(int_), 0, 1},
-      {frame(int_), 1, 0}
+      {data::frame(int_), 0, 1},
+      {data::frame(int_), 1, 0}
     };
 
   d.show_call_graph(cg);
