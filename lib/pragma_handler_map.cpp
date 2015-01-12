@@ -41,9 +41,9 @@ using namespace metashell;
 
 namespace
 {
-  bool can_be_part_of_name(const token& t_)
+  bool can_be_part_of_name(const data::token& t_)
   {
-    return t_.type() == token_type::identifier;
+    return t_.type() == data::token_type::identifier;
   }
 
   boost::optional<command::iterator> is_this_pragma(

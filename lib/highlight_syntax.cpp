@@ -20,19 +20,19 @@
 
 namespace metashell {
 
-colored_string::color_t color_of_token(const token& t) {
+colored_string::color_t color_of_token(const data::token& t) {
   switch (t.category())
   {
-  case token_category::character_literal:
-  case token_category::floating_literal:
-  case token_category::integer_literal:
-  case token_category::string_literal:
-  case token_category::bool_literal:
-  case token_category::preprocessor:
+  case data::token_category::character_literal:
+  case data::token_category::floating_literal:
+  case data::token_category::integer_literal:
+  case data::token_category::string_literal:
+  case data::token_category::bool_literal:
+  case data::token_category::preprocessor:
     return color::magenta;
-  case token_category::keyword:
+  case data::token_category::keyword:
     return color::bright_green;
-  case token_category::comment:
+  case data::token_category::comment:
     return color::green;
   default:
     return boost::none;
@@ -43,7 +43,7 @@ colored_string highlight_syntax(const std::string& str) {
   colored_string result;
 
   const command cmd(str);
-  for (const token& t : cmd) {
+  for (const data::token& t : cmd) {
     result += colored_string(t.value(), color_of_token(t));
   }
 

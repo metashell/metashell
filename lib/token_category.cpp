@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_category.hpp>
+#include <metashell/data/token_category.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
-token_category metashell::category_of_token(token_type type_)
+token_category metashell::data::category_of_token(token_type type_)
 {
   switch (type_)
   {

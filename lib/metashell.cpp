@@ -59,20 +59,26 @@ namespace
       std::find_if(
         begin_,
         end_,
-        [](const token& t_) { return t_.type() == token_type::keyword_typedef; }
+        [](const data::token& t_)
+        {
+          return t_.type() == data::token_type::keyword_typedef;
+        }
       ) != end_;
   }
 
-  token_type last_non_whitespace_token_type(
+  data::token_type last_non_whitespace_token_type(
     command::iterator begin_,
     const command::iterator& end_
   )
   {
-    token_type t;
+    data::token_type t;
     for (; begin_ != end_; ++begin_)
     {
-      const token_category c = begin_->category();
-      if (c != token_category::whitespace && c != token_category::comment)
+      const data::token_category c = begin_->category();
+      if (
+        c != data::token_category::whitespace
+        && c != data::token_category::comment
+      )
       {
         t = begin_->type();
       }
@@ -216,7 +222,7 @@ namespace
     const command cmd(s_);
 
     std::ostringstream o;
-    token last_token;
+    data::token last_token;
     bool first = true;
     for (auto i = cmd.begin(), e = cmd.end(); i != e; ++i)
     {
@@ -238,8 +244,8 @@ namespace
     else
     {
       if (
-        last_token.category() == token_category::identifier
-        || last_token.category() == token_category::keyword
+        last_token.category() == data::token_category::identifier
+        || last_token.category() == data::token_category::keyword
       )
       {
         return string_pair(o.str(), last_token.value());
@@ -307,49 +313,50 @@ bool metashell::is_environment_setup_command(
     }
     else
     {
-      const token t = *begin_;
+      const data::token t = *begin_;
       switch (t.category())
       {
-      case token_category::keyword:
+      case data::token_category::keyword:
         switch (t.type())
         {
-        case token_type::keyword_bool:
-        case token_type::keyword_char:
-        case token_type::keyword_const:
-        case token_type::keyword_double:
-        case token_type::keyword_float:
-        case token_type::keyword_int:
-        case token_type::keyword_long:
-        case token_type::keyword_short:
-        case token_type::keyword_signed:
-        case token_type::keyword_unsigned:
-        case token_type::keyword_void:
-        case token_type::keyword_volatile:
-        case token_type::keyword_wchar_t:
+        case data::token_type::keyword_bool:
+        case data::token_type::keyword_char:
+        case data::token_type::keyword_const:
+        case data::token_type::keyword_double:
+        case data::token_type::keyword_float:
+        case data::token_type::keyword_int:
+        case data::token_type::keyword_long:
+        case data::token_type::keyword_short:
+        case data::token_type::keyword_signed:
+        case data::token_type::keyword_unsigned:
+        case data::token_type::keyword_void:
+        case data::token_type::keyword_volatile:
+        case data::token_type::keyword_wchar_t:
           if (has_typedef(begin_, end_))
           {
             return true;
           }
           else
           {
-            const token_type lt = last_non_whitespace_token_type(begin_, end_);
+            const data::token_type
+              lt = last_non_whitespace_token_type(begin_, end_);
             return
-              lt == token_type::operator_semicolon
-              || lt == token_type::operator_right_brace;
+              lt == data::token_type::operator_semicolon
+              || lt == data::token_type::operator_right_brace;
           }
-        case token_type::keyword_sizeof:
-        case token_type::keyword_const_cast:
-        case token_type::keyword_static_cast:
-        case token_type::keyword_dynamic_cast:
-        case token_type::keyword_reinterpret_cast:
+        case data::token_type::keyword_sizeof:
+        case data::token_type::keyword_const_cast:
+        case data::token_type::keyword_static_cast:
+        case data::token_type::keyword_dynamic_cast:
+        case data::token_type::keyword_reinterpret_cast:
           return false;
         default:
           return true;
         }
         assert(false);
-      case token_category::identifier:
+      case data::token_category::identifier:
         return has_typedef(begin_, end_);
-      case token_category::preprocessor:
+      case data::token_category::preprocessor:
         return true;
       default:
         return false;

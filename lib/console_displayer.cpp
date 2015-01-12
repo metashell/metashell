@@ -130,8 +130,8 @@ void console_displayer::show_cpp_code(const std::string& code_)
         indent(
           _console->width(),
           2,
-          std::function<void(const token&)>(
-            [this](const token& t_)
+          std::function<void(const data::token&)>(
+            [this](const data::token& t_)
             {
               this->_console->show(highlight_syntax(t_.value()));
             }
@@ -145,8 +145,8 @@ void console_displayer::show_cpp_code(const std::string& code_)
         indent(
           _console->width(),
           2,
-          std::function<void(const token&)>(
-            [this](const token& t_) { this->_console->show(t_.value()); }
+          std::function<void(const data::token&)>(
+            [this](const data::token& t_) { this->_console->show(t_.value()); }
           ),
           code_,
           "<output>"

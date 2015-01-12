@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token.hpp>
+#include <metashell/data/token.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
 token::token() :
   _type(token_type::unknown),

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token.hpp>
+#include <metashell/data/token.hpp>
 
 #include <string>
 #include <vector>
@@ -29,13 +29,13 @@ namespace metashell
   public:
     explicit command(const std::string& cmd_);
 
-    typedef std::vector<token>::const_iterator iterator;
+    typedef std::vector<data::token>::const_iterator iterator;
 
     iterator begin() const;
     iterator end() const;
   private:
     std::string _cmd;
-    std::vector<token> _tokens;
+    std::vector<data::token> _tokens;
   };
 
   command::iterator skip(command::iterator i_);

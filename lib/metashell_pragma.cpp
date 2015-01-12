@@ -41,10 +41,12 @@ namespace
     return result;
   }
 
-  bool argument_token(const token& t_)
+  bool argument_token(const data::token& t_)
   {
-    const token_category c = t_.category();
-    return c != token_category::whitespace && c != token_category::comment;
+    const data::token_category c = t_.category();
+    return
+      c != data::token_category::whitespace
+      && c != data::token_category::comment;
   }
 }
 
@@ -55,8 +57,8 @@ boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
   if (
     i != cmd_.end()
     && (
-      i->type() == token_type::p_pragma
-      || i->type() == token_type::operator_pound
+      i->type() == data::token_type::p_pragma
+      || i->type() == data::token_type::operator_pound
     )
   )
   {
@@ -64,7 +66,7 @@ boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
 
     if (
       i != cmd_.end()
-      && i->type() == token_type::identifier
+      && i->type() == data::token_type::identifier
       && (i->value() == "metashell" || i->value() == "msh")
     )
     {
@@ -73,7 +75,7 @@ boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
       {
         throw exception("The name of the metashell pragma is missing.");
       }
-      else if (i->type() == token_type::identifier)
+      else if (i->type() == data::token_type::identifier)
       {
         return i;
       }

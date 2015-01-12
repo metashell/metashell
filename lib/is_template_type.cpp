@@ -22,9 +22,9 @@ namespace metashell {
 
 bool is_template_type(const std::string& type) {
   command cmd(type);
-  for (const token& t : cmd) {
-    if (t.type() == token_type::operator_greater ||
-        t.type() == token_type::operator_less)
+  for (const data::token& t : cmd) {
+    if (t.type() == data::token_type::operator_greater ||
+        t.type() == data::token_type::operator_less)
     {
       return true;
     }

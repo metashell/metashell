@@ -77,12 +77,12 @@ namespace
       std::find_if(
         cmd_.begin(),
         cmd_.end(),
-        [] (const token& t_) -> bool
+        [] (const data::token& t_) -> bool
         {
-          const token_category c = t_.category();
+          const data::token_category c = t_.category();
           return
-            c != token_category::whitespace
-            && c != token_category::comment;
+            c != data::token_category::whitespace
+            && c != data::token_category::comment;
         }
       ) == cmd_.end();
   }

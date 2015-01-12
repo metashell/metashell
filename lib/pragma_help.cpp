@@ -116,8 +116,8 @@ void pragma_help::run(
     {
       switch (i->category())
       {
-      case token_category::whitespace:
-      case token_category::comment:
+      case data::token_category::whitespace:
+      case data::token_category::comment:
         // skip token
         break;
       default:

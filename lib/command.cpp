@@ -21,9 +21,11 @@ using namespace metashell;
 
 namespace
 {
-  bool whitespace_or_comment(token_category c_)
+  bool whitespace_or_comment(data::token_category c_)
   {
-    return c_ == token_category::whitespace || c_ == token_category::comment;
+    return
+      c_ == data::token_category::whitespace
+      || c_ == data::token_category::comment;
   }
 }
 

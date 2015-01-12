@@ -17,27 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_type.hpp>
+#include <metashell/data/token_type.hpp>
 
 namespace metashell
 {
-  enum class token_category
+  namespace data
   {
-    character_literal,
-    floating_literal,
-    identifier,
-    integer_literal,
-    string_literal,
-    bool_literal,
-    unknown,
-    whitespace,
-    comment,
-    keyword,
-    operator_token,
-    preprocessor
-  };
+    enum class token_category
+    {
+      character_literal,
+      floating_literal,
+      identifier,
+      integer_literal,
+      string_literal,
+      bool_literal,
+      unknown,
+      whitespace,
+      comment,
+      keyword,
+      operator_token,
+      preprocessor
+    };
 
-  token_category category_of_token(token_type type_);
+    token_category category_of_token(token_type type_);
+  }
 }
 
 #endif

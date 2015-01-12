@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token.hpp>
+#include <metashell/data/token.hpp>
 
 namespace metashell
 {
@@ -26,12 +26,12 @@ namespace metashell
     class tokeniser
     {
     public:
-      typedef token token_type;
+      typedef data::token token_type;
 
       virtual ~tokeniser() {}
 
       virtual bool has_further_tokens() const = 0;
-      virtual token current_token() const = 0;
+      virtual data::token current_token() const = 0;
       virtual void move_to_next_token() = 0;
 
       // The error flag is never cleared once it was set

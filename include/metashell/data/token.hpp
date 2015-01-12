@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/token_type.hpp>
-#include <metashell/token_category.hpp>
+#include <metashell/data/token_type.hpp>
+#include <metashell/data/token_category.hpp>
 
 #include <string>
 #include <iostream>
@@ -27,30 +27,33 @@
 
 namespace metashell
 {
-  class token
+  namespace data
   {
-  public:
-    token();
-    token(std::string value_, token_type type_);
-
-    token_category category() const;
-    const std::string& value() const;
-    token_type type() const;
-  private:
-    token_type _type;
-    std::string _value;
-  };
-
-  template <class TokenIt>
-  std::string tokens_to_string(TokenIt begin_, const TokenIt& end_)
-  {
-    std::ostringstream s;
-    while (begin_ != end_)
+    class token
     {
-      s << begin_->value();
-      ++begin_;
+    public:
+      token();
+      token(std::string value_, token_type type_);
+
+      token_category category() const;
+      const std::string& value() const;
+      token_type type() const;
+    private:
+      token_type _type;
+      std::string _value;
+    };
+
+    template <class TokenIt>
+    std::string tokens_to_string(TokenIt begin_, const TokenIt& end_)
+    {
+      std::ostringstream s;
+      while (begin_ != end_)
+      {
+        s << begin_->value();
+        ++begin_;
+      }
+      return s.str();
     }
-    return s.str();
   }
 }
 
@@ -60,23 +63,23 @@ namespace mindent
   class token_traits;
 
   template <>
-  class token_traits<metashell::token>
+  class token_traits<metashell::data::token>
   {
   public:
-    typedef metashell::token token_type;
+    typedef metashell::data::token token_type;
     typedef std::string string_type;
 
     static bool is_double_colon(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::operator_token
+        t_.category() == metashell::data::token_category::operator_token
         && t_.value() == "::";
     }
 
     static bool is_c_comment(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::comment
+        t_.category() == metashell::data::token_category::comment
         && t_.value().size() >= 4
         && t_.value()[0] == '/'
         && t_.value()[1] == '*';
@@ -85,35 +88,35 @@ namespace mindent
     static bool is_less(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::operator_token
+        t_.category() == metashell::data::token_category::operator_token
         && t_.value() == "<";
     }
 
     static bool is_greater(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::operator_token
+        t_.category() == metashell::data::token_category::operator_token
         && t_.value() == ">";
     }
 
     static bool is_comma(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::operator_token
+        t_.category() == metashell::data::token_category::operator_token
         && t_.value() == ",";
     }
 
     static bool is_space(const token_type& t_)
     {
       return
-        t_.category() == metashell::token_category::unknown ||
-        t_.category() == metashell::token_category::whitespace;
+        t_.category() == metashell::data::token_category::unknown ||
+        t_.category() == metashell::data::token_category::whitespace;
     }
 
     static token_type empty_token()
     {
       return
-        token_type("", metashell::token_type::unknown);
+        token_type("", metashell::data::token_type::unknown);
     }
 
     static token_type space_token(int len_)
@@ -121,12 +124,13 @@ namespace mindent
       using std::string;
 
       assert(len_ > 0);
-      return token_type(string(len_, ' '), metashell::token_type::whitespace);
+      return
+        token_type(string(len_, ' '), metashell::data::token_type::whitespace);
     }
 
     static token_type new_line_token()
     {
-      return token_type("\n", metashell::token_type::new_line);
+      return token_type("\n", metashell::data::token_type::new_line);
     }
 
     static token_type change_value(

@@ -24,7 +24,7 @@ namespace
 {
   void test_type_of_a_token(
     const std::string& token_,
-    token_type expected_type_
+    data::token_type expected_type_
   )
   {
     const auto t = create_wave_tokeniser(token_);
@@ -35,7 +35,7 @@ namespace
 
   void test_category_of_a_token(
     const std::string& token_,
-    token_category expected_category_
+    data::token_category expected_category_
   )
   {
     const auto t = create_wave_tokeniser(token_);
@@ -81,111 +81,111 @@ JUST_TEST_CASE(test_value_of_token)
 
 JUST_TEST_CASE(test_category_of_a_character_literal)
 {
-  test_category_of_a_token("'a'", token_category::character_literal);
+  test_category_of_a_token("'a'", data::token_category::character_literal);
 }
 
 JUST_TEST_CASE(test_category_of_a_floating_literal)
 {
-  test_category_of_a_token("11.13", token_category::floating_literal);
+  test_category_of_a_token("11.13", data::token_category::floating_literal);
 }
 
 JUST_TEST_CASE(test_category_of_an_integer_literal)
 {
-  test_category_of_a_token("13", token_category::integer_literal);
+  test_category_of_a_token("13", data::token_category::integer_literal);
 }
 
 JUST_TEST_CASE(test_category_of_a_string_literal)
 {
-  test_category_of_a_token("\"foo bar\"", token_category::string_literal);
+  test_category_of_a_token("\"foo bar\"", data::token_category::string_literal);
 }
 
 JUST_TEST_CASE(test_category_of_a_bool_literal)
 {
-  test_category_of_a_token("true", token_category::bool_literal);
+  test_category_of_a_token("true", data::token_category::bool_literal);
 }
 
 JUST_TEST_CASE(test_category_of_an_identifier)
 {
-  test_category_of_a_token("foo", token_category::identifier);
-  test_category_of_a_token("std", token_category::identifier);
+  test_category_of_a_token("foo", data::token_category::identifier);
+  test_category_of_a_token("std", data::token_category::identifier);
 }
 
 JUST_TEST_CASE(test_category_of_a_whitespace)
 {
-  test_category_of_a_token(" ", token_category::whitespace);
-  test_category_of_a_token("\n", token_category::whitespace);
+  test_category_of_a_token(" ", data::token_category::whitespace);
+  test_category_of_a_token("\n", data::token_category::whitespace);
 }
 
 JUST_TEST_CASE(test_category_of_a_comment)
 {
-  test_category_of_a_token("/* c comment */", token_category::comment);
-  test_category_of_a_token("// c++ comment\n", token_category::comment);
+  test_category_of_a_token("/* c comment */", data::token_category::comment);
+  test_category_of_a_token("// c++ comment\n", data::token_category::comment);
 }
 
 JUST_TEST_CASE(test_category_of_a_keyword)
 {
-  test_category_of_a_token("for", token_category::keyword);
+  test_category_of_a_token("for", data::token_category::keyword);
 }
 
 JUST_TEST_CASE(test_category_of_an_operator)
 {
-  test_category_of_a_token("+=", token_category::operator_token);
+  test_category_of_a_token("+=", data::token_category::operator_token);
 }
 
 JUST_TEST_CASE(test_category_of_a_preprocessor_token)
 {
-  test_category_of_a_token("#define", token_category::preprocessor);
+  test_category_of_a_token("#define", data::token_category::preprocessor);
 }
 
 JUST_TEST_CASE(test_type_of_identifier_token)
 {
-  test_type_of_a_token("foo", token_type::identifier);
+  test_type_of_a_token("foo", data::token_type::identifier);
 }
 
 JUST_TEST_CASE(test_type_of_character_literal_token)
 {
-  test_type_of_a_token("'a'", token_type::character_literal);
+  test_type_of_a_token("'a'", data::token_type::character_literal);
 }
 
 JUST_TEST_CASE(test_type_of_floating_literal_token)
 {
-  test_type_of_a_token("11.13", token_type::floating_literal);
+  test_type_of_a_token("11.13", data::token_type::floating_literal);
 }
 
 JUST_TEST_CASE(test_type_of_integer_literal_token)
 {
-  test_type_of_a_token("015", token_type::integer_literal);
-  test_type_of_a_token("0xd", token_type::integer_literal);
-  test_type_of_a_token("13", token_type::integer_literal);
-  test_type_of_a_token("13LL", token_type::integer_literal);
+  test_type_of_a_token("015", data::token_type::integer_literal);
+  test_type_of_a_token("0xd", data::token_type::integer_literal);
+  test_type_of_a_token("13", data::token_type::integer_literal);
+  test_type_of_a_token("13LL", data::token_type::integer_literal);
 }
 
 JUST_TEST_CASE(test_type_of_string_literal_token)
 {
-  test_type_of_a_token("\"foo bar\"", token_type::string_literal);
+  test_type_of_a_token("\"foo bar\"", data::token_type::string_literal);
 }
 
 JUST_TEST_CASE(test_type_of_bool_literal_token)
 {
-  test_type_of_a_token("true", token_type::bool_literal);
-  test_type_of_a_token("false", token_type::bool_literal);
+  test_type_of_a_token("true", data::token_type::bool_literal);
+  test_type_of_a_token("false", data::token_type::bool_literal);
 }
 
 JUST_TEST_CASE(test_type_of_comment_token)
 {
-  test_type_of_a_token("/* foo bar */", token_type::c_comment);
-  test_type_of_a_token("// foo bar\n", token_type::cpp_comment);
+  test_type_of_a_token("/* foo bar */", data::token_type::c_comment);
+  test_type_of_a_token("// foo bar\n", data::token_type::cpp_comment);
 }
 
 JUST_TEST_CASE(test_type_of_whitespace_token)
 {
-  test_type_of_a_token(" ", token_type::whitespace);
-  test_type_of_a_token("\f", token_type::whitespace);
+  test_type_of_a_token(" ", data::token_type::whitespace);
+  test_type_of_a_token("\f", data::token_type::whitespace);
 }
 
 JUST_TEST_CASE(test_type_of_new_line_token)
 {
-  test_type_of_a_token("\n", token_type::new_line);
+  test_type_of_a_token("\n", data::token_type::new_line);
 }
 
 #ifdef TEST_KEYWORD
@@ -194,7 +194,7 @@ JUST_TEST_CASE(test_type_of_new_line_token)
 #define TEST_KEYWORD(name) \
   JUST_TEST_CASE(test_type_of_ ## name ## _keyword_token) \
   { \
-    test_type_of_a_token(#name, token_type::keyword_ ## name); \
+    test_type_of_a_token(#name, data::token_type::keyword_ ## name); \
   }
 
 TEST_KEYWORD(asm)
@@ -268,7 +268,7 @@ TEST_KEYWORD(while)
 #define TEST_OPERATOR(name, code) \
   JUST_TEST_CASE(test_type_of_ ## name ## _operator_token) \
   { \
-    test_type_of_a_token(code, token_type::operator_ ## name); \
+    test_type_of_a_token(code, data::token_type::operator_ ## name); \
   }
 
 #ifdef TEST_OPERATOR_ALT
@@ -277,7 +277,7 @@ TEST_KEYWORD(while)
 #define TEST_OPERATOR_ALT(name, code) \
   JUST_TEST_CASE(test_type_of_ ## name ## _alt_operator_token) \
   { \
-    test_type_of_a_token(code, token_type::operator_ ## name); \
+    test_type_of_a_token(code, data::token_type::operator_ ## name); \
   }
 
 #ifdef TEST_OPERATOR_TRIGRAPH
@@ -286,7 +286,7 @@ TEST_KEYWORD(while)
 #define TEST_OPERATOR_TRIGRAPH(name, code) \
   JUST_TEST_CASE(test_type_of_ ## name ## _trigraph_operator_token) \
   { \
-    test_type_of_a_token(code, token_type::operator_ ## name); \
+    test_type_of_a_token(code, data::token_type::operator_ ## name); \
   }
 
 TEST_OPERATOR(bitwise_and, "&")
@@ -377,8 +377,8 @@ TEST_OPERATOR_TRIGRAPH(pound, "\?\?=")
 #define TEST_PP_TOKEN(name) \
   JUST_TEST_CASE(test_type_of_p_ ## name ## _token) \
   { \
-    test_type_of_a_token("#" #name, token_type::p_ ## name); \
-    test_type_of_a_token("#  " #name, token_type::p_ ## name); \
+    test_type_of_a_token("#" #name, data::token_type::p_ ## name); \
+    test_type_of_a_token("#  " #name, data::token_type::p_ ## name); \
   }
 
 TEST_PP_TOKEN(define)
@@ -412,6 +412,6 @@ JUST_TEST_CASE(test_error_flag_is_set)
 
 JUST_TEST_CASE(test_constexpr_is_in_keyword_category)
 {
-  test_category_of_a_token("constexpr", token_category::keyword);
+  test_category_of_a_token("constexpr", data::token_category::keyword);
 }
 
