@@ -44,7 +44,6 @@
 #include "llvm/Support/Host.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/MemoryObject.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/SourceMgr.h"
@@ -109,7 +108,7 @@ llvm::MCPU("mcpu",
      cl::init(""));
 
 cl::opt<std::string>
-llvm::ArchName("arch", cl::desc("Target arch to disassemble for, "
+llvm::ArchName("arch-name", cl::desc("Target arch to disassemble for, "
                                 "see -version for available targets"));
 
 static cl::opt<bool>
@@ -149,6 +148,7 @@ PrivateHeadersShort("p", cl::desc("Alias for --private-headers"),
                     cl::aliasopt(PrivateHeaders));
 
 static StringRef ToolName;
+static int ReturnValue = EXIT_SUCCESS;
 
 bool llvm::error(std::error_code EC) {
   if (!EC)
@@ -156,6 +156,7 @@ bool llvm::error(std::error_code EC) {
 
   outs() << ToolName << ": error reading file: " << EC.message() << ".\n";
   outs().flush();
+  ReturnValue = EXIT_FAILURE;
   return true;
 }
 
@@ -307,25 +308,18 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
   }
 
   for (const SectionRef &Section : Obj->sections()) {
-    bool Text;
-    if (error(Section.isText(Text)))
-      break;
-    if (!Text)
+    if (!Section.isText() || Section.isVirtual())
       continue;
 
-    uint64_t SectionAddr;
-    if (error(Section.getAddress(SectionAddr)))
-      break;
-
-    uint64_t SectSize;
-    if (error(Section.getSize(SectSize)))
-      break;
+    uint64_t SectionAddr = Section.getAddress();
+    uint64_t SectSize = Section.getSize();
+    if (!SectSize)
+      continue;
 
     // Make a list of all the symbols in this section.
     std::vector<std::pair<uint64_t, StringRef>> Symbols;
     for (const SymbolRef &Symbol : Obj->symbols()) {
-      bool contains;
-      if (!error(Section.containsSymbol(Symbol, contains)) && contains) {
+      if (Section.containsSymbol(Symbol)) {
         uint64_t Address;
         if (error(Symbol.getAddress(Address)))
           break;
@@ -380,10 +374,12 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
     SmallString<40> Comments;
     raw_svector_ostream CommentStream(Comments);
 
-    StringRef Bytes;
-    if (error(Section.getContents(Bytes)))
+    StringRef BytesStr;
+    if (error(Section.getContents(BytesStr)))
       break;
-    StringRefMemoryObject memoryObject(Bytes, SectionAddr);
+    ArrayRef<uint8_t> Bytes(reinterpret_cast<const uint8_t *>(BytesStr.data()),
+                            BytesStr.size());
+
     uint64_t Size;
     uint64_t Index;
 
@@ -410,13 +406,14 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
       for (Index = Start; Index < End; Index += Size) {
         MCInst Inst;
 
-        if (DisAsm->getInstruction(Inst, Size, memoryObject,
-                                   SectionAddr + Index,
-                                   DebugOut, CommentStream)) {
+        if (DisAsm->getInstruction(Inst, Size, Bytes.slice(Index),
+                                   SectionAddr + Index, DebugOut,
+                                   CommentStream)) {
           outs() << format("%8" PRIx64 ":", SectionAddr + Index);
           if (!NoShowRawInsn) {
             outs() << "\t";
-            DumpBytes(StringRef(Bytes.data() + Index, Size));
+            DumpBytes(StringRef(
+                reinterpret_cast<const char *>(Bytes.data()) + Index, Size));
           }
           IP->printInst(&Inst, outs(), "");
           outs() << CommentStream.str();
@@ -501,19 +498,11 @@ static void PrintSectionHeaders(const ObjectFile *Obj) {
     StringRef Name;
     if (error(Section.getName(Name)))
       return;
-    uint64_t Address;
-    if (error(Section.getAddress(Address)))
-      return;
-    uint64_t Size;
-    if (error(Section.getSize(Size)))
-      return;
-    bool Text, Data, BSS;
-    if (error(Section.isText(Text)))
-      return;
-    if (error(Section.isData(Data)))
-      return;
-    if (error(Section.isBSS(BSS)))
-      return;
+    uint64_t Address = Section.getAddress();
+    uint64_t Size = Section.getSize();
+    bool Text = Section.isText();
+    bool Data = Section.isData();
+    bool BSS = Section.isBSS();
     std::string Type = (std::string(Text ? "TEXT " : "") +
                         (Data ? "DATA " : "") + (BSS ? "BSS" : ""));
     outs() << format("%3d %-13s %08" PRIx64 " %016" PRIx64 " %s\n", i,
@@ -527,20 +516,15 @@ static void PrintSectionContents(const ObjectFile *Obj) {
   for (const SectionRef &Section : Obj->sections()) {
     StringRef Name;
     StringRef Contents;
-    uint64_t BaseAddr;
-    bool BSS;
     if (error(Section.getName(Name)))
       continue;
-    if (error(Section.getAddress(BaseAddr)))
-      continue;
-    if (error(Section.isBSS(BSS)))
+    uint64_t BaseAddr = Section.getAddress();
+    uint64_t Size = Section.getSize();
+    if (!Size)
       continue;
 
     outs() << "Contents of section " << Name << ":\n";
-    if (BSS) {
-      uint64_t Size;
-      if (error(Section.getSize(Size)))
-        continue;
+    if (Section.isBSS()) {
       outs() << format("<skipping contents of bss section at [%04" PRIx64
                        ", %04" PRIx64 ")>\n",
                        BaseAddr, BaseAddr + Size);
@@ -912,5 +896,5 @@ int main(int argc, char **argv) {
   std::for_each(InputFilenames.begin(), InputFilenames.end(),
                 DumpInput);
 
-  return 0;
+  return ReturnValue;
 }

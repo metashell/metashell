@@ -34,7 +34,7 @@ const uptr kWordSizeInBits = 8 * kWordSize;
   const uptr kCacheLineSize = 64;
 #endif
 
-const uptr kMaxPathLength = 512;
+const uptr kMaxPathLength = 4096;
 
 const uptr kMaxThreadStackSize = 1 << 30;  // 1Gb
 
@@ -66,6 +66,7 @@ bool MemoryRangeIsAvailable(uptr range_start, uptr range_end);
 void FlushUnneededShadowMemory(uptr addr, uptr size);
 void IncreaseTotalMmap(uptr size);
 void DecreaseTotalMmap(uptr size);
+uptr GetRSS();
 
 // InternalScopedBuffer can be used instead of large stack arrays to
 // keep frame size low.
@@ -128,9 +129,6 @@ void SetLowLevelAllocateCallback(LowLevelAllocateCallback callback);
 
 // IO
 void RawWrite(const char *buffer);
-bool PrintsToTty();
-// Caching version of PrintsToTty(). Not thread-safe.
-bool PrintsToTtyCached();
 bool ColorizeReports();
 void Printf(const char *format, ...);
 void Report(const char *format, ...);
@@ -146,11 +144,33 @@ void SetPrintfAndReportCallback(void (*callback)(const char *));
 
 // Can be used to prevent mixing error reports from different sanitizers.
 extern StaticSpinMutex CommonSanitizerReportMutex;
-void MaybeOpenReportFile();
-extern fd_t report_fd;
-extern bool log_to_file;
-extern char report_path_prefix[4096];
-extern uptr report_fd_pid;
+
+struct ReportFile {
+  void Write(const char *buffer, uptr length);
+  bool PrintsToTty();
+  void SetReportPath(const char *path);
+
+  // Don't use fields directly. They are only declared public to allow
+  // aggregate initialization.
+
+  // Protects fields below.
+  StaticSpinMutex *mu;
+  // Opened file descriptor. Defaults to stderr. It may be equal to
+  // kInvalidFd, in which case new file will be opened when necessary.
+  fd_t fd;
+  // Path prefix of report file, set via __sanitizer_set_report_path.
+  char path_prefix[kMaxPathLength];
+  // Full path to report, obtained as <path_prefix>.PID
+  char full_path[kMaxPathLength];
+  // PID of the process that opened fd. If a fork() occurs,
+  // the PID of child will be different from fd_pid.
+  uptr fd_pid;
+
+ private:
+  void ReopenIfNecessary();
+};
+extern ReportFile report_file;
+
 extern uptr stoptheworld_tracer_pid;
 extern uptr stoptheworld_tracer_ppid;
 
@@ -172,10 +192,8 @@ bool IsAccessibleMemoryRange(uptr beg, uptr size);
 // Error report formatting.
 const char *StripPathPrefix(const char *filepath,
                             const char *strip_file_prefix);
-void PrintSourceLocation(InternalScopedString *buffer, const char *file,
-                         int line, int column);
-void PrintModuleAndOffset(InternalScopedString *buffer,
-                          const char *module, uptr offset);
+// Strip the directories from the module name.
+const char *StripModuleName(const char *module);
 
 // OS
 void DisableCoreDumperIfNecessary();
@@ -209,9 +227,6 @@ void SleepForMillis(int millis);
 u64 NanoTime();
 int Atexit(void (*function)(void));
 void SortArray(uptr *array, uptr size);
-// Strip the directories from the module name, return a new string allocated
-// with internal_strdup.
-char *StripModuleName(const char *module);
 
 // Exit
 void NORETURN Abort();
@@ -230,6 +245,7 @@ bool SanitizerGetThreadName(char *name, int max_len);
 // to do tool-specific job.
 typedef void (*DieCallbackType)(void);
 void SetDieCallback(DieCallbackType);
+void SetUserDieCallback(DieCallbackType);
 DieCallbackType GetDieCallback();
 typedef void (*CheckFailedCallbackType)(const char *, int, const char *,
                                        u64, u64);
@@ -528,23 +544,6 @@ const uptr kPthreadDestructorIterations = 0;
 // Callback type for iterating over a set of memory ranges.
 typedef void (*RangeIteratorCallback)(uptr begin, uptr end, void *arg);
 
-#if (SANITIZER_FREEBSD || SANITIZER_LINUX) && !defined(SANITIZER_GO)
-extern uptr indirect_call_wrapper;
-void SetIndirectCallWrapper(uptr wrapper);
-
-template <typename F>
-F IndirectExternCall(F f) {
-  typedef F (*WrapF)(F);
-  return indirect_call_wrapper ? ((WrapF)indirect_call_wrapper)(f) : f;
-}
-#else
-INLINE void SetIndirectCallWrapper(uptr wrapper) {}
-template <typename F>
-F IndirectExternCall(F f) {
-  return f;
-}
-#endif
-
 #if SANITIZER_ANDROID
 // Initialize Android logging. Any writes before this are silently lost.
 void AndroidLogInit();
@@ -557,6 +556,24 @@ INLINE void AndroidLogWrite(const char *buffer_unused) {}
 INLINE void GetExtraActivationFlags(char *buf, uptr size) { *buf = '\0'; }
 INLINE void SanitizerInitializeUnwinder() {}
 #endif
+
+void *internal_start_thread(void(*func)(void*), void *arg);
+void internal_join_thread(void *th);
+void MaybeStartBackgroudThread();
+
+// Make the compiler think that something is going on there.
+// Use this inside a loop that looks like memset/memcpy/etc to prevent the
+// compiler from recognising it and turning it into an actual call to
+// memset/memcpy/etc.
+static inline void SanitizerBreakOptimization(void *arg) {
+#if _MSC_VER
+  // FIXME: make sure this is actually enough.
+  __asm;
+#else
+  __asm__ __volatile__("" : : "r" (arg) : "memory");
+#endif
+}
+
 }  // namespace __sanitizer
 
 inline void *operator new(__sanitizer::operator_new_size_type size,

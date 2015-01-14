@@ -200,6 +200,7 @@ public:
 
   // MachO specific.
   std::error_code getIndirectName(DataRefImpl Symb, StringRef &Res) const;
+  unsigned getSectionType(SectionRef Sec) const;
 
   std::error_code getSymbolAddress(DataRefImpl Symb,
                                    uint64_t &Res) const override;
@@ -215,24 +216,16 @@ public:
   void moveSectionNext(DataRefImpl &Sec) const override;
   std::error_code getSectionName(DataRefImpl Sec,
                                  StringRef &Res) const override;
-  std::error_code getSectionAddress(DataRefImpl Sec,
-                                    uint64_t &Res) const override;
-  std::error_code getSectionSize(DataRefImpl Sec, uint64_t &Res) const override;
+  uint64_t getSectionAddress(DataRefImpl Sec) const override;
+  uint64_t getSectionSize(DataRefImpl Sec) const override;
   std::error_code getSectionContents(DataRefImpl Sec,
                                      StringRef &Res) const override;
-  std::error_code getSectionAlignment(DataRefImpl Sec,
-                                      uint64_t &Res) const override;
-  std::error_code isSectionText(DataRefImpl Sec, bool &Res) const override;
-  std::error_code isSectionData(DataRefImpl Sec, bool &Res) const override;
-  std::error_code isSectionBSS(DataRefImpl Sec, bool &Res) const override;
-  std::error_code isSectionRequiredForExecution(DataRefImpl Sec,
-                                                bool &Res) const override;
-  std::error_code isSectionVirtual(DataRefImpl Sec, bool &Res) const override;
-  std::error_code isSectionZeroInit(DataRefImpl Sec, bool &Res) const override;
-  std::error_code isSectionReadOnlyData(DataRefImpl Sec,
-                                        bool &Res) const override;
-  std::error_code sectionContainsSymbol(DataRefImpl Sec, DataRefImpl Symb,
-                                        bool &Result) const override;
+  uint64_t getSectionAlignment(DataRefImpl Sec) const override;
+  bool isSectionText(DataRefImpl Sec) const override;
+  bool isSectionData(DataRefImpl Sec) const override;
+  bool isSectionBSS(DataRefImpl Sec) const override;
+  bool isSectionVirtual(DataRefImpl Sec) const override;
+  bool sectionContainsSymbol(DataRefImpl Sec, DataRefImpl Symb) const override;
   relocation_iterator section_rel_begin(DataRefImpl Sec) const override;
   relocation_iterator section_rel_end(DataRefImpl Sec) const override;
 
@@ -327,6 +320,8 @@ public:
                                     const MachO::any_relocation_info &RE) const;
   uint32_t getScatteredRelocationValue(
                                     const MachO::any_relocation_info &RE) const;
+  uint32_t getScatteredRelocationType(
+                                    const MachO::any_relocation_info &RE) const;
   unsigned getAnyRelocationAddress(const MachO::any_relocation_info &RE) const;
   unsigned getAnyRelocationPCRel(const MachO::any_relocation_info &RE) const;
   unsigned getAnyRelocationLength(const MachO::any_relocation_info &RE) const;
@@ -351,8 +346,8 @@ public:
   getSegmentLoadCommand(const LoadCommandInfo &L) const;
   MachO::segment_command_64
   getSegment64LoadCommand(const LoadCommandInfo &L) const;
-  MachO::linker_options_command
-  getLinkerOptionsLoadCommand(const LoadCommandInfo &L) const;
+  MachO::linker_option_command
+  getLinkerOptionLoadCommand(const LoadCommandInfo &L) const;
   MachO::version_min_command
   getVersionMinLoadCommand(const LoadCommandInfo &L) const;
   MachO::dylib_command
@@ -363,10 +358,28 @@ public:
   getDylinkerCommand(const LoadCommandInfo &L) const;
   MachO::uuid_command
   getUuidCommand(const LoadCommandInfo &L) const;
+  MachO::rpath_command
+  getRpathCommand(const LoadCommandInfo &L) const;
   MachO::source_version_command
   getSourceVersionCommand(const LoadCommandInfo &L) const;
   MachO::entry_point_command
   getEntryPointCommand(const LoadCommandInfo &L) const;
+  MachO::encryption_info_command
+  getEncryptionInfoCommand(const LoadCommandInfo &L) const;
+  MachO::encryption_info_command_64
+  getEncryptionInfoCommand64(const LoadCommandInfo &L) const;
+  MachO::sub_framework_command
+  getSubFrameworkCommand(const LoadCommandInfo &L) const;
+  MachO::sub_umbrella_command
+  getSubUmbrellaCommand(const LoadCommandInfo &L) const;
+  MachO::sub_library_command
+  getSubLibraryCommand(const LoadCommandInfo &L) const;
+  MachO::sub_client_command
+  getSubClientCommand(const LoadCommandInfo &L) const;
+  MachO::routines_command
+  getRoutinesCommand(const LoadCommandInfo &L) const;
+  MachO::routines_command_64
+  getRoutinesCommand64(const LoadCommandInfo &L) const;
 
   MachO::any_relocation_info getRelocation(DataRefImpl Rel) const;
   MachO::data_in_code_entry getDice(DataRefImpl Rel) const;
@@ -385,6 +398,7 @@ public:
   ArrayRef<uint8_t> getDyldInfoWeakBindOpcodes() const;
   ArrayRef<uint8_t> getDyldInfoLazyBindOpcodes() const;
   ArrayRef<uint8_t> getDyldInfoExportsTrie() const;
+  ArrayRef<uint8_t> getUuid() const;
 
   StringRef getStringTableData() const;
   bool is64Bit() const;
@@ -422,6 +436,7 @@ private:
   const char *DysymtabLoadCmd;
   const char *DataInCodeLoadCmd;
   const char *DyldInfoLoadCmd;
+  const char *UuidLoadCmd;
   bool HasPageZeroSegment;
 };
 

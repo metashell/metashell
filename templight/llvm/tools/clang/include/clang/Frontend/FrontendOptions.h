@@ -147,19 +147,6 @@ public:
   unsigned ASTDumpLookups : 1;             ///< Whether we include lookup table
                                            ///< dumps in AST dumps.
 
-  // BEGIN TEMPLIGHT
-  unsigned Templight : 1;                  ///< For Tracing template
-                                           /// instantiations
-  unsigned TemplightStdout : 1;            ///< Tracing template instantiations
-                                           /// to stdout
-  unsigned TemplightMemory : 1;            ///< For tracing memory usage
-                                           /// during template instantiations
-                                           /// This indicates Templight
-  unsigned TemplightSafeMode : 1;          ///< For flushing the Templight
-                                           /// trace immediately instead of
-                                           /// store it in a buffer
-  // END TEMPLIGHT
-
   CodeCompleteOptions CodeCompleteOpts;
 
   enum {
@@ -197,12 +184,15 @@ public:
     ObjCMT_NsAtomicIOSOnlyProperty = 0x400,
     /// \brief Enable inferring NS_DESIGNATED_INITIALIZER for ObjC methods.
     ObjCMT_DesignatedInitializer = 0x800,
+    /// \brief Enable converting setter/getter expressions to property-dot syntx.
+    ObjCMT_PropertyDotSyntax = 0x1000,
     ObjCMT_MigrateDecls = (ObjCMT_ReadonlyProperty | ObjCMT_ReadwriteProperty |
                            ObjCMT_Annotation | ObjCMT_Instancetype |
                            ObjCMT_NsMacros | ObjCMT_ProtocolConformance |
                            ObjCMT_NsAtomicIOSOnlyProperty |
                            ObjCMT_DesignatedInitializer),
-    ObjCMT_MigrateAll = (ObjCMT_Literals | ObjCMT_Subscripting | ObjCMT_MigrateDecls)
+    ObjCMT_MigrateAll = (ObjCMT_Literals | ObjCMT_Subscripting |
+                         ObjCMT_MigrateDecls | ObjCMT_PropertyDotSyntax)
   };
   unsigned ObjCMTAction;
   std::string ObjCMTWhiteListPath;
@@ -215,17 +205,6 @@ public:
 
   /// The output file, if any.
   std::string OutputFile;
-
-  // BEGIN TEMPLIGHT
-  /// Output file fo Templight, if any.
-  std::string TemplightOutputFile;
-
-  /// Format of Templight output (yaml/xml/text)
-  std::string TemplightFormat;
-
-  /// Capacity of trace file
-  unsigned TraceCapacity;
-  // END TEMPLIGHT
 
   /// If given, the new suffix for fix-it rewritten files.
   std::string FixItSuffix;
@@ -253,6 +232,13 @@ public:
 
   /// The list of plugins to load.
   std::vector<std::string> Plugins;
+
+  /// \brief The list of module map files to load before processing the input.
+  std::vector<std::string> ModuleMapFiles;
+
+  /// \brief The list of additional prebuilt module files to load before
+  /// processing the input.
+  std::vector<std::string> ModuleFiles;
 
   /// \brief The list of AST files to merge.
   std::vector<std::string> ASTMergeFiles;

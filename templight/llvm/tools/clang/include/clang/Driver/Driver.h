@@ -194,6 +194,9 @@ private:
   // Before executing jobs, sets up response files for commands that need them.
   void setUpResponseFiles(Compilation &C, Job &J);
 
+  void generatePrefixedToolNames(const char *Tool, const ToolChain &TC,
+                                 SmallVectorImpl<std::string> &Names) const;
+
 public:
   Driver(StringRef _ClangExecutable,
          StringRef _DefaultTargetTriple,
@@ -304,7 +307,7 @@ public:
   /// including preprocessed source file(s).
   /// 
   void generateCompilationDiagnostics(Compilation &C,
-                                      const Command *FailingCommand);
+                                      const Command &FailingCommand);
 
   /// @}
   /// @name Helper Methods

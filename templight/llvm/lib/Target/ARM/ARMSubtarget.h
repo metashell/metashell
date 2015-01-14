@@ -37,12 +37,13 @@ namespace llvm {
 class GlobalValue;
 class StringRef;
 class TargetOptions;
+class ARMBaseTargetMachine;
 
 class ARMSubtarget : public ARMGenSubtargetInfo {
 protected:
   enum ARMProcFamilyEnum {
     Others, CortexA5, CortexA7, CortexA8, CortexA9, CortexA12, CortexA15,
-    CortexR5, Swift, CortexA53, CortexA57, Krait
+    CortexA17, CortexR5, Swift, CortexA53, CortexA57, Krait, 
   };
   enum ARMProcClassEnum {
     None, AClass, RClass, MClass
@@ -225,19 +226,14 @@ protected:
   /// Options passed via command line that could influence the target
   const TargetOptions &Options;
 
- public:
-  enum {
-    ARM_ABI_UNKNOWN,
-    ARM_ABI_APCS,
-    ARM_ABI_AAPCS // ARM EABI
-  } TargetABI;
+  const ARMBaseTargetMachine &TM;
 
+public:
   /// This constructor initializes the data members to match that
   /// of the specified triple.
   ///
   ARMSubtarget(const std::string &TT, const std::string &CPU,
-               const std::string &FS, TargetMachine &TM, bool IsLittle,
-               const TargetOptions &Options);
+               const std::string &FS, const ARMBaseTargetMachine &TM, bool IsLittle);
 
   /// getMaxInlineSizeThreshold - Returns the maximum memset / memcpy size
   /// that still makes it profitable to inline the call.
@@ -348,7 +344,7 @@ public:
   bool isTargetIOS() const { return TargetTriple.isiOS(); }
   bool isTargetLinux() const { return TargetTriple.isOSLinux(); }
   bool isTargetNaCl() const { return TargetTriple.isOSNaCl(); }
-  bool isTargetNetBSD() const { return TargetTriple.getOS() == Triple::NetBSD; }
+  bool isTargetNetBSD() const { return TargetTriple.isOSNetBSD(); }
   bool isTargetWindows() const { return TargetTriple.isOSWindows(); }
 
   bool isTargetCOFF() const { return TargetTriple.isOSBinFormatCOFF(); }
@@ -389,14 +385,8 @@ public:
     return TargetTriple.getEnvironment() == Triple::Android;
   }
 
-  bool isAPCS_ABI() const {
-    assert(TargetABI != ARM_ABI_UNKNOWN);
-    return TargetABI == ARM_ABI_APCS;
-  }
-  bool isAAPCS_ABI() const {
-    assert(TargetABI != ARM_ABI_UNKNOWN);
-    return TargetABI == ARM_ABI_AAPCS;
-  }
+  bool isAPCS_ABI() const;
+  bool isAAPCS_ABI() const;
 
   bool isThumb() const { return InThumbMode; }
   bool isThumb1Only() const { return InThumbMode && !HasThumb2; }
@@ -405,6 +395,10 @@ public:
   bool isMClass() const { return ARMProcClass == MClass; }
   bool isRClass() const { return ARMProcClass == RClass; }
   bool isAClass() const { return ARMProcClass == AClass; }
+
+  bool isV6M() const {
+    return isThumb1Only() && isMClass();
+  }
 
   bool isR9Reserved() const { return IsR9Reserved; }
 

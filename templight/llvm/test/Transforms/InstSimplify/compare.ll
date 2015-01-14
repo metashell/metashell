@@ -949,6 +949,29 @@ define i1 @returns_nonnull_as_deref() {
 ; CHECK: ret
 }
 
+define i1 @nonnull_load(i32** %addr) {
+  %ptr = load i32** %addr, !nonnull !{}
+  %cmp = icmp eq i32* %ptr, null
+  ret i1 %cmp
+; CHECK-LABEL: @nonnull_load
+; CHECK: ret i1 false
+}
+
+define i1 @nonnull_load_as_outer(i32* addrspace(1)* %addr) {
+  %ptr = load i32* addrspace(1)* %addr, !nonnull !{}
+  %cmp = icmp eq i32* %ptr, null
+  ret i1 %cmp
+; CHECK-LABEL: @nonnull_load_as_outer
+; CHECK: ret i1 false
+}
+define i1 @nonnull_load_as_inner(i32 addrspace(1)** %addr) {
+  %ptr = load i32 addrspace(1)** %addr, !nonnull !{}
+  %cmp = icmp eq i32 addrspace(1)* %ptr, null
+  ret i1 %cmp
+; CHECK-LABEL: @nonnull_load_as_inner
+; CHECK: ret i1 false
+}
+
 ; If a bit is known to be zero for A and known to be one for B,
 ; then A and B cannot be equal.
 define i1 @icmp_eq_const(i32 %a) nounwind {
@@ -1076,4 +1099,68 @@ define i1 @icmp_shl_1_V_ne_31(i32 %V) {
 
 ; CHECK-LABEL: @icmp_shl_1_V_ne_31(
 ; CHECK-NEXT: ret i1 true
+}
+
+define i1 @tautological1(i32 %A, i32 %B) {
+  %C = and i32 %A, %B
+  %D = icmp ugt i32 %C, %A
+  ret i1 %D
+; CHECK-LABEL: @tautological1(
+; CHECK: ret i1 false
+}
+
+define i1 @tautological2(i32 %A, i32 %B) {
+  %C = and i32 %A, %B
+  %D = icmp ule i32 %C, %A
+  ret i1 %D
+; CHECK-LABEL: @tautological2(
+; CHECK: ret i1 true
+}
+
+define i1 @tautological3(i32 %A, i32 %B) {
+  %C = or i32 %A, %B
+  %D = icmp ule i32 %A, %C
+  ret i1 %D
+; CHECK-LABEL: @tautological3(
+; CHECK: ret i1 true
+}
+
+define i1 @tautological4(i32 %A, i32 %B) {
+  %C = or i32 %A, %B
+  %D = icmp ugt i32 %A, %C
+  ret i1 %D
+; CHECK-LABEL: @tautological4(
+; CHECK: ret i1 false
+}
+
+define i1 @tautological5(i32 %A, i32 %B) {
+  %C = or i32 %A, %B
+  %D = icmp ult i32 %C, %A
+  ret i1 %D
+; CHECK-LABEL: @tautological5(
+; CHECK: ret i1 false
+}
+
+define i1 @tautological6(i32 %A, i32 %B) {
+  %C = or i32 %A, %B
+  %D = icmp uge i32 %C, %A
+  ret i1 %D
+; CHECK-LABEL: @tautological6(
+; CHECK: ret i1 true
+}
+
+define i1 @tautological7(i32 %A, i32 %B) {
+  %C = and i32 %A, %B
+  %D = icmp uge i32 %A, %C
+  ret i1 %D
+; CHECK-LABEL: @tautological7(
+; CHECK: ret i1 true
+}
+
+define i1 @tautological8(i32 %A, i32 %B) {
+  %C = and i32 %A, %B
+  %D = icmp ult i32 %A, %C
+  ret i1 %D
+; CHECK-LABEL: @tautological8(
+; CHECK: ret i1 false
 }

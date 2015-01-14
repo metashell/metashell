@@ -234,7 +234,7 @@ LLVM-specific variables
   Enable all compiler warnings. Defaults to ON.
 
 **LLVM_ENABLE_PEDANTIC**:BOOL
-  Enable pedantic mode. This disable compiler specific extensions, is
+  Enable pedantic mode. This disables compiler specific extensions, if
   possible. Defaults to ON.
 
 **LLVM_ENABLE_WERROR**:BOOL
@@ -290,6 +290,12 @@ LLVM-specific variables
   Define the sanitizer used to build LLVM binaries and tests. Possible values
   are ``Address``, ``Memory``, ``MemoryWithOrigins`` and ``Undefined``.
   Defaults to empty string.
+
+**LLVM_PARALLEL_COMPILE_JOBS**:STRING
+  Define the maximum number of concurrent compilation jobs.
+
+**LLVM_PARALLEL_LINK_JOBS**:STRING
+  Define the maximum number of concurrent link jobs.
 
 **LLVM_BUILD_DOCS**:BOOL
   Enables all enabled documentation targets (i.e. Doxgyen and Sphinx targets) to

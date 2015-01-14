@@ -52,6 +52,9 @@ private:
   /// accurate when after this flag is cleared.
   bool TracksLiveness;
 
+  /// True if subregister liveness is tracked.
+  bool TracksSubRegLiveness;
+
   /// VRegInfo - Information we keep for each virtual register.
   ///
   /// Each element in this list contains the register class of the vreg and the
@@ -178,6 +181,12 @@ public:
   /// This should be called by late passes that invalidate the liveness
   /// information.
   void invalidateLiveness() { TracksLiveness = false; }
+
+  bool tracksSubRegLiveness() const { return TracksSubRegLiveness; }
+
+  void enableSubRegLiveness(bool Enable = true) {
+    TracksSubRegLiveness = Enable;
+  }
 
   //===--------------------------------------------------------------------===//
   // Register Info
@@ -767,6 +776,10 @@ public:
   void EmitLiveInCopies(MachineBasicBlock *EntryMBB,
                         const TargetRegisterInfo &TRI,
                         const TargetInstrInfo &TII);
+
+  /// Returns a mask covering all bits that can appear in lane masks of
+  /// subregisters of the virtual register @p Reg.
+  unsigned getMaxLaneMaskForVReg(unsigned Reg) const;
 
   /// defusechain_iterator - This class provides iterator support for machine
   /// operands in the function that use or define a specific register.  If

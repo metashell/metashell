@@ -107,7 +107,7 @@ static void ComputePTXValueVTs(const TargetLowering &TLI, Type *Ty,
 
 // NVPTXTargetLowering Constructor.
 NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM)
-    : TargetLowering(TM, new NVPTXTargetObjectFile()), nvTM(&TM),
+    : TargetLowering(TM), nvTM(&TM),
       nvptxSubtarget(TM.getSubtarget<NVPTXSubtarget>()) {
 
   // always lower memset, memcpy, and memmove intrinsics to load/store
@@ -1355,7 +1355,12 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     //  .param .align 16 .b8 retval0[<size-in-bytes>], or
     //  .param .b<size-in-bits> retval0
     unsigned resultsz = TD->getTypeAllocSizeInBits(retTy);
-    if (retTy->isSingleValueType()) {
+    // Emit ".param .b<size-in-bits> retval0" instead of byte arrays only for
+    // these three types to match the logic in
+    // NVPTXAsmPrinter::printReturnValStr and NVPTXTargetLowering::getPrototype.
+    // Plus, this behavior is consistent with nvcc's.
+    if (retTy->isFloatingPointTy() || retTy->isIntegerTy() ||
+        retTy->isPointerTy()) {
       // Scalar needs to be at least 32bit wide
       if (resultsz < 32)
         resultsz = 32;
@@ -2163,7 +2168,6 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
         unsigned NumElts = ObjectVT.getVectorNumElements();
         assert(TLI->getNumRegisters(F->getContext(), ObjectVT) == NumElts &&
                "Vector was not scalarized");
-        unsigned Ofst = 0;
         EVT EltVT = ObjectVT.getVectorElementType();
 
         // V1 load
@@ -2172,10 +2176,8 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
           // We only have one element, so just directly load it
           Value *SrcValue = Constant::getNullValue(PointerType::get(
               EltVT.getTypeForEVT(F->getContext()), llvm::ADDRESS_SPACE_PARAM));
-          SDValue SrcAddr = DAG.getNode(ISD::ADD, dl, getPointerTy(), Arg,
-                                        DAG.getConstant(Ofst, getPointerTy()));
           SDValue P = DAG.getLoad(
-              EltVT, dl, Root, SrcAddr, MachinePointerInfo(SrcValue), false,
+              EltVT, dl, Root, Arg, MachinePointerInfo(SrcValue), false,
               false, true,
               TD->getABITypeAlignment(EltVT.getTypeForEVT(F->getContext())));
           if (P.getNode())
@@ -2184,7 +2186,6 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
           if (Ins[InsIdx].VT.getSizeInBits() > EltVT.getSizeInBits())
             P = DAG.getNode(ISD::ANY_EXTEND, dl, Ins[InsIdx].VT, P);
           InVals.push_back(P);
-          Ofst += TD->getTypeAllocSize(EltVT.getTypeForEVT(F->getContext()));
           ++InsIdx;
         } else if (NumElts == 2) {
           // V2 load
@@ -2192,10 +2193,8 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
           EVT VecVT = EVT::getVectorVT(F->getContext(), EltVT, 2);
           Value *SrcValue = Constant::getNullValue(PointerType::get(
               VecVT.getTypeForEVT(F->getContext()), llvm::ADDRESS_SPACE_PARAM));
-          SDValue SrcAddr = DAG.getNode(ISD::ADD, dl, getPointerTy(), Arg,
-                                        DAG.getConstant(Ofst, getPointerTy()));
           SDValue P = DAG.getLoad(
-              VecVT, dl, Root, SrcAddr, MachinePointerInfo(SrcValue), false,
+              VecVT, dl, Root, Arg, MachinePointerInfo(SrcValue), false,
               false, true,
               TD->getABITypeAlignment(VecVT.getTypeForEVT(F->getContext())));
           if (P.getNode())
@@ -2213,7 +2212,6 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
 
           InVals.push_back(Elt0);
           InVals.push_back(Elt1);
-          Ofst += TD->getTypeAllocSize(VecVT.getTypeForEVT(F->getContext()));
           InsIdx += 2;
         } else {
           // V4 loads
@@ -2231,6 +2229,7 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
             VecSize = 2;
           }
           EVT VecVT = EVT::getVectorVT(F->getContext(), EltVT, VecSize);
+          unsigned Ofst = 0;
           for (unsigned i = 0; i < NumElts; i += VecSize) {
             Value *SrcValue = Constant::getNullValue(
                 PointerType::get(VecVT.getTypeForEVT(F->getContext()),
@@ -4496,4 +4495,11 @@ NVPTXTargetObjectFile::~NVPTXTargetObjectFile() {
   delete DwarfARangesSection;
   delete DwarfRangesSection;
   delete DwarfMacroInfoSection;
+}
+
+const MCSection *
+NVPTXTargetObjectFile::SelectSectionForGlobal(const GlobalValue *GV,
+                                              SectionKind Kind, Mangler &Mang,
+                                              const TargetMachine &TM) const {
+  return getDataSection();
 }

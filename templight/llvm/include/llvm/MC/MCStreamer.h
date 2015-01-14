@@ -49,14 +49,14 @@ typedef std::pair<const MCSection *, const MCExpr *> MCSectionSubPair;
 ///
 /// If target foo wants to use this, it should implement 3 classes:
 /// * FooTargetStreamer : public MCTargetStreamer
-/// * FooTargetAsmSreamer : public FooTargetStreamer
+/// * FooTargetAsmStreamer : public FooTargetStreamer
 /// * FooTargetELFStreamer : public FooTargetStreamer
 ///
 /// FooTargetStreamer should have a pure virtual method for each directive. For
 /// example, for a ".bar symbol_name" directive, it should have
 /// virtual emitBar(const MCSymbol &Symbol) = 0;
 ///
-/// The FooTargetAsmSreamer and FooTargetELFStreamer classes implement the
+/// The FooTargetAsmStreamer and FooTargetELFStreamer classes implement the
 /// method. The assembly streamer just prints ".bar symbol_name". The object
 /// streamer does whatever is needed to implement .bar in the object file.
 ///
@@ -66,8 +66,9 @@ typedef std::pair<const MCSection *, const MCExpr *> MCSectionSubPair;
 /// MCTargetStreamer &TS = OutStreamer.getTargetStreamer();
 /// FooTargetStreamer &ATS = static_cast<FooTargetStreamer &>(TS);
 ///
-/// The base classes FooTargetAsmSreamer and FooTargetELFStreamer should *never*
-/// be treated differently. Callers should always talk to a FooTargetStreamer.
+/// The base classes FooTargetAsmStreamer and FooTargetELFStreamer should
+/// *never* be treated differently. Callers should always talk to a
+/// FooTargetStreamer.
 class MCTargetStreamer {
 protected:
   MCStreamer &Streamer;
@@ -91,7 +92,6 @@ public:
   AArch64TargetStreamer(MCStreamer &S);
   ~AArch64TargetStreamer();
 
-
   void finish() override;
 
   /// Callback used to implement the ldr= pseudo.
@@ -102,6 +102,9 @@ public:
   /// Callback used to implemnt the .ltorg directive.
   /// Emit contents of constant pool for the current section.
   void emitCurrentConstantPool();
+
+  /// Callback used to implement the .inst directive.
+  virtual void emitInst(uint32_t Inst);
 
 private:
   std::unique_ptr<AssemblerConstantPools> ConstantPools;
@@ -344,8 +347,8 @@ public:
   /// @p Section.  This is required to update CurSection.
   ///
   /// This corresponds to assembler directives like .section, .text, etc.
-  void SwitchSection(const MCSection *Section,
-                     const MCExpr *Subsection = nullptr) {
+  virtual void SwitchSection(const MCSection *Section,
+                             const MCExpr *Subsection = nullptr) {
     assert(Section && "Cannot switch to a null section!");
     MCSectionSubPair curSection = SectionStack.back().first;
     SectionStack.back().second = curSection;
@@ -368,7 +371,7 @@ public:
   }
 
   /// Create the default sections and set the initial one.
-  virtual void InitSections();
+  virtual void InitSections(bool NoExecStack);
 
   /// AssignSection - Sets the symbol's section.
   ///
@@ -766,8 +769,8 @@ MCStreamer *createMachOStreamer(MCContext &Ctx, MCAsmBackend &TAB,
 /// createELFStreamer - Create a machine code streamer which will generate
 /// ELF format object files.
 MCStreamer *createELFStreamer(MCContext &Ctx, MCAsmBackend &TAB,
-                              raw_ostream &OS, MCCodeEmitter *CE, bool RelaxAll,
-                              bool NoExecStack);
+                              raw_ostream &OS, MCCodeEmitter *CE,
+                              bool RelaxAll);
 
 } // end namespace llvm
 

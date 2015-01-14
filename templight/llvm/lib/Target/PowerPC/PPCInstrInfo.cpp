@@ -230,10 +230,12 @@ PPCInstrInfo::commuteInstruction(MachineInstr *MI, bool NewMI) const {
 
   // Normal instructions can be commuted the obvious way.
   if (MI->getOpcode() != PPC::RLWIMI &&
-      MI->getOpcode() != PPC::RLWIMIo &&
-      MI->getOpcode() != PPC::RLWIMI8 &&
-      MI->getOpcode() != PPC::RLWIMI8o)
+      MI->getOpcode() != PPC::RLWIMIo)
     return TargetInstrInfo::commuteInstruction(MI, NewMI);
+  // Note that RLWIMI can be commuted as a 32-bit instruction, but not as a
+  // 64-bit instruction (so we don't handle PPC::RLWIMI8 here), because
+  // changing the relative order of the mask operands might change what happens
+  // to the high-bits of the mask (and, thus, the result).
 
   // Cannot commute if it has a non-zero rotate count.
   if (MI->getOperand(3).getImm() != 0)
@@ -1622,6 +1624,7 @@ protected:
       bool Changed = false;
 
       MachineRegisterInfo &MRI = MBB.getParent()->getRegInfo();
+      const TargetRegisterInfo *TRI = &TII->getRegisterInfo();
       for (MachineBasicBlock::iterator I = MBB.begin(), IE = MBB.end();
            I != IE; ++I) {
         MachineInstr *MI = I;
@@ -1687,16 +1690,26 @@ protected:
         // In theory, there could be other uses of the addend copy before this
         // fma.  We could deal with this, but that would require additional
         // logic below and I suspect it will not occur in any relevant
-        // situations.
-        bool OtherUsers = false;
+        // situations.  Additionally, check whether the copy source is killed
+        // prior to the fma.  In order to replace the addend here with the
+        // source of the copy, it must still be live here.  We can't use
+        // interval testing for a physical register, so as long as we're
+        // walking the MIs we may as well test liveness here.
+        bool OtherUsers = false, KillsAddendSrc = false;
         for (auto J = std::prev(I), JE = MachineBasicBlock::iterator(AddendMI);
-             J != JE; --J)
+             J != JE; --J) {
           if (J->readsVirtualRegister(AddendMI->getOperand(0).getReg())) {
             OtherUsers = true;
             break;
           }
+          if (J->modifiesRegister(AddendSrcReg, TRI) ||
+              J->killsRegister(AddendSrcReg, TRI)) {
+            KillsAddendSrc = true;
+            break;
+          }
+        }
 
-        if (OtherUsers)
+        if (OtherUsers || KillsAddendSrc)
           continue;
 
         // Find one of the product operands that is killed by this instruction.
@@ -1717,10 +1730,11 @@ protected:
         if (!KilledProdOp)
           continue;
 
-        // In order to replace the addend here with the source of the copy,
-        // it must still be live here.
-        if (!LIS->getInterval(AddendMI->getOperand(1).getReg()).liveAt(FMAIdx))
-          continue;
+        // For virtual registers, verify that the addend source register
+        // is live here (as should have been assured above).
+        assert((!TargetRegisterInfo::isVirtualRegister(AddendSrcReg) ||
+                LIS->getInterval(AddendSrcReg).liveAt(FMAIdx)) &&
+               "Addend source register is not live!");
 
         // Transform: (O2 * O3) + O1 -> (O2 * O1) + O3.
 
@@ -1741,6 +1755,12 @@ protected:
         bool OtherProdRegUndef  = MI->getOperand(OtherProdOp).isUndef();
 
         unsigned OldFMAReg = MI->getOperand(0).getReg();
+
+        // The transformation doesn't work well with things like:
+        //    %vreg5 = A-form-op %vreg5, %vreg11, %vreg5;
+        // so leave such things alone.
+        if (OldFMAReg == KilledProdReg)
+          continue;
 
         assert(OldFMAReg == AddendMI->getOperand(0).getReg() &&
                "Addend copy not tied to old FMA output!");

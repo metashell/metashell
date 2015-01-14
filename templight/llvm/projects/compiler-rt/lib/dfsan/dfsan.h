@@ -44,7 +44,11 @@ namespace __dfsan {
 void InitializeInterceptors();
 
 inline dfsan_label *shadow_for(void *ptr) {
+#if defined(__x86_64__)
   return (dfsan_label *) ((((uptr) ptr) & ~0x700000000000) << 1);
+#elif defined(__mips64)
+  return (dfsan_label *) ((((uptr) ptr) & ~0xF000000000) << 1);
+#endif
 }
 
 inline const dfsan_label *shadow_for(const void *ptr) {
@@ -61,6 +65,8 @@ struct Flags {
   // comparison might be data-dependent on the content of the strings). This
   // applies only to the custom functions defined in 'custom.c'.
   bool strict_data_dependencies;
+  // The path of the file where to dump the labels when the program terminates.
+  const char* dump_labels_at_exit;
 };
 
 extern Flags flags_data;

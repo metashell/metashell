@@ -118,7 +118,7 @@ CheckPropertyAgainstProtocol(Sema &S, ObjCPropertyDecl *Prop,
                              ObjCProtocolDecl *Proto,
                              llvm::SmallPtrSetImpl<ObjCProtocolDecl *> &Known) {
   // Have we seen this protocol before?
-  if (!Known.insert(Proto))
+  if (!Known.insert(Proto).second)
     return;
 
   // Look for a property with the same name.
@@ -1584,6 +1584,7 @@ void Sema::DefaultSynthesizeProperties(Scope *S, ObjCImplDecl* IMPDecl,
       else {
         Diag(Prop->getLocation(), diag::warn_autosynthesis_property_in_superclass)
         << Prop->getIdentifier();
+        Diag(PropInSuperClass->getLocation(), diag::note_property_declare);
         Diag(IMPDecl->getLocation(), diag::note_while_in_implementation);
       }
       continue;

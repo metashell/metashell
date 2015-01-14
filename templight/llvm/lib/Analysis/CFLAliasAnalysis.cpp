@@ -157,8 +157,8 @@ struct FunctionHandle : public CallbackVH {
 
   virtual ~FunctionHandle() {}
 
-  virtual void deleted() override { removeSelfFromCache(); }
-  virtual void allUsesReplacedWith(Value *) override { removeSelfFromCache(); }
+  void deleted() override { removeSelfFromCache(); }
+  void allUsesReplacedWith(Value *) override { removeSelfFromCache(); }
 
 private:
   CFLAliasAnalysis *CFLAA;
@@ -185,7 +185,7 @@ public:
 
   virtual ~CFLAliasAnalysis() {}
 
-  void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AliasAnalysis::getAnalysisUsage(AU);
   }
 
@@ -315,6 +315,17 @@ public:
     auto *Ptr = Inst.getPointerOperand();
     auto *Val = Inst.getValueOperand();
     Output.push_back(Edge(Ptr, Val, EdgeType::Dereference, AttrNone));
+  }
+
+  void visitVAArgInst(VAArgInst &Inst) {
+    // We can't fully model va_arg here. For *Ptr = Inst.getOperand(0), it does
+    // two things:
+    //  1. Loads a value from *((T*)*Ptr).
+    //  2. Increments (stores to) *Ptr by some target-specific amount.
+    // For now, we'll handle this like a landingpad instruction (by placing the
+    // result in its own group, and having that group alias externals).
+    auto *Val = &Inst;
+    Output.push_back(Edge(Val, Val, EdgeType::Assign, AttrAll));
   }
 
   static bool isFunctionExternal(Function *Fn) {
@@ -986,9 +997,17 @@ CFLAliasAnalysis::query(const AliasAnalysis::Location &LocA,
 
   auto AttrsA = Sets.getLink(SetA.Index).Attrs;
   auto AttrsB = Sets.getLink(SetB.Index).Attrs;
-  auto CombinedAttrs = AttrsA | AttrsB;
-  if (CombinedAttrs.any())
-    return AliasAnalysis::PartialAlias;
+  // Stratified set attributes are used as markets to signify whether a member
+  // of a StratifiedSet (or a member of a set above the current set) has 
+  // interacted with either arguments or globals. "Interacted with" meaning
+  // its value may be different depending on the value of an argument or 
+  // global. The thought behind this is that, because arguments and globals
+  // may alias each other, if AttrsA and AttrsB have touched args/globals,
+  // we must conservatively say that they alias. However, if at least one of 
+  // the sets has no values that could legally be altered by changing the value 
+  // of an argument or global, then we don't have to be as conservative.
+  if (AttrsA.any() && AttrsB.any())
+    return AliasAnalysis::MayAlias;
 
   return AliasAnalysis::NoAlias;
 }

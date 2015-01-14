@@ -23,6 +23,7 @@
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/Basic/LLVM.h"
+#include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/Support/AlignOf.h"
 
 namespace llvm {
@@ -63,6 +64,9 @@ public:
   /// \brief Returns \c true if \c this and \c Other represent the same kind.
   bool isSame(ASTNodeKind Other) const;
 
+  /// \brief Returns \c true only for the default \c ASTNodeKind()
+  bool isNone() const { return KindId == NKI_None; }
+
   /// \brief Returns \c true if \c this is a base kind of (or same as) \c Other.
   /// \param Distance If non-null, used to return the distance between \c this
   /// and \c Other in the class hierarchy.
@@ -75,6 +79,32 @@ public:
   bool operator<(const ASTNodeKind &Other) const {
     return KindId < Other.KindId;
   }
+
+  /// \brief Return the most derived type between \p Kind1 and \p Kind2.
+  ///
+  /// Return ASTNodeKind() if they are not related.
+  static ASTNodeKind getMostDerivedType(ASTNodeKind Kind1, ASTNodeKind Kind2);
+
+  /// \brief Return the most derived common ancestor between Kind1 and Kind2.
+  ///
+  /// Return ASTNodeKind() if they are not related.
+  static ASTNodeKind getMostDerivedCommonAncestor(ASTNodeKind Kind1,
+                                                  ASTNodeKind Kind2);
+
+  /// \brief Hooks for using ASTNodeKind as a key in a DenseMap.
+  struct DenseMapInfo {
+    // ASTNodeKind() is a good empty key because it is represented as a 0.
+    static inline ASTNodeKind getEmptyKey() { return ASTNodeKind(); }
+    // NKI_NumberOfKinds is not a valid value, so it is good for a
+    // tombstone key.
+    static inline ASTNodeKind getTombstoneKey() {
+      return ASTNodeKind(NKI_NumberOfKinds);
+    }
+    static unsigned getHashValue(const ASTNodeKind &Val) { return Val.KindId; }
+    static bool isEqual(const ASTNodeKind &LHS, const ASTNodeKind &RHS) {
+      return LHS.KindId == RHS.KindId;
+    }
+  };
 
 private:
   /// \brief Kind ids.
@@ -115,6 +145,8 @@ private:
   template <class T> struct KindToKindId {
     static const NodeKindId Id = NKI_None;
   };
+  template <class T>
+  struct KindToKindId<const T> : KindToKindId<T> {};
 
   /// \brief Per kind info.
   struct KindInfo {
@@ -191,6 +223,16 @@ public:
     return BaseConverter<T>::get(NodeKind, Storage.buffer);
   }
 
+  /// \brief Retrieve the stored node as type \c T.
+  ///
+  /// Similar to \c get(), but asserts that the type is what we are expecting.
+  template <typename T>
+  const T &getUnchecked() const {
+    return BaseConverter<T>::getUnchecked(NodeKind, Storage.buffer);
+  }
+
+  ASTNodeKind getNodeKind() const { return NodeKind; }
+
   /// \brief Returns a pointer that identifies the stored AST node.
   ///
   /// Note that this is not supported by all AST nodes. For AST nodes
@@ -219,14 +261,15 @@ public:
     return getMemoizationData() < Other.getMemoizationData();
   }
   bool operator==(const DynTypedNode &Other) const {
-    if (!NodeKind.isBaseOf(Other.NodeKind) &&
-        !Other.NodeKind.isBaseOf(NodeKind))
+    // DynTypedNode::create() stores the exact kind of the node in NodeKind.
+    // If they contain the same node, their NodeKind must be the same.
+    if (!NodeKind.isSame(Other.NodeKind))
       return false;
 
     // FIXME: Implement for other types.
-    if (ASTNodeKind::getFromNodeKind<QualType>().isBaseOf(NodeKind)) {
-      return *get<QualType>() == *Other.get<QualType>();
-    }
+    if (ASTNodeKind::getFromNodeKind<QualType>().isSame(NodeKind))
+      return getUnchecked<QualType>() == Other.getUnchecked<QualType>();
+
     assert(getMemoizationData() && Other.getMemoizationData());
     return getMemoizationData() == Other.getMemoizationData();
   }
@@ -242,9 +285,13 @@ private:
   /// \brief Converter that uses dyn_cast<T> from a stored BaseT*.
   template <typename T, typename BaseT> struct DynCastPtrConverter {
     static const T *get(ASTNodeKind NodeKind, const char Storage[]) {
-      if (ASTNodeKind::getFromNodeKind<BaseT>().isBaseOf(NodeKind))
-        return dyn_cast<T>(*reinterpret_cast<BaseT *const *>(Storage));
+      if (ASTNodeKind::getFromNodeKind<T>().isBaseOf(NodeKind))
+        return cast<T>(*reinterpret_cast<BaseT *const *>(Storage));
       return nullptr;
+    }
+    static const T &getUnchecked(ASTNodeKind NodeKind, const char Storage[]) {
+      assert(ASTNodeKind::getFromNodeKind<T>().isBaseOf(NodeKind));
+      return *cast<T>(*reinterpret_cast<BaseT *const *>(Storage));
     }
     static DynTypedNode create(const BaseT &Node) {
       DynTypedNode Result;
@@ -262,6 +309,10 @@ private:
         return *reinterpret_cast<T *const *>(Storage);
       return nullptr;
     }
+    static const T &getUnchecked(ASTNodeKind NodeKind, const char Storage[]) {
+      assert(ASTNodeKind::getFromNodeKind<T>().isSame(NodeKind));
+      return **reinterpret_cast<T *const *>(Storage);
+    }
     static DynTypedNode create(const T &Node) {
       DynTypedNode Result;
       Result.NodeKind = ASTNodeKind::getFromNodeKind<T>();
@@ -277,6 +328,10 @@ private:
       if (ASTNodeKind::getFromNodeKind<T>().isSame(NodeKind))
         return reinterpret_cast<const T *>(Storage);
       return nullptr;
+    }
+    static const T &getUnchecked(ASTNodeKind NodeKind, const char Storage[]) {
+      assert(ASTNodeKind::getFromNodeKind<T>().isSame(NodeKind));
+      return *reinterpret_cast<const T *>(Storage);
     }
     static DynTypedNode create(const T &Node) {
       DynTypedNode Result;
@@ -358,5 +413,13 @@ template <typename T, typename EnablerT> struct DynTypedNode::BaseConverter {
 
 } // end namespace ast_type_traits
 } // end namespace clang
+
+namespace llvm {
+
+template <>
+struct DenseMapInfo<clang::ast_type_traits::ASTNodeKind>
+    : clang::ast_type_traits::ASTNodeKind::DenseMapInfo {};
+
+}  // end namespace llvm
 
 #endif

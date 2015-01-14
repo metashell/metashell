@@ -50,7 +50,8 @@ clang_binary::clang_binary(const std::string& path_, logger* logger_) :
 {}
 
 just::process::output clang_binary::run(
-  const std::vector<std::string>& args_
+  const std::vector<std::string>& args_,
+  const std::string& stdin
 ) const
 {
   std::vector<std::string> cmd(args_.size() + 1);
@@ -62,7 +63,7 @@ just::process::output clang_binary::run(
 
   METASHELL_LOG(_logger, "Running Clang: " + boost::algorithm::join(cmd, " "));
 
-  const just::process::output o = just::process::run(cmd, "");
+  const just::process::output o = just::process::run(cmd, stdin);
 
   METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output());
   METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error());

@@ -244,12 +244,22 @@ public:
   ///
   DebugLoc getDebugLoc() const { return debugLoc; }
 
-  /// getDebugVariable() - Return the debug variable referenced by
+  /// \brief Return the debug variable referenced by
   /// this DBG_VALUE instruction.
   DIVariable getDebugVariable() const {
     assert(isDebugValue() && "not a DBG_VALUE");
-    const MDNode *Var = getOperand(getNumOperands() - 1).getMetadata();
-    return DIVariable(Var);
+    DIVariable Var(getOperand(2).getMetadata());
+    assert(Var.Verify() && "not a DIVariable");
+    return Var;
+  }
+
+  /// \brief Return the complex address expression referenced by
+  /// this DBG_VALUE instruction.
+  DIExpression getDebugExpression() const {
+    assert(isDebugValue() && "not a DBG_VALUE");
+    DIExpression Expr(getOperand(3).getMetadata());
+    assert(Expr.Verify() && "not a DIExpression");
+    return Expr;
   }
 
   /// emitError - Emit an error referring to the source location of this
@@ -1129,7 +1139,10 @@ public:
   /// setDebugLoc - Replace current source information with new such.
   /// Avoid using this, the constructor argument is preferable.
   ///
-  void setDebugLoc(const DebugLoc dl) { debugLoc = dl; }
+  void setDebugLoc(const DebugLoc dl) {
+    debugLoc = dl;
+    assert(debugLoc.hasTrivialDestructor() && "Expected trivial destructor");
+  }
 
   /// RemoveOperand - Erase an operand  from an instruction, leaving it with one
   /// fewer operand than it started with.

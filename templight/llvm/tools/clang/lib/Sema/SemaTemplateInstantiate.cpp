@@ -23,18 +23,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/Template.h"
 #include "clang/Sema/TemplateDeduction.h"
-
-// BEGIN TEMPLIGHT
-#include <string>
-#include <vector>
-
-#include <llvm/MC/YAML.h>
-#include "llvm/Support/Format.h"
-#include "llvm/Support/Timer.h"
-#include "llvm/Support/Process.h"
-#include "llvm/Support/FileSystem.h"
-#include "clang/Basic/FileManager.h"
-// END TEMPLIGHT
+#include "clang/Sema/TemplateInstObserver.h"
 
 using namespace clang;
 using namespace sema;
@@ -42,420 +31,6 @@ using namespace sema;
 //===----------------------------------------------------------------------===/
 // Template Instantiation Support
 //===----------------------------------------------------------------------===/
-
-// BEGIN TEMPLIGHT
-namespace llvm {
-namespace yaml {
-
-template <>
-struct ScalarEnumerationTraits<
-    clang::Sema::ActiveTemplateInstantiation::InstantiationKind> {
-  static void enumeration(IO &io,
-    clang::Sema::ActiveTemplateInstantiation::InstantiationKind &value) {
-    using namespace clang;
-    io.enumCase(value, "TemplateInstantiation",
-      Sema::ActiveTemplateInstantiation::TemplateInstantiation);
-    io.enumCase(value, "DefaultTemplateArgumentInstantiation",
-      Sema::ActiveTemplateInstantiation::DefaultTemplateArgumentInstantiation);
-    io.enumCase(value, "DefaultFunctionArgumentInstantiation",
-      Sema::ActiveTemplateInstantiation::DefaultFunctionArgumentInstantiation);
-    io.enumCase(value, "ExplicitTemplateArgumentSubstitution",
-      Sema::ActiveTemplateInstantiation::ExplicitTemplateArgumentSubstitution);
-    io.enumCase(value, "DeducedTemplateArgumentSubstitution",
-      Sema::ActiveTemplateInstantiation::DeducedTemplateArgumentSubstitution);
-    io.enumCase(value, "PriorTemplateArgumentSubstitution",
-      Sema::ActiveTemplateInstantiation::PriorTemplateArgumentSubstitution);
-    io.enumCase(value, "DefaultTemplateArgumentChecking",
-      Sema::ActiveTemplateInstantiation::DefaultTemplateArgumentChecking);
-    io.enumCase(value, "ExceptionSpecInstantiation",
-      Sema::ActiveTemplateInstantiation::ExceptionSpecInstantiation);
-    io.enumCase(value, "Memoization",
-      Sema::ActiveTemplateInstantiation::Memoization);
-  }
-};
-
-template <>
-struct MappingTraits<clang::Sema::PrintableTraceEntry> {
-  static void mapping(IO &io, clang::Sema::PrintableTraceEntry &Entry) {
-    io.mapRequired("IsTemplateBegin", Entry.IsTemplateBegin);
-    io.mapRequired("Kind", Entry.InstantiationKind);
-    io.mapOptional("Name", Entry.Name);
-    io.mapOptional("FileName", Entry.FileName);
-    io.mapOptional("Line", Entry.Line);
-    io.mapOptional("Column", Entry.Column);
-    io.mapRequired("TimeStamp", Entry.TimeStamp);
-    io.mapOptional("MemoryUsage", Entry.MemoryUsage);
-  }
-};
-
-template<typename T>
-struct SequenceTraits<std::vector<T> > {
-   static size_t size(IO &io, std::vector<T> &seq) {
-     return seq.size();
-   }
-
-   static typename std::vector<T>::value_type& element(
-     IO &io, std::vector<T> &seq, size_t index) {
-     return seq[index];
-   }
-  //
-  // The following is option and will cause generated YAML to use
-  // a flow sequence (e.g. [a,b,c]).
-  static const bool flow = true;
-};
-
-} // namespace yaml
-} // namespace llvm
-
-void Sema::YamlPrinter::startTrace(raw_ostream* os) {
-  Output.reset(new llvm::yaml::Output(*os));
-  Output->beginDocuments();
-  Output->beginFlowSequence();
-}
-
-void Sema::YamlPrinter::endTrace(raw_ostream*) {
-  Output->endFlowSequence();
-  Output->endDocuments();
-}
-
-void Sema::YamlPrinter::printEntry(raw_ostream*,
-  const PrintableTraceEntry& Entry) {
-  void *SaveInfo;
-  if ( Output->preflightFlowElement(1, SaveInfo) ) {
-    llvm::yaml::yamlize(*Output, const_cast<PrintableTraceEntry&>(Entry), true);
-    Output->postflightFlowElement(SaveInfo);
-  }
-}
-
-void Sema::TextPrinter::startTrace(raw_ostream*) {
-}
-
-void Sema::TextPrinter::endTrace(raw_ostream*) {
-}
-
-void Sema::TextPrinter::printEntry(raw_ostream* os,
-  const PrintableTraceEntry& Entry) {
-  if (Entry.IsTemplateBegin) {
-    *os
-      << llvm::format(
-        "TemplateBegin\n"
-        "  Kind = %s\n"
-        "  Name = %s\n"
-        "  PointOfInstantiation = %s|%d|%d\n",
-        Entry.InstantiationKind.c_str(), Entry.Name.c_str(),
-        Entry.FileName.c_str(), Entry.Line, Entry.Column);
-
-    *os << llvm::format(
-      "  TimeStamp = %f\n"
-      "  MemoryUsage = %d\n"
-      , Entry.TimeStamp, Entry.MemoryUsage);
-  } else {
-    *os
-      << llvm::format(
-        "TemplateEnd\n"
-        "  Kind = %s\n"
-        "  TimeStamp = %f\n"
-        "  MemoryUsage = %d\n"
-        , Entry.InstantiationKind.c_str(),
-        Entry.TimeStamp, Entry.MemoryUsage);
-  }
-}
-
-namespace { // unnamed namespace
-
-const char* InstantiationKindStrings[] = { "TemplateInstantiation",
-  "DefaultTemplateArgumentInstantiation",
-  "DefaultFunctionArgumentInstantiation",
-  "ExplicitTemplateArgumentSubstitution",
-  "DeducedTemplateArgumentSubstitution", "PriorTemplateArgumentSubstitution",
-  "DefaultTemplateArgumentChecking", "ExceptionSpecInstantiation",
-  "Memoization" };
-
-void reportTraceCapacityExceeded(unsigned int ActualCapacity) {
-  static bool AlreadyReported = false;
-
-  if (!AlreadyReported) {
-    llvm::errs() <<
-      llvm::format("Template instantiations limit of Templight exceeded, "
-      "please specify a greater value.\nCurrent limit: %d\n", ActualCapacity);
-  }
-
-  AlreadyReported = true;
-}
-
-static std::string escapeXml(const std::string& Input) {
-  std::string Result;
-  Result.reserve(64);
-
-  unsigned i, pos = 0;
-  for (i = 0; i < Input.length(); ++i) {
-    if (Input[i] == '<' || Input[i] == '>' || Input[i] == '"'
-      || Input[i] == '\'' || Input[i] == '&') {
-      Result.insert(Result.length(), Input, pos, i - pos);
-      pos = i + 1;
-      switch (Input[i]) {
-      case '<':
-        Result += "&lt;";
-        break;
-      case '>':
-        Result += "&gt;";
-        break;
-      case '\'':
-        Result += "&apos;";
-        break;
-      case '"':
-        Result += "&quot;";
-        break;
-      case '&':
-        Result += "&amp;";
-        break;
-      default:
-        break;
-      }
-    }
-  }
-  Result.insert(Result.length(), Input, pos, i - pos);
-  return Result;
-}
-
-} // unnamed namespace
-
-
-void Sema::XmlPrinter::startTrace(raw_ostream* os) {
-  *os <<
-    "<?xml version=\"1.0\" standalone=\"yes\"?>\n"
-    "<Trace>\n";
-}
-
-void Sema::XmlPrinter::endTrace(raw_ostream* os) {
-  *os << "</Trace>\n";
-}
-
-void Sema::XmlPrinter::printEntry(
-  raw_ostream* os, const Sema::PrintableTraceEntry& Entry) {
-  if (Entry.IsTemplateBegin) {
-    std::string EscapedName = escapeXml(Entry.Name);
-    *os
-      << llvm::format("<TemplateBegin>\n"
-        "    <Kind>%s</Kind>\n"
-        "    <Context context = \"%s\"/>\n"
-        "    <PointOfInstantiation>%s|%d|%d</PointOfInstantiation>\n",
-        Entry.InstantiationKind.c_str(), EscapedName.c_str(),
-        Entry.FileName.c_str(), Entry.Line, Entry.Column);
-
-    *os << llvm::format("    <TimeStamp time = \"%f\"/>\n"
-      "    <MemoryUsage bytes = \"%d\"/>\n"
-      "</TemplateBegin>\n", Entry.TimeStamp, Entry.MemoryUsage);
-  } else {
-    *os
-      << llvm::format("<TemplateEnd>\n"
-        "    <Kind>%s</Kind>\n"
-        "    <TimeStamp time = \"%f\"/>\n"
-        "    <MemoryUsage bytes = \"%d\"/>\n"
-        "</TemplateEnd>\n", Entry.InstantiationKind.c_str(),
-        Entry.TimeStamp, Entry.MemoryUsage);
-  }
-}
-
-void Sema::setTemplightFormat(const std::string& Format) {
-  if (Format == "yaml") {
-    TemplateTracePrinter.reset(new YamlPrinter());
-  }
-  else if (Format == "xml") {
-    TemplateTracePrinter.reset(new XmlPrinter());
-  }
-  else if (Format == "txt") {
-    TemplateTracePrinter.reset(new TextPrinter());
-  }
-  else {
-    llvm::errs() << "Error: Unrecoginized template trace format:" << Format << '\n';
-  }
-
-  setTemplightFlag(true);
-}
-
-Sema::PrintableTraceEntry
-Sema::rawToPrintable(const Sema::RawTraceEntry& Entry) {
-  PrintableTraceEntry Ret;
-
-  Ret.IsTemplateBegin = Entry.IsTemplateBegin;
-  Ret.InstantiationKind = InstantiationKindStrings[Entry.InstantiationKind];
-
-  if (Entry.IsTemplateBegin) {
-    Decl *Template = reinterpret_cast<Decl*>(Entry.Entity);
-    NamedDecl *NamedTemplate = dyn_cast<NamedDecl>(Template);
-
-    if (NamedTemplate) {
-      llvm::raw_string_ostream OS(Ret.Name);
-      NamedTemplate->getNameForDiagnostic(OS, getLangOpts(), true);
-    }
-
-    PresumedLoc Loc = getSourceManager().getPresumedLoc(
-      Entry.PointOfInstantiation);
-
-    if (Loc.isValid()) {
-      Ret.FileName = Loc.getFilename();
-      Ret.Line = Loc.getLine();
-      Ret.Column = Loc.getColumn();
-    }
-  }
-
-  Ret.TimeStamp = Entry.TimeStamp;
-  Ret.MemoryUsage = Entry.MemoryUsage;
-
-  return Ret;
-}
-
-void Sema::startTemplight() {
-  if (!getTemplightFlag()) {
-    return;
-  }
-
-  if (!getTemplightSafeModeFlag()) {
-    allocateTraceEntriesArray();
-  }
-
-  if (!TemplateTracePrinter) {
-    TemplateTracePrinter.reset(new YamlPrinter());
-  }
-
-  FileID fileID = getSourceManager().getMainFileID();
-
-  if (!TraceOS) {
-    std::string postfix = getTemplightMemoryFlag() ? ".memory.trace." : ".trace.";
-    postfix += TemplateTracePrinter->getFormatName();
-
-    std::string FileName =
-      getSourceManager().getFileEntryForID(fileID)->getName() + postfix;
-
-    std::error_code error;
-    TraceOS = new llvm::raw_fd_ostream(FileName.c_str(), error, llvm::sys::fs::F_None);
-
-    if (error) {
-      llvm::errs() <<
-        "Can not open file to write trace of template instantiations: "
-        << FileName << " Error: " << error.message();
-      setTemplightFlag(false);
-      return;
-    }
-  }
-
-  TemplateTracePrinter->startTrace(TraceOS);
-}
-
-void Sema::finishTemplight() {
-  if (!getTemplightFlag()) {
-    return;
-  }
-
-  // In this case we collected the entries in a buffer
-  // and we have to output them now
-  if (!getTemplightSafeModeFlag()) {
-    for (unsigned i = 0; i < TraceEntryCount; ++i) {
-      TemplateTracePrinter->printEntry(TraceOS,
-        rawToPrintable(TraceEntries[i]));
-    }
-  }
-
-  TemplateTracePrinter->endTrace(TraceOS);
-
-  TraceOS->flush();
-  if (TraceOS != &llvm::outs()) {
-    delete TraceOS;
-  }
-}
-
-void Sema::templightTraceToStdOut() {
-  TraceOS = &llvm::outs();
-  TemplightFlag = true;
-}
-
-void Sema::setTemplightOutputFile(const std::string& FileName) {
-  std::error_code error;
-  TraceOS = new llvm::raw_fd_ostream(FileName.c_str(), error, llvm::sys::fs::F_None);
-
-  if (error) {
-    llvm::errs() <<
-      "Can not open file to write trace of template instantiations: "
-      << FileName << " Error: " << error.message();
-    TraceOS = 0;
-    return;
-  }
-
-  setTemplightFlag(true);
-}
-
-void Sema::traceTemplateBegin(unsigned int InstantiationKind, Decl* Entity,
-  SourceLocation PointOfInstantiation) {
-  if (TraceEntryCount >= TraceCapacity) {
-    reportTraceCapacityExceeded(TraceCapacity);
-    return;
-  }
-
-  RawTraceEntry Entry;
-
-  llvm::TimeRecord timeRecord = llvm::TimeRecord::getCurrentTime();
-
-  Entry.IsTemplateBegin = true;
-  Entry.InstantiationKind =
-    (ActiveTemplateInstantiation::InstantiationKind)InstantiationKind;
-  Entry.Entity = (uintptr_t)Entity;
-  Entry.PointOfInstantiation = PointOfInstantiation;
-  Entry.TimeStamp = timeRecord.getWallTime();
-  Entry.MemoryUsage =
-    (getTemplightMemoryFlag()) ? llvm::sys::Process::GetMallocUsage() : 0;
-
-  if (getTemplightSafeModeFlag()) {
-    TemplateTracePrinter->printEntry(TraceOS, rawToPrintable(Entry));
-    TraceOS->flush();
-  } else {
-    TraceEntries[TraceEntryCount++] = Entry;
-  }
-
-  LastBeginEntry = Entry;
-}
-
-void Sema::traceTemplateEnd(unsigned int InstantiationKind) {
-  if (TraceEntryCount >= TraceCapacity) {
-    reportTraceCapacityExceeded(TraceCapacity);
-    return;
-  }
-
-  RawTraceEntry Entry;
-
-  llvm::TimeRecord timeRecord = llvm::TimeRecord::getCurrentTime();
-
-  Entry.IsTemplateBegin = false;
-  Entry.InstantiationKind =
-    (ActiveTemplateInstantiation::InstantiationKind)InstantiationKind;
-  Entry.TimeStamp = timeRecord.getWallTime();
-  Entry.MemoryUsage =
-    (getTemplightMemoryFlag()) ? llvm::sys::Process::GetMallocUsage() : 0;
-
-  if (getTemplightSafeModeFlag()) {
-    TemplateTracePrinter->printEntry(TraceOS, rawToPrintable(Entry));
-    TraceOS->flush();
-  } else {
-    TraceEntries[TraceEntryCount++] = Entry;
-  }
-}
-
-void Sema::traceMemoization(NamedDecl* Memoized, SourceLocation Loc)
-{
-  if (LastBeginEntry.InstantiationKind ==
-    ActiveTemplateInstantiation::Memoization
-    && LastBeginEntry.IsTemplateBegin
-    && LastBeginEntry.Entity == (uintptr_t)Memoized) {
-    return;
-  }
-
-  traceTemplateBegin(ActiveTemplateInstantiation::Memoization,
-    Memoized, Loc);
-
-  traceTemplateEnd(ActiveTemplateInstantiation::Memoization);
-}
-
-// END TEMPLIGHT
 
 /// \brief Retrieve the template argument list(s) that should be used to
 /// instantiate the definition of the given declaration.
@@ -608,28 +183,6 @@ Sema::getTemplateInstantiationArgs(NamedDecl *D,
   return Result;
 }
 
-bool Sema::ActiveTemplateInstantiation::isInstantiationRecord() const {
-  switch (Kind) {
-  case TemplateInstantiation:
-  case ExceptionSpecInstantiation:
-  case DefaultTemplateArgumentInstantiation:
-  case DefaultFunctionArgumentInstantiation:
-  case ExplicitTemplateArgumentSubstitution:
-  case DeducedTemplateArgumentSubstitution:
-  case PriorTemplateArgumentSubstitution:
-    return true;
-
-  case DefaultTemplateArgumentChecking:
-    return false;
-  // BEGIN TEMPLIGHT
-  case Memoization:
-    break;
-  // END TEMPLIGHT
-  }
-
-  llvm_unreachable("Invalid InstantiationKind!");
-}
-
 void Sema::InstantiatingTemplate::Initialize(
     ActiveTemplateInstantiation::InstantiationKind Kind,
     SourceLocation PointOfInstantiation, SourceRange InstantiationRange,
@@ -650,13 +203,10 @@ void Sema::InstantiatingTemplate::Initialize(
     Inst.InstantiationRange = InstantiationRange;
     SemaRef.InNonInstantiationSFINAEContext = false;
     SemaRef.ActiveTemplateInstantiations.push_back(Inst);
+    if ( SemaRef.TemplateInstObserverChain )
+      SemaRef.TemplateInstObserverChain->atTemplateBegin(SemaRef, Inst);
     if (!Inst.isInstantiationRecord())
       ++SemaRef.NonInstantiationEntries;
-    // BEGIN TEMPLIGHT
-    if (SemaRef.getTemplightFlag())
-      SemaRef.traceTemplateBegin(Inst.Kind, Inst.Entity, PointOfInstantiation);
-    // END TEMPLIGHT
-
   }
 }
 
@@ -799,13 +349,10 @@ void Sema::InstantiatingTemplate::Clear() {
       SemaRef.ActiveTemplateInstantiationLookupModules.pop_back();
     }
 
-    // BEGIN TEMPLIGHT
-    if (SemaRef.getTemplightFlag()) {
-      ActiveTemplateInstantiation Last =
-        SemaRef.ActiveTemplateInstantiations.back();
-      SemaRef.traceTemplateEnd(Last.Kind);
-    }
-    // END TEMPLIGHT
+    if ( SemaRef.TemplateInstObserverChain )
+      SemaRef.TemplateInstObserverChain->atTemplateEnd(
+        SemaRef, SemaRef.ActiveTemplateInstantiations.back());
+
     SemaRef.ActiveTemplateInstantiations.pop_back();
     Invalid = true;
   }
@@ -890,6 +437,10 @@ void Sema::PrintInstantiationStack() {
                      diag::note_template_enum_def_here)
           << ED
           << Active->InstantiationRange;
+      } else if (FieldDecl *FD = dyn_cast<FieldDecl>(D)) {
+        Diags.Report(Active->PointOfInstantiation,
+                     diag::note_template_nsdmi_here)
+            << FD << Active->InstantiationRange;
       } else {
         Diags.Report(Active->PointOfInstantiation,
                      diag::note_template_type_alias_instantiation_here)
@@ -1017,10 +568,9 @@ void Sema::PrintInstantiationStack() {
         << cast<FunctionDecl>(Active->Entity)
         << Active->InstantiationRange;
       break;
-    // BEGIN TEMPLIGHT
+
     case ActiveTemplateInstantiation::Memoization:
       break;
-    // END TEMPLIGHT
     }
   }
 }
@@ -1061,10 +611,9 @@ Optional<TemplateDeductionInfo *> Sema::isSFINAEContext() const {
       // or deduced template arguments, so SFINAE applies.
       assert(Active->DeductionInfo && "Missing deduction info pointer");
       return Active->DeductionInfo;
-    // BEGIN TEMPLIGHT
+
     case ActiveTemplateInstantiation::Memoization:
       break;
-    // END TEMPLIGHT
     }
   }
 
@@ -1217,6 +766,8 @@ namespace {
                           QualType ObjectType = QualType(),
                           NamedDecl *FirstQualifierInScope = nullptr);
 
+    const LoopHintAttr *TransformLoopHintAttr(const LoopHintAttr *LH);
+
     ExprResult TransformPredefinedExpr(PredefinedExpr *E);
     ExprResult TransformDeclRefExpr(DeclRefExpr *E);
     ExprResult TransformCXXDefaultArgExpr(CXXDefaultArgExpr *E);
@@ -1239,11 +790,17 @@ namespace {
     ExprResult TransformFunctionParmPackExpr(FunctionParmPackExpr *E);
 
     QualType TransformFunctionProtoType(TypeLocBuilder &TLB,
-                                        FunctionProtoTypeLoc TL);
+                                        FunctionProtoTypeLoc TL) {
+      // Call the base version; it will forward to our overridden version below.
+      return inherited::TransformFunctionProtoType(TLB, TL);
+    }
+
+    template<typename Fn>
     QualType TransformFunctionProtoType(TypeLocBuilder &TLB,
                                         FunctionProtoTypeLoc TL,
                                         CXXRecordDecl *ThisContext,
-                                        unsigned ThisTypeQuals);
+                                        unsigned ThisTypeQuals,
+                                        Fn TransformExceptionSpec);
 
     ParmVarDecl *TransformFunctionTypeParam(ParmVarDecl *OldParm,
                                             int indexAdjustment,
@@ -1577,6 +1134,24 @@ TemplateInstantiator::TransformTemplateParmRefExpr(DeclRefExpr *E,
   return transformNonTypeTemplateParmRef(NTTP, E->getLocation(), Arg);
 }
 
+const LoopHintAttr *
+TemplateInstantiator::TransformLoopHintAttr(const LoopHintAttr *LH) {
+  Expr *TransformedExpr = getDerived().TransformExpr(LH->getValue()).get();
+
+  if (TransformedExpr == LH->getValue())
+    return LH;
+
+  // Generate error if there is a problem with the value.
+  if (getSema().CheckLoopHintExpr(TransformedExpr, LH->getLocation()))
+    return LH;
+
+  // Create new LoopHintValueAttr with integral expression in place of the
+  // non-type template parameter.
+  return LoopHintAttr::CreateImplicit(
+      getSema().Context, LH->getSemanticSpelling(), LH->getOption(),
+      LH->getState(), TransformedExpr, LH->getRange());
+}
+
 ExprResult TemplateInstantiator::transformNonTypeTemplateParmRef(
                                                  NonTypeTemplateParmDecl *parm,
                                                  SourceLocation loc,
@@ -1757,21 +1332,16 @@ ExprResult TemplateInstantiator::TransformCXXDefaultArgExpr(
                                         E->getParam());
 }
 
-QualType TemplateInstantiator::TransformFunctionProtoType(TypeLocBuilder &TLB,
-                                                      FunctionProtoTypeLoc TL) {
-  // We need a local instantiation scope for this function prototype.
-  LocalInstantiationScope Scope(SemaRef, /*CombineWithOuterScope=*/true);
-  return inherited::TransformFunctionProtoType(TLB, TL);
-}
-
+template<typename Fn>
 QualType TemplateInstantiator::TransformFunctionProtoType(TypeLocBuilder &TLB,
                                  FunctionProtoTypeLoc TL,
                                  CXXRecordDecl *ThisContext,
-                                 unsigned ThisTypeQuals) {
+                                 unsigned ThisTypeQuals,
+                                 Fn TransformExceptionSpec) {
   // We need a local instantiation scope for this function prototype.
   LocalInstantiationScope Scope(SemaRef, /*CombineWithOuterScope=*/true);
-  return inherited::TransformFunctionProtoType(TLB, TL, ThisContext, 
-                                               ThisTypeQuals);  
+  return inherited::TransformFunctionProtoType(
+      TLB, TL, ThisContext, ThisTypeQuals, TransformExceptionSpec);
 }
 
 ParmVarDecl *
@@ -2006,7 +1576,8 @@ static bool NeedsInstantiationAsFunctionType(TypeSourceInfo *T) {
 
 /// A form of SubstType intended specifically for instantiating the
 /// type of a FunctionDecl.  Its purpose is solely to force the
-/// instantiation of default-argument expressions.
+/// instantiation of default-argument expressions and to avoid
+/// instantiating an exception-specification.
 TypeSourceInfo *Sema::SubstFunctionDeclType(TypeSourceInfo *T,
                                 const MultiLevelTemplateArgumentList &Args,
                                 SourceLocation Loc,
@@ -2029,9 +1600,17 @@ TypeSourceInfo *Sema::SubstFunctionDeclType(TypeSourceInfo *T,
 
   QualType Result;
 
-  if (FunctionProtoTypeLoc Proto = TL.getAs<FunctionProtoTypeLoc>()) {
-    Result = Instantiator.TransformFunctionProtoType(TLB, Proto, ThisContext,
-                                                     ThisTypeQuals);
+  if (FunctionProtoTypeLoc Proto =
+          TL.IgnoreParens().getAs<FunctionProtoTypeLoc>()) {
+    // Instantiate the type, other than its exception specification. The
+    // exception specification is instantiated in InitFunctionInstantiation
+    // once we've built the FunctionDecl.
+    // FIXME: Set the exception specification to EST_Uninstantiated here,
+    // instead of rebuilding the function type again later.
+    Result = Instantiator.TransformFunctionProtoType(
+        TLB, Proto, ThisContext, ThisTypeQuals,
+        [](FunctionProtoType::ExceptionSpecInfo &ESI,
+           bool &Changed) { return false; });
   } else {
     Result = Instantiator.TransformType(TLB, TL);
   }
@@ -2039,6 +1618,26 @@ TypeSourceInfo *Sema::SubstFunctionDeclType(TypeSourceInfo *T,
     return nullptr;
 
   return TLB.getTypeSourceInfo(Context, Result);
+}
+
+void Sema::SubstExceptionSpec(FunctionDecl *New, const FunctionProtoType *Proto,
+                              const MultiLevelTemplateArgumentList &Args) {
+  FunctionProtoType::ExceptionSpecInfo ESI =
+      Proto->getExtProtoInfo().ExceptionSpec;
+  assert(ESI.Type != EST_Uninstantiated);
+
+  TemplateInstantiator Instantiator(*this, Args, New->getLocation(),
+                                    New->getDeclName());
+
+  SmallVector<QualType, 4> ExceptionStorage;
+  bool Changed = false;
+  if (Instantiator.TransformExceptionSpec(
+          New->getTypeSourceInfo()->getTypeLoc().getLocEnd(), ESI,
+          ExceptionStorage, Changed))
+    // On error, recover by dropping the exception specification.
+    ESI.Type = EST_None;
+
+  UpdateExceptionSpec(New, ESI);
 }
 
 ParmVarDecl *Sema::SubstParmVarDecl(ParmVarDecl *OldParm, 
@@ -2397,8 +1996,6 @@ Sema::InstantiateClass(SourceLocation PointOfInstantiation,
 
   TemplateDeclInstantiator Instantiator(*this, Instantiation, TemplateArgs);
   SmallVector<Decl*, 4> Fields;
-  SmallVector<std::pair<FieldDecl*, FieldDecl*>, 4>
-    FieldsWithMemberInitializers;
   // Delay instantiation of late parsed attributes.
   LateInstantiatedAttrVec LateAttrs;
   Instantiator.enableLateAttributeInstantiation(&LateAttrs);
@@ -2425,10 +2022,6 @@ Sema::InstantiateClass(SourceLocation PointOfInstantiation,
     if (NewMember) {
       if (FieldDecl *Field = dyn_cast<FieldDecl>(NewMember)) {
         Fields.push_back(Field);
-        FieldDecl *OldField = cast<FieldDecl>(Member);
-        if (OldField->getInClassInitializer())
-          FieldsWithMemberInitializers.push_back(std::make_pair(OldField,
-                                                                Field));
       } else if (EnumDecl *Enum = dyn_cast<EnumDecl>(NewMember)) {
         // C++11 [temp.inst]p1: The implicit instantiation of a class template
         // specialization causes the implicit instantiation of the definitions
@@ -2465,31 +2058,6 @@ Sema::InstantiateClass(SourceLocation PointOfInstantiation,
               SourceLocation(), SourceLocation(), nullptr);
   CheckCompletedCXXClass(Instantiation);
 
-  // Attach any in-class member initializers now the class is complete.
-  // FIXME: We are supposed to defer instantiating these until they are needed.
-  if (!FieldsWithMemberInitializers.empty()) {
-    // C++11 [expr.prim.general]p4:
-    //   Otherwise, if a member-declarator declares a non-static data member 
-    //  (9.2) of a class X, the expression this is a prvalue of type "pointer
-    //  to X" within the optional brace-or-equal-initializer. It shall not 
-    //  appear elsewhere in the member-declarator.
-    CXXThisScopeRAII ThisScope(*this, Instantiation, (unsigned)0);
-    
-    for (unsigned I = 0, N = FieldsWithMemberInitializers.size(); I != N; ++I) {
-      FieldDecl *OldField = FieldsWithMemberInitializers[I].first;
-      FieldDecl *NewField = FieldsWithMemberInitializers[I].second;
-      Expr *OldInit = OldField->getInClassInitializer();
-
-      ActOnStartCXXInClassMemberInitializer();
-      ExprResult NewInit = SubstInitializer(OldInit, TemplateArgs,
-                                            /*CXXDirectInit=*/false);
-      Expr *Init = NewInit.get();
-      assert((!Init || !isa<ParenListExpr>(Init)) &&
-             "call-style init in class");
-      ActOnFinishCXXInClassMemberInitializer(NewField,
-        Init ? Init->getLocStart() : SourceLocation(), Init);
-    }
-  }
   // Instantiate late parsed attributes, and attach them to their decls.
   // See Sema::InstantiateAttrs
   for (LateInstantiatedAttrVec::iterator I = LateAttrs.begin(),
@@ -2628,6 +2196,80 @@ bool Sema::InstantiateEnum(SourceLocation PointOfInstantiation,
   SavedContext.pop();
 
   return Instantiation->isInvalidDecl();
+}
+
+
+/// \brief Instantiate the definition of a field from the given pattern.
+///
+/// \param PointOfInstantiation The point of instantiation within the
+///        source code.
+/// \param Instantiation is the declaration whose definition is being
+///        instantiated. This will be a class of a class temploid
+///        specialization, or a local enumeration within a function temploid
+///        specialization.
+/// \param Pattern The templated declaration from which the instantiation
+///        occurs.
+/// \param TemplateArgs The template arguments to be substituted into
+///        the pattern.
+///
+/// \return \c true if an error occurred, \c false otherwise.
+bool Sema::InstantiateInClassInitializer(
+    SourceLocation PointOfInstantiation, FieldDecl *Instantiation,
+    FieldDecl *Pattern, const MultiLevelTemplateArgumentList &TemplateArgs) {
+  // If there is no initializer, we don't need to do anything.
+  if (!Pattern->hasInClassInitializer())
+    return false;
+
+  assert(Instantiation->getInClassInitStyle() ==
+             Pattern->getInClassInitStyle() &&
+         "pattern and instantiation disagree about init style");
+
+  // Error out if we haven't parsed the initializer of the pattern yet because
+  // we are waiting for the closing brace of the outer class.
+  Expr *OldInit = Pattern->getInClassInitializer();
+  if (!OldInit) {
+    RecordDecl *PatternRD = Pattern->getParent();
+    RecordDecl *OutermostClass = PatternRD->getOuterLexicalRecordContext();
+    if (OutermostClass == PatternRD) {
+      Diag(Pattern->getLocEnd(), diag::err_in_class_initializer_not_yet_parsed)
+          << PatternRD << Pattern;
+    } else {
+      Diag(Pattern->getLocEnd(),
+           diag::err_in_class_initializer_not_yet_parsed_outer_class)
+          << PatternRD << OutermostClass << Pattern;
+    }
+    Instantiation->setInvalidDecl();
+    return true;
+  }
+
+  InstantiatingTemplate Inst(*this, PointOfInstantiation, Instantiation);
+  if (Inst.isInvalid())
+    return true;
+
+  // Enter the scope of this instantiation. We don't use PushDeclContext because
+  // we don't have a scope.
+  ContextRAII SavedContext(*this, Instantiation->getParent());
+  EnterExpressionEvaluationContext EvalContext(*this,
+                                               Sema::PotentiallyEvaluated);
+
+  LocalInstantiationScope Scope(*this);
+
+  // Instantiate the initializer.
+  ActOnStartCXXInClassMemberInitializer();
+  CXXThisScopeRAII ThisScope(*this, Instantiation->getParent(), /*TypeQuals=*/0);
+
+  ExprResult NewInit = SubstInitializer(OldInit, TemplateArgs,
+                                        /*CXXDirectInit=*/false);
+  Expr *Init = NewInit.get();
+  assert((!Init || !isa<ParenListExpr>(Init)) && "call-style init in class");
+  ActOnFinishCXXInClassMemberInitializer(
+      Instantiation, Init ? Init->getLocStart() : SourceLocation(), Init);
+
+  // Exit the scope of this instantiation.
+  SavedContext.pop();
+
+  // Return true if the in-class initializer is still missing.
+  return !Instantiation->getInClassInitializer();
 }
 
 namespace {
@@ -2908,7 +2550,10 @@ Sema::InstantiateClassMembers(SourceLocation PointOfInstantiation,
       // Always skip the injected-class-name, along with any
       // redeclarations of nested classes, since both would cause us
       // to try to instantiate the members of a class twice.
-      if (Record->isInjectedClassName() || Record->getPreviousDecl())
+      // Skip closure types; they'll get instantiated when we instantiate
+      // the corresponding lambda-expression.
+      if (Record->isInjectedClassName() || Record->getPreviousDecl() ||
+          Record->isLambda())
         continue;
       
       MemberSpecializationInfo *MSInfo = Record->getMemberSpecializationInfo();
@@ -2990,6 +2635,19 @@ Sema::InstantiateClassMembers(SourceLocation PointOfInstantiation,
       } else {
         MSInfo->setTemplateSpecializationKind(TSK);
         MSInfo->setPointOfInstantiation(PointOfInstantiation);
+      }
+    } else if (auto *Field = dyn_cast<FieldDecl>(D)) {
+      // No need to instantiate in-class initializers during explicit
+      // instantiation.
+      if (Field->hasInClassInitializer() && TSK == TSK_ImplicitInstantiation) {
+        CXXRecordDecl *ClassPattern =
+            Instantiation->getTemplateInstantiationPattern();
+        DeclContext::lookup_result Lookup =
+            ClassPattern->lookup(Field->getDeclName());
+        assert(Lookup.size() == 1);
+        FieldDecl *Pattern = cast<FieldDecl>(Lookup[0]);
+        InstantiateInClassInitializer(PointOfInstantiation, Field, Pattern,
+                                      TemplateArgs);
       }
     }
   }

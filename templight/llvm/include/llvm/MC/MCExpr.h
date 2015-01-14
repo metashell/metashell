@@ -250,6 +250,7 @@ public:
     VK_PPC_GOT_TLSLD_HI,   // symbol@got@tlsld@h
     VK_PPC_GOT_TLSLD_HA,   // symbol@got@tlsld@ha
     VK_PPC_TLSLD,          // symbol@tlsld
+    VK_PPC_LOCAL,          // symbol@local
 
     VK_Mips_GPREL,
     VK_Mips_GOT_CALL,
@@ -282,21 +283,20 @@ public:
   };
 
 private:
+  /// The symbol reference modifier.
+  const unsigned Kind : 16;
+
+  /// Specifies how the variant kind should be printed.
+  const unsigned UseParensForSymbolVariant : 1;
+
+  // FIXME: Remove this bit.
+  const unsigned HasSubsectionsViaSymbols : 1;
+
   /// The symbol being referenced.
   const MCSymbol *Symbol;
 
-  /// The symbol reference modifier.
-  const VariantKind Kind;
-
-  /// MCAsmInfo that is used to print symbol variants correctly.
-  const MCAsmInfo *MAI;
-
-  explicit MCSymbolRefExpr(const MCSymbol *_Symbol, VariantKind _Kind,
-                           const MCAsmInfo *_MAI)
-    : MCExpr(MCExpr::SymbolRef), Symbol(_Symbol), Kind(_Kind), MAI(_MAI) {
-    assert(Symbol);
-    assert(MAI);
-  }
+  explicit MCSymbolRefExpr(const MCSymbol *Symbol, VariantKind Kind,
+                           const MCAsmInfo *MAI);
 
 public:
   /// @name Construction
@@ -316,9 +316,12 @@ public:
   /// @{
 
   const MCSymbol &getSymbol() const { return *Symbol; }
-  const MCAsmInfo &getMCAsmInfo() const { return *MAI; }
 
-  VariantKind getKind() const { return Kind; }
+  VariantKind getKind() const { return static_cast<VariantKind>(Kind); }
+
+  void printVariantKind(raw_ostream &OS) const;
+
+  bool hasSubsectionsViaSymbols() const { return HasSubsectionsViaSymbols; }
 
   /// @}
   /// @name Static Utility Functions

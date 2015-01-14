@@ -51,3 +51,17 @@ bool TargetOptions::HonorSignDependentRoundingFPMath() const {
 StringRef TargetOptions::getTrapFunctionName() const {
   return TrapFuncName;
 }
+
+/// getCFIFuncName - If this returns a non-empty string, then it is the name of
+/// the function that gets called on CFI violations in CFI non-enforcing mode
+/// (!TargetOptions::CFIEnforcing).
+StringRef TargetOptions::getCFIFuncName() const {
+  return CFIFuncName;
+}
+
+/// getABIName - If this returns a non-empty string this represents the
+/// textual name of the ABI that we want the backend to use, e.g. o32, or
+/// aapcs-linux.
+StringRef TargetOptions::getABIName() const {
+  return ABIName;
+}

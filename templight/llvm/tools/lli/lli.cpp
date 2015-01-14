@@ -74,10 +74,6 @@ namespace {
                                  cl::desc("Force interpretation: disable JIT"),
                                  cl::init(false));
 
-  cl::opt<bool> DebugIR(
-    "debug-ir", cl::desc("Generate debug information to allow debugging IR."),
-    cl::init(false));
-
   // The MCJIT supports building for a target address space separate from
   // the JIT compilation process. Use a forked process and a copying
   // memory manager with IPC to execute using this functionality.
@@ -414,11 +410,6 @@ int main(int argc, char **argv, char * const *envp) {
     }
   }
 
-  if (DebugIR) {
-    ModulePass *DebugIRPass = createDebugIRPass();
-    DebugIRPass->runOnModule(*Mod);
-  }
-
   std::string ErrorMsg;
   EngineBuilder builder(std::move(Owner));
   builder.setMArch(MArch);
@@ -442,7 +433,11 @@ int main(int argc, char **argv, char * const *envp) {
       RTDyldMM = new RemoteMemoryManager();
     else
       RTDyldMM = new SectionMemoryManager();
-    builder.setMCJITMemoryManager(RTDyldMM);
+
+    // Deliberately construct a temp std::unique_ptr to pass in. Do not null out
+    // RTDyldMM: We still use it below, even though we don't own it.
+    builder.setMCJITMemoryManager(
+      std::unique_ptr<RTDyldMemoryManager>(RTDyldMM));
   } else if (RemoteMCJIT) {
     errs() << "error: Remote process execution does not work with the "
               "interpreter.\n";

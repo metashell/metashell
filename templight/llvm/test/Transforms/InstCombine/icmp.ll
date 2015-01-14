@@ -1418,3 +1418,107 @@ define i1 @icmp_and_or_lshr_cst(i32 %x) {
   %ret = icmp ne i32 %and, 0
   ret i1 %ret
 }
+
+; CHECK-LABEL: @shl_ap1_zero_ap2_non_zero_2
+; CHECK-NEXT: %cmp = icmp ugt i32 %a, 29
+; CHECK-NEXT: ret i1 %cmp
+define i1 @shl_ap1_zero_ap2_non_zero_2(i32 %a) {
+ %shl = shl i32 4, %a
+ %cmp = icmp eq i32 %shl, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_zero_ap2_non_zero_4
+; CHECK-NEXT: %cmp = icmp ugt i32 %a, 30
+; CHECK-NEXT: ret i1 %cmp
+define i1 @shl_ap1_zero_ap2_non_zero_4(i32 %a) {
+ %shl = shl i32 -2, %a
+ %cmp = icmp eq i32 %shl, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_non_zero_ap2_non_zero_both_positive
+; CHECK-NEXT: %cmp = icmp eq i32 %a, 0
+; CHECK-NEXT: ret i1 %cmp
+define i1 @shl_ap1_non_zero_ap2_non_zero_both_positive(i32 %a) {
+ %shl = shl i32 50, %a
+ %cmp = icmp eq i32 %shl, 50
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_non_zero_ap2_non_zero_both_negative
+; CHECK-NEXT: %cmp = icmp eq i32 %a, 0
+; CHECK-NEXT: ret i1 %cmp
+define i1 @shl_ap1_non_zero_ap2_non_zero_both_negative(i32 %a) {
+ %shl = shl i32 -50, %a
+ %cmp = icmp eq i32 %shl, -50
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_non_zero_ap2_non_zero_ap1_1
+; CHECK-NEXT: ret i1 false
+define i1 @shl_ap1_non_zero_ap2_non_zero_ap1_1(i32 %a) {
+ %shl = shl i32 50, %a
+ %cmp = icmp eq i32 %shl, 25
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_non_zero_ap2_non_zero_ap1_2
+; CHECK-NEXT: %cmp = icmp eq i32 %a, 1
+; CHECK-NEXT: ret i1 %cmp
+define i1 @shl_ap1_non_zero_ap2_non_zero_ap1_2(i32 %a) {
+ %shl = shl i32 25, %a
+ %cmp = icmp eq i32 %shl, 50
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @shl_ap1_non_zero_ap2_non_zero_ap1_3
+; CHECK-NEXT: ret i1 false
+define i1 @shl_ap1_non_zero_ap2_non_zero_ap1_3(i32 %a) {
+ %shl = shl i32 26, %a
+ %cmp = icmp eq i32 %shl, 50
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @icmp_sgt_zero_add_nsw
+; CHECK-NEXT: icmp sgt i32 %a, -1
+define i1 @icmp_sgt_zero_add_nsw(i32 %a) {
+ %add = add nsw i32 %a, 1
+ %cmp = icmp sgt i32 %add, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @icmp_sge_zero_add_nsw
+; CHECK-NEXT: icmp sgt i32 %a, -2
+define i1 @icmp_sge_zero_add_nsw(i32 %a) {
+ %add = add nsw i32 %a, 1
+ %cmp = icmp sge i32 %add, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @icmp_slt_zero_add_nsw
+; CHECK-NEXT: icmp slt i32 %a, -1
+define i1 @icmp_slt_zero_add_nsw(i32 %a) {
+ %add = add nsw i32 %a, 1
+ %cmp = icmp slt i32 %add, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @icmp_sle_zero_add_nsw
+; CHECK-NEXT: icmp slt i32 %a, 0
+define i1 @icmp_sle_zero_add_nsw(i32 %a) {
+ %add = add nsw i32 %a, 1
+ %cmp = icmp sle i32 %add, 0
+ ret i1 %cmp
+}
+
+; CHECK-LABEL: @icmp_cmpxchg_strong
+; CHECK-NEXT: %[[xchg:.*]] = cmpxchg i32* %sc, i32 %old_val, i32 %new_val seq_cst seq_cst
+; CHECK-NEXT: %[[icmp:.*]] = extractvalue { i32, i1 } %[[xchg]], 1
+; CHECK-NEXT: ret i1 %[[icmp]]
+define zeroext i1 @icmp_cmpxchg_strong(i32* %sc, i32 %old_val, i32 %new_val) {
+  %xchg = cmpxchg i32* %sc, i32 %old_val, i32 %new_val seq_cst seq_cst
+  %xtrc = extractvalue { i32, i1 } %xchg, 0
+  %icmp = icmp eq i32 %xtrc, %old_val
+  ret i1 %icmp
+}

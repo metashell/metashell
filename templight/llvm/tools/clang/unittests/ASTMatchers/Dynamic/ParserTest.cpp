@@ -26,9 +26,12 @@ public:
   virtual ~MockSema() {}
 
   uint64_t expectMatcher(StringRef MatcherName) {
-    ast_matchers::internal::Matcher<Stmt> M = stmt();
+    // Optimizations on the matcher framework make simple matchers like
+    // 'stmt()' to be all the same matcher.
+    // Use a more complex expression to prevent that.
+    ast_matchers::internal::Matcher<Stmt> M = stmt(stmt(), stmt());
     ExpectedMatchers.insert(std::make_pair(MatcherName, M));
-    return M.getID();
+    return M.getID().second;
   }
 
   void parse(StringRef Code) {
@@ -125,8 +128,12 @@ TEST(ParserTest, ParseMatcher) {
     EXPECT_EQ("", Sema.Errors[i]);
   }
 
+  EXPECT_NE(ExpectedFoo, ExpectedBar);
+  EXPECT_NE(ExpectedFoo, ExpectedBaz);
+  EXPECT_NE(ExpectedBar, ExpectedBaz);
+
   EXPECT_EQ(1ULL, Sema.Values.size());
-  EXPECT_EQ(ExpectedFoo, getSingleMatcher(Sema.Values[0])->getID());
+  EXPECT_EQ(ExpectedFoo, getSingleMatcher(Sema.Values[0])->getID().second);
 
   EXPECT_EQ(3ULL, Sema.Matchers.size());
   const MockSema::MatcherInfo Bar = Sema.Matchers[0];
@@ -145,8 +152,8 @@ TEST(ParserTest, ParseMatcher) {
   EXPECT_EQ("Foo", Foo.MatcherName);
   EXPECT_TRUE(matchesRange(Foo.NameRange, 1, 2, 2, 12));
   EXPECT_EQ(2ULL, Foo.Args.size());
-  EXPECT_EQ(ExpectedBar, getSingleMatcher(Foo.Args[0].Value)->getID());
-  EXPECT_EQ(ExpectedBaz, getSingleMatcher(Foo.Args[1].Value)->getID());
+  EXPECT_EQ(ExpectedBar, getSingleMatcher(Foo.Args[0].Value)->getID().second);
+  EXPECT_EQ(ExpectedBaz, getSingleMatcher(Foo.Args[1].Value)->getID().second);
   EXPECT_EQ("Yo!", Foo.BoundID);
 }
 

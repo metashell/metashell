@@ -512,7 +512,7 @@ protected:
         // Defines a new offset for the CFA. E.g.
         //
         //  With frame:
-        //  
+        //
         //     pushq %rbp
         //  L0:
         //     .cfi_def_cfa_offset 16
@@ -682,7 +682,7 @@ private:
     //     4       3
     //     5       3
     //
-    for (unsigned i = 0; i != CU_NUM_SAVED_REGS; ++i) {
+    for (unsigned i = 0; i < RegCount; ++i) {
       int CUReg = getCompactUnwindRegNum(SavedRegs[i]);
       if (CUReg == -1) return ~0U;
       SavedRegs[i] = CUReg;

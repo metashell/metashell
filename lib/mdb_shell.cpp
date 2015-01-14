@@ -36,7 +36,8 @@
 
 namespace
 {
-  const std::string internal_file_name = "mdb-stdin";
+  //Note: this how clang calls the file when the input comes from stdin
+  const std::string stdin_name = "<stdin>";
 
   const std::string wrap_prefix = "metashell::impl::wrap<";
   const std::string wrap_suffix = ">";
@@ -443,7 +444,7 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     const std::string& target_name =
       mp->get_vertex_property(mp->get_target(edge)).name;
     // Filter out edges, that is not instantiated by the entered type
-    if (property.point_of_instantiation.name == internal_file_name &&
+    if (property.point_of_instantiation.name == stdin_name &&
         property.point_of_instantiation.row == line_number + 1 &&
         (property.kind == data::instantiation_kind::template_instantiation ||
         property.kind == data::instantiation_kind::memoization) &&
@@ -717,10 +718,10 @@ void mdb_shell::command_quit(
 bool mdb_shell::run_metaprogram_with_templight(
     const std::string& str, bool full_mode, iface::displayer& displayer_)
 {
-  temporary_file templight_xml_file("templight.xml");
-  std::string xml_path = templight_xml_file.get_path();
+  temporary_file templight_output_file("templight.pb");
+  std::string output_path = templight_output_file.get_path();
 
-  env.set_xml_location(xml_path);
+  env.set_output_location(output_path);
 
   boost::optional<data::type>
     evaluation_result = run_metaprogram(str, displayer_);
@@ -730,8 +731,8 @@ bool mdb_shell::run_metaprogram_with_templight(
     return false;
   }
 
-  mp = metaprogram::create_from_xml_file(
-      xml_path, full_mode, str, *evaluation_result);
+  mp = metaprogram::create_from_protobuf_file(
+      output_path + ".trace.pbf", full_mode, str, *evaluation_result);
   return true;
 }
 
@@ -739,8 +740,7 @@ boost::optional<data::type> mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
-  result
-    res = eval_tmp_unformatted(env, str, conf, internal_file_name, _logger);
+  result res = eval_tmp(env, str, conf, _logger);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);

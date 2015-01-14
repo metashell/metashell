@@ -9,9 +9,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "AMDGPUInstPrinter.h"
+#include "SIDefines.h"
+
 #include "MCTargetDesc/AMDGPUMCTargetDesc.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Support/MathExtras.h"
 
@@ -40,6 +43,16 @@ void AMDGPUInstPrinter::printU32ImmOperand(const MCInst *MI, unsigned OpNo,
   O << formatHex(MI->getOperand(OpNo).getImm() & 0xffffffff);
 }
 
+void AMDGPUInstPrinter::printU8ImmDecOperand(const MCInst *MI, unsigned OpNo,
+                                             raw_ostream &O) {
+  O << formatDec(MI->getOperand(OpNo).getImm() & 0xff);
+}
+
+void AMDGPUInstPrinter::printU16ImmDecOperand(const MCInst *MI, unsigned OpNo,
+                                              raw_ostream &O) {
+  O << formatDec(MI->getOperand(OpNo).getImm() & 0xffff);
+}
+
 void AMDGPUInstPrinter::printOffen(const MCInst *MI, unsigned OpNo,
                                    raw_ostream &O) {
   if (MI->getOperand(OpNo).getImm())
@@ -62,8 +75,29 @@ void AMDGPUInstPrinter::printMBUFOffset(const MCInst *MI, unsigned OpNo,
                                         raw_ostream &O) {
   if (MI->getOperand(OpNo).getImm()) {
     O << " offset:";
-    printU16ImmOperand(MI, OpNo, O);
+    printU16ImmDecOperand(MI, OpNo, O);
   }
+}
+
+void AMDGPUInstPrinter::printDSOffset(const MCInst *MI, unsigned OpNo,
+                                      raw_ostream &O) {
+  uint16_t Imm = MI->getOperand(OpNo).getImm();
+  if (Imm != 0) {
+    O << " offset:";
+    printU16ImmDecOperand(MI, OpNo, O);
+  }
+}
+
+void AMDGPUInstPrinter::printDSOffset0(const MCInst *MI, unsigned OpNo,
+                                        raw_ostream &O) {
+  O << " offset0:";
+  printU8ImmDecOperand(MI, OpNo, O);
+}
+
+void AMDGPUInstPrinter::printDSOffset1(const MCInst *MI, unsigned OpNo,
+                                        raw_ostream &O) {
+  O << " offset1:";
+  printU8ImmDecOperand(MI, OpNo, O);
 }
 
 void AMDGPUInstPrinter::printGLC(const MCInst *MI, unsigned OpNo,
@@ -175,7 +209,7 @@ void AMDGPUInstPrinter::printRegOperand(unsigned reg, raw_ostream &O) {
   O << Type << '[' << RegIdx << ':' << (RegIdx + NumRegs - 1) << ']';
 }
 
-void AMDGPUInstPrinter::printImmediate(uint32_t Imm, raw_ostream &O) {
+void AMDGPUInstPrinter::printImmediate32(uint32_t Imm, raw_ostream &O) {
   int32_t SImm = static_cast<int32_t>(Imm);
   if (SImm >= -16 && SImm <= 64) {
     O << SImm;
@@ -200,9 +234,37 @@ void AMDGPUInstPrinter::printImmediate(uint32_t Imm, raw_ostream &O) {
     O << "4.0";
   else if (Imm == FloatToBits(-4.0f))
     O << "-4.0";
-  else {
+  else
     O << formatHex(static_cast<uint64_t>(Imm));
+}
+
+void AMDGPUInstPrinter::printImmediate64(uint64_t Imm, raw_ostream &O) {
+  int64_t SImm = static_cast<int64_t>(Imm);
+  if (SImm >= -16 && SImm <= 64) {
+    O << SImm;
+    return;
   }
+
+  if (Imm == DoubleToBits(0.0))
+    O << "0.0";
+  else if (Imm == DoubleToBits(1.0))
+    O << "1.0";
+  else if (Imm == DoubleToBits(-1.0))
+    O << "-1.0";
+  else if (Imm == DoubleToBits(0.5))
+    O << "0.5";
+  else if (Imm == DoubleToBits(-0.5))
+    O << "-0.5";
+  else if (Imm == DoubleToBits(2.0))
+    O << "2.0";
+  else if (Imm == DoubleToBits(-2.0))
+    O << "-2.0";
+  else if (Imm == DoubleToBits(4.0))
+    O << "4.0";
+  else if (Imm == DoubleToBits(-4.0))
+    O << "-4.0";
+  else
+    llvm_unreachable("64-bit literal constants not supported");
 }
 
 void AMDGPUInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
@@ -220,14 +282,37 @@ void AMDGPUInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
       break;
     }
   } else if (Op.isImm()) {
-    printImmediate(Op.getImm(), O);
+    const MCInstrDesc &Desc = MII.get(MI->getOpcode());
+    int RCID = Desc.OpInfo[OpNo].RegClass;
+    if (RCID != -1) {
+      const MCRegisterClass &ImmRC = MRI.getRegClass(RCID);
+      if (ImmRC.getSize() == 4)
+        printImmediate32(Op.getImm(), O);
+      else if (ImmRC.getSize() == 8)
+        printImmediate64(Op.getImm(), O);
+      else
+        llvm_unreachable("Invalid register class size");
+    } else {
+      // We hit this for the immediate instruction bits that don't yet have a
+      // custom printer.
+      // TODO: Eventually this should be unnecessary.
+      O << formatDec(Op.getImm());
+    }
   } else if (Op.isFPImm()) {
-
     // We special case 0.0 because otherwise it will be printed as an integer.
     if (Op.getFPImm() == 0.0)
       O << "0.0";
-    else
-      printImmediate(FloatToBits(Op.getFPImm()), O);
+    else {
+      const MCInstrDesc &Desc = MII.get(MI->getOpcode());
+      const MCRegisterClass &ImmRC = MRI.getRegClass(Desc.OpInfo[OpNo].RegClass);
+
+      if (ImmRC.getSize() == 4)
+        printImmediate32(FloatToBits(Op.getFPImm()), O);
+      else if (ImmRC.getSize() == 8)
+        printImmediate64(DoubleToBits(Op.getFPImm()), O);
+      else
+        llvm_unreachable("Invalid register class size");
+    }
   } else if (Op.isExpr()) {
     const MCExpr *Exp = Op.getExpr();
     Exp->print(O);
@@ -239,12 +324,12 @@ void AMDGPUInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
 void AMDGPUInstPrinter::printOperandAndMods(const MCInst *MI, unsigned OpNo,
                                             raw_ostream &O) {
   unsigned InputModifiers = MI->getOperand(OpNo).getImm();
-  if (InputModifiers & 0x1)
+  if (InputModifiers & SISrcMods::NEG)
     O << '-';
-  if (InputModifiers & 0x2)
+  if (InputModifiers & SISrcMods::ABS)
     O << '|';
   printOperand(MI, OpNo + 1, O);
-  if (InputModifiers & 0x2)
+  if (InputModifiers & SISrcMods::ABS)
     O << '|';
 }
 
@@ -290,6 +375,23 @@ void AMDGPUInstPrinter::printAbs(const MCInst *MI, unsigned OpNo,
 void AMDGPUInstPrinter::printClamp(const MCInst *MI, unsigned OpNo,
                                    raw_ostream &O) {
   printIfSet(MI, OpNo, O, "_SAT");
+}
+
+void AMDGPUInstPrinter::printClampSI(const MCInst *MI, unsigned OpNo,
+                                     raw_ostream &O) {
+  if (MI->getOperand(OpNo).getImm())
+    O << " clamp";
+}
+
+void AMDGPUInstPrinter::printOModSI(const MCInst *MI, unsigned OpNo,
+                                     raw_ostream &O) {
+  int Imm = MI->getOperand(OpNo).getImm();
+  if (Imm == SIOutMods::MUL2)
+    O << " mul:2";
+  else if (Imm == SIOutMods::MUL4)
+    O << " mul:4";
+  else if (Imm == SIOutMods::DIV2)
+    O << " div:2";
 }
 
 void AMDGPUInstPrinter::printLiteral(const MCInst *MI, unsigned OpNo,
@@ -493,12 +595,26 @@ void AMDGPUInstPrinter::printWaitFlag(const MCInst *MI, unsigned OpNo,
   unsigned Vmcnt = SImm16 & 0xF;
   unsigned Expcnt = (SImm16 >> 4) & 0xF;
   unsigned Lgkmcnt = (SImm16 >> 8) & 0xF;
-  if (Vmcnt != 0xF)
-    O << "vmcnt(" << Vmcnt << ") ";
-  if (Expcnt != 0x7)
-    O << "expcnt(" << Expcnt << ") ";
-  if (Lgkmcnt != 0x7)
+
+  bool NeedSpace = false;
+
+  if (Vmcnt != 0xF) {
+    O << "vmcnt(" << Vmcnt << ')';
+    NeedSpace = true;
+  }
+
+  if (Expcnt != 0x7) {
+    if (NeedSpace)
+      O << ' ';
+    O << "expcnt(" << Expcnt << ')';
+    NeedSpace = true;
+  }
+
+  if (Lgkmcnt != 0x7) {
+    if (NeedSpace)
+      O << ' ';
     O << "lgkmcnt(" << Lgkmcnt << ')';
+  }
 }
 
 #include "AMDGPUGenAsmWriter.inc"

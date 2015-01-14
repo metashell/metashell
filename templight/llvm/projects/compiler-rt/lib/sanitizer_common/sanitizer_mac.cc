@@ -160,7 +160,7 @@ void GetThreadStackTopAndBottom(bool at_initialization, uptr *stack_top,
   // pthread_get_stacksize_np() returns an incorrect stack size for the main
   // thread on Mavericks. See
   // https://code.google.com/p/address-sanitizer/issues/detail?id=261
-  if ((GetMacosVersion() == MACOS_VERSION_MAVERICKS) && at_initialization &&
+  if ((GetMacosVersion() >= MACOS_VERSION_MAVERICKS) && at_initialization &&
       stacksize == (1 << 19))  {
     struct rlimit rl;
     CHECK_EQ(getrlimit(RLIMIT_STACK, &rl), 0);
@@ -297,7 +297,12 @@ MacosVersion GetMacosVersionInternal() {
         case '1': return MACOS_VERSION_LION;
         case '2': return MACOS_VERSION_MOUNTAIN_LION;
         case '3': return MACOS_VERSION_MAVERICKS;
-        default: return MACOS_VERSION_UNKNOWN;
+        case '4': return MACOS_VERSION_YOSEMITE;
+        default:
+          if (IsDigit(version[1]))
+            return MACOS_VERSION_UNKNOWN_NEWER;
+          else
+            return MACOS_VERSION_UNKNOWN;
       }
     }
     default: return MACOS_VERSION_UNKNOWN;
@@ -315,6 +320,13 @@ MacosVersion GetMacosVersion() {
   }
   return result;
 }
+
+uptr GetRSS() {
+  return 0;
+}
+
+void *internal_start_thread(void (*func)(void *arg), void *arg) { return 0; }
+void internal_join_thread(void *th) { }
 
 }  // namespace __sanitizer
 

@@ -65,9 +65,7 @@ PragmaHandler *PragmaNamespace::FindHandler(StringRef Name,
 void PragmaNamespace::AddPragma(PragmaHandler *Handler) {
   assert(!Handlers.lookup(Handler->getName()) &&
          "A handler with this name is already registered in this namespace");
-  llvm::StringMapEntry<PragmaHandler *> &Entry =
-    Handlers.GetOrCreateValue(Handler->getName());
-  Entry.setValue(Handler);
+  Handlers[Handler->getName()] = Handler;
 }
 
 void PragmaNamespace::RemovePragmaHandler(PragmaHandler *Handler) {
@@ -472,9 +470,9 @@ void Preprocessor::HandlePragmaDependency(Token &DependencyTok) {
 
   // Search include directories for this file.
   const DirectoryLookup *CurDir;
-  const FileEntry *File = LookupFile(FilenameTok.getLocation(), Filename,
-                                     isAngled, nullptr, CurDir, nullptr,
-                                     nullptr, nullptr);
+  const FileEntry *File =
+      LookupFile(FilenameTok.getLocation(), Filename, isAngled, nullptr,
+                 nullptr, CurDir, nullptr, nullptr, nullptr);
   if (!File) {
     if (!SuppressIncludeNotFoundError)
       Diag(FilenameTok, diag::err_pp_file_not_found) << Filename;

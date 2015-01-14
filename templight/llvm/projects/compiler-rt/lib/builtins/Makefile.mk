@@ -13,6 +13,9 @@ SubDirs :=
 # Add arch specific optimized implementations.
 SubDirs += i386 ppc x86_64 arm armv6m
 
+# Add ARM64 dir.
+SubDirs += arm64
+
 # Define the variables for this specific directory.
 Sources := $(foreach file,$(wildcard $(Dir)/*.c),$(notdir $(file)))
 ObjNames := $(Sources:%.c=%.o)

@@ -1,5 +1,5 @@
-; RUN: llc < %s -mtriple=powerpc64-unknown-linux-gnu -mcpu=pwr7 -enable-unsafe-fp-math | FileCheck %s
-; RUN: llc < %s -mtriple=powerpc64-unknown-linux-gnu -mcpu=pwr7 | FileCheck -check-prefix=CHECK-SAFE %s
+; RUN: llc < %s -mtriple=powerpc64-unknown-linux-gnu -mcpu=pwr7 -enable-unsafe-fp-math -mattr=-vsx | FileCheck %s
+; RUN: llc < %s -mtriple=powerpc64-unknown-linux-gnu -mcpu=pwr7 -mattr=-vsx | FileCheck -check-prefix=CHECK-SAFE %s
 target datalayout = "E-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-f128:128:128-v128:128:128-n32:64"
 target triple = "powerpc64-unknown-linux-gnu"
 
@@ -16,12 +16,12 @@ define double @foo(double %a, double %b) nounwind {
 ; CHECK-DAG: frsqrte
 ; CHECK-DAG: fnmsub
 ; CHECK: fmul
-; CHECK: fmadd
-; CHECK: fmul
-; CHECK: fmul
-; CHECK: fmadd
-; CHECK: fmul
-; CHECK: fmul
+; CHECK-NEXT: fmadd
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmadd
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmul
 ; CHECK: blr
 
 ; CHECK-SAFE: @foo
@@ -85,13 +85,41 @@ define float @goo(float %a, float %b) nounwind {
 ; CHECK-DAG: frsqrtes
 ; CHECK-DAG: fnmsubs
 ; CHECK: fmuls
-; CHECK: fmadds
-; CHECK: fmuls
-; CHECK: fmuls
-; CHECK: blr
+; CHECK-NEXT: fmadds
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: blr
 
 ; CHECK-SAFE: @goo
 ; CHECK-SAFE: fsqrts
+; CHECK-SAFE: fdivs
+; CHECK-SAFE: blr
+}
+
+; Recognize that this is rsqrt(a) * rcp(b) * c, 
+; not 1 / ( 1 / sqrt(a)) * rcp(b) * c.
+define float @rsqrt_fmul(float %a, float %b, float %c) {
+  %x = call float @llvm.sqrt.f32(float %a)
+  %y = fmul float %x, %b 
+  %z = fdiv float %c, %y
+  ret float %z
+
+; CHECK: @rsqrt_fmul
+; CHECK-DAG: frsqrtes
+; CHECK-DAG: fres
+; CHECK-DAG: fnmsubs
+; CHECK-DAG: fmuls
+; CHECK-DAG: fnmsubs
+; CHECK-DAG: fmadds
+; CHECK-DAG: fmadds
+; CHECK: fmuls
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: blr
+
+; CHECK-SAFE: @rsqrt_fmul
+; CHECK-SAFE: fsqrts
+; CHECK-SAFE: fmuls
 ; CHECK-SAFE: fdivs
 ; CHECK-SAFE: blr
 }
@@ -117,10 +145,10 @@ define double @foo2(double %a, double %b) nounwind {
 ; CHECK-DAG: fre
 ; CHECK-DAG: fnmsub
 ; CHECK: fmadd
-; CHECK: fnmsub
-; CHECK: fmadd
-; CHECK: fmul
-; CHECK: blr
+; CHECK-NEXT: fnmsub
+; CHECK-NEXT: fmadd
+; CHECK-NEXT: fmul
+; CHECK-NEXT: blr
 
 ; CHECK-SAFE: @foo2
 ; CHECK-SAFE: fdiv
@@ -135,8 +163,8 @@ define float @goo2(float %a, float %b) nounwind {
 ; CHECK-DAG: fres
 ; CHECK-DAG: fnmsubs
 ; CHECK: fmadds
-; CHECK: fmuls
-; CHECK: blr
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: blr
 
 ; CHECK-SAFE: @goo2
 ; CHECK-SAFE: fdivs
@@ -164,16 +192,12 @@ define double @foo3(double %a) nounwind {
 ; CHECK-DAG: frsqrte
 ; CHECK-DAG: fnmsub
 ; CHECK: fmul
-; CHECK: fmadd
-; CHECK: fmul
-; CHECK: fmul
-; CHECK: fmadd
-; CHECK: fmul
-; CHECK: fre
-; CHECK: fnmsub
-; CHECK: fmadd
-; CHECK: fnmsub
-; CHECK: fmadd
+; CHECK-NEXT: fmadd
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmadd
+; CHECK-NEXT: fmul
+; CHECK-NEXT: fmul
 ; CHECK: blr
 
 ; CHECK-SAFE: @foo3
@@ -190,11 +214,9 @@ define float @goo3(float %a) nounwind {
 ; CHECK-DAG: frsqrtes
 ; CHECK-DAG: fnmsubs
 ; CHECK: fmuls
-; CHECK: fmadds
-; CHECK: fmuls
-; CHECK: fres
-; CHECK: fnmsubs
-; CHECK: fmadds
+; CHECK-NEXT: fmadds
+; CHECK-NEXT: fmuls
+; CHECK-NEXT: fmuls
 ; CHECK: blr
 
 ; CHECK-SAFE: @goo3
@@ -208,7 +230,6 @@ define <4 x float> @hoo3(<4 x float> %a) nounwind {
 
 ; CHECK: @hoo3
 ; CHECK: vrsqrtefp
-; CHECK-DAG: vrefp
 ; CHECK-DAG: vcmpeqfp
 
 ; CHECK-SAFE: @hoo3

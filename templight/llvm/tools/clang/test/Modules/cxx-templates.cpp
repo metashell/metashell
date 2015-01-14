@@ -122,6 +122,10 @@ void g() {
   (void)&WithImplicitSpecialMembers<int>::n;
 
   MergeClassTemplateSpecializations_string s;
+
+  extern TestInjectedClassName::A *use_a;
+  extern TestInjectedClassName::C *use_c;
+  TestInjectedClassName::UseD();
 }
 
 static_assert(Outer<int>::Inner<int>::f() == 1, "");
@@ -143,6 +147,11 @@ MergeSpecializations<char>::explicitly_specialized_in_a spec_in_a_2;
 MergeSpecializations<double>::explicitly_specialized_in_b spec_in_b_2;
 MergeSpecializations<bool>::explicitly_specialized_in_c spec_in_c_2;
 #endif
+
+MergeAnonUnionMember<> maum_main;
+typedef DontWalkPreviousDeclAfterMerging<int> dwpdam_typedef_2;
+dwpdam_typedef::type dwpdam_typedef_use;
+DontWalkPreviousDeclAfterMerging<int>::Inner::type dwpdam;
 
 using AliasTemplateMergingTest = WithAliasTemplate<int>::X<char>;
 

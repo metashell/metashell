@@ -91,6 +91,13 @@ namespace llvm {
 
     iterator end() const { return Data + Length; }
 
+    const unsigned char *bytes_begin() const {
+      return reinterpret_cast<const unsigned char *>(begin());
+    }
+    const unsigned char *bytes_end() const {
+      return reinterpret_cast<const unsigned char *>(end());
+    }
+
     /// @}
     /// @name String Operations
     /// @{
@@ -347,8 +354,11 @@ namespace llvm {
     typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
     getAsInteger(unsigned Radix, T &Result) const {
       unsigned long long ULLVal;
+      // The additional cast to unsigned long long is required to avoid the
+      // Visual C++ warning C4805: '!=' : unsafe mix of type 'bool' and type
+      // 'unsigned __int64' when instantiating getAsInteger with T = bool.
       if (getAsUnsignedInteger(*this, Radix, ULLVal) ||
-            static_cast<T>(ULLVal) != ULLVal)
+          static_cast<unsigned long long>(static_cast<T>(ULLVal)) != ULLVal)
         return true;
       Result = ULLVal;
       return false;

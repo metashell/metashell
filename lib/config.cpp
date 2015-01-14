@@ -338,9 +338,6 @@ config metashell::detect_config(
     );
 
   cfg.max_template_depth = ucfg_.max_template_depth;
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
-  cfg.templight_trace_capacity = ucfg_.templight_trace_capacity;
-#endif
   cfg.saving_enabled = ucfg_.saving_enabled;
 
   if (env_detector_.on_windows())

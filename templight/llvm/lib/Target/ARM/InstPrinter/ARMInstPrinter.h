@@ -51,7 +51,6 @@ public:
   void printAddrMode3Operand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
   void printAddrMode3OffsetOperand(const MCInst *MI, unsigned OpNum,
                                    raw_ostream &O);
-  void printAM3PostIndexOp(const MCInst *MI, unsigned Op, raw_ostream &O);
   void printAM3PreOrOffsetIndexOp(const MCInst *MI, unsigned Op, raw_ostream &O,
                                   bool AlwaysPrintImm0);
   void printPostIdxImm8Operand(const MCInst *MI, unsigned OpNum,
@@ -132,6 +131,7 @@ public:
   void printNEONModImmOperand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
   void printImmPlusOneOperand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
   void printRotImmOperand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
+  void printModImmOperand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
   void printGPRPairOperand(const MCInst *MI, unsigned OpNum, raw_ostream &O);
 
   void printPCLabel(const MCInst *MI, unsigned OpNum, raw_ostream &O);

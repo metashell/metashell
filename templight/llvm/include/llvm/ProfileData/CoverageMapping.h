@@ -16,6 +16,9 @@
 #define LLVM_PROFILEDATA_COVERAGEMAPPING_H_
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/Hashing.h"
+#include "llvm/ADT/iterator.h"
 #include "llvm/Support/ErrorOr.h"
 #include "llvm/Support/raw_ostream.h"
 #include <system_error>
@@ -63,6 +66,10 @@ public:
     return Kind == Other.Kind && ID == Other.ID;
   }
 
+  friend bool operator<(const Counter &LHS, const Counter &RHS) {
+    return std::tie(LHS.Kind, LHS.ID) < std::tie(RHS.Kind, RHS.ID);
+  }
+
   /// \brief Return the counter that represents the number zero.
   static Counter getZero() { return Counter(); }
 
@@ -87,10 +94,6 @@ struct CounterExpression {
 
   CounterExpression(ExprKind Kind, Counter LHS, Counter RHS)
       : Kind(Kind), LHS(LHS), RHS(RHS) {}
-
-  bool operator==(const CounterExpression &Other) const {
-    return Kind == Other.Kind && LHS == Other.LHS && RHS == Other.RHS;
-  }
 };
 
 /// \brief A Counter expression builder is used to construct the
@@ -98,9 +101,9 @@ struct CounterExpression {
 /// and simplifies algebraic expressions.
 class CounterExpressionBuilder {
   /// \brief A list of all the counter expressions
-  llvm::SmallVector<CounterExpression, 16> Expressions;
-  /// \brief An array of terms used in expression simplification.
-  llvm::SmallVector<int, 16> Terms;
+  std::vector<CounterExpression> Expressions;
+  /// \brief A lookup table for the index of a given expression.
+  llvm::DenseMap<CounterExpression, unsigned> ExpressionIndices;
 
   /// \brief Return the counter which corresponds to the given expression.
   ///
@@ -109,18 +112,19 @@ class CounterExpressionBuilder {
   /// expression is added to the builder's collection of expressions.
   Counter get(const CounterExpression &E);
 
-  /// \brief Convert the expression tree represented by a counter
-  /// into a polynomial in the form of K1Counter1 + .. + KNCounterN
-  /// where K1 .. KN are integer constants that are stored in the Terms array.
-  void extractTerms(Counter C, int Sign = 1);
+  /// \brief Gather the terms of the expression tree for processing.
+  ///
+  /// This collects each addition and subtraction referenced by the counter into
+  /// a sequence that can be sorted and combined to build a simplified counter
+  /// expression.
+  void extractTerms(Counter C, int Sign,
+                    SmallVectorImpl<std::pair<unsigned, int>> &Terms);
 
   /// \brief Simplifies the given expression tree
   /// by getting rid of algebraically redundant operations.
   Counter simplify(Counter ExpressionTree);
 
 public:
-  CounterExpressionBuilder(unsigned NumCounterValues);
-
   ArrayRef<CounterExpression> getExpressions() const { return Expressions; }
 
   /// \brief Return a counter that represents the expression
@@ -228,9 +232,47 @@ struct FunctionRecord {
   std::vector<std::string> Filenames;
   /// \brief Regions in the function along with their counts.
   std::vector<CountedRegion> CountedRegions;
+  /// \brief The number of times this function was executed.
+  uint64_t ExecutionCount;
 
-  FunctionRecord(StringRef Name, ArrayRef<StringRef> Filenames)
-      : Name(Name), Filenames(Filenames.begin(), Filenames.end()) {}
+  FunctionRecord(StringRef Name, ArrayRef<StringRef> Filenames,
+                 uint64_t ExecutionCount)
+      : Name(Name), Filenames(Filenames.begin(), Filenames.end()),
+        ExecutionCount(ExecutionCount) {}
+};
+
+/// \brief Iterator over Functions, optionally filtered to a single file.
+class FunctionRecordIterator
+    : public iterator_facade_base<FunctionRecordIterator,
+                                  std::forward_iterator_tag, FunctionRecord> {
+  ArrayRef<FunctionRecord> Records;
+  ArrayRef<FunctionRecord>::iterator Current;
+  StringRef Filename;
+
+  /// \brief Skip records whose primary file is not \c Filename.
+  void skipOtherFiles();
+
+public:
+  FunctionRecordIterator(ArrayRef<FunctionRecord> Records_,
+                         StringRef Filename = "")
+      : Records(Records_), Current(Records.begin()), Filename(Filename) {
+    skipOtherFiles();
+  }
+
+  FunctionRecordIterator() : Current(Records.begin()) {}
+
+  bool operator==(const FunctionRecordIterator &RHS) const {
+    return Current == RHS.Current && Filename == RHS.Filename;
+  }
+
+  const FunctionRecord &operator*() const { return *Current; }
+
+  FunctionRecordIterator &operator++() {
+    assert(Current != Records.end() && "incremented past end");
+    ++Current;
+    skipOtherFiles();
+    return *this;
+  }
 };
 
 /// \brief Coverage information for a macro expansion or #included file.
@@ -335,7 +377,7 @@ public:
   unsigned getMismatchedCount() { return MismatchedFunctionCount; }
 
   /// \brief Returns the list of files that are covered.
-  std::vector<StringRef> getUniqueSourceFiles();
+  std::vector<StringRef> getUniqueSourceFiles() const;
 
   /// \brief Get the coverage for a particular file.
   ///
@@ -345,8 +387,16 @@ public:
   CoverageData getCoverageForFile(StringRef Filename);
 
   /// \brief Gets all of the functions covered by this profile.
-  ArrayRef<FunctionRecord> getCoveredFunctions() {
-    return ArrayRef<FunctionRecord>(Functions.data(), Functions.size());
+  iterator_range<FunctionRecordIterator> getCoveredFunctions() const {
+    return make_range(FunctionRecordIterator(Functions),
+                      FunctionRecordIterator());
+  }
+
+  /// \brief Gets all of the functions in a particular file.
+  iterator_range<FunctionRecordIterator>
+  getCoveredFunctions(StringRef Filename) const {
+    return make_range(FunctionRecordIterator(Functions, Filename),
+                      FunctionRecordIterator());
   }
 
   /// \brief Get the list of function instantiations in the file.
@@ -363,6 +413,36 @@ public:
 };
 
 } // end namespace coverage
+
+/// \brief Provide DenseMapInfo for CounterExpression
+template<> struct DenseMapInfo<coverage::CounterExpression> {
+  static inline coverage::CounterExpression getEmptyKey() {
+    using namespace coverage;
+    return CounterExpression(CounterExpression::ExprKind::Subtract,
+                             Counter::getCounter(~0U),
+                             Counter::getCounter(~0U));
+  }
+
+  static inline coverage::CounterExpression getTombstoneKey() {
+    using namespace coverage;
+    return CounterExpression(CounterExpression::ExprKind::Add,
+                             Counter::getCounter(~0U),
+                             Counter::getCounter(~0U));
+  }
+
+  static unsigned getHashValue(const coverage::CounterExpression &V) {
+    return static_cast<unsigned>(
+        hash_combine(V.Kind, V.LHS.getKind(), V.LHS.getCounterID(),
+                     V.RHS.getKind(), V.RHS.getCounterID()));
+  }
+
+  static bool isEqual(const coverage::CounterExpression &LHS,
+                      const coverage::CounterExpression &RHS) {
+    return LHS.Kind == RHS.Kind && LHS.LHS == RHS.LHS && LHS.RHS == RHS.RHS;
+  }
+};
+
+
 } // end namespace llvm
 
 #endif // LLVM_PROFILEDATA_COVERAGEMAPPING_H_

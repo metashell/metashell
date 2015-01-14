@@ -51,16 +51,6 @@ namespace
     s << "-ftemplate-depth=" << v_;
     return s.str();
   }
-
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
-  void add_templight_trace_capacity(
-      unsigned capacity_,
-      std::vector<std::string>& v_)
-  {
-    v_.push_back("-trace-capacity");
-    v_.push_back(std::to_string(capacity_));
-  }
-#endif
 }
 
 in_memory_environment::in_memory_environment(
@@ -81,10 +71,6 @@ in_memory_environment::in_memory_environment(
   _clang_args.push_back(clang_argument(config_.standard_to_use));
   _clang_args.push_back("-I" + internal_dir());
   _clang_args.push_back(set_max_template_depth(config_.max_template_depth));
-
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TRACE_CAPACITY
-  add_templight_trace_capacity(config_.templight_trace_capacity, _clang_args);
-#endif
 
   add_with_prefix("-I", config_.include_path, _clang_args);
   add_with_prefix("-D", config_.macros, _clang_args);

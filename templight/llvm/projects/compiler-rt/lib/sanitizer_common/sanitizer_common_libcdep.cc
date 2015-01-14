@@ -13,35 +13,27 @@
 
 #include "sanitizer_common.h"
 #include "sanitizer_flags.h"
+#include "sanitizer_stackdepot.h"
 #include "sanitizer_stacktrace.h"
 #include "sanitizer_symbolizer.h"
 
 namespace __sanitizer {
 
-bool PrintsToTty() {
-  MaybeOpenReportFile();
-  return internal_isatty(report_fd) != 0;
-}
-
-bool PrintsToTtyCached() {
-  // FIXME: Add proper Windows support to AnsiColorDecorator and re-enable color
-  // printing on Windows.
-  if (SANITIZER_WINDOWS)
-    return 0;
-
-  static int cached = 0;
-  static bool prints_to_tty;
-  if (!cached) {  // Not thread-safe.
-    prints_to_tty = PrintsToTty();
-    cached = 1;
-  }
-  return prints_to_tty;
+bool ReportFile::PrintsToTty() {
+  SpinMutexLock l(mu);
+  ReopenIfNecessary();
+  return internal_isatty(fd) != 0;
 }
 
 bool ColorizeReports() {
+  // FIXME: Add proper Windows support to AnsiColorDecorator and re-enable color
+  // printing on Windows.
+  if (SANITIZER_WINDOWS)
+    return false;
+
   const char *flag = common_flags()->color;
   return internal_strcmp(flag, "always") == 0 ||
-         (internal_strcmp(flag, "auto") == 0 && PrintsToTtyCached());
+         (internal_strcmp(flag, "auto") == 0 && report_file.PrintsToTty());
 }
 
 static void (*sandboxing_callback)();
@@ -52,16 +44,62 @@ void SetSandboxingCallback(void (*f)()) {
 void ReportErrorSummary(const char *error_type, StackTrace *stack) {
   if (!common_flags()->print_summary)
     return;
-  AddressInfo ai;
 #if !SANITIZER_GO
   if (stack->size > 0 && Symbolizer::GetOrInit()->CanReturnFileLineInfo()) {
     // Currently, we include the first stack frame into the report summary.
     // Maybe sometimes we need to choose another frame (e.g. skip memcpy/etc).
     uptr pc = StackTrace::GetPreviousInstructionPc(stack->trace[0]);
-    Symbolizer::GetOrInit()->SymbolizePC(pc, &ai, 1);
+    SymbolizedStack *frame = Symbolizer::GetOrInit()->SymbolizePC(pc);
+    const AddressInfo &ai = frame->info;
+    ReportErrorSummary(error_type, ai.file, ai.line, ai.function);
+    frame->ClearAll();
   }
-#endif
+#else
+  AddressInfo ai;
   ReportErrorSummary(error_type, ai.file, ai.line, ai.function);
+#endif
+}
+
+void BackgroundThread(void *arg) {
+  uptr hard_rss_limit_mb = common_flags()->hard_rss_limit_mb;
+  uptr prev_reported_rss = 0;
+  uptr prev_reported_stack_depot_size = 0;
+  while (true) {
+    SleepForMillis(100);
+    uptr current_rss_mb = GetRSS() >> 20;
+    if (common_flags()->verbosity) {
+      // If RSS has grown 10% since last time, print some information.
+      if (prev_reported_rss * 11 / 10 < current_rss_mb) {
+        Printf("%s: RSS: %zdMb\n", SanitizerToolName, current_rss_mb);
+        prev_reported_rss = current_rss_mb;
+      }
+      // If stack depot has grown 10% since last time, print it too.
+      StackDepotStats *stack_depot_stats = StackDepotGetStats();
+      if (prev_reported_stack_depot_size * 11 / 10 <
+          stack_depot_stats->allocated) {
+        Printf("%s: StackDepot: %zd ids; %zdM allocated\n",
+               SanitizerToolName,
+               stack_depot_stats->n_uniq_ids,
+               stack_depot_stats->allocated >> 20);
+        prev_reported_stack_depot_size = stack_depot_stats->allocated;
+      }
+    }
+    // Check RSS against the limit.
+    if (hard_rss_limit_mb && hard_rss_limit_mb < current_rss_mb) {
+      Report("%s: hard rss limit exhausted (%zdMb vs %zdMb)\n",
+             SanitizerToolName, hard_rss_limit_mb, current_rss_mb);
+      DumpProcessMap();
+      Die();
+    }
+  }
+}
+
+void MaybeStartBackgroudThread() {
+  if (!SANITIZER_LINUX) return;  // Need to implement/test on other platforms.
+  // Currently, only start the background thread if hard_rss_limit_mb is given.
+  if (!common_flags()->hard_rss_limit_mb) return;
+  if (!real_pthread_create) return;  // Can't spawn the thread anyway.
+  internal_start_thread(BackgroundThread, nullptr);
 }
 
 }  // namespace __sanitizer

@@ -44,6 +44,7 @@ class MachineModuleInfo;
 class MCAsmInfo;
 class MCCFIInstruction;
 class MCContext;
+class MCExpr;
 class MCInst;
 class MCInstrInfo;
 class MCSection;
@@ -238,6 +239,9 @@ public:
   /// alignment (if present) and a comment describing it if appropriate.
   void EmitBasicBlockStart(const MachineBasicBlock &MBB) const;
 
+  /// Lower the specified LLVM Constant to an MCExpr.
+  const MCExpr *lowerConstant(const Constant *CV);
+
   /// \brief Print a general LLVM constant to the .s file.
   void EmitGlobalConstant(const Constant *CV);
 
@@ -348,12 +352,6 @@ public:
   /// .set if it is available.
   void EmitLabelDifference(const MCSymbol *Hi, const MCSymbol *Lo,
                            unsigned Size) const;
-
-  /// Emit something like ".long Hi+Offset-Lo" where the size in bytes of the
-  /// directive is specified by Size and Hi/Lo specify the labels.  This
-  /// implicitly uses .set if it is available.
-  void EmitLabelOffsetDifference(const MCSymbol *Hi, uint64_t Offset,
-                                 const MCSymbol *Lo, unsigned Size) const;
 
   /// Emit something like ".long Label+Offset" where the size in bytes of the
   /// directive is specified by Size and Label specifies the label.  This
@@ -470,6 +468,10 @@ public:
   virtual bool PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
                                      unsigned AsmVariant, const char *ExtraCode,
                                      raw_ostream &OS);
+
+  /// Let the target do anything it needs to do before emitting inlineasm.
+  /// \p StartInfo - the subtarget info before parsing inline asm
+  virtual void emitInlineAsmStart(const MCSubtargetInfo &StartInfo) const;
 
   /// Let the target do anything it needs to do after emitting inlineasm.
   /// This callback can be used restore the original mode in case the

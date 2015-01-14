@@ -182,7 +182,7 @@ bool ArgPromotion::canPaddingBeAccessed(Argument *arg) {
     Value *V = WorkList.back();
     WorkList.pop_back();
     if (isa<GetElementPtrInst>(V) || isa<PHINode>(V)) {
-      if (PtrValues.insert(V))
+      if (PtrValues.insert(V).second)
         WorkList.insert(WorkList.end(), V->user_begin(), V->user_end());
     } else if (StoreInst *Store = dyn_cast<StoreInst>(V)) {
       Stores.push_back(Store);
@@ -530,7 +530,7 @@ bool ArgPromotion::isSafeToPromoteArgument(Argument *Arg,
         // of elements of the aggregate.
         return false;
       }
-      ToPromote.insert(Operands);
+      ToPromote.insert(std::move(Operands));
     }
   }
 
@@ -554,7 +554,8 @@ bool ArgPromotion::isSafeToPromoteArgument(Argument *Arg,
     BasicBlock *BB = Load->getParent();
 
     AliasAnalysis::Location Loc = AA.getLocation(Load);
-    if (AA.canInstructionRangeModify(BB->front(), *Load, Loc))
+    if (AA.canInstructionRangeModRef(BB->front(), *Load, Loc,
+        AliasAnalysis::Mod))
       return false;  // Pointer is invalidated!
 
     // Now check every path from the entry block to the load for transparency.
@@ -703,6 +704,8 @@ CallGraphNode *ArgPromotion::DoPromotion(Function *F,
   if (DI != FunctionDIs.end()) {
     DISubprogram SP = DI->second;
     SP.replaceFunction(NF);
+    // Ensure the map is updated so it can be reused on subsequent argument
+    // promotions of the same function.
     FunctionDIs.erase(DI);
     FunctionDIs[NF] = SP;
   }

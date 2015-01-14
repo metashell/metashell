@@ -14,6 +14,7 @@
 #ifndef LLVM_OBJECT_ARCHIVE_H
 #define LLVM_OBJECT_ARCHIVE_H
 
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Object/Binary.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -83,7 +84,7 @@ public:
       return getHeader()->getAccessMode();
     }
     /// \return the size of the archive member without the header or padding.
-    uint64_t getSize() const { return Data.size() - StartOfFile; }
+    uint64_t getSize() const;
 
     StringRef getBuffer() const {
       return StringRef(Data.data() + StartOfFile, getSize());
@@ -97,12 +98,12 @@ public:
 
   class child_iterator {
     Child child;
+
   public:
     child_iterator() : child(Child(nullptr, nullptr)) {}
     child_iterator(const Child &c) : child(c) {}
-    const Child* operator->() const {
-      return &child;
-    }
+    const Child *operator->() const { return &child; }
+    const Child &operator*() const { return child; }
 
     bool operator==(const child_iterator &other) const {
       return child == other.child;
@@ -112,11 +113,11 @@ public:
       return !(*this == other);
     }
 
-    bool operator <(const child_iterator &other) const {
+    bool operator<(const child_iterator &other) const {
       return child < other.child;
     }
 
-    child_iterator& operator++() {  // Preincrement
+    child_iterator &operator++() { // Preincrement
       child = child.getNext();
       return *this;
     }
@@ -172,12 +173,14 @@ public:
     K_COFF
   };
 
-  Kind kind() const { 
-    return Format;
-  }
+  Kind kind() const { return (Kind)Format; }
 
   child_iterator child_begin(bool SkipInternal = true) const;
   child_iterator child_end() const;
+  iterator_range<child_iterator> children(bool SkipInternal = true) const {
+    return iterator_range<child_iterator>(child_begin(SkipInternal),
+                                          child_end());
+  }
 
   symbol_iterator symbol_begin() const;
   symbol_iterator symbol_end() const;
@@ -196,7 +199,8 @@ private:
   child_iterator SymbolTable;
   child_iterator StringTable;
   child_iterator FirstRegular;
-  Kind Format;
+  unsigned Format : 2;
+  unsigned IsThin : 1;
 };
 
 }

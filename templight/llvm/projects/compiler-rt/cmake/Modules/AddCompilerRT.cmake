@@ -43,7 +43,8 @@ endmacro()
 # add_compiler_rt_runtime(<name> <arch> {STATIC,SHARED}
 #                         SOURCES <source files>
 #                         CFLAGS <compile flags>
-#                         DEFS <compile definitions>)
+#                         DEFS <compile definitions>
+#                         OUTPUT_NAME <output library name>)
 macro(add_compiler_rt_runtime name arch type)
   if(CAN_TARGET_${arch})
     parse_arguments(LIB "SOURCES;CFLAGS;DEFS;OUTPUT_NAME" "" ${ARGN})
@@ -58,15 +59,20 @@ macro(add_compiler_rt_runtime name arch type)
     # Setup correct output directory in the build tree.
     set_target_properties(${name} PROPERTIES
       ARCHIVE_OUTPUT_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR}
-      LIBRARY_OUTPUT_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR})
-    if (LIB_OUTPUT_NAME)
+      LIBRARY_OUTPUT_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR}
+      RUNTIME_OUTPUT_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR})
+    if ("${LIB_OUTPUT_NAME}" STREQUAL "")
+      set_target_properties(${name} PROPERTIES
+        OUTPUT_NAME ${name}${COMPILER_RT_OS_SUFFIX})
+    else()
       set_target_properties(${name} PROPERTIES
         OUTPUT_NAME ${LIB_OUTPUT_NAME})
     endif()
     # Add installation command.
     install(TARGETS ${name}
       ARCHIVE DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR}
-      LIBRARY DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR})
+      LIBRARY DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR}
+      RUNTIME DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR})
   else()
     message(FATAL_ERROR "Archtecture ${arch} can't be targeted")
   endif()
@@ -142,7 +148,7 @@ if(MSVC)
   # Visual Studio 2012 only supports up to 8 template parameters in
   # std::tr1::tuple by default, but gtest requires 10
   if(MSVC_VERSION EQUAL 1700)
-    add_definitions(-D_VARIADIC_MAX=10)
+    list(APPEND COMPILER_RT_GTEST_CFLAGS -D_VARIADIC_MAX=10)
   endif()
 endif()
 
@@ -150,12 +156,17 @@ endif()
 # using specified link flags. Make executable a part of provided
 # test_suite.
 # add_compiler_rt_test(<test_suite> <test_name>
+#                      SUBDIR <subdirectory for binary>
 #                      OBJECTS <object files>
 #                      DEPS <deps (e.g. runtime libs)>
 #                      LINK_FLAGS <link flags>)
 macro(add_compiler_rt_test test_suite test_name)
-  parse_arguments(TEST "OBJECTS;DEPS;LINK_FLAGS" "" ${ARGN})
-  set(output_bin "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+  parse_arguments(TEST "SUBDIR;OBJECTS;DEPS;LINK_FLAGS" "" ${ARGN})
+  if(TEST_SUBDIR)
+    set(output_bin "${CMAKE_CURRENT_BINARY_DIR}/${TEST_SUBDIR}/${test_name}")
+  else()
+    set(output_bin "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+  endif()
   # Use host compiler in a standalone build, and just-built Clang otherwise.
   if(NOT COMPILER_RT_STANDALONE_BUILD)
     list(APPEND TEST_DEPS clang)

@@ -197,6 +197,29 @@ void test_float_builtins(float F, double D, long double LD) {
   // CHECK: and i1
 }
 
+// CHECK-LABEL: define void @test_float_builtin_ops
+void test_float_builtin_ops(float F, double D, long double LD) {
+  volatile float resf;
+  volatile double resd;
+  volatile long double resld;
+
+  resf = __builtin_fmodf(F,F);
+  // CHECK: frem float
+
+  resd = __builtin_fmod(D,D);
+  // CHECK: frem double
+
+  resld = __builtin_fmodl(LD,LD);
+  // CHECK: frem x86_fp80
+
+  resf = __builtin_fabsf(F);
+  resd = __builtin_fabs(D);
+  resld = __builtin_fabsl(LD);
+  // CHECK: call float @llvm.fabs.f32(float
+  // CHECK: call double @llvm.fabs.f64(double
+  // CHECK: call x86_fp80 @llvm.fabs.f80(x86_fp80
+}
+
 // CHECK-LABEL: define void @test_builtin_longjmp
 void test_builtin_longjmp(void **buffer) {
   // CHECK: [[BITCAST:%.*]] = bitcast

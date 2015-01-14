@@ -375,6 +375,13 @@ uptr internal_rename(const char *oldpath, const char *newpath) {
   UNIMPLEMENTED();
 }
 
+uptr GetRSS() {
+  return 0;
+}
+
+void *internal_start_thread(void (*func)(void *arg), void *arg) { return 0; }
+void internal_join_thread(void *th) { }
+
 // ---------------------- BlockingMutex ---------------- {{{1
 const uptr LOCK_UNINITIALIZED = 0;
 const uptr LOCK_READY = (uptr)-1;
@@ -444,7 +451,7 @@ void GetThreadStackAndTls(bool main, uptr *stk_addr, uptr *stk_size,
 }
 
 #if !SANITIZER_GO
-void StackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
+void BufferedStackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
   CHECK_GE(max_depth, 2);
   // FIXME: CaptureStackBackTrace might be too slow for us.
   // FIXME: Compare with StackWalk64.
@@ -459,8 +466,8 @@ void StackTrace::SlowUnwindStack(uptr pc, uptr max_depth) {
   PopStackFrames(pc_location);
 }
 
-void StackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
-                                            uptr max_depth) {
+void BufferedStackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
+                                                    uptr max_depth) {
   CONTEXT ctx = *(CONTEXT *)context;
   STACKFRAME64 stack_frame;
   memset(&stack_frame, 0, sizeof(stack_frame));
@@ -483,20 +490,15 @@ void StackTrace::SlowUnwindStackWithContext(uptr pc, void *context,
                      &stack_frame, &ctx, NULL, &SymFunctionTableAccess64,
                      &SymGetModuleBase64, NULL) &&
          size < Min(max_depth, kStackTraceMax)) {
-    trace[size++] = (uptr)stack_frame.AddrPC.Offset;
+    trace_buffer[size++] = (uptr)stack_frame.AddrPC.Offset;
   }
 }
 #endif  // #if !SANITIZER_GO
 
-void MaybeOpenReportFile() {
-  // Windows doesn't have native fork, and we don't support Cygwin or other
-  // environments that try to fake it, so the initial report_fd will always be
-  // correct.
-}
-
-void RawWrite(const char *buffer) {
-  uptr length = (uptr)internal_strlen(buffer);
-  if (length != internal_write(report_fd, buffer, length)) {
+void ReportFile::Write(const char *buffer, uptr length) {
+  SpinMutexLock l(mu);
+  ReopenIfNecessary();
+  if (length != internal_write(fd, buffer, length)) {
     // stderr may be closed, but we may be able to print to the debugger
     // instead.  This is the case when launching a program from Visual Studio,
     // and the following routine should write to its console.

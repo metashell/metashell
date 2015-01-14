@@ -47,7 +47,7 @@ static Allocator allocator;
 static THREADLOCAL AllocatorCache cache;
 
 void InitializeAllocator() {
-  allocator.Init();
+  allocator.InitLinkerInitialized(common_flags()->allocator_may_return_null);
 }
 
 void AllocatorThreadFinish() {
@@ -63,7 +63,7 @@ static void RegisterAllocation(const StackTrace &stack, void *p, uptr size) {
   ChunkMetadata *m = Metadata(p);
   CHECK(m);
   m->tag = DisabledInThisThread() ? kIgnored : kDirectlyLeaked;
-  m->stack_trace_id = StackDepotPut(stack.trace, stack.size);
+  m->stack_trace_id = StackDepotPut(stack);
   m->requested_size = size;
   atomic_store(reinterpret_cast<atomic_uint8_t *>(m), 1, memory_order_relaxed);
 }

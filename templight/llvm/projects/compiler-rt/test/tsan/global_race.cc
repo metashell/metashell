@@ -1,4 +1,4 @@
-// RUN: %clangxx_tsan -O1 %s -o %t && %deflake %run %t | FileCheck %s
+// RUN: %clangxx_tsan -O1 %s -o %T/global_race.cc.exe && %deflake %run %T/global_race.cc.exe | FileCheck %s
 #include <pthread.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -13,7 +13,9 @@ void *Thread(void *a) {
 }
 
 int main() {
-  fprintf(stderr, "addr=%p\n", GlobalData);
+  // On FreeBSD, the %p conversion specifier works as 0x%x and thus does not
+  // match to the format used in the diagnotic message.
+  fprintf(stderr, "addr=0x%012lx\n", (unsigned long) GlobalData);
   pthread_t t;
   pthread_create(&t, 0, Thread, 0);
   GlobalData[2] = 43;
@@ -22,5 +24,5 @@ int main() {
 
 // CHECK: addr=[[ADDR:0x[0-9,a-f]+]]
 // CHECK: WARNING: ThreadSanitizer: data race
-// CHECK: Location is global 'GlobalData' of size 40 at [[ADDR]] ({{.*}}+0x{{[0-9,a-f]+}})
+// CHECK: Location is global 'GlobalData' of size 40 at [[ADDR]] (global_race.cc.exe+0x{{[0-9,a-f]+}})
 

@@ -59,9 +59,9 @@ static void ReportMutexMisuse(ThreadState *thr, uptr pc, ReportType typ,
   ThreadRegistryLock l(ctx->thread_registry);
   ScopedReport rep(typ);
   rep.AddMutex(mid);
-  StackTrace trace;
-  trace.ObtainCurrent(thr, pc);
-  rep.AddStack(&trace, true);
+  VarSizeStackTrace trace;
+  ObtainCurrentStack(thr, pc, &trace);
+  rep.AddStack(trace, true);
   rep.AddLocation(addr, 1);
   OutputReport(thr, rep);
 }
@@ -88,7 +88,7 @@ void MutexCreate(ThreadState *thr, uptr pc, uptr addr,
 void MutexDestroy(ThreadState *thr, uptr pc, uptr addr) {
   DPrintf("#%d: MutexDestroy %zx\n", thr->tid, addr);
   StatInc(thr, StatMutexDestroy);
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
   // Global mutexes not marked as LINKER_INITIALIZED
   // cause tons of not interesting reports, so just ignore it.
   if (IsGlobalVar(addr))
@@ -124,12 +124,12 @@ void MutexDestroy(ThreadState *thr, uptr pc, uptr addr) {
     ThreadRegistryLock l(ctx->thread_registry);
     ScopedReport rep(ReportTypeMutexDestroyLocked);
     rep.AddMutex(mid);
-    StackTrace trace;
-    trace.ObtainCurrent(thr, pc);
-    rep.AddStack(&trace);
+    VarSizeStackTrace trace;
+    ObtainCurrentStack(thr, pc, &trace);
+    rep.AddStack(trace);
     FastState last(last_lock);
     RestoreStack(last.tid(), last.epoch(), &trace, 0);
-    rep.AddStack(&trace, true);
+    rep.AddStack(trace, true);
     rep.AddLocation(addr, 1);
     OutputReport(thr, rep);
   }
@@ -405,7 +405,7 @@ void ReleaseStore(ThreadState *thr, uptr pc, uptr addr) {
   s->mtx.Unlock();
 }
 
-#ifndef TSAN_GO
+#ifndef SANITIZER_GO
 static void UpdateSleepClockCallback(ThreadContextBase *tctx_base, void *arg) {
   ThreadState *thr = reinterpret_cast<ThreadState*>(arg);
   ThreadContext *tctx = static_cast<ThreadContext*>(tctx_base);
@@ -472,21 +472,17 @@ void ReportDeadlock(ThreadState *thr, uptr pc, DDReport *r) {
     rep.AddUniqueTid((int)r->loop[i].thr_ctx);
     rep.AddThread((int)r->loop[i].thr_ctx);
   }
-  InternalScopedBuffer<StackTrace> stacks(2 * DDReport::kMaxLoopSize);
   uptr dummy_pc = 0x42;
   for (int i = 0; i < r->n; i++) {
-    uptr size;
     for (int j = 0; j < (flags()->second_deadlock_stack ? 2 : 1); j++) {
       u32 stk = r->loop[i].stk[j];
       if (stk) {
-        const uptr *trace = StackDepotGet(stk, &size);
-        stacks[i].Init(const_cast<uptr *>(trace), size);
+        rep.AddStack(StackDepotGet(stk), true);
       } else {
         // Sometimes we fail to extract the stack trace (FIXME: investigate),
         // but we should still produce some stack trace in the report.
-        stacks[i].Init(&dummy_pc, 1);
+        rep.AddStack(StackTrace(&dummy_pc, 1), true);
       }
-      rep.AddStack(&stacks[i], true);
     }
   }
   OutputReport(thr, rep);

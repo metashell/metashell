@@ -44,19 +44,19 @@ public:
       const std::string& root_name,
       const data::type& evaluation_result);
 
-  static metaprogram create_from_xml_stream(
+  static metaprogram create_from_protobuf_stream(
       std::istream& stream,
       bool full_mode,
       const std::string& root_name,
       const data::type& evaluation_result);
 
-  static metaprogram create_from_xml_file(
+  static metaprogram create_from_protobuf_file(
       const std::string& file,
       bool full_mode,
       const std::string& root_name,
       const data::type& evaluation_result);
 
-  static metaprogram create_from_xml_string(
+  static metaprogram create_from_protobuf_string(
       const std::string& string,
       bool full_mode,
       const std::string& root_name,

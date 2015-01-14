@@ -109,7 +109,7 @@ static void getUnderlyingObjects(const Value *V,
     for (SmallVectorImpl<Value *>::iterator I = Objs.begin(), IE = Objs.end();
          I != IE; ++I) {
       V = *I;
-      if (!Visited.insert(V))
+      if (!Visited.insert(V).second)
         continue;
       if (Operator::getOpcode(V) == Instruction::IntToPtr) {
         const Value *O =
@@ -588,7 +588,7 @@ iterateChainSucc(AliasAnalysis *AA, const MachineFrameInfo *MFI,
     return *Depth;
 
   // Remember visited nodes.
-  if (!Visited.insert(SUb))
+  if (!Visited.insert(SUb).second)
       return *Depth;
   // If there is _some_ dependency already in place, do not
   // descend any further.
@@ -920,6 +920,13 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       AliasMemDefs.clear();
       AliasMemUses.clear();
     } else if (MI->mayStore()) {
+      // Add dependence on barrier chain, if needed.
+      // There is no point to check aliasing on barrier event. Even if
+      // SU and barrier _could_ be reordered, they should not. In addition,
+      // we have lost all RejectMemNodes below barrier.
+      if (BarrierChain)
+        BarrierChain->addPred(SDep(SU, SDep::Barrier));
+
       UnderlyingObjectsVector Objs;
       getUnderlyingObjectsForInstr(MI, MFI, Objs);
 
@@ -989,12 +996,6 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
         adjustChainDeps(AA, MFI, SU, &ExitSU, RejectMemNodes,
                         TrueMemOrderLatency);
       }
-      // Add dependence on barrier chain, if needed.
-      // There is no point to check aliasing on barrier event. Even if
-      // SU and barrier _could_ be reordered, they should not. In addition,
-      // we have lost all RejectMemNodes below barrier.
-      if (BarrierChain)
-        BarrierChain->addPred(SDep(SU, SDep::Barrier));
     } else if (MI->mayLoad()) {
       bool MayAlias = true;
       if (MI->isInvariantLoad(AA)) {

@@ -40,8 +40,7 @@ protected:
   ~LibCallSimplifier() {}
 
 public:
-  LibCallSimplifier(const DataLayout *TD, const TargetLibraryInfo *TLI,
-                    bool UnsafeFPShrink);
+  LibCallSimplifier(const DataLayout *TD, const TargetLibraryInfo *TLI);
 
   /// optimizeCall - Take the given call instruction and return a more
   /// optimal value to replace the instruction with or 0 if a more
@@ -92,6 +91,8 @@ private:
   Value *optimizeCos(CallInst *CI, IRBuilder<> &B);
   Value *optimizePow(CallInst *CI, IRBuilder<> &B);
   Value *optimizeExp2(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeFabs(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeSqrt(CallInst *CI, IRBuilder<> &B);
   Value *optimizeSinCosPi(CallInst *CI, IRBuilder<> &B);
 
   // Integer Library Call Optimizations

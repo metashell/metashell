@@ -28,6 +28,7 @@
 #include "llvm/PassManager.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/Host.h"
+#include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
@@ -78,10 +79,14 @@ static std::vector<std::string> Cleanup;
 static llvm::TargetOptions TargetOpts;
 
 namespace options {
-  enum generate_bc { BC_NO, BC_ALSO, BC_ONLY };
+  enum OutputType {
+    OT_NORMAL,
+    OT_DISABLE,
+    OT_BC_ONLY,
+    OT_SAVE_TEMPS
+  };
   static bool generate_api_file = false;
-  static generate_bc generate_bc_file = BC_NO;
-  static std::string bc_path;
+  static OutputType TheOutputType = OT_NORMAL;
   static std::string obj_path;
   static std::string extra_library_path;
   static std::string triple;
@@ -110,19 +115,11 @@ namespace options {
     } else if (opt.startswith("obj-path=")) {
       obj_path = opt.substr(strlen("obj-path="));
     } else if (opt == "emit-llvm") {
-      generate_bc_file = BC_ONLY;
-    } else if (opt == "also-emit-llvm") {
-      generate_bc_file = BC_ALSO;
-    } else if (opt.startswith("also-emit-llvm=")) {
-      llvm::StringRef path = opt.substr(strlen("also-emit-llvm="));
-      generate_bc_file = BC_ALSO;
-      if (!bc_path.empty()) {
-        message(LDPL_WARNING, "Path to the output IL file specified twice. "
-                              "Discarding %s",
-                opt_);
-      } else {
-        bc_path = path;
-      }
+      TheOutputType = OT_BC_ONLY;
+    } else if (opt == "save-temps") {
+      TheOutputType = OT_SAVE_TEMPS;
+    } else if (opt == "disable-output") {
+      TheOutputType = OT_DISABLE;
     } else {
       // Save this option to pass to the code generator.
       // ParseCommandLineOptions() expects argv[0] to be program name. Lazily
@@ -264,6 +261,14 @@ static const GlobalObject *getBaseObject(const GlobalValue &GV) {
   return cast<GlobalObject>(&GV);
 }
 
+static bool shouldSkip(uint32_t Symflags) {
+  if (!(Symflags & object::BasicSymbolRef::SF_Global))
+    return true;
+  if (Symflags & object::BasicSymbolRef::SF_FormatSpecific)
+    return true;
+  return false;
+}
+
 /// Called by gold to see whether this file is one that our plugin can handle.
 /// We'll try to open it and register all the symbols with add_symbol if
 /// possible.
@@ -278,7 +283,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
       message(LDPL_ERROR, "Failed to get a view of %s", file->name);
       return LDPS_ERR;
     }
-    BufferRef = MemoryBufferRef(StringRef((char *)view, file->filesize), "");
+    BufferRef = MemoryBufferRef(StringRef((const char *)view, file->filesize), "");
   } else {
     int64_t offset = 0;
     // Gold has found what might be IR part-way inside of a file, such as
@@ -298,7 +303,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
   }
 
   ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
-      object::IRObjectFile::createIRObjectFile(BufferRef, Context);
+      object::IRObjectFile::create(BufferRef, Context);
   std::error_code EC = ObjOrErr.getError();
   if (EC == BitcodeError::InvalidBitcodeSignature ||
       EC == object::object_error::invalid_file_type ||
@@ -321,10 +326,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
 
   for (auto &Sym : Obj->symbols()) {
     uint32_t Symflags = Sym.getFlags();
-    if (!(Symflags & object::BasicSymbolRef::SF_Global))
-      continue;
-
-    if (Symflags & object::BasicSymbolRef::SF_FormatSpecific)
+    if (shouldSkip(Symflags))
       continue;
 
     cf.syms.push_back(ld_plugin_symbol());
@@ -418,18 +420,8 @@ static void keepGlobalValue(GlobalValue &GV,
   assert(!GV.isDiscardableIfUnused());
 }
 
-static bool isDeclaration(const GlobalValue &V) {
-  if (V.hasAvailableExternallyLinkage())
-    return true;
-
-  if (V.isMaterializable())
-    return false;
-
-  return V.isDeclaration();
-}
-
 static void internalize(GlobalValue &GV) {
-  if (isDeclaration(GV))
+  if (GV.isDeclarationForLinker())
     return; // We get here if there is a matching asm definition.
   if (!GV.hasLocalLinkage())
     GV.setLinkage(GlobalValue::InternalLinkage);
@@ -485,35 +477,13 @@ static const char *getResolutionName(ld_plugin_symbol_resolution R) {
   case LDPR_PREVAILING_DEF_IRONLY_EXP:
     return "PREVAILING_DEF_IRONLY_EXP";
   }
-}
-
-static GlobalObject *makeInternalReplacement(GlobalObject *GO) {
-  Module *M = GO->getParent();
-  GlobalObject *Ret;
-  if (auto *F = dyn_cast<Function>(GO)) {
-    auto *NewF = Function::Create(
-        F->getFunctionType(), GlobalValue::InternalLinkage, F->getName(), M);
-    NewF->getBasicBlockList().splice(NewF->end(), F->getBasicBlockList());
-    Ret = NewF;
-    F->deleteBody();
-  } else {
-    auto *Var = cast<GlobalVariable>(GO);
-    Ret = new GlobalVariable(
-        *M, Var->getType()->getElementType(), Var->isConstant(),
-        GlobalValue::InternalLinkage, Var->getInitializer(), Var->getName(),
-        nullptr, Var->getThreadLocalMode(), Var->getType()->getAddressSpace(),
-        Var->isExternallyInitialized());
-    Var->setInitializer(nullptr);
-  }
-  Ret->copyAttributesFrom(GO);
-  Ret->setComdat(GO->getComdat());
-
-  return Ret;
+  llvm_unreachable("Unknown resolution");
 }
 
 namespace {
 class LocalValueMaterializer : public ValueMaterializer {
   DenseSet<GlobalValue *> &Dropped;
+  DenseMap<GlobalObject *, GlobalObject *> LocalVersions;
 
 public:
   LocalValueMaterializer(DenseSet<GlobalValue *> &Dropped) : Dropped(Dropped) {}
@@ -522,13 +492,39 @@ public:
 }
 
 Value *LocalValueMaterializer::materializeValueFor(Value *V) {
-  auto *GV = dyn_cast<GlobalValue>(V);
-  if (!GV)
+  auto *GO = dyn_cast<GlobalObject>(V);
+  if (!GO)
     return nullptr;
-  if (!Dropped.count(GV))
+
+  auto I = LocalVersions.find(GO);
+  if (I != LocalVersions.end())
+    return I->second;
+
+  if (!Dropped.count(GO))
     return nullptr;
-  assert(!isa<GlobalAlias>(GV) && "Found alias point to weak alias.");
-  return makeInternalReplacement(cast<GlobalObject>(GV));
+
+  Module &M = *GO->getParent();
+  GlobalValue::LinkageTypes L = GO->getLinkage();
+  GlobalObject *Declaration;
+  if (auto *F = dyn_cast<Function>(GO)) {
+    Declaration = Function::Create(F->getFunctionType(), L, "", &M);
+  } else {
+    auto *Var = cast<GlobalVariable>(GO);
+    Declaration = new GlobalVariable(M, Var->getType()->getElementType(),
+                                     Var->isConstant(), L,
+                                     /*Initializer*/ nullptr);
+  }
+  Declaration->takeName(GO);
+  Declaration->copyAttributesFrom(GO);
+
+  GO->setLinkage(GlobalValue::InternalLinkage);
+  GO->setName(Declaration->getName());
+  Dropped.erase(GO);
+  GO->replaceAllUsesWith(Declaration);
+
+  LocalVersions[Declaration] = GO;
+
+  return GO;
 }
 
 static Constant *mapConstantToLocalCopy(Constant *C, ValueToValueMapTy &VM,
@@ -550,40 +546,41 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
   if (get_view(F.handle, &View) != LDPS_OK)
     message(LDPL_FATAL, "Failed to get a view of file");
 
-  llvm::ErrorOr<MemoryBufferRef> MBOrErr =
-      object::IRObjectFile::findBitcodeInMemBuffer(
-          MemoryBufferRef(StringRef((const char *)View, File.filesize), ""));
-  if (std::error_code EC = MBOrErr.getError())
+  MemoryBufferRef BufferRef(StringRef((const char *)View, File.filesize), "");
+  ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
+      object::IRObjectFile::create(BufferRef, Context);
+
+  if (std::error_code EC = ObjOrErr.getError())
     message(LDPL_FATAL, "Could not read bitcode from file : %s",
             EC.message().c_str());
-
-  std::unique_ptr<MemoryBuffer> Buffer =
-      MemoryBuffer::getMemBuffer(MBOrErr->getBuffer(), "", false);
 
   if (release_input_file(F.handle) != LDPS_OK)
     message(LDPL_FATAL, "Failed to release file information");
 
-  ErrorOr<Module *> MOrErr = getLazyBitcodeModule(std::move(Buffer), Context);
+  object::IRObjectFile &Obj = **ObjOrErr;
 
-  if (std::error_code EC = MOrErr.getError())
-    message(LDPL_FATAL, "Could not read bitcode from file : %s",
-            EC.message().c_str());
-
-  std::unique_ptr<Module> M(MOrErr.get());
+  Module &M = Obj.getModule();
 
   SmallPtrSet<GlobalValue *, 8> Used;
-  collectUsedGlobalVariables(*M, Used, /*CompilerUsed*/ false);
+  collectUsedGlobalVariables(M, Used, /*CompilerUsed*/ false);
 
   DenseSet<GlobalValue *> Drop;
   std::vector<GlobalAlias *> KeptAliases;
-  for (ld_plugin_symbol &Sym : F.syms) {
+
+  unsigned SymNum = 0;
+  for (auto &ObjSym : Obj.symbols()) {
+    if (shouldSkip(ObjSym.getFlags()))
+      continue;
+    ld_plugin_symbol &Sym = F.syms[SymNum];
+    ++SymNum;
+
     ld_plugin_symbol_resolution Resolution =
         (ld_plugin_symbol_resolution)Sym.resolution;
 
     if (options::generate_api_file)
       *ApiFile << Sym.name << ' ' << getResolutionName(Resolution) << '\n';
 
-    GlobalValue *GV = M->getNamedValue(Sym.name);
+    GlobalValue *GV = Obj.getSymbolGV(ObjSym.getRawDataRefImpl());
     if (!GV)
       continue; // Asm symbol.
 
@@ -604,7 +601,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     case LDPR_RESOLVED_EXEC:
     case LDPR_RESOLVED_DYN:
     case LDPR_UNDEF:
-      assert(isDeclaration(*GV));
+      assert(GV->isDeclarationForLinker());
       break;
 
     case LDPR_PREVAILING_DEF_IRONLY: {
@@ -613,7 +610,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
         // Since we use the regular lib/Linker, we cannot just internalize GV
         // now or it will not be copied to the merged module. Instead we force
         // it to be copied and then internalize it.
-        Internalize.insert(Sym.name);
+        Internalize.insert(GV->getName());
       }
       break;
     }
@@ -622,8 +619,14 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
       keepGlobalValue(*GV, KeptAliases);
       break;
 
-    case LDPR_PREEMPTED_REG:
     case LDPR_PREEMPTED_IR:
+      // Gold might have selected a linkonce_odr and preempted a weak_odr.
+      // In that case we have to make sure we don't end up internalizing it.
+      if (!GV->isDiscardableIfUnused())
+        Maybe.erase(GV->getName());
+
+      // fall-through
+    case LDPR_PREEMPTED_REG:
       Drop.insert(GV);
       break;
 
@@ -633,7 +636,7 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
       // and in that module the address might be significant, but that
       // copy will be LDPR_PREEMPTED_IR.
       if (GV->hasLinkOnceODRLinkage())
-        Maybe.insert(Sym.name);
+        Maybe.insert(GV->getName());
       keepGlobalValue(*GV, KeptAliases);
       break;
     }
@@ -645,12 +648,6 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     Sym.comdat_key = nullptr;
   }
 
-  if (!Drop.empty())
-    // This is horrible. Given how lazy loading is implemented, dropping
-    // the body while there is a materializer present doesn't work, the
-    // linker will just read the body back.
-    M->materializeAllPermanently();
-
   ValueToValueMapTy VM;
   LocalValueMaterializer Materializer(Drop);
   for (GlobalAlias *GA : KeptAliases) {
@@ -658,14 +655,13 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     // expression is being dropped. If that is the case, that GV must be copied.
     Constant *Aliasee = GA->getAliasee();
     Constant *Replacement = mapConstantToLocalCopy(Aliasee, VM, &Materializer);
-    if (Aliasee != Replacement)
-      GA->setAliasee(Replacement);
+    GA->setAliasee(Replacement);
   }
 
   for (auto *GV : Drop)
     drop(*GV);
 
-  return M;
+  return Obj.takeModule();
 }
 
 static void runLTOPasses(Module &M, TargetMachine &TM) {
@@ -675,8 +671,18 @@ static void runLTOPasses(Module &M, TargetMachine &TM) {
   PMB.Inliner = createFunctionInliningPass();
   PMB.VerifyInput = true;
   PMB.VerifyOutput = true;
+  PMB.LoopVectorize = true;
+  PMB.SLPVectorize = true;
   PMB.populateLTOPassManager(passes, &TM);
   passes.run(M);
+}
+
+static void saveBCFile(StringRef Path, Module &M) {
+  std::error_code EC;
+  raw_fd_ostream OS(Path, EC, sys::fs::OpenFlags::F_None);
+  if (EC)
+    message(LDPL_FATAL, "Failed to write the output file.");
+  WriteBitcodeToFile(&M, OS);
 }
 
 static void codegen(Module &M) {
@@ -703,6 +709,9 @@ static void codegen(Module &M) {
 
   runLTOPasses(M, *TM);
 
+  if (options::TheOutputType == options::OT_SAVE_TEMPS)
+    saveBCFile(output_name + ".opt.bc", M);
+
   PassManager CodeGenPasses;
   CodeGenPasses.add(new DataLayoutPass());
 
@@ -712,7 +721,7 @@ static void codegen(Module &M) {
     std::error_code EC =
         sys::fs::createTemporaryFile("lto-llvm", "o", FD, Filename);
     if (EC)
-      message(LDPL_FATAL, "Could not create temorary file: %s",
+      message(LDPL_FATAL, "Could not create temporary file: %s",
               EC.message().c_str());
   } else {
     Filename = options::obj_path;
@@ -765,9 +774,8 @@ static ld_plugin_status allSymbolsReadHook(raw_fd_ostream *ApiFile) {
       M->setTargetTriple(DefaultTriple);
     }
 
-    std::string ErrMsg;
-    if (L.linkInModule(M.get(), &ErrMsg))
-      message(LDPL_FATAL, "Failed to link module: %s", ErrMsg.c_str());
+    if (L.linkInModule(M.get()))
+      message(LDPL_FATAL, "Failed to link module");
   }
 
   for (const auto &Name : Internalize) {
@@ -785,22 +793,17 @@ static ld_plugin_status allSymbolsReadHook(raw_fd_ostream *ApiFile) {
       internalize(*GV);
   }
 
-  if (options::generate_bc_file != options::BC_NO) {
+  if (options::TheOutputType == options::OT_DISABLE)
+    return LDPS_OK;
+
+  if (options::TheOutputType != options::OT_NORMAL) {
     std::string path;
-    if (options::generate_bc_file == options::BC_ONLY)
+    if (options::TheOutputType == options::OT_BC_ONLY)
       path = output_name;
-    else if (!options::bc_path.empty())
-      path = options::bc_path;
     else
       path = output_name + ".bc";
-    {
-      std::error_code EC;
-      raw_fd_ostream OS(path, EC, sys::fs::OpenFlags::F_None);
-      if (EC)
-        message(LDPL_FATAL, "Failed to write the output file.");
-      WriteBitcodeToFile(L.getModule(), OS);
-    }
-    if (options::generate_bc_file == options::BC_ONLY)
+    saveBCFile(path, *L.getModule());
+    if (options::TheOutputType == options::OT_BC_ONLY)
       return LDPS_OK;
   }
 
@@ -826,7 +829,10 @@ static ld_plugin_status all_symbols_read_hook(void) {
     Ret = allSymbolsReadHook(&ApiFile);
   }
 
-  if (options::generate_bc_file == options::BC_ONLY)
+  llvm_shutdown();
+
+  if (options::TheOutputType == options::OT_BC_ONLY ||
+      options::TheOutputType == options::OT_DISABLE)
     exit(0);
 
   return Ret;

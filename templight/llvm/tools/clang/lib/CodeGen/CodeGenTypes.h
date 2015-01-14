@@ -248,7 +248,8 @@ public:
                                                   CXXCtorType CtorKind,
                                                   unsigned ExtraArgs);
   const CGFunctionInfo &arrangeFreeFunctionCall(const CallArgList &Args,
-                                                const FunctionType *Ty);
+                                                const FunctionType *Ty,
+                                                bool ChainCall);
   const CGFunctionInfo &arrangeFreeFunctionCall(QualType ResTy,
                                                 const CallArgList &args,
                                                 FunctionType::ExtInfo info,
@@ -273,7 +274,8 @@ public:
   ///
   /// \param argTypes - must all actually be canonical as params
   const CGFunctionInfo &arrangeLLVMFunctionInfo(CanQualType returnType,
-                                                bool IsInstanceMethod,
+                                                bool instanceMethod,
+                                                bool chainCall,
                                                 ArrayRef<CanQualType> argTypes,
                                                 FunctionType::ExtInfo info,
                                                 RequiredArgs args);
@@ -292,11 +294,10 @@ public:  // These are internal details of CGT that shouldn't be used externally.
   /// ConvertRecordDeclType - Lay out a tagged decl type like struct or union.
   llvm::StructType *ConvertRecordDeclType(const RecordDecl *TD);
 
-  /// GetExpandedTypes - Expand the type \arg Ty into the LLVM
-  /// argument types it would be passed as on the provided vector \arg
-  /// ArgTys. See ABIArgInfo::Expand.
-  void GetExpandedTypes(QualType type,
-                        SmallVectorImpl<llvm::Type*> &expanded);
+  /// getExpandedTypes - Expand the type \arg Ty into the LLVM
+  /// argument types it would be passed as. See ABIArgInfo::Expand.
+  void getExpandedTypes(QualType Ty,
+                        SmallVectorImpl<llvm::Type *>::iterator &TI);
 
   /// IsZeroInitializable - Return whether a type can be
   /// zero-initialized (in the C++ sense) with an LLVM zeroinitializer.

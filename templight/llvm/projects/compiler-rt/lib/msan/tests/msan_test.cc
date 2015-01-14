@@ -20,7 +20,6 @@
 
 #include "sanitizer/allocator_interface.h"
 #include "sanitizer/msan_interface.h"
-#include "msandr_test_so.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -251,7 +250,6 @@ TEST(MemorySanitizer, ArgTest) {
 
 
 TEST(MemorySanitizer, CallAndRet) {
-  if (!__msan_has_dynamic_component()) return;
   ReturnPoisoned<S1>();
   ReturnPoisoned<S2>();
   ReturnPoisoned<S4>();
@@ -494,14 +492,12 @@ TEST(MemorySanitizer, DynMem) {
 static char *DynRetTestStr;
 
 TEST(MemorySanitizer, DynRet) {
-  if (!__msan_has_dynamic_component()) return;
   ReturnPoisoned<S8>();
   EXPECT_NOT_POISONED(clearenv());
 }
 
 
 TEST(MemorySanitizer, DynRet1) {
-  if (!__msan_has_dynamic_component()) return;
   ReturnPoisoned<S8>();
 }
 
@@ -570,7 +566,7 @@ TEST(MemorySanitizer, fread) {
   EXPECT_NOT_POISONED(x[16]);
   EXPECT_NOT_POISONED(x[31]);
   fclose(f);
-  delete x;
+  delete[] x;
 }
 
 TEST(MemorySanitizer, read) {
@@ -583,7 +579,7 @@ TEST(MemorySanitizer, read) {
   EXPECT_NOT_POISONED(x[16]);
   EXPECT_NOT_POISONED(x[31]);
   close(fd);
-  delete x;
+  delete[] x;
 }
 
 TEST(MemorySanitizer, pread) {
@@ -596,7 +592,7 @@ TEST(MemorySanitizer, pread) {
   EXPECT_NOT_POISONED(x[16]);
   EXPECT_NOT_POISONED(x[31]);
   close(fd);
-  delete x;
+  delete[] x;
 }
 
 TEST(MemorySanitizer, readv) {
@@ -1452,13 +1448,8 @@ void TestOverlapMemmove() {
   x[2] = 0;
   memmove(x, x + 1, (size - 1) * sizeof(T));
   EXPECT_NOT_POISONED(x[1]);
-  if (!__msan_has_dynamic_component()) {
-    // FIXME: under DR we will lose this information
-    // because accesses in memmove will unpoisin the shadow.
-    // We need to use our own memove implementation instead of libc's.
-    EXPECT_POISONED(x[0]);
-    EXPECT_POISONED(x[2]);
-  }
+  EXPECT_POISONED(x[0]);
+  EXPECT_POISONED(x[2]);
   delete [] x;
 }
 
@@ -1547,55 +1538,74 @@ TEST(MemorySanitizer, strncat_overflow) {  // NOLINT
   EXPECT_POISONED(a[7]);
 }
 
-#define TEST_STRTO_INT(func_name)          \
-  TEST(MemorySanitizer, func_name) {       \
-    char *e;                               \
-    EXPECT_EQ(1U, func_name("1", &e, 10)); \
-    EXPECT_NOT_POISONED((S8)e);            \
+#define TEST_STRTO_INT(func_name, char_type, str_prefix) \
+  TEST(MemorySanitizer, func_name) {                     \
+    char_type *e;                                        \
+    EXPECT_EQ(1U, func_name(str_prefix##"1", &e, 10));   \
+    EXPECT_NOT_POISONED((S8)e);                          \
   }
 
-#define TEST_STRTO_FLOAT(func_name)     \
-  TEST(MemorySanitizer, func_name) {    \
-    char *e;                            \
-    EXPECT_NE(0, func_name("1.5", &e)); \
-    EXPECT_NOT_POISONED((S8)e);         \
+#define TEST_STRTO_FLOAT(func_name, char_type, str_prefix) \
+  TEST(MemorySanitizer, func_name) {                       \
+    char_type *e;                                          \
+    EXPECT_NE(0, func_name(str_prefix##"1.5", &e));        \
+    EXPECT_NOT_POISONED((S8)e);                            \
   }
 
-#define TEST_STRTO_FLOAT_LOC(func_name)                          \
+#define TEST_STRTO_FLOAT_LOC(func_name, char_type, str_prefix)   \
   TEST(MemorySanitizer, func_name) {                             \
     locale_t loc = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0); \
-    char *e;                                                     \
-    EXPECT_NE(0, func_name("1.5", &e, loc));                     \
+    char_type *e;                                                \
+    EXPECT_NE(0, func_name(str_prefix##"1.5", &e, loc));         \
     EXPECT_NOT_POISONED((S8)e);                                  \
     freelocale(loc);                                             \
   }
 
-#define TEST_STRTO_INT_LOC(func_name)                            \
+#define TEST_STRTO_INT_LOC(func_name, char_type, str_prefix)     \
   TEST(MemorySanitizer, func_name) {                             \
     locale_t loc = newlocale(LC_NUMERIC_MASK, "C", (locale_t)0); \
-    char *e;                                                     \
-    ASSERT_EQ(1U, func_name("1", &e, 10, loc));                  \
+    char_type *e;                                                \
+    ASSERT_EQ(1U, func_name(str_prefix##"1", &e, 10, loc));      \
     EXPECT_NOT_POISONED((S8)e);                                  \
     freelocale(loc);                                             \
   }
 
-TEST_STRTO_INT(strtol)
-TEST_STRTO_INT(strtoll)
-TEST_STRTO_INT(strtoul)
-TEST_STRTO_INT(strtoull)
+TEST_STRTO_INT(strtol, char, )
+TEST_STRTO_INT(strtoll, char, )
+TEST_STRTO_INT(strtoul, char, )
+TEST_STRTO_INT(strtoull, char, )
 
-TEST_STRTO_FLOAT(strtof)
-TEST_STRTO_FLOAT(strtod)
-TEST_STRTO_FLOAT(strtold)
+TEST_STRTO_FLOAT(strtof, char, )
+TEST_STRTO_FLOAT(strtod, char, )
+TEST_STRTO_FLOAT(strtold, char, )
 
-TEST_STRTO_FLOAT_LOC(strtof_l)
-TEST_STRTO_FLOAT_LOC(strtod_l)
-TEST_STRTO_FLOAT_LOC(strtold_l)
+TEST_STRTO_FLOAT_LOC(strtof_l, char, )
+TEST_STRTO_FLOAT_LOC(strtod_l, char, )
+TEST_STRTO_FLOAT_LOC(strtold_l, char, )
 
-TEST_STRTO_INT_LOC(strtol_l)
-TEST_STRTO_INT_LOC(strtoll_l)
-TEST_STRTO_INT_LOC(strtoul_l)
-TEST_STRTO_INT_LOC(strtoull_l)
+TEST_STRTO_INT_LOC(strtol_l, char, )
+TEST_STRTO_INT_LOC(strtoll_l, char, )
+TEST_STRTO_INT_LOC(strtoul_l, char, )
+TEST_STRTO_INT_LOC(strtoull_l, char, )
+
+TEST_STRTO_INT(wcstol, wchar_t, L)
+TEST_STRTO_INT(wcstoll, wchar_t, L)
+TEST_STRTO_INT(wcstoul, wchar_t, L)
+TEST_STRTO_INT(wcstoull, wchar_t, L)
+
+TEST_STRTO_FLOAT(wcstof, wchar_t, L)
+TEST_STRTO_FLOAT(wcstod, wchar_t, L)
+TEST_STRTO_FLOAT(wcstold, wchar_t, L)
+
+TEST_STRTO_FLOAT_LOC(wcstof_l, wchar_t, L)
+TEST_STRTO_FLOAT_LOC(wcstod_l, wchar_t, L)
+TEST_STRTO_FLOAT_LOC(wcstold_l, wchar_t, L)
+
+TEST_STRTO_INT_LOC(wcstol_l, wchar_t, L)
+TEST_STRTO_INT_LOC(wcstoll_l, wchar_t, L)
+TEST_STRTO_INT_LOC(wcstoul_l, wchar_t, L)
+TEST_STRTO_INT_LOC(wcstoull_l, wchar_t, L)
+
 
 TEST(MemorySanitizer, strtoimax) {
   char *e;
@@ -1611,12 +1621,20 @@ TEST(MemorySanitizer, strtoumax) {
 
 #ifdef __GLIBC__
 extern "C" float __strtof_l(const char *nptr, char **endptr, locale_t loc);
-TEST_STRTO_FLOAT_LOC(__strtof_l)
+TEST_STRTO_FLOAT_LOC(__strtof_l, char, )
 extern "C" double __strtod_l(const char *nptr, char **endptr, locale_t loc);
-TEST_STRTO_FLOAT_LOC(__strtod_l)
+TEST_STRTO_FLOAT_LOC(__strtod_l, char, )
 extern "C" long double __strtold_l(const char *nptr, char **endptr,
                                    locale_t loc);
-TEST_STRTO_FLOAT_LOC(__strtold_l)
+TEST_STRTO_FLOAT_LOC(__strtold_l, char, )
+
+extern "C" float __wcstof_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc);
+TEST_STRTO_FLOAT_LOC(__wcstof_l, wchar_t, L)
+extern "C" double __wcstod_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc);
+TEST_STRTO_FLOAT_LOC(__wcstod_l, wchar_t, L)
+extern "C" long double __wcstold_l(const wchar_t *nptr, wchar_t **endptr,
+                                   locale_t loc);
+TEST_STRTO_FLOAT_LOC(__wcstold_l, wchar_t, L)
 #endif  // __GLIBC__
 
 TEST(MemorySanitizer, modf) {
@@ -1840,6 +1858,16 @@ TEST(MemorySanitizer, wcsnrtombs) {
   EXPECT_EQ(buff[0], 'a');
   EXPECT_EQ(buff[1], 'b');
   EXPECT_POISONED(buff[2]);
+}
+
+TEST(MemorySanitizer, wmemset) {
+    wchar_t x[25];
+    break_optimization(x);
+    EXPECT_POISONED(x[0]);
+    wmemset(x, L'A', 10);
+    EXPECT_EQ(x[0], L'A');
+    EXPECT_EQ(x[9], L'A');
+    EXPECT_POISONED(x[10]);
 }
 
 TEST(MemorySanitizer, mbtowc) {
@@ -2807,7 +2835,7 @@ TEST(MemorySanitizer, scanf) {
   EXPECT_NOT_POISONED(s[4]);
   EXPECT_NOT_POISONED(s[5]);
   EXPECT_POISONED(s[6]);
-  delete s;
+  delete[] s;
   delete d;
 }
 
@@ -3732,56 +3760,6 @@ TEST(VectorMaddTest, mmx_pmadd_wd) {
 }
 #endif  // defined(__clang__)
 
-TEST(MemorySanitizerDr, StoreInDSOTest) {
-  if (!__msan_has_dynamic_component()) return;
-  char* s = new char[10];
-  dso_memfill(s, 9);
-  EXPECT_NOT_POISONED(s[5]);
-  EXPECT_POISONED(s[9]);
-}
-
-int return_poisoned_int() {
-  return ReturnPoisoned<U8>();
-}
-
-TEST(MemorySanitizerDr, ReturnFromDSOTest) {
-  if (!__msan_has_dynamic_component()) return;
-  EXPECT_NOT_POISONED(dso_callfn(return_poisoned_int));
-}
-
-NOINLINE int TrashParamTLS(long long x, long long y, long long z) {  //NOLINT
-  EXPECT_POISONED(x);
-  EXPECT_POISONED(y);
-  EXPECT_POISONED(z);
-  return 0;
-}
-
-static int CheckParamTLS(long long x, long long y, long long z) {  //NOLINT
-  EXPECT_NOT_POISONED(x);
-  EXPECT_NOT_POISONED(y);
-  EXPECT_NOT_POISONED(z);
-  return 0;
-}
-
-TEST(MemorySanitizerDr, CallFromDSOTest) {
-  if (!__msan_has_dynamic_component()) return;
-  S8* x = GetPoisoned<S8>();
-  S8* y = GetPoisoned<S8>();
-  S8* z = GetPoisoned<S8>();
-  EXPECT_NOT_POISONED(TrashParamTLS(*x, *y, *z));
-  EXPECT_NOT_POISONED(dso_callfn1(CheckParamTLS));
-}
-
-static void StackStoreInDSOFn(int* x, int* y) {
-  EXPECT_NOT_POISONED(*x);
-  EXPECT_NOT_POISONED(*y);
-}
-
-TEST(MemorySanitizerDr, StackStoreInDSOTest) {
-  if (!__msan_has_dynamic_component()) return;
-  dso_stack_store(StackStoreInDSOFn, 1);
-}
-
 TEST(MemorySanitizerOrigins, SetGet) {
   EXPECT_EQ(TrackingOrigins(), __msan_get_track_origins());
   if (!TrackingOrigins()) return;
@@ -3801,8 +3779,7 @@ struct S {
   U2 b;
 };
 
-// http://code.google.com/p/memory-sanitizer/issues/detail?id=6
-TEST(MemorySanitizerOrigins, DISABLED_InitializedStoreDoesNotChangeOrigin) {
+TEST(MemorySanitizerOrigins, InitializedStoreDoesNotChangeOrigin) {
   if (!TrackingOrigins()) return;
 
   S s;

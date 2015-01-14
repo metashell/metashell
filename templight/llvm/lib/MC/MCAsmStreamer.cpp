@@ -443,7 +443,7 @@ bool MCAsmStreamer::EmitSymbolAttribute(MCSymbol *Symbol,
     break;
   case MCSA_Protected:      OS << "\t.protected\t";       break;
   case MCSA_Reference:      OS << "\t.reference\t";       break;
-  case MCSA_Weak:           OS << "\t.weak\t";            break;
+  case MCSA_Weak:           OS << MAI->getWeakDirective(); break;
   case MCSA_WeakDefinition:
     OS << "\t.weak_definition\t";
     break;
@@ -682,7 +682,11 @@ void MCAsmStreamer::EmitValueImpl(const MCExpr *Value, unsigned Size,
       // We truncate our partial emission to fit within the bounds of the
       // emission domain.  This produces nicer output and silences potential
       // truncation warnings when round tripping through another assembler.
-      ValueToEmit &= ~0ULL >> (64 - EmissionSize * 8);
+      uint64_t Shift = 64 - EmissionSize * 8;
+      assert(Shift < static_cast<uint64_t>(
+                         std::numeric_limits<unsigned long long>::digits) &&
+             "undefined behavior");
+      ValueToEmit &= ~0ULL >> Shift;
       EmitIntValue(ValueToEmit, EmissionSize);
       Emitted += EmissionSize;
     }
