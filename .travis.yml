@@ -16,8 +16,6 @@ install:
   # Install protobuf
   - tools/get_protobuf.sh
 script:
-  # Test that the TOC of the description is up to date
-  - tools/gen_toc -i README.md -o - -t github | diff README.md -
   # Test the code
   - mkdir bin
   - cd bin
@@ -25,7 +23,5 @@ script:
   - make -j2
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Test that the documentation about the built-in pragmas and mdb commands is up to date
-  - app/metashell --show_pragma_help | ../tools/replace_part -i ../README.md -m '<!-- pragma_info -->' -o - -r - | diff ../README.md -
   - app/metashell --show_pragma_help | ../tools/replace_part -i ../docs/reference/pragmas.md -m '<!-- pragma_info -->' -o - -r - | diff ../docs/reference/pragmas.md -
-  - app/metashell --show_mdb_help | ../tools/replace_part -i ../README.md -m '<!-- mdb_info -->' -o - -r - | diff ../README.md -
   - app/metashell --show_mdb_help | ../tools/replace_part -i ../docs/reference/mdb_commands.md -m '<!-- mdb_info -->' -o - -r - | diff ../docs/reference/mdb_commands.md -
