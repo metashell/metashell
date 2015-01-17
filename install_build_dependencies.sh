@@ -36,7 +36,8 @@ then
     termcap
 elif [ "DISTRIB_ID=Ubuntu" = "$(cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID)" ]
 then
-  sudo apt-get -y install git g++ cmake libreadline-dev
+  sudo apt-get -y install git g++ cmake libreadline-dev python-pip
+  sudo pip install mkdocs
 elif [ -e /etc/debian_version ]
 then
   apt-get -y install git g++ cmake libreadline-dev

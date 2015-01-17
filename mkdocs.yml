@@ -1,0 +1,19 @@
+site_name: Metashell
+site_description: Template metaprogramming shell
+repo_url: https://github.com/sabel83/metashell
+pages:
+- ['index.md', Home]
+- ['getting_metashell/platforms.md', 'Getting Metashell', 'Supported platforms']
+- ['getting_metashell/installers.md', 'Getting Metashell', 'Binary installers']
+- ['getting_metashell/build.md', 'Getting Metashell', 'Building Metashell']
+- ['manual/getting_started.md', 'User manual', 'Getting started']
+- ['manual/environment.md', 'User manual', 'The environment in Metashell']
+- ['manual/troubleshooting.md', 'User manual', 'Troubleshooting']
+- ['manual/embedding.md', 'User manual', 'Embedding Metashell']
+- ['manual/how_to.md', 'User manual', 'How to...']
+- ['reference/pragmas.md', 'Reference', 'The pragmas']
+- ['reference/mdb_commands.md', 'Reference', 'MDB commands']
+- ['reference/headers.md', 'Reference', 'The built-in headers']
+- ['about/changelog.md', 'About', 'Changelog']
+theme: cosmo
+
