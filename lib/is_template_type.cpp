@@ -16,12 +16,12 @@
 
 #include <metashell/is_template_type.hpp>
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 namespace metashell {
 
 bool is_template_type(const std::string& type) {
-  command cmd(type);
+  data::command cmd(type);
   for (const data::token& t : cmd) {
     if (t.type() == data::token_type::operator_greater ||
         t.type() == data::token_type::operator_less)

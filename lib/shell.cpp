@@ -21,7 +21,7 @@
 #include <metashell/version.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/to_string.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/null_history.hpp>
@@ -71,7 +71,7 @@ namespace
     return false;
   }
 
-  bool is_empty_line(const command& cmd_)
+  bool is_empty_line(const data::command& cmd_)
   {
     return
       std::find_if(
@@ -175,13 +175,15 @@ void shell::cancel_operation() {}
 
 void shell::display_splash(iface::displayer& displayer_)
 {
+  using data::paragraph;
+
   const std::string version_desc =
     #include "version_desc.hpp"
   ;
 
   const paragraph empty_line("");
 
-  text splash_text;
+  data::text splash_text;
   splash_text.paragraphs.push_back(
     paragraph("Template metaprogramming shell " + version())
   );
@@ -244,7 +246,7 @@ void shell::display_splash(iface::displayer& displayer_)
 
   if (_config.verbose)
   {
-    displayer_.show_comment(text("Verbose mode: ON"));
+    displayer_.show_comment(data::text("Verbose mode: ON"));
   }
 }
 
@@ -261,7 +263,7 @@ void shell::line_available(
       const std::string s = _line_prefix + s_;
       _line_prefix.clear();
 
-      const command cmd(s);
+      const data::command cmd(s);
 
       if (has_non_whitespace(s))
       {
@@ -273,7 +275,7 @@ void shell::line_available(
 
         if (!is_empty_line(cmd))
         {
-          if (boost::optional<command::iterator> p = parse_pragma(cmd))
+          if (boost::optional<data::command::iterator> p = parse_pragma(cmd))
           {
             _pragma_handlers.process(*p, cmd.end(), displayer_);
           }
@@ -438,17 +440,17 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 {
   if (_environment_stack.empty())
   {
-    displayer_.show_comment(text("Environment stack is empty"));
+    displayer_.show_comment(data::text("Environment stack is empty"));
   }
   else if (_environment_stack.size() == 1)
   {
-    displayer_.show_comment(text("Environment stack has 1 entry"));
+    displayer_.show_comment(data::text("Environment stack has 1 entry"));
   }
   else
   {
     std::ostringstream s;
     s << "Environment stack has " << _environment_stack.size() << " entries";
-    displayer_.show_comment(text(s.str()));
+    displayer_.show_comment(data::text(s.str()));
   }
 }
 

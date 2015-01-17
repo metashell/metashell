@@ -77,12 +77,12 @@ std::string pragma_switch::description() const
 }
 
 void pragma_switch::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {
-  command::iterator i = args_begin_;
+  auto i = args_begin_;
 
   if (i != args_end_)
   {
@@ -109,7 +109,7 @@ void pragma_switch::run(
     }
   }
   displayer_.show_comment(
-    text(_name + " is " + (_query() ? "on" : "off"))
+    data::text(_name + " is " + (_query() ? "on" : "off"))
   );
 }
 

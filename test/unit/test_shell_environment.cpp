@@ -90,7 +90,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
   sh.display_environment_stack_size(d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {metashell::text("Environment stack is empty")},
+    {metashell::data::text("Environment stack is empty")},
     d.comments()
   );
 }
@@ -103,7 +103,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
   sh.display_environment_stack_size(d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {metashell::text("Environment stack has 1 entry")},
+    {metashell::data::text("Environment stack has 1 entry")},
     d.comments()
   );
 }
@@ -117,7 +117,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
   sh.display_environment_stack_size(d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {metashell::text("Environment stack has 2 entries")},
+    {metashell::data::text("Environment stack has 2 entries")},
     d.comments()
   );
 }
@@ -183,7 +183,7 @@ JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
   JUST_ASSERT_EQUAL_CONTAINER({"typedef int x;"}, d.cpp_codes());
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      metashell::text(
+      metashell::data::text(
         "You don't need the environment add pragma to add this to the"
         " environment. The following command does this as well:"
       )

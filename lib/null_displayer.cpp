@@ -33,7 +33,7 @@ void null_displayer::show_type(const data::type&)
   // throw away
 }
 
-void null_displayer::show_comment(const text&)
+void null_displayer::show_comment(const data::text&)
 {
   // throw away
 }
@@ -48,7 +48,7 @@ void null_displayer::show_frame(const data::frame&)
   // throw away
 }
 
-void null_displayer::show_backtrace(const backtrace&)
+void null_displayer::show_backtrace(const data::backtrace&)
 {
   // throw away
 }

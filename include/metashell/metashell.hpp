@@ -19,7 +19,7 @@
 
 #include <metashell/config.hpp>
 #include <metashell/environment.hpp>
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
 
 #include "result.hpp"
@@ -69,11 +69,11 @@ namespace metashell
   );
 
   bool is_environment_setup_command(
-    command::iterator begin_,
-    const command::iterator& end_
+    data::command::iterator begin_,
+    const data::command::iterator& end_
   );
 
-  inline bool is_environment_setup_command(const command& cmd_)
+  inline bool is_environment_setup_command(const data::command& cmd_)
   {
     return is_environment_setup_command(cmd_.begin(), cmd_.end());
   }

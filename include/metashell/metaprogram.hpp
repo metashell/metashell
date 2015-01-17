@@ -28,7 +28,7 @@
 
 #include <metashell/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
-#include <metashell/backtrace.hpp>
+#include <metashell/data/backtrace.hpp>
 #include <metashell/data/type.hpp>
 
 namespace metashell {
@@ -150,7 +150,7 @@ public:
   optional_edge_descriptor get_current_edge() const;
   data::frame get_current_frame() const;
   data::frame get_root_frame() const;
-  backtrace get_backtrace() const;
+  data::backtrace get_backtrace() const;
   unsigned get_backtrace_length() const;
 
   unsigned get_traversal_count(vertex_descriptor vertex) const;

@@ -34,8 +34,8 @@ namespace metashell
     virtual std::string arguments() const override;
 
     virtual void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_,
+      const data::command::iterator& args_begin_,
+      const data::command::iterator& args_end_,
       iface::displayer& displayer_
     ) const override;
 

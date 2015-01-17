@@ -38,8 +38,8 @@ namespace
     virtual std::string description() const override { return "Foo bar"; }
 
     virtual void run(
-      const command::iterator&,
-      const command::iterator&,
+      const data::command::iterator&,
+      const data::command::iterator&,
       iface::displayer&
     ) const override
     {
@@ -62,7 +62,7 @@ JUST_TEST_CASE(test_test_handler_sets_run_flag)
 JUST_TEST_CASE(test_processing_non_existing_handler)
 {
   pragma_handler_map m;
-  const command cmd(/* #pragma metashell */ "foo");
+  const data::command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
   JUST_ASSERT_THROWS([&m, &cmd, &d] { m.process(cmd.begin(), cmd.end(), d); });
@@ -73,7 +73,7 @@ JUST_TEST_CASE(test_processing_existing_handler)
   bool foo_run = false;
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
-  const command cmd(/* #pragma metashell */ "foo");
+  const data::command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -86,7 +86,7 @@ JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
   bool foo_bar_run = false;
   pragma_handler_map m;
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const command cmd(/* #pragma metashell */ "foo bar");
+  const data::command cmd(/* #pragma metashell */ "foo bar");
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -103,7 +103,7 @@ JUST_TEST_CASE(
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const command cmd(/* #pragma metashell */ "foo bar");
+  const data::command cmd(/* #pragma metashell */ "foo bar");
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -119,7 +119,7 @@ JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const command cmd(/* #pragma metashell */ "foo x");
+  const data::command cmd(/* #pragma metashell */ "foo x");
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);

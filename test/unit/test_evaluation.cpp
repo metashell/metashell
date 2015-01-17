@@ -369,25 +369,25 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
 
 JUST_TEST_CASE(test_variable_definition)
 {
-  using metashell::command;
+  using metashell::data::command;
   JUST_ASSERT(metashell::is_environment_setup_command(command("int x;")));
 }
 
 JUST_TEST_CASE(test_function_definition)
 {
-  using metashell::command;
+  using metashell::data::command;
   JUST_ASSERT(metashell::is_environment_setup_command(command("void f() {}")));
 }
 
 JUST_TEST_CASE(test_is_environment_setup_with_leading_whitespace)
 {
-  using metashell::command;
+  using metashell::data::command;
   JUST_ASSERT(!metashell::is_environment_setup_command(command(" int")));
 }
 
 JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
 {
-  using metashell::command;
+  using metashell::data::command;
   JUST_ASSERT(!metashell::is_environment_setup_command(command("int")));
 }
 

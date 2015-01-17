@@ -42,8 +42,8 @@ std::string pragma_evaluate::description() const
 }
 
 void pragma_evaluate::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {
@@ -54,19 +54,19 @@ void pragma_evaluate::run(
   if (!is_environment_setup_command(args_begin_, args_end_))
   {
     displayer_.show_comment(
-      text{
-        paragraph(
+      data::text{
+        data::paragraph(
           "You don't need the evaluate add pragma to evaluate this metaprogram."
           " The following command does this as well:"
         ),
-        paragraph(cmd)
+        data::paragraph(cmd)
       }
     );
   }
   else
   {
     displayer_.show_comment(
-      text(
+      data::text(
         "Metashell (incorrectly) thinks that this command should be added to"
         " the environment and would not execute it as a metaprogram without"
         " the \"evaluate\" pragma. Please file a bug report containing"

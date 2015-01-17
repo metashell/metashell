@@ -42,8 +42,8 @@ std::string pragma_environment_add::description() const
 }
 
 void pragma_environment_add::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {
@@ -54,7 +54,7 @@ void pragma_environment_add::run(
   if (is_environment_setup_command(args_begin_, args_end_))
   {
     displayer_.show_comment(
-      text(
+      data::text(
         "You don't need the environment add pragma to add this to the"
         " environment. The following command does this as well:"
       )
@@ -64,7 +64,7 @@ void pragma_environment_add::run(
   else
   {
     displayer_.show_comment(
-      text(
+      data::text(
         "Metashell (incorrectly) thinks that this command should execute a"
         " metaprogram and would not add it to the environment without using"
         " the \"environment add\" pragma. Please file a bug report containing"

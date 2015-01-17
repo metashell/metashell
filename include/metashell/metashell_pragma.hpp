@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <boost/optional.hpp>
 
@@ -25,11 +25,12 @@
 
 namespace metashell
 {
-  boost::optional<command::iterator> parse_pragma(const command& cmd_);
+  boost::optional<data::command::iterator>
+    parse_pragma(const data::command& cmd_);
 
-  command::iterator end_of_pragma_argument_list(
-    command::iterator begin_,
-    const command::iterator& end_
+  data::command::iterator end_of_pragma_argument_list(
+    data::command::iterator begin_,
+    const data::command::iterator& end_
   );
 }
 

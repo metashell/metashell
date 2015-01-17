@@ -1,5 +1,5 @@
-#ifndef METASHELL_PARAGRAPH_HPP
-#define METASHELL_PARAGRAPH_HPP
+#ifndef METASHELL_COMMAND_HPP
+#define METASHELL_COMMAND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
+#include <metashell/data/token.hpp>
 
 #include <string>
-#include <iosfwd>
+#include <vector>
 
 namespace metashell
 {
-  class paragraph : boost::equality_comparable<paragraph>
+  namespace data
   {
-  public:
-    paragraph() = default;
-    explicit paragraph(
-      const std::string& content_,
-      const std::string& indentation_ = std::string()
+    class command
+    {
+    public:
+      explicit command(const std::string& cmd_);
+
+      typedef std::vector<data::token>::const_iterator iterator;
+
+      iterator begin() const;
+      iterator end() const;
+    private:
+      std::string _cmd;
+      std::vector<data::token> _tokens;
+    };
+
+    command::iterator skip(command::iterator i_);
+    command::iterator skip_whitespace(
+      command::iterator begin_,
+      const command::iterator& end_
     );
-    paragraph(
-      const std::string& content_,
-      const std::string& indentation_,
-      const std::string& first_line_indentation_
+
+    std::string tokens_to_string(
+      command::iterator begin_,
+      const command::iterator& end_
     );
-
-    bool operator==(const paragraph& p_) const;
-
-    std::string first_line_indentation;
-    std::string rest_of_lines_indentation;
-    std::string content;
-  };
-
-  std::ostream& operator<<(std::ostream& o_, const paragraph& p_);
+  }
 }
 
 #endif

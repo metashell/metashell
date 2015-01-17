@@ -1,5 +1,5 @@
-#ifndef METASHELL_COMMAND_HPP
-#define METASHELL_COMMAND_HPP
+#ifndef METASHELL_BACKTRACE_HPP
+#define METASHELL_BACKTRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,37 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/token.hpp>
+#include <metashell/data/frame.hpp>
 
-#include <string>
+#include <boost/operators.hpp>
+
 #include <vector>
+#include <iosfwd>
 
 namespace metashell
 {
-  class command
+  namespace data
   {
-  public:
-    explicit command(const std::string& cmd_);
+    class backtrace : boost::equality_comparable<backtrace>
+    {
+    public:
+      typedef std::vector<frame>::const_iterator iterator;
+      typedef iterator const_iterator;
 
-    typedef std::vector<data::token>::const_iterator iterator;
+      backtrace() = default;
 
-    iterator begin() const;
-    iterator end() const;
-  private:
-    std::string _cmd;
-    std::vector<data::token> _tokens;
-  };
+      backtrace(const std::initializer_list<frame>& frames_);
 
-  command::iterator skip(command::iterator i_);
-  command::iterator skip_whitespace(
-    command::iterator begin_,
-    const command::iterator& end_
-  );
+      void push_back(const frame& f_);
 
-  std::string tokens_to_string(
-    command::iterator begin_,
-    const command::iterator& end_
-  );
+      iterator begin() const;
+      iterator end() const;
+    private:
+      std::vector<frame> _frames;
+    };
+
+    std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
+    bool operator==(const backtrace& a_, const backtrace& b_);
+  }
 }
 
 #endif

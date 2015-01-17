@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/color.hpp>
+#include <metashell/data/color.hpp>
 
 #include <string>
 #include <vector>
@@ -27,6 +27,7 @@
 #include <boost/operators.hpp>
 
 namespace metashell {
+namespace data {
 
 class colored_string :
   boost::addable<colored_string>,
@@ -91,6 +92,7 @@ colored_string operator+(colored_string rhs, const std::string& lhs) {
 
 std::ostream& operator<<(std::ostream& os, const colored_string& cs);
 
+}
 }
 
 #endif

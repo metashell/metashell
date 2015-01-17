@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/colored_string.hpp>
+#include <metashell/data/colored_string.hpp>
 
 namespace metashell
 {
@@ -28,7 +28,7 @@ namespace metashell
     public:
       virtual ~console() {}
 
-      virtual void show(const colored_string& s_) = 0;
+      virtual void show(const data::colored_string& s_) = 0;
       virtual void new_line() = 0;
 
       virtual int width() const = 0;

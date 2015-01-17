@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/backtrace.hpp>
+#include <metashell/data/backtrace.hpp>
 
 #include <boost/range/algorithm/equal.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
-backtrace::backtrace(const std::initializer_list<data::frame>& frames_) :
+backtrace::backtrace(const std::initializer_list<frame>& frames_) :
   _frames(frames_)
 {}
 
-void backtrace::push_back(const data::frame& f_)
+void backtrace::push_back(const frame& f_)
 {
   _frames.push_back(f_);
 }
@@ -39,11 +39,11 @@ backtrace::iterator backtrace::end() const
   return _frames.end();
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const backtrace& t_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
 {
   o_ << "backtrace{";
   bool first = true;
-  for (const data::frame& f : t_)
+  for (const frame& f : t_)
   {
     if (first)
     {
@@ -58,7 +58,7 @@ std::ostream& metashell::operator<<(std::ostream& o_, const backtrace& t_)
   return o_ << "}";
 }
 
-bool metashell::operator==(const backtrace& a_, const backtrace& b_)
+bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
 {
   return boost::equal(a_, b_);
 }

@@ -24,7 +24,7 @@ namespace metashell
   class stdout_console : public iface::console
   {
   public:
-    virtual void show(const colored_string& s_) override;
+    virtual void show(const data::colored_string& s_) override;
     virtual void new_line() override;
 
     virtual int width() const override;

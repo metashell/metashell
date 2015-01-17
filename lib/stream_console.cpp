@@ -25,7 +25,7 @@ stream_console::stream_console(std::ostream& s_) :
   _s(&s_)
 {}
 
-void stream_console::show(const colored_string& s_)
+void stream_console::show(const data::colored_string& s_)
 {
   *_s << s_.get_string();
 }

@@ -27,35 +27,35 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_parse_pragma)
 {
-  JUST_ASSERT(bool(parse_pragma(command("#pragma metashell foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("#pragma metashell foo"))));
 }
 
 JUST_TEST_CASE(test_parse_no_pragma)
 {
-  JUST_ASSERT(!parse_pragma(command("")));
+  JUST_ASSERT(!parse_pragma(data::command("")));
 }
 
 JUST_TEST_CASE(test_parse_pragma_with_inital_whitespace)
 {
-  JUST_ASSERT(bool(parse_pragma(command(" \t #pragma metashell foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command(" \t #pragma metashell foo"))));
 }
 
 JUST_TEST_CASE(test_whitespace_is_not_pragma)
 {
-  JUST_ASSERT(!parse_pragma(command(" ")));
+  JUST_ASSERT(!parse_pragma(data::command(" ")));
 }
 
 JUST_TEST_CASE(test_gcc_pragma_is_not_metashell_pragma)
 {
-  JUST_ASSERT(!parse_pragma(command("#pragma gcc foo")));
+  JUST_ASSERT(!parse_pragma(data::command("#pragma gcc foo")));
 }
 
 JUST_TEST_CASE(test_name_of_pragma)
 {
-  const command c_foo("#pragma metashell foo");
-  const command c_bar("#pragma metashell bar");
+  const data::command c_foo("#pragma metashell foo");
+  const data::command c_bar("#pragma metashell bar");
 
-  const command::iterator
+  const data::command::iterator
     op_foo = *parse_pragma(c_foo),
     op_bar = *parse_pragma(c_bar);
 
@@ -65,12 +65,14 @@ JUST_TEST_CASE(test_name_of_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS([] { parse_pragma(command("#pragma metashell 13")); });
+  JUST_ASSERT_THROWS(
+    [] { parse_pragma(data::command("#pragma metashell 13")); }
+  );
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS([] { parse_pragma(command("#pragma metashell")); });
+  JUST_ASSERT_THROWS([] { parse_pragma(data::command("#pragma metashell")); });
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)
@@ -94,7 +96,10 @@ JUST_TEST_CASE(test_check_verbosity)
   in_memory_displayer d;
   shell sh(test_config());
   sh.line_available("#pragma metashell verbose", d);
-  JUST_ASSERT_EQUAL_CONTAINER({text("verbose mode is off")}, d.comments());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {data::text("verbose mode is off")},
+    d.comments()
+  );
 }
 
 JUST_TEST_CASE(test_check_enabling_verbosity)
@@ -102,7 +107,7 @@ JUST_TEST_CASE(test_check_enabling_verbosity)
   in_memory_displayer d;
   shell sh(test_config());
   sh.line_available("#pragma metashell verbose on", d);
-  JUST_ASSERT_EQUAL_CONTAINER({text("verbose mode is on")}, d.comments());
+  JUST_ASSERT_EQUAL_CONTAINER({data::text("verbose mode is on")}, d.comments());
 }
 
 JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
@@ -124,22 +129,22 @@ JUST_TEST_CASE(test_quit)
 
 JUST_TEST_CASE(test_accept_pound_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(command("#msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(command("# msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(command(" # msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("#msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("# msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command(" # msh foo"))));
 }
 
 JUST_TEST_CASE(test_accept_pound_metashell_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(command("#metashell foo"))));
-  JUST_ASSERT(bool(parse_pragma(command("# metashell foo"))));
-  JUST_ASSERT(bool(parse_pragma(command(" # metashell foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("#metashell foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("# metashell foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command(" # metashell foo"))));
 }
 
 JUST_TEST_CASE(test_accept_pragma_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(command("#pragma msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(command("# pragma msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(command(" # pragma msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("#pragma msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command("# pragma msh foo"))));
+  JUST_ASSERT(bool(parse_pragma(data::command(" # pragma msh foo"))));
 }
 

@@ -46,7 +46,7 @@ JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
   sh.line_available("backtrace", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    { backtrace{data::frame(data::type("int_<fib<10>::value>"))} },
+    { data::backtrace{data::frame(data::type("int_<fib<10>::value>"))} },
     d.backtraces()
   );
 }
@@ -89,6 +89,7 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
   using data::instantiation_kind;
   using data::type;
   using data::frame;
+  using data::backtrace;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
@@ -116,6 +117,7 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
   using data::instantiation_kind;
   using data::type;
   using data::frame;
+  using data::backtrace;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
@@ -144,6 +146,7 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
   using data::instantiation_kind;
   using data::type;
   using data::frame;
+  using data::backtrace;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);
@@ -188,6 +191,7 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   using data::instantiation_kind;
   using data::type;
   using data::frame;
+  using data::backtrace;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_mp);

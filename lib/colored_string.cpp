@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/colored_string.hpp>
+#include <metashell/data/colored_string.hpp>
 
 #include <just/console.hpp>
 
@@ -25,9 +25,9 @@
 
 namespace
 {
-  just::console::color console_color(metashell::color c_)
+  just::console::color console_color(metashell::data::color c_)
   {
-    using metashell::color;
+    using metashell::data::color;
 
     switch (c_)
     {
@@ -55,6 +55,7 @@ namespace
 }
 
 namespace metashell {
+namespace data {
 
 colored_string::colored_string(
     const std::string& string, const color_t& color) :
@@ -151,4 +152,5 @@ bool operator==(const colored_string& a_, const colored_string& b_)
     && boost::equal(a_.get_colors(), b_.get_colors());
 }
 
+}
 }

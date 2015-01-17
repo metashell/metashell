@@ -71,7 +71,7 @@ void logger::log(const std::string& msg_)
     _fwriter.write(msg_ + "\n");
     break;
   case logging_mode::console:
-    _displayer.show_comment(text("Log: " + msg_));
+    _displayer.show_comment(data::text("Log: " + msg_));
     break;
   }
 }

@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/wave_tokeniser.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
 namespace
 {
-  bool whitespace_or_comment(data::token_category c_)
+  bool whitespace_or_comment(token_category c_)
   {
-    return
-      c_ == data::token_category::whitespace
-      || c_ == data::token_category::comment;
+    return c_ == token_category::whitespace || c_ == token_category::comment;
   }
 }
 
@@ -53,13 +51,13 @@ command::iterator command::end() const
   return _tokens.end();
 }
 
-command::iterator metashell::skip(command::iterator i_)
+command::iterator metashell::data::skip(command::iterator i_)
 {
   ++i_;
   return i_;
 }
 
-command::iterator metashell::skip_whitespace(
+command::iterator metashell::data::skip_whitespace(
   command::iterator begin_,
   const command::iterator& end_
 )
@@ -70,7 +68,7 @@ command::iterator metashell::skip_whitespace(
       begin_;
 }
 
-std::string metashell::tokens_to_string(
+std::string metashell::data::tokens_to_string(
   command::iterator begin_,
   const command::iterator& end_
 )

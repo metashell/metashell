@@ -18,13 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/token.hpp>
-#include <metashell/colored_string.hpp>
+#include <metashell/data/colored_string.hpp>
 
 namespace metashell {
 
-colored_string::color_t color_of_token(const data::token& t);
+data::colored_string::color_t color_of_token(const data::token& t);
 
-colored_string highlight_syntax(const std::string& s);
+data::colored_string highlight_syntax(const std::string& s);
 
 }
 

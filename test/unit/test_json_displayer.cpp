@@ -106,7 +106,7 @@ JUST_TEST_CASE(test_json_display_of_comment_with_one_paragraph)
   mock_json_writer w;
   json_displayer d(w);
 
-  d.show_comment(text{paragraph("foo bar", "x", "y")});
+  d.show_comment(data::text{data::paragraph("foo bar", "x", "y")});
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
@@ -241,7 +241,7 @@ JUST_TEST_CASE(test_json_display_of_backtrace)
   json_displayer d(w);
 
   d.show_backtrace(
-    backtrace{
+    data::backtrace{
       data::frame(data::type("fib_c<13>::type")),
       data::frame(data::type("fib<int_<13>>::type")),
     }

@@ -46,10 +46,10 @@ namespace
     return t_.type() == data::token_type::identifier;
   }
 
-  boost::optional<command::iterator> is_this_pragma(
+  boost::optional<data::command::iterator> is_this_pragma(
     const std::vector<std::string>& name_,
-    command::iterator begin_,
-    const command::iterator& end_
+    data::command::iterator begin_,
+    const data::command::iterator& end_
   )
   {
     using std::string;
@@ -68,13 +68,13 @@ namespace
     }
     return
       i == e ?
-        optional<command::iterator>(begin_) :
-        optional<command::iterator>();
+        optional<data::command::iterator>(begin_) :
+        optional<data::command::iterator>();
   }
 
   std::string name_of_pragma(
-    command::iterator begin_,
-    const command::iterator& end_
+    data::command::iterator begin_,
+    const data::command::iterator& end_
   )
   {
     std::ostringstream s;
@@ -93,16 +93,16 @@ namespace
 }
 
 void pragma_handler_map::process(
-  const command::iterator& begin_,
-  const command::iterator& end_,
+  const data::command::iterator& begin_,
+  const data::command::iterator& end_,
   iface::displayer& displayer_
 ) const
 {
   using boost::optional;
 
-  const command::iterator e = end_of_pragma_argument_list(begin_, end_);
+  const data::command::iterator e = end_of_pragma_argument_list(begin_, end_);
 
-  command::iterator longest_fit_begin = e;
+  auto longest_fit_begin = e;
   const pragma_handler* longest_fit_handler = 0;
   int longest_fit_len = -1;
 
@@ -110,7 +110,8 @@ void pragma_handler_map::process(
   for (const np& p : _handlers)
   {
     if (
-      const optional<command::iterator> i = is_this_pragma(p.first, begin_, e)
+      const optional<data::command::iterator>
+        i = is_this_pragma(p.first, begin_, e)
     )
     {
       if (longest_fit_len < int(p.first.size()))

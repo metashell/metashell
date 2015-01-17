@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_handler.hpp>
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/command_processor_queue.hpp>
 
@@ -95,8 +95,8 @@ namespace metashell
 
 
     void process(
-      const command::iterator& p_,
-      const command::iterator& end_,
+      const data::command::iterator& p_,
+      const data::command::iterator& end_,
       iface::displayer& displayer_
     ) const;
 

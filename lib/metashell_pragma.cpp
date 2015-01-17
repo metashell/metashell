@@ -50,9 +50,11 @@ namespace
   }
 }
 
-boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
+boost::optional<data::command::iterator> metashell::parse_pragma(
+  const data::command& cmd_
+)
 {
-  command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
+  data::command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
 
   if (
     i != cmd_.end()
@@ -88,15 +90,15 @@ boost::optional<command::iterator> metashell::parse_pragma(const command& cmd_)
     }
   }
 
-  return boost::optional<command::iterator>();
+  return boost::none;
 }
 
-command::iterator metashell::end_of_pragma_argument_list(
-  command::iterator begin_,
-  const command::iterator& end_
+data::command::iterator metashell::end_of_pragma_argument_list(
+  data::command::iterator begin_,
+  const data::command::iterator& end_
 )
 {
-  command::iterator result = find_last_if(begin_, end_, argument_token);
+  data::command::iterator result = find_last_if(begin_, end_, argument_token);
 
   if (result == end_)
   {

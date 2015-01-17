@@ -32,7 +32,10 @@ namespace
     return s_.find(substr_) != std::string::npos;
   }
 
-  bool contains(const std::string& substr_, const std::vector<paragraph>& v_)
+  bool contains(
+    const std::string& substr_,
+    const std::vector<data::paragraph>& v_
+  )
   {
     for (const auto& p : v_)
     {

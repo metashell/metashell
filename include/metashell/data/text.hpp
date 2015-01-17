@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/paragraph.hpp>
+#include <metashell/data/paragraph.hpp>
 
 #include <boost/operators.hpp>
 
@@ -26,19 +26,22 @@
 
 namespace metashell
 {
-  class text : boost::equality_comparable<text>
+  namespace data
   {
-  public:
-    text() = default;
-    explicit text(const std::string& s_);
-    explicit text(const std::initializer_list<paragraph>& paragraphs_);
+    class text : boost::equality_comparable<text>
+    {
+    public:
+      text() = default;
+      explicit text(const std::string& s_);
+      explicit text(const std::initializer_list<paragraph>& paragraphs_);
 
-    bool operator==(const text& t_) const;
+      bool operator==(const text& t_) const;
 
-    std::vector<paragraph> paragraphs;
-  };
+      std::vector<paragraph> paragraphs;
+    };
 
-  std::ostream& operator<<(std::ostream& o_, const text& t_);
+    std::ostream& operator<<(std::ostream& o_, const text& t_);
+  }
 }
 
 #endif

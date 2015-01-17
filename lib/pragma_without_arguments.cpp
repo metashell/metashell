@@ -29,8 +29,8 @@ std::string pragma_without_arguments::arguments() const
 }
 
 void pragma_without_arguments::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {

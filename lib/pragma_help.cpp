@@ -32,16 +32,16 @@ namespace
   {
     using boost::algorithm::join;
 
-    text t;
+    data::text t;
     t.paragraphs.push_back(
-      paragraph("Metashell has the following built-in pragmas:")
+      data::paragraph("Metashell has the following built-in pragmas:")
     );
 
     for (const auto& p : pragma_handlers_)
     {
       const std::string args = p.second.arguments();
       t.paragraphs.push_back(
-        paragraph(
+        data::paragraph(
           "#msh "
             + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
           "  "
@@ -49,15 +49,17 @@ namespace
       );
     }
 
-    const paragraph empty_line("");
+    const data::paragraph empty_line("");
 
     t.paragraphs.push_back(empty_line);
     t.paragraphs.push_back(
-      paragraph(
+      data::paragraph(
         "#msh is the short form of #pragma metashell. Both forms are accepted"
       )
     );
-    t.paragraphs.push_back(paragraph("To quit Metashell run \"#msh quit\""));
+    t.paragraphs.push_back(
+      data::paragraph("To quit Metashell run \"#msh quit\"")
+    );
     t.paragraphs.push_back(empty_line);
 
     displayer_.show_comment(t);
@@ -98,8 +100,8 @@ std::string pragma_help::description() const
 }
 
 void pragma_help::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {
@@ -112,7 +114,7 @@ void pragma_help::run(
   else
   {
     std::vector<std::string> args;
-    for (command::iterator i = args_begin_; i != args_end_; ++i)
+    for (auto i = args_begin_; i != args_end_; ++i)
     {
       switch (i->category())
       {
@@ -125,7 +127,7 @@ void pragma_help::run(
       }
     }
 
-    text help_text;
+    data::text help_text;
     bool was_pragma = false;
 
     for (const auto& h : _pragma_handlers)
@@ -134,7 +136,7 @@ void pragma_help::run(
       {
         if (was_pragma)
         {
-          help_text.paragraphs.push_back(paragraph(""));
+          help_text.paragraphs.push_back(data::paragraph(""));
         }
         else
         {
@@ -142,14 +144,14 @@ void pragma_help::run(
         }
         const std::string p_args = h.second.arguments();
         help_text.paragraphs.push_back(
-          paragraph(
+          data::paragraph(
             "#msh "
               + join(h.first, " ")
               + (p_args.empty() ? std::string() : " " + p_args)
           )
         );
         help_text.paragraphs.push_back(
-          paragraph(h.second.description(), "    ")
+          data::paragraph(h.second.description(), "    ")
         );
       }
     }

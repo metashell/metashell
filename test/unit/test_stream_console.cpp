@@ -45,7 +45,7 @@ JUST_TEST_CASE(test_displaying_new_line_with_stream_console)
 JUST_TEST_CASE(test_text_is_displayed_on_stream_console_without_color)
 {
   std::ostringstream s;
-  stream_console(s).show(colored_string("hello", color::red));
+  stream_console(s).show(data::colored_string("hello", data::color::red));
 
   JUST_ASSERT_EQUAL("hello", s.str());
 }

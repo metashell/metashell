@@ -311,10 +311,10 @@ data::frame metaprogram::get_root_frame() const {
   return data::frame(data::type(get_vertex_property(get_root_vertex()).name));
 }
 
-backtrace metaprogram::get_backtrace() const {
+data::backtrace metaprogram::get_backtrace() const {
   assert(!is_finished());
 
-  backtrace tr;
+  data::backtrace tr;
 
   for (vertex_descriptor current_vertex = get_current_vertex();
       current_vertex != get_root_vertex(); )

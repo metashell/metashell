@@ -73,7 +73,7 @@ void json_displayer::show_type(const data::type& type_)
   _writer.end_document();
 }
 
-void json_displayer::show_comment(const text& msg_)
+void json_displayer::show_comment(const data::text& msg_)
 {
   _writer.start_object();
 
@@ -82,7 +82,7 @@ void json_displayer::show_comment(const text& msg_)
 
   _writer.key("paragraphs");
   _writer.start_array();
-  for (const paragraph& p : msg_.paragraphs)
+  for (const data::paragraph& p : msg_.paragraphs)
   {
     _writer.start_object();
 
@@ -122,7 +122,7 @@ void json_displayer::show_frame(const data::frame& frame_)
   _writer.end_document();
 }
 
-void json_displayer::show_backtrace(const backtrace& trace_)
+void json_displayer::show_backtrace(const data::backtrace& trace_)
 {
   _writer.start_object();
 

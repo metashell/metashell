@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/text.hpp>
+#include <metashell/data/text.hpp>
 
 #include <iostream>
 
-using namespace metashell;
+using namespace metashell::data;
 
 text::text(const std::string& s_) :
   paragraphs(1, paragraph(s_))
@@ -33,7 +33,7 @@ bool text::operator==(const text& t_) const
   return paragraphs == t_.paragraphs;
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const text& t_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, const text& t_)
 {
   o_ << "text({";
   bool first = true;

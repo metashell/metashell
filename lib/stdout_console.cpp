@@ -24,7 +24,7 @@
 
 using namespace metashell;
 
-void stdout_console::show(const colored_string& s_)
+void stdout_console::show(const data::colored_string& s_)
 {
   print_to_cout(s_);
 }

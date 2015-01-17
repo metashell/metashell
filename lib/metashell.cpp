@@ -18,7 +18,7 @@
 #include "get_type_of_variable.hpp"
 #include "cxindex.hpp"
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/clang_binary.hpp>
 
@@ -55,8 +55,8 @@ namespace
   }
 
   bool has_typedef(
-    const command::iterator& begin_,
-    const command::iterator& end_
+    const data::command::iterator& begin_,
+    const data::command::iterator& end_
   )
   {
     return
@@ -71,8 +71,8 @@ namespace
   }
 
   data::token_type last_non_whitespace_token_type(
-    command::iterator begin_,
-    const command::iterator& end_
+    data::command::iterator begin_,
+    const data::command::iterator& end_
   )
   {
     data::token_type t;
@@ -261,7 +261,7 @@ namespace
   {
     typedef std::pair<std::string, std::string> string_pair;
 
-    const command cmd(s_);
+    const data::command cmd(s_);
 
     std::ostringstream o;
     data::token last_token;
@@ -340,8 +340,8 @@ void metashell::code_complete(
 }
 
 bool metashell::is_environment_setup_command(
-  command::iterator begin_,
-  const command::iterator& end_
+  data::command::iterator begin_,
+  const data::command::iterator& end_
 )
 {
   try

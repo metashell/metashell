@@ -28,7 +28,7 @@ namespace metashell
   public:
     explicit stream_console(std::ostream& s_);
 
-    virtual void show(const colored_string& s_) override;
+    virtual void show(const data::colored_string& s_) override;
     virtual void new_line() override;
 
     virtual int width() const override;

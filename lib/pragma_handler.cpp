@@ -17,7 +17,7 @@
 #include <metashell/pragma_handler.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <cassert>
 
@@ -40,8 +40,8 @@ void pragma_handler::swap(pragma_handler& h_)
 }
 
 void pragma_handler::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {
@@ -67,7 +67,7 @@ void metashell::run(
   iface::displayer& displayer_
 )
 {
-  const command cmd(args_);
+  const data::command cmd(args_);
   handler_.run(
     cmd.begin(),
     end_of_pragma_argument_list(cmd.begin(), cmd.end()),

@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <metashell/highlight_syntax.hpp>
 
 namespace metashell {
 
-colored_string::color_t color_of_token(const data::token& t) {
+data::colored_string::color_t color_of_token(const data::token& t) {
   switch (t.category())
   {
   case data::token_category::character_literal:
@@ -29,22 +29,22 @@ colored_string::color_t color_of_token(const data::token& t) {
   case data::token_category::string_literal:
   case data::token_category::bool_literal:
   case data::token_category::preprocessor:
-    return color::magenta;
+    return data::color::magenta;
   case data::token_category::keyword:
-    return color::bright_green;
+    return data::color::bright_green;
   case data::token_category::comment:
-    return color::green;
+    return data::color::green;
   default:
     return boost::none;
   }
 }
 
-colored_string highlight_syntax(const std::string& str) {
-  colored_string result;
+data::colored_string highlight_syntax(const std::string& str) {
+  data::colored_string result;
 
-  const command cmd(str);
+  const data::command cmd(str);
   for (const data::token& t : cmd) {
-    result += colored_string(t.value(), color_of_token(t));
+    result += data::colored_string(t.value(), color_of_token(t));
   }
 
   return result;

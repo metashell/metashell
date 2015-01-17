@@ -67,7 +67,7 @@ JUST_TEST_CASE(test_log_is_displayed_on_console_when_logging_to_console)
 
   l.log("foo bar");
 
-  JUST_ASSERT_EQUAL_CONTAINER({text("Log: foo bar")}, d.comments());
+  JUST_ASSERT_EQUAL_CONTAINER({data::text("Log: foo bar")}, d.comments());
 }
 
 JUST_TEST_CASE(test_log_into_file_tries_to_open_the_file)

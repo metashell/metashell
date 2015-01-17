@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
 JUST_TEST_CASE(test_formatting_empty_token_list)
 {

@@ -19,7 +19,7 @@
 
 #include <metashell/iface/displayer.hpp>
 
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <string>
 
@@ -38,8 +38,8 @@ namespace metashell
       virtual std::string description() const = 0;
 
       virtual void run(
-        const command::iterator& args_begin_,
-        const command::iterator& args_end_,
+        const data::command::iterator& args_begin_,
+        const data::command::iterator& args_end_,
         iface::displayer& displayer_
       ) const = 0;
     };

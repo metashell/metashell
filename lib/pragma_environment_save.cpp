@@ -50,8 +50,8 @@ std::string pragma_environment_save::description() const
 }
 
 void pragma_environment_save::run(
-  const command::iterator& args_begin_,
-  const command::iterator& args_end_,
+  const data::command::iterator& args_begin_,
+  const data::command::iterator& args_end_,
   iface::displayer& displayer_
 ) const
 {

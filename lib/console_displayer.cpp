@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/console_displayer.hpp>
-#include <metashell/colored_string.hpp>
+#include <metashell/data/colored_string.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/indenter.hpp>
 
@@ -76,7 +76,7 @@ void console_displayer::show_error(const std::string& msg_)
   if (!msg_.empty()) {
     if (_syntax_highlight)
     {
-      _console->show(colored_string(msg_, color::bright_red));
+      _console->show(data::colored_string(msg_, data::color::bright_red));
     }
     else
     {
@@ -91,7 +91,7 @@ void console_displayer::show_type(const data::type& type_)
   show_cpp_code(type_.name());
 }
 
-void console_displayer::show_comment(const text& msg_)
+void console_displayer::show_comment(const data::text& msg_)
 {
   // TODO: handle one-liners differently (with //)
   indenter ind(_console->width());
@@ -185,14 +185,14 @@ void console_displayer::show_frame(const data::frame& frame_)
   _console->new_line();
 }
 
-void console_displayer::show_backtrace(const backtrace& trace_)
+void console_displayer::show_backtrace(const data::backtrace& trace_)
 {
   int i = 0;
   for (const data::frame& f : trace_)
   {
     std::ostringstream s;
     s << "#" << i << " ";
-    _console->show(colored_string(s.str(), color::white));
+    _console->show(data::colored_string(s.str(), data::color::white));
     show_frame(f);
     ++i;
   }
@@ -200,14 +200,14 @@ void console_displayer::show_backtrace(const backtrace& trace_)
 
 namespace
 {
-  color get_color(int n_)
+  data::color get_color(int n_)
   {
-    color cs[] = {
-      color::red,
-      color::green,
-      color::yellow,
-      color::blue,
-      color::cyan
+    data::color cs[] = {
+      data::color::red,
+      data::color::green,
+      data::color::yellow,
+      data::color::blue,
+      data::color::cyan
     };
     return cs[n_ % (sizeof(cs) / sizeof(cs[0]))];
   }
@@ -227,25 +227,28 @@ namespace
       for (int i = 1; i < depth_; ++i)
       {
         console_.show(
-          colored_string(depth_counter_[i] > 0 ? "| " : "  ", get_color(i))
+          data::colored_string(
+            depth_counter_[i] > 0 ? "| " : "  ",
+            get_color(i)
+          )
         );
       }
 
-      const color mark_color = get_color(depth_);
+      const data::color mark_color = get_color(depth_);
       if (print_mark_)
       {
         if (depth_counter_[depth_] == 0)
         {
-          console_.show(colored_string("` ", mark_color));
+          console_.show(data::colored_string("` ", mark_color));
         }
         else
         {
-          console_.show(colored_string("+ ", mark_color));
+          console_.show(data::colored_string("+ ", mark_color));
         }
       }
       else if (depth_counter_[depth_] > 0)
       {
-        console_.show(colored_string("| ", mark_color));
+        console_.show(data::colored_string("| ", mark_color));
       }
       else
       {
@@ -254,7 +257,7 @@ namespace
     }
   }
 
-  colored_string format_frame(const data::frame& f_)
+  data::colored_string format_frame(const data::frame& f_)
   {
     std::ostringstream s;
     if (f_.has_kind())
@@ -271,7 +274,8 @@ namespace
     iface::console& console_
   )
   {
-    const colored_string element_content = format_frame(node_.current_frame());
+    const data::colored_string
+      element_content = format_frame(node_.current_frame());
 
     const int non_content_length = 2*node_.depth();
 

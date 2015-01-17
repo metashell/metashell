@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/command.hpp>
+#include <metashell/data/command.hpp>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -40,8 +40,8 @@ namespace metashell
     std::string description() const;
 
     void run(
-      const command::iterator& args_begin_,
-      const command::iterator& args_end_,
+      const data::command::iterator& args_begin_,
+      const data::command::iterator& args_end_,
       iface::displayer& displayer_
     ) const;
   private:

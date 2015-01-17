@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/text.hpp>
-#include <metashell/backtrace.hpp>
+#include <metashell/data/text.hpp>
+#include <metashell/data/backtrace.hpp>
 #include <metashell/data/frame.hpp>
 #include <metashell/data/type.hpp>
 
@@ -38,11 +38,11 @@ namespace metashell
       virtual void show_raw_text(const std::string& text_) = 0;
       virtual void show_error(const std::string& msg_) = 0;
       virtual void show_type(const data::type& type_) = 0;
-      virtual void show_comment(const text& msg_) = 0;
+      virtual void show_comment(const data::text& msg_) = 0;
       virtual void show_cpp_code(const std::string& code_) = 0;
 
       virtual void show_frame(const data::frame& frame_) = 0;
-      virtual void show_backtrace(const backtrace& trace_) = 0;
+      virtual void show_backtrace(const data::backtrace& trace_) = 0;
       virtual void show_call_graph(const iface::call_graph& cg_) = 0;
     };
   }

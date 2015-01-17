@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/paragraph.hpp>
+#include <metashell/data/paragraph.hpp>
 #include <iostream>
 
-using namespace metashell;
+using namespace metashell::data;
 
 paragraph::paragraph(
   const std::string& content_,
@@ -46,7 +46,7 @@ bool paragraph::operator==(const paragraph& p_) const
     && rest_of_lines_indentation == p_.rest_of_lines_indentation;
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const paragraph& p_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, const paragraph& p_)
 {
   return
     o_

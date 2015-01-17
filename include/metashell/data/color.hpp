@@ -19,24 +19,27 @@
 
 namespace metashell
 {
-  enum class color
+  namespace data
   {
-    black,
-    red,
-    bright_red,
-    green,
-    bright_green,
-    yellow,
-    bright_yellow,
-    blue,
-    bright_blue,
-    magenta,
-    bright_magenta,
-    cyan,
-    bright_cyan,
-    gray,
-    white
-  };
+    enum class color
+    {
+      black,
+      red,
+      bright_red,
+      green,
+      bright_green,
+      yellow,
+      bright_yellow,
+      blue,
+      bright_blue,
+      magenta,
+      bright_magenta,
+      cyan,
+      bright_cyan,
+      gray,
+      white
+    };
+  }
 }
 
 #endif

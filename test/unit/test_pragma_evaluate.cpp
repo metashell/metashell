@@ -54,12 +54,12 @@ JUST_TEST_CASE(test_pragma_evaluate_warns)
   JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());
   JUST_ASSERT_EQUAL_CONTAINER(
     {
-      text{
-        paragraph(
+      data::text{
+        data::paragraph(
           "You don't need the evaluate add pragma to evaluate this metaprogram."
           " The following command does this as well:"
         ),
-        paragraph("int")
+        data::paragraph("int")
       }
     },
     d.comments()

@@ -22,7 +22,7 @@ mock_console::mock_console(int width_) :
   _width(width_)
 {}
 
-void mock_console::show(const metashell::colored_string& s_)
+void mock_console::show(const metashell::data::colored_string& s_)
 {
   _content += s_;
 }
@@ -47,7 +47,7 @@ void mock_console::set_width(int width_)
   _width = width_;
 }
 
-const metashell::colored_string& mock_console::content() const
+const metashell::data::colored_string& mock_console::content() const
 {
   return _content;
 }

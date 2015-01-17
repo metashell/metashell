@@ -86,7 +86,7 @@ JUST_TEST_CASE(test_error_with_no_colors_is_printed)
   cd.show_error("Something went wrong");
 
   JUST_ASSERT_EQUAL(
-    colored_string("Something went wrong\n", boost::none),
+    data::colored_string("Something went wrong\n", boost::none),
     c.content()
   );
 }
@@ -98,7 +98,7 @@ JUST_TEST_CASE(test_error_with_colors_is_printed_in_red)
   cd.show_error("Something went wrong");
 
   JUST_ASSERT_EQUAL(
-    colored_string("Something went wrong", color::bright_red) + "\n",
+    data::colored_string("Something went wrong", data::color::bright_red)+"\n",
     c.content()
   );
 }

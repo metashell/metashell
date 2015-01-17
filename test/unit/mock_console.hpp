@@ -24,7 +24,7 @@ class mock_console : public metashell::iface::console
 public:
   explicit mock_console(int width_ = 80);
 
-  virtual void show(const metashell::colored_string& s_) override;
+  virtual void show(const metashell::data::colored_string& s_) override;
   virtual void new_line() override;
 
   virtual int width() const override;
@@ -32,9 +32,9 @@ public:
   void clear();
   void set_width(int width_);
 
-  const metashell::colored_string& content() const;
+  const metashell::data::colored_string& content() const;
 private:
-  metashell::colored_string _content;
+  metashell::data::colored_string _content;
   int _width;
 };
 

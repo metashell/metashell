@@ -33,7 +33,7 @@ void in_memory_displayer::show_type(const data::type& type_)
   _types.push_back(type_);
 }
 
-void in_memory_displayer::show_comment(const text& msg_)
+void in_memory_displayer::show_comment(const data::text& msg_)
 {
   _comments.push_back(msg_);
 }
@@ -48,7 +48,7 @@ void in_memory_displayer::show_frame(const data::frame& frame_)
   _frames.push_back(frame_);
 }
 
-void in_memory_displayer::show_backtrace(const backtrace& trace_)
+void in_memory_displayer::show_backtrace(const data::backtrace& trace_)
 {
   _backtraces.push_back(trace_);
 }
@@ -73,7 +73,7 @@ const std::vector<data::type>& in_memory_displayer::types() const
   return _types;
 }
 
-const std::vector<text>& in_memory_displayer::comments() const
+const std::vector<data::text>& in_memory_displayer::comments() const
 {
   return _comments;
 }
@@ -88,7 +88,7 @@ const std::vector<data::frame>& in_memory_displayer::frames() const
   return _frames;
 }
 
-const std::vector<backtrace>& in_memory_displayer::backtraces() const
+const std::vector<data::backtrace>& in_memory_displayer::backtraces() const
 {
   return _backtraces;
 }

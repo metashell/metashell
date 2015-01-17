@@ -1,5 +1,5 @@
-#ifndef METASHELL_BACKTRACE_HPP
-#define METASHELL_BACKTRACE_HPP
+#ifndef METASHELL_PARAGRAPH_HPP
+#define METASHELL_PARAGRAPH_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/frame.hpp>
-
 #include <boost/operators.hpp>
 
-#include <vector>
+#include <string>
 #include <iosfwd>
 
 namespace metashell
 {
-  class backtrace : boost::equality_comparable<backtrace>
+  namespace data
   {
-  public:
-    typedef std::vector<data::frame>::const_iterator iterator;
-    typedef iterator const_iterator;
+    class paragraph : boost::equality_comparable<paragraph>
+    {
+    public:
+      paragraph() = default;
+      explicit paragraph(
+        const std::string& content_,
+        const std::string& indentation_ = std::string()
+      );
+      paragraph(
+        const std::string& content_,
+        const std::string& indentation_,
+        const std::string& first_line_indentation_
+      );
 
-    backtrace() = default;
+      bool operator==(const paragraph& p_) const;
 
-    backtrace(const std::initializer_list<data::frame>& frames_);
+      std::string first_line_indentation;
+      std::string rest_of_lines_indentation;
+      std::string content;
+    };
 
-    void push_back(const data::frame& f_);
-
-    iterator begin() const;
-    iterator end() const;
-  private:
-    std::vector<data::frame> _frames;
-  };
-
-  std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
-  bool operator==(const backtrace& a_, const backtrace& b_);
+    std::ostream& operator<<(std::ostream& o_, const paragraph& p_);
+  }
 }
 
 #endif

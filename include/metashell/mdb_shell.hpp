@@ -24,7 +24,6 @@
 
 #include <metashell/config.hpp>
 #include <metashell/metaprogram.hpp>
-#include <metashell/colored_string.hpp>
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/logger.hpp>
