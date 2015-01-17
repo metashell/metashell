@@ -193,6 +193,8 @@ want to install them, you can build Metashell yourself.
     * Termcap
 * Install the dependent tools:
     * CMake
+* Get and build Google Protobuf:
+    * `tools/get_protobuf.sh`
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
     * `cd templight`
     * `mkdir build`
@@ -325,6 +327,8 @@ upgrade WinEditLine to a newer version, you need to update these files.
 * Install the dependent tools:
     * CMake
     * XCode
+* Get and build Google Protobuf:
+    * `tools/get_protobuf.sh`
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
     * `cd templight`
     * `mkdir build`
