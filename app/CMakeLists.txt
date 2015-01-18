@@ -21,7 +21,10 @@ enable_warnings()
 use_cpp11()
 
 # Metashell
-target_link_libraries(metashell metashell_lib)
+target_link_libraries(metashell
+  metashell_core_lib
+  metashell_data_lib
+)
 
 # Wave
 target_link_libraries(metashell

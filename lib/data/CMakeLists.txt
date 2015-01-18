@@ -14,5 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(data core)
+aux_source_directory(. SOURCES)
+add_library(metashell_data_lib STATIC ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
 
