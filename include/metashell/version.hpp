@@ -24,7 +24,6 @@ namespace metashell
   std::string version();
 
   std::string libclang_version();
-  std::string readline_version();
 }
 
 #endif

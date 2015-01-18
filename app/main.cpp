@@ -23,8 +23,33 @@
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
 
+#include <metashell/version.hpp>
+#include <metashell/wave_tokeniser.hpp>
+#include <metashell/readline/version.hpp>
+
 #include <iostream>
 #include <stdexcept>
+
+namespace
+{
+  std::map<std::string, std::string> get_dependency_versions()
+  {
+    const std::string readline_name =
+#ifdef USE_EDITLINE
+      "Libedit"
+#else
+      "Readline"
+#endif
+    ;
+
+    return
+      {
+        {"libclang", metashell::libclang_version()},
+        {"Boost.Wave", metashell::wave_version()},
+        {readline_name, metashell::readline::version()}
+      };
+  }
+}
 
 int main(int argc_, const char* argv_[])
 {
@@ -69,7 +94,7 @@ int main(int argc_, const char* argv_[])
 
       if (cfg.splash_enabled)
       {
-        shell->display_splash(ccfg.displayer());
+        shell->display_splash(ccfg.displayer(), get_dependency_versions());
       }
 
       ccfg.processor_queue().push(move(shell));

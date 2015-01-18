@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,38 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/version.hpp>
+#include <metashell/readline/version.hpp>
 #include <metashell/to_string.hpp>
 
-#include "cxstring.hpp"
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#endif
 
-#include <clang-c/Index.h>
-
-using namespace metashell;
-
-std::string metashell::libclang_version()
+std::string metashell::readline::version()
 {
-  return cxstring(clang_getClangVersion());
+#ifdef USE_EDITLINE
+  return " ";
+#else
+  return TO_STRING(RL_VERSION_MAJOR) "." TO_STRING(RL_VERSION_MINOR);
+#endif
 }
-
-std::string metashell::version()
-{
-#ifndef METASHELL_MAJOR
-  #error METASHELL_MAJOR not defined
-#endif
-
-#ifndef METASHELL_MINOR
-  #error METASHELL_MINOR not defined
-#endif
-
-#ifndef METASHELL_PATCH
-  #error METASHELL_PATCH not defined
-#endif
-
-  return
-    TO_STRING(METASHELL_MAJOR)
-    "." TO_STRING(METASHELL_MINOR)
-    "." TO_STRING(METASHELL_PATCH);
-}
-
 

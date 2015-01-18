@@ -20,19 +20,6 @@ add_library(metashell_core_lib STATIC ${SOURCES})
 enable_warnings()
 use_cpp11()
 
-# Readline
-if (WIN32)
-  add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
-else()
-  if (USE_EDITLINE)
-    include_directories(${EDITLINE_INCLUDE_DIR})
-    add_definitions( -DUSE_EDITLINE )
-  else()
-    include_directories(${READLINE_INCLUDE_DIR})
-  endif()
-endif()
-
 # Clang
 include_directories(${CLANG_INCLUDE_DIR})
 if (MSVC)

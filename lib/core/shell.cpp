@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metashell.hpp>
-#include <metashell/wave_tokeniser.hpp>
 
 #include <metashell/shell.hpp>
 #include <metashell/version.hpp>
@@ -35,6 +34,12 @@ using namespace metashell;
 
 namespace
 {
+  std::string extend(const std::string& s_, int width_)
+  {
+    const int len = s_.length();
+    return len < width_ ? s_ + std::string(width_ - len, ' ') : s_;
+  }
+
   std::string max_template_depth_info(int depth_)
   {
     std::ostringstream s;
@@ -173,7 +178,10 @@ shell::shell(
 
 void shell::cancel_operation() {}
 
-void shell::display_splash(iface::displayer& displayer_)
+void shell::display_splash(
+  iface::displayer& displayer_,
+  const std::map<std::string, std::string>& dependency_versions_
+)
 {
   using data::paragraph;
 
@@ -211,23 +219,12 @@ void shell::display_splash(iface::displayer& displayer_)
   );
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Based on"));
-  splash_text.paragraphs.push_back(
-    paragraph(metashell::libclang_version(), "             ", "  libclang   ")
-  );
-  splash_text.paragraphs.push_back(
-    paragraph(metashell::wave_version(), "             ", "  Boost.Wave ")
-  );
-  splash_text.paragraphs.push_back(
-    paragraph(
-      metashell::readline_version(),
-      "             ",
-#ifdef USE_EDITLINE
-      "  Libedit    "
-#else
-      "  Readline   "
-#endif
-    )
-  );
+  for (const auto& d : dependency_versions_)
+  {
+    splash_text.paragraphs.push_back(
+      paragraph(d.second, "             ", extend("  " + d.first, 13))
+    );
+  }
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(
     paragraph(

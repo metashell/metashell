@@ -55,7 +55,10 @@ namespace metashell
       logger* logger_ = nullptr
     );
 
-    void display_splash(iface::displayer& displayer_);
+    void display_splash(
+      iface::displayer& displayer_,
+      const std::map<std::string, std::string>& dependency_versions_
+    );
     virtual void line_available(
       const std::string& s_,
       iface::displayer& displayer_,

@@ -59,22 +59,6 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 
-# Readline
-if (WIN32)
-  target_link_libraries(metashell_unit_test edit_static)
-  add_definitions( -DUSE_EDITLINE )
-  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
-else()
-  if (USE_EDITLINE)
-    target_link_libraries(metashell_unit_test ${EDITLINE_LIBRARY})
-  else()
-    target_link_libraries(
-      metashell_unit_test
-      ${READLINE_LIBRARY} ${TERMCAP_LIBRARY}
-    )
-  endif()
-endif()
-
 # Clang
 include_directories(${CLANG_INCLUDE_DIR})
 if (MSVC)
