@@ -17,16 +17,7 @@
 #include <metashell/version.hpp>
 #include <metashell/to_string.hpp>
 
-#include "cxstring.hpp"
-
-#include <clang-c/Index.h>
-
 using namespace metashell;
-
-std::string metashell::libclang_version()
-{
-  return cxstring(clang_getClangVersion());
-}
 
 std::string metashell::version()
 {

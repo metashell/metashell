@@ -14,26 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/text_position.hpp>
+#include <metashell/clang/cxindex.hpp>
 
-#include <just/test.hpp>
+#include <clang-c/Index.h>
 
-using namespace metashell::data;
+using namespace metashell::clang;
 
-JUST_TEST_CASE(test_text_position)
+cxindex::cxindex(logger* logger_) :
+  _index(clang_createIndex(0, 0)),
+  _logger(logger_)
+{}
+
+cxindex::~cxindex()
 {
-  const text_position s;
+  clang_disposeIndex(_index);
+}
 
-  JUST_ASSERT_EQUAL(text_position(1, 1), s);
-  JUST_ASSERT_EQUAL(text_position(1, 2), s + "x");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\n");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\r");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\r\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\n\r");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\r");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\n\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\r");
+std::unique_ptr<cxtranslationunit> cxindex::parse_code(
+  const unsaved_file& src_,
+  const environment& env_
+)
+{
+  return
+    std::unique_ptr<cxtranslationunit>(
+      new cxtranslationunit(env_, src_, _index, _logger)
+    );
 }
 
 

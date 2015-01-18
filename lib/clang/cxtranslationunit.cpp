@@ -15,13 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell.hpp>
-#include <metashell/text_position.hpp>
 #include <metashell/headers.hpp>
 #include <metashell/exception.hpp>
 
-#include "cxtranslationunit.hpp"
-#include "cxdiagnostic.hpp"
-#include "cxcodecompleteresults.hpp"
+#include <metashell/data/text_position.hpp>
+
+#include <metashell/clang/cxtranslationunit.hpp>
+#include <metashell/clang/cxdiagnostic.hpp>
+#include <metashell/clang/cxcodecompleteresults.hpp>
 
 #include <clang-c/Index.h>
 
@@ -32,7 +33,7 @@
 #include <sstream>
 #include <iostream>
 
-using namespace metashell;
+using namespace metashell::clang;
 
 namespace
 {
@@ -195,6 +196,8 @@ bool cxtranslationunit::has_errors() const
 
 void cxtranslationunit::code_complete(std::set<std::string>& out_) const
 {
+  using metashell::data::text_position;
+
   const text_position pos = text_position() + _src.content();
   cxcodecompleteresults(
     clang_codeCompleteAt(

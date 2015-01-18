@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxcursor.hpp"
-#include "cxstring.hpp"
+#include <metashell/clang/cxcursor.hpp>
+#include <metashell/clang/cxstring.hpp>
 
-using namespace metashell;
+using namespace metashell::clang;
 
 /*
  * namespace_iterator

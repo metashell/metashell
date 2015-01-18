@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxdiagnostic.hpp"
-#include "cxstring.hpp"
+#include <metashell/clang/version.hpp>
+
+#include <metashell/clang/cxstring.hpp>
 
 #include <clang-c/Index.h>
 
-using namespace metashell;
+using namespace metashell::clang;
 
-cxdiagnostic::cxdiagnostic(CXDiagnostic d_) : _d(d_) {}
-
-cxdiagnostic::~cxdiagnostic()
+std::string metashell::clang::libclang_version()
 {
-  clang_disposeDiagnostic(_d);
-}
-
-std::string cxdiagnostic::spelling() const
-{
-  return
-    cxstring(
-      clang_formatDiagnostic(_d, clang_defaultDiagnosticDisplayOptions())
-    );
+  return cxstring(clang_getClangVersion());
 }
 

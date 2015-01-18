@@ -14,35 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxtype.hpp"
-#include "cxcursor.hpp"
-#include "cxstring.hpp"
+#include <metashell/clang/cxdiagnostic.hpp>
+#include <metashell/clang/cxstring.hpp>
 
-#include <sstream>
-#include <iostream>
-#include <iterator>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <map>
+#include <clang-c/Index.h>
 
-#include <boost/algorithm/string/join.hpp>
-#include <boost/range/iterator_range.hpp>
-#include <boost/iterator/transform_iterator.hpp>
+using namespace metashell::clang;
 
-using namespace metashell;
+cxdiagnostic::cxdiagnostic(CXDiagnostic d_) : _d(d_) {}
 
-cxtype::cxtype() {}
-
-cxtype::cxtype(CXType type_) : _type(type_) {}
-
-std::string cxtype::spelling() const
+cxdiagnostic::~cxdiagnostic()
 {
-  return cxcursor(clang_getTypeDeclaration(_type)).spelling();
+  clang_disposeDiagnostic(_d);
 }
 
-cxtype cxtype::canonical_type() const
+std::string cxdiagnostic::spelling() const
 {
-  return cxtype(clang_getCanonicalType(_type));
+  return
+    cxstring(
+      clang_formatDiagnostic(_d, clang_defaultDiagnosticDisplayOptions())
+    );
 }
 

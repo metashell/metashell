@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metashell.hpp>
-#include "get_type_of_variable.hpp"
-#include "cxindex.hpp"
+#include <metashell/clang/get_type_of_variable.hpp>
+#include <metashell/clang/cxindex.hpp>
 
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
@@ -35,8 +35,8 @@ namespace
 {
   const char* var = "__metashell_v";
 
-  std::pair<std::unique_ptr<cxtranslationunit>, std::string> parse_expr(
-    cxindex& index_,
+  std::pair<std::unique_ptr<clang::cxtranslationunit>, std::string> parse_expr(
+    clang::cxindex& index_,
     const std::string& input_filename_,
     const environment& env_,
     const std::string& tmp_exp_
@@ -104,8 +104,8 @@ result metashell::validate_code(
   try
   {
     const unsaved_file src(input_filename_, env_.get_appended(src_));
-    cxindex index(logger_);
-    std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env_);
+    clang::cxindex index(logger_);
+    std::unique_ptr<clang::cxtranslationunit> tu = index.parse_code(src, env_);
     return
       result(
         "",
@@ -132,7 +132,7 @@ result metashell::eval_tmp_formatted(
   using std::string;
   using std::pair;
 
-  typedef std::unique_ptr<cxtranslationunit> tup;
+  typedef std::unique_ptr<clang::cxtranslationunit> tup;
 
   METASHELL_LOG(
     logger_,
@@ -140,7 +140,7 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  cxindex index(logger_);
+  clang::cxindex index(logger_);
 
   pair<tup, string> simple = parse_expr(index, input_filename_, env_, tmp_exp_);
 
@@ -163,9 +163,9 @@ result metashell::eval_tmp_formatted(
         "::metashell::format<" + tmp_exp_ + ">::type"
       );
 
-  get_type_of_variable v(var);
+  clang::get_type_of_variable v(var);
   final_pair.first->visit_nodes(
-    [&v](cxcursor cursor_, cxcursor) { v(cursor_); }
+    [&v](clang::cxcursor cursor_, clang::cxcursor) { v(cursor_); }
   );
 
   return
@@ -226,21 +226,21 @@ result metashell::eval_tmp_unformatted(
   using std::string;
   using std::pair;
 
-  typedef std::unique_ptr<cxtranslationunit> tup;
+  typedef std::unique_ptr<clang::cxtranslationunit> tup;
 
   METASHELL_LOG(
     logger_,
     "Evaluating template metaprogram without metashell:format: " + tmp_exp_
   );
 
-  cxindex index(logger_);
+  clang::cxindex index(logger_);
 
   pair<tup, string> final_pair =
     parse_expr(index, input_filename_, env_, tmp_exp_);
 
-  get_type_of_variable v(var);
+  clang::get_type_of_variable v(var);
   final_pair.first->visit_nodes(
-    [&v](cxcursor cursor_, cxcursor) { v(cursor_); }
+    [&v](clang::cxcursor cursor_, clang::cxcursor) { v(cursor_); }
   );
 
   return
@@ -326,7 +326,7 @@ void metashell::code_complete(
   );
 
   set<string> c;
-  cxindex(logger_).parse_code(src, env_)->code_complete(c);
+  clang::cxindex(logger_).parse_code(src, env_)->code_complete(c);
 
   out_.clear();
   const int prefix_len = completion_start.second.length();

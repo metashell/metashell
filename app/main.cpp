@@ -26,6 +26,7 @@
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
+#include <metashell/clang/version.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -44,7 +45,7 @@ namespace
 
     return
       {
-        {"libclang", metashell::libclang_version()},
+        {"libclang", metashell::clang::libclang_version()},
         {"Boost.Wave", metashell::wave_version()},
         {readline_name, metashell::readline::version()}
       };

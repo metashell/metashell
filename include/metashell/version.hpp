@@ -22,8 +22,6 @@
 namespace metashell
 {
   std::string version();
-
-  std::string libclang_version();
 }
 
 #endif

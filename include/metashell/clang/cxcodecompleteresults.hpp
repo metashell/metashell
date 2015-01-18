@@ -26,16 +26,19 @@
 
 namespace metashell
 {
-  class cxcodecompleteresults : boost::noncopyable
+  namespace clang
   {
-  public:
-    cxcodecompleteresults(CXCodeCompleteResults* r_);
-    ~cxcodecompleteresults();
+    class cxcodecompleteresults : boost::noncopyable
+    {
+    public:
+      cxcodecompleteresults(CXCodeCompleteResults* r_);
+      ~cxcodecompleteresults();
 
-    void fill(std::set<std::string>& out_) const;
-  private:
-    CXCodeCompleteResults* _r;
-  };
+      void fill(std::set<std::string>& out_) const;
+    private:
+      CXCodeCompleteResults* _r;
+    };
+  }
 }
 
 #endif

@@ -14,5 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(data core readline clang)
+aux_source_directory(. SOURCES)
+add_library(metashell_clang_lib STATIC ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+# Clang
+include_directories(${CLANG_INCLUDE_DIR})
+if (MSVC)
+  # libclang calls its import library libclang.imp instead of libclang.lib
+  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
+endif()
+target_link_libraries(metashell_clang_lib ${CLANG_LIBRARY})
 

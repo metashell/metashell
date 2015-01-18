@@ -24,33 +24,36 @@
 
 namespace metashell
 {
-  class text_position : boost::equality_comparable<text_position>
+  namespace data
   {
-  public:
-    text_position();
-    text_position(int line_, int column_);
+    class text_position : boost::equality_comparable<text_position>
+    {
+    public:
+      text_position();
+      text_position(int line_, int column_);
 
-    int line() const;
-    int column() const;
+      int line() const;
+      int column() const;
 
-    void next_column();
-    void next_line();
+      void next_column();
+      void next_line();
 
-    bool operator==(const text_position& pos_) const;
-  private:
-    int _line;
-    int _column;
-  };
+      bool operator==(const text_position& pos_) const;
+    private:
+      int _line;
+      int _column;
+    };
 
-  /*
-   * Character sequences treated as one new line:
-   *   10
-   *   13
-   *   13 10
-   */
-  text_position operator+(text_position pos_, const std::string& s_);
+    /*
+     * Character sequences treated as one new line:
+     *   10
+     *   13
+     *   13 10
+     */
+    text_position operator+(text_position pos_, const std::string& s_);
 
-  std::ostream& operator<<(std::ostream& o_, const text_position& pos_);
+    std::ostream& operator<<(std::ostream& o_, const text_position& pos_);
+  }
 }
 
 #endif

@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/text_position.hpp>
+#include <metashell/data/text_position.hpp>
 #include <iostream>
 
-using namespace metashell;
+using namespace metashell::data;
 
 text_position::text_position() :
   _line(1),
@@ -50,7 +50,10 @@ void text_position::next_line()
   ++_line;
 }
 
-text_position metashell::operator+(text_position pos_, const std::string& s_)
+text_position metashell::data::operator+(
+  text_position pos_,
+  const std::string& s_
+)
 {
   bool was13 = false;
 
@@ -86,7 +89,10 @@ bool text_position::operator==(const text_position& pos_) const
   return _line == pos_._line && _column == pos_._column;
 }
 
-std::ostream& metashell::operator<<(std::ostream& o_, const text_position& pos_)
+std::ostream& metashell::data::operator<<(
+  std::ostream& o_,
+  const text_position& pos_
+)
 {
   return o_ << pos_.line() << ":" << pos_.column();
 }

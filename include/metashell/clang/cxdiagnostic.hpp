@@ -1,5 +1,5 @@
-#ifndef METASHELL_CXSTRING_HPP
-#define METASHELL_CXSTRING_HPP
+#ifndef METASHELL_CXDIAGNOSTIC_HPP
+#define METASHELL_CXDIAGNOSTIC_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -25,17 +25,20 @@
 
 namespace metashell
 {
-  class cxstring : boost::noncopyable
+  namespace clang
   {
-  public:
-    // Takes ownership
-    explicit cxstring(CXString s_);
-    ~cxstring();
+    class cxdiagnostic : boost::noncopyable
+    {
+    public:
+      // takes ownership
+      explicit cxdiagnostic(CXDiagnostic d_);
+      ~cxdiagnostic();
 
-    operator std::string() const;
-  private:
-    CXString _s;
-  };
+      std::string spelling() const;
+    private:
+      CXDiagnostic _d;
+    };
+  }
 }
 
 #endif

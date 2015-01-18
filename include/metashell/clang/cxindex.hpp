@@ -1,5 +1,5 @@
-#ifndef METASHELL_CXDIAGNOSTIC_HPP
-#define METASHELL_CXDIAGNOSTIC_HPP
+#ifndef METASHELL_CXINDEX_HPP
+#define METASHELL_CXINDEX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/clang/cxtranslationunit.hpp>
+
+#include <metashell/logger.hpp>
+#include <metashell/environment.hpp>
+#include <metashell/unsaved_file.hpp>
+
 #include <clang-c/Index.h>
 
 #include <boost/utility.hpp>
 
-#include <string>
+#include <memory>
 
 namespace metashell
 {
-  class cxdiagnostic : boost::noncopyable
+  namespace clang
   {
-  public:
-    // takes ownership
-    explicit cxdiagnostic(CXDiagnostic d_);
-    ~cxdiagnostic();
+    class cxindex : boost::noncopyable
+    {
+    public:
+      explicit cxindex(logger* logger_);
+      ~cxindex();
 
-    std::string spelling() const;
-  private:
-    CXDiagnostic _d;
-  };
+      std::unique_ptr<cxtranslationunit> parse_code(
+        const unsaved_file& src_,
+        const environment& env_
+      );
+    private:
+      CXIndex _index;
+      logger* _logger;
+    };
+  }
 }
 
 #endif

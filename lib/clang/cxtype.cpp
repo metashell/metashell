@@ -14,19 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxstring.hpp"
+#include <metashell/clang/cxtype.hpp>
+#include <metashell/clang/cxcursor.hpp>
+#include <metashell/clang/cxstring.hpp>
 
-using namespace metashell;
+#include <sstream>
+#include <iostream>
+#include <iterator>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <map>
 
-cxstring::cxstring(CXString s_) : _s(s_) {}
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
-cxstring::~cxstring()
+using namespace metashell::clang;
+
+cxtype::cxtype() {}
+
+cxtype::cxtype(CXType type_) : _type(type_) {}
+
+std::string cxtype::spelling() const
 {
-  clang_disposeString(_s);
+  return cxcursor(clang_getTypeDeclaration(_type)).spelling();
 }
 
-cxstring::operator std::string() const
+cxtype cxtype::canonical_type() const
 {
-  return clang_getCString(_s);
+  return cxtype(clang_getCanonicalType(_type));
 }
 

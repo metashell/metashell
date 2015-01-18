@@ -18,12 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/environment.hpp>
-#include <metashell/text_position.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/logger.hpp>
 
-#include "cxcursor.hpp"
-#include "indexing_iterator.hpp"
+#include <metashell/data/text_position.hpp>
+
+#include <metashell/clang/cxcursor.hpp>
+#include <metashell/clang/indexing_iterator.hpp>
 
 #include <clang-c/Index.h>
 
@@ -36,36 +37,39 @@
 
 namespace metashell
 {
-  class cxtranslationunit : boost::noncopyable
+  namespace clang
   {
-  public:
-    typedef std::function<void(cxcursor, cxcursor)> visitor;
+    class cxtranslationunit : boost::noncopyable
+    {
+    public:
+      typedef std::function<void(cxcursor, cxcursor)> visitor;
 
-    typedef indexing_iterator<std::string> error_iterator;
+      typedef indexing_iterator<std::string> error_iterator;
 
-    // takes ownership
-    cxtranslationunit(
-      const environment& env_,
-      const unsaved_file& src_,
-      CXIndex index_,
-      logger* logger_
-    );
-    ~cxtranslationunit();
+      // takes ownership
+      cxtranslationunit(
+        const environment& env_,
+        const unsaved_file& src_,
+        CXIndex index_,
+        logger* logger_
+      );
+      ~cxtranslationunit();
 
-    void visit_nodes(const visitor& f_);
+      void visit_nodes(const visitor& f_);
 
-    error_iterator errors_begin() const;
-    error_iterator errors_end() const;
+      error_iterator errors_begin() const;
+      error_iterator errors_end() const;
 
-    bool has_errors() const;
+      bool has_errors() const;
 
-    void code_complete(std::set<std::string>& out_) const;
-  private:
-    unsaved_file _src;
-    std::vector<CXUnsavedFile> _unsaved_files;
-    CXTranslationUnit _tu;
-    logger* _logger;
-  };
+      void code_complete(std::set<std::string>& out_) const;
+    private:
+      unsaved_file _src;
+      std::vector<CXUnsavedFile> _unsaved_files;
+      CXTranslationUnit _tu;
+      logger* _logger;
+    };
+  }
 }
 
 #endif

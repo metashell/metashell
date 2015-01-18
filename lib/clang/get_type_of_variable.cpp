@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "get_type_of_variable.hpp"
+#include <metashell/clang/get_type_of_variable.hpp>
 
 #include <metashell/exception.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 
-using namespace metashell;
+using namespace metashell::clang;
 
 namespace
 {
@@ -35,14 +35,20 @@ namespace
       || std::string(s_.begin(), s_.begin() + prefix_.size()) != prefix_
     )
     {
-      throw exception("\"" + prefix_ + "\" is not a prefix of \"" + s_ + "\"");
+      throw
+        metashell::exception(
+          "\"" + prefix_ + "\" is not a prefix of \"" + s_ + "\""
+        );
     }
     else if (
       s_.size() < suffix_.size()
       || std::string(s_.end() - suffix_.size(), s_.end()) != suffix_
     )
     {
-      throw exception("\"" + suffix_ + "\" is not a suffix of \"" + s_ + "\"");
+      throw
+        metashell::exception(
+          "\"" + suffix_ + "\" is not a suffix of \"" + s_ + "\""
+        );
     }
     else
     {

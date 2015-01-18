@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxindex.hpp"
+#include <metashell/clang/cxindex.hpp>
 
 #include <metashell/metashell.hpp>
 #include <metashell/default_environment_detector.hpp>
@@ -245,8 +245,8 @@ bool default_environment_detector::clang_binary_works_with_libclang(
     header_file_environment env(cfg, _logger);
     env.append("struct foo {};");
 
-    cxindex index(_logger);
-    std::unique_ptr<cxtranslationunit> tu = index.parse_code(src, env);
+    clang::cxindex index(_logger);
+    std::unique_ptr<clang::cxtranslationunit> tu = index.parse_code(src, env);
     return tu->errors_begin() == tu->errors_end();
   }
   catch (...)

@@ -1,5 +1,8 @@
+#ifndef METASHELL_CLANG_VERSION_HPP
+#define METASHELL_CLANG_VERSION_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,31 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cxindex.hpp"
+#include <string>
 
-#include <clang-c/Index.h>
-
-using namespace metashell;
-
-cxindex::cxindex(logger* logger_) :
-  _index(clang_createIndex(0, 0)),
-  _logger(logger_)
-{}
-
-cxindex::~cxindex()
+namespace metashell
 {
-  clang_disposeIndex(_index);
+  namespace clang
+  {
+    std::string libclang_version();
+  }
 }
 
-std::unique_ptr<cxtranslationunit> cxindex::parse_code(
-  const unsaved_file& src_,
-  const environment& env_
-)
-{
-  return
-    std::unique_ptr<cxtranslationunit>(
-      new cxtranslationunit(env_, src_, _index, _logger)
-    );
-}
-
+#endif
 
