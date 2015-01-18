@@ -44,7 +44,7 @@ namespace
   {
     using std::make_pair;
 
-    const unsaved_file
+    const data::unsaved_file
       code(
         input_filename_,
         env_.get_appended(
@@ -103,7 +103,7 @@ result metashell::validate_code(
 
   try
   {
-    const unsaved_file src(input_filename_, env_.get_appended(src_));
+    const data::unsaved_file src(input_filename_, env_.get_appended(src_));
     clang::cxindex index(logger_);
     std::unique_ptr<clang::cxtranslationunit> tu = index.parse_code(src, env_);
     return
@@ -319,7 +319,7 @@ void metashell::code_complete(
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
-  const unsaved_file src(
+  const data::unsaved_file src(
     input_filename_,
     // code completion doesn't seem to work without that extra space at the end
     env_.get_appended(completion_start.first + " ")

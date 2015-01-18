@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/unsaved_file.hpp>
+#include <metashell/data/unsaved_file.hpp>
 
 #include <clang-c/Index.h>
 
@@ -32,9 +32,9 @@ namespace metashell
   public:
     explicit headers(const std::string& internal_dir_, bool empty_ = false);
 
-    typedef std::vector<unsaved_file>::const_iterator iterator;
+    typedef std::vector<data::unsaved_file>::const_iterator iterator;
     typedef iterator const_iterator;
-    typedef std::vector<unsaved_file>::size_type size_type;
+    typedef std::vector<data::unsaved_file>::size_type size_type;
 
     iterator begin() const;
     iterator end() const;
@@ -45,7 +45,7 @@ namespace metashell
 
     const std::string& internal_dir() const;
   private:
-    std::vector<unsaved_file> _headers;
+    std::vector<data::unsaved_file> _headers;
     std::string _internal_dir;
 
     void add(const std::string& filename_, const std::string& content_);

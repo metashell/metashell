@@ -18,9 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/environment.hpp>
-#include <metashell/unsaved_file.hpp>
 #include <metashell/logger.hpp>
 
+#include <metashell/data/unsaved_file.hpp>
 #include <metashell/data/text_position.hpp>
 
 #include <metashell/clang/cxcursor.hpp>
@@ -49,7 +49,7 @@ namespace metashell
       // takes ownership
       cxtranslationunit(
         const environment& env_,
-        const unsaved_file& src_,
+        const data::unsaved_file& src_,
         CXIndex index_,
         logger* logger_
       );
@@ -64,7 +64,7 @@ namespace metashell
 
       void code_complete(std::set<std::string>& out_) const;
     private:
-      unsaved_file _src;
+      data::unsaved_file _src;
       std::vector<CXUnsavedFile> _unsaved_files;
       CXTranslationUnit _tu;
       logger* _logger;

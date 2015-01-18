@@ -21,7 +21,8 @@
 
 #include <metashell/logger.hpp>
 #include <metashell/environment.hpp>
-#include <metashell/unsaved_file.hpp>
+
+#include <metashell/data/unsaved_file.hpp>
 
 #include <clang-c/Index.h>
 
@@ -40,7 +41,7 @@ namespace metashell
       ~cxindex();
 
       std::unique_ptr<cxtranslationunit> parse_code(
-        const unsaved_file& src_,
+        const data::unsaved_file& src_,
         const environment& env_
       );
     private:

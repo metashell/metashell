@@ -17,9 +17,16 @@
 #include <metashell/headers.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/path_builder.hpp>
+#include <metashell/exception.hpp>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptors.hpp>
+
+#include <iostream>
+#include <fstream>
 
 using namespace metashell;
 
@@ -90,6 +97,22 @@ namespace
         + string(path_builder() / "metashell" / "formatter" / (name_ + ".hpp"))
         + ">";
   }
+
+  void generate(const data::unsaved_file& f_)
+  {
+    boost::filesystem::path p(f_.filename());
+    p.remove_filename();
+    create_directories(p); // Throws when fails to create the directory
+    std::ofstream f(f_.filename().c_str());
+    if (f)
+    {
+      f << f_.content();
+    }
+    else
+    {
+      throw exception("Error creating file " + f_.filename());
+    }
+  }
 }
 
 headers::headers(const std::string& internal_dir_, bool empty_) :
@@ -150,7 +173,7 @@ headers::headers(const std::string& internal_dir_, bool empty_) :
 
 void headers::add(const std::string& filename_, const std::string& content_)
 {
-  _headers.push_back(unsaved_file(filename_, content_));
+  _headers.push_back(data::unsaved_file(filename_, content_));
 }
 
 headers::iterator headers::begin() const
@@ -165,9 +188,9 @@ headers::iterator headers::end() const
 
 void headers::generate() const
 {
-  for (const unsaved_file& h : _headers)
+  for (const data::unsaved_file& h : _headers)
   {
-    h.generate();
+    ::generate(h);
   }
 }
 

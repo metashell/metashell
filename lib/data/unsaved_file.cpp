@@ -14,16 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/unsaved_file.hpp>
-#include <metashell/exception.hpp>
+#include <metashell/data/unsaved_file.hpp>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-
-#include <iostream>
-#include <fstream>
-
-using namespace metashell;
+using namespace metashell::data;
 
 unsaved_file::unsaved_file(
   const std::string& filename_,
@@ -33,15 +26,6 @@ unsaved_file::unsaved_file(
   _content(content_)
 {}
 
-CXUnsavedFile unsaved_file::get() const
-{
-  CXUnsavedFile entry;
-  entry.Filename = _filename.c_str();
-  entry.Contents = _content.c_str();
-  entry.Length = _content.size();
-  return entry;
-}
-
 const std::string& unsaved_file::filename() const
 {
   return _filename;
@@ -50,21 +34,5 @@ const std::string& unsaved_file::filename() const
 const std::string& unsaved_file::content() const
 {
   return _content;
-}
-
-void unsaved_file::generate() const
-{
-  boost::filesystem::path p(_filename);
-  p.remove_filename();
-  create_directories(p); // Throws when fails to create the directory
-  std::ofstream f(_filename.c_str());
-  if (f)
-  {
-    f << _content;
-  }
-  else
-  {
-    throw exception("Error creating file " + _filename);
-  }
 }
 

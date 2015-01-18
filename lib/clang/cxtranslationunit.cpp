@@ -86,11 +86,21 @@ namespace
 
     return s.str();
   }
+
+  CXUnsavedFile get(const metashell::data::unsaved_file& f_)
+  {
+    CXUnsavedFile entry;
+    entry.Filename = f_.filename().c_str();
+    entry.Contents = f_.content().c_str();
+    entry.Length = f_.content().size();
+    return entry;
+  }
+
 }
 
 cxtranslationunit::cxtranslationunit(
   const environment& env_,
-  const unsaved_file& src_,
+  const metashell::data::unsaved_file& src_,
   CXIndex index_,
   logger* logger_
 ) :
@@ -112,11 +122,11 @@ cxtranslationunit::cxtranslationunit(
     c_str_it;
 
   _unsaved_files.reserve(env_.get_headers().size() + 1);
-  for (const unsaved_file& uf : env_.get_headers())
+  for (const metashell::data::unsaved_file& uf : env_.get_headers())
   {
-    _unsaved_files.push_back(uf.get());
+    _unsaved_files.push_back(get(uf));
   }
-  _unsaved_files.push_back(_src.get());
+  _unsaved_files.push_back(get(src_));
 
   const vector<const char*> argv(
     c_str_it(env_.clang_arguments().begin(), c_str),

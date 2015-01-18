@@ -238,7 +238,7 @@ bool default_environment_detector::clang_binary_works_with_libclang(
   config cfg(cfg_);
   cfg.use_precompiled_headers = true;
 
-  const unsaved_file src("<stdin>", "typedef foo bar;");
+  const data::unsaved_file src("<stdin>", "typedef foo bar;");
 
   try
   {

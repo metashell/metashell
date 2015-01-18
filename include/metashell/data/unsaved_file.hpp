@@ -17,32 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <clang-c/Index.h>
-
 #include <string>
 
 namespace metashell
 {
-  class unsaved_file
+  namespace data
   {
-  public:
-    explicit unsaved_file(
-      const std::string& filename_ = "",
-      const std::string& content_ = ""
-    );
+    class unsaved_file
+    {
+    public:
+      explicit unsaved_file(
+        const std::string& filename_ = "",
+        const std::string& content_ = ""
+      );
 
-    // The resulting CXUnsavedFile object refers back to this object.
-    // Destroying the unsaved_file object invalidates the CXUnsavedFile.
-    CXUnsavedFile get() const;
-
-    const std::string& filename() const;
-    const std::string& content() const;
-
-    void generate() const;
-  private:
-    std::string _filename;
-    std::string _content;
-  };
+      const std::string& filename() const;
+      const std::string& content() const;
+    private:
+      std::string _filename;
+      std::string _content;
+    };
+  }
 }
 
 #endif

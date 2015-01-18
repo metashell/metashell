@@ -31,7 +31,7 @@ cxindex::~cxindex()
 }
 
 std::unique_ptr<cxtranslationunit> cxindex::parse_code(
-  const unsaved_file& src_,
+  const metashell::data::unsaved_file& src_,
   const environment& env_
 )
 {
