@@ -23,11 +23,14 @@
 
 namespace metashell
 {
-  class readline_history : public iface::history
+  namespace readline
   {
-  public:
-    virtual void add(const std::string& cmd_) override;
-  };
+    class history : public iface::history
+    {
+    public:
+      virtual void add(const std::string& cmd_) override;
+    };
+  }
 }
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef METASHELL_READLINE_COMPLETION_FUNCTION_HPP
-#define METASHELL_READLINE_COMPLETION_FUNCTION_HPP
+#ifndef METASHELL_READLINE_LINE_READER_HPP
+#define METASHELL_READLINE_LINE_READER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,23 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Needed for the OpenBSD build. Including this header after
-// <readline/readline.h> breaks.
-#include <boost/optional.hpp>
-
-#ifdef USE_EDITLINE
-#  include <editline/readline.h>
-#else
-#  include <readline/readline.h>
-#endif
+#include <metashell/line_reader.hpp>
+#include <metashell/command_processor_queue.hpp>
 
 namespace metashell
 {
-#ifdef __APPLE__
-  typedef CPPFunction readline_completion_function;
-#else
-  typedef rl_completion_func_t readline_completion_function;
-#endif
+  namespace readline
+  {
+    line_reader line_reader(command_processor_queue& processor_queue_);
+  }
 }
 
 #endif

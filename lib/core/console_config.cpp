@@ -20,9 +20,9 @@
 #include <metashell/stream_console.hpp>
 #include <metashell/json_displayer.hpp>
 #include <metashell/console_displayer.hpp>
-#include <metashell/readline_history.hpp>
+#include <metashell/readline/history.hpp>
 #include <metashell/null_history.hpp>
-#include <metashell/readline_line_reader.hpp>
+#include <metashell/readline/line_reader.hpp>
 #include <metashell/json_line_reader.hpp>
 #include <metashell/rapid_json_writer.hpp>
 
@@ -70,8 +70,8 @@ console_config::console_config(
     _displayer.reset(
       new console_displayer(*_console, indent_, syntax_highlight_)
     );
-    _history.reset(new readline_history);
-    _reader = metashell::readline_line_reader(_processor_queue);
+    _history.reset(new readline::history);
+    _reader = metashell::readline::line_reader(_processor_queue);
     break;
   case console_type::json:
     _json_writer.reset(new rapid_json_writer(std::cout));

@@ -23,6 +23,7 @@ use_cpp11()
 # Metashell
 target_link_libraries(metashell
   metashell_core_lib
+  metashell_readline_lib
   metashell_data_lib
 )
 

@@ -14,5 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(data core readline)
+aux_source_directory(. SOURCES)
+add_library(metashell_readline_lib STATIC ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+# Readline
+if (WIN32)
+  add_definitions( -DUSE_EDITLINE )
+  include_directories("${CMAKE_SOURCE_DIR}/3rd/wineditline")
+else()
+  if (USE_EDITLINE)
+    include_directories(${EDITLINE_INCLUDE_DIR})
+    add_definitions( -DUSE_EDITLINE )
+  else()
+    include_directories(${READLINE_INCLUDE_DIR})
+  endif()
+endif()
 

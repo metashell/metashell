@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/readline_line_reader.hpp>
-#include <metashell/readline_completion_function.hpp>
+#include <metashell/readline/line_reader.hpp>
 #include <metashell/line_reader.hpp>
 
 #ifdef USE_EDITLINE
@@ -29,6 +28,7 @@
 #include <algorithm>
 
 using namespace metashell;
+using namespace metashell::readline;
 
 namespace
 {
@@ -132,7 +132,7 @@ namespace
   }
 }
 
-line_reader metashell::readline_line_reader(
+metashell::line_reader metashell::readline::line_reader(
   command_processor_queue& processor_queue_
 )
 {

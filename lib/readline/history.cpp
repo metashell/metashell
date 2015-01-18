@@ -1,6 +1,3 @@
-#ifndef METASHELL_READLINE_INPUT_LOOP_HPP
-#define METASHELL_READLINE_INPUT_LOOP_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,13 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_reader.hpp>
-#include <metashell/command_processor_queue.hpp>
+#include <metashell/readline/history.hpp>
 
-namespace metashell
-{
-  line_reader readline_line_reader(command_processor_queue& processor_queue_);
-}
+#include <vector>
 
+#ifdef USE_EDITLINE
+#  include <editline/readline.h>
+#else
+#  include <readline/readline.h>
+#  include <readline/history.h>
 #endif
+
+using namespace metashell::readline;
+
+void history::add(const std::string& cmd_)
+{
+  //TODO save/restore history
+  std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
+  ::add_history(l.data());
+}
 
