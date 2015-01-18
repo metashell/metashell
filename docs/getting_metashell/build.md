@@ -178,5 +178,42 @@ upgrade WinEditLine to a newer version, you need to update these files.
       late July version.
     * `cpack`
 
+## Building against custom Clang build
+
+If you want to build Metashell against a different version of Clang or you have
+built Clang on your system and would like to use that instead of rebuilding it
+for Metashell, here is how you can do it.
+
+> Note that you should apply [the Templight
+> patch](https://github.com/mikael-s-persson/templight) against your Clang.
+
+> Note that you need to build a static version of libClang. If you are building
+> LLVM/Clang with CMake, you need to pass the `-DLIBCLANG_BUILD_STATIC=ON`
+> argument to Clang's `cmake`.
+
+> Also note that Metashell is prepared for being built against the version of
+> Clang you can find in the `templight` directory. It is staticly linked against
+> Clang and if you use a different version of Clang, the list of libraries to
+> link against might be different. You can update it in
+> `cmake/Modules/FindClang.cmake`.
+
+You need to follow the manual build instructions of your platform and pass the
+following extra arguments to `cmake`:
+
+`-DCLANG_INCLUDEDIR=$LLVM/tools/clang/include -DCLANG_BINARYDIR=$CLANG_BIN/bin -DCLANG_LIBRARYDIR=$CLANG_BIN/lib`
+
+where
+
+* `$LLVM` is the path to the (top level) `llvm` directory of your Clang source
+  tree.
+* `$CLANG_BIN` is the path to the directory where you have built the Clang
+  binaries. This is `$BUILD` on Unix systems and `$BUILD/<build mode>` on
+  Windows, where `$BUILD` is the `build` directory you were running `cmake` from
+  and `<build mode>` is the build mode you choose in Visual Studio (eg. Debug,
+  Release, etc).
+
+To debug configuration issues, you can pass the `-DCLANG_DEBUG=true` argument to
+`cmake`. This will show you which version of Clang it found.
+
 <p>&nbsp;</p>
 
