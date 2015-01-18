@@ -200,7 +200,9 @@ for Metashell, here is how you can do it.
 You need to follow the manual build instructions of your platform and pass the
 following extra arguments to `cmake`:
 
-`-DCLANG_INCLUDEDIR=$LLVM/tools/clang/include -DCLANG_BINARYDIR=$CLANG_BIN/bin -DCLANG_LIBRARYDIR=$CLANG_BIN/lib`
+```
+-DCLANG_INCLUDEDIR=$LLVM/tools/clang/include -DCLANG_BINARYDIR=$CLANG_BIN/bin -DCLANG_LIBRARYDIR=$CLANG_BIN/lib
+```
 
 where
 
