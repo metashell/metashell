@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_config.hpp>
+#include "console_config.hpp"
 
 #include <metashell/stdout_console.hpp>
 #include <metashell/stream_console.hpp>
