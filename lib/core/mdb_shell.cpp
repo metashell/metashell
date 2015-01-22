@@ -136,7 +136,7 @@ config set_pch_false(config c) {
 
 mdb_shell::mdb_shell(
     const config& conf_,
-    const environment& env_arg,
+    const iface::environment& env_arg,
     logger* logger_) :
   conf(set_pch_false(conf_)),
   env(conf),

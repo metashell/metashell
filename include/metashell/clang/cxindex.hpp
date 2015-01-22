@@ -17,36 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang/cxtranslationunit.hpp>
+#include <metashell/iface/cxindex.hpp>
+#include <metashell/iface/environment.hpp>
 
 #include <metashell/logger.hpp>
-#include <metashell/environment.hpp>
-
-#include <metashell/data/unsaved_file.hpp>
 
 #include <clang-c/Index.h>
-
-#include <boost/utility.hpp>
-
-#include <memory>
 
 namespace metashell
 {
   namespace clang
   {
-    class cxindex : boost::noncopyable
+    class cxindex : public iface::cxindex
     {
     public:
-      explicit cxindex(logger* logger_);
+      cxindex(const iface::environment& env_, logger* logger_);
       ~cxindex();
 
-      std::unique_ptr<cxtranslationunit> parse_code(
-        const data::unsaved_file& src_,
-        const environment& env_
-      );
+      virtual std::unique_ptr<iface::cxtranslationunit> parse_code(
+        const data::unsaved_file& src_
+      ) override;
     private:
       CXIndex _index;
       logger* _logger;
+      const iface::environment* _env;
     };
   }
 }

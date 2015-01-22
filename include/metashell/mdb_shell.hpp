@@ -41,7 +41,7 @@ public:
 
   mdb_shell(
       const config& conf,
-      const environment& env,
+      const iface::environment& env,
       logger* logger_);
 
   virtual std::string prompt() const override;

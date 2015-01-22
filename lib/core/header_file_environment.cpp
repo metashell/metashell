@@ -15,12 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/header_file_environment.hpp>
-#include <metashell/headers.hpp>
+#include <metashell/data/headers.hpp>
 #include <metashell/config.hpp>
 #include <metashell/clang_binary.hpp>
 #include <metashell/exception.hpp>
 
 #include <just/process.hpp>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 
@@ -71,6 +74,30 @@ namespace
       throw exception("Error precompiling header " + fn_ + ": " + err);
     }
   }
+
+  void generate(const data::unsaved_file& f_)
+  {
+    boost::filesystem::path p(f_.filename());
+    p.remove_filename();
+    create_directories(p); // Throws when fails to create the directory
+    std::ofstream f(f_.filename().c_str());
+    if (f)
+    {
+      f << f_.content();
+    }
+    else
+    {
+      throw exception("Error creating file " + f_.filename());
+    }
+  }
+
+  void generate(const data::headers& headers_)
+  {
+    for (const data::unsaved_file& h : headers_)
+    {
+      generate(h);
+    }
+  }
 }
 
 header_file_environment::header_file_environment(
@@ -80,7 +107,7 @@ header_file_environment::header_file_environment(
   _dir(),
   _buffer(_dir.path(), config_, "-I" + _dir.path(), logger_),
   _clang_args(),
-  _empty_headers(_buffer.internal_dir(), true),
+  _empty_headers(_buffer.internal_dir()),
   _use_precompiled_headers(config_.use_precompiled_headers),
   _clang_path(config_.clang_path)
 {
@@ -94,7 +121,7 @@ header_file_environment::header_file_environment(
   extend_to_find_headers_in_local_dir(_clang_args);
 
   save();
-  _buffer.get_headers().generate();
+  generate(_buffer.get_headers());
 }
 
 void header_file_environment::append(const std::string& s_)
@@ -163,7 +190,7 @@ std::string header_file_environment::internal_dir() const
   return _dir.path();
 }
 
-const headers& header_file_environment::get_headers() const
+const data::headers& header_file_environment::get_headers() const
 {
   return _empty_headers;
 }

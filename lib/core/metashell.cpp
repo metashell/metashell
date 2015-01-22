@@ -15,8 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/metashell.hpp>
-#include <metashell/clang/get_type_of_variable.hpp>
-#include <metashell/clang/cxindex.hpp>
 
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
@@ -35,10 +33,10 @@ namespace
 {
   const char* var = "__metashell_v";
 
-  std::pair<std::unique_ptr<clang::cxtranslationunit>, std::string> parse_expr(
-    clang::cxindex& index_,
+  std::pair<std::unique_ptr<iface::cxtranslationunit>, std::string> parse_expr(
+    iface::cxindex& index_,
     const std::string& input_filename_,
-    const environment& env_,
+    const iface::environment& env_,
     const std::string& tmp_exp_
   )
   {
@@ -51,7 +49,7 @@ namespace
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
         )
       );
-    return make_pair(index_.parse_code(code, env_), code.content());
+    return make_pair(index_.parse_code(code), code.content());
   }
 
   bool has_typedef(
@@ -89,14 +87,76 @@ namespace
     }
     return t;
   }
+
+  std::string unwrap(
+    const std::string& prefix_,
+    const std::string& s_,
+    const std::string& suffix_
+  )
+  {
+    if (
+      s_.size() < prefix_.size()
+      || std::string(s_.begin(), s_.begin() + prefix_.size()) != prefix_
+    )
+    {
+      throw
+        metashell::exception(
+          "\"" + prefix_ + "\" is not a prefix of \"" + s_ + "\""
+        );
+    }
+    else if (
+      s_.size() < suffix_.size()
+      || std::string(s_.end() - suffix_.size(), s_.end()) != suffix_
+    )
+    {
+      throw
+        metashell::exception(
+          "\"" + suffix_ + "\" is not a suffix of \"" + s_ + "\""
+        );
+    }
+    else
+    {
+      return
+        std::string(s_.begin() + prefix_.size(), s_.end() - suffix_.size());
+    }
+  }
+
+  std::function<void(const iface::cxcursor&)> get_type_of_variable(
+    std::string name_,
+    std::string& result_
+  )
+  {
+    return
+      [name_, &result_] (const iface::cxcursor& cursor_)
+      {
+        if (cursor_.variable_declaration() && cursor_.spelling() == name_)
+        {
+          try
+          {
+            result_ =
+              unwrap(
+                "wrap<",
+                cursor_.type()->canonical_type()->spelling(),
+                ">"
+              );
+          }
+          catch (const exception&)
+          {
+            return;
+          }
+          boost::algorithm::trim(result_);
+        }
+      };
+  }
 }
 
 result metashell::validate_code(
   const std::string& src_,
   const config& config_,
-  const environment& env_,
+  const iface::environment& env_,
   const std::string& input_filename_,
-  logger* logger_
+  logger* logger_,
+  iface::libclang& libclang_
 )
 {
   METASHELL_LOG(logger_, "Validating code " + src_);
@@ -104,8 +164,9 @@ result metashell::validate_code(
   try
   {
     const data::unsaved_file src(input_filename_, env_.get_appended(src_));
-    clang::cxindex index(logger_);
-    std::unique_ptr<clang::cxtranslationunit> tu = index.parse_code(src, env_);
+    std::unique_ptr<iface::cxindex>
+      index = libclang_.create_index(env_, logger_);
+    std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
     return
       result(
         "",
@@ -122,17 +183,18 @@ result metashell::validate_code(
 }
 
 result metashell::eval_tmp_formatted(
-  const environment& env_,
+  const iface::environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
   const std::string& input_filename_,
-  logger* logger_
+  logger* logger_,
+  iface::libclang& libclang_
 )
 {
   using std::string;
   using std::pair;
 
-  typedef std::unique_ptr<clang::cxtranslationunit> tup;
+  typedef std::unique_ptr<iface::cxtranslationunit> tup;
 
   METASHELL_LOG(
     logger_,
@@ -140,13 +202,14 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  clang::cxindex index(logger_);
+  std::unique_ptr<iface::cxindex> index = libclang_.create_index(env_, logger_);
 
-  pair<tup, string> simple = parse_expr(index, input_filename_, env_, tmp_exp_);
+  pair<tup, string>
+    simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
 
   METASHELL_LOG(
     logger_,
-    simple.first->has_errors() ?
+    simple.first->errors_begin() != simple.first->errors_end() ?
       "Errors occured during metaprogram evaluation. Displaying errors coming"
       " from the metaprogram without metashell::format" :
       "No errors occured during metaprogram evaluation. Re-evaluating it with"
@@ -154,23 +217,21 @@ result metashell::eval_tmp_formatted(
   );
 
   const pair<tup, string> final_pair =
-    simple.first->has_errors() ?
+    simple.first->errors_begin() != simple.first->errors_end() ?
       std::move(simple) :
       parse_expr(
-        index,
+        *index,
         input_filename_,
         env_,
         "::metashell::format<" + tmp_exp_ + ">::type"
       );
 
-  clang::get_type_of_variable v(var);
-  final_pair.first->visit_nodes(
-    [&v](clang::cxcursor cursor_, clang::cxcursor) { v(cursor_); }
-  );
+  std::string v;
+  final_pair.first->visit_nodes(get_type_of_variable(var, v));
 
   return
     result(
-      v.result(),
+      v,
       final_pair.first->errors_begin(),
       final_pair.first->errors_end(),
       config_.verbose ? final_pair.second : ""
@@ -178,7 +239,7 @@ result metashell::eval_tmp_formatted(
 }
 
 result metashell::eval_tmp(
-  const environment& env_,
+  const iface::environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
   logger* logger_)
@@ -213,45 +274,6 @@ result metashell::eval_tmp(
 
   return result{boost::trim_copy(std::string(match[1])), "", ""};
 }
-
-
-result metashell::eval_tmp_unformatted(
-  const environment& env_,
-  const std::string& tmp_exp_,
-  const config& config_,
-  const std::string& input_filename_,
-  logger* logger_
-)
-{
-  using std::string;
-  using std::pair;
-
-  typedef std::unique_ptr<clang::cxtranslationunit> tup;
-
-  METASHELL_LOG(
-    logger_,
-    "Evaluating template metaprogram without metashell:format: " + tmp_exp_
-  );
-
-  clang::cxindex index(logger_);
-
-  pair<tup, string> final_pair =
-    parse_expr(index, input_filename_, env_, tmp_exp_);
-
-  clang::get_type_of_variable v(var);
-  final_pair.first->visit_nodes(
-    [&v](clang::cxcursor cursor_, clang::cxcursor) { v(cursor_); }
-  );
-
-  return
-    result(
-      v.result(),
-      final_pair.first->errors_begin(),
-      final_pair.first->errors_end(),
-      config_.verbose ? final_pair.second : ""
-    );
-}
-
 
 namespace
 {
@@ -302,11 +324,12 @@ namespace
 }
 
 void metashell::code_complete(
-  const environment& env_,
+  const iface::environment& env_,
   const std::string& src_,
   const std::string& input_filename_,
   std::set<std::string>& out_,
-  logger* logger_
+  logger* logger_,
+  iface::libclang& libclang_
 )
 {
   using boost::starts_with;
@@ -326,7 +349,7 @@ void metashell::code_complete(
   );
 
   set<string> c;
-  clang::cxindex(logger_).parse_code(src, env_)->code_complete(c);
+  libclang_.create_index(env_, logger_)->parse_code(src)->code_complete(c);
 
   out_.clear();
   const int prefix_len = completion_start.second.length();

@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,29 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang/cxcursor.hpp>
-#include <metashell/clang/cxstring.hpp>
-#include <metashell/clang/cxtype.hpp>
+#include <metashell/clang/libclang.hpp>
+#include <metashell/clang/cxindex.hpp>
 
 using namespace metashell::clang;
 
-cxcursor::cxcursor(CXCursor cursor_) : _cursor(cursor_) {}
-
-std::string cxcursor::spelling() const
+std::unique_ptr<metashell::iface::cxindex> libclang::create_index(
+  const metashell::iface::environment& env_,
+  metashell::logger* logger_
+)
 {
-  return cxstring(clang_getCursorDisplayName(_cursor));
-}
-
-std::unique_ptr<metashell::iface::cxtype> cxcursor::type() const
-{
-  return
-    std::unique_ptr<metashell::iface::cxtype>(
-      new cxtype(clang_getCursorType(_cursor))
-    );
-}
-
-bool cxcursor::variable_declaration() const
-{
-  return clang_getCursorKind(_cursor) == CXCursor_VarDecl;
+  return std::unique_ptr<metashell::iface::cxindex>(new cxindex(env_, logger_));
 }
 

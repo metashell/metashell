@@ -1,8 +1,8 @@
-#ifndef METASHELL_GET_TYPE_OF_VARIABLE_HPP
-#define METASHELL_GET_TYPE_OF_VARIABLE_HPP
+#ifndef METASHELL_IFACE_CXCURSOR_HPP
+#define METASHELL_IFACE_CXCURSOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,29 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang/cxcursor.hpp>
-
-#include <clang-c/Index.h>
+#include <metashell/iface/cxtype.hpp>
 
 #include <string>
-#include <functional>
+#include <memory>
 
 namespace metashell
 {
-  namespace clang
+  namespace iface
   {
-    class get_type_of_variable :
-      public std::binary_function<cxcursor, cxcursor, CXChildVisitResult>
+    class cxcursor
     {
     public:
-      explicit get_type_of_variable(const std::string& name_ = std::string());
+      virtual ~cxcursor() {}
 
-      CXChildVisitResult operator()(cxcursor cursor_);
+      virtual std::string spelling() const = 0;
 
-      const std::string& result() const;
-    private:
-      std::string _name;
-      std::string _result;
+      virtual std::unique_ptr<cxtype> type() const = 0;
+
+      virtual bool variable_declaration() const = 0;
     };
   }
 }

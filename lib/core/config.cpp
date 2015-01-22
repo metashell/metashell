@@ -19,6 +19,7 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/fstream_file_writer.hpp>
+#include <metashell/null_libclang.hpp>
 
 #include <metashell/metashell.hpp>
 
@@ -376,7 +377,8 @@ config metashell::detect_config(
 
 config metashell::empty_config(const std::string& argv0_)
 {
-  default_environment_detector ed(argv0_, nullptr);
+  null_libclang lc;
+  default_environment_detector ed(argv0_, nullptr, lc);
   null_displayer d;
   return detect_config(user_config(), ed, d, nullptr);
 }

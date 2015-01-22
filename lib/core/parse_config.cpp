@@ -22,6 +22,7 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/null_libclang.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -72,8 +73,9 @@ namespace
   void show_pragma_help()
   {
     const config cfg;
+    null_libclang lclang;
     command_processor_queue cpq;
-    shell sh(cfg, cpq);
+    shell sh(cfg, cpq, lclang);
     const pragma_handler_map
       m = pragma_handler_map::build_default(sh, &cpq, nullptr);
 

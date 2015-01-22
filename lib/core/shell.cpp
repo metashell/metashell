@@ -138,11 +138,16 @@ namespace
     "\n";
 }
 
-shell::shell(const config& config_, logger* logger_) :
+shell::shell(
+  const config& config_,
+  iface::libclang& libclang_,
+  logger* logger_
+) :
   _env(),
   _config(config_),
   _stopped(false),
-  _logger(logger_)
+  _logger(logger_),
+  _libclang(&libclang_)
 {
   rebuild_environment();
   init(nullptr);
@@ -151,12 +156,14 @@ shell::shell(const config& config_, logger* logger_) :
 shell::shell(
   const config& config_,
   command_processor_queue& cpq_,
+  iface::libclang& libclang_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
-  _logger(logger_)
+  _logger(logger_),
+  _libclang(&libclang_)
 {
   rebuild_environment();
   init(&cpq_);
@@ -164,14 +171,16 @@ shell::shell(
 
 shell::shell(
   const config& config_,
-  std::unique_ptr<environment> env_,
+  std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
+  iface::libclang& libclang_,
   logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
-  _logger(logger_)
+  _logger(logger_),
+  _libclang(&libclang_)
 {
   init(&cpq_);
 }
@@ -309,7 +318,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r = validate_code(s_, _config, *_env, input_filename(), _logger);
+  const result r =
+    validate_code(s_, _config, *_env, input_filename(), _logger, *_libclang);
   const bool success = !r.has_errors();
   if (success)
   {
@@ -339,7 +349,14 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(*_env, s_, input_filename(), out_, _logger);
+    metashell::code_complete(
+      *_env,
+      s_,
+      input_filename(),
+      out_,
+      _logger,
+      *_libclang
+    );
   }
   catch (...)
   {
@@ -391,12 +408,12 @@ void shell::using_precompiled_headers(bool enabled_)
   rebuild_environment();
 }
 
-environment& shell::env()
+iface::environment& shell::env()
 {
   return *_env;
 }
 
-const environment& shell::env() const
+const iface::environment& shell::env() const
 {
   return *_env;
 }
@@ -454,7 +471,14 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
   display(
-    eval_tmp_formatted(*_env, s_, _config, input_filename(), _logger),
+    eval_tmp_formatted(
+      *_env,
+      s_,
+      _config,
+      input_filename(),
+      _logger,
+      *_libclang
+    ),
     displayer_
   );
 }

@@ -18,13 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_environment.hpp>
-#include <metashell/headers.hpp>
+#include <metashell/data/headers.hpp>
 
 #include <just/temp.hpp>
 
 namespace metashell
 {
-  class header_file_environment : public environment
+  class header_file_environment : public iface::environment
   {
   public:
     header_file_environment(const config& config_, logger* logger_);
@@ -38,14 +38,14 @@ namespace metashell
     virtual std::vector<std::string>& clang_arguments() override;
     virtual const std::vector<std::string>& clang_arguments() const override;
 
-    virtual const headers& get_headers() const override;
+    virtual const data::headers& get_headers() const override;
 
     virtual std::string get_all() const override;
   private:
     just::temp::directory _dir;
     in_memory_environment _buffer;
     std::vector<std::string> _clang_args;
-    headers _empty_headers;
+    data::headers _empty_headers;
 
     bool _use_precompiled_headers;
     std::string _clang_path;

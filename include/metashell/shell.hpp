@@ -18,14 +18,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/command_processor_queue.hpp>
 #include <metashell/logger.hpp>
 
+#include <metashell/iface/environment.hpp>
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
+#include <metashell/iface/libclang.hpp>
 
 #include <boost/optional.hpp>
 
@@ -40,18 +41,24 @@ namespace metashell
   class shell : public iface::command_processor
   {
   public:
-    explicit shell(const config& config_, logger* logger_ = nullptr);
-
     shell(
       const config& config_,
-      command_processor_queue& cpq_,
+      iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
 
     shell(
       const config& config_,
-      std::unique_ptr<environment> env_,
       command_processor_queue& cpq_,
+      iface::libclang& libclang_,
+      logger* logger_ = nullptr
+    );
+
+    shell(
+      const config& config_,
+      std::unique_ptr<iface::environment> env_,
+      command_processor_queue& cpq_,
+      iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
 
@@ -90,8 +97,8 @@ namespace metashell
     void using_precompiled_headers(bool enabled_);
     bool using_precompiled_headers() const;
 
-    const environment& env() const;
-    environment& env();
+    const iface::environment& env() const;
+    iface::environment& env();
 
     void reset_environment();
     void push_environment();
@@ -102,13 +109,14 @@ namespace metashell
     const config& get_config() const;
   private:
     std::string _line_prefix;
-    std::unique_ptr<environment> _env;
+    std::unique_ptr<iface::environment> _env;
     config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
     logger* _logger;
+    iface::libclang* _libclang;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

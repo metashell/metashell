@@ -20,14 +20,6 @@ add_library(metashell_core_lib STATIC ${SOURCES})
 enable_warnings()
 use_cpp11()
 
-# Clang
-include_directories(${CLANG_INCLUDE_DIR})
-if (MSVC)
-  # libclang calls its import library libclang.imp instead of libclang.lib
-  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
-endif()
-target_link_libraries(metashell_core_lib ${CLANG_LIBRARY})
-
 # mIndent
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")
 

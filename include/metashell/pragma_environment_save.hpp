@@ -19,8 +19,8 @@
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
+#include <metashell/iface/environment.hpp>
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
 
 #include <string>
 
@@ -29,7 +29,10 @@ namespace metashell
   class pragma_environment_save : public iface::pragma_handler
   {
   public:
-    pragma_environment_save(const config& config_, const environment& env_);
+    pragma_environment_save(
+      const config& config_,
+      const iface::environment& env_
+    );
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -43,7 +46,7 @@ namespace metashell
     ) const override;
   private:
     const config& _config;
-    const environment& _env;
+    const iface::environment& _env;
   };
 }
 

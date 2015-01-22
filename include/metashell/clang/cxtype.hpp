@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/cxtype.hpp>
+
 #include <clang-c/Index.h>
 
 #include <string>
@@ -25,17 +27,15 @@ namespace metashell
 {
   namespace clang
   {
-    class cxcursor;
-
-    class cxtype
+    class cxtype : public iface::cxtype
     {
     public:
       cxtype();
       explicit cxtype(CXType type_);
 
-      std::string spelling() const;
+      virtual std::string spelling() const override;
 
-      cxtype canonical_type() const;
+      virtual std::unique_ptr<iface::cxtype> canonical_type() const override;
     private:
       CXType _type;
     };

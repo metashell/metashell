@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/shell.hpp>
-#include <metashell/headers.hpp>
 #include <metashell/exception.hpp>
 
 #include <metashell/data/text_position.hpp>
@@ -39,14 +38,14 @@ namespace
 {
   CXChildVisitResult visitor(
     CXCursor cursor_,
-    CXCursor parent_,
+    CXCursor /* parent_ */,
     CXClientData client_data_
   )
   {
     const cxtranslationunit::visitor& f =
       *static_cast<cxtranslationunit::visitor*>(client_data_);
 
-    f(cxcursor(cursor_), cxcursor(parent_));
+    f(cxcursor(cursor_));
     return CXChildVisit_Recurse;
   }
 
@@ -99,7 +98,7 @@ namespace
 }
 
 cxtranslationunit::cxtranslationunit(
-  const environment& env_,
+  const iface::environment& env_,
   const metashell::data::unsaved_file& src_,
   CXIndex index_,
   logger* logger_
@@ -197,11 +196,6 @@ cxtranslationunit::error_iterator cxtranslationunit::errors_end() const
       [this] (int n_) { return get_nth_error_msg(this->_tu, n_); },
       clang_getNumDiagnostics(_tu)
     );
-}
-
-bool cxtranslationunit::has_errors() const
-{
-  return clang_getNumDiagnostics(_tu) > 0;
 }
 
 void cxtranslationunit::code_complete(std::set<std::string>& out_) const

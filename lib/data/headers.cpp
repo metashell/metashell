@@ -14,29 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang/cxcursor.hpp>
-#include <metashell/clang/cxstring.hpp>
-#include <metashell/clang/cxtype.hpp>
+#include <metashell/data/headers.hpp>
 
-using namespace metashell::clang;
+using namespace metashell::data;
 
-cxcursor::cxcursor(CXCursor cursor_) : _cursor(cursor_) {}
-
-std::string cxcursor::spelling() const
+headers::headers(const std::string& internal_dir_) :
+  _headers(),
+  _internal_dir(internal_dir_)
 {
-  return cxstring(clang_getCursorDisplayName(_cursor));
 }
 
-std::unique_ptr<metashell::iface::cxtype> cxcursor::type() const
+void headers::add(const std::string& filename_, const std::string& content_)
 {
-  return
-    std::unique_ptr<metashell::iface::cxtype>(
-      new cxtype(clang_getCursorType(_cursor))
-    );
+  _headers.push_back(data::unsaved_file(filename_, content_));
 }
 
-bool cxcursor::variable_declaration() const
+headers::iterator headers::begin() const
 {
-  return clang_getCursorKind(_cursor) == CXCursor_VarDecl;
+  return _headers.begin();
+}
+
+headers::iterator headers::end() const
+{
+  return _headers.end();
+}
+
+headers::size_type headers::size() const
+{
+  return _headers.size();
+}
+
+const std::string& headers::internal_dir() const
+{
+  return _internal_dir;
 }
 

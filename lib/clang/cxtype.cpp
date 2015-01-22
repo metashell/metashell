@@ -41,8 +41,11 @@ std::string cxtype::spelling() const
   return cxcursor(clang_getTypeDeclaration(_type)).spelling();
 }
 
-cxtype cxtype::canonical_type() const
+std::unique_ptr<metashell::iface::cxtype> cxtype::canonical_type() const
 {
-  return cxtype(clang_getCanonicalType(_type));
+  return
+    std::unique_ptr<metashell::iface::cxtype>(
+      new cxtype(clang_getCanonicalType(_type))
+    );
 }
 

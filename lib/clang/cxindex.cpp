@@ -15,14 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/clang/cxindex.hpp>
+#include <metashell/clang/cxtranslationunit.hpp>
 
 #include <clang-c/Index.h>
 
 using namespace metashell::clang;
 
-cxindex::cxindex(logger* logger_) :
+cxindex::cxindex(const iface::environment& env_, logger* logger_) :
   _index(clang_createIndex(0, 0)),
-  _logger(logger_)
+  _logger(logger_),
+  _env(&env_)
 {}
 
 cxindex::~cxindex()
@@ -30,14 +32,13 @@ cxindex::~cxindex()
   clang_disposeIndex(_index);
 }
 
-std::unique_ptr<cxtranslationunit> cxindex::parse_code(
-  const metashell::data::unsaved_file& src_,
-  const environment& env_
+std::unique_ptr<metashell::iface::cxtranslationunit> cxindex::parse_code(
+  const metashell::data::unsaved_file& src_
 )
 {
   return
-    std::unique_ptr<cxtranslationunit>(
-      new cxtranslationunit(env_, src_, _index, _logger)
+    std::unique_ptr<metashell::iface::cxtranslationunit>(
+      new cxtranslationunit(*_env, src_, _index, _logger)
     );
 }
 

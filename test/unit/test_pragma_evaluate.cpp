@@ -16,6 +16,7 @@
 
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/clang/libclang.hpp>
 #include "test_config.hpp"
 #include "argv0.hpp"
 
@@ -28,7 +29,8 @@ using namespace metashell;
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
   in_memory_displayer d;
-  shell sh(test_config());
+  metashell::clang::libclang lc;
+  shell sh(test_config(), lc);
   sh.line_available("typedef int x;", d);
   sh.line_available("#pragma metashell evaluate x", d);
 
@@ -39,7 +41,8 @@ JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 {
   in_memory_displayer d;
-  shell sh(test_config());
+  metashell::clang::libclang lc;
+  shell sh(test_config(), lc);
   sh.line_available("#pragma metashell evaluate nonexisting_type", d);
 
   JUST_ASSERT(!d.errors().empty());
@@ -48,7 +51,8 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
   in_memory_displayer d;
-  shell sh(metashell::empty_config(argv0::get()));
+  metashell::clang::libclang lc;
+  shell sh(metashell::empty_config(argv0::get()), lc);
   sh.line_available("#pragma metashell evaluate int", d);
 
   JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());

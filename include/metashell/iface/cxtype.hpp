@@ -1,5 +1,8 @@
+#ifndef METASHELL_IFACE_CXTYPE_HPP
+#define METASHELL_IFACE_CXTYPE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,29 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang/cxcursor.hpp>
-#include <metashell/clang/cxstring.hpp>
-#include <metashell/clang/cxtype.hpp>
+#include <string>
+#include <memory>
 
-using namespace metashell::clang;
-
-cxcursor::cxcursor(CXCursor cursor_) : _cursor(cursor_) {}
-
-std::string cxcursor::spelling() const
+namespace metashell
 {
-  return cxstring(clang_getCursorDisplayName(_cursor));
+  namespace iface
+  {
+    class cxtype
+    {
+    public:
+      virtual ~cxtype() {}
+
+      virtual std::string spelling() const = 0;
+      virtual std::unique_ptr<cxtype> canonical_type() const = 0;
+    };
+  }
 }
 
-std::unique_ptr<metashell::iface::cxtype> cxcursor::type() const
-{
-  return
-    std::unique_ptr<metashell::iface::cxtype>(
-      new cxtype(clang_getCursorType(_cursor))
-    );
-}
-
-bool cxcursor::variable_declaration() const
-{
-  return clang_getCursorKind(_cursor) == CXCursor_VarDecl;
-}
+#endif
 

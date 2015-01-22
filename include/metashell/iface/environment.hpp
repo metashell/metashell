@@ -17,37 +17,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/utility.hpp>
+#include <metashell/data/headers.hpp>
 
 #include <string>
 #include <vector>
 
 namespace metashell
 {
-  class headers;
-
-  class environment : boost::noncopyable
+  namespace iface
   {
-  public:
-    environment() = default;
-    environment(environment&&) {}
+    class environment
+    {
+    public:
+      virtual ~environment() {}
 
-    virtual ~environment() {}
+      virtual void append(const std::string& s_) = 0;
+      virtual std::string get() const = 0;
+      virtual std::string get_appended(const std::string& s_) const = 0;
 
-    virtual void append(const std::string& s_) = 0;
-    virtual std::string get() const = 0;
-    virtual std::string get_appended(const std::string& s_) const = 0;
+      virtual std::string internal_dir() const = 0;
 
-    virtual std::string internal_dir() const = 0;
+      virtual std::vector<std::string>& clang_arguments() = 0;
+      virtual const std::vector<std::string>& clang_arguments() const = 0;
 
-    virtual std::vector<std::string>& clang_arguments() = 0;
-    virtual const std::vector<std::string>& clang_arguments() const = 0;
+      virtual const data::headers& get_headers() const = 0;
 
-    virtual const headers& get_headers() const = 0;
-
-    // Returns parts that are in precompiled header files as well
-    virtual std::string get_all() const = 0;
-  };
+      // Returns parts that are in precompiled header files as well
+      virtual std::string get_all() const = 0;
+    };
+  }
 }
 
 #endif

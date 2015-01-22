@@ -21,6 +21,8 @@
 #include <metashell/path_builder.hpp>
 #include <metashell/in_memory_displayer.hpp>
 
+#include <metashell/clang/libclang.hpp>
+
 #include <just/test.hpp>
 
 using namespace metashell;
@@ -80,7 +82,8 @@ JUST_TEST_CASE(test_formatting_disabled)
   cfg.max_template_depth = 256;
 
   in_memory_displayer d;
-  shell sh(cfg);
+  metashell::clang::libclang lc;
+  shell sh(cfg, lc);
   sh.line_available(
     "template <class... Ts> struct template_with_a_long_name {};",
     d
@@ -100,7 +103,8 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
     metashell::path_builder() / "metashell" / "formatter" / "vector.hpp";
 
   in_memory_displayer d;
-  shell sh(test_config());
+  metashell::clang::libclang lc;
+  shell sh(test_config(), lc);
   sh.line_available("#include <" + vector_hpp + ">", d);
   sh.line_available("boost::mpl::vector<boost::mpl::vector<int>>", d);
 

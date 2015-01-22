@@ -25,6 +25,8 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
 
+#include <metashell/clang/libclang.hpp>
+
 #include <just/test.hpp>
 
 #include <sstream>
@@ -34,7 +36,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   metashell::config cfg;
   cfg.verbose = false;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -44,7 +47,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
 
   JUST_ASSERT(sh.verbose());
 }
@@ -54,7 +58,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = false;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -65,7 +70,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -73,14 +79,16 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
 
   JUST_ASSERT(!sh.stopped());
 }
 
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -91,7 +99,8 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
@@ -101,7 +110,8 @@ JUST_TEST_CASE(test_shell_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
 
   JUST_ASSERT(sh.using_precompiled_headers());
 }
@@ -111,7 +121,8 @@ JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(sh.using_precompiled_headers());
@@ -122,7 +133,8 @@ JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
@@ -135,7 +147,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.using_precompiled_headers(true);
 
   JUST_ASSERT(
@@ -151,7 +164,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = true;
 
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.using_precompiled_headers(false);
 
   JUST_ASSERT(
@@ -166,7 +180,8 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
   cfg.use_precompiled_headers = false;
 
   metashell::in_memory_displayer d;
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.store_in_buffer("typedef int foo;\n", d);
   const std::string env_before = sh.env().get_all();
 
@@ -181,7 +196,8 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
   cfg.use_precompiled_headers = true;
 
   metashell::in_memory_displayer d;
-  metashell::shell sh(cfg);
+  metashell::clang::libclang lc;
+  metashell::shell sh(cfg, lc);
   sh.store_in_buffer("typedef int foo;\n", d);
   const std::string env_before = sh.env().get_all();
 

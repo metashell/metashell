@@ -17,52 +17,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/environment.hpp>
+#include <metashell/iface/environment.hpp>
 #include <metashell/logger.hpp>
+
+#include <metashell/iface/cxtranslationunit.hpp>
 
 #include <metashell/data/unsaved_file.hpp>
 #include <metashell/data/text_position.hpp>
 
 #include <metashell/clang/cxcursor.hpp>
-#include <metashell/clang/indexing_iterator.hpp>
 
 #include <clang-c/Index.h>
 
-#include <boost/utility.hpp>
-
-#include <string>
-#include <set>
 #include <vector>
-#include <functional>
 
 namespace metashell
 {
   namespace clang
   {
-    class cxtranslationunit : boost::noncopyable
+    class cxtranslationunit : public iface::cxtranslationunit
     {
     public:
-      typedef std::function<void(cxcursor, cxcursor)> visitor;
-
-      typedef indexing_iterator<std::string> error_iterator;
-
-      // takes ownership
       cxtranslationunit(
-        const environment& env_,
+        const iface::environment& env_,
         const data::unsaved_file& src_,
         CXIndex index_,
         logger* logger_
       );
       ~cxtranslationunit();
 
-      void visit_nodes(const visitor& f_);
+      virtual void visit_nodes(const visitor& f_) override;
 
-      error_iterator errors_begin() const;
-      error_iterator errors_end() const;
+      virtual error_iterator errors_begin() const override;
+      virtual error_iterator errors_end() const override;
 
-      bool has_errors() const;
-
-      void code_complete(std::set<std::string>& out_) const;
+      virtual void code_complete(std::set<std::string>& out_) const override;
     private:
       data::unsaved_file _src;
       std::vector<CXUnsavedFile> _unsaved_files;

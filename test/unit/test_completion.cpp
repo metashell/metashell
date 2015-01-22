@@ -17,6 +17,8 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
 
+#include <metashell/clang/libclang.hpp>
+
 #include "string_set.hpp"
 #include "test_config.hpp"
 
@@ -24,7 +26,8 @@
 
 JUST_TEST_CASE(test_simple_completion)
 {
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
 
   JUST_ASSERT_EQUAL(string_set(), string_set(sh, "no_completion_for_this"));
   JUST_ASSERT_EQUAL(string_set("e"), string_set(sh, "doubl"));
@@ -36,7 +39,8 @@ JUST_TEST_CASE(test_simple_completion)
 JUST_TEST_CASE(test_member_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
   sh.store_in_buffer(
     "struct foo"
     "{"
@@ -72,7 +76,8 @@ JUST_TEST_CASE(test_member_completion)
 JUST_TEST_CASE(test_template_member_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
   sh.store_in_buffer(
     "template <class T>"
     "struct foo"
@@ -112,7 +117,8 @@ JUST_TEST_CASE(test_template_member_completion)
 JUST_TEST_CASE(test_included_completion)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
   sh.store_in_buffer("#include <vector>", d);
 
   JUST_ASSERT_EQUAL(string_set("r"), string_set(sh, "std::vecto"));

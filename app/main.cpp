@@ -27,6 +27,7 @@
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
 #include <metashell/clang/version.hpp>
+#include <metashell/clang/libclang.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -82,7 +83,9 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    metashell::default_environment_detector det(argv_[0], &logger);
+    metashell::clang::libclang libclang;
+
+    metashell::default_environment_detector det(argv_[0], &logger, libclang);
     const metashell::config
       cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 
@@ -91,7 +94,9 @@ int main(int argc_, const char* argv_[])
       METASHELL_LOG(&logger, "Running shell");
 
       std::unique_ptr<metashell::shell>
-        shell(new metashell::shell(cfg, ccfg.processor_queue(), &logger));
+        shell(
+          new metashell::shell(cfg, ccfg.processor_queue(), libclang, &logger)
+        );
 
       if (cfg.splash_enabled)
       {

@@ -21,11 +21,14 @@
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
 
+#include <metashell/clang/libclang.hpp>
+
 namespace
 {
   metashell::shell& get_shell()
   {
-    static metashell::shell sh(metashell::test_config());
+    static metashell::clang::libclang lc;
+    static metashell::shell sh(metashell::test_config(), lc);
     return sh;
   }
 }

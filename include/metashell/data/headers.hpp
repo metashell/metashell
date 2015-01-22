@@ -19,37 +19,35 @@
 
 #include <metashell/data/unsaved_file.hpp>
 
-#include <clang-c/Index.h>
-
-#include <map>
 #include <vector>
 #include <string>
 
 namespace metashell
 {
-  class headers
+  namespace data
   {
-  public:
-    explicit headers(const std::string& internal_dir_, bool empty_ = false);
+    class headers
+    {
+    public:
+      explicit headers(const std::string& internal_dir_);
 
-    typedef std::vector<data::unsaved_file>::const_iterator iterator;
-    typedef iterator const_iterator;
-    typedef std::vector<data::unsaved_file>::size_type size_type;
+      typedef std::vector<data::unsaved_file>::const_iterator iterator;
+      typedef iterator const_iterator;
+      typedef std::vector<data::unsaved_file>::size_type size_type;
 
-    iterator begin() const;
-    iterator end() const;
+      iterator begin() const;
+      iterator end() const;
 
-    size_type size() const;
+      size_type size() const;
 
-    void generate() const;
+      const std::string& internal_dir() const;
 
-    const std::string& internal_dir() const;
-  private:
-    std::vector<data::unsaved_file> _headers;
-    std::string _internal_dir;
-
-    void add(const std::string& filename_, const std::string& content_);
-  };
+      void add(const std::string& filename_, const std::string& content_);
+    private:
+      std::vector<data::unsaved_file> _headers;
+      std::string _internal_dir;
+    };
+  }
 }
 
 #endif

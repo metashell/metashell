@@ -18,7 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
-#include <metashell/environment.hpp>
+#include <metashell/iface/environment.hpp>
+#include <metashell/iface/libclang.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
 
@@ -30,24 +31,17 @@
 
 namespace metashell
 {
-  result eval_tmp_unformatted(
-    const environment& env_,
-    const std::string& tmp_exp_,
-    const config& config_,
-    const std::string& input_filename_,
-    logger* logger_
-  );
-
   result eval_tmp_formatted(
-    const environment& env_,
+    const iface::environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
     const std::string& input_filename_,
-    logger* logger_
+    logger* logger_,
+    iface::libclang& libclang_
   );
 
   result eval_tmp(
-    const environment& env_,
+    const iface::environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
     logger* logger_);
@@ -55,17 +49,19 @@ namespace metashell
   result validate_code(
     const std::string& s_,
     const config& config_,
-    const environment& env_,
+    const iface::environment& env_,
     const std::string& intput_filename_,
-    logger* logger_
+    logger* logger_,
+    iface::libclang& libclang_
   );
 
   void code_complete(
-    const environment& env_,
+    const iface::environment& env_,
     const std::string& src_,
     const std::string& input_filename_,
     std::set<std::string>& out_,
-    logger* logger_
+    logger* logger_,
+    iface::libclang& libclang_
   );
 
   bool is_environment_setup_command(

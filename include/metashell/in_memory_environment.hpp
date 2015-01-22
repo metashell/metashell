@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/environment.hpp>
-#include <metashell/headers.hpp>
+#include <metashell/iface/environment.hpp>
+#include <metashell/data/headers.hpp>
 #include <metashell/logger.hpp>
 
 #include <string>
@@ -27,7 +27,7 @@ namespace metashell
 {
   class config;
 
-  class in_memory_environment : public environment
+  class in_memory_environment : public iface::environment
   {
   public:
     in_memory_environment(
@@ -46,7 +46,7 @@ namespace metashell
     virtual std::vector<std::string>& clang_arguments() override;
     virtual const std::vector<std::string>& clang_arguments() const override;
 
-    virtual const headers& get_headers() const override;
+    virtual const data::headers& get_headers() const override;
 
     void add_clang_arg(const std::string& arg_);
 
@@ -55,7 +55,7 @@ namespace metashell
     logger* get_logger();
   private:
     std::string _buffer;
-    headers _headers;
+    data::headers _headers;
     std::vector<std::string> _clang_args;
     logger* _logger;
   };

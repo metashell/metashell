@@ -17,6 +17,10 @@
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/standard.hpp>
 #include <metashell/config.hpp>
+#include <metashell/path_builder.hpp>
+
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptors.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -51,6 +55,124 @@ namespace
     s << "-ftemplate-depth=" << v_;
     return s.str();
   }
+
+  std::string seq_formatter(const std::string& name_)
+  {
+    return
+      "#include <boost/mpl/fold.hpp>\n"
+      "#include <boost/mpl/" + name_ + ".hpp>\n"
+
+      "namespace boost_"
+      "{"
+        "namespace mpl"
+        "{"
+          "template <class... Ts>"
+          "struct " + name_ +
+          "{"
+            "typedef " + name_ + " type;"
+          "};"
+        "}"
+      "}"
+
+      "namespace metashell"
+      "{"
+        "namespace impl "
+        "{ "
+          "template <class C, class Item> "
+          "struct " + name_ + "_builder;\n"
+
+          "template <class... Ts, class Item>"
+          "struct "
+            + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
+            "::boost_::mpl::" + name_ + "<"
+              "Ts..., typename ::metashell::format<Item>::type"
+            ">"
+          "{};"
+        "} "
+
+        "template <> "
+        "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
+        "{ "
+          "typedef format_impl type; "
+
+          "template <class V> "
+          "struct apply : "
+            "::boost::mpl::fold<"
+              "V,"
+              "::boost_::mpl::" + name_ + "<>,"
+              "::metashell::impl::" + name_ + "_builder<"
+                "::boost::mpl::_1, "
+                "::boost::mpl::_2"
+              ">"
+            ">"
+          "{};"
+        "};"
+      "}"
+      "\n"
+      ;
+  }
+
+  std::string include_formatter(const std::string& name_)
+  {
+    using std::string;
+    using metashell::path_builder;
+
+    return
+      "#include <"
+        + string(path_builder() / "metashell" / "formatter" / (name_ + ".hpp"))
+        + ">";
+  }
+
+  void add_internal_headers(data::headers& headers_)
+  {
+    using boost::algorithm::join;
+    using boost::adaptors::transformed;
+  
+    using std::string;
+  
+    const path_builder internal_dir(headers_.internal_dir());
+    const string hpp(".hpp");
+  
+    const char* formatters[] = {"vector", "list", "set", "map"};
+  
+    for (const char* f : formatters)
+    {
+      headers_.add(
+        internal_dir / "metashell" / "formatter" / (f + hpp),
+        seq_formatter(f)
+      );
+    }
+  
+    const string vector_formatter =
+       string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+  
+    headers_.add(
+      internal_dir / "metashell" / "formatter" / "deque.hpp",
+      "#include <" + vector_formatter + ">\n"
+    );
+  
+    headers_.add(
+      internal_dir / "metashell" / "formatter.hpp",
+      join(formatters | transformed(include_formatter), "\n") + "\n"
+    );
+  
+    headers_.add(
+      internal_dir / "metashell" / "scalar.hpp",
+      "#include <type_traits>\n"
+  
+      "#define SCALAR(...) "
+        "std::integral_constant<"
+          "std::remove_reference<"
+            "std::remove_cv<"
+              "std::remove_reference<"
+                "decltype((__VA_ARGS__))"
+              ">::type"
+            ">::type"
+          ">::type,"
+          "(__VA_ARGS__)"
+        ">\n"
+    );
+  }
 }
 
 in_memory_environment::in_memory_environment(
@@ -65,6 +187,8 @@ in_memory_environment::in_memory_environment(
   _logger(logger_)
 {
   assert(!internal_dir_.empty());
+
+  add_internal_headers(_headers);
 
   _clang_args.push_back("-x");
   _clang_args.push_back("c++-header");
@@ -123,7 +247,7 @@ std::string in_memory_environment::internal_dir() const
   return _headers.internal_dir();
 }
 
-const headers& in_memory_environment::get_headers() const
+const data::headers& in_memory_environment::get_headers() const
 {
   return _headers;
 }

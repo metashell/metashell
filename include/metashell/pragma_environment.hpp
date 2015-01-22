@@ -18,14 +18,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/pragma_without_arguments.hpp>
-#include <metashell/environment.hpp>
+#include <metashell/iface/environment.hpp>
 
 namespace metashell
 {
   class pragma_environment : public pragma_without_arguments
   {
   public:
-    explicit pragma_environment(environment& env_);
+    explicit pragma_environment(iface::environment& env_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -33,7 +33,7 @@ namespace metashell
 
     virtual void run(iface::displayer& displayer_) const override;
   private:
-    environment& _env;
+    iface::environment& _env;
   };
 }
 

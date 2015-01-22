@@ -17,6 +17,8 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
 
+#include <metashell/clang/libclang.hpp>
+
 #include "util.hpp"
 #include "test_config.hpp"
 
@@ -28,7 +30,8 @@ metashell::data::type get_output(
 )
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config());
+  metashell::clang::libclang lc;
+  metashell::shell sh(metashell::test_config(), lc);
   if (!test_code_.empty())
   {
     const bool r = sh.store_in_buffer(test_code_, d);
