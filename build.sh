@@ -73,10 +73,7 @@ tools/get_protobuf.sh
 cd templight
   mkdir build; cd build
     cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON \
-      && make clang -j${BUILD_THREADS} \
-      && make libclang -j${BUILD_THREADS} \
-      && make libclang_static -j${BUILD_THREADS} \
-      && make templight -j${BUILD_THREADS}
+      && make clang libclang libclang_static templight -j${BUILD_THREADS}
   cd ..
 cd ..
 
