@@ -19,7 +19,11 @@
 
 namespace metashell_system_test
 {
-  class placeholder {};
+  class placeholder
+  {
+  public:
+    placeholder() {}
+  };
 
   extern const placeholder _;
 }
