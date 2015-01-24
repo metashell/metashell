@@ -144,7 +144,9 @@ JUST_TEST_CASE(test_readme_getting_started)
 
   JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(type("std::integral_constant<int, 13>"), *i);
+  JUST_ASSERT(
+      type("std::integral_constant<int, 13>") == *i ||
+      type("std::__1::integral_constant<int, 13>") == *i);
   ++i;
   JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;
