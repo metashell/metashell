@@ -16,8 +16,7 @@
 
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
-
-#include <metashell/clang/libclang.hpp>
+#include <metashell/null_libclang.hpp>
 
 #include "test_config.hpp"
 
@@ -53,7 +52,7 @@ namespace
 JUST_TEST_CASE(test_pragma_help_with_no_arguments)
 {
   in_memory_displayer d;
-  metashell::clang::libclang lc;
+  metashell::null_libclang lc;
   metashell::shell sh(metashell::test_config(), lc);
   sh.line_available("#pragma metashell help", d);
 
@@ -64,7 +63,7 @@ JUST_TEST_CASE(test_pragma_help_with_no_arguments)
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
 {
   in_memory_displayer d;
-  metashell::clang::libclang lc;
+  metashell::null_libclang lc;
   metashell::shell sh(metashell::test_config(), lc);
   sh.line_available("#pragma metashell help foo", d);
 
@@ -75,7 +74,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
 JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
 {
   in_memory_displayer d;
-  metashell::clang::libclang lc;
+  metashell::null_libclang lc;
   metashell::shell sh(metashell::test_config(), lc);
   sh.line_available("#pragma metashell help foo bar", d);
 
@@ -86,7 +85,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
 JUST_TEST_CASE(test_pragma_help_for_a_pragma)
 {
   in_memory_displayer d;
-  metashell::clang::libclang lc;
+  metashell::null_libclang lc;
   metashell::shell sh(metashell::test_config(), lc);
   sh.line_available("#pragma metashell help help", d);
 
@@ -99,7 +98,7 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  metashell::clang::libclang lc;
+  metashell::null_libclang lc;
   metashell::shell sh(metashell::test_config(), lc);
   sh.line_available("#msh help environment", d);
 
