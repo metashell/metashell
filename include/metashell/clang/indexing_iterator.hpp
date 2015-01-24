@@ -39,6 +39,12 @@ namespace metashell
     public:
       typedef std::function<ValueType(int)> getter;
 
+      explicit indexing_iterator(int n_ = 0) :
+        _f(),
+        _n(n_),
+        _value_valid(false)
+      {}
+
       indexing_iterator(const getter& f_, int n_) :
         _f(f_),
         _n(n_),
