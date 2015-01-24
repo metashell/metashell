@@ -83,13 +83,13 @@ cd ..
 # Build & package Metashell
 if [ "${PLATFORM}" = "fedora" ] || [ "${PLATFORM}" = "opensuse" ]
 then
-  tools/clang_default_path --gcc=g++ > lib/extra_sysinclude.hpp
+  tools/clang_default_path --gcc=g++ > lib/core/extra_sysinclude.hpp
 elif [ "${PLATFORM}" = "openbsd" ]
 then
-  python2.7 tools/clang_default_path --gcc=eg++ > lib/extra_sysinclude.hpp
+  python2.7 tools/clang_default_path --gcc=eg++ > lib/core/extra_sysinclude.hpp
 elif [ "${PLATFORM}" = "osx" ] && [ "${PLATFORM_VERSION}" = "10.10" ]
 then
-  tools/clang_default_path --gcc=clang > lib/extra_sysinclude.hpp
+  tools/clang_default_path --gcc=clang > lib/core/extra_sysinclude.hpp
 fi
 
 mkdir bin; cd bin
