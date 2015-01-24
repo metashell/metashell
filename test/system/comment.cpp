@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "error.hpp"
+#include "comment.hpp"
 #include "query_json.hpp"
 
 #include <rapidjson/writer.h>
@@ -26,34 +26,36 @@
 
 using namespace metashell_system_test;
 
-error::error(const std::string& msg_) :
-  _msg(msg_)
+comment::comment(std::vector<paragraph> paragraphs_) :
+  _paragraphs_specified(true),
+  _paragraphs(move(paragraphs_))
 {}
 
-error::error(placeholder) :
-  _msg(boost::none)
+comment::comment(placeholder) :
+  _paragraphs_specified(false),
+  _paragraphs()
 {}
 
-bool error::message_specified() const
+bool comment::paragraphs_specified() const
 {
-  return _msg != boost::none;
+  return _paragraphs_specified;
 }
 
-const std::string& error::message() const
+const std::vector<paragraph>& comment::paragraphs() const
 {
-  assert(message_specified());
-  return *_msg;
+  assert(paragraphs_specified());
+  return _paragraphs;
 }
 
 std::ostream& metashell_system_test::operator<<(
   std::ostream& out_,
-  const error& error_
+  const comment& comment_
 )
 {
-  return out_ << to_json_string(error_);
+  return out_ << to_json_string(comment_);
 }
 
-json_string metashell_system_test::to_json_string(const error& e_)
+json_string metashell_system_test::to_json_string(const comment& c_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -61,12 +63,17 @@ json_string metashell_system_test::to_json_string(const error& e_)
   w.StartObject();
 
   w.Key("type");
-  w.String("error");
+  w.String("comment");
 
-  w.Key("msg");
-  if (e_.message_specified())
+  w.Key("paragraphs");
+  if (c_.paragraphs_specified())
   {
-    w.String(e_.message().c_str());
+    w.StartArray();
+    for (const paragraph& p : c_.paragraphs())
+    {
+      write(p, w);
+    }
+    w.EndArray();
   }
   else
   {
@@ -79,16 +86,39 @@ json_string metashell_system_test::to_json_string(const error& e_)
 }
 
 bool metashell_system_test::operator==(
-  const error& error_,
+  const comment& c_,
   const json_string& s_
 )
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
 
-  return
-    members_are({"type", "msg"}, d)
-    && is_string("error", d["type"])
-    && (!error_.message_specified() || is_string(error_.message(), d["msg"]));
+  if (members_are({"type", "paragraphs"}, d) && is_string("comment", d["type"]))
+  {
+    if (c_.paragraphs_specified())
+    {
+      if (
+        d["paragraphs"].IsArray()
+        && d["paragraphs"].Size() == c_.paragraphs().size()
+      )
+      {
+        auto i = d["paragraphs"].Begin();
+        for (const paragraph& p : c_.paragraphs())
+        {
+          if (metashell_system_test::operator!=(p, *i))
+          {
+            return false;
+          }
+          ++i;
+        }
+        return true;
+      }
+    }
+    else
+    {
+      return true;
+    }
+  }
+  return false;
 }
 

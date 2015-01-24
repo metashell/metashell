@@ -14,81 +14,64 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "error.hpp"
-#include "query_json.hpp"
+#include "paragraph.hpp"
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
-#include <rapidjson/document.h>
 
 #include <iostream>
-#include <cassert>
 
 using namespace metashell_system_test;
 
-error::error(const std::string& msg_) :
-  _msg(msg_)
+paragraph::paragraph(
+  const std::string& content_,
+  const std::string& indentation_
+) :
+  _content(content_),
+  _first_line_indentation(indentation_),
+  _rest_of_lines_indentation(indentation_)
 {}
 
-error::error(placeholder) :
-  _msg(boost::none)
+paragraph::paragraph(
+  const std::string& content_,
+  const std::string& rest_of_lines_indentation_,
+  const std::string& first_line_indentation_
+) :
+  _content(content_),
+  _first_line_indentation(first_line_indentation_),
+  _rest_of_lines_indentation(rest_of_lines_indentation_)
 {}
-
-bool error::message_specified() const
+  
+const std::string& paragraph::content() const
 {
-  return _msg != boost::none;
+  return _content;
 }
 
-const std::string& error::message() const
+const std::string& paragraph::first_line_indentation() const
 {
-  assert(message_specified());
-  return *_msg;
+  return _first_line_indentation;
 }
 
+const std::string& paragraph::rest_of_lines_indentation() const
+{
+  return _rest_of_lines_indentation;
+}
+ 
 std::ostream& metashell_system_test::operator<<(
   std::ostream& out_,
-  const error& error_
+  const paragraph& p_
 )
 {
-  return out_ << to_json_string(error_);
+  return out_ << to_json_string(p_);
 }
 
-json_string metashell_system_test::to_json_string(const error& e_)
+json_string metashell_system_test::to_json_string(const paragraph& p_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
 
-  w.StartObject();
-
-  w.Key("type");
-  w.String("error");
-
-  w.Key("msg");
-  if (e_.message_specified())
-  {
-    w.String(e_.message().c_str());
-  }
-  else
-  {
-    w.Null();
-  }
-
-  w.EndObject();
+  write(p_, w);
 
   return json_string(buff.GetString());
-}
-
-bool metashell_system_test::operator==(
-  const error& error_,
-  const json_string& s_
-)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  return
-    members_are({"type", "msg"}, d)
-    && is_string("error", d["type"])
-    && (!error_.message_specified() || is_string(error_.message(), d["msg"]));
 }
 
