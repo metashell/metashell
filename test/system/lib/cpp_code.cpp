@@ -14,46 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/type.hpp>
-#include <metashell_system_test/query_json.hpp>
+#include <metashell_system_test/cpp_code.hpp>
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
-#include <rapidjson/document.h>
 
-#include <cassert>
 #include <iostream>
 
 using namespace metashell_system_test;
 
-type::type(const std::string& name_) :
-  _name(name_)
+cpp_code::cpp_code(const std::string& code_) :
+  _code(code_)
 {}
 
-type::type(placeholder) :
-  _name(boost::none)
-{}
-
-bool type::name_specified() const
+const std::string& cpp_code::code() const
 {
-  return _name != boost::none;
-}
-
-const std::string& type::name() const
-{
-  assert(name_specified());
-  return *_name;
+  return _code;
 }
 
 std::ostream& metashell_system_test::operator<<(
   std::ostream& out_,
-  const type& type_
+  const cpp_code& cpp_code_
 )
 {
-  return out_ << to_json_string(type_);
+  return out_ << to_json_string(cpp_code_);
 }
 
-json_string metashell_system_test::to_json_string(const type& t_)
+json_string metashell_system_test::to_json_string(const cpp_code& t_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -61,31 +48,21 @@ json_string metashell_system_test::to_json_string(const type& t_)
   w.StartObject();
 
   w.Key("type");
-  w.String("type");
+  w.String("cpp_code");
 
-  w.Key("name");
-  if (t_.name_specified())
-  {
-    w.String(t_.name().c_str());
-  }
-  else
-  {
-    w.Null();
-  }
+  w.Key("code");
+  w.String(t_.code().c_str());
 
   w.EndObject();
 
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(const type& type_, const json_string& s_)
+bool metashell_system_test::operator==(
+  const cpp_code& cpp_code_,
+  const json_string& s_
+)
 {
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  return
-    members_are({"type", "name"}, d)
-    && is_string("type", d["type"])
-    && (!type_.name_specified() || is_string(type_.name(), d["name"]));
+  return to_json_string(cpp_code_) == s_;
 }
 

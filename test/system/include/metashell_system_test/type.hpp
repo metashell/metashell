@@ -18,6 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/json_string.hpp>
+#include <metashell_system_test/placeholder.hpp>
+
+#include <boost/optional.hpp>
 
 #include <string>
 #include <iosfwd>
@@ -27,11 +30,13 @@ namespace metashell_system_test
   class type
   {
   public:
-    explicit type(const std::string& name);
+    explicit type(const std::string& name_);
+    explicit type(placeholder);
   
+    bool name_specified() const;
     const std::string& name() const;
   private:
-    std::string _name;
+    boost::optional<std::string> _name;
   };
 
   std::ostream& operator<<(std::ostream& out_, const type& type_);

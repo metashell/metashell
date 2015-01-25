@@ -18,7 +18,6 @@
 #include "argv0.hpp"
 
 #include "mock_libclang.hpp"
-#include "mock_cxindex.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
@@ -28,25 +27,10 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_libclang.hpp>
-#include <metashell/null_cxtranslationunit.hpp>
 
 #include <just/test.hpp>
 
 #include <sstream>
-
-namespace
-{
-  void init_empty(metashell::mock_libclang& libclang_)
-  {
-    std::unique_ptr<metashell::mock_cxindex> ind(new metashell::mock_cxindex);
-    ind->parse_code_returns(
-      std::unique_ptr<metashell::iface::cxtranslationunit>(
-        new metashell::null_cxtranslationunit
-      )
-    );
-    libclang_.create_index_returns(move(ind));
-  }
-}
 
 JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
 {
@@ -198,7 +182,7 @@ JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
 
   metashell::in_memory_displayer d;
   metashell::mock_libclang lc;
-  init_empty(lc);
+  expect_parsing_return_empty(lc);
   metashell::shell sh(cfg, lc);
   sh.store_in_buffer("typedef int foo;\n", d);
   const std::string env_before = sh.env().get_all();
@@ -215,7 +199,7 @@ JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
 
   metashell::in_memory_displayer d;
   metashell::mock_libclang lc;
-  init_empty(lc);
+  expect_parsing_return_empty(lc);
   metashell::shell sh(cfg, lc);
   sh.store_in_buffer("typedef int foo;\n", d);
   const std::string env_before = sh.env().get_all();

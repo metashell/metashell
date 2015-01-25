@@ -1,5 +1,5 @@
-#ifndef METASHELL_MOCK_LIBCLANG_HPP
-#define METASHELL_MOCK_LIBCLANG_HPP
+#ifndef METASHELL_MOCK_CXTRANSLATIONUNIT_HPP
+#define METASHELL_MOCK_CXTRANSLATIONUNIT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,27 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/libclang.hpp>
+#include <metashell/iface/cxtranslationunit.hpp>
 
-#include <deque>
+#include <vector>
 
 namespace metashell
 {
-  class mock_libclang : public iface::libclang
+  class mock_cxtranslationunit : public iface::cxtranslationunit
   {
   public:
-    virtual std::unique_ptr<iface::cxindex> create_index(
-      const iface::environment& env_,
-      logger* logger_
-    ) override;
+    mock_cxtranslationunit();
 
-    void create_index_returns(std::unique_ptr<iface::cxindex> result_);
+    virtual void visit_nodes(const visitor& f_) override;
+
+    virtual error_iterator errors_begin() const override;
+    virtual error_iterator errors_end() const override;
+
+    virtual void code_complete(std::set<std::string>& out_) const override;
+
+    void add_error(const std::string& msg_);
   private:
-    std::deque<std::unique_ptr<iface::cxindex>> _create_index_results;
+    std::vector<std::string> _errors;
+    std::function<std::string(int)> _get_error;
   };
-
-  void expect_parsing_return_empty(mock_libclang& libclang_);
-  void expect_parsing_fails(mock_libclang& libclang_);
 }
 
 #endif

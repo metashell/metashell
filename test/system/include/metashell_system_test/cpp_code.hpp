@@ -1,5 +1,5 @@
-#ifndef METASHELL_MOCK_LIBCLANG_HPP
-#define METASHELL_MOCK_LIBCLANG_HPP
+#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
+#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,27 +17,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/libclang.hpp>
+#include <metashell_system_test/json_string.hpp>
 
-#include <deque>
+#include <string>
+#include <iosfwd>
 
-namespace metashell
+namespace metashell_system_test
 {
-  class mock_libclang : public iface::libclang
+  class cpp_code
   {
   public:
-    virtual std::unique_ptr<iface::cxindex> create_index(
-      const iface::environment& env_,
-      logger* logger_
-    ) override;
-
-    void create_index_returns(std::unique_ptr<iface::cxindex> result_);
+    explicit cpp_code(const std::string& code_);
+  
+    const std::string& code() const;
   private:
-    std::deque<std::unique_ptr<iface::cxindex>> _create_index_results;
+    std::string _code;
   };
 
-  void expect_parsing_return_empty(mock_libclang& libclang_);
-  void expect_parsing_fails(mock_libclang& libclang_);
+  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
+
+  json_string to_json_string(const cpp_code& code_);
+
+  bool operator==(const cpp_code& code_, const json_string& s_);
 }
 
 #endif
