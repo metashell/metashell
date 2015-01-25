@@ -27,6 +27,12 @@
     * `cd build`
     * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
     * `make clang libclang libclang_static templight`
+* You'll also have to download the
+  [Google Protocol Buffers](https://developers.google.com/protocol-buffers/)
+  library. There is a supplied helper script, which does that for you. (Note:
+  dependency on protobuf is only temporary, it won't be needed in the future)
+  From the source directory run:
+    * `tools/get_protobuf.sh`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
@@ -158,6 +164,12 @@ upgrade WinEditLine to a newer version, you need to update these files.
     * `cd build`
     * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
     * `make clang libclang libclang_static templight`
+* You'll also have to download the
+  [Google Protocol Buffers](https://developers.google.com/protocol-buffers/)
+  library. There is a supplied helper script, which does that for you. (Note:
+  dependency on protobuf is only temporary, it won't be needed in the future)
+  From the source directory run:
+    * `tools/get_protobuf.sh`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
     * `cd bin`
