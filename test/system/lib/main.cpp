@@ -46,7 +46,8 @@ int metashell_system_test::main(int argc_, char* argv_[])
       system_test_config::metashell_arg(*i);
     }
 
-    std::vector<char*> just_test_args(argv_ + 2, argv_ + argc_);
+    // starting from sep, as it will the "name of the binary" argument
+    std::vector<char*> just_test_args(sep, end);
     just_test_args[0] = argv_[0];
 
     return ::just::test::run(just_test_args.size(), just_test_args.data());
