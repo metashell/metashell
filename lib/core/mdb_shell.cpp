@@ -24,6 +24,8 @@
 #include <metashell/null_history.hpp>
 
 #include <cmath>
+#include <chrono>
+#include <sstream>
 
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
@@ -74,7 +76,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
-        "[-full] [<type>]",
+        "[-full] [-profile] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
@@ -83,7 +85,9 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-        "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+        "explicitly enter `metashell::format< <type> >::type` for the same effect.\n\n"
+        "The qualifier `-profile` is intentionally undocumented. It is only used for\n"
+        "internal profiling, and could be changed or removed at any time."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over|out] [n]",
         "Step the program.",
@@ -470,6 +474,7 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     if (discovered[vertex]) {
       continue;
     }
+    discovered[vertex] = true;
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
@@ -540,38 +545,80 @@ void mdb_shell::filter_metaprogram() {
 }
 
 void mdb_shell::command_evaluate(
-    const std::string& arg,
+    const std::string& arg_copy,
     iface::displayer& displayer_)
 {
   // Easier not to use spirit here (or probably not...)
-
-  using boost::starts_with;
+  // TODO OK. after -profile, this parsing really needs some refactoring
+  std::string arg = arg_copy;
 
   const std::string full_flag = "-full";
+  const std::string profile_flag = "-profile";
 
-  const bool has_full =
-      boost::starts_with(arg, full_flag) &&
-      (arg.size() == full_flag.size() || std::isspace(arg[full_flag.size()]));
+  bool has_full = false;
+  bool has_profile = false;
 
-  std::string type =
-      boost::trim_copy(has_full ? arg.substr(full_flag.size()) : arg);
+  // Intentionally left really ugly for more motivation to refactor
+  while (true) {
+    if (boost::starts_with(arg, full_flag) &&
+       (arg.size() == full_flag.size() ||
+       std::isspace(arg[full_flag.size()])))
+    {
+      has_full = true;
+      arg = boost::trim_left_copy(arg.substr(full_flag.size()));
+    } else if (boost::starts_with(arg, profile_flag) &&
+       (arg.size() == profile_flag.size() ||
+       std::isspace(arg[profile_flag.size()])))
+    {
+      has_profile = true;
+      arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
+    } else {
+      break;
+    }
+  }
 
-  if (type.empty()) {
+  if (arg.empty()) {
     if (!mp) {
       displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
-    type = mp->get_vertex_property(mp->get_root_vertex()).name;
+    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
   }
 
   breakpoints.clear();
 
-  if (!run_metaprogram_with_templight(type, has_full, displayer_)) {
+  using clock_type = std::chrono::steady_clock;
+
+  auto run_start_time = clock_type::now();
+  if (!run_metaprogram_with_templight(arg, has_full, displayer_)) {
     return;
   }
+  auto run_end_time = clock_type::now();
+
   displayer_.show_raw_text("Metaprogram started");
 
+  auto filter_start_time = clock_type::now();
   filter_metaprogram();
+  auto filter_end_time = clock_type::now();
+
+  if (has_profile) {
+    using std::chrono::duration_cast;
+    using std::chrono::milliseconds;
+
+    std::stringstream ss;
+
+    ss << "Profiling information:\n" <<
+      "Running time = " <<
+      duration_cast<milliseconds>(run_end_time - run_start_time).count() <<
+      "ms\n" <<
+      "Filtering time = " <<
+      duration_cast<milliseconds>(filter_end_time - filter_start_time).count() <<
+      "ms\n" <<
+      "Graph node count = " << mp->get_num_vertices() << "\n" <<
+      "Graph edge count = " << mp->get_num_edges();
+
+    displayer_.show_raw_text(ss.str());
+  }
 }
 
 void mdb_shell::command_forwardtrace(
