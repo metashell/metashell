@@ -14,7 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+aux_source_directory(. SOURCES)
+add_library(metashell_system_test_lib STATIC ${SOURCES})
 
-subdirs(lib app)
+enable_warnings()
+use_cpp11()
+
+# Boost for the unit tests
+add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost/include\" )
+
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_process/include")
 
