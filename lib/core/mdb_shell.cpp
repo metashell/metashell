@@ -474,6 +474,7 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     if (discovered[vertex]) {
       continue;
     }
+    discovered[vertex] = true;
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
