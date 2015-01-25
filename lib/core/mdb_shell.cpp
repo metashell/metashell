@@ -540,33 +540,49 @@ void mdb_shell::filter_metaprogram() {
 }
 
 void mdb_shell::command_evaluate(
-    const std::string& arg,
+    const std::string& arg_copy,
     iface::displayer& displayer_)
 {
   // Easier not to use spirit here (or probably not...)
-
-  using boost::starts_with;
+  // TODO OK. after -profile, this parsing really needs some refactoring
+  std::string arg = arg_copy;
 
   const std::string full_flag = "-full";
+  const std::string profile_flag = "-profile";
 
-  const bool has_full =
-      boost::starts_with(arg, full_flag) &&
-      (arg.size() == full_flag.size() || std::isspace(arg[full_flag.size()]));
+  bool has_full = false;
+  bool has_profile = false;
 
-  std::string type =
-      boost::trim_copy(has_full ? arg.substr(full_flag.size()) : arg);
+  // Intentionally left really ugly for more motivation to refactor
+  while (true) {
+    if (boost::starts_with(arg, full_flag) &&
+       (arg.size() == full_flag.size() ||
+       std::isspace(arg[full_flag.size()])))
+    {
+      has_full = true;
+      arg = boost::trim_left_copy(arg.substr(full_flag.size()));
+    } else if (boost::starts_with(arg, profile_flag) &&
+       (arg.size() == profile_flag.size() ||
+       std::isspace(arg[profile_flag.size()])))
+    {
+      has_profile = true;
+      arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
+    } else {
+      break;
+    }
+  }
 
-  if (type.empty()) {
+  if (arg.empty()) {
     if (!mp) {
       displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
-    type = mp->get_vertex_property(mp->get_root_vertex()).name;
+    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
   }
 
   breakpoints.clear();
 
-  if (!run_metaprogram_with_templight(type, has_full, displayer_)) {
+  if (!run_metaprogram_with_templight(arg, has_full, displayer_)) {
     return;
   }
   displayer_.show_raw_text("Metaprogram started");
