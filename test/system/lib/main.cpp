@@ -21,21 +21,30 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 using namespace metashell_system_test;
 
 int metashell_system_test::main(int argc_, char* argv_[])
 {
-  if (argc_ < 3 || argv_[2] != std::string("--"))
+  const auto end = argv_ + argc_;
+  const auto sep = std::find(argv_, end, std::string("--"));
+
+  if (argc_ < 3 || sep == end)
   {
     std::cerr
       << "Usage: " << argv_[0]
-      << " <metashell_binary> -- <just::test arguments>" << std::endl;
+      << " <metashell_binary> <metashell arguments> -- <just::test arguments>"
+      << std::endl;
     return -1;
   }
   else
   {
     system_test_config::metashell_binary(argv_[1]);
+    for (auto i = argv_ + 2; i != sep; ++i)
+    {
+      system_test_config::metashell_arg(*i);
+    }
 
     std::vector<char*> just_test_args(argv_ + 2, argv_ + argc_);
     just_test_args[0] = argv_[0];

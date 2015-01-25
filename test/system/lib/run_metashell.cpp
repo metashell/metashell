@@ -110,8 +110,13 @@ std::vector<json_string> metashell_system_test::run_metashell(
 {
   using just::process::run;
 
-  const std::vector<std::string>
+  std::vector<std::string>
     cmd{system_test_config::metashell_binary(), "--console=json", "--nosplash"};
+  cmd.insert(
+    cmd.end(),
+    system_test_config::metashell_args().begin(),
+    system_test_config::metashell_args().end()
+  );
 
   std::vector<std::string> rsp;
   split_at_new_lines(run(cmd, join(commands_)).standard_output(), rsp);
