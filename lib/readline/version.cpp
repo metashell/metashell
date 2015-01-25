@@ -23,12 +23,20 @@
 #  include <readline/readline.h>
 #endif
 
+#include <string>
+
 std::string metashell::readline::version()
 {
 #ifdef USE_EDITLINE
   return " ";
-#else
+#elif defined(RL_VERSION_MAJOR) && defined(RL_VERSION_MINOR)
   return TO_STRING(RL_VERSION_MAJOR) "." TO_STRING(RL_VERSION_MINOR);
+#elif defined(RL_READLINE_VERSION)
+  return
+    std::to_string(RL_READLINE_VERSION / 0x100) + "." +
+    std::to_string(RL_READLINE_VERSION % 0x100);
+#else
+  return "unknown";
 #endif
 }
 
