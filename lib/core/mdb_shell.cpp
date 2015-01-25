@@ -76,7 +76,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
       {{"evaluate"}, non_repeatable, &mdb_shell::command_evaluate,
-        "[-full] [<type>]",
+        "[-full] [-profile] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
@@ -85,7 +85,9 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-        "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+        "explicitly enter `metashell::format< <type> >::type` for the same effect.\n\n"
+        "The qualifier `-profile` is intentionally undocumented. It is only used for\n"
+        "internal profiling, and could be changed or removed at any time."},
       {{"step"}, repeatable, &mdb_shell::command_step,
         "[over|out] [n]",
         "Step the program.",
