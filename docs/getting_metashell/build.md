@@ -69,9 +69,6 @@ used:
 
 ## Windows
 
-> Note that some recent major changes have not been ported to Windows yet. Until
-> it is done, it is recommended to build/use version 2.0.0 on Windows.
-
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install [CMake](http://cmake.org/)
 * First you need to build Clang with
