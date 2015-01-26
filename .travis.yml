@@ -14,8 +14,6 @@ install:
       clang
       g++-4.8
   - if [ "$CXX" == "g++" ]; then export CXX="g++-4.8"; fi
-  # Install protobuf
-  - tools/get_protobuf.sh
 script:
   # Test the code
   - mkdir bin
