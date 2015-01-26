@@ -47,6 +47,7 @@ target_link_libraries(metashell_unit_test
   ${RT_LIBRARY}
   ${PROTOBUF_LIBRARY}
   ${TERMCAP_LIBRARY}
+  protobuf
 )
 
 # Program_options

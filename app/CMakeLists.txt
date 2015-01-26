@@ -38,6 +38,7 @@ target_link_libraries(metashell
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
   ${PROTOBUF_LIBRARY}
+  protobuf
 )
 
 # Readline
