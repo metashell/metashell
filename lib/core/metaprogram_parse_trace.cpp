@@ -25,94 +25,34 @@
 #include <metashell/metaprogram.hpp>
 #include <metashell/metaprogram_builder.hpp>
 
-#include "templight_messages.pb.h"
+#include <templight/ProtobufReader.h>
 
 namespace metashell {
 
-typedef std::map<unsigned, std::string> file_dictionary;
-
-file_location file_location_from_protobuf(
-    const TemplightEntry::SourceLocation& source_location,
-    file_dictionary& dict)
-{
-  if (source_location.has_file_name()) {
-    dict[source_location.file_id()] = source_location.file_name();
-  }
-
-  int col = source_location.has_column() ? source_location.column() : -1;
-
-  return file_location(
-      dict[source_location.file_id()],
-      source_location.line(),
-      col);
-}
-
-data::instantiation_kind instantiation_kind_from_protobuf(
-    const TemplightEntry::InstantiationKind& kind)
-{
+data::instantiation_kind instantiation_kind_from_protobuf(int kind) {
   switch (kind) {
-    case TemplightEntry::TemplateInstantiation:
+    case 0:
       return data::instantiation_kind::template_instantiation;
-    case TemplightEntry::DefaultTemplateArgumentInstantiation:
+    case 1:
       return data::instantiation_kind::default_template_argument_instantiation;
-    case TemplightEntry::DefaultFunctionArgumentInstantiation:
+    case 2:
       return data::instantiation_kind::default_function_argument_instantiation;
-    case TemplightEntry::ExplicitTemplateArgumentSubstitution:
+    case 3:
       return data::instantiation_kind::explicit_template_argument_substitution;
-    case TemplightEntry::DeducedTemplateArgumentSubstitution:
+    case 4:
       return data::instantiation_kind::deduced_template_argument_substitution;
-    case TemplightEntry::PriorTemplateArgumentSubstitution:
+    case 5:
       return data::instantiation_kind::prior_template_argument_substitution;
-    case TemplightEntry::DefaultTemplateArgumentChecking:
+    case 6:
       return data::instantiation_kind::default_template_argument_checking;
-    case TemplightEntry::ExceptionSpecInstantiation:
+    case 7:
       return data::instantiation_kind::exception_spec_instantiation;
-    case TemplightEntry::Memoization:
+    case 8:
       return data::instantiation_kind::memoization;
     default:
       throw exception(
           "templight xml parse failed (invalid instantiation kind)");
   }
-}
-
-//TODO this is probably very slow
-std::string resolve_name(int id, const TemplightTrace& trace) {
-
-  if (id >= trace.names_size()) {
-    throw exception("id out of range");
-  }
-
-  const DictionaryEntry& entry = trace.names(id);
-  int marker_idx = 0;
-
-  std::stringstream ss;
-
-  for (char ch : entry.marked_name()) {
-    if (ch != '\0') {
-      ss << ch;
-    } else {
-      ss << resolve_name(entry.marker_ids(marker_idx++), trace);
-    }
-  }
-
-  return ss.str();
-}
-
-//TODO type instead of std::string
-std::string type_from_protobuf(
-    const TemplightEntry::TemplateName& name,
-    const TemplightTrace& trace) //For the dictionary
-{
-  if (name.has_name()) {
-    return name.name();
-  }
-  if (name.has_dict_id()) {
-    return resolve_name(static_cast<int>(name.dict_id()), trace);
-  }
-  if (!name.has_compressed_name()) {
-    throw exception("TemplateName has no name, dict_id and compressed_name");
-  }
-  return "?????";
 }
 
 metaprogram metaprogram::create_from_protobuf_stream(
@@ -122,41 +62,32 @@ metaprogram metaprogram::create_from_protobuf_stream(
     const data::type& evaluation_result)
 {
 
-  TemplightTraceCollection traces;
-
-  if (!traces.ParseFromIstream(&stream)) {
-    throw exception("Can't parse protobuf trace file");
-  }
-
-  if (traces.traces_size() != 1) {
-    throw exception("There are more than one trace in the protobuf trace file");
-  }
-
-  const TemplightTrace& trace = traces.traces(0);
-
   metaprogram_builder builder(full_mode, root_name, evaluation_result);
-  file_dictionary dict;
-
-  for (int i = 0; i < trace.entries_size(); ++i) {
-    const TemplightEntry& entry = trace.entries(i);
-    if (entry.has_begin() && entry.has_end()) {
-      throw exception("TemplightEntry has both begin and end object");
+  templight::ProtobufReader reader;
+  reader.startOnBuffer(stream);
+  while (reader.LastChunk != templight::ProtobufReader::EndOfFile) {
+    switch (reader.LastChunk) {
+      case templight::ProtobufReader::BeginEntry:
+        {
+          auto begin_entry = reader.LastBeginEntry;
+          builder.handle_template_begin(
+              instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
+              begin_entry.Name,
+              file_location(
+                begin_entry.FileName, begin_entry.Line, begin_entry.Column));
+          break;
+        }
+      case templight::ProtobufReader::EndEntry:
+        builder.handle_template_end();
+        break;
+      case templight::ProtobufReader::EndOfFile:
+      case templight::ProtobufReader::Other:
+      case templight::ProtobufReader::Header:
+      default:
+        break;
     }
-
-    if (entry.has_begin()) {
-      const TemplightEntry::Begin& begin = entry.begin();
-      builder.handle_template_begin(
-          instantiation_kind_from_protobuf(begin.kind()),
-          type_from_protobuf(begin.name(), trace),
-          file_location_from_protobuf(begin.location(), dict)
-      );
-    } else if (entry.has_end()) {
-      builder.handle_template_end();
-    } else {
-      throw exception("TemplightEntry has no begin and end object");
-    }
+    reader.next();
   }
-
   return builder.get_metaprogram();
 }
 
