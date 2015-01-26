@@ -66,9 +66,6 @@ fi
 echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
-# Protobuf
-tools/get_protobuf.sh
-
 # Build Clang
 cd templight
   mkdir build; cd build
