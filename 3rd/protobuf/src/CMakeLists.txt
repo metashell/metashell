@@ -14,5 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use_cpp11()
+
 aux_source_directory(. SOURCES)
 add_library(protobuf STATIC ${SOURCES})
