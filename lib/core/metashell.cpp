@@ -121,6 +121,40 @@ namespace
     }
   }
 
+  std::string get_type_from_ast_string(const std::string& ast) {
+    // This algorithm is very ugly, but it basically iterates on the
+    // lines of the ast dump from the end until it finds the interesting line.
+
+    std::size_t end_index = std::string::npos;
+    std::size_t start_index = ast.find_last_of('\n');
+
+    std::string line;
+    while (true) {
+      end_index = start_index;
+      start_index = ast.find_last_of('\n', end_index - 1);
+
+      if (start_index == std::string::npos || end_index == std::string::npos) {
+        throw exception("No suitable ast line in dump");
+      }
+
+      line = ast.substr(start_index + 1, end_index-start_index-1);
+      if (!line.empty() && line != "`-<undeserialized declarations>") {
+        break;
+      }
+    }
+
+    boost::regex reg(
+      ".*':'struct metashell::impl::wrap<(?:class |struct |union |enum )?(.*)>' "
+      "'void \\(void\\) noexcept'.*");
+
+    boost::smatch match;
+    if (!boost::regex_match(line, match, reg)) {
+      throw exception("Unexpected ast format: \"" + line + "\"");
+    }
+
+    return boost::trim_copy(std::string(match[1]));
+  }
+
   std::function<void(const iface::cxcursor&)> get_type_of_variable(
     std::string name_,
     std::string& result_
@@ -202,42 +236,30 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  std::unique_ptr<iface::cxindex> index = libclang_.create_index(env_, logger_);
+  result simple = eval_tmp(env_, tmp_exp_, config_, logger_);
 
-  pair<tup, string>
-    simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
+//  std::unique_ptr<iface::cxindex> index = libclang_.create_index(env_, logger_);
+//
+//  pair<tup, string>
+//    simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
 
-  std::string error_string = simple.first->get_error_string();
   METASHELL_LOG(
     logger_,
-    !error_string.empty() ?
+    !simple.successful ?
       "Errors occured during metaprogram evaluation. Displaying errors coming"
       " from the metaprogram without metashell::format" :
       "No errors occured during metaprogram evaluation. Re-evaluating it with"
       " metashell::format"
   );
 
-  const pair<tup, string> final_pair =
-    !error_string.empty() ?
-      std::move(simple) :
-      parse_expr(
-        *index,
-        input_filename_,
-        env_,
-        "::metashell::format<" + tmp_exp_ + ">::type"
-      );
+  result final_result = !simple.successful ? std::move(simple) :
+    eval_tmp(
+      env_,
+      "::metashell::format<" + tmp_exp_ + ">::type",
+      config_,
+      logger_);
 
-  std::string v;
-  final_pair.first->visit_nodes(get_type_of_variable(var, v));
-
-  error_string = final_pair.first->get_error_string();
-
-  return
-    result(error_string.empty(),
-      v,
-      error_string,
-      config_.verbose ? final_pair.second : ""
-    );
+  return final_result;
 }
 
 result metashell::eval_tmp(
@@ -246,8 +268,6 @@ result metashell::eval_tmp(
   const config& config_,
   logger* logger_)
 {
-  //lot of hacking and duplication just to make things work. TODO refactor
-
   auto clang_args = env_.clang_arguments();
   clang_args.push_back("-"); //Compile from stdin
 
@@ -261,20 +281,7 @@ result metashell::eval_tmp(
     return result{false, "", output.standard_error(), ""};
   }
 
-  const std::string& standard_output = output.standard_output();
-  std::string last_line = standard_output.substr(
-      standard_output.find_last_of('\n', standard_output.size() - 2) + 1);
-
-  boost::regex reg(
-      ".*':'struct metashell::impl::wrap<(?:class |struct |union )?(.*)>' "
-      "'void \\(void\\) noexcept'.*");
-
-  boost::smatch match;
-  if (!boost::regex_match(last_line, match, reg)) {
-    throw exception("Unexpected ast format");
-  }
-
-  return result{true, boost::trim_copy(std::string(match[1])), "", ""};
+  return result{true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
 namespace
