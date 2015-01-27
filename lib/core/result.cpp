@@ -16,18 +16,15 @@
 
 #include <metashell/result.hpp>
 
-using namespace metashell;
+namespace metashell {
 
 result::result() {}
 
 result::result(
+  bool successful,
   const std::string& output_,
   const std::string& error_,
   const std::string& info_) :
-    output(output_), errors(error_.empty() ? 0 : 1, error_), info(info_) {}
+    successful(successful), output(output_), error(error_), info(info_) {}
 
-bool result::has_errors() const
-{
-  return !errors.empty();
 }
-

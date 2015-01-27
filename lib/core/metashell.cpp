@@ -167,18 +167,18 @@ result metashell::validate_code(
     std::unique_ptr<iface::cxindex>
       index = libclang_.create_index(env_, logger_);
     std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
+
+    const std::string error_string = tu->get_error_string();
     return
-      result(
+      result(error_string.empty(),
         "",
-        tu->errors_begin(),
-        tu->errors_end(),
+        error_string,
         config_.verbose ? src.content() : ""
       );
   }
   catch (const std::exception& e)
   {
-    const std::string es[] = { e.what() };
-    return result("", es, es + sizeof(es) / sizeof(es[0]), "");
+    return result(false, "", e.what(), "");
   }
 }
 
@@ -207,9 +207,10 @@ result metashell::eval_tmp_formatted(
   pair<tup, string>
     simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
 
+  std::string error_string = simple.first->get_error_string();
   METASHELL_LOG(
     logger_,
-    simple.first->errors_begin() != simple.first->errors_end() ?
+    !error_string.empty() ?
       "Errors occured during metaprogram evaluation. Displaying errors coming"
       " from the metaprogram without metashell::format" :
       "No errors occured during metaprogram evaluation. Re-evaluating it with"
@@ -217,7 +218,7 @@ result metashell::eval_tmp_formatted(
   );
 
   const pair<tup, string> final_pair =
-    simple.first->errors_begin() != simple.first->errors_end() ?
+    !error_string.empty() ?
       std::move(simple) :
       parse_expr(
         *index,
@@ -229,11 +230,12 @@ result metashell::eval_tmp_formatted(
   std::string v;
   final_pair.first->visit_nodes(get_type_of_variable(var, v));
 
+  error_string = final_pair.first->get_error_string();
+
   return
-    result(
+    result(error_string.empty(),
       v,
-      final_pair.first->errors_begin(),
-      final_pair.first->errors_end(),
+      error_string,
       config_.verbose ? final_pair.second : ""
     );
 }
@@ -256,7 +258,7 @@ result metashell::eval_tmp(
           "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));
 
   if (output.exit_code() != 0) {
-    return result{"", output.standard_error(), ""};
+    return result{false, "", output.standard_error(), ""};
   }
 
   const std::string& standard_output = output.standard_output();
@@ -272,7 +274,7 @@ result metashell::eval_tmp(
     throw exception("Unexpected ast format");
   }
 
-  return result{boost::trim_copy(std::string(match[1])), "", ""};
+  return result{true, boost::trim_copy(std::string(match[1])), "", ""};
 }
 
 namespace

@@ -48,8 +48,7 @@ namespace metashell
 
       virtual void visit_nodes(const visitor& f_) override;
 
-      virtual error_iterator errors_begin() const override;
-      virtual error_iterator errors_end() const override;
+      virtual std::string get_error_string() const override;
 
       virtual void code_complete(std::set<std::string>& out_) const override;
     private:

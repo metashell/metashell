@@ -18,25 +18,15 @@
 
 using namespace metashell;
 
-mock_cxtranslationunit::mock_cxtranslationunit() :
-  _get_error([this] (int n_) { return this->_errors[n_]; })
-{}
+mock_cxtranslationunit::mock_cxtranslationunit() {}
 
 void mock_cxtranslationunit::visit_nodes(const visitor&)
 {
   // ignore
 }
 
-mock_cxtranslationunit::error_iterator
-mock_cxtranslationunit::errors_begin() const
-{
-  return error_iterator(_get_error, 0);
-}
-
-mock_cxtranslationunit::error_iterator
-mock_cxtranslationunit::errors_end() const
-{
-  return error_iterator(_get_error, _errors.size());
+std::string mock_cxtranslationunit::get_error_string() const {
+  return _error;
 }
 
 void mock_cxtranslationunit::code_complete(std::set<std::string>&) const
@@ -44,8 +34,8 @@ void mock_cxtranslationunit::code_complete(std::set<std::string>&) const
   // ignore
 }
 
-void mock_cxtranslationunit::add_error(const std::string& msg_)
+void mock_cxtranslationunit::set_error(const std::string& msg_)
 {
-  _errors.push_back(msg_);
+  _error = msg_;
 }
 

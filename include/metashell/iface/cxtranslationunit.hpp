@@ -42,8 +42,7 @@ namespace metashell
 
       virtual void visit_nodes(const visitor& f_) = 0;
 
-      virtual error_iterator errors_begin() const = 0;
-      virtual error_iterator errors_end() const = 0;
+      virtual std::string get_error_string() const = 0;
 
       virtual void code_complete(std::set<std::string>& out_) const = 0;
     };

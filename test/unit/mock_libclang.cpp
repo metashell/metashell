@@ -1,4 +1,3 @@
-// Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
@@ -58,7 +57,7 @@ void metashell::expect_parsing_fails(mock_libclang& libclang_)
   std::unique_ptr<mock_cxindex> ind(new mock_cxindex);
 
   std::unique_ptr<mock_cxtranslationunit> tu(new mock_cxtranslationunit);
-  tu->add_error("test error");
+  tu->set_error("test error");
 
   ind->parse_code_returns(move(tu));
   libclang_.create_index_returns(move(ind));

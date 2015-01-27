@@ -19,8 +19,6 @@
 
 #include <metashell/iface/cxtranslationunit.hpp>
 
-#include <vector>
-
 namespace metashell
 {
   class mock_cxtranslationunit : public iface::cxtranslationunit
@@ -30,15 +28,13 @@ namespace metashell
 
     virtual void visit_nodes(const visitor& f_) override;
 
-    virtual error_iterator errors_begin() const override;
-    virtual error_iterator errors_end() const override;
+    virtual std::string get_error_string() const override;
 
     virtual void code_complete(std::set<std::string>& out_) const override;
 
-    void add_error(const std::string& msg_);
+    void set_error(const std::string& msg_);
   private:
-    std::vector<std::string> _errors;
-    std::function<std::string(int)> _get_error;
+    std::string _error;
   };
 }
 

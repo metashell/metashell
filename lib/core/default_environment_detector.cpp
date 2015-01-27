@@ -249,7 +249,7 @@ bool default_environment_detector::clang_binary_works_with_libclang(
       index = _libclang->create_index(env, _logger);
 
     std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
-    return tu->errors_begin() == tu->errors_end();
+    return tu->get_error_string().empty();
   }
   catch (...)
   {

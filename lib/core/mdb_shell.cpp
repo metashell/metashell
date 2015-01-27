@@ -793,10 +793,8 @@ boost::optional<data::type> mdb_shell::run_metaprogram(
     displayer_.show_raw_text(res.info);
   }
 
-  if (res.has_errors()) {
-    for (const std::string& e : res.errors) {
-      displayer_.show_error(e);
-    }
+  if (!res.successful) {
+    displayer_.show_error(res.error);
     return boost::none;
   }
   return data::type(res.output);

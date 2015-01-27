@@ -397,7 +397,8 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
       lc
     );
 
-  JUST_ASSERT(!r.errors.empty());
+  JUST_ASSERT(!r.successful);
+  JUST_ASSERT(!r.error.empty());
 }
 
 JUST_TEST_CASE(test_variable_definition)
