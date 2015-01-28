@@ -31,8 +31,6 @@ using namespace metashell;
 
 namespace
 {
-  const char* var = "__metashell_v";
-
   bool has_typedef(
     const data::command::iterator& begin_,
     const data::command::iterator& end_
@@ -196,7 +194,7 @@ result metashell::eval_tmp(
     clang_binary(config_.clang_path, logger_).run(
         clang_args,
         env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));
+          "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v" + ";\n"));
 
   if (output.exit_code() != 0) {
     return result{false, "", output.standard_error(), ""};
