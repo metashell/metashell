@@ -69,40 +69,40 @@ namespace
     return t;
   }
 
-  std::string get_type_from_ast_string(const std::string& ast) {
-    // This algorithm is very ugly, but it basically iterates on the
-    // lines of the ast dump from the end until it finds the interesting line.
+}
 
-    std::size_t end_index = std::string::npos;
-    std::size_t start_index = ast.find_last_of('\n');
+std::string metashell::get_type_from_ast_string(const std::string& ast) {
+  // This algorithm is very ugly, but it basically iterates on the
+  // lines of the ast dump from the end until it finds the interesting line.
 
-    std::string line;
-    while (true) {
-      end_index = start_index;
-      start_index = ast.find_last_of('\n', end_index - 1);
+  std::size_t end_index = std::string::npos;
+  std::size_t start_index = ast.find_last_of('\n');
 
-      if (start_index == std::string::npos || end_index == std::string::npos) {
-        throw exception("No suitable ast line in dump");
-      }
+  std::string line;
+  while (true) {
+    end_index = start_index;
+    start_index = ast.find_last_of('\n', end_index - 1);
 
-      line = ast.substr(start_index + 1, end_index-start_index-1);
-      if (!line.empty() && line != "`-<undeserialized declarations>") {
-        break;
-      }
+    if (start_index == std::string::npos || end_index == std::string::npos) {
+      throw exception("No suitable ast line in dump");
     }
 
-    boost::regex reg(
-      ".*':'struct metashell::impl::wrap<(?:class |struct |union |enum )?(.*)>' "
-      "'void \\(void\\) noexcept'.*");
-
-    boost::smatch match;
-    if (!boost::regex_match(line, match, reg)) {
-      throw exception("Unexpected ast format: \"" + line + "\"");
+    line = ast.substr(start_index + 1, end_index-start_index-1);
+    if (!line.empty() && line != "`-<undeserialized declarations>") {
+      break;
     }
-
-    return boost::trim_copy(std::string(match[1]));
   }
 
+  boost::regex reg(
+    ".*':'struct metashell::impl::wrap<(?:class |struct |union |enum )?(.*)>' "
+    "'void \\(void\\) noexcept'.*");
+
+  boost::smatch match;
+  if (!boost::regex_match(line, match, reg)) {
+    throw exception("Unexpected ast format: \"" + line + "\"");
+  }
+
+  return boost::trim_copy(std::string(match[1]));
 }
 
 result metashell::validate_code(

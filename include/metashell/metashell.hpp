@@ -31,6 +31,8 @@
 
 namespace metashell
 {
+  std::string get_type_from_ast_string(const std::string& ast);
+
   result eval_tmp_formatted(
     const iface::environment& env_,
     const std::string& tmp_exp_,
