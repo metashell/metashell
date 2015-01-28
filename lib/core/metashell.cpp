@@ -194,7 +194,7 @@ result metashell::eval_tmp(
     clang_binary(config_.clang_path, logger_).run(
         clang_args,
         env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v" + ";\n"));
+          "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"));
 
   if (output.exit_code() != 0) {
     return result{false, "", output.standard_error(), ""};
