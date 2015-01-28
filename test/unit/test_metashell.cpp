@@ -58,6 +58,16 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
 }
 
+JUST_TEST_CASE(test_type_from_ast_string_int_no_noexcept) {
+  std::string ast = R"(
+TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
+|-VarDecl 0x7feb5300cb10 <<stdin>:1:1, col:59> col:59 __metashell_v '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' callinit
+| `-CXXConstructExpr 0x7feb5300cbb8 <col:59> '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' 'void (void)'
+`-<undeserialized declarations>
+)";
+  JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
+}
+
 JUST_TEST_CASE(test_type_from_ast_string_bool) {
   std::string ast = R"(
 TranslationUnitDecl 0x7f9c5c8278c0 <<invalid sloc>> <invalid sloc>
