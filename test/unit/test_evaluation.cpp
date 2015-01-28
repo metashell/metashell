@@ -119,6 +119,9 @@ JUST_TEST_CASE(test_accept_two_space_input)
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
+// This test is disabled, because it needs the location of the templight binary
+// Should be moved to system test
+#if 0
 JUST_TEST_CASE(test_macro_in_config)
 {
   metashell::config cfg;
@@ -133,6 +136,7 @@ JUST_TEST_CASE(test_macro_in_config)
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({data::type("int")}, d.types());
 }
+#endif
 
 namespace
 {
@@ -349,6 +353,9 @@ JUST_TEST_CASE(test_disabled_warnings)
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
+// This test is disabled, because it needs the location of the templight binary
+// Should be moved to system test
+#if 0
 JUST_TEST_CASE(test_extra_clang_arg)
 {
   metashell::config cfg;
@@ -363,6 +370,7 @@ JUST_TEST_CASE(test_extra_clang_arg)
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
   JUST_ASSERT_EQUAL_CONTAINER({data::type("double")}, d.types());
 }
+#endif
 
 JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 {
