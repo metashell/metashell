@@ -33,25 +33,6 @@ namespace
 {
   const char* var = "__metashell_v";
 
-  std::pair<std::unique_ptr<iface::cxtranslationunit>, std::string> parse_expr(
-    iface::cxindex& index_,
-    const std::string& input_filename_,
-    const iface::environment& env_,
-    const std::string& tmp_exp_
-  )
-  {
-    using std::make_pair;
-
-    const data::unsaved_file
-      code(
-        input_filename_,
-        env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
-        )
-      );
-    return make_pair(index_.parse_code(code), code.content());
-  }
-
   bool has_typedef(
     const data::command::iterator& begin_,
     const data::command::iterator& end_
@@ -88,39 +69,6 @@ namespace
     return t;
   }
 
-  std::string unwrap(
-    const std::string& prefix_,
-    const std::string& s_,
-    const std::string& suffix_
-  )
-  {
-    if (
-      s_.size() < prefix_.size()
-      || std::string(s_.begin(), s_.begin() + prefix_.size()) != prefix_
-    )
-    {
-      throw
-        metashell::exception(
-          "\"" + prefix_ + "\" is not a prefix of \"" + s_ + "\""
-        );
-    }
-    else if (
-      s_.size() < suffix_.size()
-      || std::string(s_.end() - suffix_.size(), s_.end()) != suffix_
-    )
-    {
-      throw
-        metashell::exception(
-          "\"" + suffix_ + "\" is not a suffix of \"" + s_ + "\""
-        );
-    }
-    else
-    {
-      return
-        std::string(s_.begin() + prefix_.size(), s_.end() - suffix_.size());
-    }
-  }
-
   std::string get_type_from_ast_string(const std::string& ast) {
     // This algorithm is very ugly, but it basically iterates on the
     // lines of the ast dump from the end until it finds the interesting line.
@@ -155,33 +103,6 @@ namespace
     return boost::trim_copy(std::string(match[1]));
   }
 
-  std::function<void(const iface::cxcursor&)> get_type_of_variable(
-    std::string name_,
-    std::string& result_
-  )
-  {
-    return
-      [name_, &result_] (const iface::cxcursor& cursor_)
-      {
-        if (cursor_.variable_declaration() && cursor_.spelling() == name_)
-        {
-          try
-          {
-            result_ =
-              unwrap(
-                "wrap<",
-                cursor_.type()->canonical_type()->spelling(),
-                ">"
-              );
-          }
-          catch (const exception&)
-          {
-            return;
-          }
-          boost::algorithm::trim(result_);
-        }
-      };
-  }
 }
 
 result metashell::validate_code(
