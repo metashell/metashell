@@ -48,6 +48,26 @@ JUST_TEST_CASE(test_repair_string_type_7) {
   JUST_ASSERT_EQUAL("b_Boola", repair_type_string("b_Boola"));
 }
 
+JUST_TEST_CASE(test_repair_string_type_8) {
+  JUST_ASSERT_EQUAL("X", repair_type_string("struct X"));
+}
+
+JUST_TEST_CASE(test_repair_string_type_9) {
+  JUST_ASSERT_EQUAL("X", repair_type_string("class X"));
+}
+
+JUST_TEST_CASE(test_repair_string_type_10) {
+  JUST_ASSERT_EQUAL("X", repair_type_string("union X"));
+}
+
+JUST_TEST_CASE(test_repair_string_type_11) {
+  JUST_ASSERT_EQUAL("X", repair_type_string("enum X"));
+}
+
+JUST_TEST_CASE(test_repair_string_type_12) {
+  JUST_ASSERT_EQUAL("X<Y>", repair_type_string("struct X<struct Y>"));
+}
+
 JUST_TEST_CASE(test_type_from_ast_string_int) {
   std::string ast = R"(
 TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>

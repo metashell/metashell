@@ -70,9 +70,15 @@ namespace
 }
 
 std::string metashell::repair_type_string(const std::string& type) {
-  boost::regex bool_regex("(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+  boost::regex bool_regex(
+      "(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+  boost::regex type_regex(
+      "(^|[^A-Za-z0-9_])(?:class |struct |union |enum )");
 
-  return boost::regex_replace(type, bool_regex, "\\1bool\\2",
+  auto tmp = boost::regex_replace(type, bool_regex, "\\1bool\\2",
+      boost::match_default | boost::format_all);
+
+  return boost::regex_replace(tmp, type_regex, "\\1",
       boost::match_default | boost::format_all);
 }
 
@@ -99,7 +105,7 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
   }
 
   boost::regex reg(
-    ".*':'struct metashell::impl::wrap<(?:class |struct |union |enum )?(.*)>' "
+    ".*':'struct metashell::impl::wrap<?(.*)>' "
     "'void \\(void\\)(?: noexcept|(?:))'.*");
 
   boost::smatch match;
