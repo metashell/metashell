@@ -37,7 +37,7 @@ JUST_TEST_CASE(test_repair_string_type_4) {
 }
 
 JUST_TEST_CASE(test_repair_string_type_5) {
-  JUST_ASSERT_EQUAL("a_Bool", repair_type_string("a_Bool>"));
+  JUST_ASSERT_EQUAL("a_Bool", repair_type_string("a_Bool"));
 }
 
 JUST_TEST_CASE(test_repair_string_type_6) {
