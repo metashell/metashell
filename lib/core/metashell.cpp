@@ -71,6 +71,13 @@ namespace
 
 }
 
+std::string metashell::repair_type_string(const std::string& type) {
+  boost::regex bool_regex("(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+
+  return boost::regex_replace(type, bool_regex, "\\1bool\\2",
+      boost::match_default | boost::format_all);
+}
+
 std::string metashell::get_type_from_ast_string(const std::string& ast) {
   // This algorithm is very ugly, but it basically iterates on the
   // lines of the ast dump from the end until it finds the interesting line.
@@ -102,7 +109,7 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
     throw exception("Unexpected ast format: \"" + line + "\"");
   }
 
-  return boost::trim_copy(std::string(match[1]));
+  return repair_type_string(boost::trim_copy(std::string(match[1])));
 }
 
 result metashell::validate_code(
@@ -195,7 +202,8 @@ result metashell::eval_tmp(
     return result{false, "", output.standard_error(), ""};
   }
 
-  return result{true, get_type_from_ast_string(output.standard_output()), "", ""};
+  return result{
+    true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
 namespace
