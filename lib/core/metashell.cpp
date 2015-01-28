@@ -152,8 +152,6 @@ result metashell::eval_tmp_formatted(
   using std::string;
   using std::pair;
 
-  typedef std::unique_ptr<iface::cxtranslationunit> tup;
-
   METASHELL_LOG(
     logger_,
     "Checking if metaprogram can be evaluated without metashell::format: "
