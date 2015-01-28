@@ -22,8 +22,7 @@
 #include <metashell/iface/libclang.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
-
-#include "result.hpp"
+#include <metashell/result.hpp>
 
 #include <set>
 #include <string>
