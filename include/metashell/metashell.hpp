@@ -35,9 +35,7 @@ namespace metashell
     const iface::environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
-    const std::string& input_filename_,
-    logger* logger_,
-    iface::libclang& libclang_
+    logger* logger_
   );
 
   result eval_tmp(

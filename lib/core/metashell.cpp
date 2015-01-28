@@ -141,9 +141,7 @@ result metashell::eval_tmp_formatted(
   const iface::environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
-  const std::string& input_filename_,
-  logger* logger_,
-  iface::libclang& libclang_
+  logger* logger_
 )
 {
   using std::string;
@@ -158,11 +156,6 @@ result metashell::eval_tmp_formatted(
   );
 
   result simple = eval_tmp(env_, tmp_exp_, config_, logger_);
-
-//  std::unique_ptr<iface::cxindex> index = libclang_.create_index(env_, logger_);
-//
-//  pair<tup, string>
-//    simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
 
   METASHELL_LOG(
     logger_,

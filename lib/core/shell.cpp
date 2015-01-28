@@ -473,9 +473,7 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
       *_env,
       s_,
       _config,
-      input_filename(),
-      _logger,
-      *_libclang
+      _logger
     ),
     displayer_
   );
