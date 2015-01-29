@@ -20,14 +20,13 @@
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
-
-#include <metashell/clang/libclang.hpp>
+#include <metashell/null_libclang.hpp>
 
 namespace
 {
   metashell::shell& get_shell()
   {
-    static metashell::clang::libclang lc;
+    static metashell::null_libclang lc;
     static metashell::shell sh(metashell::test_config(), lc);
     return sh;
   }
