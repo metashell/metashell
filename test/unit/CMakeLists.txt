@@ -22,7 +22,6 @@ use_cpp11()
 
 target_link_libraries(metashell_unit_test
   metashell_core_lib
-  metashell_clang_lib
   metashell_data_lib
 )
 
@@ -61,24 +60,6 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 
-# Clang
-include_directories(${CLANG_INCLUDE_DIR})
-if (MSVC)
-  # libclang calls its import library libclang.imp instead of libclang.lib
-  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
-
-  # delayload libclang
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:libclang.dll")
-
-  # PATH of the standard headers
-  add_definitions(-DWINDOWS_HEADERS="${CMAKE_SOURCE_DIR}/windows_headers")
-endif()
-target_link_libraries(metashell_unit_test ${CLANG_LIBRARY})
-
-if (CLANG_STATIC)
-  target_link_libraries(metashell_unit_test ${ZLIB_LIBRARIES})
-endif()
-
 add_test(metashell_unit_tests metashell_unit_test)
 
 # Code coverage
@@ -87,7 +68,7 @@ if (ENABLE_CODE_COVERAGE)
     test_coverage
     metashell_unit_test
     coverage
-    "'/usr/*';'test/*';'include/just/*';'3rd/*'"
+    "'/usr/*';'test/*';'3rd/*'"
   )
 endif()
 
