@@ -14,35 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/shell.hpp>
-
-#include <metashell/clang/libclang.hpp>
-
 #include "util.hpp"
-#include "test_config.hpp"
 
 #include <just/test.hpp>
-
-metashell::data::type get_output(
-  const std::string& input_,
-  const std::string& test_code_
-)
-{
-  metashell::in_memory_displayer d;
-  metashell::clang::libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
-  if (!test_code_.empty())
-  {
-    const bool r = sh.store_in_buffer(test_code_, d);
-    JUST_ASSERT(r);
-  }
-  sh.line_available(input_, d);
-  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
-  JUST_ASSERT_EQUAL(1u, d.types().size());
-  return d.types().front();
-}
 
 std::tuple<metashell::mdb_command, std::string> get_command_from_map(
     const metashell::mdb_command_handler_map& map,

@@ -23,11 +23,6 @@
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/data/type.hpp>
 
-metashell::data::type get_output(
-  const std::string& input_,
-  const std::string& test_code_ = std::string()
-);
-
 std::tuple<metashell::mdb_command, std::string> get_command_from_map(
     const metashell::mdb_command_handler_map& map,
     const std::string& line);
