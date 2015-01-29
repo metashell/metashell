@@ -45,7 +45,6 @@ target_link_libraries(metashell_unit_test
   ${CMAKE_THREAD_LIBS_INIT}
   ${RT_LIBRARY}
   ${PROTOBUF_LIBRARY}
-  ${TERMCAP_LIBRARY}
   protobuf
 )
 
