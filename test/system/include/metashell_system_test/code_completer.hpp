@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_JSON_GENERATOR_HPP
-#define METASHELL_SYSTEM_TEST_JSON_GENERATOR_HPP
+#ifndef METASHELL_SYSTEM_TEST_CODE_COMPLETER_HPP
+#define METASHELL_SYSTEM_TEST_CODE_COMPLETER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +23,16 @@
 
 namespace metashell_system_test
 {
-  json_string command(const std::string& cmd_);
-  json_string code_completion(const std::string& code_);
+  class code_completer
+  {
+  public:
+    code_completer(const std::string& init_code_ = std::string());
+
+    json_string operator()(const std::string& code_) const;
+
+  private:
+    std::string _init_code;
+  };
 }
 
 #endif

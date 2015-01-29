@@ -51,3 +51,8 @@ json_string metashell_system_test::command(const std::string& cmd_)
   return json_object({{"type", "cmd"}, {"cmd", cmd_}});
 }
 
+json_string metashell_system_test::code_completion(const std::string& code_)
+{
+  return json_object({{"type", "code_completion"}, {"code", code_}});
+}
+

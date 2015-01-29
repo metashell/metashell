@@ -34,7 +34,7 @@ namespace
     writer_.start_object();
 
     writer_.key("type");
-    writer_.string("code_completion");
+    writer_.string("code_completion_result");
 
     writer_.key("completions");
     writer_.start_array();

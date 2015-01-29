@@ -286,7 +286,7 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_result)
       "end_document",
 
       "start_object",
-        "key type", "string code_completion",
+        "key type", "string code_completion_result",
         "key completions",
           "start_array",
             "string hello",
