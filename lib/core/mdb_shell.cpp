@@ -80,7 +80,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
-        "If called without <type>, then the last evaluated metaprogram will be\n"
+        "If called without `<type>`, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
@@ -793,10 +793,8 @@ boost::optional<data::type> mdb_shell::run_metaprogram(
     displayer_.show_raw_text(res.info);
   }
 
-  if (res.has_errors()) {
-    for (const std::string& e : res.errors) {
-      displayer_.show_error(e);
-    }
+  if (!res.successful) {
+    displayer_.show_error(res.error);
     return boost::none;
   }
   return data::type(res.output);

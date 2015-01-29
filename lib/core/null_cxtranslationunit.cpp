@@ -23,16 +23,8 @@ void null_cxtranslationunit::visit_nodes(const visitor&)
   // ignore
 }
 
-null_cxtranslationunit::error_iterator
-null_cxtranslationunit::errors_begin() const
-{
-  return errors_end();
-}
-
-null_cxtranslationunit::error_iterator
-null_cxtranslationunit::errors_end() const
-{
-  return error_iterator();
+std::string null_cxtranslationunit::get_error_string() const {
+  return "";
 }
 
 void null_cxtranslationunit::code_complete(std::set<std::string>&) const

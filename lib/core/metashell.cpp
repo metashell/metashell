@@ -31,27 +31,6 @@ using namespace metashell;
 
 namespace
 {
-  const char* var = "__metashell_v";
-
-  std::pair<std::unique_ptr<iface::cxtranslationunit>, std::string> parse_expr(
-    iface::cxindex& index_,
-    const std::string& input_filename_,
-    const iface::environment& env_,
-    const std::string& tmp_exp_
-  )
-  {
-    using std::make_pair;
-
-    const data::unsaved_file
-      code(
-        input_filename_,
-        env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"
-        )
-      );
-    return make_pair(index_.parse_code(code), code.content());
-  }
-
   bool has_typedef(
     const data::command::iterator& begin_,
     const data::command::iterator& end_
@@ -88,66 +67,53 @@ namespace
     return t;
   }
 
-  std::string unwrap(
-    const std::string& prefix_,
-    const std::string& s_,
-    const std::string& suffix_
-  )
-  {
-    if (
-      s_.size() < prefix_.size()
-      || std::string(s_.begin(), s_.begin() + prefix_.size()) != prefix_
-    )
-    {
-      throw
-        metashell::exception(
-          "\"" + prefix_ + "\" is not a prefix of \"" + s_ + "\""
-        );
+}
+
+std::string metashell::repair_type_string(const std::string& type) {
+  boost::regex bool_regex(
+      "(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+  boost::regex type_regex(
+      "(^|[^A-Za-z0-9_])(?:class |struct |union |enum )");
+
+  auto tmp = boost::regex_replace(type, bool_regex, "\\1bool\\2",
+      boost::match_default | boost::format_all);
+
+  return boost::regex_replace(tmp, type_regex, "\\1",
+      boost::match_default | boost::format_all);
+}
+
+std::string metashell::get_type_from_ast_string(const std::string& ast) {
+  // This algorithm is very ugly, but it basically iterates on the
+  // lines of the ast dump from the end until it finds the interesting line.
+
+  std::size_t end_index = std::string::npos;
+  std::size_t start_index = ast.find_last_of('\n');
+
+  std::string line;
+  while (true) {
+    end_index = start_index;
+    start_index = ast.find_last_of('\n', end_index - 1);
+
+    if (start_index == std::string::npos || end_index == std::string::npos) {
+      throw exception("No suitable ast line in dump");
     }
-    else if (
-      s_.size() < suffix_.size()
-      || std::string(s_.end() - suffix_.size(), s_.end()) != suffix_
-    )
-    {
-      throw
-        metashell::exception(
-          "\"" + suffix_ + "\" is not a suffix of \"" + s_ + "\""
-        );
-    }
-    else
-    {
-      return
-        std::string(s_.begin() + prefix_.size(), s_.end() - suffix_.size());
+
+    line = ast.substr(start_index + 1, end_index-start_index-1);
+    if (!line.empty() && line != "`-<undeserialized declarations>") {
+      break;
     }
   }
 
-  std::function<void(const iface::cxcursor&)> get_type_of_variable(
-    std::string name_,
-    std::string& result_
-  )
-  {
-    return
-      [name_, &result_] (const iface::cxcursor& cursor_)
-      {
-        if (cursor_.variable_declaration() && cursor_.spelling() == name_)
-        {
-          try
-          {
-            result_ =
-              unwrap(
-                "wrap<",
-                cursor_.type()->canonical_type()->spelling(),
-                ">"
-              );
-          }
-          catch (const exception&)
-          {
-            return;
-          }
-          boost::algorithm::trim(result_);
-        }
-      };
+  boost::regex reg(
+    ".*':'struct metashell::impl::wrap<?(.*)>' "
+    "'void \\(void\\)(?: noexcept|(?:))'.*");
+
+  boost::smatch match;
+  if (!boost::regex_match(line, match, reg)) {
+    throw exception("Unexpected ast format: \"" + line + "\"");
   }
+
+  return repair_type_string(boost::trim_copy(std::string(match[1])));
 }
 
 result metashell::validate_code(
@@ -167,18 +133,18 @@ result metashell::validate_code(
     std::unique_ptr<iface::cxindex>
       index = libclang_.create_index(env_, logger_);
     std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
+
+    const std::string error_string = tu->get_error_string();
     return
-      result(
+      result(error_string.empty(),
         "",
-        tu->errors_begin(),
-        tu->errors_end(),
+        error_string,
         config_.verbose ? src.content() : ""
       );
   }
   catch (const std::exception& e)
   {
-    const std::string es[] = { e.what() };
-    return result("", es, es + sizeof(es) / sizeof(es[0]), "");
+    return result(false, "", e.what(), "");
   }
 }
 
@@ -186,15 +152,11 @@ result metashell::eval_tmp_formatted(
   const iface::environment& env_,
   const std::string& tmp_exp_,
   const config& config_,
-  const std::string& input_filename_,
-  logger* logger_,
-  iface::libclang& libclang_
+  logger* logger_
 )
 {
   using std::string;
   using std::pair;
-
-  typedef std::unique_ptr<iface::cxtranslationunit> tup;
 
   METASHELL_LOG(
     logger_,
@@ -202,40 +164,25 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  std::unique_ptr<iface::cxindex> index = libclang_.create_index(env_, logger_);
-
-  pair<tup, string>
-    simple = parse_expr(*index, input_filename_, env_, tmp_exp_);
+  result simple = eval_tmp(env_, tmp_exp_, config_, logger_);
 
   METASHELL_LOG(
     logger_,
-    simple.first->errors_begin() != simple.first->errors_end() ?
+    !simple.successful ?
       "Errors occured during metaprogram evaluation. Displaying errors coming"
       " from the metaprogram without metashell::format" :
       "No errors occured during metaprogram evaluation. Re-evaluating it with"
       " metashell::format"
   );
 
-  const pair<tup, string> final_pair =
-    simple.first->errors_begin() != simple.first->errors_end() ?
-      std::move(simple) :
-      parse_expr(
-        *index,
-        input_filename_,
-        env_,
-        "::metashell::format<" + tmp_exp_ + ">::type"
-      );
+  result final_result = !simple.successful ? std::move(simple) :
+    eval_tmp(
+      env_,
+      "::metashell::format<" + tmp_exp_ + ">::type",
+      config_,
+      logger_);
 
-  std::string v;
-  final_pair.first->visit_nodes(get_type_of_variable(var, v));
-
-  return
-    result(
-      v,
-      final_pair.first->errors_begin(),
-      final_pair.first->errors_end(),
-      config_.verbose ? final_pair.second : ""
-    );
+  return final_result;
 }
 
 result metashell::eval_tmp(
@@ -244,8 +191,6 @@ result metashell::eval_tmp(
   const config& config_,
   logger* logger_)
 {
-  //lot of hacking and duplication just to make things work. TODO refactor
-
   auto clang_args = env_.clang_arguments();
   clang_args.push_back("-"); //Compile from stdin
 
@@ -253,26 +198,14 @@ result metashell::eval_tmp(
     clang_binary(config_.clang_path, logger_).run(
         clang_args,
         env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > " + var + ";\n"));
+          "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"));
 
   if (output.exit_code() != 0) {
-    return result{"", output.standard_error(), ""};
+    return result{false, "", output.standard_error(), ""};
   }
 
-  const std::string& standard_output = output.standard_output();
-  std::string last_line = standard_output.substr(
-      standard_output.find_last_of('\n', standard_output.size() - 2) + 1);
-
-  boost::regex reg(
-      ".*':'struct metashell::impl::wrap<(?:class |struct |union )?(.*)>' "
-      "'void \\(void\\) noexcept'.*");
-
-  boost::smatch match;
-  if (!boost::regex_match(last_line, match, reg)) {
-    throw exception("Unexpected ast format");
-  }
-
-  return result{boost::trim_copy(std::string(match[1])), "", ""};
+  return result{
+    true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
 namespace

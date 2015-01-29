@@ -22,8 +22,7 @@
 #include <metashell/iface/libclang.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
-
-#include "result.hpp"
+#include <metashell/result.hpp>
 
 #include <set>
 #include <string>
@@ -31,13 +30,14 @@
 
 namespace metashell
 {
+  std::string repair_type_string(const std::string& type);
+  std::string get_type_from_ast_string(const std::string& ast);
+
   result eval_tmp_formatted(
     const iface::environment& env_,
     const std::string& tmp_exp_,
     const config& config_,
-    const std::string& input_filename_,
-    logger* logger_,
-    iface::libclang& libclang_
+    logger* logger_
   );
 
   result eval_tmp(

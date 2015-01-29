@@ -53,12 +53,10 @@ namespace
     {
       displayer_.show_raw_text(r_.info);
     }
-
-    for (const std::string& i : r_.errors)
-    {
-      displayer_.show_error(i);
+    if (!r_.successful) {
+      displayer_.show_error(r_.error);
     }
-    if (!r_.has_errors() && !r_.output.empty())
+    if (r_.successful && !r_.output.empty())
     {
       displayer_.show_type(data::type(r_.output));
     }
@@ -320,8 +318,8 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
   const result r =
     validate_code(s_, _config, *_env, input_filename(), _logger, *_libclang);
-  const bool success = !r.has_errors();
-  if (success)
+
+  if (r.successful)
   {
     try
     {
@@ -334,7 +332,7 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
     }
   }
   ::display(r, displayer_);
-  return success;
+  return r.successful;
 }
 
 const char* shell::input_filename()
@@ -475,9 +473,7 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
       *_env,
       s_,
       _config,
-      input_filename(),
-      _logger,
-      *_libclang
+      _logger
     ),
     displayer_
   );

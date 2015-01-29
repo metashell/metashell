@@ -49,13 +49,13 @@ namespace metashell
 #  error METASHELL_LOG already defined
 #endif
 #define METASHELL_LOG(logger_ptr, msg) \
-  { \
+  do { \
     ::metashell::logger* l = (logger_ptr); \
     if (l != nullptr && l->logging()) \
     { \
       l->log(msg); \
     } \
-  }
+  } while (false)
 
 #endif
 

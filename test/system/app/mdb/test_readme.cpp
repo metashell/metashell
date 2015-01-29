@@ -124,13 +124,7 @@ JUST_TEST_CASE(test_readme_getting_started)
 
   JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(
-    error(
-      "<stdin>:1:26: error: template argument for template type parameter"
-      " must be a type"
-    ),
-    *i
-  );
+  JUST_ASSERT_EQUAL(error(_), *i);
   ++i;
   JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;

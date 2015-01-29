@@ -60,7 +60,10 @@ namespace
   template <class It>
   void word_wrap(It begin_, It end_, int width_, std::vector<std::string>& out_)
   {
-    assert(width_ > 0);
+    // Some environments report 0 width
+    if (width_ <= 0) {
+      width_ = 80;
+    }
 
     for (auto i = begin_; i != end_;)
     {

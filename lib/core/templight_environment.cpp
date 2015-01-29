@@ -24,8 +24,6 @@ templight_environment::templight_environment(
   logger* logger_
 ) : header_file_environment(config, logger_)
 {
-  clang_arguments().push_back("-Xclang");
-  clang_arguments().push_back("-ast-dump");
   clang_arguments().push_back("-Xtemplight");
   clang_arguments().push_back("-profiler");
 

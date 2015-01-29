@@ -180,22 +180,18 @@ void cxtranslationunit::visit_nodes(const visitor& f_)
   );
 }
 
-cxtranslationunit::error_iterator cxtranslationunit::errors_begin() const
-{
-  return
-    error_iterator(
-      [this] (int n_) { return get_nth_error_msg(this->_tu, n_); },
-      0
-    );
-}
+std::string cxtranslationunit::get_error_string() const {
+  std::stringstream ss;
 
-cxtranslationunit::error_iterator cxtranslationunit::errors_end() const
-{
-  return
-    error_iterator(
-      [this] (int n_) { return get_nth_error_msg(this->_tu, n_); },
-      clang_getNumDiagnostics(_tu)
-    );
+  unsigned n = clang_getNumDiagnostics(_tu);
+  if (n > 0) {
+    ss << get_nth_error_msg(_tu, 0);
+  }
+  for (unsigned i = 1; i < n; ++i) {
+    ss << '\n' << get_nth_error_msg(_tu, i);
+  }
+
+  return ss.str();
 }
 
 void cxtranslationunit::code_complete(std::set<std::string>& out_) const
