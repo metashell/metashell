@@ -36,7 +36,10 @@ namespace metashell
     std::deque<std::unique_ptr<iface::cxindex>> _create_index_results;
   };
 
-  void expect_parsing_return_empty(mock_libclang& libclang_);
+  void expect_parsing_return_empty(
+    mock_libclang& libclang_,
+    int number_of_expected_parsings_with_same_index_ = 1
+  );
   void expect_parsing_fails(mock_libclang& libclang_);
 }
 

@@ -44,12 +44,20 @@ void mock_libclang::create_index_returns(
   _create_index_results.push_back(move(result_));
 }
 
-void metashell::expect_parsing_return_empty(mock_libclang& libclang_)
+void metashell::expect_parsing_return_empty(
+  mock_libclang& libclang_,
+  int number_of_expected_parsings_with_same_index_
+)
 {
+  assert(number_of_expected_parsings_with_same_index_ >= 0);
+
   std::unique_ptr<mock_cxindex> ind(new mock_cxindex);
-  ind->parse_code_returns(
-    std::unique_ptr<iface::cxtranslationunit>(new null_cxtranslationunit)
-  );
+  for (int i = 0; i != number_of_expected_parsings_with_same_index_; ++i)
+  {
+    ind->parse_code_returns(
+      std::unique_ptr<iface::cxtranslationunit>(new null_cxtranslationunit)
+    );
+  }
   libclang_.create_index_returns(move(ind));
 }
 

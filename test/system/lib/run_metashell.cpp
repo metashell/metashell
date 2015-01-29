@@ -105,7 +105,8 @@ namespace
 }
 
 std::vector<json_string> metashell_system_test::run_metashell(
-  std::initializer_list<json_string> commands_
+  std::initializer_list<json_string> commands_,
+  std::initializer_list<std::string> extra_args_
 )
 {
   using just::process::run;
@@ -117,6 +118,7 @@ std::vector<json_string> metashell_system_test::run_metashell(
     system_test_config::metashell_args().begin(),
     system_test_config::metashell_args().end()
   );
+  cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
 
   std::vector<std::string> rsp;
   split_at_new_lines(run(cmd, join(commands_)).standard_output(), rsp);
