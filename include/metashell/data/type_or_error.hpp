@@ -17,6 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+#include <ostream>
+
 #include <boost/variant.hpp>
 
 #include <metashell/data/type.hpp>
@@ -44,6 +47,8 @@ private:
   typedef boost::variant<type_type, error_type> data_type;
   data_type data;
 };
+
+std::ostream& operator<<(std::ostream& os, const type_or_error& te);
 
 }}
 

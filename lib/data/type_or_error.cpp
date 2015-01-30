@@ -51,4 +51,13 @@ const type_or_error::error_type& type_or_error::get_error() const {
   return boost::get<error_type>(data);
 }
 
+std::ostream& operator<<(std::ostream& os, const type_or_error& te) {
+  if (te.is_type()) {
+    os << "type[" << te.get_type() << "]";
+  } else {
+    os << "error[" << te.get_error() << "]";
+  }
+  return os;
+}
+
 }}
