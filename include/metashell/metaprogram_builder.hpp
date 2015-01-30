@@ -29,7 +29,7 @@ struct metaprogram_builder {
   metaprogram_builder(
       bool full_mode,
       const std::string& root_name,
-      const data::type& evaluation_result);
+      const data::type_or_error& evaluation_result);
 
   void handle_template_begin(
     data::instantiation_kind kind,

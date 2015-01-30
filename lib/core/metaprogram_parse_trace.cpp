@@ -59,7 +59,7 @@ metaprogram metaprogram::create_from_protobuf_stream(
     std::istream& stream,
     bool full_mode,
     const std::string& root_name,
-    const data::type& evaluation_result)
+    const data::type_or_error& evaluation_result)
 {
 
   metaprogram_builder builder(full_mode, root_name, evaluation_result);
@@ -95,7 +95,7 @@ metaprogram metaprogram::create_from_protobuf_file(
     const std::string& file,
     bool full_mode,
     const std::string& root_name,
-    const data::type& evaluation_result)
+    const data::type_or_error& evaluation_result)
 {
   std::ifstream in(file);
   if (!in) {
@@ -108,7 +108,7 @@ metaprogram metaprogram::create_from_protobuf_string(
     const std::string& string,
     bool full_mode,
     const std::string& root_name,
-    const data::type& evaluation_result)
+    const data::type_or_error& evaluation_result)
 {
   std::istringstream ss(string);
   return create_from_protobuf_stream(ss, full_mode, root_name, evaluation_result);

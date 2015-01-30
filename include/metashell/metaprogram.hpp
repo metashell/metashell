@@ -29,7 +29,7 @@
 #include <metashell/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
 #include <metashell/data/backtrace.hpp>
-#include <metashell/data/type.hpp>
+#include <metashell/data/type_or_error.hpp>
 
 namespace metashell {
 
@@ -42,25 +42,25 @@ public:
   metaprogram(
       bool full_mode,
       const std::string& root_name,
-      const data::type& evaluation_result);
+      const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
       bool full_mode,
       const std::string& root_name,
-      const data::type& evaluation_result);
+      const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_file(
       const std::string& file,
       bool full_mode,
       const std::string& root_name,
-      const data::type& evaluation_result);
+      const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
       bool full_mode,
       const std::string& root_name,
-      const data::type& evaluation_result);
+      const data::type_or_error& evaluation_result);
 
   struct vertex_property_tag {
     typedef boost::vertex_property_tag kind;
@@ -127,7 +127,7 @@ public:
       data::instantiation_kind kind,
       const file_location& point_of_instantiation);
 
-  const data::type& get_evaluation_result() const;
+  const data::type_or_error& get_evaluation_result() const;
 
   void reset_state();
 
@@ -203,7 +203,7 @@ private:
   // This should be generally 0
   vertex_descriptor root_vertex;
 
-  data::type evaluation_result;
+  data::type_or_error evaluation_result;
 };
 
 template<class P>

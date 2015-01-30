@@ -28,7 +28,7 @@ namespace metashell {
 metaprogram::metaprogram(
     bool full_mode,
     const std::string& root_name,
-    const data::type& evaluation_result) :
+    const data::type_or_error& evaluation_result) :
   full_mode(full_mode),
   evaluation_result(evaluation_result)
 {
@@ -70,7 +70,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
-const data::type& metaprogram::get_evaluation_result() const {
+const data::type_or_error& metaprogram::get_evaluation_result() const {
   return evaluation_result;
 }
 

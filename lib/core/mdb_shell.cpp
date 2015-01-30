@@ -26,6 +26,7 @@
 #include <cmath>
 #include <chrono>
 #include <sstream>
+#include <fstream>
 
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
@@ -770,20 +771,27 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   env.set_output_location(output_path);
 
-  boost::optional<data::type>
-    evaluation_result = run_metaprogram(str, displayer_);
+  data::type_or_error evaluation_result = run_metaprogram(str, displayer_);
 
-  if (!evaluation_result) {
+  std::ifstream protobuf_stream(output_path + ".trace.pbf");
+  if (!protobuf_stream) {
+    if (evaluation_result.is_error()) {
+      displayer_.show_error(evaluation_result.get_error());
+    } else {
+      // Shouldn't happen
+      displayer_.show_error("Unexpected type type_or_error result");
+    }
     mp = boost::none;
     return false;
   }
 
-  mp = metaprogram::create_from_protobuf_file(
-      output_path + ".trace.pbf", full_mode, str, *evaluation_result);
+  mp = metaprogram::create_from_protobuf_stream(
+      protobuf_stream, full_mode, str, evaluation_result);
+
   return true;
 }
 
-boost::optional<data::type> mdb_shell::run_metaprogram(
+data::type_or_error mdb_shell::run_metaprogram(
     const std::string& str,
     iface::displayer& displayer_)
 {
@@ -794,10 +802,9 @@ boost::optional<data::type> mdb_shell::run_metaprogram(
   }
 
   if (!res.successful) {
-    displayer_.show_error(res.error);
-    return boost::none;
+    return data::type_or_error::make_error(res.error);
   }
-  return data::type(res.output);
+  return data::type_or_error::make_type(data::type(res.output));
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
@@ -858,7 +865,7 @@ void mdb_shell::display_metaprogram_finished(
     iface::displayer& displayer_) const
 {
   displayer_.show_raw_text("Metaprogram finished");
-  displayer_.show_type(mp->get_evaluation_result());
+  displayer_.show_type_or_error(mp->get_evaluation_result());
 }
 
 void mdb_shell::cancel_operation() {

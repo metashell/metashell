@@ -38,7 +38,7 @@ JUST_TEST_CASE(test_mdb_evaluate_int) {
   JUST_ASSERT(sh.has_metaprogram());
   JUST_ASSERT_EQUAL(
     sh.get_metaprogram().get_evaluation_result(),
-    data::type("int")
+    data::type_or_error::make_type(data::type("int"))
   );
 }
 #endif
@@ -54,7 +54,7 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
   JUST_ASSERT(sh.has_metaprogram());
   JUST_ASSERT_EQUAL(
     sh.get_metaprogram().get_evaluation_result(),
-    data::type("int_<55>")
+    data::type_or_error::make_type(data::type("int_<55>"))
   );
 }
 #endif
