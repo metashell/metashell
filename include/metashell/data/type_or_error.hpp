@@ -28,6 +28,9 @@ public:
   typedef type type_type;
   typedef std::string error_type;
 
+  type_or_error(const type_type& t);
+  type_or_error(const error_type& e);
+
   static type_or_error make_type(const type_type& t);
   static type_or_error make_error(const error_type& e);
 
@@ -38,9 +41,6 @@ public:
   const error_type& get_error() const;
 
 private:
-  type_or_error(const type_type& t);
-  type_or_error(const error_type& e);
-
   typedef boost::variant<type_type, error_type> data_type;
   data_type data;
 };
