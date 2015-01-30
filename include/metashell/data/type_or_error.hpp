@@ -43,6 +43,8 @@ public:
   const type_type& get_type() const;
   const error_type& get_error() const;
 
+  bool operator==(const type_or_error& other) const;
+
 private:
   typedef boost::variant<type_type, error_type> data_type;
   data_type data;
