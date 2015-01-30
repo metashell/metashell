@@ -21,6 +21,7 @@
 #include <metashell/data/backtrace.hpp>
 #include <metashell/data/frame.hpp>
 #include <metashell/data/type.hpp>
+#include <metashell/data/type_or_error.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 
@@ -44,6 +45,14 @@ namespace metashell
       virtual void show_frame(const data::frame& frame_) = 0;
       virtual void show_backtrace(const data::backtrace& trace_) = 0;
       virtual void show_call_graph(const iface::call_graph& cg_) = 0;
+
+      void show_type_or_error(const data::type_or_error& te_) {
+        if (te_.is_type()) {
+          show_type(te_.get_type());
+        } else {
+          show_error(te_.get_error());
+        }
+      }
     };
   }
 }
