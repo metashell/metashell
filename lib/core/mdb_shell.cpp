@@ -788,6 +788,15 @@ bool mdb_shell::run_metaprogram_with_templight(
   mp = metaprogram::create_from_protobuf_stream(
       protobuf_stream, full_mode, str, evaluation_result);
 
+  assert(mp);
+  if (mp->is_empty() && evaluation_result.is_error()) {
+    // Most errors will cause templight to generate an empty trace
+    // We're only intrested in non-empty traces
+    displayer_.show_error(evaluation_result.get_error());
+    mp = boost::none;
+    return false;
+  }
+
   return true;
 }
 

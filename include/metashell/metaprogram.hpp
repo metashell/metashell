@@ -127,6 +127,8 @@ public:
       data::instantiation_kind kind,
       const file_location& point_of_instantiation);
 
+  bool is_empty() const;
+
   const data::type_or_error& get_evaluation_result() const;
 
   void reset_state();

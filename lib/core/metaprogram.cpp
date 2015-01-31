@@ -70,6 +70,10 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
+bool metaprogram::is_empty() const {
+  return get_num_vertices() == 1; // 1 is the <root> vertex
+}
+
 const data::type_or_error& metaprogram::get_evaluation_result() const {
   return evaluation_result;
 }
