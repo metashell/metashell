@@ -402,3 +402,25 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
 }
 #endif
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram) {
+  in_memory_displayer d;
+  mdb_test_shell sh(missing_value_fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("forwardtrace", d);
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("int_<fib<5>::value>")), 0, 1},
+      {frame(fib<5>(), instantiation_kind::template_instantiation), 1, 1},
+      {frame( fib<3>(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(  fib<1>(), instantiation_kind::memoization), 3, 0},
+      {frame(  fib<2>(), instantiation_kind::template_instantiation), 3, 1},
+      {frame(   fib<0>(), instantiation_kind::memoization), 4, 0},
+    },
+    d.call_graphs().front()
+  );
+}
+#endif

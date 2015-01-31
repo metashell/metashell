@@ -110,6 +110,19 @@ JUST_TEST_CASE(test_mdb_evaluate_failure_will_reset_metaprogram_state) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_instantiation_failure_will_start_metaprogram)
+{
+  in_memory_displayer d;
+  mdb_test_shell sh(missing_value_fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_run_last_metaprogram) {
   in_memory_displayer d;
   mdb_test_shell sh;

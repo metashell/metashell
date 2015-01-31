@@ -225,3 +225,33 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
 }
 #endif
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+  JUST_TEST_CASE(test_mdb_backtrace_on_error) {
+  using data::instantiation_kind;
+  using data::type;
+  using data::frame;
+  using data::backtrace;
+
+  in_memory_displayer d;
+  mdb_test_shell sh(missing_value_fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+  sh.line_available("continue", d);
+
+  d.clear();
+  sh.line_available("backtrace", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      backtrace{
+        frame(type("fib<0>"), instantiation_kind::memoization),
+        frame(type("fib<2>"), instantiation_kind::template_instantiation),
+        frame(type("fib<3>"), instantiation_kind::template_instantiation),
+        frame(type("fib<5>"), instantiation_kind::template_instantiation),
+        frame(type("int_<fib<5>::value>"))
+      }
+    },
+    d.backtraces()
+  );
+}
+#endif
