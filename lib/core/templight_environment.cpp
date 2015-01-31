@@ -26,6 +26,8 @@ templight_environment::templight_environment(
 {
   clang_arguments().push_back("-Xtemplight");
   clang_arguments().push_back("-profiler");
+  clang_arguments().push_back("-Xtemplight");
+  clang_arguments().push_back("-safe-mode");
 
   // templight can't be forced to generate output file with
   // -Xtemplight -output=<file> for some reason
