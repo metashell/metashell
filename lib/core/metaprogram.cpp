@@ -303,6 +303,8 @@ metaprogram::edge_property& metaprogram::get_edge_property(
 }
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
+  assert(!state.edge_stack.empty());
+
   const optional_edge_descriptor& edge = state.edge_stack.top();
   if (!edge) {
     return get_root_vertex();
