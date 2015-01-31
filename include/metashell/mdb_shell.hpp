@@ -86,6 +86,8 @@ protected:
   ) const;
   bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
   bool require_running_metaprogram(iface::displayer& displayer_) const;
+  bool require_running_or_errored_metaprogram(
+      iface::displayer& displayer_) const;
 
   bool run_metaprogram_with_templight(
     const std::string& str,

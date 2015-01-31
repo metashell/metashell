@@ -252,6 +252,24 @@ bool mdb_shell::require_running_metaprogram(iface::displayer& displayer_) const
   return true;
 }
 
+bool mdb_shell::require_running_or_errored_metaprogram(
+    iface::displayer& displayer_) const
+{
+  if (!require_evaluated_metaprogram(displayer_)) {
+    return false;
+  }
+
+  if (mp->get_evaluation_result().is_error()) {
+    return true;
+  }
+
+  if (mp->is_finished()) {
+    display_metaprogram_finished(displayer_);
+    return false;
+  }
+  return true;
+}
+
 void mdb_shell::command_continue(
     const std::string& arg,
     iface::displayer& displayer_)
@@ -665,7 +683,7 @@ void mdb_shell::command_backtrace(
 {
   if (
     require_empty_args(arg, displayer_)
-    && require_running_metaprogram(displayer_)
+    && require_running_or_errored_metaprogram(displayer_)
   ) {
     display_backtrace(displayer_);
   }

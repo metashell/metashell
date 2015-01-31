@@ -19,6 +19,7 @@
 
 #include <tuple>
 #include <cassert>
+#include <iostream>
 #include <algorithm>
 
 #include <boost/range/adaptor/reversed.hpp>
@@ -106,7 +107,28 @@ bool metaprogram::is_at_endpoint(direction_t direction) const {
 }
 
 bool metaprogram::is_finished() const {
-  return state.edge_stack.empty();
+  if (evaluation_result.is_type()) {
+    return state.edge_stack.empty();
+  }
+
+  // In case the evaluation_result is an error, we want to stop one step before
+  // the DFS is finished.
+  //
+  // Emulating a step() to see if we would get to a regular in_finished() state
+  // if we would've called a step()
+  if (state.edge_stack.size() > 1) {
+    return false;
+  }
+  vertex_descriptor current_vertex = get_current_vertex();
+  if (state.discovered[current_vertex]) {
+    return true;
+  }
+  for (edge_descriptor edge : get_out_edges(current_vertex)) {
+    if (get_edge_property(edge).enabled) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool metaprogram::is_at_start() const {
@@ -281,8 +303,6 @@ metaprogram::edge_property& metaprogram::get_edge_property(
 }
 
 metaprogram::vertex_descriptor metaprogram::get_current_vertex() const {
-  assert(!is_finished());
-
   const optional_edge_descriptor& edge = state.edge_stack.top();
   if (!edge) {
     return get_root_vertex();
@@ -316,8 +336,6 @@ data::frame metaprogram::get_root_frame() const {
 }
 
 data::backtrace metaprogram::get_backtrace() const {
-  assert(!is_finished());
-
   data::backtrace tr;
 
   for (vertex_descriptor current_vertex = get_current_vertex();
