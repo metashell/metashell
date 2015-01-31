@@ -255,6 +255,60 @@ Metaprogram finished
 mpl_::int_<13>
 ```
 
+### Evaluating failing metaprograms
+
+Sometimes you want to debug metaprograms which don't compile for some reason.
+Metadebugger allows this and will behave similarly to how runtime debuggers
+stop the execution when some runtime failure is detected (like a Segmentation
+Fault). To demonstrate this, consider the following faulty version of the
+fibonacci metaprogram:
+
+```cpp
+> template <int N> struct fib { static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; };
+> template <> struct fib<0> { static constexpr int value = 1; };
+> template <> struct fib<1> {};
+> template <int N> struct int_;
+```
+
+Let's try to evaluate `int_<fib<5>::value>`:
+
+```cpp
+> int_<fib<5>::value>
+```
+
+You'll see a bunch of error messages appear. Let's debug out metaprogram to
+see what's going on:
+
+```cpp
+> #msh mdb int_<fib<5>::value>
+For help, type "help".
+Metaprogram started
+```
+
+Continue the execution until we hit the error:
+
+```cpp
+> continue
+Metaprogram finished
+```
+
+You should see the same error messages as above, but this time we can actually
+check out where the error happened:
+
+```cpp
+(mdb) bt
+#0 fib<1> (Memoization)
+#1 fib<2> (TemplateInstantiation)
+#2 fib<3> (TemplateInstantiation)
+#3 fib<4> (TemplateInstantiation)
+#4 fib<5> (TemplateInstantiation)
+#5 int_<fib<5>::value>
+```
+
+Since the top frame (`#0`) is the Memoization of `fib<1>` we can suspect that
+there is something wrong with that. Indeed, there is no value member defined
+in the `fib<1>` specialization.
+
 ### Reevaluation and precompiled headers
 
 Metadebugger never uses precompiled headers. This is because instantiation
