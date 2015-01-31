@@ -841,3 +841,23 @@ JUST_TEST_CASE(test_mdb_step_garbage_argument) {
 }
 #endif
 
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_step_cant_step_forward_when_metaprogram_errored) {
+  in_memory_displayer d;
+  mdb_test_shell sh(missing_value_fibonacci_mp);
+
+  sh.line_available("evaluate int_<fib<5>::value>", d);
+
+  d.clear();
+  sh.line_available("continue", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL(1, d.errors().size());
+
+  d.clear();
+  sh.line_available("step", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram finished"}, d.raw_texts());
+  JUST_ASSERT_EQUAL(1, d.errors().size());
+}
+#endif
