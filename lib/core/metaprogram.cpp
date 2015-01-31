@@ -142,7 +142,7 @@ void metaprogram::step() {
     }
 
     auto reverse_edge_range =
-      get_out_edges(current_vertex) |boost::adaptors::reversed;
+      get_out_edges(current_vertex) | boost::adaptors::reversed;
 
     rollback.edge_stack_push_count = 0;
     for (edge_descriptor edge : reverse_edge_range) {
