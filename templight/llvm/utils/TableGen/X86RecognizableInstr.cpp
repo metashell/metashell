@@ -119,6 +119,10 @@ namespace X86Local {
   enum {
     OpSize16 = 1, OpSize32 = 2
   };
+
+  enum {
+    AdSize16 = 1, AdSize32 = 2, AdSize64 = 3
+  };
 }
 
 using namespace X86Disassembler;
@@ -194,7 +198,7 @@ RecognizableInstr::RecognizableInstr(DisassemblerTables &tables,
   Encoding = byteFromRec(Rec, "OpEncBits");
 
   OpSize           = byteFromRec(Rec, "OpSizeBits");
-  HasAdSizePrefix  = Rec->getValueAsBit("hasAdSizePrefix");
+  AdSize           = byteFromRec(Rec, "AdSizeBits");
   HasREX_WPrefix   = Rec->getValueAsBit("hasREX_WPrefix");
   HasVEX_4V        = Rec->getValueAsBit("hasVEX_4V");
   HasVEX_4VOp3     = Rec->getValueAsBit("hasVEX_4VOp3");
@@ -401,16 +405,20 @@ InstructionContext RecognizableInstr::insnContext() const {
       errs() << "Instruction does not use a prefix: " << Name << "\n";
       llvm_unreachable("Invalid prefix");
     }
-  } else if (Is64Bit || HasREX_WPrefix) {
+  } else if (Is64Bit || HasREX_WPrefix || AdSize == X86Local::AdSize64) {
     if (HasREX_WPrefix && (OpSize == X86Local::OpSize16 || OpPrefix == X86Local::PD))
       insnContext = IC_64BIT_REXW_OPSIZE;
+    else if (HasREX_WPrefix && AdSize == X86Local::AdSize32)
+      insnContext = IC_64BIT_REXW_ADSIZE;
     else if (OpSize == X86Local::OpSize16 && OpPrefix == X86Local::XD)
       insnContext = IC_64BIT_XD_OPSIZE;
     else if (OpSize == X86Local::OpSize16 && OpPrefix == X86Local::XS)
       insnContext = IC_64BIT_XS_OPSIZE;
+    else if (OpSize == X86Local::OpSize16 && AdSize == X86Local::AdSize32)
+      insnContext = IC_64BIT_OPSIZE_ADSIZE;
     else if (OpSize == X86Local::OpSize16 || OpPrefix == X86Local::PD)
       insnContext = IC_64BIT_OPSIZE;
-    else if (HasAdSizePrefix)
+    else if (AdSize == X86Local::AdSize32)
       insnContext = IC_64BIT_ADSIZE;
     else if (HasREX_WPrefix && OpPrefix == X86Local::XS)
       insnContext = IC_64BIT_REXW_XS;
@@ -429,9 +437,11 @@ InstructionContext RecognizableInstr::insnContext() const {
       insnContext = IC_XD_OPSIZE;
     else if (OpSize == X86Local::OpSize16 && OpPrefix == X86Local::XS)
       insnContext = IC_XS_OPSIZE;
+    else if (OpSize == X86Local::OpSize16 && AdSize == X86Local::AdSize16)
+      insnContext = IC_OPSIZE_ADSIZE;
     else if (OpSize == X86Local::OpSize16 || OpPrefix == X86Local::PD)
       insnContext = IC_OPSIZE;
-    else if (HasAdSizePrefix)
+    else if (AdSize == X86Local::AdSize16)
       insnContext = IC_ADSIZE;
     else if (OpPrefix == X86Local::XD)
       insnContext = IC_XD;
@@ -850,6 +860,13 @@ void RecognizableInstr::emitDecodePath(DisassemblerTables &tables) const {
     break;
   } // switch (OpMap)
 
+  unsigned AddressSize = 0;
+  switch (AdSize) {
+  case X86Local::AdSize16: AddressSize = 16; break;
+  case X86Local::AdSize32: AddressSize = 32; break;
+  case X86Local::AdSize64: AddressSize = 64; break;
+  }
+
   assert(opcodeType != (OpcodeType)-1 &&
          "Opcode type not set");
   assert(filter && "Filter not set");
@@ -867,13 +884,13 @@ void RecognizableInstr::emitDecodePath(DisassemblerTables &tables) const {
                             insnContext(),
                             currentOpcode,
                             *filter,
-                            UID, Is32Bit, IgnoresVEX_L);
+                            UID, Is32Bit, IgnoresVEX_L, AddressSize);
   } else {
     tables.setTableFields(opcodeType,
                           insnContext(),
                           opcodeToSet,
                           *filter,
-                          UID, Is32Bit, IgnoresVEX_L);
+                          UID, Is32Bit, IgnoresVEX_L, AddressSize);
   }
 
   delete filter;
@@ -963,10 +980,17 @@ OperandType RecognizableInstr::typeFromString(const std::string &s,
   TYPE("dstidx16",            TYPE_DSTIDX16)
   TYPE("dstidx32",            TYPE_DSTIDX32)
   TYPE("dstidx64",            TYPE_DSTIDX64)
-  TYPE("offset8",             TYPE_MOFFS8)
-  TYPE("offset16",            TYPE_MOFFS16)
-  TYPE("offset32",            TYPE_MOFFS32)
-  TYPE("offset64",            TYPE_MOFFS64)
+  TYPE("offset16_8",          TYPE_MOFFS8)
+  TYPE("offset16_16",         TYPE_MOFFS16)
+  TYPE("offset16_32",         TYPE_MOFFS32)
+  TYPE("offset32_8",          TYPE_MOFFS8)
+  TYPE("offset32_16",         TYPE_MOFFS16)
+  TYPE("offset32_32",         TYPE_MOFFS32)
+  TYPE("offset32_64",         TYPE_MOFFS64)
+  TYPE("offset64_8",          TYPE_MOFFS8)
+  TYPE("offset64_16",         TYPE_MOFFS16)
+  TYPE("offset64_32",         TYPE_MOFFS32)
+  TYPE("offset64_64",         TYPE_MOFFS64)
   TYPE("VR256",               TYPE_XMM256)
   TYPE("VR256X",              TYPE_XMM256)
   TYPE("VR512",               TYPE_XMM512)
@@ -1192,10 +1216,17 @@ RecognizableInstr::relocationEncodingFromString(const std::string &s,
   ENCODING("brtarget",        ENCODING_Iv)
   ENCODING("brtarget8",       ENCODING_IB)
   ENCODING("i64imm",          ENCODING_IO)
-  ENCODING("offset8",         ENCODING_Ia)
-  ENCODING("offset16",        ENCODING_Ia)
-  ENCODING("offset32",        ENCODING_Ia)
-  ENCODING("offset64",        ENCODING_Ia)
+  ENCODING("offset16_8",      ENCODING_Ia)
+  ENCODING("offset16_16",     ENCODING_Ia)
+  ENCODING("offset16_32",     ENCODING_Ia)
+  ENCODING("offset32_8",      ENCODING_Ia)
+  ENCODING("offset32_16",     ENCODING_Ia)
+  ENCODING("offset32_32",     ENCODING_Ia)
+  ENCODING("offset32_64",     ENCODING_Ia)
+  ENCODING("offset64_8",      ENCODING_Ia)
+  ENCODING("offset64_16",     ENCODING_Ia)
+  ENCODING("offset64_32",     ENCODING_Ia)
+  ENCODING("offset64_64",     ENCODING_Ia)
   ENCODING("srcidx8",         ENCODING_SI)
   ENCODING("srcidx16",        ENCODING_SI)
   ENCODING("srcidx32",        ENCODING_SI)

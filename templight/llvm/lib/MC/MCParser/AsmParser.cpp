@@ -1298,6 +1298,9 @@ bool AsmParser::parseStatement(ParseStatementInfo &Info,
       Sym = getContext().GetOrCreateSymbol(IDVal);
     } else
       Sym = Ctx.CreateDirectionalLocalSymbol(LocalLabelVal);
+
+    Sym->redefineIfPossible();
+
     if (!Sym->isUndefined() || Sym->isVariable())
       return Error(IDLoc, "invalid symbol redefinition");
 
@@ -1595,14 +1598,18 @@ bool AsmParser::parseStatement(ParseStatementInfo &Info,
   // directive for the instruction.
   if (!HadError && getContext().getGenDwarfForAssembly() &&
       getContext().getGenDwarfSectionSyms().count(
-        getStreamer().getCurrentSection().first)) {
-
-    unsigned Line = SrcMgr.FindLineNumber(IDLoc, CurBuffer);
+          getStreamer().getCurrentSection().first)) {
+    unsigned Line;
+    if (ActiveMacros.empty())
+      Line = SrcMgr.FindLineNumber(IDLoc, CurBuffer);
+    else
+      Line = SrcMgr.FindLineNumber(ActiveMacros.back()->InstantiationLoc,
+                                   ActiveMacros.back()->ExitBuffer);
 
     // If we previously parsed a cpp hash file line comment then make sure the
     // current Dwarf File is for the CppHashFilename if not then emit the
     // Dwarf File table for it and adjust the line number for the .loc.
-    if (CppHashFilename.size() != 0) {
+    if (CppHashFilename.size()) {
       unsigned FileNumber = getStreamer().EmitDwarfFileDirective(
           0, StringRef(), CppHashFilename);
       getContext().setGenDwarfFileNumber(FileNumber);
@@ -2212,6 +2219,8 @@ bool AsmParser::parseAssignment(StringRef Name, bool allow_redef,
     return false;
   } else
     Sym = getContext().GetOrCreateSymbol(Name);
+
+  Sym->setRedefinable(allow_redef);
 
   // Do the assignment.
   Out.EmitAssignment(Sym, Value);

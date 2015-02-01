@@ -258,3 +258,29 @@ const char * func() {
 }
 @end
 
+@implementation UndeclaredImpl // expected-warning{{cannot find interface declaration}}
+- (void)partiallyUnavailableMethod {}
+@end
+
+@interface InterfaceWithSameMethodAsUndeclaredImpl
+- (void)partiallyUnavailableMethod __attribute__((unavailable));
+@end
+
+void f(id a) {
+  [a partiallyUnavailableMethod]; // no warning, `a` could be an UndeclaredImpl.
+}
+
+@interface InterfaceWithImplementation
+- (void)anotherPartiallyUnavailableMethod;
+@end
+@implementation InterfaceWithImplementation
+- (void)anotherPartiallyUnavailableMethod {}
+@end
+
+@interface InterfaceWithSameMethodAsInterfaceWithImplementation
+- (void)anotherPartiallyUnavailableMethod __attribute__((unavailable));
+@end
+
+void g(id a) {
+  [a anotherPartiallyUnavailableMethod]; // no warning, `a` could be an InterfaceWithImplementation.
+}

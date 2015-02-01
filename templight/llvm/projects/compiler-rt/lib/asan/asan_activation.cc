@@ -26,6 +26,8 @@ static struct AsanDeactivatedFlags {
   AllocatorOptions allocator_options;
   int malloc_context_size;
   bool poison_heap;
+  bool coverage;
+  const char *coverage_dir;
 
   void OverrideFromActivationFlags() {
     Flags f;
@@ -35,10 +37,18 @@ static struct AsanDeactivatedFlags {
     allocator_options.CopyTo(&f, &cf);
     cf.malloc_context_size = malloc_context_size;
     f.poison_heap = poison_heap;
+    cf.coverage = coverage;
+    cf.coverage_dir = coverage_dir;
 
     // Check if activation flags need to be overriden.
     // FIXME: Add diagnostic to check that activation flags string doesn't
     // contain any other flags.
+    if (const char *env = GetEnv("ASAN_ACTIVATION_OPTIONS")) {
+      cf.ParseFromString(env);
+      ParseFlagsFromString(&f, env);
+    }
+
+    // Override from getprop asan.options.
     char buf[100];
     GetExtraActivationFlags(buf, sizeof(buf));
     cf.ParseFromString(buf);
@@ -47,16 +57,19 @@ static struct AsanDeactivatedFlags {
     allocator_options.SetFrom(&f, &cf);
     malloc_context_size = cf.malloc_context_size;
     poison_heap = f.poison_heap;
+    coverage = cf.coverage;
+    coverage_dir = cf.coverage_dir;
   }
 
   void Print() {
-    Report("quarantine_size_mb %d, max_redzone %d, poison_heap %d, "
-           "malloc_context_size %d, alloc_dealloc_mismatch %d, "
-           "allocator_may_return_null %d\n",
-           allocator_options.quarantine_size_mb, allocator_options.max_redzone,
-           poison_heap, malloc_context_size,
-           allocator_options.alloc_dealloc_mismatch,
-           allocator_options.may_return_null);
+    Report(
+        "quarantine_size_mb %d, max_redzone %d, poison_heap %d, "
+        "malloc_context_size %d, alloc_dealloc_mismatch %d, "
+        "allocator_may_return_null %d, coverage %d, coverage_dir %s\n",
+        allocator_options.quarantine_size_mb, allocator_options.max_redzone,
+        poison_heap, malloc_context_size,
+        allocator_options.alloc_dealloc_mismatch,
+        allocator_options.may_return_null, coverage, coverage_dir);
   }
 } asan_deactivated_flags;
 
@@ -70,10 +83,14 @@ void AsanDeactivate() {
   GetAllocatorOptions(&asan_deactivated_flags.allocator_options);
   asan_deactivated_flags.malloc_context_size = GetMallocContextSize();
   asan_deactivated_flags.poison_heap = CanPoisonMemory();
+  asan_deactivated_flags.coverage = common_flags()->coverage;
+  asan_deactivated_flags.coverage_dir = common_flags()->coverage_dir;
 
   // Deactivate the runtime.
   SetCanPoisonMemory(false);
   SetMallocContextSize(1);
+  ReInitializeCoverage(false, nullptr);
+
   AllocatorOptions disabled = asan_deactivated_flags.allocator_options;
   disabled.quarantine_size_mb = 0;
   disabled.min_redzone = 16;  // Redzone must be at least 16 bytes long.
@@ -93,6 +110,8 @@ void AsanActivate() {
 
   SetCanPoisonMemory(asan_deactivated_flags.poison_heap);
   SetMallocContextSize(asan_deactivated_flags.malloc_context_size);
+  ReInitializeCoverage(asan_deactivated_flags.coverage,
+                       asan_deactivated_flags.coverage_dir);
   ReInitializeAllocator(asan_deactivated_flags.allocator_options);
 
   asan_is_deactivated = false;

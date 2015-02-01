@@ -1,4 +1,4 @@
-//===--- ActiveTemplateInst.cpp - Active Template Instantiation Records ------===//
+//===--- ActiveTemplateInst.cpp - Active Template Instantiation Records ---===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements basic operators on the class that represents active template 
-// instantiations during semantic analysis.
+// This file implements basic operators on the class that represents active 
+// template instantiations during semantic analysis.
 //
 //===----------------------------------------------------------------------===//
 

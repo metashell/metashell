@@ -787,11 +787,12 @@ SDValue DAGCombiner::CombineTo(SDNode *N, const SDValue *To, unsigned NumTo,
         N->dump(&DAG);
         dbgs() << "\nWith: ";
         To[0].getNode()->dump(&DAG);
-        dbgs() << " and " << NumTo-1 << " other values\n";
-        for (unsigned i = 0, e = NumTo; i != e; ++i)
-          assert((!To[i].getNode() ||
-                  N->getValueType(i) == To[i].getValueType()) &&
-                 "Cannot combine value to value of different type!"));
+        dbgs() << " and " << NumTo-1 << " other values\n");
+  for (unsigned i = 0, e = NumTo; i != e; ++i)
+    assert((!To[i].getNode() ||
+            N->getValueType(i) == To[i].getValueType()) &&
+           "Cannot combine value to value of different type!");
+
   WorklistRemover DeadNodes(*this);
   DAG.ReplaceAllUsesWith(N, To);
   if (AddTo) {
@@ -9498,14 +9499,11 @@ bool DAGCombiner::MergeConsecutiveStores(StoreSDNode* St) {
     return false;
 
   // Perform an early exit check. Do not bother looking at stored values that
-  // are not constants, loads, or extracted vector elements.
+  // are not constants or loads.
   SDValue StoredVal = St->getValue();
   bool IsLoadSrc = isa<LoadSDNode>(StoredVal);
-  bool IsConstantSrc = isa<ConstantSDNode>(StoredVal) ||
-                       isa<ConstantFPSDNode>(StoredVal);
-  bool IsExtractVecEltSrc = (StoredVal.getOpcode() == ISD::EXTRACT_VECTOR_ELT);
-   
-  if (!IsConstantSrc && !IsLoadSrc && !IsExtractVecEltSrc)
+  if (!isa<ConstantSDNode>(StoredVal) && !isa<ConstantFPSDNode>(StoredVal) &&
+      !IsLoadSrc)
     return false;
 
   // Only look at ends of store sequences.
@@ -9647,7 +9645,7 @@ bool DAGCombiner::MergeConsecutiveStores(StoreSDNode* St) {
   LSBaseSDNode *FirstInChain = StoreNodes[0].MemNode;
 
   // Store the constants into memory as one consecutive store.
-  if (IsConstantSrc) {
+  if (!IsLoadSrc) {
     unsigned LastLegalType = 0;
     unsigned LastLegalVectorType = 0;
     bool NonZero = false;
@@ -9769,74 +9767,6 @@ bool DAGCombiner::MergeConsecutiveStores(StoreSDNode* St) {
       // When we change it's chain to be St's chain they become identical,
       // get CSEed and the net result is that X is now a use of St.
       // Since we know that St is redundant, just iterate.
-      while (!St->use_empty())
-        DAG.ReplaceAllUsesWith(SDValue(St, 0), St->getChain());
-      deleteAndRecombine(St);
-    }
-
-    return true;
-  }
-
-  // When extracting multiple vector elements, try to store them
-  // in one vector store rather than a sequence of scalar stores.
-  if (IsExtractVecEltSrc) {
-    unsigned NumElem = 0;
-    for (unsigned i = 0; i < LastConsecutiveStore + 1; ++i) {
-      // Find a legal type for the vector store.
-      EVT Ty = EVT::getVectorVT(*DAG.getContext(), MemVT, i+1);
-      if (TLI.isTypeLegal(Ty))
-        NumElem = i + 1;
-    }
-
-    // Make sure we have a legal type and something to merge.
-    if (NumElem < 2)
-      return false;
-
-    unsigned EarliestNodeUsed = 0;
-    for (unsigned i=0; i < NumElem; ++i) {
-      // Find a chain for the new wide-store operand. Notice that some
-      // of the store nodes that we found may not be selected for inclusion
-      // in the wide store. The chain we use needs to be the chain of the
-      // earliest store node which is *used* and replaced by the wide store.
-      if (StoreNodes[i].SequenceNum > StoreNodes[EarliestNodeUsed].SequenceNum)
-        EarliestNodeUsed = i;
-    }
-   
-    // The earliest Node in the DAG.
-    LSBaseSDNode *EarliestOp = StoreNodes[EarliestNodeUsed].MemNode;
-    SDLoc DL(StoreNodes[0].MemNode);
-   
-    SDValue StoredVal;
-
-    // Find a legal type for the vector store.
-    EVT Ty = EVT::getVectorVT(*DAG.getContext(), MemVT, NumElem);
-
-    SmallVector<SDValue, 8> Ops;
-    for (unsigned i = 0; i < NumElem ; ++i) {
-      StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
-      SDValue Val = St->getValue();
-      // All of the operands of a BUILD_VECTOR must have the same type.
-      if (Val.getValueType() != MemVT)
-        return false;
-      Ops.push_back(Val);
-    }
-   
-    // Build the extracted vector elements back into a vector.
-    StoredVal = DAG.getNode(ISD::BUILD_VECTOR, DL, Ty, Ops);
-
-    SDValue NewStore = DAG.getStore(EarliestOp->getChain(), DL, StoredVal,
-                                    FirstInChain->getBasePtr(),
-                                    FirstInChain->getPointerInfo(),
-                                    false, false,
-                                    FirstInChain->getAlignment());
-
-    // Replace the first store with the new store
-    CombineTo(EarliestOp, NewStore);
-    // Erase all other stores.
-    for (unsigned i = 0; i < NumElem ; ++i) {
-      if (StoreNodes[i].MemNode == EarliestOp)
-        continue;
-      StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
       while (!St->use_empty())
         DAG.ReplaceAllUsesWith(SDValue(St, 0), St->getChain());
       deleteAndRecombine(St);
@@ -10832,6 +10762,7 @@ SDValue DAGCombiner::visitBUILD_VECTOR(SDNode *N) {
 
   // If everything is good, we can make a shuffle operation.
   if (VecIn1.getNode()) {
+    unsigned InNumElements = VecIn1.getValueType().getVectorNumElements();
     SmallVector<int, 8> Mask;
     for (unsigned i = 0; i != NumInScalars; ++i) {
       unsigned Opcode = N->getOperand(i).getOpcode();
@@ -10858,8 +10789,8 @@ SDValue DAGCombiner::visitBUILD_VECTOR(SDNode *N) {
         continue;
       }
 
-      // Otherwise, use InIdx + VecSize
-      Mask.push_back(NumInScalars+ExtIndex);
+      // Otherwise, use InIdx + InputVecSize
+      Mask.push_back(InNumElements + ExtIndex);
     }
 
     // Avoid introducing illegal shuffles with zero.
@@ -10869,14 +10800,12 @@ SDValue DAGCombiner::visitBUILD_VECTOR(SDNode *N) {
     // We can't generate a shuffle node with mismatched input and output types.
     // Attempt to transform a single input vector to the correct type.
     if ((VT != VecIn1.getValueType())) {
-      // We don't support shuffeling between TWO values of different types.
-      if (VecIn2.getNode())
-        return SDValue();
-
       // If the input vector type has a different base type to the output
       // vector type, bail out.
-      if (VecIn1.getValueType().getVectorElementType() !=
-          VT.getVectorElementType())
+      EVT VTElemType = VT.getVectorElementType();
+      if ((VecIn1.getValueType().getVectorElementType() != VTElemType) ||
+          (VecIn2.getNode() &&
+           (VecIn2.getValueType().getVectorElementType() != VTElemType)))
         return SDValue();
 
       // If the input vector is too small, widen it.
@@ -10884,11 +10813,22 @@ SDValue DAGCombiner::visitBUILD_VECTOR(SDNode *N) {
       // output registers. For example XMM->YMM widening on X86 with AVX.
       EVT VecInT = VecIn1.getValueType();
       if (VecInT.getSizeInBits() * 2 == VT.getSizeInBits()) {
-        // Widen the input vector by adding undef values.
-        VecIn1 = DAG.getNode(ISD::CONCAT_VECTORS, dl, VT,
-                             VecIn1, DAG.getUNDEF(VecIn1.getValueType()));
+        // If we only have one small input, widen it by adding undef values.
+        if (!VecIn2.getNode())
+          VecIn1 = DAG.getNode(ISD::CONCAT_VECTORS, dl, VT, VecIn1,
+                               DAG.getUNDEF(VecIn1.getValueType()));
+        else if (VecIn1.getValueType() == VecIn2.getValueType()) {
+          // If we have two small inputs of the same type, try to concat them.
+          VecIn1 = DAG.getNode(ISD::CONCAT_VECTORS, dl, VT, VecIn1, VecIn2);
+          VecIn2 = SDValue(nullptr, 0);
+        } else
+          return SDValue();
       } else if (VecInT.getSizeInBits() == VT.getSizeInBits() * 2) {
         // If the input vector is too large, try to split it.
+        // We don't support having two input vectors that are too large.
+        if (VecIn2.getNode())
+          return SDValue();
+
         if (!TLI.isExtractSubvectorCheap(VT, VT.getVectorNumElements()))
           return SDValue();
         
@@ -10899,7 +10839,7 @@ SDValue DAGCombiner::visitBUILD_VECTOR(SDNode *N) {
         VecIn1 = DAG.getNode(ISD::EXTRACT_SUBVECTOR, dl, VT, VecIn1,
           DAG.getConstant(0, TLI.getVectorIdxTy()));
         UsesZeroVector = false;
-      } else 
+      } else
         return SDValue();
     }
 

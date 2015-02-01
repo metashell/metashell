@@ -273,7 +273,7 @@ static bool IsIndirectCall(MachineInstr* MI) {
 void HexagonPacketizerList::reserveResourcesForConstExt(MachineInstr* MI) {
   const HexagonInstrInfo *QII = (const HexagonInstrInfo *) TII;
   MachineFunction *MF = MI->getParent()->getParent();
-  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::IMMEXT_i),
+  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::A4_ext),
                                                   MI->getDebugLoc());
 
   if (ResourceTracker->canReserveResources(PseudoMI)) {
@@ -291,7 +291,7 @@ bool HexagonPacketizerList::canReserveResourcesForConstExt(MachineInstr *MI) {
   assert((QII->isExtended(MI) || QII->isConstExtended(MI)) &&
          "Should only be called for constant extended instructions");
   MachineFunction *MF = MI->getParent()->getParent();
-  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::IMMEXT_i),
+  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::A4_ext),
                                                   MI->getDebugLoc());
   bool CanReserve = ResourceTracker->canReserveResources(PseudoMI);
   MF->DeleteMachineInstr(PseudoMI);
@@ -303,7 +303,7 @@ bool HexagonPacketizerList::canReserveResourcesForConstExt(MachineInstr *MI) {
 bool HexagonPacketizerList::tryAllocateResourcesForConstExt(MachineInstr* MI) {
   const HexagonInstrInfo *QII = (const HexagonInstrInfo *) TII;
   MachineFunction *MF = MI->getParent()->getParent();
-  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::IMMEXT_i),
+  MachineInstr *PseudoMI = MF->CreateMachineInstr(QII->get(Hexagon::A4_ext),
                                                   MI->getDebugLoc());
 
   if (ResourceTracker->canReserveResources(PseudoMI)) {
@@ -563,8 +563,8 @@ bool HexagonPacketizerList::CanPromoteToNewValueStore(
     if (PacketSU->getInstr()->getDesc().mayStore() ||
         // if we have mayStore = 1 set on ALLOCFRAME and DEALLOCFRAME,
         // then we don't need this
-        PacketSU->getInstr()->getOpcode() == Hexagon::ALLOCFRAME ||
-        PacketSU->getInstr()->getOpcode() == Hexagon::DEALLOCFRAME)
+        PacketSU->getInstr()->getOpcode() == Hexagon::S2_allocframe ||
+        PacketSU->getInstr()->getOpcode() == Hexagon::L2_deallocframe)
       return false;
   }
 
@@ -1115,7 +1115,7 @@ bool HexagonPacketizerList::isLegalToPacketizeTogether(SUnit *SUI, SUnit *SUJ) {
         //    first operand is also a reg), first reg is not defined in
         //    the same packet.
         if (PacketSU->getInstr()->getDesc().mayStore()               ||
-            PacketSU->getInstr()->getOpcode() == Hexagon::ALLOCFRAME ||
+            PacketSU->getInstr()->getOpcode() == Hexagon::S2_allocframe ||
             // Check #2.
             (!secondRegMatch && NextMI->getOperand(1).isReg() &&
              PacketSU->getInstr()->modifiesRegister(
@@ -1279,10 +1279,10 @@ bool HexagonPacketizerList::isLegalToPacketizeTogether(SUnit *SUI, SUnit *SUJ) {
       // caller's SP. Hence, offset needs to be updated accordingly.
       else if (DepType == SDep::Data
                && QRI->Subtarget.hasV4TOps()
-               && J->getOpcode() == Hexagon::ALLOCFRAME
-               && (I->getOpcode() == Hexagon::STrid
-                   || I->getOpcode() == Hexagon::STriw
-                   || I->getOpcode() == Hexagon::STrib)
+               && J->getOpcode() == Hexagon::S2_allocframe
+               && (I->getOpcode() == Hexagon::S2_storerd_io
+                   || I->getOpcode() == Hexagon::S2_storeri_io
+                   || I->getOpcode() == Hexagon::S2_storerb_io)
                && I->getOperand(0).getReg() == QRI->getStackRegister()
                && QII->isValidOffset(I->getOpcode(),
                                      I->getOperand(1).getImm() -

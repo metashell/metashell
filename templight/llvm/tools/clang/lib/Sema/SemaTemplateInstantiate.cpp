@@ -23,7 +23,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/Template.h"
 #include "clang/Sema/TemplateDeduction.h"
-#include "clang/Sema/TemplateInstObserver.h"
+#include "clang/Sema/TemplateInstCallbacks.h"
 
 using namespace clang;
 using namespace sema;
@@ -203,8 +203,8 @@ void Sema::InstantiatingTemplate::Initialize(
     Inst.InstantiationRange = InstantiationRange;
     SemaRef.InNonInstantiationSFINAEContext = false;
     SemaRef.ActiveTemplateInstantiations.push_back(Inst);
-    if ( SemaRef.TemplateInstObserverChain )
-      SemaRef.TemplateInstObserverChain->atTemplateBegin(SemaRef, Inst);
+    if (SemaRef.TemplateInstCallbacksChain)
+      SemaRef.TemplateInstCallbacksChain->atTemplateBegin(SemaRef, Inst);
     if (!Inst.isInstantiationRecord())
       ++SemaRef.NonInstantiationEntries;
   }
@@ -349,8 +349,8 @@ void Sema::InstantiatingTemplate::Clear() {
       SemaRef.ActiveTemplateInstantiationLookupModules.pop_back();
     }
 
-    if ( SemaRef.TemplateInstObserverChain )
-      SemaRef.TemplateInstObserverChain->atTemplateEnd(
+    if (SemaRef.TemplateInstCallbacksChain)
+      SemaRef.TemplateInstCallbacksChain->atTemplateEnd(
         SemaRef, SemaRef.ActiveTemplateInstantiations.back());
 
     SemaRef.ActiveTemplateInstantiations.pop_back();

@@ -63,6 +63,8 @@ void CommonFlags::SetDefaults() {
   legacy_pthread_cond = false;
   intercept_tls_get_addr = false;
   coverage = false;
+  coverage_pcs = true;  // On by default, but works only if coverage==true.
+  coverage_bitset = false;
   coverage_direct = SANITIZER_ANDROID;
   coverage_dir = ".";
   full_address_space = false;
@@ -150,6 +152,12 @@ void CommonFlags::ParseFromString(const char *str) {
   ParseFlag(str, &coverage, "coverage",
       "If set, coverage information will be dumped at program shutdown (if the "
       "coverage instrumentation was enabled at compile time).");
+  ParseFlag(str, &coverage_pcs, "coverage_pcs",
+      "If set (and if 'coverage' is set too), the coverage information "
+      "will be dumped as a set of PC offsets for every module.");
+  ParseFlag(str, &coverage_bitset, "coverage_bitset",
+      "If set (and if 'coverage' is set too), the coverage information "
+      "will also be dumped as a bitset to a separate file.");
   ParseFlag(str, &coverage_direct, "coverage_direct",
             "If set, coverage information will be dumped directly to a memory "
             "mapped file. This way data is not lost even if the process is "
@@ -177,6 +185,10 @@ void CommonFlags::ParseFromString(const char *str) {
   // Do a sanity check for certain flags.
   if (malloc_context_size < 1)
     malloc_context_size = 1;
+}
+
+void CommonFlags::CopyFrom(const CommonFlags &other) {
+  internal_memcpy(this, &other, sizeof(*this));
 }
 
 static bool GetFlagValue(const char *env, const char *name,
@@ -212,7 +224,7 @@ static bool GetFlagValue(const char *env, const char *name,
       end = internal_strchr(pos, '\'');
     } else {
       // Read until the next space or colon.
-      end = pos + internal_strcspn(pos, " :");
+      end = pos + internal_strcspn(pos, " :\r\n\t");
     }
     if (end == 0)
       end = pos + internal_strlen(pos);

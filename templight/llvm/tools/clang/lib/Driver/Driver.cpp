@@ -65,10 +65,13 @@ Driver::Driver(StringRef ClangExecutable,
   // Compute the path to the resource directory.
   StringRef ClangResourceDir(CLANG_RESOURCE_DIR);
   SmallString<128> P(Dir);
-  if (ClangResourceDir != "")
+  if (ClangResourceDir != "") {
     llvm::sys::path::append(P, ClangResourceDir);
-  else
-    llvm::sys::path::append(P, "..", "lib", "clang", CLANG_VERSION_STRING);
+  } else {
+    StringRef ClangLibdirSuffix(CLANG_LIBDIR_SUFFIX);
+    llvm::sys::path::append(P, "..", Twine("lib") + ClangLibdirSuffix, "clang",
+                            CLANG_VERSION_STRING);
+  }
   ResourceDir = P.str();
 }
 
@@ -125,9 +128,7 @@ InputArgList *Driver::ParseArgStrings(ArrayRef<const char *> ArgStrings) {
       << Args->getArgString(MissingArgIndex) << MissingArgCount;
 
   // Check for unsupported options.
-  for (ArgList::const_iterator it = Args->begin(), ie = Args->end();
-       it != ie; ++it) {
-    Arg *A = *it;
+  for (const Arg *A : *Args) {
     if (A->getOption().hasFlag(options::Unsupported)) {
       Diag(clang::diag::err_drv_unsupported_opt) << A->getAsString(*Args);
       continue;
@@ -165,7 +166,7 @@ const {
       (PhaseArg = DAL.getLastArg(options::OPT__SLASH_P))) {
     FinalPhase = phases::Preprocess;
 
-    // -{fsyntax-only,-analyze,emit-ast,S} only run up to the compiler.
+    // -{fsyntax-only,-analyze,emit-ast} only run up to the compiler.
   } else if ((PhaseArg = DAL.getLastArg(options::OPT_fsyntax_only)) ||
              (PhaseArg = DAL.getLastArg(options::OPT_module_file_info)) ||
              (PhaseArg = DAL.getLastArg(options::OPT_verify_pch)) ||
@@ -174,9 +175,12 @@ const {
              (PhaseArg = DAL.getLastArg(options::OPT__migrate)) ||
              (PhaseArg = DAL.getLastArg(options::OPT__analyze,
                                         options::OPT__analyze_auto)) ||
-             (PhaseArg = DAL.getLastArg(options::OPT_emit_ast)) ||
-             (PhaseArg = DAL.getLastArg(options::OPT_S))) {
+             (PhaseArg = DAL.getLastArg(options::OPT_emit_ast))) {
     FinalPhase = phases::Compile;
+
+    // -S only runs up to the backend.
+  } else if ((PhaseArg = DAL.getLastArg(options::OPT_S))) {
+    FinalPhase = phases::Backend;
 
     // -c only runs up to the assembler.
   } else if ((PhaseArg = DAL.getLastArg(options::OPT_c))) {
@@ -205,10 +209,7 @@ DerivedArgList *Driver::TranslateInputArgs(const InputArgList &Args) const {
   DerivedArgList *DAL = new DerivedArgList(Args);
 
   bool HasNostdlib = Args.hasArg(options::OPT_nostdlib);
-  for (ArgList::const_iterator it = Args.begin(),
-         ie = Args.end(); it != ie; ++it) {
-    const Arg *A = *it;
-
+  for (Arg *A : Args) {
     // Unfortunately, we have to parse some forwarding options (-Xassembler,
     // -Xlinker, -Xpreprocessor) because we either integrate their functionality
     // (assembler and preprocessor), or bypass a previous driver ('collect2').
@@ -274,7 +275,7 @@ DerivedArgList *Driver::TranslateInputArgs(const InputArgList &Args) const {
       continue;
     }
 
-    DAL->append(*it);
+    DAL->append(A);
   }
 
   // Add a default value of -mlinker-version=, if one was given and the user
@@ -468,9 +469,7 @@ void Driver::generateCompilationDiagnostics(Compilation &C,
   // Don't attempt to generate preprocessed files if multiple -arch options are
   // used, unless they're all duplicates.
   llvm::StringSet<> ArchNames;
-  for (ArgList::const_iterator it = C.getArgs().begin(), ie = C.getArgs().end();
-       it != ie; ++it) {
-    Arg *A = *it;
+  for (const Arg *A : C.getArgs()) {
     if (A->getOption().matches(options::OPT_arch)) {
       StringRef ArchName = A->getValue();
       ArchNames.insert(ArchName);
@@ -849,7 +848,9 @@ void Driver::PrintActions(const Compilation &C) const {
 /// \brief Check whether the given input tree contains any compilation or
 /// assembly actions.
 static bool ContainsCompileOrAssembleAction(const Action *A) {
-  if (isa<CompileJobAction>(A) || isa<AssembleJobAction>(A))
+  if (isa<CompileJobAction>(A) ||
+      isa<BackendJobAction>(A) ||
+      isa<AssembleJobAction>(A))
     return true;
 
   for (Action::const_iterator it = A->begin(), ie = A->end(); it != ie; ++it)
@@ -868,10 +869,7 @@ void Driver::BuildUniversalActions(const ToolChain &TC,
   // be handled once (in the order seen).
   llvm::StringSet<> ArchNames;
   SmallVector<const char *, 4> Archs;
-  for (ArgList::const_iterator it = Args.begin(), ie = Args.end();
-       it != ie; ++it) {
-    Arg *A = *it;
-
+  for (Arg *A : Args) {
     if (A->getOption().matches(options::OPT_arch)) {
       // Validate the option here; we don't save the type here because its
       // particular spelling may participate in other driver choices.
@@ -1019,10 +1017,7 @@ void Driver::BuildInputs(const ToolChain &TC, DerivedArgList &Args,
     assert(!Args.hasArg(options::OPT_x) && "-x and /TC or /TP is not allowed");
   }
 
-  for (ArgList::const_iterator it = Args.begin(), ie = Args.end();
-       it != ie; ++it) {
-    Arg *A = *it;
-
+  for (Arg *A : Args) {
     if (A->getOption().getKind() == Option::InputClass) {
       const char *Value = A->getValue();
       types::ID Ty = types::TY_INVALID;
@@ -1346,17 +1341,21 @@ Driver::ConstructPhaseAction(const ArgList &Args, phases::ID Phase,
     if (Args.hasArg(options::OPT_verify_pch))
       return llvm::make_unique<VerifyPCHJobAction>(std::move(Input),
                                                    types::TY_Nothing);
+    return llvm::make_unique<CompileJobAction>(std::move(Input),
+                                               types::TY_LLVM_BC);
+  }
+  case phases::Backend: {
     if (IsUsingLTO(Args)) {
       types::ID Output =
         Args.hasArg(options::OPT_S) ? types::TY_LTO_IR : types::TY_LTO_BC;
-      return llvm::make_unique<CompileJobAction>(std::move(Input), Output);
+      return llvm::make_unique<BackendJobAction>(std::move(Input), Output);
     }
     if (Args.hasArg(options::OPT_emit_llvm)) {
       types::ID Output =
         Args.hasArg(options::OPT_S) ? types::TY_LLVM_IR : types::TY_LLVM_BC;
-      return llvm::make_unique<CompileJobAction>(std::move(Input), Output);
+      return llvm::make_unique<BackendJobAction>(std::move(Input), Output);
     }
-    return llvm::make_unique<CompileJobAction>(std::move(Input),
+    return llvm::make_unique<BackendJobAction>(std::move(Input),
                                                types::TY_PP_Asm);
   }
   case phases::Assemble:
@@ -1383,9 +1382,8 @@ void Driver::BuildJobs(Compilation &C) const {
   // files.
   if (FinalOutput) {
     unsigned NumOutputs = 0;
-    for (ActionList::const_iterator it = C.getActions().begin(),
-           ie = C.getActions().end(); it != ie; ++it)
-      if ((*it)->getType() != types::TY_Nothing)
+    for (const Action *A : C.getActions())
+      if (A->getType() != types::TY_Nothing)
         ++NumOutputs;
 
     if (NumOutputs > 1) {
@@ -1396,19 +1394,12 @@ void Driver::BuildJobs(Compilation &C) const {
 
   // Collect the list of architectures.
   llvm::StringSet<> ArchNames;
-  if (C.getDefaultToolChain().getTriple().isOSBinFormatMachO()) {
-    for (ArgList::const_iterator it = C.getArgs().begin(), ie = C.getArgs().end();
-         it != ie; ++it) {
-      Arg *A = *it;
+  if (C.getDefaultToolChain().getTriple().isOSBinFormatMachO())
+    for (const Arg *A : C.getArgs())
       if (A->getOption().matches(options::OPT_arch))
         ArchNames.insert(A->getValue());
-    }
-  }
 
-  for (ActionList::const_iterator it = C.getActions().begin(),
-         ie = C.getActions().end(); it != ie; ++it) {
-    Action *A = *it;
-
+  for (Action *A : C.getActions()) {
     // If we are linking an image for multiple archs then the linker wants
     // -arch_multiple and -final_output <final image name>. Unfortunately, this
     // doesn't fit in cleanly because we have to pass this information down.
@@ -1444,10 +1435,7 @@ void Driver::BuildJobs(Compilation &C) const {
   // Claim --driver-mode, it was handled earlier.
   (void) C.getArgs().hasArg(options::OPT_driver_mode);
 
-  for (ArgList::const_iterator it = C.getArgs().begin(), ie = C.getArgs().end();
-       it != ie; ++it) {
-    Arg *A = *it;
-
+  for (Arg *A : C.getArgs()) {
     // FIXME: It would be nice to be able to send the argument to the
     // DiagnosticsEngine, so that extra values, position, and so on could be
     // printed.
@@ -1494,12 +1482,34 @@ static const Tool *SelectToolForJob(Compilation &C, const ToolChain *TC,
       !C.getArgs().hasArg(options::OPT__SLASH_FA) &&
       !C.getArgs().hasArg(options::OPT__SLASH_Fa) &&
       isa<AssembleJobAction>(JA) &&
-      Inputs->size() == 1 && isa<CompileJobAction>(*Inputs->begin())) {
-    const Tool *Compiler =
-      TC->SelectTool(cast<JobAction>(**Inputs->begin()));
+      Inputs->size() == 1 && isa<BackendJobAction>(*Inputs->begin())) {
+    // A BackendJob is always preceded by a CompileJob, and without
+    // -save-temps they will always get combined together, so instead of
+    // checking the backend tool, check if the tool for the CompileJob
+    // has an integrated assembler.
+    const ActionList *BackendInputs = &(*Inputs)[0]->getInputs();
+    JobAction *CompileJA = cast<CompileJobAction>(*BackendInputs->begin());
+    const Tool *Compiler = TC->SelectTool(*CompileJA);
     if (!Compiler)
       return nullptr;
     if (Compiler->hasIntegratedAssembler()) {
+      Inputs = &(*BackendInputs)[0]->getInputs();
+      ToolForJob = Compiler;
+    }
+  }
+
+  // A backend job should always be combined with the preceding compile job
+  // unless OPT_save_temps is enabled and the compiler is capable of emitting
+  // LLVM IR as an intermediate output.
+  if (isa<BackendJobAction>(JA)) {
+    // Check if the compiler supports emitting LLVM IR.
+    assert(Inputs->size() == 1);
+    JobAction *CompileJA = cast<CompileJobAction>(*Inputs->begin());
+    const Tool *Compiler = TC->SelectTool(*CompileJA);
+    if (!Compiler)
+      return nullptr;
+    if (!Compiler->canEmitIR() ||
+        !C.getArgs().hasArg(options::OPT_save_temps)) {
       Inputs = &(*Inputs)[0]->getInputs();
       ToolForJob = Compiler;
     }
@@ -1569,8 +1579,7 @@ void Driver::BuildJobsForAction(Compilation &C,
 
   // Only use pipes when there is exactly one input.
   InputInfoList InputInfos;
-  for (ActionList::const_iterator it = Inputs->begin(), ie = Inputs->end();
-       it != ie; ++it) {
+  for (const Action *Input : *Inputs) {
     // Treat dsymutil and verify sub-jobs as being at the top-level too, they
     // shouldn't get temporary output names.
     // FIXME: Clean this up.
@@ -1579,7 +1588,7 @@ void Driver::BuildJobsForAction(Compilation &C,
       SubJobAtTopLevel = true;
 
     InputInfo II;
-    BuildJobsForAction(C, *it, TC, BoundArch, SubJobAtTopLevel, MultipleArchs,
+    BuildJobsForAction(C, Input, TC, BoundArch, SubJobAtTopLevel, MultipleArchs,
                        LinkingOutput, II);
     InputInfos.push_back(II);
   }
@@ -1751,6 +1760,12 @@ const char *Driver::GetNamedOutputPath(Compilation &C,
       Suffixed += "-";
       Suffixed.append(BoundArch);
     }
+    // When using both -save-temps and -emit-llvm, use a ".tmp.bc" suffix for
+    // the unoptimized bitcode so that it does not get overwritten by the ".bc"
+    // optimized bitcode output.
+    if (!AtTopLevel && C.getArgs().hasArg(options::OPT_emit_llvm) &&
+        JA.getType() == types::TY_LLVM_BC)
+      Suffixed += ".tmp";
     Suffixed += '.';
     Suffixed += Suffix;
     NamedOutput = C.getArgs().MakeArgString(Suffixed.c_str());
@@ -2083,7 +2098,7 @@ bool Driver::ShouldUseClangCompiler(const JobAction &JA) const {
 
   // Otherwise make sure this is an action clang understands.
   if (!isa<PreprocessJobAction>(JA) && !isa<PrecompileJobAction>(JA) &&
-      !isa<CompileJobAction>(JA))
+      !isa<CompileJobAction>(JA) && !isa<BackendJobAction>(JA))
     return false;
 
   return true;

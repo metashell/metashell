@@ -1244,7 +1244,8 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
   SourceLocation AttrFixitLoc = Tok.getLocation();
 
   if (TagType == DeclSpec::TST_struct &&
-      !Tok.is(tok::identifier) &&
+      Tok.isNot(tok::identifier) &&
+      !Tok.isAnnotation() &&
       Tok.getIdentifierInfo() &&
       (Tok.is(tok::kw___is_abstract) ||
        Tok.is(tok::kw___is_arithmetic) ||
@@ -2705,6 +2706,19 @@ void Parser::ParseCXXMemberSpecification(SourceLocation RecordLoc,
     // and the only possible place for them to appertain
     // to the class would be between class-key and class-name.
     CheckMisplacedCXX11Attribute(Attrs, AttrFixitLoc);
+
+    // ParseClassSpecifier() does only a superficial check for attributes before
+    // deciding to call this method.  For example, for
+    // `class C final alignas ([l) {` it will decide that this looks like a
+    // misplaced attribute since it sees `alignas '(' ')'`.  But the actual
+    // attribute parsing code will try to parse the '[' as a constexpr lambda
+    // and consume enough tokens that the alignas parsing code will eat the
+    // opening '{'.  So bail out if the next token isn't one we expect.
+    if (!Tok.is(tok::colon) && !Tok.is(tok::l_brace)) {
+      if (TagDecl)
+        Actions.ActOnTagDefinitionError(getCurScope(), TagDecl);
+      return;
+    }
   }
 
   if (Tok.is(tok::colon)) {

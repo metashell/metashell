@@ -22,7 +22,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/PrettyDeclStackTrace.h"
 #include "clang/Sema/Template.h"
-#include "clang/Sema/TemplateInstObserver.h"
+#include "clang/Sema/TemplateInstCallbacks.h"
 
 using namespace clang;
 
@@ -2361,8 +2361,10 @@ Decl * TemplateDeclInstantiator
 Decl *TemplateDeclInstantiator::VisitClassScopeFunctionSpecializationDecl(
                                      ClassScopeFunctionSpecializationDecl *Decl) {
   CXXMethodDecl *OldFD = Decl->getSpecialization();
-  CXXMethodDecl *NewFD = cast<CXXMethodDecl>(VisitCXXMethodDecl(OldFD,
-                                                                nullptr, true));
+  CXXMethodDecl *NewFD =
+    cast_or_null<CXXMethodDecl>(VisitCXXMethodDecl(OldFD, nullptr, true));
+  if (!NewFD)
+    return nullptr;
 
   LookupResult Previous(SemaRef, NewFD->getNameInfo(), Sema::LookupOrdinaryName,
                         Sema::ForRedeclaration);
@@ -3187,12 +3189,12 @@ TemplateDeclInstantiator::InitFunctionInstantiation(FunctionDecl *New,
       assert(FunTmpl->getTemplatedDecl() == Tmpl &&
              "Deduction from the wrong function template?");
       (void) FunTmpl;
-      if ( SemaRef.TemplateInstObserverChain )
-        SemaRef.TemplateInstObserverChain->atTemplateEnd(SemaRef, ActiveInst);
+      if (SemaRef.TemplateInstCallbacksChain)
+        SemaRef.TemplateInstCallbacksChain->atTemplateEnd(SemaRef, ActiveInst);
       ActiveInst.Kind = ActiveInstType::TemplateInstantiation;
       ActiveInst.Entity = New;
-      if ( SemaRef.TemplateInstObserverChain )
-        SemaRef.TemplateInstObserverChain->atTemplateBegin(SemaRef, ActiveInst);
+      if (SemaRef.TemplateInstCallbacksChain)
+        SemaRef.TemplateInstCallbacksChain->atTemplateBegin(SemaRef, ActiveInst);
     }
   }
 

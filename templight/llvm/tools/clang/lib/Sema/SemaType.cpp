@@ -30,7 +30,7 @@
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/ScopeInfo.h"
 #include "clang/Sema/Template.h"
-#include "clang/Sema/TemplateInstObserver.h"
+#include "clang/Sema/TemplateInstCallbacks.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -1189,6 +1189,9 @@ static std::string getPrintableNameForEntity(DeclarationName Entity) {
 
 QualType Sema::BuildQualifiedType(QualType T, SourceLocation Loc,
                                   Qualifiers Qs, const DeclSpec *DS) {
+  if (T.isNull())
+    return QualType();
+
   // Enforce C99 6.7.3p2: "Types other than pointer types derived from
   // object or incomplete types shall not be restrict-qualified."
   if (Qs.hasRestrict()) {
@@ -1227,6 +1230,9 @@ QualType Sema::BuildQualifiedType(QualType T, SourceLocation Loc,
 
 QualType Sema::BuildQualifiedType(QualType T, SourceLocation Loc,
                                   unsigned CVRA, const DeclSpec *DS) {
+  if (T.isNull())
+    return QualType();
+
   // Convert from DeclSpec::TQ to Qualifiers::TQ by just dropping TQ_atomic.
   unsigned CVR = CVRA & ~DeclSpec::TQ_atomic;
 
@@ -5186,14 +5192,14 @@ bool Sema::RequireCompleteTypeImpl(SourceLocation Loc, QualType T,
       // Try to recover by implicitly importing this module.
       createImplicitModuleImportForErrorRecovery(Loc, Owner);
     }
-    else if (Def && TemplateInstObserverChain) {
+    else if (Def && TemplateInstCallbacksChain) {
       ActiveTemplateInstantiation TempInst;
       TempInst.Kind = ActiveTemplateInstantiation::Memoization;
       TempInst.Template = Def;
       TempInst.Entity = Def;
       TempInst.PointOfInstantiation = Loc;
-      TemplateInstObserverChain->atTemplateBegin(*this, TempInst);
-      TemplateInstObserverChain->atTemplateEnd(*this, TempInst);
+      TemplateInstCallbacksChain->atTemplateBegin(*this, TempInst);
+      TemplateInstCallbacksChain->atTemplateEnd(*this, TempInst);
     }
 
     // We lock in the inheritance model once somebody has asked us to ensure

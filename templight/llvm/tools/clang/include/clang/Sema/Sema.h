@@ -161,7 +161,7 @@ namespace clang {
   class TemplateArgumentList;
   class TemplateArgumentLoc;
   class TemplateDecl;
-  class TemplateInstantiationObserver;
+  class TemplateInstantiationCallbacks;
   class TemplateParameterList;
   class TemplatePartialOrderingContext;
   class TemplateTemplateParmDecl;
@@ -1253,7 +1253,7 @@ public:
   static QualType getPrintable(QualType T) { return T; }
   static SourceRange getPrintable(SourceRange R) { return R; }
   static SourceRange getPrintable(SourceLocation L) { return L; }
-  static SourceRange getPrintable(Expr *E) { return E->getSourceRange(); }
+  static SourceRange getPrintable(const Expr *E) { return E->getSourceRange(); }
   static SourceRange getPrintable(TypeLoc TL) { return TL.getSourceRange();}
 
   template<typename T1>
@@ -6327,13 +6327,12 @@ public:
   /// to implement it anywhere else.
   ActiveTemplateInstantiation LastTemplateInstantiationErrorContext;
 
-  /// \brief The template instantiation observer to trace or track 
-  /// instantiations (observers can be chained).
+  /// \brief The template instantiation callbacks to trace or track 
+  /// instantiations (objects can be chained).
   ///
-  /// This observer is used to print, trace or track template
-  /// instantiations as they are being constructed. For example, 
-  /// the 'templight' option is implemented with one such observer.
-  std::unique_ptr<TemplateInstantiationObserver> TemplateInstObserverChain;
+  /// This callbacks is used to print, trace or track template
+  /// instantiations as they are being constructed.
+  std::unique_ptr<TemplateInstantiationCallbacks> TemplateInstCallbacksChain;
 
   /// \brief The current index into pack expansion arguments that will be
   /// used for substitution of parameter packs.

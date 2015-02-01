@@ -159,15 +159,15 @@ void HexagonRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
       //
       // r0 = add(r30, #10000)
       // r0 = memw(r0)
-      if ( (MI.getOpcode() == Hexagon::LDriw)  ||
-           (MI.getOpcode() == Hexagon::LDrid)   ||
-           (MI.getOpcode() == Hexagon::LDrih)   ||
-           (MI.getOpcode() == Hexagon::LDriuh)  ||
-           (MI.getOpcode() == Hexagon::LDrib)   ||
-           (MI.getOpcode() == Hexagon::LDriub)  ||
+      if ( (MI.getOpcode() == Hexagon::L2_loadri_io)  ||
+           (MI.getOpcode() == Hexagon::L2_loadrd_io)   ||
+           (MI.getOpcode() == Hexagon::L2_loadrh_io) ||
+           (MI.getOpcode() == Hexagon::L2_loadruh_io) ||
+           (MI.getOpcode() == Hexagon::L2_loadrb_io) ||
+           (MI.getOpcode() == Hexagon::L2_loadrub_io) ||
            (MI.getOpcode() == Hexagon::LDriw_f) ||
            (MI.getOpcode() == Hexagon::LDrid_f)) {
-        unsigned dstReg = (MI.getOpcode() == Hexagon::LDrid) ?
+        unsigned dstReg = (MI.getOpcode() == Hexagon::L2_loadrd_io) ?
           getSubReg(MI.getOperand(0).getReg(), Hexagon::subreg_loreg) :
           MI.getOperand(0).getReg();
 
@@ -186,11 +186,10 @@ void HexagonRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
         MI.getOperand(FIOperandNum).ChangeToRegister(dstReg, false, false,true);
         MI.getOperand(FIOperandNum+1).ChangeToImmediate(0);
-      } else if ((MI.getOpcode() == Hexagon::STriw_indexed) ||
-                 (MI.getOpcode() == Hexagon::STriw) ||
-                 (MI.getOpcode() == Hexagon::STrid) ||
-                 (MI.getOpcode() == Hexagon::STrih) ||
-                 (MI.getOpcode() == Hexagon::STrib) ||
+      } else if ((MI.getOpcode() == Hexagon::S2_storeri_io) ||
+                 (MI.getOpcode() == Hexagon::S2_storerd_io) ||
+                 (MI.getOpcode() == Hexagon::S2_storerh_io) ||
+                 (MI.getOpcode() == Hexagon::S2_storerb_io) ||
                  (MI.getOpcode() == Hexagon::STrid_f) ||
                  (MI.getOpcode() == Hexagon::STriw_f)) {
         // For stores, we need a reserved register. Change

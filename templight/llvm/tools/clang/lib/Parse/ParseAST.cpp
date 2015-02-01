@@ -14,7 +14,6 @@
 #include "clang/Parse/ParseAST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
-#include "clang/AST/DeclCXX.h"
 #include "clang/AST/ExternalASTSource.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Parse/ParseDiagnostic.h"
@@ -23,7 +22,7 @@
 #include "clang/Sema/ExternalSemaSource.h"
 #include "clang/Sema/Sema.h"
 #include "clang/Sema/SemaConsumer.h"
-#include "clang/Sema/TemplateInstObserver.h"
+#include "clang/Sema/TemplateInstCallbacks.h"
 #include "llvm/Support/CrashRecoveryContext.h"
 #include <cstdio>
 #include <memory>
@@ -111,8 +110,8 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
 
   // Initialize the template instantiation observer chain.
   // FIXME: See note on "finalize" below.
-  if (S.TemplateInstObserverChain)
-    S.TemplateInstObserverChain->initialize(S);
+  if (S.TemplateInstCallbacksChain)
+    S.TemplateInstCallbacksChain->initialize(S);
 
   ASTConsumer *Consumer = &S.getASTConsumer();
 
@@ -162,8 +161,8 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
   // Sema does not have a reliable "Finalize" function (it has a 
   // destructor, but it is not guaranteed to be called ("-disable-free")).
   // So, do the initialization above and do the finalization here:
-  if (S.TemplateInstObserverChain)
-    S.TemplateInstObserverChain->finalize(S);
+  if (S.TemplateInstCallbacksChain)
+    S.TemplateInstCallbacksChain->finalize(S);
 
   std::swap(OldCollectStats, S.CollectStats);
   if (PrintStats) {

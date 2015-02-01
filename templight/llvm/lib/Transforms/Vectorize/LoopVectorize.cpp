@@ -1852,6 +1852,7 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
     Ptr = Builder.CreateExtractElement(PtrVal[0], Zero);
   }
 
+  VectorParts Mask = createBlockInMask(Instr->getParent());
   // Handle Stores:
   if (SI) {
     assert(!Legal->isUniform(SI->getPointerOperand()) &&
@@ -1860,7 +1861,7 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
     // We don't want to update the value in the map as it might be used in
     // another expression. So don't use a reference type for "StoredVal".
     VectorParts StoredVal = getVectorValue(SI->getValueOperand());
-
+    
     for (unsigned Part = 0; Part < UF; ++Part) {
       // Calculate the pointer for the specific unroll-part.
       Value *PartPtr = Builder.CreateGEP(Ptr, Builder.getInt32(Part * VF));
@@ -1879,20 +1880,9 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
                                             DataTy->getPointerTo(AddressSpace));
 
       Instruction *NewSI;
-      if (Legal->isMaskRequired(SI)) {
-        Type *I8PtrTy =
-        Builder.getInt8PtrTy(PartPtr->getType()->getPointerAddressSpace());
-
-        Value *I8Ptr = Builder.CreateBitCast(PartPtr, I8PtrTy);
-
-        VectorParts Cond = createBlockInMask(SI->getParent());
-        SmallVector <Value *, 8> Ops;
-        Ops.push_back(I8Ptr);
-        Ops.push_back(StoredVal[Part]);
-        Ops.push_back(Builder.getInt32(Alignment));
-        Ops.push_back(Cond[Part]);
-        NewSI = Builder.CreateMaskedStore(Ops);
-      }
+      if (Legal->isMaskRequired(SI))
+        NewSI = Builder.CreateMaskedStore(StoredVal[Part], VecPtr, Alignment,
+                                          Mask[Part]);
       else 
         NewSI = Builder.CreateAlignedStore(StoredVal[Part], VecPtr, Alignment);
       propagateMetadata(NewSI, SI);
@@ -1915,25 +1905,14 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
     }
 
     Instruction* NewLI;
-    if (Legal->isMaskRequired(LI)) {
-      Type *I8PtrTy =
-        Builder.getInt8PtrTy(PartPtr->getType()->getPointerAddressSpace());
-
-      Value *I8Ptr = Builder.CreateBitCast(PartPtr, I8PtrTy);
-
-      VectorParts SrcMask = createBlockInMask(LI->getParent());
-      SmallVector <Value *, 8> Ops;
-      Ops.push_back(I8Ptr);
-      Ops.push_back(UndefValue::get(DataTy));
-      Ops.push_back(Builder.getInt32(Alignment));
-      Ops.push_back(SrcMask[Part]);
-      NewLI = Builder.CreateMaskedLoad(Ops);
-    }
-    else {
-      Value *VecPtr = Builder.CreateBitCast(PartPtr,
-                                            DataTy->getPointerTo(AddressSpace));
+    Value *VecPtr = Builder.CreateBitCast(PartPtr,
+                                          DataTy->getPointerTo(AddressSpace));
+    if (Legal->isMaskRequired(LI))
+      NewLI = Builder.CreateMaskedLoad(VecPtr, Alignment, Mask[Part],
+                                       UndefValue::get(DataTy),
+                                       "wide.masked.load");
+    else
       NewLI = Builder.CreateAlignedLoad(VecPtr, Alignment, "wide.load");
-    }
     propagateMetadata(NewLI, LI);
     Entry[Part] = Reverse ? reverseVector(NewLI) :  NewLI;
   }

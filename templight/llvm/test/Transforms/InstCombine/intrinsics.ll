@@ -148,7 +148,7 @@ define %ov.result.32 @smultest1_nsw(i32 %a, i32 %b) {
   %x = call %ov.result.32 @llvm.smul.with.overflow.i32(i32 %A, i32 %B)
   ret %ov.result.32 %x
 ; CHECK-LABEL: @smultest1_nsw
-; CHECK: %x = mul nsw i32 %A, %B
+; CHECK: %x = mul nuw nsw i32 %A, %B
 ; CHECK-NEXT: %1 = insertvalue %ov.result.32 { i32 undef, i1 false }, i32 %x, 0
 ; CHECK-NEXT:  ret %ov.result.32 %1
 }
@@ -229,6 +229,19 @@ define i32 @umultest4(i32 %n) nounwind {
   ret i32 %ret
 ; CHECK-LABEL: @umultest4(
 ; CHECK: umul.with.overflow
+}
+
+define %ov.result.32 @umultest5(i32 %x, i32 %y) nounwind {
+  %or_x = or i32 %x, 2147483648
+  %or_y = or i32 %y, 2147483648
+  %mul = call %ov.result.32 @llvm.umul.with.overflow.i32(i32 %or_x, i32 %or_y)
+  ret %ov.result.32 %mul
+; CHECK-LABEL: @umultest5(
+; CHECK-NEXT: %[[or_x:.*]] = or i32 %x, -2147483648
+; CHECK-NEXT: %[[or_y:.*]] = or i32 %y, -2147483648
+; CHECK-NEXT: %[[mul:.*]] = mul i32 %[[or_x]], %[[or_y]]
+; CHECK-NEXT: %[[ret:.*]] = insertvalue %ov.result.32 { i32 undef, i1 true }, i32 %[[mul]], 0
+; CHECK-NEXT: ret %ov.result.32 %[[ret]]
 }
 
 define void @powi(double %V, double *%P) {

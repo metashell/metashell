@@ -1,4 +1,4 @@
-//===--- ActiveTemplateInst.h - Active Template Instantiation Records --------------*- C++ -*-===//
+//===- ActiveTemplateInst.h - Active Template Instantiation Records - C++ -===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -26,7 +26,6 @@ namespace clang {
 namespace sema {
   class TemplateDeductionInfo;
 }
-
 
 /// \brief A template instantiation that is currently in progress.
 class ActiveTemplateInstantiation {
@@ -118,7 +117,6 @@ public:
 
 };
 
-
 bool operator==(const ActiveTemplateInstantiation &X,
                 const ActiveTemplateInstantiation &Y);
 
@@ -128,12 +126,6 @@ bool operator!=(const ActiveTemplateInstantiation &X,
   return !(X == Y);
 }
 
-
-
 }
 
-
 #endif
-
-
-

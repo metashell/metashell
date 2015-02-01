@@ -159,14 +159,10 @@ void CodeGenFunction::GenerateVarArgsThunk(
   // with "this".
   llvm::Value *ThisPtr = &*AI;
   llvm::BasicBlock *EntryBB = Fn->begin();
-  llvm::Instruction *ThisStore = nullptr;
-  for (llvm::BasicBlock::iterator I = EntryBB->begin(), E = EntryBB->end();
-       I != E; I++) {
-    if (isa<llvm::StoreInst>(I) && I->getOperand(0) == ThisPtr) {
-      ThisStore = cast<llvm::StoreInst>(I);
-      break;
-    }
-  }
+  llvm::Instruction *ThisStore =
+      std::find_if(EntryBB->begin(), EntryBB->end(), [&](llvm::Instruction &I) {
+    return isa<llvm::StoreInst>(I) && I.getOperand(0) == ThisPtr;
+  });
   assert(ThisStore && "Store of this should be in entry block?");
   // Adjust "this", if necessary.
   Builder.SetInsertPoint(ThisStore);
@@ -218,7 +214,7 @@ void CodeGenFunction::StartThunk(llvm::Function *Fn, GlobalDecl GD,
 
   // Start defining the function.
   StartFunction(GlobalDecl(), ResultType, Fn, FnInfo, FunctionArgs,
-                MD->getLocation(), SourceLocation());
+                MD->getLocation(), MD->getLocation());
 
   // Since we didn't pass a GlobalDecl to StartFunction, do this ourselves.
   CGM.getCXXABI().EmitInstanceFunctionProlog(*this);
