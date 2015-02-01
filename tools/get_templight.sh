@@ -22,7 +22,7 @@ then
   cd templight
     # Get the patch revision
     PATCH=$(ls patch | sort | tail -1)
-    REV=$(echo "$PATCH" | egrep -o '[0-9]*')
+    REV=$(echo "$PATCH" | sed -E 's/templight_patch_r([0-9]*).diff/\1/g')
 
     echo "Deleting current templight and libc++"
     rm -rf build llvm libcxx
