@@ -33,7 +33,7 @@ namespace metashell
 
     just::process::output run(
         const std::vector<std::string>& args_,
-        const std::string& stdin = "") const;
+        const std::string& stdin_ = "") const;
   private:
     std::string _path;
     logger* _logger;
