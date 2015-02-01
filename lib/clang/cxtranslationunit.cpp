@@ -32,11 +32,11 @@
 #include <sstream>
 #include <iostream>
 
-using namespace metashell::clang;
+namespace metashell { namespace clang {
 
 namespace
 {
-  CXChildVisitResult visitor(
+  CXChildVisitResult visitor_func(
     CXCursor cursor_,
     CXCursor /* parent_ */,
     CXClientData client_data_
@@ -175,7 +175,7 @@ void cxtranslationunit::visit_nodes(const visitor& f_)
 {
   clang_visitChildren(
     clang_getTranslationUnitCursor(_tu),
-    ::visitor,
+    visitor_func,
     const_cast<visitor*>(&f_)
   );
 }
@@ -213,4 +213,4 @@ void cxtranslationunit::code_complete(std::set<std::string>& out_) const
   ).fill(out_);
 }
 
-
+}}
