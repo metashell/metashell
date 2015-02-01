@@ -106,7 +106,8 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
 
   boost::regex reg(
     ".*':'struct metashell::impl::wrap<?(.*)>' "
-    "'void \\(void\\)(?: noexcept|(?:))'.*");
+    "'void \\(void\\)"
+    "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
 
   boost::smatch match;
   if (!boost::regex_match(line, match, reg)) {
