@@ -72,10 +72,6 @@ then
       sed -i "" '1s/^/add_subdirectory(templight)/g' CMakeLists.txt
     cd ../../../..
   cd ..
-  echo "Running protoc"
-  3rd/protobuf/bin/protoc --cpp_out=lib \
-    -I=templight/llvm/tools/clang/tools/templight \
-    templight/llvm/tools/clang/tools/templight/templight_messages.proto
 else
   echo "Please run this script from the root directory of the Metashell source code"
 fi
