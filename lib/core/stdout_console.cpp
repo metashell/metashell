@@ -16,7 +16,9 @@
 
 #include <metashell/stdout_console.hpp>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#  include <windows.h>
+#else
 #  include <sys/ioctl.h>
 #endif
 
