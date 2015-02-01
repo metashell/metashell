@@ -463,7 +463,11 @@ namespace just
         WaitForSingleObject(h_std_err, INFINITE);
         WaitForSingleObject(pi.hProcess, INFINITE);
 
-        return output(std_out, std_err);
+        DWORD exit_code;
+        if (!GetExitCodeProcess(pi.hProcess, &exit_code)) {
+          throw exception("Can't get exit code");
+        }
+        return output(exit_code, std_out, std_err);
       }
       else
       {
