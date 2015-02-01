@@ -69,7 +69,7 @@ then
     fi
     cd llvm/tools/clang/tools
       git clone 'https://github.com/mikael-s-persson/templight.git'
-      sed -i '1iadd_subdirectory(templight)' CMakeLists.txt
+      sed -i "" '1s/^/add_subdirectory(templight)/g' CMakeLists.txt
     cd ../../../..
   cd ..
   echo "Running protoc"
