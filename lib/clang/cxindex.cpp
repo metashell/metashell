@@ -19,7 +19,7 @@
 
 #include <clang-c/Index.h>
 
-using namespace metashell::clang;
+namespace metashell { namespace clang {
 
 cxindex::cxindex(const iface::environment& env_, logger* logger_) :
   _index(clang_createIndex(0, 0)),
@@ -42,4 +42,4 @@ std::unique_ptr<metashell::iface::cxtranslationunit> cxindex::parse_code(
     );
 }
 
-
+}}
