@@ -791,7 +791,9 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   data::type_or_error evaluation_result = run_metaprogram(str, displayer_);
 
-  std::ifstream protobuf_stream(output_path + ".trace.pbf");
+  std::ifstream protobuf_stream(output_path + ".trace.pbf",
+      std::ios_base::in | std::ios_base::binary);
+
   if (!protobuf_stream) {
     if (evaluation_result.is_error()) {
       displayer_.show_error(evaluation_result.get_error());
