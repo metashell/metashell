@@ -97,7 +97,7 @@ metaprogram metaprogram::create_from_protobuf_file(
     const std::string& root_name,
     const data::type_or_error& evaluation_result)
 {
-  std::ifstream in(file);
+  std::ifstream in(file, std::ios_base::in | std::ios_base::binary);
   if (!in) {
     throw exception("Can't open templight file");
   }
