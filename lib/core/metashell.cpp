@@ -89,6 +89,11 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
   std::size_t end_index = std::string::npos;
   std::size_t start_index = ast.find_last_of('\n');
 
+  boost::regex reg(
+    ".*':'struct metashell::impl::wrap<?(.*)>' "
+    "'void \\(void\\)"
+    "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
+
   std::string line;
   while (true) {
     end_index = start_index;
@@ -99,22 +104,12 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
     }
 
     line = ast.substr(start_index + 1, end_index-start_index-1);
-    if (!line.empty() && line != "`-<undeserialized declarations>") {
-      break;
+
+    boost::smatch match;
+    if (boost::regex_match(line, match, reg)) {
+      return repair_type_string(boost::trim_copy(std::string(match[1])));
     }
   }
-
-  boost::regex reg(
-    ".*':'struct metashell::impl::wrap<?(.*)>' "
-    "'void \\(void\\)"
-    "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
-
-  boost::smatch match;
-  if (!boost::regex_match(line, match, reg)) {
-    throw exception("Unexpected ast format: \"" + line + "\"");
-  }
-
-  return repair_type_string(boost::trim_copy(std::string(match[1])));
 }
 
 result metashell::validate_code(

@@ -149,6 +149,22 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
 }
 
+JUST_TEST_CASE(test_type_from_ast_string_with_extra_trailing_lines) {
+  std::string ast = R"(
+TranslationUnitDecl 0x7fee54031cc0 <<invalid sloc>> <invalid sloc>
+|-VarDecl 0x7fee5486c0e0 <<stdin>:1:1, col:40> col:40 __metashell_v '::metashell::impl::wrap<str_hello_t>':'struct metashell::impl::wrap<struct boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807> >' callinit
+| `-CXXConstructExpr 0x7fee548a9500 <col:40> '::metashell::impl::wrap<str_hello_t>':'struct metashell::impl::wrap<struct boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807> >' 'void (void) noexcept'
+|-LinkageSpecDecl 0x7fee549fdbb0 </Users/r0mai/workspace/metashell/bin/app/../include/metashell/libcxx/string:1287:12> col:12 implicit C
+| `-FunctionDecl 0x7fee549fdc00 <col:12> col:12 implicit used __builtin_memcpy 'void *(void *, const void *, unsigned long)' extern
+|   |-ParmVarDecl 0x7fee549fdca0 <<invalid sloc>> <invalid sloc> 'void *'
+|   |-ParmVarDecl 0x7fee549fdd00 <<invalid sloc>> <invalid sloc> 'const void *'
+|   |-ParmVarDecl 0x7fee549fdd60 <<invalid sloc>> <invalid sloc> 'unsigned long'
+|   `-NoThrowAttr 0x7fee549fddd0 <col:12> Implicit
+`-<undeserialized declarations>
+)";
+  JUST_ASSERT_EQUAL("boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807>", get_type_from_ast_string(ast));
+}
+
 JUST_TEST_CASE(test_type_from_ast_string_no_pch) {
   std::string ast = R"(
 TranslationUnitDecl 0x7febd883d2c0 <<invalid sloc>> <invalid sloc>
