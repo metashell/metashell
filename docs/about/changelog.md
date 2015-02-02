@@ -7,6 +7,7 @@
     * Optional logging of what Metashell is doing in the background.
     * New MDB command: `step out`
     * MDB now can debug metaprograms which fail to compile
+    * Significantly improved MDB performance for large metaprograms
     * New command-line arguments:
         * `--console` for choosing shell mode
         * `--log` for enabling logging
