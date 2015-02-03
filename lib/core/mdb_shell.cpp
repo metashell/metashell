@@ -791,6 +791,8 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   data::type_or_error evaluation_result = run_metaprogram(str, displayer_);
 
+  // Opening in binary mode, because some platforms interpret some characters
+  // specially in text mode, which caused parsing to fail.
   std::ifstream protobuf_stream(output_path + ".trace.pbf",
       std::ios_base::in | std::ios_base::binary);
 
