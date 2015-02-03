@@ -20,7 +20,6 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include <fstream>
-#include <iostream>
 
 using namespace metashell;
 

@@ -19,7 +19,6 @@
 #include <metashell/clang/cxstring.hpp>
 
 #include <sstream>
-#include <iostream>
 #include <iterator>
 #include <vector>
 #include <string>

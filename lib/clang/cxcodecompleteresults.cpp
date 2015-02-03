@@ -17,8 +17,6 @@
 #include <metashell/clang/cxcodecompleteresults.hpp>
 #include <metashell/clang/cxstring.hpp>
 
-#include <iostream>
-
 using namespace metashell::clang;
 
 namespace

@@ -18,7 +18,7 @@
 
 #include <boost/regex.hpp>
 
-#include <iostream>
+#include <ostream>
 #include <sstream>
 
 using namespace metashell::data;

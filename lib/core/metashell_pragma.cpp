@@ -18,7 +18,6 @@
 
 #include <metashell/exception.hpp>
 
-#include <iostream>
 #include <sstream>
 #include <cassert>
 #include <algorithm>

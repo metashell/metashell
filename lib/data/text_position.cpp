@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/text_position.hpp>
-#include <iostream>
+#include <ostream>
 
 using namespace metashell::data;
 

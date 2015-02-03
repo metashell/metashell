@@ -19,7 +19,7 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
-#include <iostream>
+#include <ostream>
 #include <cassert>
 
 using namespace metashell;

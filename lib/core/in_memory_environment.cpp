@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <iterator>
 #include <cassert>
-#include <iostream>
 #include <sstream>
 
 using namespace metashell;

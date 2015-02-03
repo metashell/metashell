@@ -16,7 +16,7 @@
 
 #include <metashell/logging_mode.hpp>
 
-#include <iostream>
+#include <ostream>
 
 using namespace metashell;
 

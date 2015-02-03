@@ -16,7 +16,7 @@
 
 #include <metashell/data/text.hpp>
 
-#include <iostream>
+#include <ostream>
 
 using namespace metashell::data;
 

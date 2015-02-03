@@ -16,7 +16,7 @@
 
 #include <metashell/data/frame.hpp>
 
-#include <iostream>
+#include <ostream>
 #include <sstream>
 #include <cassert>
 

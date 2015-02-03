@@ -30,7 +30,6 @@
 
 #include <functional>
 #include <sstream>
-#include <iostream>
 
 namespace metashell { namespace clang {
 

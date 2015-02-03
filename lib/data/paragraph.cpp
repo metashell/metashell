@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/paragraph.hpp>
-#include <iostream>
+#include <ostream>
 
 using namespace metashell::data;
 

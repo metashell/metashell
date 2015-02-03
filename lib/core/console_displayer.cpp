@@ -27,7 +27,6 @@
 
 
 #include <functional>
-#include <iostream>
 #include <sstream>
 
 using namespace metashell;

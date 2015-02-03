@@ -34,7 +34,6 @@
 #include <metashell/pragma_evaluate.hpp>
 
 #include <cassert>
-#include <iostream>
 #include <sstream>
 
 using namespace metashell;

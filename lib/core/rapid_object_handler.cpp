@@ -17,7 +17,6 @@
 #include <metashell/rapid_object_handler.hpp>
 
 #include <sstream>
-#include <iostream>
 
 using namespace metashell;
 

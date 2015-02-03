@@ -16,7 +16,7 @@
 
 #include <metashell/console_type.hpp>
 
-#include <iostream>
+#include <ostream>
 #include <stdexcept>
 
 using namespace metashell;

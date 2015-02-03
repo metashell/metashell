@@ -21,7 +21,6 @@
 #include <metashell/data/token_category.hpp>
 
 #include <string>
-#include <iostream>
 #include <sstream>
 #include <cassert>
 
