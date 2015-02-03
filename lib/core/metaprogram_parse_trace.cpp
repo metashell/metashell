@@ -91,19 +91,6 @@ metaprogram metaprogram::create_from_protobuf_stream(
   return builder.get_metaprogram();
 }
 
-metaprogram metaprogram::create_from_protobuf_file(
-    const std::string& file,
-    bool full_mode,
-    const std::string& root_name,
-    const data::type_or_error& evaluation_result)
-{
-  std::ifstream in(file, std::ios_base::in | std::ios_base::binary);
-  if (!in) {
-    throw exception("Can't open templight file");
-  }
-  return create_from_protobuf_stream(in, full_mode, root_name, evaluation_result);
-}
-
 metaprogram metaprogram::create_from_protobuf_string(
     const std::string& string,
     bool full_mode,
