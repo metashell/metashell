@@ -94,13 +94,19 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
         "Negative n means step the program backwards.\n\n"
-        "Use of the `over` qualifier will jump over sub instantiations.\n"
-        "Please note that `step over -1` is not always the inverse of `step over`.\n"
-        "In particular when there are no more instantiations that got instantiated\n"
-        "by the current parent, then `step over` will behave like a normal `step`,\n"
-        "and will step out of one or more instantiation frames.\n\n"
+        "`step over` is an alias for next.\n"
         "Use of the `out` qualifier will jump out of the current instantiation frame.\n"
-        "Similarly to `step out`, `step out -1` is not always the inverse of `step out`."},
+        "Similarly to `next`, `step out -1` is not always the inverse of `step out`."},
+      {{"next"}, repeatable, &mdb_shell::command_next,
+        "[n]",
+        "Jump over to the next instantiation skipping sub instantiations.",
+        "Argument n means jump n times. n defaults to 1 if not specified.\n"
+        "Negative n means step the program backwards.\n\n"
+        "Please note that `next -1` is not always the inverse of `next`.\n"
+        "In particular when there are no more instantiations that got instantiated\n"
+        "by the current parent, then `next` will behave like a normal `step`,\n"
+        "and will step out of one or more instantiation frames.\n\n"
+        "`step over` is an alias for next."},
       {{"rbreak"}, non_repeatable, &mdb_shell::command_rbreak,
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
@@ -278,50 +284,32 @@ void mdb_shell::command_continue(
     return;
   }
 
-  using boost::spirit::qi::int_;
-  using boost::spirit::ascii::space;
-  using boost::phoenix::ref;
-  using boost::spirit::qi::_1;
-
-  auto begin = arg.begin(),
-       end = arg.end();
-
-  int continue_count = 1;
-
-  bool result =
-    boost::spirit::qi::phrase_parse(
-        begin, end,
-
-        -int_[ref(continue_count) = _1],
-
-        space
-    );
-
-  if (!result || begin != end) {
+  const auto continue_count = parse_single_integer_arg(arg);
+  if (!continue_count) {
     display_argument_parsing_failed(displayer_);
     return;
   }
 
-  if (continue_count == 0) {
+  if (*continue_count == 0) {
     return;
   }
 
   metaprogram::direction_t direction =
-    continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+    *continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
 
   breakpoints_t::iterator breakpoint_it = breakpoints.end();
   for (int i = 0;
-      i < std::abs(continue_count) && !mp->is_at_endpoint(direction); ++i)
+      i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
   {
     breakpoint_it = continue_metaprogram(direction);
   }
 
   if (mp->is_finished()) {
-    if (continue_count > 0) {
+    if (*continue_count > 0) {
       display_metaprogram_finished(displayer_);
     }
   } else if (mp->is_at_start()) {
-    if (continue_count < 0) {
+    if (*continue_count < 0) {
       display_metaprogram_reached_the_beginning(displayer_);
     }
   } else {
@@ -384,17 +372,7 @@ void mdb_shell::command_step(
       }
       break;
     case over:
-      {
-        for (int i = 0;
-            i < iteration_count && !mp->is_at_endpoint(direction); ++i)
-        {
-          unsigned bt_depth = mp->get_backtrace_length();
-          do {
-            mp->step(direction);
-          } while (!mp->is_at_endpoint(direction) &&
-              mp->get_backtrace_length() > bt_depth);
-        }
-      }
+      next_metaprogram(direction, iteration_count);
       break;
     case out:
       {
@@ -421,6 +399,37 @@ void mdb_shell::command_step(
     }
   } else if (mp->is_at_start()) {
     if (step_count < 0) {
+      display_metaprogram_reached_the_beginning(displayer_);
+    }
+  } else {
+    display_current_frame(displayer_);
+  }
+}
+
+void mdb_shell::command_next(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_evaluated_metaprogram(displayer_)) {
+    return;
+  }
+
+  const auto next_count = parse_single_integer_arg(arg);
+  if (!next_count) {
+    display_argument_parsing_failed(displayer_);
+    return;
+  }
+
+  next_metaprogram(
+    next_count >= 0 ? metaprogram::forward : metaprogram::backwards,
+    std::abs(*next_count));
+
+  if (mp->is_finished()) {
+    if (*next_count > 0) {
+      display_metaprogram_finished(displayer_);
+    }
+  } else if (mp->is_at_start()) {
+    if (*next_count < 0) {
       display_metaprogram_reached_the_beginning(displayer_);
     }
   } else {
@@ -838,6 +847,34 @@ data::type_or_error mdb_shell::run_metaprogram(
   return data::type_or_error::make_type(data::type(res.output));
 }
 
+boost::optional<int> mdb_shell::parse_single_integer_arg(
+    const std::string& arg)
+{
+  using boost::spirit::qi::int_;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+  using boost::spirit::qi::_1;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  int count = 1;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -int_[ref(count) = _1],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    return boost::none;
+  }
+  return count;
+}
+
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
     metaprogram::direction_t direction)
 {
@@ -853,6 +890,18 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
         return it;
       }
     }
+  }
+}
+
+void mdb_shell::next_metaprogram(metaprogram::direction_t direction, int n) {
+  assert(n >= 0);
+  for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
+  {
+    unsigned bt_depth = mp->get_backtrace_length();
+    do {
+      mp->step(direction);
+    } while (!mp->is_at_endpoint(direction) &&
+        mp->get_backtrace_length() > bt_depth);
   }
 }
 

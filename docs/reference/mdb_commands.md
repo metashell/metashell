@@ -25,14 +25,21 @@ Step the program. <br />
 Argument n means step n times. n defaults to 1 if not specified.
   Negative n means step the program backwards.
   
-  Use of the `over` qualifier will jump over sub instantiations.
-  Please note that `step over -1` is not always the inverse of `step over`.
+  `step over` is an alias for next.
+  Use of the `out` qualifier will jump out of the current instantiation frame.
+  Similarly to `next`, `step out -1` is not always the inverse of `step out`.
+
+* __`next [n]`__ <br />
+Jump over to the next instantiation skipping sub instantiations. <br />
+Argument n means jump n times. n defaults to 1 if not specified.
+  Negative n means step the program backwards.
+  
+  Please note that `next -1` is not always the inverse of `next`.
   In particular when there are no more instantiations that got instantiated
-  by the current parent, then `step over` will behave like a normal `step`,
+  by the current parent, then `next` will behave like a normal `step`,
   and will step out of one or more instantiation frames.
   
-  Use of the `out` qualifier will jump out of the current instantiation frame.
-  Similarly to `step out`, `step out -1` is not always the inverse of `step out`.
+  `step over` is an alias for next.
 
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.

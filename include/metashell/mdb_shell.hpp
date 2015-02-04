@@ -58,6 +58,7 @@ public:
 
   void command_continue(const std::string& arg, iface::displayer& displayer_);
   void command_step(const std::string& arg, iface::displayer& displayer_);
+  void command_next(const std::string& arg, iface::displayer& displayer_);
   void command_evaluate(const std::string& arg, iface::displayer& displayer_);
   void command_forwardtrace(
     const std::string& arg,
@@ -108,8 +109,13 @@ protected:
   void filter_similar_edges();
   void filter_metaprogram();
 
+  static
+  boost::optional<int> parse_single_integer_arg(const std::string& arg);
+
   breakpoints_t::iterator continue_metaprogram(
       metaprogram::direction_t direction);
+
+  void next_metaprogram(metaprogram::direction_t direction, int n);
 
   void display_current_frame(iface::displayer& displayer_) const;
   void display_current_forwardtrace(
