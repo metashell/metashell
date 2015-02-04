@@ -290,10 +290,6 @@ void mdb_shell::command_continue(
     return;
   }
 
-  if (*continue_count == 0) {
-    return;
-  }
-
   metaprogram::direction_t direction =
     *continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
 
@@ -308,7 +304,7 @@ void mdb_shell::command_continue(
     displayer_.show_raw_text(
         "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
   }
-  display_movement_info(true, displayer_);
+  display_movement_info(*continue_count != 0, displayer_);
 }
 
 void mdb_shell::command_step(
