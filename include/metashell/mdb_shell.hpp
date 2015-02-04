@@ -128,6 +128,7 @@ protected:
     iface::displayer& displayer_
   ) const;
   void display_metaprogram_finished(iface::displayer& displayer_) const;
+  void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
   config conf;
   templight_environment env;

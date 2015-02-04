@@ -304,20 +304,11 @@ void mdb_shell::command_continue(
     breakpoint_it = continue_metaprogram(direction);
   }
 
-  if (mp->is_finished()) {
-    if (*continue_count > 0) {
-      display_metaprogram_finished(displayer_);
-    }
-  } else if (mp->is_at_start()) {
-    if (*continue_count < 0) {
-      display_metaprogram_reached_the_beginning(displayer_);
-    }
-  } else {
-    assert(breakpoint_it != breakpoints.end());
+  if (breakpoint_it != breakpoints.end()) {
     displayer_.show_raw_text(
         "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
-    display_current_frame(displayer_);
   }
+  display_movement_info(true, displayer_);
 }
 
 void mdb_shell::command_step(
@@ -393,17 +384,7 @@ void mdb_shell::command_step(
       break;
   }
 
-  if (mp->is_finished()) {
-    if (step_count > 0) {
-      display_metaprogram_finished(displayer_);
-    }
-  } else if (mp->is_at_start()) {
-    if (step_count < 0) {
-      display_metaprogram_reached_the_beginning(displayer_);
-    }
-  } else {
-    display_current_frame(displayer_);
-  }
+  display_movement_info(step_count != 0, displayer_);
 }
 
 void mdb_shell::command_next(
@@ -424,17 +405,7 @@ void mdb_shell::command_next(
     next_count >= 0 ? metaprogram::forward : metaprogram::backwards,
     std::abs(*next_count));
 
-  if (mp->is_finished()) {
-    if (*next_count > 0) {
-      display_metaprogram_finished(displayer_);
-    }
-  } else if (mp->is_at_start()) {
-    if (*next_count < 0) {
-      display_metaprogram_reached_the_beginning(displayer_);
-    }
-  } else {
-    display_current_frame(displayer_);
-  }
+  display_movement_info(next_count != 0, displayer_);
 }
 
 bool mdb_shell::is_wrap_type(const std::string& type) {
@@ -946,6 +917,23 @@ void mdb_shell::display_metaprogram_finished(
 {
   displayer_.show_raw_text("Metaprogram finished");
   displayer_.show_type_or_error(mp->get_evaluation_result());
+}
+
+void mdb_shell::display_movement_info(
+    bool moved,
+    iface::displayer& displayer_) const
+{
+  if (mp->is_finished()) {
+    if (moved) {
+      display_metaprogram_finished(displayer_);
+    }
+  } else if (mp->is_at_start()) {
+    if (moved) {
+      display_metaprogram_reached_the_beginning(displayer_);
+    }
+  } else {
+    display_current_frame(displayer_);
+  }
 }
 
 void mdb_shell::cancel_operation() {
