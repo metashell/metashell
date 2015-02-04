@@ -6,6 +6,7 @@
     * Support different shell modes (plain, readline, JSON)
     * Optional logging of what Metashell is doing in the background.
     * New MDB command: `step out`
+    * New MDB command: `next`, alias for `step over`
     * MDB now can debug metaprograms which fail to compile
     * Significantly improved MDB performance for large metaprograms
     * New command-line arguments:
