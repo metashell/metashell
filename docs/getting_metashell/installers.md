@@ -40,6 +40,8 @@ want to install them, you can build Metashell yourself.
 
 ### OS X
 
+* Using [Homebrew](http://brew.sh/): `brew install metashell`
+
 * [Yosemite](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_osx10.10_x86_64.dmg)
   Note that you need to install XCode for Metashell to work properly.
 
