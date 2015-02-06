@@ -1,6 +1,6 @@
 <h1>Metashell</h1>
 
-[![Build Status](img/metashell.png?branch=master "Build Status")](http://travis-ci.org/sabel83/metashell)
+[![Build Status](https://travis-ci.org/sabel83/metashell.svg?branch=master)](https://travis-ci.org/sabel83/metashell)
 
 ![](img/metashell.png "Metashell")
 
