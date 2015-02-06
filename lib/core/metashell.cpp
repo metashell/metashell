@@ -349,7 +349,10 @@ bool metashell::is_environment_setup_command(
         }
         assert(false);
       case data::token_category::identifier:
-        return has_typedef(begin_, end_);
+        return
+          has_typedef(begin_, end_) ||
+            last_non_whitespace_token_type(begin_, end_)
+            == data::token_type::operator_semicolon;
       case data::token_category::preprocessor:
         return true;
       default:

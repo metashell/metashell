@@ -14,6 +14,9 @@
         * `--log` for enabling logging
         * `--nosplash` for disabling the splash at (sub)shell startup
 
+* Fixes
+    * Detect environment setup commands that are expanded from a macro call
+
 * Documentation updates
     * New section about `step over` in Getting started.
 

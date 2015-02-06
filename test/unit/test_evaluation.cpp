@@ -272,3 +272,11 @@ JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
   JUST_ASSERT_EQUAL("...>", sh.prompt());
 }
 
+JUST_TEST_CASE(test_command_macro_usage_with_semicolon_is_environment_setup)
+{
+  using metashell::data::command;
+  using metashell::is_environment_setup_command;
+
+  JUST_ASSERT(is_environment_setup_command(command("SOME_MACRO(13);")));
+}
+
