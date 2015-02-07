@@ -25,10 +25,10 @@
 namespace metashell_system_test
 {
   std::vector<json_string> run_metashell(
-    std::initializer_list<json_string> commands_,
-    std::initializer_list<std::string> extra_args_ = {}
+    const std::vector<json_string>& commands_,
+    const std::vector<std::string>& extra_args_ = {}
   );
-  
+
   json_string run_metashell_command(const std::string& command_);
 }
 

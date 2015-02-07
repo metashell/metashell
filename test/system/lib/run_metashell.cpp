@@ -37,7 +37,7 @@ namespace
     v_.pop_back();
   }
 
-  std::string join(std::initializer_list<json_string> commands_)
+  std::string join(const std::vector<json_string>& commands_)
   {
     std::ostringstream s;
     bool first = true;
@@ -105,8 +105,8 @@ namespace
 }
 
 std::vector<json_string> metashell_system_test::run_metashell(
-  std::initializer_list<json_string> commands_,
-  std::initializer_list<std::string> extra_args_
+  const std::vector<json_string>& commands_,
+  const std::vector<std::string>& extra_args_
 )
 {
   using just::process::run;
