@@ -17,9 +17,9 @@
 
 set -e
 
-if [ -d templight ]
+if [ -d 3rd ]
 then
-  cd templight
+  cd 3rd/templight
     # Get the patch revision
     PATCH=$(ls patch | sort | tail -1)
     REV=$(echo "$PATCH" | sed -E 's/templight_patch_r([0-9]*).diff/\1/g')
@@ -71,7 +71,7 @@ then
       git clone 'https://github.com/mikael-s-persson/templight.git'
       sed -i "" '1s/^/add_subdirectory(templight)\'$'\n/g' CMakeLists.txt
     cd ../../../..
-  cd ..
+  cd ../..
 else
   echo "Please run this script from the root directory of the Metashell source code"
 fi

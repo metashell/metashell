@@ -74,11 +74,11 @@ if (ENABLE_PROFILING)
 endif()
 
 # The "internal" Clang build
-set(TEMPLIGHT_BUILD "${CMAKE_SOURCE_DIR}/templight/build")
+set(TEMPLIGHT_BUILD "${CMAKE_SOURCE_DIR}/3rd/templight/build")
 
 set(
   CLANG_INCLUDEDIR
-  "${CLANG_INCLUDEDIR};${CMAKE_SOURCE_DIR}/templight/llvm/tools/clang/include"
+  "${CLANG_INCLUDEDIR};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/include"
 )
 set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin")
 set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/bin")

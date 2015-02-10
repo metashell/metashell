@@ -20,7 +20,7 @@
 * Install the dependent tools:
     * CMake
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
-    * `cd templight`
+    * `cd 3rd/templight`
     * `mkdir build`
     * `cd build`
     * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
@@ -60,7 +60,7 @@
 
 The source code of Metashell contains the source code of LLVM/Clang patched with
 [Templight](https://github.com/mikael-s-persson/templight). The Templight patch
-can be found in the `templight/patch` directory. The naming convention is
+can be found in the `3rd/templight/patch` directory. The naming convention is
 `templight_patch_r<SVN release it patches>.diff`. To update the Clang version
 used:
 
@@ -74,7 +74,7 @@ used:
 * First you need to build Clang with
   [Templight](https://github.com/mikael-s-persson/templight).
     * Start a command line on your Windows host and go into the source directory
-    * Run `cd templight`
+    * Run `cd 3rd/templight`
     * Run `md build`
     * Run `cd build`
     * Run `cmake ..\llvm`
@@ -146,7 +146,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
     * CMake
     * XCode
 * Build Clang with [Templight](https://github.com/mikael-s-persson/templight)
-    * `cd templight`
+    * `cd 3rd/templight`
     * `mkdir build`
     * `cd build`
     * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
@@ -179,9 +179,9 @@ for Metashell, here is how you can do it.
 > argument to Clang's `cmake`.
 
 > Also note that Metashell is prepared for being built against the version of
-> Clang you can find in the `templight` directory. It is staticly linked against
-> Clang and if you use a different version of Clang, the list of libraries to
-> link against might be different. You can update it in
+> Clang you can find in the `3rd/templight` directory. It is staticly linked
+> against Clang and if you use a different version of Clang, the list of
+> libraries to link against might be different. You can update it in
 > `cmake/Modules/FindClang.cmake`.
 
 You need to follow the manual build instructions of your platform and pass the

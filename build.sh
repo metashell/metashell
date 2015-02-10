@@ -67,10 +67,12 @@ echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
 # Build Clang
-cd templight
-  mkdir build; cd build
-    cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON \
-      && make clang libclang libclang_static templight -j${BUILD_THREADS}
+cd 3rd
+  cd templight
+    mkdir build; cd build
+      cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON \
+        && make clang libclang libclang_static templight -j${BUILD_THREADS}
+    cd ..
   cd ..
 cd ..
 
