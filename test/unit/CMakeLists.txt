@@ -31,7 +31,7 @@ add_definitions(-DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/3rd/boost/include\")
 # Libc++ for the unit tests
 if (APPLE)
   add_definitions(
-    -DLIBCXX_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/templight/libcxx/include\"
+    -DLIBCXX_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/3rd/templight/libcxx/include\"
   )
 endif()
 

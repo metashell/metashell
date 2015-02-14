@@ -128,7 +128,7 @@ function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
     if (APPLE)
       # Libcxx headers
       copy_all_files_to_include(
-        "${CMAKE_SOURCE_DIR}/templight/libcxx/include"
+        "${CMAKE_SOURCE_DIR}/3rd/templight/libcxx/include"
         "${LIBCXX_HEADER_INSTALL_PATH}"
         ${INSTALL_COPIED_FILES}
       )
