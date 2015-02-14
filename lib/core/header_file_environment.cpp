@@ -120,6 +120,8 @@ header_file_environment::header_file_environment(
   _clang_args.push_back("-Xclang");
   _clang_args.push_back("-ast-dump");
 
+  _clang_args.push_back("-Wfatal-errors");
+
   extend_to_find_headers_in_local_dir(_clang_args);
 
   save();
