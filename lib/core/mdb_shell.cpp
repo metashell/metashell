@@ -210,7 +210,7 @@ void mdb_shell::line_available(
 
     last_command_repeatable = cmd.is_repeatable();
 
-    (this->*cmd.get_func())(args, displayer_);
+    cmd.get_func()(*this, args, displayer_);
   } catch (const std::exception& ex) {
     displayer_.show_error(std::string("Error: ") + ex.what() + "\n");
   } catch (...) {

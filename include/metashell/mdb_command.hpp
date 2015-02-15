@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 
 namespace metashell {
 
@@ -34,11 +35,8 @@ enum repeatable_t {
 class mdb_command {
 public:
   typedef std::vector<std::string> keys_t;
-  typedef
-    void (mdb_shell::*function)(
-      const std::string& args,
-      iface::displayer& displayer_
-    );
+  typedef std::function<
+    void(mdb_shell&, const std::string&, iface::displayer&)> function;
 
   mdb_command() = default;
   mdb_command(
