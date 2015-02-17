@@ -47,7 +47,7 @@ namespace
 
   typedef
     std::tuple<
-      metashell::file_location,
+      metashell::data::file_location,
       metashell::data::instantiation_kind,
       metashell::metaprogram::vertex_descriptor
     >

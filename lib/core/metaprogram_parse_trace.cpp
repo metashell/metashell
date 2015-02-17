@@ -72,7 +72,7 @@ metaprogram metaprogram::create_from_protobuf_stream(
           builder.handle_template_begin(
               instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
               begin_entry.Name,
-              file_location(
+              data::file_location(
                 begin_entry.FileName, begin_entry.Line, begin_entry.Column));
           break;
         }

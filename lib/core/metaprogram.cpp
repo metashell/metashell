@@ -56,7 +56,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
     data::instantiation_kind kind,
-    const file_location& point_of_instantiation)
+    const data::file_location& point_of_instantiation)
 {
   edge_descriptor edge;
   bool inserted;

@@ -92,7 +92,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
-        file_location("foo.cpp", 10, 20));
+        data::file_location("foo.cpp", 10, 20));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
@@ -101,7 +101,7 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
       data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
-      file_location("foo.cpp", 10, 20));
+      data::file_location("foo.cpp", 10, 20));
 
   assert_state_equal(mp.get_state(),
         {false, false},
@@ -142,11 +142,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
-        file_location("bar.cpp", 20, 10));
+        data::file_location("bar.cpp", 20, 10));
   metaprogram::edge_descriptor edge_root_a_me =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::memoization,
-        file_location("foobar.cpp", 21, 11));
+        data::file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
@@ -155,11 +155,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
       data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
-      file_location("bar.cpp", 20, 10));
+      data::file_location("bar.cpp", 20, 10));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
       data::instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
-      file_location("foobar.cpp", 21, 11));
+      data::file_location("foobar.cpp", 21, 11));
 
   assert_state_equal(mp.get_state(),
         {false, false},
@@ -208,7 +208,7 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
   metaprogram::edge_descriptor edge_root_a =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
-      file_location("foobar.cpp", 21, 11));
+      data::file_location("foobar.cpp", 21, 11));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 1u);
@@ -217,7 +217,7 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).kind,
       data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a).point_of_instantiation,
-      file_location("foobar.cpp", 21, 11));
+      data::file_location("foobar.cpp", 21, 11));
 
   assert_state_equal(mp.get_state(),
         {false, false},
@@ -258,11 +258,11 @@ JUST_TEST_CASE(
   metaprogram::edge_descriptor edge_root_a_ti =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
-        file_location("xx.cpp", 1, 2));
+        data::file_location("xx.cpp", 1, 2));
   metaprogram::edge_descriptor edge_root_a_me =
     mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::memoization,
-        file_location("yy.cpp", 1, 2));
+        data::file_location("yy.cpp", 1, 2));
 
   JUST_ASSERT_EQUAL(mp.get_num_vertices(), 2u);
   JUST_ASSERT_EQUAL(mp.get_num_edges(), 2u);
@@ -271,11 +271,11 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).kind,
       data::instantiation_kind::template_instantiation);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
-      file_location("xx.cpp", 1, 2));
+      data::file_location("xx.cpp", 1, 2));
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).kind,
       data::instantiation_kind::memoization);
   JUST_ASSERT_EQUAL(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
-      file_location("yy.cpp", 1, 2));
+      data::file_location("yy.cpp", 1, 2));
 
   assert_state_equal(mp.get_state(),
         {false, false},

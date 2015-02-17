@@ -34,7 +34,7 @@ struct metaprogram_builder {
   void handle_template_begin(
     data::instantiation_kind kind,
     const std::string& context,
-    const file_location& location);
+    const data::file_location& location);
 
   void handle_template_end();
 

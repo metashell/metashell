@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/file_location.hpp>
+#include <metashell/data/file_location.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell;
+using namespace metashell::data;
 
 JUST_TEST_CASE(test_empty_file_location)
 {

@@ -31,7 +31,7 @@ metaprogram_builder::metaprogram_builder(
 void metaprogram_builder::handle_template_begin(
   data::instantiation_kind kind,
   const std::string& context,
-  const file_location& point_of_instantiation)
+  const data::file_location& point_of_instantiation)
 {
   vertex_descriptor vertex = add_vertex(context);
   vertex_descriptor top_vertex =

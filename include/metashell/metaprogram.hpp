@@ -26,7 +26,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
-#include <metashell/file_location.hpp>
+#include <metashell/data/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
 #include <metashell/data/backtrace.hpp>
 #include <metashell/data/type_or_error.hpp>
@@ -68,7 +68,7 @@ public:
   };
   struct edge_property {
     data::instantiation_kind kind;
-    file_location point_of_instantiation;
+    data::file_location point_of_instantiation;
     bool enabled = true;
   };
 
@@ -119,7 +119,7 @@ public:
       vertex_descriptor from,
       vertex_descriptor to,
       data::instantiation_kind kind,
-      const file_location& point_of_instantiation);
+      const data::file_location& point_of_instantiation);
 
   bool is_empty() const;
 

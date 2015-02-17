@@ -1,7 +1,4 @@
 
-#ifndef METASHELL_FILE_LOCATION_HPP
-#define METASHELL_FILE_LOCATION_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
 //
@@ -18,27 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
-#include <ostream>
+#include <metashell/data/file_location.hpp>
 
-#include <boost/operators.hpp>
+#include <tuple>
 
 namespace metashell {
+namespace data {
 
-struct file_location : boost::totally_ordered<file_location> {
-  file_location();
-  file_location(const std::string& name, int row, int column);
+file_location::file_location() : name(), row(-1), column(-1) {}
 
-  std::string name;
-  int row;
-  int column;
+file_location::file_location(const std::string& name, int row, int column) :
+  name(name), row(row), column(column) {}
 
-};
-
-bool operator<(const file_location& lhs, const file_location& rhs);
-bool operator==(const file_location& lhs, const file_location& rhs);
-std::ostream& operator<<(std::ostream& os, const file_location& location);
-
+std::ostream& operator<<(std::ostream& os, const file_location& location) {
+  os << location.name << ":" << location.row << ":" << location.column;
+  return os;
 }
 
-#endif
+bool operator<(const file_location& lhs, const file_location& rhs) {
+  return std::tie(lhs.name, lhs.row, lhs.column) <
+         std::tie(rhs.name, rhs.row, rhs.column);
+}
+
+bool operator==(const file_location& lhs, const file_location& rhs) {
+  return std::tie(lhs.name, lhs.row, lhs.column) ==
+         std::tie(rhs.name, rhs.row, rhs.column);
+}
+
+}
+}
+
