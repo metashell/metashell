@@ -178,7 +178,8 @@ void console_displayer::show_frame(const data::frame& frame_)
   if (frame_.is_full())
   {
     std::ostringstream s;
-    s << " (" << frame_.kind() << ")";
+    s << " (" << frame_.kind()
+      << " from " << frame_.point_of_instantiation() << ")";
     _console->show(s.str());
   }
   _console->new_line();
@@ -261,7 +262,7 @@ namespace
     std::ostringstream s;
     if (f_.is_full())
     {
-      s << " (" << f_.kind() << ")";
+      s << " (" << f_.kind() << " from " << f_.point_of_instantiation() << ")";
     }
     return highlight_syntax(f_.name().name()) + s.str();
   }
