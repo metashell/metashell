@@ -18,6 +18,7 @@
 #include <metashell/data/file_location.hpp>
 
 #include <tuple>
+#include <sstream>
 
 namespace metashell {
 namespace data {
@@ -40,6 +41,12 @@ bool operator<(const file_location& lhs, const file_location& rhs) {
 bool operator==(const file_location& lhs, const file_location& rhs) {
   return std::tie(lhs.name, lhs.row, lhs.column) ==
          std::tie(rhs.name, rhs.row, rhs.column);
+}
+
+std::string to_string(const file_location& location) {
+  std::stringstream ss;
+  ss << location;
+  return ss.str();
 }
 
 }

@@ -18,6 +18,8 @@
 
 #include <iostream>
 
+#include <boost/regex.hpp>
+
 using namespace metashell_system_test;
 
 json_string::json_string(const std::string& json_) :
@@ -34,7 +36,13 @@ bool metashell_system_test::operator==(
   const json_string& b_
 )
 {
-  return a_.get() == b_.get();
+  // Not testing point_of_instantiation
+  auto flags = boost::match_default | boost::format_all;
+  boost::regex filter_poi(R"(,"point_of_instantiation":"[^"]*")");
+  auto filtered_a = boost::regex_replace(a_.get(), filter_poi, "", flags);
+  auto filtered_b = boost::regex_replace(b_.get(), filter_poi, "", flags);
+
+  return filtered_a == filtered_b;
 }
 
 std::ostream& metashell_system_test::operator<<(

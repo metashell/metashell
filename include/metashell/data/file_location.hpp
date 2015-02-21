@@ -40,6 +40,8 @@ bool operator<(const file_location& lhs, const file_location& rhs);
 bool operator==(const file_location& lhs, const file_location& rhs);
 std::ostream& operator<<(std::ostream& os, const file_location& location);
 
+std::string to_string(const file_location& location);
+
 }
 }
 

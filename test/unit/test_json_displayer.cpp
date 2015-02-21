@@ -146,7 +146,7 @@ JUST_TEST_CASE(test_json_display_of_cpp_code)
   );
 }
 
-JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
+JUST_TEST_CASE(test_json_display_of_frame_normal)
 {
   mock_json_writer w;
   json_displayer d(w);
@@ -167,9 +167,11 @@ JUST_TEST_CASE(test_json_display_of_frame_without_instantiation_kind)
 
 namespace
 {
-  void test_frame_with_instantiation_kind(
+  void test_frame_full(
     data::instantiation_kind kind_,
-    const std::string& kind_in_json_
+    const std::string& kind_in_json_,
+    data::file_location location_,
+    const std::string& location_in_json_
   )
   {
     using metashell::data::file_location;
@@ -178,7 +180,7 @@ namespace
     json_displayer d(w);
 
     d.show_frame(
-        data::frame(data::type("fib_c<13>::type"), file_location(), kind_));
+        data::frame(data::type("fib_c<13>::type"), location_, kind_));
 
     JUST_ASSERT_EQUAL_CONTAINER(
       {
@@ -186,6 +188,7 @@ namespace
           "key type", "string frame",
           "key name", "string fib_c<13>::type",
           "key kind", "string " + kind_in_json_,
+          "key point_of_instantiation", "string " + location_in_json_,
         "end_object",
         "end_document"
       },
@@ -194,47 +197,67 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_json_display_of_frame_with_instantiation_kind)
+JUST_TEST_CASE(test_json_display_of_frame_full)
 {
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::template_instantiation,
-    "TemplateInstantiation"
+    "TemplateInstantiation",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::default_template_argument_instantiation,
-    "DefaultTemplateArgumentInstantiation"
+    "DefaultTemplateArgumentInstantiation",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::default_function_argument_instantiation,
-    "DefaultFunctionArgumentInstantiation"
+    "DefaultFunctionArgumentInstantiation",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::explicit_template_argument_substitution,
-    "ExplicitTemplateArgumentSubstitution"
+    "ExplicitTemplateArgumentSubstitution",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::deduced_template_argument_substitution,
-    "DeducedTemplateArgumentSubstitution"
+    "DeducedTemplateArgumentSubstitution",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::prior_template_argument_substitution,
-    "PriorTemplateArgumentSubstitution"
+    "PriorTemplateArgumentSubstitution",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::default_template_argument_checking,
-    "DefaultTemplateArgumentChecking"
+    "DefaultTemplateArgumentChecking",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::exception_spec_instantiation,
-    "ExceptionSpecInstantiation"
+    "ExceptionSpecInstantiation",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::memoization,
-    "Memoization"
+    "Memoization",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
-  test_frame_with_instantiation_kind(
+  test_frame_full(
     data::instantiation_kind::non_template_type,
-    "NonTemplateType"
+    "NonTemplateType",
+    data::file_location("a.cpp", 3, 4),
+    "a.cpp:3:4"
   );
 }
 

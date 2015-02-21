@@ -32,18 +32,18 @@ namespace metashell_system_test
   public:
     explicit frame(const type& name_);
     frame(const type& name_, instantiation_kind kind_);
-  
+
     const type& name() const;
-  
+
     bool has_kind() const;
-  
+
     // precondition: has_kind()
     instantiation_kind kind() const;
   private:
     type _name;
     boost::optional<instantiation_kind> _kind;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const frame& f_);
 
   json_string to_json_string(const frame& f_);

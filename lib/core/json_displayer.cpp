@@ -47,6 +47,8 @@ namespace
     {
       writer_.key("kind");
       writer_.string(to_string(frame_.kind()));
+      writer_.key("point_of_instantiation");
+      writer_.string(to_string(frame_.point_of_instantiation()));
     }
   }
 }
@@ -115,7 +117,7 @@ void json_displayer::show_frame(const data::frame& frame_)
 
   _writer.key("type");
   _writer.string("frame");
-  
+
   show_frame_fields(_writer, frame_);
 
   _writer.end_object();
