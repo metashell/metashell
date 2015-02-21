@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/type.hpp>
+#include <metashell/data/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
 
 #include <boost/optional.hpp>
@@ -31,17 +32,23 @@ namespace metashell
     {
     public:
       frame() = default;
-      frame(const type& name_, instantiation_kind kind_);
+
       explicit frame(const type& name_);
+
+      frame(const type& name_,
+        const file_location& point_of_instantiation_,
+        instantiation_kind kind_);
 
       const type& name() const;
 
-      bool has_kind() const;
+      bool is_full() const;
 
-      // precondition: has_kind()
+      // precondition: is_full()
       instantiation_kind kind() const;
+      const file_location& point_of_instantiation() const;
     private:
       type _name;
+      boost::optional<file_location> _point_of_instantiation;
       boost::optional<data::instantiation_kind> _kind;
     };
 

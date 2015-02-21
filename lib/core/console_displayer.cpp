@@ -175,7 +175,7 @@ void console_displayer::display_code(const std::string& code_)
 void console_displayer::show_frame(const data::frame& frame_)
 {
   display_code(frame_.name().name());
-  if (frame_.has_kind())
+  if (frame_.is_full())
   {
     std::ostringstream s;
     s << " (" << frame_.kind() << ")";
@@ -259,7 +259,7 @@ namespace
   data::colored_string format_frame(const data::frame& f_)
   {
     std::ostringstream s;
-    if (f_.has_kind())
+    if (f_.is_full())
     {
       s << " (" << f_.kind() << ")";
     }

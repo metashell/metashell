@@ -19,6 +19,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 #include <metashell/exception.hpp>
 #include <metashell/metaprogram.hpp>

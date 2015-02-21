@@ -43,7 +43,7 @@ namespace
     writer_.key("name");
     writer_.string(frame_.name().name());
 
-    if (frame_.has_kind())
+    if (frame_.is_full())
     {
       writer_.key("kind");
       writer_.string(to_string(frame_.kind()));

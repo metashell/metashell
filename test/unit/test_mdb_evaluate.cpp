@@ -178,6 +178,7 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
   using data::instantiation_kind;
   using data::type;
   using data::frame;
+  using data::file_location;
 
   in_memory_displayer d;
   mdb_test_shell sh(fibonacci_with_enum_mp);
@@ -195,14 +196,14 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
       {frame(type("int_<fib<2>::value>")), 0, 4},
-      {frame( fib<2>(), instantiation_kind::template_instantiation), 1, 4},
-      {frame(  fib<0>(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<1>(), instantiation_kind::memoization), 2, 0},
-      {frame(  type("fib<1>::ENUM"), instantiation_kind::memoization), 2, 0},
-      {frame(  type("fib<0>::ENUM"), instantiation_kind::memoization), 2, 0},
-      {frame( fib<2>(), instantiation_kind::memoization), 1, 0},
-      {frame( type("fib<2>::ENUM"), instantiation_kind::memoization), 1, 0},
-      {frame( type("int_<1>"), instantiation_kind::template_instantiation), 1,0}
+      {frame( fib<2>(), file_location(), instantiation_kind::template_instantiation), 1, 4},
+      {frame(  fib<0>(), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<1>(), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame(  type("fib<1>::ENUM"), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame(  type("fib<0>::ENUM"), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame( fib<2>(), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame( type("fib<2>::ENUM"), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<1>"), file_location(), instantiation_kind::template_instantiation), 1,0}
     },
     d.call_graphs().front()
   );

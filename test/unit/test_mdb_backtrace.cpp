@@ -23,6 +23,7 @@
 #include <just/test.hpp>
 
 using namespace metashell;
+using namespace metashell::data;
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_without_evaluation) {
@@ -103,7 +104,7 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<10>::value>"))
       }
     },
@@ -131,8 +132,8 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<8>"), instantiation_kind::template_instantiation),
-        frame(type("fib<10>"), instantiation_kind::template_instantiation),
+        frame(type("fib<8>"), file_location(), instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<10>::value>"))
       }
     },
@@ -160,9 +161,9 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<6>"), instantiation_kind::template_instantiation),
-        frame(type("fib<8>"), instantiation_kind::template_instantiation),
-        frame(type("fib<10>"), instantiation_kind::template_instantiation),
+        frame(type("fib<6>"), file_location(), instantiation_kind::template_instantiation),
+        frame(type("fib<8>"), file_location(), instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<10>::value>"))
       }
     },
@@ -204,7 +205,7 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<10>::value>"))
       }
     },
@@ -216,7 +217,7 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<10>::value>"))
       }
     },
@@ -244,10 +245,10 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<0>"), instantiation_kind::memoization),
-        frame(type("fib<2>"), instantiation_kind::template_instantiation),
-        frame(type("fib<3>"), instantiation_kind::template_instantiation),
-        frame(type("fib<5>"), instantiation_kind::template_instantiation),
+        frame(type("fib<0>"), file_location(), instantiation_kind::memoization),
+        frame(type("fib<2>"), file_location(), instantiation_kind::template_instantiation),
+        frame(type("fib<3>"), file_location(), instantiation_kind::template_instantiation),
+        frame(type("fib<5>"), file_location(), instantiation_kind::template_instantiation),
         frame(type("int_<fib<5>::value>"))
       }
     },

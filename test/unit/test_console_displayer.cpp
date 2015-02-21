@@ -34,21 +34,22 @@ namespace
     using metashell::data::instantiation_kind;
     using metashell::data::type;
     using metashell::data::frame;
+    using metashell::data::file_location;
 
     return
       call_grph{
         {frame(type("int_<fib<5>::value>")), 0, 3},
-        {frame( fib<5>(), instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<3>(), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<1>(), instantiation_kind::memoization), 3, 0},
-        {frame(   fib<2>(), instantiation_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), instantiation_kind::memoization), 4, 0},
-        {frame(    fib<1>(), instantiation_kind::memoization), 4, 0},
-        {frame(  fib<4>(), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), instantiation_kind::memoization), 3, 0},
-        {frame(   fib<3>(), instantiation_kind::memoization), 3, 0},
-        {frame( fib<5>(), instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<5>"),instantiation_kind::template_instantiation),1,0}
+        {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
+        {frame(  fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
+        {frame(   fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 2},
+        {frame(    fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
+        {frame(    fib<1>(), file_location(), instantiation_kind::memoization), 4, 0},
+        {frame(  fib<4>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<2>(), file_location(), instantiation_kind::memoization), 3, 0},
+        {frame(   fib<3>(), file_location(), instantiation_kind::memoization), 3, 0},
+        {frame( fib<5>(), file_location(), instantiation_kind::memoization), 1, 0},
+        {frame( type("int_<5>"), file_location(), instantiation_kind::template_instantiation), 1, 0}
       };
   }
 }

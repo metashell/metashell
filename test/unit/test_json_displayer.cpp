@@ -172,11 +172,14 @@ namespace
     const std::string& kind_in_json_
   )
   {
+    using metashell::data::file_location;
+
     mock_json_writer w;
     json_displayer d(w);
-  
-    d.show_frame(data::frame(data::type("fib_c<13>::type"), kind_));
-  
+
+    d.show_frame(
+        data::frame(data::type("fib_c<13>::type"), file_location(), kind_));
+
     JUST_ASSERT_EQUAL_CONTAINER(
       {
         "start_object",
