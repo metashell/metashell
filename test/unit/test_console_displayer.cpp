@@ -36,20 +36,22 @@ namespace
     using metashell::data::frame;
     using metashell::data::file_location;
 
+    file_location f("a.cpp", 1, 2);
+
     return
       call_grph{
         {frame(type("int_<fib<5>::value>")), 0, 3},
-        {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-        {frame(   fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
-        {frame(    fib<1>(), file_location(), instantiation_kind::memoization), 4, 0},
-        {frame(  fib<4>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), file_location(), instantiation_kind::memoization), 3, 0},
-        {frame(   fib<3>(), file_location(), instantiation_kind::memoization), 3, 0},
-        {frame( fib<5>(), file_location(), instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<5>"), file_location(), instantiation_kind::template_instantiation), 1, 0}
+        {frame( fib<5>(), f, instantiation_kind::template_instantiation), 1, 2},
+        {frame(  fib<3>(), f, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<1>(), f, instantiation_kind::memoization), 3, 0},
+        {frame(   fib<2>(), f, instantiation_kind::template_instantiation), 3, 2},
+        {frame(    fib<0>(), f, instantiation_kind::memoization), 4, 0},
+        {frame(    fib<1>(), f, instantiation_kind::memoization), 4, 0},
+        {frame(  fib<4>(), f, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<2>(), f, instantiation_kind::memoization), 3, 0},
+        {frame(   fib<3>(), f, instantiation_kind::memoization), 3, 0},
+        {frame( fib<5>(), f, instantiation_kind::memoization), 1, 0},
+        {frame( type("int_<5>"), f, instantiation_kind::template_instantiation), 1, 0}
       };
   }
 }
@@ -114,26 +116,32 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
     "+ fib<5> (TemplateInstant\n"
-    "| iation)\n"
+    "| iation from a.cpp:1:2)\n"
     "| + fib<3> (TemplateInsta\n"
-    "| | ntiation)\n"
+    "| | ntiation from a.cpp:1\n"
+    "| | :2)\n"
     "| | + fib<1> (Memoization\n"
-    "| | | )\n"
+    "| | |  from a.cpp:1:2)\n"
     "| | ` fib<2> (TemplateIns\n"
-    "| |   tantiation)\n"
+    "| |   tantiation from a.c\n"
+    "| |   pp:1:2)\n"
     "| |   + fib<0> (Memoizati\n"
-    "| |   | on)\n"
+    "| |   | on from a.cpp:1:2\n"
+    "| |   | )\n"
     "| |   ` fib<1> (Memoizati\n"
-    "| |     on)\n"
+    "| |     on from a.cpp:1:2\n"
+    "| |     )\n"
     "| ` fib<4> (TemplateInsta\n"
-    "|   ntiation)\n"
+    "|   ntiation from a.cpp:1\n"
+    "|   :2)\n"
     "|   + fib<2> (Memoization\n"
-    "|   | )\n"
+    "|   |  from a.cpp:1:2)\n"
     "|   ` fib<3> (Memoization\n"
-    "|     )\n"
-    "+ fib<5> (Memoization)\n"
+    "|      from a.cpp:1:2)\n"
+    "+ fib<5> (Memoization fro\n"
+    "| m a.cpp:1:2)\n"
     "` int_<5> (TemplateInstan\n"
-    "  tiation)\n",
+    "  tiation from a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
@@ -148,17 +156,17 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
   // The algorithm just gives up, and prints without extra line breaks
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
-    "+ fib<5> (TemplateInstantiation)\n"
-    "| + fib<3> (TemplateInstantiation)\n"
-    "| | + fib<1> (Memoization)\n"
-    "| | ` fib<2> (TemplateInstantiation)\n"
-    "| |   + fib<0> (Memoization)\n"
-    "| |   ` fib<1> (Memoization)\n"
-    "| ` fib<4> (TemplateInstantiation)\n"
-    "|   + fib<2> (Memoization)\n"
-    "|   ` fib<3> (Memoization)\n"
-    "+ fib<5> (Memoization)\n"
-    "` int_<5> (TemplateInstantiation)\n",
+    "+ fib<5> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| + fib<3> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| | + fib<1> (Memoization from a.cpp:1:2)\n"
+    "| | ` fib<2> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| |   + fib<0> (Memoization from a.cpp:1:2)\n"
+    "| |   ` fib<1> (Memoization from a.cpp:1:2)\n"
+    "| ` fib<4> (TemplateInstantiation from a.cpp:1:2)\n"
+    "|   + fib<2> (Memoization from a.cpp:1:2)\n"
+    "|   ` fib<3> (Memoization from a.cpp:1:2)\n"
+    "+ fib<5> (Memoization from a.cpp:1:2)\n"
+    "` int_<5> (TemplateInstantiation from a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
@@ -173,17 +181,17 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   // The algorithm just gives up, and prints without extra line breaks
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
-    "+ fib<5> (TemplateInstantiation)\n"
-    "| + fib<3> (TemplateInstantiation)\n"
-    "| | + fib<1> (Memoization)\n"
-    "| | ` fib<2> (TemplateInstantiation)\n"
-    "| |   + fib<0> (Memoization)\n"
-    "| |   ` fib<1> (Memoization)\n"
-    "| ` fib<4> (TemplateInstantiation)\n"
-    "|   + fib<2> (Memoization)\n"
-    "|   ` fib<3> (Memoization)\n"
-    "+ fib<5> (Memoization)\n"
-    "` int_<5> (TemplateInstantiation)\n",
+    "+ fib<5> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| + fib<3> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| | + fib<1> (Memoization from a.cpp:1:2)\n"
+    "| | ` fib<2> (TemplateInstantiation from a.cpp:1:2)\n"
+    "| |   + fib<0> (Memoization from a.cpp:1:2)\n"
+    "| |   ` fib<1> (Memoization from a.cpp:1:2)\n"
+    "| ` fib<4> (TemplateInstantiation from a.cpp:1:2)\n"
+    "|   + fib<2> (Memoization from a.cpp:1:2)\n"
+    "|   ` fib<3> (Memoization from a.cpp:1:2)\n"
+    "+ fib<5> (Memoization from a.cpp:1:2)\n"
+    "` int_<5> (TemplateInstantiation from a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
