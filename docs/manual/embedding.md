@@ -44,9 +44,14 @@ template instantiations. Each frame in the trace is a template instatiation
 triggered by the preceeding frame. The format of the frames is the
 following: <br />
 <br />
-`{ "name":"<type instantiated>", "kind":"<kind of instatiation>" }` <br />
+`{
+  "name":"<type instantiated>",
+  "kind":"<kind of instatiation>"
+  "point_of_instantiation":"<point of instantiation>"
+}` <br />
 <br />
-The `name` and `kind` fields are the same as the fields of the `frame` object.
+The `name`, `kind`, `point_of_instantiation` fields are the same as the fields
+of the `frame` object.
 
 * __call\_graph__ <br />
 <br />
@@ -62,12 +67,14 @@ format of the nodes is the following: <br />
 `{
   "name":"<type instantiated>",
   "kind":"<kind of instatiation>",
+  "point_of_instantiation":"<point of instantiation>"
   "depth":<depth of the node in the tree>,
   "children":<number of children the node has>
 }` <br />
 <br />
-The `name` and `kind` fields are the same as the fields of the `frame` object.
-The values of the `<depth>` and `<children>` fields are integers.
+The `name`, `kind` and `point_of_instantiation` fields are the same as the
+fields of the `frame` object. The values of the `<depth>` and `<children>`
+fields are integers.
 
 * __code\_completion\_result__ <br />
 <br />
@@ -115,13 +122,14 @@ Format:
   "type":"frame",
   "name":"<type instantiated>",
   "kind":"<kind of instatiation>"
+  "point_of_instantiation":"<point of instantiation>"
 }` <br />
 <br />
 Display a template class instantiation. This is treated as a stack frame of a
 template metaprogram execution (this is where the name comes from). The
 `<type instantiated>` is the pretty-printed version of the template instance.
-The `kind` field is optional depending on whether Metashell has this
-information. The possible values are: <br />
+The `kind` and `point_of_instantiation` fields are optional depending on
+whether Metashell has this information. The possible values for kind are: <br />
 
     * `DefaultFunctionArgumentInstantiation`
     * `DefaultTemplateArgumentChecking`
@@ -134,6 +142,11 @@ information. The possible values are: <br />
     * `PriorTemplateArgumentSubstitution`
     * `TemplateInstantiation`
     * `UnknownKind`
+
+Format of `point_of_instantiation` is `<file_name>:<row>:<column>`. For example:
+`main.cpp:35:16`. There is a special file called `<stdin>` which can appear in
+this field. This is a placeholder for the the code directly entered into the
+shell.
 
 * __prompt__ <br />
 <br />
