@@ -209,7 +209,7 @@ void shell::display_splash(
 
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(
-    paragraph("Metashell Copyright (C) 2013 Abel Sinkovics (abel@sinkovics.hu)")
+    paragraph("Metashell Copyright (C) 2015 Abel Sinkovics (abel@sinkovics.hu)")
   );
   splash_text.paragraphs.push_back(
     paragraph(
