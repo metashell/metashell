@@ -267,3 +267,21 @@ JUST_TEST_CASE(test_three_line_input)
   JUST_ASSERT(i == r.end());
 }
 
+JUST_TEST_CASE(test_dealing_with_crashing_clang)
+{
+  const auto r =
+    run_metashell({
+      command("template <class = void> struct foo { ~foo() {} };"),
+      // This test assumes, that Clang breaks for the following command:
+      command("decltype(&foo<>::~foo)")
+    });
+
+  auto i = r.begin();
+
+  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(error(_), *i); ++i;
+
+  JUST_ASSERT(i == r.end());
+}
+

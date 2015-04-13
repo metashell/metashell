@@ -497,6 +497,33 @@ namespace just
 #endif
 
 #ifndef _WIN32
+    inline std::string exit_reason(int status_)
+    {
+      if (WIFSIGNALED(status_))
+      {
+        std::ostringstream s;
+        s << "\nProcess died due to unhandled signal " << WTERMSIG(status_)
+          << ".";
+        return s.str();
+      }
+      else if (WCOREDUMP(status_))
+      {
+        return "\nProcess core dumped.";
+      }
+      else if (WIFSTOPPED(status_))
+      {
+        std::ostringstream s;
+        s << "\nProcess was stopped with signal " << WSTOPSIG(status_) << ".";
+        return s.str();
+      }
+      else
+      {
+        return "";
+      }
+    }
+#endif
+
+#ifndef _WIN32
     template <class Seq>
     output run(const Seq& cmd_, const std::string& input_)
     {
@@ -569,13 +596,15 @@ namespace just
         int status;
         waitpid(pid, &status, 0);
 
-        assert(WIFEXITED(status) && "child didn't exit normally");
-
         const std::string err = error_reporting.input.read();
         if (err.empty())
         {
-          return output(WEXITSTATUS(status),
-            standard_output_string, standard_error.input.read());
+          return
+            output(
+              WIFEXITED(status) ? WEXITSTATUS(status) : -1,
+              standard_output_string,
+              standard_error.input.read() + exit_reason(status)
+            );
         }
         else
         {
