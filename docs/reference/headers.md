@@ -32,6 +32,14 @@ These header files are available in Metashell:
     </td>
   </tr>
   <tr>
+    <td><code>metashell/instantiate_expression.hpp</code></td>
+    <td>
+      Defines the <code>METASHELL_INSTANTIATE_EXPRESSION(...)</code> macro. This
+      can be used to instantiate the templates needed by the <code>...</code>
+      expression.
+    </td>
+  </tr>
+  <tr>
     <td><code>metashell/scalar.hpp</code></td>
     <td>Defines the <code>SCALAR</code> macro.</td>
   </tr>

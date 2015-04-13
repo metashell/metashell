@@ -171,6 +171,17 @@ namespace
           "(__VA_ARGS__)"
         ">\n"
     );
+
+    headers_.add(
+      internal_dir / "metashell" / "instantiate_expression.hpp",
+      "namespace metashell\n"
+      "{\n"
+      "  template <bool> struct expression_instantiated;\n"
+      "}\n"
+      
+      "#define METASHELL_INSTANTIATE_EXPRESSION(...) \\\n"
+      "  ::metashell::expression_instantiated<true ? true : ((__VA_ARGS__), false)>\n"
+    );
   }
 }
 

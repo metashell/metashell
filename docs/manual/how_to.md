@@ -78,5 +78,81 @@ correct results, you need to make sure that you use the same include path and
 macro definitions (`-D` arguments) when you launch Metashell that you use to
 build your `fun.cpp` file.
 
+## see what templates are instantiated by a certain (normal C++) expression?
+
+In some cases it is both interesting and useful to know what templates and with
+what arguments a certain expression in your code instantiates. It can be very
+helpful in understanding and fixing compilation errors. But even when your code
+compiles and works as expected, there might be significantly more templates
+involved that you thought (eg. when you use generic libraries like STL).
+
+Let's look at the following example: a function taking advantage of variadic
+templates to summarise an arbitrary number of values:
+
+```cpp
+#include <type_traits>
+
+template <class T>
+T sum(T t_)
+{
+  return t_;
+}
+
+template <class T, class... Ts>
+typename std::common_type<T, Ts...>::type sum(T t_, Ts... ts_)
+{
+  return t_ + sum(ts_...);
+}
+```
+
+To sum the numbers between 1 and 10, one can call
+`sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)`.
+
+We know (or think we know) what templates get instantiated by the above
+expression. We can use Metashell and MDB to verify it. Let's store the above
+code in `sum.hpp` and include it into the shell:
+
+```cpp
+> #include "sum.hpp"
+> #include <metashell/instantiate_expression.hpp>
+```
+
+We have included a built-in header, `metashell/instantiate_expression.hpp` as
+well. This header defines the `METASHELL_INSTANTIATE_EXPRESSION` macro, which
+can be used to evaluate an arbitrary C++ expression in the shell. Let's do it:
+
+```cpp
+> METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
+metashell::expression_instantiated<true>
+```
+
+The shell says that all templates could be instantiated successfully (when there
+are errors, the shell displays the error report). We can use MDB to see what
+templates are instantiated by the expression and how they are related:
+
+```cpp
+> #msh mdb METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
+For help, type "help".
+Metaprogram started
+```
+
+Now we can display the instantiation tree:
+
+```cpp
+(mdb) ft
+METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
++ sum<int, int, int, int, int, int, int, int, int, int> (TemplateInstantiation from <stdin>:2:26)
+| ` sum<int, int, int, int, int, int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|   ` sum<int, int, int, int, int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|     ` sum<int, int, int, int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|       ` sum<int, int, int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|         ` sum<int, int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|           ` sum<int, int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|             ` sum<int, int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|               ` sum<int, int> (TemplateInstantiation from ./sum.hpp:12:15)
+|                 ` sum<int> (TemplateInstantiation from ./sum.hpp:12:15)
+` metashell::expression_instantiated<true> (TemplateInstantiation from <stdin>:2:99)
+```
+
 <p>&nbsp;</p>
 
