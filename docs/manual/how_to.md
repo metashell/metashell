@@ -154,5 +154,10 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 ` metashell::expression_instantiated<true> (TemplateInstantiation from <stdin>:2:99)
 ```
 
+> Note that `decltype( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )` shows the result of
+> instantiating the function template signature only.
+> `METASHELL_INSTANTIATE_EXPRESSION` instantiates the body of the function
+> templates (and further template instantiations triggered by them) as well.
+
 <p>&nbsp;</p>
 
