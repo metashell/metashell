@@ -30,7 +30,7 @@ int metashell_system_test::main(int argc_, char* argv_[])
   const auto end = argv_ + argc_;
   const auto sep = std::find(argv_, end, std::string("--"));
 
-  if (argc_ < 3 || sep == end)
+  if (argc_ < 3 || sep == end || sep < argv_ + 2)
   {
     std::cerr
       << "Usage: " << argv_[0]
