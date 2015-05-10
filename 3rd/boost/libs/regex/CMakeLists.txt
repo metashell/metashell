@@ -17,7 +17,7 @@
 aux_source_directory(. SOURCES)
 add_library(boost_regex STATIC ${SOURCES})
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
 endif()
 
