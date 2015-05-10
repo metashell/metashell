@@ -158,7 +158,7 @@ endif ()
 # The standard Clang header files
 file(WRITE "${PROJECT_BINARY_DIR}/empty.hpp" "")
 execute_process(
-  COMMAND ${CLANG_BINARY} -v -xc++ "${PROJECT_BINARY_DIR}/empty.hpp"
+  COMMAND ${CLANG_BINARY} -v -xc++ "${PROJECT_BINARY_DIR}/empty.hpp" -c
   ERROR_VARIABLE CLANG_OUTPUT
 )
 string(REGEX MATCHALL "[^\r\n]*[\r\n]" LINES "${CLANG_OUTPUT}")
