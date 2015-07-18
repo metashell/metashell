@@ -92,6 +92,7 @@ namespace
     else
     {
       const std::string str = text_ + *pos;
+      // readline expects the string to be allocated by malloc
       char* s = (char*)malloc(str.length() + 1);
       std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
       s[str.length()] = 0;
