@@ -114,6 +114,7 @@ namespace
   {
     processor_queue = &processor_queue_;
     rl_attempted_completion_function = tab_completion;
+    rl_completion_append_character = '\0';
 
     if (char *line = ::readline(prompt_.c_str()))
     {
