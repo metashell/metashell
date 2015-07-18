@@ -86,7 +86,7 @@ namespace
 
     if (pos == values.end())
     {
-      return 0;
+      return nullptr;
     }
     else
     {
@@ -97,7 +97,7 @@ namespace
       ++pos;
       return s;
     }
-    return 0;
+    return nullptr;
   }
 
   char** tab_completion(const char* text_, int, int end_)
