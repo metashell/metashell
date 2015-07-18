@@ -24,7 +24,6 @@
 #  include <readline/history.h>
 #endif
 
-#include <iostream>
 #include <cassert>
 #include <algorithm>
 
