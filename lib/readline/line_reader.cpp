@@ -24,6 +24,7 @@
 #  include <readline/history.h>
 #endif
 
+#include <iostream>
 #include <cassert>
 #include <algorithm>
 
@@ -91,7 +92,7 @@ namespace
     else
     {
       const std::string str = text_ + *pos;
-      char* s = new char[str.length() + 1];
+      char* s = (char*)malloc(str.length() + 1);
       std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
       s[str.length()] = 0;
       ++pos;
