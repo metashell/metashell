@@ -86,18 +86,19 @@ namespace
 
     if (pos == values.end())
     {
-      return 0;
+      return nullptr;
     }
     else
     {
       const std::string str = text_ + *pos;
-      char* s = new char[str.length() + 1];
+      // readline expects the string to be allocated by malloc
+      char* s = (char*)malloc(str.length() + 1);
       std::copy(str.begin(), str.end(), array_begin(s, str.length() + 1));
       s[str.length()] = 0;
       ++pos;
       return s;
     }
-    return 0;
+    return nullptr;
   }
 
   char** tab_completion(const char* text_, int, int end_)
@@ -113,6 +114,7 @@ namespace
   {
     processor_queue = &processor_queue_;
     rl_attempted_completion_function = tab_completion;
+    rl_completion_append_character = '\0';
 
     if (char *line = ::readline(prompt_.c_str()))
     {
