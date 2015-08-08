@@ -16,11 +16,12 @@
 
 #include <metashell/standard.hpp>
 
+#include <ostream>
 #include <stdexcept>
 
 using namespace metashell;
 
-standard::type metashell::parse_standard(const std::string& std_)
+standard metashell::parse_standard(const std::string& std_)
 {
   if (std_ == "c++0x" || std_ == "c++11")
   {
@@ -36,7 +37,7 @@ standard::type metashell::parse_standard(const std::string& std_)
   }
 }
 
-std::string metashell::clang_argument(standard::type std_)
+std::string metashell::clang_argument(standard std_)
 {
   switch (std_)
   {
@@ -46,4 +47,12 @@ std::string metashell::clang_argument(standard::type std_)
   throw std::runtime_error("Invalid standard value");
 }
 
-
+std::ostream& metashell::operator<<(std::ostream& os, standard std_) {
+  switch (std_)
+  {
+  case standard::cpp11: os << "C++11";
+  case standard::cpp14: os << "C++14";
+  default: os << "Unknown standard";
+  }
+  return os;
+}

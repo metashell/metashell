@@ -17,21 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <iosfwd>
 #include <string>
 
 namespace metashell
 {
-  namespace standard
-  {
-    enum type
-    {
+  enum class standard {
       cpp11,
       cpp14
-    };
-  }
+  };
 
-  standard::type parse_standard(const std::string& std_);
-  std::string clang_argument(standard::type std_);
+  standard parse_standard(const std::string& std_);
+  std::string clang_argument(standard std_);
+
+  std::ostream& operator<<(std::ostream& os, standard std_);
 }
 
 #endif

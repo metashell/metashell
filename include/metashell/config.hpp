@@ -35,7 +35,7 @@ namespace metashell
   public:
     std::vector<std::string> include_path;
     bool verbose;
-    standard::type standard_to_use;
+    standard standard_to_use;
     std::vector<std::string> macros;
     bool warnings_enabled;
     std::vector<std::string> extra_clang_args;
