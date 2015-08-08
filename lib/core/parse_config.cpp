@@ -291,25 +291,26 @@ parse_config_result metashell::parse_config(
 parse_config_result parse_config_result::exit(bool with_error_)
 {
   parse_config_result r;
-  r.action = with_error_ ? exit_with_error : exit_without_error;
+  r.action =
+    with_error_ ? action_t::exit_with_error : action_t::exit_without_error;
   return r;
 }
 
 parse_config_result parse_config_result::start_shell(const user_config& cfg_)
 {
   parse_config_result r;
-  r.action = run_shell;
+  r.action = action_t::run_shell;
   r.cfg = cfg_;
   return r;
 }
 
 bool parse_config_result::should_run_shell() const
 {
-  return action == run_shell;
+  return action == action_t::run_shell;
 }
 
 bool parse_config_result::should_error_at_exit() const
 {
-  return action == exit_with_error;
+  return action == action_t::exit_with_error;
 }
 

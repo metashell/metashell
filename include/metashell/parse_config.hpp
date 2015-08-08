@@ -25,7 +25,7 @@ namespace metashell
 {
   struct parse_config_result
   {
-    enum action_t
+    enum class action_t
     {
       run_shell,
       exit_with_error,
