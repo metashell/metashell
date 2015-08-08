@@ -32,7 +32,7 @@ namespace metashell
     bool verbose = false;
     bool syntax_highlight = true;
     bool indent = true;
-    standard::type standard_to_use = standard::cpp11;
+    standard standard_to_use = standard::cpp11;
     std::vector<std::string> macros;
     bool warnings_enabled = true;
     std::vector<std::string> extra_clang_args;

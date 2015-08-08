@@ -33,10 +33,10 @@
 
 namespace metashell {
 
+enum class direction_t { forward, backwards };
+
 class metaprogram {
 public:
-
-  enum direction_t { forward, backwards };
 
   // Creates empty metaprogram: single <root> vertex
   metaprogram(

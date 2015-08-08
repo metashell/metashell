@@ -95,9 +95,9 @@ bool metaprogram::is_in_full_mode() const {
 }
 
 bool metaprogram::is_at_endpoint(direction_t direction) const {
-  if (direction == forward) {
+  if (direction == direction_t::forward) {
     return is_finished();
-  } else if (direction == backwards) {
+  } else if (direction == direction_t::backwards) {
     return is_at_start();
   } else {
     assert(false);
@@ -139,9 +139,9 @@ metaprogram::vertex_descriptor metaprogram::get_root_vertex() const {
 }
 
 void metaprogram::step(direction_t direction) {
-  if (direction == forward) {
+  if (direction == direction_t::forward) {
     step();
-  } else if (direction == backwards) {
+  } else if (direction == direction_t::backwards) {
     step_back();
   } else {
     assert(false);

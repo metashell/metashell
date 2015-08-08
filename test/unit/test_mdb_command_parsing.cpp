@@ -26,8 +26,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{{"asd"}}, non_repeatable, nullptr, "", "", ""},
-    {{{"efg"}}, non_repeatable, nullptr, "", "", ""}
+    {{{"asd"}}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{{"efg"}}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -60,8 +60,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", "", ""},
-    {{"afg"}, non_repeatable, nullptr, "", "", ""}
+    {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"afg"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -84,8 +84,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", "", ""},
-    {{"a"}, non_repeatable, nullptr, "", "", ""}
+    {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"a"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -108,8 +108,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"asd"}, non_repeatable, nullptr, "", "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", "", ""}
+    {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -123,8 +123,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"asd", "xyz"}, non_repeatable, nullptr, "", "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", "", ""}
+    {{"asd", "xyz"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -152,8 +152,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", "", ""}
+    {{"ft", "forwardtrace"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -171,8 +171,9 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace", "fff"}, non_repeatable, nullptr, "", "", ""},
-    {{"asf"}, non_repeatable, nullptr, "", "", ""}
+    {{"ft", "forwardtrace", "fff"}, repeatable_t::non_repeatable, nullptr,
+      "", "", ""},
+    {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -193,8 +194,8 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"ft", "forwardtrace"}, non_repeatable, nullptr, "", "", ""},
-    {{"fff"}, non_repeatable, nullptr, "", "", ""}
+    {{"ft", "forwardtrace"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
+    {{"fff"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);
@@ -206,7 +207,7 @@ JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 {
   mdb_command_handler_map::commands_t commands =
   {
-    {{"asf"}, non_repeatable, nullptr, "", "", ""}
+    {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}
   };
 
   mdb_command_handler_map map(commands);

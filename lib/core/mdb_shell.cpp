@@ -94,7 +94,8 @@ namespace metashell {
 const mdb_command_handler_map mdb_shell::command_handler =
   mdb_command_handler_map(
     {
-      {{"evaluate"}, non_repeatable, callback(&mdb_shell::command_evaluate),
+      {{"evaluate"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_evaluate),
         "[-full] [-profile] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
@@ -107,7 +108,8 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "explicitly enter `metashell::format< <type> >::type` for the same effect.\n\n"
         "The qualifier `-profile` is intentionally undocumented. It is only used for\n"
         "internal profiling, and could be changed or removed at any time."},
-      {{"step"}, repeatable, callback(&mdb_shell::command_step),
+      {{"step"}, repeatable_t::repeatable,
+        callback(&mdb_shell::command_step),
         "[over|out] [n]",
         "Step the program.",
         "Argument n means step n times. n defaults to 1 if not specified.\n"
@@ -115,7 +117,8 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "`step over` is an alias for next.\n"
         "Use of the `out` qualifier will jump out of the current instantiation frame.\n"
         "Similarly to `next`, `step out -1` is not always the inverse of `step out`."},
-      {{"next"}, repeatable, callback(&mdb_shell::command_next),
+      {{"next"}, repeatable_t::repeatable,
+        callback(&mdb_shell::command_next),
         "[n]",
         "Jump over to the next instantiation skipping sub instantiations.",
         "Argument n means jump n times. n defaults to 1 if not specified.\n"
@@ -125,30 +128,36 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "by the current parent, then `next` will behave like a normal `step`,\n"
         "and will step out of one or more instantiation frames.\n\n"
         "`step over` is an alias for next."},
-      {{"rbreak"}, non_repeatable, callback(&mdb_shell::command_rbreak),
+      {{"rbreak"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_rbreak),
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
         ""},
-      {{"continue"}, repeatable, callback(&mdb_shell::command_continue),
+      {{"continue"}, repeatable_t::repeatable,
+        callback(&mdb_shell::command_continue),
         "[n]",
         "Continue program being debugged.",
         "The program is continued until the nth breakpoint or the end of the program\n"
         "is reached. n defaults to 1 if not specified.\n"
         "Negative n means continue the program backwards."},
-      {{"forwardtrace", "ft"}, non_repeatable, callback(&mdb_shell::command_forwardtrace),
+      {{"forwardtrace", "ft"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_forwardtrace),
         "[n]",
         "Print forwardtrace from the current point.",
         "The n specifier limits the depth of the trace. If n is not specified, then the\n"
         "trace depth is unlimited."},
-      {{"backtrace", "bt"}, non_repeatable, callback(&mdb_shell::command_backtrace),
+      {{"backtrace", "bt"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_backtrace),
         "",
         "Print backtrace from the current point.",
         ""},
-      {{"help"}, non_repeatable, callback(&mdb_shell::command_help),
+      {{"help"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_help),
         "[<command>]",
         "Show help for commands.",
         "If <command> is not specified, show a list of all available commands."},
-      {{"quit"} , non_repeatable, callback(&mdb_shell::command_quit),
+      {{"quit"} , repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_quit),
         "",
         "Quit metadebugger.",
         ""}
@@ -308,8 +317,8 @@ void mdb_shell::command_continue(
     return;
   }
 
-  metaprogram::direction_t direction =
-    *continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+  direction_t direction =
+    *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
 
   breakpoints_t::iterator breakpoint_it = breakpoints.end();
   for (int i = 0;
@@ -343,15 +352,18 @@ void mdb_shell::command_step(
        end = arg.end();
 
   int step_count = 1;
-  enum { normal, over, out } step_type = normal;
+
+  enum class step_t { normal, over, out };
+
+  step_t step_type = step_t::normal;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
         -(
-          lit("over")[ref(step_type) = over] |
-          lit("out")[ref(step_type) = out]
+          lit("over")[ref(step_type) = step_t::over] |
+          lit("out")[ref(step_type) = step_t::out]
         ) >>
         -int_[ref(step_count) = _1],
 
@@ -363,23 +375,23 @@ void mdb_shell::command_step(
     return;
   }
 
-  metaprogram::direction_t direction =
-    step_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+  direction_t direction =
+    step_count >= 0 ? direction_t::forward : direction_t::backwards;
 
   int iteration_count = std::abs(step_count);
 
   switch (step_type) {
-    case normal:
+    case step_t::normal:
       for (int i = 0;
           i < iteration_count && !mp->is_at_endpoint(direction); ++i)
       {
         mp->step(direction);
       }
       break;
-    case over:
+    case step_t::over:
       next_metaprogram(direction, iteration_count);
       break;
-    case out:
+    case step_t::out:
       {
         for (int i = 0;
             i < iteration_count && !mp->is_at_endpoint(direction); ++i)
@@ -416,7 +428,7 @@ void mdb_shell::command_next(
   }
 
   next_metaprogram(
-    next_count >= 0 ? metaprogram::forward : metaprogram::backwards,
+    next_count >= 0 ? direction_t::forward : direction_t::backwards,
     std::abs(*next_count));
 
   display_movement_info(next_count != 0, displayer_);
@@ -861,7 +873,7 @@ boost::optional<int> mdb_shell::parse_single_integer_arg(
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
-    metaprogram::direction_t direction)
+    direction_t direction)
 {
   assert(!mp->is_at_endpoint(direction));
 
@@ -878,7 +890,7 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
   }
 }
 
-void mdb_shell::next_metaprogram(metaprogram::direction_t direction, int n) {
+void mdb_shell::next_metaprogram(direction_t direction, int n) {
   assert(n >= 0);
   for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
   {

@@ -27,7 +27,7 @@ namespace metashell {
 
 class mdb_shell;
 
-enum repeatable_t {
+enum class repeatable_t {
   repeatable,
   non_repeatable
 };

@@ -35,7 +35,7 @@ const mdb_command::keys_t& mdb_command::get_keys() const {
 }
 
 bool mdb_command::is_repeatable() const {
-  return rep == repeatable;
+  return rep == repeatable_t::repeatable;
 }
 
 mdb_command::function mdb_command::get_func() const {
