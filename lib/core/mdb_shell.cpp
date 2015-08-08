@@ -317,8 +317,8 @@ void mdb_shell::command_continue(
     return;
   }
 
-  metaprogram::direction_t direction =
-    *continue_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+  direction_t direction =
+    *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
 
   breakpoints_t::iterator breakpoint_it = breakpoints.end();
   for (int i = 0;
@@ -372,8 +372,8 @@ void mdb_shell::command_step(
     return;
   }
 
-  metaprogram::direction_t direction =
-    step_count >= 0 ? metaprogram::forward : metaprogram::backwards;
+  direction_t direction =
+    step_count >= 0 ? direction_t::forward : direction_t::backwards;
 
   int iteration_count = std::abs(step_count);
 
@@ -425,7 +425,7 @@ void mdb_shell::command_next(
   }
 
   next_metaprogram(
-    next_count >= 0 ? metaprogram::forward : metaprogram::backwards,
+    next_count >= 0 ? direction_t::forward : direction_t::backwards,
     std::abs(*next_count));
 
   display_movement_info(next_count != 0, displayer_);
@@ -870,7 +870,7 @@ boost::optional<int> mdb_shell::parse_single_integer_arg(
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
-    metaprogram::direction_t direction)
+    direction_t direction)
 {
   assert(!mp->is_at_endpoint(direction));
 
@@ -887,7 +887,7 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
   }
 }
 
-void mdb_shell::next_metaprogram(metaprogram::direction_t direction, int n) {
+void mdb_shell::next_metaprogram(direction_t direction, int n) {
   assert(n >= 0);
   for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
   {
