@@ -31,6 +31,10 @@ standard metashell::parse_standard(const std::string& std_)
   {
     return standard::cpp14;
   }
+  else if (std_ == "c++1z")
+  {
+    return standard::cpp1z;
+  }
   else
   {
     throw std::runtime_error("Invalid standard version: " + std_);
@@ -43,6 +47,7 @@ std::string metashell::clang_argument(standard std_)
   {
   case standard::cpp11: return "-std=c++0x";
   case standard::cpp14: return "-std=c++1y";
+  case standard::cpp1z: return "-std=c++1z";
   }
   throw std::runtime_error("Invalid standard value");
 }
@@ -52,6 +57,7 @@ std::ostream& metashell::operator<<(std::ostream& os, standard std_) {
   {
   case standard::cpp11: os << "C++11";
   case standard::cpp14: os << "C++14";
+  case standard::cpp1z: os << "C++1z";
   default: os << "Unknown standard";
   }
   return os;

@@ -24,7 +24,8 @@ namespace metashell
 {
   enum class standard {
     cpp11,
-    cpp14
+    cpp14,
+    cpp1z
   };
 
   standard parse_standard(const std::string& std_);
