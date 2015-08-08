@@ -352,15 +352,18 @@ void mdb_shell::command_step(
        end = arg.end();
 
   int step_count = 1;
-  enum { normal, over, out } step_type = normal;
+
+  enum class step_t { normal, over, out };
+
+  step_t step_type = step_t::normal;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
         -(
-          lit("over")[ref(step_type) = over] |
-          lit("out")[ref(step_type) = out]
+          lit("over")[ref(step_type) = step_t::over] |
+          lit("out")[ref(step_type) = step_t::out]
         ) >>
         -int_[ref(step_count) = _1],
 
@@ -378,17 +381,17 @@ void mdb_shell::command_step(
   int iteration_count = std::abs(step_count);
 
   switch (step_type) {
-    case normal:
+    case step_t::normal:
       for (int i = 0;
           i < iteration_count && !mp->is_at_endpoint(direction); ++i)
       {
         mp->step(direction);
       }
       break;
-    case over:
+    case step_t::over:
       next_metaprogram(direction, iteration_count);
       break;
-    case out:
+    case step_t::out:
       {
         for (int i = 0;
             i < iteration_count && !mp->is_at_endpoint(direction); ++i)
