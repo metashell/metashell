@@ -39,7 +39,24 @@ then
     echo "Getting LLVM/Clang"
     svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
     cd llvm
-      svn info | grep Revision | egrep -o '[0-9]*' > ../revision.txt
+      CLANG_REV_TXT=../revision.txt
+      CLANG_REV_HEADER=../../../include/metashell/clang_revision.hpp
+
+      svn info | grep Revision | egrep -o '[0-9]*' > ${CLANG_REV_TXT}
+      echo "#ifndef METASHELL_CLANG_REVISION_HPP" > ${CLANG_REV_HEADER}
+      echo "#define METASHELL_CLANG_REVISION_HPP" >> ${CLANG_REV_HEADER}
+      echo "/*" >> ${CLANG_REV_HEADER}
+      echo " * This is an automatically generated header using tools/get_templight.sh" >> ${CLANG_REV_HEADER}
+      echo " */" >> ${CLANG_REV_HEADER}
+      echo >> ${CLANG_REV_HEADER}
+      echo "#ifdef METASHELL_CLANG_REVISION">> ${CLANG_REV_HEADER}
+      echo "#  error METASHELL_CLANG_REVISION already defined">> ${CLANG_REV_HEADER}
+      echo "#endif" >> ${CLANG_REV_HEADER}
+      echo -n "#define METASHELL_CLANG_REVISION " >> ${CLANG_REV_HEADER}
+      cat ${CLANG_REV_TXT} >> ${CLANG_REV_HEADER}
+      echo >> ${CLANG_REV_HEADER}
+      echo "#endif" >> ${CLANG_REV_HEADER}
+
       cd tools
         svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
       cd ..

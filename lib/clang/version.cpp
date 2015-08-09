@@ -15,15 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/clang/version.hpp>
-
 #include <metashell/clang/cxstring.hpp>
 
+#include <metashell/clang_revision.hpp>
+
 #include <clang-c/Index.h>
+
+#include <boost/preprocessor/stringize.hpp>
 
 using namespace metashell::clang;
 
 std::string metashell::clang::libclang_version()
 {
-  return std::string(cxstring(clang_getClangVersion())) + " (r244415)";
+  return
+    std::string(cxstring(clang_getClangVersion()))
+    + " (r" BOOST_PP_STRINGIZE(METASHELL_CLANG_REVISION) ")";
 }
 
