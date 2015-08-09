@@ -23,7 +23,7 @@
     * `cd 3rd/templight`
     * `mkdir build`
     * `cd build`
-    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release`
     * `make clang libclang libclang_static templight`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
@@ -149,7 +149,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
     * `cd 3rd/templight`
     * `mkdir build`
     * `cd build`
-    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release`
     * `make clang libclang libclang_static templight`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`

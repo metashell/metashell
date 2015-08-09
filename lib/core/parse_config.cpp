@@ -183,7 +183,7 @@ parse_config_result metashell::parse_config(
     ("indent", "Enable indenting (experimental)")
     (
       "std", value(&cppstd)->default_value(cppstd),
-      "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14."
+      "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14, c++1z."
     )
     ("no_warnings,w", "Disable warnings")
     (

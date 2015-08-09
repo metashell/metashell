@@ -24,6 +24,6 @@ using namespace metashell::clang;
 
 std::string metashell::clang::libclang_version()
 {
-  return cxstring(clang_getClangVersion());
+  return std::string(cxstring(clang_getClangVersion())) + " (r244415)";
 }
 

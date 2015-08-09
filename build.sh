@@ -70,7 +70,7 @@ echo "Platform: ${PLATFORM}"
 cd 3rd
   cd templight
     mkdir build; cd build
-      cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON \
+      cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release \
         && make clang libclang libclang_static templight -j${BUILD_THREADS}
     cd ..
   cd ..
