@@ -124,25 +124,15 @@ public:
   size_type count() const {
     unsigned NumBits = 0;
     for (unsigned i = 0; i < BITWORDS_PER_ELEMENT; ++i)
-      if (sizeof(BitWord) == 4)
-        NumBits += CountPopulation_32(Bits[i]);
-      else if (sizeof(BitWord) == 8)
-        NumBits += CountPopulation_64(Bits[i]);
-      else
-        llvm_unreachable("Unsupported!");
+      NumBits += countPopulation(Bits[i]);
     return NumBits;
   }
 
   /// find_first - Returns the index of the first set bit.
   int find_first() const {
     for (unsigned i = 0; i < BITWORDS_PER_ELEMENT; ++i)
-      if (Bits[i] != 0) {
-        if (sizeof(BitWord) == 4)
-          return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
-        if (sizeof(BitWord) == 8)
-          return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
-        llvm_unreachable("Unsupported!");
-      }
+      if (Bits[i] != 0)
+        return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
     llvm_unreachable("Illegal empty element");
   }
 
@@ -161,23 +151,13 @@ public:
     // Mask off previous bits.
     Copy &= ~0UL << BitPos;
 
-    if (Copy != 0) {
-      if (sizeof(BitWord) == 4)
-        return WordPos * BITWORD_SIZE + countTrailingZeros(Copy);
-      if (sizeof(BitWord) == 8)
-        return WordPos * BITWORD_SIZE + countTrailingZeros(Copy);
-      llvm_unreachable("Unsupported!");
-    }
+    if (Copy != 0)
+      return WordPos * BITWORD_SIZE + countTrailingZeros(Copy);
 
     // Check subsequent words.
     for (unsigned i = WordPos+1; i < BITWORDS_PER_ELEMENT; ++i)
-      if (Bits[i] != 0) {
-        if (sizeof(BitWord) == 4)
-          return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
-        if (sizeof(BitWord) == 8)
-          return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
-        llvm_unreachable("Unsupported!");
-      }
+      if (Bits[i] != 0)
+        return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
     return -1;
   }
 
@@ -473,6 +453,9 @@ public:
 
   // Assignment
   SparseBitVector& operator=(const SparseBitVector& RHS) {
+    if (this == &RHS)
+      return *this;
+
     Elements.clear();
 
     ElementListConstIter ElementIter = RHS.Elements.begin();
@@ -579,6 +562,9 @@ public:
 
   // Union our bitmap with the RHS and return true if we changed.
   bool operator|=(const SparseBitVector &RHS) {
+    if (this == &RHS)
+      return false;
+
     bool changed = false;
     ElementListIter Iter1 = Elements.begin();
     ElementListConstIter Iter2 = RHS.Elements.begin();
@@ -607,6 +593,9 @@ public:
 
   // Intersect our bitmap with the RHS and return true if ours changed.
   bool operator&=(const SparseBitVector &RHS) {
+    if (this == &RHS)
+      return false;
+
     bool changed = false;
     ElementListIter Iter1 = Elements.begin();
     ElementListConstIter Iter2 = RHS.Elements.begin();
@@ -639,9 +628,13 @@ public:
         ElementListIter IterTmp = Iter1;
         ++Iter1;
         Elements.erase(IterTmp);
+        changed = true;
       }
     }
-    Elements.erase(Iter1, Elements.end());
+    if (Iter1 != Elements.end()) {
+      Elements.erase(Iter1, Elements.end());
+      changed = true;
+    }
     CurrElementIter = Elements.begin();
     return changed;
   }
@@ -649,6 +642,14 @@ public:
   // Intersect our bitmap with the complement of the RHS and return true
   // if ours changed.
   bool intersectWithComplement(const SparseBitVector &RHS) {
+    if (this == &RHS) {
+      if (!empty()) {
+        clear();
+        return true;
+      }
+      return false;
+    }
+
     bool changed = false;
     ElementListIter Iter1 = Elements.begin();
     ElementListConstIter Iter2 = RHS.Elements.begin();
@@ -695,6 +696,15 @@ public:
   void intersectWithComplement(const SparseBitVector<ElementSize> &RHS1,
                                const SparseBitVector<ElementSize> &RHS2)
   {
+    if (this == &RHS1) {
+      intersectWithComplement(RHS2);
+      return;
+    } else if (this == &RHS2) {
+      SparseBitVector RHS2Copy(RHS2);
+      intersectWithComplement(RHS1, RHS2Copy);
+      return;
+    }
+
     Elements.clear();
     CurrElementIter = Elements.begin();
     ElementListConstIter Iter1 = RHS1.Elements.begin();

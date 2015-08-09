@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -fopenmp=libiomp5 -verify %s
+// RUN: %clang_cc1 -fsyntax-only -fopenmp -verify %s
 
 // expected-error@+1 {{unexpected OpenMP directive '#pragma omp parallel for'}}
 #pragma omp parallel for
@@ -57,11 +57,6 @@ void test_non_identifiers() {
 
 // expected-warning@+1 {{extra tokens at the end of '#pragma omp parallel for' are ignored}}
 #pragma omp parallel for;
-  for (i = 0; i < 16; ++i)
-    ;
-// expected-error@+2 {{unexpected OpenMP clause 'linear' in directive '#pragma omp parallel for'}}
-// expected-warning@+1 {{extra tokens at the end of '#pragma omp parallel for' are ignored}}
-#pragma omp parallel for linear(x);
   for (i = 0; i < 16; ++i)
     ;
 

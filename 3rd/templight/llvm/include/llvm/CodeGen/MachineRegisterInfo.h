@@ -95,20 +95,8 @@ private:
     return MO->Contents.Reg.Next;
   }
 
-  /// UsedRegUnits - This is a bit vector that is computed and set by the
-  /// register allocator, and must be kept up to date by passes that run after
-  /// register allocation (though most don't modify this).  This is used
-  /// so that the code generator knows which callee save registers to save and
-  /// for other target specific uses.
-  /// This vector has bits set for register units that are modified in the
-  /// current function. It doesn't include registers clobbered by function
-  /// calls with register mask operands.
-  BitVector UsedRegUnits;
-
   /// UsedPhysRegMask - Additional used physregs including aliases.
   /// This bit vector represents all the registers clobbered by function calls.
-  /// It can model things that UsedRegUnits can't, such as function calls that
-  /// clobber ymm7 but preserve the low half in xmm7.
   BitVector UsedPhysRegMask;
 
   /// ReservedRegs - This is a bit vector of reserved registers.  The target
@@ -123,8 +111,8 @@ private:
   /// second element.
   std::vector<std::pair<unsigned, unsigned> > LiveIns;
 
-  MachineRegisterInfo(const MachineRegisterInfo&) LLVM_DELETED_FUNCTION;
-  void operator=(const MachineRegisterInfo&) LLVM_DELETED_FUNCTION;
+  MachineRegisterInfo(const MachineRegisterInfo&) = delete;
+  void operator=(const MachineRegisterInfo&) = delete;
 public:
   explicit MachineRegisterInfo(const MachineFunction *MF);
 
@@ -182,7 +170,18 @@ public:
   /// information.
   void invalidateLiveness() { TracksLiveness = false; }
 
-  bool tracksSubRegLiveness() const { return TracksSubRegLiveness; }
+  /// Returns true if liveness for register class @p RC should be tracked at
+  /// the subregister level.
+  bool shouldTrackSubRegLiveness(const TargetRegisterClass &RC) const {
+    return subRegLivenessEnabled() && RC.HasDisjunctSubRegs;
+  }
+  bool shouldTrackSubRegLiveness(unsigned VReg) const {
+    assert(TargetRegisterInfo::isVirtualRegister(VReg) && "Must pass a VReg");
+    return shouldTrackSubRegLiveness(*getRegClass(VReg));
+  }
+  bool subRegLivenessEnabled() const {
+    return TracksSubRegLiveness;
+  }
 
   void enableSubRegLiveness(bool Enable = true) {
     TracksSubRegLiveness = Enable;
@@ -593,7 +592,7 @@ public:
   /// virtual register, for example after removing instructions or splitting
   /// the live range.
   ///
-  bool recomputeRegClass(unsigned Reg, const TargetMachine&);
+  bool recomputeRegClass(unsigned Reg);
 
   /// createVirtualRegister - Create and return a new virtual register in the
   /// function with the specified register class.
@@ -609,22 +608,31 @@ public:
 
   /// setRegAllocationHint - Specify a register allocation hint for the
   /// specified virtual register.
-  void setRegAllocationHint(unsigned Reg, unsigned Type, unsigned PrefReg) {
-    RegAllocHints[Reg].first  = Type;
-    RegAllocHints[Reg].second = PrefReg;
+  void setRegAllocationHint(unsigned VReg, unsigned Type, unsigned PrefReg) {
+    assert(TargetRegisterInfo::isVirtualRegister(VReg));
+    RegAllocHints[VReg].first  = Type;
+    RegAllocHints[VReg].second = PrefReg;
+  }
+
+  /// Specify the preferred register allocation hint for the specified virtual
+  /// register.
+  void setSimpleHint(unsigned VReg, unsigned PrefReg) {
+    setRegAllocationHint(VReg, /*Type=*/0, PrefReg);
   }
 
   /// getRegAllocationHint - Return the register allocation hint for the
   /// specified virtual register.
   std::pair<unsigned, unsigned>
-  getRegAllocationHint(unsigned Reg) const {
-    return RegAllocHints[Reg];
+  getRegAllocationHint(unsigned VReg) const {
+    assert(TargetRegisterInfo::isVirtualRegister(VReg));
+    return RegAllocHints[VReg];
   }
 
   /// getSimpleHint - Return the preferred register allocation hint, or 0 if a
   /// standard simple hint (Type == 0) is not set.
-  unsigned getSimpleHint(unsigned Reg) const {
-    std::pair<unsigned, unsigned> Hint = getRegAllocationHint(Reg);
+  unsigned getSimpleHint(unsigned VReg) const {
+    assert(TargetRegisterInfo::isVirtualRegister(VReg));
+    std::pair<unsigned, unsigned> Hint = getRegAllocationHint(VReg);
     return Hint.first ? 0 : Hint.second;
   }
 
@@ -633,56 +641,17 @@ public:
   /// deleted during LiveDebugVariables analysis.
   void markUsesInDebugValueAsUndef(unsigned Reg) const;
 
-  //===--------------------------------------------------------------------===//
-  // Physical Register Use Info
-  //===--------------------------------------------------------------------===//
-
-  /// isPhysRegUsed - Return true if the specified register is used in this
-  /// function. Also check for clobbered aliases and registers clobbered by
-  /// function calls with register mask operands.
-  ///
-  /// This only works after register allocation. It is primarily used by
-  /// PrologEpilogInserter to determine which callee-saved registers need
-  /// spilling.
-  bool isPhysRegUsed(unsigned Reg) const {
-    if (UsedPhysRegMask.test(Reg))
-      return true;
-    for (MCRegUnitIterator Units(Reg, getTargetRegisterInfo());
-         Units.isValid(); ++Units)
-      if (UsedRegUnits.test(*Units))
-        return true;
-    return false;
-  }
-
-  /// Mark the specified register unit as used in this function.
-  /// This should only be called during and after register allocation.
-  void setRegUnitUsed(unsigned RegUnit) {
-    UsedRegUnits.set(RegUnit);
-  }
-
-  /// setPhysRegUsed - Mark the specified register used in this function.
-  /// This should only be called during and after register allocation.
-  void setPhysRegUsed(unsigned Reg) {
-    for (MCRegUnitIterator Units(Reg, getTargetRegisterInfo());
-         Units.isValid(); ++Units)
-      UsedRegUnits.set(*Units);
-  }
+  /// Return true if the specified register is modified in this function.
+  /// This checks that no defining machine operands exist for the register or
+  /// any of its aliases. Definitions found on functions marked noreturn are
+  /// ignored.
+  bool isPhysRegModified(unsigned PhysReg) const;
 
   /// addPhysRegsUsedFromRegMask - Mark any registers not in RegMask as used.
   /// This corresponds to the bit mask attached to register mask operands.
   void addPhysRegsUsedFromRegMask(const uint32_t *RegMask) {
     UsedPhysRegMask.setBitsNotInMask(RegMask);
   }
-
-  /// setPhysRegUnused - Mark the specified register unused in this function.
-  /// This should only be called during and after register allocation.
-  void setPhysRegUnused(unsigned Reg) {
-    UsedPhysRegMask.reset(Reg);
-    for (MCRegUnitIterator Units(Reg, getTargetRegisterInfo());
-         Units.isValid(); ++Units)
-      UsedRegUnits.reset(*Units);
-  }
-
 
   //===--------------------------------------------------------------------===//
   // Reserved Register Info
@@ -829,7 +798,6 @@ public:
     typedef std::iterator<std::forward_iterator_tag,
                           MachineInstr, ptrdiff_t>::pointer pointer;
 
-    defusechain_iterator(const defusechain_iterator &I) : Op(I.Op) {}
     defusechain_iterator() : Op(nullptr) {}
 
     bool operator==(const defusechain_iterator &x) const {
@@ -932,7 +900,6 @@ public:
     typedef std::iterator<std::forward_iterator_tag,
                           MachineInstr, ptrdiff_t>::pointer pointer;
 
-    defusechain_instr_iterator(const defusechain_instr_iterator &I) : Op(I.Op){}
     defusechain_instr_iterator() : Op(nullptr) {}
 
     bool operator==(const defusechain_instr_iterator &x) const {

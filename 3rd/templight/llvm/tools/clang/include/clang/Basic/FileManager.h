@@ -25,15 +25,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Allocator.h"
 #include <memory>
-// FIXME: Enhance libsystem to support inode and other fields in stat.
-#include <sys/types.h>
 #include <map>
-
-#ifdef _MSC_VER
-typedef unsigned short mode_t;
-#endif
-
-struct stat;
 
 namespace llvm {
 class MemoryBuffer;
@@ -73,11 +65,7 @@ class FileEntry {
   mutable std::unique_ptr<vfs::File> File;
   friend class FileManager;
 
-  void closeFile() const {
-    File.reset(); // rely on destructor to close File
-  }
-
-  void operator=(const FileEntry &) LLVM_DELETED_FUNCTION;
+  void operator=(const FileEntry &) = delete;
 
 public:
   FileEntry()
@@ -109,6 +97,10 @@ public:
   /// \brief Check whether the file is a named pipe (and thus can't be opened by
   /// the native FileManager methods).
   bool isNamedPipe() const { return IsNamedPipe; }
+
+  void closeFile() const {
+    File.reset(); // rely on destructor to close File
+  }
 };
 
 struct FileData;
@@ -262,7 +254,13 @@ public:
   /// \brief If path is not absolute and FileSystemOptions set the working
   /// directory, the path is modified to be relative to the given
   /// working directory.
-  void FixupRelativePath(SmallVectorImpl<char> &path) const;
+  /// \returns true if \c path changed.
+  bool FixupRelativePath(SmallVectorImpl<char> &path) const;
+
+  /// Makes \c Path absolute taking into account FileSystemOptions and the
+  /// working directory option.
+  /// \returns true if \c Path changed to absolute.
+  bool makeAbsolutePath(SmallVectorImpl<char> &Path) const;
 
   /// \brief Produce an array mapping from the unique IDs assigned to each
   /// file to the corresponding FileEntry pointer.
@@ -275,7 +273,7 @@ public:
                               time_t ModificationTime);
 
   /// \brief Remove any './' components from a path.
-  static bool removeDotPaths(SmallVectorImpl<char> &Path);
+  static bool removeDotPaths(SmallVectorImpl<char> &Path, bool RemoveDotDot = false);
 
   /// \brief Retrieve the canonical name for a given directory.
   ///

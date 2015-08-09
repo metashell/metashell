@@ -39,5 +39,51 @@ entry:
 ; CHECK: blr
 }
 
+; Function Attrs: nounwind readnone
+declare i32 @llvm.bswap.i32(i32) #0
+
+; Function Attrs: nounwind readonly
+define zeroext i32 @bs32(i32* nocapture readonly %x) #1 {
+entry:
+  %0 = load i32, i32* %x, align 4
+  %1 = tail call i32 @llvm.bswap.i32(i32 %0)
+  ret i32 %1
+
+; CHECK-LABEL: @bs32
+; CHECK-NOT: rldicl 3, {{[0-9]+}}, 0, 32
+; CHECK: blr
+}
+
+; Function Attrs: nounwind readonly
+define zeroext i16 @bs16(i16* nocapture readonly %x) #1 {
+entry:
+  %0 = load i16, i16* %x, align 2
+  %1 = tail call i16 @llvm.bswap.i16(i16 %0)
+  ret i16 %1
+
+; CHECK-LABEL: @bs16
+; CHECK-NOT: rldicl 3, {{[0-9]+}}, 0, 32
+; CHECK: blr
+}
+
+; Function Attrs: nounwind readnone
+declare i16 @llvm.bswap.i16(i16) #0
+
+; Function Attrs: nounwind readnone
+define zeroext i32 @ctlz32(i32 zeroext %x) #0 {
+entry:
+  %0 = tail call i32 @llvm.ctlz.i32(i32 %x, i1 false)
+  ret i32 %0
+
+; CHECK-LABEL: @ctlz32
+; CHECK-NOT: rldicl 3, {{[0-9]+}}, 0, 32
+; CHECK: blr
+}
+
+; Function Attrs: nounwind readnone
+declare i32 @llvm.ctlz.i32(i32, i1) #0
+
+
 attributes #0 = { nounwind readnone }
+attributes #1 = { nounwind readonly }
 

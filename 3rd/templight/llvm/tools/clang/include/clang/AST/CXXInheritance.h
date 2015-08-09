@@ -162,10 +162,9 @@ class CXXBasePaths {
   
   void ComputeDeclsFound();
 
-  bool lookupInBases(ASTContext &Context, 
-                     const CXXRecordDecl *Record,
-                     CXXRecordDecl::BaseMatchesCallback *BaseMatches, 
-                     void *UserData);
+  bool lookupInBases(ASTContext &Context, const CXXRecordDecl *Record,
+                     CXXRecordDecl::BaseMatchesCallback BaseMatches);
+
 public:
   typedef std::list<CXXBasePath>::iterator paths_iterator;
   typedef std::list<CXXBasePath>::const_iterator const_paths_iterator;
@@ -333,12 +332,12 @@ public:
 ///   struct D : B, C { };
 /// \endcode
 ///
-/// This data structure contaings a mapping from every virtual
+/// This data structure contains a mapping from every virtual
 /// function *that does not override an existing virtual function* and
 /// in every subobject where that virtual function occurs to the set
 /// of virtual functions that override it. Thus, the same virtual
 /// function \c A::f can actually occur in multiple subobjects of type
-/// \c A due to multiple inheritance, and may be overriden by
+/// \c A due to multiple inheritance, and may be overridden by
 /// different virtual functions in each, as in the following example:
 ///
 /// \code
@@ -354,7 +353,7 @@ public:
 /// \c A::f but in *different* subobjects of type A. This is
 /// represented by numbering the subobjects in which the overridden
 /// and the overriding virtual member functions are located. Subobject
-/// 0 represents the virtua base class subobject of that type, while
+/// 0 represents the virtual base class subobject of that type, while
 /// subobject numbers greater than 0 refer to non-virtual base class
 /// subobjects of that type.
 class CXXFinalOverriderMap

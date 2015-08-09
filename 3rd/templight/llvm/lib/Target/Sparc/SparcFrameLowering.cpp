@@ -82,10 +82,11 @@ void SparcFrameLowering::emitSPAdjustment(MachineFunction &MF,
     .addReg(SP::O6).addReg(SP::G1);
 }
 
-void SparcFrameLowering::emitPrologue(MachineFunction &MF) const {
+void SparcFrameLowering::emitPrologue(MachineFunction &MF,
+                                      MachineBasicBlock &MBB) const {
   SparcMachineFunctionInfo *FuncInfo = MF.getInfo<SparcMachineFunctionInfo>();
 
-  MachineBasicBlock &MBB = MF.front();
+  assert(&MF.front() == &MBB && "Shrink-wrapping not yet supported");
   MachineFrameInfo *MFI = MF.getFrameInfo();
   const SparcInstrInfo &TII =
       *static_cast<const SparcInstrInfo *>(MF.getSubtarget().getInstrInfo());
@@ -103,9 +104,7 @@ void SparcFrameLowering::emitPrologue(MachineFunction &MF) const {
     SAVEri = SP::ADDri;
     SAVErr = SP::ADDrr;
   }
-  NumBytes =
-      -MF.getTarget().getSubtarget<SparcSubtarget>().getAdjustedFrameSize(
-          NumBytes);
+  NumBytes = -MF.getSubtarget<SparcSubtarget>().getAdjustedFrameSize(NumBytes);
   emitSPAdjustment(MF, MBB, MBBI, NumBytes, SAVErr, SAVEri);
 
   MachineModuleInfo &MMI = MF.getMMI();
@@ -168,8 +167,7 @@ void SparcFrameLowering::emitEpilogue(MachineFunction &MF,
   if (NumBytes == 0)
     return;
 
-  NumBytes = MF.getTarget().getSubtarget<SparcSubtarget>().getAdjustedFrameSize(
-      NumBytes);
+  NumBytes = MF.getSubtarget<SparcSubtarget>().getAdjustedFrameSize(NumBytes);
   emitSPAdjustment(MF, MBB, MBBI, NumBytes, SP::ADDrr, SP::ADDri);
 }
 
@@ -192,11 +190,11 @@ static bool LLVM_ATTRIBUTE_UNUSED verifyLeafProcRegUse(MachineRegisterInfo *MRI)
 {
 
   for (unsigned reg = SP::I0; reg <= SP::I7; ++reg)
-    if (MRI->isPhysRegUsed(reg))
+    if (!MRI->reg_nodbg_empty(reg))
       return false;
 
   for (unsigned reg = SP::L0; reg <= SP::L7; ++reg)
-    if (MRI->isPhysRegUsed(reg))
+    if (!MRI->reg_nodbg_empty(reg))
       return false;
 
   return true;
@@ -208,10 +206,10 @@ bool SparcFrameLowering::isLeafProc(MachineFunction &MF) const
   MachineRegisterInfo &MRI = MF.getRegInfo();
   MachineFrameInfo    *MFI = MF.getFrameInfo();
 
-  return !(MFI->hasCalls()              // has calls
-           || MRI.isPhysRegUsed(SP::L0) // Too many registers needed
-           || MRI.isPhysRegUsed(SP::O6) // %SP is used
-           || hasFP(MF));               // need %FP
+  return !(MFI->hasCalls()                 // has calls
+           || !MRI.reg_nodbg_empty(SP::L0) // Too many registers needed
+           || !MRI.reg_nodbg_empty(SP::O6) // %SP is used
+           || hasFP(MF));                  // need %FP
 }
 
 void SparcFrameLowering::remapRegsForLeafProc(MachineFunction &MF) const {
@@ -220,16 +218,13 @@ void SparcFrameLowering::remapRegsForLeafProc(MachineFunction &MF) const {
 
   // Remap %i[0-7] to %o[0-7].
   for (unsigned reg = SP::I0; reg <= SP::I7; ++reg) {
-    if (!MRI.isPhysRegUsed(reg))
+    if (MRI.reg_nodbg_empty(reg))
       continue;
     unsigned mapped_reg = (reg - SP::I0 + SP::O0);
-    assert(!MRI.isPhysRegUsed(mapped_reg));
+    assert(MRI.reg_nodbg_empty(mapped_reg));
 
     // Replace I register with O register.
     MRI.replaceRegWith(reg, mapped_reg);
-
-    // Mark the reg unused.
-    MRI.setPhysRegUnused(reg);
   }
 
   // Rewrite MBB's Live-ins.
@@ -249,9 +244,10 @@ void SparcFrameLowering::remapRegsForLeafProc(MachineFunction &MF) const {
 #endif
 }
 
-void SparcFrameLowering::processFunctionBeforeCalleeSavedScan
-                  (MachineFunction &MF, RegScavenger *RS) const {
-
+void SparcFrameLowering::determineCalleeSaves(MachineFunction &MF,
+                                              BitVector &SavedRegs,
+                                              RegScavenger *RS) const {
+  TargetFrameLowering::determineCalleeSaves(MF, SavedRegs, RS);
   if (!DisableLeafProc && isLeafProc(MF)) {
     SparcMachineFunctionInfo *MFI = MF.getInfo<SparcMachineFunctionInfo>();
     MFI->setLeafProc(true);

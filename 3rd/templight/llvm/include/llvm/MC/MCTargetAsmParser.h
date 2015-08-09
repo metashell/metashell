@@ -13,7 +13,6 @@
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCParser/MCAsmParserExtension.h"
 #include "llvm/MC/MCTargetOptions.h"
-
 #include <memory>
 
 namespace llvm {
@@ -76,8 +75,6 @@ struct ParseInstructionInfo {
   ParseInstructionInfo() : AsmRewrites(nullptr) {}
   ParseInstructionInfo(SmallVectorImpl<AsmRewrite> *rewrites)
     : AsmRewrites(rewrites) {}
-
-  ~ParseInstructionInfo() {}
 };
 
 /// MCTargetAsmParser - Generic interface to target specific assembly parsers.
@@ -92,10 +89,10 @@ public:
   };
 
 private:
-  MCTargetAsmParser(const MCTargetAsmParser &) LLVM_DELETED_FUNCTION;
-  void operator=(const MCTargetAsmParser &) LLVM_DELETED_FUNCTION;
+  MCTargetAsmParser(const MCTargetAsmParser &) = delete;
+  void operator=(const MCTargetAsmParser &) = delete;
 protected: // Can only create subclasses.
-  MCTargetAsmParser();
+  MCTargetAsmParser(MCTargetOptions const &);
 
   /// AvailableFeatures - The current set of available features.
   uint64_t AvailableFeatures;
@@ -111,7 +108,7 @@ protected: // Can only create subclasses.
   MCTargetOptions MCOptions;
 
 public:
-  virtual ~MCTargetAsmParser();
+  ~MCTargetAsmParser() override;
 
   uint64_t getAvailableFeatures() const { return AvailableFeatures; }
   void setAvailableFeatures(uint64_t Value) { AvailableFeatures = Value; }
@@ -201,7 +198,7 @@ public:
     return nullptr;
   }
 
-  virtual void onLabelParsed(MCSymbol *Symbol) { };
+  virtual void onLabelParsed(MCSymbol *Symbol) { }
 };
 
 } // End llvm namespace

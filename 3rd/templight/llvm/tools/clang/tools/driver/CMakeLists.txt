@@ -33,16 +33,21 @@ add_clang_executable(clang
 
 target_link_libraries(clang
   clangBasic
+  clangCodeGen
   clangDriver
   clangFrontend
   clangFrontendTool
   )
 
-set_target_properties(clang PROPERTIES VERSION ${CLANG_EXECUTABLE_VERSION})
+if(WIN32 AND NOT CYGWIN)
+  # Prevent versioning if the buildhost is targeting for Win32.
+else()
+  set_target_properties(clang PROPERTIES VERSION ${CLANG_EXECUTABLE_VERSION})
+endif()
 
 # Support plugins.
 if(CLANG_PLUGIN_SUPPORT)
-  set_target_properties(clang PROPERTIES ENABLE_EXPORTS 1)
+  export_executable_symbols(clang)
 endif()
 
 add_dependencies(clang clang-headers)

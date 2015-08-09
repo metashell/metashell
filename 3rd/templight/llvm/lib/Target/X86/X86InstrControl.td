@@ -57,33 +57,32 @@ let isTerminator = 1, isReturn = 1, isBarrier = 1,
 
 // Unconditional branches.
 let isBarrier = 1, isBranch = 1, isTerminator = 1, SchedRW = [WriteJump] in {
-  def JMP_4 : Ii32PCRel<0xE9, RawFrm, (outs), (ins brtarget:$dst),
-                        "jmp\t$dst", [(br bb:$dst)], IIC_JMP_REL>, OpSize32;
-  def JMP_2 : Ii16PCRel<0xE9, RawFrm, (outs), (ins brtarget:$dst),
-                        "jmp\t$dst", [(br bb:$dst)], IIC_JMP_REL>, OpSize16,
-                        Requires<[In16BitMode]>;
-  let hasSideEffects = 0 in
   def JMP_1 : Ii8PCRel<0xEB, RawFrm, (outs), (ins brtarget8:$dst),
-                       "jmp\t$dst", [], IIC_JMP_REL>;
+                       "jmp\t$dst", [(br bb:$dst)], IIC_JMP_REL>;
+  let hasSideEffects = 0, isCodeGenOnly = 1, ForceDisassemble = 1 in {
+    def JMP_2 : Ii16PCRel<0xE9, RawFrm, (outs), (ins brtarget16:$dst),
+                          "jmp\t$dst", [], IIC_JMP_REL>, OpSize16;
+    def JMP_4 : Ii32PCRel<0xE9, RawFrm, (outs), (ins brtarget32:$dst),
+                          "jmp\t$dst", [], IIC_JMP_REL>, OpSize32;
+  }
 }
 
 // Conditional Branches.
 let isBranch = 1, isTerminator = 1, Uses = [EFLAGS], SchedRW = [WriteJump] in {
   multiclass ICBr<bits<8> opc1, bits<8> opc4, string asm, PatFrag Cond> {
-    let hasSideEffects = 0 in
-    def _1 : Ii8PCRel <opc1, RawFrm, (outs), (ins brtarget8:$dst), asm, [],
-                       IIC_Jcc>;
-    def _2 : Ii16PCRel<opc4, RawFrm, (outs), (ins brtarget:$dst), asm,
-                       [(X86brcond bb:$dst, Cond, EFLAGS)], IIC_Jcc>, OpSize16,
-		       TB, Requires<[In16BitMode]>;
-    def _4 : Ii32PCRel<opc4, RawFrm, (outs), (ins brtarget:$dst), asm,
-                       [(X86brcond bb:$dst, Cond, EFLAGS)], IIC_Jcc>, TB,
-             OpSize32;
+    def _1 : Ii8PCRel <opc1, RawFrm, (outs), (ins brtarget8:$dst), asm,
+                       [(X86brcond bb:$dst, Cond, EFLAGS)], IIC_Jcc>;
+    let hasSideEffects = 0, isCodeGenOnly = 1, ForceDisassemble = 1 in {
+      def _2 : Ii16PCRel<opc4, RawFrm, (outs), (ins brtarget16:$dst), asm,
+                         [], IIC_Jcc>, OpSize16, TB;
+      def _4 : Ii32PCRel<opc4, RawFrm, (outs), (ins brtarget32:$dst), asm,
+                         [], IIC_Jcc>, TB, OpSize32;
+    }
   }
 }
 
 defm JO  : ICBr<0x70, 0x80, "jo\t$dst" , X86_COND_O>;
-defm JNO : ICBr<0x71, 0x81, "jno\t$dst" , X86_COND_NO>;
+defm JNO : ICBr<0x71, 0x81, "jno\t$dst", X86_COND_NO>;
 defm JB  : ICBr<0x72, 0x82, "jb\t$dst" , X86_COND_B>;
 defm JAE : ICBr<0x73, 0x83, "jae\t$dst", X86_COND_AE>;
 defm JE  : ICBr<0x74, 0x84, "je\t$dst" , X86_COND_E>;
@@ -106,14 +105,16 @@ let isBranch = 1, isTerminator = 1, hasSideEffects = 0, SchedRW = [WriteJump] in
   // jecxz.
   let Uses = [CX] in
     def JCXZ : Ii8PCRel<0xE3, RawFrm, (outs), (ins brtarget8:$dst),
-                        "jcxz\t$dst", [], IIC_JCXZ>, AdSize16;
+                        "jcxz\t$dst", [], IIC_JCXZ>, AdSize16,
+                        Requires<[Not64BitMode]>;
   let Uses = [ECX] in
     def JECXZ : Ii8PCRel<0xE3, RawFrm, (outs), (ins brtarget8:$dst),
                         "jecxz\t$dst", [], IIC_JCXZ>, AdSize32;
 
   let Uses = [RCX] in
     def JRCXZ : Ii8PCRel<0xE3, RawFrm, (outs), (ins brtarget8:$dst),
-                           "jrcxz\t$dst", [], IIC_JCXZ>, AdSize64;
+                         "jrcxz\t$dst", [], IIC_JCXZ>, AdSize64,
+                         Requires<[In64BitMode]>;
 }
 
 // Indirect branches
@@ -241,13 +242,13 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
   // mcinst.
   def TAILJMPd : Ii32PCRel<0xE9, RawFrm, (outs),
                            (ins i32imm_pcrel:$dst),
-                           "jmp\t$dst  # TAILCALL",
+                           "jmp\t$dst",
                            [], IIC_JMP_REL>;
   def TAILJMPr : I<0xFF, MRM4r, (outs), (ins ptr_rc_tailcall:$dst),
                    "", [], IIC_JMP_REG>;  // FIXME: Remove encoding when JIT is dead.
   let mayLoad = 1 in
   def TAILJMPm : I<0xFF, MRM4m, (outs), (ins i32mem_TC:$dst),
-                   "jmp{l}\t{*}$dst  # TAILCALL", [], IIC_JMP_MEM>;
+                   "jmp{l}\t{*}$dst", [], IIC_JMP_MEM>;
 }
 
 
@@ -279,17 +280,6 @@ let isCall = 1, Uses = [RSP], SchedRW = [WriteJump] in {
                        "lcall{q}\t{*}$dst", [], IIC_CALL_FAR_MEM>;
 }
 
-let isCall = 1, isCodeGenOnly = 1 in
-  // __chkstk(MSVC):     clobber R10, R11 and EFLAGS.
-  // ___chkstk(Mingw64): clobber R10, R11, RAX and EFLAGS, and update RSP.
-  let Defs = [RAX, R10, R11, RSP, EFLAGS],
-      Uses = [RSP] in {
-    def W64ALLOCA : Ii32PCRel<0xE8, RawFrm,
-                      (outs), (ins i64i32imm_pcrel:$dst),
-                      "call{q}\t$dst", [], IIC_CALL_RI>,
-                    Requires<[IsWin64]>, Sched<[WriteJump]>;
-  }
-
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
     isCodeGenOnly = 1, Uses = [RSP], usesCustomInserter = 1,
     SchedRW = [WriteJump] in {
@@ -302,13 +292,25 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
   def TCRETURNmi64 : PseudoI<(outs),
                        (ins i64mem_TC:$dst, i32imm:$offset), []>;
 
-  def TAILJMPd64 : Ii32PCRel<0xE9, RawFrm, (outs),
-                                      (ins i64i32imm_pcrel:$dst),
-                   "jmp\t$dst  # TAILCALL", [], IIC_JMP_REL>;
+  def TAILJMPd64 : Ii32PCRel<0xE9, RawFrm, (outs), (ins i64i32imm_pcrel:$dst),
+                   "jmp\t$dst", [], IIC_JMP_REL>;
   def TAILJMPr64 : I<0xFF, MRM4r, (outs), (ins ptr_rc_tailcall:$dst),
-                     "jmp{q}\t{*}$dst  # TAILCALL", [], IIC_JMP_MEM>;
+                     "jmp{q}\t{*}$dst", [], IIC_JMP_MEM>;
 
   let mayLoad = 1 in
   def TAILJMPm64 : I<0xFF, MRM4m, (outs), (ins i64mem_TC:$dst),
-                     "jmp{q}\t{*}$dst  # TAILCALL", [], IIC_JMP_MEM>;
+                     "jmp{q}\t{*}$dst", [], IIC_JMP_MEM>;
+
+  // Win64 wants jumps leaving the function to have a REX_W prefix.
+  let hasREX_WPrefix = 1 in {
+    def TAILJMPd64_REX : Ii32PCRel<0xE9, RawFrm, (outs),
+                                   (ins i64i32imm_pcrel:$dst),
+                                   "rex64 jmp\t$dst", [], IIC_JMP_REL>;
+    def TAILJMPr64_REX : I<0xFF, MRM4r, (outs), (ins ptr_rc_tailcall:$dst),
+                           "rex64 jmp{q}\t{*}$dst", [], IIC_JMP_MEM>;
+
+    let mayLoad = 1 in
+    def TAILJMPm64_REX : I<0xFF, MRM4m, (outs), (ins i64mem_TC:$dst),
+                           "rex64 jmp{q}\t{*}$dst", [], IIC_JMP_MEM>;
+  }
 }

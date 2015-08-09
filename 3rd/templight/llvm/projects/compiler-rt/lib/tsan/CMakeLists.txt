@@ -9,6 +9,7 @@ append_list_if(COMPILER_RT_HAS_FPIE_FLAG -fPIE TSAN_CFLAGS)
 append_no_rtti_flag(TSAN_CFLAGS)
 
 set(TSAN_RTL_CFLAGS ${TSAN_CFLAGS})
+append_list_if(COMPILER_RT_HAS_MSSE3_FLAG -msse3 TSAN_RTL_CFLAGS)
 append_list_if(SANITIZER_LIMIT_FRAME_SIZE -Wframe-larger-than=512
                TSAN_RTL_CFLAGS)
 append_list_if(COMPILER_RT_HAS_WGLOBAL_CONSTRUCTORS_FLAG -Wglobal-constructors
@@ -40,6 +41,9 @@ set(TSAN_SOURCES
   rtl/tsan_symbolize.cc
   rtl/tsan_sync.cc)
 
+set(TSAN_CXX_SOURCES
+  rtl/tsan_new_delete.cc)
+
 if(APPLE)
   list(APPEND TSAN_SOURCES rtl/tsan_platform_mac.cc)
 elseif(UNIX)
@@ -54,7 +58,9 @@ set(TSAN_HEADERS
   rtl/tsan_dense_alloc.h
   rtl/tsan_fd.h
   rtl/tsan_flags.h
+  rtl/tsan_flags.inc
   rtl/tsan_ignoreset.h
+  rtl/tsan_interceptors.h
   rtl/tsan_interface_ann.h
   rtl/tsan_interface.h
   rtl/tsan_interface_inl.h
@@ -76,31 +82,50 @@ set(TSAN_HEADERS
 
 set(TSAN_RUNTIME_LIBRARIES)
 add_custom_target(tsan)
-# TSan is currently supported on 64-bit Linux only.
-if(CAN_TARGET_x86_64 AND UNIX AND NOT APPLE)
-  set(TSAN_ASM_SOURCES rtl/tsan_rtl_amd64.S)
-  # Pass ASM file directly to the C++ compiler.
-  set_source_files_properties(${TSAN_ASM_SOURCES} PROPERTIES
-    LANGUAGE C)
-  set(arch "x86_64")
+
+foreach(arch ${TSAN_SUPPORTED_ARCH})
+  if(arch STREQUAL "x86_64")
+    set(TSAN_ASM_SOURCES rtl/tsan_rtl_amd64.S)
+    # Pass ASM file directly to the C++ compiler.
+    set_source_files_properties(${TSAN_ASM_SOURCES} PROPERTIES
+      LANGUAGE C)
+    # Sanity check for Go runtime.
+    set(BUILDGO_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/go/buildgo.sh)
+    add_custom_target(GotsanRuntimeCheck
+      COMMAND env "CC=${CMAKE_C_COMPILER} ${CMAKE_C_COMPILER_ARG1}"
+              IN_TMPDIR=1 SILENT=1 ${BUILDGO_SCRIPT}
+      DEPENDS clang_rt.tsan-${arch} ${BUILDGO_SCRIPT}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/go
+      COMMENT "Checking TSan Go runtime..."
+      VERBATIM)
+  else()
+    set(TSAN_ASM_SOURCES)
+  endif()
   add_compiler_rt_runtime(clang_rt.tsan-${arch} ${arch} STATIC
     SOURCES ${TSAN_SOURCES} ${TSAN_ASM_SOURCES}
             $<TARGET_OBJECTS:RTInterception.${arch}>
             $<TARGET_OBJECTS:RTSanitizerCommon.${arch}>
             $<TARGET_OBJECTS:RTSanitizerCommonLibc.${arch}>
-    CFLAGS ${TSAN_RTL_CFLAGS}
-    DEFS ${TSAN_COMMON_DEFINITIONS})
-  list(APPEND TSAN_RUNTIME_LIBRARIES clang_rt.tsan-${arch})
+            $<TARGET_OBJECTS:RTUbsan.${arch}>
+    CFLAGS ${TSAN_RTL_CFLAGS})
+  add_compiler_rt_runtime(clang_rt.tsan_cxx-${arch} ${arch} STATIC
+    SOURCES ${TSAN_CXX_SOURCES}
+            $<TARGET_OBJECTS:RTUbsan_cxx.${arch}>
+    CFLAGS ${TSAN_RTL_CFLAGS})
+  list(APPEND TSAN_RUNTIME_LIBRARIES clang_rt.tsan-${arch}
+                                     clang_rt.tsan_cxx-${arch})
   add_sanitizer_rt_symbols(clang_rt.tsan-${arch} rtl/tsan.syms.extra)
+  add_sanitizer_rt_symbols(clang_rt.tsan_cxx-${arch} rtl/tsan.syms.extra)
   add_dependencies(tsan clang_rt.tsan-${arch}
-    clang_rt.tsan-${arch}-symbols)
-endif()
+                        clang_rt.tsan_cxx-${arch}
+                        clang_rt.tsan-${arch}-symbols
+                        clang_rt.tsan_cxx-${arch}-symbols)
+endforeach()
 
 add_dependencies(compiler-rt tsan)
 
 # Build libcxx instrumented with TSan.
-if(TSAN_SUPPORTED_ARCH AND
-   COMPILER_RT_HAS_LIBCXX_SOURCES AND
+if(COMPILER_RT_HAS_LIBCXX_SOURCES AND
    COMPILER_RT_TEST_COMPILER_ID STREQUAL "Clang")
   set(LIBCXX_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libcxx_tsan)
   add_custom_libcxx(libcxx_tsan ${LIBCXX_PREFIX}

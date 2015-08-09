@@ -14,7 +14,7 @@
 
 
 ; CHECK: .loc	1 2 0{{$}}
-; CHECK-NOT: .loc
+; CHECK-NOT: .loc{{ }}
 ; CHECK: .loc	1 3 3 prologue_end{{$}}
 ; CHECK-NOT: .loc
 ; CHECK: .loc	1 3 9 is_stmt 0{{$}}
@@ -44,12 +44,12 @@
 ; Function Attrs: nounwind uwtable
 define void @f2() #0 {
 entry:
-  call void (...)* @f1(), !dbg !11
-  call void (...)* @f1(), !dbg !12
-  call void (...)* @f1(), !dbg !13
-  call void (...)* @f1(), !dbg !14
-  call void (...)* @f1(), !dbg !15
-  call void (...)* @f1(), !dbg !16
+  call void (...) @f1(), !dbg !11
+  call void (...) @f1(), !dbg !12
+  call void (...) @f1(), !dbg !13
+  call void (...) @f1(), !dbg !14
+  call void (...) @f1(), !dbg !15
+  call void (...) @f1(), !dbg !16
   ret void, !dbg !17
 }
 
@@ -62,21 +62,21 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "n
 !llvm.module.flags = !{!8, !9}
 !llvm.ident = !{!10}
 
-!0 = !{!"0x11\0012\00clang version 3.6.0 (trunk 225000) (llvm/trunk 224999)\000\00\000\00\001", !1, !2, !2, !3, !2, !2} ; [ DW_TAG_compile_unit ] [/tmp/dbginfo/multiline.c] [DW_LANG_C99]
-!1 = !{!"multiline.c", !"/tmp/dbginfo"}
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, producer: "clang version 3.6.0 (trunk 225000) (llvm/trunk 224999)", isOptimized: false, emissionKind: 1, file: !1, enums: !2, retainedTypes: !2, subprograms: !3, globals: !2, imports: !2)
+!1 = !DIFile(filename: "multiline.c", directory: "/tmp/dbginfo")
 !2 = !{}
 !3 = !{!4}
-!4 = !{!"0x2e\00f2\00f2\00\002\000\001\000\000\000\000\002", !1, !5, !6, null, void ()* @f2, null, null, !2} ; [ DW_TAG_subprogram ] [line 2] [def] [f2]
-!5 = !{!"0x29", !1}                               ; [ DW_TAG_file_type ] [/tmp/dbginfo/multiline.c]
-!6 = !{!"0x15\00\000\000\000\000\000\000", null, null, null, !7, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
+!4 = !DISubprogram(name: "f2", line: 2, isLocal: false, isDefinition: true, isOptimized: false, scopeLine: 2, file: !1, scope: !5, type: !6, function: void ()* @f2, variables: !2)
+!5 = !DIFile(filename: "multiline.c", directory: "/tmp/dbginfo")
+!6 = !DISubroutineType(types: !7)
 !7 = !{null}
 !8 = !{i32 2, !"Dwarf Version", i32 4}
-!9 = !{i32 2, !"Debug Info Version", i32 2}
+!9 = !{i32 2, !"Debug Info Version", i32 3}
 !10 = !{!"clang version 3.6.0 (trunk 225000) (llvm/trunk 224999)"}
-!11 = !{i32 3, i32 3, !4, null}
-!12 = !{i32 3, i32 9, !4, null}
-!13 = !{i32 3, i32 15, !4, null}
-!14 = !{i32 4, i32 3, !4, null}
-!15 = !{i32 4, i32 9, !4, null}
-!16 = !{i32 4, i32 15, !4, null}
-!17 = !{i32 5, i32 1, !4, null}
+!11 = !DILocation(line: 3, column: 3, scope: !4)
+!12 = !DILocation(line: 3, column: 9, scope: !4)
+!13 = !DILocation(line: 3, column: 15, scope: !4)
+!14 = !DILocation(line: 4, column: 3, scope: !4)
+!15 = !DILocation(line: 4, column: 9, scope: !4)
+!16 = !DILocation(line: 4, column: 15, scope: !4)
+!17 = !DILocation(line: 5, column: 1, scope: !4)

@@ -15,16 +15,16 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/MutexGuard.h"
 #include <algorithm>
 #include <cstring>
 #include <map>
 #include <string>
 #include <vector>
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/IR/InstIterator.h"
-#include "llvm/Support/MutexGuard.h"
 
 using namespace llvm;
 
@@ -293,12 +293,9 @@ bool llvm::isKernelFunction(const Function &F) {
   unsigned x = 0;
   bool retval = llvm::findOneNVVMAnnotation(
       &F, llvm::PropertyAnnotationNames[llvm::PROPERTY_ISKERNEL_FUNCTION], x);
-  if (retval == false) {
+  if (!retval) {
     // There is no NVVM metadata, check the calling convention
-    if (F.getCallingConv() == llvm::CallingConv::PTX_Kernel)
-      return true;
-    else
-      return false;
+    return F.getCallingConv() == llvm::CallingConv::PTX_Kernel;
   }
   return (x == 1);
 }
@@ -307,7 +304,7 @@ bool llvm::getAlign(const Function &F, unsigned index, unsigned &align) {
   std::vector<unsigned> Vs;
   bool retval = llvm::findAllNVVMAnnotation(
       &F, llvm::PropertyAnnotationNames[llvm::PROPERTY_ALIGN], Vs);
-  if (retval == false)
+  if (!retval)
     return false;
   for (int i = 0, e = Vs.size(); i < e; i++) {
     unsigned v = Vs[i];
@@ -339,18 +336,16 @@ bool llvm::getAlign(const CallInst &I, unsigned index, unsigned &align) {
 }
 
 bool llvm::isBarrierIntrinsic(Intrinsic::ID id) {
-  if ((id == Intrinsic::nvvm_barrier0) ||
-      (id == Intrinsic::nvvm_barrier0_popc) ||
-      (id == Intrinsic::nvvm_barrier0_and) ||
-      (id == Intrinsic::nvvm_barrier0_or) ||
-      (id == Intrinsic::cuda_syncthreads))
-    return true;
-  return false;
+  return (id == Intrinsic::nvvm_barrier0) ||
+         (id == Intrinsic::nvvm_barrier0_popc) ||
+         (id == Intrinsic::nvvm_barrier0_and) ||
+         (id == Intrinsic::nvvm_barrier0_or) ||
+         (id == Intrinsic::cuda_syncthreads);
 }
 
 // Interface for checking all memory space transfer related intrinsics
 bool llvm::isMemorySpaceTransferIntrinsic(Intrinsic::ID id) {
-  if (id == Intrinsic::nvvm_ptr_local_to_gen ||
+  return id == Intrinsic::nvvm_ptr_local_to_gen ||
       id == Intrinsic::nvvm_ptr_shared_to_gen ||
       id == Intrinsic::nvvm_ptr_global_to_gen ||
       id == Intrinsic::nvvm_ptr_constant_to_gen ||
@@ -358,11 +353,7 @@ bool llvm::isMemorySpaceTransferIntrinsic(Intrinsic::ID id) {
       id == Intrinsic::nvvm_ptr_gen_to_shared ||
       id == Intrinsic::nvvm_ptr_gen_to_local ||
       id == Intrinsic::nvvm_ptr_gen_to_constant ||
-      id == Intrinsic::nvvm_ptr_gen_to_param) {
-    return true;
-  }
-
-  return false;
+      id == Intrinsic::nvvm_ptr_gen_to_param;
 }
 
 // consider several special intrinsics in striping pointer casts, and

@@ -22,6 +22,8 @@
 #include "clang/Basic/TargetOptions.h"
 #include "clang/Basic/VersionTuple.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -66,10 +68,13 @@ protected:
   unsigned char LongWidth, LongAlign;
   unsigned char LongLongWidth, LongLongAlign;
   unsigned char SuitableAlign;
+  unsigned char DefaultAlignForAttributeAligned;
   unsigned char MinGlobalAlign;
   unsigned char MaxAtomicPromoteWidth, MaxAtomicInlineWidth;
   unsigned short MaxVectorAlign;
-  const char *DescriptionString;
+  unsigned short MaxTLSAlign;
+  unsigned short SimdDefaultAlign;
+  const char *DataLayoutString;
   const char *UserLabelPrefix;
   const char *MCountName;
   const llvm::fltSemantics *HalfFormat, *FloatFormat, *DoubleFormat,
@@ -314,6 +319,12 @@ public:
   /// object with a fundamental alignment requirement.
   unsigned getSuitableAlign() const { return SuitableAlign; }
 
+  /// \brief Return the default alignment for __attribute__((aligned)) on
+  /// this target, to be used if no alignment value is specified.
+  unsigned getDefaultAlignForAttributeAligned() const {
+    return DefaultAlignForAttributeAligned;
+  }
+
   /// getMinGlobalAlign - Return the minimum alignment of a global variable,
   /// unless its alignment is explicitly reduced via attributes.
   unsigned getMinGlobalAlign() const { return MinGlobalAlign; }
@@ -356,6 +367,10 @@ public:
     return *LongDoubleFormat;
   }
 
+  /// \brief Return true if the 'long double' type should be mangled like
+  /// __float128.
+  virtual bool useFloat128ManglingForLongDouble() const { return false; }
+
   /// \brief Return the value for the C99 FLT_EVAL_METHOD macro.
   virtual unsigned getFloatEvalMethod() const { return 0; }
 
@@ -382,6 +397,10 @@ public:
 
   /// \brief Return the maximum vector alignment supported for the given target.
   unsigned getMaxVectorAlign() const { return MaxVectorAlign; }
+  /// \brief Return default simd alignment for the given target. Generally, this
+  /// value is type-specific, but this alignment can be used for most of the
+  /// types for the given target.
+  unsigned getSimdDefaultAlign() const { return SimdDefaultAlign; }
 
   /// \brief Return the size of intmax_t and uintmax_t for this target, in bits.
   unsigned getIntMaxTWidth() const {
@@ -528,22 +547,32 @@ public:
       CI_None = 0x00,
       CI_AllowsMemory = 0x01,
       CI_AllowsRegister = 0x02,
-      CI_ReadWrite = 0x04,       // "+r" output constraint (read and write).
-      CI_HasMatchingInput = 0x08 // This output operand has a matching input.
+      CI_ReadWrite = 0x04,         // "+r" output constraint (read and write).
+      CI_HasMatchingInput = 0x08,  // This output operand has a matching input.
+      CI_ImmediateConstant = 0x10, // This operand must be an immediate constant
+      CI_EarlyClobber = 0x20,      // "&" output constraint (early clobber).
     };
     unsigned Flags;
     int TiedOperand;
+    struct {
+      int Min;
+      int Max;
+    } ImmRange;
+    llvm::SmallSet<int, 4> ImmSet;
 
     std::string ConstraintStr;  // constraint: "=rm"
     std::string Name;           // Operand name: [foo] with no []'s.
   public:
     ConstraintInfo(StringRef ConstraintStr, StringRef Name)
-      : Flags(0), TiedOperand(-1), ConstraintStr(ConstraintStr.str()),
-      Name(Name.str()) {}
+        : Flags(0), TiedOperand(-1), ConstraintStr(ConstraintStr.str()),
+          Name(Name.str()) {
+      ImmRange.Min = ImmRange.Max = 0;
+    }
 
     const std::string &getConstraintStr() const { return ConstraintStr; }
     const std::string &getName() const { return Name; }
     bool isReadWrite() const { return (Flags & CI_ReadWrite) != 0; }
+    bool earlyClobber() { return (Flags & CI_EarlyClobber) != 0; }
     bool allowsRegister() const { return (Flags & CI_AllowsRegister) != 0; }
     bool allowsMemory() const { return (Flags & CI_AllowsMemory) != 0; }
 
@@ -562,10 +591,38 @@ public:
       return (unsigned)TiedOperand;
     }
 
+    bool requiresImmediateConstant() const {
+      return (Flags & CI_ImmediateConstant) != 0;
+    }
+    bool isValidAsmImmediate(const llvm::APInt &Value) const {
+      return (Value.sge(ImmRange.Min) && Value.sle(ImmRange.Max)) ||
+             ImmSet.count(Value.getZExtValue()) != 0;
+    }
+
     void setIsReadWrite() { Flags |= CI_ReadWrite; }
+    void setEarlyClobber() { Flags |= CI_EarlyClobber; }
     void setAllowsMemory() { Flags |= CI_AllowsMemory; }
     void setAllowsRegister() { Flags |= CI_AllowsRegister; }
     void setHasMatchingInput() { Flags |= CI_HasMatchingInput; }
+    void setRequiresImmediate(int Min, int Max) {
+      Flags |= CI_ImmediateConstant;
+      ImmRange.Min = Min;
+      ImmRange.Max = Max;
+    }
+    void setRequiresImmediate(llvm::ArrayRef<int> Exacts) {
+      Flags |= CI_ImmediateConstant;
+      for (int Exact : Exacts)
+        ImmSet.insert(Exact);
+    }
+    void setRequiresImmediate(int Exact) {
+      Flags |= CI_ImmediateConstant;
+      ImmSet.insert(Exact);
+    }
+    void setRequiresImmediate() {
+      Flags |= CI_ImmediateConstant;
+      ImmRange.Min = INT_MIN;
+      ImmRange.Max = INT_MAX;
+    }
 
     /// \brief Indicate that this is an input operand that is tied to
     /// the specified output operand. 
@@ -617,6 +674,12 @@ public:
     return std::string(1, *Constraint);
   }
 
+  /// \brief Returns true if NaN encoding is IEEE 754-2008.
+  /// Only MIPS allows a different encoding.
+  virtual bool isNan2008() const {
+    return true;
+  }
+
   /// \brief Returns a string of target-specific clobbers, in LLVM format.
   virtual const char *getClobbers() const = 0;
 
@@ -626,9 +689,9 @@ public:
     return Triple;
   }
 
-  const char *getTargetDescription() const {
-    assert(DescriptionString);
-    return DescriptionString;
+  const char *getDataLayoutString() const {
+    assert(DataLayoutString && "Uninitialized DataLayoutString!");
+    return DataLayoutString;
   }
 
   struct GCCRegAlias {
@@ -751,6 +814,10 @@ public:
   virtual bool hasFeature(StringRef Feature) const {
     return false;
   }
+
+  // \brief Validate the contents of the __builtin_cpu_supports(const char*)
+  // argument.
+  virtual bool validateCpuSupports(StringRef Name) const { return false; }
   
   // \brief Returns maximal number of args passed in registers.
   unsigned getRegParmMax() const {
@@ -761,6 +828,21 @@ public:
   /// \brief Whether the target supports thread-local storage.
   bool isTLSSupported() const {
     return TLSSupported;
+  }
+
+  /// \brief Return the maximum alignment (in bits) of a TLS variable
+  ///
+  /// Gets the maximum alignment (in bits) of a TLS variable on this target.
+  /// Returns zero if there is no such constraint.
+  unsigned short getMaxTLSAlign() const {
+    return MaxTLSAlign;
+  }
+
+  /// \brief Whether the target supports SEH __try.
+  bool isSEHTrySupported() const {
+    return getTriple().isOSWindows() &&
+           (getTriple().getArch() == llvm::Triple::x86 ||
+            getTriple().getArch() == llvm::Triple::x86_64);
   }
 
   /// \brief Return true if {|} are normal characters in the asm string.
@@ -815,7 +897,8 @@ public:
 
   enum CallingConvCheckResult {
     CCCR_OK,
-    CCCR_Warning
+    CCCR_Warning,
+    CCCR_Ignore,
   };
 
   /// \brief Determines whether a given calling convention is valid for the
@@ -829,6 +912,12 @@ public:
       case CC_C:
         return CCCR_OK;
     }
+  }
+
+  /// Controls if __builtin_longjmp / __builtin_setjmp can be lowered to
+  /// llvm.eh.sjlj.longjmp / llvm.eh.sjlj.setjmp.
+  virtual bool hasSjLjLowering() const {
+    return false;
   }
 
 protected:

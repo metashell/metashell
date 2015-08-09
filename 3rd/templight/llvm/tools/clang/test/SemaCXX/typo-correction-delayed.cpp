@@ -152,3 +152,60 @@ namespace PR21947 {
 int blue;  // expected-note {{'blue' declared here}}
 __typeof blur y;  // expected-error {{use of undeclared identifier 'blur'; did you mean 'blue'?}}
 }
+
+namespace PR22092 {
+a = b ? : 0;  // expected-error {{C++ requires a type specifier for all declarations}} \
+              // expected-error-re {{use of undeclared identifier 'b'{{$}}}}
+}
+
+extern long clock (void);
+struct Pointer {
+  void set_xpos(int);
+  void set_ypos(int);
+};
+void MovePointer(Pointer &Click, int x, int y) {  // expected-note 2 {{'Click' declared here}}
+  click.set_xpos(x);  // expected-error {{use of undeclared identifier 'click'; did you mean 'Click'?}}
+  click.set_ypos(x);  // expected-error {{use of undeclared identifier 'click'; did you mean 'Click'?}}
+}
+
+namespace PR22250 {
+// expected-error@+4 {{use of undeclared identifier 'size_t'; did you mean 'sizeof'?}}
+// expected-error-re@+3 {{use of undeclared identifier 'y'{{$}}}}
+// expected-error-re@+2 {{use of undeclared identifier 'z'{{$}}}}
+// expected-error@+1 {{expected ';' after top level declarator}}
+int getenv_s(size_t *y, char(&z)) {}
+}
+
+namespace PR22291 {
+template <unsigned I> void f() {
+  unsigned *prio_bits_array;  // expected-note {{'prio_bits_array' declared here}}
+  // expected-error@+1 {{use of undeclared identifier 'prio_op_array'; did you mean 'prio_bits_array'?}}
+  __atomic_store_n(prio_op_array + I, false, __ATOMIC_RELAXED);
+}
+}
+
+namespace PR22297 {
+double pow(double x, double y);
+struct TimeTicks {
+  static void Now();  // expected-note {{'Now' declared here}}
+};
+void f() {
+  TimeTicks::now();  // expected-error {{no member named 'now' in 'PR22297::TimeTicks'; did you mean 'Now'?}}
+}
+}
+
+namespace PR23005 {
+void f() { int a = Unknown::b(c); }  // expected-error {{use of undeclared identifier 'Unknown'}}
+// expected-error@-1 {{use of undeclared identifier 'c'}}
+}
+
+namespace PR23350 {
+int z = 1 ? N : ;  // expected-error {{expected expression}}
+// expected-error-re@-1 {{use of undeclared identifier 'N'{{$}}}}
+}
+
+// PR 23285. This test must be at the end of the file to avoid additional,
+// unwanted diagnostics.
+// expected-error-re@+2 {{use of undeclared identifier 'uintmax_t'{{$}}}}
+// expected-error@+1 {{expected ';' after top level declarator}}
+unsigned int a = 0(uintmax_t

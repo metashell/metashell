@@ -10,12 +10,12 @@
 // CHECK-NEXT: call void @llvm.dbg.declare(metadata {{.*}}, metadata ![[FOUND_IT:.*]], metadata !{{.*}}), !dbg ![[DBG2:.*]]
 // CHECK: = landingpad
 // CHECK-NEXT: cleanup, !dbg ![[DBG3:.*]]
-// CHECK-DAG: ![[CURRENT_ADDR]] = {{.*}} [current_address]
-// CHECK-DAG: ![[FOUND_IT]] = {{.*}} [found_it]
-// CHECK-DAG: ![[DBG1]] = !{i32 256,
-// CHECK-DAG: ![[DBG2]] = !{i32 257,
-// CHECK-DAG: ![[DBG3]] = !{i32 268,
-// CHECK-DAG: ![[DBG4]] = !{i32 256,
+// CHECK-DAG: ![[CURRENT_ADDR]] = {{.*}}name: "current_address"
+// CHECK-DAG: ![[FOUND_IT]] = {{.*}}name: "found_it"
+// CHECK-DAG: ![[DBG1]] = !DILocation(line: 256,
+// CHECK-DAG: ![[DBG2]] = !DILocation(line: 257,
+// CHECK-DAG: ![[DBG3]] = !DILocation(line: 268,
+// CHECK-DAG: ![[DBG4]] = !DILocation(line: 256,
 typedef unsigned long long uint64_t;
 template<class _Tp> class shared_ptr {
 public:

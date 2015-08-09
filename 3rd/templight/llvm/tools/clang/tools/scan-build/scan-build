@@ -766,7 +766,7 @@ ENDTEXT
           my $x = shift @fname;
           print OUT $x;
           if ($#fname >= 0) {
-            print OUT "<span class=\"W\"> </span>/";
+            print OUT "/";
           }
         }
       }
@@ -1145,10 +1145,21 @@ OPTIONS:
    scan-build to use a specific compiler for *compilation* then you can use
    this option to specify a path to that compiler.
 
+   If the given compiler is a cross compiler, you may also need to provide
+   --analyzer-target option to properly analyze the source code because static
+   analyzer runs as if the code is compiled for the host machine by default.
+
  --use-c++ [compiler path]
  --use-c++=[compiler path]
 
-   This is the same as "-use-cc" but for C++ code.
+   This is the same as "--use-cc" but for C++ code.
+
+ --analyzer-target [target triple name for analysis]
+ --analyzer-target=[target triple name for analysis]
+
+   This provides target triple information to clang static analyzer.
+   It only changes the target for analysis but doesn't change the target of a
+   real compiler given by --use-cc and --use-c++ options.
 
  -v
 
@@ -1232,16 +1243,9 @@ ENDTEXT
   }
   my %EnabledCheckers;
   foreach my $lang ("c", "objective-c", "objective-c++", "c++") {
-    pipe(FROM_CHILD, TO_PARENT);
-    my $pid = fork();
-    if ($pid == 0) {
-      close FROM_CHILD;
-      open(STDOUT,">&", \*TO_PARENT);
-      open(STDERR,">&", \*TO_PARENT);
-      exec $Clang, ( @PluginLoadCommandline_xclang, '--analyze', '-x', $lang, '-', '-###');
-    }
-    close(TO_PARENT);
-    while(<FROM_CHILD>) {
+    my $ExecLine = join(' ', qq/"$Clang"/, @PluginLoadCommandline_xclang, "--analyze", "-x", $lang, "-", "-###", "2>&1", "|");
+    open(PS, $ExecLine);
+    while (<PS>) {
       foreach my $val (split /\s+/) {
         $val =~ s/\"//g;
         if ($val =~ /-analyzer-checker\=([^\s]+)/) {
@@ -1249,23 +1253,14 @@ ENDTEXT
         }
       }
     }
-    waitpid($pid,0);
-    close(FROM_CHILD);
   }
 
   # Query clang for complete list of checkers.
   if (defined $Clang && -x $Clang) {
-    pipe(FROM_CHILD, TO_PARENT);
-    my $pid = fork();
-    if ($pid == 0) {
-      close FROM_CHILD;
-      open(STDOUT,">&", \*TO_PARENT);
-      open(STDERR,">&", \*TO_PARENT);
-      exec $Clang, ('-cc1', @PluginsToLoad , '-analyzer-checker-help');
-    }
-    close(TO_PARENT);
+    my $ExecLine = join(' ', qq/"$Clang"/, "-cc1", @PluginsToLoad, "-analyzer-checker-help", "2>&1", "|");
+    open(PS, $ExecLine);
     my $foundCheckers = 0;
-    while(<FROM_CHILD>) {
+    while (<PS>) {
       if (/CHECKERS:/) {
         $foundCheckers = 1;
         last;
@@ -1277,7 +1272,7 @@ ENDTEXT
     else {
       print("\nAVAILABLE CHECKERS:\n\n");
       my $skip = 0;
-      while(<FROM_CHILD>) {
+       while(<PS>) {
         if (/experimental/) {
           $skip = 1;
           next;
@@ -1314,10 +1309,9 @@ ENDTEXT
         }
         print $_;
       }
-      print "\nNOTE: \"+\" indicates that an analysis is enabled by default.\n"
+      print "\nNOTE: \"+\" indicates that an analysis is enabled by default.\n";
     }
-    waitpid($pid,0);
-    close(FROM_CHILD);
+    close PS;
   }
 
 print <<ENDTEXT
@@ -1476,6 +1470,24 @@ while (@ARGV) {
     }
 
     $ENV{"CCC_CXX"} = $cxx;
+    next;
+  }
+
+  if ($arg =~ /^--analyzer-target(=(.+))?$/) {
+    shift @ARGV;
+    my $AnalyzerTarget;
+
+    if (!defined $2 || $2 eq "") {
+      if (!@ARGV) {
+        DieDiag("'--analyzer-target' option requires a target triple name.\n");
+      }
+      $AnalyzerTarget = shift @ARGV;
+    }
+    else {
+      $AnalyzerTarget = $2;
+    }
+
+    $ENV{"CLANG_ANALYZER_TARGET"} = $AnalyzerTarget;
     next;
   }
 

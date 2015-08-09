@@ -21,6 +21,7 @@
 #include "llvm/CodeGen/MachineValueType.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/Support/CommandLine.h"
 #include <cassert>
 #include <functional>
 
@@ -32,6 +33,9 @@ class RegScavenger;
 template<class T> class SmallVectorImpl;
 class VirtRegMap;
 class raw_ostream;
+class LiveRegMatrix;
+
+extern cl::opt<bool> ForceStackAlign;
 
 class TargetRegisterClass {
 public:
@@ -46,6 +50,11 @@ public:
   const uint32_t *SubClassMask;
   const uint16_t *SuperRegIndices;
   const unsigned LaneMask;
+  /// Classes with a higher priority value are assigned first by register
+  /// allocators using a greedy heuristic. The value is in the range [0,63].
+  const uint8_t AllocationPriority;
+  /// Whether the class supports two (or more) disjunct subregister indices.
+  const bool HasDisjunctSubRegs;
   const sc_iterator SuperClasses;
   ArrayRef<MCPhysReg> (*OrderFunc)(const MachineFunction&);
 
@@ -357,15 +366,28 @@ public:
   ///
   /// then:
   ///
-  ///   getSubRegIndexLaneMask(A) & getSubRegIndexLaneMask(B) != 0
+  ///   (getSubRegIndexLaneMask(A) & getSubRegIndexLaneMask(B)) != 0
   ///
   /// The converse is not necessarily true. If two lane masks have a common
   /// bit, the corresponding sub-registers may not overlap, but it can be
   /// assumed that they usually will.
+  /// SubIdx == 0 is allowed, it has the lane mask ~0u.
   unsigned getSubRegIndexLaneMask(unsigned SubIdx) const {
-    // SubIdx == 0 is allowed, it has the lane mask ~0u.
     assert(SubIdx < getNumSubRegIndices() && "This is not a subregister index");
     return SubRegIndexLaneMasks[SubIdx];
+  }
+
+  /// Returns true if the given lane mask is imprecise.
+  ///
+  /// LaneMasks as given by getSubRegIndexLaneMask() have a limited number of
+  /// bits, so for targets with more than 31 disjunct subregister indices there
+  /// may be cases where:
+  ///    getSubReg(Reg,A) does not overlap getSubReg(Reg,B)
+  /// but we still have
+  ///    (getSubRegIndexLaneMask(A) & getSubRegIndexLaneMask(B)) != 0.
+  /// This function returns true in those cases.
+  static bool isImpreciseLaneMask(unsigned LaneMask) {
+    return LaneMask & 0x80000000u;
   }
 
   /// The lane masks returned by getSubRegIndexLaneMask() above can only be
@@ -425,10 +447,10 @@ public:
   /// closest to the incoming stack pointer if stack grows down, and vice versa.
   ///
   virtual const MCPhysReg*
-  getCalleeSavedRegs(const MachineFunction *MF = nullptr) const = 0;
+  getCalleeSavedRegs(const MachineFunction *MF) const = 0;
 
   /// getCallPreservedMask - Return a mask of call-preserved registers for the
-  /// given calling convention on the current sub-target.  The mask should
+  /// given calling convention on the current function.  The mask should
   /// include all call-preserved aliases.  This is used by the register
   /// allocator to determine which registers can be live across a call.
   ///
@@ -445,16 +467,26 @@ public:
   /// instructions should use implicit-def operands to indicate call clobbered
   /// registers.
   ///
-  virtual const uint32_t *getCallPreservedMask(CallingConv::ID) const {
+  virtual const uint32_t *getCallPreservedMask(const MachineFunction &MF,
+                                               CallingConv::ID) const {
     // The default mask clobbers everything.  All targets should override.
     return nullptr;
   }
+
+  /// Return all the call-preserved register masks defined for this target.
+  virtual ArrayRef<const uint32_t *> getRegMasks() const = 0;
+  virtual ArrayRef<const char *> getRegMaskNames() const = 0;
 
   /// getReservedRegs - Returns a bitset indexed by physical register number
   /// indicating if a register is a special register that has particular uses
   /// and should be considered unavailable at all times, e.g. SP, RA. This is
   /// used by register scavenger to determine what registers are free.
   virtual BitVector getReservedRegs(const MachineFunction &MF) const = 0;
+
+  /// Prior to adding the live-out mask to a stackmap or patchpoint
+  /// instruction, provide the target the opportunity to adjust it (mainly to
+  /// remove pseudo-registers that should be ignored).
+  virtual void adjustStackMapLiveOutMask(uint32_t *Mask) const { }
 
   /// getMatchingSuperReg - Return a super-register of the specified register
   /// Reg so its sub-register of index SubIdx is Reg.
@@ -617,8 +649,9 @@ public:
   /// legal to use in the current sub-target and has the same spill size.
   /// The returned register class can be used to create virtual registers which
   /// means that all its registers can be copied and spilled.
-  virtual const TargetRegisterClass*
-  getLargestLegalSuperClass(const TargetRegisterClass *RC) const {
+  virtual const TargetRegisterClass *
+  getLargestLegalSuperClass(const TargetRegisterClass *RC,
+                            const MachineFunction &) const {
     /// The default implementation is very conservative and doesn't allow the
     /// register allocator to inflate register classes.
     return RC;
@@ -650,7 +683,8 @@ public:
 
   /// Get the register unit pressure limit for this dimension.
   /// This limit must be adjusted dynamically for reserved registers.
-  virtual unsigned getRegPressureSetLimit(unsigned Idx) const = 0;
+  virtual unsigned getRegPressureSetLimit(const MachineFunction &MF,
+                                          unsigned Idx) const = 0;
 
   /// Get the dimensions of register pressure impacted by this register class.
   /// Returns a -1 terminated array of pressure set IDs.
@@ -679,23 +713,17 @@ public:
                                      ArrayRef<MCPhysReg> Order,
                                      SmallVectorImpl<MCPhysReg> &Hints,
                                      const MachineFunction &MF,
-                                     const VirtRegMap *VRM = nullptr) const;
+                                     const VirtRegMap *VRM = nullptr,
+                                     const LiveRegMatrix *Matrix = nullptr)
+    const;
 
-  /// avoidWriteAfterWrite - Return true if the register allocator should avoid
-  /// writing a register from RC in two consecutive instructions.
-  /// This can avoid pipeline stalls on certain architectures.
-  /// It does cause increased register pressure, though.
-  virtual bool avoidWriteAfterWrite(const TargetRegisterClass *RC) const {
-    return false;
-  }
-
-  /// UpdateRegAllocHint - A callback to allow target a chance to update
+  /// updateRegAllocHint - A callback to allow target a chance to update
   /// register allocation hints when a register is "changed" (e.g. coalesced)
   /// to another register. e.g. On ARM, some virtual registers should target
   /// register pairs, if one of pair is coalesced to another register, the
   /// allocation hint of the other half of the pair should be changed to point
   /// to the new register.
-  virtual void UpdateRegAllocHint(unsigned Reg, unsigned NewReg,
+  virtual void updateRegAllocHint(unsigned Reg, unsigned NewReg,
                                   MachineFunction &MF) const {
     // Do nothing.
   }
@@ -747,7 +775,7 @@ public:
   /// x86, if the frame register is required, the first fixed stack object is
   /// reserved as its spill slot. This tells PEI not to create a new stack frame
   /// object for the given register. It should be called only after
-  /// processFunctionBeforeCalleeSavedScan().
+  /// determineCalleeSaves().
   virtual bool hasReservedSpillSlot(const MachineFunction &MF, unsigned Reg,
                                     int &FrameIdx) const {
     return false;
@@ -759,12 +787,14 @@ public:
     return false;
   }
 
+  /// canRealignStack - true if the stack can be realigned for the target.
+  virtual bool canRealignStack(const MachineFunction &MF) const;
+
   /// needsStackRealignment - true if storage within the function requires the
   /// stack pointer to be aligned more than the normal calling convention calls
-  /// for.
-  virtual bool needsStackRealignment(const MachineFunction &MF) const {
-    return false;
-  }
+  /// for. This cannot be overriden by the target, but canRealignStack can be
+  /// overriden.
+  bool needsStackRealignment(const MachineFunction &MF) const;
 
   /// getFrameIndexInstrOffset - Get the offset from the referenced frame
   /// index in the instruction, if there is one.
@@ -797,9 +827,9 @@ public:
     llvm_unreachable("resolveFrameIndex does not exist on this target");
   }
 
-  /// isFrameOffsetLegal - Determine whether a given offset immediate is
-  /// encodable to resolve a frame index.
-  virtual bool isFrameOffsetLegal(const MachineInstr *MI,
+  /// isFrameOffsetLegal - Determine whether a given base register plus offset
+  /// immediate is encodable to resolve a frame index.
+  virtual bool isFrameOffsetLegal(const MachineInstr *MI, unsigned BaseReg,
                                   int64_t Offset) const {
     llvm_unreachable("isFrameOffsetLegal does not exist on this target");
   }

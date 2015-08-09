@@ -301,13 +301,9 @@ void RAFast::spillVirtReg(MachineBasicBlock::iterator MI,
       const MDNode *Expr = DBG->getDebugExpression();
       bool IsIndirect = DBG->isIndirectDebugValue();
       uint64_t Offset = IsIndirect ? DBG->getOperand(1).getImm() : 0;
-      DebugLoc DL;
-      if (MI == MBB->end()) {
-        // If MI is at basic block end then use last instruction's location.
-        MachineBasicBlock::iterator EI = MI;
-        DL = (--EI)->getDebugLoc();
-      } else
-        DL = MI->getDebugLoc();
+      DebugLoc DL = DBG->getDebugLoc();
+      assert(cast<DILocalVariable>(Var)->isValidLocationForIntrinsic(DL) &&
+             "Expected inlined-at fields to agree");
       MachineInstr *NewDV =
           BuildMI(*MBB, MI, DL, TII->get(TargetOpcode::DBG_VALUE))
               .addFrameIndex(FI)
@@ -877,6 +873,9 @@ void RAFast::AllocateBasicBlock() {
               const MDNode *Expr = MI->getDebugExpression();
               DebugLoc DL = MI->getDebugLoc();
               MachineBasicBlock *MBB = MI->getParent();
+              assert(
+                  cast<DILocalVariable>(Var)->isValidLocationForIntrinsic(DL) &&
+                  "Expected inlined-at fields to agree");
               MachineInstr *NewDV = BuildMI(*MBB, MBB->erase(MI), DL,
                                             TII->get(TargetOpcode::DBG_VALUE))
                                         .addFrameIndex(SS)
@@ -987,10 +986,6 @@ void RAFast::AllocateBasicBlock() {
       }
     }
 
-    for (UsedInInstrSet::iterator
-         I = UsedInInstr.begin(), E = UsedInInstr.end(); I != E; ++I)
-      MRI->setRegUnitUsed(*I);
-
     // Track registers defined by instruction - early clobbers and tied uses at
     // this point.
     UsedInInstr.clear();
@@ -1051,10 +1046,6 @@ void RAFast::AllocateBasicBlock() {
       killVirtReg(VirtDead[i]);
     VirtDead.clear();
 
-    for (UsedInInstrSet::iterator
-         I = UsedInInstr.begin(), E = UsedInInstr.end(); I != E; ++I)
-      MRI->setRegUnitUsed(*I);
-
     if (CopyDst && CopyDst == CopySrc && CopyDstSub == CopySrcSub) {
       DEBUG(dbgs() << "-- coalescing: " << *MI);
       Coalesced.push_back(MI);
@@ -1103,12 +1094,6 @@ bool RAFast::runOnMachineFunction(MachineFunction &Fn) {
     MBB = &*MBBi;
     AllocateBasicBlock();
   }
-
-  // Add the clobber lists for all the instructions we skipped earlier.
-  for (const MCInstrDesc *Desc : SkippedInstrs)
-    if (const uint16_t *Defs = Desc->getImplicitDefs())
-      while (*Defs)
-        MRI->setPhysRegUsed(*Defs++);
 
   // All machine operands and other references to virtual registers have been
   // replaced. Remove the virtual registers.

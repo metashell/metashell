@@ -4,7 +4,7 @@
 ; RUN: llc -O3 -debug %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=LLC-Ox
 ; RUN: llc -misched-postra -debug %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=LLC-MORE
 
-; REQUIRES: asserts
+; REQUIRES: asserts, native
 
 ; This test verifies that we don't run Machine Function optimizations
 ; on optnone functions.
@@ -17,7 +17,7 @@ entry:
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %entry
-  %0 = load i32* %x.addr, align 4
+  %0 = load i32, i32* %x.addr, align 4
   %dec = add nsw i32 %0, -1
   store i32 %dec, i32* %x.addr, align 4
   %tobool = icmp ne i32 %0, 0

@@ -14,10 +14,11 @@
 #ifndef LLVM_CLANG_FRONTEND_CODEGENOPTIONS_H
 #define LLVM_CLANG_FRONTEND_CODEGENOPTIONS_H
 
+#include "clang/Basic/Sanitizers.h"
+#include "llvm/Support/Regex.h"
 #include <memory>
 #include <string>
 #include <vector>
-#include "llvm/Support/Regex.h"
 
 namespace clang {
 
@@ -43,6 +44,11 @@ public:
     NoInlining,         // Perform no inlining whatsoever.
     NormalInlining,     // Use the standard function inlining pass.
     OnlyAlwaysInlining  // Only run the always inlining pass.
+  };
+
+  enum VectorLibrary {
+    NoLibrary, // Don't use any vector library.
+    Accelerate // Use the Accelerate framework.
   };
 
   enum ObjCDispatchMethodKind {
@@ -148,11 +154,20 @@ public:
   /// A list of dependent libraries.
   std::vector<std::string> DependentLibraries;
 
+  /// Name of the profile file to use as output for -fprofile-instr-generate
+  /// and -fprofile-generate.
+  std::string InstrProfileOutput;
+
   /// Name of the profile file to use with -fprofile-sample-use.
   std::string SampleProfileFile;
 
   /// Name of the profile file to use as input for -fprofile-instr-use
   std::string InstrProfileInput;
+
+  /// A list of file names passed with -fcuda-include-gpubinary options to
+  /// forward to CUDA runtime back-end for incorporating them into host-side
+  /// object file.
+  std::vector<std::string> CudaGpuBinaryFileNames;
 
   /// Regular expression to select optimizations for which we should enable
   /// optimization remarks. Transformation passes whose name matches this
@@ -175,6 +190,16 @@ public:
   /// a given transformation. This is enabled by the -Rpass-analysis=regexp
   /// flag.
   std::shared_ptr<llvm::Regex> OptimizationRemarkAnalysisPattern;
+
+  /// Set of files definining the rules for the symbol rewriting.
+  std::vector<std::string> RewriteMapFiles;
+
+  /// Set of sanitizer checks that are non-fatal (i.e. execution should be
+  /// continued when possible).
+  SanitizerSet SanitizeRecover;
+
+  /// Set of sanitizer checks that trap rather than diagnose.
+  SanitizerSet SanitizeTrap;
 
 public:
   // Define accessors/mutators for code generation options of enumeration type.

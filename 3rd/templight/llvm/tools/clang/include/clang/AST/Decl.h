@@ -26,6 +26,7 @@
 #include "llvm/ADT/Optional.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TrailingObjects.h"
 
 namespace clang {
 struct ASTTemplateArgumentListInfo;
@@ -39,6 +40,7 @@ class LabelStmt;
 class MemberSpecializationInfo;
 class Module;
 class NestedNameSpecifier;
+class ParmVarDecl;
 class Stmt;
 class StringLiteral;
 class TemplateArgumentList;
@@ -82,10 +84,7 @@ class TranslationUnitDecl : public Decl, public DeclContext {
   /// translation unit, if one has been created.
   NamespaceDecl *AnonymousNamespace;
 
-  explicit TranslationUnitDecl(ASTContext &ctx)
-    : Decl(TranslationUnit, nullptr, SourceLocation()),
-      DeclContext(TranslationUnit),
-      Ctx(ctx), AnonymousNamespace(nullptr) {}
+  explicit TranslationUnitDecl(ASTContext &ctx);
 public:
   ASTContext &getASTContext() const { return Ctx; }
 
@@ -101,6 +100,43 @@ public:
   }
   static TranslationUnitDecl *castFromDeclContext(const DeclContext *DC) {
     return static_cast<TranslationUnitDecl *>(const_cast<DeclContext*>(DC));
+  }
+};
+
+/// \brief Declaration context for names declared as extern "C" in C++. This
+/// is neither the semantic nor lexical context for such declarations, but is
+/// used to check for conflicts with other extern "C" declarations. Example:
+///
+/// \code
+///   namespace N { extern "C" void f(); } // #1
+///   void N::f() {}                       // #2
+///   namespace M { extern "C" void f(); } // #3
+/// \endcode
+///
+/// The semantic context of #1 is namespace N and its lexical context is the
+/// LinkageSpecDecl; the semantic context of #2 is namespace N and its lexical
+/// context is the TU. However, both declarations are also visible in the
+/// extern "C" context.
+///
+/// The declaration at #3 finds it is a redeclaration of \c N::f through
+/// lookup in the extern "C" context.
+class ExternCContextDecl : public Decl, public DeclContext {
+  virtual void anchor();
+
+  explicit ExternCContextDecl(TranslationUnitDecl *TU)
+    : Decl(ExternCContext, TU, SourceLocation()),
+      DeclContext(ExternCContext) {}
+public:
+  static ExternCContextDecl *Create(const ASTContext &C,
+                                    TranslationUnitDecl *TU);
+  // Implement isa/cast/dyncast/etc.
+  static bool classof(const Decl *D) { return classofKind(D->getKind()); }
+  static bool classofKind(Kind K) { return K == ExternCContext; }
+  static DeclContext *castToDeclContext(const ExternCContextDecl *D) {
+    return static_cast<DeclContext *>(const_cast<ExternCContextDecl*>(D));
+  }
+  static ExternCContextDecl *castFromDeclContext(const DeclContext *DC) {
+    return static_cast<ExternCContextDecl *>(const_cast<DeclContext*>(DC));
   }
 };
 
@@ -179,14 +215,17 @@ public:
                                     const PrintingPolicy &Policy,
                                     bool Qualified) const;
 
-  /// declarationReplaces - Determine whether this declaration, if
+  /// \brief Determine whether this declaration, if
   /// known to be well-formed within its context, will replace the
   /// declaration OldD if introduced into scope. A declaration will
   /// replace another declaration if, for example, it is a
   /// redeclaration of the same variable or function, but not if it is
   /// a declaration of a different kind (function vs. class) or an
   /// overloaded function.
-  bool declarationReplaces(NamedDecl *OldD) const;
+  ///
+  /// \param IsKnownNewer \c true if this declaration is known to be newer
+  /// than \p OldD (for instance, if this declaration is newly-created).
+  bool declarationReplaces(NamedDecl *OldD, bool IsKnownNewer = true) const;
 
   /// \brief Determine whether this declaration has linkage.
   bool hasLinkage() const;
@@ -198,7 +237,11 @@ public:
   bool isHidden() const { return Hidden; }
 
   /// \brief Set whether this declaration is hidden from name lookup.
-  void setHidden(bool Hide) { Hidden = Hide; }
+  void setHidden(bool Hide) {
+    assert((!Hide || isFromASTFile() || hasLocalOwningModuleStorage()) &&
+           "declaration with no owning module can't be hidden");
+    Hidden = Hide;
+  }
 
   /// \brief Determine whether this declaration is a C++ class member.
   bool isCXXClassMember() const {
@@ -530,13 +573,12 @@ struct QualifierInfo {
   /// setTemplateParameterListsInfo - Sets info about "outer" template
   /// parameter lists.
   void setTemplateParameterListsInfo(ASTContext &Context,
-                                     unsigned NumTPLists,
-                                     TemplateParameterList **TPLists);
+                                     ArrayRef<TemplateParameterList *> TPLists);
 
 private:
   // Copy constructor and copy assignment are disabled.
-  QualifierInfo(const QualifierInfo&) LLVM_DELETED_FUNCTION;
-  QualifierInfo& operator=(const QualifierInfo&) LLVM_DELETED_FUNCTION;
+  QualifierInfo(const QualifierInfo&) = delete;
+  QualifierInfo& operator=(const QualifierInfo&) = delete;
 };
 
 /// \brief Represents a ValueDecl that came out of a declarator.
@@ -616,8 +658,8 @@ public:
     assert(index < getNumTemplateParameterLists());
     return getExtInfo()->TemplParamLists[index];
   }
-  void setTemplateParameterListsInfo(ASTContext &Context, unsigned NumTPLists,
-                                     TemplateParameterList **TPLists);
+  void setTemplateParameterListsInfo(ASTContext &Context,
+                                     ArrayRef<TemplateParameterList *> TPLists);
 
   SourceLocation getTypeSpecStartLoc() const;
 
@@ -710,37 +752,8 @@ private:
     unsigned SClass : 3;
     unsigned TSCSpec : 2;
     unsigned InitStyle : 2;
-
-    /// \brief Whether this variable is the exception variable in a C++ catch
-    /// or an Objective-C @catch statement.
-    unsigned ExceptionVar : 1;
-
-    /// \brief Whether this local variable could be allocated in the return
-    /// slot of its function, enabling the named return value optimization
-    /// (NRVO).
-    unsigned NRVOVariable : 1;
-
-    /// \brief Whether this variable is the for-range-declaration in a C++0x
-    /// for-range statement.
-    unsigned CXXForRangeDecl : 1;
-
-    /// \brief Whether this variable is an ARC pseudo-__strong
-    /// variable;  see isARCPseudoStrong() for details.
-    unsigned ARCPseudoStrong : 1;
-
-    /// \brief Whether this variable is (C++0x) constexpr.
-    unsigned IsConstexpr : 1;
-
-    /// \brief Whether this variable is the implicit variable for a lambda
-    /// init-capture.
-    unsigned IsInitCapture : 1;
-
-    /// \brief Whether this local extern variable's previous declaration was
-    /// declared in the same block scope. This controls whether we should merge
-    /// the type of this declaration with its previous declaration.
-    unsigned PreviousDeclInSameBlockScope : 1;
   };
-  enum { NumVarDeclBits = 14 };
+  enum { NumVarDeclBits = 7 };
 
   friend class ASTDeclReader;
   friend class StmtIteratorBase;
@@ -776,10 +789,50 @@ protected:
     unsigned ParameterIndex : NumParameterIndexBits;
   };
 
+  class NonParmVarDeclBitfields {
+    friend class VarDecl;
+    friend class ASTDeclReader;
+
+    unsigned : NumVarDeclBits;
+
+    /// \brief Whether this variable is the exception variable in a C++ catch
+    /// or an Objective-C @catch statement.
+    unsigned ExceptionVar : 1;
+
+    /// \brief Whether this local variable could be allocated in the return
+    /// slot of its function, enabling the named return value optimization
+    /// (NRVO).
+    unsigned NRVOVariable : 1;
+
+    /// \brief Whether this variable is the for-range-declaration in a C++0x
+    /// for-range statement.
+    unsigned CXXForRangeDecl : 1;
+
+    /// \brief Whether this variable is an ARC pseudo-__strong
+    /// variable;  see isARCPseudoStrong() for details.
+    unsigned ARCPseudoStrong : 1;
+
+    /// \brief Whether this variable is (C++0x) constexpr.
+    unsigned IsConstexpr : 1;
+
+    /// \brief Whether this variable is a (C++ Concepts TS) concept.
+    unsigned IsConcept : 1;
+
+    /// \brief Whether this variable is the implicit variable for a lambda
+    /// init-capture.
+    unsigned IsInitCapture : 1;
+
+    /// \brief Whether this local extern variable's previous declaration was
+    /// declared in the same block scope. This controls whether we should merge
+    /// the type of this declaration with its previous declaration.
+    unsigned PreviousDeclInSameBlockScope : 1;
+  };
+
   union {
     unsigned AllBits;
     VarDeclBitfields VarDeclBits;
     ParmVarDeclBitfields ParmVarDeclBits;
+    NonParmVarDeclBitfields NonParmVarDeclBits;
   };
 
   VarDecl(Kind DK, ASTContext &C, DeclContext *DC, SourceLocation StartLoc,
@@ -840,7 +893,7 @@ public:
       return !isFileVarDecl() && getTSCSpec() == TSCS_unspecified;
 
     // Global Named Register (GNU extension)
-    if (getStorageClass() == SC_Register && !isLocalVarDecl())
+    if (getStorageClass() == SC_Register && !isLocalVarDeclOrParm())
       return false;
 
     // Return true for:  Auto, Register.
@@ -904,6 +957,11 @@ public:
     if (const DeclContext *DC = getLexicalDeclContext())
       return DC->getRedeclContext()->isFunctionOrMethod();
     return false;
+  }
+
+  /// \brief Similar to isLocalVarDecl but also includes parameters.
+  bool isLocalVarDeclOrParm() const {
+    return isLocalVarDecl() || getKind() == Decl::ParmVar;
   }
 
   /// isFunctionOrMethodVarDecl - Similar to isLocalVarDecl, but
@@ -1127,9 +1185,12 @@ public:
   /// \brief Determine whether this variable is the exception variable in a
   /// C++ catch statememt or an Objective-C \@catch statement.
   bool isExceptionVariable() const {
-    return VarDeclBits.ExceptionVar;
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.ExceptionVar;
   }
-  void setExceptionVariable(bool EV) { VarDeclBits.ExceptionVar = EV; }
+  void setExceptionVariable(bool EV) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.ExceptionVar = EV;
+  }
 
   /// \brief Determine whether this local variable can be used with the named
   /// return value optimization (NRVO).
@@ -1141,36 +1202,73 @@ public:
   /// return slot when returning from the function. Within the function body,
   /// each return that returns the NRVO object will have this variable as its
   /// NRVO candidate.
-  bool isNRVOVariable() const { return VarDeclBits.NRVOVariable; }
-  void setNRVOVariable(bool NRVO) { VarDeclBits.NRVOVariable = NRVO; }
+  bool isNRVOVariable() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.NRVOVariable;
+  }
+  void setNRVOVariable(bool NRVO) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.NRVOVariable = NRVO;
+  }
 
   /// \brief Determine whether this variable is the for-range-declaration in
   /// a C++0x for-range statement.
-  bool isCXXForRangeDecl() const { return VarDeclBits.CXXForRangeDecl; }
-  void setCXXForRangeDecl(bool FRD) { VarDeclBits.CXXForRangeDecl = FRD; }
+  bool isCXXForRangeDecl() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.CXXForRangeDecl;
+  }
+  void setCXXForRangeDecl(bool FRD) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.CXXForRangeDecl = FRD;
+  }
 
   /// \brief Determine whether this variable is an ARC pseudo-__strong
   /// variable.  A pseudo-__strong variable has a __strong-qualified
   /// type but does not actually retain the object written into it.
   /// Generally such variables are also 'const' for safety.
-  bool isARCPseudoStrong() const { return VarDeclBits.ARCPseudoStrong; }
-  void setARCPseudoStrong(bool ps) { VarDeclBits.ARCPseudoStrong = ps; }
+  bool isARCPseudoStrong() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.ARCPseudoStrong;
+  }
+  void setARCPseudoStrong(bool ps) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.ARCPseudoStrong = ps;
+  }
 
   /// Whether this variable is (C++11) constexpr.
-  bool isConstexpr() const { return VarDeclBits.IsConstexpr; }
-  void setConstexpr(bool IC) { VarDeclBits.IsConstexpr = IC; }
+  bool isConstexpr() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.IsConstexpr;
+  }
+  void setConstexpr(bool IC) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.IsConstexpr = IC;
+  }
+
+  /// Whether this variable is (C++ Concepts TS) concept.
+  bool isConcept() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.IsConcept;
+  }
+  void setConcept(bool IC) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.IsConcept = IC;
+  }
 
   /// Whether this variable is the implicit variable for a lambda init-capture.
-  bool isInitCapture() const { return VarDeclBits.IsInitCapture; }
-  void setInitCapture(bool IC) { VarDeclBits.IsInitCapture = IC; }
+  bool isInitCapture() const {
+    return isa<ParmVarDecl>(this) ? false : NonParmVarDeclBits.IsInitCapture;
+  }
+  void setInitCapture(bool IC) {
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.IsInitCapture = IC;
+  }
 
   /// Whether this local extern variable declaration's previous declaration
   /// was declared in the same block scope. Only correct in C++.
   bool isPreviousDeclInSameBlockScope() const {
-    return VarDeclBits.PreviousDeclInSameBlockScope;
+    return isa<ParmVarDecl>(this)
+               ? false
+               : NonParmVarDeclBits.PreviousDeclInSameBlockScope;
   }
   void setPreviousDeclInSameBlockScope(bool Same) {
-    VarDeclBits.PreviousDeclInSameBlockScope = Same;
+    assert(!isa<ParmVarDecl>(this));
+    NonParmVarDeclBits.PreviousDeclInSameBlockScope = Same;
   }
 
   /// \brief If this variable is an instantiated static data member of a
@@ -1477,6 +1575,9 @@ private:
   bool IsLateTemplateParsed : 1;
   bool IsConstexpr : 1;
 
+  /// \brief Indicates if the function uses __try.
+  bool UsesSEHTry : 1;
+
   /// \brief Indicates if the function was a definition but its body was
   /// skipped.
   unsigned HasSkippedBody : 1;
@@ -1565,8 +1666,8 @@ protected:
       HasWrittenPrototype(true), IsDeleted(false), IsTrivial(false),
       IsDefaulted(false), IsExplicitlyDefaulted(false),
       HasImplicitReturnZero(false), IsLateTemplateParsed(false),
-      IsConstexpr(isConstexprSpecified), HasSkippedBody(false),
-      EndRangeLoc(NameInfo.getEndLoc()),
+      IsConstexpr(isConstexprSpecified), UsesSEHTry(false),
+      HasSkippedBody(false), EndRangeLoc(NameInfo.getEndLoc()),
       TemplateOrSpecialization(),
       DNLoc(NameInfo.getInfo()) {}
 
@@ -1746,6 +1847,10 @@ public:
   bool isConstexpr() const { return IsConstexpr; }
   void setConstexpr(bool IC) { IsConstexpr = IC; }
 
+  /// Whether this is a (C++11) constexpr function or constexpr constructor.
+  bool usesSEHTry() const { return UsesSEHTry; }
+  void setUsesSEHTry(bool UST) { UsesSEHTry = UST; }
+
   /// \brief Whether this function has been deleted.
   ///
   /// A function that is "deleted" (via the C++0x "= delete" syntax)
@@ -1809,11 +1914,6 @@ public:
   ///    allocation function. [...]
   bool isReplaceableGlobalAllocationFunction() const;
 
-  /// \brief Determine whether this function is a sized global deallocation
-  /// function in C++1y. If so, find and return the corresponding unsized
-  /// deallocation function.
-  FunctionDecl *getCorrespondingUnsizedGlobalDeallocationFunction() const;
-
   /// Compute the language linkage.
   LanguageLinkage getLanguageLinkage() const;
 
@@ -1842,8 +1942,10 @@ public:
 
   void setPreviousDeclaration(FunctionDecl * PrevDecl);
 
-  virtual const FunctionDecl *getCanonicalDecl() const;
   FunctionDecl *getCanonicalDecl() override;
+  const FunctionDecl *getCanonicalDecl() const {
+    return const_cast<FunctionDecl*>(this)->getCanonicalDecl();
+  }
 
   unsigned getBuiltinID() const;
 
@@ -1917,6 +2019,13 @@ public:
   QualType getCallResultType() const {
     return getType()->getAs<FunctionType>()->getCallResultType(getASTContext());
   }
+
+  /// \brief Returns true if this function or its return type has the
+  /// warn_unused_result attribute. If the return type has the attribute and
+  /// this function is a method of the return type's class, then false will be
+  /// returned to avoid spurious warnings on member methods such as assignment
+  /// operators.
+  bool hasUnusedResultAttr() const;
 
   /// \brief Returns the storage class as written in the source. For the
   /// computed linkage of symbol, see getLinkage.
@@ -2390,7 +2499,8 @@ public:
 /// IndirectFieldDecl - An instance of this class is created to represent a
 /// field injected from an anonymous union/struct into the parent scope.
 /// IndirectFieldDecl are always implicit.
-class IndirectFieldDecl : public ValueDecl {
+class IndirectFieldDecl : public ValueDecl,
+                          public Mergeable<IndirectFieldDecl> {
   void anchor() override;
   NamedDecl **Chaining;
   unsigned ChainingSize;
@@ -2427,6 +2537,9 @@ public:
     assert(ChainingSize >= 2);
     return dyn_cast<VarDecl>(*chain_begin());
   }
+
+  IndirectFieldDecl *getCanonicalDecl() override { return getFirstDecl(); }
+  const IndirectFieldDecl *getCanonicalDecl() const { return getFirstDecl(); }
 
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
@@ -2531,6 +2644,13 @@ public:
   /// Retrieves the canonical declaration of this typedef-name.
   TypedefNameDecl *getCanonicalDecl() override { return getFirstDecl(); }
   const TypedefNameDecl *getCanonicalDecl() const { return getFirstDecl(); }
+
+  /// Retrieves the tag declaration for which this is the typedef name for
+  /// linkage purposes, if any.
+  ///
+  /// \param AnyRedecl Look for the tag declaration in any redeclaration of
+  /// this typedef declaration.
+  TagDecl *getAnonDeclWithTypedefName(bool AnyRedecl = false) const;
 
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
@@ -2863,8 +2983,8 @@ public:
     assert(i < getNumTemplateParameterLists());
     return getExtInfo()->TemplParamLists[i];
   }
-  void setTemplateParameterListsInfo(ASTContext &Context, unsigned NumTPLists,
-                                     TemplateParameterList **TPLists);
+  void setTemplateParameterListsInfo(ASTContext &Context,
+                                     ArrayRef<TemplateParameterList *> TPLists);
 
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
@@ -3371,7 +3491,7 @@ private:
   Stmt *Body;
   TypeSourceInfo *SignatureAsWritten;
 
-  Capture *Captures;
+  const Capture *Captures;
   unsigned NumCaptures;
 
   unsigned ManglingNumber;
@@ -3477,10 +3597,8 @@ public:
 
   bool capturesVariable(const VarDecl *var) const;
 
-  void setCaptures(ASTContext &Context,
-                   const Capture *begin,
-                   const Capture *end,
-                   bool capturesCXXThis);
+  void setCaptures(ASTContext &Context, ArrayRef<Capture> Captures,
+                   bool CapturesCXXThis);
 
    unsigned getBlockManglingNumber() const {
      return ManglingNumber;
@@ -3509,7 +3627,15 @@ public:
 
 /// \brief This represents the body of a CapturedStmt, and serves as its
 /// DeclContext.
-class CapturedDecl : public Decl, public DeclContext {
+class CapturedDecl final
+    : public Decl,
+      public DeclContext,
+      private llvm::TrailingObjects<CapturedDecl, ImplicitParamDecl *> {
+protected:
+  size_t numTrailingObjects(OverloadToken<ImplicitParamDecl>) {
+    return NumParams;
+  }
+
 private:
   /// \brief The number of parameters to the outlined function.
   unsigned NumParams;
@@ -3522,9 +3648,12 @@ private:
     : Decl(Captured, DC, SourceLocation()), DeclContext(Captured),
       NumParams(NumParams), ContextParam(0), BodyAndNothrow(nullptr, false) { }
 
-  ImplicitParamDecl **getParams() const {
-    return reinterpret_cast<ImplicitParamDecl **>(
-             const_cast<CapturedDecl *>(this) + 1);
+  ImplicitParamDecl *const *getParams() const {
+    return getTrailingObjects<ImplicitParamDecl *>();
+  }
+
+  ImplicitParamDecl **getParams() {
+    return getTrailingObjects<ImplicitParamDecl *>();
   }
 
 public:
@@ -3562,7 +3691,7 @@ public:
   }
   unsigned getContextParamPosition() const { return ContextParam; }
 
-  typedef ImplicitParamDecl **param_iterator;
+  typedef ImplicitParamDecl *const *param_iterator;
   typedef llvm::iterator_range<param_iterator> param_range;
 
   /// \brief Retrieve an iterator pointing to the first parameter decl.
@@ -3585,6 +3714,7 @@ public:
 
   friend class ASTDeclReader;
   friend class ASTDeclWriter;
+  friend TrailingObjects;
 };
 
 /// \brief Describes a module import declaration, which makes the contents
@@ -3597,7 +3727,8 @@ public:
 ///
 /// Import declarations can also be implicitly generated from
 /// \#include/\#import directives.
-class ImportDecl : public Decl {
+class ImportDecl final : public Decl,
+                         llvm::TrailingObjects<ImportDecl, SourceLocation> {
   /// \brief The imported module, along with a bit that indicates whether
   /// we have source-location information for each identifier in the module
   /// name. 
@@ -3613,7 +3744,8 @@ class ImportDecl : public Decl {
   friend class ASTReader;
   friend class ASTDeclReader;
   friend class ASTContext;
-  
+  friend TrailingObjects;
+
   ImportDecl(DeclContext *DC, SourceLocation StartLoc, Module *Imported,
              ArrayRef<SourceLocation> IdentifierLocs);
 
@@ -3690,8 +3822,6 @@ void Redeclarable<decl_type>::setPreviousDecl(decl_type *PrevDecl) {
   // and Redeclarable to be defined.
   assert(RedeclLink.NextIsLatest() &&
          "setPreviousDecl on a decl already in a redeclaration chain");
-
-  decl_type *First;
 
   if (PrevDecl) {
     // Point to previous. Make sure that this is actually the most recent

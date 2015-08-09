@@ -298,6 +298,8 @@ protected:
     SupportedArchs.push_back(Triple::arm);
     SupportedArchs.push_back(Triple::mips);
     SupportedArchs.push_back(Triple::mipsel);
+    SupportedArchs.push_back(Triple::mips64);
+    SupportedArchs.push_back(Triple::mips64el);
     SupportedArchs.push_back(Triple::x86);
     SupportedArchs.push_back(Triple::x86_64);
 
@@ -307,11 +309,6 @@ protected:
     HasSubArchs.push_back(Triple::arm);
     SupportedSubArchs.push_back("armv6");
     SupportedSubArchs.push_back("armv7");
-
-    // The operating systems below are known to be incompatible with MCJIT as
-    // they are copied from the test/ExecutionEngine/MCJIT/lit.local.cfg and
-    // should be kept in sync.
-    UnsupportedOSs.push_back(Triple::Darwin);
 
     UnsupportedEnvironments.push_back(Triple::Cygnus);
   }

@@ -71,8 +71,16 @@ private:
     return isMachO() ? "__DATA,__llvm_prf_data" : "__llvm_prf_data";
   }
 
+  /// Get the section name for the coverage mapping data.
+  StringRef getCoverageSection() const {
+    return isMachO() ? "__DATA,__llvm_covmap" : "__llvm_covmap";
+  }
+
   /// Replace instrprof_increment with an increment of the appropriate value.
   void lowerIncrement(InstrProfIncrementInst *Inc);
+
+  /// Set up the section and uses for coverage data and its references.
+  void lowerCoverageData(GlobalVariable *CoverageData);
 
   /// Get the region counters for an increment, creating them if necessary.
   ///
@@ -89,7 +97,8 @@ private:
   /// Add uses of our data variables and runtime hook.
   void emitUses();
 
-  /// Create a static initializer for our data, on platforms that need it.
+  /// Create a static initializer for our data, on platforms that need it,
+  /// and for any profile output file that was specified.
   void emitInitialization();
 };
 
@@ -118,6 +127,10 @@ bool InstrProfiling::runOnModule(Module &M) {
           lowerIncrement(Inc);
           MadeChange = true;
         }
+  if (GlobalVariable *Coverage = M.getNamedGlobal("__llvm_coverage_mapping")) {
+    lowerCoverageData(Coverage);
+    MadeChange = true;
+  }
   if (!MadeChange)
     return false;
 
@@ -133,11 +146,40 @@ void InstrProfiling::lowerIncrement(InstrProfIncrementInst *Inc) {
 
   IRBuilder<> Builder(Inc->getParent(), *Inc);
   uint64_t Index = Inc->getIndex()->getZExtValue();
-  llvm::Value *Addr = Builder.CreateConstInBoundsGEP2_64(Counters, 0, Index);
-  llvm::Value *Count = Builder.CreateLoad(Addr, "pgocount");
+  Value *Addr = Builder.CreateConstInBoundsGEP2_64(Counters, 0, Index);
+  Value *Count = Builder.CreateLoad(Addr, "pgocount");
   Count = Builder.CreateAdd(Count, Builder.getInt64(1));
   Inc->replaceAllUsesWith(Builder.CreateStore(Count, Addr));
   Inc->eraseFromParent();
+}
+
+void InstrProfiling::lowerCoverageData(GlobalVariable *CoverageData) {
+  CoverageData->setSection(getCoverageSection());
+  CoverageData->setAlignment(8);
+
+  Constant *Init = CoverageData->getInitializer();
+  // We're expecting { i32, i32, i32, i32, [n x { i8*, i32, i32 }], [m x i8] }
+  // for some C. If not, the frontend's given us something broken.
+  assert(Init->getNumOperands() == 6 && "bad number of fields in coverage map");
+  assert(isa<ConstantArray>(Init->getAggregateElement(4)) &&
+         "invalid function list in coverage map");
+  ConstantArray *Records = cast<ConstantArray>(Init->getAggregateElement(4));
+  for (unsigned I = 0, E = Records->getNumOperands(); I < E; ++I) {
+    Constant *Record = Records->getOperand(I);
+    Value *V = const_cast<Value *>(Record->getOperand(0))->stripPointerCasts();
+
+    assert(isa<GlobalVariable>(V) && "Missing reference to function name");
+    GlobalVariable *Name = cast<GlobalVariable>(V);
+
+    // If we have region counters for this name, we've already handled it.
+    auto It = RegionCounters.find(Name);
+    if (It != RegionCounters.end())
+      continue;
+
+    // Move the name variable to the right section.
+    Name->setSection(getNameSection());
+    Name->setAlignment(1);
+  }
 }
 
 /// Get the name of a profiling variable for a particular function.
@@ -154,9 +196,13 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
   if (It != RegionCounters.end())
     return It->second;
 
-  // Move the name variable to the right section.
+  // Move the name variable to the right section. Make sure it is placed in the
+  // same comdat as its associated function. Otherwise, we may get multiple
+  // counters for the same function in certain cases.
+  Function *Fn = Inc->getParent()->getParent();
   Name->setSection(getNameSection());
   Name->setAlignment(1);
+  Name->setComdat(Fn->getComdat());
 
   uint64_t NumCounters = Inc->getNumCounters()->getZExtValue();
   LLVMContext &Ctx = M->getContext();
@@ -169,6 +215,7 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
   Counters->setVisibility(Name->getVisibility());
   Counters->setSection(getCountersSection());
   Counters->setAlignment(8);
+  Counters->setComdat(Fn->getComdat());
 
   RegionCounters[Inc->getName()] = Counters;
 
@@ -193,6 +240,7 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
   Data->setVisibility(Name->getVisibility());
   Data->setSection(getDataSection());
   Data->setAlignment(8);
+  Data->setComdat(Fn->getComdat());
 
   // Mark the data variable as used so that it isn't stripped out.
   UsedVars.push_back(Data);
@@ -215,7 +263,7 @@ void InstrProfiling::emitRegistration() {
   if (Options.NoRedZone)
     RegisterF->addFnAttr(Attribute::NoRedZone);
 
-  auto *RuntimeRegisterTy = llvm::FunctionType::get(VoidTy, VoidPtrTy, false);
+  auto *RuntimeRegisterTy = FunctionType::get(VoidTy, VoidPtrTy, false);
   auto *RuntimeRegisterF =
       Function::Create(RuntimeRegisterTy, GlobalVariable::ExternalLinkage,
                        "__llvm_profile_register_function", M);
@@ -247,6 +295,7 @@ void InstrProfiling::emitRuntimeHook() {
   User->addFnAttr(Attribute::NoInline);
   if (Options.NoRedZone)
     User->addFnAttr(Attribute::NoRedZone);
+  User->setVisibility(GlobalValue::HiddenVisibility);
 
   IRBuilder<> IRB(BasicBlock::Create(M->getContext(), "", User));
   auto *Load = IRB.CreateLoad(Var);
@@ -261,7 +310,7 @@ void InstrProfiling::emitUses() {
     return;
 
   GlobalVariable *LLVMUsed = M->getGlobalVariable("llvm.used");
-  std::vector<Constant*> MergedVars;
+  std::vector<Constant *> MergedVars;
   if (LLVMUsed) {
     // Collect the existing members of llvm.used.
     ConstantArray *Inits = cast<ConstantArray>(LLVMUsed->getInitializer());
@@ -274,20 +323,22 @@ void InstrProfiling::emitUses() {
   // Add uses for our data.
   for (auto *Value : UsedVars)
     MergedVars.push_back(
-        ConstantExpr::getBitCast(cast<llvm::Constant>(Value), i8PTy));
+        ConstantExpr::getBitCast(cast<Constant>(Value), i8PTy));
 
   // Recreate llvm.used.
   ArrayType *ATy = ArrayType::get(i8PTy, MergedVars.size());
-  LLVMUsed = new llvm::GlobalVariable(
-      *M, ATy, false, llvm::GlobalValue::AppendingLinkage,
-      llvm::ConstantArray::get(ATy, MergedVars), "llvm.used");
+  LLVMUsed =
+      new GlobalVariable(*M, ATy, false, GlobalValue::AppendingLinkage,
+                         ConstantArray::get(ATy, MergedVars), "llvm.used");
 
   LLVMUsed->setSection("llvm.metadata");
 }
 
 void InstrProfiling::emitInitialization() {
+  std::string InstrProfileOutput = Options.InstrProfileOutput;
+
   Constant *RegisterF = M->getFunction("__llvm_profile_register_functions");
-  if (!RegisterF)
+  if (!RegisterF && InstrProfileOutput.empty())
     return;
 
   // Create the initialization function.
@@ -302,7 +353,24 @@ void InstrProfiling::emitInitialization() {
 
   // Add the basic block and the necessary calls.
   IRBuilder<> IRB(BasicBlock::Create(M->getContext(), "", F));
-  IRB.CreateCall(RegisterF);
+  if (RegisterF)
+    IRB.CreateCall(RegisterF, {});
+  if (!InstrProfileOutput.empty()) {
+    auto *Int8PtrTy = Type::getInt8PtrTy(M->getContext());
+    auto *SetNameTy = FunctionType::get(VoidTy, Int8PtrTy, false);
+    auto *SetNameF =
+        Function::Create(SetNameTy, GlobalValue::ExternalLinkage,
+                         "__llvm_profile_override_default_filename", M);
+
+    // Create variable for profile name.
+    Constant *ProfileNameConst =
+        ConstantDataArray::getString(M->getContext(), InstrProfileOutput, true);
+    GlobalVariable *ProfileName =
+        new GlobalVariable(*M, ProfileNameConst->getType(), true,
+                           GlobalValue::PrivateLinkage, ProfileNameConst);
+
+    IRB.CreateCall(SetNameF, IRB.CreatePointerCast(ProfileName, Int8PtrTy));
+  }
   IRB.CreateRetVoid();
 
   appendToGlobalCtors(*M, F, 0);

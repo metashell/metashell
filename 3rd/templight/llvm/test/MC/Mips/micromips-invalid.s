@@ -38,6 +38,9 @@
   swm32   $16, $19, 8($4)  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: consecutive register numbers expected
   swm32   $16-$25, 8($4)   # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid register operand
   lwm32 $16, $17, $18, $19, $20, $21, $22, $23, $24, 8($4) # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid register operand
+  addiupc $7, 16777216  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: immediate operand value out of range
+  addiupc $6, -16777220 # CHECK: :[[@LINE]]:{{[0-9]+}}: error: immediate operand value out of range
+  addiupc $3, 3         # CHECK: :[[@LINE]]:{{[0-9]+}}: error: immediate operand value out of range
   lbu16 $9, 8($16) # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
   lhu16 $9, 4($16) # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
   lw16  $9, 8($17) # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
@@ -64,3 +67,14 @@
   sw16  $7, 4($10)  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
   cache 256, 8($5)  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: immediate operand value out of range
   pref 256, 8($5)   # CHECK: :[[@LINE]]:{{[0-9]+}}: error: immediate operand value out of range
+  beqz16 $9, 20 # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  bnez16 $9, 20 # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  movep   $5, $21, $2, $3 # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  movep   $8, $6, $2, $3  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  movep   $5, $6, $5, $3  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  movep   $5, $6, $2, $9  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  break 1024        # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  break 1024, 5     # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  break 7, 1024     # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  break 1024, 1024  # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction
+  wait 1024         # CHECK: :[[@LINE]]:{{[0-9]+}}: error: invalid operand for instruction

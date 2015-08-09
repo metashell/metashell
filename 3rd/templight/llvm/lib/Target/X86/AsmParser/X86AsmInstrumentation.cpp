@@ -14,7 +14,6 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/CodeGen/MachineValueType.h"
-#include "llvm/IR/Function.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInst.h"
@@ -246,7 +245,7 @@ protected:
     assert(VT == MVT::i32 || VT == MVT::i64);
     MCInst Inst;
     Inst.setOpcode(VT == MVT::i32 ? X86::LEA32r : X86::LEA64r);
-    Inst.addOperand(MCOperand::CreateReg(getX86SubSuperRegister(Reg, VT)));
+    Inst.addOperand(MCOperand::createReg(getX86SubSuperRegister(Reg, VT)));
     Op.addMemOperands(Inst, 5);
     EmitInstruction(Out, Inst);
   }
@@ -262,13 +261,13 @@ protected:
                                               MCContext &Ctx, int64_t *Residue);
 
   bool is64BitMode() const {
-    return (STI.getFeatureBits() & X86::Mode64Bit) != 0;
+    return STI.getFeatureBits()[X86::Mode64Bit];
   }
   bool is32BitMode() const {
-    return (STI.getFeatureBits() & X86::Mode32Bit) != 0;
+    return STI.getFeatureBits()[X86::Mode32Bit];
   }
   bool is16BitMode() const {
-    return (STI.getFeatureBits() & X86::Mode16Bit) != 0;
+    return STI.getFeatureBits()[X86::Mode16Bit];
   }
 
   unsigned getPointerWidth() {
@@ -316,7 +315,7 @@ void X86AddressSanitizer::InstrumentMOVSBase(unsigned DstReg, unsigned SrcReg,
 
   // Test (%SrcReg)
   {
-    const MCExpr *Disp = MCConstantExpr::Create(0, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(0, Ctx);
     std::unique_ptr<X86Operand> Op(X86Operand::CreateMem(
         getPointerWidth(), 0, Disp, SrcReg, 0, AccessSize, SMLoc(), SMLoc()));
     InstrumentMemOperand(*Op, AccessSize, false /* IsWrite */, RegCtx, Ctx,
@@ -325,7 +324,7 @@ void X86AddressSanitizer::InstrumentMOVSBase(unsigned DstReg, unsigned SrcReg,
 
   // Test -1(%SrcReg, %CntReg, AccessSize)
   {
-    const MCExpr *Disp = MCConstantExpr::Create(-1, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(-1, Ctx);
     std::unique_ptr<X86Operand> Op(X86Operand::CreateMem(
         getPointerWidth(), 0, Disp, SrcReg, CntReg, AccessSize, SMLoc(),
         SMLoc()));
@@ -335,7 +334,7 @@ void X86AddressSanitizer::InstrumentMOVSBase(unsigned DstReg, unsigned SrcReg,
 
   // Test (%DstReg)
   {
-    const MCExpr *Disp = MCConstantExpr::Create(0, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(0, Ctx);
     std::unique_ptr<X86Operand> Op(X86Operand::CreateMem(
         getPointerWidth(), 0, Disp, DstReg, 0, AccessSize, SMLoc(), SMLoc()));
     InstrumentMemOperand(*Op, AccessSize, true /* IsWrite */, RegCtx, Ctx, Out);
@@ -343,7 +342,7 @@ void X86AddressSanitizer::InstrumentMOVSBase(unsigned DstReg, unsigned SrcReg,
 
   // Test -1(%DstReg, %CntReg, AccessSize)
   {
-    const MCExpr *Disp = MCConstantExpr::Create(-1, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(-1, Ctx);
     std::unique_ptr<X86Operand> Op(X86Operand::CreateMem(
         getPointerWidth(), 0, Disp, DstReg, CntReg, AccessSize, SMLoc(),
         SMLoc()));
@@ -462,7 +461,7 @@ void X86AddressSanitizer::ComputeMemOperandAddress(X86Operand &Op,
 
   while (Residue != 0) {
     const MCConstantExpr *Disp =
-        MCConstantExpr::Create(ApplyDisplacementBounds(Residue), Ctx);
+        MCConstantExpr::create(ApplyDisplacementBounds(Residue), Ctx);
     std::unique_ptr<X86Operand> DispOp =
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, Reg, 0, 1, SMLoc(),
                               SMLoc());
@@ -494,7 +493,7 @@ X86AddressSanitizer::AddDisplacement(X86Operand &Op, int64_t Displacement,
   CheckDisplacementBounds(NewDisplacement);
 
   *Residue = Displacement - NewDisplacement;
-  const MCExpr *Disp = MCConstantExpr::Create(NewDisplacement, Ctx);
+  const MCExpr *Disp = MCConstantExpr::create(NewDisplacement, Ctx);
   return X86Operand::CreateMem(Op.getMemModeSize(), Op.getMemSegReg(), Disp,
                                Op.getMemBaseReg(), Op.getMemIndexReg(),
                                Op.getMemScale(), SMLoc(), SMLoc());
@@ -614,9 +613,9 @@ private:
         Out, MCInstBuilder(X86::PUSH32r).addReg(RegCtx.AddressReg(MVT::i32)));
 
     const std::string &Fn = FuncName(AccessSize, IsWrite);
-    MCSymbol *FnSym = Ctx.GetOrCreateSymbol(StringRef(Fn));
+    MCSymbol *FnSym = Ctx.getOrCreateSymbol(StringRef(Fn));
     const MCSymbolRefExpr *FnExpr =
-        MCSymbolRefExpr::Create(FnSym, MCSymbolRefExpr::VK_PLT, Ctx);
+        MCSymbolRefExpr::create(FnSym, MCSymbolRefExpr::VK_PLT, Ctx);
     EmitInstruction(Out, MCInstBuilder(X86::CALLpcrel32).addExpr(FnExpr));
   }
 };
@@ -643,8 +642,8 @@ void X86AddressSanitizer32::InstrumentMemOperandSmall(
   {
     MCInst Inst;
     Inst.setOpcode(X86::MOV8rm);
-    Inst.addOperand(MCOperand::CreateReg(ShadowRegI8));
-    const MCExpr *Disp = MCConstantExpr::Create(kShadowOffset, Ctx);
+    Inst.addOperand(MCOperand::createReg(ShadowRegI8));
+    const MCExpr *Disp = MCConstantExpr::create(kShadowOffset, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ShadowRegI32, 0, 1,
                               SMLoc(), SMLoc()));
@@ -654,9 +653,9 @@ void X86AddressSanitizer32::InstrumentMemOperandSmall(
 
   EmitInstruction(
       Out, MCInstBuilder(X86::TEST8rr).addReg(ShadowRegI8).addReg(ShadowRegI8));
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   EmitInstruction(Out, MCInstBuilder(X86::MOV32rr).addReg(ScratchRegI32).addReg(
                            AddressRegI32));
@@ -666,10 +665,11 @@ void X86AddressSanitizer32::InstrumentMemOperandSmall(
                            .addImm(7));
 
   switch (AccessSize) {
+  default: llvm_unreachable("Incorrect access size");
   case 1:
     break;
   case 2: {
-    const MCExpr *Disp = MCConstantExpr::Create(1, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(1, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ScratchRegI32, 0, 1,
                               SMLoc(), SMLoc()));
@@ -682,9 +682,6 @@ void X86AddressSanitizer32::InstrumentMemOperandSmall(
                              .addReg(ScratchRegI32)
                              .addImm(3));
     break;
-  default:
-    assert(false && "Incorrect access size");
-    break;
   }
 
   EmitInstruction(
@@ -692,7 +689,7 @@ void X86AddressSanitizer32::InstrumentMemOperandSmall(
       MCInstBuilder(X86::MOVSX32rr8).addReg(ShadowRegI32).addReg(ShadowRegI8));
   EmitInstruction(Out, MCInstBuilder(X86::CMP32rr).addReg(ScratchRegI32).addReg(
                            ShadowRegI32));
-  EmitInstruction(Out, MCInstBuilder(X86::JL_4).addExpr(DoneExpr));
+  EmitInstruction(Out, MCInstBuilder(X86::JL_1).addExpr(DoneExpr));
 
   EmitCallAsanReport(AccessSize, IsWrite, Ctx, Out, RegCtx);
   EmitLabel(Out, DoneSym);
@@ -715,27 +712,25 @@ void X86AddressSanitizer32::InstrumentMemOperandLarge(
   {
     MCInst Inst;
     switch (AccessSize) {
+    default: llvm_unreachable("Incorrect access size");
     case 8:
       Inst.setOpcode(X86::CMP8mi);
       break;
     case 16:
       Inst.setOpcode(X86::CMP16mi);
       break;
-    default:
-      assert(false && "Incorrect access size");
-      break;
     }
-    const MCExpr *Disp = MCConstantExpr::Create(kShadowOffset, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(kShadowOffset, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ShadowRegI32, 0, 1,
                               SMLoc(), SMLoc()));
     Op->addMemOperands(Inst, 5);
-    Inst.addOperand(MCOperand::CreateImm(0));
+    Inst.addOperand(MCOperand::createImm(0));
     EmitInstruction(Out, Inst);
   }
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   EmitCallAsanReport(AccessSize, IsWrite, Ctx, Out, RegCtx);
   EmitLabel(Out, DoneSym);
@@ -747,11 +742,11 @@ void X86AddressSanitizer32::InstrumentMOVSImpl(unsigned AccessSize,
   StoreFlags(Out);
 
   // No need to test when ECX is equals to zero.
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
   EmitInstruction(
       Out, MCInstBuilder(X86::TEST32rr).addReg(X86::ECX).addReg(X86::ECX));
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   // Instrument first and last elements in src and dst range.
   InstrumentMOVSBase(X86::EDI /* DstReg */, X86::ESI /* SrcReg */,
@@ -865,7 +860,7 @@ public:
 
 private:
   void EmitAdjustRSP(MCContext &Ctx, MCStreamer &Out, long Offset) {
-    const MCExpr *Disp = MCConstantExpr::Create(Offset, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(Offset, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, X86::RSP, 0, 1,
                               SMLoc(), SMLoc()));
@@ -888,9 +883,9 @@ private:
                                RegCtx.AddressReg(MVT::i64)));
     }
     const std::string &Fn = FuncName(AccessSize, IsWrite);
-    MCSymbol *FnSym = Ctx.GetOrCreateSymbol(StringRef(Fn));
+    MCSymbol *FnSym = Ctx.getOrCreateSymbol(StringRef(Fn));
     const MCSymbolRefExpr *FnExpr =
-        MCSymbolRefExpr::Create(FnSym, MCSymbolRefExpr::VK_PLT, Ctx);
+        MCSymbolRefExpr::create(FnSym, MCSymbolRefExpr::VK_PLT, Ctx);
     EmitInstruction(Out, MCInstBuilder(X86::CALL64pcrel32).addExpr(FnExpr));
   }
 };
@@ -918,8 +913,8 @@ void X86AddressSanitizer64::InstrumentMemOperandSmall(
   {
     MCInst Inst;
     Inst.setOpcode(X86::MOV8rm);
-    Inst.addOperand(MCOperand::CreateReg(ShadowRegI8));
-    const MCExpr *Disp = MCConstantExpr::Create(kShadowOffset, Ctx);
+    Inst.addOperand(MCOperand::createReg(ShadowRegI8));
+    const MCExpr *Disp = MCConstantExpr::create(kShadowOffset, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ShadowRegI64, 0, 1,
                               SMLoc(), SMLoc()));
@@ -929,9 +924,9 @@ void X86AddressSanitizer64::InstrumentMemOperandSmall(
 
   EmitInstruction(
       Out, MCInstBuilder(X86::TEST8rr).addReg(ShadowRegI8).addReg(ShadowRegI8));
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   EmitInstruction(Out, MCInstBuilder(X86::MOV32rr).addReg(ScratchRegI32).addReg(
                            AddressRegI32));
@@ -941,10 +936,11 @@ void X86AddressSanitizer64::InstrumentMemOperandSmall(
                            .addImm(7));
 
   switch (AccessSize) {
+  default: llvm_unreachable("Incorrect access size");
   case 1:
     break;
   case 2: {
-    const MCExpr *Disp = MCConstantExpr::Create(1, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(1, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ScratchRegI32, 0, 1,
                               SMLoc(), SMLoc()));
@@ -957,9 +953,6 @@ void X86AddressSanitizer64::InstrumentMemOperandSmall(
                              .addReg(ScratchRegI32)
                              .addImm(3));
     break;
-  default:
-    assert(false && "Incorrect access size");
-    break;
   }
 
   EmitInstruction(
@@ -967,7 +960,7 @@ void X86AddressSanitizer64::InstrumentMemOperandSmall(
       MCInstBuilder(X86::MOVSX32rr8).addReg(ShadowRegI32).addReg(ShadowRegI8));
   EmitInstruction(Out, MCInstBuilder(X86::CMP32rr).addReg(ScratchRegI32).addReg(
                            ShadowRegI32));
-  EmitInstruction(Out, MCInstBuilder(X86::JL_4).addExpr(DoneExpr));
+  EmitInstruction(Out, MCInstBuilder(X86::JL_1).addExpr(DoneExpr));
 
   EmitCallAsanReport(AccessSize, IsWrite, Ctx, Out, RegCtx);
   EmitLabel(Out, DoneSym);
@@ -990,28 +983,26 @@ void X86AddressSanitizer64::InstrumentMemOperandLarge(
   {
     MCInst Inst;
     switch (AccessSize) {
+    default: llvm_unreachable("Incorrect access size");
     case 8:
       Inst.setOpcode(X86::CMP8mi);
       break;
     case 16:
       Inst.setOpcode(X86::CMP16mi);
       break;
-    default:
-      assert(false && "Incorrect access size");
-      break;
     }
-    const MCExpr *Disp = MCConstantExpr::Create(kShadowOffset, Ctx);
+    const MCExpr *Disp = MCConstantExpr::create(kShadowOffset, Ctx);
     std::unique_ptr<X86Operand> Op(
         X86Operand::CreateMem(getPointerWidth(), 0, Disp, ShadowRegI64, 0, 1,
                               SMLoc(), SMLoc()));
     Op->addMemOperands(Inst, 5);
-    Inst.addOperand(MCOperand::CreateImm(0));
+    Inst.addOperand(MCOperand::createImm(0));
     EmitInstruction(Out, Inst);
   }
 
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   EmitCallAsanReport(AccessSize, IsWrite, Ctx, Out, RegCtx);
   EmitLabel(Out, DoneSym);
@@ -1023,11 +1014,11 @@ void X86AddressSanitizer64::InstrumentMOVSImpl(unsigned AccessSize,
   StoreFlags(Out);
 
   // No need to test when RCX is equals to zero.
-  MCSymbol *DoneSym = Ctx.CreateTempSymbol();
-  const MCExpr *DoneExpr = MCSymbolRefExpr::Create(DoneSym, Ctx);
+  MCSymbol *DoneSym = Ctx.createTempSymbol();
+  const MCExpr *DoneExpr = MCSymbolRefExpr::create(DoneSym, Ctx);
   EmitInstruction(
       Out, MCInstBuilder(X86::TEST64rr).addReg(X86::RCX).addReg(X86::RCX));
-  EmitInstruction(Out, MCInstBuilder(X86::JE_4).addExpr(DoneExpr));
+  EmitInstruction(Out, MCInstBuilder(X86::JE_1).addExpr(DoneExpr));
 
   // Instrument first and last elements in src and dst range.
   InstrumentMOVSBase(X86::RDI /* DstReg */, X86::RSI /* SrcReg */,
@@ -1081,9 +1072,9 @@ CreateX86AsmInstrumentation(const MCTargetOptions &MCOptions,
   const bool hasCompilerRTSupport = T.isOSLinux();
   if (ClAsanInstrumentAssembly && hasCompilerRTSupport &&
       MCOptions.SanitizeAddress) {
-    if ((STI.getFeatureBits() & X86::Mode32Bit) != 0)
+    if (STI.getFeatureBits()[X86::Mode32Bit] != 0)
       return new X86AddressSanitizer32(STI);
-    if ((STI.getFeatureBits() & X86::Mode64Bit) != 0)
+    if (STI.getFeatureBits()[X86::Mode64Bit] != 0)
       return new X86AddressSanitizer64(STI);
   }
   return new X86AsmInstrumentation(STI);

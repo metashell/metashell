@@ -11,13 +11,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "int_lib.h"
 #include <stdio.h>
 
 #if __LDBL_MANT_DIG__ == 113
 
 #include "fp_test.h"
 
-long double __floatsitf(int a);
+long COMPILER_RT_ABI double __floatsitf(int a);
 
 int test__floatsitf(int a, uint64_t expectedHi, uint64_t expectedLo)
 {
@@ -39,6 +40,8 @@ char assumption_1[sizeof(long double) * CHAR_BIT == 128] = {0};
 int main()
 {
 #if __LDBL_MANT_DIG__ == 113
+    if (test__floatsitf(0x80000000, UINT64_C(0xc01e000000000000), UINT64_C(0x0)))
+        return 1;
     if (test__floatsitf(0x7fffffff, UINT64_C(0x401dfffffffc0000), UINT64_C(0x0)))
         return 1;
     if (test__floatsitf(0, UINT64_C(0x0), UINT64_C(0x0)))

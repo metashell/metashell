@@ -1,4 +1,4 @@
-// Check that -mcpu works for all supported GPUs
+t// Check that -mcpu works for all supported GPUs
 
 // RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=r600 %s -o - 2>&1 | FileCheck --check-prefix=R600-CHECK %s
 // RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=rv630 %s -o - 2>&1 | FileCheck --check-prefix=R600-CHECK %s
@@ -26,15 +26,18 @@
 // RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=caicos %s -o - 2>&1 | FileCheck --check-prefix=CAICOS-CHECK %s
 // RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=cayman %s -o - 2>&1 | FileCheck --check-prefix=CAYMAN-CHECK %s
 // RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=aruba %s -o - 2>&1 | FileCheck --check-prefix=CAYMAN-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=tahiti %s -o - 2>&1 | FileCheck --check-prefix=TAHITI-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=pitcairn %s -o - 2>&1 | FileCheck --check-prefix=PITCAIRN-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=verde %s -o - 2>&1 | FileCheck --check-prefix=VERDE-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=oland %s -o - 2>&1 | FileCheck --check-prefix=OLAND-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=bonaire %s -o - 2>&1 | FileCheck --check-prefix=BONAIRE-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=kabini %s -o - 2>&1 | FileCheck --check-prefix=KABINI-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=kaveri %s -o - 2>&1 | FileCheck --check-prefix=KAVERI-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=hawaii %s -o - 2>&1 | FileCheck --check-prefix=HAWAII-CHECK %s
-// RUN: %clang -### -target r600 -x cl -S -emit-llvm -mcpu=mullins %s -o - 2>&1 | FileCheck --check-prefix=MULLINS-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=tahiti %s -o - 2>&1 | FileCheck --check-prefix=TAHITI-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=pitcairn %s -o - 2>&1 | FileCheck --check-prefix=PITCAIRN-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=verde %s -o - 2>&1 | FileCheck --check-prefix=VERDE-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=oland %s -o - 2>&1 | FileCheck --check-prefix=OLAND-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=bonaire %s -o - 2>&1 | FileCheck --check-prefix=BONAIRE-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=kabini %s -o - 2>&1 | FileCheck --check-prefix=KABINI-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=kaveri %s -o - 2>&1 | FileCheck --check-prefix=KAVERI-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=hawaii %s -o - 2>&1 | FileCheck --check-prefix=HAWAII-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=mullins %s -o - 2>&1 | FileCheck --check-prefix=MULLINS-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=tonga %s -o - 2>&1 | FileCheck --check-prefix=TONGA-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=iceland %s -o - 2>&1 | FileCheck --check-prefix=ICELAND-CHECK %s
+// RUN: %clang -### -target amdgcn -x cl -S -emit-llvm -mcpu=carrizo %s -o - 2>&1 | FileCheck --check-prefix=CARRIZO-CHECK %s
 
 // R600-CHECK:  "-target-cpu" "r600"
 // RS880-CHECK: "-target-cpu" "rs880"
@@ -60,3 +63,6 @@
 // KAVERI-CHECK: "-target-cpu" "kaveri"
 // HAWAII-CHECK: "-target-cpu" "hawaii"
 // MULLINS-CHECK: "-target-cpu" "mullins"
+// TONGA-CHECK: "-target-cpu" "tonga"
+// ICELAND-CHECK: "-target-cpu" "iceland"
+// CARRIZO-CHECK: "-target-cpu" "carrizo"

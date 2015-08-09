@@ -18,6 +18,7 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Target/TargetOptions.h"
 #include <cstring>
 
 using namespace llvm;
@@ -28,7 +29,7 @@ using namespace llvm;
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(GenericValue, LLVMGenericValueRef)
 
 
-inline LLVMTargetMachineRef wrap(const TargetMachine *P) {
+static LLVMTargetMachineRef wrap(const TargetMachine *P) {
   return
   reinterpret_cast<LLVMTargetMachineRef>(const_cast<TargetMachine*>(P));
 }
@@ -177,11 +178,22 @@ LLVMBool LLVMCreateMCJITCompilerForModule(
   memcpy(&options, PassedOptions, SizeOfPassedOptions);
   
   TargetOptions targetOptions;
-  targetOptions.NoFramePointerElim = options.NoFramePointerElim;
   targetOptions.EnableFastISel = options.EnableFastISel;
+  std::unique_ptr<Module> Mod(unwrap(M));
+
+  if (Mod)
+    // Set function attribute "no-frame-pointer-elim" based on
+    // NoFramePointerElim.
+    for (auto &F : *Mod) {
+      auto Attrs = F.getAttributes();
+      auto Value = options.NoFramePointerElim ? "true" : "false";
+      Attrs = Attrs.addAttribute(F.getContext(), AttributeSet::FunctionIndex,
+                                 "no-frame-pointer-elim", Value);
+      F.setAttributes(Attrs);
+    }
 
   std::string Error;
-  EngineBuilder builder(std::unique_ptr<Module>(unwrap(M)));
+  EngineBuilder builder(std::move(Mod));
   builder.setEngineKind(EngineKind::JIT)
          .setErrorStr(&Error)
          .setOptLevel((CodeGenOpt::Level)options.OptLevel)
@@ -243,11 +255,8 @@ int LLVMRunFunctionAsMain(LLVMExecutionEngineRef EE, LLVMValueRef F,
                           unsigned ArgC, const char * const *ArgV,
                           const char * const *EnvP) {
   unwrap(EE)->finalizeObject();
-  
-  std::vector<std::string> ArgVec;
-  for (unsigned I = 0; I != ArgC; ++I)
-    ArgVec.push_back(ArgV[I]);
-  
+
+  std::vector<std::string> ArgVec(ArgV, ArgV + ArgC);
   return unwrap(EE)->runFunctionAsMain(unwrap<Function>(F), ArgVec, EnvP);
 }
 
@@ -309,7 +318,7 @@ void *LLVMRecompileAndRelinkFunction(LLVMExecutionEngineRef EE,
 }
 
 LLVMTargetDataRef LLVMGetExecutionEngineTargetData(LLVMExecutionEngineRef EE) {
-  return wrap(unwrap(EE)->getDataLayout());
+  return wrap(&unwrap(EE)->getDataLayout());
 }
 
 LLVMTargetMachineRef
@@ -351,7 +360,7 @@ class SimpleBindingMemoryManager : public RTDyldMemoryManager {
 public:
   SimpleBindingMemoryManager(const SimpleBindingMMFunctions& Functions,
                              void *Opaque);
-  virtual ~SimpleBindingMemoryManager();
+  ~SimpleBindingMemoryManager() override;
 
   uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment,
                                unsigned SectionID,

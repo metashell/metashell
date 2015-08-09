@@ -12,9 +12,9 @@
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Mutex.h"
 #include "llvm/Support/MutexGuard.h"
-#include "llvm/Support/ManagedStatic.h"
 
 using namespace llvm;
 using namespace llvm::object;
@@ -103,7 +103,7 @@ public:
 
   /// Unregisters each object that was previously registered and releases all
   /// internal resources.
-  virtual ~GDBJITRegistrationListener();
+  ~GDBJITRegistrationListener() override;
 
   /// Creates an entry in the JIT registry for the buffer @p Object,
   /// which must contain an object file in executable memory with any

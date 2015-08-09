@@ -4,8 +4,8 @@
 // simple return expressions.
 
 // CHECK: define {{.*}}foo
-// CHECK: call void @_ZN1CD1Ev(%class.C* {{.*}}), !dbg ![[CLEANUP:[0-9]+]]
-// CHECK: ret i32 0, !dbg ![[RET:[0-9]+]]
+// CHECK: call void @_ZN1CD1Ev(%class.C* {{.*}}), !dbg ![[RET:[0-9]+]]
+// CHECK: ret i32 0, !dbg ![[RET]]
 
 // CHECK: define {{.*}}bar
 // CHECK: ret void, !dbg ![[RETBAR:[0-9]+]]
@@ -23,16 +23,15 @@ int foo()
 {
   C c;
   c.i = 42;
-  // This breakpoint should be at/before the cleanup code.
-  // CHECK: ![[CLEANUP]] = !{i32 [[@LINE+1]], i32 0, !{{.*}}, null}
   return 0;
-  // CHECK: ![[RET]] = !{i32 [[@LINE+1]], i32 0, !{{.*}}, null}
+  // This breakpoint should be at/before the cleanup code.
+  // CHECK: ![[RET]] = !DILocation(line: [[@LINE+1]], scope: !{{.*}})
 }
 
 void bar()
 {
   if (!foo())
-    // CHECK: {{.*}} = !{i32 [[@LINE+1]], i32 0, !{{.*}}, null}
+    // CHECK: {{.*}} = !DILocation(line: [[@LINE+1]], scope: !{{.*}})
     return;
 
   if (foo()) {
@@ -40,21 +39,21 @@ void bar()
     c.i = foo();
   }
   // Clang creates only a single ret instruction. Make sure it is at a useful line.
-  // CHECK: ![[RETBAR]] = !{i32 [[@LINE+1]], i32 0, !{{.*}}, null}
+  // CHECK: ![[RETBAR]] = !DILocation(line: [[@LINE+1]], scope: !{{.*}})
 }
 
 void baz()
 {
   if (!foo())
-    // CHECK: ![[SCOPE1:.*]] = !{!"0xb\00[[@LINE-1]]\00{{.*}}", {{.*}} ; [ DW_TAG_lexical_block ]
-    // CHECK: {{.*}} = !{i32 [[@LINE+1]], i32 0, ![[SCOPE1]], null}
+    // CHECK: ![[SCOPE1:.*]] = distinct !DILexicalBlock({{.*}}, line: [[@LINE-1]])
+    // CHECK: {{.*}} = !DILocation(line: [[@LINE+1]], scope: ![[SCOPE1]])
     return;
 
   if (foo()) {
     // no cleanup
-    // CHECK: {{.*}} = !{i32 [[@LINE+2]], i32 0, ![[SCOPE2:.*]], null}
-    // CHECK: ![[SCOPE2]] = !{!"0xb\00[[@LINE-3]]\00{{.*}}", {{.*}} ; [ DW_TAG_lexical_block ]
+    // CHECK: {{.*}} = !DILocation(line: [[@LINE+2]], scope: ![[SCOPE2:.*]])
+    // CHECK: ![[SCOPE2]] = distinct !DILexicalBlock({{.*}}, line: [[@LINE-3]])
     return;
   }
-  // CHECK: ![[RETBAZ]] = !{i32 [[@LINE+1]], i32 0, !{{.*}}, null}
+  // CHECK: ![[RETBAZ]] = !DILocation(line: [[@LINE+1]], scope: !{{.*}})
 }

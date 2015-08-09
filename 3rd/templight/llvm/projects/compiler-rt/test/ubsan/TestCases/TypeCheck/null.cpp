@@ -1,6 +1,6 @@
 // RUN: %clangxx -fsanitize=null %s -O3 -o %t
 // RUN: %run %t l 2>&1 | FileCheck %s --check-prefix=CHECK-LOAD
-// RUN: not --crash %run %t s 2>&1 | FileCheck %s --check-prefix=CHECK-STORE
+// RUN: %expect_crash %run %t s 2>&1 | FileCheck %s --check-prefix=CHECK-STORE
 // RUN: %run %t r 2>&1 | FileCheck %s --check-prefix=CHECK-REFERENCE
 // RUN: %run %t m 2>&1 | FileCheck %s --check-prefix=CHECK-MEMBER
 // RUN: %run %t f 2>&1 | FileCheck %s --check-prefix=CHECK-MEMFUN
@@ -18,21 +18,21 @@ int main(int, char **argv) {
 
   switch (argv[1][0]) {
   case 'l':
-    // CHECK-LOAD: null.cpp:22:12: runtime error: load of null pointer of type 'int'
+    // CHECK-LOAD: null.cpp:[[@LINE+1]]:12: runtime error: load of null pointer of type 'int'
     return *p;
   case 's':
-    // CHECK-STORE: null.cpp:25:5: runtime error: store to null pointer of type 'int'
+    // CHECK-STORE: null.cpp:[[@LINE+1]]:5: runtime error: store to null pointer of type 'int'
     *p = 1;
     break;
   case 'r':
-    // CHECK-REFERENCE: null.cpp:29:15: runtime error: reference binding to null pointer of type 'int'
+    // CHECK-REFERENCE: null.cpp:[[@LINE+1]]:15: runtime error: reference binding to null pointer of type 'int'
     {int &r = *p;}
     break;
   case 'm':
-    // CHECK-MEMBER: null.cpp:33:15: runtime error: member access within null pointer of type 'S'
+    // CHECK-MEMBER: null.cpp:[[@LINE+1]]:15: runtime error: member access within null pointer of type 'S'
     return s->k;
   case 'f':
-    // CHECK-MEMFUN: null.cpp:36:12: runtime error: member call on null pointer of type 'S'
+    // CHECK-MEMFUN: null.cpp:[[@LINE+1]]:12: runtime error: member call on null pointer of type 'S'
     return s->f();
   }
 }

@@ -23,8 +23,9 @@ public:
 
   typedef uint64_t TargetPtrT;
 
-  RuntimeDyldMachOAArch64(RTDyldMemoryManager *MM)
-      : RuntimeDyldMachOCRTPBase(MM) {}
+  RuntimeDyldMachOAArch64(RuntimeDyld::MemoryManager &MM,
+                          RuntimeDyld::SymbolResolver &Resolver)
+      : RuntimeDyldMachOCRTPBase(MM, Resolver) {}
 
   unsigned getMaxStubSize() override { return 8; }
 
@@ -183,8 +184,8 @@ public:
       assert(isInt<33>(Addend) && "Invalid page reloc value.");
 
       // Encode the addend into the instruction.
-      uint32_t ImmLoValue = (uint32_t)(Addend << 17) & 0x60000000;
-      uint32_t ImmHiValue = (uint32_t)(Addend >> 9) & 0x00FFFFE0;
+      uint32_t ImmLoValue = ((uint64_t)Addend << 17) & 0x60000000;
+      uint32_t ImmHiValue = ((uint64_t)Addend >> 9) & 0x00FFFFE0;
       *p = (*p & 0x9F00001F) | ImmHiValue | ImmLoValue;
       break;
     }
@@ -283,7 +284,7 @@ public:
 
     bool IsExtern = Obj.getPlainRelocationExternal(RelInfo);
     if (!IsExtern && RE.IsPCRel)
-      makeValueAddendPCRel(Value, Obj, RelI, 1 << RE.Size);
+      makeValueAddendPCRel(Value, RelI, 1 << RE.Size);
 
     RE.Addend = Value.Offset;
 

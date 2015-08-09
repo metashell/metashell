@@ -108,12 +108,126 @@ else()
       libclangTooling.a
       libclangToolingCore.a
       libLLVMBitReader.a
+      libLLVMAArch64Info.a
+      libLLVMAArch64CodeGen.a
+      libLLVMAArch64Desc.a
+      libLLVMAArch64Printer.a
+      libLLVMAArch64AsmParser.a
+      libLLVMAArch64AsmPrinter.a
+      libLLVMAArch64Utils.a
+      libLLVMAMDGPUInfo.a
+      libLLVMAMDGPUCodeGen.a
+      libLLVMAMDGPUDesc.a
+      libLLVMAMDGPUPrinter.a
+      libLLVMAMDGPUAsmParser.a
+      libLLVMAMDGPUAsmPrinter.a
+      libLLVMAMDGPUUtils.a
+      libLLVMARMInfo.a
+      libLLVMARMCodeGen.a
+      libLLVMARMDesc.a
+      libLLVMARMPrinter.a
+      libLLVMARMAsmParser.a
+      libLLVMARMAsmPrinter.a
+      libLLVMARMUtils.a
+      libLLVMBPFInfo.a
+      libLLVMBPFCodeGen.a
+      libLLVMBPFDesc.a
+      libLLVMBPFPrinter.a
+      libLLVMBPFAsmParser.a
+      libLLVMBPFAsmPrinter.a
+      libLLVMBPFUtils.a
+      libLLVMCodeGen.a
+      libLLVMCppBackendInfo.a
+      libLLVMCppBackendCodeGen.a
+      libLLVMCppBackendDesc.a
+      libLLVMCppBackendPrinter.a
+      libLLVMCppBackendAsmParser.a
+      libLLVMCppBackendAsmPrinter.a
+      libLLVMCppBackendUtils.a
+      libLLVMHexagonInfo.a
+      libLLVMHexagonCodeGen.a
+      libLLVMHexagonDesc.a
+      libLLVMHexagonPrinter.a
+      libLLVMHexagonAsmParser.a
+      libLLVMHexagonAsmPrinter.a
+      libLLVMHexagonUtils.a
+      libLLVMMipsInfo.a
+      libLLVMMipsCodeGen.a
+      libLLVMMipsDesc.a
+      libLLVMMipsPrinter.a
+      libLLVMMipsAsmParser.a
+      libLLVMMipsAsmPrinter.a
+      libLLVMMipsUtils.a
+      libLLVMMSP430Info.a
+      libLLVMMSP430CodeGen.a
+      libLLVMMSP430Desc.a
+      libLLVMMSP430Printer.a
+      libLLVMMSP430AsmParser.a
+      libLLVMMSP430AsmPrinter.a
+      libLLVMMSP430Utils.a
+      libLLVMNVPTXInfo.a
+      libLLVMNVPTXCodeGen.a
+      libLLVMNVPTXDesc.a
+      libLLVMNVPTXPrinter.a
+      libLLVMNVPTXAsmParser.a
+      libLLVMNVPTXAsmPrinter.a
+      libLLVMNVPTXUtils.a
+      libLLVMPowerPCInfo.a
+      libLLVMPowerPCCodeGen.a
+      libLLVMPowerPCDesc.a
+      libLLVMPowerPCPrinter.a
+      libLLVMPowerPCAsmParser.a
+      libLLVMPowerPCAsmPrinter.a
+      libLLVMPowerPCUtils.a
+      libLLVMSparcInfo.a
+      libLLVMSparcCodeGen.a
+      libLLVMSparcDesc.a
+      libLLVMSparcPrinter.a
+      libLLVMSparcAsmParser.a
+      libLLVMSparcAsmPrinter.a
+      libLLVMSparcUtils.a
+      libLLVMSystemZInfo.a
+      libLLVMSystemZCodeGen.a
+      libLLVMSystemZDesc.a
+      libLLVMSystemZPrinter.a
+      libLLVMSystemZAsmParser.a
+      libLLVMSystemZAsmPrinter.a
+      libLLVMSystemZUtils.a
+      libLLVMX86Info.a
+      libLLVMX86CodeGen.a
+      libLLVMX86Desc.a
+      libLLVMX86Printer.a
+      libLLVMX86AsmParser.a
+      libLLVMX86AsmPrinter.a
+      libLLVMX86Utils.a
+      libLLVMXCoreInfo.a
+      libLLVMXCoreCodeGen.a
+      libLLVMXCoreDesc.a
+      libLLVMXCorePrinter.a
+      libLLVMXCoreAsmParser.a
+      libLLVMXCoreAsmPrinter.a
+      libLLVMXCoreUtils.a
+      libLLVMCodeGen.a
+      libLLVMAsmPrinter.a
+      libLLVMAsmParser.a
+      libLLVMSelectionDAG.a
       libLLVMTransformUtils.a
+      libLLVMTarget.a
+      libLLVMAnalysis.a
       libLLVMCore.a
       libLLVMMC.a
       libLLVMMCParser.a
       libLLVMOption.a
       libLLVMSupport.a
+      libLLVMTarget.a
+      libLLVMMC.a
+      libLLVMMCDisassembler.a
+      libLLVMScalarOpts.a
+      libLLVMipo.a
+      libLLVMipa.a
+      libLLVMInstrumentation.a
+      libLLVMObject.a
+      libLLVMBitReader.a
       dl
       tinfo
     )

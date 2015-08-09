@@ -2,6 +2,7 @@
 
 @var = global i32 0, align 4
 
+; CHECK-LABEL: @test_i128_align
 define i128 @test_i128_align(i32, i128 %arg, i32 %after) {
   store i32 %after, i32* @var, align 4
 ; CHECK: str w4, [{{x[0-9]+}}, :lo12:var]
@@ -9,6 +10,16 @@ define i128 @test_i128_align(i32, i128 %arg, i32 %after) {
   ret i128 %arg
 ; CHECK: mov x0, x2
 ; CHECK: mov x1, x3
+}
+
+; CHECK-LABEL: @test_i64x2_align
+define [2 x i64] @test_i64x2_align(i32, [2 x i64] %arg, i32 %after) {
+  store i32 %after, i32* @var, align 4
+; CHECK: str w3, [{{x[0-9]+}}, :lo12:var]
+
+  ret [2 x i64] %arg
+; CHECK: mov x0, x1
+; CHECK: mov x1, x2
 }
 
 @var64 = global i64 0, align 8
@@ -67,8 +78,8 @@ define void @test_extension(i1 %bool, i8 %char, i16 %short, i32 %int) {
 
   %ext_int = zext i32 %int to i64
   store volatile i64 %ext_int, i64* @var64
-; CHECK: ubfx [[EXT:x[0-9]+]], x3, #0, #32
-; CHECK: str [[EXT]], [{{x[0-9]+}}, :lo12:var64]
+; CHECK: mov w[[EXT:[0-9]+]], w3
+; CHECK: str x[[EXT]], [{{x[0-9]+}}, :lo12:var64]
 
   ret void
 }
@@ -78,7 +89,7 @@ declare void @variadic(i32 %a, ...)
   ; Under AAPCS variadic functions have the same calling convention as
   ; others. The extra arguments should go in registers rather than on the stack.
 define void @test_variadic() {
-  call void(i32, ...)* @variadic(i32 0, i64 1, double 2.0)
+  call void(i32, ...) @variadic(i32 0, i64 1, double 2.0)
 ; CHECK: fmov d0, #2.0
 ; CHECK: orr w1, wzr, #0x1
 ; CHECK: bl variadic

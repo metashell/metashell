@@ -117,6 +117,7 @@ static void CheckUnreachable(Sema &S, AnalysisDeclContext &AC) {
   reachable_code::FindUnreachableCode(AC, S.getPreprocessor(), UC);
 }
 
+namespace {
 /// \brief Warn on logical operator errors in CFGBuilder
 class LogicalErrorHandler : public CFGCallback {
   Sema &S;
@@ -129,16 +130,15 @@ public:
       return true;
 
     // Recurse to children.
-    for (ConstStmtRange SubStmts = E->children(); SubStmts; ++SubStmts)
-      if (*SubStmts)
-        if (const Expr *SubExpr = dyn_cast<Expr>(*SubStmts))
-          if (HasMacroID(SubExpr))
-            return true;
+    for (const Stmt *SubStmt : E->children())
+      if (const Expr *SubExpr = dyn_cast_or_null<Expr>(SubStmt))
+        if (HasMacroID(SubExpr))
+          return true;
 
     return false;
   }
 
-  void compareAlwaysTrue(const BinaryOperator *B, bool isAlwaysTrue) {
+  void compareAlwaysTrue(const BinaryOperator *B, bool isAlwaysTrue) override {
     if (HasMacroID(B))
       return;
 
@@ -147,7 +147,8 @@ public:
         << DiagRange << isAlwaysTrue;
   }
 
-  void compareBitwiseEquality(const BinaryOperator *B, bool isAlwaysTrue) {
+  void compareBitwiseEquality(const BinaryOperator *B,
+                              bool isAlwaysTrue) override {
     if (HasMacroID(B))
       return;
 
@@ -156,7 +157,7 @@ public:
         << DiagRange << isAlwaysTrue;
   }
 };
-
+} // namespace
 
 //===----------------------------------------------------------------------===//
 // Check for infinite self-recursion in functions
@@ -170,63 +171,71 @@ enum RecursiveState {
   FoundPathWithNoRecursiveCall
 };
 
+static bool hasRecursiveCallInPath(const FunctionDecl *FD, CFGBlock &Block) {
+  // Since the current state is FoundPathWithNoRecursiveCall, the successors
+  // will be either FoundPathWithNoRecursiveCall or FoundPath.  To determine
+  // which, process all the Stmt's in this block to find any recursive calls.
+  for (const auto &B : Block) {
+    if (B.getKind() != CFGElement::Statement)
+      continue;
+
+    const CallExpr *CE = dyn_cast<CallExpr>(B.getAs<CFGStmt>()->getStmt());
+    if (!CE || !CE->getCalleeDecl() ||
+        CE->getCalleeDecl()->getCanonicalDecl() != FD)
+      continue;
+
+    // Skip function calls which are qualified with a templated class.
+    if (const DeclRefExpr *DRE =
+            dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts())) {
+      if (NestedNameSpecifier *NNS = DRE->getQualifier()) {
+        if (NNS->getKind() == NestedNameSpecifier::TypeSpec &&
+            isa<TemplateSpecializationType>(NNS->getAsType())) {
+          continue;
+        }
+      }
+    }
+
+    const CXXMemberCallExpr *MCE = dyn_cast<CXXMemberCallExpr>(CE);
+    if (!MCE || isa<CXXThisExpr>(MCE->getImplicitObjectArgument()) ||
+        !MCE->getMethodDecl()->isVirtual())
+      return true;
+  }
+  return false;
+}
+
 static void checkForFunctionCall(Sema &S, const FunctionDecl *FD,
                                  CFGBlock &Block, unsigned ExitID,
                                  llvm::SmallVectorImpl<RecursiveState> &States,
                                  RecursiveState State) {
-  unsigned ID = Block.getBlockID();
+  SmallVector<std::pair<CFGBlock *, RecursiveState>, 16> Stack;
+  Stack.emplace_back(&Block, State);
 
-  // A block's state can only move to a higher state.
-  if (States[ID] >= State)
-    return;
+  while (!Stack.empty()) {
+    CFGBlock &CurBlock = *Stack.back().first;
+    RecursiveState CurState = Stack.back().second;
+    Stack.pop_back();
 
-  States[ID] = State;
+    unsigned ID = CurBlock.getBlockID();
 
-  // Found a path to the exit node without a recursive call.
-  if (ID == ExitID && State == FoundPathWithNoRecursiveCall)
-    return;
+    // A block's state can only move to a higher state.
+    if (States[ID] >= CurState)
+      continue;
 
-  if (State == FoundPathWithNoRecursiveCall) {
-    // If the current state is FoundPathWithNoRecursiveCall, the successors
-    // will be either FoundPathWithNoRecursiveCall or FoundPath.  To determine
-    // which, process all the Stmt's in this block to find any recursive calls.
-    for (const auto &B : Block) {
-      if (B.getKind() != CFGElement::Statement)
+    States[ID] = CurState;
+
+    if (CurState == FoundPathWithNoRecursiveCall) {
+      // Found a path to the exit node without a recursive call.
+      if (ExitID == ID)
         continue;
 
-      const CallExpr *CE = dyn_cast<CallExpr>(B.getAs<CFGStmt>()->getStmt());
-      if (CE && CE->getCalleeDecl() &&
-          CE->getCalleeDecl()->getCanonicalDecl() == FD) {
-
-        // Skip function calls which are qualified with a templated class.
-        if (const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(
-                CE->getCallee()->IgnoreParenImpCasts())) {
-          if (NestedNameSpecifier *NNS = DRE->getQualifier()) {
-            if (NNS->getKind() == NestedNameSpecifier::TypeSpec &&
-                isa<TemplateSpecializationType>(NNS->getAsType())) {
-               continue;
-            }
-          }
-        }
-
-        if (const CXXMemberCallExpr *MCE = dyn_cast<CXXMemberCallExpr>(CE)) {
-          if (isa<CXXThisExpr>(MCE->getImplicitObjectArgument()) ||
-              !MCE->getMethodDecl()->isVirtual()) {
-            State = FoundPath;
-            break;
-          }
-        } else {
-          State = FoundPath;
-          break;
-        }
-      }
+      if (hasRecursiveCallInPath(FD, CurBlock))
+        CurState = FoundPath;
     }
-  }
 
-  for (CFGBlock::succ_iterator I = Block.succ_begin(), E = Block.succ_end();
-       I != E; ++I)
-    if (*I)
-      checkForFunctionCall(S, FD, **I, ExitID, States, State);
+    for (auto I = CurBlock.succ_begin(), E = CurBlock.succ_end(); I != E; ++I)
+      if (*I)
+        Stack.emplace_back(*I, CurState);
+  }
 }
 
 static void checkRecursiveFunction(Sema &S, const FunctionDecl *FD,
@@ -572,28 +581,29 @@ namespace {
 /// ContainsReference - A visitor class to search for references to
 /// a particular declaration (the needle) within any evaluated component of an
 /// expression (recursively).
-class ContainsReference : public EvaluatedExprVisitor<ContainsReference> {
+class ContainsReference : public ConstEvaluatedExprVisitor<ContainsReference> {
   bool FoundReference;
   const DeclRefExpr *Needle;
 
 public:
-  ContainsReference(ASTContext &Context, const DeclRefExpr *Needle)
-    : EvaluatedExprVisitor<ContainsReference>(Context),
-      FoundReference(false), Needle(Needle) {}
+  typedef ConstEvaluatedExprVisitor<ContainsReference> Inherited;
 
-  void VisitExpr(Expr *E) {
+  ContainsReference(ASTContext &Context, const DeclRefExpr *Needle)
+    : Inherited(Context), FoundReference(false), Needle(Needle) {}
+
+  void VisitExpr(const Expr *E) {
     // Stop evaluating if we already have a reference.
     if (FoundReference)
       return;
 
-    EvaluatedExprVisitor<ContainsReference>::VisitExpr(E);
+    Inherited::VisitExpr(E);
   }
 
-  void VisitDeclRefExpr(DeclRefExpr *E) {
+  void VisitDeclRefExpr(const DeclRefExpr *E) {
     if (E == Needle)
       FoundReference = true;
     else
-      EvaluatedExprVisitor<ContainsReference>::VisitDeclRefExpr(E);
+      Inherited::VisitDeclRefExpr(E);
   }
 
   bool doesContainReference() const { return FoundReference; }
@@ -852,7 +862,7 @@ static bool DiagnoseUninitializedUse(Sema &S, const VarDecl *VD,
         return false;
 
       ContainsReference CR(S.Context, DRE);
-      CR.Visit(const_cast<Expr*>(Initializer));
+      CR.Visit(Initializer);
       if (CR.doesContainReference()) {
         S.Diag(DRE->getLocStart(),
                diag::warn_uninit_self_reference_in_init)
@@ -1088,8 +1098,7 @@ static void DiagnoseSwitchLabelsFallthrough(Sema &S, AnalysisDeclContext &AC,
 
   FM.fillReachableBlocks(Cfg);
 
-  for (CFG::reverse_iterator I = Cfg->rbegin(), E = Cfg->rend(); I != E; ++I) {
-    const CFGBlock *B = *I;
+  for (const CFGBlock *B : llvm::reverse(*Cfg)) {
     const Stmt *Label = B->getLabel();
 
     if (!Label || !isa<SwitchCase>(Label))
@@ -1332,9 +1341,7 @@ class UninitValsDiagReporter : public UninitVariablesHandler {
   
 public:
   UninitValsDiagReporter(Sema &S) : S(S), uses(nullptr) {}
-  ~UninitValsDiagReporter() { 
-    flushDiagnostics();
-  }
+  ~UninitValsDiagReporter() override { flushDiagnostics(); }
 
   MappedType &getUses(const VarDecl *vd) {
     if (!uses)
@@ -1438,7 +1445,7 @@ struct SortDiagBySourceLocation {
 //===----------------------------------------------------------------------===//
 namespace clang {
 namespace threadSafety {
-
+namespace {
 class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
   Sema &S;
   DiagList Warnings;
@@ -1463,7 +1470,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
       PartialDiagnosticAt FNote(CurrentFunction->getBody()->getLocStart(),
                                 S.PDiag(diag::note_thread_warning_in_fun)
                                     << CurrentFunction->getNameAsString());
-      ONS.push_back(FNote);
+      ONS.push_back(std::move(FNote));
     }
     return ONS;
   }
@@ -1477,7 +1484,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
       PartialDiagnosticAt FNote(CurrentFunction->getBody()->getLocStart(),
                                 S.PDiag(diag::note_thread_warning_in_fun)
                                     << CurrentFunction->getNameAsString());
-      ONS.push_back(FNote);
+      ONS.push_back(std::move(FNote));
     }
     return ONS;
   }
@@ -1490,7 +1497,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     if (!Loc.isValid())
       Loc = FunLocation;
     PartialDiagnosticAt Warning(Loc, S.PDiag(DiagID) << Kind << LockName);
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
  public:
@@ -1516,7 +1523,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
   void handleInvalidLockExp(StringRef Kind, SourceLocation Loc) override {
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_cannot_resolve_lock)
                                          << Loc);
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
   void handleUnmatchedUnlock(StringRef Kind, Name LockName,
@@ -1532,7 +1539,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_unlock_kind_mismatch)
                                          << Kind << LockName << Received
                                          << Expected);
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
   void handleDoubleLock(StringRef Kind, Name LockName, SourceLocation Loc) override {
@@ -1566,10 +1573,10 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     if (LocLocked.isValid()) {
       PartialDiagnosticAt Note(LocLocked, S.PDiag(diag::note_locked_here)
                                               << Kind);
-      Warnings.push_back(DelayedDiag(Warning, getNotes(Note)));
+      Warnings.emplace_back(std::move(Warning), getNotes(Note));
       return;
     }
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
   void handleExclusiveAndShared(StringRef Kind, Name LockName,
@@ -1580,7 +1587,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
                                     << Kind << LockName);
     PartialDiagnosticAt Note(Loc2, S.PDiag(diag::note_lock_exclusive_and_shared)
                                        << Kind << LockName);
-    Warnings.push_back(DelayedDiag(Warning, getNotes(Note)));
+    Warnings.emplace_back(std::move(Warning), getNotes(Note));
   }
 
   void handleNoMutexHeld(StringRef Kind, const NamedDecl *D,
@@ -1593,7 +1600,7 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
                         diag::warn_var_deref_requires_any_lock;
     PartialDiagnosticAt Warning(Loc, S.PDiag(DiagID)
       << D->getNameAsString() << getLockKindFromAccessKind(AK));
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
   void handleMutexNotHeld(StringRef Kind, const NamedDecl *D,
@@ -1628,9 +1635,9 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
         PartialDiagnosticAt VNote(D->getLocation(),
                                  S.PDiag(diag::note_guarded_by_declared_here)
                                      << D->getNameAsString());
-        Warnings.push_back(DelayedDiag(Warning, getNotes(Note, VNote)));
+        Warnings.emplace_back(std::move(Warning), getNotes(Note, VNote));
       } else
-        Warnings.push_back(DelayedDiag(Warning, getNotes(Note)));
+        Warnings.emplace_back(std::move(Warning), getNotes(Note));
     } else {
       switch (POK) {
         case POK_VarAccess:
@@ -1656,19 +1663,18 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
         PartialDiagnosticAt Note(D->getLocation(),
                                  S.PDiag(diag::note_guarded_by_declared_here)
                                      << D->getNameAsString());
-        Warnings.push_back(DelayedDiag(Warning, getNotes(Note)));
+        Warnings.emplace_back(std::move(Warning), getNotes(Note));
       } else
-        Warnings.push_back(DelayedDiag(Warning, getNotes()));
+        Warnings.emplace_back(std::move(Warning), getNotes());
     }
   }
 
-
-  virtual void handleNegativeNotHeld(StringRef Kind, Name LockName, Name Neg,
-                                     SourceLocation Loc) override {
+  void handleNegativeNotHeld(StringRef Kind, Name LockName, Name Neg,
+                             SourceLocation Loc) override {
     PartialDiagnosticAt Warning(Loc,
         S.PDiag(diag::warn_acquire_requires_negative_cap)
         << Kind << LockName << Neg);
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
 
@@ -1676,7 +1682,20 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
                              SourceLocation Loc) override {
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_fun_excludes_mutex)
                                          << Kind << FunName << LockName);
-    Warnings.push_back(DelayedDiag(Warning, getNotes()));
+    Warnings.emplace_back(std::move(Warning), getNotes());
+  }
+
+  void handleLockAcquiredBefore(StringRef Kind, Name L1Name, Name L2Name,
+                                SourceLocation Loc) override {
+    PartialDiagnosticAt Warning(Loc,
+      S.PDiag(diag::warn_acquired_before) << Kind << L1Name << L2Name);
+    Warnings.emplace_back(std::move(Warning), getNotes());
+  }
+
+  void handleBeforeAfterCycle(Name L1Name, SourceLocation Loc) override {
+    PartialDiagnosticAt Warning(Loc,
+      S.PDiag(diag::warn_acquired_before_after_cycle) << L1Name);
+    Warnings.emplace_back(std::move(Warning), getNotes());
   }
 
   void enterFunction(const FunctionDecl* FD) override {
@@ -1687,9 +1706,9 @@ class ThreadSafetyReporter : public clang::threadSafety::ThreadSafetyHandler {
     CurrentFunction = 0;
   }
 };
-
-}
-}
+} // namespace
+} // namespace threadSafety
+} // namespace clang
 
 //===----------------------------------------------------------------------===//
 // -Wconsumed
@@ -1704,7 +1723,7 @@ class ConsumedWarningsHandler : public ConsumedWarningsHandlerBase {
   DiagList Warnings;
   
 public:
-  
+
   ConsumedWarningsHandler(Sema &S) : S(S) {}
 
   void emitDiagnostics() override {
@@ -1720,8 +1739,8 @@ public:
                              StringRef VariableName) override {
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_loop_state_mismatch) <<
       VariableName);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnParamReturnTypestateMismatch(SourceLocation Loc,
@@ -1732,8 +1751,8 @@ public:
     PartialDiagnosticAt Warning(Loc, S.PDiag(
       diag::warn_param_return_typestate_mismatch) << VariableName <<
         ExpectedState << ObservedState);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnParamTypestateMismatch(SourceLocation Loc, StringRef ExpectedState,
@@ -1741,16 +1760,16 @@ public:
     
     PartialDiagnosticAt Warning(Loc, S.PDiag(
       diag::warn_param_typestate_mismatch) << ExpectedState << ObservedState);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnReturnTypestateForUnconsumableType(SourceLocation Loc,
                                               StringRef TypeName) override {
     PartialDiagnosticAt Warning(Loc, S.PDiag(
       diag::warn_return_typestate_for_unconsumable_type) << TypeName);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnReturnTypestateMismatch(SourceLocation Loc, StringRef ExpectedState,
@@ -1758,8 +1777,8 @@ public:
                                     
     PartialDiagnosticAt Warning(Loc, S.PDiag(
       diag::warn_return_typestate_mismatch) << ExpectedState << ObservedState);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnUseOfTempInInvalidState(StringRef MethodName, StringRef State,
@@ -1767,8 +1786,8 @@ public:
                                                     
     PartialDiagnosticAt Warning(Loc, S.PDiag(
       diag::warn_use_of_temp_in_invalid_state) << MethodName << State);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
   
   void warnUseInInvalidState(StringRef MethodName, StringRef VariableName,
@@ -1776,8 +1795,8 @@ public:
   
     PartialDiagnosticAt Warning(Loc, S.PDiag(diag::warn_use_in_invalid_state) <<
                                 MethodName << VariableName << State);
-    
-    Warnings.push_back(DelayedDiag(Warning, OptionalNotes()));
+
+    Warnings.emplace_back(std::move(Warning), OptionalNotes());
   }
 };
 }}}
@@ -1874,6 +1893,7 @@ AnalysisBasedWarnings::IssueWarnings(sema::AnalysisBasedWarnings::Policy P,
   AC.getCFGBuildOptions().AddImplicitDtors = true;
   AC.getCFGBuildOptions().AddTemporaryDtors = true;
   AC.getCFGBuildOptions().AddCXXNewAllocator = false;
+  AC.getCFGBuildOptions().AddCXXDefaultInitExprInCtors = true;
 
   // Force that certain expressions appear as CFGElements in the CFG.  This
   // is used to speed up various analyses.
@@ -1981,7 +2001,8 @@ AnalysisBasedWarnings::IssueWarnings(sema::AnalysisBasedWarnings::Policy P,
     if (!Diags.isIgnored(diag::warn_thread_safety_verbose, D->getLocStart()))
       Reporter.setVerbose(true);
 
-    threadSafety::runThreadSafetyAnalysis(AC, Reporter);
+    threadSafety::runThreadSafetyAnalysis(AC, Reporter,
+                                          &S.ThreadSafetyDeclCache);
     Reporter.emitDiagnostics();
   }
 

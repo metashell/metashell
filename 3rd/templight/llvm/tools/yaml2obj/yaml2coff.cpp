@@ -13,13 +13,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "yaml2obj.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringSwitch.h"
-#include "llvm/Object/COFFYAML.h"
 #include "llvm/Object/COFF.h"
+#include "llvm/Object/COFFYAML.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
@@ -253,10 +253,7 @@ binary_le_impl<value_type> binary_le(value_type V) {
   return binary_le_impl<value_type>(V);
 }
 
-template <size_t NumBytes>
-struct zeros_impl {
-  zeros_impl() {}
-};
+template <size_t NumBytes> struct zeros_impl {};
 
 template <size_t NumBytes>
 raw_ostream &operator<<(raw_ostream &OS, const zeros_impl<NumBytes> &) {
@@ -282,7 +279,7 @@ raw_ostream &operator<<(raw_ostream &OS, const num_zeros_impl &NZI) {
   return OS;
 }
 
-num_zeros_impl num_zeros(size_t N) {
+static num_zeros_impl num_zeros(size_t N) {
   num_zeros_impl NZI(N);
   return NZI;
 }

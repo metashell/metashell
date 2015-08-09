@@ -17,11 +17,8 @@
 using namespace llvm;
 
 ReplaceableMetadataImpl *ReplaceableMetadataImpl::get(Metadata &MD) {
-  if (auto *N = dyn_cast<MDNode>(&MD)) {
-    if (auto *G = dyn_cast<GenericMDNode>(N))
-      return G->ReplaceableUses.get();
-    return cast<MDNodeFwdDecl>(N);
-  }
+  if (auto *N = dyn_cast<MDNode>(&MD))
+    return N->Context.getReplaceableUses();
   return dyn_cast<ValueAsMetadata>(&MD);
 }
 

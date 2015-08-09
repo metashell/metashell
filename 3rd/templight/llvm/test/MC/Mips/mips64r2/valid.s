@@ -1,7 +1,7 @@
 # Instructions that are valid
 #
 # RUN: llvm-mc %s -triple=mips64-unknown-linux -show-encoding -mcpu=mips64r2 | FileCheck %s
-
+a:
         .set noat
         abs.d     $f7,$f25             # CHECK: encoding:
         abs.s     $f9,$f16
@@ -84,10 +84,15 @@
         div.d     $f29,$f20,$f27
         div.s     $f4,$f5,$f15
         divu      $zero,$25,$15
+        dmfc0     $10,$16,2            # CHECK: dmfc0 $10, $16, 2           # encoding: [0x40,0x2a,0x80,0x02]
         dmfc1     $12,$f13
+        dmtc0     $4,$10,0             # CHECK: dmtc0 $4, $10, 0            # encoding: [0x40,0xa4,0x50,0x00]
         dmtc1     $s0,$f14
         dmult     $s7,$9
         dmultu    $a1,$a2
+        dneg      $2                   # CHECK: dneg $2, $2                 # encoding: [0x00,0x02,0x10,0x2e]
+        dneg      $2,$3                # CHECK: dneg $2, $3                 # encoding: [0x00,0x03,0x10,0x2e]
+        dnegu     $2,$3                # CHECK: dnegu $2, $3                # encoding: [0x00,0x03,0x10,0x2f]
         drotr     $1,15                # CHECK: drotr $1, $1, 15            # encoding: [0x00,0x21,0x0b,0xfa]
         drotr     $1,$14,15            # CHECK: drotr $1, $14, 15           # encoding: [0x00,0x2e,0x0b,0xfa]
         drotr32   $1,15                # CHECK: drotr32 $1, $1, 15          # encoding: [0x00,0x21,0x0b,0xfe]
@@ -131,6 +136,11 @@
         floor.l.s $f12,$f5
         floor.w.d $f14,$f11
         floor.w.s $f8,$f9
+        j         1f                   # CHECK: j $tmp0 # encoding: [0b000010AA,A,A,A]
+                                       # CHECK:         #   fixup A - offset: 0, value: ($tmp0), kind: fixup_Mips_26
+        j         a                    # CHECK: j a     # encoding: [0b000010AA,A,A,A]
+                                       # CHECK:         #   fixup A - offset: 0, value: a, kind: fixup_Mips_26
+        j         1328                 # CHECK: j 1328  # encoding: [0x08,0x00,0x01,0x4c]
         jr.hb     $4                   # CHECK: jr.hb  $4 # encoding: [0x00,0x80,0x04,0x08]
         jalr.hb   $4                   # CHECK: jalr.hb  $4 # encoding: [0x00,0x80,0xfc,0x09]
         jalr.hb   $4, $5               # CHECK: jalr.hb  $4, $5 # encoding: [0x00,0xa0,0x24,0x09]
@@ -161,7 +171,7 @@
         madd.s    $f1,$f31,$f19,$f25
         maddu     $s3,$gp
         maddu     $24,$s2
-        mfc0      $a2,$14,1
+        mfc0      $8,$15,1             # CHECK: mfc0 $8, $15, 1        # encoding: [0x40,0x08,0x78,0x01]
         mfc1      $a3,$f27
         mfhc1     $s8,$f24
         mfhi      $s3
@@ -188,7 +198,7 @@
         msub      $s7,$k1
         msub.s    $f12,$f19,$f10,$f16
         msubu     $15,$a1
-        mtc0      $9,$29,3
+        mtc0      $9,$15,1             # CHECK: mtc0 $9, $15, 1     # encoding: [0x40,0x89,0x78,0x01]
         mtc1      $s8,$f9
         mthc1     $zero,$f16
         mthi      $s1
@@ -302,4 +312,7 @@
         trunc.w.d $f22,$f15
         trunc.w.s $f28,$f30
         xor       $s2,$a0,$s8
+        xor       $2, 4                # CHECK: xori $2, $2, 4         # encoding: [0x38,0x42,0x00,0x04]
         wsbh      $k1,$9
+
+1:

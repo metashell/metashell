@@ -16,8 +16,12 @@
 #include "gtest/gtest.h"
 
 #ifdef LLVM_ON_WIN32
-#include <Windows.h>
+#include <windows.h>
 #include <winerror.h>
+#endif
+
+#ifdef LLVM_ON_UNIX
+#include <sys/stat.h>
 #endif
 
 using namespace llvm;
@@ -168,8 +172,51 @@ TEST(Support, RelativePathIterator) {
   }
 }
 
+TEST(Support, RelativePathDotIterator) {
+  SmallString<64> Path(StringRef(".c/.d/../."));
+  typedef SmallVector<StringRef, 4> PathComponents;
+  PathComponents ExpectedPathComponents;
+  PathComponents ActualPathComponents;
+
+  StringRef(Path).split(ExpectedPathComponents, "/");
+
+  for (path::const_iterator I = path::begin(Path), E = path::end(Path); I != E;
+       ++I) {
+    ActualPathComponents.push_back(*I);
+  }
+
+  ASSERT_EQ(ExpectedPathComponents.size(), ActualPathComponents.size());
+
+  for (size_t i = 0; i <ExpectedPathComponents.size(); ++i) {
+    EXPECT_EQ(ExpectedPathComponents[i].str(), ActualPathComponents[i].str());
+  }
+}
+
 TEST(Support, AbsolutePathIterator) {
   SmallString<64> Path(StringRef("/c/d/e/foo.txt"));
+  typedef SmallVector<StringRef, 4> PathComponents;
+  PathComponents ExpectedPathComponents;
+  PathComponents ActualPathComponents;
+
+  StringRef(Path).split(ExpectedPathComponents, "/");
+
+  // The root path will also be a component when iterating
+  ExpectedPathComponents[0] = "/";
+
+  for (path::const_iterator I = path::begin(Path), E = path::end(Path); I != E;
+       ++I) {
+    ActualPathComponents.push_back(*I);
+  }
+
+  ASSERT_EQ(ExpectedPathComponents.size(), ActualPathComponents.size());
+
+  for (size_t i = 0; i <ExpectedPathComponents.size(); ++i) {
+    EXPECT_EQ(ExpectedPathComponents[i].str(), ActualPathComponents[i].str());
+  }
+}
+
+TEST(Support, AbsolutePathDotIterator) {
+  SmallString<64> Path(StringRef("/.c/.d/../."));
   typedef SmallVector<StringRef, 4> PathComponents;
   PathComponents ExpectedPathComponents;
   PathComponents ActualPathComponents;
@@ -265,7 +312,7 @@ protected:
   /// be placed. It is removed at the end of each test (must be empty).
   SmallString<128> TestDirectory;
 
-  virtual void SetUp() {
+  void SetUp() override {
     ASSERT_NO_ERROR(
         fs::createUniqueDirectory("file-system-test", TestDirectory));
     // We don't care about this specific file.
@@ -273,9 +320,7 @@ protected:
     errs().flush();
   }
 
-  virtual void TearDown() {
-    ASSERT_NO_ERROR(fs::remove(TestDirectory.str()));
-  }
+  void TearDown() override { ASSERT_NO_ERROR(fs::remove(TestDirectory.str())); }
 };
 
 TEST_F(FileSystemTest, Unique) {
@@ -417,6 +462,26 @@ TEST_F(FileSystemTest, CreateDir) {
             errc::file_exists);
   ASSERT_NO_ERROR(fs::remove(Twine(TestDirectory) + "foo"));
 
+#ifdef LLVM_ON_UNIX
+  // Set a 0000 umask so that we can test our directory permissions.
+  mode_t OldUmask = ::umask(0000);
+
+  fs::file_status Status;
+  ASSERT_NO_ERROR(
+      fs::create_directory(Twine(TestDirectory) + "baz500", false,
+                           fs::perms::owner_read | fs::perms::owner_exe));
+  ASSERT_NO_ERROR(fs::status(Twine(TestDirectory) + "baz500", Status));
+  ASSERT_EQ(Status.permissions() & fs::perms::all_all,
+            fs::perms::owner_read | fs::perms::owner_exe);
+  ASSERT_NO_ERROR(fs::create_directory(Twine(TestDirectory) + "baz777", false,
+                                       fs::perms::all_all));
+  ASSERT_NO_ERROR(fs::status(Twine(TestDirectory) + "baz777", Status));
+  ASSERT_EQ(Status.permissions() & fs::perms::all_all, fs::perms::all_all);
+
+  // Restore umask to be safe.
+  ::umask(OldUmask);
+#endif
+
 #ifdef LLVM_ON_WIN32
   // Prove that create_directories() can handle a pathname > 248 characters,
   // which is the documented limit for CreateDirectory().
@@ -557,6 +622,7 @@ const char macho_dynamically_linked_shared_lib[] =
 const char macho_dynamic_linker[] = "\xfe\xed\xfa\xce..........\x00\x07";
 const char macho_bundle[] = "\xfe\xed\xfa\xce..........\x00\x08";
 const char macho_dsym_companion[] = "\xfe\xed\xfa\xce..........\x00\x0a";
+const char macho_kext_bundle[] = "\xfe\xed\xfa\xce..........\x00\x0b";
 const char windows_resource[] = "\x00\x00\x00\x00\x020\x00\x00\x00\xff";
 const char macho_dynamically_linked_shared_lib_stub[] =
     "\xfe\xed\xfa\xce..........\x00\x09";
@@ -587,6 +653,7 @@ TEST_F(FileSystemTest, Magic) {
     DEFINE(macho_bundle),
     DEFINE(macho_dynamically_linked_shared_lib_stub),
     DEFINE(macho_dsym_companion),
+    DEFINE(macho_kext_bundle),
     DEFINE(windows_resource)
 #undef DEFINE
     };

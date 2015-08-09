@@ -437,3 +437,42 @@ namespace error_in_transform_prototype {
     f(S()); // expected-note {{requested here}}
   }
 }
+
+namespace PR21857 {
+  template<typename Fn> struct fun : Fn {
+    fun() = default;
+    using Fn::operator();
+  };
+  template<typename Fn> fun<Fn> wrap(Fn fn);
+  auto x = wrap([](){});
+}
+
+namespace PR13987 {
+class Enclosing {
+  void Method(char c = []()->char {
+    int d = []()->int {
+        struct LocalClass {
+          int Method() { return 0; }
+        };
+      return 0;
+    }();
+    return d; }()
+  );
+};
+}
+
+namespace PR23860 {
+template <class> struct A {
+  void f(int x = []() {
+    struct B {
+      void g() {}
+    };
+    return 0;
+  }());
+};
+
+int main() {
+}
+
+A<int> a;
+}

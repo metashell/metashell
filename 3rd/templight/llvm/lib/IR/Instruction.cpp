@@ -26,14 +26,10 @@ Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
 
   // If requested, insert this instruction into a basic block...
   if (InsertBefore) {
-    assert(InsertBefore->getParent() &&
-           "Instruction to insert before is not in a basic block!");
-    InsertBefore->getParent()->getInstList().insert(InsertBefore, this);
+    BasicBlock *BB = InsertBefore->getParent();
+    assert(BB && "Instruction to insert before is not in a basic block!");
+    BB->getInstList().insert(InsertBefore, this);
   }
-}
-
-const DataLayout *Instruction::getDataLayout() const {
-  return getParent()->getDataLayout();
 }
 
 Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
@@ -58,12 +54,21 @@ void Instruction::setParent(BasicBlock *P) {
   Parent = P;
 }
 
+const Module *Instruction::getModule() const {
+  return getParent()->getModule();
+}
+
+Module *Instruction::getModule() {
+  return getParent()->getModule();
+}
+
+
 void Instruction::removeFromParent() {
   getParent()->getInstList().remove(this);
 }
 
-void Instruction::eraseFromParent() {
-  getParent()->getInstList().erase(this);
+iplist<Instruction>::iterator Instruction::eraseFromParent() {
+  return getParent()->getInstList().erase(this);
 }
 
 /// insertBefore - Insert an unlinked instructions into a basic block
@@ -191,6 +196,11 @@ const char *Instruction::getOpcodeName(unsigned OpCode) {
   case Invoke: return "invoke";
   case Resume: return "resume";
   case Unreachable: return "unreachable";
+  case CleanupRet: return "cleanupret";
+  case CatchEndPad: return "catchendpad";
+  case CatchRet: return "catchret";
+  case CatchPad: return "catchpad";
+  case TerminatePad: return "terminatepad";
 
   // Standard binary operators...
   case Add: return "add";
@@ -251,6 +261,7 @@ const char *Instruction::getOpcodeName(unsigned OpCode) {
   case ExtractValue:   return "extractvalue";
   case InsertValue:    return "insertvalue";
   case LandingPad:     return "landingpad";
+  case CleanupPad:   return "cleanuppad";
 
   default: return "<Invalid operator> ";
   }
@@ -402,6 +413,8 @@ bool Instruction::mayReadFromMemory() const {
   case Instruction::Fence: // FIXME: refine definition of mayReadFromMemory
   case Instruction::AtomicCmpXchg:
   case Instruction::AtomicRMW:
+  case Instruction::CatchRet:
+  case Instruction::TerminatePad:
     return true;
   case Instruction::Call:
     return !cast<CallInst>(this)->doesNotAccessMemory();
@@ -422,6 +435,8 @@ bool Instruction::mayWriteToMemory() const {
   case Instruction::VAArg:
   case Instruction::AtomicCmpXchg:
   case Instruction::AtomicRMW:
+  case Instruction::CatchRet:
+  case Instruction::TerminatePad:
     return true;
   case Instruction::Call:
     return !cast<CallInst>(this)->onlyReadsMemory();
@@ -450,6 +465,12 @@ bool Instruction::isAtomic() const {
 bool Instruction::mayThrow() const {
   if (const CallInst *CI = dyn_cast<CallInst>(this))
     return !CI->doesNotThrow();
+  if (const auto *CRI = dyn_cast<CleanupReturnInst>(this))
+    return CRI->unwindsToCaller();
+  if (const auto *CEPI = dyn_cast<CatchEndPadInst>(this))
+    return CEPI->unwindsToCaller();
+  if (const auto *TPI = dyn_cast<TerminatePadInst>(this))
+    return TPI->unwindsToCaller();
   return isa<ResumeInst>(this);
 }
 
@@ -529,8 +550,23 @@ bool Instruction::isNilpotent(unsigned Opcode) {
   return Opcode == Xor;
 }
 
+Instruction *Instruction::cloneImpl() const {
+  llvm_unreachable("Subclass of Instruction failed to implement cloneImpl");
+}
+
 Instruction *Instruction::clone() const {
-  Instruction *New = clone_impl();
+  Instruction *New = nullptr;
+  switch (getOpcode()) {
+  default:
+    llvm_unreachable("Unhandled Opcode.");
+#define HANDLE_INST(num, opc, clas)                                            \
+  case Instruction::opc:                                                       \
+    New = cast<clas>(this)->cloneImpl();                                       \
+    break;
+#include "llvm/IR/Instruction.def"
+#undef HANDLE_INST
+  }
+
   New->SubclassOptionalData = SubclassOptionalData;
   if (!hasMetadata())
     return New;

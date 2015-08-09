@@ -15,24 +15,28 @@
 #include "llvm/Config/config.h" // plugin-api.h requires HAVE_STDINT_H
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/CodeGen/Analysis.h"
 #include "llvm/CodeGen/CommandFlags.h"
+#include "llvm/IR/AutoUpgrade.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DiagnosticInfo.h"
+#include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Linker/Linker.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Object/IRObjectFile.h"
-#include "llvm/PassManager.h"
-#include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/GlobalStatus.h"
@@ -87,6 +91,7 @@ namespace options {
   };
   static bool generate_api_file = false;
   static OutputType TheOutputType = OT_NORMAL;
+  static unsigned OptLevel = 2;
   static std::string obj_path;
   static std::string extra_library_path;
   static std::string triple;
@@ -98,7 +103,7 @@ namespace options {
   // use only and will not be passed.
   static std::vector<const char *> extra;
 
-  static void process_plugin_option(const char* opt_)
+  static void process_plugin_option(const char *opt_)
   {
     if (opt_ == nullptr)
       return;
@@ -120,6 +125,10 @@ namespace options {
       TheOutputType = OT_SAVE_TEMPS;
     } else if (opt == "disable-output") {
       TheOutputType = OT_DISABLE;
+    } else if (opt.size() == 2 && opt[0] == 'O') {
+      if (opt[1] < '0' || opt[1] > '3')
+        report_fatal_error("Optimization level must be between 0 and 3");
+      OptLevel = opt[1] - '0';
     } else {
       // Save this option to pass to the code generator.
       // ParseCommandLineOptions() expects argv[0] to be program name. Lazily
@@ -269,6 +278,36 @@ static bool shouldSkip(uint32_t Symflags) {
   return false;
 }
 
+static void diagnosticHandler(const DiagnosticInfo &DI, void *Context) {
+  if (const auto *BDI = dyn_cast<BitcodeDiagnosticInfo>(&DI)) {
+    std::error_code EC = BDI->getError();
+    if (EC == BitcodeError::InvalidBitcodeSignature)
+      return;
+  }
+
+  std::string ErrStorage;
+  {
+    raw_string_ostream OS(ErrStorage);
+    DiagnosticPrinterRawOStream DP(OS);
+    DI.print(DP);
+  }
+  ld_plugin_level Level;
+  switch (DI.getSeverity()) {
+  case DS_Error:
+    message(LDPL_FATAL, "LLVM gold plugin has failed to create LTO module: %s",
+            ErrStorage.c_str());
+    llvm_unreachable("Fatal doesn't return.");
+  case DS_Warning:
+    Level = LDPL_WARNING;
+    break;
+  case DS_Note:
+  case DS_Remark:
+    Level = LDPL_INFO;
+    break;
+  }
+  message(Level, "LLVM gold plugin: %s",  ErrStorage.c_str());
+}
+
 /// Called by gold to see whether this file is one that our plugin can handle.
 /// We'll try to open it and register all the symbols with add_symbol if
 /// possible.
@@ -283,7 +322,8 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
       message(LDPL_ERROR, "Failed to get a view of %s", file->name);
       return LDPS_ERR;
     }
-    BufferRef = MemoryBufferRef(StringRef((const char *)view, file->filesize), "");
+    BufferRef =
+        MemoryBufferRef(StringRef((const char *)view, file->filesize), "");
   } else {
     int64_t offset = 0;
     // Gold has found what might be IR part-way inside of a file, such as
@@ -302,11 +342,11 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
     BufferRef = Buffer->getMemBufferRef();
   }
 
+  Context.setDiagnosticHandler(diagnosticHandler);
   ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
       object::IRObjectFile::create(BufferRef, Context);
   std::error_code EC = ObjOrErr.getError();
-  if (EC == BitcodeError::InvalidBitcodeSignature ||
-      EC == object::object_error::invalid_file_type ||
+  if (EC == object::object_error::invalid_file_type ||
       EC == object::object_error::bitcode_section_not_found)
     return LDPS_OK;
 
@@ -390,7 +430,7 @@ static ld_plugin_status claim_file_hook(const ld_plugin_input_file *file,
   }
 
   if (!cf.syms.empty()) {
-    if (add_symbols(cf.handle, cf.syms.size(), &cf.syms[0]) != LDPS_OK) {
+    if (add_symbols(cf.handle, cf.syms.size(), cf.syms.data()) != LDPS_OK) {
       message(LDPL_ERROR, "Unable to add symbols!");
       return LDPS_ERR;
     }
@@ -540,20 +580,19 @@ static void freeSymName(ld_plugin_symbol &Sym) {
 }
 
 static std::unique_ptr<Module>
-getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
+getModuleForFile(LLVMContext &Context, claimed_file &F,
+                 ld_plugin_input_file &Info, raw_fd_ostream *ApiFile,
                  StringSet<> &Internalize, StringSet<> &Maybe) {
-  ld_plugin_input_file File;
-  if (get_input_file(F.handle, &File) != LDPS_OK)
-    message(LDPL_FATAL, "Failed to get file information");
 
-  if (get_symbols(F.handle, F.syms.size(), &F.syms[0]) != LDPS_OK)
+  if (get_symbols(F.handle, F.syms.size(), F.syms.data()) != LDPS_OK)
     message(LDPL_FATAL, "Failed to get symbol information");
 
   const void *View;
   if (get_view(F.handle, &View) != LDPS_OK)
     message(LDPL_FATAL, "Failed to get a view of file");
 
-  MemoryBufferRef BufferRef(StringRef((const char *)View, File.filesize), "");
+  MemoryBufferRef BufferRef(StringRef((const char *)View, Info.filesize),
+                            Info.name);
   ErrorOr<std::unique_ptr<object::IRObjectFile>> ObjOrErr =
       object::IRObjectFile::create(BufferRef, Context);
 
@@ -561,12 +600,12 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     message(LDPL_FATAL, "Could not read bitcode from file : %s",
             EC.message().c_str());
 
-  if (release_input_file(F.handle) != LDPS_OK)
-    message(LDPL_FATAL, "Failed to release file information");
-
   object::IRObjectFile &Obj = **ObjOrErr;
 
   Module &M = Obj.getModule();
+
+  M.materializeMetadata();
+  UpgradeDebugInfo(M);
 
   SmallPtrSet<GlobalValue *, 8> Used;
   collectUsedGlobalVariables(M, Used, /*CompilerUsed*/ false);
@@ -610,8 +649,14 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
     case LDPR_RESOLVED_IR:
     case LDPR_RESOLVED_EXEC:
     case LDPR_RESOLVED_DYN:
-    case LDPR_UNDEF:
       assert(GV->isDeclarationForLinker());
+      break;
+
+    case LDPR_UNDEF:
+      if (!GV->isDeclarationForLinker()) {
+        assert(GV->hasComdat());
+        Drop.insert(GV);
+      }
       break;
 
     case LDPR_PREVAILING_DEF_IRONLY: {
@@ -672,15 +717,20 @@ getModuleForFile(LLVMContext &Context, claimed_file &F, raw_fd_ostream *ApiFile,
 }
 
 static void runLTOPasses(Module &M, TargetMachine &TM) {
-  PassManager passes;
+  M.setDataLayout(TM.createDataLayout());
+
+  legacy::PassManager passes;
+  passes.add(createTargetTransformInfoWrapperPass(TM.getTargetIRAnalysis()));
+
   PassManagerBuilder PMB;
-  PMB.LibraryInfo = new TargetLibraryInfo(Triple(TM.getTargetTriple()));
+  PMB.LibraryInfo = new TargetLibraryInfoImpl(Triple(TM.getTargetTriple()));
   PMB.Inliner = createFunctionInliningPass();
   PMB.VerifyInput = true;
   PMB.VerifyOutput = true;
   PMB.LoopVectorize = true;
   PMB.SLPVectorize = true;
-  PMB.populateLTOPassManager(passes, &TM);
+  PMB.OptLevel = options::OptLevel;
+  PMB.populateLTOPassManager(passes);
   passes.run(M);
 }
 
@@ -689,7 +739,7 @@ static void saveBCFile(StringRef Path, Module &M) {
   raw_fd_ostream OS(Path, EC, sys::fs::OpenFlags::F_None);
   if (EC)
     message(LDPL_FATAL, "Failed to write the output file.");
-  WriteBitcodeToFile(&M, OS);
+  WriteBitcodeToFile(&M, OS, /* ShouldPreserveUseListOrder */ true);
 }
 
 static void codegen(Module &M) {
@@ -710,28 +760,47 @@ static void codegen(Module &M) {
     Features.AddFeature(A);
 
   TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+  CodeGenOpt::Level CGOptLevel;
+  switch (options::OptLevel) {
+  case 0:
+    CGOptLevel = CodeGenOpt::None;
+    break;
+  case 1:
+    CGOptLevel = CodeGenOpt::Less;
+    break;
+  case 2:
+    CGOptLevel = CodeGenOpt::Default;
+    break;
+  case 3:
+    CGOptLevel = CodeGenOpt::Aggressive;
+    break;
+  }
   std::unique_ptr<TargetMachine> TM(TheTarget->createTargetMachine(
       TripleStr, options::mcpu, Features.getString(), Options, RelocationModel,
-      CodeModel::Default, CodeGenOpt::Aggressive));
+      CodeModel::Default, CGOptLevel));
 
   runLTOPasses(M, *TM);
 
   if (options::TheOutputType == options::OT_SAVE_TEMPS)
     saveBCFile(output_name + ".opt.bc", M);
 
-  PassManager CodeGenPasses;
-  CodeGenPasses.add(new DataLayoutPass());
+  legacy::PassManager CodeGenPasses;
 
   SmallString<128> Filename;
+  if (!options::obj_path.empty())
+    Filename = options::obj_path;
+  else if (options::TheOutputType == options::OT_SAVE_TEMPS)
+    Filename = output_name + ".o";
+
   int FD;
-  if (options::obj_path.empty()) {
+  bool TempOutFile = Filename.empty();
+  if (TempOutFile) {
     std::error_code EC =
         sys::fs::createTemporaryFile("lto-llvm", "o", FD, Filename);
     if (EC)
       message(LDPL_FATAL, "Could not create temporary file: %s",
               EC.message().c_str());
   } else {
-    Filename = options::obj_path;
     std::error_code EC =
         sys::fs::openFileForWrite(Filename.c_str(), FD, sys::fs::F_None);
     if (EC)
@@ -740,9 +809,8 @@ static void codegen(Module &M) {
 
   {
     raw_fd_ostream OS(FD, true);
-    formatted_raw_ostream FOS(OS);
 
-    if (TM->addPassesToEmitFile(CodeGenPasses, FOS,
+    if (TM->addPassesToEmitFile(CodeGenPasses, OS,
                                 TargetMachine::CGFT_ObjectFile))
       message(LDPL_FATAL, "Failed to setup codegen");
     CodeGenPasses.run(M);
@@ -753,7 +821,7 @@ static void codegen(Module &M) {
             "Unable to add .o file to the link. File left behind in: %s",
             Filename.c_str());
 
-  if (options::obj_path.empty())
+  if (TempOutFile)
     Cleanup.push_back(Filename.c_str());
 }
 
@@ -765,6 +833,8 @@ static ld_plugin_status allSymbolsReadHook(raw_fd_ostream *ApiFile) {
     return LDPS_OK;
 
   LLVMContext Context;
+  Context.setDiagnosticHandler(diagnosticHandler, nullptr, true);
+
   std::unique_ptr<Module> Combined(new Module("ld-temp.o", Context));
   Linker L(Combined.get());
 
@@ -773,8 +843,11 @@ static ld_plugin_status allSymbolsReadHook(raw_fd_ostream *ApiFile) {
   StringSet<> Internalize;
   StringSet<> Maybe;
   for (claimed_file &F : Modules) {
+    ld_plugin_input_file File;
+    if (get_input_file(F.handle, &File) != LDPS_OK)
+      message(LDPL_FATAL, "Failed to get file information");
     std::unique_ptr<Module> M =
-        getModuleForFile(Context, F, ApiFile, Internalize, Maybe);
+        getModuleForFile(Context, F, File, ApiFile, Internalize, Maybe);
     if (!options::triple.empty())
       M->setTargetTriple(options::triple.c_str());
     else if (M->getTargetTriple().empty()) {
@@ -783,6 +856,8 @@ static ld_plugin_status allSymbolsReadHook(raw_fd_ostream *ApiFile) {
 
     if (L.linkInModule(M.get()))
       message(LDPL_FATAL, "Failed to link module");
+    if (release_input_file(F.handle) != LDPS_OK)
+      message(LDPL_FATAL, "Failed to release file information");
   }
 
   for (const auto &Name : Internalize) {
@@ -839,8 +914,13 @@ static ld_plugin_status all_symbols_read_hook(void) {
   llvm_shutdown();
 
   if (options::TheOutputType == options::OT_BC_ONLY ||
-      options::TheOutputType == options::OT_DISABLE)
+      options::TheOutputType == options::OT_DISABLE) {
+    if (options::TheOutputType == options::OT_DISABLE)
+      // Remove the output file here since ld.bfd creates the output file
+      // early.
+      sys::fs::remove(output_name);
     exit(0);
+  }
 
   return Ret;
 }

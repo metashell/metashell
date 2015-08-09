@@ -22,6 +22,7 @@
 #include "sanitizer_common/sanitizer_atomic.h"
 #include "sanitizer_common/sanitizer_common.h"
 #include "sanitizer_common/sanitizer_flags.h"
+#include "sanitizer_common/sanitizer_flag_parser.h"
 #include "sanitizer_common/sanitizer_libc.h"
 
 #include "dfsan/dfsan.h"
@@ -79,6 +80,22 @@ SANITIZER_INTERFACE_ATTRIBUTE THREADLOCAL dfsan_label __dfsan_arg_tls[64];
 // | reserved by kernel |
 // +--------------------+ 0x0000000000
 
+// On Linux/AArch64 (39-bit VMA), memory is laid out as follow:
+//
+// +--------------------+ 0x8000000000 (top of memory)
+// | application memory |
+// +--------------------+ 0x7000008000 (kAppAddr)
+// |                    |
+// |       unused       |
+// |                    |
+// +--------------------+ 0x1200000000 (kUnusedAddr)
+// |    union table     |
+// +--------------------+ 0x1000000000 (kUnionTableAddr)
+// |   shadow memory    |
+// +--------------------+ 0x0000010000 (kShadowAddr)
+// | reserved by kernel |
+// +--------------------+ 0x0000000000
+
 typedef atomic_dfsan_label dfsan_union_table_t[kNumLabels][kNumLabels];
 
 #if defined(__x86_64__)
@@ -91,6 +108,11 @@ static const uptr kShadowAddr = 0x10000;
 static const uptr kUnionTableAddr = 0x2000000000;
 static const uptr kUnusedAddr = kUnionTableAddr + sizeof(dfsan_union_table_t);
 static const uptr kAppAddr = 0xF000008000;
+#elif defined(__aarch64__)
+static const uptr kShadowAddr = 0x10000;
+static const uptr kUnionTableAddr = 0x1000000000;
+static const uptr kUnusedAddr = kUnionTableAddr + sizeof(dfsan_union_table_t);
+static const uptr kAppAddr = 0x7000008000;
 #else
 # error "DFSan not supported for this platform!"
 #endif
@@ -256,7 +278,7 @@ dfsan_read_label(const void *addr, uptr size) {
   return __dfsan_union_load(shadow_for(addr), size);
 }
 
-SANITIZER_INTERFACE_ATTRIBUTE
+extern "C" SANITIZER_INTERFACE_ATTRIBUTE
 const struct dfsan_label_info *dfsan_get_label_info(dfsan_label label) {
   return &__dfsan_label_info[label];
 }
@@ -301,30 +323,38 @@ dfsan_dump_labels(int fd) {
     char buf[64];
     internal_snprintf(buf, sizeof(buf), "%u %u %u ", l,
                       __dfsan_label_info[l].l1, __dfsan_label_info[l].l2);
-    internal_write(fd, buf, internal_strlen(buf));
+    WriteToFile(fd, buf, internal_strlen(buf));
     if (__dfsan_label_info[l].l1 == 0 && __dfsan_label_info[l].desc) {
-      internal_write(fd, __dfsan_label_info[l].desc,
-                     internal_strlen(__dfsan_label_info[l].desc));
+      WriteToFile(fd, __dfsan_label_info[l].desc,
+                  internal_strlen(__dfsan_label_info[l].desc));
     }
-    internal_write(fd, "\n", 1);
+    WriteToFile(fd, "\n", 1);
   }
 }
 
-static void InitializeFlags(Flags &f, const char *env) {
-  f.warn_unimplemented = true;
-  f.warn_nonzero_labels = false;
-  f.strict_data_dependencies = true;
-  f.dump_labels_at_exit = "";
+void Flags::SetDefaults() {
+#define DFSAN_FLAG(Type, Name, DefaultValue, Description) Name = DefaultValue;
+#include "dfsan_flags.inc"
+#undef DFSAN_FLAG
+}
 
-  ParseFlag(env, &f.warn_unimplemented, "warn_unimplemented", "");
-  ParseFlag(env, &f.warn_nonzero_labels, "warn_nonzero_labels", "");
-  ParseFlag(env, &f.strict_data_dependencies, "strict_data_dependencies", "");
-  ParseFlag(env, &f.dump_labels_at_exit, "dump_labels_at_exit", "");
+static void RegisterDfsanFlags(FlagParser *parser, Flags *f) {
+#define DFSAN_FLAG(Type, Name, DefaultValue, Description) \
+  RegisterFlag(parser, #Name, Description, &f->Name);
+#include "dfsan_flags.inc"
+#undef DFSAN_FLAG
+}
+
+static void InitializeFlags() {
+  FlagParser parser;
+  RegisterDfsanFlags(&parser, &flags());
+  flags().SetDefaults();
+  parser.ParseString(GetEnv("DFSAN_OPTIONS"));
 }
 
 static void dfsan_fini() {
   if (internal_strcmp(flags().dump_labels_at_exit, "") != 0) {
-    fd_t fd = OpenFile(flags().dump_labels_at_exit, true /* write */);
+    fd_t fd = OpenFile(flags().dump_labels_at_exit, WrOnly);
     if (fd == kInvalidFd) {
       Report("WARNING: DataFlowSanitizer: unable to open output file %s\n",
              flags().dump_labels_at_exit);
@@ -334,7 +364,7 @@ static void dfsan_fini() {
     Report("INFO: DataFlowSanitizer: dumping labels to %s\n",
            flags().dump_labels_at_exit);
     dfsan_dump_labels(fd);
-    internal_close(fd);
+    CloseFile(fd);
   }
 }
 
@@ -352,10 +382,9 @@ static void dfsan_init(int argc, char **argv, char **envp) {
   // case by disabling memory protection when ASLR is disabled.
   uptr init_addr = (uptr)&dfsan_init;
   if (!(init_addr >= kUnusedAddr && init_addr < kAppAddr))
-    Mprotect(kUnusedAddr, kAppAddr - kUnusedAddr);
+    MmapNoAccess(kUnusedAddr, kAppAddr - kUnusedAddr);
 
-  InitializeFlags(flags(), GetEnv("DFSAN_OPTIONS"));
-
+  InitializeFlags();
   InitializeInterceptors();
 
   // Register the fini callback to run when the program terminates successfully

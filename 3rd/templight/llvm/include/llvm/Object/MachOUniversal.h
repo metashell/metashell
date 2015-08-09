@@ -16,8 +16,9 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/Object/Binary.h"
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/Object/Archive.h"
+#include "llvm/Object/Binary.h"
 #include "llvm/Object/MachO.h"
 #include "llvm/Support/ErrorOr.h"
 #include "llvm/Support/MachO.h"
@@ -51,6 +52,10 @@ public:
 
     ObjectForArch getNext() const { return ObjectForArch(Parent, Index + 1); }
     uint32_t getCPUType() const { return Header.cputype; }
+    uint32_t getCPUSubType() const { return Header.cpusubtype; }
+    uint32_t getOffset() const { return Header.offset; }
+    uint32_t getSize() const { return Header.size; }
+    uint32_t getAlign() const { return Header.align; }
     std::string getArchTypeName() const {
       Triple T = MachOObjectFile::getArch(Header.cputype, Header.cpusubtype);
       return T.getArchName();
@@ -65,9 +70,8 @@ public:
     ObjectForArch Obj;
   public:
     object_iterator(const ObjectForArch &Obj) : Obj(Obj) {}
-    const ObjectForArch* operator->() const {
-      return &Obj;
-    }
+    const ObjectForArch *operator->() const { return &Obj; }
+    const ObjectForArch &operator*() const { return Obj; }
 
     bool operator==(const object_iterator &Other) const {
       return Obj == Other.Obj;
@@ -93,6 +97,10 @@ public:
     return ObjectForArch(nullptr, 0);
   }
 
+  iterator_range<object_iterator> objects() const {
+    return make_range(begin_objects(), end_objects());
+  }
+
   uint32_t getNumberOfObjects() const { return NumberOfObjects; }
 
   // Cast methods.
@@ -101,7 +109,7 @@ public:
   }
 
   ErrorOr<std::unique_ptr<MachOObjectFile>>
-  getObjectForArch(Triple::ArchType Arch) const;
+  getObjectForArch(StringRef ArchName) const;
 };
 
 }

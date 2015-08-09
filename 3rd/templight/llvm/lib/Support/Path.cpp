@@ -14,14 +14,12 @@
 #include "llvm/Support/COFF.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/Errc.h"
-#include "llvm/Support/Path.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/Process.h"
 #include <cctype>
-#include <cstdio>
 #include <cstring>
-#include <fcntl.h>
 
 #if !defined(_MSC_VER) && !defined(__MINGW32__)
 #include <unistd.h>
@@ -30,6 +28,7 @@
 #endif
 
 using namespace llvm;
+using namespace llvm::support::endian;
 
 namespace {
   using llvm::StringRef;
@@ -48,7 +47,6 @@ namespace {
     // * empty (in this case we return an empty string)
     // * either C: or {//,\\}net.
     // * {/,\}
-    // * {.,..}
     // * {file,directory}name
 
     if (path.empty())
@@ -73,12 +71,6 @@ namespace {
 
     // {/,\}
     if (is_separator(path[0]))
-      return path.substr(0, 1);
-
-    if (path.startswith(".."))
-      return path.substr(0, 2);
-
-    if (path[0] == '.')
       return path.substr(0, 1);
 
     // * {file,directory}name
@@ -793,12 +785,13 @@ std::error_code make_absolute(SmallVectorImpl<char> &path) {
                    "occurred above!");
 }
 
-std::error_code create_directories(const Twine &Path, bool IgnoreExisting) {
+std::error_code create_directories(const Twine &Path, bool IgnoreExisting,
+                                   perms Perms) {
   SmallString<128> PathStorage;
   StringRef P = Path.toStringRef(PathStorage);
 
   // Be optimistic and try to create the directory
-  std::error_code EC = create_directory(P, IgnoreExisting);
+  std::error_code EC = create_directory(P, IgnoreExisting, Perms);
   // If we succeeded, or had any error other than the parent not existing, just
   // return it.
   if (EC != errc::no_such_file_or_directory)
@@ -810,10 +803,10 @@ std::error_code create_directories(const Twine &Path, bool IgnoreExisting) {
   if (Parent.empty())
     return EC;
 
-  if ((EC = create_directories(Parent)))
+  if ((EC = create_directories(Parent, IgnoreExisting, Perms)))
       return EC;
 
-  return create_directory(P, IgnoreExisting);
+  return create_directory(P, IgnoreExisting, Perms);
 }
 
 std::error_code copy_file(const Twine &From, const Twine &To) {
@@ -897,8 +890,7 @@ std::error_code is_other(const Twine &Path, bool &Result) {
 }
 
 void directory_entry::replace_filename(const Twine &filename, file_status st) {
-  SmallString<128> path(Path.begin(), Path.end());
-  path::remove_filename(path);
+  SmallString<128> path = path::parent_path(Path);
   path::append(path, filename);
   Path = path.str();
   Status = st;
@@ -917,7 +909,7 @@ file_magic identify_magic(StringRef Magic) {
         if (Magic.size() < MinSize)
           return file_magic::coff_import_library;
 
-        int BigObjVersion = *reinterpret_cast<const support::ulittle16_t*>(
+        int BigObjVersion = read16le(
             Magic.data() + offsetof(COFF::BigObjHeader, Version));
         if (BigObjVersion < COFF::BigObjHeader::MinBigObjectVersion)
           return file_magic::coff_import_library;
@@ -948,7 +940,8 @@ file_magic identify_magic(StringRef Magic) {
       break;
     case '!':
       if (Magic.size() >= 8)
-        if (memcmp(Magic.data(),"!<arch>\n",8) == 0)
+        if (memcmp(Magic.data(), "!<arch>\n", 8) == 0 ||
+            memcmp(Magic.data(), "!<thin>\n", 8) == 0)
           return file_magic::archive;
       break;
 
@@ -960,7 +953,7 @@ file_magic identify_magic(StringRef Magic) {
         unsigned low  = Data2MSB ? 17 : 16;
         if (Magic[high] == 0)
           switch (Magic[low]) {
-            default: break;
+            default: return file_magic::elf;
             case 1: return file_magic::elf_relocatable;
             case 2: return file_magic::elf_executable;
             case 3: return file_magic::elf_shared_object;
@@ -1012,6 +1005,7 @@ file_magic identify_magic(StringRef Magic) {
         case 8: return file_magic::macho_bundle;
         case 9: return file_magic::macho_dynamically_linked_shared_lib_stub;
         case 10: return file_magic::macho_dsym_companion;
+        case 11: return file_magic::macho_kext_bundle;
       }
       break;
     }
@@ -1033,8 +1027,7 @@ file_magic identify_magic(StringRef Magic) {
 
     case 'M': // Possible MS-DOS stub on Windows PE file
       if (Magic[1] == 'Z') {
-        uint32_t off =
-          *reinterpret_cast<const support::ulittle32_t*>(Magic.data() + 0x3c);
+        uint32_t off = read32le(Magic.data() + 0x3c);
         // PE/COFF file, either EXE or DLL.
         if (off < Magic.size() &&
             memcmp(Magic.data()+off, COFF::PEMagic, sizeof(COFF::PEMagic)) == 0)

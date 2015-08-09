@@ -8,8 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Frontend/SerializedDiagnosticPrinter.h"
-#include "clang/Frontend/SerializedDiagnosticReader.h"
-#include "clang/Frontend/SerializedDiagnostics.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/FileManager.h"
@@ -17,9 +15,12 @@
 #include "clang/Basic/Version.h"
 #include "clang/Frontend/DiagnosticRenderer.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
+#include "clang/Frontend/SerializedDiagnosticReader.h"
+#include "clang/Frontend/SerializedDiagnostics.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/ADT/DenseSet.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
@@ -60,8 +61,8 @@ public:
                  DiagnosticOptions *DiagOpts)
     : DiagnosticNoteRenderer(LangOpts, DiagOpts), Writer(Writer) {}
 
-  virtual ~SDiagsRenderer() {}
-  
+  ~SDiagsRenderer() override {}
+
 protected:
   void emitDiagnosticMessage(SourceLocation Loc,
                              PresumedLoc PLoc,
@@ -157,7 +158,7 @@ public:
     EmitPreamble();
   }
 
-  ~SDiagsWriter() {}
+  ~SDiagsWriter() override {}
 
   void HandleDiagnostic(DiagnosticsEngine::Level DiagLevel,
                         const Diagnostic &Info) override;
@@ -477,7 +478,7 @@ void SDiagsWriter::EmitBlockInfoBlock() {
   AddSourceLocationAbbrev(Abbrev);
   Abbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 10)); // Category.  
   Abbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 10)); // Mapped Diag ID.
-  Abbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 16)); // Text size.
+  Abbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::VBR, 16)); // Text size.
   Abbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Blob)); // Diagnostc text.
   Abbrevs.set(RECORD_DIAG, Stream.EmitBlockInfoAbbrev(BLOCK_DIAG, Abbrev));
   
@@ -631,7 +632,7 @@ void SDiagsWriter::HandleDiagnostic(DiagnosticsEngine::Level DiagLevel,
          "Unexpected diagnostic with valid location outside of a source file");
   SDiagsRenderer Renderer(*this, *LangOpts, &*State->DiagOpts);
   Renderer.emitDiagnostic(Info.getLocation(), DiagLevel,
-                          State->diagBuf.str(),
+                          State->diagBuf,
                           Info.getRanges(),
                           Info.getFixItHints(),
                           &Info.getSourceManager(),

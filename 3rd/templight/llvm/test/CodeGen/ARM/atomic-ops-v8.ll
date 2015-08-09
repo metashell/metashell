@@ -664,7 +664,7 @@ define void @test_atomic_load_min_i64(i64 %offset) nounwind {
 ; CHECK: movt r[[ADDR]], :upper16:var64
 
 ; CHECK: .LBB{{[0-9]+}}_1:
-; CHECK: ldaexd [[OLD1:r[0-9]+]], [[OLD2:r[0-9]+]], [r[[ADDR]]]
+; CHECK: ldaexd [[OLD1:r[0-9]+|lr]], [[OLD2:r[0-9]+|lr]], [r[[ADDR]]]
   ; r0, r1 below is a reasonable guess but could change: it certainly comes into the
   ; function there.
 ; CHECK-ARM: mov [[LOCARRY:r[0-9]+|lr]], #0
@@ -782,7 +782,7 @@ define void @test_atomic_load_max_i64(i64 %offset) nounwind {
 ; CHECK: movt r[[ADDR]], :upper16:var64
 
 ; CHECK: .LBB{{[0-9]+}}_1:
-; CHECK: ldrexd [[OLD1:r[0-9]+]], [[OLD2:r[0-9]+]], [r[[ADDR]]]
+; CHECK: ldrexd [[OLD1:r[0-9]+]], [[OLD2:r[0-9]+|lr]], [r[[ADDR]]]
   ; r0, r1 below is a reasonable guess but could change: it certainly comes into the
   ; function there.
 ; CHECK-ARM: mov [[LOCARRY:r[0-9]+|lr]], #0
@@ -900,7 +900,7 @@ define void @test_atomic_load_umin_i64(i64 %offset) nounwind {
 ; CHECK: movt r[[ADDR]], :upper16:var64
 
 ; CHECK: .LBB{{[0-9]+}}_1:
-; CHECK: ldaexd [[OLD1:r[0-9]+]], [[OLD2:r[0-9]+]], [r[[ADDR]]]
+; CHECK: ldaexd [[OLD1:r[0-9]+|lr]], [[OLD2:r[0-9]+|lr]], [r[[ADDR]]]
   ; r0, r1 below is a reasonable guess but could change: it certainly comes into the
   ; function there.
 ; CHECK-ARM: mov [[LOCARRY:r[0-9]+|lr]], #0
@@ -1018,7 +1018,7 @@ define void @test_atomic_load_umax_i64(i64 %offset) nounwind {
 ; CHECK: movt r[[ADDR]], :upper16:var64
 
 ; CHECK: .LBB{{[0-9]+}}_1:
-; CHECK: ldaexd [[OLD1:r[0-9]+]], [[OLD2:r[0-9]+]], [r[[ADDR]]]
+; CHECK: ldaexd [[OLD1:r[0-9]+|lr]], [[OLD2:r[0-9]+|lr]], [r[[ADDR]]]
   ; r0, r1 below is a reasonable guess but could change: it certainly comes into the
   ; function there.
 ; CHECK-ARM: mov [[LOCARRY:r[0-9]+|lr]], #0
@@ -1146,10 +1146,12 @@ define void @test_atomic_cmpxchg_i64(i64 %wanted, i64 %new) nounwind {
   ; function there.
 ; CHECK-LE-DAG: eor{{(\.w)?}} [[MISMATCH_LO:r[0-9]+|lr]], [[OLD1]], r0
 ; CHECK-LE-DAG: eor{{(\.w)?}} [[MISMATCH_HI:r[0-9]+|lr]], [[OLD2]], r1
-; CHECK-LE: orrs{{(\.w)?}} {{r[0-9]+}}, [[MISMATCH_LO]], [[MISMATCH_HI]]
+; CHECK-ARM-LE: orrs{{(\.w)?}} {{r[0-9]+}}, [[MISMATCH_LO]], [[MISMATCH_HI]]
+; CHECK-THUMB-LE: orrs{{(\.w)?}} {{(r[0-9]+, )?}}[[MISMATCH_HI]], [[MISMATCH_LO]]
 ; CHECK-BE-DAG: eor{{(\.w)?}} [[MISMATCH_HI:r[0-9]+|lr]], [[OLD2]], r1
 ; CHECK-BE-DAG: eor{{(\.w)?}} [[MISMATCH_LO:r[0-9]+|lr]], [[OLD1]], r0
-; CHECK-BE: orrs{{(\.w)?}} {{r[0-9]+}}, [[MISMATCH_HI]], [[MISMATCH_LO]]
+; CHECK-ARM-BE: orrs{{(\.w)?}} {{r[0-9]+}}, [[MISMATCH_HI]], [[MISMATCH_LO]]
+; CHECK-THUMB-BE: orrs{{(\.w)?}} {{(r[0-9]+, )?}}[[MISMATCH_LO]], [[MISMATCH_HI]]
 ; CHECK-NEXT: bne .LBB{{[0-9]+}}_3
 ; CHECK-NEXT: BB#2:
   ; As above, r2, r3 is a reasonable guess.
@@ -1166,7 +1168,7 @@ define void @test_atomic_cmpxchg_i64(i64 %wanted, i64 %new) nounwind {
 
 define i8 @test_atomic_load_monotonic_i8() nounwind {
 ; CHECK-LABEL: test_atomic_load_monotonic_i8:
-  %val = load atomic i8* @var8 monotonic, align 1
+  %val = load atomic i8, i8* @var8 monotonic, align 1
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK: movw r[[ADDR:[0-9]+]], :lower16:var8
@@ -1183,7 +1185,7 @@ define i8 @test_atomic_load_monotonic_regoff_i8(i64 %base, i64 %off) nounwind {
   %addr_int = add i64 %base, %off
   %addr = inttoptr i64 %addr_int to i8*
 
-  %val = load atomic i8* %addr monotonic, align 1
+  %val = load atomic i8, i8* %addr monotonic, align 1
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK-LE: ldrb r0, [r0, r2]
@@ -1196,7 +1198,7 @@ define i8 @test_atomic_load_monotonic_regoff_i8(i64 %base, i64 %off) nounwind {
 
 define i8 @test_atomic_load_acquire_i8() nounwind {
 ; CHECK-LABEL: test_atomic_load_acquire_i8:
-  %val = load atomic i8* @var8 acquire, align 1
+  %val = load atomic i8, i8* @var8 acquire, align 1
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK: movw r[[ADDR:[0-9]+]], :lower16:var8
@@ -1213,7 +1215,7 @@ define i8 @test_atomic_load_acquire_i8() nounwind {
 
 define i8 @test_atomic_load_seq_cst_i8() nounwind {
 ; CHECK-LABEL: test_atomic_load_seq_cst_i8:
-  %val = load atomic i8* @var8 seq_cst, align 1
+  %val = load atomic i8, i8* @var8 seq_cst, align 1
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK: movw r[[ADDR:[0-9]+]], :lower16:var8
@@ -1230,7 +1232,7 @@ define i8 @test_atomic_load_seq_cst_i8() nounwind {
 
 define i16 @test_atomic_load_monotonic_i16() nounwind {
 ; CHECK-LABEL: test_atomic_load_monotonic_i16:
-  %val = load atomic i16* @var16 monotonic, align 2
+  %val = load atomic i16, i16* @var16 monotonic, align 2
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK: movw r[[ADDR:[0-9]+]], :lower16:var16
@@ -1251,7 +1253,7 @@ define i32 @test_atomic_load_monotonic_regoff_i32(i64 %base, i64 %off) nounwind 
   %addr_int = add i64 %base, %off
   %addr = inttoptr i64 %addr_int to i32*
 
-  %val = load atomic i32* %addr monotonic, align 4
+  %val = load atomic i32, i32* %addr monotonic, align 4
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK-LE: ldr r0, [r0, r2]
@@ -1264,7 +1266,7 @@ define i32 @test_atomic_load_monotonic_regoff_i32(i64 %base, i64 %off) nounwind 
 
 define i64 @test_atomic_load_seq_cst_i64() nounwind {
 ; CHECK-LABEL: test_atomic_load_seq_cst_i64:
-  %val = load atomic i64* @var64 seq_cst, align 8
+  %val = load atomic i64, i64* @var64 seq_cst, align 8
 ; CHECK-NOT: dmb
 ; CHECK-NOT: mcr
 ; CHECK: movw r[[ADDR:[0-9]+]], :lower16:var64
@@ -1296,7 +1298,7 @@ define void @test_atomic_store_monotonic_regoff_i8(i64 %base, i64 %off, i8 %val)
   %addr = inttoptr i64 %addr_int to i8*
 
   store atomic i8 %val, i8* %addr monotonic, align 1
-; CHECK-LE: ldrb{{(\.w)?}} [[VAL:r[0-9]+]], [sp]
+; CHECK-LE: ldr{{b?(\.w)?}} [[VAL:r[0-9]+]], [sp]
 ; CHECK-LE: strb [[VAL]], [r0, r2]
 ; CHECK-BE: ldrb{{(\.w)?}} [[VAL:r[0-9]+]], [sp, #3]
 ; CHECK-BE: strb [[VAL]], [r1, r3]
@@ -1399,7 +1401,7 @@ define i32 @not.barriers(i32* %var, i1 %cond) {
 ; CHECK-LABEL: not.barriers:
   br i1 %cond, label %atomic_ver, label %simple_ver
 simple_ver:
-  %oldval = load i32* %var
+  %oldval = load i32, i32* %var
   %newval = add nsw i32 %oldval, -1
   store i32 %newval, i32* %var
   br label %somewhere

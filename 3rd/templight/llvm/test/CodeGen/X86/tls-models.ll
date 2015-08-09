@@ -18,6 +18,8 @@
 @external_le = external thread_local(localexec) global i32
 @internal_le = internal thread_local(localexec) global i32 42
 
+; See test cases for emulated model in emutls.ll, emutls-pic.ll and emutls-pie.ll.
+
 ; ----- no model specified -----
 
 define i32* @f1() {
@@ -128,6 +130,14 @@ entry:
   ; DARWIN:  _internal_ie@TLVP
 }
 
+define i32 @PR22083() {
+entry:
+  ret i32 ptrtoint (i32* @external_ie to i32)
+  ; X64-LABEL:     PR22083:
+  ; X64:     movq    external_ie@GOTTPOFF(%rip), %rax
+  ; X64_PIC-LABEL: PR22083:
+  ; X64_PIC: movq    external_ie@GOTTPOFF(%rip), %rax
+}
 
 ; ----- localexec specified -----
 

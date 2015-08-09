@@ -83,7 +83,8 @@ CostModelAnalysis::getAnalysisUsage(AnalysisUsage &AU) const {
 bool
 CostModelAnalysis::runOnFunction(Function &F) {
  this->F = &F;
- TTI = getAnalysisIfAvailable<TargetTransformInfo>();
+ auto *TTIWP = getAnalysisIfAvailable<TargetTransformInfoWrapperPass>();
+ TTI = TTIWP ? &TTIWP->getTTI(F) : nullptr;
 
  return false;
 }
@@ -382,10 +383,8 @@ unsigned CostModelAnalysis::getInstructionCost(const Instruction *I) const {
     return -1;
 
   switch (I->getOpcode()) {
-  case Instruction::GetElementPtr:{
-    Type *ValTy = I->getOperand(0)->getType()->getPointerElementType();
-    return TTI->getAddressComputationCost(ValTy);
-  }
+  case Instruction::GetElementPtr:
+    return TTI->getUserCost(I);
 
   case Instruction::Ret:
   case Instruction::PHI:

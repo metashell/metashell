@@ -255,6 +255,17 @@ static int parse_remapped_files_with_try(int try_idx,
   if (ret)
     return ret;
 
+  if (num_unsaved_files_no_try_idx == 0) {
+    *unsaved_files = unsaved_files_try_idx;
+    *num_unsaved_files = num_unsaved_files_try_idx;
+    return 0;
+  }
+  if (num_unsaved_files_try_idx == 0) {
+    *unsaved_files = unsaved_files_no_try_idx;
+    *num_unsaved_files = num_unsaved_files_no_try_idx;
+    return 0;
+  }
+
   *num_unsaved_files = num_unsaved_files_no_try_idx + num_unsaved_files_try_idx;
   *unsaved_files
     = (struct CXUnsavedFile *)realloc(unsaved_files_no_try_idx,
@@ -1250,6 +1261,12 @@ static void PrintTypeAndTypeKind(CXType T, const char *Format) {
   clang_disposeString(TypeKindSpelling);
 }
 
+static enum CXVisitorResult FieldVisitor(CXCursor C,
+                                         CXClientData client_data) {
+    (*(int *) client_data)+=1;
+    return CXVisit_Continue;
+}
+
 static enum CXChildVisitResult PrintType(CXCursor cursor, CXCursor p,
                                          CXClientData d) {
   if (!clang_isInvalid(clang_getCursorKind(cursor))) {
@@ -1320,6 +1337,22 @@ static enum CXChildVisitResult PrintType(CXCursor cursor, CXCursor p,
         PrintTypeAndTypeKind(PT, " [pointeetype=%s] [pointeekind=%s]");
       }
     }
+    /* Print the number of fields if they exist. */
+    {
+      int numFields = 0;
+      if (clang_Type_visitFields(T, FieldVisitor, &numFields)){
+        if (numFields != 0) {
+          printf(" [nbFields=%d]", numFields);
+        }
+        /* Print if it is an anonymous record. */
+        {
+          unsigned isAnon = clang_Cursor_isAnonymous(cursor);
+          if (isAnon != 0) {
+            printf(" [isAnon=%d]", isAnon);
+          }
+        }
+      }
+    }
 
     printf("\n");
   }
@@ -1353,28 +1386,29 @@ static enum CXChildVisitResult PrintTypeSize(CXCursor cursor, CXCursor p,
   {
     CXString FieldSpelling = clang_getCursorSpelling(cursor);
     const char *FieldName = clang_getCString(FieldSpelling);
-    /* recurse to get the root anonymous record parent */
-    CXCursor Parent, Root;
+    /* recurse to get the first parent record that is not anonymous. */
+    CXCursor Parent, Record;
+    unsigned RecordIsAnonymous = 0;
     if (clang_getCursorKind(cursor) == CXCursor_FieldDecl) {
-      CXString RootParentSpelling;
-      const char *RootParentName = 0;
-      Parent = p;
+      Record = Parent = p;
       do {
-        if (RootParentName != 0)
-          clang_disposeString(RootParentSpelling);
-
-        Root = Parent;
-        RootParentSpelling = clang_getCursorSpelling(Root);
-        RootParentName = clang_getCString(RootParentSpelling);
-        Parent = clang_getCursorSemanticParent(Root);
-      } while (clang_getCursorType(Parent).kind == CXType_Record &&
-               !strcmp(RootParentName, ""));
-      clang_disposeString(RootParentSpelling);
-      /* if RootParentName is "", record is anonymous. */
+        Record = Parent;
+        Parent = clang_getCursorSemanticParent(Record);
+        RecordIsAnonymous = clang_Cursor_isAnonymous(Record);
+        /* Recurse as long as the parent is a CXType_Record and the Record
+           is anonymous */
+      } while ( clang_getCursorType(Parent).kind == CXType_Record &&
+                RecordIsAnonymous > 0);
       {
-        long long Offset = clang_Type_getOffsetOf(clang_getCursorType(Root),
+        long long Offset = clang_Type_getOffsetOf(clang_getCursorType(Record),
                                                   FieldName);
-        printf(" [offsetof=%lld]", Offset);
+        long long Offset2 = clang_Cursor_getOffsetOfField(cursor);
+        if (Offset == Offset2){
+            printf(" [offsetof=%lld]", Offset);
+        } else {
+            /* Offsets will be different in anonymous records. */
+            printf(" [offsetof=%lld/%lld]", Offset, Offset2);
+        }
       }
     }
     clang_disposeString(FieldSpelling);
@@ -2078,7 +2112,7 @@ int perform_code_completion(int argc, const char **argv, int timing_only) {
                                      clang_defaultReparseOptions(TU));
 
   if (Err != CXError_Success) {
-    fprintf(stderr, "Unable to reparse translation init!\n");
+    fprintf(stderr, "Unable to reparse translation unit!\n");
     describeLibclangFailure(Err);
     clang_disposeTranslationUnit(TU);
     return 1;

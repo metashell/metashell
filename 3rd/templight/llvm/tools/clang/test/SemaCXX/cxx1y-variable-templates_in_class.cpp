@@ -58,13 +58,13 @@ namespace out_of_line {
     template<typename T, typename T0> static CONST T b = T(100);
     template<typename T> static CONST T b<T,int>;
   };
-  template<typename T, typename T0> CONST T B4::a; // expected-error {{default initialization of an object of const type 'const int'}} expected-note {{add an explicit initializer to initialize 'a<int, char>'}}
+  template<typename T, typename T0> CONST T B4::a; // expected-error {{default initialization of an object of const type 'const int'}}
   template<typename T> CONST T B4::a<T,int>;
   template CONST int B4::a<int,char>; // expected-note {{in instantiation of}}
   template CONST int B4::a<int,int>;
 
   template<typename T, typename T0> CONST T B4::b;
-  template<typename T> CONST T B4::b<T,int>; // expected-error {{default initialization of an object of const type 'const int'}} expected-note {{add an explicit initializer to initialize 'b<int, int>'}}
+  template<typename T> CONST T B4::b<T,int>; // expected-error {{default initialization of an object of const type 'const int'}}
   template CONST int B4::b<int,char>;
   template CONST int B4::b<int,int>; // expected-note {{in instantiation of}}
 }
@@ -214,7 +214,7 @@ namespace in_class_template {
     template<typename T>
     class D0a {
       template<typename U> static U Data;
-      template<typename U> static CONST U Data<U*> = U(10);  // expected-note {{previous definition is here}}
+      template<typename U> static CONST U Data<U*> = U(10);  // expected-note {{previous declaration is here}}
     };
     template<>
     template<typename U> U D0a<float>::Data<U*> = U(100);  // expected-error {{redefinition of 'Data'}}
@@ -228,7 +228,7 @@ namespace in_class_template {
     template<typename T>
     class D1 {
       template<typename U> static U Data;
-      template<typename U> static CONST U Data<U*> = U(10);  // expected-note {{previous definition is here}}
+      template<typename U> static CONST U Data<U*> = U(10);  // expected-note {{previous declaration is here}}
     };
     template<>
     template<typename U> U D1<float>::Data = U(10);

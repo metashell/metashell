@@ -31,13 +31,13 @@ NOINLINE void free_aaa(void *p) { free_bbb(p); break_optimization(0);}
 
 template<typename T>
 NOINLINE void uaf_test(int size, int off) {
-  char *p = (char *)malloc_aaa(size);
+  void *p = malloc_aaa(size);
   free_aaa(p);
   for (int i = 1; i < 100; i++)
     free_aaa(malloc_aaa(i));
   fprintf(stderr, "writing %ld byte(s) at %p with offset %d\n",
           (long)sizeof(T), p, off);
-  asan_write((T*)(p + off));
+  asan_write((T *)((char *)p + off));
 }
 
 TEST(AddressSanitizer, HasFeatureAddressSanitizerTest) {
@@ -250,12 +250,12 @@ TEST(AddressSanitizer, BitFieldNegativeTest) {
 #if ASAN_NEEDS_SEGV
 namespace {
 
-const char kUnknownCrash[] = "AddressSanitizer: SEGV on unknown address";
+const char kSEGVCrash[] = "AddressSanitizer: SEGV on unknown address";
 const char kOverriddenHandler[] = "ASan signal handler has been overridden\n";
 
 TEST(AddressSanitizer, WildAddressTest) {
   char *c = (char*)0x123;
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_DEATH(*c = 0, kSEGVCrash);
 }
 
 void my_sigaction_sighandler(int, siginfo_t*, void*) {
@@ -279,10 +279,10 @@ TEST(AddressSanitizer, SignalTest) {
   EXPECT_EQ(0, sigaction(SIGBUS, &sigact, 0));
 #endif
   char *c = (char*)0x123;
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_DEATH(*c = 0, kSEGVCrash);
   // ... and signal().
   EXPECT_EQ(0, signal(SIGSEGV, my_signal_sighandler));
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_DEATH(*c = 0, kSEGVCrash);
 }
 }  // namespace
 #endif
@@ -335,6 +335,8 @@ void *ManyThreadsWorker(void *a) {
   return 0;
 }
 
+#if !defined(__aarch64__)
+// FIXME: Infinite loop in AArch64 (PR24389).
 TEST(AddressSanitizer, ManyThreadsTest) {
   const size_t kNumThreads =
       (SANITIZER_WORDSIZE == 32 || ASAN_AVOID_EXPENSIVE_TESTS) ? 30 : 1000;
@@ -346,6 +348,7 @@ TEST(AddressSanitizer, ManyThreadsTest) {
     PTHREAD_JOIN(t[i], 0);
   }
 }
+#endif
 
 TEST(AddressSanitizer, ReallocTest) {
   const int kMinElem = 5;
@@ -436,10 +439,10 @@ TEST(AddressSanitizer, WrongFreeTest) {
 
 void DoubleFree() {
   int *x = (int*)malloc(100 * sizeof(int));
-  fprintf(stderr, "DoubleFree: x=%p\n", x);
+  fprintf(stderr, "DoubleFree: x=%p\n", (void *)x);
   free(x);
   free(x);
-  fprintf(stderr, "should have failed in the second free(%p)\n", x);
+  fprintf(stderr, "should have failed in the second free(%p)\n", (void *)x);
   abort();
 }
 
@@ -569,17 +572,6 @@ TEST(AddressSanitizer, LongJmpTest) {
 }
 
 #if !defined(_WIN32)  // Only basic longjmp is available on Windows.
-NOINLINE void BuiltinLongJmpFunc1(jmp_buf buf) {
-  // create three red zones for these two stack objects.
-  int a;
-  int b;
-
-  int *A = Ident(&a);
-  int *B = Ident(&b);
-  *A = *B;
-  __builtin_longjmp((void**)buf, 1);
-}
-
 NOINLINE void UnderscopeLongJmpFunc1(jmp_buf buf) {
   // create three red zones for these two stack objects.
   int a;
@@ -603,7 +595,20 @@ NOINLINE void SigLongJmpFunc1(sigjmp_buf buf) {
 }
 
 #if !defined(__ANDROID__) && !defined(__arm__) && \
-    !defined(__powerpc64__) && !defined(__powerpc__)
+    !defined(__powerpc64__) && !defined(__powerpc__) && \
+    !defined(__aarch64__) && !defined(__mips__) && \
+    !defined(__mips64)
+NOINLINE void BuiltinLongJmpFunc1(jmp_buf buf) {
+  // create three red zones for these two stack objects.
+  int a;
+  int b;
+
+  int *A = Ident(&a);
+  int *B = Ident(&b);
+  *A = *B;
+  __builtin_longjmp((void**)buf, 1);
+}
+
 // Does not work on Power and ARM:
 // https://code.google.com/p/address-sanitizer/issues/detail?id=185
 TEST(AddressSanitizer, BuiltinLongJmpTest) {
@@ -615,7 +620,8 @@ TEST(AddressSanitizer, BuiltinLongJmpTest) {
   }
 }
 #endif  // !defined(__ANDROID__) && !defined(__powerpc64__) &&
-        // !defined(__powerpc__) && !defined(__arm__)
+        // !defined(__powerpc__) && !defined(__arm__) &&
+        // !defined(__mips__) && !defined(__mips64)
 
 TEST(AddressSanitizer, UnderscopeLongJmpTest) {
   static jmp_buf buf;
@@ -1242,7 +1248,7 @@ TEST(AddressSanitizer, DISABLED_DemoTooMuchMemoryTest) {
   const size_t kAllocSize = (1 << 28) - 1024;
   size_t total_size = 0;
   while (true) {
-    char *x = (char*)malloc(kAllocSize);
+    void *x = malloc(kAllocSize);
     memset(x, 0, kAllocSize);
     total_size += kAllocSize;
     fprintf(stderr, "total: %ldM %p\n", (long)total_size >> 20, x);

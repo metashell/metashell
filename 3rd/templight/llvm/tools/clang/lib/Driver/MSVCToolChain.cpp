@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "ToolChains.h"
+#include "Tools.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/Version.h"
 #include "clang/Driver/Compilation.h"
@@ -21,6 +22,7 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
+#include <cstdio>
 
 // Include the necessary headers to interface with the Windows registry and
 // environment.
@@ -51,12 +53,12 @@ MSVCToolChain::MSVCToolChain(const Driver &D, const llvm::Triple& Triple,
 }
 
 Tool *MSVCToolChain::buildLinker() const {
-  return new tools::visualstudio::Link(*this);
+  return new tools::visualstudio::Linker(*this);
 }
 
 Tool *MSVCToolChain::buildAssembler() const {
   if (getTriple().isOSBinFormatMachO())
-    return new tools::darwin::Assemble(*this);
+    return new tools::darwin::Assembler(*this);
   getDriver().Diag(clang::diag::err_no_external_assembler);
   return nullptr;
 }
@@ -212,7 +214,7 @@ bool MSVCToolChain::getWindowsSDKDir(std::string &path, int &major,
       "SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows\\$VERSION",
       "InstallationFolder", path, &sdkVersion);
   if (!sdkVersion.empty())
-    ::sscanf(sdkVersion.c_str(), "v%d.%d", &major, &minor);
+    std::sscanf(sdkVersion.c_str(), "v%d.%d", &major, &minor);
   return hasSDKDir && !path.empty();
 }
 
@@ -423,7 +425,7 @@ void MSVCToolChain::AddSystemIncludeWithSubfolder(const ArgList &DriverArgs,
                                                   const char *subfolder) const {
   llvm::SmallString<128> path(folder);
   llvm::sys::path::append(path, subfolder);
-  addSystemInclude(DriverArgs, CC1Args, path.str());
+  addSystemInclude(DriverArgs, CC1Args, path);
 }
 
 void MSVCToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
@@ -434,7 +436,7 @@ void MSVCToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
   if (!DriverArgs.hasArg(options::OPT_nobuiltininc)) {
     SmallString<128> P(getDriver().ResourceDir);
     llvm::sys::path::append(P, "include");
-    addSystemInclude(DriverArgs, CC1Args, P.str());
+    addSystemInclude(DriverArgs, CC1Args, P);
   }
 
   if (DriverArgs.hasArg(options::OPT_nostdlibinc))
@@ -493,4 +495,134 @@ void MSVCToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
 void MSVCToolChain::AddClangCXXStdlibIncludeArgs(const ArgList &DriverArgs,
                                                  ArgStringList &CC1Args) const {
   // FIXME: There should probably be logic here to find libc++ on Windows.
+}
+
+std::string
+MSVCToolChain::ComputeEffectiveClangTriple(const ArgList &Args,
+                                           types::ID InputType) const {
+  std::string TripleStr =
+      ToolChain::ComputeEffectiveClangTriple(Args, InputType);
+  llvm::Triple Triple(TripleStr);
+  VersionTuple MSVT =
+      tools::visualstudio::getMSVCVersion(/*D=*/nullptr, Triple, Args,
+                                          /*IsWindowsMSVC=*/true);
+  if (MSVT.empty())
+    return TripleStr;
+
+  MSVT = VersionTuple(MSVT.getMajor(), MSVT.getMinor().getValueOr(0),
+                      MSVT.getSubminor().getValueOr(0));
+
+  if (Triple.getEnvironment() == llvm::Triple::MSVC) {
+    StringRef ObjFmt = Triple.getEnvironmentName().split('-').second;
+    if (ObjFmt.empty())
+      Triple.setEnvironmentName((Twine("msvc") + MSVT.getAsString()).str());
+    else
+      Triple.setEnvironmentName(
+          (Twine("msvc") + MSVT.getAsString() + Twine('-') + ObjFmt).str());
+  }
+  return Triple.getTriple();
+}
+
+SanitizerMask MSVCToolChain::getSupportedSanitizers() const {
+  SanitizerMask Res = ToolChain::getSupportedSanitizers();
+  Res |= SanitizerKind::Address;
+  return Res;
+}
+
+llvm::opt::DerivedArgList *
+MSVCToolChain::TranslateArgs(const llvm::opt::DerivedArgList &Args,
+                             const char *BoundArch) const {
+  DerivedArgList *DAL = new DerivedArgList(Args.getBaseArgs());
+  const OptTable &Opts = getDriver().getOpts();
+
+  // The -O[12xd] flag actually expands to several flags.  We must desugar the
+  // flags so that options embedded can be negated.  For example, the '-O2' flag
+  // enables '-Oy'.  Expanding '-O2' into its constituent flags allows us to
+  // correctly handle '-O2 -Oy-' where the trailing '-Oy-' disables a single
+  // aspect of '-O2'.
+  //
+  // Note that this expansion logic only applies to the *last* of '[12xd]'.
+
+  // First step is to search for the character we'd like to expand.
+  const char *ExpandChar = nullptr;
+  for (Arg *A : Args) {
+    if (!A->getOption().matches(options::OPT__SLASH_O))
+      continue;
+    StringRef OptStr = A->getValue();
+    for (size_t I = 0, E = OptStr.size(); I != E; ++I) {
+      const char &OptChar = *(OptStr.data() + I);
+      if (OptChar == '1' || OptChar == '2' || OptChar == 'x' || OptChar == 'd')
+        ExpandChar = OptStr.data() + I;
+    }
+  }
+
+  // The -O flag actually takes an amalgam of other options.  For example,
+  // '/Ogyb2' is equivalent to '/Og' '/Oy' '/Ob2'.
+  for (Arg *A : Args) {
+    if (!A->getOption().matches(options::OPT__SLASH_O)) {
+      DAL->append(A);
+      continue;
+    }
+
+    StringRef OptStr = A->getValue();
+    for (size_t I = 0, E = OptStr.size(); I != E; ++I) {
+      const char &OptChar = *(OptStr.data() + I);
+      switch (OptChar) {
+      default:
+        break;
+      case '1':
+      case '2':
+      case 'x':
+      case 'd':
+        if (&OptChar == ExpandChar) {
+          if (OptChar == 'd') {
+            DAL->AddFlagArg(A, Opts.getOption(options::OPT_O0));
+          } else {
+            if (OptChar == '1') {
+              DAL->AddJoinedArg(A, Opts.getOption(options::OPT_O), "s");
+            } else if (OptChar == '2' || OptChar == 'x') {
+              DAL->AddFlagArg(A, Opts.getOption(options::OPT_fbuiltin));
+              DAL->AddJoinedArg(A, Opts.getOption(options::OPT_O), "2");
+            }
+            DAL->AddFlagArg(A,
+                            Opts.getOption(options::OPT_fomit_frame_pointer));
+            if (OptChar == '1' || OptChar == '2')
+              DAL->AddFlagArg(A,
+                              Opts.getOption(options::OPT_ffunction_sections));
+          }
+        }
+        break;
+      case 'b':
+        if (isdigit(OptStr[I + 1]))
+          ++I;
+        break;
+      case 'g':
+        break;
+      case 'i':
+        if (OptStr[I + 1] == '-') {
+          ++I;
+          DAL->AddFlagArg(A, Opts.getOption(options::OPT_fno_builtin));
+        } else {
+          DAL->AddFlagArg(A, Opts.getOption(options::OPT_fbuiltin));
+        }
+        break;
+      case 's':
+        DAL->AddJoinedArg(A, Opts.getOption(options::OPT_O), "s");
+        break;
+      case 't':
+        DAL->AddJoinedArg(A, Opts.getOption(options::OPT_O), "2");
+        break;
+      case 'y':
+        if (OptStr[I + 1] == '-') {
+          ++I;
+          DAL->AddFlagArg(A,
+                          Opts.getOption(options::OPT_fno_omit_frame_pointer));
+        } else {
+          DAL->AddFlagArg(A, Opts.getOption(options::OPT_fomit_frame_pointer));
+        }
+        break;
+      }
+    }
+  }
+  return DAL;
 }

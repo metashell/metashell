@@ -1,6 +1,6 @@
 // RUN: %clangxx_asan -O2 %s -o %t
-// RUN: ASAN_OPTIONS=fast_unwind_on_malloc=1 not %run %t 2>&1 | FileCheck %s --check-prefix=CHECK-FAST
-// RUN: ASAN_OPTIONS=fast_unwind_on_malloc=0 not %run %t 2>&1 | FileCheck %s --check-prefix=CHECK-SLOW
+// RUN: env ASAN_OPTIONS=$ASAN_OPTIONS:fast_unwind_on_malloc=1 not %run %t 2>&1 | FileCheck %s --check-prefix=CHECK-FAST
+// RUN: env ASAN_OPTIONS=$ASAN_OPTIONS:fast_unwind_on_malloc=0 not %run %t 2>&1 | FileCheck %s --check-prefix=CHECK-SLOW
 
 // Test how well we unwind in presence of qsort in the stack
 // (i.e. if we can unwind through a function compiled w/o frame pointers).
@@ -39,15 +39,12 @@ int main() {
   return GlobalPtr[10];
 }
 
-// Fast unwind: can not unwind through qsort.
-// FIXME: this test does not properly work with slow unwind yet.
-
+// Fast unwind may not unwind through qsort.
 // CHECK-FAST: ERROR: AddressSanitizer: heap-buffer-overflow
 // CHECK-FAST: is located 0 bytes to the right
 // CHECK-FAST: #0{{.*}}operator new
 // CHECK-FAST-NEXT: #1{{.*}}QsortCallback
-// CHECK-FAST-NOT: MyQsort
-//
+
 // CHECK-SLOW: ERROR: AddressSanitizer: heap-buffer-overflow
 // CHECK-SLOW: is located 0 bytes to the right
 // CHECK-SLOW: #0{{.*}}operator new

@@ -18,10 +18,10 @@ entry:
 ; CHECK: addi [[REG]], [[REG]], env_sigill@toc@l
 ; CHECK: ld 31, 0([[REG]])
 ; CHECK: ld [[REG2:[0-9]+]], 8([[REG]])
-; CHECK: ld 1, 16([[REG]])
-; CHECK: mtctr [[REG2]]
-; CHECK: ld 30, 32([[REG]])
-; CHECK: ld 2, 24([[REG]])
+; CHECK-DAG: ld 1, 16([[REG]])
+; CHECK-DAG: mtctr [[REG2]]
+; CHECK-DAG: ld 30, 32([[REG]])
+; CHECK-DAG: ld 2, 24([[REG]])
 ; CHECK: bctr
 
 return:                                           ; No predecessors!
@@ -37,7 +37,7 @@ entry:
   %0 = call i8* @llvm.frameaddress(i32 0)
   store i8* %0, i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**)
   %1 = call i8* @llvm.stacksave()
-  store i8* %1, i8** getelementptr (i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**), i32 2)
+  store i8* %1, i8** getelementptr (i8*, i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**), i32 2)
   %2 = call i32 @llvm.eh.sjlj.setjmp(i8* bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8*))
   %tobool = icmp ne i32 %2, 0
   br i1 %tobool, label %if.then, label %if.else
@@ -55,7 +55,7 @@ if.end:                                           ; preds = %if.else
   br label %return
 
 return:                                           ; preds = %if.end, %if.then
-  %3 = load i32* %retval
+  %3 = load i32, i32* %retval
   ret i32 %3
 
 ; FIXME: We should be saving VRSAVE on Darwin, but we're not!
@@ -110,7 +110,7 @@ entry:
   %0 = call i8* @llvm.frameaddress(i32 0)
   store i8* %0, i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**)
   %1 = call i8* @llvm.stacksave()
-  store i8* %1, i8** getelementptr (i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**), i32 2)
+  store i8* %1, i8** getelementptr (i8*, i8** bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8**), i32 2)
   %2 = call i32 @llvm.eh.sjlj.setjmp(i8* bitcast ([1 x %struct.__jmp_buf_tag]* @env_sigill to i8*))
   %tobool = icmp ne i32 %2, 0
   br i1 %tobool, label %if.then, label %if.else
@@ -128,7 +128,7 @@ if.end:                                           ; preds = %if.else
   br label %return
 
 return:                                           ; preds = %if.end, %if.then
-  %3 = load i32* %retval
+  %3 = load i32, i32* %retval
   ret i32 %3
 
 ; CHECK: @main2

@@ -31,7 +31,7 @@ void ExprEngine::VisitBinaryOperator(const BinaryOperator* B,
   ExplodedNodeSet Tmp2;
   getCheckerManager().runCheckersForPreStmt(CheckedSet, Pred, B, *this);
     
-  // With both the LHS and RHS evaluated, process the operation itself.    
+  // With both the LHS and RHS evaluated, process the operation itself.
   for (ExplodedNodeSet::iterator it=CheckedSet.begin(), ei=CheckedSet.end();
          it != ei; ++it) {
       
@@ -663,9 +663,7 @@ void ExprEngine::VisitGuardedExpr(const Expr *Ex,
   bool hasValue = false;
   SVal V;
 
-  for (CFGBlock::const_reverse_iterator I = SrcBlock->rbegin(),
-                                        E = SrcBlock->rend(); I != E; ++I) {
-    CFGElement CE = *I;
+  for (CFGElement CE : llvm::reverse(*SrcBlock)) {
     if (Optional<CFGStmt> CS = CE.getAs<CFGStmt>()) {
       const Expr *ValEx = cast<Expr>(CS->getStmt());
       ValEx = ValEx->IgnoreParens();

@@ -107,7 +107,7 @@ define i32 @test12(i32 %a, i32 %b) {
 ; PR2642
 define internal void @test13(<4 x float>*) {
 ; CHECK-LABEL: @test13(
-	load <4 x float>* %0, align 1
+	load <4 x float>, <4 x float>* %0, align 1
 	fmul <4 x float> %2, < float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00 >
 	store <4 x float> %3, <4 x float>* %0, align 1
 	ret void
@@ -278,4 +278,29 @@ define i64 @test30(i32 %A, i32 %B) {
 ; CHECK-NEXT: %[[zext2:.*]] = zext i32 %B to i64
 ; CHECK-NEXT: %[[mul:.*]] = mul nuw i64 %[[zext1]], %[[zext2]]
 ; CHECK-NEXT: ret i64 %[[mul]]
+}
+
+@PR22087 = external global i32
+define i32 @test31(i32 %V) {
+; CHECK-LABEL: @test31
+  %mul = mul i32 %V, shl (i32 1, i32 zext (i1 icmp ne (i32* inttoptr (i64 1 to i32*), i32* @PR22087) to i32))
+  ret i32 %mul
+; CHECK:      %[[mul:.*]] = shl i32 %V, zext (i1 icmp ne (i32* inttoptr (i64 1 to i32*), i32* @PR22087) to i32)
+; CHECK-NEXT: ret i32 %[[mul]]
+}
+
+define i32 @test32(i32 %X) {
+; CHECK-LABEL: @test32
+  %mul = mul nsw i32 %X, -2147483648
+  ret i32 %mul
+; CHECK:      %[[shl:.*]] = shl i32 %X, 31
+; CHECK-NEXT: ret i32 %[[shl]]
+}
+
+define i32 @test33(i32 %X) {
+; CHECK-LABEL: @test33
+  %mul = mul nsw i32 %X, 1073741824
+; CHECK:      %[[shl:.*]] = shl nsw i32 %X, 30
+; CHECK-NEXT: ret i32 %[[shl]]
+  ret i32 %mul
 }

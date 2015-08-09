@@ -1,10 +1,10 @@
-// RUN: %clangxx_msan -m64 -O0 -g %s -o %t && %run %t >%t.out 2>&1
+// RUN: %clangxx_msan -O0 -g %s -o %t && %run %t >%t.out 2>&1
 // RUN: FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-NO-ORIGINS < %t.out
 
-// RUN: %clangxx_msan -fsanitize-memory-track-origins -m64 -O0 -g %s -o %t && %run %t >%t.out 2>&1
+// RUN: %clangxx_msan -fsanitize-memory-track-origins -O0 -g %s -o %t && %run %t >%t.out 2>&1
 // RUN: FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-ORIGINS < %t.out
 
-// RUN: %clangxx_msan -fsanitize-memory-track-origins=2 -m64 -O0 -g %s -o %t && %run %t >%t.out 2>&1
+// RUN: %clangxx_msan -fsanitize-memory-track-origins=2 -O0 -g %s -o %t && %run %t >%t.out 2>&1
 // RUN: FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-ORIGINS --check-prefix=CHECK-ORIGINS-2 < %t.out
 
 #include <sanitizer/msan_interface.h>
@@ -99,7 +99,7 @@ int main(void) {
 // CHECK-ORIGINS:     #1 {{.*}} in main{{.*}}msan_print_shadow.cc:14
 
 // CHECK-ORIGINS: Origin B (origin_id {{.*}}):
-// CHECK-ORIGINS:   Uninitialized value was created by a heap allocation
+// CHECK-ORIGINS:   Memory was marked as uninitialized
 // CHECK-ORIGINS:     #0 {{.*}} in __msan_allocated_memory
 // CHECK-ORIGINS:     #1 {{.*}} in main{{.*}}msan_print_shadow.cc:18
 
@@ -110,13 +110,13 @@ int main(void) {
 // CHECK-ORIGINS:     #0 {{.*}} in main{{.*}}msan_print_shadow.cc:12
 
 // CHECK-ORIGINS: Origin D (origin_id {{.*}}):
-// CHECK-ORIGINS:   Uninitialized value was created by a heap allocation
+// CHECK-ORIGINS:   Memory was marked as uninitialized
 // CHECK-ORIGINS:     #0 {{.*}} in __msan_allocated_memory
 // CHECK-ORIGINS:     #1 {{.*}} in main{{.*}}msan_print_shadow.cc:20
 
 // ...
 
 // CHECK-ORIGINS: Origin Z (origin_id {{.*}}):
-// CHECK-ORIGINS:   Uninitialized value was created by a heap allocation
+// CHECK-ORIGINS:   Memory was marked as uninitialized
 // CHECK-ORIGINS:     #0 {{.*}} in __msan_allocated_memory
 // CHECK-ORIGINS:     #1 {{.*}} in main{{.*}}msan_print_shadow.cc:42

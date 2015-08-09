@@ -254,7 +254,7 @@ In `Chapter 7 <LangImpl7.html>`_ of this tutorial ("mutable variables"),
 we'll talk about #1 in depth. For now, just believe me that you don't
 need SSA construction to handle this case. For #2, you have the choice
 of using the techniques that we will describe for #1, or you can insert
-Phi nodes directly, if convenient. In this case, it is really really
+Phi nodes directly, if convenient. In this case, it is really
 easy to generate the Phi node, so we choose to do it directly.
 
 Okay, enough of the motivation and overview, lets generate code!
@@ -388,7 +388,7 @@ code:
 
 The first two lines here are now familiar: the first adds the "merge"
 block to the Function object (it was previously floating, like the else
-block above). The second block changes the insertion point so that newly
+block above). The second changes the insertion point so that newly
 created code will go into the "merge" block. Once that is done, we need
 to create the PHI node and set up the block/value pairs for the PHI.
 
@@ -736,7 +736,7 @@ the if/then/else and for expressions.. To build this example, use:
 .. code-block:: bash
 
     # Compile
-    clang++ -g toy.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core jit native` -O3 -o toy
+    clang++ -g toy.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -O3 -o toy
     # Run
     ./toy
 

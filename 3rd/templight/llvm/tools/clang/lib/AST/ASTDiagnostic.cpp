@@ -66,11 +66,63 @@ static QualType Desugar(ASTContext &Context, QualType QT, bool &ShouldAKA) {
       continue;
     }
 
-    // Don't desugar template specializations, unless it's an alias template.
-    if (const TemplateSpecializationType *TST
-          = dyn_cast<TemplateSpecializationType>(Ty))
-      if (!TST->isTypeAlias())
+    // Desugar FunctionType if return type or any parameter type should be
+    // desugared. Preserve nullability attribute on desugared types.
+    if (const FunctionType *FT = dyn_cast<FunctionType>(Ty)) {
+      bool DesugarReturn = false;
+      QualType SugarRT = FT->getReturnType();
+      QualType RT = Desugar(Context, SugarRT, DesugarReturn);
+      if (auto nullability = AttributedType::stripOuterNullability(SugarRT)) {
+        RT = Context.getAttributedType(
+            AttributedType::getNullabilityAttrKind(*nullability), RT, RT);
+      }
+
+      bool DesugarArgument = false;
+      SmallVector<QualType, 4> Args;
+      const FunctionProtoType *FPT = dyn_cast<FunctionProtoType>(FT);
+      if (FPT) {
+        for (QualType SugarPT : FPT->param_types()) {
+          QualType PT = Desugar(Context, SugarPT, DesugarArgument);
+          if (auto nullability =
+                  AttributedType::stripOuterNullability(SugarPT)) {
+            PT = Context.getAttributedType(
+                AttributedType::getNullabilityAttrKind(*nullability), PT, PT);
+          }
+          Args.push_back(PT);
+        }
+      }
+
+      if (DesugarReturn || DesugarArgument) {
+        ShouldAKA = true;
+        QT = FPT ? Context.getFunctionType(RT, Args, FPT->getExtProtoInfo())
+                 : Context.getFunctionNoProtoType(RT, FT->getExtInfo());
         break;
+      }
+    }
+
+    // Desugar template specializations if any template argument should be
+    // desugared.
+    if (const TemplateSpecializationType *TST =
+            dyn_cast<TemplateSpecializationType>(Ty)) {
+      if (!TST->isTypeAlias()) {
+        bool DesugarArgument = false;
+        SmallVector<TemplateArgument, 4> Args;
+        for (unsigned I = 0, N = TST->getNumArgs(); I != N; ++I) {
+          const TemplateArgument &Arg = TST->getArg(I);
+          if (Arg.getKind() == TemplateArgument::Type)
+            Args.push_back(Desugar(Context, Arg.getAsType(), DesugarArgument));
+          else
+            Args.push_back(Arg);
+        }
+
+        if (DesugarArgument) {
+          ShouldAKA = true;
+          QT = Context.getTemplateSpecializationType(
+              TST->getTemplateName(), Args.data(), Args.size(), QT);
+        }
+        break;
+      }
+    }
 
     // Don't desugar magic Objective-C types.
     if (QualType(Ty,0) == Context.getObjCIdType() ||
@@ -125,12 +177,23 @@ break; \
   if (const PointerType *Ty = QT->getAs<PointerType>()) {
     QT = Context.getPointerType(Desugar(Context, Ty->getPointeeType(),
                                         ShouldAKA));
+  } else if (const auto *Ty = QT->getAs<ObjCObjectPointerType>()) {
+    QT = Context.getObjCObjectPointerType(Desugar(Context, Ty->getPointeeType(),
+                                                  ShouldAKA));
   } else if (const LValueReferenceType *Ty = QT->getAs<LValueReferenceType>()) {
     QT = Context.getLValueReferenceType(Desugar(Context, Ty->getPointeeType(),
                                                 ShouldAKA));
   } else if (const RValueReferenceType *Ty = QT->getAs<RValueReferenceType>()) {
     QT = Context.getRValueReferenceType(Desugar(Context, Ty->getPointeeType(),
                                                 ShouldAKA));
+  } else if (const auto *Ty = QT->getAs<ObjCObjectType>()) {
+    if (Ty->getBaseType().getTypePtr() != Ty && !ShouldAKA) {
+      QualType BaseType = Desugar(Context, Ty->getBaseType(), ShouldAKA);
+      QT = Context.getObjCObjectType(BaseType, Ty->getTypeArgsAsWritten(),
+                                     llvm::makeArrayRef(Ty->qual_begin(),
+                                                        Ty->getNumProtocols()),
+                                     Ty->isKindOfTypeAsWritten());
+    }
   }
 
   return QC.apply(Context, QT);
@@ -181,8 +244,8 @@ ConvertTypeToDiagnosticString(ASTContext &Context, QualType Ty,
     if (CompareCanTy == CanTy)
       continue;  // Same canonical types
     std::string CompareS = CompareTy.getAsString(Context.getPrintingPolicy());
-    bool aka;
-    QualType CompareDesugar = Desugar(Context, CompareTy, aka);
+    bool ShouldAKA = false;
+    QualType CompareDesugar = Desugar(Context, CompareTy, ShouldAKA);
     std::string CompareDesugarStr =
         CompareDesugar.getAsString(Context.getPrintingPolicy());
     if (CompareS != S && CompareDesugarStr != S)
@@ -998,29 +1061,27 @@ class TemplateDiff {
             (!HasFromValueDecl && !HasToValueDecl)) &&
            "Template argument cannot be both integer and declaration");
 
-    unsigned ParamWidth = 128; // Safe default
-    if (FromDefaultNonTypeDecl->getType()->isIntegralOrEnumerationType())
-      ParamWidth = Context.getIntWidth(FromDefaultNonTypeDecl->getType());
-
     if (!HasFromInt && !HasToInt && !HasFromValueDecl && !HasToValueDecl) {
       Tree.SetNode(FromExpr, ToExpr);
       Tree.SetDefault(FromIter.isEnd() && FromExpr, ToIter.isEnd() && ToExpr);
       if (FromDefaultNonTypeDecl->getType()->isIntegralOrEnumerationType()) {
         if (FromExpr)
-          HasFromInt = GetInt(Context, FromIter, FromExpr, FromInt);
+          HasFromInt = GetInt(Context, FromIter, FromExpr, FromInt,
+                              FromDefaultNonTypeDecl->getType());
         if (ToExpr)
-          HasToInt = GetInt(Context, ToIter, ToExpr, ToInt);
+          HasToInt = GetInt(Context, ToIter, ToExpr, ToInt,
+                            ToDefaultNonTypeDecl->getType());
       }
       if (HasFromInt && HasToInt) {
         Tree.SetNode(FromInt, ToInt, HasFromInt, HasToInt);
-        Tree.SetSame(IsSameConvertedInt(ParamWidth, FromInt, ToInt));
+        Tree.SetSame(FromInt == ToInt);
         Tree.SetKind(DiffTree::Integer);
       } else if (HasFromInt || HasToInt) {
         Tree.SetNode(FromInt, ToInt, HasFromInt, HasToInt);
         Tree.SetSame(false);
         Tree.SetKind(DiffTree::Integer);
       } else {
-        Tree.SetSame(IsEqualExpr(Context, ParamWidth, FromExpr, ToExpr) ||
+        Tree.SetSame(IsEqualExpr(Context, FromExpr, ToExpr) ||
                      (FromNullPtr && ToNullPtr));
         Tree.SetNullPtr(FromNullPtr, ToNullPtr);
         Tree.SetKind(DiffTree::Expression);
@@ -1030,11 +1091,17 @@ class TemplateDiff {
 
     if (HasFromInt || HasToInt) {
       if (!HasFromInt && FromExpr)
-        HasFromInt = GetInt(Context, FromIter, FromExpr, FromInt);
+        HasFromInt = GetInt(Context, FromIter, FromExpr, FromInt,
+                            FromDefaultNonTypeDecl->getType());
       if (!HasToInt && ToExpr)
-        HasToInt = GetInt(Context, ToIter, ToExpr, ToInt);
+        HasToInt = GetInt(Context, ToIter, ToExpr, ToInt,
+                          ToDefaultNonTypeDecl->getType());
       Tree.SetNode(FromInt, ToInt, HasFromInt, HasToInt);
-      Tree.SetSame(IsSameConvertedInt(ParamWidth, FromInt, ToInt));
+      if (HasFromInt && HasToInt) {
+        Tree.SetSame(FromInt == ToInt);
+      } else {
+        Tree.SetSame(false);
+      }
       Tree.SetDefault(FromIter.isEnd() && HasFromInt,
                       ToIter.isEnd() && HasToInt);
       Tree.SetKind(DiffTree::Integer);
@@ -1210,9 +1277,11 @@ class TemplateDiff {
   }
 
   /// GetInt - Retrieves the template integer argument, including evaluating
-  /// default arguments.
+  /// default arguments.  If the value comes from an expression, extend the
+  /// APSInt to size of IntegerType to match the behavior in
+  /// Sema::CheckTemplateArgument
   static bool GetInt(ASTContext &Context, const TSTiterator &Iter,
-                     Expr *ArgExpr, llvm::APInt &Int) {
+                     Expr *ArgExpr, llvm::APSInt &Int, QualType IntegerType) {
     // Default, value-depenedent expressions require fetching
     // from the desugared TemplateArgument, otherwise expression needs to
     // be evaluatable.
@@ -1224,12 +1293,14 @@ class TemplateDiff {
         case TemplateArgument::Expression:
           ArgExpr = Iter.getDesugar().getAsExpr();
           Int = ArgExpr->EvaluateKnownConstInt(Context);
+          Int = Int.extOrTrunc(Context.getTypeSize(IntegerType));
           return true;
         default:
           llvm_unreachable("Unexpected template argument kind");
       }
     } else if (ArgExpr->isEvaluatable(Context)) {
       Int = ArgExpr->EvaluateKnownConstInt(Context);
+      Int = Int.extOrTrunc(Context.getTypeSize(IntegerType));
       return true;
     }
 
@@ -1302,18 +1373,8 @@ class TemplateDiff {
     return nullptr;
   }
 
-  /// IsSameConvertedInt - Returns true if both integers are equal when
-  /// converted to an integer type with the given width.
-  static bool IsSameConvertedInt(unsigned Width, const llvm::APSInt &X,
-                                 const llvm::APSInt &Y) {
-    llvm::APInt ConvertedX = X.extOrTrunc(Width);
-    llvm::APInt ConvertedY = Y.extOrTrunc(Width);
-    return ConvertedX == ConvertedY;
-  }
-
   /// IsEqualExpr - Returns true if the expressions evaluate to the same value.
-  static bool IsEqualExpr(ASTContext &Context, unsigned ParamWidth,
-                          Expr *FromExpr, Expr *ToExpr) {
+  static bool IsEqualExpr(ASTContext &Context, Expr *FromExpr, Expr *ToExpr) {
     if (FromExpr == ToExpr)
       return true;
 
@@ -1345,7 +1406,7 @@ class TemplateDiff {
 
     switch (FromVal.getKind()) {
       case APValue::Int:
-        return IsSameConvertedInt(ParamWidth, FromVal.getInt(), ToVal.getInt());
+        return FromVal.getInt() == ToVal.getInt();
       case APValue::LValue: {
         APValue::LValueBase FromBase = FromVal.getLValueBase();
         APValue::LValueBase ToBase = ToVal.getLValueBase();
@@ -1655,11 +1716,14 @@ class TemplateDiff {
     }
     Unbold();
   }
-  
+
   /// HasExtraInfo - Returns true if E is not an integer literal or the
   /// negation of an integer literal
   bool HasExtraInfo(Expr *E) {
     if (!E) return false;
+
+    E = E->IgnoreImpCasts();
+
     if (isa<IntegerLiteral>(E)) return false;
 
     if (UnaryOperator *UO = dyn_cast<UnaryOperator>(E))

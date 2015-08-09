@@ -1,19 +1,28 @@
 # See docs/CMake.html for instructions about how to build LLVM with CMake.
 
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.12.2)
 
-# FIXME: It may be removed when we use 2.8.12.
-if(CMAKE_VERSION VERSION_LESS 2.8.12)
-  # Invalidate a couple of keywords.
-  set(cmake_2_8_12_INTERFACE)
-  set(cmake_2_8_12_PRIVATE)
-else()
-  # Use ${cmake_2_8_12_KEYWORD} intead of KEYWORD in target_link_libraries().
-  set(cmake_2_8_12_INTERFACE INTERFACE)
-  set(cmake_2_8_12_PRIVATE PRIVATE)
-  if(POLICY CMP0022)
-    cmake_policy(SET CMP0022 NEW) # automatic when 2.8.12 is required
-  endif()
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "No build type selected, default to Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+if (CMAKE_BUILD_TYPE AND
+    NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+  message(FATAL_ERROR "Invalid value for CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+endif()
+
+if(POLICY CMP0022)
+  cmake_policy(SET CMP0022 NEW) # automatic when 2.8.12 is required
+endif()
+
+if (POLICY CMP0051)
+  # CMake 3.1 and higher include generator expressions of the form
+  # $<TARGETLIB:obj> in the SOURCES property.  These need to be
+  # stripped everywhere that access the SOURCES property, so we just
+  # defer to the OLD behavior of not including generator expressions
+  # in the output for now.
+  cmake_policy(SET CMP0051 OLD)
 endif()
 
 if(CMAKE_VERSION VERSION_LESS 3.1.20141117)
@@ -22,21 +31,29 @@ else()
   set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
 endif()
 
-project(LLVM)
+project(LLVM C CXX ASM)
 
 # The following only works with the Ninja generator in CMake >= 3.0.
 set(LLVM_PARALLEL_COMPILE_JOBS "" CACHE STRING
   "Define the maximum number of concurrent compilation jobs.")
 if(LLVM_PARALLEL_COMPILE_JOBS)
-  set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_job_pool=${LLVM_PARALLEL_COMPILE_JOBS})
-  set(CMAKE_JOB_POOL_COMPILE compile_job_pool)
+  if(CMAKE_VERSION VERSION_LESS 3.0 OR NOT CMAKE_MAKE_PROGRAM MATCHES "ninja$")
+    message(WARNING "Job pooling is only available with Ninja generators and CMake 3.0 and later.")
+  else()
+    set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_job_pool=${LLVM_PARALLEL_COMPILE_JOBS})
+    set(CMAKE_JOB_POOL_COMPILE compile_job_pool)
+  endif()
 endif()
 
 set(LLVM_PARALLEL_LINK_JOBS "" CACHE STRING
   "Define the maximum number of concurrent link jobs.")
 if(LLVM_PARALLEL_LINK_JOBS)
-  set_property(GLOBAL APPEND PROPERTY JOB_POOLS link_job_pool=${LLVM_PARALLEL_LINK_JOBS})
-  set(CMAKE_JOB_POOL_LINK link_job_pool)
+  if(CMAKE_VERSION VERSION_LESS 3.0 OR NOT CMAKE_MAKE_PROGRAM MATCHES "ninja$")
+    message(WARNING "Job pooling is only available with Ninja generators and CMake 3.0 and later.")
+  else()
+    set_property(GLOBAL APPEND PROPERTY JOB_POOLS link_job_pool=${LLVM_PARALLEL_LINK_JOBS})
+    set(CMAKE_JOB_POOL_LINK link_job_pool)
+  endif()
 endif()
 
 # Add path for custom modules
@@ -47,12 +64,16 @@ set(CMAKE_MODULE_PATH
   )
 
 set(LLVM_VERSION_MAJOR 3)
-set(LLVM_VERSION_MINOR 6)
+set(LLVM_VERSION_MINOR 8)
 set(LLVM_VERSION_PATCH 0)
+set(LLVM_VERSION_SUFFIX svn)
 
 if (NOT PACKAGE_VERSION)
-  set(PACKAGE_VERSION "${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}svn")
+  set(PACKAGE_VERSION
+    "${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}${LLVM_VERSION_SUFFIX}")
 endif()
+
+option(LLVM_INSTALL_UTILS "Include utility binaries in the 'install' target." OFF)
 
 option(LLVM_INSTALL_TOOLCHAIN_ONLY "Only include toolchain files in the 'install' target." OFF)
 
@@ -85,6 +106,7 @@ set(CPACK_PACKAGE_VERSION_MINOR ${LLVM_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${LLVM_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION ${PACKAGE_VERSION})
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.TXT")
+set(CPACK_NSIS_COMPRESSOR "/SOLID lzma \r\n SetCompressorDictSize 32")
 if(WIN32 AND NOT UNIX)
   set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "LLVM")
   set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}\\\\cmake\\\\nsis_logo.bmp")
@@ -96,6 +118,9 @@ if(WIN32 AND NOT UNIX)
     "ExecWait '$INSTDIR/tools/msbuild/install.bat'")
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
     "ExecWait '$INSTDIR/tools/msbuild/uninstall.bat'")
+  if( CMAKE_CL_64 )
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+  endif()
 endif()
 include(CPack)
 
@@ -156,14 +181,15 @@ set(LLVM_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(LLVM_ALL_TARGETS
   AArch64
+  AMDGPU
   ARM
+  BPF
   CppBackend
   Hexagon
   Mips
   MSP430
   NVPTX
   PowerPC
-  R600
   Sparc
   SystemZ
   X86
@@ -222,17 +248,11 @@ list(REMOVE_DUPLICATES LLVM_TARGETS_TO_BUILD)
 include(AddLLVMDefinitions)
 
 option(LLVM_ENABLE_PIC "Build Position-Independent Code" ON)
-
-# MSVC has a gazillion warnings with this.
-if( MSVC )
-  option(LLVM_ENABLE_WARNINGS "Enable compiler warnings." OFF)
-else()
-  option(LLVM_ENABLE_WARNINGS "Enable compiler warnings." ON)
-endif()
-
+option(LLVM_ENABLE_WARNINGS "Enable compiler warnings." ON)
 option(LLVM_ENABLE_MODULES "Compile with C++ modules enabled." OFF)
 option(LLVM_ENABLE_CXX1Y "Compile with C++1y enabled." OFF)
 option(LLVM_ENABLE_LIBCXX "Use libc++ if available." OFF)
+option(LLVM_ENABLE_LIBCXXABI "Use libc++abi when using libc++." OFF)
 option(LLVM_ENABLE_PEDANTIC "Compile with pedantic enabled." ON)
 option(LLVM_ENABLE_WERROR "Fail and stop if a warning is triggered." OFF)
 
@@ -241,6 +261,9 @@ if( NOT uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
 else()
   option(LLVM_ENABLE_ASSERTIONS "Enable assertions" ON)
 endif()
+
+set(LLVM_ABI_BREAKING_CHECKS "WITH_ASSERTS" CACHE STRING
+  "Enable abi-breaking checks.  Can be WITH_ASSERTS, FORCE_ON or FORCE_OFF.")
 
 option(LLVM_FORCE_USE_OLD_HOST_TOOLCHAIN
        "Set to ON to force using an old, unsupported host toolchain." OFF)
@@ -325,9 +348,15 @@ option (LLVM_BUILD_EXTERNAL_COMPILER_RT
   "Build compiler-rt as an external project." OFF)
 
 option(LLVM_BUILD_LLVM_DYLIB "Build libllvm dynamic library" OFF)
+option(LLVM_DYLIB_EXPORT_ALL "Export all symbols from libLLVM.dylib (default is C API only" OFF)
 option(LLVM_DISABLE_LLVM_DYLIB_ATEXIT "Disable llvm-shlib's atexit destructors." ON)
 if(LLVM_DISABLE_LLVM_DYLIB_ATEXIT)
   set(DISABLE_LLVM_DYLIB_ATEXIT 1)
+endif()
+
+option(LLVM_OPTIMIZED_TABLEGEN "Force TableGen to be built with optimization" OFF)
+if(CMAKE_CROSSCOMPILING OR (LLVM_OPTIMIZED_TABLEGEN AND LLVM_ENABLE_ASSERTIONS))
+  set(LLVM_USE_HOST_TOOLS ON)
 endif()
 
 # All options referred to from HandleLLVMOptions have to be specified
@@ -494,7 +523,7 @@ if (APPLE)
 else(UNIX)
   if(NOT DEFINED CMAKE_INSTALL_RPATH)
     set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib${LLVM_LIBDIR_SUFFIX}")
-    if (${CMAKE_SYSTEM_NAME} MATCHES FreeBSD)
+    if (${CMAKE_SYSTEM_NAME} MATCHES FreeBSD OR ${CMAKE_SYSTEM_NAME} MATCHES DragonFly)
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,origin")
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
     endif()
@@ -506,7 +535,7 @@ endif()
 # check its symbols. This is wasteful (the check was done when foo.so
 # was created) and can fail since it is not the dynamic linker and
 # doesn't know how to handle search paths correctly.
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(CMAKE_EXE_LINKER_FLAGS
       "${CMAKE_EXE_LINKER_FLAGS} -Wl,-allow-shlib-undefined")
 endif()
@@ -516,23 +545,23 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories( ${LLVM_INCLUDE_DIR} ${LLVM_MAIN_INCLUDE_DIR})
 
 # when crosscompiling import the executable targets from a file
-if(CMAKE_CROSSCOMPILING)
+if(LLVM_USE_HOST_TOOLS)
   include(CrossCompile)
-endif(CMAKE_CROSSCOMPILING)
+endif(LLVM_USE_HOST_TOOLS)
 
-if( ${CMAKE_SYSTEM_NAME} MATCHES FreeBSD )
+if( ${CMAKE_SYSTEM_NAME} MATCHES FreeBSD OR ${CMAKE_SYSTEM_NAME} MATCHES DragonFly )
   # On FreeBSD, /usr/local/* is not used by default. In order to build LLVM
   # with libxml2, iconv.h, etc., we must add /usr/local paths.
   include_directories("/usr/local/include")
   link_directories("/usr/local/lib")
-endif( ${CMAKE_SYSTEM_NAME} MATCHES FreeBSD )
+endif( ${CMAKE_SYSTEM_NAME} MATCHES FreeBSD OR ${CMAKE_SYSTEM_NAME} MATCHES DragonFly )
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES SunOS )
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include llvm/Support/Solaris.h")
 endif( ${CMAKE_SYSTEM_NAME} MATCHES SunOS )
 
 # Make sure we don't get -rdynamic in every binary. For those that need it,
-# use set_target_properties(target PROPERTIES ENABLE_EXPORTS 1)
+# use export_executable_symbols(target).
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 include(AddLLVM)
@@ -627,6 +656,7 @@ add_subdirectory(cmake/modules)
 if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
   install(DIRECTORY include/llvm include/llvm-c
     DESTINATION include
+    COMPONENT llvm-headers
     FILES_MATCHING
     PATTERN "*.def"
     PATTERN "*.h"
@@ -638,6 +668,7 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
 
   install(DIRECTORY ${LLVM_INCLUDE_DIR}/llvm
     DESTINATION include
+    COMPONENT llvm-headers
     FILES_MATCHING
     PATTERN "*.def"
     PATTERN "*.h"
@@ -648,4 +679,12 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
     PATTERN "config.h" EXCLUDE
     PATTERN ".svn" EXCLUDE
     )
+
+  if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_custom_target(installhdrs
+                      DEPENDS ${name}
+                      COMMAND "${CMAKE_COMMAND}"
+                              -DCMAKE_INSTALL_COMPONENT=llvm-headers
+                              -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+  endif()
 endif()

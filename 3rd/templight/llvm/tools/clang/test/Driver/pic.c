@@ -11,6 +11,8 @@
 // CHECK-PIC2: "-mrelocation-model" "pic"
 // CHECK-PIC2: "-pic-level" "2"
 //
+// CHECK-NO-STATIC-NOT: "-static"
+//
 // CHECK-PIE1: "-mrelocation-model" "pic"
 // CHECK-PIE1: "-pic-level" "1"
 // CHECK-PIE1: "-pie-level" "1"
@@ -118,12 +120,15 @@
 // Make sure -pie is passed to along to ld and that the right *crt* files
 // are linked in.
 // RUN: %clang %s -target i386-unknown-freebsd -fPIE -pie -### \
+// RUN: --gcc-toolchain="" \
 // RUN: --sysroot=%S/Inputs/basic_freebsd_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 // RUN: %clang %s -target i386-linux-gnu -fPIE -pie -### \
+// RUN: --gcc-toolchain="" \
 // RUN: --sysroot=%S/Inputs/basic_linux_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 // RUN: %clang %s -target i386-linux-gnu -fPIC -pie -### \
+// RUN: --gcc-toolchain="" \
 // RUN: --sysroot=%S/Inputs/basic_linux_tree 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE-LD
 //
@@ -197,6 +202,8 @@
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIC2
 // RUN: %clang -c %s -target arm64-apple-ios -mkernel -miphoneos-version-min=7.0.0 -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIC2
+// RUN: %clang -x assembler -c %s -target arm64-apple-ios -mkernel -miphoneos-version-min=7.0.0 -no-integrated-as -### 2>&1 \
+// RUN:   | FileCheck %s --check-prefix=CHECK-NO-STATIC
 // RUN: %clang -c %s -target armv7-apple-ios -fapple-kext -miphoneos-version-min=5.0.0 -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-NO-PIC
 // RUN: %clang -c %s -target armv7-apple-ios -fapple-kext -miphoneos-version-min=6.0.0 -static -### 2>&1 \
@@ -212,6 +219,8 @@
 // RUN: %clang -c %s -target mips64el-unknown-openbsd -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE1
 // RUN: %clang -c %s -target powerpc-unknown-openbsd -### 2>&1 \
+// RUN:   | FileCheck %s --check-prefix=CHECK-PIE2
+// RUN: %clang -c %s -target sparc-unknown-openbsd -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE2
 // RUN: %clang -c %s -target sparc64-unknown-openbsd -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIE2
@@ -233,3 +242,9 @@
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIC1
 // RUN: %clang -c %s -target arm64-linux-android -### 2>&1 \
 // RUN:   | FileCheck %s --check-prefix=CHECK-PIC1
+//
+// On Windows-X64 PIC is enabled by default
+// RUN: %clang -c %s -target x86_64-pc-windows-msvc18.0.0 -### 2>&1 \
+// RUN:   | FileCheck %s --check-prefix=CHECK-PIC2
+// RUN: %clang -c %s -target x86_64-pc-windows-gnu -### 2>&1 \
+// RUN:   | FileCheck %s --check-prefix=CHECK-PIC2

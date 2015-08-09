@@ -22,8 +22,8 @@
 #include "MCTargetDesc/ARMAddressingModes.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
-#include "llvm/CodeGen/MachineInstrBundle.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
+#include "llvm/CodeGen/MachineInstrBundle.h"
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h" // FIXME: for debug only. remove!
@@ -747,6 +747,55 @@ bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &MBB,
   switch (Opcode) {
     default:
       return false;
+
+    case ARM::TCRETURNdi:
+    case ARM::TCRETURNri: {
+      MachineBasicBlock::iterator MBBI = MBB.getLastNonDebugInstr();
+      assert(MBBI->isReturn() &&
+             "Can only insert epilog into returning blocks");
+      unsigned RetOpcode = MBBI->getOpcode();
+      DebugLoc dl = MBBI->getDebugLoc();
+      const ARMBaseInstrInfo &TII = *static_cast<const ARMBaseInstrInfo *>(
+          MBB.getParent()->getSubtarget().getInstrInfo());
+
+      // Tail call return: adjust the stack pointer and jump to callee.
+      MBBI = MBB.getLastNonDebugInstr();
+      MachineOperand &JumpTarget = MBBI->getOperand(0);
+
+      // Jump to label or value in register.
+      if (RetOpcode == ARM::TCRETURNdi) {
+        unsigned TCOpcode =
+            STI->isThumb()
+                ? (STI->isTargetMachO() ? ARM::tTAILJMPd : ARM::tTAILJMPdND)
+                : ARM::TAILJMPd;
+        MachineInstrBuilder MIB = BuildMI(MBB, MBBI, dl, TII.get(TCOpcode));
+        if (JumpTarget.isGlobal())
+          MIB.addGlobalAddress(JumpTarget.getGlobal(), JumpTarget.getOffset(),
+                               JumpTarget.getTargetFlags());
+        else {
+          assert(JumpTarget.isSymbol());
+          MIB.addExternalSymbol(JumpTarget.getSymbolName(),
+                                JumpTarget.getTargetFlags());
+        }
+
+        // Add the default predicate in Thumb mode.
+        if (STI->isThumb())
+          MIB.addImm(ARMCC::AL).addReg(0);
+      } else if (RetOpcode == ARM::TCRETURNri) {
+        BuildMI(MBB, MBBI, dl,
+                TII.get(STI->isThumb() ? ARM::tTAILJMPr : ARM::TAILJMPr))
+            .addReg(JumpTarget.getReg(), RegState::Kill);
+      }
+
+      MachineInstr *NewMI = std::prev(MBBI);
+      for (unsigned i = 1, e = MBBI->getNumOperands(); i != e; ++i)
+        NewMI->addOperand(MBBI->getOperand(i));
+
+      // Delete the pseudo instruction TCRETURN.
+      MBB.erase(MBBI);
+      MBBI = NewMI;
+      return true;
+    }
     case ARM::VMOVScc:
     case ARM::VMOVDcc: {
       unsigned newOpc = Opcode == ARM::VMOVScc ? ARM::VMOVS : ARM::VMOVD;
@@ -887,6 +936,9 @@ bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &MBB,
           unsigned MaxAlign = MFI->getMaxAlignment();
           assert (!AFI->isThumb1OnlyFunction());
           // Emit bic r6, r6, MaxAlign
+          assert(MaxAlign <= 256 && "The BIC instruction cannot encode "
+                                    "immediates larger than 256 with all lower "
+                                    "bits set.");
           unsigned bicOpc = AFI->isThumbFunction() ?
             ARM::t2BICri : ARM::BICri;
           AddDefaultCC(AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(),
@@ -1129,7 +1181,8 @@ bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &MBB,
       // Add the source operands (D subregs).
       unsigned D0 = TRI->getSubReg(SrcReg, ARM::dsub_0);
       unsigned D1 = TRI->getSubReg(SrcReg, ARM::dsub_1);
-      MIB.addReg(D0).addReg(D1);
+      MIB.addReg(D0, SrcIsKill ? RegState::Kill : 0)
+         .addReg(D1, SrcIsKill ? RegState::Kill : 0);
 
       if (SrcIsKill)      // Add an implicit kill for the Q register.
         MIB->addRegisterKilled(SrcReg, TRI, true);
@@ -1342,11 +1395,9 @@ bool ARMExpandPseudo::ExpandMBB(MachineBasicBlock &MBB) {
 }
 
 bool ARMExpandPseudo::runOnMachineFunction(MachineFunction &MF) {
-  const TargetMachine &TM = MF.getTarget();
-  TII = static_cast<const ARMBaseInstrInfo *>(
-      TM.getSubtargetImpl()->getInstrInfo());
-  TRI = TM.getSubtargetImpl()->getRegisterInfo();
-  STI = &TM.getSubtarget<ARMSubtarget>();
+  STI = &static_cast<const ARMSubtarget &>(MF.getSubtarget());
+  TII = STI->getInstrInfo();
+  TRI = STI->getRegisterInfo();
   AFI = MF.getInfo<ARMFunctionInfo>();
 
   bool Modified = false;

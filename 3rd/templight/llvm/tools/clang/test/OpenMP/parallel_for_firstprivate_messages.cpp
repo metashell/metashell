@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -verify -fopenmp=libiomp5 %s
+// RUN: %clang_cc1 -verify -fopenmp %s
 
 void foo() {
 }
@@ -102,9 +102,6 @@ int foomain(int argc, char **argv) {
 #pragma omp parallel for firstprivate(h) // expected-error {{threadprivate or thread local variable cannot be firstprivate}}
   for (int k = 0; k < argc; ++k)
     ++k;
-#pragma omp parallel for linear(i) // expected-error {{unexpected OpenMP clause 'linear' in directive '#pragma omp parallel for'}}
-  for (int k = 0; k < argc; ++k)
-    ++k;
 #pragma omp parallel
   {
     int v = 0;
@@ -135,6 +132,14 @@ int foomain(int argc, char **argv) {
   for (i = 0; i < argc; ++i) // expected-error {{loop iteration variable in the associated loop of 'omp parallel for' directive may not be firstprivate, predetermined as private}}
     foo();
   return 0;
+}
+
+namespace A {
+double x;
+#pragma omp threadprivate(x) // expected-note {{defined as threadprivate or thread local}}
+}
+namespace B {
+using A::x;
 }
 
 int main(int argc, char **argv) {
@@ -207,7 +212,7 @@ int main(int argc, char **argv) {
 #pragma omp parallel for firstprivate(m) // OK
   for (i = 0; i < argc; ++i)
     foo();
-#pragma omp parallel for firstprivate(h) // expected-error {{threadprivate or thread local variable cannot be firstprivate}}
+#pragma omp parallel for firstprivate(h, B::x) // expected-error 2 {{threadprivate or thread local variable cannot be firstprivate}}
   for (i = 0; i < argc; ++i)
     foo();
 #pragma omp parallel for private(xa), firstprivate(xa) // expected-error {{private variable cannot be firstprivate}} expected-note {{defined as private}}

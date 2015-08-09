@@ -96,6 +96,13 @@ u32 __msan_chain_origin(u32 id);
 SANITIZER_INTERFACE_ATTRIBUTE
 u32 __msan_get_origin(const void *a);
 
+// Test that this_id is a descendant of prev_id (or they are simply equal).
+// "descendant" here means that are part of the same chain, created with
+// __msan_chain_origin.
+SANITIZER_INTERFACE_ATTRIBUTE
+int __msan_origin_is_descendant_or_same(u32 this_id, u32 prev_id);
+
+
 SANITIZER_INTERFACE_ATTRIBUTE
 void __msan_clear_on_return();
 
@@ -132,6 +139,11 @@ void __msan_partial_poison(const void* data, void* shadow, uptr size);
 // Memory will be marked uninitialized, with origin at the call site.
 SANITIZER_INTERFACE_ATTRIBUTE
 void __msan_allocated_memory(const void* data, uptr size);
+
+// Tell MSan about newly destroyed memory. Memory will be marked
+// uninitialized.
+SANITIZER_INTERFACE_ATTRIBUTE
+void __sanitizer_dtor_callback(const void* data, uptr size);
 
 SANITIZER_INTERFACE_ATTRIBUTE
 u16 __sanitizer_unaligned_load16(const uu16 *p);

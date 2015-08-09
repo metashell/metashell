@@ -12,13 +12,20 @@ tablegen(LLVM HexagonGenSubtargetInfo.inc -gen-subtarget)
 add_public_tablegen_target(HexagonCommonTableGen)
 
 add_llvm_target(HexagonCodeGen
+  BitTracker.cpp
   HexagonAsmPrinter.cpp
-  HexagonCallingConvLower.cpp
+  HexagonBitTracker.cpp
   HexagonCFGOptimizer.cpp
+  HexagonCommonGEP.cpp
   HexagonCopyToCombine.cpp
+  HexagonExpandCondsets.cpp
   HexagonExpandPredSpillCode.cpp
   HexagonFixupHwLoops.cpp
   HexagonFrameLowering.cpp
+  HexagonGenExtract.cpp
+  HexagonGenInsert.cpp
+  HexagonGenMux.cpp
+  HexagonGenPredicate.cpp
   HexagonHardwareLoops.cpp
   HexagonInstrInfo.cpp
   HexagonISelDAGToDAG.cpp
@@ -32,10 +39,10 @@ add_llvm_target(HexagonCodeGen
   HexagonRemoveSZExtArgs.cpp
   HexagonSelectionDAGInfo.cpp
   HexagonSplitConst32AndConst64.cpp
-  HexagonSplitTFRCondSets.cpp
   HexagonSubtarget.cpp
   HexagonTargetMachine.cpp
   HexagonTargetObjectFile.cpp
+  HexagonTargetTransformInfo.cpp
   HexagonVLIWPacketizer.cpp
 )
 

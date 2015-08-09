@@ -85,13 +85,11 @@ public:
     ReservedCodeSize(0), UsedCodeSize(0), ReservedDataSizeRO(0), 
     UsedDataSizeRO(0), ReservedDataSizeRW(0), UsedDataSizeRW(0) {    
   }
-  
-  virtual bool needsToReserveAllocationSpace() {
-    return true;
-  }
 
-  virtual void reserveAllocationSpace(
-      uintptr_t CodeSize, uintptr_t DataSizeRO, uintptr_t DataSizeRW) {
+  bool needsToReserveAllocationSpace() override { return true; }
+
+  void reserveAllocationSpace(uintptr_t CodeSize, uintptr_t DataSizeRO,
+                              uintptr_t DataSizeRW) override {
     ReservedCodeSize = CodeSize;
     ReservedDataSizeRO = DataSizeRO;
     ReservedDataSizeRW = DataSizeRW;
@@ -103,15 +101,17 @@ public:
     *UsedSize = AlignedBegin + AlignedSize;
   }
 
-  virtual uint8_t* allocateDataSection(uintptr_t Size, unsigned Alignment,
-      unsigned SectionID, StringRef SectionName, bool IsReadOnly) {
+  uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment,
+                               unsigned SectionID, StringRef SectionName,
+                               bool IsReadOnly) override {
     useSpace(IsReadOnly ? &UsedDataSizeRO : &UsedDataSizeRW, Size, Alignment);
     return SectionMemoryManager::allocateDataSection(Size, Alignment, 
       SectionID, SectionName, IsReadOnly);
   }
 
-  uint8_t* allocateCodeSection(uintptr_t Size, unsigned Alignment, 
-      unsigned SectionID, StringRef SectionName) {
+  uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment,
+                               unsigned SectionID,
+                               StringRef SectionName) override {
     useSpace(&UsedCodeSize, Size, Alignment);
     return SectionMemoryManager::allocateCodeSection(Size, Alignment, 
       SectionID, SectionName);
@@ -127,6 +127,8 @@ protected:
     SupportedArchs.push_back(Triple::aarch64);
     SupportedArchs.push_back(Triple::arm);
     SupportedArchs.push_back(Triple::mips);
+    SupportedArchs.push_back(Triple::mips64);
+    SupportedArchs.push_back(Triple::mips64el);
     SupportedArchs.push_back(Triple::x86);
     SupportedArchs.push_back(Triple::x86_64);
 
@@ -141,8 +143,8 @@ protected:
     // that they will fail the MCJIT C API tests.
     UnsupportedEnvironments.push_back(Triple::Cygnus);
   }
-  
-  virtual void SetUp() {
+
+  void SetUp() override {
     didCallAllocateCodeSection = false;
     didAllocateCompactUnwindSection = false;
     didCallYield = false;
@@ -151,8 +153,8 @@ protected:
     Engine = nullptr;
     Error = nullptr;
   }
-  
-  virtual void TearDown() {
+
+  void TearDown() override {
     if (Engine)
       LLVMDisposeExecutionEngine(Engine);
     else if (Module)
@@ -359,13 +361,10 @@ TEST_F(MCJITCAPITest, gva) {
   buildMCJITEngine();
   buildAndRunPasses();
 
-  union {
-    uint64_t raw;
-    int32_t *usable;
-  } valuePointer;
-  valuePointer.raw = LLVMGetGlobalValueAddress(Engine, "simple_value");
+  uint64_t raw = LLVMGetGlobalValueAddress(Engine, "simple_value");
+  int32_t *usable  = (int32_t *) raw;
 
-  EXPECT_EQ(42, *valuePointer.usable);
+  EXPECT_EQ(42, *usable);
 }
 
 TEST_F(MCJITCAPITest, gfa) {
@@ -376,13 +375,10 @@ TEST_F(MCJITCAPITest, gfa) {
   buildMCJITEngine();
   buildAndRunPasses();
 
-  union {
-    uint64_t raw;
-    int (*usable)();
-  } functionPointer;
-  functionPointer.raw = LLVMGetFunctionAddress(Engine, "simple_function");
+  uint64_t raw = LLVMGetFunctionAddress(Engine, "simple_function");
+  int (*usable)() = (int (*)()) raw;
 
-  EXPECT_EQ(42, functionPointer.usable());
+  EXPECT_EQ(42, usable());
 }
 
 TEST_F(MCJITCAPITest, custom_memory_manager) {
@@ -492,3 +488,44 @@ TEST_F(MCJITCAPITest, yield) {
   EXPECT_TRUE(didCallYield);
 }
 
+static int localTestFunc() {
+  return 42;
+}
+
+TEST_F(MCJITCAPITest, addGlobalMapping) {
+  SKIP_UNSUPPORTED_PLATFORM;
+
+  Module = LLVMModuleCreateWithName("testModule");
+  LLVMSetTarget(Module, HostTriple.c_str());
+  LLVMTypeRef FunctionType = LLVMFunctionType(LLVMInt32Type(), NULL, 0, 0);
+  LLVMValueRef MappedFn = LLVMAddFunction(Module, "mapped_fn", FunctionType);
+
+  Function = LLVMAddFunction(Module, "test_fn", FunctionType);
+  LLVMBasicBlockRef Entry = LLVMAppendBasicBlock(Function, "");
+  LLVMBuilderRef Builder = LLVMCreateBuilder();
+  LLVMPositionBuilderAtEnd(Builder, Entry);
+  LLVMValueRef RetVal = LLVMBuildCall(Builder, MappedFn, NULL, 0, "");
+  LLVMBuildRet(Builder, RetVal);
+  LLVMDisposeBuilder(Builder);
+
+  LLVMVerifyModule(Module, LLVMAbortProcessAction, &Error);
+  LLVMDisposeMessage(Error);
+
+  buildMCJITOptions();
+  buildMCJITEngine();
+
+  union {
+    int (*raw)();
+    void *usable;
+  } functionPointer;
+  functionPointer.raw = &localTestFunc;
+
+  LLVMAddGlobalMapping(Engine, MappedFn, functionPointer.usable);
+
+  buildAndRunPasses();
+
+  uint64_t raw = LLVMGetFunctionAddress(Engine, "test_fn");
+  int (*usable)() = (int (*)()) raw;
+
+  EXPECT_EQ(42, usable());
+}

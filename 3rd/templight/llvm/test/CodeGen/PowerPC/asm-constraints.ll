@@ -23,17 +23,18 @@ entry:
   %addr.addr = alloca i8*, align 8
   store i32 %result, i32* %result.addr, align 4
   store i8* %addr, i8** %addr.addr, align 8
-  %0 = load i8** %addr.addr, align 8
+  %0 = load i8*, i8** %addr.addr, align 8
   %1 = call i32 asm sideeffect "ld${1:U}${1:X} $0,$1\0Acmpw $0,$0\0Abne- 1f\0A1: isync\0A", "=r,*m,~{memory},~{cr0}"(i8* %0) #1, !srcloc !1
   store i32 %1, i32* %result.addr, align 4
   ret void
 }
 
 ; CHECK-LABEL: @foo
-; CHECK: ld [[REG:[0-9]+]],0(4)
-; CHECK-NEXT: cmpw [[REG]],[[REG]]
-; CHECK-NEXT: bne- 1f
-; CHECK-NEXT: 1: isync
+; CHECK: ld [[REG:[0-9]+]], 0(4)
+; CHECK: cmpw [[REG]], [[REG]]
+; CHECK: bne- 0, .Ltmp[[TMP:[0-9]+]]
+; CHECK: .Ltmp[[TMP]]:
+; CHECK: isync
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }

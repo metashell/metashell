@@ -21,6 +21,7 @@
 #include "asan_report.h"
 #include "asan_stack.h"
 #include "sanitizer_common/sanitizer_libc.h"
+#include "sanitizer_common/sanitizer_posix.h"
 #include "sanitizer_common/sanitizer_procmaps.h"
 
 #include <pthread.h>
@@ -32,18 +33,11 @@
 
 namespace __asan {
 
-SignalContext SignalContext::Create(void *siginfo, void *context) {
-  uptr addr = (uptr)((siginfo_t*)siginfo)->si_addr;
-  uptr pc, sp, bp;
-  GetPcSpBp(context, &pc, &sp, &bp);
-  return SignalContext(context, addr, pc, sp, bp);
-}
-
-void AsanOnSIGSEGV(int, void *siginfo, void *context) {
+void AsanOnDeadlySignal(int signo, void *siginfo, void *context) {
   ScopedDeadlySignal signal_scope(GetCurrentThread());
   int code = (int)((siginfo_t*)siginfo)->si_code;
   // Write the first message using the bullet-proof write.
-  if (13 != internal_write(2, "ASAN:SIGSEGV\n", 13)) Die();
+  if (18 != internal_write(2, "ASAN:DEADLYSIGNAL\n", 18)) Die();
   SignalContext sig = SignalContext::Create(siginfo, context);
 
   // Access at a reasonable offset above SP, or slightly below it (to account
@@ -81,8 +75,10 @@ void AsanOnSIGSEGV(int, void *siginfo, void *context) {
   // unaligned memory access.
   if (IsStackAccess && (code == si_SEGV_MAPERR || code == si_SEGV_ACCERR))
     ReportStackOverflow(sig);
+  else if (signo == SIGFPE)
+    ReportDeadlySignal("FPE", sig);
   else
-    ReportSIGSEGV("SEGV", sig);
+    ReportDeadlySignal("SEGV", sig);
 }
 
 // ---------------------- TSD ---------------- {{{1

@@ -62,21 +62,6 @@ namespace __asan {
 class AsanThread;
 using __sanitizer::StackTrace;
 
-struct SignalContext {
-  void *context;
-  uptr addr;
-  uptr pc;
-  uptr sp;
-  uptr bp;
-
-  SignalContext(void *context, uptr addr, uptr pc, uptr sp, uptr bp) :
-      context(context), addr(addr), pc(pc), sp(sp), bp(bp) {
-  }
-
-  // Creates signal context in a platform-specific manner.
-  static SignalContext Create(void *siginfo, void *context);
-};
-
 void AsanInitFromRtl();
 
 // asan_rtl.cc
@@ -90,13 +75,11 @@ void *AsanDoesNotSupportStaticLinkage();
 void AsanCheckDynamicRTPrereqs();
 void AsanCheckIncompatibleRT();
 
-void GetPcSpBp(void *context, uptr *pc, uptr *sp, uptr *bp);
-void AsanOnSIGSEGV(int, void *siginfo, void *context);
+void AsanOnDeadlySignal(int, void *siginfo, void *context);
 
+void DisableReexec();
 void MaybeReexec();
-bool AsanInterceptsSignal(int signum);
 void ReadContextStack(void *context, uptr *stack, uptr *ssize);
-void AsanPlatformThreadInit();
 void StopInitOrderChecking();
 
 // Wrapper for TLS/TSD.
@@ -108,6 +91,8 @@ void PlatformTSDDtor(void *tsd);
 void AppendToErrorMessageBuffer(const char *buffer);
 
 void *AsanDlSymNext(const char *sym);
+
+void ReserveShadowMemoryRange(uptr beg, uptr end, const char *name);
 
 // Platform-specific options.
 #if SANITIZER_MAC

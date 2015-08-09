@@ -145,7 +145,7 @@ public:
       // when an exception is thrown.
       Pass.TA.replace(RecContainer->getSourceRange(), RecRange);
       std::string str = " = ";
-      str += getNilString(Pass.Ctx);
+      str += getNilString(Pass);
       Pass.TA.insertAfterToken(RecRange.getEnd(), str);
       return true;
     }
@@ -359,16 +359,16 @@ private:
       return;
 
     Stmt::child_range StmtExprChild = StmtE->children();
-    if (!StmtExprChild)
+    if (StmtExprChild.begin() == StmtExprChild.end())
       return;
-    CompoundStmt *CompS = dyn_cast_or_null<CompoundStmt>(*StmtExprChild);
+    auto *CompS = dyn_cast_or_null<CompoundStmt>(*StmtExprChild.begin());
     if (!CompS)
       return;
 
     Stmt::child_range CompStmtChild = CompS->children();
-    if (!CompStmtChild)
+    if (CompStmtChild.begin() == CompStmtChild.end())
       return;
-    DeclStmt *DeclS = dyn_cast_or_null<DeclStmt>(*CompStmtChild);
+    auto *DeclS = dyn_cast_or_null<DeclStmt>(*CompStmtChild.begin());
     if (!DeclS)
       return;
     if (!DeclS->isSingleDecl())

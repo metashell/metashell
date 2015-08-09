@@ -1179,7 +1179,7 @@ namespace ExternConstexpr {
   void f() {
     extern constexpr int i; // expected-error {{constexpr variable declaration must be a definition}}
     constexpr int j = 0;
-    constexpr int k; // expected-error {{default initialization of an object of const type}} expected-note{{add an explicit initializer to initialize 'k'}}
+    constexpr int k; // expected-error {{default initialization of an object of const type}}
   }
 }
 
@@ -1978,4 +1978,19 @@ namespace PR21786 {
 namespace PR21859 {
   constexpr int Fun() { return; } // expected-error {{non-void constexpr function 'Fun' should return a value}}
   constexpr int Var = Fun(); // expected-error {{constexpr variable 'Var' must be initialized by a constant expression}}
+}
+
+struct InvalidRedef {
+  int f; // expected-note{{previous definition is here}}
+  constexpr int f(void); // expected-error{{redefinition of 'f'}} expected-warning{{will not be implicitly 'const'}}
+};
+
+namespace PR17938 {
+  template <typename T> constexpr T const &f(T const &x) { return x; }
+
+  struct X {};
+  struct Y : X {};
+  struct Z : Y { constexpr Z() {} };
+
+  static constexpr auto z = f(Z());
 }

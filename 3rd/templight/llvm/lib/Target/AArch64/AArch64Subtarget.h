@@ -29,6 +29,7 @@
 namespace llvm {
 class GlobalValue;
 class StringRef;
+class Triple;
 
 class AArch64Subtarget : public AArch64GenSubtargetInfo {
 protected:
@@ -36,6 +37,8 @@ protected:
 
   /// ARMProcFamily - ARM processor family: Cortex-A53, Cortex-A57, and others.
   ARMProcFamilyEnum ARMProcFamily;
+
+  bool HasV8_1aOps;
 
   bool HasFPARMv8;
   bool HasNEON;
@@ -48,13 +51,20 @@ protected:
   // HasZeroCycleZeroing - Has zero-cycle zeroing instructions.
   bool HasZeroCycleZeroing;
 
+  // StrictAlign - Disallow unaligned memory accesses.
+  bool StrictAlign;
+
+  // ReserveX18 - X18 is not available as a general purpose register.
+  bool ReserveX18;
+
+  bool IsLittle;
+
   /// CPUString - String name of used CPU.
   std::string CPUString;
 
   /// TargetTriple - What processor and OS we're targeting.
   Triple TargetTriple;
 
-  const DataLayout DL;
   AArch64FrameLowering FrameLowering;
   AArch64InstrInfo InstrInfo;
   AArch64SelectionDAGInfo TSInfo;
@@ -68,7 +78,7 @@ private:
 public:
   /// This constructor initializes the data members to match that
   /// of the specified triple.
-  AArch64Subtarget(const std::string &TT, const std::string &CPU,
+  AArch64Subtarget(const Triple &TT, const std::string &CPU,
                    const std::string &FS, const TargetMachine &TM,
                    bool LittleEndian);
 
@@ -82,25 +92,30 @@ public:
     return &TLInfo;
   }
   const AArch64InstrInfo *getInstrInfo() const override { return &InstrInfo; }
-  const DataLayout *getDataLayout() const override { return &DL; }
   const AArch64RegisterInfo *getRegisterInfo() const override {
     return &getInstrInfo()->getRegisterInfo();
   }
+  const Triple &getTargetTriple() const { return TargetTriple; }
   bool enableMachineScheduler() const override { return true; }
-  bool enablePostMachineScheduler() const override {
+  bool enablePostRAScheduler() const override {
     return isCortexA53() || isCortexA57();
   }
+
+  bool hasV8_1aOps() const { return HasV8_1aOps; }
 
   bool hasZeroCycleRegMove() const { return HasZeroCycleRegMove; }
 
   bool hasZeroCycleZeroing() const { return HasZeroCycleZeroing; }
 
+  bool requiresStrictAlign() const { return StrictAlign; }
+
+  bool isX18Reserved() const { return ReserveX18; }
   bool hasFPARMv8() const { return HasFPARMv8; }
   bool hasNEON() const { return HasNEON; }
   bool hasCrypto() const { return HasCrypto; }
   bool hasCRC() const { return HasCRC; }
 
-  bool isLittleEndian() const { return DL.isLittleEndian(); }
+  bool isLittleEndian() const { return IsLittle; }
 
   bool isTargetDarwin() const { return TargetTriple.isOSDarwin(); }
   bool isTargetIOS() const { return TargetTriple.isiOS(); }

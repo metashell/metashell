@@ -1,18 +1,18 @@
 // Test ASan detection of stack-overflow condition.
 
-// RUN: %clangxx_asan -O0 %s -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O0 %s -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O0 %s -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
 
-// RUN: %clangxx_asan -O0 %s -DTHREAD -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -DTHREAD -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O0 %s -DTHREAD -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -DTHREAD -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O0 %s -DTHREAD -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 %s -DTHREAD -pthread -o %t && env ASAN_OPTIONS=use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -DTHREAD -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -DTHREAD -DSMALL_FRAME -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -DTHREAD -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -DTHREAD -DSAVE_ALL_THE_REGISTERS -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 %s -DTHREAD -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 %s -DTHREAD -pthread -o %t && env ASAN_OPTIONS=$ASAN_OPTIONS:use_sigaltstack=1 not %run %t 2>&1 | FileCheck %s
 // RUN: not %run %t 2>&1 | FileCheck %s
 // REQUIRES: stable-runtime
 
@@ -92,7 +92,7 @@ void LimitStackAndReexec(int argc, char **argv) {
   int res = getrlimit(RLIMIT_STACK, &rlim);
   assert(res == 0);
   if (rlim.rlim_cur == RLIM_INFINITY) {
-    rlim.rlim_cur = 128 * 1024;
+    rlim.rlim_cur = 256 * 1024;
     res = setrlimit(RLIMIT_STACK, &rlim);
     assert(res == 0);
 

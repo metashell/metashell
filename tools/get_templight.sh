@@ -20,15 +20,11 @@ set -e
 if [ -d 3rd ]
 then
   cd 3rd/templight
-    # Get the patch revision
-    PATCH=$(ls patch | sort | tail -1)
-    REV=$(echo "$PATCH" | sed -E 's/templight_patch_r([0-9]*).diff/\1/g')
-
     echo "Deleting current templight and libc++"
     rm -rf build llvm libcxx
 
-    echo "Getting libc++ revision ${REV}"
-    svn co -r "${REV}" http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+    echo "Getting libc++"
+    svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
     echo "Removing the unused parts of the libcxx source code"
     rm -rf \
       libcxx/.svn \
@@ -40,37 +36,40 @@ then
       libcxx/test \
       libcxx/www
 
-    echo "Getting LLVM/Clang revision ${REV}"
-    svn co -r "${REV}" http://llvm.org/svn/llvm-project/llvm/trunk llvm
-    cd llvm/tools
-      svn co -r "${REV}" http://llvm.org/svn/llvm-project/cfe/trunk clang
-    cd ../..
-    cd llvm/projects
-      svn co -r "${REV}" http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
-    cd ../..
+    echo "Getting LLVM/Clang"
+    svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
+    cd llvm
+      svn info | grep Revision | egrep -o '[0-9]*' > ../revision.txt
+      cd tools
+        svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+      cd ..
+      cd projects
+        svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+      cd ..
 
-    echo "Make the entire LLVM/Clang source code managed in one git repository"
-    cat llvm/.gitignore | grep -v projects | grep -v tools > tmp
-    rm llvm/.gitignore
-    mv tmp llvm/.gitignore
+      echo "Make the entire LLVM/Clang source code managed in one git repository"
+      sed -i 's/.*\(projects\|tools\).*//g' .gitignore
 
-    rm -rf llvm/.svn
-    rm -rf llvm/projects/compiler-rt/.svn
-    rm -rf llvm/tools/clang/.svn
+      if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
+      then
+        echo "Patching LLVM/Clang"
+        cd tools/clang
+          cd tools
+            git clone 'https://github.com/mikael-s-persson/templight.git'
+            rm -rf templight/.git
+            sed -i '1s/^/add_subdirectory(templight)\n/g' CMakeLists.txt
+          cd ..
+          svn patch tools/templight/templight_clang_patch.diff
+        cd ../..
+      else
+        echo "Patching LLVM/Clang is disabled"
+      fi
 
-    if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
-    then
-      echo "Patching LLVM/Clang"
-      cd llvm/tools/clang
-        patch -p0 -i "../../../patch/${PATCH}"
-      cd ../../..
-    else
-      echo "Patching LLVM/Clang is disabled"
-    fi
-    cd llvm/tools/clang/tools
-      git clone 'https://github.com/mikael-s-persson/templight.git'
-      sed -i "" '1s/^/add_subdirectory(templight)\'$'\n/g' CMakeLists.txt
-    cd ../../../..
+      rm -rf .svn
+      rm -rf projects/compiler-rt/.svn
+      rm -rf tools/clang/.svn
+    cd ..
+
   cd ../..
 else
   echo "Please run this script from the root directory of the Metashell source code"

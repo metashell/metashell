@@ -74,10 +74,10 @@ void FlushUnneededASanShadowMemory(uptr p, uptr size) {
 
 void AsanPoisonOrUnpoisonIntraObjectRedzone(uptr ptr, uptr size, bool poison) {
   uptr end = ptr + size;
-  if (common_flags()->verbosity) {
+  if (Verbosity()) {
     Printf("__asan_%spoison_intra_object_redzone [%p,%p) %zd\n",
            poison ? "" : "un", ptr, end, size);
-    if (common_flags()->verbosity >= 2)
+    if (Verbosity() >= 2)
       PRINT_CURRENT_STACK();
   }
   CHECK(size);
@@ -112,7 +112,7 @@ void __asan_poison_memory_region(void const volatile *addr, uptr size) {
   if (!flags()->allow_user_poisoning || size == 0) return;
   uptr beg_addr = (uptr)addr;
   uptr end_addr = beg_addr + size;
-  VPrintf(1, "Trying to poison memory region [%p, %p)\n", (void *)beg_addr,
+  VPrintf(3, "Trying to poison memory region [%p, %p)\n", (void *)beg_addr,
           (void *)end_addr);
   ShadowSegmentEndpoint beg(beg_addr);
   ShadowSegmentEndpoint end(end_addr);
@@ -152,7 +152,7 @@ void __asan_unpoison_memory_region(void const volatile *addr, uptr size) {
   if (!flags()->allow_user_poisoning || size == 0) return;
   uptr beg_addr = (uptr)addr;
   uptr end_addr = beg_addr + size;
-  VPrintf(1, "Trying to unpoison memory region [%p, %p)\n", (void *)beg_addr,
+  VPrintf(3, "Trying to unpoison memory region [%p, %p)\n", (void *)beg_addr,
           (void *)end_addr);
   ShadowSegmentEndpoint beg(beg_addr);
   ShadowSegmentEndpoint end(end_addr);
@@ -218,7 +218,7 @@ uptr __asan_region_is_poisoned(uptr beg, uptr size) {
         __asan::AddressIsPoisoned(__p + __size - 1))) {       \
       GET_CURRENT_PC_BP_SP;                                   \
       uptr __bad = __asan_region_is_poisoned(__p, __size);    \
-      __asan_report_error(pc, bp, sp, __bad, isWrite, __size);\
+      __asan_report_error(pc, bp, sp, __bad, isWrite, __size, 0);\
     }                                                         \
   } while (false);                                            \
 

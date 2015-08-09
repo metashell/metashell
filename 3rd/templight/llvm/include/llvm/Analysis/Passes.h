@@ -59,13 +59,6 @@ namespace llvm {
 
   //===--------------------------------------------------------------------===//
   //
-  // createBasicAliasAnalysisPass - This pass implements the stateless alias
-  // analysis.
-  //
-  ImmutablePass *createBasicAliasAnalysisPass();
-
-  //===--------------------------------------------------------------------===//
-  //
   // createCFLAliasAnalysisPass - This pass implements a set-based approach to
   // alias analysis.
   //
@@ -138,6 +131,13 @@ namespace llvm {
 
   //===--------------------------------------------------------------------===//
   //
+  // createDivergenceAnalysisPass - This pass determines which branches in a GPU
+  // program are divergent.
+  //
+  FunctionPass *createDivergenceAnalysisPass();
+
+  //===--------------------------------------------------------------------===//
+  //
   // Minor pass prototypes, allowing us to expose them through bugpoint and
   // analyze.
   FunctionPass *createInstCountPass();
@@ -159,9 +159,13 @@ namespace llvm {
   //
   FunctionPass *createMemDepPrinter();
 
-  // createJumpInstrTableInfoPass - This creates a pass that stores information
-  // about the jump tables created by JumpInstrTables
-  ImmutablePass *createJumpInstrTableInfoPass();
+  //===--------------------------------------------------------------------===//
+  //
+  // createMemDerefPrinter - This pass collects memory dereferenceability
+  // information and prints it with -analyze.
+  //
+  FunctionPass *createMemDerefPrinter();
+
 }
 
 #endif

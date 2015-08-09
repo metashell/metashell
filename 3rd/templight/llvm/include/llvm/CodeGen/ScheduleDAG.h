@@ -190,6 +190,12 @@ namespace llvm {
       return getKind() == Order && Contents.OrdKind == Barrier;
     }
 
+    /// isNormalMemoryOrBarrier - Test if this is could be any kind of memory
+    /// dependence.
+    bool isNormalMemoryOrBarrier() const {
+      return (isNormalMemory() || isBarrier());
+    }
+
     /// isMustAlias - Test if this is an Order dependence that is marked
     /// as "must alias", meaning that the SUnits at either end of the edge
     /// have a memory dependence on a known memory location.
@@ -368,7 +374,7 @@ namespace llvm {
     /// correspond to schedulable entities (e.g. instructions) and do not have a
     /// valid ID. Consequently, always check for boundary nodes before accessing
     /// an assoicative data structure keyed on node ID.
-    bool isBoundaryNode() const { return NodeNum == BoundaryID; };
+    bool isBoundaryNode() const { return NodeNum == BoundaryID; }
 
     /// setNode - Assign the representative SDNode for this SUnit.
     /// This may be used during pre-regalloc scheduling.
@@ -621,12 +627,6 @@ namespace llvm {
       return Operand == x.Operand;
     }
     bool operator!=(const SUnitIterator& x) const { return !operator==(x); }
-
-    const SUnitIterator &operator=(const SUnitIterator &I) {
-      assert(I.Node==Node && "Cannot assign iterators to two different nodes!");
-      Operand = I.Operand;
-      return *this;
-    }
 
     pointer operator*() const {
       return Node->Preds[Operand].getSUnit();

@@ -5,10 +5,10 @@
 ; Bugpoint should keep the call's metadata attached to the call.
 
 ; CHECK: call void @foo(), !dbg ![[LOC:[0-9]+]], !attach ![[CALL:[0-9]+]]
-; CHECK: ![[LOC]] = !{i32 104, i32 105, ![[SCOPE:[0-9]+]], ![[SCOPE]]}
-; CHECK: ![[SCOPE]] = !{!"0x11\000\00me\001\00\000\00\000", ![[FILE:[0-9]+]], ![[LIST:[0-9]+]], ![[LIST]], null, null, null}
-; CHECK: ![[FILE]] = !{!"source.c", !"/dir"}
-; CHECK: ![[LIST]] = !{i32 0}
+; CHECK: ![[LOC]] = !DILocation(line: 104, column: 105, scope: ![[SCOPE:[0-9]+]])
+; CHECK: ![[SCOPE]] = !DISubprogram(name: "test"
+; CHECK-SAME:                       file: ![[FILE:[0-9]+]]
+; CHECK: ![[FILE]] = !DIFile(filename: "source.c", directory: "/dir")
 ; CHECK: ![[CALL]] = !{!"the call to foo"}
 
 %rust_task = type {}
@@ -31,12 +31,12 @@ declare void @foo()
 !3 = !{!"noise"}
 !4 = !{!"filler"}
 
-!9 = !{!"0x11\000\00me\001\00\000\00\000", !15, !16, !16, null, null, null} ; [ DW_TAG_compile_unit ]
-!10 = !{i32 100, i32 101, !9, !9}
-!11 = !{i32 102, i32 103, !9, !9}
-!12 = !{i32 104, i32 105, !9, !9}
-!13 = !{i32 106, i32 107, !9, !9}
-!14 = !{i32 108, i32 109, !9, !9}
-!15 = !{!"source.c", !"/dir"}
-!16 = !{i32 0}
-!17 = !{i32 1, !"Debug Info Version", i32 2}
+!9 = !DISubprogram(name: "test", file: !15)
+!10 = !DILocation(line: 100, column: 101, scope: !9)
+!11 = !DILocation(line: 102, column: 103, scope: !9)
+!12 = !DILocation(line: 104, column: 105, scope: !9)
+!13 = !DILocation(line: 106, column: 107, scope: !9)
+!14 = !DILocation(line: 108, column: 109, scope: !9)
+!15 = !DIFile(filename: "source.c", directory: "/dir")
+!16 = !{}
+!17 = !{i32 1, !"Debug Info Version", i32 3}

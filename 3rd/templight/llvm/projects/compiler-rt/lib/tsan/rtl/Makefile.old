@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -fPIE -g -Wall -Werror -fno-builtin -msse3 -DSANITIZER_DEBUG=$(DEBUG)
+CXXFLAGS = -std=c++11 -fPIE -g -Wall -Werror -fno-builtin -msse3 -DSANITIZER_DEBUG=$(DEBUG) -DTSAN_CONTAINS_UBSAN=0
 CLANG=clang
 ifeq ($(DEBUG), 0)
   CXXFLAGS += -O3
@@ -15,6 +15,7 @@ CXXFLAGS+=$(CFLAGS)
 ifeq ($(DEBUG), 0)
   CXXFLAGS+=-fomit-frame-pointer
 ifeq ($(CXX), g++)
+  CXXFLAGS+=-Wno-maybe-uninitialized
   CXXFLAGS+=-Wframe-larger-than=512
 endif  # CXX=g++
 endif  # DEBUG=0
@@ -34,7 +35,7 @@ LIBTSAN_HEADERS=$(wildcard *.h) \
 LIBTSAN_SRC=$(wildcard *.cc)
 LIBTSAN_ASM_SRC=$(wildcard *.S)
 INTERCEPTION_SRC=$(wildcard $(INTERCEPTION)/*.cc)
-COMMON_SRC=$(wildcard $(COMMON)/*.cc)
+COMMON_SRC=$(filter-out $(wildcard $(COMMON)/*_nolibc.cc),$(wildcard $(COMMON)/*.cc))
 
 LIBTSAN_OBJ=$(patsubst %.cc,%.o,$(LIBTSAN_SRC)) \
 	    $(patsubst %.S,%.o,$(LIBTSAN_ASM_SRC)) \

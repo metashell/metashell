@@ -18,8 +18,8 @@
 #include "clang/AST/TemplateName.h"
 #include "clang/AST/Type.h"
 #include "llvm/ADT/APSInt.h"
-#include "llvm/ADT/iterator_range.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/ErrorHandling.h"
 
@@ -114,7 +114,7 @@ private:
     struct TV TypeOrValue;
   };
 
-  TemplateArgument(TemplateName, bool) LLVM_DELETED_FUNCTION;
+  TemplateArgument(TemplateName, bool) = delete;
   
 public:
   /// \brief Construct an empty, invalid template argument.
@@ -198,22 +198,19 @@ public:
   ///
   /// We assume that storage for the template arguments provided
   /// outlives the TemplateArgument itself.
-  TemplateArgument(const TemplateArgument *Args, unsigned NumArgs) {
+  explicit TemplateArgument(ArrayRef<TemplateArgument> Args) {
     this->Args.Kind = Pack;
-    this->Args.Args = Args;
-    this->Args.NumArgs = NumArgs;
+    this->Args.Args = Args.data();
+    this->Args.NumArgs = Args.size();
   }
 
-  static TemplateArgument getEmptyPack() {
-    return TemplateArgument((TemplateArgument*)nullptr, 0);
-  }
+  static TemplateArgument getEmptyPack() { return TemplateArgument(None); }
 
   /// \brief Create a new template argument pack by copying the given set of
   /// template arguments.
   static TemplateArgument CreatePackCopy(ASTContext &Context,
-                                         const TemplateArgument *Args,
-                                         unsigned NumArgs);
-  
+                                         ArrayRef<TemplateArgument> Args);
+
   /// \brief Return the kind of stored template argument.
   ArgKind getKind() const { return (ArgKind)TypeOrValue.Kind; }
 

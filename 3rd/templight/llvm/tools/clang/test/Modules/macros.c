@@ -1,10 +1,9 @@
 // RUN: rm -rf %t
-// RUN: %clang_cc1 -fmodules -x objective-c -emit-module -fmodules-cache-path=%t -fmodule-name=macros_top %S/Inputs/module.map
-// RUN: %clang_cc1 -fmodules -x objective-c -emit-module -fmodules-cache-path=%t -fmodule-name=macros_left %S/Inputs/module.map
-// RUN: %clang_cc1 -fmodules -x objective-c -emit-module -fmodules-cache-path=%t -fmodule-name=macros_right %S/Inputs/module.map
-// RUN: %clang_cc1 -fmodules -x objective-c -emit-module -fmodules-cache-path=%t -fmodule-name=macros %S/Inputs/module.map
-// RUN: %clang_cc1 -fmodules -x objective-c -verify -fmodules-cache-path=%t -I %S/Inputs %s
-// RUN: not %clang_cc1 -E -fmodules -x objective-c -fmodules-cache-path=%t -I %S/Inputs %s | FileCheck -check-prefix CHECK-PREPROCESSED %s
+// RUN: %clang_cc1 -fmodules -fimplicit-module-maps -x objective-c -verify -fmodules-cache-path=%t -I %S/Inputs %s
+// RUN: %clang_cc1 -fmodules -fimplicit-module-maps -x objective-c -verify -fmodules-cache-path=%t -I %S/Inputs %s -DALT
+// RUN: %clang_cc1 -fmodules -fimplicit-module-maps -x objective-c -verify -fmodules-cache-path=%t -I %S/Inputs %s -detailed-preprocessing-record
+// RUN: %clang_cc1 -fmodules -fimplicit-module-maps -DLOCAL_VISIBILITY -fmodules-local-submodule-visibility -x objective-c++ -verify -fmodules-cache-path=%t -I %S/Inputs %s
+// RUN: not %clang_cc1 -E -fmodules -fimplicit-module-maps -x objective-c -fmodules-cache-path=%t -I %S/Inputs %s | FileCheck -check-prefix CHECK-PREPROCESSED %s
 // FIXME: When we have a syntax for modules in C, use that.
 // These notes come from headers in modules, and are bogus.
 
@@ -13,6 +12,7 @@
 // expected-note@Inputs/macros_right.h:12{{expanding this definition of 'LEFT_RIGHT_DIFFERENT'}}
 // expected-note@Inputs/macros_right.h:13{{expanding this definition of 'LEFT_RIGHT_DIFFERENT2'}}
 // expected-note@Inputs/macros_left.h:14{{other definition of 'LEFT_RIGHT_DIFFERENT'}}
+// expected-note@Inputs/macros_left.h:11{{other definition of 'LEFT_RIGHT_DIFFERENT2'}}
 
 @import macros;
 
@@ -26,6 +26,10 @@
 
 #ifdef MODULE
 #  error MODULE macro should not be visible
+#endif
+
+#ifndef INDIRECTLY_IN_MACROS
+#  error INDIRECTLY_IN_MACROS should be visible
 #endif
 
 // CHECK-PREPROCESSED: double d
@@ -138,11 +142,24 @@ TOP_DEF_RIGHT_UNDEF *TDRUf() { return TDRUp; }
 
 int TOP_DEF_RIGHT_UNDEF; // ok, no longer defined
 
-// FIXME: When macros_right.undef is built, macros_top is visible because
-// the state from building macros_right leaks through, so macros_right.undef
-// undefines macros_top's macro.
-#ifdef TOP_RIGHT_UNDEF
-# error TOP_RIGHT_UNDEF should not be defined
+#ifdef LOCAL_VISIBILITY
+// TOP_RIGHT_UNDEF should not be undefined, because macros_right.undef does
+// not undefine macros_right's macro.
+# ifndef TOP_RIGHT_UNDEF
+#  error TOP_RIGHT_UNDEF should still be defined
+# endif
+#else
+// When macros_right.undef is built and local submodule visibility is not
+// enabled, macros_top is visible because the state from building
+// macros_right leaks through, so macros_right.undef undefines macros_top's
+// macro.
+# ifdef TOP_RIGHT_UNDEF
+#  error TOP_RIGHT_UNDEF should not be defined
+# endif
+#endif
+
+#ifdef ALT
+int tmp = TOP_OTHER_REDEF1;
 #endif
 
 @import macros_other;
@@ -154,13 +171,13 @@ int TOP_DEF_RIGHT_UNDEF; // ok, no longer defined
 #ifndef TOP_OTHER_UNDEF2
 # error TOP_OTHER_UNDEF2 should still be defined
 #endif
-
+#pragma clang __debug macro TOP_OTHER_REDEF1
 #ifndef TOP_OTHER_REDEF1
 # error TOP_OTHER_REDEF1 should still be defined
 #endif
 int n1 = TOP_OTHER_REDEF1; // expected-warning{{ambiguous expansion of macro 'TOP_OTHER_REDEF1'}}
-// expected-note@macros_top.h:19 {{expanding this definition}}
-// expected-note@macros_other.h:4 {{other definition}}
+// expected-note@macros_other.h:4 {{expanding this definition}}
+// expected-note@macros_top.h:19 {{other definition}}
 
 #ifndef TOP_OTHER_REDEF2
 # error TOP_OTHER_REDEF2 should still be defined

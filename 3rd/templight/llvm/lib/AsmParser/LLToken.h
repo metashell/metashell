@@ -28,9 +28,8 @@ namespace lltok {
     lbrace, rbrace,    // {  }
     less, greater,     // <  >
     lparen, rparen,    // (  )
-    backslash,         // \    (not /)
     exclaim,           // !
-    hash,              // #
+    bar,               // |
 
     kw_x,
     kw_true,    kw_false,
@@ -52,6 +51,7 @@ namespace lltok {
     kw_zeroinitializer,
     kw_undef, kw_null,
     kw_to,
+    kw_caller,
     kw_tail,
     kw_musttail,
     kw_target,
@@ -101,12 +101,15 @@ namespace lltok {
     // Attributes:
     kw_attributes,
     kw_alwaysinline,
+    kw_argmemonly,
     kw_sanitize_address,
     kw_builtin,
     kw_byval,
     kw_inalloca,
     kw_cold,
+    kw_convergent,
     kw_dereferenceable,
+    kw_dereferenceable_or_null,
     kw_inlinehint,
     kw_inreg,
     kw_jumptable,
@@ -134,6 +137,7 @@ namespace lltok {
     kw_ssp,
     kw_sspreq,
     kw_sspstrong,
+    kw_safestack,
     kw_sret,
     kw_sanitize_thread,
     kw_sanitize_memory,
@@ -174,13 +178,17 @@ namespace lltok {
     kw_landingpad, kw_personality, kw_cleanup, kw_catch, kw_filter,
 
     kw_ret, kw_br, kw_switch, kw_indirectbr, kw_invoke, kw_resume,
-    kw_unreachable,
+    kw_unreachable, kw_cleanupret, kw_catchret, kw_catchpad,
+    kw_terminatepad, kw_cleanuppad, kw_catchendpad,
 
     kw_alloca, kw_load, kw_store, kw_fence, kw_cmpxchg, kw_atomicrmw,
     kw_getelementptr,
 
     kw_extractelement, kw_insertelement, kw_shufflevector,
     kw_extractvalue, kw_insertvalue, kw_blockaddress,
+
+    // Metadata types.
+    kw_distinct,
 
     // Use-list order directives.
     kw_uselistorder, kw_uselistorder_bb,
@@ -197,6 +205,12 @@ namespace lltok {
     LocalVar,          // %foo %"foo"
     MetadataVar,       // !foo
     StringConstant,    // "foo"
+    DwarfTag,          // DW_TAG_foo
+    DwarfAttEncoding,  // DW_ATE_foo
+    DwarfVirtuality,   // DW_VIRTUALITY_foo
+    DwarfLang,         // DW_LANG_foo
+    DwarfOp,           // DW_OP_foo
+    DIFlag,            // DIFlagFoo
 
     // Type valued tokens (TyVal).
     Type,

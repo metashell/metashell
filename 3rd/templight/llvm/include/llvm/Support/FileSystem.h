@@ -120,7 +120,7 @@ class UniqueID {
   uint64_t File;
 
 public:
-  UniqueID() {}
+  UniqueID() = default;
   UniqueID(uint64_t Device, uint64_t File) : Device(Device), File(File) {}
   bool operator==(const UniqueID &Other) const {
     return Device == Other.Device && File == Other.File;
@@ -241,6 +241,7 @@ struct file_magic {
     macho_bundle,             ///< Mach-O Bundle file
     macho_dynamically_linked_shared_lib_stub, ///< Mach-O Shared lib stub
     macho_dsym_companion,     ///< Mach-O dSYM companion file
+    macho_kext_bundle,        ///< Mach-O kext bundle file
     macho_universal_binary,   ///< Mach-O universal binary
     coff_object,              ///< COFF object file
     coff_import_library,      ///< COFF import library
@@ -284,7 +285,8 @@ std::error_code make_absolute(SmallVectorImpl<char> &path);
 ///          specific error_code. If IgnoreExisting is false, also returns
 ///          error if the directory already existed.
 std::error_code create_directories(const Twine &path,
-                                   bool IgnoreExisting = true);
+                                   bool IgnoreExisting = true,
+                                   perms Perms = owner_all | group_all);
 
 /// @brief Create the directory in path.
 ///
@@ -292,7 +294,8 @@ std::error_code create_directories(const Twine &path,
 /// @returns errc::success if is_directory(path), otherwise a platform
 ///          specific error_code. If IgnoreExisting is false, also returns
 ///          error if the directory already existed.
-std::error_code create_directory(const Twine &path, bool IgnoreExisting = true);
+std::error_code create_directory(const Twine &path, bool IgnoreExisting = true,
+                                 perms Perms = owner_all | group_all);
 
 /// @brief Create a link from \a from to \a to.
 ///
@@ -624,9 +627,9 @@ std::error_code getUniqueID(const Twine Path, UniqueID &Result);
 /// This class represents a memory mapped file. It is based on
 /// boost::iostreams::mapped_file.
 class mapped_file_region {
-  mapped_file_region() LLVM_DELETED_FUNCTION;
-  mapped_file_region(mapped_file_region&) LLVM_DELETED_FUNCTION;
-  mapped_file_region &operator =(mapped_file_region&) LLVM_DELETED_FUNCTION;
+  mapped_file_region() = delete;
+  mapped_file_region(mapped_file_region&) = delete;
+  mapped_file_region &operator =(mapped_file_region&) = delete;
 
 public:
   enum mapmode {

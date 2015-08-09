@@ -1,5 +1,5 @@
 # RUN: llvm-mc -triple=x86_64-apple-macosx10.9 -relocation-model=pic -filetype=obj -o %T/test_x86-64.o %s
-# RUN: llvm-rtdyld -triple=x86_64-apple-macosx10.9 -verify -check=%s %/T/test_x86-64.o
+# RUN: llvm-rtdyld -triple=x86_64-apple-macosx10.9 -dummy-extern ds1=0xfffffffffffffffe -dummy-extern ds2=0xffffffffffffffff -verify -check=%s %/T/test_x86-64.o
 
         .section	__TEXT,__text,regular,pure_instructions
 	.globl	foo
@@ -31,6 +31,13 @@ insn3:
         movl	$0, %eax
 	retq
 
+# Test processing of the __eh_frame section.
+# rtdyld-check: *{8}(section_addr(test_x86-64.o, __eh_frame) + 0x20) = eh_frame_test - (section_addr(test_x86-64.o, __eh_frame) + 0x20)
+eh_frame_test:
+        .cfi_startproc
+        retq
+        .cfi_endproc
+
         .comm   y,4,2
 
         .section	__DATA,__data
@@ -38,5 +45,16 @@ insn3:
 	.align	2
 x:
         .long   5
+
+# Test dummy-extern relocation.
+# rtdyld-check: *{8}z1 = ds1
+z1:
+        .quad   ds1
+
+# Test external-symbol relocation bypass: symbols with addr 0xffffffffffffffff
+# don't have their relocations applied.
+# rtdyld-check: *{8}z2 = 0
+z2:
+        .quad   ds2
 
 .subsections_via_symbols

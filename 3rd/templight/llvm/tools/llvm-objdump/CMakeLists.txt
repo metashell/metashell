@@ -1,6 +1,7 @@
 set(LLVM_LINK_COMPONENTS
   ${LLVM_TARGETS_TO_BUILD}
-  DebugInfo
+  CodeGen
+  DebugInfoDWARF
   MC
   MCDisassembler
   Object

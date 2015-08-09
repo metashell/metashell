@@ -14,9 +14,9 @@
 
 #include "Unix.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/Format.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FileUtilities.h"
-#include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Mutex.h"
 #include "llvm/Support/Program.h"
@@ -24,7 +24,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <string>
-#include <vector>
 #if HAVE_EXECINFO_H
 # include <execinfo.h>         // For backtrace().
 #endif
@@ -57,8 +56,6 @@ static ManagedStatic<SmartMutex<true> > SignalsMutex;
 static void (*InterruptFunction)() = nullptr;
 
 static ManagedStatic<std::vector<std::string>> FilesToRemove;
-static ManagedStatic<std::vector<std::pair<void (*)(void *), void *>>>
-    CallBacksToRun;
 
 // IntSigs - Signals that represent requested termination. There's no bug
 // or failure, or if there is, it's not our direct responsibility. For whatever
@@ -111,6 +108,12 @@ static void RegisterHandler(int Signal) {
 }
 
 static void RegisterHandlers() {
+  // We need to dereference the signals mutex during handler registration so
+  // that we force its construction. This is to prevent the first use being
+  // during handling an actual signal because you can't safely call new in a
+  // signal handler.
+  *SignalsMutex;
+  
   // If the handlers are already registered, we're done.
   if (NumRegisteredSignals != 0) return;
 
@@ -132,13 +135,15 @@ static void UnregisterHandlers() {
 /// NB: This must be an async signal safe function. It cannot allocate or free
 /// memory, even in debug builds.
 static void RemoveFilesToRemove() {
+  // Avoid constructing ManagedStatic in the signal handler.
+  // If FilesToRemove is not constructed, there are no files to remove.
+  if (!FilesToRemove.isConstructed())
+    return;
+
   // We avoid iterators in case of debug iterators that allocate or release
   // memory.
   std::vector<std::string>& FilesToRemoveRef = *FilesToRemove;
   for (unsigned i = 0, e = FilesToRemoveRef.size(); i != e; ++i) {
-    // We rely on a std::string implementation for which repeated calls to
-    // 'c_str()' don't allocate memory. We pre-call 'c_str()' on all of these
-    // strings to try to ensure this is safe.
     const char *path = FilesToRemoveRef[i].c_str();
 
     // Get the status so we can determine if it's a file or directory. If we
@@ -193,10 +198,7 @@ static RETSIGTYPE SignalHandler(int Sig) {
   }
 
   // Otherwise if it is a fault (like SEGV) run any handler.
-  std::vector<std::pair<void (*)(void *), void *>>& CallBacksToRunRef =
-      *CallBacksToRun;
-  for (unsigned i = 0, e = CallBacksToRun->size(); i != e; ++i)
-    CallBacksToRunRef[i].first(CallBacksToRunRef[i].second);
+  llvm::sys::RunSignalHandlers();
 
 #ifdef __s390__
   // On S/390, certain signals are delivered with PSW Address pointing to
@@ -226,21 +228,7 @@ bool llvm::sys::RemoveFileOnSignal(StringRef Filename,
                                    std::string* ErrMsg) {
   {
     sys::SmartScopedLock<true> Guard(*SignalsMutex);
-    std::vector<std::string>& FilesToRemoveRef = *FilesToRemove;
-    std::string *OldPtr =
-        FilesToRemoveRef.empty() ? nullptr : &FilesToRemoveRef[0];
-    FilesToRemoveRef.push_back(Filename);
-
-    // We want to call 'c_str()' on every std::string in this vector so that if
-    // the underlying implementation requires a re-allocation, it happens here
-    // rather than inside of the signal handler. If we see the vector grow, we
-    // have to call it on every entry. If it remains in place, we only need to
-    // call it on the latest one.
-    if (OldPtr == &FilesToRemoveRef[0])
-      FilesToRemoveRef.back().c_str();
-    else
-      for (unsigned i = 0, e = FilesToRemoveRef.size(); i != e; ++i)
-        FilesToRemoveRef[i].c_str();
+    FilesToRemove->push_back(Filename);
   }
 
   RegisterHandlers();
@@ -255,13 +243,6 @@ void llvm::sys::DontRemoveFileOnSignal(StringRef Filename) {
   std::vector<std::string>::iterator I = FilesToRemove->end();
   if (RI != FilesToRemove->rend())
     I = FilesToRemove->erase(RI.base()-1);
-
-  // We need to call c_str() on every element which would have been moved by
-  // the erase. These elements, in a C++98 implementation where c_str()
-  // requires a reallocation on the first call may have had the call to c_str()
-  // made on insertion become invalid by being copied down an element.
-  for (std::vector<std::string>::iterator E = FilesToRemove->end(); I != E; ++I)
-    I->c_str();
 }
 
 /// AddSignalHandler - Add a function to be called when a signal is delivered
@@ -324,7 +305,8 @@ static bool findModulesAndOffsets(void **StackTrace, int Depth,
 }
 #endif
 
-static bool printSymbolizedStackTrace(void **StackTrace, int Depth, FILE *FD) {
+static bool printSymbolizedStackTrace(void **StackTrace, int Depth,
+                                      llvm::raw_ostream &OS) {
   // FIXME: Subtract necessary number from StackTrace entries to turn return addresses
   // into actual instruction addresses.
   // Use llvm-symbolizer tool to symbolize the stack traces.
@@ -382,7 +364,7 @@ static bool printSymbolizedStackTrace(void **StackTrace, int Depth, FILE *FD) {
   int frame_no = 0;
   for (int i = 0; i < Depth; i++) {
     if (!Modules[i]) {
-      fprintf(FD, "#%d %p\n", frame_no++, StackTrace[i]);
+      OS << format("#%d %p\n", frame_no++, StackTrace[i]);
       continue;
     }
     // Read pairs of lines (function name and file/line info) until we
@@ -393,17 +375,17 @@ static bool printSymbolizedStackTrace(void **StackTrace, int Depth, FILE *FD) {
       StringRef FunctionName = *CurLine++;
       if (FunctionName.empty())
         break;
-      fprintf(FD, "#%d %p ", frame_no++, StackTrace[i]);
+      OS << format("#%d %p ", frame_no++, StackTrace[i]);
       if (!FunctionName.startswith("??"))
-        fprintf(FD, "%s ", FunctionName.str().c_str());
+        OS << format("%s ", FunctionName.str().c_str());
       if (CurLine == Lines.end())
         return false;
       StringRef FileLineInfo = *CurLine++;
       if (!FileLineInfo.startswith("??"))
-        fprintf(FD, "%s", FileLineInfo.str().c_str());
+        OS << format("%s", FileLineInfo.str().c_str());
       else
-        fprintf(FD, "(%s+%p)", Modules[i], (void *)Offsets[i]);
-      fprintf(FD, "\n");
+        OS << format("(%s+%p)", Modules[i], (void *)Offsets[i]);
+      OS << "\n";
     }
   }
   return true;
@@ -415,13 +397,13 @@ static bool printSymbolizedStackTrace(void **StackTrace, int Depth, FILE *FD) {
 //
 // On glibc systems we have the 'backtrace' function, which works nicely, but
 // doesn't demangle symbols.
-void llvm::sys::PrintStackTrace(FILE *FD) {
+void llvm::sys::PrintStackTrace(raw_ostream &OS) {
 #if defined(HAVE_BACKTRACE) && defined(ENABLE_BACKTRACES)
   static void* StackTrace[256];
   // Use backtrace() to output a backtrace on Linux systems with glibc.
   int depth = backtrace(StackTrace,
                         static_cast<int>(array_lengthof(StackTrace)));
-  if (printSymbolizedStackTrace(StackTrace, depth, FD))
+  if (printSymbolizedStackTrace(StackTrace, depth, OS))
     return;
 #if HAVE_DLFCN_H && __GNUG__
   int width = 0;
@@ -441,34 +423,34 @@ void llvm::sys::PrintStackTrace(FILE *FD) {
     Dl_info dlinfo;
     dladdr(StackTrace[i], &dlinfo);
 
-    fprintf(FD, "%-2d", i);
+    OS << format("%-2d", i);
 
     const char* name = strrchr(dlinfo.dli_fname, '/');
-    if (!name) fprintf(FD, " %-*s", width, dlinfo.dli_fname);
-    else       fprintf(FD, " %-*s", width, name+1);
+    if (!name) OS << format(" %-*s", width, dlinfo.dli_fname);
+    else       OS << format(" %-*s", width, name+1);
 
-    fprintf(FD, " %#0*lx",
-            (int)(sizeof(void*) * 2) + 2, (unsigned long)StackTrace[i]);
+    OS << format(" %#0*lx", (int)(sizeof(void*) * 2) + 2,
+                 (unsigned long)StackTrace[i]);
 
     if (dlinfo.dli_sname != nullptr) {
-      fputc(' ', FD);
+      OS << ' ';
 #  if HAVE_CXXABI_H
       int res;
       char* d = abi::__cxa_demangle(dlinfo.dli_sname, nullptr, nullptr, &res);
 #  else
       char* d = NULL;
 #  endif
-      if (!d) fputs(dlinfo.dli_sname, FD);
-      else    fputs(d, FD);
+      if (!d) OS << dlinfo.dli_sname;
+      else    OS << d;
       free(d);
 
       // FIXME: When we move to C++11, use %t length modifier. It's not in
       // C++03 and causes gcc to issue warnings. Losing the upper 32 bits of
       // the stack offset for a stack dump isn't likely to cause any problems.
-      fprintf(FD, " + %u",(unsigned)((char*)StackTrace[i]-
-                                     (char*)dlinfo.dli_saddr));
+      OS << format(" + %u",(unsigned)((char*)StackTrace[i]-
+                                      (char*)dlinfo.dli_saddr));
     }
-    fputc('\n', FD);
+    OS << '\n';
   }
 #else
   backtrace_symbols_fd(StackTrace, depth, STDERR_FILENO);
@@ -477,17 +459,19 @@ void llvm::sys::PrintStackTrace(FILE *FD) {
 }
 
 static void PrintStackTraceSignalHandler(void *) {
-  PrintStackTrace(stderr);
+  PrintStackTrace(llvm::errs());
 }
+
+void llvm::sys::DisableSystemDialogsOnCrash() {}
 
 /// PrintStackTraceOnErrorSignal - When an error signal (such as SIGABRT or
 /// SIGSEGV) is delivered to the process, print a stack trace and then exit.
-void llvm::sys::PrintStackTraceOnErrorSignal() {
+void llvm::sys::PrintStackTraceOnErrorSignal(bool DisableCrashReporting) {
   AddSignalHandler(PrintStackTraceSignalHandler, nullptr);
 
 #if defined(__APPLE__) && defined(ENABLE_CRASH_OVERRIDES)
   // Environment variable to disable any kind of crash dialog.
-  if (getenv("LLVM_DISABLE_CRASH_REPORT")) {
+  if (DisableCrashReporting || getenv("LLVM_DISABLE_CRASH_REPORT")) {
     mach_port_t self = mach_task_self();
 
     exception_mask_t mask = EXC_MASK_CRASH;

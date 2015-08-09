@@ -20,6 +20,7 @@
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Casting.h"
+#include <functional>
 
 namespace llvm {
 
@@ -31,6 +32,7 @@ class LLVMContextImpl;
 class Twine;
 class Value;
 class DebugLoc;
+class SMDiagnostic;
 
 /// \brief Defines the different supported severity of a diagnostic.
 enum DiagnosticSeverity {
@@ -45,6 +47,7 @@ enum DiagnosticSeverity {
 /// \brief Defines the different supported kind of a diagnostic.
 /// This enum should be extended with a new ID for each added concrete subclass.
 enum DiagnosticKind {
+  DK_Bitcode,
   DK_InlineAsm,
   DK_StackSize,
   DK_Linker,
@@ -54,6 +57,7 @@ enum DiagnosticKind {
   DK_OptimizationRemarkMissed,
   DK_OptimizationRemarkAnalysis,
   DK_OptimizationFailure,
+  DK_MIRParser,
   DK_FirstPluginKind
 };
 
@@ -96,6 +100,8 @@ public:
   /// keyword.
   virtual void print(DiagnosticPrinter &DP) const = 0;
 };
+
+typedef std::function<void(const DiagnosticInfo &)> DiagnosticHandlerFunction;
 
 /// Diagnostic information for inline asm reporting.
 /// This is basically a message and an optional location.
@@ -380,6 +386,24 @@ public:
 
   /// \see DiagnosticInfoOptimizationBase::isEnabled.
   bool isEnabled() const override;
+};
+
+/// Diagnostic information for machine IR parser.
+class DiagnosticInfoMIRParser : public DiagnosticInfo {
+  const SMDiagnostic &Diagnostic;
+
+public:
+  DiagnosticInfoMIRParser(DiagnosticSeverity Severity,
+                          const SMDiagnostic &Diagnostic)
+      : DiagnosticInfo(DK_MIRParser, Severity), Diagnostic(Diagnostic) {}
+
+  const SMDiagnostic &getDiagnostic() const { return Diagnostic; }
+
+  void print(DiagnosticPrinter &DP) const override;
+
+  static bool classof(const DiagnosticInfo *DI) {
+    return DI->getKind() == DK_MIRParser;
+  }
 };
 
 // Create wrappers for C Binding types (see CBindingWrapping.h).

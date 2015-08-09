@@ -15,12 +15,12 @@ data files.
 COMMANDS
 --------
 
-* `merge <profdata_merge_>`_
-* `show <profdata_show_>`_
+* :ref:`merge <profdata-merge>`
+* :ref:`show <profdata-show>`
 
 .. program:: llvm-profdata merge
 
-.. _profdata_merge:
+.. _profdata-merge:
 
 MERGE
 -----
@@ -49,9 +49,31 @@ OPTIONS
  Specify the output file name.  *Output* cannot be ``-`` as the resulting
  indexed profile data can't be written to standard output.
 
+.. option:: -instr (default)
+
+ Specify that the input profile is an instrumentation-based profile.
+
+.. option:: -sample
+
+ Specify that the input profile is a sample-based profile. When using
+ sample-based profiles, the format of the generated file can be generated
+ in one of three ways:
+
+ .. option:: -binary (default)
+
+ Emit the profile using a binary encoding.
+
+ .. option:: -text
+
+ Emit the profile in text mode.
+
+ .. option:: -gcc
+
+ Emit the profile using GCC's gcov format (Not yet supported).
+
 .. program:: llvm-profdata show
 
-.. _profdata_show:
+.. _profdata-show:
 
 SHOW
 ----
@@ -94,6 +116,14 @@ OPTIONS
 
  Specify the output file name.  If *output* is ``-`` or it isn't specified,
  then the output is sent to standard output.
+
+.. option:: -instr (default)
+
+ Specify that the input profile is an instrumentation-based profile.
+
+.. option:: -sample
+
+ Specify that the input profile is a sample-based profile.
 
 EXIT STATUS
 -----------

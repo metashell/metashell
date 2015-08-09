@@ -53,6 +53,8 @@ function(add_ocaml_library name)
   endif()
 
   set(ocaml_flags "-lstdc++" "-ldopt" "-L${LLVM_LIBRARY_DIR}"
+                  "-ccopt" "-L\\$CAMLORIGIN/.."
+                  "-ccopt" "-Wl,-rpath,\\$CAMLORIGIN/.."
                   ${ocaml_pkgs})
 
   foreach( ocaml_dep ${ARG_OCAMLDEP} )
@@ -147,7 +149,7 @@ function(add_ocaml_library name)
             "-I" "${LLVM_LIBRARY_DIR}/ocaml/"
             "-dump" "${bin}/${name}.odoc"
             ${ocaml_pkgs} ${ocaml_inputs}
-    DEPENDS ${ocaml_inputs}
+    DEPENDS ${ocaml_inputs} ${ocaml_outputs}
     COMMENT "Building OCaml documentation for ${name}"
     VERBATIM)
 

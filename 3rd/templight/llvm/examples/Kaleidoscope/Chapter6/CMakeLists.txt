@@ -3,13 +3,13 @@ set(LLVM_LINK_COMPONENTS
   Core
   ExecutionEngine
   InstCombine
-  MC
+  MCJIT
+  RuntimeDyld
   ScalarOpts
   Support
   native
-  mcjit
   )
 
-add_llvm_example(Kaleidoscope-Ch6
+add_kaleidoscope_chapter(Kaleidoscope-Ch6
   toy.cpp
   )

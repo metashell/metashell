@@ -72,6 +72,15 @@ private:
 /// MachineFunction is destroyed.
 struct MachineFunctionInfo {
   virtual ~MachineFunctionInfo();
+
+  /// \brief Factory function: default behavior is to call new using the
+  /// supplied allocator.
+  ///
+  /// This function can be overridden in a derive class.
+  template<typename Ty>
+  static Ty *create(BumpPtrAllocator &Allocator, MachineFunction &MF) {
+    return new (Allocator.Allocate<Ty>()) Ty(MF);
+  }
 };
 
 class MachineFunction {
@@ -136,8 +145,8 @@ class MachineFunction {
   /// True if the function includes any inline assembly.
   bool HasInlineAsm;
 
-  MachineFunction(const MachineFunction &) LLVM_DELETED_FUNCTION;
-  void operator=(const MachineFunction&) LLVM_DELETED_FUNCTION;
+  MachineFunction(const MachineFunction &) = delete;
+  void operator=(const MachineFunction&) = delete;
 public:
   MachineFunction(const Function *Fn, const TargetMachine &TM,
                   unsigned FunctionNum, MachineModuleInfo &MMI);
@@ -145,6 +154,9 @@ public:
 
   MachineModuleInfo &getMMI() const { return MMI; }
   MCContext &getContext() const { return Ctx; }
+
+  /// Return the DataLayout attached to the Module associated to this MF.
+  const DataLayout &getDataLayout() const;
 
   /// getFunction - Return the LLVM function that this machine code represents
   ///
@@ -166,6 +178,13 @@ public:
   /// compiled.
   const TargetSubtargetInfo &getSubtarget() const { return *STI; }
   void setSubtarget(const TargetSubtargetInfo *ST) { STI = ST; }
+
+  /// getSubtarget - This method returns a pointer to the specified type of
+  /// TargetSubtargetInfo.  In debug builds, it verifies that the object being
+  /// returned is of the correct type.
+  template<typename STC> const STC &getSubtarget() const {
+    return *static_cast<const STC *>(STI);
+  }
 
   /// getRegInfo - Return information about the registers currently in use.
   ///
@@ -239,7 +258,7 @@ public:
   template<typename Ty>
   Ty *getInfo() {
     if (!MFInfo)
-      MFInfo = new (Allocator.Allocate<Ty>()) Ty(*this);
+      MFInfo = Ty::template create<Ty>(Allocator, *this);
     return static_cast<Ty*>(MFInfo);
   }
 
@@ -455,6 +474,9 @@ public:
             MachineInstr::mmo_iterator>
     extractStoreMemRefs(MachineInstr::mmo_iterator Begin,
                         MachineInstr::mmo_iterator End);
+
+  /// Allocate a string and populate it with the given external symbol name.
+  const char *createExternalSymbolName(StringRef Name);
 
   //===--------------------------------------------------------------------===//
   // Label Manipulation.

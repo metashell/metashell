@@ -42,7 +42,11 @@ static void printIntegral(const TemplateArgument &TemplArg,
 
   if (const EnumType *ET = T->getAs<EnumType>()) {
     for (const EnumConstantDecl* ECD : ET->getDecl()->enumerators()) {
-      if (ECD->getInitVal() == Val) {
+      // In Sema::CheckTemplateArugment, enum template arguments value are
+      // extended to the size of the integer underlying the enum type.  This
+      // may create a size difference between the enum value and template
+      // argument value, requiring isSameValue here instead of operator==.
+      if (llvm::APSInt::isSameValue(ECD->getInitVal(), Val)) {
         ECD->printQualifiedName(Out, Policy);
         return;
       }
@@ -84,15 +88,13 @@ TemplateArgument::TemplateArgument(ASTContext &Ctx, const llvm::APSInt &Value,
   Integer.Type = Type.getAsOpaquePtr();
 }
 
-TemplateArgument TemplateArgument::CreatePackCopy(ASTContext &Context,
-                                                  const TemplateArgument *Args,
-                                                  unsigned NumArgs) {
-  if (NumArgs == 0)
+TemplateArgument
+TemplateArgument::CreatePackCopy(ASTContext &Context,
+                                 ArrayRef<TemplateArgument> Args) {
+  if (Args.empty())
     return getEmptyPack();
-  
-  TemplateArgument *Storage = new (Context) TemplateArgument [NumArgs];
-  std::copy(Args, Args + NumArgs, Storage);
-  return TemplateArgument(Storage, NumArgs);
+
+  return TemplateArgument(Args.copy(Context));
 }
 
 bool TemplateArgument::isDependent() const {

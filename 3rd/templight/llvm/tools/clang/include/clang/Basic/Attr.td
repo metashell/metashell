@@ -144,6 +144,7 @@ class TypeArgument<string name, bit opt = 0> : Argument<name, opt>;
 class UnsignedArgument<string name, bit opt = 0> : Argument<name, opt>;
 class VariadicUnsignedArgument<string name> : Argument<name, 1>;
 class VariadicExprArgument<string name> : Argument<name, 1>;
+class VariadicStringArgument<string name> : Argument<name, 1>;
 
 // A version of the form major.minor[.subminor].
 class VersionArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -194,7 +195,8 @@ class CXX11<string namespace, string name, int version = 1>
     : Spelling<name, "CXX11"> {
   string Namespace = namespace;
   int Version = version;
-} class Keyword<string name> : Spelling<name, "Keyword">;
+}
+class Keyword<string name> : Spelling<name, "Keyword">;
 class Pragma<string namespace, string name> : Spelling<name, "Pragma"> {
   string Namespace = namespace;
 }
@@ -239,14 +241,18 @@ def COnly : LangOpt<"CPlusPlus", 1>;
 class TargetArch<list<string> arches> {
   list<string> Arches = arches;
   list<string> OSes;
+  list<string> CXXABIs;
 }
 def TargetARM : TargetArch<["arm", "thumb"]>;
+def TargetMips : TargetArch<["mips", "mipsel"]>;
 def TargetMSP430 : TargetArch<["msp430"]>;
 def TargetX86 : TargetArch<["x86"]>;
 def TargetWindows : TargetArch<["x86", "x86_64", "arm", "thumb"]> {
   let OSes = ["Win32"];
 }
-def TargetMips : TargetArch<["mips", "mipsel"]>;
+def TargetMicrosoftCXXABI : TargetArch<["x86", "x86_64", "arm", "thumb"]> {
+  let CXXABIs = ["Microsoft"];
+}
 
 class Attr {
   // The various ways in which an attribute can be spelled in source
@@ -345,6 +351,8 @@ def AddressSpace : TypeAttr {
 def Alias : Attr {
   let Spellings = [GCC<"alias">];
   let Args = [StringArgument<"Aliasee">];
+  let Subjects = SubjectList<[Function, GlobalVar], ErrorDiag,
+                             "ExpectedFunctionGlobalVarMethodOrProperty">;
   let Documentation = [Undocumented];
 }
 
@@ -438,8 +446,11 @@ def Availability : InheritableAttr {
   let AdditionalMembers =
 [{static llvm::StringRef getPrettyPlatformName(llvm::StringRef Platform) {
     return llvm::StringSwitch<llvm::StringRef>(Platform)
+             .Case("android", "Android")
              .Case("ios", "iOS")
              .Case("macosx", "OS X")
+             .Case("ios_app_extension", "iOS (App Extension)")
+             .Case("macosx_app_extension", "OS X (App Extension)")
              .Default(llvm::StringRef());
 } }];
   let HasCustomParsing = 1;
@@ -576,7 +587,7 @@ def CUDAInvalidTarget : InheritableAttr {
 
 def CUDALaunchBounds : InheritableAttr {
   let Spellings = [GNU<"launch_bounds">];
-  let Args = [IntArgument<"MaxThreads">, DefaultIntArgument<"MinBlocks", 0>];
+  let Args = [ExprArgument<"MaxThreads">, ExprArgument<"MinBlocks", 1>];
   let LangOpts = [CUDA];
   let Subjects = SubjectList<[ObjCMethod, FunctionLike], WarnDiag,
                              "ExpectedFunctionOrMethod">;
@@ -788,9 +799,9 @@ def IBOutletCollection : InheritableAttr {
   let Documentation = [Undocumented];
 }
 
-def Malloc : InheritableAttr {
-  let Spellings = [GCC<"malloc">];
-//  let Subjects = [Function];
+def Restrict : InheritableAttr {
+  let Spellings = [Declspec<"restrict">, GCC<"malloc">];
+  let Subjects = SubjectList<[Function]>;
   let Documentation = [Undocumented];
 }
 
@@ -858,6 +869,12 @@ def ReturnsTwice : InheritableAttr {
   let Spellings = [GCC<"returns_twice">];
   let Subjects = SubjectList<[Function]>;
   let Documentation = [Undocumented];
+}
+
+def NoAlias : InheritableAttr {
+  let Spellings = [Declspec<"noalias">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [NoAliasDocs];
 }
 
 def NoCommon : InheritableAttr {
@@ -943,13 +960,34 @@ def NonNull : InheritableAttr {
   } }];
   // FIXME: We should merge duplicates into a single nonnull attribute.
   let DuplicatesAllowedWhileMerging = 1;
-  let Documentation = [Undocumented];
+  let Documentation = [NonNullDocs];
 }
 
 def ReturnsNonNull : InheritableAttr {
   let Spellings = [GCC<"returns_nonnull">];
   let Subjects = SubjectList<[ObjCMethod, Function], WarnDiag,
                              "ExpectedFunctionOrMethod">;
+  let Documentation = [ReturnsNonNullDocs];
+}
+
+// Nullability type attributes.
+def TypeNonNull : TypeAttr {
+  let Spellings = [Keyword<"_Nonnull">];
+  let Documentation = [TypeNonNullDocs];
+}
+
+def TypeNullable : TypeAttr {
+  let Spellings = [Keyword<"_Nullable">];
+  let Documentation = [TypeNullableDocs];
+}
+
+def TypeNullUnspecified : TypeAttr {
+  let Spellings = [Keyword<"_Null_unspecified">];
+  let Documentation = [TypeNullUnspecifiedDocs];
+}
+
+def ObjCKindOf : TypeAttr {
+  let Spellings = [Keyword<"__kindof">];
   let Documentation = [Undocumented];
 }
 
@@ -979,7 +1017,8 @@ def NoThrow : InheritableAttr {
 
 def ObjCBridge : InheritableAttr {
   let Spellings = [GNU<"objc_bridge">];
-  let Subjects = SubjectList<[Record], ErrorDiag>;
+  let Subjects = SubjectList<[Record, TypedefName], ErrorDiag,
+                             "ExpectedStructOrUnionOrTypedef">;
   let Args = [IdentifierArgument<"BridgedType">];
   let Documentation = [Undocumented];
 }
@@ -1052,6 +1091,11 @@ def ObjCNSObject : InheritableAttr {
   let Documentation = [Undocumented];
 }
 
+def ObjCIndependentClass : InheritableAttr {
+  let Spellings = [GNU<"objc_independent_class">];
+  let Documentation = [Undocumented];
+}
+
 def ObjCPreciseLifetime : InheritableAttr {
   let Spellings = [GNU<"objc_precise_lifetime">];
   let Subjects = SubjectList<[Var], ErrorDiag>;
@@ -1096,6 +1140,12 @@ def ObjCRuntimeName : Attr {
   let Documentation = [ObjCRuntimeNameDocs];
 }
 
+def ObjCBoxable : Attr {
+  let Spellings = [GNU<"objc_boxable">];
+  let Subjects = SubjectList<[Record], ErrorDiag, "ExpectedStructOrUnion">;
+  let Documentation = [ObjCBoxableDocs];
+}
+
 def OptimizeNone : InheritableAttr {
   let Spellings = [GNU<"optnone">, CXX11<"clang", "optnone">];
   let Subjects = SubjectList<[Function, ObjCMethod]>;
@@ -1136,12 +1186,6 @@ def Ownership : InheritableAttr {
 def Packed : InheritableAttr {
   let Spellings = [GCC<"packed">];
 //  let Subjects = [Tag, Field];
-  let Documentation = [Undocumented];
-}
-
-def PnaclCall : InheritableAttr {
-  let Spellings = [GNU<"pnaclcall">];
-//  let Subjects = [Function, ObjCMethod];
   let Documentation = [Undocumented];
 }
 
@@ -1242,6 +1286,13 @@ def Pascal : InheritableAttr {
   let Spellings = [GNU<"pascal">, Keyword<"__pascal">, Keyword<"_pascal">];
 //  let Subjects = [Function, ObjCMethod];
   let Documentation = [Undocumented];
+}
+
+def Target : InheritableAttr {
+  let Spellings = [GCC<"target">];
+  let Args = [StringArgument<"features">];
+  let Subjects = SubjectList<[Function], ErrorDiag>;
+  let Documentation = [TargetDocs];
 }
 
 def TransparentUnion : InheritableAttr {
@@ -1381,26 +1432,35 @@ def X86ForceAlignArgPointer : InheritableAttr, TargetSpecificAttr<TargetX86> {
   let Documentation = [Undocumented];
 }
 
-// Attribute to disable AddressSanitizer (or equivalent) checks.
-def NoSanitizeAddress : InheritableAttr {
+def NoSanitize : InheritableAttr {
+  let Spellings = [GNU<"no_sanitize">, CXX11<"clang", "no_sanitize">];
+  let Args = [VariadicStringArgument<"Sanitizers">];
+  let Subjects = SubjectList<[Function, ObjCMethod], ErrorDiag>;
+  let Documentation = [NoSanitizeDocs];
+  let AdditionalMembers = [{
+    SanitizerMask getMask() const {
+      SanitizerMask Mask = 0;
+      for (auto SanitizerName : sanitizers()) {
+        SanitizerMask ParsedMask =
+            parseSanitizerValue(SanitizerName, /*AllowGroups=*/true);
+        Mask |= expandSanitizerGroups(ParsedMask);
+      }
+      return Mask;
+    }
+  }];
+}
+
+// Attributes to disable a specific sanitizer. No new sanitizers should be added
+// to this list; the no_sanitize attribute should be extended instead.
+def NoSanitizeSpecific : InheritableAttr {
   let Spellings = [GCC<"no_address_safety_analysis">,
-                   GCC<"no_sanitize_address">];
+                   GCC<"no_sanitize_address">,
+                   GCC<"no_sanitize_thread">,
+                   GNU<"no_sanitize_memory">];
   let Subjects = SubjectList<[Function], ErrorDiag>;
-  let Documentation = [NoSanitizeAddressDocs];
-}
-
-// Attribute to disable ThreadSanitizer checks.
-def NoSanitizeThread : InheritableAttr {
-  let Spellings = [GNU<"no_sanitize_thread">];
-  let Subjects = SubjectList<[Function], ErrorDiag>;
-  let Documentation = [NoSanitizeThreadDocs];
-}
-
-// Attribute to disable MemorySanitizer checks.
-def NoSanitizeMemory : InheritableAttr {
-  let Spellings = [GNU<"no_sanitize_memory">];
-  let Subjects = SubjectList<[Function], ErrorDiag>;
-  let Documentation = [NoSanitizeMemoryDocs];
+  let Documentation = [NoSanitizeAddressDocs, NoSanitizeThreadDocs,
+                       NoSanitizeMemoryDocs];
+  let ASTNode = 0;
 }
 
 // C/C++ Thread safety attributes (e.g. for deadlock, data race checking)
@@ -1764,11 +1824,17 @@ def TypeTagForDatatype : InheritableAttr {
 
 // Microsoft-related attributes
 
-def MsProperty : IgnoredAttr {
+def MSNoVTable : InheritableAttr, TargetSpecificAttr<TargetMicrosoftCXXABI> {
+  let Spellings = [Declspec<"novtable">];
+  let Subjects = SubjectList<[CXXRecord]>;
+  let Documentation = [MSNoVTableDocs];
+}
+
+def : IgnoredAttr {
   let Spellings = [Declspec<"property">];
 }
 
-def MsStruct : InheritableAttr {
+def MSStruct : InheritableAttr {
   let Spellings = [GCC<"ms_struct">];
   let Subjects = SubjectList<[Record]>;
   let Documentation = [Undocumented];
@@ -1914,8 +1980,8 @@ def LoopHint : Attr {
                           ["Vectorize", "VectorizeWidth", "Interleave", "InterleaveCount",
                            "Unroll", "UnrollCount"]>,
               EnumArgument<"State", "LoopHintState",
-                           ["default", "enable", "disable"],
-                           ["Default", "Enable", "Disable"]>,
+                           ["default", "enable", "disable", "assume_safety"],
+                           ["Default", "Enable", "Disable", "AssumeSafety"]>,
               ExprArgument<"Value">];
 
   let AdditionalMembers = [{
@@ -1961,6 +2027,8 @@ def LoopHint : Attr {
       return "";
     else if (state == Enable)
       OS << (option == Unroll ? "full" : "enable");
+    else if (state == AssumeSafety)
+      OS << "assume_safety";
     else
       OS << "disable";
     OS << ")";

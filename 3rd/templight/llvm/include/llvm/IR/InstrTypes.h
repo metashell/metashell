@@ -44,7 +44,7 @@ protected:
     : Instruction(Ty, iType, Ops, NumOps, InsertAtEnd) {}
 
   // Out of line virtual method, so the vtable, etc has a home.
-  ~TerminatorInst();
+  ~TerminatorInst() override;
 
   /// Virtual methods - Terminators should overload these and provide inline
   /// overrides of non-V methods.
@@ -75,6 +75,199 @@ public:
   static inline bool classof(const Value *V) {
     return isa<Instruction>(V) && classof(cast<Instruction>(V));
   }
+
+  // \brief Returns true if this terminator relates to exception handling.
+  bool isExceptional() const {
+    switch (getOpcode()) {
+    case Instruction::CatchPad:
+    case Instruction::CatchEndPad:
+    case Instruction::CatchRet:
+    case Instruction::CleanupRet:
+    case Instruction::Invoke:
+    case Instruction::Resume:
+    case Instruction::TerminatePad:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  //===--------------------------------------------------------------------===//
+  // succ_iterator definition
+  //===--------------------------------------------------------------------===//
+
+  template <class Term, class BB> // Successor Iterator
+  class SuccIterator : public std::iterator<std::random_access_iterator_tag, BB,
+                                            int, BB *, BB *> {
+    typedef std::iterator<std::random_access_iterator_tag, BB, int, BB *, BB *>
+        super;
+
+  public:
+    typedef typename super::pointer pointer;
+    typedef typename super::reference reference;
+
+  private:
+    Term TermInst;
+    unsigned idx;
+    typedef SuccIterator<Term, BB> Self;
+
+    inline bool index_is_valid(unsigned idx) {
+      return idx < TermInst->getNumSuccessors();
+    }
+
+    /// \brief Proxy object to allow write access in operator[]
+    class SuccessorProxy {
+      Self it;
+
+    public:
+      explicit SuccessorProxy(const Self &it) : it(it) {}
+
+      SuccessorProxy(const SuccessorProxy &) = default;
+
+      SuccessorProxy &operator=(SuccessorProxy r) {
+        *this = reference(r);
+        return *this;
+      }
+
+      SuccessorProxy &operator=(reference r) {
+        it.TermInst->setSuccessor(it.idx, r);
+        return *this;
+      }
+
+      operator reference() const { return *it; }
+    };
+
+  public:
+    // begin iterator
+    explicit inline SuccIterator(Term T) : TermInst(T), idx(0) {}
+    // end iterator
+    inline SuccIterator(Term T, bool) : TermInst(T) {
+      if (TermInst)
+        idx = TermInst->getNumSuccessors();
+      else
+        // Term == NULL happens, if a basic block is not fully constructed and
+        // consequently getTerminator() returns NULL. In this case we construct
+        // a SuccIterator which describes a basic block that has zero
+        // successors.
+        // Defining SuccIterator for incomplete and malformed CFGs is especially
+        // useful for debugging.
+        idx = 0;
+    }
+
+    /// This is used to interface between code that wants to
+    /// operate on terminator instructions directly.
+    unsigned getSuccessorIndex() const { return idx; }
+
+    inline bool operator==(const Self &x) const { return idx == x.idx; }
+    inline bool operator!=(const Self &x) const { return !operator==(x); }
+
+    inline reference operator*() const { return TermInst->getSuccessor(idx); }
+    inline pointer operator->() const { return operator*(); }
+
+    inline Self &operator++() {
+      ++idx;
+      return *this;
+    } // Preincrement
+
+    inline Self operator++(int) { // Postincrement
+      Self tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    inline Self &operator--() {
+      --idx;
+      return *this;
+    }                             // Predecrement
+    inline Self operator--(int) { // Postdecrement
+      Self tmp = *this;
+      --*this;
+      return tmp;
+    }
+
+    inline bool operator<(const Self &x) const {
+      assert(TermInst == x.TermInst &&
+             "Cannot compare iterators of different blocks!");
+      return idx < x.idx;
+    }
+
+    inline bool operator<=(const Self &x) const {
+      assert(TermInst == x.TermInst &&
+             "Cannot compare iterators of different blocks!");
+      return idx <= x.idx;
+    }
+    inline bool operator>=(const Self &x) const {
+      assert(TermInst == x.TermInst &&
+             "Cannot compare iterators of different blocks!");
+      return idx >= x.idx;
+    }
+
+    inline bool operator>(const Self &x) const {
+      assert(TermInst == x.TermInst &&
+             "Cannot compare iterators of different blocks!");
+      return idx > x.idx;
+    }
+
+    inline Self &operator+=(int Right) {
+      unsigned new_idx = idx + Right;
+      assert(index_is_valid(new_idx) && "Iterator index out of bound");
+      idx = new_idx;
+      return *this;
+    }
+
+    inline Self operator+(int Right) const {
+      Self tmp = *this;
+      tmp += Right;
+      return tmp;
+    }
+
+    inline Self &operator-=(int Right) { return operator+=(-Right); }
+
+    inline Self operator-(int Right) const { return operator+(-Right); }
+
+    inline int operator-(const Self &x) const {
+      assert(TermInst == x.TermInst &&
+             "Cannot work on iterators of different blocks!");
+      int distance = idx - x.idx;
+      return distance;
+    }
+
+    inline SuccessorProxy operator[](int offset) {
+      Self tmp = *this;
+      tmp += offset;
+      return SuccessorProxy(tmp);
+    }
+
+    /// Get the source BB of this iterator.
+    inline BB *getSource() {
+      assert(TermInst && "Source not available, if basic block was malformed");
+      return TermInst->getParent();
+    }
+  };
+
+  typedef SuccIterator<TerminatorInst *, BasicBlock> succ_iterator;
+  typedef SuccIterator<const TerminatorInst *, const BasicBlock>
+      succ_const_iterator;
+  typedef llvm::iterator_range<succ_iterator> succ_range;
+  typedef llvm::iterator_range<succ_const_iterator> succ_const_range;
+
+private:
+  inline succ_iterator succ_begin() { return succ_iterator(this); }
+  inline succ_const_iterator succ_begin() const {
+    return succ_const_iterator(this);
+  }
+  inline succ_iterator succ_end() { return succ_iterator(this, true); }
+  inline succ_const_iterator succ_end() const {
+    return succ_const_iterator(this, true);
+  }
+
+public:
+  inline succ_range successors() {
+    return succ_range(succ_begin(), succ_end());
+  }
+  inline succ_const_range successors() const {
+    return succ_const_range(succ_begin(), succ_end());
+  }
 };
 
 
@@ -83,7 +276,7 @@ public:
 //===----------------------------------------------------------------------===//
 
 class UnaryInstruction : public Instruction {
-  void *operator new(size_t, unsigned) LLVM_DELETED_FUNCTION;
+  void *operator new(size_t, unsigned) = delete;
 
 protected:
   UnaryInstruction(Type *Ty, unsigned iType, Value *V,
@@ -102,7 +295,7 @@ public:
   }
 
   // Out of line virtual method, so the vtable, etc has a home.
-  ~UnaryInstruction();
+  ~UnaryInstruction() override;
 
   /// Transparently provide more efficient getOperand methods.
   DECLARE_TRANSPARENT_OPERAND_ACCESSORS(Value);
@@ -132,14 +325,18 @@ DEFINE_TRANSPARENT_OPERAND_ACCESSORS(UnaryInstruction, Value)
 //===----------------------------------------------------------------------===//
 
 class BinaryOperator : public Instruction {
-  void *operator new(size_t, unsigned) LLVM_DELETED_FUNCTION;
+  void *operator new(size_t, unsigned) = delete;
 protected:
   void init(BinaryOps iType);
   BinaryOperator(BinaryOps iType, Value *S1, Value *S2, Type *Ty,
                  const Twine &Name, Instruction *InsertBefore);
   BinaryOperator(BinaryOps iType, Value *S1, Value *S2, Type *Ty,
                  const Twine &Name, BasicBlock *InsertAtEnd);
-  BinaryOperator *clone_impl() const override;
+
+  // Note: Instruction needs to be a friend here to call cloneImpl.
+  friend class Instruction;
+  BinaryOperator *cloneImpl() const;
+
 public:
   // allocate space for exactly two operands
   void *operator new(size_t s) {
@@ -570,10 +767,9 @@ public:
   /// This ensures that any pointer<->integer cast has enough bits in the
   /// integer and any other cast is a bitcast.
   static bool isBitOrNoopPointerCastable(
-    Type *SrcTy, ///< The Type from which the value should be cast.
-    Type *DestTy, ///< The Type to which the value should be cast.
-    const DataLayout *Layout = 0 ///< Optional DataLayout.
-  );
+      Type *SrcTy,  ///< The Type from which the value should be cast.
+      Type *DestTy, ///< The Type to which the value should be cast.
+      const DataLayout &DL);
 
   /// Returns the opcode necessary to cast Val into Ty using usual casting
   /// rules.
@@ -621,9 +817,9 @@ public:
   ) const;
 
   /// @brief Determine if this cast is a no-op cast.
-  bool isNoopCast(
-    const DataLayout *DL ///< DataLayout to get the Int Ptr type from.
-  ) const;
+  ///
+  /// \param DL is the DataLayout to get the Int Ptr type from.
+  bool isNoopCast(const DataLayout &DL) const;
 
   /// Determine how a pair of casts can be eliminated, if they can be at all.
   /// This is a helper function for both CastInst and ConstantExpr.
@@ -674,8 +870,8 @@ public:
 /// This class is the base class for the comparison instructions.
 /// @brief Abstract base class of comparison instructions.
 class CmpInst : public Instruction {
-  void *operator new(size_t, unsigned) LLVM_DELETED_FUNCTION;
-  CmpInst() LLVM_DELETED_FUNCTION;
+  void *operator new(size_t, unsigned) = delete;
+  CmpInst() = delete;
 protected:
   CmpInst(Type *ty, Instruction::OtherOps op, unsigned short pred,
           Value *LHS, Value *RHS, const Twine &Name = "",

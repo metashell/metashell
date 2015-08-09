@@ -59,6 +59,26 @@ entry:
 ; DARWIN: movq
 }
 
+define void @test3_minsize(i8* nocapture %A, i8* nocapture %B) nounwind minsize noredzone {
+  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* %A, i8* %B, i64 64, i32 1, i1 false)
+  ret void
+; LINUX-LABEL: test3_minsize:
+; LINUX: memcpy
+
+; DARWIN-LABEL: test3_minsize:
+; DARWIN: memcpy
+}
+
+define void @test3_minsize_optsize(i8* nocapture %A, i8* nocapture %B) nounwind optsize minsize noredzone {
+  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* %A, i8* %B, i64 64, i32 1, i1 false)
+  ret void
+; LINUX-LABEL: test3_minsize_optsize:
+; LINUX: memcpy
+
+; DARWIN-LABEL: test3_minsize_optsize:
+; DARWIN: memcpy
+}
+
 ; Large constant memcpy's should be inlined when not optimizing for size.
 define void @test4(i8* nocapture %A, i8* nocapture %B) nounwind noredzone {
 entry:
@@ -84,7 +104,7 @@ entry:
 
 define void @test5(i8* nocapture %C) nounwind uwtable ssp {
 entry:
-  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* %C, i8* getelementptr inbounds ([30 x i8]* @.str, i64 0, i64 0), i64 16, i32 1, i1 false)
+  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* %C, i8* getelementptr inbounds ([30 x i8], [30 x i8]* @.str, i64 0, i64 0), i64 16, i32 1, i1 false)
   ret void
 
 ; DARWIN-LABEL: test5:
@@ -101,7 +121,7 @@ entry:
 ; DARWIN: test6
 ; DARWIN: movw $0, 8
 ; DARWIN: movq $120, 0
-  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* null, i8* getelementptr inbounds ([2 x i8]* @.str2, i64 0, i64 0), i64 10, i32 1, i1 false)
+  tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* null, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @.str2, i64 0, i64 0), i64 10, i32 1, i1 false)
   ret void
 }
 

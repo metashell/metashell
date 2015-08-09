@@ -461,8 +461,8 @@
 // CHECK022: "-L{{.*}}/lib/gcc"
 // CHECK022: "-L{{.*}}/hexagon/lib/v4"
 // CHECK022: "-L{{.*}}/hexagon/lib"
-// CHECK022: "-Tbss" "0xdead" "-Tdata" "0xbeef" "-Ttext" "0xcafe"
 // CHECK022: "-s"
+// CHECK022: "-Tbss" "0xdead" "-Tdata" "0xbeef" "-Ttext" "0xcafe"
 // CHECK022: "-t"
 // CHECK022: "-u" "Foo" "-undefined" "Bar"
 // CHECK022: "{{[^"]+}}.o"
@@ -495,13 +495,6 @@
 // RUN:   -ccc-install-dir %S/Inputs/hexagon_tree/qc/bin \
 // RUN:   --gcc-toolchain="" \
 // RUN:   -fPIC \
-// RUN:   %s 2>&1 \
-// RUN:   | FileCheck -check-prefix=CHECK024 %s
-// RUN: %clang -### -target hexagon-unknown-elf     \
-// RUN:   -ccc-install-dir %S/Inputs/hexagon_tree/qc/bin \
-// RUN:   --gcc-toolchain="" \
-// RUN:   -fPIC \
-// RUN:   -msmall-data-threshold=8 \
 // RUN:   %s 2>&1 \
 // RUN:   | FileCheck -check-prefix=CHECK024 %s
 // CHECK024:      "-cc1"

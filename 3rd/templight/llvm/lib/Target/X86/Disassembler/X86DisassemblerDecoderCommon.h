@@ -406,6 +406,8 @@ enum OperandEncoding {
   ENUM_ENTRY(TYPE_IMM64,      "8-byte")                                        \
   ENUM_ENTRY(TYPE_IMM3,       "1-byte immediate operand between 0 and 7")      \
   ENUM_ENTRY(TYPE_IMM5,       "1-byte immediate operand between 0 and 31")     \
+  ENUM_ENTRY(TYPE_AVX512ICC,  "1-byte immediate operand for AVX512 icmp")      \
+  ENUM_ENTRY(TYPE_UIMM8,      "1-byte unsigned immediate operand")             \
   ENUM_ENTRY(TYPE_RM8,        "1-byte register or memory operand")             \
   ENUM_ENTRY(TYPE_RM16,       "2-byte")                                        \
   ENUM_ENTRY(TYPE_RM32,       "4-byte")                                        \
@@ -421,10 +423,6 @@ enum OperandEncoding {
   ENUM_ENTRY(TYPE_M1616,      "2+2-byte segment+offset address")               \
   ENUM_ENTRY(TYPE_M1632,      "2+4-byte")                                      \
   ENUM_ENTRY(TYPE_M1664,      "2+8-byte")                                      \
-  ENUM_ENTRY(TYPE_M16_32,     "2+4-byte two-part memory operand (LIDT, LGDT)") \
-  ENUM_ENTRY(TYPE_M16_16,     "2+2-byte (BOUND)")                              \
-  ENUM_ENTRY(TYPE_M32_32,     "4+4-byte (BOUND)")                              \
-  ENUM_ENTRY(TYPE_M16_64,     "2+8-byte (LIDT, LGDT)")                         \
   ENUM_ENTRY(TYPE_SRCIDX8,    "1-byte memory at source index")                 \
   ENUM_ENTRY(TYPE_SRCIDX16,   "2-byte memory at source index")                 \
   ENUM_ENTRY(TYPE_SRCIDX32,   "4-byte memory at source index")                 \
@@ -443,14 +441,8 @@ enum OperandEncoding {
   ENUM_ENTRY(TYPE_M32FP,      "32-bit IEE754 memory floating-point operand")   \
   ENUM_ENTRY(TYPE_M64FP,      "64-bit")                                        \
   ENUM_ENTRY(TYPE_M80FP,      "80-bit extended")                               \
-  ENUM_ENTRY(TYPE_M16INT,     "2-byte memory integer operand for use in "      \
-                              "floating-point instructions")                   \
-  ENUM_ENTRY(TYPE_M32INT,     "4-byte")                                        \
-  ENUM_ENTRY(TYPE_M64INT,     "8-byte")                                        \
   ENUM_ENTRY(TYPE_ST,         "Position on the floating-point stack")          \
-  ENUM_ENTRY(TYPE_MM,         "MMX register operand")                          \
-  ENUM_ENTRY(TYPE_MM32,       "4-byte MMX register or memory operand")         \
-  ENUM_ENTRY(TYPE_MM64,       "8-byte")                                        \
+  ENUM_ENTRY(TYPE_MM64,       "8-byte MMX register")                           \
   ENUM_ENTRY(TYPE_XMM,        "XMM register operand")                          \
   ENUM_ENTRY(TYPE_XMM32,      "4-byte XMM register or memory operand")         \
   ENUM_ENTRY(TYPE_XMM64,      "8-byte")                                        \
@@ -468,6 +460,7 @@ enum OperandEncoding {
   ENUM_ENTRY(TYPE_SEGMENTREG, "Segment register operand")                      \
   ENUM_ENTRY(TYPE_DEBUGREG,   "Debug register operand")                        \
   ENUM_ENTRY(TYPE_CONTROLREG, "Control register operand")                      \
+  ENUM_ENTRY(TYPE_BNDR,       "MPX bounds register")                           \
                                                                                \
   ENUM_ENTRY(TYPE_Mv,         "Memory operand of operand size")                \
   ENUM_ENTRY(TYPE_Rv,         "Register operand of operand size")              \
@@ -492,18 +485,6 @@ struct OperandSpecifier {
   uint8_t encoding;
   uint8_t type;
 };
-
-// Indicates where the opcode modifier (if any) is to be found.  Extended
-// opcodes with AddRegFrm have the opcode modifier in the ModR/M byte.
-#define MODIFIER_TYPES        \
-  ENUM_ENTRY(MODIFIER_NONE)
-
-#define ENUM_ENTRY(n) n,
-enum ModifierType {
-  MODIFIER_TYPES
-  MODIFIER_max
-};
-#undef ENUM_ENTRY
 
 static const unsigned X86_MAX_OPERANDS = 6;
 

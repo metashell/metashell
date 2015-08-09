@@ -6,6 +6,7 @@ set(DFSAN_RTL_SOURCES
   dfsan_custom.cc
   dfsan_interceptors.cc)
 set(DFSAN_COMMON_CFLAGS ${SANITIZER_COMMON_CFLAGS})
+append_no_rtti_flag(DFSAN_COMMON_CFLAGS)
 # Prevent clang from generating libc calls.
 append_list_if(COMPILER_RT_HAS_FFREESTANDING_FLAG -ffreestanding DFSAN_COMMON_CFLAGS)
 
@@ -24,6 +25,7 @@ foreach(arch ${DFSAN_SUPPORTED_ARCH})
   add_compiler_rt_runtime(clang_rt.dfsan-libc-${arch} ${arch} STATIC
     SOURCES ${DFSAN_RTL_SOURCES}
             $<TARGET_OBJECTS:RTSanitizerCommon.${arch}>
+            $<TARGET_OBJECTS:RTSanitizerCommonNoLibc.${arch}>
             CFLAGS ${DFSAN_NOLIBC_CFLAGS})
   add_sanitizer_rt_symbols(clang_rt.dfsan-${arch} dfsan.syms.extra)
   add_dependencies(dfsan

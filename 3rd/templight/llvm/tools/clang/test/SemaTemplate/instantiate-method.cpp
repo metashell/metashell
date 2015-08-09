@@ -195,3 +195,15 @@ namespace PR22040 {
     Foobar<int>::bazqux(3);  // expected-error{{no member named 'bazqux' in }}
   }
 }
+
+template <typename>
+struct SpecializationOfGlobalFnInClassScope {
+  template <>
+  void ::Fn(); // expected-error{{cannot have a qualified name}}
+};
+
+class AbstractClassWithGlobalFn {
+  template <typename>
+  void ::f(); // expected-error{{cannot have a qualified name}}
+  virtual void f1() = 0;
+};
