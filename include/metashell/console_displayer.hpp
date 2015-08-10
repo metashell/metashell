@@ -19,6 +19,7 @@
 
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/console.hpp>
+#include <metashell/data/file_location.hpp>
 
 namespace metashell
 {
