@@ -24,6 +24,10 @@ namespace metashell {
 file_section get_file_section(
   std::istream& stream, int middle_line, int offset)
 {
+  if (middle_line <= 0 || offset < 0) {
+    return {};
+  }
+
   file_section result;
 
   std::string line;
