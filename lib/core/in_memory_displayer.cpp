@@ -48,6 +48,13 @@ void in_memory_displayer::show_frame(const data::frame& frame_)
   _frames.push_back(frame_);
 }
 
+void in_memory_displayer::show_file_section(
+  const data::file_location& location_,
+  const std::string& /*env_buffer_*/)
+{
+  _file_locations.push_back(location_);
+}
+
 void in_memory_displayer::show_backtrace(const data::backtrace& trace_)
 {
   _backtraces.push_back(trace_);
@@ -88,6 +95,12 @@ const std::vector<data::frame>& in_memory_displayer::frames() const
   return _frames;
 }
 
+const std::vector<data::file_location>&
+in_memory_displayer::file_locations() const
+{
+  return _file_locations;
+}
+
 const std::vector<data::backtrace>& in_memory_displayer::backtraces() const
 {
   return _backtraces;
@@ -107,6 +120,7 @@ void in_memory_displayer::clear()
   _comments.clear();
   _cpp_codes.clear();
   _frames.clear();
+  _file_locations.clear();
   _backtraces.clear();
   _call_graphs.clear();
 }

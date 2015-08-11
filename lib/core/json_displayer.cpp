@@ -124,6 +124,14 @@ void json_displayer::show_frame(const data::frame& frame_)
   _writer.end_document();
 }
 
+void json_displayer::show_file_section(
+  const data::file_location& location_,
+  const std::string& env_buffer_)
+{
+  // We don't show this in json. Whoever uses the json interface can do it
+  // himself the way he wants it
+}
+
 void json_displayer::show_backtrace(const data::backtrace& trace_)
 {
   _writer.start_object();

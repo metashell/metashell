@@ -907,7 +907,11 @@ void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
   assert(!mp->is_at_start());
   assert(!mp->is_finished());
 
-  displayer_.show_frame(mp->get_current_frame());
+  auto frame = mp->get_current_frame();
+  displayer_.show_frame(frame);
+  if (frame.is_full()) {
+    displayer_.show_file_section(frame.point_of_instantiation(), env.get_all());
+  }
 }
 
 void mdb_shell::display_current_forwardtrace(

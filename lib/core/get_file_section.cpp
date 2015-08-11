@@ -1,6 +1,7 @@
 #include <metashell/get_file_section.hpp>
 
 #include <fstream>
+#include <sstream>
 
 namespace metashell {
 
@@ -30,6 +31,13 @@ file_section get_file_section_from_file(
     return {};
   }
   return get_file_section(in, middle_line, offset);
+}
+
+file_section get_file_section_from_buffer(
+  const std::string& buffer, int middle_line, int offset)
+{
+  std::stringstream ss(buffer);
+  return get_file_section(ss, middle_line, offset);
 }
 
 } // namespace metashell

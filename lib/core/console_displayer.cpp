@@ -53,34 +53,6 @@ namespace
       f_
     );
   }
-
-  void display_file_section(
-    const data::file_location& fl_,
-    iface::console& console_)
-  {
-    if (fl_.name == "<stdin>") {
-      // TODO
-      console_.show("line form <stdin>");
-      console_.new_line();
-      return;
-    }
-
-    file_section section = get_file_section_from_file(fl_.name, fl_.row, 2);
-
-    for (const auto& indexed_line : section) {
-
-      std::stringstream ss;
-      if (indexed_line.line_index == fl_.row) {
-        ss << "-> ";
-      } else {
-        ss << "   ";
-      }
-      ss << indexed_line.line_index << "  " << indexed_line.line;
-
-      console_.show(ss.str());
-      console_.new_line();
-    }
-  }
 }
 
 console_displayer::console_displayer(
@@ -212,7 +184,31 @@ void console_displayer::show_frame(const data::frame& frame_)
     _console->show(s.str());
   }
   _console->new_line();
-  display_file_section(frame_.point_of_instantiation(), *_console);
+}
+
+void console_displayer::show_file_section(
+  const data::file_location& location_,
+  const std::string& env_buffer_)
+{
+  file_section section;
+  if (location_.name == "<stdin>") {
+    section = get_file_section_from_buffer(env_buffer_, location_.row, 2);
+  } else {
+    section = get_file_section_from_file(location_.name, location_.row, 2);
+  }
+
+  for (const auto& indexed_line : section) {
+    std::stringstream ss;
+    if (indexed_line.line_index == location_.row) {
+      ss << "-> ";
+    } else {
+      ss << "   ";
+    }
+    ss << indexed_line.line_index << "  " << indexed_line.line;
+
+    _console->show(ss.str());
+    _console->new_line();
+  }
 }
 
 void console_displayer::show_backtrace(const data::backtrace& trace_)
