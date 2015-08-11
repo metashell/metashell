@@ -19,6 +19,9 @@ using file_section = std::vector<indexed_line>;
 file_section get_file_section(
   std::istream& stream, int middle_line, int offset);
 
+file_section get_file_section_from_file(
+  const std::string& file_name, int middle_line, int offset);
+
 } // namespace metashell
 
 #endif

@@ -64,14 +64,8 @@ namespace
       console_.new_line();
       return;
     }
-    std::ifstream in(fl_.name);
-    if (!in) {
-      console_.show("File section not avaliable. (Can't open file)");
-      console_.new_line();
-      return;
-    }
 
-    file_section section = get_file_section(in, fl_.row, 2);
+    file_section section = get_file_section_from_file(fl_.name, fl_.row, 2);
 
     for (const auto& indexed_line : section) {
 
