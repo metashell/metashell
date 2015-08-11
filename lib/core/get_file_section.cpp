@@ -11,7 +11,8 @@ file_section get_file_section(
   file_section result;
 
   std::string line;
-  for (int i = 1; std::getline(stream, line); ++i) {
+  int i = 1;
+  for (; std::getline(stream, line); ++i) {
     if (i > middle_line + offset) {
       break;
     }
@@ -19,6 +20,9 @@ file_section get_file_section(
       continue;
     }
     result.push_back({i, line});
+  }
+  if (i-1 < middle_line) {
+    return {};
   }
   return result;
 }
