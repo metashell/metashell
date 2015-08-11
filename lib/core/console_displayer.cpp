@@ -18,6 +18,7 @@
 #include <metashell/data/colored_string.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/indenter.hpp>
+#include <metashell/get_file_section.hpp>
 
 #include <mindent/stream_display.hpp>
 #include <mindent/display.hpp>
@@ -70,42 +71,17 @@ namespace
       return;
     }
 
-    auto line_number = fl_.row;
-    if (line_number <= 0) {
-      console_.show("File section not avaliable. (Invalid line number)");
-      console_.new_line();
-      return;
-    }
+    file_section section = get_file_section(in, fl_.row, 2);
 
-    std::vector<std::tuple<int, std::string>> lines;
-
-    std::string line;
-    for (int i = 1; std::getline(in, line); ++i) {
-      if (i < line_number - 2) {
-        continue;
-      }
-      if (i > line_number + 2) {
-        break;
-      }
-      lines.push_back(std::make_tuple(i, line));
-    }
-    if (lines.empty()) {
-      console_.show("File section not avaliable. (Not enough lines in file)");
-      console_.new_line();
-      return;
-    }
-    for (const auto& indexed_line : lines) {
-      int line_index;
-      std::string line;
-      std::tie(line_index, line) = indexed_line;
+    for (const auto& indexed_line : section) {
 
       std::stringstream ss;
-      if (line_index == line_number) {
-        ss << " -> ";
+      if (indexed_line.line_index == fl_.row) {
+        ss << "-> ";
       } else {
-        ss << "    ";
+        ss << "   ";
       }
-      ss << line_index << "    " << line;
+      ss << indexed_line.line_index << "  " << indexed_line.line;
 
       console_.show(ss.str());
       console_.new_line();
