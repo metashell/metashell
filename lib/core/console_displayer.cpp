@@ -29,6 +29,7 @@
 #include <functional>
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 
 using namespace metashell;
 
@@ -197,13 +198,20 @@ void console_displayer::show_file_section(
     section = get_file_section_from_file(location_.name, location_.row, 2);
   }
 
+  if (section.empty()) {
+    return;
+  }
+
+  int largest_index_length = std::to_string(section.back().line_index).size();
+
   for (const auto& indexed_line : section) {
     std::stringstream ss;
     if (indexed_line.line_index == location_.row) {
-      ss << "-> ";
+      ss << "->";
     } else {
-      ss << "   ";
+      ss << "  ";
     }
+    ss << std::setw(largest_index_length + 1);
     ss << indexed_line.line_index << "  " << indexed_line.line;
 
     _console->show(ss.str());
