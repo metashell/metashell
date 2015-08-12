@@ -960,10 +960,6 @@ void mdb_shell::next_metaprogram(direction_t direction, int n) {
 void mdb_shell::display_frame(
   const data::frame& frame, iface::displayer& displayer_) const
 {
-  assert(mp);
-  assert(!mp->is_at_start());
-  assert(!mp->is_finished());
-
   displayer_.show_frame(frame);
   if (frame.is_full()) {
     // TODO: we should somehow compensate the file_locations returned by
@@ -977,6 +973,10 @@ void mdb_shell::display_frame(
 }
 
 void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
+  assert(mp);
+  assert(!mp->is_at_start());
+  assert(!mp->is_finished());
+
   display_frame(mp->get_current_frame(), displayer_);
 }
 
