@@ -151,6 +151,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "",
         "Print backtrace from the current point.",
         ""},
+      {{"frame", "f"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_frame),
+        "n",
+        "Print the nth frame from the current point.",
+        ""},
       {{"help"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_help),
         "[<command>]",
@@ -311,7 +316,7 @@ void mdb_shell::command_continue(
     return;
   }
 
-  const auto continue_count = parse_single_integer_arg(arg);
+  const auto continue_count = parse_defaultable_integer(arg, 1);
   if (!continue_count) {
     display_argument_parsing_failed(displayer_);
     return;
@@ -421,7 +426,7 @@ void mdb_shell::command_next(
     return;
   }
 
-  const auto next_count = parse_single_integer_arg(arg);
+  const auto next_count = parse_defaultable_integer(arg, 1);
   if (!next_count) {
     display_argument_parsing_failed(displayer_);
     return;
@@ -687,12 +692,34 @@ void mdb_shell::command_backtrace(
     const std::string& arg,
     iface::displayer& displayer_)
 {
-  if (
-    require_empty_args(arg, displayer_)
-    && require_running_or_errored_metaprogram(displayer_)
-  ) {
+  if (require_empty_args(arg, displayer_) &&
+    require_running_or_errored_metaprogram(displayer_)) {
     display_backtrace(displayer_);
   }
+}
+
+void mdb_shell::command_frame(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_running_or_errored_metaprogram(displayer_)) {
+    return;
+  }
+
+  const auto frame_index = parse_mandatory_integer(arg);
+  if (!frame_index) {
+    display_argument_parsing_failed(displayer_);
+    return;
+  }
+
+  auto backtrace = mp->get_backtrace();
+
+  if (frame_index < 0 || *frame_index >= static_cast<int>(backtrace.size())) {
+    displayer_.show_error("Frame index out of range");
+    return;
+  }
+
+  display_frame(backtrace[*frame_index], displayer_);
 }
 
 void mdb_shell::command_rbreak(
@@ -844,7 +871,35 @@ data::type_or_error mdb_shell::run_metaprogram(
   return data::type_or_error::make_type(data::type(res.output));
 }
 
-boost::optional<int> mdb_shell::parse_single_integer_arg(
+boost::optional<int> mdb_shell::parse_defaultable_integer(
+    const std::string& arg, int default_value)
+{
+  using boost::spirit::qi::int_;
+  using boost::spirit::ascii::space;
+  using boost::phoenix::ref;
+  using boost::spirit::qi::_1;
+
+  auto begin = arg.begin(),
+       end = arg.end();
+
+  int value = default_value;
+
+  bool result =
+    boost::spirit::qi::phrase_parse(
+        begin, end,
+
+        -int_[ref(value) = _1],
+
+        space
+    );
+
+  if (!result || begin != end) {
+    return boost::none;
+  }
+  return value;
+}
+
+boost::optional<int> mdb_shell::parse_mandatory_integer(
     const std::string& arg)
 {
   using boost::spirit::qi::int_;
@@ -855,13 +910,13 @@ boost::optional<int> mdb_shell::parse_single_integer_arg(
   auto begin = arg.begin(),
        end = arg.end();
 
-  int count = 1;
+  int value = 0;
 
   bool result =
     boost::spirit::qi::phrase_parse(
         begin, end,
 
-        -int_[ref(count) = _1],
+        int_[ref(value) = _1],
 
         space
     );
@@ -869,7 +924,7 @@ boost::optional<int> mdb_shell::parse_single_integer_arg(
   if (!result || begin != end) {
     return boost::none;
   }
-  return count;
+  return value;
 }
 
 mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
@@ -902,12 +957,13 @@ void mdb_shell::next_metaprogram(direction_t direction, int n) {
   }
 }
 
-void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
+void mdb_shell::display_frame(
+  const data::frame& frame, iface::displayer& displayer_) const
+{
   assert(mp);
   assert(!mp->is_at_start());
   assert(!mp->is_finished());
 
-  auto frame = mp->get_current_frame();
   displayer_.show_frame(frame);
   if (frame.is_full()) {
     // TODO: we should somehow compensate the file_locations returned by
@@ -918,6 +974,10 @@ void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
     // displayer_.show_file_section(frame.point_of_instantiation(), env.get());
     displayer_.show_file_section(frame.point_of_instantiation(), "");
   }
+}
+
+void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
+  display_frame(mp->get_current_frame(), displayer_);
 }
 
 void mdb_shell::display_current_forwardtrace(

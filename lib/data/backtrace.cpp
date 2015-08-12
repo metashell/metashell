@@ -29,6 +29,16 @@ void backtrace::push_back(const frame& f_)
   _frames.push_back(f_);
 }
 
+backtrace::size_type backtrace::size() const
+{
+  return _frames.size();
+}
+
+const frame& backtrace::operator[](size_type i) const
+{
+  return _frames[i];
+}
+
 backtrace::iterator backtrace::begin() const
 {
   return _frames.begin();

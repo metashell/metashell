@@ -31,6 +31,7 @@ namespace metashell
     class backtrace : boost::equality_comparable<backtrace>
     {
     public:
+      typedef std::vector<frame>::size_type size_type;
       typedef std::vector<frame>::const_iterator iterator;
       typedef iterator const_iterator;
 
@@ -39,6 +40,9 @@ namespace metashell
       backtrace(const std::initializer_list<frame>& frames_);
 
       void push_back(const frame& f_);
+
+      size_type size() const;
+      const frame& operator[](size_type i) const;
 
       iterator begin() const;
       iterator end() const;
