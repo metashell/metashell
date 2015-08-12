@@ -196,3 +196,126 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   );
 }
 
+JUST_TEST_CASE(test_show_file_section_3_lines_1)
+{
+  mock_console c(0);
+  console_displayer d(c, false, false);
+
+  std::string stdin_content =
+    "first\n"
+    "second\n"
+    "third\n";
+
+  data::file_location location("<stdin>", 2, 0);
+  d.show_file_section(location, stdin_content);
+
+  JUST_ASSERT_EQUAL(
+    "   1  first\n"
+    "-> 2  second\n"
+    "   3  third\n",
+    c.content().get_string()
+  );
+}
+
+JUST_TEST_CASE(test_show_file_section_3_lines_2)
+{
+  mock_console c(0);
+  console_displayer d(c, false, false);
+
+  std::string stdin_content =
+    "first\n"
+    "second\n"
+    "third\n";
+
+  data::file_location location("<stdin>", 3, 0);
+  d.show_file_section(location, stdin_content);
+
+  JUST_ASSERT_EQUAL(
+    "   1  first\n"
+    "   2  second\n"
+    "-> 3  third\n",
+    c.content().get_string()
+  );
+}
+
+JUST_TEST_CASE(test_show_file_section_6_lines_1)
+{
+  mock_console c(0);
+  console_displayer d(c, false, false);
+
+  std::string stdin_content =
+    "first\n"
+    "second\n"
+    "third\n"
+    "fourth\n"
+    "fifth\n"
+    "sixth\n";
+
+  data::file_location location("<stdin>", 3, 0);
+  d.show_file_section(location, stdin_content);
+
+  JUST_ASSERT_EQUAL(
+    "   1  first\n"
+    "   2  second\n"
+    "-> 3  third\n"
+    "   4  fourth\n"
+    "   5  fifth\n",
+    c.content().get_string()
+  );
+}
+
+JUST_TEST_CASE(test_show_file_section_6_lines_2)
+{
+  mock_console c(0);
+  console_displayer d(c, false, false);
+
+  std::string stdin_content =
+    "first\n"
+    "second\n"
+    "third\n"
+    "fourth\n"
+    "fifth\n"
+    "sixth\n";
+
+  data::file_location location("<stdin>", 4, 0);
+  d.show_file_section(location, stdin_content);
+
+  JUST_ASSERT_EQUAL(
+    "   2  second\n"
+    "   3  third\n"
+    "-> 4  fourth\n"
+    "   5  fifth\n"
+    "   6  sixth\n",
+    c.content().get_string()
+  );
+}
+
+JUST_TEST_CASE(test_show_file_section_10_lines)
+{
+  mock_console c(0);
+  console_displayer d(c, false, false);
+
+  std::string stdin_content =
+    "first\n"
+    "second\n"
+    "third\n"
+    "fourth\n"
+    "fifth\n"
+    "sixth\n"
+    "seventh\n"
+    "eighth\n"
+    "ninth\n"
+    "tenth\n";
+
+  data::file_location location("<stdin>", 8, 0);
+  d.show_file_section(location, stdin_content);
+
+  JUST_ASSERT_EQUAL(
+    "    6  sixth\n"
+    "    7  seventh\n"
+    "->  8  eighth\n"
+    "    9  ninth\n"
+    "   10  tenth\n",
+    c.content().get_string()
+  );
+}
