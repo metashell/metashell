@@ -212,9 +212,10 @@ void console_displayer::show_file_section(
       ss << "  ";
     }
     ss << std::setw(largest_index_length + 1);
-    ss << indexed_line.line_index << "  " << indexed_line.line;
+    ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
+    display_code(indexed_line.line);
     _console->new_line();
   }
 }
