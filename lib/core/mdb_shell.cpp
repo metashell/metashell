@@ -907,7 +907,17 @@ void mdb_shell::display_current_frame(iface::displayer& displayer_) const {
   assert(!mp->is_at_start());
   assert(!mp->is_finished());
 
-  displayer_.show_frame(mp->get_current_frame());
+  auto frame = mp->get_current_frame();
+  displayer_.show_frame(frame);
+  if (frame.is_full()) {
+    // TODO: we should somehow compensate the file_locations returned by
+    // clang for the <stdin> file. This is hard because the file clang sees
+    // is just two lines (an include for the PCH and the current line)
+    // Until this is figured out, printing file sections for <stdin> is
+    // turned off
+    // displayer_.show_file_section(frame.point_of_instantiation(), env.get());
+    displayer_.show_file_section(frame.point_of_instantiation(), "");
+  }
 }
 
 void mdb_shell::display_current_forwardtrace(

@@ -18,6 +18,7 @@
 #include <metashell/data/colored_string.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/indenter.hpp>
+#include <metashell/get_file_section.hpp>
 
 #include <mindent/stream_display.hpp>
 #include <mindent/display.hpp>
@@ -25,9 +26,10 @@
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
-
 #include <functional>
 #include <sstream>
+#include <fstream>
+#include <iomanip>
 
 using namespace metashell;
 
@@ -183,6 +185,38 @@ void console_displayer::show_frame(const data::frame& frame_)
     _console->show(s.str());
   }
   _console->new_line();
+}
+
+void console_displayer::show_file_section(
+  const data::file_location& location_,
+  const std::string& env_buffer_)
+{
+  file_section section;
+  if (location_.name == "<stdin>") {
+    section = get_file_section_from_buffer(env_buffer_, location_.row, 2);
+  } else {
+    section = get_file_section_from_file(location_.name, location_.row, 2);
+  }
+
+  if (section.empty()) {
+    return;
+  }
+
+  int largest_index_length = std::to_string(section.back().line_index).size();
+
+  for (const auto& indexed_line : section) {
+    std::stringstream ss;
+    if (indexed_line.line_index == location_.row) {
+      ss << "->";
+    } else {
+      ss << "  ";
+    }
+    ss << std::setw(largest_index_length + 1);
+    ss << indexed_line.line_index << "  " << indexed_line.line;
+
+    _console->show(ss.str());
+    _console->new_line();
+  }
 }
 
 void console_displayer::show_backtrace(const data::backtrace& trace_)
