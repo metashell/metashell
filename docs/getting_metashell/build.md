@@ -74,7 +74,7 @@ used:
 * First you need to build Clang with
   [Templight](https://github.com/mikael-s-persson/templight).
     * Start a command line on your Windows host and go into the source directory
-    * Run `cd 3rd/templight`
+    * Run `cd 3rd\templight`
     * Run `md build`
     * Run `cd build`
     * Run `cmake ..\llvm`

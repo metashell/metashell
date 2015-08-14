@@ -80,8 +80,7 @@ if (WIN32)
   if (CLANG_STATIC)
     message(FATAL_ERROR "CLANG_STATIC is not supported on Windows")
   endif()
-  # The import library of clang is called libclang.imp instead of libclang.lib
-  find_file(CLANG_LIBRARY NAMES libclang.imp HINTS ${CLANG_LIBRARYDIR})
+  find_file(CLANG_LIBRARY NAMES libclang.lib HINTS ${CLANG_LIBRARYDIR})
   find_file(CLANG_DLL NAMES libclang.dll HINTS ${CLANG_LIBRARYDIR})
 
 else()
