@@ -65,6 +65,7 @@ public:
     iface::displayer& displayer_
   );
   void command_backtrace(const std::string& arg, iface::displayer& displayer_);
+  void command_frame(const std::string& arg, iface::displayer& displayer_);
   void command_rbreak(const std::string& arg, iface::displayer& displayer_);
   void command_help(const std::string& arg, iface::displayer& displayer_);
   void command_quit(const std::string& arg, iface::displayer& displayer_);
@@ -109,13 +110,17 @@ protected:
   void filter_similar_edges();
   void filter_metaprogram();
 
-  static
-  boost::optional<int> parse_single_integer_arg(const std::string& arg);
+  static boost::optional<int> parse_defaultable_integer(
+    const std::string& arg, int default_value);
+
+  static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
   breakpoints_t::iterator continue_metaprogram(direction_t direction);
 
   void next_metaprogram(direction_t direction, int n);
 
+  void display_frame(
+    const data::frame& frame, iface::displayer& displayer_) const;
   void display_current_frame(iface::displayer& displayer_) const;
   void display_current_forwardtrace(
     boost::optional<int> max_depth,

@@ -7,7 +7,10 @@
     * Optional logging of what Metashell is doing in the background.
     * New MDB command: `step out`
     * New MDB command: `next`, alias for `step over`
+    * New MDB command: `frame`
     * MDB now can debug metaprograms which fail to compile
+    * MDB now prints the relevant sections of the source code for movement
+      commands
     * Significantly improved MDB performance for large metaprograms
     * New command-line arguments:
         * `--console` for choosing shell mode
