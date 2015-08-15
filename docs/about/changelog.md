@@ -1,6 +1,6 @@
 <h1>Changelog</h1>
 
-## Not in any release yet
+## Version 2.1.0
 
 * New features
     * Support different shell modes (plain, readline, JSON)

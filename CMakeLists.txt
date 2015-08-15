@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 2.6)
 project(metashell)
 set(CMAKE_PROJECT_NAME metashell)
 set(MAJOR_VERSION 2)
-set(MINOR_VERSION 0)
+set(MINOR_VERSION 1)
 set(PATCH_VERSION 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
