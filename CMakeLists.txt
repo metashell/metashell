@@ -223,8 +223,6 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
         "Unsupported Debian version. Package dependencies will be invalid."
       )
     endif()
-  elseif (APPLE)
-    set(CPACK_GENERATOR "7Z")
   endif ()
 
   set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
