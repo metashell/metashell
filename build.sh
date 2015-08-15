@@ -88,10 +88,19 @@ then
   tools/clang_default_path --gcc=clang > lib/core/extra_sysinclude.hpp
 fi
 
+CMAKE_ARGS=()
+CPACK_ARGS=()
+if [ "${PLATFORM}" = "osx" ]
+then
+  # This argument is needed, so the generated archive will not have
+  # /usr/local prefix for all files
+  CMAKE_ARGS+=( '-DCMAKE_INSTALL_PREFIX:PATH=.' )
+  CPACK_ARGS+=( '-G' '7Z' )
+fi
+
 mkdir bin; cd bin
-  cmake .. \
+  cmake .. "${CMAKE_ARGS[@]}" \
     && make -j${BUILD_THREADS} \
     && make test \
-    && cpack
+    && cpack "${CPACK_ARGS[@]}"
 cd ..
-
