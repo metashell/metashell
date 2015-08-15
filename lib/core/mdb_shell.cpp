@@ -154,7 +154,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
       {{"frame", "f"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_frame),
         "n",
-        "Print the nth frame from the current point.",
+        "Inspect the nth frame of the current backtrace.",
         ""},
       {{"help"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_help),
