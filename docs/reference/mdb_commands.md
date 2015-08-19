@@ -59,7 +59,7 @@ The n specifier limits the depth of the trace. If n is not specified, then the
 Print backtrace from the current point.
 
 * __`frame|f n`__ <br />
-Print the nth frame from the current point.
+Inspect the nth frame of the current backtrace.
 
 * __`help [<command>]`__ <br />
 Show help for commands. <br />
