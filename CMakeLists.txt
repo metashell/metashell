@@ -163,9 +163,6 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       "https://github.com/sabel83/metashell#metashell" "Metashell website"
       "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
     )
-  else()
-    set(CPACK_SET_DESTDIR "on")
-    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   endif()
 
   if (DEFINED PLATFORM_CPACK_GENERATOR)
@@ -211,6 +208,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
         "Unsupported Ubuntu version. Package dependencies will be invalid."
       )
     endif()
+    set(CPACK_SET_DESTDIR "on")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   elseif (DEBIAN_LINUX)
     if (
       ("${PLATFORM_VERSION}" STREQUAL "7.6")
@@ -223,6 +222,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
         "Unsupported Debian version. Package dependencies will be invalid."
       )
     endif()
+    set(CPACK_SET_DESTDIR "on")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   endif ()
 
   set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
