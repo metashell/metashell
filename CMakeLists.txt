@@ -206,7 +206,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
   elseif (UBUNTU_LINUX)
     if ("${PLATFORM_VERSION}" STREQUAL "14.04")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.8-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "14.10")
+    elseif (
+      ("${PLATFORM_VERSION}" STREQUAL "14.10")
+      OR ("${PLATFORM_VERSION}" STREQUAL "15.04")
+    )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
     else()
       message(
@@ -222,6 +225,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       OR ("${PLATFORM_VERSION}" STREQUAL "7.7")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
+    elseif ("${PLATFORM_VERSION}" STREQUAL "8.1")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
     else()
       message(
         WARNING
