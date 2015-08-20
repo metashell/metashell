@@ -56,7 +56,8 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
     data::instantiation_kind kind,
-    const data::file_location& point_of_instantiation)
+    const data::file_location& point_of_instantiation,
+    double initial_time_stamp)
 {
   edge_descriptor edge;
   bool inserted;
@@ -66,6 +67,9 @@ metaprogram::edge_descriptor metaprogram::add_edge(
 
   get_edge_property(edge).kind = kind;
   get_edge_property(edge).point_of_instantiation = point_of_instantiation;
+
+  // This should be later modified when the TemplateEnd event is processed
+  get_edge_property(edge).time_taken = initial_time_stamp;
 
   return edge;
 }

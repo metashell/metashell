@@ -74,12 +74,16 @@ metaprogram metaprogram::create_from_protobuf_stream(
               instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
               begin_entry.Name,
               data::file_location(
-                begin_entry.FileName, begin_entry.Line, begin_entry.Column));
+                begin_entry.FileName, begin_entry.Line, begin_entry.Column),
+              begin_entry.TimeStamp);
           break;
         }
       case templight::ProtobufReader::EndEntry:
-        builder.handle_template_end();
-        break;
+        {
+          auto end_entry = reader.LastEndEntry;
+          builder.handle_template_end(end_entry.TimeStamp);
+          break;
+        }
       case templight::ProtobufReader::EndOfFile:
       case templight::ProtobufReader::Other:
       case templight::ProtobufReader::Header:

@@ -69,6 +69,7 @@ public:
   struct edge_property {
     data::instantiation_kind kind;
     data::file_location point_of_instantiation;
+    double time_taken = 0.0;
     bool enabled = true;
   };
 
@@ -119,7 +120,8 @@ public:
       vertex_descriptor from,
       vertex_descriptor to,
       data::instantiation_kind kind,
-      const data::file_location& point_of_instantiation);
+      const data::file_location& point_of_instantiation,
+      double initial_time_stamp);
 
   bool is_empty() const;
 
