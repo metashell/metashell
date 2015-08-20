@@ -24,7 +24,6 @@
 #include <metashell/null_history.hpp>
 
 #include <cmath>
-#include <chrono>
 #include <sstream>
 #include <fstream>
 
@@ -617,38 +616,13 @@ void mdb_shell::command_evaluate(
 
   breakpoints.clear();
 
-  using clock_type = std::chrono::steady_clock;
-
-  auto run_start_time = clock_type::now();
   if (!run_metaprogram_with_templight(arg, has_full, displayer_)) {
     return;
   }
-  auto run_end_time = clock_type::now();
 
   displayer_.show_raw_text("Metaprogram started");
 
-  auto filter_start_time = clock_type::now();
   filter_metaprogram();
-  auto filter_end_time = clock_type::now();
-
-  if (has_profile) {
-    using std::chrono::duration_cast;
-    using std::chrono::milliseconds;
-
-    std::stringstream ss;
-
-    ss << "Profiling information:\n" <<
-      "Running time = " <<
-      duration_cast<milliseconds>(run_end_time - run_start_time).count() <<
-      "ms\n" <<
-      "Filtering time = " <<
-      duration_cast<milliseconds>(filter_end_time - filter_start_time).count() <<
-      "ms\n" <<
-      "Graph node count = " << mp->get_num_vertices() << "\n" <<
-      "Graph edge count = " << mp->get_num_edges();
-
-    displayer_.show_raw_text(ss.str());
-  }
 }
 
 void mdb_shell::command_forwardtrace(
