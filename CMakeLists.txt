@@ -150,7 +150,13 @@ subdirs(lib app test 3rd)
 
 # Debian package
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "/usr")
+  if (APPLE)
+    # This argument is needed, so the generated archive will not have
+    # /usr/local prefix for all files
+    set(CMAKE_INSTALL_PREFIX ".")
+  else()
+    set(CMAKE_INSTALL_PREFIX "/usr")
+  endif()
 endif()
 
 if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")

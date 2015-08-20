@@ -72,7 +72,7 @@ elseif (APPLE)
     OUTPUT_VARIABLE PV
   )
   string(STRIP "${PV}" PLATFORM_VERSION)
-  set(PLATFORM_CPACK_GENERATOR "DragNDrop")
+  set(PLATFORM_CPACK_GENERATOR "7Z")
 else()
   execute_process(COMMAND uname OUTPUT_VARIABLE UN)
   string(STRIP "${UN}" UNAME)
