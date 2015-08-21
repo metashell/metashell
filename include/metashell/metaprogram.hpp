@@ -37,22 +37,26 @@ enum class direction_t { forward, backwards };
 
 class metaprogram {
 public:
+  enum class mode_t {
+    normal,
+    full
+  };
 
   // Creates empty metaprogram: single <root> vertex
   metaprogram(
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
@@ -129,7 +133,7 @@ public:
 
   void reset_state();
 
-  bool is_in_full_mode() const;
+  mode_t get_mode() const;
 
   bool is_at_endpoint(direction_t direction) const;
   bool is_finished() const;
@@ -196,7 +200,7 @@ private:
   state_t state;
   state_history_t state_history;
 
-  bool full_mode;
+  mode_t mode;
 
   // This should be generally 0
   vertex_descriptor root_vertex;
@@ -212,6 +216,8 @@ void metaprogram::disable_edges_if(P pred) {
     }
   }
 }
+
+std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode);
 
 }
 

@@ -26,10 +26,10 @@
 namespace metashell {
 
 metaprogram::metaprogram(
-    bool full_mode,
+    mode_t mode,
     const std::string& root_name,
     const data::type_or_error& evaluation_result) :
-  full_mode(full_mode),
+  mode(mode),
   evaluation_result(evaluation_result)
 {
   root_vertex = add_vertex(root_name);
@@ -94,8 +94,8 @@ void metaprogram::reset_state() {
   state_history = state_history_t();
 }
 
-bool metaprogram::is_in_full_mode() const {
-  return full_mode;
+metaprogram::mode_t metaprogram::get_mode() const {
+  return mode;
 }
 
 bool metaprogram::is_at_endpoint(direction_t direction) const {
@@ -161,7 +161,7 @@ void metaprogram::step() {
   state.edge_stack.pop();
 
   if (!state.discovered[current_vertex]) {
-    if (!full_mode) {
+    if (get_mode() != mode_t::full) {
       state.discovered[current_vertex] = true;
       rollback.discovered_vertex = current_vertex;
     }
@@ -325,7 +325,7 @@ data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
   const data::type t(get_vertex_property(get_target(e_)).name);
   return
-    is_in_full_mode() ?
+    get_mode() == mode_t::full ?
       data::frame(t) :
       data::frame(t,
           get_edge_property(e_).point_of_instantiation,
@@ -380,7 +380,7 @@ unsigned metaprogram::get_backtrace_length() const {
 }
 
 unsigned metaprogram::get_traversal_count(vertex_descriptor vertex) const {
-  if (full_mode) {
+  if (get_mode() == mode_t::full) {
     return get_full_traversal_count(vertex);
   } else {
     return get_enabled_in_degree(vertex);
@@ -419,6 +419,14 @@ unsigned metaprogram::get_full_traversal_count(
   traversal_counts_t traversal_counts(get_num_vertices());
 
   return get_full_traversal_count_helper(vertex, traversal_counts);
+}
+
+std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode) {
+  switch (mode) {
+    case metaprogram::mode_t::normal: os << "normal"; break;
+    case metaprogram::mode_t::full: os << "full"; break;
+  }
+  return os;
 }
 
 }

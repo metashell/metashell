@@ -538,8 +538,8 @@ void mdb_shell::filter_similar_edges() {
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
 
-  auto comparator =
-    mp->is_in_full_mode() ? less_than_ignore_instantiation_kind : less_than;
+  auto comparator = mp->get_mode() == metaprogram::mode_t::full ?
+    less_than_ignore_instantiation_kind : less_than;
 
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
@@ -616,7 +616,10 @@ void mdb_shell::command_evaluate(
 
   breakpoints.clear();
 
-  if (!run_metaprogram_with_templight(arg, has_full, displayer_)) {
+  metaprogram::mode_t mode =
+    has_full ? metaprogram::mode_t::full : metaprogram::mode_t::normal;
+
+  if (!run_metaprogram_with_templight(arg, mode, displayer_)) {
     return;
   }
 
@@ -789,7 +792,9 @@ void mdb_shell::command_quit(
 }
 
 bool mdb_shell::run_metaprogram_with_templight(
-    const std::string& str, bool full_mode, iface::displayer& displayer_)
+    const std::string& str,
+    metaprogram::mode_t mode,
+    iface::displayer& displayer_)
 {
   temporary_file templight_output_file("templight.pb");
   std::string output_path = templight_output_file.get_path();
@@ -815,7 +820,7 @@ bool mdb_shell::run_metaprogram_with_templight(
   }
 
   mp = metaprogram::create_from_protobuf_stream(
-      protobuf_stream, full_mode, str, evaluation_result);
+      protobuf_stream, mode, str, evaluation_result);
 
   assert(mp);
   if (mp->is_empty() && evaluation_result.is_error()) {

@@ -93,7 +93,7 @@ protected:
 
   bool run_metaprogram_with_templight(
     const std::string& str,
-    bool full_mode,
+    metaprogram::mode_t mode,
     iface::displayer& displayer_
   );
   data::type_or_error run_metaprogram(

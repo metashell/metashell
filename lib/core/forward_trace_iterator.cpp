@@ -77,7 +77,7 @@ void forward_trace_iterator::visit(
 
   if (!_discovered[vertex])
   {
-    if (!_mp->is_in_full_mode())
+    if (_mp->get_mode() != metaprogram::mode_t::full)
     {
       _discovered[vertex] = true;
     }

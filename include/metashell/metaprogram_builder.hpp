@@ -28,7 +28,7 @@ class metaprogram_builder {
 public:
 
   metaprogram_builder(
-      bool full_mode,
+      metaprogram::mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 

@@ -22,10 +22,10 @@
 namespace metashell {
 
 metaprogram_builder::metaprogram_builder(
-    bool full_mode,
+    metaprogram::mode_t mode,
     const std::string& root_name,
     const data::type_or_error& evaluation_result) :
-  mp(full_mode, root_name, evaluation_result)
+  mp(mode, root_name, evaluation_result)
 {}
 
 void metaprogram_builder::handle_template_begin(
