@@ -277,6 +277,7 @@ bool console_displayer::display_node(
     display_trace_graph(node_.depth(), depth_counter_, true, pager_);
 
     pager_.show(element_content);
+    return pager_.new_line();
   }
   else
   {
@@ -285,9 +286,12 @@ bool console_displayer::display_node(
     {
       display_trace_graph(node_.depth(), depth_counter_, i == 0, pager_);
       pager_.show(element_content.substr(i, content_width));
+      if (!pager_.new_line()) {
+        return false;
+      }
     }
+    return true;
   }
-  return pager_.new_line();
 }
 
 void console_displayer::show_frame(const data::frame& frame_)
