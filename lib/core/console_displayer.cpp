@@ -156,27 +156,27 @@ void console_displayer::show_cpp_code(const std::string& code_)
     }
     else
     {
-      display_code(code_);
+      _console->show(format_code(code_));
     }
     _console->new_line();
   }
 }
 
-void console_displayer::display_code(const std::string& code_)
+data::colored_string console_displayer::format_code(const std::string& code_)
 {
   if (_syntax_highlight)
   {
-    _console->show(highlight_syntax(code_));
+    return highlight_syntax(code_);
   }
   else
   {
-    _console->show(code_);
+    return code_;
   }
 }
 
 void console_displayer::show_frame(const data::frame& frame_)
 {
-  display_code(frame_.name().name());
+  _console->show(format_code(frame_.name().name()));
   if (frame_.is_full())
   {
     std::ostringstream s;
@@ -215,7 +215,7 @@ void console_displayer::show_file_section(
     ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
-    display_code(indexed_line.line);
+    _console->show(format_code(indexed_line.line));
     _console->new_line();
   }
 }

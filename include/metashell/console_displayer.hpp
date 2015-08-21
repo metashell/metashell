@@ -49,7 +49,7 @@ namespace metashell
     bool _indent;
     bool _syntax_highlight;
 
-    void display_code(const std::string& c_);
+    data::colored_string format_code(const std::string& c_);
   };
 }
 
