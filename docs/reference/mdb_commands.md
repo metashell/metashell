@@ -3,10 +3,13 @@
 You can find the list of MDB commands here.
 
 <!-- mdb_info -->
-* __`evaluate [-full] [-profile] [<type>]`__ <br />
+* __`evaluate [-full|-profile] [<type>]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
 Evaluating a metaprogram using the `-full` qualifier will expand all
   Memoization events.
+  
+  Evaluating a metaprogram using the `-profile` qualifier will enable
+  profile mode.
   
   If called without `<type>`, then the last evaluated metaprogram will be
   reevaluated.
@@ -16,9 +19,6 @@ Evaluating a metaprogram using the `-full` qualifier will expand all
   Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
   the debugged metaprogram with unrelated code. If you need formatting, you can
   explicitly enter `metashell::format< <type> >::type` for the same effect.
-  
-  The qualifier `-profile` is intentionally undocumented. It is only used for
-  internal profiling, and could be changed or removed at any time.
 
 * __`step [over|out] [n]`__ <br />
 Step the program. <br />
