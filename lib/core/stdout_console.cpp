@@ -43,6 +43,7 @@ iface::console::user_answer stdout_console::ask_for_continuation()
     std::cout << "Next page (RETURN), Show all (a), Quit (q): ";
 
     if (!std::getline(std::cin, line)) {
+      new_line();
       return iface::console::user_answer::quit;
     }
     if (line.empty()) {
