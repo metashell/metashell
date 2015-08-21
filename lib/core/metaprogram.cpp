@@ -207,10 +207,6 @@ void metaprogram::step_back() {
   state_history.pop();
 }
 
-const metaprogram::graph_t& metaprogram::get_graph() const {
-  return graph;
-}
-
 const metaprogram::state_t& metaprogram::get_state() const {
   return state;
 }

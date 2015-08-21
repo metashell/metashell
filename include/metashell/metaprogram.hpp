@@ -158,7 +158,6 @@ public:
 
   unsigned get_traversal_count(vertex_descriptor vertex) const;
 
-  const graph_t& get_graph() const;
   const state_t& get_state() const;
 
   vertices_size_type get_num_vertices() const;
