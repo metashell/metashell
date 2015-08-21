@@ -54,7 +54,64 @@ namespace
       f_
     );
   }
-}
+
+  data::color get_color(int n_)
+  {
+    data::color cs[] = {
+      data::color::red,
+      data::color::green,
+      data::color::yellow,
+      data::color::blue,
+      data::color::cyan
+    };
+    return cs[n_ % (sizeof(cs) / sizeof(cs[0]))];
+  }
+
+  void display_trace_graph(
+    int depth_,
+    const std::vector<int>& depth_counter_,
+    bool print_mark_,
+    iface::console& console_
+  )
+  {
+    assert(depth_counter_.size() > static_cast<unsigned int>(depth_));
+
+    if (depth_ > 0)
+    {
+      //TODO respect the -H (no syntax highlight parameter)
+      for (int i = 1; i < depth_; ++i)
+      {
+        console_.show(
+          data::colored_string(
+            depth_counter_[i] > 0 ? "| " : "  ",
+            get_color(i)
+          )
+        );
+      }
+
+      const data::color mark_color = get_color(depth_);
+      if (print_mark_)
+      {
+        if (depth_counter_[depth_] == 0)
+        {
+          console_.show(data::colored_string("` ", mark_color));
+        }
+        else
+        {
+          console_.show(data::colored_string("+ ", mark_color));
+        }
+      }
+      else if (depth_counter_[depth_] > 0)
+      {
+        console_.show(data::colored_string("| ", mark_color));
+      }
+      else
+      {
+        console_.show("  ");
+      }
+    }
+  }
+} // anonymouse namespace
 
 console_displayer::console_displayer(
   iface::console& console_,
@@ -174,16 +231,60 @@ data::colored_string console_displayer::format_code(const std::string& code_)
   }
 }
 
+data::colored_string console_displayer::format_frame(const data::frame& f_)
+{
+  std::ostringstream prefix;
+  if (f_.is_profiled())
+  {
+    prefix << "[" << f_.time_taken() << "] ";
+  }
+  std::ostringstream postfix;
+  if (f_.is_full())
+  {
+    postfix
+      << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
+  }
+  return prefix.str() + format_code(f_.name().name()) + postfix.str();
+}
+
+void console_displayer::display_node(
+  const data::call_graph_node& node_,
+  const std::vector<int>& depth_counter_)
+{
+  const auto width = _console->width();
+
+  const data::colored_string
+    element_content = format_frame(node_.current_frame());
+
+  const int non_content_length = 2*node_.depth();
+
+  const int pretty_print_threshold = 10;
+  if (
+    width < pretty_print_threshold
+    || non_content_length >= width - pretty_print_threshold
+  )
+  {
+    // We have no chance to display the graph nicely :(
+    display_trace_graph(node_.depth(), depth_counter_, true, *_console);
+
+    _console->show(element_content);
+    _console->new_line();
+  }
+  else
+  {
+    int content_width = width - non_content_length;
+    for (unsigned i = 0; i < element_content.size(); i += content_width)
+    {
+      display_trace_graph(node_.depth(), depth_counter_, i == 0, *_console);
+      _console->show(element_content.substr(i, content_width));
+      _console->new_line();
+    }
+  }
+}
+
 void console_displayer::show_frame(const data::frame& frame_)
 {
-  _console->show(format_code(frame_.name().name()));
-  if (frame_.is_full())
-  {
-    std::ostringstream s;
-    s << " (" << frame_.kind()
-      << " from " << frame_.point_of_instantiation() << ")";
-    _console->show(s.str());
-  }
+  _console->show(format_frame(frame_));
   _console->new_line();
 }
 
@@ -233,122 +334,9 @@ void console_displayer::show_backtrace(const data::backtrace& trace_)
   }
 }
 
-namespace
-{
-  data::color get_color(int n_)
-  {
-    data::color cs[] = {
-      data::color::red,
-      data::color::green,
-      data::color::yellow,
-      data::color::blue,
-      data::color::cyan
-    };
-    return cs[n_ % (sizeof(cs) / sizeof(cs[0]))];
-  }
-
-  void display_trace_graph(
-    int depth_,
-    const std::vector<int>& depth_counter_,
-    bool print_mark_,
-    iface::console& console_
-  )
-  {
-    assert(depth_counter_.size() > static_cast<unsigned int>(depth_));
-
-    if (depth_ > 0)
-    {
-      //TODO respect the -H (no syntax highlight parameter)
-      for (int i = 1; i < depth_; ++i)
-      {
-        console_.show(
-          data::colored_string(
-            depth_counter_[i] > 0 ? "| " : "  ",
-            get_color(i)
-          )
-        );
-      }
-
-      const data::color mark_color = get_color(depth_);
-      if (print_mark_)
-      {
-        if (depth_counter_[depth_] == 0)
-        {
-          console_.show(data::colored_string("` ", mark_color));
-        }
-        else
-        {
-          console_.show(data::colored_string("+ ", mark_color));
-        }
-      }
-      else if (depth_counter_[depth_] > 0)
-      {
-        console_.show(data::colored_string("| ", mark_color));
-      }
-      else
-      {
-        console_.show("  ");
-      }
-    }
-  }
-
-  data::colored_string format_frame(const data::frame& f_)
-  {
-    std::ostringstream prefix;
-    if (f_.is_profiled())
-    {
-      prefix << "[" << f_.time_taken() << "] ";
-    }
-    std::ostringstream postfix;
-    if (f_.is_full())
-    {
-      postfix
-        << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
-    }
-    return prefix.str() + highlight_syntax(f_.name().name()) + postfix.str();
-  }
-
-  void display_node(
-    const data::call_graph_node& node_,
-    const std::vector<int>& depth_counter_,
-    int width_,
-    iface::console& console_
-  )
-  {
-    const data::colored_string
-      element_content = format_frame(node_.current_frame());
-
-    const int non_content_length = 2*node_.depth();
-
-    const int pretty_print_threshold = 10;
-    if (
-      width_ < pretty_print_threshold
-      || non_content_length >= width_ - pretty_print_threshold
-    )
-    {
-      // We have no chance to display the graph nicely :(
-      display_trace_graph(node_.depth(), depth_counter_, true, console_);
-
-      console_.show(element_content);
-      console_.new_line();
-    }
-    else
-    {
-      int content_width = width_ - non_content_length;
-      for (unsigned i = 0; i < element_content.size(); i += content_width)
-      {
-        display_trace_graph(node_.depth(), depth_counter_, i == 0, console_);
-        console_.show(element_content.substr(i, content_width));
-        console_.new_line();
-      }
-    }
-  }
-}
 
 void console_displayer::show_call_graph(const iface::call_graph& cg_)
 {
-  const auto width = _console->width();
-
   std::vector<int> depth_counter(1);
 
   ++depth_counter[0]; // This value is neved read
@@ -357,7 +345,7 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
   {
     --depth_counter[n.depth()];
 
-    display_node(n, depth_counter, width, *_console);
+    display_node(n, depth_counter);
 
     if (depth_counter.size() <= static_cast<unsigned int>(n.depth()+1))
     {

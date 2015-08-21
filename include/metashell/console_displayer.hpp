@@ -50,6 +50,11 @@ namespace metashell
     bool _syntax_highlight;
 
     data::colored_string format_code(const std::string& c_);
+    data::colored_string format_frame(const data::frame& f_);
+
+    void display_node(
+      const data::call_graph_node& node_,
+      const std::vector<int>& depth_counter_);
   };
 }
 
