@@ -36,12 +36,17 @@ public:
   virtual int height() const override;
 
   void clear();
+  void set_continiation_answer(user_answer answer);
   void set_width(int width_);
   void set_height(int width_);
 
   const metashell::data::colored_string& content() const;
+  int ask_for_continuation_count() const;
 private:
   metashell::data::colored_string _content;
+  int _ask_for_continuation_count = 0;
+
+  user_answer _continuation_answer = user_answer::show_all;
   int _width;
   int _height;
 };

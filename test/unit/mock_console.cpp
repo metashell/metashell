@@ -45,12 +45,19 @@ int mock_console::height() const
 
 iface::console::user_answer mock_console::ask_for_continuation()
 {
-  return iface::console::user_answer::show_all;
+  ++_ask_for_continuation_count;
+  return _continuation_answer;
 }
 
 void mock_console::clear()
 {
   _content.clear();
+  _ask_for_continuation_count = 0;
+}
+
+void mock_console::set_continiation_answer(user_answer answer)
+{
+  _continuation_answer = answer;
 }
 
 void mock_console::set_width(int width_)
@@ -66,5 +73,10 @@ void mock_console::set_height(int height_)
 const metashell::data::colored_string& mock_console::content() const
 {
   return _content;
+}
+
+int mock_console::ask_for_continuation_count() const
+{
+  return _ask_for_continuation_count;
 }
 
