@@ -43,6 +43,11 @@ int mock_console::height() const
   return _height;
 }
 
+iface::console::user_answer mock_console::ask_for_continuation()
+{
+  return iface::console::user_answer::show_all;
+}
+
 void mock_console::clear()
 {
   _content.clear();

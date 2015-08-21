@@ -36,6 +36,11 @@ void stdout_console::new_line()
   std::cout << std::endl;
 }
 
+iface::console::user_answer stdout_console::ask_for_continuation()
+{
+  return iface::console::user_answer::show_all;
+}
+
 int stdout_console::width() const
 {
 #ifdef _WIN32

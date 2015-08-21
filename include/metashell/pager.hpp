@@ -26,10 +26,12 @@ public:
   pager(iface::console& console);
 
   void show(const data::colored_string& string);
-  void new_line();
+  bool new_line();
 
 private:
   iface::console& console_;
+
+  bool show_all = false;
 
   int lines_in_current_page = 0;
   int chars_in_current_line = 0;
