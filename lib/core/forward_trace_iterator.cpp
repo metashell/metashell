@@ -84,22 +84,10 @@ void forward_trace_iterator::visit(
 
     if (!_max_depth || *_max_depth > depth_)
     {
-      metaprogram::out_edge_iterator begin, end;
-      std::tie(begin, end) = boost::out_edges(vertex, *_graph);
-
-      std::vector<metaprogram::edge_descriptor> edges(begin, end);
-
-      // Reverse iteration, so types that got instantiated first
-      // get on the top of the stack
-      for (
-        const metaprogram::edge_descriptor& out_edge :
-          edges | boost::adaptors::reversed
-      )
+      auto edges = _mp->get_filtered_out_edges(vertex);
+      for (const metaprogram::edge_descriptor& out_edge : edges)
       {
-        if (_mp->get_edge_property(out_edge).enabled)
-        {
-          _to_visit.push(std::make_tuple(out_edge, depth_ + 1));
-        }
+        _to_visit.push(std::make_tuple(out_edge, depth_ + 1));
       }
     }
   }

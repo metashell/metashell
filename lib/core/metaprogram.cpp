@@ -21,7 +21,9 @@
 #include <cassert>
 #include <algorithm>
 
-#include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/algorithm/sort.hpp>
+#include <boost/range/algorithm/reverse.hpp>
 
 namespace metashell {
 
@@ -166,15 +168,11 @@ void metaprogram::step() {
       rollback.discovered_vertex = current_vertex;
     }
 
-    auto reverse_edge_range =
-      get_out_edges(current_vertex) | boost::adaptors::reversed;
+    auto edges = get_filtered_out_edges(current_vertex);
 
-    rollback.edge_stack_push_count = 0;
-    for (edge_descriptor edge : reverse_edge_range) {
-      if (get_edge_property(edge).enabled) {
-        state.edge_stack.push(edge);
-        ++rollback.edge_stack_push_count;
-      }
+    rollback.edge_stack_push_count = edges.size();
+    for (edge_descriptor edge : edges) {
+      state.edge_stack.push(edge);
     }
   }
 
@@ -269,6 +267,37 @@ metaprogram::get_in_edges(vertex_descriptor vertex) const {
 boost::iterator_range<metaprogram::out_edge_iterator>
 metaprogram::get_out_edges(vertex_descriptor vertex) const {
   return boost::out_edges(vertex, graph);
+}
+
+std::vector<metaprogram::edge_descriptor> metaprogram::get_filtered_out_edges(
+    vertex_descriptor vertex) const
+{
+  using boost::adaptors::filtered;
+  using boost::range::sort;
+  using boost::range::reverse;
+  using boost::copy_range;
+
+  auto is_enabled = [this](edge_descriptor edge) {
+    return get_edge_property(edge).enabled;
+  };
+
+  auto edges = copy_range<std::vector<edge_descriptor>>(
+    get_out_edges(vertex) | filtered(is_enabled));
+
+  if (get_mode() == mode_t::profile) {
+    // Traverse the eges which took a long time first
+    auto time_order = [this](edge_descriptor lhs, edge_descriptor rhs) {
+      return
+        get_edge_property(lhs).time_taken >
+        get_edge_property(rhs).time_taken;
+    };
+    sort(edges, time_order);
+  }
+  // Reverse iteration, so types that got instantiated first
+  // get on the top of the stack on the caller side
+  reverse(edges);
+
+  return edges;
 }
 
 boost::iterator_range<metaprogram::vertex_iterator>

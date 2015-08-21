@@ -174,6 +174,9 @@ public:
   boost::iterator_range<out_edge_iterator> get_out_edges(
       vertex_descriptor vertex) const;
 
+  std::vector<edge_descriptor> get_filtered_out_edges(
+      vertex_descriptor vertex) const;
+
   boost::iterator_range<vertex_iterator> get_vertices() const;
   boost::iterator_range<edge_iterator> get_edges() const;
 
