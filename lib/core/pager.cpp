@@ -16,16 +16,45 @@
 
 #include <metashell/pager.hpp>
 
+#include <cassert>
+
+#include <boost/range/algorithm/count.hpp>
+
+#include <iostream>
+
 namespace metashell {
 
 pager::pager(iface::console& console) : console_(console) {}
 
 void pager::show(const data::colored_string& string) {
+  int width = console_.width();
+
+  for (char ch : string.get_string()) {
+    if (ch == '\n') {
+      ++lines_in_current_page;
+      chars_in_current_line = 0;
+    } else {
+      ++chars_in_current_line;
+      if (chars_in_current_line > width) {
+        ++lines_in_current_page;
+        chars_in_current_line = 0;
+      }
+    }
+  }
+
   console_.show(string);
 }
 
 void pager::new_line() {
+  chars_in_current_line = 0;
+  ++lines_in_current_page;
+
   console_.new_line();
+
+  int height = console_.height();
+  if (height <= lines_in_current_page + 1) {
+    lines_in_current_page = 0;
+  }
 }
 
 } // namespace metashell
