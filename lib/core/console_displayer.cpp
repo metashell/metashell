@@ -255,7 +255,7 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
   return prefix + format_code(f_.name().name()) + postfix.str();
 }
 
-void console_displayer::display_node(
+bool console_displayer::display_node(
   const data::call_graph_node& node_,
   const std::vector<int>& depth_counter_,
   pager& pager_)
@@ -277,7 +277,6 @@ void console_displayer::display_node(
     display_trace_graph(node_.depth(), depth_counter_, true, pager_);
 
     pager_.show(element_content);
-    pager_.new_line();
   }
   else
   {
@@ -286,9 +285,9 @@ void console_displayer::display_node(
     {
       display_trace_graph(node_.depth(), depth_counter_, i == 0, pager_);
       pager_.show(element_content.substr(i, content_width));
-      pager_.new_line();
     }
   }
+  return pager_.new_line();
 }
 
 void console_displayer::show_frame(const data::frame& frame_)
@@ -356,7 +355,10 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
   {
     --depth_counter[n.depth()];
 
-    display_node(n, depth_counter, pager);
+    if (!display_node(n, depth_counter, pager))
+    {
+      return;
+    }
 
     if (depth_counter.size() <= static_cast<unsigned int>(n.depth()+1))
     {

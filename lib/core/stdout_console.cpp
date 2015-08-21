@@ -38,7 +38,23 @@ void stdout_console::new_line()
 
 iface::console::user_answer stdout_console::ask_for_continuation()
 {
-  return iface::console::user_answer::show_all;
+  std::string line;
+  while (true) {
+    std::cout << "Next page (RETURN), Show all (a), Quit (q): ";
+
+    if (!std::getline(std::cin, line)) {
+      return iface::console::user_answer::quit;
+    }
+    if (line.empty()) {
+      return iface::console::user_answer::next_page;
+    }
+    if (line == "a" || line == "A") {
+      return iface::console::user_answer::show_all;
+    }
+    if (line == "q" || line == "Q") {
+      return iface::console::user_answer::quit;
+    }
+  }
 }
 
 int stdout_console::width() const
