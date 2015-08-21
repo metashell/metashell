@@ -32,6 +32,7 @@ namespace metashell
       virtual void new_line() = 0;
 
       virtual int width() const = 0;
+      virtual int height() const = 0;
     };
   }
 }

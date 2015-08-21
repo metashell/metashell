@@ -40,3 +40,7 @@ int stream_console::width() const
   return std::numeric_limits<int>::max();
 }
 
+int stream_console::height() const
+{
+  return std::numeric_limits<int>::max();
+}

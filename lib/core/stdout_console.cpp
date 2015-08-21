@@ -50,3 +50,16 @@ int stdout_console::width() const
 #endif
 }
 
+int stdout_console::height() const
+{
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO info;
+
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+    return info.srWindow.Bottom - info.srWindow.Top + 1;
+#else
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    return w.ws_row;
+#endif
+}

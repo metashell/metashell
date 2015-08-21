@@ -28,6 +28,7 @@ namespace metashell
     virtual void new_line() override;
 
     virtual int width() const override;
+    virtual int height() const override;
   };
 }
 
