@@ -39,7 +39,8 @@ class metaprogram {
 public:
   enum class mode_t {
     normal,
-    full
+    full,
+    profile
   };
 
   // Creates empty metaprogram: single <root> vertex

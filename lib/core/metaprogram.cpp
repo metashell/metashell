@@ -324,12 +324,19 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
 data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
   const data::type t(get_vertex_property(get_target(e_)).name);
-  return
-    get_mode() == mode_t::full ?
-      data::frame(t) :
-      data::frame(t,
-          get_edge_property(e_).point_of_instantiation,
-          get_edge_property(e_).kind);
+  const auto& ep = get_edge_property(e_);
+
+  switch (get_mode()) {
+    case mode_t::normal:
+      return data::frame(t, ep.point_of_instantiation, ep.kind);
+    case mode_t::full:
+      return data::frame(t);
+    case mode_t::profile:
+      return data::frame(t, ep.point_of_instantiation, ep.kind, ep.time_taken);
+  };
+  // unreachable
+  assert(false);
+  return data::frame(t);
 }
 
 data::frame metaprogram::get_current_frame() const {
@@ -425,6 +432,7 @@ std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode) {
   switch (mode) {
     case metaprogram::mode_t::normal: os << "normal"; break;
     case metaprogram::mode_t::full: os << "full"; break;
+    case metaprogram::mode_t::profile: os << "profile"; break;
   }
   return os;
 }

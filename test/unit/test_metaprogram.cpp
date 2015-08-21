@@ -346,6 +346,13 @@ JUST_TEST_CASE(
   JUST_ASSERT(!mp.is_finished());
 }
 
+JUST_TEST_CASE(test_metaprogram_constructor_normal_mode) {
+  metaprogram mp(metaprogram::mode_t::normal,
+      "some_type", data::type_or_error(data::type("the_result_type")));
+
+  JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::normal);
+}
+
 JUST_TEST_CASE(test_metaprogram_constructor_full_mode) {
   metaprogram mp(metaprogram::mode_t::full,
       "some_type", data::type_or_error(data::type("the_result_type")));
@@ -353,9 +360,9 @@ JUST_TEST_CASE(test_metaprogram_constructor_full_mode) {
   JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::full);
 }
 
-JUST_TEST_CASE(test_metaprogram_constructor_normal_mode) {
-  metaprogram mp(metaprogram::mode_t::normal,
+JUST_TEST_CASE(test_metaprogram_constructor_profile_mode) {
+  metaprogram mp(metaprogram::mode_t::profile,
       "some_type", data::type_or_error(data::type("the_result_type")));
 
-  JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::normal);
+  JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::profile);
 }

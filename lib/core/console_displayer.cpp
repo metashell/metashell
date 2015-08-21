@@ -294,12 +294,18 @@ namespace
 
   data::colored_string format_frame(const data::frame& f_)
   {
-    std::ostringstream s;
+    std::ostringstream prefix;
+    if (f_.is_profiled())
+    {
+      prefix << "[" << f_.time_taken() << "] ";
+    }
+    std::ostringstream postfix;
     if (f_.is_full())
     {
-      s << " (" << f_.kind() << " from " << f_.point_of_instantiation() << ")";
+      postfix
+        << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
     }
-    return highlight_syntax(f_.name().name()) + s.str();
+    return prefix.str() + highlight_syntax(f_.name().name()) + postfix.str();
   }
 
   void display_node(

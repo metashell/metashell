@@ -95,18 +95,18 @@ const mdb_command_handler_map mdb_shell::command_handler =
     {
       {{"evaluate"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_evaluate),
-        "[-full] [-profile] [<type>]",
+        "[-full|-profile] [<type>]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
+        "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
+        "profile mode.\n\n"
         "If called without `<type>`, then the last evaluated metaprogram will be\n"
         "reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-        "explicitly enter `metashell::format< <type> >::type` for the same effect.\n\n"
-        "The qualifier `-profile` is intentionally undocumented. It is only used for\n"
-        "internal profiling, and could be changed or removed at any time."},
+        "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"step"}, repeatable_t::repeatable,
         callback(&mdb_shell::command_step),
         "[over|out] [n]",
@@ -606,6 +606,11 @@ void mdb_shell::command_evaluate(
     }
   }
 
+  if (has_full && has_profile) {
+    displayer_.show_error("-full and -profile flags cannot be used together.");
+    return;
+  }
+
   if (arg.empty()) {
     if (!mp) {
       displayer_.show_error("Nothing has been evaluated yet.");
@@ -616,8 +621,11 @@ void mdb_shell::command_evaluate(
 
   breakpoints.clear();
 
-  metaprogram::mode_t mode =
-    has_full ? metaprogram::mode_t::full : metaprogram::mode_t::normal;
+  metaprogram::mode_t mode = [&] {
+    if (has_full) { return metaprogram::mode_t::full; }
+    if (has_profile) { return metaprogram::mode_t::profile; }
+    return metaprogram::mode_t::normal;
+  }();
 
   if (!run_metaprogram_with_templight(arg, mode, displayer_)) {
     return;
