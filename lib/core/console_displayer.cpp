@@ -255,6 +255,13 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
   return prefix + format_code(f_.name().name()) + postfix.str();
 }
 
+bool console_displayer::display_frame_with_pager(
+  const data::frame& frame_, pager& pager_)
+{
+  pager_.show(format_frame(frame_));
+  return pager_.new_line();
+}
+
 bool console_displayer::display_node(
   const data::call_graph_node& node_,
   const std::vector<int>& depth_counter_,
@@ -335,13 +342,17 @@ void console_displayer::show_file_section(
 
 void console_displayer::show_backtrace(const data::backtrace& trace_)
 {
+  pager pager(*_console);
+
   int i = 0;
   for (const data::frame& f : trace_)
   {
     std::ostringstream s;
     s << "#" << i << " ";
-    _console->show(data::colored_string(s.str(), data::color::white));
-    show_frame(f);
+    pager.show(data::colored_string(s.str(), data::color::white));
+    if (!display_frame_with_pager(f, pager)) {
+      break;
+    }
     ++i;
   }
 }

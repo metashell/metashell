@@ -54,6 +54,8 @@ namespace metashell
     data::colored_string format_time(double time_in_seconds_);
     data::colored_string format_frame(const data::frame& f_);
 
+    bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
+
     bool display_node(
       const data::call_graph_node& node_,
       const std::vector<int>& depth_counter_,
