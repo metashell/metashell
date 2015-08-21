@@ -231,12 +231,20 @@ data::colored_string console_displayer::format_code(const std::string& code_)
   }
 }
 
+data::colored_string console_displayer::format_time(double time_in_seconds_)
+{
+  std::ostringstream ss;
+  ss << std::fixed << std::setprecision(2);
+  ss << time_in_seconds_ * 1000.0 << "ms";
+  return ss.str();
+}
+
 data::colored_string console_displayer::format_frame(const data::frame& f_)
 {
-  std::ostringstream prefix;
+  data::colored_string prefix;
   if (f_.is_profiled())
   {
-    prefix << "[" << f_.time_taken() << "] ";
+    prefix = "[" + format_time(f_.time_taken()) + "] ";
   }
   std::ostringstream postfix;
   if (f_.is_full())
@@ -244,7 +252,7 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
     postfix
       << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
   }
-  return prefix.str() + format_code(f_.name().name()) + postfix.str();
+  return prefix + format_code(f_.name().name()) + postfix.str();
 }
 
 void console_displayer::display_node(
