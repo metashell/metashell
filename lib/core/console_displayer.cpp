@@ -71,7 +71,7 @@ namespace
     int depth_,
     const std::vector<int>& depth_counter_,
     bool print_mark_,
-    iface::console& console_
+    pager& pager_
   )
   {
     assert(depth_counter_.size() > static_cast<unsigned int>(depth_));
@@ -81,7 +81,7 @@ namespace
       //TODO respect the -H (no syntax highlight parameter)
       for (int i = 1; i < depth_; ++i)
       {
-        console_.show(
+        pager_.show(
           data::colored_string(
             depth_counter_[i] > 0 ? "| " : "  ",
             get_color(i)
@@ -94,20 +94,20 @@ namespace
       {
         if (depth_counter_[depth_] == 0)
         {
-          console_.show(data::colored_string("` ", mark_color));
+          pager_.show(data::colored_string("` ", mark_color));
         }
         else
         {
-          console_.show(data::colored_string("+ ", mark_color));
+          pager_.show(data::colored_string("+ ", mark_color));
         }
       }
       else if (depth_counter_[depth_] > 0)
       {
-        console_.show(data::colored_string("| ", mark_color));
+        pager_.show(data::colored_string("| ", mark_color));
       }
       else
       {
-        console_.show("  ");
+        pager_.show("  ");
       }
     }
   }
@@ -257,7 +257,8 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
 
 void console_displayer::display_node(
   const data::call_graph_node& node_,
-  const std::vector<int>& depth_counter_)
+  const std::vector<int>& depth_counter_,
+  pager& pager_)
 {
   const auto width = _console->width();
 
@@ -273,19 +274,19 @@ void console_displayer::display_node(
   )
   {
     // We have no chance to display the graph nicely :(
-    display_trace_graph(node_.depth(), depth_counter_, true, *_console);
+    display_trace_graph(node_.depth(), depth_counter_, true, pager_);
 
-    _console->show(element_content);
-    _console->new_line();
+    pager_.show(element_content);
+    pager_.new_line();
   }
   else
   {
     int content_width = width - non_content_length;
     for (unsigned i = 0; i < element_content.size(); i += content_width)
     {
-      display_trace_graph(node_.depth(), depth_counter_, i == 0, *_console);
-      _console->show(element_content.substr(i, content_width));
-      _console->new_line();
+      display_trace_graph(node_.depth(), depth_counter_, i == 0, pager_);
+      pager_.show(element_content.substr(i, content_width));
+      pager_.new_line();
     }
   }
 }
@@ -345,6 +346,8 @@ void console_displayer::show_backtrace(const data::backtrace& trace_)
 
 void console_displayer::show_call_graph(const iface::call_graph& cg_)
 {
+  pager pager(*_console);
+
   std::vector<int> depth_counter(1);
 
   ++depth_counter[0]; // This value is neved read
@@ -353,7 +356,7 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
   {
     --depth_counter[n.depth()];
 
-    display_node(n, depth_counter);
+    display_node(n, depth_counter, pager);
 
     if (depth_counter.size() <= static_cast<unsigned int>(n.depth()+1))
     {

@@ -20,6 +20,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/console.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/pager.hpp>
 
 namespace metashell
 {
@@ -55,7 +56,8 @@ namespace metashell
 
     void display_node(
       const data::call_graph_node& node_,
-      const std::vector<int>& depth_counter_);
+      const std::vector<int>& depth_counter_,
+      pager& pager_);
   };
 }
 
