@@ -239,12 +239,22 @@ data::colored_string console_displayer::format_time(double time_in_seconds_)
   return ss.str();
 }
 
+data::colored_string console_displayer::format_ratio(double ratio_)
+{
+  std::ostringstream ss;
+  ss << std::fixed << std::setprecision(2);
+  ss << ratio_ * 100.0 << "%";
+  return ss.str();
+}
+
 data::colored_string console_displayer::format_frame(const data::frame& f_)
 {
   data::colored_string prefix;
   if (f_.is_profiled())
   {
-    prefix = "[" + format_time(f_.time_taken()) + "] ";
+    prefix =
+      "[" + format_time(f_.time_taken()) +
+      ", " + format_ratio(f_.time_taken_ratio()) + "] ";
   }
   std::ostringstream postfix;
   if (f_.is_full())

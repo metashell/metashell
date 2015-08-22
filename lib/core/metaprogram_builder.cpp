@@ -41,6 +41,10 @@ void metaprogram_builder::handle_template_begin(
   auto edge =
     mp.add_edge(top_vertex, vertex, kind, point_of_instantiation, time_stamp);
   edge_stack.push(edge);
+
+  if (first_time_stamp <= 0.0) {
+    first_time_stamp = time_stamp;
+  }
 }
 
 void metaprogram_builder::handle_template_end(double time_stamp) {
@@ -52,13 +56,16 @@ void metaprogram_builder::handle_template_end(double time_stamp) {
   initial_time_stamp = time_stamp - initial_time_stamp;
 
   edge_stack.pop();
+
+  last_time_stamp = time_stamp;
 }
 
-const metaprogram& metaprogram_builder::get_metaprogram() const {
+const metaprogram& metaprogram_builder::get_metaprogram() {
   if (!edge_stack.empty()) {
     throw exception(
         "Some Templight TemplateEnd events are missing");
   }
+  mp.set_full_time_taken(last_time_stamp - first_time_stamp);
   return mp;
 }
 

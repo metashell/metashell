@@ -52,6 +52,7 @@ namespace metashell
 
     data::colored_string format_code(const std::string& c_);
     data::colored_string format_time(double time_in_seconds_);
+    data::colored_string format_ratio(double ratio_);
     data::colored_string format_frame(const data::frame& f_);
 
     bool display_frame_with_pager(const data::frame& frame_, pager& pager_);

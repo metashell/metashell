@@ -128,6 +128,8 @@ public:
       const data::file_location& point_of_instantiation,
       double initial_time_stamp);
 
+  void set_full_time_taken(double time_taken);
+
   bool is_empty() const;
 
   const data::type_or_error& get_evaluation_result() const;
@@ -209,6 +211,9 @@ private:
   vertex_descriptor root_vertex;
 
   data::type_or_error evaluation_result;
+
+  // Time taken to run the full metaprogram (used to show % in profiling data)
+  double full_time_taken = 0.0;
 };
 
 template<class P>

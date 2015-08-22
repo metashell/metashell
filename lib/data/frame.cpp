@@ -28,11 +28,13 @@ frame::frame(
     const type& name_,
     const file_location& point_of_instantiation_,
     instantiation_kind kind_,
-    boost::optional<double> time_taken) :
+    boost::optional<double> time_taken,
+    boost::optional<double> time_taken_ratio) :
   _name(name_),
   _point_of_instantiation(point_of_instantiation_),
   _kind(kind_),
-  _time_taken(time_taken)
+  _time_taken(time_taken),
+  _time_taken_ratio(time_taken_ratio)
 {}
 
 const type& frame::name() const
@@ -48,6 +50,7 @@ bool frame::is_full() const
 
 bool frame::is_profiled() const
 {
+  assert(bool(_time_taken) == bool(_time_taken_ratio));
   return bool(_time_taken);
 }
 
@@ -67,6 +70,12 @@ double frame::time_taken() const
 {
   assert(is_profiled());
   return *_time_taken;
+}
+
+double frame::time_taken_ratio() const
+{
+  assert(is_profiled());
+  return *_time_taken_ratio;
 }
 
 
@@ -97,6 +106,7 @@ bool metashell::data::operator==(const frame& a_, const frame& b_)
         /*&& a_.point_of_instantiation() == b_.point_of_instantiation()*/))
     && a_.is_profiled() == b_.is_profiled()
     && (!a_.is_profiled() ||
-        (a_.time_taken() == b_.time_taken()));
+        (a_.time_taken() == b_.time_taken()
+         && a_.time_taken_ratio() == b_.time_taken_ratio()));
 }
 

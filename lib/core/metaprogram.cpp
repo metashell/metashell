@@ -76,6 +76,10 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   return edge;
 }
 
+void metaprogram::set_full_time_taken(double time_taken) {
+  full_time_taken = time_taken;
+}
+
 bool metaprogram::is_empty() const {
   return get_num_vertices() == 1; // 1 is the <root> vertex
 }
@@ -357,7 +361,15 @@ data::frame metaprogram::to_frame(const edge_descriptor& e_) const
     case mode_t::full:
       return data::frame(t);
     case mode_t::profile:
-      return data::frame(t, ep.point_of_instantiation, ep.kind, ep.time_taken);
+      double ratio = [&] {
+        if (full_time_taken <= 0.0) {
+          return 1.0;
+        } else {
+          return ep.time_taken / full_time_taken;
+        }
+      }();
+      return data::frame(
+        t, ep.point_of_instantiation, ep.kind, ep.time_taken, ratio);
   };
   // unreachable
   assert(false);
