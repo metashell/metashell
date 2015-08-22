@@ -33,8 +33,7 @@ namespace metashell
     public:
       frame() = default;
 
-      explicit frame(const type& name_,
-        boost::optional<double> time_taken = boost::none);
+      explicit frame(const type& name_);
 
       frame(const type& name_,
         const file_location& point_of_instantiation_,

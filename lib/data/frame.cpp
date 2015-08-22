@@ -22,8 +22,7 @@
 
 using namespace metashell::data;
 
-frame::frame(const type& name_,
-  boost::optional<double> time_taken) : _name(name_), _time_taken(time_taken) {}
+frame::frame(const type& name_) : _name(name_) {}
 
 frame::frame(
     const type& name_,
