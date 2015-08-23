@@ -33,6 +33,13 @@ namespace metashell
   std::string repair_type_string(const std::string& type);
   std::string get_type_from_ast_string(const std::string& ast);
 
+  result run_clang(
+    const std::string& clang_path_,
+    std::vector<std::string> clang_args_,
+    const std::string& input_,
+    logger* logger_
+  );
+
   result eval_tmp_formatted(
     const iface::environment& env_,
     const std::string& tmp_exp_,
