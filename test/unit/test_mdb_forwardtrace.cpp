@@ -424,3 +424,43 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram) {
   );
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3) {
+  in_memory_displayer d;
+  mdb_test_shell sh(
+    fibonacci_mp +
+    "int_<fib<5>::value> x;"
+    "int_<fib<6>::value> y;"
+  );
+
+  sh.line_available("evaluate -", d);
+  sh.line_available("forwardtrace", d);
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("<environment>")), 0, 8},
+      {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 2},
+      {frame(    fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
+      {frame(    fib<1>(), file_location(), instantiation_kind::memoization), 4, 0},
+      {frame(  fib<4>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<2>(), file_location(), instantiation_kind::memoization), 3, 0},
+      {frame(   fib<3>(), file_location(), instantiation_kind::memoization), 3, 0},
+      {frame( fib<5>(), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<5>"), file_location(), instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("int_<5>"), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame( fib<6>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<4>(), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame(  fib<5>(), file_location(), instantiation_kind::memoization), 2, 0},
+      {frame( fib<6>(), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<8>"), file_location(), instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("int_<8>"), file_location(), instantiation_kind::memoization), 1, 0},
+    },
+    d.call_graphs().front()
+  );
+}
+#endif
