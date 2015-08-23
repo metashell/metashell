@@ -88,9 +88,8 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex) {
 
   JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::normal);
 
-  metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
-  metaprogram::edge_descriptor edge_root_a =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto vertex_a = mp.add_vertex("A");
+  auto edge_root_a = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
         data::file_location("foo.cpp", 10, 20), 10.0);
 
@@ -138,13 +137,11 @@ JUST_TEST_CASE(test_metaprogram_with_single_non_root_vertex_parallel_edge) {
 
   JUST_ASSERT_EQUAL(mp.get_mode(), metaprogram::mode_t::normal);
 
-  metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
-  metaprogram::edge_descriptor edge_root_a_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto vertex_a = mp.add_vertex("A");
+  auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
         data::file_location("bar.cpp", 20, 10), 10.0);
-  metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto edge_root_a_me = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::memoization,
         data::file_location("foobar.cpp", 21, 11), 10.0);
 
@@ -204,9 +201,8 @@ JUST_TEST_CASE(test_metaprogram_step_back_with_single_non_root_vertex) {
   metaprogram mp(metaprogram::mode_t::normal,
       "some_type", data::type_or_error(data::type("the_result_type")));
 
-  metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
-  metaprogram::edge_descriptor edge_root_a =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto vertex_a = mp.add_vertex("A");
+  auto edge_root_a = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
       data::file_location("foobar.cpp", 21, 11), 10.0);
 
@@ -254,13 +250,11 @@ JUST_TEST_CASE(
   metaprogram mp(metaprogram::mode_t::normal,
       "some_type", data::type_or_error(data::type("the_result_type")));
 
-  metaprogram::vertex_descriptor vertex_a = mp.add_vertex("A");
-  metaprogram::edge_descriptor edge_root_a_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto vertex_a = mp.add_vertex("A");
+  auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
         data::file_location("xx.cpp", 1, 2), 10.0);
-  metaprogram::edge_descriptor edge_root_a_me =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto edge_root_a_me = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::memoization,
         data::file_location("yy.cpp", 1, 2), 10.0);
 
@@ -353,12 +347,10 @@ JUST_TEST_CASE(test_metaprogram_step_sorting_in_profile_mode) {
   auto vertex_a = mp.add_vertex("A");
   auto vertex_b = mp.add_vertex("B");
 
-  auto edge_root_a_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_a,
+  auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
         data::file_location("xx.cpp", 1, 2), 10.0);
-  auto edge_root_b_ti =
-    mp.add_edge(mp.get_root_vertex(), vertex_b,
+  auto edge_root_b_ti = mp.add_edge(mp.get_root_vertex(), vertex_b,
         data::instantiation_kind::memoization,
         data::file_location("yy.cpp", 1, 2), 30.0);
 
