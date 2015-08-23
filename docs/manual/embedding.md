@@ -123,13 +123,16 @@ Format:
   "name":"<type instantiated>",
   "kind":"<kind of instatiation>"
   "point_of_instantiation":"<point of instantiation>"
+  "time_taken":"<time taken in seconds>"
+  "time_taken_ratio":"<time taken ratio>
 }` <br />
 <br />
 Display a template class instantiation. This is treated as a stack frame of a
 template metaprogram execution (this is where the name comes from). The
 `<type instantiated>` is the pretty-printed version of the template instance.
-The `kind` and `point_of_instantiation` fields are optional depending on
-whether Metashell has this information. The possible values for kind are: <br />
+The `kind`, `point_of_instantiation`, `time_taken` and `time_taken_ratio` fields
+are optional depending on whether Metashell has this information. The possible
+values for kind are: <br />
 
     * `DefaultFunctionArgumentInstantiation`
     * `DefaultTemplateArgumentChecking`
@@ -147,6 +150,11 @@ Format of `point_of_instantiation` is `<file_name>:<row>:<column>`. For example:
 `main.cpp:35:16`. There is a special file called `<stdin>` which can appear in
 this field. This is a placeholder for the the code directly entered into the
 shell.
+
+`time_taken` is given in seconds as a double. `time_taken_ratio` is also a
+double and can be generally expected to be in the range `[0-1]`. Sometimes it
+can get out of this range, if there is something wrong with how the compiler
+reports timings to Metashell.
 
 * __prompt__ <br />
 <br />
