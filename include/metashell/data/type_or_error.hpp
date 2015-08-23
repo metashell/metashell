@@ -31,12 +31,15 @@ public:
   typedef type type_type;
   typedef std::string error_type;
 
+  type_or_error();
   type_or_error(const type_type& t);
   type_or_error(const error_type& e);
 
+  static type_or_error make_none();
   static type_or_error make_type(const type_type& t);
   static type_or_error make_error(const error_type& e);
 
+  bool is_none() const;
   bool is_type() const;
   bool is_error() const;
 
@@ -46,7 +49,7 @@ public:
   bool operator==(const type_or_error& other) const;
 
 private:
-  typedef boost::variant<type_type, error_type> data_type;
+  typedef boost::variant<boost::blank, type_type, error_type> data_type;
   data_type data;
 };
 
