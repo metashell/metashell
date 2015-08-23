@@ -381,8 +381,9 @@ Metaprogram started
 (mdb)
 ```
 
-From this point, you can use the usual commands to traverse the instantiation
-tree of the whole translation unit.
+The `-` means, that the final trace you can traverse is not constrained to a
+single expression, but to whole translation unit.  From this point, you can use
+the usual commands to traverse and inspect the instantiation tree.
 
 ### Full mode
 
