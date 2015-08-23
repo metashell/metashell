@@ -39,6 +39,11 @@ void rapid_json_writer::int_(int value_)
   _writer.Int(value_);
 }
 
+void rapid_json_writer::double_(double value_)
+{
+  _writer.Double(value_);
+}
+
 void rapid_json_writer::start_object()
 {
   _writer.StartObject();

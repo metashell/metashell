@@ -27,6 +27,7 @@ class mock_json_writer : public metashell::iface::json_writer
 public:
   virtual void string(const std::string& value_) override;
   virtual void int_(int value_) override;
+  virtual void double_(double value) override;
 
   virtual void start_object() override;
   virtual void key(const std::string& key_) override;

@@ -33,6 +33,7 @@ namespace metashell
 
     virtual void string(const std::string& value_) override;
     virtual void int_(int value_) override;
+    virtual void double_(double value_) override;
 
     virtual void start_object() override;
     virtual void key(const std::string& key_) override;
