@@ -611,12 +611,15 @@ void mdb_shell::command_evaluate(
     return;
   }
 
-  if (arg.empty()) {
+  boost::optional<std::string> expression = arg;
+  if (expression->empty()) {
     if (!mp) {
       displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
-    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
+    expression = mp->get_vertex_property(mp->get_root_vertex()).name;
+  } else if (*expression == "-") {
+    expression = boost::none;
   }
 
   breakpoints.clear();
@@ -627,7 +630,7 @@ void mdb_shell::command_evaluate(
     return metaprogram::mode_t::normal;
   }();
 
-  if (!run_metaprogram_with_templight(arg, mode, displayer_)) {
+  if (!run_metaprogram_with_templight(expression, mode, displayer_)) {
     return;
   }
 
@@ -800,7 +803,7 @@ void mdb_shell::command_quit(
 }
 
 bool mdb_shell::run_metaprogram_with_templight(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     metaprogram::mode_t mode,
     iface::displayer& displayer_)
 {
@@ -809,7 +812,8 @@ bool mdb_shell::run_metaprogram_with_templight(
 
   env.set_output_location(output_path);
 
-  data::type_or_error evaluation_result = run_metaprogram(str, displayer_);
+  data::type_or_error evaluation_result =
+    run_metaprogram(expression, displayer_);
 
   // Opening in binary mode, because some platforms interpret some characters
   // specially in text mode, which caused parsing to fail.
@@ -828,7 +832,10 @@ bool mdb_shell::run_metaprogram_with_templight(
   }
 
   mp = metaprogram::create_from_protobuf_stream(
-      protobuf_stream, mode, str, evaluation_result);
+      protobuf_stream,
+      mode,
+      expression ? *expression : "<environment>",
+      evaluation_result);
 
   assert(mp);
   if (mp->is_empty() && evaluation_result.is_error()) {
@@ -843,10 +850,12 @@ bool mdb_shell::run_metaprogram_with_templight(
 }
 
 data::type_or_error mdb_shell::run_metaprogram(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     iface::displayer& displayer_)
 {
-  result res = eval_tmp(env, str, conf, _logger);
+  result res = expression ?
+    eval_tmp(env, *expression, conf, _logger) :
+    eval_environment(env, conf, _logger);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
@@ -854,8 +863,11 @@ data::type_or_error mdb_shell::run_metaprogram(
 
   if (!res.successful) {
     return data::type_or_error::make_error(res.error);
+  } else if (expression) {
+    return data::type_or_error::make_type(data::type(res.output));
+  } else {
+    return data::type_or_error::make_none();
   }
-  return data::type_or_error::make_type(data::type(res.output));
 }
 
 boost::optional<int> mdb_shell::parse_defaultable_integer(

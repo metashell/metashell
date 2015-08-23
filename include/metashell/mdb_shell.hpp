@@ -92,12 +92,12 @@ protected:
       iface::displayer& displayer_) const;
 
   bool run_metaprogram_with_templight(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     metaprogram::mode_t mode,
     iface::displayer& displayer_
   );
   data::type_or_error run_metaprogram(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     iface::displayer& displayer_
   );
 

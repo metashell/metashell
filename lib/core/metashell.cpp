@@ -213,6 +213,23 @@ result metashell::eval_tmp(
     true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
+result metashell::eval_environment(
+  const iface::environment& env_,
+  const config& config_,
+  logger* logger_)
+{
+  const just::process::output output = run_clang(
+    config_.clang_path,
+    env_.clang_arguments(),
+    env_.get(),
+    logger_);
+
+  if (output.exit_code() != 0) {
+    return result{false, "", output.standard_error(), ""};
+  }
+  return result{true, "", "", ""};
+}
+
 namespace
 {
   std::pair<std::string, std::string> find_completion_start(
