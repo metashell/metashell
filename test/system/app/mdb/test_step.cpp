@@ -324,6 +324,81 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i++);
 }
 
+JUST_TEST_CASE(test_mdb_step_over_environment_multiple_steps) {
+  std::vector<json_string> commands = {
+    command(
+      fibonacci_mp +
+      "int_<fib<5>::value> x;"
+      "int_<fib<6>::value> y;"
+    ),
+    command("#msh mdb -")
+  };
+  for (auto i = 0; i < 19; ++i) {
+    commands.push_back(command("step"));
+  }
+
+  const auto r = run_metashell(commands);
+
+  auto i = r.begin() + 4;
+
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<3>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<2>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<0>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<4>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<2>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<3>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("int_<5>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("int_<5>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<6>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<4>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<6>"), instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("int_<8>"), instantiation_kind::template_instantiation), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("int_<8>"), instantiation_kind::memoization), *i);
+  i += 2;
+
+  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
+}
+
 JUST_TEST_CASE(
     test_mdb_step_over_the_whole_metaprogram_multiple_steps_in_full_mode)
 {
