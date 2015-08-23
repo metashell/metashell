@@ -1,4 +1,4 @@
-<h1>Embedding Metashell into other applications</h1>
+# Embedding Metashell into other applications
 
 Metashell provides a [JSON](http://json.org/)-based interface for building a
 custom front-end or embedding Metashell into IDEs. To use it, you need to start
@@ -13,14 +13,26 @@ Here is the list of commands Metashell accepts when it is running in JSON-mode.
 
 * __cmd__
 
-Format: `{ "type":"cmd", "cmd":"<command>" }`
+Format:
+```json
+{
+  "type":"cmd",
+  "cmd":"<command>"
+}
+```
 
 Sending this command to Metashell means that the user has typed `<command>` in
 and pressed enter in the shell.
 
 * __code\_completion__
 
-Format: `{ "type":"code_completion", "code":"<code to complete>" }`
+Format:
+```json
+{
+  "type":"code_completion",
+  "code":"<code to complete>"
+}
+```
 
 Sending this command to Meashell means that the user has asked for
 code-completion and the code to complete is `<code to complete>`. As a response
@@ -40,7 +52,7 @@ Format:
 ```json
 {
   "type":"backtrace",
-  "frames":[<frames of the backtrace>]
+  "frames":"[list of frames of the backtrace]"
 }
 ```
 
@@ -52,7 +64,7 @@ following:
 ```json
 {
   "name":"<type instantiated>",
-  "kind":"<kind of instatiation>"
+  "kind":"<kind of instatiation>",
   "point_of_instantiation":"<point of instantiation>"
 }
 ```
@@ -66,7 +78,7 @@ Format:
 ```json
 {
   "type":"call_graph",
-  "nodes":[<nodes of the call graph>]
+  "nodes":"[list of nodes of the call graph]"
 }
 ```
 
@@ -80,9 +92,9 @@ format of the nodes is the following:
 {
   "name":"<type instantiated>",
   "kind":"<kind of instatiation>",
-  "point_of_instantiation":"<point of instantiation>"
-  "depth":<depth of the node in the tree>,
-  "children":<number of children the node has>
+  "point_of_instantiation":"<point of instantiation>",
+  "depth":"<depth of the node in the tree>",
+  "children":"<number of children the node has>"
 }
 ```
 
@@ -96,7 +108,7 @@ Format:
 ```json
 {
   "type":"code_completion_result",
-  "completions":[<list of completions>]
+  "completions":"[list of completions]"
 }
 ```
 
@@ -110,7 +122,7 @@ Format:
 ```json
 {
   "type":"comment",
-  "paragraphs":[<list of paragraphs>]
+  "paragraphs":"[list of paragraphs]"
 }
 ```
 
@@ -160,10 +172,10 @@ Format:
 {
   "type":"frame",
   "name":"<type instantiated>",
-  "kind":"<kind of instatiation>"
-  "point_of_instantiation":"<point of instantiation>"
-  "time_taken":"<time taken in seconds>"
-  "time_taken_ratio":"<time taken ratio>
+  "kind":"<kind of instatiation>",
+  "point_of_instantiation":"<point of instantiation>",
+  "time_taken":"<time taken in seconds>",
+  "time_taken_ratio":"<time taken ratio>"
 }
 ```
 
@@ -215,7 +227,7 @@ further output until the next command arrives.
 
 Format:
 
-```
+```json
 {
   "type":"raw_text",
   "value":"<text>"
@@ -228,7 +240,7 @@ Format:
 
 Format:
 
-```
+```json
 {
   "type":"type",
   "name":"<pretty printed type>"
