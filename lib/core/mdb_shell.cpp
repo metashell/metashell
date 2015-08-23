@@ -459,7 +459,7 @@ void mdb_shell::filter_disable_everything() {
 }
 
 
-void mdb_shell::filter_enable_reachable_from_current_line() {
+void mdb_shell::filter_enable_reachable(bool for_current_line) {
   using vertex_descriptor = metaprogram::vertex_descriptor;
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
@@ -476,9 +476,14 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     edge_property& property = mp->get_edge_property(edge);
     const std::string& target_name =
       mp->get_vertex_property(mp->get_target(edge)).name;
-    // Filter out edges, that is not instantiated by the entered type
-    if (property.point_of_instantiation.name == stdin_name &&
-        property.point_of_instantiation.row == line_number + 1 &&
+    // Filter out edges, that is not instantiated
+    // by the entered type if requested
+    const bool current_line_filter = !for_current_line || (
+      property.point_of_instantiation.name == stdin_name &&
+      property.point_of_instantiation.row == line_number + 1
+    );
+
+    if (current_line_filter &&
         (property.kind == data::instantiation_kind::template_instantiation ||
         property.kind == data::instantiation_kind::memoization) &&
         (!is_wrap_type(target_name) ||
@@ -564,11 +569,11 @@ void mdb_shell::filter_similar_edges() {
   }
 }
 
-void mdb_shell::filter_metaprogram() {
+void mdb_shell::filter_metaprogram(bool for_current_line) {
   assert(mp);
 
   filter_disable_everything();
-  filter_enable_reachable_from_current_line();
+  filter_enable_reachable(for_current_line);
   filter_unwrap_vertices();
   filter_similar_edges();
 }
@@ -617,7 +622,7 @@ void mdb_shell::command_evaluate(
       displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
-    expression = mp->get_vertex_property(mp->get_root_vertex()).name;
+    expression = last_evaluated_expression;
   } else if (*expression == "-") {
     expression = boost::none;
   }
@@ -630,13 +635,14 @@ void mdb_shell::command_evaluate(
     return metaprogram::mode_t::normal;
   }();
 
+  last_evaluated_expression = expression;
   if (!run_metaprogram_with_templight(expression, mode, displayer_)) {
     return;
   }
 
   displayer_.show_raw_text("Metaprogram started");
 
-  filter_metaprogram();
+  filter_metaprogram(bool(expression));
 }
 
 void mdb_shell::command_forwardtrace(

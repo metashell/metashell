@@ -53,7 +53,7 @@ namespace metashell
       void show_type_or_error(const data::type_or_error& te_) {
         if (te_.is_type()) {
           show_type(te_.get_type());
-        } else {
+        } else if (te_.is_error()) {
           show_error(te_.get_error());
         }
       }

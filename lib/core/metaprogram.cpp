@@ -116,7 +116,7 @@ bool metaprogram::is_at_endpoint(direction_t direction) const {
 }
 
 bool metaprogram::is_finished() const {
-  if (evaluation_result.is_type()) {
+  if (evaluation_result.is_type() || evaluation_result.is_none()) {
     return state.edge_stack.empty();
   }
 
