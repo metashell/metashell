@@ -334,11 +334,62 @@ short) without giving any expression as an argument:
 Metaprogram started
 ```
 
+### Profiling
+
+Metadebugger can be used to profile template metaprograms. To enable profiling
+call `evaluate` or `#msh mdb` with the `-profile` flag:
+
+```cpp
+(mdb) evaluate -profile int_<fib<4>::value>
+Metaprogram started
+(mdb) ft
+int_<fib<4>::value>
++ [0.41ms, 76.89%] fib<4> (TemplateInstantiation)
+| + [0.14ms, 26.70%] fib<2> (TemplateInstantiation)
+| | + [0.01ms, 2.44%] fib<1> (Memoization)
+| | ` [0.01ms, 2.06%] fib<0> (Memoization)
+| ` [0.06ms, 11.84%] fib<3> (TemplateInstantiation)
+|   + [0.01ms, 1.12%] fib<1> (Memoization)
+|   ` [0.01ms, 0.94%] fib<2> (Memoization)
++ [0.05ms, 8.84%] int_<5> (TemplateInstantiation)
+` [0.01ms, 0.94%] fib<4> (Memoization)
+```
+
+Some extra information is printed every time a frame is printed by any command.
+You can see the absolute time taken by an instantiation and all of it's sub
+instantiations as well as an approximate ratio of the time taken by an
+instantiation and the full template instantiation process as a percentage.
+The sum of the percentages on the top level will never add up to 100% since the
+compiler does other things which are not shown in the trace.
+
+One more improtant difference in profile mode, is that the instantiations and
+sub instantiations are not ordered by the order which they were actually
+instantiated by the compiler, but the time they took the longest one being the
+first. This means that you can usually find the bottleneck just by looking at
+the first few steps of the metaprogram.
+
+#### Profiling a translation unit
+
+When trying to find out why a specific translation unit takes a long time to
+compile, you may want to see the trace for the full file, not just a single
+expression. You can do this with Metadebugger as well:
+
+```cpp
+> #include "file_which_takes_a_long_time_to_compile.cpp"
+> #msh mdb -profile -
+Metaprogram started
+(mdb)
+```
+
+From this point, you can use the usual commands to traverse the instantiation
+tree of the whole translation unit.
+
 ### Full mode
 
-There are two modes which Metadebugger can operate in. The normal mode, which
-was shown in the previous chapters, and the full mode. To demonstrate the
-difference let's evaluate a metaprogram in full mode and print the forwardtrace:
+There are three modes which Metadebugger can operate in. The normal mode and
+profiling mode which was shown in the previous chapters, and the full mode.
+To demonstrate the difference let's evaluate a metaprogram in full mode and
+print the forwardtrace:
 
 ```cpp
 (mdb) evaluate -full int_<fib<4>::value>
