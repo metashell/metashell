@@ -95,14 +95,16 @@ const mdb_command_handler_map mdb_shell::command_handler =
     {
       {{"evaluate"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_evaluate),
-        "[-full|-profile] [<type>]",
+        "[-full|-profile] [<type>|-]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
         "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
         "profile mode.\n\n"
-        "If called without `<type>`, then the last evaluated metaprogram will be\n"
-        "reevaluated.\n\n"
+        "Instead of `<type>`, evaluate can be called with `-`, in which case the\n"
+        "whole environment is being debugged not just a single type expression.\n\n"
+        "If called without `<type>` or `-`, then the last evaluated metaprogram will\n"
+        "be reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"

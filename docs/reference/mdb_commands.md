@@ -3,7 +3,7 @@
 You can find the list of MDB commands here.
 
 <!-- mdb_info -->
-* __`evaluate [-full|-profile] [<type>]`__ <br />
+* __`evaluate [-full|-profile] [<type>|-]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
 Evaluating a metaprogram using the `-full` qualifier will expand all
   Memoization events.
@@ -11,8 +11,11 @@ Evaluating a metaprogram using the `-full` qualifier will expand all
   Evaluating a metaprogram using the `-profile` qualifier will enable
   profile mode.
   
-  If called without `<type>`, then the last evaluated metaprogram will be
-  reevaluated.
+  Instead of `<type>`, evaluate can be called with `-`, in which case the
+  whole environment is being debugged not just a single type expression.
+  
+  If called without `<type>` or `-`, then the last evaluated metaprogram will
+  be reevaluated.
   
   Previous breakpoints are cleared.
   
