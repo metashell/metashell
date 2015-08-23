@@ -346,6 +346,67 @@ JUST_TEST_CASE(
   JUST_ASSERT(!mp.is_finished());
 }
 
+JUST_TEST_CASE(test_metaprogram_step_sorting_in_profile_mode) {
+  metaprogram mp(metaprogram::mode_t::profile,
+      "some_type", data::type_or_error(data::type("the_result_type")));
+
+  auto vertex_a = mp.add_vertex("A");
+  auto vertex_b = mp.add_vertex("B");
+
+  auto edge_root_a_ti =
+    mp.add_edge(mp.get_root_vertex(), vertex_a,
+        data::instantiation_kind::template_instantiation,
+        data::file_location("xx.cpp", 1, 2), 10.0);
+  auto edge_root_b_ti =
+    mp.add_edge(mp.get_root_vertex(), vertex_b,
+        data::instantiation_kind::memoization,
+        data::file_location("yy.cpp", 1, 2), 30.0);
+
+  mp.set_full_time_taken(40.0);
+
+  JUST_ASSERT_EQUAL(3u, mp.get_num_vertices());
+  JUST_ASSERT_EQUAL(2u, mp.get_num_edges());
+
+  JUST_ASSERT_EQUAL(10.0, mp.get_edge_property(edge_root_a_ti).time_taken);
+  JUST_ASSERT_EQUAL(30.0, mp.get_edge_property(edge_root_b_ti).time_taken);
+
+  mp.step();
+
+  // B should come first, since that took longer to finish
+
+  {
+    auto frame = mp.get_current_frame();
+
+    JUST_ASSERT(frame.is_full());
+    JUST_ASSERT(frame.is_profiled());
+
+    JUST_ASSERT_EQUAL("B", frame.name().name());
+    JUST_ASSERT_EQUAL("yy.cpp", frame.point_of_instantiation().name);
+    JUST_ASSERT_EQUAL(30.0, frame.time_taken());
+    JUST_ASSERT_EQUAL(0.75, frame.time_taken_ratio());
+  }
+
+  mp.step();
+
+  {
+    auto frame = mp.get_current_frame();
+
+    JUST_ASSERT(frame.is_full());
+    JUST_ASSERT(frame.is_profiled());
+
+    // A should come second, since that was faster
+
+    JUST_ASSERT_EQUAL("A", frame.name().name());
+    JUST_ASSERT_EQUAL("xx.cpp", frame.point_of_instantiation().name);
+    JUST_ASSERT_EQUAL(10.0, frame.time_taken());
+    JUST_ASSERT_EQUAL(0.25, frame.time_taken_ratio());
+  }
+
+  mp.step();
+
+  JUST_ASSERT(mp.is_finished());
+}
+
 JUST_TEST_CASE(test_metaprogram_constructor_normal_mode) {
   metaprogram mp(metaprogram::mode_t::normal,
       "some_type", data::type_or_error(data::type("the_result_type")));
