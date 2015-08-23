@@ -67,7 +67,18 @@ namespace
     return t;
   }
 
-}
+  just::process::output run_clang(
+    const std::string& clang_path_,
+    std::vector<std::string> clang_args_,
+    const std::string& input_,
+    logger* logger_
+  )
+  {
+    clang_args_.push_back("-"); //Compile from stdin
+
+    return clang_binary(clang_path_, logger_).run(clang_args_, input_);
+  }
+} // anonymous namespace
 
 std::string metashell::repair_type_string(const std::string& type) {
   boost::regex bool_regex(
@@ -144,26 +155,6 @@ result metashell::validate_code(
   }
 }
 
-result metashell::run_clang(
-  const std::string& clang_path_,
-  std::vector<std::string> clang_args_,
-  const std::string& input_,
-  logger* logger_
-)
-{
-  clang_args_.push_back("-"); //Compile from stdin
-
-  const just::process::output output =
-    clang_binary(clang_path_, logger_).run(clang_args_, input_);
-
-  if (output.exit_code() != 0) {
-    return result{false, "", output.standard_error(), ""};
-  }
-
-  return result{
-    true, get_type_from_ast_string(output.standard_output()), "", ""};
-}
-
 result metashell::eval_tmp_formatted(
   const iface::environment& env_,
   const std::string& tmp_exp_,
@@ -207,11 +198,19 @@ result metashell::eval_tmp(
   const config& config_,
   logger* logger_)
 {
-  return run_clang(
-    config_.clang_path, env_.clang_arguments(),
+  const just::process::output output = run_clang(
+    config_.clang_path,
+    env_.clang_arguments(),
     env_.get_appended(
       "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"),
     logger_);
+
+  if (output.exit_code() != 0) {
+    return result{false, "", output.standard_error(), ""};
+  }
+
+  return result{
+    true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
 namespace
