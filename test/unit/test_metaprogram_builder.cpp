@@ -197,3 +197,47 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
   JUST_ASSERT(mp.is_finished());
 }
+
+JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1) {
+  metaprogram_builder mb(
+    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+
+  JUST_ASSERT_THROWS<std::exception>([&] {
+    mb.handle_template_end(100.0);
+  }).check_exception(JUST_WHAT_RETURNS(
+    "Mismatched Templight TemplateBegin and TemplateEnd events"));
+}
+
+JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
+  metaprogram_builder mb(
+    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+
+  mb.handle_template_begin(
+    data::instantiation_kind::template_instantiation,
+    "type<A>",
+    data::file_location("file", 10, 20),
+    100.0);
+
+  mb.handle_template_end(110.0);
+
+  JUST_ASSERT_THROWS<std::exception>([&] {
+    mb.handle_template_end(120.0);
+  }).check_exception(JUST_WHAT_RETURNS(
+    "Mismatched Templight TemplateBegin and TemplateEnd events"));
+}
+
+JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events) {
+  metaprogram_builder mb(
+    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+
+  mb.handle_template_begin(
+    data::instantiation_kind::template_instantiation,
+    "type<A>",
+    data::file_location("file", 10, 20),
+    100.0);
+
+  JUST_ASSERT_THROWS<std::exception>([&] {
+    mb.get_metaprogram();
+  }).check_exception(JUST_WHAT_RETURNS(
+    "Some Templight TemplateEnd events are missing"));
+}
