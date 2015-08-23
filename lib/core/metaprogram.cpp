@@ -377,6 +377,7 @@ data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 }
 
 data::frame metaprogram::get_current_frame() const {
+  assert(!is_at_start());
   assert(!is_finished());
 
   return to_frame(*state.edge_stack.top());
