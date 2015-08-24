@@ -21,9 +21,15 @@
 
 namespace metashell { namespace data {
 
+type_or_error::type_or_error() : data(boost::blank{}) {}
+
 type_or_error::type_or_error(const type_type& t) : data(t) {}
 
 type_or_error::type_or_error(const error_type& e) : data(e) {}
+
+type_or_error type_or_error::make_none() {
+  return type_or_error();
+}
 
 type_or_error type_or_error::make_type(const type_type& t) {
   return type_or_error(t);
@@ -31,6 +37,10 @@ type_or_error type_or_error::make_type(const type_type& t) {
 
 type_or_error type_or_error::make_error(const error_type& e) {
   return type_or_error(e);
+}
+
+bool type_or_error::is_none() const {
+  return boost::get<boost::blank>(&data) != nullptr;
 }
 
 bool type_or_error::is_type() const {
@@ -58,8 +68,10 @@ bool type_or_error::operator==(const type_or_error& other) const {
 std::ostream& operator<<(std::ostream& os, const type_or_error& te) {
   if (te.is_type()) {
     os << "type[" << te.get_type() << "]";
-  } else {
+  } else if (te.is_error()) {
     os << "error[" << te.get_error() << "]";
+  } else {
+    os << "none[]";
   }
   return os;
 }

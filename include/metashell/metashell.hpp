@@ -46,6 +46,11 @@ namespace metashell
     const config& config_,
     logger* logger_);
 
+  result eval_environment(
+    const iface::environment& env_,
+    const config& config_,
+    logger* logger_);
+
   result validate_code(
     const std::string& s_,
     const config& config_,

@@ -21,15 +21,17 @@
 #include <cassert>
 #include <algorithm>
 
-#include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/algorithm/sort.hpp>
+#include <boost/range/algorithm/reverse.hpp>
 
 namespace metashell {
 
 metaprogram::metaprogram(
-    bool full_mode,
+    mode_t mode,
     const std::string& root_name,
     const data::type_or_error& evaluation_result) :
-  full_mode(full_mode),
+  mode(mode),
   evaluation_result(evaluation_result)
 {
   root_vertex = add_vertex(root_name);
@@ -56,7 +58,8 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor from,
     vertex_descriptor to,
     data::instantiation_kind kind,
-    const data::file_location& point_of_instantiation)
+    const data::file_location& point_of_instantiation,
+    double initial_time_stamp)
 {
   edge_descriptor edge;
   bool inserted;
@@ -67,7 +70,14 @@ metaprogram::edge_descriptor metaprogram::add_edge(
   get_edge_property(edge).kind = kind;
   get_edge_property(edge).point_of_instantiation = point_of_instantiation;
 
+  // This should be later modified when the TemplateEnd event is processed
+  get_edge_property(edge).time_taken = initial_time_stamp;
+
   return edge;
+}
+
+void metaprogram::set_full_time_taken(double time_taken) {
+  full_time_taken = time_taken;
 }
 
 bool metaprogram::is_empty() const {
@@ -90,8 +100,8 @@ void metaprogram::reset_state() {
   state_history = state_history_t();
 }
 
-bool metaprogram::is_in_full_mode() const {
-  return full_mode;
+metaprogram::mode_t metaprogram::get_mode() const {
+  return mode;
 }
 
 bool metaprogram::is_at_endpoint(direction_t direction) const {
@@ -106,7 +116,7 @@ bool metaprogram::is_at_endpoint(direction_t direction) const {
 }
 
 bool metaprogram::is_finished() const {
-  if (evaluation_result.is_type()) {
+  if (evaluation_result.is_type() || evaluation_result.is_none()) {
     return state.edge_stack.empty();
   }
 
@@ -157,20 +167,16 @@ void metaprogram::step() {
   state.edge_stack.pop();
 
   if (!state.discovered[current_vertex]) {
-    if (!full_mode) {
+    if (get_mode() != mode_t::full) {
       state.discovered[current_vertex] = true;
       rollback.discovered_vertex = current_vertex;
     }
 
-    auto reverse_edge_range =
-      get_out_edges(current_vertex) | boost::adaptors::reversed;
+    auto edges = get_filtered_out_edges(current_vertex);
 
-    rollback.edge_stack_push_count = 0;
-    for (edge_descriptor edge : reverse_edge_range) {
-      if (get_edge_property(edge).enabled) {
-        state.edge_stack.push(edge);
-        ++rollback.edge_stack_push_count;
-      }
+    rollback.edge_stack_push_count = edges.size();
+    for (edge_descriptor edge : edges) {
+      state.edge_stack.push(edge);
     }
   }
 
@@ -203,10 +209,6 @@ void metaprogram::step_back() {
   state.edge_stack.push(rollback.popped_edge);
 
   state_history.pop();
-}
-
-const metaprogram::graph_t& metaprogram::get_graph() const {
-  return graph;
 }
 
 const metaprogram::state_t& metaprogram::get_state() const {
@@ -267,6 +269,37 @@ metaprogram::get_out_edges(vertex_descriptor vertex) const {
   return boost::out_edges(vertex, graph);
 }
 
+std::vector<metaprogram::edge_descriptor> metaprogram::get_filtered_out_edges(
+    vertex_descriptor vertex) const
+{
+  using boost::adaptors::filtered;
+  using boost::range::sort;
+  using boost::range::reverse;
+  using boost::copy_range;
+
+  auto is_enabled = [this](edge_descriptor edge) {
+    return get_edge_property(edge).enabled;
+  };
+
+  auto edges = copy_range<std::vector<edge_descriptor>>(
+    get_out_edges(vertex) | filtered(is_enabled));
+
+  if (get_mode() == mode_t::profile) {
+    // Traverse the eges which took a long time first
+    auto time_order = [this](edge_descriptor lhs, edge_descriptor rhs) {
+      return
+        get_edge_property(lhs).time_taken >
+        get_edge_property(rhs).time_taken;
+    };
+    sort(edges, time_order);
+  }
+  // Reverse iteration, so types that got instantiated first
+  // get on the top of the stack on the caller side
+  reverse(edges);
+
+  return edges;
+}
+
 boost::iterator_range<metaprogram::vertex_iterator>
 metaprogram::get_vertices() const {
   return boost::vertices(graph);
@@ -320,15 +353,31 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
 data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
   const data::type t(get_vertex_property(get_target(e_)).name);
-  return
-    is_in_full_mode() ?
-      data::frame(t) :
-      data::frame(t,
-          get_edge_property(e_).point_of_instantiation,
-          get_edge_property(e_).kind);
+  const auto& ep = get_edge_property(e_);
+
+  switch (get_mode()) {
+    case mode_t::normal:
+      return data::frame(t, ep.point_of_instantiation, ep.kind);
+    case mode_t::full:
+      return data::frame(t);
+    case mode_t::profile:
+      double ratio = [&] {
+        if (full_time_taken <= 0.0) {
+          return 1.0;
+        } else {
+          return ep.time_taken / full_time_taken;
+        }
+      }();
+      return data::frame(
+        t, ep.point_of_instantiation, ep.kind, ep.time_taken, ratio);
+  };
+  // unreachable
+  assert(false);
+  return data::frame(t);
 }
 
 data::frame metaprogram::get_current_frame() const {
+  assert(!is_at_start());
   assert(!is_finished());
 
   return to_frame(*state.edge_stack.top());
@@ -376,7 +425,7 @@ unsigned metaprogram::get_backtrace_length() const {
 }
 
 unsigned metaprogram::get_traversal_count(vertex_descriptor vertex) const {
-  if (full_mode) {
+  if (get_mode() == mode_t::full) {
     return get_full_traversal_count(vertex);
   } else {
     return get_enabled_in_degree(vertex);
@@ -415,6 +464,15 @@ unsigned metaprogram::get_full_traversal_count(
   traversal_counts_t traversal_counts(get_num_vertices());
 
   return get_full_traversal_count_helper(vertex, traversal_counts);
+}
+
+std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode) {
+  switch (mode) {
+    case metaprogram::mode_t::normal: os << "normal"; break;
+    case metaprogram::mode_t::full: os << "full"; break;
+    case metaprogram::mode_t::profile: os << "profile"; break;
+  }
+  return os;
 }
 
 }

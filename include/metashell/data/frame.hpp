@@ -37,19 +37,28 @@ namespace metashell
 
       frame(const type& name_,
         const file_location& point_of_instantiation_,
-        instantiation_kind kind_);
+        instantiation_kind kind_,
+        boost::optional<double> time_taken = boost::none,
+        boost::optional<double> time_taken_ratio = boost::none);
 
       const type& name() const;
 
       bool is_full() const;
+      bool is_profiled() const;
 
       // precondition: is_full()
       instantiation_kind kind() const;
       const file_location& point_of_instantiation() const;
+
+      // precondition: is_profiled()
+      double time_taken() const;
+      double time_taken_ratio() const;
     private:
       type _name;
       boost::optional<file_location> _point_of_instantiation;
       boost::optional<data::instantiation_kind> _kind;
+      boost::optional<double> _time_taken;
+      boost::optional<double> _time_taken_ratio;
     };
 
     std::ostream& operator<<(std::ostream& o_, const frame& f_);

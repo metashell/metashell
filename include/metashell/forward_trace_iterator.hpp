@@ -64,8 +64,7 @@ namespace metashell
 
     // The usual stack for DFS
     std::stack<stack_element> _to_visit;
-    const metaprogram::graph_t* _graph;
-    const metaprogram* _mp;
+    const metaprogram* _mp = nullptr;
     metaprogram::discovered_t _discovered;
 
     void visit(const metaprogram::optional_edge_descriptor& edge_, int depth_);

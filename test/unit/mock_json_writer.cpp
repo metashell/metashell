@@ -26,6 +26,11 @@ void mock_json_writer::int_(int value_)
   _calls.push_back("int " + std::to_string(value_));
 }
 
+void mock_json_writer::double_(double value_)
+{
+  _calls.push_back("double " + std::to_string(value_));
+}
+
 void mock_json_writer::start_object()
 {
   _calls.push_back("start_object");

@@ -18,8 +18,9 @@
 
 using namespace metashell;
 
-mock_console::mock_console(int width_) :
-  _width(width_)
+mock_console::mock_console(int width_, int height_) :
+  _width(width_),
+  _height(height_)
 {}
 
 void mock_console::show(const metashell::data::colored_string& s_)
@@ -37,9 +38,26 @@ int mock_console::width() const
   return _width;
 }
 
+int mock_console::height() const
+{
+  return _height;
+}
+
+iface::console::user_answer mock_console::ask_for_continuation()
+{
+  ++_ask_for_continuation_count;
+  return _continuation_answer;
+}
+
 void mock_console::clear()
 {
   _content.clear();
+  _ask_for_continuation_count = 0;
+}
+
+void mock_console::set_continiation_answer(user_answer answer)
+{
+  _continuation_answer = answer;
 }
 
 void mock_console::set_width(int width_)
@@ -47,8 +65,18 @@ void mock_console::set_width(int width_)
   _width = width_;
 }
 
+void mock_console::set_height(int height_)
+{
+  _height = height_;
+}
+
 const metashell::data::colored_string& mock_console::content() const
 {
   return _content;
+}
+
+int mock_console::ask_for_continuation_count() const
+{
+  return _ask_for_continuation_count;
 }
 

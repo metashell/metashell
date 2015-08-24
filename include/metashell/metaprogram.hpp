@@ -37,22 +37,27 @@ enum class direction_t { forward, backwards };
 
 class metaprogram {
 public:
+  enum class mode_t {
+    normal,
+    full,
+    profile
+  };
 
   // Creates empty metaprogram: single <root> vertex
   metaprogram(
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
-      bool full_mode,
+      mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
@@ -69,6 +74,7 @@ public:
   struct edge_property {
     data::instantiation_kind kind;
     data::file_location point_of_instantiation;
+    double time_taken = 0.0;
     bool enabled = true;
   };
 
@@ -119,7 +125,10 @@ public:
       vertex_descriptor from,
       vertex_descriptor to,
       data::instantiation_kind kind,
-      const data::file_location& point_of_instantiation);
+      const data::file_location& point_of_instantiation,
+      double initial_time_stamp);
+
+  void set_full_time_taken(double time_taken);
 
   bool is_empty() const;
 
@@ -127,7 +136,7 @@ public:
 
   void reset_state();
 
-  bool is_in_full_mode() const;
+  mode_t get_mode() const;
 
   bool is_at_endpoint(direction_t direction) const;
   bool is_finished() const;
@@ -151,7 +160,6 @@ public:
 
   unsigned get_traversal_count(vertex_descriptor vertex) const;
 
-  const graph_t& get_graph() const;
   const state_t& get_state() const;
 
   vertices_size_type get_num_vertices() const;
@@ -165,6 +173,9 @@ public:
   boost::iterator_range<in_edge_iterator> get_in_edges(
       vertex_descriptor vertex) const;
   boost::iterator_range<out_edge_iterator> get_out_edges(
+      vertex_descriptor vertex) const;
+
+  std::vector<edge_descriptor> get_filtered_out_edges(
       vertex_descriptor vertex) const;
 
   boost::iterator_range<vertex_iterator> get_vertices() const;
@@ -194,12 +205,15 @@ private:
   state_t state;
   state_history_t state_history;
 
-  bool full_mode;
+  mode_t mode;
 
   // This should be generally 0
   vertex_descriptor root_vertex;
 
   data::type_or_error evaluation_result;
+
+  // Time taken to run the full metaprogram (used to show % in profiling data)
+  double full_time_taken = 0.0;
 };
 
 template<class P>
@@ -210,6 +224,8 @@ void metaprogram::disable_edges_if(P pred) {
     }
   }
 }
+
+std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode);
 
 }
 

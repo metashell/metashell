@@ -1,8 +1,8 @@
-#ifndef METASHELL_STREAM_CONSOLE_HPP
-#define METASHELL_STREAM_CONSOLE_HPP
+#ifndef METASHELL_PAGER_HPP
+#define METASHELL_PAGER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Andras Kucsma (andras.kucsma@gmail.com)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,26 +19,24 @@
 
 #include <metashell/iface/console.hpp>
 
-#include <iosfwd>
+namespace metashell {
 
-namespace metashell
-{
-  class stream_console : public iface::console
-  {
-  public:
-    explicit stream_console(std::ostream& s_);
+class pager {
+public:
+  pager(iface::console& console);
 
-    virtual void show(const data::colored_string& s_) override;
-    virtual void new_line() override;
+  void show(const data::colored_string& string);
+  bool new_line();
 
-    virtual user_answer ask_for_continuation() override;
+private:
+  iface::console& console_;
 
-    virtual int width() const override;
-    virtual int height() const override;
-  private:
-    std::ostream* _s;
-  };
-}
+  bool show_all = false;
+
+  int lines_in_current_page = 0;
+  int chars_in_current_line = 0;
+};
+
+} // namespace metashell
 
 #endif
-

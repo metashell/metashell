@@ -20,6 +20,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/console.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/pager.hpp>
 
 namespace metashell
 {
@@ -49,7 +50,17 @@ namespace metashell
     bool _indent;
     bool _syntax_highlight;
 
-    void display_code(const std::string& c_);
+    data::colored_string format_code(const std::string& c_);
+    data::colored_string format_time(double time_in_seconds_);
+    data::colored_string format_ratio(double ratio_);
+    data::colored_string format_frame(const data::frame& f_);
+
+    bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
+
+    bool display_node(
+      const data::call_graph_node& node_,
+      const std::vector<int>& depth_counter_,
+      pager& pager_);
   };
 }
 

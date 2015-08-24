@@ -35,8 +35,17 @@ void stream_console::new_line()
   *_s << std::endl;
 }
 
+iface::console::user_answer stream_console::ask_for_continuation()
+{
+  return iface::console::user_answer::show_all;
+}
+
 int stream_console::width() const
 {
   return std::numeric_limits<int>::max();
 }
 
+int stream_console::height() const
+{
+  return std::numeric_limits<int>::max();
+}

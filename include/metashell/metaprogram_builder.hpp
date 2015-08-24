@@ -24,31 +24,36 @@
 
 namespace metashell {
 
-struct metaprogram_builder {
+class metaprogram_builder {
+public:
 
   metaprogram_builder(
-      bool full_mode,
+      metaprogram::mode_t mode,
       const std::string& root_name,
       const data::type_or_error& evaluation_result);
 
   void handle_template_begin(
     data::instantiation_kind kind,
     const std::string& context,
-    const data::file_location& location);
+    const data::file_location& location,
+    double time_stamp);
 
-  void handle_template_end();
+  void handle_template_end(double time_stamp);
 
-  const metaprogram& get_metaprogram() const;
+  const metaprogram& get_metaprogram();
 
 private:
   typedef metaprogram::vertex_descriptor vertex_descriptor;
+  typedef metaprogram::edge_descriptor edge_descriptor;
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
   vertex_descriptor add_vertex(const std::string& context);
 
   metaprogram mp;
+  double first_time_stamp = 0.0;
+  double last_time_stamp = 0.0;
 
-  std::stack<vertex_descriptor> vertex_stack;
+  std::stack<edge_descriptor> edge_stack;
 
   element_vertex_map_t element_vertex_map;
 };

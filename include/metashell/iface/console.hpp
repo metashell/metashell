@@ -26,12 +26,21 @@ namespace metashell
     class console
     {
     public:
-      virtual ~console() {}
+      enum class user_answer {
+        next_page,
+        show_all,
+        quit
+      };
+
+      virtual ~console() = default;
 
       virtual void show(const data::colored_string& s_) = 0;
       virtual void new_line() = 0;
 
+      virtual user_answer ask_for_continuation() = 0;
+
       virtual int width() const = 0;
+      virtual int height() const = 0;
     };
   }
 }

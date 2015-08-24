@@ -1,5 +1,12 @@
 <h1>Changelog</h1>
 
+## Not in any release yet
+
+* New features
+    * Add pager for MDB commands which tend to have long output
+    * Experimental support for profiling metaprograms in MDB
+    * Experimental support for traversing the whole environment in MDB
+
 ## Version 2.1.0
 
 * New features

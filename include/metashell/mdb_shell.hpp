@@ -92,12 +92,12 @@ protected:
       iface::displayer& displayer_) const;
 
   bool run_metaprogram_with_templight(
-    const std::string& str,
-    bool full_mode,
+    const boost::optional<std::string>& expression,
+    metaprogram::mode_t mode,
     iface::displayer& displayer_
   );
   data::type_or_error run_metaprogram(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     iface::displayer& displayer_
   );
 
@@ -105,10 +105,10 @@ protected:
   std::string trim_wrap_type(const std::string& type);
 
   void filter_disable_everything();
-  void filter_enable_reachable_from_current_line();
+  void filter_enable_reachable(bool for_current_line);
   void filter_unwrap_vertices();
   void filter_similar_edges();
-  void filter_metaprogram();
+  void filter_metaprogram(bool for_current_line);
 
   static boost::optional<int> parse_defaultable_integer(
     const std::string& arg, int default_value);
@@ -142,6 +142,10 @@ protected:
 
   std::string prev_line;
   bool last_command_repeatable = false;
+
+  // It is empty if evaluate was called with "-".
+  // mp is empty when there were no evaluations at all
+  boost::optional<std::string> last_evaluated_expression;
 
   bool is_stopped = false;
   logger* _logger;

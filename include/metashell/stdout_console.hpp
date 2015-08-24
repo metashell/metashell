@@ -27,7 +27,10 @@ namespace metashell
     virtual void show(const data::colored_string& s_) override;
     virtual void new_line() override;
 
+    virtual user_answer ask_for_continuation() override;
+
     virtual int width() const override;
+    virtual int height() const override;
   };
 }
 

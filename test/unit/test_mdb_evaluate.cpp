@@ -60,6 +60,22 @@ JUST_TEST_CASE(test_mdb_evaluate_fib_10) {
 #endif
 
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_evaluate_empty_environment) {
+  in_memory_displayer d;
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(
+    sh.get_metaprogram().get_evaluation_result(),
+    data::type_or_error::make_none()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_evaluate_no_arguments_no_evaluation) {
   in_memory_displayer d;
   mdb_test_shell sh;
@@ -170,6 +186,32 @@ JUST_TEST_CASE(
         first_state.discovered.begin(),
         first_state.discovered.end(),
         second_state.discovered.begin()));
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_reevaluate_environment) {
+  in_memory_displayer d;
+  mdb_test_shell sh;
+
+  sh.line_available("evaluate -", d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(
+    sh.get_metaprogram().get_evaluation_result(),
+    data::type_or_error::make_none()
+  );
+
+  d.clear();
+
+  sh.line_available("evaluate", d);
+  JUST_ASSERT_EQUAL_CONTAINER({"Metaprogram started"}, d.raw_texts());
+  JUST_ASSERT(sh.has_metaprogram());
+  JUST_ASSERT_EQUAL(
+    sh.get_metaprogram().get_evaluation_result(),
+    data::type_or_error::make_none()
+  );
 }
 #endif
 

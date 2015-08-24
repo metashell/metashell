@@ -24,7 +24,6 @@
 #include <metashell/null_history.hpp>
 
 #include <cmath>
-#include <chrono>
 #include <sstream>
 #include <fstream>
 
@@ -96,18 +95,20 @@ const mdb_command_handler_map mdb_shell::command_handler =
     {
       {{"evaluate"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_evaluate),
-        "[-full] [-profile] [<type>]",
+        "[-full|-profile] [<type>|-]",
         "Evaluate and start debugging a new metaprogram.",
         "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
         "Memoization events.\n\n"
-        "If called without `<type>`, then the last evaluated metaprogram will be\n"
-        "reevaluated.\n\n"
+        "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
+        "profile mode.\n\n"
+        "Instead of `<type>`, evaluate can be called with `-`, in which case the\n"
+        "whole environment is being debugged not just a single type expression.\n\n"
+        "If called without `<type>` or `-`, then the last evaluated metaprogram will\n"
+        "be reevaluated.\n\n"
         "Previous breakpoints are cleared.\n\n"
         "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
         "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-        "explicitly enter `metashell::format< <type> >::type` for the same effect.\n\n"
-        "The qualifier `-profile` is intentionally undocumented. It is only used for\n"
-        "internal profiling, and could be changed or removed at any time."},
+        "explicitly enter `metashell::format< <type> >::type` for the same effect."},
       {{"step"}, repeatable_t::repeatable,
         callback(&mdb_shell::command_step),
         "[over|out] [n]",
@@ -460,7 +461,7 @@ void mdb_shell::filter_disable_everything() {
 }
 
 
-void mdb_shell::filter_enable_reachable_from_current_line() {
+void mdb_shell::filter_enable_reachable(bool for_current_line) {
   using vertex_descriptor = metaprogram::vertex_descriptor;
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
@@ -477,9 +478,14 @@ void mdb_shell::filter_enable_reachable_from_current_line() {
     edge_property& property = mp->get_edge_property(edge);
     const std::string& target_name =
       mp->get_vertex_property(mp->get_target(edge)).name;
-    // Filter out edges, that is not instantiated by the entered type
-    if (property.point_of_instantiation.name == stdin_name &&
-        property.point_of_instantiation.row == line_number + 1 &&
+    // Filter out edges, that is not instantiated
+    // by the entered type if requested
+    const bool current_line_filter = !for_current_line || (
+      property.point_of_instantiation.name == stdin_name &&
+      property.point_of_instantiation.row == line_number + 1
+    );
+
+    if (current_line_filter &&
         (property.kind == data::instantiation_kind::template_instantiation ||
         property.kind == data::instantiation_kind::memoization) &&
         (!is_wrap_type(target_name) ||
@@ -539,8 +545,8 @@ void mdb_shell::filter_similar_edges() {
   using edge_descriptor = metaprogram::edge_descriptor;
   using edge_property = metaprogram::edge_property;
 
-  auto comparator =
-    mp->is_in_full_mode() ? less_than_ignore_instantiation_kind : less_than;
+  auto comparator = mp->get_mode() == metaprogram::mode_t::full ?
+    less_than_ignore_instantiation_kind : less_than;
 
   // Clang sometimes produces equivalent instantiations events from the same
   // point. Filter out all but one of each
@@ -565,11 +571,11 @@ void mdb_shell::filter_similar_edges() {
   }
 }
 
-void mdb_shell::filter_metaprogram() {
+void mdb_shell::filter_metaprogram(bool for_current_line) {
   assert(mp);
 
   filter_disable_everything();
-  filter_enable_reachable_from_current_line();
+  filter_enable_reachable(for_current_line);
   filter_unwrap_vertices();
   filter_similar_edges();
 }
@@ -607,48 +613,38 @@ void mdb_shell::command_evaluate(
     }
   }
 
-  if (arg.empty()) {
+  if (has_full && has_profile) {
+    displayer_.show_error("-full and -profile flags cannot be used together.");
+    return;
+  }
+
+  boost::optional<std::string> expression = arg;
+  if (expression->empty()) {
     if (!mp) {
       displayer_.show_error("Nothing has been evaluated yet.");
       return;
     }
-    arg = mp->get_vertex_property(mp->get_root_vertex()).name;
+    expression = last_evaluated_expression;
+  } else if (*expression == "-") {
+    expression = boost::none;
   }
 
   breakpoints.clear();
 
-  using clock_type = std::chrono::steady_clock;
+  metaprogram::mode_t mode = [&] {
+    if (has_full) { return metaprogram::mode_t::full; }
+    if (has_profile) { return metaprogram::mode_t::profile; }
+    return metaprogram::mode_t::normal;
+  }();
 
-  auto run_start_time = clock_type::now();
-  if (!run_metaprogram_with_templight(arg, has_full, displayer_)) {
+  last_evaluated_expression = expression;
+  if (!run_metaprogram_with_templight(expression, mode, displayer_)) {
     return;
   }
-  auto run_end_time = clock_type::now();
 
   displayer_.show_raw_text("Metaprogram started");
 
-  auto filter_start_time = clock_type::now();
-  filter_metaprogram();
-  auto filter_end_time = clock_type::now();
-
-  if (has_profile) {
-    using std::chrono::duration_cast;
-    using std::chrono::milliseconds;
-
-    std::stringstream ss;
-
-    ss << "Profiling information:\n" <<
-      "Running time = " <<
-      duration_cast<milliseconds>(run_end_time - run_start_time).count() <<
-      "ms\n" <<
-      "Filtering time = " <<
-      duration_cast<milliseconds>(filter_end_time - filter_start_time).count() <<
-      "ms\n" <<
-      "Graph node count = " << mp->get_num_vertices() << "\n" <<
-      "Graph edge count = " << mp->get_num_edges();
-
-    displayer_.show_raw_text(ss.str());
-  }
+  filter_metaprogram(bool(expression));
 }
 
 void mdb_shell::command_forwardtrace(
@@ -815,14 +811,17 @@ void mdb_shell::command_quit(
 }
 
 bool mdb_shell::run_metaprogram_with_templight(
-    const std::string& str, bool full_mode, iface::displayer& displayer_)
+    const boost::optional<std::string>& expression,
+    metaprogram::mode_t mode,
+    iface::displayer& displayer_)
 {
   temporary_file templight_output_file("templight.pb");
   std::string output_path = templight_output_file.get_path();
 
   env.set_output_location(output_path);
 
-  data::type_or_error evaluation_result = run_metaprogram(str, displayer_);
+  data::type_or_error evaluation_result =
+    run_metaprogram(expression, displayer_);
 
   // Opening in binary mode, because some platforms interpret some characters
   // specially in text mode, which caused parsing to fail.
@@ -841,7 +840,10 @@ bool mdb_shell::run_metaprogram_with_templight(
   }
 
   mp = metaprogram::create_from_protobuf_stream(
-      protobuf_stream, full_mode, str, evaluation_result);
+      protobuf_stream,
+      mode,
+      expression ? *expression : "<environment>",
+      evaluation_result);
 
   assert(mp);
   if (mp->is_empty() && evaluation_result.is_error()) {
@@ -856,10 +858,12 @@ bool mdb_shell::run_metaprogram_with_templight(
 }
 
 data::type_or_error mdb_shell::run_metaprogram(
-    const std::string& str,
+    const boost::optional<std::string>& expression,
     iface::displayer& displayer_)
 {
-  result res = eval_tmp(env, str, conf, _logger);
+  result res = expression ?
+    eval_tmp(env, *expression, conf, _logger) :
+    eval_environment(env, conf, _logger);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
@@ -867,8 +871,11 @@ data::type_or_error mdb_shell::run_metaprogram(
 
   if (!res.successful) {
     return data::type_or_error::make_error(res.error);
+  } else if (expression) {
+    return data::type_or_error::make_type(data::type(res.output));
+  } else {
+    return data::type_or_error::make_none();
   }
-  return data::type_or_error::make_type(data::type(res.output));
 }
 
 boost::optional<int> mdb_shell::parse_defaultable_integer(

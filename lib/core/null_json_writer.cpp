@@ -28,6 +28,11 @@ void null_json_writer::int_(int)
   // throw away
 }
 
+void null_json_writer::double_(double)
+{
+  // throw away
+}
+
 void null_json_writer::start_object()
 {
   // throw away

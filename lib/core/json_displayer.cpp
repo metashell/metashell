@@ -50,6 +50,13 @@ namespace
       writer_.key("point_of_instantiation");
       writer_.string(to_string(frame_.point_of_instantiation()));
     }
+    if (frame_.is_profiled())
+    {
+      writer_.key("time_taken");
+      writer_.double_(frame_.time_taken());
+      writer_.key("time_taken_ratio");
+      writer_.double_(frame_.time_taken_ratio());
+    }
   }
 }
 
