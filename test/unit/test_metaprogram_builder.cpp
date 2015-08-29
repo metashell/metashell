@@ -158,6 +158,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
   mb.handle_template_end(140.0);
 
   metaprogram mp = mb.get_metaprogram();
+  mp.init_full_time_taken();
 
   JUST_ASSERT_EQUAL(metaprogram::mode_t::profile, mp.get_mode());
   JUST_ASSERT_EQUAL(3u, mp.get_num_vertices());

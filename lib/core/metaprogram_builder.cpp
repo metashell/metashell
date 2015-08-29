@@ -32,40 +32,33 @@ void metaprogram_builder::handle_template_begin(
   data::instantiation_kind kind,
   const std::string& context,
   const data::file_location& point_of_instantiation,
-  double time_stamp)
+  double timestamp)
 {
   vertex_descriptor vertex = add_vertex(context);
   vertex_descriptor top_vertex = edge_stack.empty() ?
     mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
   auto edge =
-    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation, time_stamp);
+    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation, timestamp);
   edge_stack.push(edge);
-
-  if (first_time_stamp <= 0.0) {
-    first_time_stamp = time_stamp;
-  }
 }
 
-void metaprogram_builder::handle_template_end(double time_stamp) {
+void metaprogram_builder::handle_template_end(double timestamp) {
   if (edge_stack.empty()) {
     throw exception(
         "Mismatched Templight TemplateBegin and TemplateEnd events");
   }
-  auto& initial_time_stamp = mp.get_edge_property(edge_stack.top()).time_taken;
-  initial_time_stamp = time_stamp - initial_time_stamp;
+  auto& ep = mp.get_edge_property(edge_stack.top());
+  ep.time_taken = timestamp - ep.begin_timestamp;
 
   edge_stack.pop();
-
-  last_time_stamp = time_stamp;
 }
 
-const metaprogram& metaprogram_builder::get_metaprogram() {
+const metaprogram& metaprogram_builder::get_metaprogram() const {
   if (!edge_stack.empty()) {
     throw exception(
         "Some Templight TemplateEnd events are missing");
   }
-  mp.set_full_time_taken(last_time_stamp - first_time_stamp);
   return mp;
 }
 

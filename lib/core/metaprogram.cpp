@@ -59,7 +59,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor to,
     data::instantiation_kind kind,
     const data::file_location& point_of_instantiation,
-    double initial_time_stamp)
+    double begin_timestamp)
 {
   edge_descriptor edge;
   bool inserted;
@@ -69,15 +69,35 @@ metaprogram::edge_descriptor metaprogram::add_edge(
 
   get_edge_property(edge).kind = kind;
   get_edge_property(edge).point_of_instantiation = point_of_instantiation;
-
-  // This should be later modified when the TemplateEnd event is processed
-  get_edge_property(edge).time_taken = initial_time_stamp;
+  get_edge_property(edge).begin_timestamp = begin_timestamp;
 
   return edge;
 }
 
-void metaprogram::set_full_time_taken(double time_taken) {
-  full_time_taken = time_taken;
+void metaprogram::init_full_time_taken() {
+  boost::optional<double> first_time_stamp;
+  boost::optional<double> last_time_stamp;
+  for (const auto& edge : get_edges()) {
+    const auto& ep = get_edge_property(edge);
+    if (!ep.enabled) {
+      continue;
+    }
+    if (!first_time_stamp ||
+        *first_time_stamp > ep.begin_timestamp)
+    {
+      first_time_stamp = ep.begin_timestamp;
+    }
+    if (!last_time_stamp ||
+        *last_time_stamp < ep.begin_timestamp + ep.time_taken)
+    {
+      last_time_stamp = ep.begin_timestamp + ep.time_taken;
+    }
+  }
+  if (!first_time_stamp || !last_time_stamp) {
+    full_time_taken = 0.0;
+  } else {
+    full_time_taken = *last_time_stamp - *first_time_stamp;
+  }
 }
 
 bool metaprogram::is_empty() const {

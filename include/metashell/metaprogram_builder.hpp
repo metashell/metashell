@@ -36,11 +36,11 @@ public:
     data::instantiation_kind kind,
     const std::string& context,
     const data::file_location& location,
-    double time_stamp);
+    double timestamp);
 
-  void handle_template_end(double time_stamp);
+  void handle_template_end(double timestamp);
 
-  const metaprogram& get_metaprogram();
+  const metaprogram& get_metaprogram() const;
 
 private:
   typedef metaprogram::vertex_descriptor vertex_descriptor;
@@ -50,8 +50,6 @@ private:
   vertex_descriptor add_vertex(const std::string& context);
 
   metaprogram mp;
-  double first_time_stamp = 0.0;
-  double last_time_stamp = 0.0;
 
   std::stack<edge_descriptor> edge_stack;
 
