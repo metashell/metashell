@@ -67,9 +67,11 @@ metaprogram::edge_descriptor metaprogram::add_edge(
 
   assert(inserted);
 
-  get_edge_property(edge).kind = kind;
-  get_edge_property(edge).point_of_instantiation = point_of_instantiation;
-  get_edge_property(edge).begin_timestamp = begin_timestamp;
+  auto& ep = get_edge_property(edge);
+
+  ep.kind = kind;
+  ep.point_of_instantiation = point_of_instantiation;
+  ep.begin_timestamp = begin_timestamp;
 
   return edge;
 }
