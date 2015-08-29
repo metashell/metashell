@@ -74,6 +74,7 @@ public:
   struct edge_property {
     data::instantiation_kind kind;
     data::file_location point_of_instantiation;
+    double begin_timestamp = 0.0;
     double time_taken = 0.0;
     bool enabled = true;
   };
@@ -126,9 +127,10 @@ public:
       vertex_descriptor to,
       data::instantiation_kind kind,
       const data::file_location& point_of_instantiation,
-      double initial_time_stamp);
+      double begin_timestamp);
 
-  void set_full_time_taken(double time_taken);
+  // Should be called after graph filtering is done
+  void init_full_time_taken();
 
   bool is_empty() const;
 

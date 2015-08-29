@@ -349,15 +349,21 @@ JUST_TEST_CASE(test_metaprogram_step_sorting_in_profile_mode) {
 
   auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
         data::instantiation_kind::template_instantiation,
-        data::file_location("xx.cpp", 1, 2), 10.0);
+        data::file_location("xx.cpp", 1, 2), 0.0);
   auto edge_root_b_ti = mp.add_edge(mp.get_root_vertex(), vertex_b,
         data::instantiation_kind::memoization,
-        data::file_location("yy.cpp", 1, 2), 30.0);
+        data::file_location("yy.cpp", 1, 2), 10.0);
 
-  mp.set_full_time_taken(40.0);
+  mp.get_edge_property(edge_root_a_ti).time_taken = 10.0;
+  mp.get_edge_property(edge_root_b_ti).time_taken = 30.0;
+
+  mp.init_full_time_taken();
 
   JUST_ASSERT_EQUAL(3u, mp.get_num_vertices());
   JUST_ASSERT_EQUAL(2u, mp.get_num_edges());
+
+  JUST_ASSERT_EQUAL(0.0, mp.get_edge_property(edge_root_a_ti).begin_timestamp);
+  JUST_ASSERT_EQUAL(10.0, mp.get_edge_property(edge_root_b_ti).begin_timestamp);
 
   JUST_ASSERT_EQUAL(10.0, mp.get_edge_property(edge_root_a_ti).time_taken);
   JUST_ASSERT_EQUAL(30.0, mp.get_edge_property(edge_root_b_ti).time_taken);

@@ -578,6 +578,8 @@ void mdb_shell::filter_metaprogram(bool for_current_line) {
   filter_enable_reachable(for_current_line);
   filter_unwrap_vertices();
   filter_similar_edges();
+
+  mp->init_full_time_taken();
 }
 
 void mdb_shell::command_evaluate(
