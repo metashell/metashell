@@ -168,7 +168,7 @@ parse_config_result metashell::parse_config(
   }
   const int argc = minus_minus - argv_;
 
-  std::string cppstd("c++0x");
+  std::string cppstd("c++14");
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
   std::string fvalue;
