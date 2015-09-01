@@ -7,6 +7,10 @@
     * Experimental support for profiling metaprograms in MDB
     * Experimental support for traversing the whole environment in MDB
 
+* Other changes
+    * Metashell now uses C++14 by default. You can override this using the
+      `--std` command line option.
+
 ## Version 2.1.0
 
 * New features
