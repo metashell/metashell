@@ -76,9 +76,7 @@ want to install them, you can build Metashell yourself.
 
 ### OS X
 
-* Using [Homebrew](http://brew.sh/): `brew install metashell`
-
-* Or from dmg file: [Yosemite](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_osx10.10_x86_64.dmg).
+* From dmg file: [Yosemite](https://github.com/sabel83/metashell/releases/download/v2.0.0/metashell_2.0.0_osx10.10_x86_64.dmg).
   Note that you need to install XCode for Metashell to work properly.
 
 ## Version 1.0.0
