@@ -141,6 +141,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "The program is continued until the nth breakpoint or the end of the program\n"
         "is reached. n defaults to 1 if not specified.\n"
         "Negative n means continue the program backwards."},
+      {{"finish"}, repeatable_t::repeatable,
+        callback(&mdb_shell::command_finish),
+        "",
+        "Finish program being debugged.",
+        "The program is continued until the end."},
       {{"forwardtrace", "ft"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_forwardtrace),
         "[n]",
@@ -338,6 +343,21 @@ void mdb_shell::command_continue(
         "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
   }
   display_movement_info(*continue_count != 0, displayer_);
+}
+
+void mdb_shell::command_finish(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  if (!require_empty_args(arg, displayer_) ||
+      !require_evaluated_metaprogram(displayer_))
+  {
+    return;
+  }
+
+  auto steps = finish_metaprogram();
+
+  display_movement_info(steps > 0, displayer_);
 }
 
 void mdb_shell::command_step(
@@ -952,6 +972,14 @@ mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
       }
     }
   }
+}
+
+unsigned mdb_shell::finish_metaprogram() {
+  unsigned steps = 0;
+  for (; !mp->is_finished(); ++steps) {
+    mp->step();
+  }
+  return steps;
 }
 
 void mdb_shell::next_metaprogram(direction_t direction, int n) {

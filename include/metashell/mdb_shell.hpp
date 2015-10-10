@@ -57,6 +57,7 @@ public:
   virtual void cancel_operation() override;
 
   void command_continue(const std::string& arg, iface::displayer& displayer_);
+  void command_finish(const std::string& arg, iface::displayer& displayer_);
   void command_step(const std::string& arg, iface::displayer& displayer_);
   void command_next(const std::string& arg, iface::displayer& displayer_);
   void command_evaluate(const std::string& arg, iface::displayer& displayer_);
@@ -116,6 +117,7 @@ protected:
   static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
   breakpoints_t::iterator continue_metaprogram(direction_t direction);
+  unsigned finish_metaprogram();
 
   void next_metaprogram(direction_t direction, int n);
 
