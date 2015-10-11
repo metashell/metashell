@@ -27,10 +27,7 @@ using namespace metashell_system_test;
 
 int metashell_system_test::main(int argc_, char* argv_[])
 {
-  const auto end = argv_ + argc_;
-  const auto sep = std::find(argv_, end, std::string("--"));
-
-  if (argc_ < 3 || sep == end || sep < argv_ + 2)
+  if (argc_ < 2)
   {
     std::cerr
       << "Usage: " << argv_[0]
@@ -40,15 +37,19 @@ int metashell_system_test::main(int argc_, char* argv_[])
   }
   else
   {
+    const auto end = argv_ + argc_;
+    const auto sep = std::find(argv_, end, std::string("--"));
+
     system_test_config::metashell_binary(argv_[1]);
     for (auto i = argv_ + 2; i != sep; ++i)
     {
       system_test_config::metashell_arg(*i);
     }
 
-    // starting from sep, as it will the "name of the binary" argument
-    std::vector<char*> just_test_args(sep, end);
-    just_test_args[0] = argv_[0];
+    std::vector<char*> just_test_args = { argv_[0] };
+    if (sep != end) {
+      just_test_args.insert(just_test_args.end(), sep + 1, end);
+    }
 
     return ::just::test::run(just_test_args.size(), just_test_args.data());
   }
