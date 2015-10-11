@@ -145,7 +145,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
         callback(&mdb_shell::command_finish),
         "",
         "Finish program being debugged.",
-        "The program is continued until the end."},
+        "The program is continued until the end ignoring any breakpoints."},
       {{"forwardtrace", "ft"}, repeatable_t::non_repeatable,
         callback(&mdb_shell::command_forwardtrace),
         "[n]",

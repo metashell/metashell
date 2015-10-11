@@ -55,7 +55,7 @@ The program is continued until the nth breakpoint or the end of the program
 
 * __`finish `__ <br />
 Finish program being debugged. <br />
-The program is continued until the end.
+The program is continued until the end ignoring any breakpoints.
 
 * __`forwardtrace|ft [n]`__ <br />
 Print forwardtrace from the current point. <br />
