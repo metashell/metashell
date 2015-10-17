@@ -507,7 +507,8 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
 
     if (current_line_filter &&
         (property.kind == data::instantiation_kind::template_instantiation ||
-        property.kind == data::instantiation_kind::memoization) &&
+        property.kind == data::instantiation_kind::memoization ||
+        property.kind == data::instantiation_kind::deduced_template_argument_substitution) &&
         (!is_wrap_type(target_name) ||
          property.kind != data::instantiation_kind::memoization))
     {
