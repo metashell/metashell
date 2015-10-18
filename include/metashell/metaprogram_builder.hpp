@@ -34,7 +34,7 @@ public:
 
   void handle_template_begin(
     data::instantiation_kind kind,
-    const std::string& context,
+    const std::string& name,
     const data::file_location& point_of_instantiation,
     const data::file_location& source_location,
     double timestamp);
@@ -48,7 +48,7 @@ private:
   typedef metaprogram::edge_descriptor edge_descriptor;
   typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
-  vertex_descriptor add_vertex(const std::string& context);
+  vertex_descriptor add_vertex(const std::string& name);
 
   metaprogram mp;
 
