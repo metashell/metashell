@@ -74,7 +74,13 @@ metaprogram metaprogram::create_from_protobuf_stream(
               instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
               begin_entry.Name,
               data::file_location(
-                begin_entry.FileName, begin_entry.Line, begin_entry.Column),
+                begin_entry.FileName,
+                begin_entry.Line,
+                begin_entry.Column),
+              data::file_location(
+                begin_entry.TempOri_FileName,
+                begin_entry.TempOri_Line,
+                begin_entry.TempOri_Column),
               begin_entry.TimeStamp);
           break;
         }

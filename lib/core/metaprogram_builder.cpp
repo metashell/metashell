@@ -32,14 +32,20 @@ void metaprogram_builder::handle_template_begin(
   data::instantiation_kind kind,
   const std::string& context,
   const data::file_location& point_of_instantiation,
+  const data::file_location& source_location,
   double timestamp)
 {
   vertex_descriptor vertex = add_vertex(context);
   vertex_descriptor top_vertex = edge_stack.empty() ?
     mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
-  auto edge =
-    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation, timestamp);
+  auto edge = mp.add_edge(
+    top_vertex,
+    vertex,
+    kind,
+    point_of_instantiation,
+    source_location,
+    timestamp);
   edge_stack.push(edge);
 }
 

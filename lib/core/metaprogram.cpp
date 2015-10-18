@@ -59,6 +59,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor to,
     data::instantiation_kind kind,
     const data::file_location& point_of_instantiation,
+    const data::file_location& source_location,
     double begin_timestamp)
 {
   edge_descriptor edge;
@@ -71,6 +72,7 @@ metaprogram::edge_descriptor metaprogram::add_edge(
 
   ep.kind = kind;
   ep.point_of_instantiation = point_of_instantiation;
+  ep.source_location = source_location;
   ep.begin_timestamp = begin_timestamp;
 
   return edge;

@@ -74,6 +74,7 @@ public:
   struct edge_property {
     data::instantiation_kind kind;
     data::file_location point_of_instantiation;
+    data::file_location source_location;
     double begin_timestamp = 0.0;
     double time_taken = 0.0;
     bool enabled = true;
@@ -127,6 +128,7 @@ public:
       vertex_descriptor to,
       data::instantiation_kind kind,
       const data::file_location& point_of_instantiation,
+      const data::file_location& source_location,
       double begin_timestamp);
 
   // Should be called after graph filtering is done

@@ -28,6 +28,7 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
     data::instantiation_kind::template_instantiation,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     100.0);
 
   mb.handle_template_end(110.0);
@@ -63,12 +64,14 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
     data::instantiation_kind::template_instantiation,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     100.0);
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
     "type<B>",
     data::file_location("file", 20, 20),
+    data::file_location("file_sl", 15, 25),
     110.0);
 
   mb.handle_template_end(120.0);
@@ -79,6 +82,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
     data::instantiation_kind::memoization,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     140.0);
 
   mb.handle_template_end(150.0);
@@ -145,6 +149,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
     data::instantiation_kind::template_instantiation,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     100.0);
 
   mb.handle_template_end(110.0);
@@ -153,6 +158,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
     data::instantiation_kind::template_instantiation,
     "type<B>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     120.0);
 
   mb.handle_template_end(140.0);
@@ -217,6 +223,7 @@ JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
     data::instantiation_kind::template_instantiation,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     100.0);
 
   mb.handle_template_end(110.0);
@@ -235,6 +242,7 @@ JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events) {
     data::instantiation_kind::template_instantiation,
     "type<A>",
     data::file_location("file", 10, 20),
+    data::file_location("file_sl", 15, 25),
     100.0);
 
   JUST_ASSERT_THROWS<std::exception>([&] {
