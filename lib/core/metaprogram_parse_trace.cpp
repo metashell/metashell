@@ -59,12 +59,16 @@ metaprogram metaprogram::create_from_protobuf_stream(
     std::istream& stream,
     mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result)
 {
 
-  metaprogram_builder builder(mode, root_name, evaluation_result);
+  metaprogram_builder builder(
+    mode, root_name, root_source_location, evaluation_result);
+
   templight::ProtobufReader reader;
   reader.startOnBuffer(stream);
+
   while (reader.LastChunk != templight::ProtobufReader::EndOfFile) {
     switch (reader.LastChunk) {
       case templight::ProtobufReader::BeginEntry:
@@ -105,10 +109,12 @@ metaprogram metaprogram::create_from_protobuf_string(
     const std::string& string,
     mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result)
 {
   std::istringstream ss(string);
-  return create_from_protobuf_stream(ss, mode, root_name, evaluation_result);
+  return create_from_protobuf_stream(
+    ss, mode, root_name, root_source_location, evaluation_result);
 }
 
 }

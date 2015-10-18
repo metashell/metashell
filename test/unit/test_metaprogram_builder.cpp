@@ -22,7 +22,10 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
   metaprogram_builder mb(
-    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::normal,
+    "root_name",
+    data::file_location("stdin.hpp", 10, 20),
+    data::type("eval_result"));
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
@@ -58,7 +61,10 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
 
 JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
   metaprogram_builder mb(
-    metaprogram::mode_t::full, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::full,
+    "root_name",
+    data::file_location("stdin.hpp", 10, 20),
+    data::type("eval_result"));
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
@@ -143,7 +149,10 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
 JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
   metaprogram_builder mb(
-    metaprogram::mode_t::profile, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::profile,
+    "root_name",
+    data::file_location("stdin.hpp", 10, 20),
+    data::type("eval_result"));
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
@@ -207,7 +216,10 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
 JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1) {
   metaprogram_builder mb(
-    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::normal,
+    "root_name",
+    data::file_location("stdin.hpp", 40, 50),
+    data::type("eval_result"));
 
   JUST_ASSERT_THROWS<std::exception>([&] {
     mb.handle_template_end(100.0);
@@ -217,7 +229,10 @@ JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1) {
 
 JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
   metaprogram_builder mb(
-    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::normal,
+    "root_name",
+    data::file_location("stdin.hpp", 30, 45),
+    data::type("eval_result"));
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
@@ -236,7 +251,10 @@ JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
 
 JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events) {
   metaprogram_builder mb(
-    metaprogram::mode_t::normal, "root_name", data::type("eval_result"));
+    metaprogram::mode_t::normal,
+    "root_name",
+    data::file_location("stdin.hpp", 30, 31),
+    data::type("eval_result"));
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,

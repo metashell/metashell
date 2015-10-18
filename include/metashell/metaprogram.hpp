@@ -47,18 +47,21 @@ public:
   metaprogram(
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   struct vertex_property_tag {
@@ -70,11 +73,11 @@ public:
 
   struct vertex_property {
     std::string name;
+    data::file_location source_location;
   };
   struct edge_property {
     data::instantiation_kind kind;
     data::file_location point_of_instantiation;
-    data::file_location source_location;
     double begin_timestamp = 0.0;
     double time_taken = 0.0;
     bool enabled = true;
@@ -121,14 +124,15 @@ public:
 
   typedef std::stack<step_rollback_t> state_history_t;
 
-  vertex_descriptor add_vertex(const std::string& element);
+  vertex_descriptor add_vertex(
+    const std::string& name,
+    const data::file_location& source_location);
 
   edge_descriptor add_edge(
       vertex_descriptor from,
       vertex_descriptor to,
       data::instantiation_kind kind,
       const data::file_location& point_of_instantiation,
-      const data::file_location& source_location,
       double begin_timestamp);
 
   // Should be called after graph filtering is done

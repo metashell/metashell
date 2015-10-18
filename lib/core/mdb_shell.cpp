@@ -866,6 +866,7 @@ bool mdb_shell::run_metaprogram_with_templight(
       protobuf_stream,
       mode,
       expression ? *expression : "<environment>",
+      data::file_location{}, // TODO something sensible here?
       evaluation_result);
 
   assert(mp);

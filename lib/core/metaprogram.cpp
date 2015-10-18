@@ -30,16 +30,18 @@ namespace metashell {
 metaprogram::metaprogram(
     mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result) :
   mode(mode),
   evaluation_result(evaluation_result)
 {
-  root_vertex = add_vertex(root_name);
+  root_vertex = add_vertex(root_name, root_source_location);
   reset_state();
 }
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
-  const std::string& element)
+  const std::string& name,
+  const data::file_location& source_location)
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
 
@@ -49,7 +51,10 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
   state.discovered.push_back(false);
   state.parent_edge.push_back(boost::none);
 
-  get_vertex_property(vertex).name = element;
+  auto& vertex_property = get_vertex_property(vertex);
+
+  vertex_property.name = name;
+  vertex_property.source_location = source_location;
 
   return vertex;
 }
@@ -59,7 +64,6 @@ metaprogram::edge_descriptor metaprogram::add_edge(
     vertex_descriptor to,
     data::instantiation_kind kind,
     const data::file_location& point_of_instantiation,
-    const data::file_location& source_location,
     double begin_timestamp)
 {
   edge_descriptor edge;
@@ -72,7 +76,6 @@ metaprogram::edge_descriptor metaprogram::add_edge(
 
   ep.kind = kind;
   ep.point_of_instantiation = point_of_instantiation;
-  ep.source_location = source_location;
   ep.begin_timestamp = begin_timestamp;
 
   return edge;

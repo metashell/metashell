@@ -30,6 +30,7 @@ public:
   metaprogram_builder(
       metaprogram::mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   void handle_template_begin(
@@ -46,9 +47,13 @@ public:
 private:
   typedef metaprogram::vertex_descriptor vertex_descriptor;
   typedef metaprogram::edge_descriptor edge_descriptor;
-  typedef std::map<std::string, vertex_descriptor> element_vertex_map_t;
 
-  vertex_descriptor add_vertex(const std::string& name);
+  typedef std::tuple<std::string, data::file_location> element_key_t;
+  typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
+
+  vertex_descriptor add_vertex(
+    const std::string& name,
+    const data::file_location& source_location);
 
   metaprogram mp;
 

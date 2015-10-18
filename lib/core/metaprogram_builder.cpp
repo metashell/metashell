@@ -24,8 +24,9 @@ namespace metashell {
 metaprogram_builder::metaprogram_builder(
     metaprogram::mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result) :
-  mp(mode, root_name, evaluation_result)
+  mp(mode, root_name, root_source_location, evaluation_result)
 {}
 
 void metaprogram_builder::handle_template_begin(
@@ -35,7 +36,7 @@ void metaprogram_builder::handle_template_begin(
   const data::file_location& source_location,
   double timestamp)
 {
-  vertex_descriptor vertex = add_vertex(name);
+  vertex_descriptor vertex = add_vertex(name, source_location);
   vertex_descriptor top_vertex = edge_stack.empty() ?
     mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
@@ -44,7 +45,6 @@ void metaprogram_builder::handle_template_begin(
     vertex,
     kind,
     point_of_instantiation,
-    source_location,
     timestamp);
   edge_stack.push(edge);
 }
@@ -69,16 +69,20 @@ const metaprogram& metaprogram_builder::get_metaprogram() const {
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const std::string& name)
+    const std::string& name,
+    const data::file_location& source_location)
 {
   element_vertex_map_t::iterator pos;
   bool inserted;
 
   std::tie(pos, inserted) = element_vertex_map.insert(
-      std::make_pair(name, vertex_descriptor()));
+      std::make_pair(
+        std::make_tuple(name, source_location),
+        vertex_descriptor()
+      ));
 
   if (inserted) {
-    pos->second = mp.add_vertex(name);
+    pos->second = mp.add_vertex(name, source_location);
   }
   return pos->second;
 }
