@@ -331,7 +331,7 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
         command("ft"),
         command("eval decltype(foo(std::vector<int>{}))"),
         command("rbreak foo"),
-        command("continue")
+        command("continue 2")
       }
     );
 
@@ -354,7 +354,8 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT_EQUAL(
     call_graph(
       {
-        {frame(type("decltype(foo(13))")), 0, 2},
+        {frame(type("decltype(foo(13))")), 0, 3},
+        {frame(type("foo"), instantiation_kind::deduced_template_argument_substitution), 1, 0},
         {frame( type("foo<int>"), instantiation_kind::template_instantiation), 1, 0},
         {frame( type("void"), instantiation_kind::non_template_type), 1, 0}
       }
@@ -371,7 +372,7 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
-    raw_text("Breakpoint \"foo\" will stop the execution on 1 location"),
+    raw_text("Breakpoint \"foo\" will stop the execution on 2 locations"),
     *i
   );
   ++i;

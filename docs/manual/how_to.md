@@ -26,6 +26,7 @@ instantiation of the foo function:
 ```cpp
 (mdb) ft
 decltype(foo(13))
++ foo (DeducedTemplateArgumentSubstitution)
 + foo<int> (TemplateInstantiation)
 ` void (NonTemplateType)
 ```
@@ -39,8 +40,8 @@ T becomes when you call foo with a template type like `std::vector`
 (mdb) eval decltype(foo(std::vector<int>{}))
 Metaprogram started
 (mdb) rbreak foo
-Breakpoint "foo" will stop the execution on 1 location
-(mdb) continue
+Breakpoint "foo" will stop the execution on 2 locations
+(mdb) continue 2
 Breakpoint "foo" reached
 foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
 ```
