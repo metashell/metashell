@@ -42,6 +42,8 @@ namespace
   {
     writer_.key("name");
     writer_.string(frame_.name().name());
+    writer_.key("source_location");
+    writer_.string(to_string(frame_.source_location()));
 
     if (frame_.is_full())
     {

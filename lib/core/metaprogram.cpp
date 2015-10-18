@@ -379,14 +379,18 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
 
 data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
-  const data::type t(get_vertex_property(get_target(e_)).name);
+  const auto& vp = get_vertex_property(get_target(e_));
+  const data::type t(vp.name);
+
   const auto& ep = get_edge_property(e_);
 
   switch (get_mode()) {
     case mode_t::normal:
-      return data::frame(t, ep.point_of_instantiation, ep.kind);
+      return data::frame(
+        t, vp.source_location, ep.point_of_instantiation, ep.kind);
+    default:
     case mode_t::full:
-      return data::frame(t);
+      return data::frame(t, vp.source_location);
     case mode_t::profile:
       double ratio = [&] {
         if (full_time_taken <= 0.0) {
@@ -396,11 +400,9 @@ data::frame metaprogram::to_frame(const edge_descriptor& e_) const
         }
       }();
       return data::frame(
-        t, ep.point_of_instantiation, ep.kind, ep.time_taken, ratio);
+        t, vp.source_location, ep.point_of_instantiation, ep.kind,
+        ep.time_taken, ratio);
   };
-  // unreachable
-  assert(false);
-  return data::frame(t);
 }
 
 data::frame metaprogram::get_current_frame() const {
@@ -411,7 +413,8 @@ data::frame metaprogram::get_current_frame() const {
 }
 
 data::frame metaprogram::get_root_frame() const {
-  return data::frame(data::type(get_vertex_property(get_root_vertex()).name));
+  const auto& vp = get_vertex_property(get_root_vertex());
+  return data::frame(data::type(vp.name), vp.source_location);
 }
 
 data::backtrace metaprogram::get_backtrace() const {
