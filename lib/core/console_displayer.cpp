@@ -256,11 +256,13 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
       "[" + format_time(f_.time_taken()) +
       ", " + format_ratio(f_.time_taken_ratio()) + "] ";
   }
+
   std::ostringstream postfix;
   if (f_.is_full())
   {
-    postfix
-      << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
+    postfix <<
+      " at " << f_.source_location() <<
+      " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
   }
   return prefix + format_code(f_.name().name()) + postfix.str();
 }
