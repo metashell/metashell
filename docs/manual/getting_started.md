@@ -202,6 +202,7 @@ calls: which metafunction calls which other metafunctions. The events in the
 output of forwardtrace happen in that order from the top down.
 
 You probably noticed that there are two kinds of events metadebugger shows you:
+
 * __TemplateInstantiation__ event happens when the compiler first encounters and
   instantiates a new template type. During a TemplateInstantiation event the
   compiler will instantiate every subtype it needs to get to the result.
@@ -220,6 +221,12 @@ creates `fib<4>` in a TemplateInstantiation event, which in turn instantiates
 `fib<3>` also in a TemplateInstantiation event and so on. You can also see,
 that when `fib<5>` gets to the point to instantiate `fib<3>` it has already
 been instantiated by `fib<4>`, so only a Memoization event happens.
+
+There is one more type of template event that we haven't seen so far. That is
+called __DeducedTemplateArgumentSubstitution__. This event can happen when the
+compiler substitutes template arguments determined as part of template argument
+deduction for either a class template partial specialization or a function
+template.
 
 ### Breakpoints and continue
 
