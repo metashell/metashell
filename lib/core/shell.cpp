@@ -99,7 +99,7 @@ R"(
 namespace metashell {
   namespace impl {
     template <class T>
-    struct wrap {  }; // This is a metashell internal type
+    struct wrap {}; // This is a metashell internal type
 
     template <class T>
     typename T::tag* tag_of(::metashell::impl::wrap<T>);
