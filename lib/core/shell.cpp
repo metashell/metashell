@@ -90,49 +90,49 @@ namespace
   }
 
   const char default_env[] =
-    "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " TO_STRING(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
+"#define __METASHELL\n"
+"#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
+"#define __METASHELL_MINOR " TO_STRING(METASHELL_MINOR) "\n"
+"#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
 
-    "namespace metashell { "
-      "namespace impl { "
-        "template <class T> "
-        "struct wrap {}; "
+R"(
+namespace metashell {
+  namespace impl {
+    template <class T>
+    struct wrap {  }; // This is a metashell internal type
 
-        "template <class T> "
-        "typename T::tag* tag_of(::metashell::impl::wrap<T>); "
+    template <class T>
+    typename T::tag* tag_of(::metashell::impl::wrap<T>);
 
-        "void* tag_of(...); "
+    void* tag_of(...);
 
-        "template <class T> "
-        "struct remove_ptr; "
+    template <class T>
+    struct remove_ptr;
 
-        "template <class T> "
-        "struct remove_ptr<T*> { typedef T type; }; "
-      "} "
+    template <class T>
+    struct remove_ptr<T*> { typedef T type; };
+  } // namespace impl
 
-      "template <class Tag> "
-      "struct format_impl "
-      "{ "
-        "typedef format_impl type; "
+  template <class Tag>
+  struct format_impl
+  {
+    typedef format_impl type;
 
-        "template <class T> "
-        "struct apply { typedef T type; }; "
-      "}; "
+    template <class T>
+    struct apply { typedef T type; };
+  };
 
-      "template <class T> "
-      "struct format : "
-        "::metashell::format_impl<"
-          "typename ::metashell::impl::remove_ptr<"
-            "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
-          ">::type"
-        ">::template apply<T>"
-        "{}; "
+  template <class T>
+  struct format :
+    ::metashell::format_impl<
+      typename ::metashell::impl::remove_ptr<
+        decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))
+      >::type
+    >::template apply<T>
+  {};
+} // namespace metashell
+)";
 
-      ""
-    "}"
-    "\n";
 }
 
 shell::shell(
