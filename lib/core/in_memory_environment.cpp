@@ -126,14 +126,14 @@ namespace
   {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
-  
+
     using std::string;
-  
+
     const path_builder internal_dir(headers_.internal_dir());
     const string hpp(".hpp");
-  
+
     const char* formatters[] = {"vector", "list", "set", "map"};
-  
+
     for (const char* f : formatters)
     {
       headers_.add(
@@ -141,24 +141,24 @@ namespace
         seq_formatter(f)
       );
     }
-  
+
     const string vector_formatter =
        string(path_builder() / "metashell" / "formatter" / "vector.hpp");
-  
+
     headers_.add(
       internal_dir / "metashell" / "formatter" / "deque.hpp",
       "#include <" + vector_formatter + ">\n"
     );
-  
+
     headers_.add(
       internal_dir / "metashell" / "formatter.hpp",
       join(formatters | transformed(include_formatter), "\n") + "\n"
     );
-  
+
     headers_.add(
       internal_dir / "metashell" / "scalar.hpp",
       "#include <type_traits>\n"
-  
+
       "#define SCALAR(...) "
         "std::integral_constant<"
           "std::remove_reference<"
@@ -178,7 +178,7 @@ namespace
       "{\n"
       "  template <bool> struct expression_instantiated;\n"
       "}\n"
-      
+
       "#define METASHELL_INSTANTIATE_EXPRESSION(...) \\\n"
       "  ::metashell::expression_instantiated<true ? true : ((__VA_ARGS__), false)>\n"
     );
