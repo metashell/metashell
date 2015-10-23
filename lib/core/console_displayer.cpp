@@ -347,8 +347,7 @@ void console_displayer::show_file_section(
     ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
-    _console->show(format_code(indexed_line.line));
-    _console->new_line();
+    _console->show(format_code(indexed_line.line + "\n"));
   }
 }
 
