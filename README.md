@@ -1,6 +1,7 @@
 # Metashell
 
 [![Build Status](https://secure.travis-ci.org/sabel83/metashell.png?branch=master "Build Status")](http://travis-ci.org/sabel83/metashell)
+[![Documentation Status](https://readthedocs.org/projects/metashell/badge/?version=latest)](http://metashell.readthedocs.org/en/latest/?badge=latest)
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
