@@ -212,7 +212,7 @@ You probably noticed that there are two kinds of events metadebugger shows you:
   compilation. This basically means that the compiler remembers every type it
   had instantiated, and reuses them when it encounters them again.
 
-  Full template specializations (e.g. `fib<0>` and `fib<1>`) only appear in
+  Full template specializations (e.g. `fib<0>` and `fib<1>`) also appear as
   Memoization events.
 
 For example, in the above forwardtrace output, you can see that `fib<5>`
