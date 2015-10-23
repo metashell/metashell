@@ -162,3 +162,16 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 
 <p>&nbsp;</p>
 
+## debug expression involving SFINAE?
+
+Expressions leveraging on SFINAE (short for Substitution Failure Is Not An
+Error) are very common in template metaprograms. The term refers to the fact
+that if errors occur while substituting template arguments to a function or
+class template, that candidate is just simply discarded from the candidate set
+of the overload resolution and an actual error is not emitted.
+
+Expressions involving SFINAE can be very complex, and sometimes it is very
+difficult to reason about why a particular candidate was or wasn't choosen in
+the overload resolution just by looking at the code. Mdb can help in debugging
+this by showing you all the types that are instantiated while templates are
+substituted.
