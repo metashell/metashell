@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/command.hpp>
-
+#include <metashell/wave_tokeniser.hpp>
 #include <metashell/highlight_syntax.hpp>
 
 namespace metashell {
@@ -42,9 +41,17 @@ data::colored_string::color_t color_of_token(const data::token& t) {
 data::colored_string highlight_syntax(const std::string& str) {
   data::colored_string result;
 
-  const data::command cmd(str);
-  for (const data::token& t : cmd) {
-    result += data::colored_string(t.value(), color_of_token(t));
+  auto tokeniser = create_wave_tokeniser(str);
+
+  for (; tokeniser->has_further_tokens(); tokeniser->move_to_next_token()) {
+    data::token token = tokeniser->current_token();
+    result += data::colored_string(token.value(), color_of_token(token));
+  }
+
+  // If we couldn't lex it for some reason, it's better not to do any
+  // syntax highlighting than to lose some parts of the source code
+  if (tokeniser->was_error()) {
+    return str;
   }
 
   return result;
