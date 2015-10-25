@@ -325,9 +325,9 @@ void console_displayer::show_file_section(
 {
   file_section section;
   if (location_.name == "<stdin>") {
-    section = get_file_section_from_buffer(env_buffer_, location_.row, 2);
+    section = get_file_section_from_buffer(env_buffer_, location_.row, 3);
   } else {
-    section = get_file_section_from_file(location_.name, location_.row, 2);
+    section = get_file_section_from_file(location_.name, location_.row, 3);
   }
 
   if (section.empty()) {

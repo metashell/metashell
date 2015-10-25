@@ -267,7 +267,8 @@ JUST_TEST_CASE(test_show_file_section_6_lines_1)
     "   2  second\n"
     "-> 3  third\n"
     "   4  fourth\n"
-    "   5  fifth\n",
+    "   5  fifth\n"
+    "   6  sixth\n",
     c.content().get_string()
   );
 }
@@ -283,17 +284,21 @@ JUST_TEST_CASE(test_show_file_section_6_lines_2)
     "third\n"
     "fourth\n"
     "fifth\n"
-    "sixth\n";
+    "sixth\n"
+    "seventh\n"
+    "eight\n";
 
-  data::file_location location("<stdin>", 4, 0);
+  data::file_location location("<stdin>", 5, 0);
   d.show_file_section(location, stdin_content);
 
   JUST_ASSERT_EQUAL(
     "   2  second\n"
     "   3  third\n"
-    "-> 4  fourth\n"
-    "   5  fifth\n"
-    "   6  sixth\n",
+    "   4  fourth\n"
+    "-> 5  fifth\n"
+    "   6  sixth\n"
+    "   7  seventh\n"
+    "   8  eight\n",
     c.content().get_string()
   );
 }
@@ -315,13 +320,15 @@ JUST_TEST_CASE(test_show_file_section_10_lines)
     "ninth\n"
     "tenth\n";
 
-  data::file_location location("<stdin>", 8, 0);
+  data::file_location location("<stdin>", 7, 0);
   d.show_file_section(location, stdin_content);
 
   JUST_ASSERT_EQUAL(
+    "    4  fourth\n"
+    "    5  fifth\n"
     "    6  sixth\n"
-    "    7  seventh\n"
-    "->  8  eighth\n"
+    "->  7  seventh\n"
+    "    8  eighth\n"
     "    9  ninth\n"
     "   10  tenth\n",
     c.content().get_string()
