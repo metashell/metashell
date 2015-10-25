@@ -160,8 +160,6 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 > `METASHELL_INSTANTIATE_EXPRESSION` instantiates the body of the function
 > templates (and further template instantiations triggered by them) as well.
 
-<p>&nbsp;</p>
-
 ## debug expression involving SFINAE?
 
 Expressions leveraging on SFINAE (short for Substitution Failure Is Not An
@@ -175,3 +173,6 @@ difficult to reason about why a particular candidate was or wasn't choosen in
 the overload resolution just by looking at the code. Mdb can help in debugging
 this by showing you all the types that are instantiated while templates are
 substituted.
+
+Note: this section about SFINAE is still a work in progress. It will be expanded
+with examples soon.
