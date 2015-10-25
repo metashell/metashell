@@ -222,11 +222,14 @@ creates `fib<4>` in a TemplateInstantiation event, which in turn instantiates
 that when `fib<5>` gets to the point to instantiate `fib<3>` it has already
 been instantiated by `fib<4>`, so only a Memoization event happens.
 
-There is one more type of template event that we haven't seen so far. That is
-called __DeducedTemplateArgumentSubstitution__. This event can happen when the
-compiler substitutes template arguments determined as part of template argument
-deduction for either a class template partial specialization or a function
-template.
+There are a few more type of template events that we haven't seen so far:
+
+* __ExplicitTemplateArgumentSubstitution__: event happens when the compiler
+  substitutes explicit template arguments provided for a function template.
+* __DeducedTemplateArgumentSubstitution__: event happens when the compiler
+  substitutes template arguments determined as part of template argument
+  deduction for either a class template partial specialization or a function
+  template.
 
 ### Breakpoints and continue
 
