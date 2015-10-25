@@ -505,16 +505,24 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
       property.point_of_instantiation.row == line_number + 1
     );
 
-    if (current_line_filter &&
-        (property.kind == data::instantiation_kind::template_instantiation ||
-        property.kind == data::instantiation_kind::memoization ||
-        property.kind == data::instantiation_kind::deduced_template_argument_substitution) &&
-        (!is_wrap_type(target_name) ||
-         property.kind != data::instantiation_kind::memoization))
-    {
-      property.enabled = true;
-      edge_stack.push(edge);
+    if (!current_line_filter) {
+      continue;
     }
+
+    switch (property.kind) {
+      default: continue;
+      case data::instantiation_kind::memoization:
+        if (is_wrap_type(target_name)) {
+          continue;
+        }
+        break;
+      case data::instantiation_kind::template_instantiation:
+      case data::instantiation_kind::deduced_template_argument_substitution:
+        break;
+    }
+
+    property.enabled = true;
+    edge_stack.push(edge);
   }
 
   discovered_t discovered(mp->get_num_vertices());
