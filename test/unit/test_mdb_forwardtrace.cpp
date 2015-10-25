@@ -470,3 +470,45 @@ JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3) {
   );
 }
 #endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_sfinae_v1) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_sfinae_mp);
+
+  sh.line_available("evaluate decltype(foo<4>())", d);
+  sh.line_available("forwardtrace", d);
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("decltype(foo<4>())"), f), 0, 5},
+      {frame( type("foo"), f, f, instantiation_kind::explicit_template_argument_substitution), 1, 2},
+      {frame(  v2fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   v2fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v2fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v2fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(   v2fib<3>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v2fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v2fib<2>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  type("enable_if<false, char>"), f, f, instantiation_kind::template_instantiation), 2, 0},
+      {frame( type("foo"), f, f, instantiation_kind::explicit_template_argument_substitution), 1, 5},
+      {frame(  v1fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   v1fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v1fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v1fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(   v1fib<3>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v1fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v1fib<2>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  type("enable_if<true, type-parameter-0-0>"), f, f, instantiation_kind::deduced_template_argument_substitution), 2, 0},
+      {frame(  type("enable_if<true, void>"), f, f, instantiation_kind::template_instantiation), 2, 0},
+      {frame(  v1fib<4>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  type("enable_if<true, void>"), f, f, instantiation_kind::memoization), 2, 0},
+      {frame( type("foo"), f, f, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+      {frame( type("foo<4>"), f, f, instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("void"), f, f, instantiation_kind::non_template_type), 1, 0}
+    },
+    d.call_graphs().front()
+  );
+}
+#endif
