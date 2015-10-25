@@ -480,7 +480,6 @@ void mdb_shell::filter_disable_everything() {
   }
 }
 
-
 void mdb_shell::filter_enable_reachable(bool for_current_line) {
   using vertex_descriptor = metaprogram::vertex_descriptor;
   using edge_descriptor = metaprogram::edge_descriptor;
@@ -509,17 +508,14 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
       continue;
     }
 
-    switch (property.kind) {
-      default: continue;
-      case data::instantiation_kind::memoization:
-        if (is_wrap_type(target_name)) {
-          continue;
-        }
-        break;
-      case data::instantiation_kind::template_instantiation:
-      case data::instantiation_kind::deduced_template_argument_substitution:
-      case data::instantiation_kind::explicit_template_argument_substitution:
-        break;
+    if (!is_instantiation_kind_enabled(property.kind)) {
+      continue;
+    }
+
+    if (property.kind == data::instantiation_kind::memoization &&
+        is_wrap_type(target_name))
+    {
+      continue;
     }
 
     property.enabled = true;
@@ -544,9 +540,7 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
-      if (property.kind == data::instantiation_kind::template_instantiation ||
-         property.kind == data::instantiation_kind::memoization)
-      {
+      if (is_instantiation_kind_enabled(property.kind)) {
         property.enabled = true;
         edge_stack.push(out_edge);
       }
@@ -610,6 +604,18 @@ void mdb_shell::filter_metaprogram(bool for_current_line) {
   filter_similar_edges();
 
   mp->init_full_time_taken();
+}
+
+bool mdb_shell::is_instantiation_kind_enabled(data::instantiation_kind kind) {
+  switch (kind) {
+    case data::instantiation_kind::memoization:
+    case data::instantiation_kind::template_instantiation:
+    case data::instantiation_kind::deduced_template_argument_substitution:
+    case data::instantiation_kind::explicit_template_argument_substitution:
+      return true;
+    default:
+      return false;
+  }
 }
 
 void mdb_shell::command_evaluate(
