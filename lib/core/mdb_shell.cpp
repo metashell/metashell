@@ -518,6 +518,7 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
         break;
       case data::instantiation_kind::template_instantiation:
       case data::instantiation_kind::deduced_template_argument_substitution:
+      case data::instantiation_kind::explicit_template_argument_substitution:
         break;
     }
 
