@@ -37,21 +37,22 @@ namespace
     using metashell::data::file_location;
 
     file_location f("a.cpp", 1, 2);
+    file_location f2("b.hpp", 1, 2);
 
     return
       call_grph{
-        {frame(type("int_<fib<5>::value>")), 0, 3},
-        {frame( fib<5>(), f, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<3>(), f, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<1>(), f, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<2>(), f, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), f, instantiation_kind::memoization), 4, 0},
-        {frame(    fib<1>(), f, instantiation_kind::memoization), 4, 0},
-        {frame(  fib<4>(), f, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), f, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<3>(), f, instantiation_kind::memoization), 3, 0},
-        {frame( fib<5>(), f, instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<5>"), f, instantiation_kind::template_instantiation), 1, 0}
+        {frame(type("int_<fib<5>::value>"), f2), 0, 3},
+        {frame( fib<5>(), f2, f, instantiation_kind::template_instantiation), 1, 2},
+        {frame(  fib<3>(), f2, f, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<1>(), f2, f, instantiation_kind::memoization), 3, 0},
+        {frame(   fib<2>(), f2, f, instantiation_kind::template_instantiation), 3, 2},
+        {frame(    fib<0>(), f2, f, instantiation_kind::memoization), 4, 0},
+        {frame(    fib<1>(), f2, f, instantiation_kind::memoization), 4, 0},
+        {frame(  fib<4>(), f2, f, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   fib<2>(), f2, f, instantiation_kind::memoization), 3, 0},
+        {frame(   fib<3>(), f2, f, instantiation_kind::memoization), 3, 0},
+        {frame( fib<5>(), f2, f, instantiation_kind::memoization), 1, 0},
+        {frame( type("int_<5>"), f2, f, instantiation_kind::template_instantiation), 1, 0}
       };
   }
 }
@@ -115,33 +116,40 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
 
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
-    "+ fib<5> (TemplateInstant\n"
-    "| iation from a.cpp:1:2)\n"
-    "| + fib<3> (TemplateInsta\n"
-    "| | ntiation from a.cpp:1\n"
-    "| | :2)\n"
-    "| | + fib<1> (Memoization\n"
-    "| | |  from a.cpp:1:2)\n"
-    "| | ` fib<2> (TemplateIns\n"
-    "| |   tantiation from a.c\n"
-    "| |   pp:1:2)\n"
-    "| |   + fib<0> (Memoizati\n"
-    "| |   | on from a.cpp:1:2\n"
-    "| |   | )\n"
-    "| |   ` fib<1> (Memoizati\n"
-    "| |     on from a.cpp:1:2\n"
-    "| |     )\n"
-    "| ` fib<4> (TemplateInsta\n"
-    "|   ntiation from a.cpp:1\n"
-    "|   :2)\n"
-    "|   + fib<2> (Memoization\n"
-    "|   |  from a.cpp:1:2)\n"
-    "|   ` fib<3> (Memoization\n"
-    "|      from a.cpp:1:2)\n"
-    "+ fib<5> (Memoization fro\n"
+    "+ fib<5> at b.hpp:1:2 (Te\n"
+    "| mplateInstantiation fro\n"
     "| m a.cpp:1:2)\n"
-    "` int_<5> (TemplateInstan\n"
-    "  tiation from a.cpp:1:2)\n",
+    "| + fib<3> at b.hpp:1:2 (\n"
+    "| | TemplateInstantiation\n"
+    "| |  from a.cpp:1:2)\n"
+    "| | + fib<1> at b.hpp:1:2\n"
+    "| | |  (Memoization from \n"
+    "| | | a.cpp:1:2)\n"
+    "| | ` fib<2> at b.hpp:1:2\n"
+    "| |    (TemplateInstantia\n"
+    "| |   tion from a.cpp:1:2\n"
+    "| |   )\n"
+    "| |   + fib<0> at b.hpp:1\n"
+    "| |   | :2 (Memoization f\n"
+    "| |   | rom a.cpp:1:2)\n"
+    "| |   ` fib<1> at b.hpp:1\n"
+    "| |     :2 (Memoization f\n"
+    "| |     rom a.cpp:1:2)\n"
+    "| ` fib<4> at b.hpp:1:2 (\n"
+    "|   TemplateInstantiation\n"
+    "|    from a.cpp:1:2)\n"
+    "|   + fib<2> at b.hpp:1:2\n"
+    "|   |  (Memoization from \n"
+    "|   | a.cpp:1:2)\n"
+    "|   ` fib<3> at b.hpp:1:2\n"
+    "|      (Memoization from \n"
+    "|     a.cpp:1:2)\n"
+    "+ fib<5> at b.hpp:1:2 (Me\n"
+    "| moization from a.cpp:1:\n"
+    "| 2)\n"
+    "` int_<5> at b.hpp:1:2 (T\n"
+    "  emplateInstantiation fr\n"
+    "  om a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
@@ -156,17 +164,17 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
   // The algorithm just gives up, and prints without extra line breaks
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
-    "+ fib<5> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| + fib<3> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| | + fib<1> (Memoization from a.cpp:1:2)\n"
-    "| | ` fib<2> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| |   + fib<0> (Memoization from a.cpp:1:2)\n"
-    "| |   ` fib<1> (Memoization from a.cpp:1:2)\n"
-    "| ` fib<4> (TemplateInstantiation from a.cpp:1:2)\n"
-    "|   + fib<2> (Memoization from a.cpp:1:2)\n"
-    "|   ` fib<3> (Memoization from a.cpp:1:2)\n"
-    "+ fib<5> (Memoization from a.cpp:1:2)\n"
-    "` int_<5> (TemplateInstantiation from a.cpp:1:2)\n",
+    "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| | + fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| | ` fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| |   + fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| |   ` fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| ` fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "|   + fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "|   ` fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "+ fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "` int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
@@ -181,17 +189,17 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   // The algorithm just gives up, and prints without extra line breaks
   JUST_ASSERT_EQUAL(
     "int_<fib<5>::value>\n"
-    "+ fib<5> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| + fib<3> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| | + fib<1> (Memoization from a.cpp:1:2)\n"
-    "| | ` fib<2> (TemplateInstantiation from a.cpp:1:2)\n"
-    "| |   + fib<0> (Memoization from a.cpp:1:2)\n"
-    "| |   ` fib<1> (Memoization from a.cpp:1:2)\n"
-    "| ` fib<4> (TemplateInstantiation from a.cpp:1:2)\n"
-    "|   + fib<2> (Memoization from a.cpp:1:2)\n"
-    "|   ` fib<3> (Memoization from a.cpp:1:2)\n"
-    "+ fib<5> (Memoization from a.cpp:1:2)\n"
-    "` int_<5> (TemplateInstantiation from a.cpp:1:2)\n",
+    "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| | + fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| | ` fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "| |   + fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| |   ` fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "| ` fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
+    "|   + fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "|   ` fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "+ fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
+    "` int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n",
     c.content().get_string()
   );
 }
@@ -259,7 +267,8 @@ JUST_TEST_CASE(test_show_file_section_6_lines_1)
     "   2  second\n"
     "-> 3  third\n"
     "   4  fourth\n"
-    "   5  fifth\n",
+    "   5  fifth\n"
+    "   6  sixth\n",
     c.content().get_string()
   );
 }
@@ -275,17 +284,21 @@ JUST_TEST_CASE(test_show_file_section_6_lines_2)
     "third\n"
     "fourth\n"
     "fifth\n"
-    "sixth\n";
+    "sixth\n"
+    "seventh\n"
+    "eight\n";
 
-  data::file_location location("<stdin>", 4, 0);
+  data::file_location location("<stdin>", 5, 0);
   d.show_file_section(location, stdin_content);
 
   JUST_ASSERT_EQUAL(
     "   2  second\n"
     "   3  third\n"
-    "-> 4  fourth\n"
-    "   5  fifth\n"
-    "   6  sixth\n",
+    "   4  fourth\n"
+    "-> 5  fifth\n"
+    "   6  sixth\n"
+    "   7  seventh\n"
+    "   8  eight\n",
     c.content().get_string()
   );
 }
@@ -307,13 +320,15 @@ JUST_TEST_CASE(test_show_file_section_10_lines)
     "ninth\n"
     "tenth\n";
 
-  data::file_location location("<stdin>", 8, 0);
+  data::file_location location("<stdin>", 7, 0);
   d.show_file_section(location, stdin_content);
 
   JUST_ASSERT_EQUAL(
+    "    4  fourth\n"
+    "    5  fifth\n"
     "    6  sixth\n"
-    "    7  seventh\n"
-    "->  8  eighth\n"
+    "->  7  seventh\n"
+    "    8  eighth\n"
     "    9  ninth\n"
     "   10  tenth\n",
     c.content().get_string()

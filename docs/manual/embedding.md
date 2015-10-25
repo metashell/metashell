@@ -64,13 +64,14 @@ following:
 ```json
 {
   "name":"<type instantiated>",
+  "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
   "point_of_instantiation":"<point of instantiation>"
 }
 ```
 
-The `name`, `kind`, `point_of_instantiation` fields are the same as the fields
-of the `frame` object.
+The `name`, `source_location`, `kind` and `point_of_instantiation` fields are
+the same as the fields of the `frame` object.
 
 * __call\_graph__
 
@@ -91,6 +92,7 @@ format of the nodes is the following:
 ```json
 {
   "name":"<type instantiated>",
+  "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
   "point_of_instantiation":"<point of instantiation>",
   "depth":"<depth of the node in the tree>",
@@ -98,9 +100,9 @@ format of the nodes is the following:
 }
 ```
 
-The `name`, `kind` and `point_of_instantiation` fields are the same as the
-fields of the `frame` object. The values of the `<depth>` and `<children>`
-fields are integers.
+The `name`, `source_location`, `kind` and `point_of_instantiation` fields are
+the same as the fields of the `frame` object. The values of the `<depth>` and
+`<children>` fields are integers.
 
 * __code\_completion\_result__
 
@@ -172,6 +174,7 @@ Format:
 {
   "type":"frame",
   "name":"<type instantiated>",
+  "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
   "point_of_instantiation":"<point of instantiation>",
   "time_taken":"<time taken in seconds>",
@@ -181,7 +184,13 @@ Format:
 
 Display a template class instantiation. This is treated as a stack frame of a
 template metaprogram execution (this is where the name comes from). The
-`<type instantiated>` is the pretty-printed version of the template instance.
+`type instantiated` is the pretty-printed version of the template instance.
+The `<source_location>` is the source location of the instantiated template.
+The format is `<file_name>:<row>:<column>`. There is a special file called
+`<stdin>` which can appear in this field. This is a placeholder for the the code
+directly entered into the shell. `file_name` is possibly empty, this means that
+the source location of that particular template is unknown.
+
 The `kind`, `point_of_instantiation`, `time_taken` and `time_taken_ratio` fields
 are optional depending on whether Metashell has this information. The possible
 values for kind are:
@@ -198,10 +207,8 @@ values for kind are:
     * `TemplateInstantiation`
     * `UnknownKind`
 
-Format of `point_of_instantiation` is `<file_name>:<row>:<column>`. For example:
-`main.cpp:35:16`. There is a special file called `<stdin>` which can appear in
-this field. This is a placeholder for the the code directly entered into the
-shell.
+Format of `point_of_instantiation` is  the same as of `source_location` but
+shows where this particular type was instantiated from.
 
 `time_taken` is given in seconds as a double. `time_taken_ratio` is also a
 double and can be generally expected to be in the range `[0-1]`. Sometimes it

@@ -305,7 +305,7 @@ namespace
       }
     }
 
-    virtual bool has_further_tokens() const
+    virtual bool has_further_tokens() const override
     {
       try
       {
@@ -327,12 +327,12 @@ namespace
       }
     }
 
-    virtual data::token current_token() const
+    virtual data::token current_token() const override
     {
       return current_tok;
     }
 
-    virtual void move_to_next_token()
+    virtual void move_to_next_token() override
     {
       try
       {
@@ -351,7 +351,7 @@ namespace
       }
     }
 
-    virtual bool was_error() const
+    virtual bool was_error() const override
     {
       return error_flag;
     }

@@ -26,6 +26,12 @@
 using namespace metashell;
 using namespace metashell::data;
 
+namespace {
+
+const file_location f{};
+
+} // anonymous namespace
+
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {
   in_memory_displayer d;
@@ -62,8 +68,8 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(int_), 0, 1},
-      {frame(int_, file_location(), instantiation_kind::non_template_type), 1, 0}
+      {frame(int_, f), 0, 1},
+      {frame(int_, f, f, instantiation_kind::non_template_type), 1, 0}
     },
     d.call_graphs().front()
   );
@@ -83,8 +89,8 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(int_), 0, 1},
-      {frame(int_), 1, 0}
+      {frame(int_, f), 0, 1},
+      {frame(int_, f), 1, 0}
     },
     d.call_graphs().front()
   );
@@ -136,8 +142,8 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(int_), 0, 1},
-      {frame(int_, file_location(), instantiation_kind::non_template_type), 1, 0}
+      {frame(int_, f), 0, 1},
+      {frame(int_, f, f, instantiation_kind::non_template_type), 1, 0}
     },
     d.call_graphs().front()
   );
@@ -155,18 +161,18 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(type("int_<fib<5>::value>")), 0, 3},
-      {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 2},
-      {frame(    fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
-      {frame(    fib<1>(), file_location(), instantiation_kind::memoization), 4, 0},
-      {frame(  fib<4>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<2>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<3>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame( fib<5>(), file_location(), instantiation_kind::memoization), 1, 0},
-      {frame( type("int_<5>"), file_location(), instantiation_kind::template_instantiation), 1,0}
+      {frame(type("int_<fib<5>::value>"), f), 0, 3},
+      {frame( fib<5>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<3>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<1>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<2>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<3>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame( fib<5>(), f, f, instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<5>"), f, f, instantiation_kind::template_instantiation), 1,0}
     },
     d.call_graphs().front()
   );
@@ -184,23 +190,23 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(type("int_<fib<5>::value>")), 0, 2},
-      {frame( fib<5>()), 1, 2},
-      {frame(  fib<3>()), 2, 2},
-      {frame(   fib<1>()), 3, 0},
-      {frame(   fib<2>()), 3, 2},
-      {frame(    fib<0>()), 4, 0},
-      {frame(    fib<1>()), 4, 0},
-      {frame(  fib<4>()), 2, 2},
-      {frame(   fib<2>()), 3, 2},
-      {frame(    fib<0>()), 4, 0},
-      {frame(    fib<1>()), 4, 0},
-      {frame(   fib<3>()), 3, 2},
-      {frame(    fib<1>()), 4, 0},
-      {frame(    fib<2>()), 4, 2},
-      {frame(     fib<0>()), 5, 0},
-      {frame(     fib<1>()), 5, 0},
-      {frame( type("int_<5>")), 1,0}
+      {frame(type("int_<fib<5>::value>"), f), 0, 2},
+      {frame( fib<5>(), f), 1, 2},
+      {frame(  fib<3>(), f), 2, 2},
+      {frame(   fib<1>(), f), 3, 0},
+      {frame(   fib<2>(), f), 3, 2},
+      {frame(    fib<0>(), f), 4, 0},
+      {frame(    fib<1>(), f), 4, 0},
+      {frame(  fib<4>(), f), 2, 2},
+      {frame(   fib<2>(), f), 3, 2},
+      {frame(    fib<0>(), f), 4, 0},
+      {frame(    fib<1>(), f), 4, 0},
+      {frame(   fib<3>(), f), 3, 2},
+      {frame(    fib<1>(), f), 4, 0},
+      {frame(    fib<2>(), f), 4, 2},
+      {frame(     fib<0>(), f), 5, 0},
+      {frame(     fib<1>(), f), 5, 0},
+      {frame( type("int_<5>"), f), 1,0}
     },
     d.call_graphs().front()
   );
@@ -220,7 +226,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame( fib<5>(), file_location(), instantiation_kind::memoization), 0, 0}
+      {frame( fib<5>(), f, f, instantiation_kind::memoization), 0, 0}
     },
     d.call_graphs().front()
   );
@@ -239,15 +245,15 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>(), file_location(), instantiation_kind::template_instantiation), 0, 2},
-      {frame( fib<3>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<1>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<2>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<0>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame( fib<4>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<2>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<3>(), file_location(), instantiation_kind::memoization), 2, 0}
+      {frame(fib<5>(), f, f, instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<0>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<1>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame( fib<4>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), f, f, instantiation_kind::memoization), 2, 0}
     },
     d.call_graphs().front()
   );
@@ -266,21 +272,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>()), 0, 2},
-      {frame( fib<3>()), 1, 2},
-      {frame(  fib<1>()), 2, 0},
-      {frame(  fib<2>()), 2, 2},
-      {frame(   fib<0>()), 3, 0},
-      {frame(   fib<1>()), 3, 0},
-      {frame( fib<4>()), 1, 2},
-      {frame(  fib<2>()), 2, 2},
-      {frame(   fib<0>()), 3, 0},
-      {frame(   fib<1>()), 3, 0},
-      {frame(  fib<3>()), 2, 2},
-      {frame(   fib<1>()), 3, 0},
-      {frame(   fib<2>()), 3, 2},
-      {frame(    fib<0>()), 4, 0},
-      {frame(    fib<1>()), 4, 0}
+      {frame(fib<5>(), f), 0, 2},
+      {frame( fib<3>(), f), 1, 2},
+      {frame(  fib<1>(), f), 2, 0},
+      {frame(  fib<2>(), f), 2, 2},
+      {frame(   fib<0>(), f), 3, 0},
+      {frame(   fib<1>(), f), 3, 0},
+      {frame( fib<4>(), f), 1, 2},
+      {frame(  fib<2>(), f), 2, 2},
+      {frame(   fib<0>(), f), 3, 0},
+      {frame(   fib<1>(), f), 3, 0},
+      {frame(  fib<3>(), f), 2, 2},
+      {frame(   fib<1>(), f), 3, 0},
+      {frame(   fib<2>(), f), 3, 2},
+      {frame(    fib<0>(), f), 4, 0},
+      {frame(    fib<1>(), f), 4, 0}
     },
     d.call_graphs().front()
   );
@@ -299,7 +305,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 0, 0}
+      {frame( fib<5>(), f, f, instantiation_kind::template_instantiation), 0, 0}
     },
     d.call_graphs().front()
   );
@@ -318,9 +324,9 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>(), file_location(), instantiation_kind::template_instantiation), 0, 2},
-      {frame( fib<3>(), file_location(), instantiation_kind::template_instantiation), 1, 0},
-      {frame( fib<4>(), file_location(), instantiation_kind::template_instantiation), 1, 0}
+      {frame(fib<5>(), f, f, instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), f, f, instantiation_kind::template_instantiation), 1, 0},
+      {frame( fib<4>(), f, f, instantiation_kind::template_instantiation), 1, 0}
     },
     d.call_graphs().front()
   );
@@ -341,9 +347,9 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>()), 0, 2},
-      {frame( fib<3>()), 1, 0},
-      {frame( fib<4>()), 1, 0}
+      {frame(fib<5>(), f), 0, 2},
+      {frame( fib<3>(), f), 1, 0},
+      {frame( fib<4>(), f), 1, 0}
     },
     d.call_graphs().front()
   );
@@ -362,13 +368,13 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>(), file_location(), instantiation_kind::template_instantiation), 0, 2},
-      {frame( fib<3>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<1>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<2>(), file_location(), instantiation_kind::template_instantiation), 2, 0},
-      {frame( fib<4>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<2>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<3>(), file_location(), instantiation_kind::memoization), 2, 0}
+      {frame(fib<5>(), f, f, instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), f, f, instantiation_kind::template_instantiation), 2, 0},
+      {frame( fib<4>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), f, f, instantiation_kind::memoization), 2, 0}
     },
     d.call_graphs().front()
   );
@@ -387,15 +393,15 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(fib<5>(), file_location(), instantiation_kind::template_instantiation), 0, 2},
-      {frame( fib<3>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<1>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<2>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<0>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame( fib<4>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<2>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<3>(), file_location(), instantiation_kind::memoization), 2, 0}
+      {frame(fib<5>(), f, f, instantiation_kind::template_instantiation), 0, 2},
+      {frame( fib<3>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<1>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<2>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<0>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<1>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame( fib<4>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<2>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<3>(), f, f, instantiation_kind::memoization), 2, 0}
     },
     d.call_graphs().front()
   );
@@ -413,12 +419,12 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(type("int_<fib<5>::value>")), 0, 1},
-      {frame(fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 1},
-      {frame( fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(  fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(  fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 1},
-      {frame(   fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
+      {frame(type("int_<fib<5>::value>"), f), 0, 1},
+      {frame(fib<5>(), f, f, instantiation_kind::template_instantiation), 1, 1},
+      {frame( fib<3>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(  fib<1>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(  fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 1},
+      {frame(   fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
     },
     d.call_graphs().front()
   );
@@ -440,25 +446,67 @@ JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3) {
   JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
   JUST_ASSERT_EQUAL_CONTAINER(
     in_memory_displayer::call_graph{
-      {frame(type("<environment>")), 0, 8},
-      {frame( fib<5>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<3>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<1>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<2>(), file_location(), instantiation_kind::template_instantiation), 3, 2},
-      {frame(    fib<0>(), file_location(), instantiation_kind::memoization), 4, 0},
-      {frame(    fib<1>(), file_location(), instantiation_kind::memoization), 4, 0},
-      {frame(  fib<4>(), file_location(), instantiation_kind::template_instantiation), 2, 2},
-      {frame(   fib<2>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame(   fib<3>(), file_location(), instantiation_kind::memoization), 3, 0},
-      {frame( fib<5>(), file_location(), instantiation_kind::memoization), 1, 0},
-      {frame( type("int_<5>"), file_location(), instantiation_kind::template_instantiation), 1, 0},
-      {frame( type("int_<5>"), file_location(), instantiation_kind::memoization), 1, 0},
-      {frame( fib<6>(), file_location(), instantiation_kind::template_instantiation), 1, 2},
-      {frame(  fib<4>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame(  fib<5>(), file_location(), instantiation_kind::memoization), 2, 0},
-      {frame( fib<6>(), file_location(), instantiation_kind::memoization), 1, 0},
-      {frame( type("int_<8>"), file_location(), instantiation_kind::template_instantiation), 1, 0},
-      {frame( type("int_<8>"), file_location(), instantiation_kind::memoization), 1, 0},
+      {frame(type("<environment>"), f), 0, 8},
+      {frame( fib<5>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<3>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<1>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   fib<2>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame(   fib<3>(), f, f, instantiation_kind::memoization), 3, 0},
+      {frame( fib<5>(), f, f, instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<5>"), f, f, instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("int_<5>"), f, f, instantiation_kind::memoization), 1, 0},
+      {frame( fib<6>(), f, f, instantiation_kind::template_instantiation), 1, 2},
+      {frame(  fib<4>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  fib<5>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame( fib<6>(), f, f, instantiation_kind::memoization), 1, 0},
+      {frame( type("int_<8>"), f, f, instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("int_<8>"), f, f, instantiation_kind::memoization), 1, 0},
+    },
+    d.call_graphs().front()
+  );
+}
+#endif
+
+#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
+JUST_TEST_CASE(test_mdb_forwardtrace_sfinae_v1) {
+  in_memory_displayer d;
+  mdb_test_shell sh(fibonacci_sfinae_mp);
+
+  sh.line_available("evaluate decltype(foo<4>())", d);
+  sh.line_available("forwardtrace", d);
+
+  JUST_ASSERT_EQUAL(1u, d.call_graphs().size());
+  JUST_ASSERT_EQUAL_CONTAINER(
+    in_memory_displayer::call_graph{
+      {frame(type("decltype(foo<4>())"), f), 0, 5},
+      {frame( type("foo"), f, f, instantiation_kind::explicit_template_argument_substitution), 1, 2},
+      {frame(  v2fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   v2fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v2fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v2fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(   v2fib<3>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v2fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v2fib<2>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  type("enable_if<false, char>"), f, f, instantiation_kind::template_instantiation), 2, 0},
+      {frame( type("foo"), f, f, instantiation_kind::explicit_template_argument_substitution), 1, 5},
+      {frame(  v1fib<4>(), f, f, instantiation_kind::template_instantiation), 2, 2},
+      {frame(   v1fib<2>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v1fib<0>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v1fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(   v1fib<3>(), f, f, instantiation_kind::template_instantiation), 3, 2},
+      {frame(    v1fib<1>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(    v1fib<2>(), f, f, instantiation_kind::memoization), 4, 0},
+      {frame(  type("enable_if<true, type-parameter-0-0>"), f, f, instantiation_kind::deduced_template_argument_substitution), 2, 0},
+      {frame(  type("enable_if<true, void>"), f, f, instantiation_kind::template_instantiation), 2, 0},
+      {frame(  v1fib<4>(), f, f, instantiation_kind::memoization), 2, 0},
+      {frame(  type("enable_if<true, void>"), f, f, instantiation_kind::memoization), 2, 0},
+      {frame( type("foo"), f, f, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+      {frame( type("foo<4>"), f, f, instantiation_kind::template_instantiation), 1, 0},
+      {frame( type("void"), f, f, instantiation_kind::non_template_type), 1, 0}
     },
     d.call_graphs().front()
   );

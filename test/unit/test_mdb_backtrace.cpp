@@ -25,6 +25,12 @@
 using namespace metashell;
 using namespace metashell::data;
 
+namespace {
+
+const file_location f{};
+
+} // anonymous namespace
+
 #ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_mdb_backtrace_without_evaluation) {
   in_memory_displayer d;
@@ -47,7 +53,7 @@ JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci) {
   sh.line_available("backtrace", d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    { data::backtrace{data::frame(data::type("int_<fib<10>::value>"))} },
+    { data::backtrace{data::frame(data::type("int_<fib<10>::value>"), f)} },
     d.backtraces()
   );
 }
@@ -104,8 +110,8 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<10>::value>"))
+        frame(type("fib<10>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<10>::value>"), f)
       }
     },
     d.backtraces()
@@ -132,9 +138,9 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<8>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<10>::value>"))
+        frame(type("fib<8>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<10>::value>"), f)
       }
     },
     d.backtraces()
@@ -161,10 +167,10 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<6>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("fib<8>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<10>::value>"))
+        frame(type("fib<6>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("fib<8>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("fib<10>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<10>::value>"), f)
       }
     },
     d.backtraces()
@@ -205,8 +211,8 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<10>::value>"))
+        frame(type("fib<10>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<10>::value>"), f)
       }
     },
     d.backtraces()
@@ -217,8 +223,8 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<10>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<10>::value>"))
+        frame(type("fib<10>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<10>::value>"), f)
       }
     },
     d.backtraces()
@@ -245,11 +251,11 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias) {
   JUST_ASSERT_EQUAL_CONTAINER(
     {
       backtrace{
-        frame(type("fib<0>"), file_location(), instantiation_kind::memoization),
-        frame(type("fib<2>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("fib<3>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("fib<5>"), file_location(), instantiation_kind::template_instantiation),
-        frame(type("int_<fib<5>::value>"))
+        frame(type("fib<0>"), f, f, instantiation_kind::memoization),
+        frame(type("fib<2>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("fib<3>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("fib<5>"), f, f, instantiation_kind::template_instantiation),
+        frame(type("int_<fib<5>::value>"), f)
       }
     },
     d.backtraces()

@@ -111,6 +111,8 @@ protected:
   void filter_similar_edges();
   void filter_metaprogram(bool for_current_line);
 
+  static bool is_instantiation_kind_enabled(data::instantiation_kind kind);
+
   static boost::optional<int> parse_defaultable_integer(
     const std::string& arg, int default_value);
 

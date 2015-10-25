@@ -784,12 +784,18 @@ JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
         command("step"),
         command("step"),
         command("step"),
+        command("step"),
         command("step")
       }
     );
 
   auto i = r.begin() + 4;
 
+  JUST_ASSERT_EQUAL(
+      frame(type("foo<N, 1>"),
+        instantiation_kind::deduced_template_argument_substitution), *i);
+
+  i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("foo<3, 1>"), instantiation_kind::template_instantiation), *i);
 
