@@ -256,11 +256,13 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
       "[" + format_time(f_.time_taken()) +
       ", " + format_ratio(f_.time_taken_ratio()) + "] ";
   }
+
   std::ostringstream postfix;
   if (f_.is_full())
   {
-    postfix
-      << " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
+    postfix <<
+      " at " << f_.source_location() <<
+      " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
   }
   return prefix + format_code(f_.name().name()) + postfix.str();
 }
@@ -323,9 +325,9 @@ void console_displayer::show_file_section(
 {
   file_section section;
   if (location_.name == "<stdin>") {
-    section = get_file_section_from_buffer(env_buffer_, location_.row, 2);
+    section = get_file_section_from_buffer(env_buffer_, location_.row, 3);
   } else {
-    section = get_file_section_from_file(location_.name, location_.row, 2);
+    section = get_file_section_from_file(location_.name, location_.row, 3);
   }
 
   if (section.empty()) {
@@ -345,8 +347,7 @@ void console_displayer::show_file_section(
     ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
-    _console->show(format_code(indexed_line.line));
-    _console->new_line();
+    _console->show(format_code(indexed_line.line + "\n"));
   }
 }
 

@@ -22,15 +22,20 @@
 
 using namespace metashell::data;
 
-frame::frame(const type& name_) : _name(name_) {}
+frame::frame(const type& name_, const file_location& source_location_) :
+  _name(name_),
+  _source_location(source_location_)
+{}
 
 frame::frame(
     const type& name_,
+    const file_location& source_location_,
     const file_location& point_of_instantiation_,
     instantiation_kind kind_,
     boost::optional<double> time_taken,
     boost::optional<double> time_taken_ratio) :
   _name(name_),
+  _source_location(source_location_),
   _point_of_instantiation(point_of_instantiation_),
   _kind(kind_),
   _time_taken(time_taken),
@@ -40,6 +45,11 @@ frame::frame(
 const type& frame::name() const
 {
   return _name;
+}
+
+const file_location& frame::source_location() const
+{
+  return _source_location;
 }
 
 bool frame::is_full() const

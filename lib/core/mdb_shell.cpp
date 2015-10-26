@@ -480,7 +480,6 @@ void mdb_shell::filter_disable_everything() {
   }
 }
 
-
 void mdb_shell::filter_enable_reachable(bool for_current_line) {
   using vertex_descriptor = metaprogram::vertex_descriptor;
   using edge_descriptor = metaprogram::edge_descriptor;
@@ -505,15 +504,22 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
       property.point_of_instantiation.row == line_number + 1
     );
 
-    if (current_line_filter &&
-        (property.kind == data::instantiation_kind::template_instantiation ||
-        property.kind == data::instantiation_kind::memoization) &&
-        (!is_wrap_type(target_name) ||
-         property.kind != data::instantiation_kind::memoization))
-    {
-      property.enabled = true;
-      edge_stack.push(edge);
+    if (!current_line_filter) {
+      continue;
     }
+
+    if (!is_instantiation_kind_enabled(property.kind)) {
+      continue;
+    }
+
+    if (property.kind == data::instantiation_kind::memoization &&
+        is_wrap_type(target_name))
+    {
+      continue;
+    }
+
+    property.enabled = true;
+    edge_stack.push(edge);
   }
 
   discovered_t discovered(mp->get_num_vertices());
@@ -534,9 +540,7 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
-      if (property.kind == data::instantiation_kind::template_instantiation ||
-         property.kind == data::instantiation_kind::memoization)
-      {
+      if (is_instantiation_kind_enabled(property.kind)) {
         property.enabled = true;
         edge_stack.push(out_edge);
       }
@@ -600,6 +604,18 @@ void mdb_shell::filter_metaprogram(bool for_current_line) {
   filter_similar_edges();
 
   mp->init_full_time_taken();
+}
+
+bool mdb_shell::is_instantiation_kind_enabled(data::instantiation_kind kind) {
+  switch (kind) {
+    case data::instantiation_kind::memoization:
+    case data::instantiation_kind::template_instantiation:
+    case data::instantiation_kind::deduced_template_argument_substitution:
+    case data::instantiation_kind::explicit_template_argument_substitution:
+      return true;
+    default:
+      return false;
+  }
 }
 
 void mdb_shell::command_evaluate(
@@ -865,6 +881,7 @@ bool mdb_shell::run_metaprogram_with_templight(
       protobuf_stream,
       mode,
       expression ? *expression : "<environment>",
+      data::file_location{}, // TODO something sensible here?
       evaluation_result);
 
   assert(mp);
@@ -998,15 +1015,19 @@ void mdb_shell::display_frame(
   const data::frame& frame, iface::displayer& displayer_) const
 {
   displayer_.show_frame(frame);
-  if (frame.is_full()) {
-    // TODO: we should somehow compensate the file_locations returned by
-    // clang for the <stdin> file. This is hard because the file clang sees
-    // is just two lines (an include for the PCH and the current line)
-    // Until this is figured out, printing file sections for <stdin> is
-    // turned off
-    // displayer_.show_file_section(frame.point_of_instantiation(), env.get());
-    displayer_.show_file_section(frame.point_of_instantiation(), "");
+
+  data::file_location source_location = frame.source_location();
+  if (source_location.name == env.env_filename()) {
+    // We don't want to show stuff from the internal header
+    source_location = data::file_location();
   }
+  // TODO: we should somehow compensate the file_locations returned by
+  // clang for the <stdin> file. This is hard because the file clang sees
+  // is just two lines (an include for the PCH and the current line)
+  // Until this is figured out, printing file sections for <stdin> is
+  // turned off
+  // displayer_.show_file_section(source_location, env.get());
+  displayer_.show_file_section(source_location, "");
 }
 
 void mdb_shell::display_current_frame(iface::displayer& displayer_) const {

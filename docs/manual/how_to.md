@@ -26,6 +26,7 @@ instantiation of the foo function:
 ```cpp
 (mdb) ft
 decltype(foo(13))
++ foo (DeducedTemplateArgumentSubstitution)
 + foo<int> (TemplateInstantiation)
 ` void (NonTemplateType)
 ```
@@ -39,8 +40,8 @@ T becomes when you call foo with a template type like `std::vector`
 (mdb) eval decltype(foo(std::vector<int>{}))
 Metaprogram started
 (mdb) rbreak foo
-Breakpoint "foo" will stop the execution on 1 location
-(mdb) continue
+Breakpoint "foo" will stop the execution on 2 locations
+(mdb) continue 2
 Breakpoint "foo" reached
 foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
 ```
@@ -159,5 +160,19 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 > `METASHELL_INSTANTIATE_EXPRESSION` instantiates the body of the function
 > templates (and further template instantiations triggered by them) as well.
 
-<p>&nbsp;</p>
+## debug expression involving SFINAE?
 
+Expressions leveraging on SFINAE (short for Substitution Failure Is Not An
+Error) are very common in template metaprograms. The term refers to the fact
+that if errors occur while substituting template arguments to a function or
+class template, that candidate is just simply discarded from the candidate set
+of the overload resolution and an actual error is not emitted.
+
+Expressions involving SFINAE can be very complex, and sometimes it is very
+difficult to reason about why a particular candidate was or wasn't choosen in
+the overload resolution just by looking at the code. Mdb can help in debugging
+this by showing you all the types that are instantiated while templates are
+substituted.
+
+Note: this section about SFINAE is still a work in progress. It will be expanded
+with examples soon.
