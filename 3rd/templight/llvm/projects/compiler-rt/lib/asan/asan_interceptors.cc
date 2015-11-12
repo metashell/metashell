@@ -11,8 +11,8 @@
 //
 // Intercept various libc functions.
 //===----------------------------------------------------------------------===//
-#include "asan_interceptors.h"
 
+#include "asan_interceptors.h"
 #include "asan_allocator.h"
 #include "asan_internal.h"
 #include "asan_mapping.h"
@@ -25,6 +25,12 @@
 
 #if SANITIZER_POSIX
 #include "sanitizer_common/sanitizer_posix.h"
+#endif
+
+#if defined(__i386) && SANITIZER_LINUX
+#define ASAN_PTHREAD_CREATE_VERSION "GLIBC_2.1"
+#elif defined(__mips__) && SANITIZER_LINUX
+#define ASAN_PTHREAD_CREATE_VERSION "GLIBC_2.2"
 #endif
 
 namespace __asan {
@@ -69,7 +75,7 @@ struct AsanInterceptorContext {
       }                                                                 \
       if (!suppressed) {                                                \
         GET_CURRENT_PC_BP_SP;                                           \
-        __asan_report_error(pc, bp, sp, __bad, isWrite, __size, 0);     \
+        ReportGenericError(pc, bp, sp, __bad, isWrite, __size, 0, false);\
       }                                                                 \
     }                                                                   \
   } while (0)
@@ -105,7 +111,7 @@ static inline bool RangesOverlap(const char *offset1, uptr length1,
 
 static inline uptr MaybeRealStrnlen(const char *s, uptr maxlen) {
 #if ASAN_INTERCEPT_STRNLEN
-  if (REAL(strnlen) != 0) {
+  if (REAL(strnlen)) {
     return REAL(strnlen)(s, maxlen);
   }
 #endif
@@ -123,7 +129,7 @@ int OnExit() {
   return 0;
 }
 
-}  // namespace __asan
+} // namespace __asan
 
 // ---------------------- Wrappers ---------------- {{{1
 using namespace __asan;  // NOLINT
@@ -216,7 +222,7 @@ static thread_return_t THREAD_CALLING_CONV asan_thread_start(void *arg) {
   ThreadStartParam *param = reinterpret_cast<ThreadStartParam *>(arg);
   AsanThread *t = nullptr;
   while ((t = reinterpret_cast<AsanThread *>(
-              atomic_load(&param->t, memory_order_acquire))) == 0)
+              atomic_load(&param->t, memory_order_acquire))) == nullptr)
     internal_sched_yield();
   SetCurrentThread(t);
   return t->ThreadStart(GetTid(), &param->is_registered);
@@ -231,7 +237,7 @@ INTERCEPTOR(int, pthread_create, void *thread,
     StopInitOrderChecking();
   GET_STACK_TRACE_THREAD;
   int detached = 0;
-  if (attr != 0)
+  if (attr)
     REAL(pthread_attr_getdetachstate)(attr, &detached);
   ThreadStartParam param;
   atomic_store(&param.t, 0, memory_order_relaxed);
@@ -263,21 +269,21 @@ DEFINE_REAL_PTHREAD_FUNCTIONS
 
 #if ASAN_INTERCEPT_SIGNAL_AND_SIGACTION
 
-#if SANITIZER_ANDROID && !defined(_LP64)
+#if SANITIZER_ANDROID
 INTERCEPTOR(void*, bsd_signal, int signum, void *handler) {
   if (!IsDeadlySignal(signum) || common_flags()->allow_user_segv_handler) {
     return REAL(bsd_signal)(signum, handler);
   }
   return 0;
 }
-#else
+#endif
+
 INTERCEPTOR(void*, signal, int signum, void *handler) {
   if (!IsDeadlySignal(signum) || common_flags()->allow_user_segv_handler) {
     return REAL(signal)(signum, handler);
   }
-  return 0;
+  return nullptr;
 }
-#endif
 
 INTERCEPTOR(int, sigaction, int signum, const struct sigaction *act,
                             struct sigaction *oldact) {
@@ -292,7 +298,7 @@ int real_sigaction(int signum, const void *act, void *oldact) {
   return REAL(sigaction)(signum, (const struct sigaction *)act,
                          (struct sigaction *)oldact);
 }
-}  // namespace __sanitizer
+} // namespace __sanitizer
 
 #elif SANITIZER_POSIX
 // We need to have defined REAL(sigaction) on posix systems.
@@ -709,7 +715,7 @@ INTERCEPTOR(int, __cxa_atexit, void (*func)(void *), void *arg,
 #endif
   ENSURE_ASAN_INITED();
   int res = REAL(__cxa_atexit)(func, arg, dso_handle);
-  REAL(__cxa_atexit)(AtCxaAtexit, 0, 0);
+  REAL(__cxa_atexit)(AtCxaAtexit, nullptr, nullptr);
   return res;
 }
 #endif  // ASAN_INTERCEPT___CXA_ATEXIT
@@ -769,11 +775,10 @@ void InitializeAsanInterceptors() {
   ASAN_INTERCEPT_FUNC(longjmp);
 #if ASAN_INTERCEPT_SIGNAL_AND_SIGACTION
   ASAN_INTERCEPT_FUNC(sigaction);
-#if SANITIZER_ANDROID && !defined(_LP64)
+#if SANITIZER_ANDROID
   ASAN_INTERCEPT_FUNC(bsd_signal);
-#else
-  ASAN_INTERCEPT_FUNC(signal);
 #endif
+  ASAN_INTERCEPT_FUNC(signal);
 #endif
 #if ASAN_INTERCEPT_SWAPCONTEXT
   ASAN_INTERCEPT_FUNC(swapcontext);
@@ -792,7 +797,11 @@ void InitializeAsanInterceptors() {
 
   // Intercept threading-related functions
 #if ASAN_INTERCEPT_PTHREAD_CREATE
+#if defined(ASAN_PTHREAD_CREATE_VERSION)
+  ASAN_INTERCEPT_FUNC_VER(pthread_create, ASAN_PTHREAD_CREATE_VERSION);
+#else
   ASAN_INTERCEPT_FUNC(pthread_create);
+#endif
   ASAN_INTERCEPT_FUNC(pthread_join);
 #endif
 
@@ -810,4 +819,4 @@ void InitializeAsanInterceptors() {
   VReport(1, "AddressSanitizer: libc interceptors initialized\n");
 }
 
-}  // namespace __asan
+} // namespace __asan

@@ -223,7 +223,6 @@ else()
       libLLVMMCDisassembler.a
       libLLVMScalarOpts.a
       libLLVMipo.a
-      libLLVMipa.a
       libLLVMInstrumentation.a
       libLLVMObject.a
       libLLVMBitReader.a

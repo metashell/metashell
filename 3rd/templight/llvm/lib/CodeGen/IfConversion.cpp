@@ -190,10 +190,10 @@ namespace {
   private:
     bool ReverseBranchCondition(BBInfo &BBI);
     bool ValidSimple(BBInfo &TrueBBI, unsigned &Dups,
-                     const BranchProbability &Prediction) const;
+                     BranchProbability Prediction) const;
     bool ValidTriangle(BBInfo &TrueBBI, BBInfo &FalseBBI,
                        bool FalseBranch, unsigned &Dups,
-                       const BranchProbability &Prediction) const;
+                       BranchProbability Prediction) const;
     bool ValidDiamond(BBInfo &TrueBBI, BBInfo &FalseBBI,
                       unsigned &Dups1, unsigned &Dups2) const;
     void ScanInstructions(BBInfo &BBI);
@@ -218,7 +218,7 @@ namespace {
 
     bool MeetIfcvtSizeLimit(MachineBasicBlock &BB,
                             unsigned Cycle, unsigned Extra,
-                            const BranchProbability &Prediction) const {
+                            BranchProbability Prediction) const {
       return Cycle > 0 && TII->isProfitableToIfCvt(BB, Cycle, Extra,
                                                    Prediction);
     }
@@ -227,7 +227,7 @@ namespace {
                             unsigned TCycle, unsigned TExtra,
                             MachineBasicBlock &FBB,
                             unsigned FCycle, unsigned FExtra,
-                            const BranchProbability &Prediction) const {
+                            BranchProbability Prediction) const {
       return TCycle > 0 && FCycle > 0 &&
         TII->isProfitableToIfCvt(TBB, TCycle, TExtra, FBB, FCycle, FExtra,
                                  Prediction);
@@ -462,11 +462,11 @@ bool IfConverter::ReverseBranchCondition(BBInfo &BBI) {
 /// getNextBlock - Returns the next block in the function blocks ordering. If
 /// it is the end, returns NULL.
 static inline MachineBasicBlock *getNextBlock(MachineBasicBlock *BB) {
-  MachineFunction::iterator I = BB;
+  MachineFunction::iterator I = BB->getIterator();
   MachineFunction::iterator E = BB->getParent()->end();
   if (++I == E)
     return nullptr;
-  return I;
+  return &*I;
 }
 
 /// ValidSimple - Returns true if the 'true' block (along with its
@@ -474,7 +474,7 @@ static inline MachineBasicBlock *getNextBlock(MachineBasicBlock *BB) {
 /// number of instructions that the ifcvt would need to duplicate if performed
 /// in Dups.
 bool IfConverter::ValidSimple(BBInfo &TrueBBI, unsigned &Dups,
-                              const BranchProbability &Prediction) const {
+                              BranchProbability Prediction) const {
   Dups = 0;
   if (TrueBBI.IsBeingAnalyzed || TrueBBI.IsDone)
     return false;
@@ -501,7 +501,7 @@ bool IfConverter::ValidSimple(BBInfo &TrueBBI, unsigned &Dups,
 /// if performed in 'Dups'.
 bool IfConverter::ValidTriangle(BBInfo &TrueBBI, BBInfo &FalseBBI,
                                 bool FalseBranch, unsigned &Dups,
-                                const BranchProbability &Prediction) const {
+                                BranchProbability Prediction) const {
   Dups = 0;
   if (TrueBBI.IsBeingAnalyzed || TrueBBI.IsDone)
     return false;
@@ -530,10 +530,10 @@ bool IfConverter::ValidTriangle(BBInfo &TrueBBI, BBInfo &FalseBBI,
 
   MachineBasicBlock *TExit = FalseBranch ? TrueBBI.FalseBB : TrueBBI.TrueBB;
   if (!TExit && blockAlwaysFallThrough(TrueBBI)) {
-    MachineFunction::iterator I = TrueBBI.BB;
+    MachineFunction::iterator I = TrueBBI.BB->getIterator();
     if (++I == TrueBBI.BB->getParent()->end())
       return false;
-    TExit = I;
+    TExit = &*I;
   }
   return TExit && TExit == FalseBBI.BB;
 }
@@ -948,10 +948,8 @@ void IfConverter::AnalyzeBlock(MachineBasicBlock *MBB,
 /// candidates.
 void IfConverter::AnalyzeBlocks(MachineFunction &MF,
                                 std::vector<IfcvtToken*> &Tokens) {
-  for (MachineFunction::iterator I = MF.begin(), E = MF.end(); I != E; ++I) {
-    MachineBasicBlock *BB = I;
-    AnalyzeBlock(BB, Tokens);
-  }
+  for (auto &BB : MF)
+    AnalyzeBlock(&BB, Tokens);
 
   // Sort to favor more complex ifcvt scheme.
   std::stable_sort(Tokens.begin(), Tokens.end(), IfcvtTokenCmp);
@@ -961,14 +959,14 @@ void IfConverter::AnalyzeBlocks(MachineFunction &MF,
 /// that all the intervening blocks are empty (given BB can fall through to its
 /// next block).
 static bool canFallThroughTo(MachineBasicBlock *BB, MachineBasicBlock *ToBB) {
-  MachineFunction::iterator PI = BB;
+  MachineFunction::iterator PI = BB->getIterator();
   MachineFunction::iterator I = std::next(PI);
-  MachineFunction::iterator TI = ToBB;
+  MachineFunction::iterator TI = ToBB->getIterator();
   MachineFunction::iterator E = BB->getParent()->end();
   while (I != TI) {
     // Check isSuccessor to avoid case where the next block is empty, but
     // it's not a successor.
-    if (I == E || !I->empty() || !PI->isSuccessor(I))
+    if (I == E || !I->empty() || !PI->isSuccessor(&*I))
       return false;
     PI = I++;
   }
@@ -1686,19 +1684,83 @@ void IfConverter::MergeBlocks(BBInfo &ToBBI, BBInfo &FromBBI, bool AddEdges) {
   ToBBI.BB->splice(ToBBI.BB->end(),
                    FromBBI.BB, FromBBI.BB->begin(), FromBBI.BB->end());
 
-  std::vector<MachineBasicBlock *> Succs(FromBBI.BB->succ_begin(),
-                                         FromBBI.BB->succ_end());
+  SmallVector<MachineBasicBlock *, 4> FromSuccs(FromBBI.BB->succ_begin(),
+                                                FromBBI.BB->succ_end());
   MachineBasicBlock *NBB = getNextBlock(FromBBI.BB);
   MachineBasicBlock *FallThrough = FromBBI.HasFallThrough ? NBB : nullptr;
 
-  for (unsigned i = 0, e = Succs.size(); i != e; ++i) {
-    MachineBasicBlock *Succ = Succs[i];
+  // The edge weight from ToBBI.BB to FromBBI.BB, which is only needed when
+  // AddEdges is true and FromBBI.BB is a successor of ToBBI.BB.
+  uint32_t To2FromWeight = 0;
+  // WeightScale and SumWeight are for calculating successor probabilities of
+  // FromBBI.BB.
+  uint32_t WeightScale = 0;
+  uint32_t SumWeight = 0;
+  if (AddEdges && ToBBI.BB->isSuccessor(FromBBI.BB)) {
+    To2FromWeight = MBPI->getEdgeWeight(ToBBI.BB, FromBBI.BB);
+    // Set the edge weight from ToBBI.BB to FromBBI.BB to zero to avoid the edge
+    // weight being merged to other edges when this edge is removed later.
+    ToBBI.BB->setSuccWeight(
+        std::find(ToBBI.BB->succ_begin(), ToBBI.BB->succ_end(), FromBBI.BB), 0);
+    SumWeight = MBPI->getSumForBlock(FromBBI.BB, WeightScale);
+  }
+
+  for (unsigned i = 0, e = FromSuccs.size(); i != e; ++i) {
+    MachineBasicBlock *Succ = FromSuccs[i];
     // Fallthrough edge can't be transferred.
     if (Succ == FallThrough)
       continue;
+
+    uint32_t NewWeight = 0;
+    if (AddEdges) {
+      // Calculate the edge weight for the edge from ToBBI.BB to Succ, which is
+      // a portion of the edge weight from FromBBI.BB to Succ. The portion ratio
+      // is the edge probability from ToBBI.BB to FromBBI.BB (if FromBBI is a
+      // successor of ToBBI.BB. See comment below for excepion).
+      NewWeight = MBPI->getEdgeWeight(FromBBI.BB, Succ);
+
+      // To2FromWeight is 0 when FromBBI.BB is not a successor of ToBBI.BB. This
+      // only happens when if-converting a diamond CFG and FromBBI.BB is the
+      // tail BB.  In this case FromBBI.BB post-dominates ToBBI.BB and hence we
+      // could just use the weights on FromBBI.BB's out-edges when adding new
+      // successors.
+      if (To2FromWeight > 0) {
+        BranchProbability Prob(NewWeight / WeightScale, SumWeight);
+        NewWeight = Prob.scale(To2FromWeight);
+      }
+    }
+
     FromBBI.BB->removeSuccessor(Succ);
-    if (AddEdges && !ToBBI.BB->isSuccessor(Succ))
-      ToBBI.BB->addSuccessor(Succ);
+
+    if (AddEdges) {
+      // If the edge from ToBBI.BB to Succ already exists, update the weight of
+      // this edge by adding NewWeight to it. An example is shown below, in
+      // which A is ToBBI.BB and B is FromBBI.BB. In this case we don't have to
+      // set C as A's successor as it already is. We only need to update the
+      // edge weight on A->C. Note that B will not be immediately removed from
+      // A's successors. It is possible that B->D is not removed either if D is
+      // a fallthrough of B. Later the edge A->D (generated here) and B->D will
+      // be combined into one edge. To maintain correct edge weight of this
+      // combined edge, we need to set the edge weight of A->B to zero, which is
+      // already done above. The edge weight on A->D is calculated by scaling
+      // the original weight on A->B by the probability of B->D.
+      //
+      // Before ifcvt:      After ifcvt (assume B->D is kept):
+      //
+      //       A                A
+      //      /|               /|\
+      //     / B              / B|
+      //    | /|             |  ||
+      //    |/ |             |  |/
+      //    C  D             C  D
+      //
+      if (ToBBI.BB->isSuccessor(Succ))
+        ToBBI.BB->setSuccWeight(
+            std::find(ToBBI.BB->succ_begin(), ToBBI.BB->succ_end(), Succ),
+            MBPI->getEdgeWeight(ToBBI.BB, Succ) + NewWeight);
+      else
+        ToBBI.BB->addSuccessor(Succ, NewWeight);
+    }
   }
 
   // Now FromBBI always falls through to the next block!

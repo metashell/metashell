@@ -523,7 +523,7 @@ static ARMBuildAttrs::CPUArch getArchForCPU(StringRef CPU,
   if (Subtarget->hasV8Ops())
     return ARMBuildAttrs::v8;
   else if (Subtarget->hasV7Ops()) {
-    if (Subtarget->isMClass() && Subtarget->hasThumb2DSP())
+    if (Subtarget->isMClass() && Subtarget->hasDSP())
       return ARMBuildAttrs::v7E_M;
     return ARMBuildAttrs::v7;
   } else if (Subtarget->hasV6T2Ops())
@@ -819,8 +819,7 @@ getModifierVariantKind(ARMCP::ARMCPModifier Modifier) {
   case ARMCP::TLSGD:       return MCSymbolRefExpr::VK_TLSGD;
   case ARMCP::TPOFF:       return MCSymbolRefExpr::VK_TPOFF;
   case ARMCP::GOTTPOFF:    return MCSymbolRefExpr::VK_GOTTPOFF;
-  case ARMCP::GOT:         return MCSymbolRefExpr::VK_GOT;
-  case ARMCP::GOTOFF:      return MCSymbolRefExpr::VK_GOTOFF;
+  case ARMCP::GOT_PREL:    return MCSymbolRefExpr::VK_ARM_GOT_PREL;
   }
   llvm_unreachable("Invalid ARMCPModifier!");
 }
@@ -1126,6 +1125,7 @@ void ARMAsmPrinter::EmitUnwindingInstruction(const MachineInstr *MI) {
         Offset = 0;
         break;
       case ARM::ADDri:
+      case ARM::t2ADDri:
         Offset = -MI->getOperand(2).getImm();
         break;
       case ARM::SUBri:

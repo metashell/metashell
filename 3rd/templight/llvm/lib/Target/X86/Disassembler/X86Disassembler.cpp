@@ -95,11 +95,13 @@ X86GenericDisassembler::X86GenericDisassembler(
   llvm_unreachable("Invalid CPU mode");
 }
 
+namespace {
 struct Region {
   ArrayRef<uint8_t> Bytes;
   uint64_t Base;
   Region(ArrayRef<uint8_t> Bytes, uint64_t Base) : Bytes(Bytes), Base(Base) {}
 };
+} // end anonymous namespace
 
 /// A callback function that wraps the readByte method from Region.
 ///
@@ -962,6 +964,7 @@ static bool translateInstruction(MCInst &mcInst,
     return true;
   }
 
+  mcInst.clear();
   mcInst.setOpcode(insn.instructionID);
   // If when reading the prefix bytes we determined the overlapping 0xf2 or 0xf3
   // prefix bytes should be disassembled as xrelease and xacquire then set the

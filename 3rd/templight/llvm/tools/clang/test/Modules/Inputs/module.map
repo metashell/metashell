@@ -328,8 +328,12 @@ module crash {
   header "crash.h"
 }
 
-module DebugModule {
-  header "DebugModule.h"
+module DebugCXX {
+  header "DebugCXX.h"
+}
+
+module DebugObjC {
+  header "DebugObjC.h"
 }
 
 module ImportNameInDir {
@@ -359,4 +363,19 @@ module TargetFeatures {
     module x86_32 { requires x86_32 }
     module x86_64 { requires x86_64 }
   }
+}
+
+module DebugSubmodules {
+  module DebugSubmoduleA {
+    header "DebugSubmoduleA.h"
+    export *
+  }
+  module DebugSubmoduleB {
+    header "DebugSubmoduleB.h"
+    export *
+  }
+}
+
+module ExtensionTestA {
+  header "ExtensionTestA.h"
 }

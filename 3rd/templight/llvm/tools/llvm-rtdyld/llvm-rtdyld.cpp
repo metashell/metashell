@@ -94,6 +94,11 @@ CheckFiles("check",
            cl::ZeroOrMore);
 
 static cl::opt<uint64_t>
+PreallocMemory("preallocate",
+              cl::desc("Allocate memory upfront rather than on-demand"),
+              cl::init(0));
+
+static cl::opt<uint64_t>
 TargetAddrStart("target-addr-start",
                 cl::desc("For -verify only: start of phony target address "
                          "range."),
@@ -173,15 +178,52 @@ public:
                         size_t Size) override {}
   void deregisterEHFrames(uint8_t *Addr, uint64_t LoadAddr,
                           size_t Size) override {}
+
+  void preallocateSlab(uint64_t Size) {
+    std::string Err;
+    sys::MemoryBlock MB = sys::Memory::AllocateRWX(Size, nullptr, &Err);
+    if (!MB.base())
+      report_fatal_error("Can't allocate enough memory: " + Err);
+
+    PreallocSlab = MB;
+    UsePreallocation = true;
+    SlabSize = Size;
+  }
+
+  uint8_t *allocateFromSlab(uintptr_t Size, unsigned Alignment, bool isCode) {
+    Size = RoundUpToAlignment(Size, Alignment);
+    if (CurrentSlabOffset + Size > SlabSize)
+      report_fatal_error("Can't allocate enough memory. Tune --preallocate");
+
+    uintptr_t OldSlabOffset = CurrentSlabOffset;
+    sys::MemoryBlock MB((void *)OldSlabOffset, Size);
+    if (isCode)
+      FunctionMemory.push_back(MB);
+    else
+      DataMemory.push_back(MB);
+    CurrentSlabOffset += Size;
+    return (uint8_t*)OldSlabOffset;
+  }
+
 private:
   std::map<std::string, uint64_t> DummyExterns;
+  sys::MemoryBlock PreallocSlab;
+  bool UsePreallocation = false;
+  uintptr_t SlabSize = 0;
+  uintptr_t CurrentSlabOffset = 0;
 };
 
 uint8_t *TrivialMemoryManager::allocateCodeSection(uintptr_t Size,
                                                    unsigned Alignment,
                                                    unsigned SectionID,
                                                    StringRef SectionName) {
-  sys::MemoryBlock MB = sys::Memory::AllocateRWX(Size, nullptr, nullptr);
+  if (UsePreallocation)
+    return allocateFromSlab(Size, Alignment, true /* isCode */);
+
+  std::string Err;
+  sys::MemoryBlock MB = sys::Memory::AllocateRWX(Size, nullptr, &Err);
+  if (!MB.base())
+    report_fatal_error("MemoryManager allocation failed: " + Err);
   FunctionMemory.push_back(MB);
   return (uint8_t*)MB.base();
 }
@@ -191,19 +233,23 @@ uint8_t *TrivialMemoryManager::allocateDataSection(uintptr_t Size,
                                                    unsigned SectionID,
                                                    StringRef SectionName,
                                                    bool IsReadOnly) {
-  sys::MemoryBlock MB = sys::Memory::AllocateRWX(Size, nullptr, nullptr);
+  if (UsePreallocation)
+    return allocateFromSlab(Size, Alignment, false /* isCode */);
+
+  std::string Err;
+  sys::MemoryBlock MB = sys::Memory::AllocateRWX(Size, nullptr, &Err);
+  if (!MB.base())
+    report_fatal_error("MemoryManager allocation failed: " + Err);
   DataMemory.push_back(MB);
   return (uint8_t*)MB.base();
 }
 
 void TrivialMemoryManager::invalidateInstructionCache() {
-  for (int i = 0, e = FunctionMemory.size(); i != e; ++i)
-    sys::Memory::InvalidateInstructionCache(FunctionMemory[i].base(),
-                                            FunctionMemory[i].size());
+  for (auto &FM : FunctionMemory)
+    sys::Memory::InvalidateInstructionCache(FM.base(), FM.size());
 
-  for (int i = 0, e = DataMemory.size(); i != e; ++i)
-    sys::Memory::InvalidateInstructionCache(DataMemory[i].base(),
-                                            DataMemory[i].size());
+  for (auto &DM : DataMemory)
+    sys::Memory::InvalidateInstructionCache(DM.base(), DM.size());
 }
 
 static const char *ProgramName;
@@ -240,7 +286,7 @@ static int printLineInfoForInput(bool LoadObjects, bool UseDebugObj) {
   // If we don't have any input files, read from stdin.
   if (!InputFileList.size())
     InputFileList.push_back("-");
-  for(unsigned i = 0, e = InputFileList.size(); i != e; ++i) {
+  for (auto &File : InputFileList) {
     // Instantiate a dynamic linker.
     TrivialMemoryManager MemMgr;
     RuntimeDyld Dyld(MemMgr, MemMgr);
@@ -248,7 +294,7 @@ static int printLineInfoForInput(bool LoadObjects, bool UseDebugObj) {
     // Load the input memory buffer.
 
     ErrorOr<std::unique_ptr<MemoryBuffer>> InputBuffer =
-        MemoryBuffer::getFileOrSTDIN(InputFileList[i]);
+        MemoryBuffer::getFileOrSTDIN(File);
     if (std::error_code EC = InputBuffer.getError())
       return Error("unable to read input: '" + EC.message() + "'");
 
@@ -317,11 +363,9 @@ static int printLineInfoForInput(bool LoadObjects, bool UseDebugObj) {
                << ", Addr = " << Addr << "\n";
 
         DILineInfoTable Lines = Context->getLineInfoForAddressRange(Addr, Size);
-        DILineInfoTable::iterator  Begin = Lines.begin();
-        DILineInfoTable::iterator  End = Lines.end();
-        for (DILineInfoTable::iterator It = Begin; It != End; ++It) {
-          outs() << "  Line info @ " << It->first - Addr << ": "
-                 << It->second.FileName << ", line:" << It->second.Line << "\n";
+        for (auto &D : Lines) {
+          outs() << "  Line info @ " << D.first - Addr << ": "
+                 << D.second.FileName << ", line:" << D.second.Line << "\n";
         }
       }
     }
@@ -330,12 +374,24 @@ static int printLineInfoForInput(bool LoadObjects, bool UseDebugObj) {
   return 0;
 }
 
+static void doPreallocation(TrivialMemoryManager &MemMgr) {
+  // Allocate a slab of memory upfront, if required. This is used if
+  // we want to test small code models.
+  if (static_cast<intptr_t>(PreallocMemory) < 0)
+    report_fatal_error("Pre-allocated bytes of memory must be a positive integer.");
+
+  // FIXME: Limit the amount of memory that can be preallocated?
+  if (PreallocMemory != 0)
+    MemMgr.preallocateSlab(PreallocMemory);
+}
+
 static int executeInput() {
   // Load any dylibs requested on the command line.
   loadDylibs();
 
   // Instantiate a dynamic linker.
   TrivialMemoryManager MemMgr;
+  doPreallocation(MemMgr);
   RuntimeDyld Dyld(MemMgr, MemMgr);
 
   // FIXME: Preserve buffers until resolveRelocations time to work around a bug
@@ -346,10 +402,10 @@ static int executeInput() {
   // If we don't have any input files, read from stdin.
   if (!InputFileList.size())
     InputFileList.push_back("-");
-  for(unsigned i = 0, e = InputFileList.size(); i != e; ++i) {
+  for (auto &File : InputFileList) {
     // Load the input memory buffer.
     ErrorOr<std::unique_ptr<MemoryBuffer>> InputBuffer =
-        MemoryBuffer::getFileOrSTDIN(InputFileList[i]);
+        MemoryBuffer::getFileOrSTDIN(File);
     if (std::error_code EC = InputBuffer.getError())
       return Error("unable to read input: '" + EC.message() + "'");
     ErrorOr<std::unique_ptr<ObjectFile>> MaybeObj(
@@ -381,12 +437,11 @@ static int executeInput() {
     return Error("no definition for '" + EntryPoint + "'");
 
   // Invalidate the instruction cache for each loaded function.
-  for (unsigned i = 0, e = MemMgr.FunctionMemory.size(); i != e; ++i) {
-    sys::MemoryBlock &Data = MemMgr.FunctionMemory[i];
+  for (auto &FM : MemMgr.FunctionMemory) {
     // Make sure the memory is executable.
     std::string ErrorStr;
-    sys::Memory::InvalidateInstructionCache(Data.base(), Data.size());
-    if (!sys::Memory::setExecutable(Data, &ErrorStr))
+    sys::Memory::InvalidateInstructionCache(FM.base(), FM.size());
+    if (!sys::Memory::setExecutable(FM, &ErrorStr))
       return Error("unable to mark function executable: '" + ErrorStr + "'");
   }
 
@@ -612,6 +667,7 @@ static int linkAndVerify() {
 
   // Instantiate a dynamic linker.
   TrivialMemoryManager MemMgr;
+  doPreallocation(MemMgr);
   RuntimeDyld Dyld(MemMgr, MemMgr);
   Dyld.setProcessAllSections(true);
   RuntimeDyldChecker Checker(Dyld, Disassembler.get(), InstPrinter.get(),
@@ -625,10 +681,10 @@ static int linkAndVerify() {
   // If we don't have any input files, read from stdin.
   if (!InputFileList.size())
     InputFileList.push_back("-");
-  for(unsigned i = 0, e = InputFileList.size(); i != e; ++i) {
+  for (auto &Filename : InputFileList) {
     // Load the input memory buffer.
     ErrorOr<std::unique_ptr<MemoryBuffer>> InputBuffer =
-        MemoryBuffer::getFileOrSTDIN(InputFileList[i]);
+        MemoryBuffer::getFileOrSTDIN(Filename);
 
     if (std::error_code EC = InputBuffer.getError())
       return Error("unable to read input: '" + EC.message() + "'");

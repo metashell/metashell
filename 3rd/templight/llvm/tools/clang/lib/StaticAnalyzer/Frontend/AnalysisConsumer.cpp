@@ -168,7 +168,7 @@ public:
   /// The local declaration to all declarations ratio might be very small when
   /// working with a PCH file.
   SetOfDecls LocalTUDecls;
-                           
+
   // Set of PathDiagnosticConsumers.  Owned by AnalysisManager.
   PathDiagnosticConsumers PathConsumers;
 
@@ -364,7 +364,7 @@ public:
     }
     return true;
   }
-  
+
   bool VisitBlockDecl(BlockDecl *BD) {
     if (BD->hasBody()) {
       assert(RecVisitorMode == AM_Syntax || Mgr->shouldInlineCall() == false);
@@ -475,7 +475,7 @@ void AnalysisConsumer::HandleDeclsCallGraph(const unsigned LocalTUDeclsSize) {
 
     CallGraphNode *N = *I;
     Decl *D = N->getDecl();
-    
+
     // Skip the abstract root node.
     if (!D)
       continue;
@@ -588,8 +588,8 @@ AnalysisConsumer::getModeForDecl(Decl *D, AnalysisMode Mode) {
   // - Header files: run non-path-sensitive checks only.
   // - System headers: don't run any checks.
   SourceManager &SM = Ctx->getSourceManager();
-  SourceLocation SL = D->hasBody() ? D->getBody()->getLocStart()
-                                     : D->getLocation();
+  const Stmt *Body = D->getBody();
+  SourceLocation SL = Body ? Body->getLocStart() : D->getLocation();
   SL = SM.getExpansionLoc(SL);
 
   if (!Opts->AnalyzeAll && !SM.isWrittenInMainFile(SL)) {
@@ -679,11 +679,11 @@ void AnalysisConsumer::RunPathSensitiveChecks(Decl *D,
   case LangOptions::NonGC:
     ActionExprEngine(D, false, IMode, Visited);
     break;
-  
+
   case LangOptions::GCOnly:
     ActionExprEngine(D, true, IMode, Visited);
     break;
-  
+
   case LangOptions::HybridGC:
     ActionExprEngine(D, false, IMode, Visited);
     ActionExprEngine(D, true, IMode, Visited);
@@ -778,8 +778,9 @@ void UbigraphViz::AddEdge(ExplodedNode *Src, ExplodedNode *Dst) {
        << ", ('arrow','true'), ('oriented', 'true'))\n";
 }
 
-UbigraphViz::UbigraphViz(std::unique_ptr<raw_ostream> Out, StringRef Filename)
-    : Out(std::move(Out)), Filename(Filename), Cntr(0) {
+UbigraphViz::UbigraphViz(std::unique_ptr<raw_ostream> OutStream,
+                         StringRef Filename)
+    : Out(std::move(OutStream)), Filename(Filename), Cntr(0) {
 
   *Out << "('vertex_style_attribute', 0, ('shape', 'icosahedron'))\n";
   *Out << "('vertex_style', 1, 0, ('shape', 'sphere'), ('color', '#ffcc66'),"

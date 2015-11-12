@@ -718,7 +718,7 @@ static bool useFuncSeen(const Constant *C,
 void NVPTXAsmPrinter::emitDeclarations(const Module &M, raw_ostream &O) {
   llvm::DenseMap<const Function *, bool> seenMap;
   for (Module::const_iterator FI = M.begin(), FE = M.end(); FI != FE; ++FI) {
-    const Function *F = FI;
+    const Function *F = &*FI;
 
     if (F->isDeclaration()) {
       if (F->use_empty())
@@ -868,9 +868,8 @@ void NVPTXAsmPrinter::emitGlobals(const Module &M) {
   DenseSet<const GlobalVariable *> GVVisiting;
 
   // Visit each global variable, in order
-  for (Module::const_global_iterator I = M.global_begin(), E = M.global_end();
-       I != E; ++I)
-    VisitGlobalVariableForEmission(I, Globals, GVVisited, GVVisiting);
+  for (const GlobalVariable &I : M.globals())
+    VisitGlobalVariableForEmission(&I, Globals, GVVisited, GVVisiting);
 
   assert(GVVisited.size() == M.getGlobalList().size() &&
          "Missed a global variable");
@@ -1183,9 +1182,11 @@ void NVPTXAsmPrinter::printModuleLevelGV(const GlobalVariable *GVar,
           printScalarConstant(Initializer, O);
         }
       } else {
-        // The frontend adds zero-initializer to variables that don't have an
-        // initial value, so skip warning for this case.
-        if (!GVar->getInitializer()->isNullValue()) {
+        // The frontend adds zero-initializer to device and constant variables
+        // that don't have an initial value, and UndefValue to shared
+        // variables, so skip warning for this case.
+        if (!GVar->getInitializer()->isNullValue() &&
+            !isa<UndefValue>(GVar->getInitializer())) {
           report_fatal_error("initial value of '" + GVar->getName() +
                              "' is not allowed in addrspace(" +
                              Twine(PTy->getAddressSpace()) + ")");
@@ -1414,11 +1415,6 @@ static unsigned int getOpenCLAlignment(const DataLayout &DL, Type *Ty) {
 void NVPTXAsmPrinter::printParamName(Function::const_arg_iterator I,
                                      int paramIndex, raw_ostream &O) {
   getSymbol(I->getParent())->print(O, MAI);
-  O << "_param_" << paramIndex;
-}
-
-void NVPTXAsmPrinter::printParamName(int paramIndex, raw_ostream &O) {
-  CurrentFnSym->print(O, MAI);
   O << "_param_" << paramIndex;
 }
 
@@ -1948,15 +1944,6 @@ void NVPTXAsmPrinter::bufferAggregateConstant(const Constant *CPV,
 
 // buildTypeNameMap - Run through symbol table looking for type names.
 //
-
-bool NVPTXAsmPrinter::isImageType(Type *Ty) {
-
-  std::map<Type *, std::string>::iterator PI = TypeNameMap.find(Ty);
-
-  return PI != TypeNameMap.end() && (!PI->second.compare("struct._image1d_t") ||
-                                     !PI->second.compare("struct._image2d_t") ||
-                                     !PI->second.compare("struct._image3d_t"));
-}
 
 
 bool NVPTXAsmPrinter::ignoreLoc(const MachineInstr &MI) {

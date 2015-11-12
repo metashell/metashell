@@ -175,51 +175,51 @@ declare void @g.f1()
 
 ; Aliases -- Linkage
 @a.private = private alias i32* @g.private
-; CHECK: @a.private = private alias i32* @g.private
+; CHECK: @a.private = private alias i32, i32* @g.private
 @a.internal = internal alias i32* @g.internal
-; CHECK: @a.internal = internal alias i32* @g.internal
+; CHECK: @a.internal = internal alias i32, i32* @g.internal
 @a.linkonce = linkonce alias i32* @g.linkonce
-; CHECK: @a.linkonce = linkonce alias i32* @g.linkonce
+; CHECK: @a.linkonce = linkonce alias i32, i32* @g.linkonce
 @a.weak = weak alias i32* @g.weak
-; CHECK: @a.weak = weak alias i32* @g.weak
+; CHECK: @a.weak = weak alias i32, i32* @g.weak
 @a.linkonce_odr = linkonce_odr alias i32* @g.linkonce_odr
-; CHECK: @a.linkonce_odr = linkonce_odr alias i32* @g.linkonce_odr
+; CHECK: @a.linkonce_odr = linkonce_odr alias i32, i32* @g.linkonce_odr
 @a.weak_odr = weak_odr alias i32* @g.weak_odr
-; CHECK: @a.weak_odr = weak_odr alias i32* @g.weak_odr
+; CHECK: @a.weak_odr = weak_odr alias i32, i32* @g.weak_odr
 @a.external = external alias i32* @g1
-; CHECK: @a.external = alias i32* @g1
+; CHECK: @a.external = alias i32, i32* @g1
 
 ; Aliases -- Visibility
 @a.default = default alias i32* @g.default
-; CHECK: @a.default = alias i32* @g.default
+; CHECK: @a.default = alias i32, i32* @g.default
 @a.hidden = hidden alias i32* @g.hidden
-; CHECK: @a.hidden = hidden alias i32* @g.hidden
+; CHECK: @a.hidden = hidden alias i32, i32* @g.hidden
 @a.protected = protected alias i32* @g.protected
-; CHECK: @a.protected = protected alias i32* @g.protected
+; CHECK: @a.protected = protected alias i32, i32* @g.protected
 
 ; Aliases -- DLLStorageClass
 @a.dlldefault = default alias i32* @g.dlldefault
-; CHECK: @a.dlldefault = alias i32* @g.dlldefault
+; CHECK: @a.dlldefault = alias i32, i32* @g.dlldefault
 @a.dllimport = dllimport alias i32* @g1
-; CHECK: @a.dllimport = dllimport alias i32* @g1
+; CHECK: @a.dllimport = dllimport alias i32, i32* @g1
 @a.dllexport = dllexport alias i32* @g.dllexport
-; CHECK: @a.dllexport = dllexport alias i32* @g.dllexport
+; CHECK: @a.dllexport = dllexport alias i32, i32* @g.dllexport
 
 ; Aliases -- ThreadLocal
 @a.notthreadlocal = alias i32* @g.notthreadlocal
-; CHECK: @a.notthreadlocal = alias i32* @g.notthreadlocal
+; CHECK: @a.notthreadlocal = alias i32, i32* @g.notthreadlocal
 @a.generaldynamic = thread_local alias i32* @g.generaldynamic
-; CHECK: @a.generaldynamic = thread_local alias i32* @g.generaldynamic
+; CHECK: @a.generaldynamic = thread_local alias i32, i32* @g.generaldynamic
 @a.localdynamic = thread_local(localdynamic) alias i32* @g.localdynamic
-; CHECK: @a.localdynamic = thread_local(localdynamic) alias i32* @g.localdynamic
+; CHECK: @a.localdynamic = thread_local(localdynamic) alias i32, i32* @g.localdynamic
 @a.initialexec = thread_local(initialexec) alias i32* @g.initialexec
-; CHECK: @a.initialexec = thread_local(initialexec) alias i32* @g.initialexec
+; CHECK: @a.initialexec = thread_local(initialexec) alias i32, i32* @g.initialexec
 @a.localexec = thread_local(localexec) alias i32* @g.localexec
-; CHECK: @a.localexec = thread_local(localexec) alias i32* @g.localexec
+; CHECK: @a.localexec = thread_local(localexec) alias i32, i32* @g.localexec
 
 ; Aliases -- unnamed_addr
 @a.unnamed_addr = unnamed_addr alias i32* @g.unnamed_addr
-; CHECK: @a.unnamed_addr = unnamed_addr alias i32* @g.unnamed_addr
+; CHECK: @a.unnamed_addr = unnamed_addr alias i32, i32* @g.unnamed_addr
 
 ;; Functions
 ; Format: define [linkage] [visibility] [DLLStorageClass]
@@ -375,8 +375,8 @@ declare cc80 void @f.cc80()
 ; CHECK: declare x86_vectorcallcc void @f.cc80()
 declare x86_vectorcallcc void @f.x86_vectorcallcc()
 ; CHECK: declare x86_vectorcallcc void @f.x86_vectorcallcc()
-declare cc8191 void @f.cc8191()
-; CHECK: declare cc8191 void @f.cc8191()
+declare cc1023 void @f.cc1023()
+; CHECK: declare cc1023 void @f.cc1023()
 
 ; Functions -- ret attrs (Return attributes)
 declare zeroext i64 @f.zeroext()
@@ -981,7 +981,7 @@ exit:
   ; CHECK: select <2 x i1> <i1 true, i1 false>, <2 x i8> <i8 2, i8 3>, <2 x i8> <i8 3, i8 2>
 
   call void @f.nobuiltin() builtin
-  ; CHECK: call void @f.nobuiltin() #31
+  ; CHECK: call void @f.nobuiltin() #33
 
   call fastcc noalias i32* @f.noalias() noinline
   ; CHECK: call fastcc noalias i32* @f.noalias() #11
@@ -1179,7 +1179,11 @@ define void @intrinsics.codegen() {
 ; CHECK: attributes #26 = { sspstrong }
 ; CHECK: attributes #27 = { uwtable }
 ; CHECK: attributes #28 = { "cpu"="cortex-a8" }
-; CHECK: attributes #31 = { builtin }
+; CHECK: attributes #29 = { nounwind readnone }
+; CHECK: attributes #30 = { argmemonly nounwind readonly }
+; CHECK: attributes #31 = { argmemonly nounwind }
+; CHECK: attributes #32 = { nounwind readonly }
+; CHECK: attributes #33 = { builtin }
 
 ;; Metadata
 

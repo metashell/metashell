@@ -170,7 +170,7 @@ public:
     }
 
     if (IID == Intrinsic::ctlz) {
-       if (getTLI()->isCheapToSpeculateCtlz())
+      if (getTLI()->isCheapToSpeculateCtlz())
         return TargetTransformInfo::TCC_Basic;
       return TargetTransformInfo::TCC_Expensive;
     }
@@ -260,7 +260,7 @@ public:
 
       for (BasicBlock::iterator J = BB->begin(), JE = BB->end(); J != JE; ++J)
         if (isa<CallInst>(J) || isa<InvokeInst>(J)) {
-          ImmutableCallSite CS(J);
+          ImmutableCallSite CS(&*J);
           if (const Function *F = CS.getCalledFunction()) {
             if (!static_cast<T *>(this)->isLoweredToCall(F))
               continue;
@@ -808,7 +808,7 @@ class BasicTTIImpl : public BasicTTIImplBase<BasicTTIImpl> {
   const TargetLoweringBase *getTLI() const { return TLI; }
 
 public:
-  explicit BasicTTIImpl(const TargetMachine *ST, Function &F);
+  explicit BasicTTIImpl(const TargetMachine *ST, const Function &F);
 
   // Provide value semantics. MSVC requires that we spell all of these out.
   BasicTTIImpl(const BasicTTIImpl &Arg)

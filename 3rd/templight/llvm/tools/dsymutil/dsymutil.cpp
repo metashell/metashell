@@ -24,6 +24,7 @@
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetSelect.h"
+#include <cstdint>
 #include <string>
 
 using namespace llvm::dsymutil;
@@ -47,6 +48,13 @@ static opt<std::string> OsoPrependPath(
     "oso-prepend-path",
     desc("Specify a directory to prepend to the paths of object files."),
     value_desc("path"), cat(DsymCategory));
+
+static opt<bool> DumpStab(
+    "symtab",
+    desc("Dumps the symbol table found in executable or object file(s) and\n"
+         "exits."),
+    init(false), cat(DsymCategory));
+static alias DumpStabA("s", desc("Alias for --symtab"), aliasopt(DumpStab));
 
 static opt<bool> FlatOut("flat",
                          desc("Produce a flat dSYM file (not a bundle)."),
@@ -230,6 +238,9 @@ int main(int argc, char **argv) {
   llvm::PrettyStackTraceProgram StackPrinter(argc, argv);
   llvm::llvm_shutdown_obj Shutdown;
   LinkOptions Options;
+  void *MainAddr = (void *)(intptr_t)&exitDsymutil;
+  std::string SDKPath = llvm::sys::fs::getMainExecutable(argv[0], MainAddr);
+  SDKPath = llvm::sys::path::parent_path(SDKPath);
 
   HideUnrelatedOptions(DsymCategory);
   llvm::cl::ParseCommandLineOptions(
@@ -250,6 +261,7 @@ int main(int argc, char **argv) {
   Options.Verbose = Verbose;
   Options.NoOutput = NoOutput;
   Options.NoODR = NoODR;
+  Options.PrependPath = OsoPrependPath;
 
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargetMCs();
@@ -274,6 +286,13 @@ int main(int argc, char **argv) {
     }
 
   for (auto &InputFile : InputFiles) {
+    // Dump the symbol table for each input file and requested arch
+    if (DumpStab) {
+      if (!dumpStab(InputFile, ArchFlags, OsoPrependPath))
+        exitDsymutil(1);
+      continue;
+    }
+
     auto DebugMapPtrsOrErr = parseDebugMap(InputFile, ArchFlags, OsoPrependPath,
                                            Verbose, InputIsYAMLDebugMap);
 
@@ -299,6 +318,11 @@ int main(int argc, char **argv) {
       if (DumpDebugMap)
         continue;
 
+      if (Map->begin() == Map->end())
+        llvm::errs() << "warning: no debug symbols in executable (-arch "
+                     << MachOUtils::getArchName(Map->getTriple().getArchName())
+                     << ")\n";
+
       std::string OutputFile = getOutputFileName(InputFile, NeedsTempFiles);
       if (OutputFile.empty() || !linkDwarf(OutputFile, *Map, Options))
         exitDsymutil(1);
@@ -310,7 +334,7 @@ int main(int argc, char **argv) {
 
     if (NeedsTempFiles &&
         !MachOUtils::generateUniversalBinary(
-            TempFiles, getOutputFileName(InputFile), Options))
+            TempFiles, getOutputFileName(InputFile), Options, SDKPath))
       exitDsymutil(1);
   }
 

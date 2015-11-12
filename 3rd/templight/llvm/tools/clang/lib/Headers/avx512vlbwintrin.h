@@ -1,4 +1,4 @@
-/*===---- avx512vlbwintrin.h - AVX512VL and AVX512BW intrinsics ----------===
+/*===---- avx512vlbwintrin.h - AVX512VL and AVX512BW intrinsics ------------===
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -2004,7 +2004,7 @@ _mm256_cvtepi16_epi8 (__m256i __A) {
 static __inline__ __m128i __DEFAULT_FN_ATTRS
 _mm256_mask_cvtepi16_epi8 (__m128i __O, __mmask16 __M, __m256i __A) {
   return (__m128i) __builtin_ia32_pmovwb256_mask ((__v16hi) __A,
-               (__v16qi) __O, 
+               (__v16qi) __O,
                __M);
 }
 

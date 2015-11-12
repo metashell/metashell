@@ -110,6 +110,19 @@ void AMDGPUAsmPrinter::EmitEndOfAsmFile(Module &M) {
   OutStreamer->EmitLabel(EndOfTextLabel);
 }
 
+void AMDGPUAsmPrinter::EmitFunctionEntryLabel() {
+  const SIMachineFunctionInfo *MFI = MF->getInfo<SIMachineFunctionInfo>();
+  const AMDGPUSubtarget &STM = MF->getSubtarget<AMDGPUSubtarget>();
+  if (MFI->isKernel() && STM.isAmdHsaOS()) {
+    AMDGPUTargetStreamer *TS =
+        static_cast<AMDGPUTargetStreamer *>(OutStreamer->getTargetStreamer());
+    TS->EmitAMDGPUSymbolType(CurrentFnSym->getName(),
+                             ELF::STT_AMDGPU_HSA_KERNEL);
+  }
+
+  AsmPrinter::EmitFunctionEntryLabel();
+}
+
 bool AMDGPUAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
 
   // The starting address of all shader programs must be 256 bytes aligned.
@@ -125,8 +138,8 @@ bool AMDGPUAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
   const AMDGPUSubtarget &STM = MF.getSubtarget<AMDGPUSubtarget>();
   SIProgramInfo KernelInfo;
   if (STM.getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS) {
+    getSIProgramInfo(KernelInfo, MF);
     if (!STM.isAmdHsaOS()) {
-      getSIProgramInfo(KernelInfo, MF);
       EmitProgramInfoSI(MF, KernelInfo);
     }
     // Emit directives
@@ -165,6 +178,23 @@ bool AMDGPUAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
                                   false);
       OutStreamer->emitRawComment(" ScratchSize: " + Twine(KernelInfo.ScratchSize),
                                   false);
+
+      OutStreamer->emitRawComment(" COMPUTE_PGM_RSRC2:USER_SGPR: " +
+                                  Twine(G_00B84C_USER_SGPR(KernelInfo.ComputePGMRSrc2)),
+                                  false);
+      OutStreamer->emitRawComment(" COMPUTE_PGM_RSRC2:TGID_X_EN: " +
+                                  Twine(G_00B84C_TGID_X_EN(KernelInfo.ComputePGMRSrc2)),
+                                  false);
+      OutStreamer->emitRawComment(" COMPUTE_PGM_RSRC2:TGID_Y_EN: " +
+                                  Twine(G_00B84C_TGID_Y_EN(KernelInfo.ComputePGMRSrc2)),
+                                  false);
+      OutStreamer->emitRawComment(" COMPUTE_PGM_RSRC2:TGID_Z_EN: " +
+                                  Twine(G_00B84C_TGID_Z_EN(KernelInfo.ComputePGMRSrc2)),
+                                  false);
+      OutStreamer->emitRawComment(" COMPUTE_PGM_RSRC2:TIDIG_COMP_CNT: " +
+                                  Twine(G_00B84C_TIDIG_COMP_CNT(KernelInfo.ComputePGMRSrc2)),
+                                  false);
+
     } else {
       R600MachineFunctionInfo *MFI = MF.getInfo<R600MachineFunctionInfo>();
       OutStreamer->emitRawComment(
@@ -264,6 +294,12 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
   for (const MachineBasicBlock &MBB : MF) {
     for (const MachineInstr &MI : MBB) {
       // TODO: CodeSize should account for multiple functions.
+
+      // TODO: Should we count size of debug info?
+      if (MI.isDebugValue())
+        continue;
+
+      // FIXME: This is reporting 0 for many instructions.
       CodeSize += MI.getDesc().Size;
 
       unsigned numOperands = MI.getNumOperands();
@@ -272,27 +308,30 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
         unsigned width = 0;
         bool isSGPR = false;
 
-        if (!MO.isReg()) {
+        if (!MO.isReg())
           continue;
-        }
-        unsigned reg = MO.getReg();
-        if (reg == AMDGPU::VCC || reg == AMDGPU::VCC_LO ||
-	    reg == AMDGPU::VCC_HI) {
-          VCCUsed = true;
-          continue;
-        } else if (reg == AMDGPU::FLAT_SCR ||
-                   reg == AMDGPU::FLAT_SCR_LO ||
-                   reg == AMDGPU::FLAT_SCR_HI) {
-          FlatUsed = true;
-          continue;
-        }
 
+        unsigned reg = MO.getReg();
         switch (reg) {
-        default: break;
-        case AMDGPU::SCC:
         case AMDGPU::EXEC:
+        case AMDGPU::SCC:
         case AMDGPU::M0:
           continue;
+
+        case AMDGPU::VCC:
+        case AMDGPU::VCC_LO:
+        case AMDGPU::VCC_HI:
+          VCCUsed = true;
+          continue;
+
+        case AMDGPU::FLAT_SCR:
+        case AMDGPU::FLAT_SCR_LO:
+        case AMDGPU::FLAT_SCR_HI:
+          FlatUsed = true;
+          continue;
+
+        default:
+          break;
         }
 
         if (AMDGPU::SReg_32RegClass.contains(reg)) {
@@ -492,7 +531,6 @@ void AMDGPUAsmPrinter::EmitAmdKernelCodeT(const MachineFunction &MF,
   header.kernarg_segment_byte_size = MFI->ABIArgOffset;
   header.wavefront_sgpr_count = KernelInfo.NumSGPR;
   header.workitem_vgpr_count = KernelInfo.NumVGPR;
-
 
   AMDGPUTargetStreamer *TS =
       static_cast<AMDGPUTargetStreamer *>(OutStreamer->getTargetStreamer());

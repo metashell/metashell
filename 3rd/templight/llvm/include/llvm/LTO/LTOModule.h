@@ -74,6 +74,11 @@ public:
   static bool isBitcodeForTarget(MemoryBuffer *memBuffer,
                                  StringRef triplePrefix);
 
+  /// Returns a string representing the producer identification stored in the
+  /// bitcode, or "" if the bitcode does not contains any.
+  ///
+  static std::string getProducerString(MemoryBuffer *Buffer);
+
   /// Create a MemoryBuffer from a memory range with an optional name.
   static std::unique_ptr<MemoryBuffer>
   makeBuffer(const void *mem, size_t length, StringRef name = "");
@@ -112,6 +117,8 @@ public:
   Module &getModule() {
     return IRFile->getModule();
   }
+
+  std::unique_ptr<Module> takeModule() { return IRFile->takeModule(); }
 
   /// Return the Module's target triple.
   const std::string &getTargetTriple() {

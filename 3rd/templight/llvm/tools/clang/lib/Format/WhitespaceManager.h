@@ -106,11 +106,11 @@ private:
     ///
     /// \p StartOfTokenColumn and \p InPPDirective will be used to lay out
     /// trailing comments and escaped newlines.
-    Change(bool CreateReplacement, const SourceRange &OriginalWhitespaceRange,
+    Change(bool CreateReplacement, SourceRange OriginalWhitespaceRange,
            unsigned IndentLevel, int Spaces, unsigned StartOfTokenColumn,
            unsigned NewlinesBefore, StringRef PreviousLinePostfix,
            StringRef CurrentLinePrefix, tok::TokenKind Kind,
-           bool ContinuesPPDirective);
+           bool ContinuesPPDirective, bool IsStartOfDeclName);
 
     bool CreateReplacement;
     // Changes might be in the middle of a token, so we cannot just keep the
@@ -126,6 +126,7 @@ private:
     // the \c BreakableToken is still doing its own alignment.
     tok::TokenKind Kind;
     bool ContinuesPPDirective;
+    bool IsStartOfDeclName;
 
     // The number of nested blocks the token is in. This is used to add tabs
     // only for the indentation, and not for alignment, when
@@ -173,6 +174,14 @@ private:
   void alignConsecutiveAssignments(unsigned Start, unsigned End,
                                    unsigned Column);
 
+  /// \brief Align consecutive declarations over all \c Changes.
+  void alignConsecutiveDeclarations();
+
+  /// \brief Align consecutive declarations from change \p Start to change \p
+  /// End at the specified \p Column.
+  void alignConsecutiveDeclarations(unsigned Start, unsigned End,
+                                    unsigned Column);
+
   /// \brief Align trailing comments over all \c Changes.
   void alignTrailingComments();
 
@@ -191,7 +200,7 @@ private:
   void generateChanges();
 
   /// \brief Stores \p Text as the replacement for the whitespace in \p Range.
-  void storeReplacement(const SourceRange &Range, StringRef Text);
+  void storeReplacement(SourceRange Range, StringRef Text);
   void appendNewlineText(std::string &Text, unsigned Newlines);
   void appendNewlineText(std::string &Text, unsigned Newlines,
                          unsigned PreviousEndOfTokenColumn,

@@ -1,5 +1,6 @@
 // REQUIRES: x86-registered-target
-// RUN: %clang_cc1 %s -O3 -triple=x86_64-apple-darwin -target-feature +ssse3 -S -o - | FileCheck %s
+// RUN: %clang_cc1 %s -triple=x86_64-apple-darwin -target-feature +ssse3 -S -o - | FileCheck %s
+// RUN: %clang_cc1 %s -triple=x86_64-apple-darwin -target-feature +ssse3 -fno-signed-char -S -o - | FileCheck %s
 
 // FIXME: Disable inclusion of mm_malloc.h, our current implementation is broken
 // on win32 since we don't generally know how to find errno.h.
@@ -450,4 +451,14 @@ __m64 test88(__m64 a, __m64 b) {
 __m64 test89(__m64 a, __m64 b) {
   // CHECK: pcmpgtd
   return _mm_cmpgt_pi32(a, b);
+}
+
+__m64 test90(int a) {
+  // CHECK: movd
+  return _m_from_int(a);
+}
+
+int test91(__m64 a) {
+  // CHECK: movd
+  return _m_to_int(a);
 }

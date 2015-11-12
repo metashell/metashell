@@ -41,7 +41,7 @@ class ARMTTIImpl : public BasicTTIImplBase<ARMTTIImpl> {
   const ARMTargetLowering *getTLI() const { return TLI; }
 
 public:
-  explicit ARMTTIImpl(const ARMBaseTargetMachine *TM, Function &F)
+  explicit ARMTTIImpl(const ARMBaseTargetMachine *TM, const Function &F)
       : BaseT(TM, F.getParent()->getDataLayout()), ST(TM->getSubtargetImpl(F)),
         TLI(ST->getTargetLowering()) {}
 
@@ -51,6 +51,8 @@ public:
   ARMTTIImpl(ARMTTIImpl &&Arg)
       : BaseT(std::move(static_cast<BaseT &>(Arg))), ST(std::move(Arg.ST)),
         TLI(std::move(Arg.TLI)) {}
+
+  bool enableInterleavedAccessVectorization() { return true; }
 
   /// \name Scalar TTI Implementations
   /// @{

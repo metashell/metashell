@@ -640,6 +640,7 @@ an optional :ref:`comdat <langref_comdats>`,
 an optional :ref:`garbage collector name <gc>`, an optional :ref:`prefix <prefixdata>`,
 an optional :ref:`prologue <prologuedata>`,
 an optional :ref:`personality <personalityfn>`,
+an optional list of attached :ref:`metadata <metadata>`,
 an opening curly brace, a list of basic blocks, and a closing curly brace.
 
 LLVM function declarations consist of the "``declare``" keyword, an
@@ -688,7 +689,7 @@ Syntax::
            <ResultType> @<FunctionName> ([argument list])
            [unnamed_addr] [fn Attrs] [section "name"] [comdat [($name)]]
            [align N] [gc] [prefix Constant] [prologue Constant]
-           [personality Constant] { ... }
+           [personality Constant] (!name !N)* { ... }
 
 The argument list is a comma separated sequence of arguments where each
 argument is of the following form:
@@ -715,7 +716,7 @@ Aliases may have an optional :ref:`linkage type <linkage>`, an optional
 
 Syntax::
 
-    @<Name> = [Linkage] [Visibility] [DLLStorageClass] [ThreadLocal] [unnamed_addr] alias <AliaseeTy> @<Aliasee>
+    @<Name> = [Linkage] [Visibility] [DLLStorageClass] [ThreadLocal] [unnamed_addr] alias <AliaseeTy>, <AliaseeTy>* @<Aliasee>
 
 The linkage must be one of ``private``, ``internal``, ``linkonce``, ``weak``,
 ``linkonce_odr``, ``weak_odr``, ``external``. Note that some system linkers
@@ -1219,10 +1220,8 @@ example:
 ``convergent``
     This attribute indicates that the callee is dependent on a convergent
     thread execution pattern under certain parallel execution models.
-    Transformations that are execution model agnostic may only move or
-    tranform this call if the final location is control equivalent to its
-    original position in the program, where control equivalence is defined as
-    A dominates B and B post-dominates A, or vice versa.
+    Transformations that are execution model agnostic may not make the execution
+    of a convergent operation control dependent on any additional values.
 ``inlinehint``
     This attribute indicates that the source code contained a hint that
     inlining this function is desirable (such as the "inline" keyword in
@@ -1278,6 +1277,10 @@ example:
     This function attribute indicates that the function never returns
     normally. This produces undefined behavior at runtime if the
     function ever does dynamically return.
+``norecurse``
+    This function attribute indicates that the function does not call itself
+    either directly or indirectly down any possible call path. This produces
+    undefined behavior at runtime if the function ever does recurse.
 ``nounwind``
     This function attribute indicates that the function never raises an
     exception. If the function does raise an exception, its runtime
@@ -1438,6 +1441,74 @@ example:
     the ELF x86-64 abi, but it can be disabled for some compilation
     units.
 
+
+.. _opbundles:
+
+Operand Bundles
+---------------
+
+Note: operand bundles are a work in progress, and they should be
+considered experimental at this time.
+
+Operand bundles are tagged sets of SSA values that can be associated
+with certain LLVM instructions (currently only ``call`` s and
+``invoke`` s).  In a way they are like metadata, but dropping them is
+incorrect and will change program semantics.
+
+Syntax::
+
+    operand bundle set ::= '[' operand bundle ']'
+    operand bundle ::= tag '(' [ bundle operand ] (, bundle operand )* ')'
+    bundle operand ::= SSA value
+    tag ::= string constant
+
+Operand bundles are **not** part of a function's signature, and a
+given function may be called from multiple places with different kinds
+of operand bundles.  This reflects the fact that the operand bundles
+are conceptually a part of the ``call`` (or ``invoke``), not the
+callee being dispatched to.
+
+Operand bundles are a generic mechanism intended to support
+runtime-introspection-like functionality for managed languages.  While
+the exact semantics of an operand bundle depend on the bundle tag,
+there are certain limitations to how much the presence of an operand
+bundle can influence the semantics of a program.  These restrictions
+are described as the semantics of an "unknown" operand bundle.  As
+long as the behavior of an operand bundle is describable within these
+restrictions, LLVM does not need to have special knowledge of the
+operand bundle to not miscompile programs containing it.
+
+- The bundle operands for an unknown operand bundle escape in unknown
+  ways before control is transferred to the callee or invokee.
+- Calls and invokes with operand bundles have unknown read / write
+  effect on the heap on entry and exit (even if the call target is
+  ``readnone`` or ``readonly``), unless they're overriden with
+  callsite specific attributes.
+- An operand bundle at a call site cannot change the implementation
+  of the called function.  Inter-procedural optimizations work as
+  usual as long as they take into account the first two properties.
+
+More specific types of operand bundles are described below.
+
+Deoptimization Operand Bundles
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Deoptimization operand bundles are characterized by the ``"deopt``
+operand bundle tag.  These operand bundles represent an alternate
+"safe" continuation for the call site they're attached to, and can be
+used by a suitable runtime to deoptimize the compiled frame at the
+specified call site.  Exact details of deoptimization is out of scope
+for the language reference, but it usually involves rewriting a
+compiled frame into a set of interpreted frames.
+
+From the compiler's perspective, deoptimization operand bundles make
+the call sites they're attached to at least ``readonly``.  They read
+through all of their pointer typed operands (even if they're not
+otherwise escaped) and the entire visible heap.  Deoptimization
+operand bundles do not capture their operands except during
+deoptimization, in which case control will not be returned to the
+compiled frame.
+
 .. _moduleasm:
 
 Module-Level Inline Assembly
@@ -1524,6 +1595,8 @@ as follows:
       symbols get a ``_`` prefix.
     * ``w``: Windows COFF prefix:  Similar to Mach-O, but stdcall and fastcall
       functions also get a suffix based on the frame size.
+    * ``x``: Windows x86 COFF prefix:  Similar to Windows COFF, but use a ``_``
+      prefix for ``__cdecl`` functions.
 ``n<size1>:<size2>:<size3>...``
     This specifies a set of native integer widths for the target CPU in
     bits. For example, it might contain ``n32`` for 32-bit PowerPC,
@@ -2168,6 +2241,26 @@ The label type represents code labels.
 
       label
 
+.. _t_token:
+
+Token Type
+^^^^^^^^^^
+
+:Overview:
+
+The token type is used when a value is associated with an instruction
+but all uses of the value must not attempt to introspect or obscure it.
+As such, it is not appropriate to have a :ref:`phi <i_phi>` or
+:ref:`select <i_select>` of type token.
+
+:Syntax:
+
+::
+
+      token
+
+
+
 .. _t_metadata:
 
 Metadata Type
@@ -2341,6 +2434,9 @@ Simple Constants
 **Null pointer constants**
     The identifier '``null``' is recognized as a null pointer constant
     and must be of :ref:`pointer type <t_pointer>`.
+**Token constants**
+    The identifier '``none``' is recognized as an empty token constant
+    and must be of :ref:`token type <t_token>`.
 
 The one non-intuitive notation for constants is the hexadecimal form of
 floating point constants. For example, the form
@@ -3557,12 +3653,21 @@ function is using two metadata arguments:
 
     call void @llvm.dbg.value(metadata !24, i64 0, metadata !25)
 
-Metadata can be attached with an instruction. Here metadata ``!21`` is
-attached to the ``add`` instruction using the ``!dbg`` identifier:
+Metadata can be attached to an instruction. Here metadata ``!21`` is attached
+to the ``add`` instruction using the ``!dbg`` identifier:
 
 .. code-block:: llvm
 
     %indvar.next = add i64 %indvar, 1, !dbg !21
+
+Metadata can also be attached to a function definition. Here metadata ``!22``
+is attached to the ``foo`` function using the ``!dbg`` identifier:
+
+.. code-block:: llvm
+
+    define void @foo() !dbg !22 {
+      ret void
+    }
 
 More information about specific metadata nodes recognized by the
 optimizers and code generator is found below.
@@ -3834,20 +3939,26 @@ All global variables should be referenced by the `globals:` field of a
 DISubprogram
 """"""""""""
 
-``DISubprogram`` nodes represent functions from the source language. The
-``variables:`` field points at :ref:`variables <DILocalVariable>` that must be
-retained, even if their IR counterparts are optimized out of the IR. The
-``type:`` field must point at an :ref:`DISubroutineType`.
+``DISubprogram`` nodes represent functions from the source language. A
+``DISubprogram`` may be attached to a function definition using ``!dbg``
+metadata. The ``variables:`` field points at :ref:`variables <DILocalVariable>`
+that must be retained, even if their IR counterparts are optimized out of
+the IR. The ``type:`` field must point at an :ref:`DISubroutineType`.
 
 .. code-block:: llvm
 
-    !0 = !DISubprogram(name: "foo", linkageName: "_Zfoov", scope: !1,
-                       file: !2, line: 7, type: !3, isLocal: true,
-                       isDefinition: false, scopeLine: 8, containingType: !4,
-                       virtuality: DW_VIRTUALITY_pure_virtual, virtualIndex: 10,
-                       flags: DIFlagPrototyped, isOptimized: true,
-                       function: void ()* @_Z3foov,
-                       templateParams: !5, declaration: !6, variables: !7)
+    define void @_Z3foov() !dbg !0 {
+      ...
+    }
+
+    !0 = distinct !DISubprogram(name: "foo", linkageName: "_Zfoov", scope: !1,
+                                file: !2, line: 7, type: !3, isLocal: true,
+                                isDefinition: false, scopeLine: 8,
+                                containingType: !4,
+                                virtuality: DW_VIRTUALITY_pure_virtual,
+                                virtualIndex: 10, flags: DIFlagPrototyped,
+                                isOptimized: true, templateParams: !5,
+                                declaration: !6, variables: !7)
 
 .. _DILexicalBlock:
 
@@ -3855,7 +3966,7 @@ DILexicalBlock
 """"""""""""""
 
 ``DILexicalBlock`` nodes describe nested blocks within a :ref:`subprogram
-<DISubprogram>`. The line number and column numbers are used to dinstinguish
+<DISubprogram>`. The line number and column numbers are used to distinguish
 two lexical blocks at same depth. They are valid targets for ``scope:``
 fields.
 
@@ -4040,13 +4151,13 @@ alias.
 
 The metadata identifying each domain is itself a list containing one or two
 entries. The first entry is the name of the domain. Note that if the name is a
-string then it can be combined accross functions and translation units. A
+string then it can be combined across functions and translation units. A
 self-reference can be used to create globally unique domain names. A
 descriptive string may optionally be provided as a second list entry.
 
 The metadata identifying each scope is also itself a list containing two or
 three entries. The first entry is the name of the scope. Note that if the name
-is a string then it can be combined accross functions and translation units. A
+is a string then it can be combined across functions and translation units. A
 self-reference can be used to create globally unique scope names. A metadata
 reference to the scope's domain is the second entry. A descriptive string may
 optionally be provided as a third list entry.
@@ -4142,6 +4253,16 @@ Examples:
     !1 = !{ i8 255, i8 2 }
     !2 = !{ i8 0, i8 2, i8 3, i8 6 }
     !3 = !{ i8 -2, i8 0, i8 3, i8 6 }
+
+'``unpredictable``' Metadata
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``unpredictable`` metadata may be attached to any branch or switch
+instruction. It can be used to express the unpredictability of control
+flow. Similar to the llvm.expect intrinsic, it may be used to alter
+optimizations related to compare and branch instructions. The metadata
+is treated as a boolean value; if it exists, it signals that the branch
+or switch that it is attached to is completely unpredictable.
 
 '``llvm.loop``'
 ^^^^^^^^^^^^^^^
@@ -4279,6 +4400,18 @@ operand which is the string ``llvm.loop.unroll.runtime.disable``. For example:
 
    !0 = !{!"llvm.loop.unroll.runtime.disable"}
 
+'``llvm.loop.unroll.enable``' Metadata
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This metadata suggests that the loop should be fully unrolled if the trip count
+is known at compile time and partially unrolled if the trip count is not known
+at compile time. The metadata has a single operand which is the string
+``llvm.loop.unroll.enable``.  For example:
+
+.. code-block:: llvm
+
+   !0 = !{!"llvm.loop.unroll.enable"}
+
 '``llvm.loop.unroll.full``' Metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -4378,6 +4511,50 @@ the loop identifier metadata node directly:
 
 The ``llvm.bitsets`` global metadata is used to implement
 :doc:`bitsets <BitSets>`.
+
+'``invariant.group``' Metadata
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``invariant.group`` metadata may be attached to ``load``/``store`` instructions.
+The existence of the ``invariant.group`` metadata on the instruction tells 
+the optimizer that every ``load`` and ``store`` to the same pointer operand 
+within the same invariant group can be assumed to load or store the same  
+value (but see the ``llvm.invariant.group.barrier`` intrinsic which affects 
+when two pointers are considered the same).
+
+Examples:
+
+.. code-block:: llvm
+
+   @unknownPtr = external global i8
+   ...
+   %ptr = alloca i8
+   store i8 42, i8* %ptr, !invariant.group !0
+   call void @foo(i8* %ptr)
+   
+   %a = load i8, i8* %ptr, !invariant.group !0 ; Can assume that value under %ptr didn't change
+   call void @foo(i8* %ptr)
+   %b = load i8, i8* %ptr, !invariant.group !1 ; Can't assume anything, because group changed
+  
+   %newPtr = call i8* @getPointer(i8* %ptr) 
+   %c = load i8, i8* %newPtr, !invariant.group !0 ; Can't assume anything, because we only have information about %ptr
+   
+   %unknownValue = load i8, i8* @unknownPtr
+   store i8 %unknownValue, i8* %ptr, !invariant.group !0 ; Can assume that %unknownValue == 42
+   
+   call void @foo(i8* %ptr)
+   %newPtr2 = call i8* @llvm.invariant.group.barrier(i8* %ptr)
+   %d = load i8, i8* %newPtr2, !invariant.group !0  ; Can't step through invariant.group.barrier to get value of %ptr
+   
+   ...
+   declare void @foo(i8*)
+   declare i8* @getPointer(i8*)
+   declare i8* @llvm.invariant.group.barrier(i8*)
+   
+   !0 = !{!"magic ptr"}
+   !1 = !{!"other ptr"}
+
+
 
 Module Flags Metadata
 =====================
@@ -4740,6 +4917,7 @@ The terminator instructions are: ':ref:`ret <i_ret>`',
 ':ref:`resume <i_resume>`', ':ref:`catchpad <i_catchpad>`',
 ':ref:`catchendpad <i_catchendpad>`',
 ':ref:`catchret <i_catchret>`',
+':ref:`cleanupendpad <i_cleanupendpad>`',
 ':ref:`cleanupret <i_cleanupret>`',
 ':ref:`terminatepad <i_terminatepad>`',
 and ':ref:`unreachable <i_unreachable>`'.
@@ -4974,7 +5152,7 @@ Syntax:
 ::
 
       <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
-                    to label <normal label> unwind label <exception label>
+                    [operand bundles] to label <normal label> unwind label <exception label>
 
 Overview:
 """""""""
@@ -5028,6 +5206,7 @@ This instruction requires several arguments:
 #. The optional :ref:`function attributes <fnattrs>` list. Only
    '``noreturn``', '``nounwind``', '``readonly``' and '``readnone``'
    attributes are valid here.
+#. The optional :ref:`operand bundles <opbundles>` list.
 
 Semantics:
 """"""""""
@@ -5106,7 +5285,7 @@ Syntax:
 
 ::
 
-      <resultval> = catchpad <resultty> [<args>*]
+      <resultval> = catchpad [<args>*]
           to label <normal label> unwind label <exception label>
 
 Overview:
@@ -5118,12 +5297,12 @@ is a catch block --- one where a personality routine attempts to transfer
 control to catch an exception.
 The ``args`` correspond to whatever information the personality
 routine requires to know if this is an appropriate place to catch the
-exception. Control is tranfered to the ``exception`` label if the
+exception. Control is transfered to the ``exception`` label if the
 ``catchpad`` is not an appropriate handler for the in-flight exception.
 The ``normal`` label should contain the code found in the ``catch``
-portion of a ``try``/``catch`` sequence. It defines values supplied by
-the :ref:`personality function <personalityfn>` upon re-entry to the
-function. The ``resultval`` has the type ``resultty``.
+portion of a ``try``/``catch`` sequence. The ``resultval`` has the type
+:ref:`token <t_token>` and is used to match the ``catchpad`` to
+corresponding :ref:`catchrets <i_catchret>`.
 
 Arguments:
 """"""""""
@@ -5138,15 +5317,11 @@ label to transfer control to if it doesn't.
 Semantics:
 """"""""""
 
-The '``catchpad``' instruction defines the values which are set by the
-:ref:`personality function <personalityfn>` upon re-entry to the function, and
-therefore the "result type" of the ``catchpad`` instruction. As with
-calling conventions, how the personality function results are
-represented in LLVM IR is target specific.
-
 When the call stack is being unwound due to an exception being thrown,
 the exception is compared against the ``args``. If it doesn't match,
 then control is transfered to the ``exception`` basic block.
+As with calling conventions, how the personality function results are
+represented in LLVM IR is target specific.
 
 The ``catchpad`` instruction has several restrictions:
 
@@ -5160,11 +5335,14 @@ The ``catchpad`` instruction has several restrictions:
    catch block.
 -  A basic block that is not a catch block may not include a
    '``catchpad``' instruction.
+-  A catch block which has another catch block as a predecessor may not have
+   any other predecessors.
 -  It is undefined behavior for control to transfer from a ``catchpad`` to a
-   ``cleanupret`` without first executing a ``catchret`` and a subsequent
-   ``cleanuppad``.
--  It is undefined behavior for control to transfer from a ``catchpad`` to a
-   ``ret`` without first executing a ``catchret``.
+   ``ret`` without first executing a ``catchret`` that consumes the
+   ``catchpad`` or unwinding through its ``catchendpad``.
+-  It is undefined behavior for control to transfer from a ``catchpad`` to
+   itself without first executing a ``catchret`` that consumes the
+   ``catchpad`` or unwinding through its ``catchendpad``.
 
 Example:
 """"""""
@@ -5172,7 +5350,7 @@ Example:
 .. code-block:: llvm
 
       ;; A catch block which can catch an integer.
-      %res = catchpad { i8*, i32 } [i8** @_ZTIi]
+      %tok = catchpad [i8** @_ZTIi]
         to label %int.handler unwind label %terminate
 
 .. _i_catchendpad:
@@ -5194,7 +5372,11 @@ Overview:
 The '``catchendpad``' instruction is used by `LLVM's exception handling
 system <ExceptionHandling.html#overview>`_ to communicate to the
 :ref:`personality function <personalityfn>` which invokes are associated
-with a chain of :ref:`catchpad <i_catchpad>` instructions.
+with a chain of :ref:`catchpad <i_catchpad>` instructions; propagating an
+exception out of a catch handler is represented by unwinding through its
+``catchendpad``.  Unwinding to the outer scope when a chain of catch handlers
+do not handle an exception is also represented by unwinding through their
+``catchendpad``.
 
 The ``nextaction`` label indicates where control should transfer to if
 none of the ``catchpad`` instructions are suitable for catching the
@@ -5227,12 +5409,23 @@ The ``catchendpad`` instruction has several restrictions:
 -  A catch-end block must have a '``catchendpad``' instruction as its
    first non-PHI instruction.
 -  There can be only one '``catchendpad``' instruction within the
-   catch block.
+   catch-end block.
 -  A basic block that is not a catch-end block may not include a
    '``catchendpad``' instruction.
 -  Exactly one catch block may unwind to a ``catchendpad``.
--  The unwind target of invokes between a ``catchpad`` and a
-   corresponding ``catchret`` must be its ``catchendpad``.
+- It is undefined behavior to execute a ``catchendpad`` if none of the
+  '``catchpad``'s chained to it have been executed.
+- It is undefined behavior to execute a ``catchendpad`` twice without an
+  intervening execution of one or more of the '``catchpad``'s chained to it.
+- It is undefined behavior to execute a ``catchendpad`` if, after the most
+  recent execution of the normal successor edge of any ``catchpad`` chained
+  to it, some ``catchret`` consuming that ``catchpad`` has already been
+  executed.
+- It is undefined behavior to execute a ``catchendpad`` if, after the most
+  recent execution of the normal successor edge of any ``catchpad`` chained
+  to it, any other ``catchpad`` or ``cleanuppad`` has been executed but has
+  not had a corresponding
+  ``catchret``/``cleanupret``/``catchendpad``/``cleanupendpad`` executed.
 
 Example:
 """"""""
@@ -5252,7 +5445,7 @@ Syntax:
 
 ::
 
-      catchret label <normal>
+      catchret <value> to label <normal>
 
 Overview:
 """""""""
@@ -5264,8 +5457,10 @@ single successor.
 Arguments:
 """"""""""
 
-The '``catchret``' instruction requires one argument which specifies
-where control will transfer to next.
+The first argument to a '``catchret``' indicates which ``catchpad`` it
+exits.  It must be a :ref:`catchpad <i_catchpad>`.
+The second argument to a '``catchret``' specifies where control will
+transfer to next.
 
 Semantics:
 """"""""""
@@ -5276,13 +5471,99 @@ whose unwinding was interrupted with a
 The :ref:`personality function <personalityfn>` gets a chance to execute
 arbitrary code to, for example, run a C++ destructor.
 Control then transfers to ``normal``.
+It may be passed an optional, personality specific, value.
+
+It is undefined behavior to execute a ``catchret`` whose ``catchpad`` has
+not been executed.
+
+It is undefined behavior to execute a ``catchret`` if, after the most recent
+execution of its ``catchpad``, some ``catchret`` or ``catchendpad`` linked
+to the same ``catchpad`` has already been executed.
+
+It is undefined behavior to execute a ``catchret`` if, after the most recent
+execution of its ``catchpad``, any other ``catchpad`` or ``cleanuppad`` has
+been executed but has not had a corresponding
+``catchret``/``cleanupret``/``catchendpad``/``cleanupendpad`` executed.
 
 Example:
 """"""""
 
 .. code-block:: llvm
 
-      catchret label %continue
+      catchret %catch label %continue
+
+.. _i_cleanupendpad:
+
+'``cleanupendpad``' Instruction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+::
+
+      cleanupendpad <value> unwind label <nextaction>
+      cleanupendpad <value> unwind to caller
+
+Overview:
+"""""""""
+
+The '``cleanupendpad``' instruction is used by `LLVM's exception handling
+system <ExceptionHandling.html#overview>`_ to communicate to the
+:ref:`personality function <personalityfn>` which invokes are associated
+with a :ref:`cleanuppad <i_cleanuppad>` instructions; propagating an exception
+out of a cleanup is represented by unwinding through its ``cleanupendpad``.
+
+The ``nextaction`` label indicates where control should unwind to next, in the
+event that a cleanup is exited by means of an(other) exception being raised.
+
+If a ``nextaction`` label is not present, the instruction unwinds out of
+its parent function. The
+:ref:`personality function <personalityfn>` will continue processing
+exception handling actions in the caller.
+
+Arguments:
+""""""""""
+
+The '``cleanupendpad``' instruction requires one argument, which indicates
+which ``cleanuppad`` it exits, and must be a :ref:`cleanuppad <i_cleanuppad>`.
+It also has an optional successor, ``nextaction``, indicating where control
+should transfer to.
+
+Semantics:
+""""""""""
+
+When and exception propagates to a ``cleanupendpad``, control is transfered to
+``nextaction`` if it is present. If it is not present, control is transfered to
+the caller.
+
+The ``cleanupendpad`` instruction has several restrictions:
+
+-  A cleanup-end block is a basic block which is the unwind destination of
+   an exceptional instruction.
+-  A cleanup-end block must have a '``cleanupendpad``' instruction as its
+   first non-PHI instruction.
+-  There can be only one '``cleanupendpad``' instruction within the
+   cleanup-end block.
+-  A basic block that is not a cleanup-end block may not include a
+   '``cleanupendpad``' instruction.
+- It is undefined behavior to execute a ``cleanupendpad`` whose ``cleanuppad``
+  has not been executed.
+- It is undefined behavior to execute a ``cleanupendpad`` if, after the most
+  recent execution of its ``cleanuppad``, some ``cleanupret`` or ``cleanupendpad``
+  consuming the same ``cleanuppad`` has already been executed.
+- It is undefined behavior to execute a ``cleanupendpad`` if, after the most
+  recent execution of its ``cleanuppad``, any other ``cleanuppad`` or
+  ``catchpad`` has been executed but has not had a corresponding
+  ``cleanupret``/``catchret``/``cleanupendpad``/``catchendpad`` executed.
+
+Example:
+""""""""
+
+.. code-block:: llvm
+
+      cleanupendpad %cleanup unwind label %terminate
+      cleanupendpad %cleanup unwind to caller
 
 .. _i_cleanupret:
 
@@ -5294,8 +5575,8 @@ Syntax:
 
 ::
 
-      cleanupret <type> <value> unwind label <continue>
-      cleanupret <type> <value> unwind to caller
+      cleanupret <value> unwind label <continue>
+      cleanupret <value> unwind to caller
 
 Overview:
 """""""""
@@ -5307,9 +5588,9 @@ an optional successor.
 Arguments:
 """"""""""
 
-The '``cleanupret``' instruction requires one argument, which must have the
-same type as the result of any '``cleanuppad``' instruction in the same
-function. It also has an optional successor,  ``continue``.
+The '``cleanupret``' instruction requires one argument, which indicates
+which ``cleanuppad`` it exits, and must be a :ref:`cleanuppad <i_cleanuppad>`.
+It also has an optional successor, ``continue``.
 
 Semantics:
 """"""""""
@@ -5319,13 +5600,25 @@ The '``cleanupret``' instruction indicates to the
 :ref:`cleanuppad <i_cleanuppad>` it transferred control to has ended.
 It transfers control to ``continue`` or unwinds out of the function.
 
+It is undefined behavior to execute a ``cleanupret`` whose ``cleanuppad`` has
+not been executed.
+
+It is undefined behavior to execute a ``cleanupret`` if, after the most recent
+execution of its ``cleanuppad``, some ``cleanupret`` or ``cleanupendpad``
+consuming the same ``cleanuppad`` has already been executed.
+
+It is undefined behavior to execute a ``cleanupret`` if, after the most recent
+execution of its ``cleanuppad``, any other ``cleanuppad`` or ``catchpad`` has
+been executed but has not had a corresponding
+``cleanupret``/``catchret``/``cleanupendpad``/``catchendpad`` executed.
+
 Example:
 """"""""
 
 .. code-block:: llvm
 
-      cleanupret void unwind to caller
-      cleanupret { i8*, i32 } %exn unwind label %continue
+      cleanupret %cleanup unwind to caller
+      cleanupret %cleanup unwind label %continue
 
 .. _i_terminatepad:
 
@@ -6464,7 +6757,7 @@ Arguments:
 """"""""""
 
 The first operand of an '``extractvalue``' instruction is a value of
-:ref:`struct <t_struct>` or :ref:`array <t_array>` type. The operands are
+:ref:`struct <t_struct>` or :ref:`array <t_array>` type. The other operands are
 constant indices to specify which value to extract in a similar manner
 as indices in a '``getelementptr``' instruction.
 
@@ -6611,9 +6904,11 @@ Syntax:
 
 ::
 
-      <result> = load [volatile] <ty>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>][, !nonnull !<index>][, !dereferenceable !<index>][, !dereferenceable_or_null !<index>]
-      <result> = load atomic [volatile] <ty>* <pointer> [singlethread] <ordering>, align <alignment>
+      <result> = load [volatile] <ty>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>][, !invariant.group !<index>][, !nonnull !<index>][, !dereferenceable !<deref_bytes_node>][, !dereferenceable_or_null !<deref_bytes_node>][, !align !<align_node>]
+      <result> = load atomic [volatile] <ty>* <pointer> [singlethread] <ordering>, align <alignment> [, !invariant.group !<index>]
       !<index> = !{ i32 1 }
+      !<deref_bytes_node> = !{i64 <dereferenceable_bytes>}
+      !<align_node> = !{ i64 <value_alignment> }
 
 Overview:
 """""""""
@@ -6668,16 +6963,19 @@ Being invariant does not imply that a location is dereferenceable,
 but it does imply that once the location is known dereferenceable
 its value is henceforth unchanging.
 
+The optional ``!invariant.group`` metadata must reference a single metadata name
+ ``<index>`` corresponding to a metadata node. See ``invariant.group`` metadata.
+
 The optional ``!nonnull`` metadata must reference a single
 metadata name ``<index>`` corresponding to a metadata node with no
 entries. The existence of the ``!nonnull`` metadata on the
 instruction tells the optimizer that the value loaded is known to
-never be null. This is analogous to the ''nonnull'' attribute
+never be null. This is analogous to the ``nonnull`` attribute
 on parameters and return values. This metadata can only be applied
 to loads of a pointer type.
 
-The optional ``!dereferenceable`` metadata must reference a single
-metadata name ``<index>`` corresponding to a metadata node with one ``i64``
+The optional ``!dereferenceable`` metadata must reference a single metadata
+name ``<deref_bytes_node>`` corresponding to a metadata node with one ``i64``
 entry. The existence of the ``!dereferenceable`` metadata on the instruction
 tells the optimizer that the value loaded is known to be dereferenceable.
 The number of bytes known to be dereferenceable is specified by the integer
@@ -6686,14 +6984,22 @@ attribute on parameters and return values. This metadata can only be applied
 to loads of a pointer type.
 
 The optional ``!dereferenceable_or_null`` metadata must reference a single
-metadata name ``<index>`` corresponding to a metadata node with one ``i64``
-entry. The existence of the ``!dereferenceable_or_null`` metadata on the
+metadata name ``<deref_bytes_node>`` corresponding to a metadata node with one
+``i64`` entry. The existence of the ``!dereferenceable_or_null`` metadata on the
 instruction tells the optimizer that the value loaded is known to be either
 dereferenceable or null.
 The number of bytes known to be dereferenceable is specified by the integer
 value in the metadata node. This is analogous to the ''dereferenceable_or_null''
 attribute on parameters and return values. This metadata can only be applied
 to loads of a pointer type.
+
+The optional ``!align`` metadata must reference a single metadata name
+``<align_node>`` corresponding to a metadata node with one ``i64`` entry.
+The existence of the ``!align`` metadata on the instruction tells the
+optimizer that the value loaded is known to be aligned to a boundary specified
+by the integer value in the metadata node. The alignment must be a power of 2.
+This is analogous to the ''align'' attribute on parameters and return values.
+This metadata can only be applied to loads of a pointer type.
 
 Semantics:
 """"""""""
@@ -6725,8 +7031,8 @@ Syntax:
 
 ::
 
-      store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields void
-      store atomic [volatile] <ty> <value>, <ty>* <pointer> [singlethread] <ordering>, align <alignment>  ; yields void
+      store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.group !<index>]        ; yields void
+      store atomic [volatile] <ty> <value>, <ty>* <pointer> [singlethread] <ordering>, align <alignment> [, !invariant.group !<index>] ; yields void
 
 Overview:
 """""""""
@@ -6773,6 +7079,9 @@ be reused in the cache. The code generator may select special
 instructions to save cache bandwidth, such as the MOVNT instruction on
 x86.
 
+The optional ``!invariant.group`` metadata must reference a 
+single metadata name ``<index>``. See ``invariant.group`` metadata.
+
 Semantics:
 """"""""""
 
@@ -6792,7 +7101,7 @@ Example:
 
       %ptr = alloca i32                               ; yields i32*:ptr
       store i32 3, i32* %ptr                          ; yields void
-      %val = load i32* %ptr                           ; yields i32:val = i32 3
+      %val = load i32, i32* %ptr                      ; yields i32:val = i32 3
 
 .. _i_fence:
 
@@ -7367,10 +7676,12 @@ implies that ``fptrunc`` cannot be used to make a *no-op cast*.
 Semantics:
 """"""""""
 
-The '``fptrunc``' instruction truncates a ``value`` from a larger
+The '``fptrunc``' instruction casts a ``value`` from a larger
 :ref:`floating point <t_floating>` type to a smaller :ref:`floating
-point <t_floating>` type. If the value cannot fit within the
-destination type, ``ty2``, then the results are undefined.
+point <t_floating>` type. If the value cannot fit (i.e. overflows) within the
+destination type, ``ty2``, then the results are undefined. If the cast produces
+an inexact result, how rounding is performed (e.g. truncation, also known as
+round to zero) is undefined.
 
 Example:
 """"""""
@@ -8099,7 +8410,8 @@ Syntax:
 
 ::
 
-      <result> = [tail | musttail] call [cconv] [ret attrs] <ty> [<fnty>*] <fnptrval>(<function args>) [fn attrs]
+      <result> = [tail | musttail | notail ] call [cconv] [ret attrs] <ty> [<fnty>*] <fnptrval>(<function args>) [fn attrs]
+                   [ operand bundles ]
 
 Overview:
 """""""""
@@ -8151,6 +8463,10 @@ This instruction requires several arguments:
    -  `Platform-specific constraints are
       met. <CodeGenerator.html#tailcallopt>`_
 
+#. The optional ``notail`` marker indicates that the optimizers should not add
+   ``tail`` or ``musttail`` markers to the call. It is used to prevent tail
+   call optimization from being performed on the call.
+
 #. The optional "cconv" marker indicates which :ref:`calling
    convention <callingconv>` the call should use. If none is
    specified, the call defaults to using C calling conventions. The
@@ -8179,6 +8495,7 @@ This instruction requires several arguments:
 #. The optional :ref:`function attributes <fnattrs>` list. Only
    '``noreturn``', '``nounwind``', '``readonly``' and '``readnone``'
    attributes are valid here.
+#. The optional :ref:`operand bundles <opbundles>` list.
 
 Semantics:
 """"""""""
@@ -8358,7 +8675,7 @@ Syntax:
 
 ::
 
-      <resultval> = cleanuppad <resultty> [<args>*]
+      <resultval> = cleanuppad [<args>*]
 
 Overview:
 """""""""
@@ -8370,7 +8687,9 @@ transfer control to run cleanup actions.
 The ``args`` correspond to whatever additional
 information the :ref:`personality function <personalityfn>` requires to
 execute the cleanup.
-The ``resultval`` has the type ``resultty``.
+The ``resultval`` has the type :ref:`token <t_token>` and is used to
+match the ``cleanuppad`` to corresponding :ref:`cleanuprets <i_cleanupret>`
+and :ref:`cleanupendpads <i_cleanupendpad>`.
 
 Arguments:
 """"""""""
@@ -8381,15 +8700,11 @@ by the :ref:`personality function <personalityfn>`.
 Semantics:
 """"""""""
 
-The '``cleanuppad``' instruction defines the values which are set by the
-:ref:`personality function <personalityfn>` upon re-entry to the function, and
-therefore the "result type" of the ``cleanuppad`` instruction. As with
-calling conventions, how the personality function results are
-represented in LLVM IR is target specific.
-
 When the call stack is being unwound due to an exception being thrown,
 the :ref:`personality function <personalityfn>` transfers control to the
 ``cleanuppad`` with the aid of the personality-specific arguments.
+As with calling conventions, how the personality function results are
+represented in LLVM IR is target specific.
 
 The ``cleanuppad`` instruction has several restrictions:
 
@@ -8401,18 +8716,21 @@ The ``cleanuppad`` instruction has several restrictions:
    cleanup block.
 -  A basic block that is not a cleanup block may not include a
    '``cleanuppad``' instruction.
+-  All '``cleanupret``'s and '``cleanupendpad``'s which consume a ``cleanuppad``
+   must have the same exceptional successor.
 -  It is undefined behavior for control to transfer from a ``cleanuppad`` to a
-   ``catchret`` without first executing a ``cleanupret`` and a subsequent
-   ``catchpad``.
--  It is undefined behavior for control to transfer from a ``cleanuppad`` to a
-   ``ret`` without first executing a ``cleanupret``.
+   ``ret`` without first executing a ``cleanupret`` or ``cleanupendpad`` that
+   consumes the ``cleanuppad``.
+-  It is undefined behavior for control to transfer from a ``cleanuppad`` to
+   itself without first executing a ``cleanupret`` or ``cleanupendpad`` that
+   consumes the ``cleanuppad``.
 
 Example:
 """"""""
 
 .. code-block:: llvm
 
-      %res = cleanuppad { i8*, i32 } [label %nextaction]
+      %tok = cleanuppad []
 
 .. _intrinsics:
 
@@ -10709,16 +11027,19 @@ This is an overloaded intrinsic. The loaded data is a vector of any integer bit 
 Overview:
 """""""""
 
-The ``llvm.uabsdiff`` intrinsic returns a vector result of the absolute difference of the two operands,
-treating them both as unsigned integers.
+The ``llvm.uabsdiff`` intrinsic returns a vector result of the absolute difference
+of the two operands, treating them both as unsigned integers. The intermediate
+calculations are computed using infinitely precise unsigned arithmetic. The final
+result will be truncated to the given type.
 
-The ``llvm.sabsdiff`` intrinsic returns a vector result of the absolute difference of the two operands,
-treating them both as signed integers.
+The ``llvm.sabsdiff`` intrinsic returns a vector result of the absolute difference of
+the two operands, treating them both as signed integers. If the result overflows, the
+behavior is undefined.
 
 .. note::
 
     These intrinsics are primarily used during the code generation stage of compilation.
-    They are generated by compiler passes such as the Loop and SLP vectorizers.it is not
+    They are generated by compiler passes such as the Loop and SLP vectorizers. It is not
     recommended for users to create them manually.
 
 Arguments:
@@ -10735,19 +11056,19 @@ The expression::
 
 is equivalent to::
 
-    %sub = sub <4 x i32> %a, %b
-    %ispos = icmp ugt <4 x i32> %sub, <i32 -1, i32 -1, i32 -1, i32 -1>
-    %neg = sub <4 x i32> zeroinitializer, %sub
-    %1 = select <4 x i1> %ispos, <4 x i32> %sub, <4 x i32> %neg
+    %1 = zext <4 x i32> %a to <4 x i64>
+    %2 = zext <4 x i32> %b to <4 x i64>
+    %sub = sub <4 x i64> %1, %2
+    %trunc = trunc <4 x i64> to <4 x i32>
 
-Similarly the expression::
+and the expression::
 
     call <4 x i32> @llvm.sabsdiff.v4i32(<4 x i32> %a, <4 x i32> %b)
 
 is equivalent to::
 
     %sub = sub nsw <4 x i32> %a, %b
-    %ispos = icmp sgt <4 x i32> %sub, <i32 -1, i32 -1, i32 -1, i32 -1>
+    %ispos = icmp sge <4 x i32> %sub, zeroinitializer
     %neg = sub nsw <4 x i32> zeroinitializer, %sub
     %1 = select <4 x i1> %ispos, <4 x i32> %sub, <4 x i32> %neg
 
@@ -11151,7 +11472,7 @@ The first operand is a vector value to be written to memory. The second operand 
 Semantics:
 """"""""""
 
-The '``llvm.masked.scatter``' intrinsics is designed for writing selected vector elements to arbitrary memory addresses in a single IR operation. The operation may be conditional, when not all bits in the mask are switched on. It is useful for targets that support vector masked scatter and allows vectorizing basic blocks with data and control divergency. Other targets may support this intrinsic differently, for example by lowering it into a sequence of branches that guard scalar store operations.
+The '``llvm.masked.scatter``' intrinsics is designed for writing selected vector elements to arbitrary memory addresses in a single IR operation. The operation may be conditional, when not all bits in the mask are switched on. It is useful for targets that support vector masked scatter and allows vectorizing basic blocks with data and control divergence. Other targets may support this intrinsic differently, for example by lowering it into a sequence of branches that guard scalar store operations.
 
 ::
 
@@ -11304,6 +11625,36 @@ Semantics:
 """"""""""
 
 This intrinsic indicates that the memory is mutable again.
+
+'``llvm.invariant.group.barrier``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+::
+
+      declare i8* @llvm.invariant.group.barrier(i8* <ptr>)
+
+Overview:
+"""""""""
+
+The '``llvm.invariant.group.barrier``' intrinsic can be used when an invariant 
+established by invariant.group metadata no longer holds, to obtain a new pointer
+value that does not carry the invariant information.
+
+
+Arguments:
+""""""""""
+
+The ``llvm.invariant.group.barrier`` takes only one argument, which is
+the pointer to the memory for which the ``invariant.group`` no longer holds.
+
+Semantics:
+""""""""""
+
+Returns another pointer that aliases its argument but which is considered different 
+for the purposes of ``load``/``store`` ``invariant.group`` metadata.
 
 General Intrinsics
 ------------------
@@ -11677,7 +12028,7 @@ Arguments:
 """"""""""
 
 The first argument is a pointer to be tested. The second argument is a
-metadata string containing the name of a :doc:`bitset <BitSets>`.
+metadata object representing an identifier for a :doc:`bitset <BitSets>`.
 
 Overview:
 """""""""

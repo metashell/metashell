@@ -93,7 +93,7 @@ FunctionPass *createBitTrackingDCEPass();
 //
 // SROA - Replace aggregates or pieces of aggregates with scalar SSA values.
 //
-FunctionPass *createSROAPass(bool RequiresDomTree = true);
+FunctionPass *createSROAPass();
 
 //===----------------------------------------------------------------------===//
 //
@@ -408,13 +408,6 @@ FunctionPass *createPartiallyInlineLibCallsPass();
 
 //===----------------------------------------------------------------------===//
 //
-// SampleProfilePass - Loads sample profile data from disk and generates
-// IR metadata to reflect the profile.
-FunctionPass *createSampleProfileLoaderPass();
-FunctionPass *createSampleProfileLoaderPass(StringRef Name);
-
-//===----------------------------------------------------------------------===//
-//
 // ScalarizerPass - Converts vector operations into scalar operations
 //
 FunctionPass *createScalarizerPass();
@@ -486,6 +479,12 @@ FunctionPass *createNaryReassociatePass();
 // LoopDistribute - Distribute loops.
 //
 FunctionPass *createLoopDistributePass();
+
+//===----------------------------------------------------------------------===//
+//
+// LoopLoadElimination - Perform loop-aware load elimination.
+//
+FunctionPass *createLoopLoadEliminationPass();
 
 } // End llvm namespace
 

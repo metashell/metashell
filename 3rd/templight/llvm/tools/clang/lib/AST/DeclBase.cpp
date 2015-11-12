@@ -266,6 +266,18 @@ void Decl::setDeclContextsImpl(DeclContext *SemaDC, DeclContext *LexicalDC,
   }
 }
 
+bool Decl::isLexicallyWithinFunctionOrMethod() const {
+  const DeclContext *LDC = getLexicalDeclContext();
+  while (true) {
+    if (LDC->isFunctionOrMethod())
+      return true;
+    if (!isa<TagDecl>(LDC))
+      return false;
+    LDC = LDC->getLexicalParent();
+  }
+  return false;
+}
+
 bool Decl::isInAnonymousNamespace() const {
   const DeclContext *DC = getDeclContext();
   do {
@@ -627,6 +639,7 @@ unsigned Decl::getIdentifierNamespaceForKind(Kind DeclKind) {
     case ExternCContext:
 
     case UsingDirective:
+    case BuiltinTemplate:
     case ClassTemplateSpecialization:
     case ClassTemplatePartialSpecialization:
     case ClassScopeFunctionSpecialization:
@@ -1221,7 +1234,7 @@ void DeclContext::addHiddenDecl(Decl *D) {
   }
 
   // Notify a C++ record declaration that we've added a member, so it can
-  // update it's class-specific state.
+  // update its class-specific state.
   if (CXXRecordDecl *Record = dyn_cast<CXXRecordDecl>(this))
     Record->addedMember(D);
 

@@ -953,6 +953,17 @@ MDNode *MDNode::getMostGenericRange(MDNode *A, MDNode *B) {
   return MDNode::get(A->getContext(), MDs);
 }
 
+MDNode *MDNode::getMostGenericAlignmentOrDereferenceable(MDNode *A, MDNode *B) {
+  if (!A || !B)
+    return nullptr;
+
+  ConstantInt *AVal = mdconst::extract<ConstantInt>(A->getOperand(0));
+  ConstantInt *BVal = mdconst::extract<ConstantInt>(B->getOperand(0));
+  if (AVal->getZExtValue() < BVal->getZExtValue())
+    return A;
+  return B;
+}
+
 //===----------------------------------------------------------------------===//
 // NamedMDNode implementation.
 //
@@ -1057,13 +1068,9 @@ MDNode *Instruction::getMetadataImpl(StringRef Kind) const {
   return getMetadataImpl(getContext().getMDKindID(Kind));
 }
 
-void Instruction::dropUnknownMetadata(ArrayRef<unsigned> KnownIDs) {
+void Instruction::dropUnknownNonDebugMetadata(ArrayRef<unsigned> KnownIDs) {
   SmallSet<unsigned, 5> KnownSet;
   KnownSet.insert(KnownIDs.begin(), KnownIDs.end());
-
-  // Drop debug if needed
-  if (KnownSet.erase(LLVMContext::MD_dbg))
-    DbgLoc = DebugLoc();
 
   if (!hasMetadataHashEntry())
     return; // Nothing to remove!
@@ -1089,7 +1096,7 @@ void Instruction::dropUnknownMetadata(ArrayRef<unsigned> KnownIDs) {
   }
 }
 
-/// setMetadata - Set the metadata of of the specified kind to the specified
+/// setMetadata - Set the metadata of the specified kind to the specified
 /// node.  This updates/replaces metadata if already present, or removes it if
 /// Node is null.
 void Instruction::setMetadata(unsigned KindID, MDNode *Node) {
@@ -1262,4 +1269,12 @@ void Function::clearMetadata() {
     return;
   getContext().pImpl->FunctionMetadata.erase(this);
   setHasMetadataHashEntry(false);
+}
+
+void Function::setSubprogram(DISubprogram *SP) {
+  setMetadata(LLVMContext::MD_dbg, SP);
+}
+
+DISubprogram *Function::getSubprogram() const {
+  return cast_or_null<DISubprogram>(getMetadata(LLVMContext::MD_dbg));
 }

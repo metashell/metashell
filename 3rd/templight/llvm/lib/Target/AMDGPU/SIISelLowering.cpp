@@ -20,6 +20,7 @@
 
 #include "SIISelLowering.h"
 #include "AMDGPU.h"
+#include "AMDGPUDiagnosticInfoUnsupported.h"
 #include "AMDGPUIntrinsicInfo.h"
 #include "AMDGPUSubtarget.h"
 #include "SIInstrInfo.h"
@@ -409,7 +410,10 @@ bool SITargetLowering::allowsMisalignedMemoryAccesses(EVT VT,
     // ds_read/write_b64 require 8-byte alignment, but we can do a 4 byte
     // aligned, 8 byte access in a single operation using ds_read2/write2_b32
     // with adjacent offsets.
-    return Align % 4 == 0;
+    bool AlignedBy4 = (Align % 4 == 0);
+    if (IsFast)
+      *IsFast = AlignedBy4;
+    return AlignedBy4;
   }
 
   // Smaller than dword value must be aligned.
@@ -461,12 +465,6 @@ bool SITargetLowering::shouldConvertConstantLoadToIntImm(const APInt &Imm,
   return TII->isInlineConstant(Imm);
 }
 
-static EVT toIntegerVT(EVT VT) {
-  if (VT.isVector())
-    return VT.changeVectorElementTypeToInteger();
-  return MVT::getIntegerVT(VT.getSizeInBits());
-}
-
 SDValue SITargetLowering::LowerParameter(SelectionDAG &DAG, EVT VT, EVT MemVT,
                                          SDLoc SL, SDValue Chain,
                                          unsigned Offset, bool Signed) const {
@@ -490,30 +488,10 @@ SDValue SITargetLowering::LowerParameter(SelectionDAG &DAG, EVT VT, EVT MemVT,
 
   unsigned Align = DL.getABITypeAlignment(Ty);
 
-  if (VT != MemVT && VT.isFloatingPoint()) {
-    // Do an integer load and convert.
-    // FIXME: This is mostly because load legalization after type legalization
-    // doesn't handle FP extloads.
-    assert(VT.getScalarType() == MVT::f32 &&
-           MemVT.getScalarType() == MVT::f16);
-
-    EVT IVT = toIntegerVT(VT);
-    EVT MemIVT = toIntegerVT(MemVT);
-    SDValue Load = DAG.getLoad(ISD::UNINDEXED, ISD::ZEXTLOAD,
-                               IVT, SL, Chain, Ptr, PtrOffset, PtrInfo, MemIVT,
-                               false, // isVolatile
-                               true, // isNonTemporal
-                               true, // isInvariant
-                               Align); // Alignment
-    SDValue Ops[] = {
-      DAG.getNode(ISD::FP16_TO_FP, SL, VT, Load),
-      Load.getValue(1)
-    };
-
-    return DAG.getMergeValues(Ops, SL);
-  }
-
   ISD::LoadExtType ExtTy = Signed ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
+  if (MemVT.isFloatingPoint())
+    ExtTy = ISD::EXTLOAD;
+
   return DAG.getLoad(ISD::UNINDEXED, ExtTy,
                      VT, SL, Chain, Ptr, PtrOffset, PtrInfo, MemVT,
                      false, // isVolatile
@@ -533,7 +511,14 @@ SDValue SITargetLowering::LowerFormalArguments(
   FunctionType *FType = MF.getFunction()->getFunctionType();
   SIMachineFunctionInfo *Info = MF.getInfo<SIMachineFunctionInfo>();
 
-  assert(CallConv == CallingConv::C);
+  if (Subtarget->isAmdHsaOS() && Info->getShaderType() != ShaderType::COMPUTE) {
+    const Function *Fn = MF.getFunction();
+    DiagnosticInfoUnsupported NoGraphicsHSA(*Fn, "non-compute shaders with HSA");
+    DAG.getContext()->diagnose(NoGraphicsHSA);
+    return SDValue();
+  }
+
+  // FIXME: We currently assume all calling conventions are kernels.
 
   SmallVector<ISD::InputArg, 16> Splits;
   BitVector Skipped(Ins.size());
@@ -592,7 +577,7 @@ SDValue SITargetLowering::LowerFormalArguments(
   }
 
   // The pointer to the list of arguments is stored in SGPR0, SGPR1
-	// The pointer to the scratch buffer is stored in SGPR2, SGPR3
+  // The pointer to the scratch buffer is stored in SGPR2, SGPR3
   if (Info->getShaderType() == ShaderType::COMPUTE) {
     if (Subtarget->isAmdHsaOS())
       Info->NumUserSGPRs = 2;  // FIXME: Need to support scratch buffers.
@@ -714,7 +699,7 @@ SDValue SITargetLowering::LowerFormalArguments(
   }
 
   if (Info->getShaderType() != ShaderType::COMPUTE) {
-    unsigned ScratchIdx = CCInfo.getFirstUnallocated(ArrayRef<MCPhysReg>(
+    unsigned ScratchIdx = CCInfo.getFirstUnallocated(makeArrayRef(
         AMDGPU::SGPR_32RegClass.begin(), AMDGPU::SGPR_32RegClass.getNumRegs()));
     Info->ScratchOffsetReg = AMDGPU::SGPR_32RegClass.getRegister(ScratchIdx);
   }
@@ -1023,6 +1008,8 @@ SDValue SITargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
   SDLoc DL(Op);
   unsigned IntrinsicID = cast<ConstantSDNode>(Op.getOperand(0))->getZExtValue();
 
+  // TODO: Should this propagate fast-math-flags?
+
   switch (IntrinsicID) {
   case Intrinsic::r600_read_ngroups_x:
     return LowerParameter(DAG, VT, VT, DL, DAG.getEntryNode(),
@@ -1112,6 +1099,10 @@ SDValue SITargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
                        DAG.getConstant(2, DL, MVT::i32), // P0
                        Op.getOperand(1), Op.getOperand(2), Glue);
   }
+  case AMDGPUIntrinsic::SI_packf16:
+    if (Op.getOperand(1).isUndef() && Op.getOperand(2).isUndef())
+      return DAG.getUNDEF(MVT::i32);
+    return Op;
   case AMDGPUIntrinsic::SI_fs_interp: {
     SDValue IJ = Op.getOperand(4);
     SDValue I = DAG.getNode(ISD::EXTRACT_VECTOR_ELT, DL, MVT::i32, IJ,
@@ -1271,8 +1262,10 @@ SDValue SITargetLowering::LowerFastFDIV(SDValue Op, SelectionDAG &DAG) const {
   if (Unsafe) {
     // Turn into multiply by the reciprocal.
     // x / y -> x * (1.0 / y)
+    SDNodeFlags Flags;
+    Flags.setUnsafeAlgebra(true);
     SDValue Recip = DAG.getNode(AMDGPUISD::RCP, SL, VT, RHS);
-    return DAG.getNode(ISD::FMUL, SL, VT, LHS, Recip);
+    return DAG.getNode(ISD::FMUL, SL, VT, LHS, Recip, &Flags);
   }
 
   return SDValue();
@@ -1308,6 +1301,8 @@ SDValue SITargetLowering::LowerFDIV32(SDValue Op, SelectionDAG &DAG) const {
   SDValue r2 = DAG.getSetCC(SL, SetCCVT, r1, K0, ISD::SETOGT);
 
   SDValue r3 = DAG.getNode(ISD::SELECT, SL, MVT::f32, r2, K1, One);
+
+  // TODO: Should this propagate fast-math-flags?
 
   r1 = DAG.getNode(ISD::FMUL, SL, MVT::f32, RHS, r3);
 
@@ -1428,6 +1423,7 @@ SDValue SITargetLowering::LowerTrig(SDValue Op, SelectionDAG &DAG) const {
   SDLoc DL(Op);
   EVT VT = Op.getValueType();
   SDValue Arg = Op.getOperand(0);
+  // TODO: Should this propagate fast-math-flags?
   SDValue FractPart = DAG.getNode(AMDGPUISD::FRACT, DL, VT,
                                   DAG.getNode(ISD::FMUL, DL, VT, Arg,
                                               DAG.getConstantFP(0.5/M_PI, DL,
@@ -2160,9 +2156,14 @@ void SITargetLowering::AdjustInstrPostInstrSelection(MachineInstr *MI,
       static_cast<const SIInstrInfo *>(Subtarget->getInstrInfo());
 
   MachineRegisterInfo &MRI = MI->getParent()->getParent()->getRegInfo();
-  TII->legalizeOperands(MI);
 
-  if (TII->isMIMG(MI->getOpcode())) {
+  if (TII->isVOP3(MI->getOpcode())) {
+    // Make sure constant bus requirements are respected.
+    TII->legalizeOperandsVOP3(MRI, MI);
+    return;
+  }
+
+  if (TII->isMIMG(*MI)) {
     unsigned VReg = MI->getOperand(0).getReg();
     unsigned Writemask = MI->getOperand(1).getImm();
     unsigned BitsSet = 0;
@@ -2204,47 +2205,32 @@ MachineSDNode *SITargetLowering::wrapAddr64Rsrc(SelectionDAG &DAG,
                                                 SDLoc DL,
                                                 SDValue Ptr) const {
   const SIInstrInfo *TII =
-      static_cast<const SIInstrInfo *>(Subtarget->getInstrInfo());
-#if 1
-    // XXX - Workaround for moveToVALU not handling different register class
-    // inserts for REG_SEQUENCE.
+    static_cast<const SIInstrInfo *>(Subtarget->getInstrInfo());
 
-    // Build the half of the subregister with the constants.
-    const SDValue Ops0[] = {
-      DAG.getTargetConstant(AMDGPU::SGPR_64RegClassID, DL, MVT::i32),
-      buildSMovImm32(DAG, DL, 0),
-      DAG.getTargetConstant(AMDGPU::sub0, DL, MVT::i32),
-      buildSMovImm32(DAG, DL, TII->getDefaultRsrcDataFormat() >> 32),
-      DAG.getTargetConstant(AMDGPU::sub1, DL, MVT::i32)
-    };
+  // Build the half of the subregister with the constants before building the
+  // full 128-bit register. If we are building multiple resource descriptors,
+  // this will allow CSEing of the 2-component register.
+  const SDValue Ops0[] = {
+    DAG.getTargetConstant(AMDGPU::SGPR_64RegClassID, DL, MVT::i32),
+    buildSMovImm32(DAG, DL, 0),
+    DAG.getTargetConstant(AMDGPU::sub0, DL, MVT::i32),
+    buildSMovImm32(DAG, DL, TII->getDefaultRsrcDataFormat() >> 32),
+    DAG.getTargetConstant(AMDGPU::sub1, DL, MVT::i32)
+  };
 
-    SDValue SubRegHi = SDValue(DAG.getMachineNode(AMDGPU::REG_SEQUENCE, DL,
-                                                  MVT::v2i32, Ops0), 0);
+  SDValue SubRegHi = SDValue(DAG.getMachineNode(AMDGPU::REG_SEQUENCE, DL,
+                                                MVT::v2i32, Ops0), 0);
 
-    // Combine the constants and the pointer.
-    const SDValue Ops1[] = {
-      DAG.getTargetConstant(AMDGPU::SReg_128RegClassID, DL, MVT::i32),
-      Ptr,
-      DAG.getTargetConstant(AMDGPU::sub0_sub1, DL, MVT::i32),
-      SubRegHi,
-      DAG.getTargetConstant(AMDGPU::sub2_sub3, DL, MVT::i32)
-    };
+  // Combine the constants and the pointer.
+  const SDValue Ops1[] = {
+    DAG.getTargetConstant(AMDGPU::SReg_128RegClassID, DL, MVT::i32),
+    Ptr,
+    DAG.getTargetConstant(AMDGPU::sub0_sub1, DL, MVT::i32),
+    SubRegHi,
+    DAG.getTargetConstant(AMDGPU::sub2_sub3, DL, MVT::i32)
+  };
 
-    return DAG.getMachineNode(AMDGPU::REG_SEQUENCE, DL, MVT::v4i32, Ops1);
-#else
-    const SDValue Ops[] = {
-      DAG.getTargetConstant(AMDGPU::SReg_128RegClassID, MVT::i32),
-      Ptr,
-      DAG.getTargetConstant(AMDGPU::sub0_sub1, MVT::i32),
-      buildSMovImm32(DAG, DL, 0),
-      DAG.getTargetConstant(AMDGPU::sub2, MVT::i32),
-      buildSMovImm32(DAG, DL, TII->getDefaultRsrcFormat() >> 32),
-      DAG.getTargetConstant(AMDGPU::sub3, MVT::i32)
-    };
-
-    return DAG.getMachineNode(AMDGPU::REG_SEQUENCE, DL, MVT::v4i32, Ops);
-
-#endif
+  return DAG.getMachineNode(AMDGPU::REG_SEQUENCE, DL, MVT::v4i32, Ops1);
 }
 
 /// \brief Return a resource descriptor with the 'Add TID' bit enabled
@@ -2288,10 +2274,8 @@ MachineSDNode *SITargetLowering::buildScratchRSRC(SelectionDAG &DAG,
                                                   SDValue Ptr) const {
   const SIInstrInfo *TII =
       static_cast<const SIInstrInfo *>(Subtarget->getInstrInfo());
-  uint64_t Rsrc = TII->getDefaultRsrcDataFormat() | AMDGPU::RSRC_TID_ENABLE |
-                  0xffffffff; // Size
 
-  return buildRSRC(DAG, DL, Ptr, 0, Rsrc);
+  return buildRSRC(DAG, DL, Ptr, 0, TII->getScratchRsrcWords23());
 }
 
 SDValue SITargetLowering::CreateLiveInRegister(SelectionDAG &DAG,

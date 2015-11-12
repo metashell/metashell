@@ -104,7 +104,6 @@ public:
   SDNode *SelectConstantFP(SDNode *N);
   SDNode *SelectAdd(SDNode *N);
   SDNode *SelectBitOp(SDNode *N);
-  bool isConstExtProfitable(SDNode *N) const;
 
   // XformMskToBitPosU5Imm - Returns the bit position which
   // the single bit 32 bit mask represents.
@@ -1328,19 +1327,6 @@ SelectInlineAsmMemoryOperand(const SDValue &Op, unsigned ConstraintID,
   return false;
 }
 
-bool HexagonDAGToDAGISel::isConstExtProfitable(SDNode *N) const {
-  unsigned UseCount = 0;
-  unsigned CallCount = 0;
-  for (SDNode::use_iterator I = N->use_begin(), E = N->use_end(); I != E; ++I) {
-    // Ignore call instructions.
-    if (I->getOpcode() == ISD::CopyToReg)
-      ++CallCount;
-    UseCount++;
-  }
-
-  return (UseCount <= 1) || (CallCount > 1);
-
-}
 
 void HexagonDAGToDAGISel::PreprocessISelDAG() {
   SelectionDAG &DAG = *CurDAG;
@@ -1397,7 +1383,7 @@ void HexagonDAGToDAGISel::EmitFunctionEntryCode() {
     return;
 
   MachineFrameInfo *MFI = MF->getFrameInfo();
-  MachineBasicBlock *EntryBB = MF->begin();
+  MachineBasicBlock *EntryBB = &MF->front();
   unsigned AR = FuncInfo->CreateReg(MVT::i32);
   unsigned MaxA = MFI->getMaxAlignment();
   auto &HII = *HST.getInstrInfo();

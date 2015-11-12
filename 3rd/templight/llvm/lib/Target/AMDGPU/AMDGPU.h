@@ -44,14 +44,21 @@ FunctionPass *createSIShrinkInstructionsPass();
 FunctionPass *createSILoadStoreOptimizerPass(TargetMachine &tm);
 FunctionPass *createSILowerControlFlowPass(TargetMachine &tm);
 FunctionPass *createSIFixControlFlowLiveIntervalsPass();
-FunctionPass *createSIFixSGPRCopiesPass(TargetMachine &tm);
+FunctionPass *createSIFixSGPRCopiesPass();
 FunctionPass *createSIFixSGPRLiveRangesPass();
 FunctionPass *createSICodeEmitterPass(formatted_raw_ostream &OS);
 FunctionPass *createSIInsertWaits(TargetMachine &tm);
 FunctionPass *createSIPrepareScratchRegs();
 
+ModulePass *createAMDGPUAnnotateKernelFeaturesPass();
+void initializeAMDGPUAnnotateKernelFeaturesPass(PassRegistry &);
+extern char &AMDGPUAnnotateKernelFeaturesID;
+
 void initializeSIFoldOperandsPass(PassRegistry &);
 extern char &SIFoldOperandsID;
+
+void initializeSIFixSGPRCopiesPass(PassRegistry &);
+extern char &SIFixSGPRCopiesID;
 
 void initializeSILowerI1CopiesPass(PassRegistry &);
 extern char &SILowerI1CopiesID;

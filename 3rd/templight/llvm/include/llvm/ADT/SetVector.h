@@ -172,7 +172,6 @@ public:
     return true;
   }
 
-
   /// \brief Count the number of elements of a given key in the SetVector.
   /// \returns 0 if the element is not in the SetVector, 1 if it is.
   size_type count(const key_type &key) const {
@@ -191,7 +190,7 @@ public:
     set_.erase(back());
     vector_.pop_back();
   }
-  
+
   T LLVM_ATTRIBUTE_UNUSED_RESULT pop_back_val() {
     T Ret = back();
     pop_back();

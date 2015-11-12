@@ -140,6 +140,9 @@ public:
   typedef typename std::vector<BlockT*>::const_iterator block_iterator;
   block_iterator block_begin() const { return Blocks.begin(); }
   block_iterator block_end() const { return Blocks.end(); }
+  inline iterator_range<block_iterator> blocks() const {
+    return iterator_range<block_iterator>(block_begin(), block_end());
+  }
 
   /// getNumBlocks - Get the number of blocks in this loop in constant time.
   unsigned getNumBlocks() const {
@@ -758,6 +761,19 @@ public:
   void print(raw_ostream &O, const Module *M = nullptr) const override;
 
   void getAnalysisUsage(AnalysisUsage &AU) const override;
+};
+
+/// \brief Pass for printing a loop's contents as LLVM's text IR assembly.
+class PrintLoopPass {
+  raw_ostream &OS;
+  std::string Banner;
+
+public:
+  PrintLoopPass();
+  PrintLoopPass(raw_ostream &OS, const std::string &Banner = "");
+
+  PreservedAnalyses run(Loop &L);
+  static StringRef name() { return "PrintLoopPass"; }
 };
 
 } // End llvm namespace

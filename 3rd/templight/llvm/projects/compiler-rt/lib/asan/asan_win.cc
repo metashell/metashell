@@ -14,6 +14,7 @@
 
 #include "sanitizer_common/sanitizer_platform.h"
 #if SANITIZER_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #include <stdlib.h>
@@ -252,7 +253,7 @@ int __asan_set_seh_filter() {
 // Put a pointer to __asan_set_seh_filter at the end of the global list
 // of C initializers, after the default EH is set by the CRT.
 #pragma section(".CRT$XIZ", long, read)  // NOLINT
-static __declspec(allocate(".CRT$XIZ"))
+__declspec(allocate(".CRT$XIZ"))
     int (*__intercept_seh)() = __asan_set_seh_filter;
 #endif
 // }}}

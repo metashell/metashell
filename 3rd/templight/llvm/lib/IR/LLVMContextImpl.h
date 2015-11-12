@@ -473,7 +473,6 @@ template <> struct MDNodeKeyImpl<DISubprogram> {
   unsigned VirtualIndex;
   unsigned Flags;
   bool IsOptimized;
-  Metadata *Function;
   Metadata *TemplateParams;
   Metadata *Declaration;
   Metadata *Variables;
@@ -483,15 +482,15 @@ template <> struct MDNodeKeyImpl<DISubprogram> {
                 bool IsLocalToUnit, bool IsDefinition, unsigned ScopeLine,
                 Metadata *ContainingType, unsigned Virtuality,
                 unsigned VirtualIndex, unsigned Flags, bool IsOptimized,
-                Metadata *Function, Metadata *TemplateParams,
-                Metadata *Declaration, Metadata *Variables)
+                Metadata *TemplateParams, Metadata *Declaration,
+                Metadata *Variables)
       : Scope(Scope), Name(Name), LinkageName(LinkageName), File(File),
         Line(Line), Type(Type), IsLocalToUnit(IsLocalToUnit),
         IsDefinition(IsDefinition), ScopeLine(ScopeLine),
         ContainingType(ContainingType), Virtuality(Virtuality),
         VirtualIndex(VirtualIndex), Flags(Flags), IsOptimized(IsOptimized),
-        Function(Function), TemplateParams(TemplateParams),
-        Declaration(Declaration), Variables(Variables) {}
+        TemplateParams(TemplateParams), Declaration(Declaration),
+        Variables(Variables) {}
   MDNodeKeyImpl(const DISubprogram *N)
       : Scope(N->getRawScope()), Name(N->getName()),
         LinkageName(N->getLinkageName()), File(N->getRawFile()),
@@ -500,7 +499,6 @@ template <> struct MDNodeKeyImpl<DISubprogram> {
         ScopeLine(N->getScopeLine()), ContainingType(N->getRawContainingType()),
         Virtuality(N->getVirtuality()), VirtualIndex(N->getVirtualIndex()),
         Flags(N->getFlags()), IsOptimized(N->isOptimized()),
-        Function(N->getRawFunction()),
         TemplateParams(N->getRawTemplateParams()),
         Declaration(N->getRawDeclaration()), Variables(N->getRawVariables()) {}
 
@@ -515,7 +513,6 @@ template <> struct MDNodeKeyImpl<DISubprogram> {
            Virtuality == RHS->getVirtuality() &&
            VirtualIndex == RHS->getVirtualIndex() && Flags == RHS->getFlags() &&
            IsOptimized == RHS->isOptimized() &&
-           Function == RHS->getRawFunction() &&
            TemplateParams == RHS->getRawTemplateParams() &&
            Declaration == RHS->getRawDeclaration() &&
            Variables == RHS->getRawVariables();
@@ -523,7 +520,7 @@ template <> struct MDNodeKeyImpl<DISubprogram> {
   unsigned getHashValue() const {
     return hash_combine(Scope, Name, LinkageName, File, Line, Type,
                         IsLocalToUnit, IsDefinition, ScopeLine, ContainingType,
-                        Virtuality, VirtualIndex, Flags, IsOptimized, Function,
+                        Virtuality, VirtualIndex, Flags, IsOptimized,
                         TemplateParams, Declaration, Variables);
   }
 };
@@ -927,8 +924,10 @@ public:
   ConstantInt *TheTrueVal;
   ConstantInt *TheFalseVal;
 
+  ConstantTokenNone *TheNoneToken;
+
   // Basic type instances.
-  Type VoidTy, LabelTy, HalfTy, FloatTy, DoubleTy, MetadataTy;
+  Type VoidTy, LabelTy, HalfTy, FloatTy, DoubleTy, MetadataTy, TokenTy;
   Type X86_FP80Ty, FP128Ty, PPC_FP128Ty, X86_MMXTy;
   IntegerType Int1Ty, Int8Ty, Int16Ty, Int32Ty, Int64Ty, Int128Ty;
 
@@ -972,19 +971,29 @@ public:
   /// instructions in different blocks at the same location.
   DenseMap<std::pair<const char *, unsigned>, unsigned> DiscriminatorTable;
 
+  typedef DenseMap<const Function *, ReturnInst *> FunctionDataMapTy;
+
   /// \brief Mapping from a function to its prefix data, which is stored as the
   /// operand of an unparented ReturnInst so that the prefix data has a Use.
-  typedef DenseMap<const Function *, ReturnInst *> PrefixDataMapTy;
-  PrefixDataMapTy PrefixDataMap;
+  FunctionDataMapTy PrefixDataMap;
 
   /// \brief Mapping from a function to its prologue data, which is stored as
   /// the operand of an unparented ReturnInst so that the prologue data has a
   /// Use.
-  typedef DenseMap<const Function *, ReturnInst *> PrologueDataMapTy;
-  PrologueDataMapTy PrologueDataMap;
+  FunctionDataMapTy PrologueDataMap;
 
   int getOrAddScopeRecordIdxEntry(MDNode *N, int ExistingIdx);
   int getOrAddScopeInlinedAtIdxEntry(MDNode *Scope, MDNode *IA,int ExistingIdx);
+
+  /// \brief A set of interned tags for operand bundles.  The StringMap maps
+  /// bundle tags to their IDs.
+  ///
+  /// \see LLVMContext::getOperandBundleTagID
+  StringMap<uint32_t> BundleTagCache;
+
+  StringMapEntry<uint32_t> *getOrInsertBundleTag(StringRef Tag);
+  void getOperandBundleTags(SmallVectorImpl<StringRef> &Tags) const;
+  uint32_t getOperandBundleTagID(StringRef Tag) const;
 
   LLVMContextImpl(LLVMContext &C);
   ~LLVMContextImpl();

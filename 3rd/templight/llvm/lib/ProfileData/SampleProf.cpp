@@ -38,6 +38,12 @@ class SampleProfErrorCategoryType : public std::error_category {
       return "Malformed profile data";
     case sampleprof_error::unrecognized_format:
       return "Unrecognized profile encoding format";
+    case sampleprof_error::unsupported_writing_format:
+      return "Profile encoding format unsupported for writing operations";
+    case sampleprof_error::truncated_name_table:
+      return "Truncated function name table";
+    case sampleprof_error::not_implemented:
+      return "Unimplemented feature";
     }
     llvm_unreachable("A value of sampleprof_error has no message.");
   }

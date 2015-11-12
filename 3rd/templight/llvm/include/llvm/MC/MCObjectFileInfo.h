@@ -35,15 +35,17 @@ protected:
   /// without an associated EH frame section.
   bool SupportsCompactUnwindWithoutEHFrame;
 
-  /// Some encoding values for EH.
+  /// OmitDwarfIfHaveCompactUnwind - True if the target object file
+  /// supports having some functions with compact unwind and other with
+  /// dwarf unwind.
+  bool OmitDwarfIfHaveCompactUnwind;
+
+  /// PersonalityEncoding, LSDAEncoding, TTypeEncoding - Some encoding values
+  /// for EH.
   unsigned PersonalityEncoding;
   unsigned LSDAEncoding;
   unsigned FDECFIEncoding;
   unsigned TTypeEncoding;
-
-  /// Section flags for eh_frame
-  unsigned EHSectionType;
-  unsigned EHSectionFlags;
 
   /// Compact unwind encoding indicating that we should emit only an EH frame.
   unsigned CompactUnwindDwarfEHFrameOnly;
@@ -200,6 +202,10 @@ public:
   bool getSupportsCompactUnwindWithoutEHFrame() const {
     return SupportsCompactUnwindWithoutEHFrame;
   }
+  bool getOmitDwarfIfHaveCompactUnwind() const {
+    return OmitDwarfIfHaveCompactUnwind;
+  }
+
   bool getCommDirectiveSupportsAlignment() const {
     return CommDirectiveSupportsAlignment;
   }
@@ -326,8 +332,6 @@ public:
   MCSection *getSXDataSection() const { return SXDataSection; }
 
   MCSection *getEHFrameSection() {
-    if (!EHFrameSection)
-      InitEHFrameSection();
     return EHFrameSection;
   }
 
@@ -346,9 +350,6 @@ private:
   void initMachOMCObjectFileInfo(Triple T);
   void initELFMCObjectFileInfo(Triple T);
   void initCOFFMCObjectFileInfo(Triple T);
-
-  /// Initialize EHFrameSection on demand.
-  void InitEHFrameSection();
 
 public:
   const Triple &getTargetTriple() const { return TT; }

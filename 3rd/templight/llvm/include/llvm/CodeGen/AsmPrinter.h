@@ -236,7 +236,7 @@ public:
   /// Print assembly representations of the jump tables used by the current
   /// function to the current output stream.
   ///
-  void EmitJumpTableInfo();
+  virtual void EmitJumpTableInfo();
 
   /// Emit the control variable for an emulated TLS variable.
   virtual void EmitEmulatedTLSControlVariable(const GlobalVariable *GV,
@@ -413,9 +413,6 @@ public:
   /// Emit the specified unsigned leb128 value.
   void EmitULEB128(uint64_t Value, const char *Desc = nullptr,
                    unsigned PadTo = 0) const;
-
-  /// Emit a .byte 42 directive for a DW_CFA_xxx value.
-  void EmitCFAByte(unsigned Val) const;
 
   /// Emit a .byte 42 directive that corresponds to an encoding.  If verbose
   /// assembly output is enabled, we output comments describing the encoding.

@@ -170,7 +170,8 @@ public:
   void substitutePass(AnalysisID StandardID, IdentifyingPassPtr TargetID);
 
   /// Insert InsertedPassID pass after TargetPassID pass.
-  void insertPass(AnalysisID TargetPassID, IdentifyingPassPtr InsertedPassID);
+  void insertPass(AnalysisID TargetPassID, IdentifyingPassPtr InsertedPassID,
+                  bool VerifyAfter = true, bool PrintAfter = true);
 
   /// Allow the target to enable a specific standard pass by default.
   void enablePass(AnalysisID PassID) { substitutePass(PassID, PassID); }
@@ -186,6 +187,9 @@ public:
 
   /// Return true if the optimized regalloc pipeline is enabled.
   bool getOptimizeRegAlloc() const;
+
+  /// Return true if shrink wrapping is enabled.
+  bool getEnableShrinkWrap() const;
 
   /// Return true if the default global register allocator is in use and
   /// has not be overriden on the command line with '-regalloc=...'
@@ -222,7 +226,7 @@ public:
   ///
   /// This can also be used to plug a new MachineSchedStrategy into an instance
   /// of the standard ScheduleDAGMI:
-  ///   return new ScheduleDAGMI(C, make_unique<MyStrategy>(C), /* IsPostRA= */false)
+  ///   return new ScheduleDAGMI(C, make_unique<MyStrategy>(C), /*RemoveKillFlags=*/false)
   ///
   /// Return NULL to select the default (generic) machine scheduler.
   virtual ScheduleDAGInstrs *
@@ -355,14 +359,6 @@ protected:
   /// Add a pass to perform basic verification of the machine function if
   /// verification is enabled.
   void addVerifyPass(const std::string &Banner);
-
-  /// Create an instance of ShrinkWrap using the runShrinkWrap predicate
-  /// function.  
-  FunctionPass *createShrinkWrapPass();
-  
-  /// Predicate function passed to a ShrinkWrap object to determine if shrink
-  /// wrapping should be run on a MachineFunction.
-  virtual bool runShrinkWrap(const MachineFunction &Fn) const;
 };
 } // namespace llvm
 
@@ -586,6 +582,9 @@ namespace llvm {
 
   /// StackSlotColoring - This pass performs stack slot coloring.
   extern char &StackSlotColoringID;
+
+  /// \brief This pass lays out funclets contiguously.
+  extern char &FuncletLayoutID;
 
   /// createStackProtectorPass - This pass adds stack protectors to functions.
   ///

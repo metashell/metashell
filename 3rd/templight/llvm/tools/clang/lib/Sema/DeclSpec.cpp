@@ -177,7 +177,7 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
                                              SourceLocation MutableLoc,
                                              ExceptionSpecificationType
                                                  ESpecType,
-                                             SourceLocation ESpecLoc,
+                                             SourceRange ESpecRange,
                                              ParsedType *Exceptions,
                                              SourceRange *ExceptionRanges,
                                              unsigned NumExceptions,
@@ -212,7 +212,8 @@ DeclaratorChunk DeclaratorChunk::getFunction(bool hasProto,
   I.Fun.RestrictQualifierLoc    = RestrictQualifierLoc.getRawEncoding();
   I.Fun.MutableLoc              = MutableLoc.getRawEncoding();
   I.Fun.ExceptionSpecType       = ESpecType;
-  I.Fun.ExceptionSpecLoc        = ESpecLoc.getRawEncoding();
+  I.Fun.ExceptionSpecLocBeg     = ESpecRange.getBegin().getRawEncoding();
+  I.Fun.ExceptionSpecLocEnd     = ESpecRange.getEnd().getRawEncoding();
   I.Fun.NumExceptions           = 0;
   I.Fun.Exceptions              = nullptr;
   I.Fun.NoexceptExpr            = nullptr;
@@ -287,6 +288,7 @@ bool Declarator::isDeclarationOfFunction() const {
   switch (DS.getTypeSpecType()) {
     case TST_atomic:
     case TST_auto:
+    case TST_auto_type:
     case TST_bool:
     case TST_char:
     case TST_char16:
@@ -348,6 +350,11 @@ bool Declarator::isStaticMember() {
          (getName().Kind == UnqualifiedId::IK_OperatorFunctionId &&
           CXXMethodDecl::isStaticOverloadedOperator(
               getName().OperatorFunctionId.Operator));
+}
+
+bool Declarator::isCtorOrDtor() {
+  return (getName().getKind() == UnqualifiedId::IK_ConstructorName) ||
+         (getName().getKind() == UnqualifiedId::IK_DestructorName);
 }
 
 bool DeclSpec::hasTagDefinition() const {
@@ -470,6 +477,7 @@ const char *DeclSpec::getSpecifierName(DeclSpec::TST T,
   case DeclSpec::TST_typeofType:
   case DeclSpec::TST_typeofExpr:  return "typeof";
   case DeclSpec::TST_auto:        return "auto";
+  case DeclSpec::TST_auto_type:   return "__auto_type";
   case DeclSpec::TST_decltype:    return "(decltype)";
   case DeclSpec::TST_decltype_auto: return "decltype(auto)";
   case DeclSpec::TST_underlyingType: return "__underlying_type";
@@ -946,7 +954,7 @@ void DeclSpec::Finish(DiagnosticsEngine &D, Preprocessor &PP, const PrintingPoli
     FixItHint Hints[NumLocs];
     SourceLocation FirstLoc;
     for (unsigned I = 0; I != NumLocs; ++I) {
-      if (!ExtraLocs[I].isInvalid()) {
+      if (ExtraLocs[I].isValid()) {
         if (FirstLoc.isInvalid() ||
             PP.getSourceManager().isBeforeInTranslationUnit(ExtraLocs[I],
                                                             FirstLoc))

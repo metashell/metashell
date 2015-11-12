@@ -110,10 +110,15 @@ static const char *GetBlockName(unsigned BlockID,
   case bitc::TYPE_BLOCK_ID_NEW:        return "TYPE_BLOCK_ID";
   case bitc::CONSTANTS_BLOCK_ID:       return "CONSTANTS_BLOCK";
   case bitc::FUNCTION_BLOCK_ID:        return "FUNCTION_BLOCK";
+  case bitc::IDENTIFICATION_BLOCK_ID:
+    return "IDENTIFICATION_BLOCK_ID";
   case bitc::VALUE_SYMTAB_BLOCK_ID:    return "VALUE_SYMTAB";
   case bitc::METADATA_BLOCK_ID:        return "METADATA_BLOCK";
   case bitc::METADATA_ATTACHMENT_ID:   return "METADATA_ATTACHMENT_BLOCK";
   case bitc::USELIST_BLOCK_ID:         return "USELIST_BLOCK_ID";
+  case bitc::FUNCTION_SUMMARY_BLOCK_ID:
+                                       return "FUNCTION_SUMMARY_BLOCK";
+  case bitc::MODULE_STRTAB_BLOCK_ID:   return "MODULE_STRTAB_BLOCK";
   }
 }
 
@@ -165,6 +170,14 @@ static const char *GetCodeName(unsigned CodeID, unsigned BlockID,
       STRINGIFY_CODE(MODULE_CODE, ALIAS)
       STRINGIFY_CODE(MODULE_CODE, PURGEVALS)
       STRINGIFY_CODE(MODULE_CODE, GCNAME)
+      STRINGIFY_CODE(MODULE_CODE, VSTOFFSET)
+    }
+  case bitc::IDENTIFICATION_BLOCK_ID:
+    switch (CodeID) {
+    default:
+      return nullptr;
+      STRINGIFY_CODE(IDENTIFICATION_CODE, STRING)
+      STRINGIFY_CODE(IDENTIFICATION_CODE, EPOCH)
     }
   case bitc::PARAMATTR_BLOCK_ID:
     switch (CodeID) {
@@ -244,6 +257,7 @@ static const char *GetCodeName(unsigned CodeID, unsigned BlockID,
       STRINGIFY_CODE(FUNC_CODE, INST_CLEANUPRET)
       STRINGIFY_CODE(FUNC_CODE, INST_CATCHRET)
       STRINGIFY_CODE(FUNC_CODE, INST_CATCHPAD)
+      STRINGIFY_CODE(FUNC_CODE, INST_CLEANUPENDPAD)
       STRINGIFY_CODE(FUNC_CODE, INST_CATCHENDPAD)
       STRINGIFY_CODE(FUNC_CODE, INST_TERMINATEPAD)
       STRINGIFY_CODE(FUNC_CODE, INST_PHI)
@@ -265,6 +279,21 @@ static const char *GetCodeName(unsigned CodeID, unsigned BlockID,
     default: return nullptr;
     STRINGIFY_CODE(VST_CODE, ENTRY)
     STRINGIFY_CODE(VST_CODE, BBENTRY)
+    STRINGIFY_CODE(VST_CODE, FNENTRY)
+    STRINGIFY_CODE(VST_CODE, COMBINED_FNENTRY)
+    }
+  case bitc::MODULE_STRTAB_BLOCK_ID:
+    switch (CodeID) {
+    default:
+      return nullptr;
+      STRINGIFY_CODE(MST_CODE, ENTRY)
+    }
+  case bitc::FUNCTION_SUMMARY_BLOCK_ID:
+    switch (CodeID) {
+    default:
+      return nullptr;
+      STRINGIFY_CODE(FS_CODE, PERMODULE_ENTRY)
+      STRINGIFY_CODE(FS_CODE, COMBINED_ENTRY)
     }
   case bitc::METADATA_ATTACHMENT_ID:
     switch(CodeID) {
@@ -481,13 +510,37 @@ static bool ParseBlock(BitstreamCursor &Stream, unsigned BlockID,
           GetCodeName(Code, BlockID, *Stream.getBitStreamReader(),
                       CurStreamType))
         outs() << " codeid=" << Code;
-      if (Entry.ID != bitc::UNABBREV_RECORD)
+      const BitCodeAbbrev *Abbv = nullptr;
+      if (Entry.ID != bitc::UNABBREV_RECORD) {
+        Abbv = Stream.getAbbrev(Entry.ID);
         outs() << " abbrevid=" << Entry.ID;
+      }
 
       for (unsigned i = 0, e = Record.size(); i != e; ++i)
         outs() << " op" << i << "=" << (int64_t)Record[i];
 
       outs() << "/>";
+
+      if (Abbv) {
+        for (unsigned i = 1, e = Abbv->getNumOperandInfos(); i != e; ++i) {
+          const BitCodeAbbrevOp &Op = Abbv->getOperandInfo(i);
+          if (!Op.isEncoding() || Op.getEncoding() != BitCodeAbbrevOp::Array)
+            continue;
+          assert(i + 2 == e && "Array op not second to last");
+          std::string Str;
+          bool ArrayIsPrintable = true;
+          for (unsigned j = i - 1, je = Record.size(); j != je; ++j) {
+            if (!isprint(static_cast<unsigned char>(Record[j]))) {
+              ArrayIsPrintable = false;
+              break;
+            }
+            Str += (char)Record[j];
+          }
+          if (ArrayIsPrintable)
+            outs() << " record string = '" << Str << "'";
+          break;
+        }
+      }
 
       if (Blob.data()) {
         outs() << " blob data = ";

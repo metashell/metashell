@@ -313,7 +313,7 @@ inline bool isShiftedUInt(uint64_t x) {
 /// isUIntN - Checks if an unsigned integer fits into the given (dynamic)
 /// bit width.
 inline bool isUIntN(unsigned N, uint64_t x) {
-  return x == (x & (~0ULL >> (64 - N)));
+  return N >= 64 || x < (UINT64_C(1)<<(N));
 }
 
 /// isIntN - Checks if an signed integer fits into the given (dynamic)
@@ -552,7 +552,7 @@ inline uint32_t FloatToBits(float Float) {
 inline uint64_t MinAlign(uint64_t A, uint64_t B) {
   // The largest power of 2 that divides both A and B.
   //
-  // Replace "-Value" by "1+~Value" in the following commented code to avoid 
+  // Replace "-Value" by "1+~Value" in the following commented code to avoid
   // MSVC warning C4146
   //    return (A | B) & -(A | B);
   return (A | B) & (1 + ~(A | B));
@@ -599,15 +599,27 @@ inline uint64_t PowerOf2Floor(uint64_t A) {
 /// Returns the next integer (mod 2**64) that is greater than or equal to
 /// \p Value and is a multiple of \p Align. \p Align must be non-zero.
 ///
+/// If non-zero \p Skew is specified, the return value will be a minimal
+/// integer that is greater than or equal to \p Value and equal to
+/// \p Align * N + \p Skew for some integer N. If \p Skew is larger than
+/// \p Align, its value is adjusted to '\p Skew mod \p Align'.
+///
 /// Examples:
 /// \code
 ///   RoundUpToAlignment(5, 8) = 8
 ///   RoundUpToAlignment(17, 8) = 24
 ///   RoundUpToAlignment(~0LL, 8) = 0
 ///   RoundUpToAlignment(321, 255) = 510
+///
+///   RoundUpToAlignment(5, 8, 7) = 7
+///   RoundUpToAlignment(17, 8, 1) = 17
+///   RoundUpToAlignment(~0LL, 8, 3) = 3
+///   RoundUpToAlignment(321, 255, 42) = 552
 /// \endcode
-inline uint64_t RoundUpToAlignment(uint64_t Value, uint64_t Align) {
-  return (Value + Align - 1) / Align * Align;
+inline uint64_t RoundUpToAlignment(uint64_t Value, uint64_t Align,
+                                   uint64_t Skew = 0) {
+  Skew %= Align;
+  return (Value + Align - 1 - Skew) / Align * Align + Skew;
 }
 
 /// Returns the offset to the next integer (mod 2**64) that is greater than

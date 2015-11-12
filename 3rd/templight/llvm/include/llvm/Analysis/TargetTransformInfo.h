@@ -310,12 +310,17 @@ public:
                              bool HasBaseReg, int64_t Scale,
                              unsigned AddrSpace = 0) const;
 
-  /// \brief Return true if the target works with masked instruction
-  /// AVX2 allows masks for consecutive load and store for i32 and i64 elements.
-  /// AVX-512 architecture will also allow masks for non-consecutive memory
-  /// accesses.
-  bool isLegalMaskedStore(Type *DataType, int Consecutive) const;
-  bool isLegalMaskedLoad(Type *DataType, int Consecutive) const;
+  /// \brief Return true if the target supports masked load/store
+  /// AVX2 and AVX-512 targets allow masks for consecutive load and store for
+  /// 32 and 64 bit elements.
+  bool isLegalMaskedStore(Type *DataType) const;
+  bool isLegalMaskedLoad(Type *DataType) const;
+
+  /// \brief Return true if the target supports masked gather/scatter
+  /// AVX-512 fully supports gather and scatter for vectors with 32 and 64
+  /// bits scalar type.
+  bool isLegalMaskedScatter(Type *DataType) const;
+  bool isLegalMaskedGather(Type *DataType) const;
 
   /// \brief Return the cost of the scaling factor used in the addressing
   /// mode represented by AM for this target, for a load/store
@@ -356,6 +361,9 @@ public:
 
   /// \brief Don't restrict interleaved unrolling to small loops.
   bool enableAggressiveInterleaving(bool LoopHasReductions) const;
+
+  /// \brief Enable matching of interleaved access groups.
+  bool enableInterleavedAccessVectorization() const;
 
   /// \brief Return hardware support for population count.
   PopcntSupportKind getPopcntSupport(unsigned IntTyWidthInBit) const;
@@ -565,8 +573,10 @@ public:
                                      int64_t BaseOffset, bool HasBaseReg,
                                      int64_t Scale,
                                      unsigned AddrSpace) = 0;
-  virtual bool isLegalMaskedStore(Type *DataType, int Consecutive) = 0;
-  virtual bool isLegalMaskedLoad(Type *DataType, int Consecutive) = 0;
+  virtual bool isLegalMaskedStore(Type *DataType) = 0;
+  virtual bool isLegalMaskedLoad(Type *DataType) = 0;
+  virtual bool isLegalMaskedScatter(Type *DataType) = 0;
+  virtual bool isLegalMaskedGather(Type *DataType) = 0;
   virtual int getScalingFactorCost(Type *Ty, GlobalValue *BaseGV,
                                    int64_t BaseOffset, bool HasBaseReg,
                                    int64_t Scale, unsigned AddrSpace) = 0;
@@ -578,6 +588,7 @@ public:
   virtual unsigned getJumpBufSize() = 0;
   virtual bool shouldBuildLookupTables() = 0;
   virtual bool enableAggressiveInterleaving(bool LoopHasReductions) = 0;
+  virtual bool enableInterleavedAccessVectorization() = 0;
   virtual PopcntSupportKind getPopcntSupport(unsigned IntTyWidthInBit) = 0;
   virtual bool haveFastSqrt(Type *Ty) = 0;
   virtual int getFPOpCost(Type *Ty) = 0;
@@ -689,11 +700,17 @@ public:
     return Impl.isLegalAddressingMode(Ty, BaseGV, BaseOffset, HasBaseReg,
                                       Scale, AddrSpace);
   }
-  bool isLegalMaskedStore(Type *DataType, int Consecutive) override {
-    return Impl.isLegalMaskedStore(DataType, Consecutive);
+  bool isLegalMaskedStore(Type *DataType) override {
+    return Impl.isLegalMaskedStore(DataType);
   }
-  bool isLegalMaskedLoad(Type *DataType, int Consecutive) override {
-    return Impl.isLegalMaskedLoad(DataType, Consecutive);
+  bool isLegalMaskedLoad(Type *DataType) override {
+    return Impl.isLegalMaskedLoad(DataType);
+  }
+  bool isLegalMaskedScatter(Type *DataType) override {
+    return Impl.isLegalMaskedScatter(DataType);
+  }
+  bool isLegalMaskedGather(Type *DataType) override {
+    return Impl.isLegalMaskedGather(DataType);
   }
   int getScalingFactorCost(Type *Ty, GlobalValue *BaseGV, int64_t BaseOffset,
                            bool HasBaseReg, int64_t Scale,
@@ -718,6 +735,9 @@ public:
   }
   bool enableAggressiveInterleaving(bool LoopHasReductions) override {
     return Impl.enableAggressiveInterleaving(LoopHasReductions);
+  }
+  bool enableInterleavedAccessVectorization() override {
+    return Impl.enableInterleavedAccessVectorization();
   }
   PopcntSupportKind getPopcntSupport(unsigned IntTyWidthInBit) override {
     return Impl.getPopcntSupport(IntTyWidthInBit);
@@ -854,7 +874,7 @@ public:
   ///
   /// The callback will be called with a particular function for which the TTI
   /// is needed and must return a TTI object for that function.
-  TargetIRAnalysis(std::function<Result(Function &)> TTICallback);
+  TargetIRAnalysis(std::function<Result(const Function &)> TTICallback);
 
   // Value semantics. We spell out the constructors for MSVC.
   TargetIRAnalysis(const TargetIRAnalysis &Arg)
@@ -870,7 +890,7 @@ public:
     return *this;
   }
 
-  Result run(Function &F);
+  Result run(const Function &F);
 
 private:
   static char PassID;
@@ -885,10 +905,10 @@ private:
   /// the analysis and thus use a function_ref which would be lighter weight.
   /// This may also be less error prone as the callback is likely to reference
   /// the external TargetMachine, and that reference needs to never dangle.
-  std::function<Result(Function &)> TTICallback;
+  std::function<Result(const Function &)> TTICallback;
 
   /// \brief Helper function used as the callback in the default constructor.
-  static Result getDefaultTTI(Function &F);
+  static Result getDefaultTTI(const Function &F);
 };
 
 /// \brief Wrapper pass for TargetTransformInfo.
@@ -912,7 +932,7 @@ public:
 
   explicit TargetTransformInfoWrapperPass(TargetIRAnalysis TIRA);
 
-  TargetTransformInfo &getTTI(Function &F);
+  TargetTransformInfo &getTTI(const Function &F);
 };
 
 /// \brief Create an analysis pass wrapper around a TTI object.

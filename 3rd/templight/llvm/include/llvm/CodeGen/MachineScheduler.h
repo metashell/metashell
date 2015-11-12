@@ -77,6 +77,7 @@
 #ifndef LLVM_CODEGEN_MACHINESCHEDULER_H
 #define LLVM_CODEGEN_MACHINESCHEDULER_H
 
+#include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/CodeGen/MachinePassRegistry.h"
 #include "llvm/CodeGen/RegisterPressure.h"
 #include "llvm/CodeGen/ScheduleDAGInstrs.h"
@@ -87,7 +88,6 @@ namespace llvm {
 extern cl::opt<bool> ForceTopDown;
 extern cl::opt<bool> ForceBottomUp;
 
-class AliasAnalysis;
 class LiveIntervals;
 class MachineDominatorTree;
 class MachineLoopInfo;
@@ -156,8 +156,12 @@ struct MachineSchedPolicy {
   bool OnlyTopDown;
   bool OnlyBottomUp;
 
+  // Disable heuristic that tries to fetch nodes from long dependency chains
+  // first.
+  bool DisableLatencyHeuristic;
+
   MachineSchedPolicy(): ShouldTrackPressure(false), OnlyTopDown(false),
-    OnlyBottomUp(false) {}
+    OnlyBottomUp(false), DisableLatencyHeuristic(false) {}
 };
 
 /// MachineSchedStrategy - Interface to the scheduling algorithm used by
@@ -174,6 +178,8 @@ public:
   virtual void initPolicy(MachineBasicBlock::iterator Begin,
                           MachineBasicBlock::iterator End,
                           unsigned NumRegionInstrs) {}
+
+  virtual void dumpPolicy() {}
 
   /// Check if pressure tracking is needed before building the DAG and
   /// initializing this strategy. Called after initPolicy.
@@ -248,9 +254,8 @@ protected:
 #endif
 public:
   ScheduleDAGMI(MachineSchedContext *C, std::unique_ptr<MachineSchedStrategy> S,
-                bool IsPostRA)
-      : ScheduleDAGInstrs(*C->MF, C->MLI, IsPostRA,
-                          /*RemoveKillFlags=*/IsPostRA, C->LIS),
+                bool RemoveKillFlags)
+      : ScheduleDAGInstrs(*C->MF, C->MLI, C->LIS, RemoveKillFlags),
         AA(C->AA), SchedImpl(std::move(S)), Topo(SUnits, &ExitSU), CurrentTop(),
         CurrentBottom(), NextClusterPred(nullptr), NextClusterSucc(nullptr) {
 #ifndef NDEBUG
@@ -380,7 +385,7 @@ protected:
 public:
   ScheduleDAGMILive(MachineSchedContext *C,
                     std::unique_ptr<MachineSchedStrategy> S)
-      : ScheduleDAGMI(C, std::move(S), /*IsPostRA=*/false),
+      : ScheduleDAGMI(C, std::move(S), /*RemoveKillFlags=*/false),
         RegClassInfo(C->RegClassInfo), DFSResult(nullptr),
         ShouldTrackPressure(false), RPTracker(RegPressure),
         TopRPTracker(TopPressure), BotRPTracker(BotPressure) {}
@@ -857,6 +862,8 @@ public:
   void initPolicy(MachineBasicBlock::iterator Begin,
                   MachineBasicBlock::iterator End,
                   unsigned NumRegionInstrs) override;
+
+  void dumpPolicy() override;
 
   bool shouldTrackPressure() const override {
     return RegionPolicy.ShouldTrackPressure;

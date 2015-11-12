@@ -244,11 +244,12 @@ static bool checkUInt32Argument(Sema &S, const AttributeList &Attr,
 /// \brief Diagnose mutually exclusive attributes when present on a given
 /// declaration. Returns true if diagnosed.
 template <typename AttrTy>
-static bool checkAttrMutualExclusion(Sema &S, Decl *D,
-                                     const AttributeList &Attr) {
+static bool checkAttrMutualExclusion(Sema &S, Decl *D, SourceRange Range,
+                                     IdentifierInfo *Ident) {
   if (AttrTy *A = D->getAttr<AttrTy>()) {
-    S.Diag(Attr.getLoc(), diag::err_attributes_are_not_compatible)
-      << Attr.getName() << A;
+    S.Diag(Range.getBegin(), diag::err_attributes_are_not_compatible) << Ident
+                                                                      << A;
+    S.Diag(A->getLocation(), diag::note_conflicting_attribute);
     return true;
   }
   return false;
@@ -628,13 +629,10 @@ static bool checkAcquireOrderAttrCommon(Sema &S, Decl *D,
 
   // Check that this attribute only applies to lockable types.
   QualType QT = cast<ValueDecl>(D)->getType();
-  if (!QT->isDependentType()) {
-    const RecordType *RT = getRecordType(QT);
-    if (!RT || !RT->getDecl()->hasAttr<CapabilityAttr>()) {
-      S.Diag(Attr.getLoc(), diag::warn_thread_attribute_decl_not_lockable)
-        << Attr.getName();
-      return false;
-    }
+  if (!QT->isDependentType() && !typeHasCapability(S, QT)) {
+    S.Diag(Attr.getLoc(), diag::warn_thread_attribute_decl_not_lockable)
+      << Attr.getName();
+    return false;
   }
 
   // Check that all arguments are lockable objects.
@@ -1311,6 +1309,17 @@ void Sema::AddAssumeAlignedAttr(SourceRange AttrRange, Decl *D, Expr *E,
             AssumeAlignedAttr(AttrRange, Context, E, OE, SpellingListIndex));
 }
 
+/// Normalize the attribute, __foo__ becomes foo.
+/// Returns true if normalization was applied.
+static bool normalizeName(StringRef &AttrName) {
+  if (AttrName.size() > 4 && AttrName.startswith("__") &&
+      AttrName.endswith("__")) {
+    AttrName = AttrName.drop_front(2).drop_back(2);
+    return true;
+  }
+  return false;
+}
+
 static void handleOwnershipAttr(Sema &S, Decl *D, const AttributeList &AL) {
   // This attribute must be applied to a function declaration. The first
   // argument to the attribute must be an identifier, the name of the resource,
@@ -1352,11 +1361,8 @@ static void handleOwnershipAttr(Sema &S, Decl *D, const AttributeList &AL) {
 
   IdentifierInfo *Module = AL.getArgAsIdent(0)->Ident;
 
-  // Normalize the argument, __foo__ becomes foo.
   StringRef ModuleName = Module->getName();
-  if (ModuleName.startswith("__") && ModuleName.endswith("__") &&
-      ModuleName.size() > 4) {
-    ModuleName = ModuleName.drop_front(2).drop_back(2);
+  if (normalizeName(ModuleName)) {
     Module = &S.PP.getIdentifierTable().get(ModuleName);
   }
 
@@ -1518,7 +1524,7 @@ static void handleAliasAttr(Sema &S, Decl *D, const AttributeList &Attr) {
 }
 
 static void handleColdAttr(Sema &S, Decl *D, const AttributeList &Attr) {
-  if (checkAttrMutualExclusion<HotAttr>(S, D, Attr))
+  if (checkAttrMutualExclusion<HotAttr>(S, D, Attr.getRange(), Attr.getName()))
     return;
 
   D->addAttr(::new (S.Context) ColdAttr(Attr.getRange(), S.Context,
@@ -1526,7 +1532,7 @@ static void handleColdAttr(Sema &S, Decl *D, const AttributeList &Attr) {
 }
 
 static void handleHotAttr(Sema &S, Decl *D, const AttributeList &Attr) {
-  if (checkAttrMutualExclusion<ColdAttr>(S, D, Attr))
+  if (checkAttrMutualExclusion<ColdAttr>(S, D, Attr.getRange(), Attr.getName()))
     return;
 
   D->addAttr(::new (S.Context) HotAttr(Attr.getRange(), S.Context,
@@ -1568,12 +1574,13 @@ static void handleRestrictAttr(Sema &S, Decl *D, const AttributeList &Attr) {
 static void handleCommonAttr(Sema &S, Decl *D, const AttributeList &Attr) {
   if (S.LangOpts.CPlusPlus) {
     S.Diag(Attr.getLoc(), diag::err_attribute_not_supported_in_lang)
-      << Attr.getName() << AttributeLangSupport::Cpp;
+        << Attr.getName() << AttributeLangSupport::Cpp;
     return;
   }
 
-  D->addAttr(::new (S.Context) CommonAttr(Attr.getRange(), S.Context,
-                                        Attr.getAttributeSpellingListIndex()));
+  if (CommonAttr *CA = S.mergeCommonAttr(D, Attr.getRange(), Attr.getName(),
+                                         Attr.getAttributeSpellingListIndex()))
+    D->addAttr(CA);
 }
 
 static void handleNoReturnAttr(Sema &S, Decl *D, const AttributeList &attr) {
@@ -1694,6 +1701,16 @@ static void handleDependencyAttr(Sema &S, Scope *Scope, Decl *D,
   D->addAttr(::new (S.Context) CarriesDependencyAttr(
                                    Attr.getRange(), S.Context,
                                    Attr.getAttributeSpellingListIndex()));
+}
+
+static void handleNotTailCalledAttr(Sema &S, Decl *D,
+                                    const AttributeList &Attr) {
+  if (checkAttrMutualExclusion<AlwaysInlineAttr>(S, D, Attr.getRange(),
+                                                 Attr.getName()))
+    return;
+
+  D->addAttr(::new (S.Context) NotTailCalledAttr(
+      Attr.getRange(), S.Context, Attr.getAttributeSpellingListIndex()));
 }
 
 static void handleUsedAttr(Sema &S, Decl *D, const AttributeList &Attr) {
@@ -1824,12 +1841,24 @@ AvailabilityAttr *Sema::mergeAvailabilityAttr(NamedDecl *D, SourceRange Range,
                                               VersionTuple Obsoleted,
                                               bool IsUnavailable,
                                               StringRef Message,
-                                              bool Override,
+                                              AvailabilityMergeKind AMK,
                                               unsigned AttrSpellingListIndex) {
   VersionTuple MergedIntroduced = Introduced;
   VersionTuple MergedDeprecated = Deprecated;
   VersionTuple MergedObsoleted = Obsoleted;
   bool FoundAny = false;
+  bool OverrideOrImpl = false;
+  switch (AMK) {
+  case AMK_None:
+  case AMK_Redeclaration:
+    OverrideOrImpl = false;
+    break;
+
+  case AMK_Override:
+  case AMK_ProtocolImplementation:
+    OverrideOrImpl = true;
+    break;
+  }
 
   if (D->hasAttrs()) {
     AttrVec &Attrs = D->getAttrs();
@@ -1846,30 +1875,46 @@ AvailabilityAttr *Sema::mergeAvailabilityAttr(NamedDecl *D, SourceRange Range,
         continue;
       }
 
+      // If there is an existing availability attribute for this platform that
+      // is explicit and the new one is implicit use the explicit one and
+      // discard the new implicit attribute.
+      if (OldAA->getRange().isValid() && Range.isInvalid()) {
+        return nullptr;
+      }
+
+      // If there is an existing attribute for this platform that is implicit
+      // and the new attribute is explicit then erase the old one and
+      // continue processing the attributes.
+      if (Range.isValid() && OldAA->getRange().isInvalid()) {
+        Attrs.erase(Attrs.begin() + i);
+        --e;
+        continue;
+      }
+
       FoundAny = true;
       VersionTuple OldIntroduced = OldAA->getIntroduced();
       VersionTuple OldDeprecated = OldAA->getDeprecated();
       VersionTuple OldObsoleted = OldAA->getObsoleted();
       bool OldIsUnavailable = OldAA->getUnavailable();
 
-      if (!versionsMatch(OldIntroduced, Introduced, Override) ||
-          !versionsMatch(Deprecated, OldDeprecated, Override) ||
-          !versionsMatch(Obsoleted, OldObsoleted, Override) ||
+      if (!versionsMatch(OldIntroduced, Introduced, OverrideOrImpl) ||
+          !versionsMatch(Deprecated, OldDeprecated, OverrideOrImpl) ||
+          !versionsMatch(Obsoleted, OldObsoleted, OverrideOrImpl) ||
           !(OldIsUnavailable == IsUnavailable ||
-            (Override && !OldIsUnavailable && IsUnavailable))) {
-        if (Override) {
+            (OverrideOrImpl && !OldIsUnavailable && IsUnavailable))) {
+        if (OverrideOrImpl) {
           int Which = -1;
           VersionTuple FirstVersion;
           VersionTuple SecondVersion;
-          if (!versionsMatch(OldIntroduced, Introduced, Override)) {
+          if (!versionsMatch(OldIntroduced, Introduced, OverrideOrImpl)) {
             Which = 0;
             FirstVersion = OldIntroduced;
             SecondVersion = Introduced;
-          } else if (!versionsMatch(Deprecated, OldDeprecated, Override)) {
+          } else if (!versionsMatch(Deprecated, OldDeprecated, OverrideOrImpl)) {
             Which = 1;
             FirstVersion = Deprecated;
             SecondVersion = OldDeprecated;
-          } else if (!versionsMatch(Obsoleted, OldObsoleted, Override)) {
+          } else if (!versionsMatch(Obsoleted, OldObsoleted, OverrideOrImpl)) {
             Which = 2;
             FirstVersion = Obsoleted;
             SecondVersion = OldObsoleted;
@@ -1878,15 +1923,20 @@ AvailabilityAttr *Sema::mergeAvailabilityAttr(NamedDecl *D, SourceRange Range,
           if (Which == -1) {
             Diag(OldAA->getLocation(),
                  diag::warn_mismatched_availability_override_unavail)
-              << AvailabilityAttr::getPrettyPlatformName(Platform->getName());
+              << AvailabilityAttr::getPrettyPlatformName(Platform->getName())
+              << (AMK == AMK_Override);
           } else {
             Diag(OldAA->getLocation(),
                  diag::warn_mismatched_availability_override)
               << Which
               << AvailabilityAttr::getPrettyPlatformName(Platform->getName())
-              << FirstVersion.getAsString() << SecondVersion.getAsString();
+              << FirstVersion.getAsString() << SecondVersion.getAsString()
+              << (AMK == AMK_Override);
           }
-          Diag(Range.getBegin(), diag::note_overridden_method);
+          if (AMK == AMK_Override)
+            Diag(Range.getBegin(), diag::note_overridden_method);
+          else
+            Diag(Range.getBegin(), diag::note_protocol_method);
         } else {
           Diag(OldAA->getLocation(), diag::warn_mismatched_availability);
           Diag(Range.getBegin(), diag::note_previous_attribute);
@@ -1929,11 +1979,11 @@ AvailabilityAttr *Sema::mergeAvailabilityAttr(NamedDecl *D, SourceRange Range,
       MergedObsoleted == Obsoleted)
     return nullptr;
 
-  // Only create a new attribute if !Override, but we want to do
+  // Only create a new attribute if !OverrideOrImpl, but we want to do
   // the checking.
   if (!checkAvailabilityAttr(*this, Range, Platform, MergedIntroduced,
                              MergedDeprecated, MergedObsoleted) &&
-      !Override) {
+      !OverrideOrImpl) {
     return ::new (Context) AvailabilityAttr(Range, Context, Platform,
                                             Introduced, Deprecated,
                                             Obsoleted, IsUnavailable, Message,
@@ -1974,10 +2024,78 @@ static void handleAvailabilityAttr(Sema &S, Decl *D,
                                                       Deprecated.Version,
                                                       Obsoleted.Version,
                                                       IsUnavailable, Str,
-                                                      /*Override=*/false,
+                                                      Sema::AMK_None,
                                                       Index);
   if (NewAttr)
     D->addAttr(NewAttr);
+
+  // Transcribe "ios" to "watchos" (and add a new attribute) if the versioning
+  // matches before the start of the watchOS platform.
+  if (S.Context.getTargetInfo().getTriple().isWatchOS()) {
+    IdentifierInfo *NewII = nullptr;
+    if (II->getName() == "ios")
+      NewII = &S.Context.Idents.get("watchos");
+    else if (II->getName() == "ios_app_extension")
+      NewII = &S.Context.Idents.get("watchos_app_extension");
+
+    if (NewII) {
+        auto adjustWatchOSVersion = [](VersionTuple Version) -> VersionTuple {
+          if (Version.empty())
+            return Version;
+          auto Major = Version.getMajor();
+          auto NewMajor = Major >= 9 ? Major - 7 : 0;
+          if (NewMajor >= 2) {
+            if (Version.getMinor().hasValue()) {
+              if (Version.getSubminor().hasValue())
+                return VersionTuple(NewMajor, Version.getMinor().getValue(),
+                                    Version.getSubminor().getValue());
+              else
+                return VersionTuple(NewMajor, Version.getMinor().getValue());
+            }
+          }
+
+          return VersionTuple(2, 0);
+        };
+
+        auto NewIntroduced = adjustWatchOSVersion(Introduced.Version);
+        auto NewDeprecated = adjustWatchOSVersion(Deprecated.Version);
+        auto NewObsoleted = adjustWatchOSVersion(Obsoleted.Version);
+
+        AvailabilityAttr *NewAttr = S.mergeAvailabilityAttr(ND,
+                                                            SourceRange(),
+                                                            NewII,
+                                                            NewIntroduced,
+                                                            NewDeprecated,
+                                                            NewObsoleted,
+                                                            IsUnavailable, Str,
+                                                            Sema::AMK_None,
+                                                            Index);
+        if (NewAttr)
+          D->addAttr(NewAttr);
+      }
+  } else if (S.Context.getTargetInfo().getTriple().isTvOS()) {
+    // Transcribe "ios" to "tvos" (and add a new attribute) if the versioning
+    // matches before the start of the tvOS platform.
+    IdentifierInfo *NewII = nullptr;
+    if (II->getName() == "ios")
+      NewII = &S.Context.Idents.get("tvos");
+    else if (II->getName() == "ios_app_extension")
+      NewII = &S.Context.Idents.get("tvos_app_extension");
+
+    if (NewII) {
+        AvailabilityAttr *NewAttr = S.mergeAvailabilityAttr(ND,
+                                                            SourceRange(),
+                                                            NewII,
+                                                            Introduced.Version,
+                                                            Deprecated.Version,
+                                                            Obsoleted.Version,
+                                                            IsUnavailable, Str,
+                                                            Sema::AMK_None,
+                                                            Index);
+        if (NewAttr)
+          D->addAttr(NewAttr);
+      }
+  }
 }
 
 template <class T>
@@ -2491,17 +2609,17 @@ static void handleFormatArgAttr(Sema &S, Decl *D, const AttributeList &Attr) {
   if (!checkFunctionOrMethodParameterIndex(S, D, Attr, 1, IdxExpr, Idx))
     return;
 
-  // make sure the format string is really a string
+  // Make sure the format string is really a string.
   QualType Ty = getFunctionOrMethodParamType(D, Idx);
 
-  bool not_nsstring_type = !isNSStringType(Ty, S.Context);
-  if (not_nsstring_type &&
+  bool NotNSStringTy = !isNSStringType(Ty, S.Context);
+  if (NotNSStringTy &&
       !isCFStringType(Ty, S.Context) &&
       (!Ty->isPointerType() ||
        !Ty->getAs<PointerType>()->getPointeeType()->isCharType())) {
     S.Diag(Attr.getLoc(), diag::err_format_attribute_not)
-        << (not_nsstring_type ? "a string type" : "an NSString")
-        << IdxExpr->getSourceRange() << getFunctionOrMethodParamRange(D, 0);
+        << "a string type" << IdxExpr->getSourceRange()
+        << getFunctionOrMethodParamRange(D, 0);
     return;
   }
   Ty = getFunctionOrMethodResultType(D);
@@ -2510,7 +2628,7 @@ static void handleFormatArgAttr(Sema &S, Decl *D, const AttributeList &Attr) {
       (!Ty->isPointerType() ||
        !Ty->getAs<PointerType>()->getPointeeType()->isCharType())) {
     S.Diag(Attr.getLoc(), diag::err_format_attribute_result_not)
-        << (not_nsstring_type ? "string type" : "NSString")
+        << (NotNSStringTy ? "string type" : "NSString")
         << IdxExpr->getSourceRange() << getFunctionOrMethodParamRange(D, 0);
     return;
   }
@@ -2634,9 +2752,7 @@ static void handleFormatAttr(Sema &S, Decl *D, const AttributeList &Attr) {
   IdentifierInfo *II = Attr.getArgAsIdent(0)->Ident;
   StringRef Format = II->getName();
 
-  // Normalize the argument, __foo__ becomes foo.
-  if (Format.startswith("__") && Format.endswith("__")) {
-    Format = Format.substr(2, Format.size() - 4);
+  if (normalizeName(Format)) {
     // If we've modified the string name, we need a new identifier for it.
     II = &S.Context.Idents.get(Format);
   }
@@ -3117,9 +3233,7 @@ static void handleModeAttr(Sema &S, Decl *D, const AttributeList &Attr) {
   IdentifierInfo *Name = Attr.getArgAsIdent(0)->Ident;
   StringRef Str = Name->getName();
 
-  // Normalize the attribute name, __foo__ becomes foo.
-  if (Str.startswith("__") && Str.endswith("__"))
-    Str = Str.substr(2, Str.size() - 4);
+  normalizeName(Str);
 
   unsigned DestWidth = 0;
   bool IntegerMode = true;
@@ -3281,6 +3395,42 @@ AlwaysInlineAttr *Sema::mergeAlwaysInlineAttr(Decl *D, SourceRange Range,
                                           AttrSpellingListIndex);
 }
 
+CommonAttr *Sema::mergeCommonAttr(Decl *D, SourceRange Range,
+                                  IdentifierInfo *Ident,
+                                  unsigned AttrSpellingListIndex) {
+  if (checkAttrMutualExclusion<InternalLinkageAttr>(*this, D, Range, Ident))
+    return nullptr;
+
+  return ::new (Context) CommonAttr(Range, Context, AttrSpellingListIndex);
+}
+
+InternalLinkageAttr *
+Sema::mergeInternalLinkageAttr(Decl *D, SourceRange Range,
+                               IdentifierInfo *Ident,
+                               unsigned AttrSpellingListIndex) {
+  if (auto VD = dyn_cast<VarDecl>(D)) {
+    // Attribute applies to Var but not any subclass of it (like ParmVar,
+    // ImplicitParm or VarTemplateSpecialization).
+    if (VD->getKind() != Decl::Var) {
+      Diag(Range.getBegin(), diag::warn_attribute_wrong_decl_type)
+          << Ident << (getLangOpts().CPlusPlus ? ExpectedFunctionVariableOrClass
+                                               : ExpectedVariableOrFunction);
+      return nullptr;
+    }
+    // Attribute does not apply to non-static local variables.
+    if (VD->hasLocalStorage()) {
+      Diag(VD->getLocation(), diag::warn_internal_linkage_local_storage);
+      return nullptr;
+    }
+  }
+
+  if (checkAttrMutualExclusion<CommonAttr>(*this, D, Range, Ident))
+    return nullptr;
+
+  return ::new (Context)
+      InternalLinkageAttr(Range, Context, AttrSpellingListIndex);
+}
+
 MinSizeAttr *Sema::mergeMinSizeAttr(Decl *D, SourceRange Range,
                                     unsigned AttrSpellingListIndex) {
   if (OptimizeNoneAttr *Optnone = D->getAttr<OptimizeNoneAttr>()) {
@@ -3317,6 +3467,10 @@ OptimizeNoneAttr *Sema::mergeOptimizeNoneAttr(Decl *D, SourceRange Range,
 
 static void handleAlwaysInlineAttr(Sema &S, Decl *D,
                                    const AttributeList &Attr) {
+  if (checkAttrMutualExclusion<NotTailCalledAttr>(S, D, Attr.getRange(),
+                                                  Attr.getName()))
+    return;
+
   if (AlwaysInlineAttr *Inline = S.mergeAlwaysInlineAttr(
           D, Attr.getRange(), Attr.getName(),
           Attr.getAttributeSpellingListIndex()))
@@ -3350,6 +3504,7 @@ static void handleGlobalAttr(Sema &S, Decl *D, const AttributeList &Attr) {
   D->addAttr(::new (S.Context)
               CUDAGlobalAttr(Attr.getRange(), S.Context,
                              Attr.getAttributeSpellingListIndex()));
+
 }
 
 static void handleGNUInlineAttr(Sema &S, Decl *D, const AttributeList &Attr) {
@@ -3899,7 +4054,8 @@ static void handleObjCRequiresSuperAttr(Sema &S, Decl *D,
 
 static void handleCFAuditedTransferAttr(Sema &S, Decl *D,
                                         const AttributeList &Attr) {
-  if (checkAttrMutualExclusion<CFUnknownTransferAttr>(S, D, Attr))
+  if (checkAttrMutualExclusion<CFUnknownTransferAttr>(S, D, Attr.getRange(),
+                                                      Attr.getName()))
     return;
 
   D->addAttr(::new (S.Context)
@@ -3909,7 +4065,8 @@ static void handleCFAuditedTransferAttr(Sema &S, Decl *D,
 
 static void handleCFUnknownTransferAttr(Sema &S, Decl *D,
                                         const AttributeList &Attr) {
-  if (checkAttrMutualExclusion<CFAuditedTransferAttr>(S, D, Attr))
+  if (checkAttrMutualExclusion<CFAuditedTransferAttr>(S, D, Attr.getRange(),
+                                                      Attr.getName()))
     return;
 
   D->addAttr(::new (S.Context)
@@ -4335,6 +4492,14 @@ static void handleDLLAttr(Sema &S, Decl *D, const AttributeList &A) {
     }
   }
 
+  if (auto *MD = dyn_cast<CXXMethodDecl>(D)) {
+    if (S.Context.getTargetInfo().getCXXABI().isMicrosoft() &&
+        MD->getParent()->isLambda()) {
+      S.Diag(A.getRange().getBegin(), diag::err_attribute_dll_lambda) << A.getName();
+      return;
+    }
+  }
+
   unsigned Index = A.getAttributeSpellingListIndex();
   Attr *NewAttr = A.getKind() == AttributeList::AT_DLLExport
                       ? (Attr *)S.mergeDLLExportAttr(D, A.getRange(), Index)
@@ -4510,8 +4675,10 @@ static void handleNoSanitizeAttr(Sema &S, Decl *D, const AttributeList &Attr) {
 
 static void handleNoSanitizeSpecificAttr(Sema &S, Decl *D,
                                          const AttributeList &Attr) {
+  StringRef AttrName = Attr.getName()->getName();
+  normalizeName(AttrName);
   std::string SanitizerName =
-      llvm::StringSwitch<std::string>(Attr.getName()->getName())
+      llvm::StringSwitch<std::string>(AttrName)
           .Case("no_address_safety_analysis", "address")
           .Case("no_sanitize_address", "address")
           .Case("no_sanitize_thread", "thread")
@@ -4519,6 +4686,14 @@ static void handleNoSanitizeSpecificAttr(Sema &S, Decl *D,
   D->addAttr(::new (S.Context)
                  NoSanitizeAttr(Attr.getRange(), S.Context, &SanitizerName, 1,
                                 Attr.getAttributeSpellingListIndex()));
+}
+
+static void handleInternalLinkageAttr(Sema &S, Decl *D,
+                                      const AttributeList &Attr) {
+  if (InternalLinkageAttr *Internal =
+          S.mergeInternalLinkageAttr(D, Attr.getRange(), Attr.getName(),
+                                     Attr.getAttributeSpellingListIndex()))
+    D->addAttr(Internal);
 }
 
 /// Handles semantic checking for features that are common to all attributes,
@@ -4878,6 +5053,9 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
   case AttributeList::AT_ReturnsTwice:
     handleSimpleAttribute<ReturnsTwiceAttr>(S, D, Attr);
     break;
+  case AttributeList::AT_NotTailCalled:
+    handleNotTailCalledAttr(S, D, Attr);
+    break;
   case AttributeList::AT_Used:
     handleUsedAttr(S, D, Attr);
     break;
@@ -4961,6 +5139,9 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
     break;
   case AttributeList::AT_OpenCLImageAccess:
     handleSimpleAttribute<OpenCLImageAccessAttr>(S, D, Attr);
+    break;
+  case AttributeList::AT_InternalLinkage:
+    handleInternalLinkageAttr(S, D, Attr);
     break;
 
   // Microsoft attributes:
@@ -5303,26 +5484,50 @@ void Sema::ProcessDeclAttributes(Scope *S, Decl *D, const Declarator &PD) {
 }
 
 /// Is the given declaration allowed to use a forbidden type?
-static bool isForbiddenTypeAllowed(Sema &S, Decl *decl) {
+/// If so, it'll still be annotated with an attribute that makes it
+/// illegal to actually use.
+static bool isForbiddenTypeAllowed(Sema &S, Decl *decl,
+                                   const DelayedDiagnostic &diag,
+                                   UnavailableAttr::ImplicitReason &reason) {
   // Private ivars are always okay.  Unfortunately, people don't
   // always properly make their ivars private, even in system headers.
   // Plus we need to make fields okay, too.
-  // Function declarations in sys headers will be marked unavailable.
   if (!isa<FieldDecl>(decl) && !isa<ObjCPropertyDecl>(decl) &&
       !isa<FunctionDecl>(decl))
     return false;
 
-  // Require it to be declared in a system header.
-  return S.Context.getSourceManager().isInSystemHeader(decl->getLocation());
+  // Silently accept unsupported uses of __weak in both user and system
+  // declarations when it's been disabled, for ease of integration with
+  // -fno-objc-arc files.  We do have to take some care against attempts
+  // to define such things;  for now, we've only done that for ivars
+  // and properties.
+  if ((isa<ObjCIvarDecl>(decl) || isa<ObjCPropertyDecl>(decl))) {
+    if (diag.getForbiddenTypeDiagnostic() == diag::err_arc_weak_disabled ||
+        diag.getForbiddenTypeDiagnostic() == diag::err_arc_weak_no_runtime) {
+      reason = UnavailableAttr::IR_ForbiddenWeak;
+      return true;
+    }
+  }
+
+  // Allow all sorts of things in system headers.
+  if (S.Context.getSourceManager().isInSystemHeader(decl->getLocation())) {
+    // Currently, all the failures dealt with this way are due to ARC
+    // restrictions.
+    reason = UnavailableAttr::IR_ARCForbiddenType;
+    return true;
+  }
+
+  return false;
 }
 
 /// Handle a delayed forbidden-type diagnostic.
 static void handleDelayedForbiddenType(Sema &S, DelayedDiagnostic &diag,
                                        Decl *decl) {
-  if (decl && isForbiddenTypeAllowed(S, decl)) {
-    decl->addAttr(UnavailableAttr::CreateImplicit(S.Context,
-                        "this system declaration uses an unsupported type",
-                        diag.Loc));
+  auto reason = UnavailableAttr::IR_None;
+  if (decl && isForbiddenTypeAllowed(S, decl, diag, reason)) {
+    assert(reason && "didn't set reason?");
+    decl->addAttr(UnavailableAttr::CreateImplicit(S.Context, "", reason,
+                                                  diag.Loc));
     return;
   }
   if (S.getLangOpts().ObjCAutoRefCount)
@@ -5375,6 +5580,7 @@ static void DoEmitAvailabilityWarning(Sema &S, Sema::AvailabilityDiagnostic K,
                                       bool ObjCPropertyAccess) {
   // Diagnostics for deprecated or unavailable.
   unsigned diag, diag_message, diag_fwdclass_message;
+  unsigned diag_available_here = diag::note_availability_specified_here;
 
   // Matches 'diag::note_property_attribute' options.
   unsigned property_note_select;
@@ -5404,6 +5610,50 @@ static void DoEmitAvailabilityWarning(Sema &S, Sema::AvailabilityDiagnostic K,
     diag_fwdclass_message = diag::warn_unavailable_fwdclass_message;
     property_note_select = /* unavailable */ 1;
     available_here_select_kind = /* unavailable */ 0;
+
+    if (auto attr = D->getAttr<UnavailableAttr>()) {
+      if (attr->isImplicit() && attr->getImplicitReason()) {
+        // Most of these failures are due to extra restrictions in ARC;
+        // reflect that in the primary diagnostic when applicable.
+        auto flagARCError = [&] {
+          if (S.getLangOpts().ObjCAutoRefCount &&
+              S.getSourceManager().isInSystemHeader(D->getLocation()))
+            diag = diag::err_unavailable_in_arc;
+        };
+
+        switch (attr->getImplicitReason()) {
+        case UnavailableAttr::IR_None: break;
+
+        case UnavailableAttr::IR_ARCForbiddenType:
+          flagARCError();
+          diag_available_here = diag::note_arc_forbidden_type;
+          break;
+
+        case UnavailableAttr::IR_ForbiddenWeak:
+          if (S.getLangOpts().ObjCWeakRuntime)
+            diag_available_here = diag::note_arc_weak_disabled;
+          else
+            diag_available_here = diag::note_arc_weak_no_runtime;
+          break;
+
+        case UnavailableAttr::IR_ARCForbiddenConversion:
+          flagARCError();
+          diag_available_here = diag::note_performs_forbidden_arc_conversion;
+          break;
+
+        case UnavailableAttr::IR_ARCInitReturnsUnrelated:
+          flagARCError();
+          diag_available_here = diag::note_arc_init_returns_unrelated;
+          break;
+
+        case UnavailableAttr::IR_ARCFieldWithOwnership:
+          flagARCError();
+          diag_available_here = diag::note_arc_field_with_ownership;
+          break;
+        }
+      }
+    }
+
     break;
 
   case Sema::AD_Partial:
@@ -5430,7 +5680,7 @@ static void DoEmitAvailabilityWarning(Sema &S, Sema::AvailabilityDiagnostic K,
     S.Diag(UnknownObjCClass->getLocation(), diag::note_forward_class);
   }
 
-  S.Diag(D->getLocation(), diag::note_availability_specified_here)
+  S.Diag(D->getLocation(), diag_available_here)
       << D << available_here_select_kind;
   if (K == Sema::AD_Partial)
     S.Diag(Loc, diag::note_partial_availability_silence) << D;

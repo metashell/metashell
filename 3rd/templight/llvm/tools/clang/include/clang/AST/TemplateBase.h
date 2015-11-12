@@ -520,7 +520,7 @@ class TemplateArgumentListInfo {
 
   // This can leak if used in an AST node, use ASTTemplateArgumentListInfo
   // instead.
-  void* operator new(size_t bytes, ASTContext& C);
+  void *operator new(size_t bytes, ASTContext &C) = delete;
 
 public:
   TemplateArgumentListInfo() {}
@@ -539,6 +539,10 @@ public:
 
   const TemplateArgumentLoc *getArgumentArray() const {
     return Arguments.data();
+  }
+
+  llvm::ArrayRef<TemplateArgumentLoc> arguments() const {
+    return Arguments;
   }
 
   const TemplateArgumentLoc &operator[](unsigned I) const {

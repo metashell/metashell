@@ -104,12 +104,13 @@ protected:
   ///
   /// Note, this should *NOT* be used directly by any class other than User.
   /// User uses this value to find the Use list.
-  enum : unsigned { NumUserOperandsBits = 29 };
+  enum : unsigned { NumUserOperandsBits = 28 };
   unsigned NumUserOperands : NumUserOperandsBits;
 
   bool IsUsedByMD : 1;
   bool HasName : 1;
   bool HasHungOffUses : 1;
+  bool HasDescriptor : 1;
 
 private:
   template <typename UseT> // UseT == 'Use' or 'const Use'
@@ -201,8 +202,9 @@ public:
 
   /// \brief Implement operator<< on Value.
   /// @{
-  void print(raw_ostream &O) const;
-  void print(raw_ostream &O, ModuleSlotTracker &MST) const;
+  void print(raw_ostream &O, bool IsForDebug = false) const;
+  void print(raw_ostream &O, ModuleSlotTracker &MST,
+             bool IsForDebug = false) const;
   /// @}
 
   /// \brief Print the name of this Value out to the specified raw_ostream.

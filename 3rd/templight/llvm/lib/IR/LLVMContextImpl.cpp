@@ -21,12 +21,14 @@ using namespace llvm;
 
 LLVMContextImpl::LLVMContextImpl(LLVMContext &C)
   : TheTrueVal(nullptr), TheFalseVal(nullptr),
+    TheNoneToken(nullptr),
     VoidTy(C, Type::VoidTyID),
     LabelTy(C, Type::LabelTyID),
     HalfTy(C, Type::HalfTyID),
     FloatTy(C, Type::FloatTyID),
     DoubleTy(C, Type::DoubleTyID),
     MetadataTy(C, Type::MetadataTyID),
+    TokenTy(C, Type::TokenTyID),
     X86_FP80Ty(C, Type::X86_FP80TyID),
     FP128Ty(C, Type::FP128TyID),
     PPC_FP128Ty(C, Type::PPC_FP128TyID),
@@ -216,6 +218,23 @@ unsigned MDNodeOpsKey::calculateHash(MDNode *N, unsigned Offset) {
 
 unsigned MDNodeOpsKey::calculateHash(ArrayRef<Metadata *> Ops) {
   return hash_combine_range(Ops.begin(), Ops.end());
+}
+
+StringMapEntry<uint32_t> *LLVMContextImpl::getOrInsertBundleTag(StringRef Tag) {
+  uint32_t NewIdx = BundleTagCache.size();
+  return &*(BundleTagCache.insert(std::make_pair(Tag, NewIdx)).first);
+}
+
+void LLVMContextImpl::getOperandBundleTags(SmallVectorImpl<StringRef> &Tags) const {
+  Tags.resize(BundleTagCache.size());
+  for (const auto &T : BundleTagCache)
+    Tags[T.second] = T.first();
+}
+
+uint32_t LLVMContextImpl::getOperandBundleTagID(StringRef Tag) const {
+  auto I = BundleTagCache.find(Tag);
+  assert(I != BundleTagCache.end() && "Unknown tag!");
+  return I->second;
 }
 
 // ConstantsContext anchors

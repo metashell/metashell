@@ -87,6 +87,7 @@ public:
     Legal,      // The target natively supports this operation.
     Promote,    // This operation should be executed in a larger type.
     Expand,     // Try to expand this to other ops, otherwise use a libcall.
+    LibCall,    // Don't try to expand this to other ops, always use a libcall.
     Custom      // Use the LowerOperation hook to implement custom lowering.
   };
 
@@ -124,15 +125,14 @@ public:
                           // mask (ex: x86 blends).
   };
 
-  /// Enum that specifies what a AtomicRMWInst is expanded to, if at all. Exists
-  /// because different targets have different levels of support for these
-  /// atomic RMW instructions, and also have different options w.r.t. what they
-  /// should expand to.
-  enum class AtomicRMWExpansionKind {
+  /// Enum that specifies what an atomic load/AtomicRMWInst is expanded
+  /// to, if at all. Exists because different targets have different levels of
+  /// support for these atomic instructions, and also have different options
+  /// w.r.t. what they should expand to.
+  enum class AtomicExpansionKind {
     None,      // Don't expand the instruction.
     LLSC,      // Expand the instruction into loadlinked/storeconditional; used
-               // by ARM/AArch64. Implies `hasLoadLinkedStoreConditional`
-               // returns true.
+               // by ARM/AArch64.
     CmpXChg,   // Expand the instruction into cmpxchg; used by at least X86.
   };
 
@@ -226,7 +226,11 @@ public:
 
   /// Return true if integer divide is usually cheaper than a sequence of
   /// several shifts, adds, and multiplies for this target.
-  bool isIntDivCheap() const { return IntDivIsCheap; }
+  /// The definition of "cheaper" may depend on whether we're optimizing
+  /// for speed or for size.
+  virtual bool isIntDivCheap(EVT VT, AttributeSet Attr) const {
+    return false;
+  }
 
   /// Return true if sqrt(x) is as cheap or cheaper than 1 / rsqrt(x)
   bool isFsqrtCheap() const {
@@ -241,9 +245,6 @@ public:
   const DenseMap<unsigned int, unsigned int> &getBypassSlowDivWidths() const {
     return BypassSlowDivWidths;
   }
-
-  /// Return true if pow2 sdiv is cheaper than a chain of sra/srl/add/sra.
-  bool isPow2SDivCheap() const { return Pow2SDivIsCheap; }
 
   /// Return true if Flow Control is an expensive operation that should be
   /// avoided.
@@ -672,9 +673,9 @@ public:
            ((unsigned)VT.SimpleTy >> 4) < array_lengthof(CondCodeActions[0]) &&
            "Table isn't big enough!");
     // See setCondCodeAction for how this is encoded.
-    uint32_t Shift = 2 * (VT.SimpleTy & 0xF);
-    uint32_t Value = CondCodeActions[CC][VT.SimpleTy >> 4];
-    LegalizeAction Action = (LegalizeAction) ((Value >> Shift) & 0x3);
+    uint32_t Shift = 4 * (VT.SimpleTy & 0x7);
+    uint32_t Value = CondCodeActions[CC][VT.SimpleTy >> 3];
+    LegalizeAction Action = (LegalizeAction) ((Value >> Shift) & 0xF);
     assert(Action != Promote && "Can't promote condition code!");
     return Action;
   }
@@ -832,6 +833,10 @@ public:
     return TargetDAGCombineArray[NT >> 3] & (1 << (NT&7));
   }
 
+  unsigned getGatherAllAliasesMaxDepth() const {
+    return GatherAllAliasesMaxDepth;
+  }
+
   /// \brief Get maximum # of store operations permitted for llvm.memset
   ///
   /// This function returns the maximum number of store operations permitted
@@ -885,7 +890,7 @@ public:
   bool allowsMemoryAccess(LLVMContext &Context, const DataLayout &DL, EVT VT,
                           unsigned AddrSpace = 0, unsigned Alignment = 1,
                           bool *Fast = nullptr) const;
-  
+
   /// Returns the target specific optimal type for load and store operations as
   /// a result of memset, memcpy, and memmove lowering.
   ///
@@ -938,15 +943,19 @@ public:
   }
 
   /// If a physical register, this returns the register that receives the
-  /// exception address on entry to a landing pad.
-  unsigned getExceptionPointerRegister() const {
-    return ExceptionPointerRegister;
+  /// exception address on entry to an EH pad.
+  virtual unsigned
+  getExceptionPointerRegister(const Constant *PersonalityFn) const {
+    // 0 is guaranteed to be the NoRegister value on all targets
+    return 0;
   }
 
   /// If a physical register, this returns the register that receives the
   /// exception typeid on entry to a landing pad.
-  unsigned getExceptionSelectorRegister() const {
-    return ExceptionSelectorRegister;
+  virtual unsigned
+  getExceptionSelectorRegister(const Constant *PersonalityFn) const {
+    // 0 is guaranteed to be the NoRegister value on all targets
+    return 0;
   }
 
   /// Returns the target's jmp_buf size in bytes (if never set, the default is
@@ -995,6 +1004,10 @@ public:
     return false;
   }
 
+  /// If the target has a standard location for the unsafe stack pointer,
+  /// returns the address of that location. Otherwise, returns nullptr.
+  virtual Value *getSafeStackPointerLocation(IRBuilder<> &IRB) const;
+
   /// Returns true if a cast between SrcAS and DestAS is a noop.
   virtual bool isNoopAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const {
     return false;
@@ -1025,10 +1038,6 @@ public:
   //===--------------------------------------------------------------------===//
   /// \name Helpers for atomic expansion.
   /// @{
-
-  /// True if AtomicExpandPass should use emitLoadLinked/emitStoreConditional
-  /// and expand AtomicCmpXchgInst.
-  virtual bool hasLoadLinkedStoreConditional() const { return false; }
 
   /// Perform a load-linked operation on Addr, returning a "Value *" with the
   /// corresponding pointee type. This may entail some non-trivial operations to
@@ -1101,6 +1110,14 @@ public:
   }
   /// @}
 
+  // Emits code that executes when the comparison result in the ll/sc
+  // expansion of a cmpxchg instruction is such that the store-conditional will
+  // not execute.  This makes it possible to balance out the load-linked with
+  // a dedicated instruction, if desired.
+  // E.g., on ARM, if ldrex isn't followed by strex, the exclusive monitor would
+  // be unnecessarily held, except if clrex, inserted by this hook, is executed.
+  virtual void emitAtomicCmpXchgNoStoreLLBalance(IRBuilder<> &Builder) const {}
+
   /// Returns true if the given (atomic) store should be expanded by the
   /// IR-level AtomicExpand pass into an "atomic xchg" which ignores its input.
   virtual bool shouldExpandAtomicStoreInIR(StoreInst *SI) const {
@@ -1110,18 +1127,25 @@ public:
   /// Returns true if arguments should be sign-extended in lib calls.
   virtual bool shouldSignExtendTypeInLibCall(EVT Type, bool IsSigned) const {
     return IsSigned;
- }
+  }
 
-  /// Returns true if the given (atomic) load should be expanded by the
-  /// IR-level AtomicExpand pass into a load-linked instruction
-  /// (through emitLoadLinked()).
-  virtual bool shouldExpandAtomicLoadInIR(LoadInst *LI) const { return false; }
+  /// Returns how the given (atomic) load should be expanded by the
+  /// IR-level AtomicExpand pass.
+  virtual AtomicExpansionKind shouldExpandAtomicLoadInIR(LoadInst *LI) const {
+    return AtomicExpansionKind::None;
+  }
+
+  /// Returns true if the given atomic cmpxchg should be expanded by the
+  /// IR-level AtomicExpand pass into a load-linked/store-conditional sequence
+  /// (through emitLoadLinked() and emitStoreConditional()).
+  virtual bool shouldExpandAtomicCmpXchgInIR(AtomicCmpXchgInst *AI) const {
+    return false;
+  }
 
   /// Returns how the IR-level AtomicExpand pass should expand the given
   /// AtomicRMW, if at all. Default is to never expand.
-  virtual AtomicRMWExpansionKind
-  shouldExpandAtomicRMWInIR(AtomicRMWInst *) const {
-    return AtomicRMWExpansionKind::None;
+  virtual AtomicExpansionKind shouldExpandAtomicRMWInIR(AtomicRMWInst *) const {
+    return AtomicExpansionKind::None;
   }
 
   /// On some platforms, an AtomicRMW that never actually modifies the value
@@ -1212,18 +1236,6 @@ protected:
     StackPointerRegisterToSaveRestore = R;
   }
 
-  /// If set to a physical register, this sets the register that receives the
-  /// exception address on entry to a landing pad.
-  void setExceptionPointerRegister(unsigned R) {
-    ExceptionPointerRegister = R;
-  }
-
-  /// If set to a physical register, this sets the register that receives the
-  /// exception typeid on entry to a landing pad.
-  void setExceptionSelectorRegister(unsigned R) {
-    ExceptionSelectorRegister = R;
-  }
-
   /// Tells the code generator not to expand operations into sequences that use
   /// the select operations if possible.
   void setSelectIsExpensive(bool isExpensive = true) {
@@ -1252,11 +1264,6 @@ protected:
   /// control.
   void setJumpIsExpensive(bool isExpensive = true);
 
-  /// Tells the code generator that integer divide is expensive, and if
-  /// possible, should be replaced by an alternate sequence of instructions not
-  /// containing an integer divide.
-  void setIntDivIsCheap(bool isCheap = true) { IntDivIsCheap = isCheap; }
-
   /// Tells the code generator that fsqrt is cheap, and should not be replaced
   /// with an alternative sequence of instructions.
   void setFsqrtIsCheap(bool isCheap = true) { FsqrtIsCheap = isCheap; }
@@ -1271,10 +1278,6 @@ protected:
   void addBypassSlowDiv(unsigned int SlowBitWidth, unsigned int FastBitWidth) {
     BypassSlowDivWidths[SlowBitWidth] = FastBitWidth;
   }
-
-  /// Tells the code generator that it shouldn't generate sra/srl/add/sra for a
-  /// signed divide by power of two; let the target handle it.
-  void setPow2SDivIsCheap(bool isCheap = true) { Pow2SDivIsCheap = isCheap; }
 
   /// Add the specified register class as an available regclass for the
   /// specified value type. This indicates the selector can handle values of
@@ -1364,12 +1367,13 @@ protected:
                          LegalizeAction Action) {
     assert(VT.isValid() && (unsigned)CC < array_lengthof(CondCodeActions) &&
            "Table isn't big enough!");
-    /// The lower 5 bits of the SimpleTy index into Nth 2bit set from the 32-bit
-    /// value and the upper 27 bits index into the second dimension of the array
+    assert((unsigned)Action < 0x10 && "too many bits for bitfield array");
+    /// The lower 3 bits of the SimpleTy index into Nth 4bit set from the 32-bit
+    /// value and the upper 29 bits index into the second dimension of the array
     /// to select what 32-bit value to use.
-    uint32_t Shift = 2 * (VT.SimpleTy & 0xF);
-    CondCodeActions[CC][VT.SimpleTy >> 4] &= ~((uint32_t)0x3 << Shift);
-    CondCodeActions[CC][VT.SimpleTy >> 4] |= (uint32_t)Action << Shift;
+    uint32_t Shift = 4 * (VT.SimpleTy & 0x7);
+    CondCodeActions[CC][VT.SimpleTy >> 3] &= ~((uint32_t)0xF << Shift);
+    CondCodeActions[CC][VT.SimpleTy >> 3] |= (uint32_t)Action << Shift;
   }
 
   /// If Opc/OrigVT is specified as being promoted, the promotion code defaults
@@ -1512,23 +1516,24 @@ public:
     return false;
   }
 
-  /// Return true if it's free to truncate a value of type Ty1 to type
-  /// Ty2. e.g. On x86 it's free to truncate a i32 value in register EAX to i16
+  /// Return true if it's free to truncate a value of type FromTy to type
+  /// ToTy. e.g. On x86 it's free to truncate a i32 value in register EAX to i16
   /// by referencing its sub-register AX.
-  virtual bool isTruncateFree(Type * /*Ty1*/, Type * /*Ty2*/) const {
+  /// Targets must return false when FromTy <= ToTy.
+  virtual bool isTruncateFree(Type *FromTy, Type *ToTy) const {
     return false;
   }
 
-  /// Return true if a truncation from Ty1 to Ty2 is permitted when deciding
+  /// Return true if a truncation from FromTy to ToTy is permitted when deciding
   /// whether a call is in tail position. Typically this means that both results
   /// would be assigned to the same register or stack slot, but it could mean
   /// the target performs adequate checks of its own before proceeding with the
-  /// tail call.
-  virtual bool allowTruncateForTailCall(Type * /*Ty1*/, Type * /*Ty2*/) const {
+  /// tail call.  Targets must return false when FromTy <= ToTy.
+  virtual bool allowTruncateForTailCall(Type *FromTy, Type *ToTy) const {
     return false;
   }
 
-  virtual bool isTruncateFree(EVT /*VT1*/, EVT /*VT2*/) const {
+  virtual bool isTruncateFree(EVT FromVT, EVT ToVT) const {
     return false;
   }
 
@@ -1561,19 +1566,21 @@ public:
     return isExtFreeImpl(I);
   }
 
-  /// Return true if any actual instruction that defines a value of type Ty1
-  /// implicitly zero-extends the value to Ty2 in the result register.
+  /// Return true if any actual instruction that defines a value of type FromTy
+  /// implicitly zero-extends the value to ToTy in the result register.
   ///
-  /// This does not necessarily include registers defined in unknown ways, such
-  /// as incoming arguments, or copies from unknown virtual registers. Also, if
-  /// isTruncateFree(Ty2, Ty1) is true, this does not necessarily apply to
-  /// truncate instructions. e.g. on x86-64, all instructions that define 32-bit
-  /// values implicit zero-extend the result out to 64 bits.
-  virtual bool isZExtFree(Type * /*Ty1*/, Type * /*Ty2*/) const {
+  /// The function should return true when it is likely that the truncate can
+  /// be freely folded with an instruction defining a value of FromTy. If
+  /// the defining instruction is unknown (because you're looking at a
+  /// function argument, PHI, etc.) then the target may require an
+  /// explicit truncate, which is not necessarily free, but this function
+  /// does not deal with those cases.
+  /// Targets must return false when FromTy >= ToTy.
+  virtual bool isZExtFree(Type *FromTy, Type *ToTy) const {
     return false;
   }
 
-  virtual bool isZExtFree(EVT /*VT1*/, EVT /*VT2*/) const {
+  virtual bool isZExtFree(EVT FromTy, EVT ToTy) const {
     return false;
   }
 
@@ -1707,6 +1714,12 @@ public:
     return false;
   }
 
+  // Return true if it is profitable to use a scalar input to a BUILD_VECTOR
+  // even if the vector itself has multiple uses.
+  virtual bool aggressivelyPreferBuildVectorSources(EVT VecVT) const {
+    return false;
+  }
+
   //===--------------------------------------------------------------------===//
   // Runtime Library hooks
   //
@@ -1763,12 +1776,6 @@ private:
   /// combined with "shift" to BitExtract instructions.
   bool HasExtractBitsInsn;
 
-  /// Tells the code generator not to expand integer divides by constants into a
-  /// sequence of muls, adds, and shifts.  This is a hack until a real cost
-  /// model is in place.  If we ever optimize for size, this will be set to true
-  /// unconditionally.
-  bool IntDivIsCheap;
-
   // Don't expand fsqrt with an approximation based on the inverse sqrt.
   bool FsqrtIsCheap;
 
@@ -1777,10 +1784,6 @@ private:
   /// generator to bypass 32-bit integer div/rem with an 8-bit unsigned integer
   /// div/rem when the operands are positive and less than 256.
   DenseMap <unsigned int, unsigned int> BypassSlowDivWidths;
-
-  /// Tells the code generator that it shouldn't generate sra/srl/add/sra for a
-  /// signed divide by power of two; let the target handle it.
-  bool Pow2SDivIsCheap;
 
   /// Tells the code generator that it shouldn't generate extra flow control
   /// instructions and should attempt to combine flow control instructions via
@@ -1849,14 +1852,6 @@ private:
   /// llvm.savestack/llvm.restorestack should save and restore.
   unsigned StackPointerRegisterToSaveRestore;
 
-  /// If set to a physical register, this specifies the register that receives
-  /// the exception address on entry to a landing pad.
-  unsigned ExceptionPointerRegister;
-
-  /// If set to a physical register, this specifies the register that receives
-  /// the exception typeid on entry to a landing pad.
-  unsigned ExceptionSelectorRegister;
-
   /// This indicates the default register class to use for each ValueType the
   /// target supports natively.
   const TargetRegisterClass *RegClassForVT[MVT::LAST_VALUETYPE];
@@ -1911,10 +1906,10 @@ private:
   /// For each condition code (ISD::CondCode) keep a LegalizeAction that
   /// indicates how instruction selection should deal with the condition code.
   ///
-  /// Because each CC action takes up 2 bits, we need to have the array size be
+  /// Because each CC action takes up 4 bits, we need to have the array size be
   /// large enough to fit all of the value types. This can be done by rounding
-  /// up the MVT::LAST_VALUETYPE value to the next multiple of 16.
-  uint32_t CondCodeActions[ISD::SETCC_INVALID][(MVT::LAST_VALUETYPE + 15) / 16];
+  /// up the MVT::LAST_VALUETYPE value to the next multiple of 8.
+  uint32_t CondCodeActions[ISD::SETCC_INVALID][(MVT::LAST_VALUETYPE + 7) / 8];
 
   ValueTypeActionImpl ValueTypeActions;
 
@@ -1954,6 +1949,12 @@ protected:
   /// \pre \p I is a sign, zero, or fp extension and
   ///      is[Z|FP]ExtFree of the related types is not true.
   virtual bool isExtFreeImpl(const Instruction *I) const { return false; }
+
+  /// Depth that GatherAllAliases should should continue looking for chain
+  /// dependencies when trying to find a more preferrable chain. As an
+  /// approximation, this should be more than the number of consecutive stores
+  /// expected to be merged.
+  unsigned GatherAllAliasesMaxDepth;
 
   /// \brief Specify maximum number of store instructions per memset call.
   ///
@@ -2095,9 +2096,9 @@ public:
   /// Returns a pair of (return value, chain).
   /// It is an error to pass RTLIB::UNKNOWN_LIBCALL as \p LC.
   std::pair<SDValue, SDValue> makeLibCall(SelectionDAG &DAG, RTLIB::Libcall LC,
-                                          EVT RetVT, const SDValue *Ops,
-                                          unsigned NumOps, bool isSigned,
-                                          SDLoc dl, bool doesNotReturn = false,
+                                          EVT RetVT, ArrayRef<SDValue> Ops,
+                                          bool isSigned, SDLoc dl,
+                                          bool doesNotReturn = false,
                                           bool isReturnValueUsed = true) const;
 
   //===--------------------------------------------------------------------===//
@@ -2426,6 +2427,13 @@ public:
 
   };
 
+  // Mark inreg arguments for lib-calls. For normal calls this is done by
+  // the frontend ABI code.
+  virtual void markInRegArguments(SelectionDAG &DAG, 
+                 TargetLowering::ArgListTy &Args) const {
+    return;
+  }
+
   /// This function lowers an abstract call to a function into an actual call.
   /// This returns a pair of operands.  The first element is the return value
   /// for the function (if RetTy is not VoidTy).  The second element is the
@@ -2734,11 +2742,14 @@ public:
   SDValue BuildUDIV(SDNode *N, const APInt &Divisor, SelectionDAG &DAG,
                     bool IsAfterLegalization,
                     std::vector<SDNode *> *Created) const;
+
+  /// Targets may override this function to provide custom SDIV lowering for
+  /// power-of-2 denominators.  If the target returns an empty SDValue, LLVM
+  /// assumes SDIV is expensive and replaces it with a series of other integer
+  /// operations.
   virtual SDValue BuildSDIVPow2(SDNode *N, const APInt &Divisor,
                                 SelectionDAG &DAG,
-                                std::vector<SDNode *> *Created) const {
-    return SDValue();
-  }
+                                std::vector<SDNode *> *Created) const;
 
   /// Indicate whether this target prefers to combine FDIVs with the same
   /// divisor. If the transform should never be done, return zero. If the

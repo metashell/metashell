@@ -51,15 +51,12 @@ static cl::opt<bool> UseTBAA("use-tbaa-in-sched-mi", cl::Hidden,
 
 ScheduleDAGInstrs::ScheduleDAGInstrs(MachineFunction &mf,
                                      const MachineLoopInfo *mli,
-                                     bool IsPostRAFlag, bool RemoveKillFlags,
-                                     LiveIntervals *lis)
-    : ScheduleDAG(mf), MLI(mli), MFI(mf.getFrameInfo()), LIS(lis),
-      IsPostRA(IsPostRAFlag), RemoveKillFlags(RemoveKillFlags),
-      CanHandleTerminators(false), FirstDbgValue(nullptr) {
-  assert((IsPostRA || LIS) && "PreRA scheduling requires LiveIntervals");
+                                     LiveIntervals *LIS,
+                                     bool RemoveKillFlags)
+    : ScheduleDAG(mf), MLI(mli), MFI(mf.getFrameInfo()), LIS(LIS),
+      RemoveKillFlags(RemoveKillFlags), CanHandleTerminators(false),
+      FirstDbgValue(nullptr) {
   DbgValues.clear();
-  assert(!(IsPostRA && MRI.getNumVirtRegs()) &&
-         "Virtual registers must be removed prior to PostRA scheduling");
 
   const TargetSubtargetInfo &ST = mf.getSubtarget();
   SchedModel.init(ST.getSchedModel(), &ST, TII);
@@ -230,11 +227,8 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
 
       if (TRI->isPhysicalRegister(Reg))
         Uses.insert(PhysRegSUOper(&ExitSU, -1, Reg));
-      else {
-        assert(!IsPostRA && "Virtual register encountered after regalloc.");
-        if (MO.readsReg()) // ignore undef operands
-          addVRegUseDeps(&ExitSU, i);
-      }
+      else if (MO.readsReg()) // ignore undef operands
+        addVRegUseDeps(&ExitSU, i);
     }
   } else {
     // For others, e.g. fallthrough, conditional branch, assume the exit
@@ -242,11 +236,9 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
     assert(Uses.empty() && "Uses in set before adding deps?");
     for (MachineBasicBlock::succ_iterator SI = BB->succ_begin(),
            SE = BB->succ_end(); SI != SE; ++SI)
-      for (MachineBasicBlock::livein_iterator I = (*SI)->livein_begin(),
-             E = (*SI)->livein_end(); I != E; ++I) {
-        unsigned Reg = *I;
-        if (!Uses.contains(Reg))
-          Uses.insert(PhysRegSUOper(&ExitSU, -1, Reg));
+      for (const auto &LI : (*SI)->liveins()) {
+        if (!Uses.contains(LI.PhysReg))
+          Uses.insert(PhysRegSUOper(&ExitSU, -1, LI.PhysReg));
       }
   }
 }
@@ -464,11 +456,9 @@ void ScheduleDAGInstrs::addVRegUseDeps(SUnit *SU, unsigned OperIdx) {
 /// Return true if MI is an instruction we are unable to reason about
 /// (like a call or something with unmodeled side effects).
 static inline bool isGlobalMemoryObject(AliasAnalysis *AA, MachineInstr *MI) {
-  if (MI->isCall() || MI->hasUnmodeledSideEffects() ||
-      (MI->hasOrderedMemoryRef() &&
-       (!MI->mayLoad() || !MI->isInvariantLoad(AA))))
-    return true;
-  return false;
+  return MI->isCall() || MI->hasUnmodeledSideEffects() ||
+         (MI->hasOrderedMemoryRef() &&
+          (!MI->mayLoad() || !MI->isInvariantLoad(AA)));
 }
 
 // This MI might have either incomplete info, or known to be unsafe
@@ -835,7 +825,6 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       if (TRI->isPhysicalRegister(Reg))
         addPhysRegDeps(SU, j);
       else {
-        assert(!IsPostRA && "Virtual register encountered!");
         if (MO.isDef()) {
           HasVRegDef = true;
           addVRegDefDeps(SU, j);
@@ -1080,11 +1069,9 @@ void ScheduleDAGInstrs::startBlockForKills(MachineBasicBlock *BB) {
   // Examine the live-in regs of all successors.
   for (MachineBasicBlock::succ_iterator SI = BB->succ_begin(),
        SE = BB->succ_end(); SI != SE; ++SI) {
-    for (MachineBasicBlock::livein_iterator I = (*SI)->livein_begin(),
-         E = (*SI)->livein_end(); I != E; ++I) {
-      unsigned Reg = *I;
+    for (const auto &LI : (*SI)->liveins()) {
       // Repeat, for reg and all subregs.
-      for (MCSubRegIterator SubRegs(Reg, TRI, /*IncludeSelf=*/true);
+      for (MCSubRegIterator SubRegs(LI.PhysReg, TRI, /*IncludeSelf=*/true);
            SubRegs.isValid(); ++SubRegs)
         LiveRegs.set(*SubRegs);
     }
@@ -1103,7 +1090,7 @@ static void toggleBundleKillFlag(MachineInstr *MI, unsigned Reg,
   // Once we set a kill flag on an instruction, we bail out, as otherwise we
   // might set it on too many operands.  We will clear as many flags as we
   // can though.
-  MachineBasicBlock::instr_iterator Begin = MI;
+  MachineBasicBlock::instr_iterator Begin = MI->getIterator();
   MachineBasicBlock::instr_iterator End = getBundleEnd(MI);
   while (Begin != End) {
     for (MachineOperand &MO : (--End)->operands()) {
@@ -1237,7 +1224,7 @@ void ScheduleDAGInstrs::fixupKills(MachineBasicBlock *MBB) {
         toggleKillFlag(MI, MO);
         DEBUG(MI->dump());
         DEBUG(if (MI->getOpcode() == TargetOpcode::BUNDLE) {
-          MachineBasicBlock::instr_iterator Begin = MI;
+          MachineBasicBlock::instr_iterator Begin = MI->getIterator();
           MachineBasicBlock::instr_iterator End = getBundleEnd(MI);
           while (++Begin != End)
             DEBUG(Begin->dump());

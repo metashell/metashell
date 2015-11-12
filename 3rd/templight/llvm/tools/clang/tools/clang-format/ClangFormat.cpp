@@ -27,6 +27,7 @@
 #include "llvm/Support/Signals.h"
 
 using namespace llvm;
+using clang::tooling::Replacements;
 
 static cl::opt<bool> Help("h", cl::desc("Alias for -help"), cl::Hidden);
 
@@ -73,11 +74,11 @@ FallbackStyle("fallback-style",
               cl::init("LLVM"), cl::cat(ClangFormatCategory));
 
 static cl::opt<std::string>
-AssumeFilename("assume-filename",
+AssumeFileName("assume-filename",
                cl::desc("When reading from stdin, clang-format assumes this\n"
                         "filename to look for a style config file (with\n"
                         "-style=file) and to determine the language."),
-               cl::cat(ClangFormatCategory));
+               cl::init("<stdin>"), cl::cat(ClangFormatCategory));
 
 static cl::opt<bool> Inplace("i",
                              cl::desc("Inplace edit <file>s, if specified."),
@@ -97,6 +98,10 @@ static cl::opt<unsigned>
                     "clang-format from an editor integration"),
            cl::init(0), cl::cat(ClangFormatCategory));
 
+static cl::opt<bool> SortIncludes("sort-includes",
+                                  cl::desc("Sort touched include lines"),
+                                  cl::cat(ClangFormatCategory));
+
 static cl::list<std::string> FileNames(cl::Positional, cl::desc("[<file> ...]"),
                                        cl::cat(ClangFormatCategory));
 
@@ -104,12 +109,11 @@ namespace clang {
 namespace format {
 
 static FileID createInMemoryFile(StringRef FileName, MemoryBuffer *Source,
-                                 SourceManager &Sources, FileManager &Files) {
-  const FileEntry *Entry = Files.getVirtualFile(FileName == "-" ? "<stdin>" :
-                                                    FileName,
-                                                Source->getBufferSize(), 0);
-  Sources.overrideFileContents(Entry, Source, true);
-  return Sources.createFileID(Entry, SourceLocation(), SrcMgr::C_User);
+                                 SourceManager &Sources, FileManager &Files,
+                                 vfs::InMemoryFileSystem *MemFS) {
+  MemFS->addFileNoOwn(FileName, 0, Source);
+  return Sources.createFileID(Files.getFile(FileName), SourceLocation(),
+                              SrcMgr::C_User);
 }
 
 // Parses <start line>:<end line> input to a pair of line numbers.
@@ -121,9 +125,17 @@ static bool parseLineRange(StringRef Input, unsigned &FromLine,
          LineRange.second.getAsInteger(0, ToLine);
 }
 
-static bool fillRanges(SourceManager &Sources, FileID ID,
-                       const MemoryBuffer *Code,
-                       std::vector<CharSourceRange> &Ranges) {
+static bool fillRanges(MemoryBuffer *Code,
+                       std::vector<tooling::Range> &Ranges) {
+  IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new vfs::InMemoryFileSystem);
+  FileManager Files(FileSystemOptions(), InMemoryFileSystem);
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
+      new DiagnosticOptions);
+  SourceManager Sources(Diagnostics, Files);
+  FileID ID = createInMemoryFile("<irrelevant>", Code, Sources, Files,
+                                 InMemoryFileSystem.get());
   if (!LineRanges.empty()) {
     if (!Offsets.empty() || !Lengths.empty()) {
       llvm::errs() << "error: cannot use -lines with -offset/-length\n";
@@ -144,7 +156,9 @@ static bool fillRanges(SourceManager &Sources, FileID ID,
       SourceLocation End = Sources.translateLineCol(ID, ToLine, UINT_MAX);
       if (Start.isInvalid() || End.isInvalid())
         return true;
-      Ranges.push_back(CharSourceRange::getCharRange(Start, End));
+      unsigned Offset = Sources.getFileOffset(Start);
+      unsigned Length = Sources.getFileOffset(End) - Offset;
+      Ranges.push_back(tooling::Range(Offset, Length));
     }
     return false;
   }
@@ -177,15 +191,19 @@ static bool fillRanges(SourceManager &Sources, FileID ID,
     } else {
       End = Sources.getLocForEndOfFile(ID);
     }
-    Ranges.push_back(CharSourceRange::getCharRange(Start, End));
+    unsigned Offset = Sources.getFileOffset(Start);
+    unsigned Length = Sources.getFileOffset(End) - Offset;
+    Ranges.push_back(tooling::Range(Offset, Length));
   }
   return false;
 }
 
 static void outputReplacementXML(StringRef Text) {
+  // FIXME: When we sort includes, we need to make sure the stream is correct
+  // utf-8.
   size_t From = 0;
   size_t Index;
-  while ((Index = Text.find_first_of("\n\r", From)) != StringRef::npos) {
+  while ((Index = Text.find_first_of("\n\r<&", From)) != StringRef::npos) {
     llvm::outs() << Text.substr(From, Index - From);
     switch (Text[Index]) {
     case '\n':
@@ -193,6 +211,12 @@ static void outputReplacementXML(StringRef Text) {
       break;
     case '\r':
       llvm::outs() << "&#13;";
+      break;
+    case '<':
+      llvm::outs() << "&lt;";
+      break;
+    case '&':
+      llvm::outs() << "&amp;";
       break;
     default:
       llvm_unreachable("Unexpected character encountered!");
@@ -202,13 +226,18 @@ static void outputReplacementXML(StringRef Text) {
   llvm::outs() << Text.substr(From);
 }
 
+static void outputReplacementsXML(const Replacements &Replaces) {
+  for (const auto &R : Replaces) {
+    outs() << "<replacement "
+           << "offset='" << R.getOffset() << "' "
+           << "length='" << R.getLength() << "'>";
+    outputReplacementXML(R.getReplacementText());
+    outs() << "</replacement>\n";
+  }
+}
+
 // Returns true on error.
 static bool format(StringRef FileName) {
-  FileManager Files((FileSystemOptions()));
-  DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
-      new DiagnosticOptions);
-  SourceManager Sources(Diagnostics, Files);
   ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
       MemoryBuffer::getFileOrSTDIN(FileName);
   if (std::error_code EC = CodeOrErr.getError()) {
@@ -218,16 +247,27 @@ static bool format(StringRef FileName) {
   std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
   if (Code->getBufferSize() == 0)
     return false; // Empty files are formatted correctly.
-  FileID ID = createInMemoryFile(FileName, Code.get(), Sources, Files);
-  std::vector<CharSourceRange> Ranges;
-  if (fillRanges(Sources, ID, Code.get(), Ranges))
+  std::vector<tooling::Range> Ranges;
+  if (fillRanges(Code.get(), Ranges))
     return true;
+  StringRef AssumedFileName = (FileName == "-") ? AssumeFileName : FileName;
+  FormatStyle FormatStyle = getStyle(Style, AssumedFileName, FallbackStyle);
+  Replacements Replaces;
+  std::string ChangedCode;
+  if (SortIncludes) {
+    Replaces =
+        sortIncludes(FormatStyle, Code->getBuffer(), Ranges, AssumedFileName);
+    ChangedCode = tooling::applyAllReplacements(Code->getBuffer(), Replaces);
+    for (const auto &R : Replaces)
+      Ranges.push_back({R.getOffset(), R.getLength()});
+  } else {
+    ChangedCode = Code->getBuffer().str();
+  }
 
-  FormatStyle FormatStyle = getStyle(
-      Style, (FileName == "-") ? AssumeFilename : FileName, FallbackStyle);
   bool IncompleteFormat = false;
-  tooling::Replacements Replaces =
-      reformat(FormatStyle, Sources, ID, Ranges, &IncompleteFormat);
+  Replaces = tooling::mergeReplacements(
+      Replaces, reformat(FormatStyle, ChangedCode, Ranges, AssumedFileName,
+                         &IncompleteFormat));
   if (OutputXML) {
     llvm::outs() << "<?xml version='1.0'?>\n<replacements "
                     "xml:space='preserve' incomplete_format='"
@@ -237,17 +277,18 @@ static bool format(StringRef FileName) {
                    << tooling::shiftedCodePosition(Replaces, Cursor)
                    << "</cursor>\n";
 
-    for (tooling::Replacements::const_iterator I = Replaces.begin(),
-                                               E = Replaces.end();
-         I != E; ++I) {
-      llvm::outs() << "<replacement "
-                   << "offset='" << I->getOffset() << "' "
-                   << "length='" << I->getLength() << "'>";
-      outputReplacementXML(I->getReplacementText());
-      llvm::outs() << "</replacement>\n";
-    }
+    outputReplacementsXML(Replaces); 
     llvm::outs() << "</replacements>\n";
   } else {
+    IntrusiveRefCntPtr<vfs::InMemoryFileSystem> InMemoryFileSystem(
+        new vfs::InMemoryFileSystem);
+    FileManager Files(FileSystemOptions(), InMemoryFileSystem);
+    DiagnosticsEngine Diagnostics(
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
+        new DiagnosticOptions);
+    SourceManager Sources(Diagnostics, Files);
+    FileID ID = createInMemoryFile(AssumedFileName, Code.get(), Sources, Files,
+                                   InMemoryFileSystem.get());
     Rewriter Rewrite(Sources, LangOptions());
     tooling::applyAllReplacements(Replaces, Rewrite);
     if (Inplace) {
@@ -283,7 +324,7 @@ int main(int argc, const char **argv) {
   cl::SetVersionPrinter(PrintVersion);
   cl::ParseCommandLineOptions(
       argc, argv,
-      "A tool to format C/C++/Obj-C code.\n\n"
+      "A tool to format C/C++/Java/JavaScript/Objective-C/Protobuf code.\n\n"
       "If no arguments are specified, it formats the code from standard input\n"
       "and writes the result to the standard output.\n"
       "If <file>s are given, it reformats the files. If -i is specified\n"
@@ -296,7 +337,7 @@ int main(int argc, const char **argv) {
   if (DumpConfig) {
     std::string Config =
         clang::format::configurationAsText(clang::format::getStyle(
-            Style, FileNames.empty() ? AssumeFilename : FileNames[0],
+            Style, FileNames.empty() ? AssumeFileName : FileNames[0],
             FallbackStyle));
     llvm::outs() << Config << "\n";
     return 0;
@@ -322,3 +363,4 @@ int main(int argc, const char **argv) {
   }
   return Error ? 1 : 0;
 }
+

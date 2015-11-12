@@ -30,6 +30,11 @@
 #include "llvm/Target/TargetSubtargetInfo.h"
 using namespace llvm;
 
+static cl::opt<bool>
+VerboseDAGDumping("dag-dump-verbose", cl::Hidden,
+                  cl::desc("Display more information when dumping selection "
+                           "DAG nodes."));
+
 std::string SDNode::getOperationName(const SelectionDAG *G) const {
   switch (getOpcode()) {
   default:
@@ -146,6 +151,8 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::FABS:                       return "fabs";
   case ISD::FMINNUM:                    return "fminnum";
   case ISD::FMAXNUM:                    return "fmaxnum";
+  case ISD::FMINNAN:                    return "fminnan";
+  case ISD::FMAXNAN:                    return "fmaxnan";
   case ISD::FNEG:                       return "fneg";
   case ISD::FSQRT:                      return "fsqrt";
   case ISD::FSIN:                       return "fsin";
@@ -276,6 +283,10 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::CALLSEQ_START:              return "callseq_start";
   case ISD::CALLSEQ_END:                return "callseq_end";
 
+    // EH instructions
+  case ISD::CATCHRET:                   return "catchret";
+  case ISD::CLEANUPRET:                 return "cleanupret";
+
     // Other operators
   case ISD::LOAD:                       return "load";
   case ISD::STORE:                      return "store";
@@ -323,7 +334,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
 
     case ISD::SETO:                     return "seto";
     case ISD::SETUO:                    return "setuo";
-    case ISD::SETUEQ:                   return "setue";
+    case ISD::SETUEQ:                   return "setueq";
     case ISD::SETUGT:                   return "setugt";
     case ISD::SETUGE:                   return "setuge";
     case ISD::SETULT:                   return "setult";
@@ -355,6 +366,27 @@ const char *SDNode::getIndexedModeName(ISD::MemIndexedMode AM) {
   }
 }
 
+namespace {
+class PrintNodeId {
+  const SDNode &Node;
+public:
+  explicit PrintNodeId(const SDNode &Node)
+      : Node(Node) {}
+  void print(raw_ostream &OS) const {
+#ifndef NDEBUG
+    OS << 't' << Node.PersistentId;
+#else
+    OS << (const void*)&Node;
+#endif
+  }
+};
+
+static inline raw_ostream &operator<<(raw_ostream &OS, const PrintNodeId &P) {
+  P.print(OS);
+  return OS;
+}
+}
+
 void SDNode::dump() const { dump(nullptr); }
 void SDNode::dump(const SelectionDAG *G) const {
   print(dbgs(), G);
@@ -362,8 +394,6 @@ void SDNode::dump(const SelectionDAG *G) const {
 }
 
 void SDNode::print_types(raw_ostream &OS, const SelectionDAG *G) const {
-  OS << (const void*)this << ": ";
-
   for (unsigned i = 0, e = getNumValues(); i != e; ++i) {
     if (i) OS << ",";
     if (getValueType(i) == MVT::Other)
@@ -371,7 +401,6 @@ void SDNode::print_types(raw_ostream &OS, const SelectionDAG *G) const {
     else
       OS << getValueType(i).getEVTString();
   }
-  OS << " = " << getOperationName(G);
 }
 
 void SDNode::print_details(raw_ostream &OS, const SelectionDAG *G) const {
@@ -526,48 +555,58 @@ void SDNode::print_details(raw_ostream &OS, const SelectionDAG *G) const {
        << ']';
   }
 
-  if (unsigned Order = getIROrder())
-      OS << " [ORD=" << Order << ']';
+  if (VerboseDAGDumping) {
+    if (unsigned Order = getIROrder())
+        OS << " [ORD=" << Order << ']';
 
-  if (getNodeId() != -1)
-    OS << " [ID=" << getNodeId() << ']';
+    if (getNodeId() != -1)
+      OS << " [ID=" << getNodeId() << ']';
 
-  if (!G)
-    return;
+    if (!G)
+      return;
 
-  DILocation *L = getDebugLoc();
-  if (!L)
-    return;
+    DILocation *L = getDebugLoc();
+    if (!L)
+      return;
 
-  if (auto *Scope = L->getScope())
-    OS << Scope->getFilename();
-  else
-    OS << "<unknown>";
-  OS << ':' << L->getLine();
-  if (unsigned C = L->getColumn())
-    OS << ':' << C;
+    if (auto *Scope = L->getScope())
+      OS << Scope->getFilename();
+    else
+      OS << "<unknown>";
+    OS << ':' << L->getLine();
+    if (unsigned C = L->getColumn())
+      OS << ':' << C;
+  }
+}
+
+/// Return true if this node is so simple that we should just print it inline
+/// if it appears as an operand.
+static bool shouldPrintInline(const SDNode &Node) {
+  if (Node.getOpcode() == ISD::EntryToken)
+    return false;
+  return Node.getNumOperands() == 0;
 }
 
 static void DumpNodes(const SDNode *N, unsigned indent, const SelectionDAG *G) {
-  for (const SDValue &Op : N->op_values())
+  for (const SDValue &Op : N->op_values()) {
+    if (shouldPrintInline(*Op.getNode()))
+      continue;
     if (Op.getNode()->hasOneUse())
       DumpNodes(Op.getNode(), indent+2, G);
-    else
-      dbgs() << "\n" << std::string(indent+2, ' ')
-             << (void*)Op.getNode() << ": <multiple use>";
+  }
 
-  dbgs() << '\n';
   dbgs().indent(indent);
   N->dump(G);
 }
 
 void SelectionDAG::dump() const {
-  dbgs() << "SelectionDAG has " << AllNodes.size() << " nodes:";
+  dbgs() << "SelectionDAG has " << AllNodes.size() << " nodes:\n";
 
   for (allnodes_const_iterator I = allnodes_begin(), E = allnodes_end();
        I != E; ++I) {
-    const SDNode *N = I;
-    if (!N->hasOneUse() && N != getRoot().getNode())
+    const SDNode *N = &*I;
+    if (!N->hasOneUse() && N != getRoot().getNode() &&
+        (!shouldPrintInline(*N) || N->use_empty()))
       DumpNodes(N, 2, this);
   }
 
@@ -576,8 +615,25 @@ void SelectionDAG::dump() const {
 }
 
 void SDNode::printr(raw_ostream &OS, const SelectionDAG *G) const {
+  OS << PrintNodeId(*this) << ": ";
   print_types(OS, G);
+  OS << " = " << getOperationName(G);
   print_details(OS, G);
+}
+
+static bool printOperand(raw_ostream &OS, const SelectionDAG *G,
+                         const SDValue Value) {
+  if (shouldPrintInline(*Value.getNode())) {
+    OS << Value->getOperationName(G) << ':';
+    Value->print_types(OS, G);
+    Value->print_details(OS, G);
+    return true;
+  } else {
+    OS << PrintNodeId(*Value.getNode());
+    if (unsigned RN = Value.getResNo())
+      OS << ':' << RN;
+    return false;
+  }
 }
 
 typedef SmallPtrSet<const SDNode *, 128> VisitedSDNodeSet;
@@ -592,20 +648,13 @@ static void DumpNodesr(raw_ostream &OS, const SDNode *N, unsigned indent,
 
   // Having printed this SDNode, walk the children:
   for (unsigned i = 0, e = N->getNumOperands(); i != e; ++i) {
-    const SDNode *child = N->getOperand(i).getNode();
-
     if (i) OS << ",";
     OS << " ";
 
-    if (child->getNumOperands() == 0) {
-      // This child has no grandchildren; print it inline right here.
-      child->printr(OS, G);
-      once.insert(child);
-    } else {         // Just the address. FIXME: also print the child's opcode.
-      OS << (const void*)child;
-      if (unsigned RN = N->getOperand(i).getResNo())
-        OS << ":" << RN;
-    }
+    const SDValue Op = N->getOperand(i);
+    bool printedInline = printOperand(OS, G, Op);
+    if (printedInline)
+      once.insert(Op.getNode());
   }
 
   OS << "\n";
@@ -667,12 +716,9 @@ void SDNode::dumprFull(const SelectionDAG *G) const {
 }
 
 void SDNode::print(raw_ostream &OS, const SelectionDAG *G) const {
-  print_types(OS, G);
+  printr(OS, G);
   for (unsigned i = 0, e = getNumOperands(); i != e; ++i) {
     if (i) OS << ", "; else OS << " ";
-    OS << (void*)getOperand(i).getNode();
-    if (unsigned RN = getOperand(i).getResNo())
-      OS << ":" << RN;
+    printOperand(OS, G, getOperand(i));
   }
-  print_details(OS, G);
 }

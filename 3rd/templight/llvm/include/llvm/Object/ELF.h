@@ -53,6 +53,7 @@ public:
   typedef Elf_Vernaux_Impl<ELFT> Elf_Vernaux;
   typedef Elf_Versym_Impl<ELFT> Elf_Versym;
   typedef Elf_Hash_Impl<ELFT> Elf_Hash;
+  typedef Elf_GnuHash_Impl<ELFT> Elf_GnuHash;
   typedef iterator_range<const Elf_Dyn *> Elf_Dyn_Range;
   typedef iterator_range<const Elf_Shdr *> Elf_Shdr_Range;
   typedef iterator_range<const Elf_Sym *> Elf_Sym_Range;
@@ -68,9 +69,6 @@ private:
   const Elf_Ehdr *Header;
   const Elf_Shdr *SectionHeaderTable = nullptr;
   StringRef DotShstrtab;                    // Section header string table.
-  const Elf_Shdr *dot_symtab_sec = nullptr; // Symbol table section.
-
-  const Elf_Shdr *SymbolTableSectionHeaderIndex = nullptr;
 
 public:
   template<typename T>
@@ -78,10 +76,10 @@ public:
   template <typename T>
   const T *getEntry(const Elf_Shdr *Section, uint32_t Entry) const;
 
-  const Elf_Shdr *getDotSymtabSec() const { return dot_symtab_sec; }
-
   ErrorOr<StringRef> getStringTable(const Elf_Shdr *Section) const;
   ErrorOr<StringRef> getStringTableForSymtab(const Elf_Shdr &Section) const;
+
+  ErrorOr<ArrayRef<Elf_Word>> getSHNDXTable(const Elf_Shdr &Section) const;
 
   void VerifyStrTab(const Elf_Shdr *sh) const;
 
@@ -89,10 +87,9 @@ public:
   void getRelocationTypeName(uint32_t Type,
                              SmallVectorImpl<char> &Result) const;
 
-  /// \brief Get the symbol table section and symbol for a given relocation.
-  template <class RelT>
-  std::pair<const Elf_Shdr *, const Elf_Sym *>
-  getRelocationSymbol(const Elf_Shdr *RelSec, const RelT *Rel) const;
+  /// \brief Get the symbol for a given relocation.
+  const Elf_Sym *getRelocationSymbol(const Elf_Rel *Rel,
+                                     const Elf_Shdr *SymTab) const;
 
   ELFFile(StringRef Object, std::error_code &EC);
 
@@ -200,9 +197,13 @@ public:
 
   uint64_t getNumSections() const;
   uintX_t getStringTableIndex() const;
-  ELF::Elf64_Word getExtendedSymbolTableIndex(const Elf_Sym *symb) const;
+  uint32_t getExtendedSymbolTableIndex(const Elf_Sym *Sym,
+                                       const Elf_Shdr *SymTab,
+                                       ArrayRef<Elf_Word> ShndxTable) const;
   const Elf_Ehdr *getHeader() const { return Header; }
-  ErrorOr<const Elf_Shdr *> getSection(const Elf_Sym *symb) const;
+  ErrorOr<const Elf_Shdr *> getSection(const Elf_Sym *Sym,
+                                       const Elf_Shdr *SymTab,
+                                       ArrayRef<Elf_Word> ShndxTable) const;
   ErrorOr<const Elf_Shdr *> getSection(uint32_t Index) const;
 
   const Elf_Sym *getSymbol(const Elf_Shdr *Sec, uint32_t Index) const {
@@ -210,6 +211,8 @@ public:
   }
 
   ErrorOr<StringRef> getSectionName(const Elf_Shdr *Section) const;
+  template <typename T>
+  ErrorOr<ArrayRef<T>> getSectionContentsAsArray(const Elf_Shdr *Sec) const;
   ErrorOr<ArrayRef<uint8_t> > getSectionContents(const Elf_Shdr *Sec) const;
 };
 
@@ -219,35 +222,49 @@ typedef ELFFile<ELFType<support::big, false>> ELF32BEFile;
 typedef ELFFile<ELFType<support::big, true>> ELF64BEFile;
 
 template <class ELFT>
-ELF::Elf64_Word
-ELFFile<ELFT>::getExtendedSymbolTableIndex(const Elf_Sym *Sym) const {
+uint32_t ELFFile<ELFT>::getExtendedSymbolTableIndex(
+    const Elf_Sym *Sym, const Elf_Shdr *SymTab,
+    ArrayRef<Elf_Word> ShndxTable) const {
   assert(Sym->st_shndx == ELF::SHN_XINDEX);
-  unsigned Index = Sym - symbol_begin(dot_symtab_sec);
+  unsigned Index = Sym - symbol_begin(SymTab);
 
-  // FIXME: error checking
-  const Elf_Word *ShndxTable = reinterpret_cast<const Elf_Word *>(
-      base() + SymbolTableSectionHeaderIndex->sh_offset);
+  // The size of the table was checked in getSHNDXTable.
   return ShndxTable[Index];
 }
 
 template <class ELFT>
 ErrorOr<const typename ELFFile<ELFT>::Elf_Shdr *>
-ELFFile<ELFT>::getSection(const Elf_Sym *symb) const {
-  uint32_t Index = symb->st_shndx;
+ELFFile<ELFT>::getSection(const Elf_Sym *Sym, const Elf_Shdr *SymTab,
+                          ArrayRef<Elf_Word> ShndxTable) const {
+  uint32_t Index = Sym->st_shndx;
   if (Index == ELF::SHN_XINDEX)
-    return getSection(getExtendedSymbolTableIndex(symb));
+    return getSection(getExtendedSymbolTableIndex(Sym, SymTab, ShndxTable));
+
   if (Index == ELF::SHN_UNDEF || Index >= ELF::SHN_LORESERVE)
     return nullptr;
-  return getSection(symb->st_shndx);
+  return getSection(Sym->st_shndx);
 }
 
 template <class ELFT>
-ErrorOr<ArrayRef<uint8_t> >
-ELFFile<ELFT>::getSectionContents(const Elf_Shdr *Sec) const {
-  if (Sec->sh_offset + Sec->sh_size > Buf.size())
+template <typename T>
+ErrorOr<ArrayRef<T>>
+ELFFile<ELFT>::getSectionContentsAsArray(const Elf_Shdr *Sec) const {
+  uintX_t Offset = Sec->sh_offset;
+  uintX_t Size = Sec->sh_size;
+
+  if (Size % sizeof(T))
     return object_error::parse_failed;
-  const uint8_t *Start = base() + Sec->sh_offset;
-  return makeArrayRef(Start, Sec->sh_size);
+  if (Offset + Size > Buf.size())
+    return object_error::parse_failed;
+
+  const T *Start = reinterpret_cast<const T *>(base() + Offset);
+  return makeArrayRef(Start, Size / sizeof(T));
+}
+
+template <class ELFT>
+ErrorOr<ArrayRef<uint8_t>>
+ELFFile<ELFT>::getSectionContents(const Elf_Shdr *Sec) const {
+  return getSectionContentsAsArray<uint8_t>(Sec);
 }
 
 template <class ELFT>
@@ -287,18 +304,13 @@ void ELFFile<ELFT>::getRelocationTypeName(uint32_t Type,
 }
 
 template <class ELFT>
-template <class RelT>
-std::pair<const typename ELFFile<ELFT>::Elf_Shdr *,
-          const typename ELFFile<ELFT>::Elf_Sym *>
-ELFFile<ELFT>::getRelocationSymbol(const Elf_Shdr *Sec, const RelT *Rel) const {
-  if (!Sec->sh_link)
-    return std::make_pair(nullptr, nullptr);
-  ErrorOr<const Elf_Shdr *> SymTableOrErr = getSection(Sec->sh_link);
-  if (std::error_code EC = SymTableOrErr.getError())
-    report_fatal_error(EC.message());
-  const Elf_Shdr *SymTable = *SymTableOrErr;
-  return std::make_pair(
-      SymTable, getEntry<Elf_Sym>(SymTable, Rel->getSymbol(isMips64EL())));
+const typename ELFFile<ELFT>::Elf_Sym *
+ELFFile<ELFT>::getRelocationSymbol(const Elf_Rel *Rel,
+                                   const Elf_Shdr *SymTab) const {
+  uint32_t Index = Rel->getSymbol(isMips64EL());
+  if (Index == 0)
+    return nullptr;
+  return getEntry<Elf_Sym>(SymTab, Index);
 }
 
 template <class ELFT>
@@ -357,29 +369,6 @@ ELFFile<ELFT>::ELFFile(StringRef Object, std::error_code &EC)
     return;
   }
 
-  // Scan sections for special sections.
-
-  for (const Elf_Shdr &Sec : sections()) {
-    switch (Sec.sh_type) {
-    case ELF::SHT_SYMTAB_SHNDX:
-      if (SymbolTableSectionHeaderIndex) {
-        // More than one .symtab_shndx!
-        EC = object_error::parse_failed;
-        return;
-      }
-      SymbolTableSectionHeaderIndex = &Sec;
-      break;
-    case ELF::SHT_SYMTAB: {
-      if (dot_symtab_sec) {
-        // More than one .symtab!
-        EC = object_error::parse_failed;
-        return;
-      }
-      dot_symtab_sec = &Sec;
-    } break;
-    }
-  }
-
   // Get string table sections.
   uintX_t StringTableIndex = getStringTableIndex();
   if (StringTableIndex) {
@@ -387,10 +376,10 @@ ELFFile<ELFT>::ELFFile(StringRef Object, std::error_code &EC)
     if ((EC = StrTabSecOrErr.getError()))
       return;
 
-    ErrorOr<StringRef> SymtabOrErr = getStringTable(*StrTabSecOrErr);
-    if ((EC = SymtabOrErr.getError()))
+    ErrorOr<StringRef> StringTableOrErr = getStringTable(*StrTabSecOrErr);
+    if ((EC = StringTableOrErr.getError()))
       return;
-    DotShstrtab = *SymtabOrErr;
+    DotShstrtab = *StringTableOrErr;
   }
 
   EC = std::error_code();
@@ -484,6 +473,31 @@ ELFFile<ELFT>::getStringTable(const Elf_Shdr *Section) const {
   if (Data[Size - 1] != '\0')
     return object_error::string_table_non_null_end;
   return Data;
+}
+
+template <class ELFT>
+ErrorOr<ArrayRef<typename ELFFile<ELFT>::Elf_Word>>
+ELFFile<ELFT>::getSHNDXTable(const Elf_Shdr &Section) const {
+  assert(Section.sh_type == ELF::SHT_SYMTAB_SHNDX);
+  const Elf_Word *ShndxTableBegin =
+      reinterpret_cast<const Elf_Word *>(base() + Section.sh_offset);
+  uintX_t Size = Section.sh_size;
+  if (Size % sizeof(uint32_t))
+    return object_error::parse_failed;
+  uintX_t NumSymbols = Size / sizeof(uint32_t);
+  const Elf_Word *ShndxTableEnd = ShndxTableBegin + NumSymbols;
+  if (reinterpret_cast<const char *>(ShndxTableEnd) > Buf.end())
+    return object_error::parse_failed;
+  ErrorOr<const Elf_Shdr *> SymTableOrErr = getSection(Section.sh_link);
+  if (std::error_code EC = SymTableOrErr.getError())
+    return EC;
+  const Elf_Shdr &SymTable = **SymTableOrErr;
+  if (SymTable.sh_type != ELF::SHT_SYMTAB &&
+      SymTable.sh_type != ELF::SHT_DYNSYM)
+    return object_error::parse_failed;
+  if (NumSymbols != (SymTable.sh_size / sizeof(Elf_Sym)))
+    return object_error::parse_failed;
+  return makeArrayRef(ShndxTableBegin, ShndxTableEnd);
 }
 
 template <class ELFT>

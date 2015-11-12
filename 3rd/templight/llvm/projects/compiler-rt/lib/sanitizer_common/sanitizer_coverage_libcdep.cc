@@ -53,6 +53,12 @@ static const u64 kMagic32 = 0xC0BFFFFFFFFFFF32ULL;
 static atomic_uint32_t dump_once_guard;  // Ensure that CovDump runs only once.
 
 static atomic_uintptr_t coverage_counter;
+static atomic_uintptr_t caller_callee_counter;
+
+static void ResetGlobalCounters() {
+  return atomic_store(&coverage_counter, 0, memory_order_relaxed);
+  return atomic_store(&caller_callee_counter, 0, memory_order_relaxed);
+}
 
 // pc_array is the array containing the covered PCs.
 // To make the pc_array thread- and async-signal-safe it has to be large enough.
@@ -225,7 +231,8 @@ void CoverageData::InitializeGuardArray(s32 *guards) {
   Enable();  // Make sure coverage is enabled at this point.
   s32 n = guards[0];
   for (s32 j = 1; j <= n; j++) {
-    uptr idx = atomic_fetch_add(&pc_array_index, 1, memory_order_relaxed);
+    uptr idx = atomic_load_relaxed(&pc_array_index);
+    atomic_store_relaxed(&pc_array_index, idx + 1);
     guards[j] = -static_cast<s32>(idx + 1);
   }
 }
@@ -435,7 +442,7 @@ void CoverageData::IndirCall(uptr caller, uptr callee, uptr callee_cache[],
     uptr was = 0;
     if (atomic_compare_exchange_strong(&atomic_callee_cache[i], &was, callee,
                                        memory_order_seq_cst)) {
-      atomic_fetch_add(&coverage_counter, 1, memory_order_relaxed);
+      atomic_fetch_add(&caller_callee_counter, 1, memory_order_relaxed);
       return;
     }
     if (was == callee)  // Already have this callee.
@@ -813,7 +820,7 @@ void CovPrepareForSandboxing(__sanitizer_sandbox_arguments *args) {
   } else {
     InternalScopedString path(kMaxPathLength);
     // Pre-open the file now. The sandbox won't allow us to do it later.
-    cov_fd = CovOpenFile(&path, true /* packed */, 0);
+    cov_fd = CovOpenFile(&path, true /* packed */, nullptr);
   }
 }
 
@@ -832,6 +839,11 @@ void CovAfterFork(int child_pid) {
   coverage_data.AfterFork(child_pid);
 }
 
+static void MaybeDumpCoverage() {
+  if (common_flags()->coverage)
+    __sanitizer_cov_dump();
+}
+
 void InitializeCoverage(bool enabled, const char *dir) {
   if (coverage_enabled)
     return;  // May happen if two sanitizer enable coverage in the same process.
@@ -840,6 +852,7 @@ void InitializeCoverage(bool enabled, const char *dir) {
   coverage_data.Init();
   if (enabled) coverage_data.Enable();
   if (!common_flags()->coverage_direct) Atexit(__sanitizer_cov_dump);
+  AddDieCallback(MaybeDumpCoverage);
 }
 
 void ReInitializeCoverage(bool enabled, const char *dir) {
@@ -853,7 +866,7 @@ void CoverageUpdateMapping() {
     CovUpdateMapping(coverage_dir);
 }
 
-}  // namespace __sanitizer
+} // namespace __sanitizer
 
 extern "C" {
 SANITIZER_INTERFACE_ATTRIBUTE void __sanitizer_cov(u32 *guard) {
@@ -902,6 +915,11 @@ uptr __sanitizer_get_total_unique_coverage() {
 }
 
 SANITIZER_INTERFACE_ATTRIBUTE
+uptr __sanitizer_get_total_unique_caller_callee_pairs() {
+  return atomic_load(&caller_callee_counter, memory_order_relaxed);
+}
+
+SANITIZER_INTERFACE_ATTRIBUTE
 void __sanitizer_cov_trace_func_enter(s32 *id) {
   coverage_data.TraceBasicBlock(id);
 }
@@ -911,6 +929,7 @@ void __sanitizer_cov_trace_basic_block(s32 *id) {
 }
 SANITIZER_INTERFACE_ATTRIBUTE
 void __sanitizer_reset_coverage() {
+  ResetGlobalCounters();
   coverage_data.ReinitializeGuards();
   internal_bzero_aligned16(
       coverage_data.data(),
@@ -936,4 +955,4 @@ SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
 void __sanitizer_cov_trace_cmp() {}
 SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
 void __sanitizer_cov_trace_switch() {}
-}  // extern "C"
+} // extern "C"

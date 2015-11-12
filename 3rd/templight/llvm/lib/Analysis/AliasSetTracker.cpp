@@ -221,7 +221,7 @@ AliasSet *AliasSetTracker::findAliasSetForPointer(const Value *Ptr,
     if (Cur->Forward || !Cur->aliasesPointer(Ptr, Size, AAInfo, AA)) continue;
     
     if (!FoundSet) {      // If this is the first alias set ptr can go into.
-      FoundSet = Cur;     // Remember it.
+      FoundSet = &*Cur;   // Remember it.
     } else {              // Otherwise, we must merge the sets.
       FoundSet->mergeSetIn(*Cur, *this);     // Merge in contents.
     }
@@ -255,7 +255,7 @@ AliasSet *AliasSetTracker::findAliasSetForUnknownInst(Instruction *Inst) {
     if (Cur->Forward || !Cur->aliasesUnknownInst(Inst, AA))
       continue;
     if (!FoundSet)            // If this is the first alias set ptr can go into.
-      FoundSet = Cur;         // Remember it.
+      FoundSet = &*Cur;       // Remember it.
     else if (!Cur->Forward)   // Otherwise, we must merge the sets.
       FoundSet->mergeSetIn(*Cur, *this);     // Merge in contents.
   }
@@ -372,8 +372,8 @@ bool AliasSetTracker::add(Instruction *I) {
 }
 
 void AliasSetTracker::add(BasicBlock &BB) {
-  for (BasicBlock::iterator I = BB.begin(), E = BB.end(); I != E; ++I)
-    add(I);
+  for (auto &I : BB)
+    add(&I);
 }
 
 void AliasSetTracker::add(const AliasSetTracker &AST) {
@@ -649,11 +649,12 @@ namespace {
 
     void getAnalysisUsage(AnalysisUsage &AU) const override {
       AU.setPreservesAll();
-      AU.addRequired<AliasAnalysis>();
+      AU.addRequired<AAResultsWrapperPass>();
     }
 
     bool runOnFunction(Function &F) override {
-      Tracker = new AliasSetTracker(getAnalysis<AliasAnalysis>());
+      auto &AAWP = getAnalysis<AAResultsWrapperPass>();
+      Tracker = new AliasSetTracker(AAWP.getAAResults());
 
       for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I)
         Tracker->add(&*I);
@@ -667,6 +668,6 @@ namespace {
 char AliasSetPrinter::ID = 0;
 INITIALIZE_PASS_BEGIN(AliasSetPrinter, "print-alias-sets",
                 "Alias Set Printer", false, true)
-INITIALIZE_AG_DEPENDENCY(AliasAnalysis)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
 INITIALIZE_PASS_END(AliasSetPrinter, "print-alias-sets",
                 "Alias Set Printer", false, true)

@@ -287,7 +287,10 @@ void AArch64FrameLowering::emitPrologue(MachineFunction &MF,
   AArch64FunctionInfo *AFI = MF.getInfo<AArch64FunctionInfo>();
   bool needsFrameMoves = MMI.hasDebugInfo() || Fn->needsUnwindTableEntry();
   bool HasFP = hasFP(MF);
-  DebugLoc DL = MBB.findDebugLoc(MBBI);
+
+  // Debug location must be unknown since the first debug location is used
+  // to determine the end of the prologue.
+  DebugLoc DL;
 
   // All calls are tail calls in GHC calling conv, and functions have no
   // prologue/epilogue.
@@ -636,14 +639,6 @@ void AArch64FrameLowering::emitEpilogue(MachineFunction &MF,
                     -(NumRestores - 1) * 16, TII, MachineInstr::NoFlags);
 }
 
-/// getFrameIndexOffset - Returns the displacement from the frame register to
-/// the stack frame of the specified index.
-int AArch64FrameLowering::getFrameIndexOffset(const MachineFunction &MF,
-                                              int FI) const {
-  unsigned FrameReg;
-  return getFrameIndexReference(MF, FI, FrameReg);
-}
-
 /// getFrameIndexReference - Provide a base+offset reference to an FI slot for
 /// debug info.  It's the same as what we use for resolving the code-gen
 /// references for now.  FIXME: This can go wrong when references are
@@ -737,9 +732,6 @@ bool AArch64FrameLowering::spillCalleeSavedRegisters(
   unsigned Count = CSI.size();
   DebugLoc DL;
   assert((Count & 1) == 0 && "Odd number of callee-saved regs to spill!");
-
-  if (MI != MBB.end())
-    DL = MI->getDebugLoc();
 
   for (unsigned i = 0; i < Count; i += 2) {
     unsigned idx = Count - i - 2;

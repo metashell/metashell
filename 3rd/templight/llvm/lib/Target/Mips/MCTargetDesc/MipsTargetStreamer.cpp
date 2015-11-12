@@ -89,9 +89,15 @@ void MipsTargetStreamer::emitDirectiveSetHardFloat() {
 void MipsTargetStreamer::emitDirectiveSetDsp() { forbidModuleDirective(); }
 void MipsTargetStreamer::emitDirectiveSetNoDsp() { forbidModuleDirective(); }
 void MipsTargetStreamer::emitDirectiveCpLoad(unsigned RegNo) {}
+void MipsTargetStreamer::emitDirectiveCpRestore(
+    SmallVector<MCInst, 3> &StoreInsts, int Offset) {
+  forbidModuleDirective();
+}
 void MipsTargetStreamer::emitDirectiveCpsetup(unsigned RegNo, int RegOrOffset,
                                               const MCSymbol &Sym, bool IsReg) {
 }
+void MipsTargetStreamer::emitDirectiveCpreturn(unsigned SaveLocation,
+                                               bool SaveLocationIsRegister) {}
 
 void MipsTargetStreamer::emitDirectiveModuleFP() {}
 
@@ -358,6 +364,12 @@ void MipsTargetAsmStreamer::emitDirectiveCpLoad(unsigned RegNo) {
   forbidModuleDirective();
 }
 
+void MipsTargetAsmStreamer::emitDirectiveCpRestore(
+    SmallVector<MCInst, 3> &StoreInsts, int Offset) {
+  MipsTargetStreamer::emitDirectiveCpRestore(StoreInsts, Offset);
+  OS << "\t.cprestore\t" << Offset << "\n";
+}
+
 void MipsTargetAsmStreamer::emitDirectiveCpsetup(unsigned RegNo,
                                                  int RegOrOffset,
                                                  const MCSymbol &Sym,
@@ -373,7 +385,13 @@ void MipsTargetAsmStreamer::emitDirectiveCpsetup(unsigned RegNo,
 
   OS << ", ";
 
-  OS << Sym.getName() << "\n";
+  OS << Sym.getName();
+  forbidModuleDirective();
+}
+
+void MipsTargetAsmStreamer::emitDirectiveCpreturn(unsigned SaveLocation,
+                                                  bool SaveLocationIsRegister) {
+  OS << "\t.cpreturn";
   forbidModuleDirective();
 }
 
@@ -752,6 +770,24 @@ void MipsTargetELFStreamer::emitDirectiveCpLoad(unsigned RegNo) {
   forbidModuleDirective();
 }
 
+void MipsTargetELFStreamer::emitDirectiveCpRestore(
+    SmallVector<MCInst, 3> &StoreInsts, int Offset) {
+  MipsTargetStreamer::emitDirectiveCpRestore(StoreInsts, Offset);
+  // .cprestore offset
+  // When PIC mode is enabled and the O32 ABI is used, this directive expands
+  // to:
+  //    sw $gp, offset($sp)
+  // and adds a corresponding LW after every JAL.
+
+  // Note that .cprestore is ignored if used with the N32 and N64 ABIs or if it
+  // is used in non-PIC mode.
+  if (!Pic || (getABI().IsN32() || getABI().IsN64()))
+    return;
+
+  for (const MCInst &Inst : StoreInsts)
+    getStreamer().EmitInstruction(Inst, STI);
+}
+
 void MipsTargetELFStreamer::emitDirectiveCpsetup(unsigned RegNo,
                                                  int RegOrOffset,
                                                  const MCSymbol &Sym,
@@ -766,7 +802,7 @@ void MipsTargetELFStreamer::emitDirectiveCpsetup(unsigned RegNo,
   // Either store the old $gp in a register or on the stack
   if (IsReg) {
     // move $save, $gpreg
-    Inst.setOpcode(Mips::DADDu);
+    Inst.setOpcode(Mips::OR64);
     Inst.addOperand(MCOperand::createReg(RegOrOffset));
     Inst.addOperand(MCOperand::createReg(Mips::GP));
     Inst.addOperand(MCOperand::createReg(Mips::ZERO));
@@ -805,6 +841,30 @@ void MipsTargetELFStreamer::emitDirectiveCpsetup(unsigned RegNo,
   Inst.addOperand(MCOperand::createReg(Mips::GP));
   Inst.addOperand(MCOperand::createReg(Mips::GP));
   Inst.addOperand(MCOperand::createReg(RegNo));
+  getStreamer().EmitInstruction(Inst, STI);
+
+  forbidModuleDirective();
+}
+
+void MipsTargetELFStreamer::emitDirectiveCpreturn(unsigned SaveLocation,
+                                                  bool SaveLocationIsRegister) {
+  // Only N32 and N64 emit anything for .cpreturn iff PIC is set.
+  if (!Pic || !(getABI().IsN32() || getABI().IsN64()))
+    return;
+
+  MCInst Inst;
+  // Either restore the old $gp from a register or on the stack
+  if (SaveLocationIsRegister) {
+    Inst.setOpcode(Mips::OR);
+    Inst.addOperand(MCOperand::createReg(Mips::GP));
+    Inst.addOperand(MCOperand::createReg(SaveLocation));
+    Inst.addOperand(MCOperand::createReg(Mips::ZERO));
+  } else {
+    Inst.setOpcode(Mips::LD);
+    Inst.addOperand(MCOperand::createReg(Mips::GP));
+    Inst.addOperand(MCOperand::createReg(Mips::SP));
+    Inst.addOperand(MCOperand::createImm(SaveLocation));
+  }
   getStreamer().EmitInstruction(Inst, STI);
 
   forbidModuleDirective();

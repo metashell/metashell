@@ -18,6 +18,7 @@
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ExprObjC.h"
+#include "clang/AST/ExprOpenMP.h"
 #include "clang/AST/StmtVisitor.h"
 #include "llvm/ADT/FoldingSet.h"
 using namespace clang;
@@ -288,6 +289,11 @@ void OMPClauseProfiler::VisitOMPSafelenClause(const OMPSafelenClause *C) {
     Profiler->VisitStmt(C->getSafelen());
 }
 
+void OMPClauseProfiler::VisitOMPSimdlenClause(const OMPSimdlenClause *C) {
+  if (C->getSimdlen())
+    Profiler->VisitStmt(C->getSimdlen());
+}
+
 void OMPClauseProfiler::VisitOMPCollapseClause(const OMPCollapseClause *C) {
   if (C->getNumForLoops())
     Profiler->VisitStmt(C->getNumForLoops());
@@ -326,6 +332,10 @@ void OMPClauseProfiler::VisitOMPUpdateClause(const OMPUpdateClause *) {}
 void OMPClauseProfiler::VisitOMPCaptureClause(const OMPCaptureClause *) {}
 
 void OMPClauseProfiler::VisitOMPSeqCstClause(const OMPSeqCstClause *) {}
+
+void OMPClauseProfiler::VisitOMPThreadsClause(const OMPThreadsClause *) {}
+
+void OMPClauseProfiler::VisitOMPSIMDClause(const OMPSIMDClause *) {}
 
 template<typename T>
 void OMPClauseProfiler::VisitOMPClauseList(T *Node) {
@@ -372,6 +382,9 @@ void OMPClauseProfiler::VisitOMPReductionClause(
       C->getQualifierLoc().getNestedNameSpecifier());
   Profiler->VisitName(C->getNameInfo().getName());
   VisitOMPClauseList(C);
+  for (auto *E : C->privates()) {
+    Profiler->VisitStmt(E);
+  }
   for (auto *E : C->lhs_exprs()) {
     Profiler->VisitStmt(E);
   }
@@ -384,6 +397,9 @@ void OMPClauseProfiler::VisitOMPReductionClause(
 }
 void OMPClauseProfiler::VisitOMPLinearClause(const OMPLinearClause *C) {
   VisitOMPClauseList(C);
+  for (auto *E : C->privates()) {
+    Profiler->VisitStmt(E);
+  }
   for (auto *E : C->inits()) {
     Profiler->VisitStmt(E);
   }
@@ -656,6 +672,10 @@ void StmtProfiler::VisitArraySubscriptExpr(const ArraySubscriptExpr *S) {
   VisitExpr(S);
 }
 
+void StmtProfiler::VisitOMPArraySectionExpr(const OMPArraySectionExpr *S) {
+  VisitExpr(S);
+}
+
 void StmtProfiler::VisitCallExpr(const CallExpr *S) {
   VisitExpr(S);
 }
@@ -834,6 +854,7 @@ static Stmt::StmtClass DecodeOperatorCall(const CXXOperatorCallExpr *S,
   case OO_Arrow:
   case OO_Call:
   case OO_Conditional:
+  case OO_Coawait:
   case NUM_OVERLOADED_OPERATORS:
     llvm_unreachable("Invalid operator call kind");
       
@@ -1300,6 +1321,14 @@ void StmtProfiler::VisitPackExpansionExpr(const PackExpansionExpr *S) {
 void StmtProfiler::VisitSizeOfPackExpr(const SizeOfPackExpr *S) {
   VisitExpr(S);
   VisitDecl(S->getPack());
+  if (S->isPartiallySubstituted()) {
+    auto Args = S->getPartialArguments();
+    ID.AddInteger(Args.size());
+    for (const auto &TA : Args)
+      VisitTemplateArgument(TA);
+  } else {
+    ID.AddInteger(0);
+  }
 }
 
 void StmtProfiler::VisitSubstNonTypeTemplateParmPackExpr(
@@ -1331,6 +1360,22 @@ void StmtProfiler::VisitMaterializeTemporaryExpr(
 void StmtProfiler::VisitCXXFoldExpr(const CXXFoldExpr *S) {
   VisitExpr(S);
   ID.AddInteger(S->getOperator());
+}
+
+void StmtProfiler::VisitCoroutineBodyStmt(const CoroutineBodyStmt *S) {
+  VisitStmt(S);
+}
+
+void StmtProfiler::VisitCoreturnStmt(const CoreturnStmt *S) {
+  VisitStmt(S);
+}
+
+void StmtProfiler::VisitCoawaitExpr(const CoawaitExpr *S) {
+  VisitExpr(S);
+}
+
+void StmtProfiler::VisitCoyieldExpr(const CoyieldExpr *S) {
+  VisitExpr(S);
 }
 
 void StmtProfiler::VisitOpaqueValueExpr(const OpaqueValueExpr *E) {

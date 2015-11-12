@@ -14,6 +14,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/IR/DiagnosticInfo.h"
+#include "llvm/IR/FunctionInfo.h"
 
 namespace llvm {
 class Module;
@@ -60,9 +61,15 @@ public:
     bool hasType(StructType *Ty);
   };
 
+  enum Flags {
+    None = 0,
+    OverrideFromSrc = (1 << 0),
+    LinkOnlyNeeded = (1 << 1),
+    InternalizeLinkedSymbols = (1 << 2)
+  };
+
   Linker(Module *M, DiagnosticHandlerFunction DiagnosticHandler);
   Linker(Module *M);
-  ~Linker();
 
   Module *getModule() const { return Composite; }
   void deleteModule();
@@ -70,16 +77,23 @@ public:
   /// \brief Link \p Src into the composite. The source is destroyed.
   /// Passing OverrideSymbols as true will have symbols from Src
   /// shadow those in the Dest.
+  /// For ThinLTO function importing/exporting the \p FunctionInfoIndex
+  /// is passed. If a \p FuncToImport is provided, only that single
+  /// function is imported from the source module.
   /// Returns true on error.
-  bool linkInModule(Module *Src, bool OverrideSymbols = false);
+  bool linkInModule(Module *Src, unsigned Flags = Flags::None,
+                    FunctionInfoIndex *Index = nullptr,
+                    Function *FuncToImport = nullptr);
 
   /// \brief Set the composite to the passed-in module.
   void setModule(Module *Dst);
 
   static bool LinkModules(Module *Dest, Module *Src,
-                          DiagnosticHandlerFunction DiagnosticHandler);
+                          DiagnosticHandlerFunction DiagnosticHandler,
+                          unsigned Flags = Flags::None);
 
-  static bool LinkModules(Module *Dest, Module *Src);
+  static bool LinkModules(Module *Dest, Module *Src,
+                          unsigned Flags = Flags::None);
 
 private:
   void init(Module *M, DiagnosticHandlerFunction DiagnosticHandler);

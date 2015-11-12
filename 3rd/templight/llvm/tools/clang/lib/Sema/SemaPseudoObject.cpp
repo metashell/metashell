@@ -328,11 +328,12 @@ namespace {
 
  class MSPropertyOpBuilder : public PseudoOpBuilder {
    MSPropertyRefExpr *RefExpr;
+   OpaqueValueExpr *InstanceBase;
 
  public:
    MSPropertyOpBuilder(Sema &S, MSPropertyRefExpr *refExpr) :
      PseudoOpBuilder(S, refExpr->getSourceRange().getBegin()),
-     RefExpr(refExpr) {}
+     RefExpr(refExpr), InstanceBase(nullptr) {}
 
    Expr *rebuildAndCaptureObject(Expr *) override;
    ExprResult buildGet() override;
@@ -406,19 +407,27 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
                                           BinaryOperatorKind opcode,
                                           Expr *LHS, Expr *RHS) {
   assert(BinaryOperator::isAssignmentOp(opcode));
-  
-  // Recover from user error
-  if (isa<UnresolvedLookupExpr>(RHS))
-    return ExprError();
 
   Expr *syntacticLHS = rebuildAndCaptureObject(LHS);
   OpaqueValueExpr *capturedRHS = capture(RHS);
+
+  // In some very specific cases, semantic analysis of the RHS as an
+  // expression may require it to be rewritten.  In these cases, we
+  // cannot safely keep the OVE around.  Fortunately, we don't really
+  // need to: we don't use this particular OVE in multiple places, and
+  // no clients rely that closely on matching up expressions in the
+  // semantic expression with expressions from the syntactic form.
+  Expr *semanticRHS = capturedRHS;
+  if (RHS->hasPlaceholderType() || isa<InitListExpr>(RHS)) {
+    semanticRHS = RHS;
+    Semantics.pop_back();
+  }
 
   Expr *syntactic;
 
   ExprResult result;
   if (opcode == BO_Assign) {
-    result = capturedRHS;
+    result = semanticRHS;
     syntactic = new (S.Context) BinaryOperator(syntacticLHS, capturedRHS,
                                                opcode, capturedRHS->getType(),
                                                capturedRHS->getValueKind(),
@@ -430,8 +439,7 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
     // Build an ordinary, non-compound operation.
     BinaryOperatorKind nonCompound =
       BinaryOperator::getOpForCompoundAssignment(opcode);
-    result = S.BuildBinOp(Sc, opcLoc, nonCompound,
-                          opLHS.get(), capturedRHS);
+    result = S.BuildBinOp(Sc, opcLoc, nonCompound, opLHS.get(), semanticRHS);
     if (result.isInvalid()) return ExprError();
 
     syntactic =
@@ -744,16 +752,6 @@ ExprResult ObjCPropertyOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
 
       op = opResult.get();
       assert(op && "successful assignment left argument invalid?");
-    }
-    else if (OpaqueValueExpr *OVE = dyn_cast<OpaqueValueExpr>(op)) {
-      Expr *Initializer = OVE->getSourceExpr();
-      // passing C++11 style initialized temporaries to objc++ properties
-      // requires special treatment by removing OpaqueValueExpr so type
-      // conversion takes place and adding the OpaqueValueExpr later on.
-      if (isa<InitListExpr>(Initializer) &&
-          Initializer->getType()->isVoidType()) {
-        op = Initializer;
-      }
     }
   }
 
@@ -1403,10 +1401,10 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
 //===----------------------------------------------------------------------===//
 
 Expr *MSPropertyOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
-  Expr *NewBase = capture(RefExpr->getBaseExpr());
+  InstanceBase = capture(RefExpr->getBaseExpr());
 
   syntacticBase =
-    MSPropertyRefRebuilder(S, NewBase).rebuild(syntacticBase);
+    MSPropertyRefRebuilder(S, InstanceBase).rebuild(syntacticBase);
 
   return syntacticBase;
 }
@@ -1423,10 +1421,10 @@ ExprResult MSPropertyOpBuilder::buildGet() {
   GetterName.setIdentifier(II, RefExpr->getMemberLoc());
   CXXScopeSpec SS;
   SS.Adopt(RefExpr->getQualifierLoc());
-  ExprResult GetterExpr = S.ActOnMemberAccessExpr(
-    S.getCurScope(), RefExpr->getBaseExpr(), SourceLocation(),
-    RefExpr->isArrow() ? tok::arrow : tok::period, SS, SourceLocation(),
-    GetterName, nullptr);
+  ExprResult GetterExpr =
+      S.ActOnMemberAccessExpr(S.getCurScope(), InstanceBase, SourceLocation(),
+                              RefExpr->isArrow() ? tok::arrow : tok::period, SS,
+                              SourceLocation(), GetterName, nullptr);
   if (GetterExpr.isInvalid()) {
     S.Diag(RefExpr->getMemberLoc(),
            diag::error_cannot_find_suitable_accessor) << 0 /* getter */
@@ -1453,10 +1451,10 @@ ExprResult MSPropertyOpBuilder::buildSet(Expr *op, SourceLocation sl,
   SetterName.setIdentifier(II, RefExpr->getMemberLoc());
   CXXScopeSpec SS;
   SS.Adopt(RefExpr->getQualifierLoc());
-  ExprResult SetterExpr = S.ActOnMemberAccessExpr(
-    S.getCurScope(), RefExpr->getBaseExpr(), SourceLocation(),
-    RefExpr->isArrow() ? tok::arrow : tok::period, SS, SourceLocation(),
-    SetterName, nullptr);
+  ExprResult SetterExpr =
+      S.ActOnMemberAccessExpr(S.getCurScope(), InstanceBase, SourceLocation(),
+                              RefExpr->isArrow() ? tok::arrow : tok::period, SS,
+                              SourceLocation(), SetterName, nullptr);
   if (SetterExpr.isInvalid()) {
     S.Diag(RefExpr->getMemberLoc(),
            diag::error_cannot_find_suitable_accessor) << 1 /* setter */

@@ -47,6 +47,10 @@ public:
     return "SI prepare scratch registers";
   }
 
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesCFG();
+    MachineFunctionPass::getAnalysisUsage(AU);
+  }
 };
 
 } // End anonymous namespace
@@ -64,7 +68,7 @@ bool SIPrepareScratchRegs::runOnMachineFunction(MachineFunction &MF) {
   const SIRegisterInfo *TRI = &TII->getRegisterInfo();
   MachineRegisterInfo &MRI = MF.getRegInfo();
   MachineFrameInfo *FrameInfo = MF.getFrameInfo();
-  MachineBasicBlock *Entry = MF.begin();
+  MachineBasicBlock *Entry = &MF.front();
   MachineBasicBlock::iterator I = Entry->begin();
   DebugLoc DL = I->getDebugLoc();
 
@@ -127,15 +131,14 @@ bool SIPrepareScratchRegs::runOnMachineFunction(MachineFunction &MF) {
       MachineInstr &MI = *I;
       RS.forward(I);
       DebugLoc DL = MI.getDebugLoc();
-      if (!TII->isVGPRSpill(MI.getOpcode()))
+      if (!TII->isVGPRSpill(MI))
         continue;
 
       // Scratch resource
       unsigned ScratchRsrcReg =
           RS.scavengeRegister(&AMDGPU::SReg_128RegClass, 0);
 
-      uint64_t Rsrc = AMDGPU::RSRC_DATA_FORMAT | AMDGPU::RSRC_TID_ENABLE |
-                      0xffffffff; // Size
+      uint64_t Rsrc23 = TII->getScratchRsrcWords23();
 
       unsigned Rsrc0 = TRI->getSubReg(ScratchRsrcReg, AMDGPU::sub0);
       unsigned Rsrc1 = TRI->getSubReg(ScratchRsrcReg, AMDGPU::sub1);
@@ -151,11 +154,11 @@ bool SIPrepareScratchRegs::runOnMachineFunction(MachineFunction &MF) {
               .addReg(ScratchRsrcReg, RegState::ImplicitDefine);
 
       BuildMI(MBB, I, DL, TII->get(AMDGPU::S_MOV_B32), Rsrc2)
-              .addImm(Rsrc & 0xffffffff)
+              .addImm(Rsrc23 & 0xffffffff)
               .addReg(ScratchRsrcReg, RegState::ImplicitDefine);
 
       BuildMI(MBB, I, DL, TII->get(AMDGPU::S_MOV_B32), Rsrc3)
-              .addImm(Rsrc >> 32)
+              .addImm(Rsrc23 >> 32)
               .addReg(ScratchRsrcReg, RegState::ImplicitDefine);
 
       // Scratch Offset

@@ -70,14 +70,14 @@ using namespace llvm;
 #define DEBUG_TYPE "add-discriminators"
 
 namespace {
-  struct AddDiscriminators : public FunctionPass {
-    static char ID; // Pass identification, replacement for typeid
-    AddDiscriminators() : FunctionPass(ID) {
-      initializeAddDiscriminatorsPass(*PassRegistry::getPassRegistry());
-    }
+struct AddDiscriminators : public FunctionPass {
+  static char ID; // Pass identification, replacement for typeid
+  AddDiscriminators() : FunctionPass(ID) {
+    initializeAddDiscriminatorsPass(*PassRegistry::getPassRegistry());
+  }
 
-    bool runOnFunction(Function &F) override;
-  };
+  bool runOnFunction(Function &F) override;
+};
 }
 
 char AddDiscriminators::ID = 0;
@@ -89,17 +89,17 @@ INITIALIZE_PASS_END(AddDiscriminators, "add-discriminators",
 // Command line option to disable discriminator generation even in the
 // presence of debug information. This is only needed when debugging
 // debug info generation issues.
-static cl::opt<bool>
-NoDiscriminators("no-discriminators", cl::init(false),
-                 cl::desc("Disable generation of discriminator information."));
+static cl::opt<bool> NoDiscriminators(
+    "no-discriminators", cl::init(false),
+    cl::desc("Disable generation of discriminator information."));
 
 FunctionPass *llvm::createAddDiscriminatorsPass() {
   return new AddDiscriminators();
 }
 
 static bool hasDebugInfo(const Function &F) {
-  NamedMDNode *CUNodes = F.getParent()->getNamedMetadata("llvm.dbg.cu");
-  return CUNodes != nullptr;
+  DISubprogram *S = getDISubprogram(&F);
+  return S != nullptr;
 }
 
 /// \brief Assign DWARF discriminators.
@@ -159,8 +159,7 @@ bool AddDiscriminators::runOnFunction(Function &F) {
   // Simlarly, if the function has no debug info, do nothing.
   // Finally, if this module is built with dwarf versions earlier than 4,
   // do nothing (discriminator support is a DWARF 4 feature).
-  if (NoDiscriminators ||
-      !hasDebugInfo(F) ||
+  if (NoDiscriminators || !hasDebugInfo(F) ||
       F.getParent()->getDwarfVersion() < 4)
     return false;
 
@@ -171,9 +170,8 @@ bool AddDiscriminators::runOnFunction(Function &F) {
 
   // Traverse all the blocks looking for instructions in different
   // blocks that are at the same file:line location.
-  for (Function::iterator I = F.begin(), E = F.end(); I != E; ++I) {
-    BasicBlock *B = I;
-    TerminatorInst *Last = B->getTerminator();
+  for (BasicBlock &B : F) {
+    TerminatorInst *Last = B.getTerminator();
     const DILocation *LastDIL = Last->getDebugLoc();
     if (!LastDIL)
       continue;
@@ -182,7 +180,7 @@ bool AddDiscriminators::runOnFunction(Function &F) {
       BasicBlock *Succ = Last->getSuccessor(I);
       Instruction *First = Succ->getFirstNonPHIOrDbgOrLifetime();
       const DILocation *FirstDIL = First->getDebugLoc();
-      if (!FirstDIL)
+      if (!FirstDIL || FirstDIL->getDiscriminator())
         continue;
 
       // If the first instruction (First) of Succ is at the same file
@@ -204,24 +202,57 @@ bool AddDiscriminators::runOnFunction(Function &F) {
         unsigned Discriminator = FirstDIL->computeNewDiscriminator();
         auto *NewScope =
             Builder.createLexicalBlockFile(Scope, File, Discriminator);
-        auto *NewDIL =
-            DILocation::get(Ctx, FirstDIL->getLine(), FirstDIL->getColumn(),
-                            NewScope, FirstDIL->getInlinedAt());
-        DebugLoc newDebugLoc = NewDIL;
 
         // Attach this new debug location to First and every
         // instruction following First that shares the same location.
         for (BasicBlock::iterator I1(*First), E1 = Succ->end(); I1 != E1;
              ++I1) {
-          if (I1->getDebugLoc().get() != FirstDIL)
-            break;
-          I1->setDebugLoc(newDebugLoc);
-          DEBUG(dbgs() << NewDIL->getFilename() << ":" << NewDIL->getLine()
-                       << ":" << NewDIL->getColumn() << ":"
-                       << NewDIL->getDiscriminator() << *I1 << "\n");
+          const DILocation *CurrentDIL = I1->getDebugLoc();
+          if (CurrentDIL && CurrentDIL->getLine() == FirstDIL->getLine() &&
+              CurrentDIL->getFilename() == FirstDIL->getFilename()) {
+            I1->setDebugLoc(DILocation::get(Ctx, CurrentDIL->getLine(),
+                                            CurrentDIL->getColumn(), NewScope,
+                                            CurrentDIL->getInlinedAt()));
+            DEBUG(dbgs() << CurrentDIL->getFilename() << ":"
+                         << CurrentDIL->getLine() << ":"
+                         << CurrentDIL->getColumn() << ":"
+                         << CurrentDIL->getDiscriminator() << *I1 << "\n");
+          }
         }
         DEBUG(dbgs() << "\n");
         Changed = true;
+      }
+    }
+  }
+
+  // Traverse all instructions and assign new discriminators to call
+  // instructions with the same lineno that are in the same basic block.
+  // Sample base profile needs to distinguish different function calls within
+  // a same source line for correct profile annotation.
+  for (BasicBlock &B : F) {
+    const DILocation *FirstDIL = NULL;
+    for (auto &I : B.getInstList()) {
+      CallInst *Current = dyn_cast<CallInst>(&I);
+      if (Current) {
+        DILocation *CurrentDIL = Current->getDebugLoc();
+        if (FirstDIL) {
+          if (CurrentDIL && CurrentDIL->getLine() == FirstDIL->getLine() &&
+              CurrentDIL->getFilename() == FirstDIL->getFilename()) {
+            auto *Scope = FirstDIL->getScope();
+            auto *File = Builder.createFile(FirstDIL->getFilename(),
+                                            Scope->getDirectory());
+            auto *NewScope = Builder.createLexicalBlockFile(
+                Scope, File, FirstDIL->computeNewDiscriminator());
+            Current->setDebugLoc(DILocation::get(
+                Ctx, CurrentDIL->getLine(), CurrentDIL->getColumn(), NewScope,
+                CurrentDIL->getInlinedAt()));
+            Changed = true;
+          } else {
+            FirstDIL = CurrentDIL;
+          }
+        } else {
+          FirstDIL = CurrentDIL;
+        }
       }
     }
   }

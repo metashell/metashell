@@ -28,7 +28,7 @@ MCObjectStreamer::MCObjectStreamer(MCContext &Context, MCAsmBackend &TAB,
                                    MCCodeEmitter *Emitter_)
     : MCStreamer(Context),
       Assembler(new MCAssembler(Context, TAB, *Emitter_,
-                                *TAB.createObjectWriter(OS), OS)),
+                                *TAB.createObjectWriter(OS))),
       EmitEHFrame(true), EmitDebugFrame(false) {}
 
 MCObjectStreamer::~MCObjectStreamer() {
@@ -39,26 +39,27 @@ MCObjectStreamer::~MCObjectStreamer() {
 }
 
 void MCObjectStreamer::flushPendingLabels(MCFragment *F, uint64_t FOffset) {
-  if (PendingLabels.size()) {
-    if (!F) {
-      F = new MCDataFragment();
-      MCSection *CurSection = getCurrentSectionOnly();
-      CurSection->getFragmentList().insert(CurInsertionPoint, F);
-      F->setParent(CurSection);
-    }
-    for (MCSymbol *Sym : PendingLabels) {
-      Sym->setFragment(F);
-      Sym->setOffset(FOffset);
-    }
-    PendingLabels.clear();
+  if (PendingLabels.empty())
+    return;
+  if (!F) {
+    F = new MCDataFragment();
+    MCSection *CurSection = getCurrentSectionOnly();
+    CurSection->getFragmentList().insert(CurInsertionPoint, F);
+    F->setParent(CurSection);
   }
+  for (MCSymbol *Sym : PendingLabels) {
+    Sym->setFragment(F);
+    Sym->setOffset(FOffset);
+  }
+  PendingLabels.clear();
 }
 
 void MCObjectStreamer::emitAbsoluteSymbolDiff(const MCSymbol *Hi,
                                               const MCSymbol *Lo,
                                               unsigned Size) {
   // If not assigned to the same (valid) fragment, fallback.
-  if (!Hi->getFragment() || Hi->getFragment() != Lo->getFragment()) {
+  if (!Hi->getFragment() || Hi->getFragment() != Lo->getFragment() ||
+      Hi->isVariable() || Lo->isVariable()) {
     MCStreamer::emitAbsoluteSymbolDiff(Hi, Lo, Size);
     return;
   }
@@ -93,7 +94,7 @@ MCFragment *MCObjectStreamer::getCurrentFragment() const {
   assert(getCurrentSectionOnly() && "No current section!");
 
   if (CurInsertionPoint != getCurrentSectionOnly()->getFragmentList().begin())
-    return std::prev(CurInsertionPoint);
+    return &*std::prev(CurInsertionPoint);
 
   return nullptr;
 }
@@ -121,7 +122,7 @@ void MCObjectStreamer::EmitCFISections(bool EH, bool Debug) {
 }
 
 void MCObjectStreamer::EmitValueImpl(const MCExpr *Value, unsigned Size,
-                                     const SMLoc &Loc) {
+                                     SMLoc Loc) {
   MCStreamer::EmitValueImpl(Value, Size, Loc);
   MCDataFragment *DF = getOrCreateDataFragment();
   flushPendingLabels(DF, DF->getContents().size());
@@ -155,7 +156,6 @@ void MCObjectStreamer::EmitLabel(MCSymbol *Symbol) {
   MCStreamer::EmitLabel(Symbol);
 
   getAssembler().registerSymbol(*Symbol);
-  assert(!Symbol->getFragment() && "Unexpected fragment on symbol data!");
 
   // If there is a current fragment, mark the symbol as pointing into it.
   // Otherwise queue the label and set its fragment pointer when we emit the
@@ -276,7 +276,6 @@ void MCObjectStreamer::EmitInstToFragment(const MCInst &Inst,
   raw_svector_ostream VecOS(Code);
   getAssembler().getEmitter().encodeInstruction(Inst, VecOS, IF->getFixups(),
                                                 STI);
-  VecOS.flush();
   IF->getContents().append(Code.begin(), Code.end());
 }
 
@@ -392,26 +391,9 @@ void MCObjectStreamer::EmitCodeAlignment(unsigned ByteAlignment,
   cast<MCAlignFragment>(getCurrentFragment())->setEmitNops(true);
 }
 
-bool MCObjectStreamer::EmitValueToOffset(const MCExpr *Offset,
+void MCObjectStreamer::emitValueToOffset(const MCExpr *Offset,
                                          unsigned char Value) {
-  int64_t Res;
-  if (Offset->evaluateAsAbsolute(Res, getAssembler())) {
-    insert(new MCOrgFragment(*Offset, Value));
-    return false;
-  }
-
-  MCSymbol *CurrentPos = getContext().createTempSymbol();
-  EmitLabel(CurrentPos);
-  MCSymbolRefExpr::VariantKind Variant = MCSymbolRefExpr::VK_None;
-  const MCExpr *Ref =
-    MCSymbolRefExpr::create(CurrentPos, Variant, getContext());
-  const MCExpr *Delta =
-    MCBinaryExpr::create(MCBinaryExpr::Sub, Offset, Ref, getContext());
-
-  if (!Delta->evaluateAsAbsolute(Res, getAssembler()))
-    return true;
-  EmitFill(Res, Value);
-  return false;
+  insert(new MCOrgFragment(*Offset, Value));
 }
 
 // Associate GPRel32 fixup with data and resize data area
@@ -435,18 +417,10 @@ void MCObjectStreamer::EmitGPRel64Value(const MCExpr *Value) {
 }
 
 void MCObjectStreamer::EmitFill(uint64_t NumBytes, uint8_t FillValue) {
-  // FIXME: A MCFillFragment would be more memory efficient but MCExpr has
-  //        problems evaluating expressions across multiple fragments.
-  MCDataFragment *DF = getOrCreateDataFragment();
-  flushPendingLabels(DF, DF->getContents().size());
-  DF->getContents().append(NumBytes, FillValue);
-}
-
-void MCObjectStreamer::EmitZeros(uint64_t NumBytes) {
   const MCSection *Sec = getCurrentSection().first;
   assert(Sec && "need a section");
   unsigned ItemSize = Sec->isVirtualSection() ? 0 : 1;
-  insert(new MCFillFragment(0, ItemSize, NumBytes));
+  insert(new MCFillFragment(FillValue, ItemSize, NumBytes));
 }
 
 void MCObjectStreamer::FinishImpl() {

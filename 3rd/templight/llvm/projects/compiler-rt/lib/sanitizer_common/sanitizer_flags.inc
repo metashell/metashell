@@ -10,6 +10,7 @@
 // This file describes common flags available in all sanitizers.
 //
 //===----------------------------------------------------------------------===//
+
 #ifndef COMMON_FLAG
 #error "Define COMMON_FLAG prior to including this file!"
 #endif
@@ -24,7 +25,7 @@ COMMON_FLAG(
     "If set, use the online symbolizer from common sanitizer runtime to turn "
     "virtual addresses to file/line locations.")
 COMMON_FLAG(
-    const char *, external_symbolizer_path, 0,
+    const char *, external_symbolizer_path, nullptr,
     "Path to external symbolizer. If empty, the tool will search $PATH for "
     "the symbolizer.")
 COMMON_FLAG(
@@ -185,3 +186,9 @@ COMMON_FLAG(bool, strict_memcmp, true,
 COMMON_FLAG(bool, decorate_proc_maps, false, "If set, decorate sanitizer "
                                              "mappings in /proc/self/maps with "
                                              "user-readable names")
+COMMON_FLAG(int, exitcode, 1, "Override the program exit status if the tool "
+                              "found an error")
+COMMON_FLAG(
+    bool, abort_on_error, SANITIZER_MAC,
+    "If set, the tool calls abort() instead of _exit() after printing the "
+    "error report.")

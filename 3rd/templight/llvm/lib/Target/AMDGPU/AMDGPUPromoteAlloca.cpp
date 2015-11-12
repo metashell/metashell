@@ -77,7 +77,7 @@ bool AMDGPUPromoteAlloca::runOnFunction(Function &F) {
     // Check how much local memory is being used by global objects
     for (Module::global_iterator I = Mod->global_begin(),
                                  E = Mod->global_end(); I != E; ++I) {
-      GlobalVariable *GV = I;
+      GlobalVariable *GV = &*I;
       PointerType *GVTy = GV->getType();
       if (GVTy->getAddressSpace() != AMDGPUAS::LOCAL_ADDRESS)
         continue;
@@ -276,6 +276,9 @@ static bool collectUsesWithPtrTypes(Value *Val, std::vector<Value*> &WorkList) {
 }
 
 void AMDGPUPromoteAlloca::visitAlloca(AllocaInst &I) {
+  if (!I.isStaticAlloca())
+    return;
+
   IRBuilder<> Builder(&I);
 
   // First try to replace the alloca with a vector

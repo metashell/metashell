@@ -125,11 +125,13 @@ class PressureDiff {
   enum { MaxPSets = 16 };
 
   PressureChange PressureChanges[MaxPSets];
-public:
+
   typedef PressureChange* iterator;
+  iterator nonconst_begin() { return &PressureChanges[0]; }
+  iterator nonconst_end() { return &PressureChanges[MaxPSets]; }
+
+public:
   typedef const PressureChange* const_iterator;
-  iterator begin() { return &PressureChanges[0]; }
-  iterator end() { return &PressureChanges[MaxPSets]; }
   const_iterator begin() const { return &PressureChanges[0]; }
   const_iterator end() const { return &PressureChanges[MaxPSets]; }
 
@@ -191,30 +193,56 @@ struct RegPressureDelta {
   }
 };
 
-/// \brief A set of live virtual registers and physical register units.
+/// A set of live virtual registers and physical register units.
 ///
-/// Virtual and physical register numbers require separate sparse sets, but most
-/// of the RegisterPressureTracker handles them uniformly.
-struct LiveRegSet {
-  SparseSet<unsigned> PhysRegs;
-  SparseSet<unsigned, VirtReg2IndexFunctor> VirtRegs;
+/// This is a wrapper around a SparseSet which deals with mapping register unit
+/// and virtual register indexes to an index usable by the sparse set.
+class LiveRegSet {
+private:
+  SparseSet<unsigned> Regs;
+  unsigned NumRegUnits;
+
+  unsigned getSparseIndexFromReg(unsigned Reg) const {
+    if (TargetRegisterInfo::isVirtualRegister(Reg))
+      return TargetRegisterInfo::virtReg2Index(Reg) + NumRegUnits;
+    assert(Reg < NumRegUnits);
+    return Reg;
+  }
+  unsigned getRegFromSparseIndex(unsigned SparseIndex) const {
+    if (SparseIndex >= NumRegUnits)
+      return TargetRegisterInfo::index2VirtReg(SparseIndex-NumRegUnits);
+    return SparseIndex;
+  }
+
+public:
+  void clear();
+  void init(const MachineRegisterInfo &MRI);
 
   bool contains(unsigned Reg) const {
-    if (TargetRegisterInfo::isVirtualRegister(Reg))
-      return VirtRegs.count(Reg);
-    return PhysRegs.count(Reg);
+    unsigned SparseIndex = getSparseIndexFromReg(Reg);
+    return Regs.count(SparseIndex);
   }
 
   bool insert(unsigned Reg) {
-    if (TargetRegisterInfo::isVirtualRegister(Reg))
-      return VirtRegs.insert(Reg).second;
-    return PhysRegs.insert(Reg).second;
+    unsigned SparseIndex = getSparseIndexFromReg(Reg);
+    return Regs.insert(SparseIndex).second;
   }
 
   bool erase(unsigned Reg) {
-    if (TargetRegisterInfo::isVirtualRegister(Reg))
-      return VirtRegs.erase(Reg);
-    return PhysRegs.erase(Reg);
+    unsigned SparseIndex = getSparseIndexFromReg(Reg);
+    return Regs.erase(SparseIndex);
+  }
+
+  size_t size() const {
+    return Regs.size();
+  }
+
+  template<typename ContainerT>
+  void appendTo(ContainerT &To) const {
+    for (unsigned I : Regs) {
+      unsigned Reg = getRegFromSparseIndex(I);
+      To.push_back(Reg);
+    }
   }
 };
 
@@ -333,7 +361,9 @@ public:
 
   /// Get the register set pressure at the current position, which may be less
   /// than the pressure across the traversed region.
-  std::vector<unsigned> &getRegSetPressureAtPos() { return CurrSetPressure; }
+  const std::vector<unsigned> &getRegSetPressureAtPos() const {
+    return CurrSetPressure;
+  }
 
   void discoverLiveOut(unsigned Reg);
   void discoverLiveIn(unsigned Reg);

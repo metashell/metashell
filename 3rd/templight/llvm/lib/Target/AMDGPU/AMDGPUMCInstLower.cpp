@@ -104,10 +104,9 @@ void AMDGPUAsmPrinter::EmitInstruction(const MachineInstr *MI) {
 #endif
   if (MI->isBundle()) {
     const MachineBasicBlock *MBB = MI->getParent();
-    MachineBasicBlock::const_instr_iterator I = MI;
-    ++I;
-    while (I != MBB->end() && I->isInsideBundle()) {
-      EmitInstruction(I);
+    MachineBasicBlock::const_instr_iterator I = ++MI->getIterator();
+    while (I != MBB->instr_end() && I->isInsideBundle()) {
+      EmitInstruction(&*I);
       ++I;
     }
   } else {
@@ -136,8 +135,6 @@ void AMDGPUAsmPrinter::EmitInstruction(const MachineInstr *MI) {
       MCCodeEmitter &InstEmitter = ObjStreamer.getAssembler().getEmitter();
       InstEmitter.encodeInstruction(TmpInst, CodeStream, Fixups,
                                     MF->getSubtarget<MCSubtargetInfo>());
-      CodeStream.flush();
-
       HexLines.resize(HexLines.size() + 1);
       std::string &HexLine = HexLines.back();
       raw_string_ostream HexStream(HexLine);
