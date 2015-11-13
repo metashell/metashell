@@ -71,7 +71,7 @@ echo "Platform: ${PLATFORM}"
 # Build Clang
 cd 3rd
   cd templight
-    mkdir build; cd build
+    mkdir -p build; cd build
       cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release \
         && make clang libclang libclang_static templight -j${BUILD_THREADS}
     cd ..
@@ -90,7 +90,7 @@ then
   tools/clang_default_path --gcc=clang > lib/core/extra_sysinclude.hpp
 fi
 
-mkdir bin; cd bin
+mkdir -p bin; cd bin
   cmake .. \
     && make -j${BUILD_THREADS} \
     && make test \
