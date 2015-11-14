@@ -47,6 +47,9 @@ then
 elif [ -e /etc/debian_version ]
 then
   PLATFORM=debian
+elif [ -e /etc/arch-release ]
+then
+  PLATFORM=arch
 elif [ `uname` = "FreeBSD" ]
 then
   PLATFORM=freebsd
