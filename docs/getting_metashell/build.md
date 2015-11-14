@@ -23,7 +23,7 @@
     * `cd 3rd/templight`
     * `mkdir build`
     * `cd build`
-    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release`
+    * `cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF`
     * `make clang libclang libclang_static templight`
 * Now compile Metashell. In the source directory run the following commands:
     * `mkdir bin`
