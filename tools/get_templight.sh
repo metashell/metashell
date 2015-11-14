@@ -42,7 +42,8 @@ then
       CLANG_REV_TXT=../revision.txt
       CLANG_REV_HEADER=../../../include/metashell/clang_revision.hpp
 
-      svn info | grep Revision | egrep -o '[0-9]*' > ${CLANG_REV_TXT}
+      CLANG_REV=$(svn info | grep Revision | egrep -o '[0-9]*' | tee ${CLANG_REV_TXT})
+
       echo "#ifndef METASHELL_CLANG_REVISION_HPP" > ${CLANG_REV_HEADER}
       echo "#define METASHELL_CLANG_REVISION_HPP" >> ${CLANG_REV_HEADER}
       echo "/*" >> ${CLANG_REV_HEADER}
@@ -53,15 +54,15 @@ then
       echo "#  error METASHELL_CLANG_REVISION already defined">> ${CLANG_REV_HEADER}
       echo "#endif" >> ${CLANG_REV_HEADER}
       echo -n "#define METASHELL_CLANG_REVISION " >> ${CLANG_REV_HEADER}
-      cat ${CLANG_REV_TXT} >> ${CLANG_REV_HEADER}
+      echo ${CLANG_REV} >> ${CLANG_REV_HEADER}
       echo >> ${CLANG_REV_HEADER}
       echo "#endif" >> ${CLANG_REV_HEADER}
 
       cd tools
-        svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+        svn co -r ${CLANG_REV} http://llvm.org/svn/llvm-project/cfe/trunk clang
       cd ..
       cd projects
-        svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+        svn co -r ${CLANG_REV} http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
       cd ..
 
       echo "Make the entire LLVM/Clang source code managed in one git repository"
