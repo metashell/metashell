@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_UNSAVED_FILE_HPP
-#define METASHELL_DATA_UNSAVED_FILE_HPP
+#ifndef METASHELL_UNSAVED_FILE_HPP
+#define METASHELL_UNSAVED_FILE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include <metashell/data/unsaved_file.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    class unsaved_file
-    {
-    public:
-      explicit unsaved_file(
-        const std::string& filename_ = "",
-        const std::string& content_ = ""
-      );
-
-      const std::string& filename() const;
-      const std::string& content() const;
-    private:
-      std::string _filename;
-      std::string _content;
-    };
+    void generate(const unsaved_file& f_);
   }
 }
 

@@ -19,6 +19,8 @@
 #include <metashell/config.hpp>
 #include <metashell/clang_binary.hpp>
 #include <metashell/exception.hpp>
+#include <metashell/unsaved_file.hpp>
+#include <metashell/headers.hpp>
 
 #include <just/process.hpp>
 
@@ -71,30 +73,6 @@ namespace
     )
     {
       throw exception("Error precompiling header " + fn_ + ": " + err);
-    }
-  }
-
-  void generate(const data::unsaved_file& f_)
-  {
-    boost::filesystem::path p(f_.filename());
-    p.remove_filename();
-    create_directories(p); // Throws when fails to create the directory
-    std::ofstream f(f_.filename().c_str());
-    if (f)
-    {
-      f << f_.content();
-    }
-    else
-    {
-      throw exception("Error creating file " + f_.filename());
-    }
-  }
-
-  void generate(const data::headers& headers_)
-  {
-    for (const data::unsaved_file& h : headers_)
-    {
-      generate(h);
     }
   }
 }

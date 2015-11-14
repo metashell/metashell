@@ -1,8 +1,5 @@
-#ifndef METASHELL_DATA_UNSAVED_FILE_HPP
-#define METASHELL_DATA_UNSAVED_FILE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include <metashell/unsaved_file.hpp>
+#include <metashell/exception.hpp>
 
-namespace metashell
+#include <boost/filesystem.hpp>
+
+#include <fstream>
+
+using namespace metashell;
+
+void metashell::data::generate(const data::unsaved_file& f_)
 {
-  namespace data
+  boost::filesystem::path p(f_.filename());
+  p.remove_filename();
+  create_directories(p); // Throws when fails to create the directory
+  std::ofstream f(f_.filename().c_str());
+  if (f)
   {
-    class unsaved_file
-    {
-    public:
-      explicit unsaved_file(
-        const std::string& filename_ = "",
-        const std::string& content_ = ""
-      );
-
-      const std::string& filename() const;
-      const std::string& content() const;
-    private:
-      std::string _filename;
-      std::string _content;
-    };
+    f << f_.content();
+  }
+  else
+  {
+    throw exception("Error creating file " + f_.filename());
   }
 }
-
-#endif
 
