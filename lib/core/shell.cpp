@@ -346,14 +346,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(
-      *_env,
-      s_,
-      input_filename(),
-      out_,
-      _logger,
-      *_libclang
-    );
+    metashell::code_complete(*_env, s_, out_, _config.clang_path, _logger);
   }
   catch (...)
   {

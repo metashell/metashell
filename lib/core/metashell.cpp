@@ -19,10 +19,14 @@
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/clang_binary.hpp>
+#include <metashell/for_each_line.hpp>
+#include <metashell/unsaved_file.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 #include <fstream>
 #include <memory>
@@ -77,6 +81,20 @@ namespace
     clang_args_.push_back("-"); //Compile from stdin
 
     return clang_binary(clang_path_, logger_).run(clang_args_, input_);
+  }
+
+  std::pair<int, int> source_position_of(const std::string& s_)
+  {
+    std::pair<int, int> result(0, 1);
+    for_each_line(
+      s_,
+      [&result](const std::string& line_)
+      {
+        ++result.first;
+        result.second = line_.length();
+      }
+    );
+    return result;
   }
 } // anonymous namespace
 
@@ -276,15 +294,63 @@ namespace
       }
     }
   }
+
+  boost::optional<std::string> remove_prefix(
+    const std::string& s_,
+    const std::string& prefix_
+  )
+  {
+    if (boost::starts_with(s_, prefix_))
+    {
+      return std::string(s_.begin() + prefix_.length(), s_.end());
+    }
+    else
+    {
+      return boost::none;
+    }
+  }
+
+  boost::optional<std::string> parse_completion(std::string line_)
+  {
+    if (const auto without_completion = remove_prefix(line_, "COMPLETION: "))
+    {
+      if (const auto pattern = remove_prefix(*without_completion, "Pattern : "))
+      {
+        const auto prefix_end = pattern->find("<#");
+        return
+          std::string(
+            pattern->begin(),
+            prefix_end == std::string::npos ?
+              pattern->end() :
+              pattern->begin() + prefix_end
+          );
+      }
+      else
+      {
+        return
+          std::string(
+            without_completion->begin(),
+            std::find(
+              without_completion->begin(),
+              without_completion->end(),
+              ' '
+            )
+          );
+      }
+    }
+    else
+    {
+      return boost::none;
+    }
+  }
 }
 
 void metashell::code_complete(
   const iface::environment& env_,
   const std::string& src_,
-  const std::string& input_filename_,
   std::set<std::string>& out_,
-  logger* logger_,
-  iface::libclang& libclang_
+  const std::string& clang_path_,
+  logger* logger_
 )
 {
   using boost::starts_with;
@@ -297,24 +363,68 @@ void metashell::code_complete(
 
   const pair<string, string> completion_start = find_completion_start(src_);
 
-  const data::unsaved_file src(
-    input_filename_,
-    // code completion doesn't seem to work without that extra space at the end
-    env_.get_appended(completion_start.first + " ")
+  METASHELL_LOG(
+    logger_,
+    "Part kept for code completion: " + completion_start.first
   );
 
-  set<string> c;
-  libclang_.create_index(env_, logger_)->parse_code(src)->code_complete(c);
+  const data::unsaved_file src(
+    env_.internal_dir() + "/code_complete.cpp",
+    env_.get_appended(completion_start.first)
+  );
 
-  out_.clear();
-  const int prefix_len = completion_start.second.length();
-  for (const string& s : c)
+  generate(src);
+
+  const pair<int, int> sp = source_position_of(src.content());
+
+  std::vector<std::string> clang_args = env_.clang_arguments();
+
+  const auto ast_dump =
+    std::find(clang_args.begin(), clang_args.end(), "-ast-dump");
+  if (ast_dump != clang_args.end() && ast_dump != clang_args.begin())
   {
-    if (starts_with(s, completion_start.second) && s != completion_start.second)
+    const auto xclang = ast_dump - 1;
+    if (*xclang == "-Xclang")
     {
-      out_.insert(string(s.begin() + prefix_len, s.end()));
+      clang_args.erase(xclang, ast_dump + 1);
     }
   }
+
+  clang_args.push_back("-fsyntax-only");
+  clang_args.push_back("-Xclang");
+  clang_args.push_back(
+    "-code-completion-at=" + src.filename()
+    + ":" + std::to_string(sp.first) + ":" + std::to_string(sp.second + 1)
+  );
+  clang_args.push_back(src.filename());
+
+  const just::process::output
+    o = clang_binary(clang_path_, logger_).run(clang_args);
+
+  METASHELL_LOG(
+    logger_,
+    "Exit code of clang: " + std::to_string(o.exit_code())
+  );
+
+  const std::string out = o.standard_output();
+  out_.clear();
+  const int prefix_len = completion_start.second.length();
+  for_each_line(
+    out,
+    [&out_, &completion_start, prefix_len](const std::string& line_)
+    {
+      if (const boost::optional<std::string> comp = parse_completion(line_))
+      {
+        if (
+          starts_with(*comp, completion_start.second)
+          && *comp != completion_start.second
+        )
+        {
+          out_.insert(string(comp->begin() + prefix_len, comp->end()));
+        }
+      }
+    }
+  );
 }
 
 bool metashell::is_environment_setup_command(

@@ -63,10 +63,9 @@ namespace metashell
   void code_complete(
     const iface::environment& env_,
     const std::string& src_,
-    const std::string& input_filename_,
     std::set<std::string>& out_,
-    logger* logger_,
-    iface::libclang& libclang_
+    const std::string& clang_path_,
+    logger* logger_
   );
 
   bool is_environment_setup_command(
