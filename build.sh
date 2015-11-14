@@ -41,7 +41,7 @@ elif [ "$(uname)" = "Darwin" ]
 then
   PLATFORM=osx
   PLATFORM_VERSION=$(sw_vers -productVersion)
-elif [ `cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID` = "DISTRIB_ID=Ubuntu" ]
+elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
 then
   PLATFORM=ubuntu
 elif [ -e /etc/debian_version ]
