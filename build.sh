@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+set -e
+
 if [ ! -d cmake ]
 then
   echo "Please run this script from the root directory of the Metashell source code"
@@ -39,12 +41,15 @@ elif [ "$(uname)" = "Darwin" ]
 then
   PLATFORM=osx
   PLATFORM_VERSION=$(sw_vers -productVersion)
-elif [ `cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID` = "DISTRIB_ID=Ubuntu" ]
+elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
 then
   PLATFORM=ubuntu
 elif [ -e /etc/debian_version ]
 then
   PLATFORM=debian
+elif [ -e /etc/arch-release ]
+then
+  PLATFORM=arch
 elif [ `uname` = "FreeBSD" ]
 then
   PLATFORM=freebsd
@@ -69,8 +74,11 @@ echo "Platform: ${PLATFORM}"
 # Build Clang
 cd 3rd
   cd templight
-    mkdir build; cd build
-      cmake ../llvm -DLIBCLANG_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Release \
+    mkdir -p build; cd build
+      cmake ../llvm \
+        -DLIBCLANG_BUILD_STATIC=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DLLVM_ENABLE_TERMINFO=OFF \
         && make clang libclang libclang_static templight -j${BUILD_THREADS}
     cd ..
   cd ..
@@ -88,7 +96,7 @@ then
   tools/clang_default_path --gcc=clang > lib/core/extra_sysinclude.hpp
 fi
 
-mkdir bin; cd bin
+mkdir -p bin; cd bin
   cmake .. \
     && make -j${BUILD_THREADS} \
     && make test \
