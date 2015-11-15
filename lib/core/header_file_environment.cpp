@@ -22,8 +22,6 @@
 #include <metashell/unsaved_file.hpp>
 #include <metashell/headers.hpp>
 
-#include <just/process.hpp>
-
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
@@ -62,8 +60,8 @@ namespace
     args.push_back(fn_ + ".pch");
     args.push_back(fn_);
 
-    const just::process::output
-      o = clang_binary(clang_path_, logger_).run(args);
+    const data::process_output
+      o = clang_binary(clang_path_, logger_).run(args, "");
     const std::string err = o.standard_output() + o.standard_error();
     if (
       !err.empty()

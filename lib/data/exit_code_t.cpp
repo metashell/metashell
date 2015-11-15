@@ -1,8 +1,5 @@
-#ifndef METASHELL_CLANG_BINARY_HPP
-#define METASHELL_CLANG_BINARY_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,30 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/executable.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/data/exit_code_t.hpp>
 
-namespace metashell
+#include <iostream>
+
+using namespace metashell::data;
+
+exit_code_t::exit_code_t(int value_) :
+  _value(value_)
+{}
+
+int exit_code_t::value() const
 {
-  class clang_binary : public iface::executable
-  {
-  public:
-    clang_binary(const std::string& path_, logger* logger_);
-
-    virtual data::process_output run(
-      const std::vector<std::string>& args_,
-      const std::string& stdin_
-    ) const override;
-  private:
-    std::string _path;
-    logger* _logger;
-  };
-
-  std::vector<std::string> default_sysinclude(
-    const clang_binary& clang_,
-    logger* logger_
-  );
+  return _value;
 }
 
-#endif
+bool metashell::data::operator==(exit_code_t a_, exit_code_t b_)
+{
+  return a_.value() == b_.value();
+}
+
+std::ostream& metashell::data::operator<<(std::ostream& out_, exit_code_t e_)
+{
+  return out_ << "exit_code(" << e_.value() << ")";
+}
+
+std::string metashell::data::to_string(exit_code_t e_)
+{
+  return std::to_string(e_.value());
+}
 

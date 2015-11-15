@@ -71,7 +71,7 @@ namespace
     return t;
   }
 
-  just::process::output run_clang(
+  data::process_output run_clang(
     const std::string& clang_path_,
     std::vector<std::string> clang_args_,
     const std::string& input_,
@@ -216,14 +216,14 @@ result metashell::eval_tmp(
   const config& config_,
   logger* logger_)
 {
-  const just::process::output output = run_clang(
+  const data::process_output output = run_clang(
     config_.clang_path,
     env_.clang_arguments(),
     env_.get_appended(
       "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"),
     logger_);
 
-  if (output.exit_code() != 0) {
+  if (output.exit_code() != data::exit_code_t(0)) {
     return result{false, "", output.standard_error(), ""};
   }
 
@@ -236,13 +236,13 @@ result metashell::eval_environment(
   const config& config_,
   logger* logger_)
 {
-  const just::process::output output = run_clang(
+  const data::process_output output = run_clang(
     config_.clang_path,
     env_.clang_arguments(),
     env_.get(),
     logger_);
 
-  if (output.exit_code() != 0) {
+  if (output.exit_code() != data::exit_code_t(0)) {
     return result{false, "", output.standard_error(), ""};
   }
   return result{true, "", "", ""};
@@ -398,13 +398,10 @@ void metashell::code_complete(
   );
   clang_args.push_back(src.filename());
 
-  const just::process::output
-    o = clang_binary(clang_path_, logger_).run(clang_args);
+  const data::process_output
+    o = clang_binary(clang_path_, logger_).run(clang_args, "");
 
-  METASHELL_LOG(
-    logger_,
-    "Exit code of clang: " + std::to_string(o.exit_code())
-  );
+  METASHELL_LOG(logger_, "Exit code of clang: " + to_string(o.exit_code()));
 
   const std::string out = o.standard_output();
   out_.clear();

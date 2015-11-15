@@ -1,8 +1,8 @@
-#ifndef METASHELL_CLANG_BINARY_HPP
-#define METASHELL_CLANG_BINARY_HPP
+#ifndef METASHELL_DATA_PROCESS_OUTPUT_HPP
+#define METASHELL_DATA_PROCESS_OUTPUT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,29 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/executable.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/data/exit_code_t.hpp>
+
+#include <string>
 
 namespace metashell
 {
-  class clang_binary : public iface::executable
+  namespace data
   {
-  public:
-    clang_binary(const std::string& path_, logger* logger_);
+    class process_output
+    {
+    public:
+      process_output(
+        exit_code_t exit_code_,
+        const std::string& stdout_,
+        const std::string& stderr_
+      );
 
-    virtual data::process_output run(
-      const std::vector<std::string>& args_,
-      const std::string& stdin_
-    ) const override;
-  private:
-    std::string _path;
-    logger* _logger;
-  };
-
-  std::vector<std::string> default_sysinclude(
-    const clang_binary& clang_,
-    logger* logger_
-  );
+      exit_code_t exit_code() const;
+      const std::string& standard_output() const;
+      const std::string& standard_error() const;
+    private:
+      exit_code_t _exit_code;
+      std::string _out;
+      std::string _err;
+    };
+  }
 }
 
 #endif
