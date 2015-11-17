@@ -225,3 +225,27 @@ JUST_TEST_CASE(test_it_is_an_error_to_specify_log_twice)
   JUST_ASSERT(r.should_error_at_exit());
 }
 
+JUST_TEST_CASE(test_not_setting_stdlib)
+{
+  const parse_config_result r = parse_config({});
+
+  JUST_ASSERT(r.should_run_shell());
+  JUST_ASSERT_EQUAL(stdlib::libstdcxx, r.cfg.stdlib_to_use);
+}
+
+JUST_TEST_CASE(test_using_libcxx)
+{
+  const parse_config_result r = parse_config({"-stdlib=libc++"});
+
+  JUST_ASSERT(r.should_run_shell());
+  JUST_ASSERT_EQUAL(stdlib::libcxx, r.cfg.stdlib_to_use);
+}
+
+JUST_TEST_CASE(test_using_libstdcxx)
+{
+  const parse_config_result r = parse_config({"-stdlib=libstdc++"});
+
+  JUST_ASSERT(r.should_run_shell());
+  JUST_ASSERT_EQUAL(stdlib::libstdcxx, r.cfg.stdlib_to_use);
+}
+

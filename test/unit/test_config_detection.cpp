@@ -739,3 +739,13 @@ JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)
   JUST_ASSERT(!cfg.splash_enabled);
 }
 
+JUST_TEST_CASE(test_stdlib_version_is_kept)
+{
+  mock_environment_detector dstub;
+
+  user_config ucfg;
+  ucfg.stdlib_to_use = stdlib::libcxx;
+
+  JUST_ASSERT_EQUAL(stdlib::libcxx, detect_config(ucfg, dstub).stdlib_to_use);
+}
+

@@ -169,6 +169,7 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string cppstd("c++0x");
+  std::string svalue("tdlib=libstdc++");
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
   std::string fvalue;
@@ -222,6 +223,12 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
+    (
+      ",s",
+      value(&svalue),
+      "-stdlib=value: Standard library to use."
+      " Currently supported: libc++, libstdc++"
+    )
     ;
 
   try
@@ -252,6 +259,19 @@ parse_config_result metashell::parse_config(
     if (!fvalue.empty())
     {
       ucfg.max_template_depth = parse_max_template_depth(fvalue);
+    }
+
+    if (svalue == "tdlib=libc++")
+    {
+      ucfg.stdlib_to_use = stdlib::libcxx;
+    }
+    else if (svalue == "tdlib=libstdc++")
+    {
+      ucfg.stdlib_to_use = stdlib::libstdcxx;
+    }
+    else
+    {
+      throw std::runtime_error("Invalid argument -s" + svalue);
     }
 
     if (vm.count("help"))

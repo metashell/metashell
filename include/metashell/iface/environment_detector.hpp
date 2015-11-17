@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/stdlib.hpp>
+
 #include <string>
 #include <vector>
 
@@ -41,7 +43,8 @@ namespace metashell
       virtual void append_to_path(const std::string& path_) = 0;
 
       virtual std::vector<std::string> default_clang_sysinclude(
-        const std::string& clang_path_
+        const std::string& clang_path_,
+        stdlib stdlib_
       ) = 0;
 
       virtual std::vector<std::string> extra_sysinclude() = 0;

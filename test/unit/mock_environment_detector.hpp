@@ -48,7 +48,8 @@ public:
   const std::string& append_to_path_last_arg() const;
 
   virtual std::vector<std::string> default_clang_sysinclude(
-    const std::string& clang_path_
+    const std::string& clang_path_,
+    metashell::stdlib stdlib_
   );
   int default_clang_sysinclude_called_times() const;
   void default_clang_sysinclude_returns_append(const std::string& path_);

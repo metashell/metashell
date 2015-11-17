@@ -199,6 +199,7 @@ namespace
 
   std::vector<std::string> clang_sysinclude(
     const std::string& clang_binary_path_,
+    stdlib stdlib_,
     iface::environment_detector& env_detector_,
     logger* logger_
   )
@@ -221,7 +222,8 @@ namespace
         logger_,
         "Getting the sysinclude of the Clang binary being used."
       );
-      return env_detector_.default_clang_sysinclude(clang_binary_path_);
+      return
+        env_detector_.default_clang_sysinclude(clang_binary_path_, stdlib_);
     }
   }
 
@@ -240,6 +242,7 @@ namespace
 
   std::vector<std::string> determine_include_path(
     const std::string& clang_binary_path_,
+    stdlib stdlib_,
     const std::vector<std::string>& user_include_path_,
     iface::environment_detector& env_detector_,
     logger* logger_
@@ -251,7 +254,7 @@ namespace
     );
 
     std::vector<std::string> result =
-      clang_sysinclude(clang_binary_path_, env_detector_, logger_);
+      clang_sysinclude(clang_binary_path_, stdlib_, env_detector_, logger_);
 
     const std::string dir_of_executable =
       directory_of_file(env_detector_.path_of_executable());
@@ -305,7 +308,8 @@ config::config() :
   warnings_enabled(true),
   use_precompiled_headers(false),
   clang_path(),
-  splash_enabled(true)
+  splash_enabled(true),
+  stdlib_to_use(stdlib::libstdcxx)
 {}
 
 config metashell::detect_config(
@@ -332,6 +336,7 @@ config metashell::detect_config(
   cfg.include_path =
     determine_include_path(
       cfg.clang_path,
+      ucfg_.stdlib_to_use,
       ucfg_.include_path,
       env_detector_,
       logger_
@@ -368,6 +373,7 @@ config metashell::detect_config(
     );
 
   cfg.splash_enabled = ucfg_.splash_enabled;
+  cfg.stdlib_to_use = ucfg_.stdlib_to_use;
 
   METASHELL_LOG(logger_, "Config detection completed");
 

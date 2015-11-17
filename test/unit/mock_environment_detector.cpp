@@ -122,7 +122,8 @@ const std::string& mock_environment_detector::append_to_path_last_arg() const
 }
 
 std::vector<std::string> mock_environment_detector::default_clang_sysinclude(
-  const std::string&
+  const std::string&,
+  metashell::stdlib
 )
 {
   ++_default_clang_sysinclude_called_times;

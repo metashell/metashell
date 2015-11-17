@@ -41,7 +41,8 @@ namespace metashell
     virtual void append_to_path(const std::string& path_) override;
 
     virtual std::vector<std::string> default_clang_sysinclude(
-      const std::string& clang_path_
+      const std::string& clang_path_,
+      stdlib stdlib_
     ) override;
     virtual std::vector<std::string> extra_sysinclude() override;
 

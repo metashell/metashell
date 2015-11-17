@@ -1,8 +1,8 @@
-#ifndef METASHELL_CLANG_BINARY_HPP
-#define METASHELL_CLANG_BINARY_HPP
+#ifndef METASHELL_STDLIB_HPP
+#define METASHELL_STDLIB_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,31 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/executable.hpp>
-#include <metashell/logger.hpp>
-#include <metashell/stdlib.hpp>
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
-  class clang_binary : public iface::executable
-  {
-  public:
-    clang_binary(const std::string& path_, logger* logger_);
-
-    virtual data::process_output run(
-      const std::vector<std::string>& args_,
-      const std::string& stdin_
-    ) const override;
-  private:
-    std::string _path;
-    logger* _logger;
+  enum class stdlib {
+    libcxx,
+    libstdcxx
   };
 
-  std::vector<std::string> default_sysinclude(
-    const clang_binary& clang_,
-    stdlib stdlib_,
-    logger* logger_
-  );
+  stdlib parse_stdlib(const std::string& std_);
+  std::string clang_argument(stdlib std_);
+
+  std::ostream& operator<<(std::ostream& os, stdlib std_);
 }
 
 #endif

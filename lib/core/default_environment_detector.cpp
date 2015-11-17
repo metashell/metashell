@@ -155,10 +155,12 @@ void default_environment_detector::append_to_path(const std::string& path_)
 }
 
 std::vector<std::string> default_environment_detector::default_clang_sysinclude(
-  const std::string& clang_path_
+  const std::string& clang_path_,
+  stdlib stdlib_
 )
 {
-  return default_sysinclude(clang_binary(clang_path_, _logger), _logger);
+  return
+    default_sysinclude(clang_binary(clang_path_, _logger), stdlib_, _logger);
 }
 
 std::string default_environment_detector::path_of_executable()

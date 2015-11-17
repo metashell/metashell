@@ -21,8 +21,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include <boost/assign/list_of.hpp>
-
 #include <just/process.hpp>
 
 #include <algorithm>
@@ -80,13 +78,13 @@ data::process_output clang_binary::run(
 
 std::vector<std::string> metashell::default_sysinclude(
   const clang_binary& clang_,
+  stdlib stdlib_,
   logger* logger_
 )
 {
   using boost::algorithm::trim_all_copy;
   using boost::algorithm::split;
   using boost::starts_with;
-  using boost::assign::list_of;
 
   using std::vector;
   using std::string;
@@ -94,7 +92,7 @@ std::vector<std::string> metashell::default_sysinclude(
   METASHELL_LOG(logger_, "Determining Clang's sysinclude.");
 
   const data::process_output o =
-    clang_.run(list_of<string>("-v")("-xc++")("-"), "");
+    clang_.run({"-v", "-xc++", "-", clang_argument(stdlib_)}, "");
 
   const string s = o.standard_output() + o.standard_error();
 
