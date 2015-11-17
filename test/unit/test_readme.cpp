@@ -24,7 +24,6 @@ using namespace metashell;
 
 // If one of these TCs fail, then README modification might be needed
 
-#ifndef METASHELL_DISABLE_TEMPLIGHT_TESTS
 JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
   mdb_command command;
   std::string args;
@@ -36,5 +35,4 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
 
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }
-#endif
 
