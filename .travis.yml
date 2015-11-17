@@ -22,7 +22,7 @@ script:
   - make -j2
   - make test || (cat Testing/Temporary/LastTest.log && false)
   # Determine the version of the underlying Clang binary
-  - CLANG_BINARY="$((echo int | app/metashell --log l >/dev/null) && egrep -o 'Running Clang: .* -x' l | sed 's/Running Clang: //' | sed 's/ -x$//' | tail -1)"
+  - CLANG_BINARY="$((echo int | app/metashell --log l >/dev/null) && egrep -o 'Running Clang. .* -x' l | sed 's/Running Clang. //' | sed 's/ -x$//' | tail -1)"
   - echo "CLANG_BINARY=${CLANG_BINARY}"
   - ${CLANG_BINARY} -v
   # Run the system tests
