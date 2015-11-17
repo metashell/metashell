@@ -62,6 +62,13 @@ int metashell_system_test::main(int argc_, char* argv_[])
     const auto end = argv_ + argc_;
     const auto sep = find_last(argv_, end, std::string("--"));
 
+    std::cerr << "Testing the following Metashell command:";
+    for (auto i = argv_ + 1; i != sep; ++i)
+    {
+      std::cerr << " " << *i;
+    }
+    std::cerr << std::endl;
+
     system_test_config::metashell_binary(argv_[1]);
     for (auto i = argv_ + 2; i != sep; ++i)
     {
