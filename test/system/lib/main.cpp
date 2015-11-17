@@ -21,9 +21,31 @@
 
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 using namespace metashell_system_test;
+
+namespace
+{
+  template <class It, class T>
+  It find_last(It begin_, It end_, T val_)
+  {
+    if (begin_ == end_)
+    {
+      return end_;
+    }
+    else
+    {
+      for (It i = end_ - 1; i != begin_; --i)
+      {
+        if (*i == val_)
+        {
+          return i;
+        }
+      }
+      return *begin_ == val_ ? begin_ : end_;
+    }
+  }
+}
 
 int metashell_system_test::main(int argc_, char* argv_[])
 {
@@ -38,7 +60,7 @@ int metashell_system_test::main(int argc_, char* argv_[])
   else
   {
     const auto end = argv_ + argc_;
-    const auto sep = std::find(argv_, end, std::string("--"));
+    const auto sep = find_last(argv_, end, std::string("--"));
 
     system_test_config::metashell_binary(argv_[1]);
     for (auto i = argv_ + 2; i != sep; ++i)
