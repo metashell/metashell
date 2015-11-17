@@ -57,22 +57,22 @@ JUST_TEST_CASE(test_mdb_next_minus_1_multi_fib_from_after_step) {
 
   auto i = r.begin() + 4;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<4>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 
   ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<5>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<5>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 
   ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<8>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 
   ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<6>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<6>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 

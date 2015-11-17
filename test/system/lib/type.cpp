@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/type.hpp>
-#include <metashell_system_test/query_json.hpp>
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -82,10 +81,6 @@ bool metashell_system_test::operator==(const type& type_, const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
-
-  return
-    members_are({"type", "name"}, d)
-    && is_string("type", d["type"])
-    && (!type_.name_specified() || is_string(type_.name(), d["name"]));
+  return members_are({"type", "name"}, d) && matches(type_, d["name"]);
 }
 

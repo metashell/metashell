@@ -200,7 +200,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   ++i;
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<4>"), instantiation_kind::template_instantiation),
+    frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
@@ -208,7 +208,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   ++i;
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<5>"), instantiation_kind::template_instantiation),
+    frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
@@ -218,8 +218,8 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(
     backtrace(
       {
-        frame(type("fib<5>"), instantiation_kind::template_instantiation),
-        frame(type("fib<6>"), instantiation_kind::template_instantiation),
+        frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+        frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
         frame(type("int_<fib<6>::value>"))
       }
     ),
@@ -232,15 +232,15 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(
     call_graph(
       {
-        {frame(type("fib<5>"), instantiation_kind::template_instantiation), 0, 2},
-        {frame( type("fib<4>"), instantiation_kind::template_instantiation), 1, 2},
-        {frame(  type("fib<3>"), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   type("fib<2>"), instantiation_kind::template_instantiation), 3, 2},
-        {frame(    type("fib<1>"), instantiation_kind::memoization), 4, 0},
-        {frame(    type("fib<0>"), instantiation_kind::memoization), 4, 0},
-        {frame(   type("fib<1>"), instantiation_kind::memoization), 3, 0},
-        {frame(  type("fib<2>"), instantiation_kind::memoization), 2, 0},
-        {frame( type("fib<3>"), instantiation_kind::memoization), 1, 0}
+        {frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), 0, 2},
+        {frame( type("fib<4>"), _, _, instantiation_kind::template_instantiation), 1, 2},
+        {frame(  type("fib<3>"), _, _, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   type("fib<2>"), _, _, instantiation_kind::template_instantiation), 3, 2},
+        {frame(    type("fib<1>"), _, _, instantiation_kind::memoization), 4, 0},
+        {frame(    type("fib<0>"), _, _, instantiation_kind::memoization), 4, 0},
+        {frame(   type("fib<1>"), _, _, instantiation_kind::memoization), 3, 0},
+        {frame(  type("fib<2>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("fib<3>"), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
     *i
@@ -260,7 +260,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
-    frame(type("fib<3>"), instantiation_kind::template_instantiation),
+    frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
@@ -269,7 +269,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   ++i;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(frame(type("fib<3>"), instantiation_kind::memoization), *i);
+  JUST_ASSERT_EQUAL(frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
   ++i;
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
@@ -355,9 +355,9 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
     call_graph(
       {
         {frame(type("decltype(foo(13))")), 0, 3},
-        {frame(type("foo"), instantiation_kind::deduced_template_argument_substitution), 1, 0},
-        {frame( type("foo<int>"), instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("void"), instantiation_kind::non_template_type), 1, 0}
+        {frame(type("foo"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("foo<int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
+        {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
     *i
@@ -384,11 +384,15 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT(
     frame(
       type("foo<std::vector<int, std::allocator<int> > >"),
+      _,
+      _,
       instantiation_kind::template_instantiation
     ) == *i
     ||
     frame(
       type("foo<std::__1::vector<int, std::__1::allocator<int> > >"),
+      _,
+      _,
       instantiation_kind::template_instantiation
     ) == *i
   );

@@ -65,6 +65,19 @@ const std::string template_specialization_mp =
   "};"
   "template <int N> struct int_ {};";
 
+const std::string fibonacci_sfinae_mp =
+  "template<bool B, class T = void> struct enable_if {};"
+  "template<class T> struct enable_if<true, T> { typedef T type; };"
+
+  "namespace v1 {" + fibonacci_mp + "}"
+  "namespace v2 {" + fibonacci_mp + "}"
+
+  "template <int N>"
+  "typename enable_if<v1::fib<N>::value == 3, void>::type foo() {}"
+
+  "template <int N>"
+  "typename enable_if<v2::fib<N>::value != 3, char>::type foo() { return{}; }";
+
 #endif
 
 

@@ -28,7 +28,12 @@ frame::frame(const type& name_) :
   _name(name_)
 {}
 
-frame::frame(const type& name_, instantiation_kind kind_) :
+frame::frame(
+  const type& name_,
+  placeholder,
+  placeholder,
+  instantiation_kind kind_
+) :
   _name(name_),
   _kind(kind_)
 {}
@@ -87,6 +92,10 @@ bool metashell_system_test::operator==(
   const json_string& s_
 )
 {
-  return to_json_string(frame_) == s_;
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+  return
+    d.IsObject() && d.HasMember("type") && is_string("frame", d["type"])
+    && matches(frame_, d);
 }
 
