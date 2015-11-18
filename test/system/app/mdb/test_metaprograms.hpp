@@ -78,6 +78,52 @@ const std::string fibonacci_sfinae_mp =
   "template <int N>"
   "typename enable_if<v2::fib<N>::value != 3, char>::type foo() { return{}; }";
 
+// Using fake unique_ptr in namespace _std to avoid slight signature and
+// namespace differences between STLs (like the std::__1 namespace).
+const std::string make_unique_sfinae_mp =
+  "#include <utility>\n"
+  "#include <type_traits>\n"
+
+ R"(
+  namespace _std {
+    template<class T> struct unique_ptr {
+      unique_ptr(T*) {}
+    };
+    template<class T> struct unique_ptr<T[]> {
+      unique_ptr(T*) {}
+    };
+  }
+
+  template<class T> struct unique_if {
+    typedef _std::unique_ptr<T> single_object;
+  };
+
+  template<class T> struct unique_if<T[]> {
+    typedef _std::unique_ptr<T[]> unknown_bound;
+  };
+
+  template<class T, unsigned N> struct unique_if<T[N]> {
+    typedef void known_bound;
+  };
+
+  template<class T, class... Args>
+  typename unique_if<T>::single_object
+  make_unique(Args&&... args) {
+    return _std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+  }
+
+  template<class T>
+  typename unique_if<T>::unknown_bound
+  make_unique(unsigned n) {
+    typedef typename std::remove_extent<T>::type U;
+    return _std::unique_ptr<T>(new U[n]());
+  }
+
+  template<class T, class... Args>
+  typename unique_if<T>::known_bound
+  make_unique(Args&&...) = delete;
+)";
+
 #endif
 
 

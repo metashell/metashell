@@ -24,6 +24,8 @@
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
 
+#include "test_metaprograms.hpp"
+
 #include <just/test.hpp>
 
 using namespace metashell_system_test;
@@ -406,3 +408,34 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT(i == r.end());
 }
 
+JUST_TEST_CASE(test_readme_how_to_sfinae) {
+  const auto r =
+    run_metashell(
+      {
+        command(make_unique_sfinae_mp),
+        command("#msh mdb decltype(make_unique<int>(15))"),
+        command("ft")
+      }
+    );
+
+  auto i = r.begin() + 4;
+
+  JUST_ASSERT_EQUAL(
+    call_graph(
+      {
+        {frame(type("decltype(make_unique<int>(15))")), 0, 6},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::template_instantiation), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("make_unique<int, int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
+        {frame( type("_std::unique_ptr<int>"), _, _, instantiation_kind::template_instantiation), 1, 0}
+      }
+    ),
+    *i
+  );
+}
