@@ -214,8 +214,8 @@ typename unique_if<T>::known_bound
 make_unique(Args&&...) = delete; // line 33
 ```
 
-Let's start metashell, and include this file and start mdb with an instantiation
-of `make_unique`:
+Let's start metashell, include this file and start mdb with an instantiation of
+`make_unique`:
 
 ```cpp
 > #include "make_unique.hpp"
