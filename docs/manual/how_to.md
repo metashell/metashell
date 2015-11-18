@@ -243,8 +243,8 @@ The important parts of the trace are the ExplicitTemplateArgumentSubstitution
 events and the DeducedTemplateArgumentSubstitution event. If you take a look
 at the line numbers at the ExplicitTemplateArgumentSubstitution events, you can
 see, that the compiler tried to instantiate all three overloads of
-`make_unique`, but only one of them succeeded, which is denoted by the
-DeducedTemplateArgumentSubstitution event. The last event shows that indeed,
+`make_unique`, but only one of them succeeded. The successful one is denoted by
+the DeducedTemplateArgumentSubstitution event. The last event shows that indeed,
 the non-array version of `make_unique` got instantiated in the end by the
 expression.
 
