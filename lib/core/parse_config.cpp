@@ -23,6 +23,7 @@
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -74,10 +75,11 @@ namespace
   {
     const config cfg;
     null_libclang lclang;
+    null_executable clang_binary;
     command_processor_queue cpq;
-    shell sh(cfg, cpq, lclang);
+    shell sh(cfg, cpq, clang_binary, lclang);
     const pragma_handler_map
-      m = pragma_handler_map::build_default(sh, &cpq, nullptr);
+      m = pragma_handler_map::build_default(clang_binary, sh, &cpq, nullptr);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)

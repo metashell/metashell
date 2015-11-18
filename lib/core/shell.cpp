@@ -137,6 +137,7 @@ namespace metashell {
 
 shell::shell(
   const config& config_,
+  iface::executable& clang_binary_,
   iface::libclang& libclang_,
   logger* logger_
 ) :
@@ -144,6 +145,7 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
+  _clang_binary(clang_binary_),
   _libclang(&libclang_)
 {
   rebuild_environment();
@@ -153,6 +155,7 @@ shell::shell(
 shell::shell(
   const config& config_,
   command_processor_queue& cpq_,
+  iface::executable& clang_binary_,
   iface::libclang& libclang_,
   logger* logger_
 ) :
@@ -160,6 +163,7 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
+  _clang_binary(clang_binary_),
   _libclang(&libclang_)
 {
   rebuild_environment();
@@ -170,6 +174,7 @@ shell::shell(
   const config& config_,
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
+  iface::executable& clang_binary_,
   iface::libclang& libclang_,
   logger* logger_
 ) :
@@ -177,6 +182,7 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
+  _clang_binary(clang_binary_),
   _libclang(&libclang_)
 {
   init(&cpq_);
@@ -346,7 +352,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(*_env, s_, out_, _config.clang_path, _logger);
+    metashell::code_complete(_clang_binary, *_env, s_, out_, _logger);
   }
   catch (...)
   {
@@ -359,7 +365,8 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
+  _pragma_handlers =
+    pragma_handler_map::build_default(_clang_binary, *this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -460,15 +467,7 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(
-    eval_tmp_formatted(
-      *_env,
-      s_,
-      _config,
-      _logger
-    ),
-    displayer_
-  );
+  display(eval_tmp_formatted(_clang_binary, *_env, s_, _logger), displayer_);
 }
 
 void shell::reset_environment()

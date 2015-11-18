@@ -186,10 +186,12 @@ config set_pch_false(config c) {
 mdb_shell::mdb_shell(
     const config& conf_,
     const iface::environment& env_arg,
+    iface::executable& clang_binary,
     logger* logger_) :
   conf(set_pch_false(conf_)),
   env(conf),
-  _logger(logger_)
+  _logger(logger_),
+  _clang_binary(clang_binary)
 {
   env.append(env_arg.get_all());
 }
@@ -900,9 +902,9 @@ data::type_or_error mdb_shell::run_metaprogram(
     const boost::optional<std::string>& expression,
     iface::displayer& displayer_)
 {
-  result res = expression ?
-    eval_tmp(env, *expression, conf, _logger) :
-    eval_environment(env, conf, _logger);
+  const result res = expression ?
+    eval_tmp(_clang_binary, env, *expression) :
+    eval_environment(_clang_binary, env);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);

@@ -32,6 +32,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 #include <metashell/iface/command_processor.hpp>
+#include <metashell/iface/executable.hpp>
 
 namespace metashell {
 
@@ -42,6 +43,7 @@ public:
   mdb_shell(
       const config& conf,
       const iface::environment& env,
+      iface::executable& clang_binary,
       logger* logger_);
 
   virtual std::string prompt() const override;
@@ -153,6 +155,7 @@ protected:
 
   bool is_stopped = false;
   logger* _logger;
+  iface::executable& _clang_binary;
 };
 
 }

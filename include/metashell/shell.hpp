@@ -27,6 +27,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 #include <metashell/iface/libclang.hpp>
+#include <metashell/iface/executable.hpp>
 
 #include <boost/optional.hpp>
 
@@ -43,6 +44,7 @@ namespace metashell
   public:
     shell(
       const config& config_,
+      iface::executable& clang_binary_,
       iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
@@ -50,6 +52,7 @@ namespace metashell
     shell(
       const config& config_,
       command_processor_queue& cpq_,
+      iface::executable& clang_binary_,
       iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
@@ -58,6 +61,7 @@ namespace metashell
       const config& config_,
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
+      iface::executable& clang_binary_,
       iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
@@ -116,6 +120,7 @@ namespace metashell
     bool _stopped;
     std::stack<std::string> _environment_stack;
     logger* _logger;
+    iface::executable& _clang_binary;
     iface::libclang* _libclang;
 
     void init(command_processor_queue* cpq_);

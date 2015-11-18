@@ -22,6 +22,7 @@
 #include <metashell/shell.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
+#include <metashell/clang_binary.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
@@ -93,9 +94,17 @@ int main(int argc_, const char* argv_[])
     {
       METASHELL_LOG(&logger, "Running shell");
 
+      metashell::clang_binary clang_binary(cfg.clang_path, &logger);
+
       std::unique_ptr<metashell::shell>
         shell(
-          new metashell::shell(cfg, ccfg.processor_queue(), libclang, &logger)
+          new metashell::shell(
+            cfg,
+            ccfg.processor_queue(),
+            clang_binary,
+            libclang,
+            &logger
+          )
         );
 
       if (cfg.splash_enabled)

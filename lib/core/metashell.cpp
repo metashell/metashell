@@ -18,7 +18,6 @@
 
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
-#include <metashell/clang_binary.hpp>
 #include <metashell/for_each_line.hpp>
 #include <metashell/unsaved_file.hpp>
 
@@ -72,15 +71,14 @@ namespace
   }
 
   data::process_output run_clang(
-    const std::string& clang_path_,
+    iface::executable& clang_binary_,
     std::vector<std::string> clang_args_,
-    const std::string& input_,
-    logger* logger_
+    const std::string& input_
   )
   {
     clang_args_.push_back("-"); //Compile from stdin
 
-    return clang_binary(clang_path_, logger_).run(clang_args_, input_);
+    return clang_binary_.run(clang_args_, input_);
   }
 
   std::pair<int, int> source_position_of(const std::string& s_)
@@ -174,9 +172,9 @@ result metashell::validate_code(
 }
 
 result metashell::eval_tmp_formatted(
+  iface::executable& clang_binary_,
   const iface::environment& env_,
   const std::string& tmp_exp_,
-  const config& config_,
   logger* logger_
 )
 {
@@ -189,7 +187,7 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  result simple = eval_tmp(env_, tmp_exp_, config_, logger_);
+  result simple = eval_tmp(clang_binary_, env_, tmp_exp_);
 
   METASHELL_LOG(
     logger_,
@@ -202,26 +200,23 @@ result metashell::eval_tmp_formatted(
 
   result final_result = !simple.successful ? std::move(simple) :
     eval_tmp(
+      clang_binary_,
       env_,
-      "::metashell::format<" + tmp_exp_ + ">::type",
-      config_,
-      logger_);
+      "::metashell::format<" + tmp_exp_ + ">::type");
 
   return final_result;
 }
 
 result metashell::eval_tmp(
+  iface::executable& clang_binary_,
   const iface::environment& env_,
-  const std::string& tmp_exp_,
-  const config& config_,
-  logger* logger_)
+  const std::string& tmp_exp_)
 {
   const data::process_output output = run_clang(
-    config_.clang_path,
+    clang_binary_,
     env_.clang_arguments(),
     env_.get_appended(
-      "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"),
-    logger_);
+      "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"));
 
   if (output.exit_code() != data::exit_code_t(0)) {
     return result{false, "", output.standard_error(), ""};
@@ -232,15 +227,13 @@ result metashell::eval_tmp(
 }
 
 result metashell::eval_environment(
-  const iface::environment& env_,
-  const config& config_,
-  logger* logger_)
+  iface::executable& clang_binary_,
+  const iface::environment& env_)
 {
   const data::process_output output = run_clang(
-    config_.clang_path,
+    clang_binary_,
     env_.clang_arguments(),
-    env_.get(),
-    logger_);
+    env_.get());
 
   if (output.exit_code() != data::exit_code_t(0)) {
     return result{false, "", output.standard_error(), ""};
@@ -346,10 +339,10 @@ namespace
 }
 
 void metashell::code_complete(
+  iface::executable& clang_binary_,
   const iface::environment& env_,
   const std::string& src_,
   std::set<std::string>& out_,
-  const std::string& clang_path_,
   logger* logger_
 )
 {
@@ -398,8 +391,7 @@ void metashell::code_complete(
   );
   clang_args.push_back(src.filename());
 
-  const data::process_output
-    o = clang_binary(clang_path_, logger_).run(clang_args, "");
+  const data::process_output o = clang_binary_.run(clang_args, "");
 
   METASHELL_LOG(logger_, "Exit code of clang: " + to_string(o.exit_code()));
 
