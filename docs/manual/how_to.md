@@ -217,7 +217,7 @@ make_unique(Args&&...) = delete; // line 33
 Let's start metashell, and include this file and start mdb with an instantiation
 of `make_unique`:
 
-```
+```cpp
 > #include "make_unique.hpp"
 > #msh mdb decltype(make_unique<int>(15))
 ```
@@ -243,9 +243,10 @@ The important parts of the trace are the ExplicitTemplateArgumentSubstitution
 events and the DeducedTemplateArgumentSubstitution event. If you take a look
 at the line numbers at the ExplicitTemplateArgumentSubstitution events, you can
 see, that the compiler tried to instantiate all three overloads of
-`make_unique`, but only one of the succeeded, which is denoted by the
-DeducedTemplateArgumentSubstitution event. The last event, shows that indeed,
-the non-array version of `make_unique` got instantiated by our expression.
+`make_unique`, but only one of them succeeded, which is denoted by the
+DeducedTemplateArgumentSubstitution event. The last event shows that indeed,
+the non-array version of `make_unique` got instantiated in the end by the
+expression.
 
 You can try instantiating the two other overloads of `make_unique` and see how
 the compiler instantiates the types in those cases.
