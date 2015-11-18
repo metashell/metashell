@@ -231,6 +231,10 @@ There are a few more type of template events that we haven't seen so far:
   deduction for either a class template partial specialization or a function
   template.
 
+Check out the section about
+[How to debug expressions involving SFINAE?](docs/manual/how_to.md#debug-expressions-involving-sfinae)
+for more information about these event types.
+
 ### Breakpoints and continue
 
 You can also create breakpoints:

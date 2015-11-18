@@ -160,7 +160,7 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 > `METASHELL_INSTANTIATE_EXPRESSION` instantiates the body of the function
 > templates (and further template instantiations triggered by them) as well.
 
-## debug expression involving SFINAE?
+## debug expressions involving SFINAE?
 
 Expressions leveraging on SFINAE (short for Substitution Failure Is Not An
 Error) are very common in template metaprograms. The term refers to the fact
