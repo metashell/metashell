@@ -160,7 +160,7 @@ METASHELL_INSTANTIATE_EXPRESSION( sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) )
 > `METASHELL_INSTANTIATE_EXPRESSION` instantiates the body of the function
 > templates (and further template instantiations triggered by them) as well.
 
-## debug expression involving SFINAE?
+## debug expressions involving SFINAE?
 
 Expressions leveraging on SFINAE (short for Substitution Failure Is Not An
 Error) are very common in template metaprograms. The term refers to the fact
@@ -174,5 +174,79 @@ the overload resolution just by looking at the code. Mdb can help in debugging
 this by showing you all the types that are instantiated while templates are
 substituted.
 
-Note: this section about SFINAE is still a work in progress. It will be expanded
-with examples soon.
+Let's take a look at an example. The following code section is a slightly
+modified version of the `make_unique` implementation from
+[N3656](https://isocpp.org/files/papers/N3656.txt).
+
+```cpp
+#include <memory>
+#include <cstddef>
+#include <utility>
+#include <type_traits>
+
+template<class T> struct unique_if {
+  typedef std::unique_ptr<T> single_object;
+};
+
+template<class T> struct unique_if<T[]> { // line 10
+  typedef std::unique_ptr<T[]> unknown_bound;
+};
+
+template<class T, size_t N> struct unique_if<T[N]> {
+  typedef void known_bound;
+};
+
+template<class T, class... Args>
+typename unique_if<T>::single_object
+make_unique(Args&&... args) { // line 20
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+template<class T>
+typename unique_if<T>::unknown_bound
+make_unique(size_t n) { // line 26
+  typedef typename std::remove_extent<T>::type U;
+  return std::unique_ptr<T>(new U[n]());
+}
+
+template<class T, class... Args>
+typename unique_if<T>::known_bound
+make_unique(Args&&...) = delete; // line 33
+```
+
+Let's start metashell, include this file and start mdb with an instantiation of
+`make_unique`:
+
+```cpp
+> #include "make_unique.hpp"
+> #msh mdb decltype(make_unique<int>(15))
+```
+
+Now let's take a look at the forwardtrace:
+
+```cpp
+(mdb) ft
+decltype(make_unique<int>(15))
++ make_unique at ./make_unique.hpp:33:1 (ExplicitTemplateArgumentSubstitution from <stdin>:2:35)
+| ` unique_if<int> at ./make_unique.hpp:6:26 (TemplateInstantiation from ./make_unique.hpp:32:1)
++ make_unique at ./make_unique.hpp:26:1 (ExplicitTemplateArgumentSubstitution from <stdin>:2:35)
+| ` unique_if<int> at ./make_unique.hpp:6:26 (Memoization from ./make_unique.hpp:25:1)
++ make_unique at ./make_unique.hpp:20:1 (ExplicitTemplateArgumentSubstitution from <stdin>:2:35)
+| + unique_if<int> at ./make_unique.hpp:6:26 (Memoization from ./make_unique.hpp:19:1)
+| ` unique_if<int> at ./make_unique.hpp:6:26 (Memoization from ./make_unique.hpp:19:10)
++ make_unique at ./make_unique.hpp:20:1 (DeducedTemplateArgumentSubstitution from <stdin>:2:35)
++ make_unique<int, int> at ./make_unique.hpp:20:1 (TemplateInstantiation from <stdin>:2:35)
+` std::__1::unique_ptr<int, std::__1::default_delete<int> > at /tmp/just-svfS9J/metashell_environment.hpp:9:12 (TemplateInstantiation from <stdin>:2:59))
+```
+
+The important parts of the trace are the ExplicitTemplateArgumentSubstitution
+events and the DeducedTemplateArgumentSubstitution event. If you take a look
+at the line numbers at the ExplicitTemplateArgumentSubstitution events, you can
+see, that the compiler tried to instantiate all three overloads of
+`make_unique`, but only one of them succeeded. The successful one is denoted by
+the DeducedTemplateArgumentSubstitution event. The last event shows that indeed,
+the non-array version of `make_unique` got instantiated in the end by the
+expression.
+
+You can try instantiating the two other overloads of `make_unique` and see how
+the compiler instantiates the types in those cases.

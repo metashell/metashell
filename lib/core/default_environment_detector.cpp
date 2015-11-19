@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <iostream>
 #include <algorithm>
 #include <stdexcept>
 #include <fstream>
