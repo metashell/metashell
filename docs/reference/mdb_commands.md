@@ -47,6 +47,9 @@ Argument n means jump n times. n defaults to 1 if not specified.
 * __`rbreak <regex>`__ <br />
 Add breakpoint for all types matching `<regex>`.
 
+* __`break list`__ <br />
+List breakpoints.
+
 * __`continue [n]`__ <br />
 Continue program being debugged. <br />
 The program is continued until the nth breakpoint or the end of the program
