@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
+#include <vector>
 
 #include <boost/regex.hpp>
 #include <boost/optional.hpp>
@@ -39,6 +40,8 @@ public:
 private:
   boost::optional<boost::regex> name_regex;
 };
+
+using breakpoints_t = std::vector<breakpoint>;
 
 } // namespace metashell
 

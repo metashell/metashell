@@ -78,9 +78,8 @@ public:
     const std::string& s_,
     std::set<std::string>& out_
   ) const override;
-protected:
-  using breakpoints_t = std::vector<breakpoint>;
 
+protected:
   bool require_empty_args(
     const std::string& args,
     iface::displayer& displayer_
