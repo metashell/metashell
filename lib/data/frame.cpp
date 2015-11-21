@@ -112,9 +112,7 @@ bool operator==(const frame& a_, const frame& b_)
     && a_.is_full() == b_.is_full()
     && (!a_.is_full() ||
         (a_.kind() == b_.kind()
-        // TODO commented out, because I don't want to include this information
-        // into the UTs.
-        /*&& a_.point_of_instantiation() == b_.point_of_instantiation()*/))
+        && a_.point_of_instantiation() == b_.point_of_instantiation()))
     && a_.is_profiled() == b_.is_profiled()
     && (!a_.is_profiled() ||
         (a_.time_taken() == b_.time_taken()
