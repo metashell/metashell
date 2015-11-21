@@ -72,7 +72,7 @@ public:
   };
 
   struct vertex_property {
-    std::string name;
+    data::type type;
     data::file_location source_location;
   };
   struct edge_property {
@@ -125,7 +125,7 @@ public:
   typedef std::stack<step_rollback_t> state_history_t;
 
   vertex_descriptor add_vertex(
-    const std::string& name,
+    const data::type& type,
     const data::file_location& source_location);
 
   edge_descriptor add_edge(

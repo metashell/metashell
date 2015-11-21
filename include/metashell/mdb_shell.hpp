@@ -100,8 +100,8 @@ protected:
     iface::displayer& displayer_
   );
 
-  bool is_wrap_type(const std::string& type);
-  std::string trim_wrap_type(const std::string& type);
+  bool is_wrap_type(const data::type& type);
+  data::type trim_wrap_type(const data::type& type);
 
   void filter_disable_everything();
   void filter_enable_reachable(bool for_current_line);

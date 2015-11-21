@@ -26,7 +26,7 @@ namespace metashell
 {
   namespace data
   {
-    class type : boost::equality_comparable<type>
+    class type : boost::totally_ordered<type>
     {
     public:
       type();
@@ -44,6 +44,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& o_, const type& t_);
     bool operator==(const type& a_, const type& b_);
+    bool operator<(const type& a_, const type& b_);
   }
 }
 

@@ -21,7 +21,8 @@
 #include <ostream>
 #include <sstream>
 
-using namespace metashell::data;
+namespace metashell {
+namespace data {
 
 type::type() {}
 
@@ -48,13 +49,19 @@ bool type::is_integral_constant(
   return regex_match(name(), regex(s.str()));
 }
 
-std::ostream& metashell::data::operator<<(std::ostream& o_, const type& t_)
+std::ostream& operator<<(std::ostream& o_, const type& t_)
 {
   return o_ << t_.name();
 }
 
-bool metashell::data::operator==(const type& a_, const type& b_)
+bool operator==(const type& a_, const type& b_)
 {
   return a_.name() == b_.name();
 }
 
+bool operator<(const type& a_, const type& b_)
+{
+  return a_.name() < b_.name();
+}
+
+}} // namespace metashell:data
