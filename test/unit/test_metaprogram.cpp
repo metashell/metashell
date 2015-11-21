@@ -422,7 +422,7 @@ JUST_TEST_CASE(test_metaprogram_step_sorting_in_profile_mode) {
     JUST_ASSERT(frame.is_full());
     JUST_ASSERT(frame.is_profiled());
 
-    JUST_ASSERT_EQUAL("B", frame.name().name());
+    JUST_ASSERT_EQUAL("B", frame.type().name());
     JUST_ASSERT_EQUAL("yy.cpp", frame.point_of_instantiation().name);
     JUST_ASSERT_EQUAL(30.0, frame.time_taken());
     JUST_ASSERT_EQUAL(0.75, frame.time_taken_ratio());
@@ -438,7 +438,7 @@ JUST_TEST_CASE(test_metaprogram_step_sorting_in_profile_mode) {
 
     // A should come second, since that was faster
 
-    JUST_ASSERT_EQUAL("A", frame.name().name());
+    JUST_ASSERT_EQUAL("A", frame.type().name());
     JUST_ASSERT_EQUAL("xx.cpp", frame.point_of_instantiation().name);
     JUST_ASSERT_EQUAL(10.0, frame.time_taken());
     JUST_ASSERT_EQUAL(0.25, frame.time_taken_ratio());

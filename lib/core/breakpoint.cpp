@@ -26,7 +26,7 @@ bool breakpoint::match(const data::type& type) const {
 }
 
 bool breakpoint::match(const data::frame& frame) const {
-  return name_regex && boost::regex_search(frame.name().name(), *name_regex);
+  return name_regex && boost::regex_search(frame.type().name(), *name_regex);
 }
 
 std::string breakpoint::to_string() const {

@@ -50,7 +50,7 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
 
   JUST_ASSERT(frame.is_full());
   JUST_ASSERT(!frame.is_profiled());
-  JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+  JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   JUST_ASSERT_EQUAL(
     data::instantiation_kind::template_instantiation, frame.kind());
 
@@ -108,7 +108,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -118,7 +118,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
   }
 
   mp.step();
@@ -128,7 +128,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -138,7 +138,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
   }
 
   mp.step();
@@ -188,7 +188,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
     JUST_ASSERT(frame.is_full());
     JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
     JUST_ASSERT_EQUAL(
       data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(20.0, frame.time_taken());
@@ -202,7 +202,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
     JUST_ASSERT(frame.is_full());
     JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
     JUST_ASSERT_EQUAL(
       data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(10.0, frame.time_taken());
