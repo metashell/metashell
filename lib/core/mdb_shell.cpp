@@ -806,6 +806,11 @@ void mdb_shell::command_break(
     return;
   }
 
+  if (breakpoints.empty()) {
+    displayer_.show_raw_text("No breakpoints currently set");
+    return;
+  }
+
   for (const breakpoint& bp : breakpoints) {
     displayer_.show_raw_text(bp.to_string());
   }
