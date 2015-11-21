@@ -19,7 +19,6 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/fstream_file_writer.hpp>
-#include <metashell/null_libclang.hpp>
 
 #include <metashell/metashell.hpp>
 
@@ -73,7 +72,11 @@ namespace
   {
     return
       directory_of_file(env_detector_.path_of_executable())
-      + (env_detector_.on_windows() ? "\\clang\\clang.exe" : "/clang_metashell");
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
   }
 
   std::string detect_clang_binary(
@@ -168,7 +171,6 @@ namespace
 
   bool detect_precompiled_header_usage(
     bool user_wants_precompiled_headers_,
-    iface::environment_detector& env_detector_,
     const config& cfg_,
     iface::displayer& displayer_,
     logger* logger_
@@ -187,7 +189,7 @@ namespace
       }
       else
       {
-        return env_detector_.clang_binary_works_with_libclang(cfg_);
+        return true;
       }
     }
     else
@@ -272,7 +274,7 @@ namespace
         || clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
       )
       {
-        wpath.push_back(dir_of_executable + "\\clang\\include");
+        wpath.push_back(dir_of_executable + "\\templight\\include");
       }
 
       result.insert(result.end(), wpath.begin(), wpath.end());
@@ -283,7 +285,7 @@ namespace
       {
         result.push_back(dir_of_executable + "/../include/metashell/libcxx");
       }
-      result.push_back(dir_of_executable + "/../include/metashell/clang");
+      result.push_back(dir_of_executable + "/../include/metashell/templight");
     }
 
     result.insert(
@@ -345,28 +347,9 @@ config metashell::detect_config(
   cfg.max_template_depth = ucfg_.max_template_depth;
   cfg.saving_enabled = ucfg_.saving_enabled;
 
-  if (env_detector_.on_windows())
-  {
-    // To find libclang.dll
-    if (
-      cfg.clang_path.empty()
-      || cfg.clang_path == clang_shipped_with_metashell(env_detector_)
-    )
-    {
-      env_detector_.append_to_path(
-        directory_of_file(env_detector_.path_of_executable()) + "\\clang"
-      );
-    }
-    else
-    {
-      env_detector_.append_to_path(directory_of_file(cfg.clang_path));
-    }
-  }
-
   cfg.use_precompiled_headers =
     detect_precompiled_header_usage(
       ucfg_.use_precompiled_headers,
-      env_detector_,
       cfg,
       displayer_,
       logger_
@@ -382,8 +365,7 @@ config metashell::detect_config(
 
 config metashell::empty_config(const std::string& argv0_)
 {
-  null_libclang lc;
-  default_environment_detector ed(argv0_, nullptr, lc);
+  default_environment_detector ed(argv0_, nullptr);
   null_displayer d;
   return detect_config(user_config(), ed, d, nullptr);
 }

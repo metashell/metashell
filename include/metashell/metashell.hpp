@@ -19,7 +19,6 @@
 
 #include <metashell/config.hpp>
 #include <metashell/iface/environment.hpp>
-#include <metashell/iface/libclang.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
@@ -54,9 +53,8 @@ namespace metashell
     const std::string& s_,
     const config& config_,
     const iface::environment& env_,
-    const std::string& intput_filename_,
     logger* logger_,
-    iface::libclang& libclang_
+    iface::executable& clang_binary_
   );
 
   void code_complete(

@@ -81,47 +81,49 @@ function(copy_all_files_to_include SRC_PATH INSTALL_PATH INSTALL_COPIED_FILES)
       install(
         FILES "${SRC_PATH}/${REL_PATH}"
         DESTINATION "${INSTALL_PATH}/${DST_DIR}"
-        COMPONENT clang
+        COMPONENT templight
       )
     endif()
   endforeach ()
 endfunction()
 
-function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
+function(copy_templight_next_to_binary INSTALL_COPIED_FILES)
   if (WIN32)
-    # libclang.dll
-    copy_file_to_binary_dir("${CLANG_DLL}" "clang/libclang.dll" true libclang)
-  
-    # Headers used by Clang on Windows
+    # Headers used by Templight on Windows
     copy_all_files_to_binary_dir(
-      "${CLANG_HEADERS}"
-      "clang/include"
+      "${TEMPLIGHT_HEADERS}"
+      "templight/include"
       true
-      libclang
+      templight
     )
   
-    # clang compiler
-    copy_file_to_binary_dir("${CLANG_BINARY}" "clang/clang.exe" true clang)
+    # templight
+    copy_file_to_binary_dir(
+      "${TEMPLIGHT_BINARY}"
+      "templight/templight.exe"
+      true
+      templight
+    )
   else()
-    # Clang binary
-    set(MY_CLANG "${CMAKE_CURRENT_BINARY_DIR}/clang_metashell")
-    configure_file("${CLANG_BINARY}" "${MY_CLANG}" COPYONLY)
+    # Templight binary
+    set(MY_TEMPLIGHT "${CMAKE_CURRENT_BINARY_DIR}/templight_metashell")
+    configure_file("${TEMPLIGHT_BINARY}" "${MY_TEMPLIGHT}" COPYONLY)
     if (INSTALL_COPIED_FILES)
       install(
-        FILES "${MY_CLANG}"
+        FILES "${MY_TEMPLIGHT}"
         DESTINATION bin
         PERMISSIONS
           OWNER_READ OWNER_EXECUTE
           GROUP_READ GROUP_EXECUTE
           WORLD_READ WORLD_EXECUTE
-        COMPONENT clang
+        COMPONENT templight
       )
     endif()
 
-    # Clang headers
+    # Templight headers
     copy_all_files_to_include(
-      "${CLANG_HEADERS}"
-      "${CLANG_HEADER_INSTALL_PATH}"
+      "${TEMPLIGHT_HEADERS}"
+      "${TEMPLIGHT_HEADER_INSTALL_PATH}"
       ${INSTALL_COPIED_FILES}
     )
 
@@ -134,5 +136,5 @@ function(copy_clang_next_to_binary INSTALL_COPIED_FILES)
       )
     endif()
   endif()
-endfunction(copy_clang_next_to_binary)
+endfunction(copy_templight_next_to_binary)
 

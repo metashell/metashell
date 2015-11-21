@@ -40,8 +40,6 @@ namespace metashell
       virtual bool on_windows() = 0;
       virtual bool on_osx() = 0;
 
-      virtual void append_to_path(const std::string& path_) = 0;
-
       virtual std::vector<std::string> default_clang_sysinclude(
         const std::string& clang_path_,
         stdlib stdlib_
@@ -50,8 +48,6 @@ namespace metashell
       virtual std::vector<std::string> extra_sysinclude() = 0;
 
       virtual std::string path_of_executable() = 0;
-
-      virtual bool clang_binary_works_with_libclang(const config& cfg_) = 0;
     };
   }
 }

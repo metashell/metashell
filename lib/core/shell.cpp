@@ -138,15 +138,13 @@ namespace metashell {
 shell::shell(
   const config& config_,
   iface::executable& clang_binary_,
-  iface::libclang& libclang_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   rebuild_environment();
   init(nullptr);
@@ -156,15 +154,13 @@ shell::shell(
   const config& config_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
-  iface::libclang& libclang_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   rebuild_environment();
   init(&cpq_);
@@ -175,15 +171,13 @@ shell::shell(
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
-  iface::libclang& libclang_,
   logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   init(&cpq_);
 }
@@ -321,8 +315,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r =
-    validate_code(s_, _config, *_env, input_filename(), _logger, *_libclang);
+  const result r = validate_code(s_, _config, *_env, _logger, _clang_binary);
 
   if (r.successful)
   {
@@ -338,11 +331,6 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
   }
   ::display(r, displayer_);
   return r.successful;
-}
-
-const char* shell::input_filename()
-{
-  return "<stdin>";
 }
 
 void shell::code_complete(

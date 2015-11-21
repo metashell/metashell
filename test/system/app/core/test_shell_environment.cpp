@@ -137,3 +137,32 @@ JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
   JUST_ASSERT(i == r.end());
 }
 
+JUST_TEST_CASE(
+  test_environment_add_invalid_code_does_not_change_environment_and_displays_error
+)
+{
+  const cpp_code breaking("typedef nonexisting_type x;");
+
+  const auto r =
+    run_metashell(
+      {
+        command("#pragma metashell environment"),
+        command("#pragma metashell environment add " + breaking.code()),
+        command("#pragma metashell environment")
+      }
+    );
+
+  auto i = r.begin();
+
+  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+
+  const auto original_env = *i; ++i;
+
+  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(error(_), *i); ++i;
+  JUST_ASSERT_EQUAL(comment(_), *i); ++i;
+  JUST_ASSERT_EQUAL(breaking, *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(original_env, *i);
+}
+

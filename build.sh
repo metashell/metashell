@@ -71,15 +71,14 @@ fi
 echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
-# Build Clang
+# Build Templight
 cd 3rd
   cd templight
     mkdir -p build; cd build
       cmake ../llvm \
-        -DLIBCLANG_BUILD_STATIC=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DLLVM_ENABLE_TERMINFO=OFF \
-        && make clang libclang libclang_static templight -j${BUILD_THREADS}
+        && make templight -j${BUILD_THREADS}
     cd ..
   cd ..
 cd ..

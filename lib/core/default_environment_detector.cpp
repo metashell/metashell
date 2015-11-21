@@ -113,12 +113,10 @@ namespace
 
 default_environment_detector::default_environment_detector(
   const std::string& argv0_,
-  logger* logger_,
-  iface::libclang& libclang_
+  logger* logger_
 ) :
   _argv0(argv0_),
-  _logger(logger_),
-  _libclang(&libclang_)
+  _logger(logger_)
 {}
 
 std::string default_environment_detector::search_clang_binary()
@@ -147,12 +145,6 @@ bool default_environment_detector::on_osx()
 #else
   return false;
 #endif
-}
-
-void default_environment_detector::append_to_path(const std::string& path_)
-{
-  METASHELL_LOG(_logger, "Appending to PATH: " + path_);
-  just::environment::append_to_path(path_);
 }
 
 std::vector<std::string> default_environment_detector::default_clang_sysinclude(
@@ -227,36 +219,5 @@ std::vector<std::string> default_environment_detector::extra_sysinclude()
       ::extra_sysinclude
         + sizeof(::extra_sysinclude) / sizeof(const char*)
     );
-}
-
-bool default_environment_detector::clang_binary_works_with_libclang(
-  const config& cfg_
-)
-{
-  METASHELL_LOG(
-    _logger,
-    "Checking if libclang can use the Clang binary's precompiled headers."
-  );
-
-  config cfg(cfg_);
-  cfg.use_precompiled_headers = true;
-
-  const data::unsaved_file src("<stdin>", "typedef foo bar;");
-
-  try
-  {
-    header_file_environment env(cfg, _logger);
-    env.append("struct foo {};");
-
-    std::unique_ptr<iface::cxindex>
-      index = _libclang->create_index(env, _logger);
-
-    std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
-    return tu->get_error_string().empty();
-  }
-  catch (...)
-  {
-    return false;
-  }
 }
 

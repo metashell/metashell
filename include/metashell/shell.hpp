@@ -26,7 +26,6 @@
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
-#include <metashell/iface/libclang.hpp>
 #include <metashell/iface/executable.hpp>
 
 #include <boost/optional.hpp>
@@ -45,7 +44,6 @@ namespace metashell
     shell(
       const config& config_,
       iface::executable& clang_binary_,
-      iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
 
@@ -53,7 +51,6 @@ namespace metashell
       const config& config_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
-      iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
 
@@ -62,7 +59,6 @@ namespace metashell
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
-      iface::libclang& libclang_,
       logger* logger_ = nullptr
     );
 
@@ -82,8 +78,6 @@ namespace metashell
 
     bool store_in_buffer(const std::string& s_, iface::displayer& displayer_);
     void run_metaprogram(const std::string& s_, iface::displayer& displayer_);
-
-    static const char* input_filename();
 
     virtual void code_complete(
       const std::string& s_,
@@ -121,7 +115,6 @@ namespace metashell
     std::stack<std::string> _environment_stack;
     logger* _logger;
     iface::executable& _clang_binary;
-    iface::libclang* _libclang;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

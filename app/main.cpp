@@ -27,8 +27,6 @@
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
-#include <metashell/clang/version.hpp>
-#include <metashell/clang/libclang.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -47,7 +45,6 @@ namespace
 
     return
       {
-        {"libclang", metashell::clang::libclang_version()},
         {"Boost.Wave", metashell::wave_version()},
         {readline_name, metashell::readline::version()}
       };
@@ -84,9 +81,7 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    metashell::clang::libclang libclang;
-
-    metashell::default_environment_detector det(argv_[0], &logger, libclang);
+    metashell::default_environment_detector det(argv_[0], &logger);
     const metashell::config
       cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 
@@ -102,7 +97,6 @@ int main(int argc_, const char* argv_[])
             cfg,
             ccfg.processor_queue(),
             clang_binary,
-            libclang,
             &logger
           )
         );

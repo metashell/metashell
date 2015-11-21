@@ -65,6 +65,7 @@ data::process_output clang_binary::run(
 
   const just::process::output o = just::process::run(cmd, stdin_);
 
+  METASHELL_LOG(_logger, "Clang's exit code: " + std::to_string(o.exit_code()));
   METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output());
   METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error());
 

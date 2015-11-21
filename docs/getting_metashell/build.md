@@ -71,6 +71,7 @@ used:
 
 * Download the source code from [github](http://github.com/sabel83/metashell).
 * Install [CMake](http://cmake.org/)
+* Install [Python](https://www.python.org/downloads/)
 * First you need to build Clang with
   [Templight](https://github.com/mikael-s-persson/templight).
     * Start a command line on your Windows host and go into the source directory
@@ -79,14 +80,12 @@ used:
     * Run `cd build`
     * Run `cmake ..\llvm`
     * Start Visual Studio 2013 and open the generated solution
-      (`templight\build\LLVM.sln`)
+      (`3rd\templight\build\LLVM.sln`)
     * In the _BUILD_ menu choose _Configuration Manager..._. As
       _Active solution configuration:_ choose _Release_ and click on _Close_.
       This is needed to do a release instead of a debug build of Clang.
-    * In _Solution Explorer_ right-click on _Clang libraries_ and choose
-      _Build_.
-    * In _Solution Explorer_ right-click on _Clang executables_ and choose
-      _Build_.
+    * In _Solution Explorer_, inside _Clang executables_ right-click on
+      _templight_ and choose _Build_.
     * You can optionally try building the rest of the projects, but Metashell
       does not need them.
 * Now you can build Metashell
@@ -96,8 +95,7 @@ used:
     * Run `cmake .. -G "Visual Studio 12 2013"`.
     * CMake will generate a solution file for Metashell in the `bin` directory.
       Open it with Visual Studio 2013 and build it. You can do a debug or a
-      release build (or both) against the release build of the Templight-enabled
-      Clang.
+      release build (or both) against the release build of Templight.
     * After a successful build you can find the Metashell executables in
       `bin/app/Release/metashell.exe` or `bin/app/Debug/metashell.exe` depending
       on the build type.

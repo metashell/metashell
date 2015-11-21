@@ -143,27 +143,30 @@ result metashell::validate_code(
   const std::string& src_,
   const config& config_,
   const iface::environment& env_,
-  const std::string& input_filename_,
   logger* logger_,
-  iface::libclang& libclang_
+  iface::executable& clang_binary_
 )
 {
   METASHELL_LOG(logger_, "Validating code " + src_);
 
   try
   {
-    const data::unsaved_file src(input_filename_, env_.get_appended(src_));
-    std::unique_ptr<iface::cxindex>
-      index = libclang_.create_index(env_, logger_);
-    std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
+    const std::string src = env_.get_appended(src_);
 
-    const std::string error_string = tu->get_error_string();
+    const data::process_output
+      output = run_clang(clang_binary_, env_.clang_arguments(), src);
+
+    const bool accept =
+      output.exit_code() == data::exit_code_t(0)
+      && output.standard_error().empty();
+
     return
-      result(error_string.empty(),
+      result{
+        accept,
         "",
-        error_string,
-        config_.verbose ? src.content() : ""
-      );
+        output.standard_error(),
+        accept && config_.verbose ? src : ""
+      };
   }
   catch (const std::exception& e)
   {

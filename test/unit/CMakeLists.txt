@@ -71,10 +71,12 @@ if (ENABLE_CODE_COVERAGE)
   )
 endif()
 
-#########################################################
-# Copying files next to the Metashell binary on Windows #
-#########################################################
-include(MetashellClang)
-
-copy_clang_next_to_binary(false)
+if (TEMPLIGHT_FOUND)
+  #########################################################
+  # Copying files next to the Metashell binary on Windows #
+  #########################################################
+  include(MetashellTemplight)
+  
+  copy_templight_next_to_binary(false)
+endif ()
 

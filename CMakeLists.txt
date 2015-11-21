@@ -73,37 +73,31 @@ if (ENABLE_PROFILING)
   endif()
 endif()
 
-# The "internal" Clang build
+# The "internal" Templight build
 set(TEMPLIGHT_BUILD "${CMAKE_SOURCE_DIR}/3rd/templight/build")
 
 set(
-  CLANG_INCLUDEDIR
-  "${CLANG_INCLUDEDIR};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/include"
+  TEMPLIGHT_INCLUDEDIR
+  "${TEMPLIGHT_INCLUDEDIR};${CMAKE_SOURCE_DIR}/3rd/templight/llvm/tools/clang/include"
 )
-set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin")
-set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/bin")
-set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/lib")
-set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/Release/lib")
-set(CLANG_LIBRARYDIR "${CLANG_LIBRARYDIR};${TEMPLIGHT_BUILD}/lib")
+set(
+  TEMPLIGHT_BINARYDIR
+  "${TEMPLIGHT_BINARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin"
+)
+set(
+  TEMPLIGHT_BINARYDIR
+  "${TEMPLIGHT_BINARYDIR};${TEMPLIGHT_BUILD}/Release/bin"
+)
+set(
+  TEMPLIGHT_BINARYDIR
+  "${TEMPLIGHT_BINARYDIR};${TEMPLIGHT_BUILD}/bin"
+)
 
+# Templight
+find_package(Templight)
 
-set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${TEMPLIGHT_BUILD}/Release+Asserts/bin")
-set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${TEMPLIGHT_BUILD}/Release/bin")
-set(CLANG_BINARYDIR "${CLANG_BINARYDIR};${TEMPLIGHT_BUILD}/bin")
-
-# Clang
-if (NOT (WIN32 OR DEFINED CLANG_STATIC))
-  set(CLANG_STATIC true)
-endif()
-
-find_package(Clang)
-
-if (CLANG_STATIC)
-  find_package(ZLIB)
-endif()
-
-if (NOT DEFINED CLANG_HEADER_INSTALL_PATH)
-  set(CLANG_HEADER_INSTALL_PATH "include/metashell/clang")
+if (NOT DEFINED TEMPLIGHT_HEADER_INSTALL_PATH)
+  set(TEMPLIGHT_HEADER_INSTALL_PATH "include/metashell/templight")
 endif ()
 
 if (NOT DEFINED LIBCXX_HEADER_INSTALL_PATH)
@@ -237,28 +231,24 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
   endif ()
 
-  set(CPACK_COMPONENTS_ALL metashell windows_headers clang libclang)
-  set(CPACK_ALL_INSTALL_TYPES full noclang minimal)
+  set(CPACK_COMPONENTS_ALL metashell windows_headers templight)
+  set(CPACK_ALL_INSTALL_TYPES full notemplight minimal)
 
   set(CPACK_INSTALL_TYPE_FULL_DISPLAY_NAME "Full")
-  set(CPACK_INSTALL_TYPE_NOLCANG_DISPLAY_NAME "Without Clang")
+  set(CPACK_INSTALL_TYPE_NOTEMPLIGHT_DISPLAY_NAME "Without Templight")
   set(CPACK_INSTALL_TYPE_MINIMAL_DISPLAY_NAME "Minimal")
 
   set(CPACK_COMPONENT_METASHELL_DISPLAY_NAME "Metashell")
   set(CPACK_COMPONENT_METASHELL_DESCRIPTION "The Metashell binary")
-  set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full noclang minimal)
+  set(CPACK_COMPONENT_METASHELL_INSTALL_TYPES full notemplight minimal)
 
   set(CPACK_COMPONENT_WINDOWS_HEADERS_DISPLAY_NAME "C++ headers")
   set(CPACK_COMPONENT_WINDOWS_HEADERS_DESCRIPTION "The MinGW standard headers")
-  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full noclang)
+  set(CPACK_COMPONENT_WINDOWS_HEADERS_INSTALL_TYPES full notemplight)
 
-  set(CPACK_COMPONENT_LIBCLANG_DISPLAY_NAME "Libclang")
-  set(CPACK_COMPONENT_LIBCLANG_DESCRIPTION "A Clang library to use when Clang is not installed on your computer. It is recommend to install Clang for better performance in Metashell.")
-  set(CPACK_COMPONENT_LIBCLANG_INSTALL_TYPES full)
-
-  set(CPACK_COMPONENT_CLANG_DISPLAY_NAME "Clang")
-  set(CPACK_COMPONENT_CLANG_DESCRIPTION "The Clang compiler")
-  set(CPACK_COMPONENT_CLANG_INSTALL_TYPES full)
+  set(CPACK_COMPONENT_TEMPLIGHT_DISPLAY_NAME "Templight")
+  set(CPACK_COMPONENT_TEMPLIGHT_DESCRIPTION "Templight")
+  set(CPACK_COMPONENT_TEMPLIGHT_INSTALL_TYPES full)
 
   include(CPack)
 

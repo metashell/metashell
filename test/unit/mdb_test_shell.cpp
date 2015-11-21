@@ -20,7 +20,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/in_memory_environment.hpp>
-#include <metashell/null_libclang.hpp>
 #include <metashell/null_executable.hpp>
 
 namespace
@@ -33,9 +32,7 @@ namespace
 
   metashell::shell& get_shell()
   {
-    static metashell::null_libclang lc;
-    static metashell::shell
-      sh(metashell::test_config(), get_clang_binary(), lc);
+    static metashell::shell sh(metashell::test_config(), get_clang_binary());
     return sh;
   }
 }
