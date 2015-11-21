@@ -81,12 +81,12 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    metashell::default_environment_detector det(argv_[0], &logger);
-    const metashell::config
-      cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
-
     if (r.should_run_shell())
     {
+      metashell::default_environment_detector det(argv_[0], &logger);
+      const metashell::config
+        cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
+
       METASHELL_LOG(&logger, "Running shell");
 
       metashell::clang_binary clang_binary(cfg.clang_path, &logger);
