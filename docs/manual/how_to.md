@@ -42,7 +42,7 @@ Metaprogram started
 (mdb) rbreak foo
 Breakpoint "foo" will stop the execution on 2 locations
 (mdb) continue 2
-Breakpoint "foo" reached
+Breakpoint 1: "foo" reached
 foo<std::vector<int, std::allocator<int> > > (TemplateInstantiation)
 ```
 

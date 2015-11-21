@@ -29,15 +29,17 @@ namespace metashell {
 
 class breakpoint {
 public:
-  breakpoint() = default;
-  explicit breakpoint(const boost::regex& name_regex);
+  explicit breakpoint(int id, const boost::regex& name_regex);
 
   // TODO: type overload should be removed, once this gets more complicated
   bool match(const data::type& type) const;
   bool match(const data::frame& frame) const;
 
+  int get_id() const;
+
   std::string to_string() const;
 private:
+  int id;
   boost::optional<boost::regex> name_regex;
 };
 

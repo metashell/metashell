@@ -336,7 +336,8 @@ void mdb_shell::command_continue(
 
   if (breakpoint_ptr) {
     displayer_.show_raw_text(
-        "Breakpoint \"" + breakpoint_ptr->to_string() + "\" reached");
+        "Breakpoint " + std::to_string(breakpoint_ptr->get_id()) + ": \"" +
+        breakpoint_ptr->to_string() + "\" reached");
   }
   display_movement_info(*continue_count != 0, displayer_);
 }
@@ -665,6 +666,7 @@ void mdb_shell::command_evaluate(
     expression = boost::none;
   }
 
+  next_breakpoint_id = 1;
   breakpoints.clear();
 
   metaprogram::mode_t mode = [&] {
@@ -766,7 +768,8 @@ void mdb_shell::command_rbreak(
     return;
   }
   try {
-    breakpoint bp{boost::regex(arg)};
+    breakpoint bp{next_breakpoint_id, boost::regex(arg)};
+    ++next_breakpoint_id;
 
     unsigned match_count = 0;
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {

@@ -18,8 +18,8 @@
 
 namespace metashell {
 
-breakpoint::breakpoint(const boost::regex& name_regex) :
-  name_regex(name_regex) {}
+breakpoint::breakpoint(int id, const boost::regex& name_regex) :
+  id(id), name_regex(name_regex) {}
 
 bool breakpoint::match(const data::type& type) const {
   return name_regex && boost::regex_search(type.name(), *name_regex);
@@ -27,6 +27,10 @@ bool breakpoint::match(const data::type& type) const {
 
 bool breakpoint::match(const data::frame& frame) const {
   return name_regex && boost::regex_search(frame.type().name(), *name_regex);
+}
+
+int breakpoint::get_id() const {
+  return id;
 }
 
 std::string breakpoint::to_string() const {

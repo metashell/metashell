@@ -140,6 +140,8 @@ protected:
   templight_environment env;
 
   boost::optional<metaprogram> mp;
+
+  int next_breakpoint_id = 1;
   breakpoints_t breakpoints;
 
   std::string prev_line;
