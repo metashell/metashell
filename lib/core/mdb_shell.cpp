@@ -257,12 +257,6 @@ void mdb_shell::line_available(
     displayer_.show_error("Unknown error\n");
   }
 }
-bool mdb_shell::breakpoint_match(
-    metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint)
-{
-  return boost::regex_search(
-      mp->get_vertex_property(vertex).name, std::get<1>(breakpoint));
-}
 
 bool mdb_shell::require_empty_args(
     const std::string& args,
@@ -333,16 +327,16 @@ void mdb_shell::command_continue(
   direction_t direction =
     *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
 
-  breakpoints_t::iterator breakpoint_it = breakpoints.end();
+  const breakpoint* breakpoint_ptr = nullptr;
   for (int i = 0;
       i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
   {
-    breakpoint_it = continue_metaprogram(direction);
+    breakpoint_ptr = continue_metaprogram(direction);
   }
 
-  if (breakpoint_it != breakpoints.end()) {
+  if (breakpoint_ptr) {
     displayer_.show_raw_text(
-        "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
+        "Breakpoint \"" + breakpoint_ptr->to_string() + "\" reached");
   }
   display_movement_info(*continue_count != 0, displayer_);
 }
@@ -770,11 +764,11 @@ void mdb_shell::command_rbreak(
     return;
   }
   try {
-    breakpoint_t breakpoint = std::make_tuple(arg, boost::regex(arg));
+    breakpoint bp{boost::regex(arg)};
 
     unsigned match_count = 0;
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-      if (breakpoint_match(vertex, breakpoint)) {
+      if (bp.match(data::type(mp->get_vertex_property(vertex).name))) {
         match_count += mp->get_traversal_count(vertex);
       }
     }
@@ -786,7 +780,7 @@ void mdb_shell::command_rbreak(
           "Breakpoint \"" + arg + "\" will stop the execution on " +
           std::to_string(match_count) +
           (match_count > 1 ? " locations" : " location"));
-      breakpoints.push_back(breakpoint);
+      breakpoints.push_back(bp);
     }
   } catch (const boost::regex_error&) {
     displayer_.show_error("\"" + arg + "\" is not a valid regex");
@@ -975,19 +969,17 @@ boost::optional<int> mdb_shell::parse_mandatory_integer(
   return value;
 }
 
-mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
-    direction_t direction)
-{
+const breakpoint* mdb_shell::continue_metaprogram(direction_t direction) {
   assert(!mp->is_at_endpoint(direction));
 
   while (true) {
     mp->step(direction);
     if (mp->is_at_endpoint(direction)) {
-      return breakpoints.end();
+      return nullptr;
     }
-    for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
-      if (breakpoint_match(mp->get_current_vertex(), *it)) {
-        return it;
+    for (const breakpoint& bp : breakpoints) {
+      if (bp.match(mp->get_current_frame())) {
+        return &bp;
       }
     }
   }

@@ -23,6 +23,7 @@
 #include <boost/optional.hpp>
 
 #include <metashell/config.hpp>
+#include <metashell/breakpoint.hpp>
 #include <metashell/metaprogram.hpp>
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
@@ -78,12 +79,7 @@ public:
     std::set<std::string>& out_
   ) const override;
 protected:
-  // breakpoint is simply a regex for now
-  typedef std::tuple<std::string, boost::regex> breakpoint_t;
-  typedef std::vector<breakpoint_t> breakpoints_t;
-
-  bool breakpoint_match(
-      metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint);
+  using breakpoints_t = std::vector<breakpoint>;
 
   bool require_empty_args(
     const std::string& args,
@@ -120,7 +116,8 @@ protected:
 
   static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
-  breakpoints_t::iterator continue_metaprogram(direction_t direction);
+  // may return nullptr
+  const breakpoint* continue_metaprogram(direction_t direction);
   unsigned finish_metaprogram();
 
   void next_metaprogram(direction_t direction, int n);
