@@ -34,10 +34,14 @@ int breakpoint::get_id() const {
 }
 
 std::string breakpoint::to_string() const {
+  std::stringstream ss;
+  ss << "Breakpoint " << id << ": ";
   if (name_regex) {
-    return name_regex->str();
+    ss << "regex(\"" + name_regex->str() + "\")";
+  } else {
+    ss << "unknown()";
   }
-  return {};
+  return ss.str();
 }
 
 } // namespace metashell

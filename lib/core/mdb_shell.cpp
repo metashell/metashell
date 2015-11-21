@@ -134,6 +134,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
         ""},
+      {{"break"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_break),
+        "list",
+        "List breakpoints.",
+        ""},
       {{"continue"}, repeatable_t::repeatable,
         callback(&mdb_shell::command_continue),
         "[n]",
@@ -335,9 +340,7 @@ void mdb_shell::command_continue(
   }
 
   if (breakpoint_ptr) {
-    displayer_.show_raw_text(
-        "Breakpoint " + std::to_string(breakpoint_ptr->get_id()) + ": \"" +
-        breakpoint_ptr->to_string() + "\" reached");
+    displayer_.show_raw_text(breakpoint_ptr->to_string() + " reached");
   }
   display_movement_info(*continue_count != 0, displayer_);
 }
@@ -789,6 +792,22 @@ void mdb_shell::command_rbreak(
     }
   } catch (const boost::regex_error&) {
     displayer_.show_error("\"" + arg + "\" is not a valid regex");
+  }
+}
+
+void mdb_shell::command_break(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  // TODO there will other more kinds of arguments here but needs a proper but
+  // it needs a proper command parser
+  if (arg != "list") {
+    displayer_.show_error("Call break like this: \"break list\"");
+    return;
+  }
+
+  for (const breakpoint& bp : breakpoints) {
+    displayer_.show_raw_text(bp.to_string());
   }
 }
 

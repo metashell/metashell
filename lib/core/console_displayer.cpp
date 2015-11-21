@@ -394,4 +394,3 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
     depth_counter[n.depth()+1] += n.number_of_children();
   }
 }
-

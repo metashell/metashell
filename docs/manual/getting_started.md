@@ -248,7 +248,7 @@ Now let's continue the execution until the first breakpoint:
 
 ```cpp
 (mdb) continue
-Breakpoint 1: "fib<3>" reached
+Breakpoint 1: regex("fib<3>") reached
 fib<3> (TemplateInstantiation)
 ```
 
@@ -257,7 +257,7 @@ instead of `continue`:
 
 ```cpp
 (mdb) c
-Breakpoint 1: "fib<3>" reached
+Breakpoint 1: regex("fib<3>") reached
 fib<3> (Memoization)
 ```
 

@@ -262,7 +262,7 @@ JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: \"int\" reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i); i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i);
 }
@@ -289,7 +289,7 @@ JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: \"int\" reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i); i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i);
 }
@@ -316,7 +316,7 @@ JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: \"int\" reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
   JUST_ASSERT_EQUAL(error(_), *i); i += 2;
   JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
 }
