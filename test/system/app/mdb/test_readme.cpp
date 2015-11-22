@@ -259,7 +259,7 @@ JUST_TEST_CASE(test_readme_getting_started)
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
     frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
@@ -269,7 +269,7 @@ JUST_TEST_CASE(test_readme_getting_started)
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
   ++i;
   JUST_ASSERT_EQUAL(frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
   ++i;
@@ -381,7 +381,7 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"foo\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"foo\") reached"), *i);
   ++i;
   JUST_ASSERT(
     frame(

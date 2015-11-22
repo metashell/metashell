@@ -7,6 +7,7 @@
     * Experimental support for profiling metaprograms in MDB
     * Experimental support for traversing the whole environment in MDB
     * New MDB command: `finish`
+    * New MDB command: `break`
     * MDB now shows DeducedTemplateArgumentSubstitution events, which helps
       you to debug expressions involving SFINAE.
 

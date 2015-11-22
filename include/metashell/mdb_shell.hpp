@@ -23,6 +23,7 @@
 #include <boost/optional.hpp>
 
 #include <metashell/config.hpp>
+#include <metashell/breakpoint.hpp>
 #include <metashell/metaprogram.hpp>
 #include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
@@ -70,6 +71,7 @@ public:
   void command_backtrace(const std::string& arg, iface::displayer& displayer_);
   void command_frame(const std::string& arg, iface::displayer& displayer_);
   void command_rbreak(const std::string& arg, iface::displayer& displayer_);
+  void command_break(const std::string& arg, iface::displayer& displayer_);
   void command_help(const std::string& arg, iface::displayer& displayer_);
   void command_quit(const std::string& arg, iface::displayer& displayer_);
 
@@ -77,14 +79,8 @@ public:
     const std::string& s_,
     std::set<std::string>& out_
   ) const override;
+
 protected:
-  // breakpoint is simply a regex for now
-  typedef std::tuple<std::string, boost::regex> breakpoint_t;
-  typedef std::vector<breakpoint_t> breakpoints_t;
-
-  bool breakpoint_match(
-      metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint);
-
   bool require_empty_args(
     const std::string& args,
     iface::displayer& displayer_
@@ -104,8 +100,8 @@ protected:
     iface::displayer& displayer_
   );
 
-  bool is_wrap_type(const std::string& type);
-  std::string trim_wrap_type(const std::string& type);
+  bool is_wrap_type(const data::type& type);
+  data::type trim_wrap_type(const data::type& type);
 
   void filter_disable_everything();
   void filter_enable_reachable(bool for_current_line);
@@ -120,7 +116,8 @@ protected:
 
   static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
-  breakpoints_t::iterator continue_metaprogram(direction_t direction);
+  // may return nullptr
+  const breakpoint* continue_metaprogram(direction_t direction);
   unsigned finish_metaprogram();
 
   void next_metaprogram(direction_t direction, int n);
@@ -144,6 +141,8 @@ protected:
   templight_environment env;
 
   boost::optional<metaprogram> mp;
+
+  int next_breakpoint_id = 1;
   breakpoints_t breakpoints;
 
   std::string prev_line;

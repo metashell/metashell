@@ -20,21 +20,22 @@
 #include <sstream>
 #include <cassert>
 
-using namespace metashell::data;
+namespace metashell {
+namespace data {
 
-frame::frame(const type& name_, const file_location& source_location_) :
-  _name(name_),
+frame::frame(const data::type& type_, const file_location& source_location_) :
+  _type(type_),
   _source_location(source_location_)
 {}
 
 frame::frame(
-    const type& name_,
+    const data::type& type_,
     const file_location& source_location_,
     const file_location& point_of_instantiation_,
     instantiation_kind kind_,
     boost::optional<double> time_taken,
     boost::optional<double> time_taken_ratio) :
-  _name(name_),
+  _type(type_),
   _source_location(source_location_),
   _point_of_instantiation(point_of_instantiation_),
   _kind(kind_),
@@ -42,9 +43,9 @@ frame::frame(
   _time_taken_ratio(time_taken_ratio)
 {}
 
-const type& frame::name() const
+const type& frame::type() const
 {
-  return _name;
+  return _type;
 }
 
 const file_location& frame::source_location() const
@@ -89,9 +90,9 @@ double frame::time_taken_ratio() const
 }
 
 
-std::ostream& metashell::data::operator<<(std::ostream& o_, const frame& f_)
+std::ostream& operator<<(std::ostream& o_, const frame& f_)
 {
-  o_ << "frame(\"" << f_.name() << "\"";
+  o_ << "frame(\"" << f_.type() << "\"";
   if (f_.is_full())
   {
     o_ << ", " << f_.point_of_instantiation() << ", " << f_.kind();
@@ -104,19 +105,18 @@ std::ostream& metashell::data::operator<<(std::ostream& o_, const frame& f_)
   return o_;
 }
 
-bool metashell::data::operator==(const frame& a_, const frame& b_)
+bool operator==(const frame& a_, const frame& b_)
 {
   return
-    a_.name() == b_.name()
+    a_.type() == b_.type()
     && a_.is_full() == b_.is_full()
     && (!a_.is_full() ||
         (a_.kind() == b_.kind()
-        // TODO commented out, because I don't want to include this information
-        // into the UTs.
-        /*&& a_.point_of_instantiation() == b_.point_of_instantiation()*/))
+        && a_.point_of_instantiation() == b_.point_of_instantiation()))
     && a_.is_profiled() == b_.is_profiled()
     && (!a_.is_profiled() ||
         (a_.time_taken() == b_.time_taken()
          && a_.time_taken_ratio() == b_.time_taken_ratio()));
 }
 
+}} // namespace metashell::data

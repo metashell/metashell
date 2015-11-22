@@ -31,12 +31,12 @@ metaprogram_builder::metaprogram_builder(
 
 void metaprogram_builder::handle_template_begin(
   data::instantiation_kind kind,
-  const std::string& name,
+  const data::type& type,
   const data::file_location& point_of_instantiation,
   const data::file_location& source_location,
   double timestamp)
 {
-  vertex_descriptor vertex = add_vertex(name, source_location);
+  vertex_descriptor vertex = add_vertex(type, source_location);
   vertex_descriptor top_vertex = edge_stack.empty() ?
     mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
@@ -69,7 +69,7 @@ const metaprogram& metaprogram_builder::get_metaprogram() const {
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const std::string& name,
+    const data::type& type,
     const data::file_location& source_location)
 {
   element_vertex_map_t::iterator pos;
@@ -77,12 +77,12 @@ metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
 
   std::tie(pos, inserted) = element_vertex_map.insert(
       std::make_pair(
-        std::make_tuple(name, source_location),
+        std::make_tuple(type, source_location),
         vertex_descriptor()
       ));
 
   if (inserted) {
-    pos->second = mp.add_vertex(name, source_location);
+    pos->second = mp.add_vertex(type, source_location);
   }
   return pos->second;
 }

@@ -264,7 +264,7 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
       " at " << f_.source_location() <<
       " (" << f_.kind() <<" from " << f_.point_of_instantiation() << ")";
   }
-  return prefix + format_code(f_.name().name()) + postfix.str();
+  return prefix + format_code(f_.type().name()) + postfix.str();
 }
 
 bool console_displayer::display_frame_with_pager(
@@ -394,4 +394,3 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
     depth_counter[n.depth()+1] += n.number_of_children();
   }
 }
-

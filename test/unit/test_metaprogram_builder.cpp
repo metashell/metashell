@@ -29,7 +29,7 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     100.0);
@@ -50,7 +50,7 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
 
   JUST_ASSERT(frame.is_full());
   JUST_ASSERT(!frame.is_profiled());
-  JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+  JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   JUST_ASSERT_EQUAL(
     data::instantiation_kind::template_instantiation, frame.kind());
 
@@ -68,14 +68,14 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     100.0);
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<B>",
+    data::type("type<B>"),
     data::file_location("file", 20, 20),
     data::file_location("file_sl", 15, 25),
     110.0);
@@ -86,7 +86,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
   mb.handle_template_begin(
     data::instantiation_kind::memoization,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     140.0);
@@ -108,7 +108,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -118,7 +118,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
   }
 
   mp.step();
@@ -128,7 +128,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -138,7 +138,7 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
 
     JUST_ASSERT(!frame.is_full());
     JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
   }
 
   mp.step();
@@ -156,7 +156,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     100.0);
@@ -165,7 +165,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<B>",
+    data::type("type<B>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     120.0);
@@ -188,7 +188,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
     JUST_ASSERT(frame.is_full());
     JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
     JUST_ASSERT_EQUAL(
       data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(20.0, frame.time_taken());
@@ -202,7 +202,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
 
     JUST_ASSERT(frame.is_full());
     JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.name().name());
+    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
     JUST_ASSERT_EQUAL(
       data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(10.0, frame.time_taken());
@@ -236,7 +236,7 @@ JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     100.0);
@@ -258,7 +258,7 @@ JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events) {
 
   mb.handle_template_begin(
     data::instantiation_kind::template_instantiation,
-    "type<A>",
+    data::type("type<A>"),
     data::file_location("file", 10, 20),
     data::file_location("file_sl", 15, 25),
     100.0);

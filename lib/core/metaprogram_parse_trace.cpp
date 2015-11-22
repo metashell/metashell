@@ -76,7 +76,7 @@ metaprogram metaprogram::create_from_protobuf_stream(
           auto begin_entry = reader.LastBeginEntry;
           builder.handle_template_begin(
               instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
-              begin_entry.Name,
+              data::type(begin_entry.Name),
               data::file_location(
                 begin_entry.FileName,
                 begin_entry.Line,

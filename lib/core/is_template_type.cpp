@@ -20,8 +20,8 @@
 
 namespace metashell {
 
-bool is_template_type(const std::string& type) {
-  data::command cmd(type);
+bool is_template_type(const data::type& type) {
+  data::command cmd(type.name());
   for (const data::token& t : cmd) {
     if (t.type() == data::token_type::operator_greater ||
         t.type() == data::token_type::operator_less)

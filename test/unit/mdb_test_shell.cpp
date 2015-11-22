@@ -68,7 +68,7 @@ const metashell::metaprogram& mdb_test_shell::get_metaprogram() const {
   return *mp;
 }
 
-const metashell::mdb_shell::breakpoints_t&
+const metashell::breakpoints_t&
 mdb_test_shell::get_breakpoints() const {
   return breakpoints;
 }

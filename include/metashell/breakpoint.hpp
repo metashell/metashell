@@ -1,8 +1,8 @@
-#ifndef METASHELL_MDB_TEST_SHELL_HPP
-#define METASHELL_MDB_TEST_SHELL_HPP
+#ifndef METASHELL_BREAKPOINT_HPP
+#define METASHELL_BREAKPOINT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2015, Andras Kucsma (andras.kucsma@gmail.com)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,21 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <string>
 #include <vector>
-#include <memory>
 
-#include <metashell/shell.hpp>
-#include <metashell/mdb_shell.hpp>
+#include <boost/regex.hpp>
+#include <boost/optional.hpp>
 
-class mdb_test_shell : public metashell::mdb_shell {
+#include <metashell/data/frame.hpp>
+
+namespace metashell {
+
+class breakpoint {
 public:
-  mdb_test_shell(const std::string& line = "");
-  mdb_test_shell(metashell::shell& shell, const std::string& line = "");
+  explicit breakpoint(int id, const boost::regex& name_regex);
 
-  bool has_metaprogram() const;
-  const metashell::metaprogram& get_metaprogram() const;
+  // TODO: type overload should be removed, once this gets more complicated
+  bool match(const data::type& type) const;
+  bool match(const data::frame& frame) const;
 
-  const metashell::breakpoints_t& get_breakpoints() const;
+  int get_id() const;
+
+  std::string to_string() const;
+private:
+  int id;
+  boost::optional<boost::regex> name_regex;
 };
+
+using breakpoints_t = std::vector<breakpoint>;
+
+} // namespace metashell
 
 #endif
