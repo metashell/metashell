@@ -241,16 +241,15 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
 }
 
 JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
-  // TODO: add mdb command to list breakpoints
   const auto r =
     run_metashell(
       {
         command("#msh mdb"),
         command("evaluate int"),
         command("rbreak int"),
-        command("c"),
+        command("break list"),
         command("evaluate unsigned int"),
-        command("c")
+        command("break list"),
       }
     );
 
@@ -262,22 +261,21 @@ JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"), *i); i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i); i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i);
+  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"), *i);
 }
 
 JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
-  // TODO: add mdb command to list breakpoints
   const auto r =
     run_metashell(
       {
         command("#msh mdb"),
         command("evaluate int"),
         command("rbreak int"),
-        command("c"),
+        command("break list"),
         command("evaluate"),
-        command("c")
+        command("break list")
       }
     );
 
@@ -289,22 +287,21 @@ JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"), *i); i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i); i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i);
+  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"), *i);
 }
 
 JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints) {
-  // TODO: add mdb command to list breakpoints
   const auto r =
     run_metashell(
       {
         command("#msh mdb"),
         command("evaluate int"),
         command("rbreak int"),
-        command("c"),
+        command("break list"),
         command("evaluate asd"),
-        command("c")
+        command("break list")
       }
     );
 
@@ -316,8 +313,8 @@ JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints) {
     *i
   );
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\") reached"), *i); i += 3;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"), *i); i += 2;
   JUST_ASSERT_EQUAL(error(_), *i); i += 2;
-  JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
+  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"), *i);
 }
 
