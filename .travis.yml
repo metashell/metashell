@@ -8,7 +8,6 @@ addons:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-precise-3.7
     packages:
-      - libprotobuf-dev
       - libreadline-dev
       - libncurses5-dev
       - g++-4.8
