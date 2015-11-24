@@ -19,6 +19,7 @@
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/for_each_line.hpp>
+#include <metashell/source_position.hpp>
 #include <metashell/unsaved_file.hpp>
 
 #include <boost/regex.hpp>
@@ -79,20 +80,6 @@ namespace
     clang_args_.push_back("-"); //Compile from stdin
 
     return clang_binary_.run(clang_args_, input_);
-  }
-
-  std::pair<int, int> source_position_of(const std::string& s_)
-  {
-    std::pair<int, int> result(0, 1);
-    for_each_line(
-      s_,
-      [&result](const std::string& line_)
-      {
-        ++result.first;
-        result.second = line_.length();
-      }
-    );
-    return result;
   }
 } // anonymous namespace
 
@@ -371,7 +358,7 @@ void metashell::code_complete(
 
   generate(src);
 
-  const pair<int, int> sp = source_position_of(src.content());
+  const source_position sp = source_position_of(src.content());
 
   std::vector<std::string> clang_args = env_.clang_arguments();
 
@@ -389,8 +376,7 @@ void metashell::code_complete(
   clang_args.push_back("-fsyntax-only");
   clang_args.push_back("-Xclang");
   clang_args.push_back(
-    "-code-completion-at=" + src.filename()
-    + ":" + std::to_string(sp.first) + ":" + std::to_string(sp.second + 1)
+    "-code-completion-at=" + src.filename() + ":" + to_string(sp)
   );
   clang_args.push_back(src.filename());
 
