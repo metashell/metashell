@@ -59,6 +59,7 @@ namespace metashell
             f_(std::string(line_start, line_end));
             line_start = i;
             line_end = line_start;
+            ++line_end;
             was_13 = false;
           }
           else

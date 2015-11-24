@@ -55,5 +55,6 @@ JUST_TEST_CASE(test_for_each_line)
   test_with_lines({"foo", "bar", "baz"});
   test_with_lines({"foo", ""});
   test_with_lines({"foo", "", "bar"});
+  test_with_lines({"ab", "c"});
 }
 
