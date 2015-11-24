@@ -16,6 +16,8 @@
 
 #include <metashell/breakpoint.hpp>
 
+#include <sstream>
+
 namespace metashell {
 
 breakpoint::breakpoint(int id, const boost::regex& name_regex) :
