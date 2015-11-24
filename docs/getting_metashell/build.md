@@ -99,6 +99,11 @@ used:
     * After a successful build you can find the Metashell executables in
       `bin/app/Release/metashell.exe` or `bin/app/Debug/metashell.exe` depending
       on the build type.
+    * Note that the system tests run lots of Metashell processes which create
+      lots of temporary directories and files. Some anti-virus software seems to
+      consider it harmful and block some these operations causing a number of
+      tests to fail. If you experience that, temporarily disabling the
+      anti-virus software can make the tests pass.
 * To generate an installer for Metashell:
     * Install [NSIS](http://nsis.sourceforge.net).
     * Build Metashell following the above instructions (make sure you build the
