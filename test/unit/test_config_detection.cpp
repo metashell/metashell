@@ -312,28 +312,6 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
 }
 
 JUST_TEST_CASE(
-  test_when_no_clang_binary_is_available_extra_sysinclude_is_added_to_include_path
-)
-{
-  mock_environment_detector envd;
-  envd.extra_sysinclude_returns_append("/foo/include");
-  envd.extra_sysinclude_returns_append("/bar/include");
-  envd.file_exists_returns(false);
-
-  user_config ucfg;
-  ucfg.include_path.push_back("/user/1");
-
-  null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
-  JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
-  // path 2 is a relative path to the clang binary. Tested elsewhere
-  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
-}
-
-JUST_TEST_CASE(
   test_when_no_clang_binary_is_available_on_windows_clang_include_dir_is_added_to_include_path
 )
 {

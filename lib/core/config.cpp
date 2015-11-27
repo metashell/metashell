@@ -199,32 +199,6 @@ namespace
     return false;
   }
 
-  std::vector<std::string> clang_sysinclude(
-    const std::string& clang_binary_path_,
-    stdlib stdlib_,
-    iface::environment_detector& env_detector_,
-    logger* logger_
-  )
-  {
-    METASHELL_LOG(logger_, "Determining Clang's sysinclude");
-
-    if (clang_binary_path_.empty())
-    {
-      METASHELL_LOG(logger_, "No Clang binary is specified.");
-      return env_detector_.extra_sysinclude();
-    }
-    else if (clang_binary_path_ == clang_shipped_with_metashell(env_detector_))
-    {
-      METASHELL_LOG(logger_, "Using the Clang binary shipped with Metashell.");
-      return env_detector_.extra_sysinclude();
-    }
-    else
-    {
-      METASHELL_LOG(logger_, "No extra sysinclude.");
-      return {};
-    }
-  }
-
   std::vector<std::string> determine_extra_clang_args(
     std::vector<std::string> extra_clang_args_,
     iface::environment_detector& env_detector_
@@ -251,8 +225,7 @@ namespace
       "Determining include path of Clang: " + clang_binary_path_
     );
 
-    std::vector<std::string> result =
-      clang_sysinclude(clang_binary_path_, stdlib_, env_detector_, logger_);
+    std::vector<std::string> result;
 
     const std::string dir_of_executable =
       directory_of_file(env_detector_.path_of_executable());
@@ -262,18 +235,15 @@ namespace
       // mingw headers shipped with Metashell
       const std::string mingw_headers = dir_of_executable + "\\windows_headers";
 
-      std::vector<std::string> wpath;
-      wpath.push_back(mingw_headers);
-      wpath.push_back(mingw_headers + "\\mingw32");
+      result.push_back(mingw_headers);
+      result.push_back(mingw_headers + "\\mingw32");
       if (
         clang_binary_path_.empty()
         || clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
       )
       {
-        wpath.push_back(dir_of_executable + "\\templight\\include");
+        result.push_back(dir_of_executable + "\\templight\\include");
       }
-
-      result.insert(result.end(), wpath.begin(), wpath.end());
     }
     else
     {

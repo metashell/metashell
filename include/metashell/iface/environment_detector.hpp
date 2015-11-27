@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
@@ -37,8 +36,6 @@ namespace metashell
       // Available as a runtime function for cross-platform unit testing
       virtual bool on_windows() = 0;
       virtual bool on_osx() = 0;
-
-      virtual std::vector<std::string> extra_sysinclude() = 0;
 
       virtual std::string path_of_executable() = 0;
     };

@@ -83,18 +83,6 @@ cd 3rd
   cd ..
 cd ..
 
-# Build & package Metashell
-if [ "${PLATFORM}" = "fedora" ] || [ "${PLATFORM}" = "opensuse" ]
-then
-  tools/clang_default_path --gcc=g++ > lib/core/extra_sysinclude.hpp
-elif [ "${PLATFORM}" = "openbsd" ]
-then
-  python2.7 tools/clang_default_path --gcc=eg++ > lib/core/extra_sysinclude.hpp
-elif [ "${PLATFORM}" = "osx" ] && [ "${PLATFORM_VERSION}" = "10.10" ]
-then
-  tools/clang_default_path --gcc=clang > lib/core/extra_sysinclude.hpp
-fi
-
 mkdir -p bin; cd bin
   cmake .. \
     && make -j${BUILD_THREADS} \

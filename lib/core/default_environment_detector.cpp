@@ -47,12 +47,6 @@ using namespace metashell;
 
 namespace
 {
-  const char* extra_sysinclude[] =
-    {
-      ""
-      #include "extra_sysinclude.hpp"
-    };
-
   const char* default_clang_search_path[] =
     {
       ""
@@ -200,15 +194,5 @@ std::string default_environment_detector::path_of_executable()
 #else
   return read_link("/proc/self/exe");
 #endif
-}
-
-std::vector<std::string> default_environment_detector::extra_sysinclude()
-{
-  return
-    std::vector<std::string>(
-      ::extra_sysinclude + 1,
-      ::extra_sysinclude
-        + sizeof(::extra_sysinclude) / sizeof(const char*)
-    );
 }
 
