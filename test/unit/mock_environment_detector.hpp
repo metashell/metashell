@@ -43,13 +43,6 @@ public:
   void on_osx_returns(bool result_);
   int on_osx_called_times() const;
 
-  virtual std::vector<std::string> default_clang_sysinclude(
-    const std::string& clang_path_,
-    metashell::stdlib stdlib_
-  );
-  int default_clang_sysinclude_called_times() const;
-  void default_clang_sysinclude_returns_append(const std::string& path_);
-
   virtual std::vector<std::string> extra_sysinclude();
   int extra_sysinclude_called_times() const;
   void extra_sysinclude_returns_append(const std::string& path_);
@@ -70,9 +63,6 @@ private:
 
   bool _on_osx_returns;
   int _on_osx_called_times;
-
-  int _default_clang_sysinclude_called_times;
-  std::vector<std::string> _default_clang_sysinclude_returns;
 
   int _extra_sysinclude_called_times;
   std::vector<std::string> _extra_sysinclude_returns;

@@ -220,12 +220,8 @@ namespace
     }
     else
     {
-      METASHELL_LOG(
-        logger_,
-        "Getting the sysinclude of the Clang binary being used."
-      );
-      return
-        env_detector_.default_clang_sysinclude(clang_binary_path_, stdlib_);
+      METASHELL_LOG(logger_, "No extra sysinclude.");
+      return {};
     }
   }
 

@@ -19,7 +19,6 @@
 
 #include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
-#include <metashell/stdlib.hpp>
 
 namespace metashell
 {
@@ -36,12 +35,6 @@ namespace metashell
     std::string _path;
     logger* _logger;
   };
-
-  std::vector<std::string> default_sysinclude(
-    const clang_binary& clang_,
-    stdlib stdlib_,
-    logger* logger_
-  );
 }
 
 #endif

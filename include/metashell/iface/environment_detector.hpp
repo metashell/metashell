@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/stdlib.hpp>
-
 #include <string>
 #include <vector>
 
@@ -39,11 +37,6 @@ namespace metashell
       // Available as a runtime function for cross-platform unit testing
       virtual bool on_windows() = 0;
       virtual bool on_osx() = 0;
-
-      virtual std::vector<std::string> default_clang_sysinclude(
-        const std::string& clang_path_,
-        stdlib stdlib_
-      ) = 0;
 
       virtual std::vector<std::string> extra_sysinclude() = 0;
 

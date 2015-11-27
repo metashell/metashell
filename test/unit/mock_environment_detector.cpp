@@ -26,7 +26,6 @@ mock_environment_detector::mock_environment_detector() :
   _on_windows_called_times(0),
   _on_osx_returns(false),
   _on_osx_called_times(0),
-  _default_clang_sysinclude_called_times(0),
   _extra_sysinclude_called_times(0),
   _path_of_executable_called_times(0)
 {}
@@ -101,27 +100,6 @@ void mock_environment_detector::on_osx_returns(bool result_)
 int mock_environment_detector::on_osx_called_times() const
 {
   return _on_osx_called_times;
-}
-
-std::vector<std::string> mock_environment_detector::default_clang_sysinclude(
-  const std::string&,
-  metashell::stdlib
-)
-{
-  ++_default_clang_sysinclude_called_times;
-  return _default_clang_sysinclude_returns;
-}
-
-void mock_environment_detector::default_clang_sysinclude_returns_append(
-  const std::string& path_
-)
-{
-  _default_clang_sysinclude_returns.push_back(path_);
-}
-
-int mock_environment_detector::default_clang_sysinclude_called_times() const
-{
-  return _default_clang_sysinclude_called_times;
 }
 
 std::vector<std::string> mock_environment_detector::extra_sysinclude()

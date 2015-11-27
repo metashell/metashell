@@ -147,15 +147,6 @@ bool default_environment_detector::on_osx()
 #endif
 }
 
-std::vector<std::string> default_environment_detector::default_clang_sysinclude(
-  const std::string& clang_path_,
-  stdlib stdlib_
-)
-{
-  return
-    default_sysinclude(clang_binary(clang_path_, _logger), stdlib_, _logger);
-}
-
 std::string default_environment_detector::path_of_executable()
 {
 #ifdef _WIN32

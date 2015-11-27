@@ -255,43 +255,6 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 }
 
 JUST_TEST_CASE(
-  test_default_clang_sysinclude_is_preprended_to_include_path_when_clang_binary_is_available
-)
-{
-  mock_environment_detector envd;
-  envd.search_clang_binary_returns("/foo/bar/clang");
-  envd.default_clang_sysinclude_returns_append("/foo/include");
-  envd.default_clang_sysinclude_returns_append("/bar/include");
-  // It should not find Clang shipped with Metashell
-  envd.file_exists_returns(false);
-
-  user_config ucfg;
-  ucfg.include_path.push_back("/user/1");
-
-  null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
-  JUST_ASSERT_EQUAL("/bar/include", cfg.include_path[1]);
-  // path 2 is a relative path to the clang binary. Tested elsewhere
-  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
-}
-
-JUST_TEST_CASE(
-  test_default_clang_sysinclude_is_not_called_when_clang_is_not_available
-)
-{
-  mock_environment_detector envd;
-  envd.file_exists_returns(false);
-
-  null_displayer d;
-  metashell::detect_config(user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
-}
-
-JUST_TEST_CASE(
   test_adding_standard_headers_next_to_the_binary_to_include_path_on_windows
 )
 {
@@ -331,7 +294,6 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
 {
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
-  envd.default_clang_sysinclude_returns_append("/foo/include");
   envd.on_windows_returns(true);
   envd.path_of_executable_returns("c:/program files/metashell.exe");
   // It should not find Clang shipped with Metashell
@@ -340,12 +302,12 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   null_displayer d;
   const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
 
-  JUST_ASSERT_EQUAL(3u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL("/foo/include", cfg.include_path[0]);
-  JUST_ASSERT_EQUAL("c:/program files\\windows_headers", cfg.include_path[1]);
-  JUST_ASSERT_EQUAL(
-    "c:/program files\\windows_headers\\mingw32",
-    cfg.include_path[2]
+  JUST_ASSERT_EQUAL_CONTAINER(
+    {
+      "c:/program files\\windows_headers",
+      "c:/program files\\windows_headers\\mingw32"
+    },
+    cfg.include_path
   );
 }
 
@@ -456,21 +418,6 @@ JUST_TEST_CASE(
   const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(contains("c:/foo/bar\\templight\\include", cfg.include_path));
-}
-
-JUST_TEST_CASE(
-  test_default_clang_sysinclude_is_not_called_for_clang_shipped_with_metashell
-)
-{
-  mock_environment_detector envd;
-  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
-  envd.file_exists_returns(true);
-  envd.on_windows_returns(true);
-
-  null_displayer d;
-  metashell::detect_config(user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(0, envd.default_clang_sysinclude_called_times());
 }
 
 JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
