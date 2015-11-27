@@ -60,9 +60,6 @@ private:
   bool _on_osx_returns;
   int _on_osx_called_times;
 
-  int _extra_sysinclude_called_times;
-  std::vector<std::string> _extra_sysinclude_returns;
-
   int _path_of_executable_called_times;
   std::string _path_of_executable_returns;
 };
