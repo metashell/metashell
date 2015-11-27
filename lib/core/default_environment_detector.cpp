@@ -106,11 +106,9 @@ namespace
 }
 
 default_environment_detector::default_environment_detector(
-  const std::string& argv0_,
-  logger* logger_
+  const std::string& argv0_
 ) :
-  _argv0(argv0_),
-  _logger(logger_)
+  _argv0(argv0_)
 {}
 
 std::string default_environment_detector::search_clang_binary()

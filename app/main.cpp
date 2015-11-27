@@ -83,7 +83,7 @@ int main(int argc_, const char* argv_[])
 
     if (r.should_run_shell())
     {
-      metashell::default_environment_detector det(argv_[0], &logger);
+      metashell::default_environment_detector det(argv_[0]);
       const metashell::config
         cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 

@@ -331,7 +331,7 @@ config metashell::detect_config(
 
 config metashell::empty_config(const std::string& argv0_)
 {
-  default_environment_detector ed(argv0_, nullptr);
+  default_environment_detector ed(argv0_);
   null_displayer d;
   return detect_config(user_config(), ed, d, nullptr);
 }

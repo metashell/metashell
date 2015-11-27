@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
 
 namespace metashell
@@ -25,7 +24,7 @@ namespace metashell
   class default_environment_detector : public iface::environment_detector
   {
   public:
-    default_environment_detector(const std::string& argv0_, logger* logger_);
+    explicit default_environment_detector(const std::string& argv0_);
 
     virtual std::string search_clang_binary() override;
     virtual bool file_exists(const std::string& path_) override;
@@ -36,7 +35,6 @@ namespace metashell
     virtual std::string path_of_executable() override;
   private:
     std::string _argv0;
-    logger* _logger;
   };
 }
 
