@@ -214,7 +214,6 @@ namespace
 
   std::vector<std::string> determine_include_path(
     const std::string& clang_binary_path_,
-    stdlib stdlib_,
     const std::vector<std::string>& user_include_path_,
     iface::environment_detector& env_detector_,
     logger* logger_
@@ -304,7 +303,6 @@ config metashell::detect_config(
   cfg.include_path =
     determine_include_path(
       cfg.clang_path,
-      ucfg_.stdlib_to_use,
       ucfg_.include_path,
       env_detector_,
       logger_
