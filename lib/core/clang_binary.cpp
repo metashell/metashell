@@ -34,11 +34,6 @@ namespace
     return arg_;
 #endif
   }
-
-  bool is_new_line(char c_)
-  {
-    return c_ == '\n';
-  }
 }
 
 clang_binary::clang_binary(const std::string& path_, logger* logger_) :
