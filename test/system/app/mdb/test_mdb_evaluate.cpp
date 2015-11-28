@@ -222,6 +222,25 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i); i += 2;
+
+// On Windows clang tries to be compatible with MSVC, and this affects the Sema
+// code to take slightly different paths. Probably because of this, Memoization
+// events are not generated for the nested enum type.
+#ifdef _WIN32
+  JUST_ASSERT_EQUAL(
+    call_graph(
+      {
+        {frame(type("int_<fib<2>::value>")), 0, 3},
+        {frame( fib<2>(), _, _, instantiation_kind::template_instantiation), 1, 2},
+        {frame(  fib<0>(), _, _, instantiation_kind::memoization), 2, 0},
+        {frame(  fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( fib<2>(), _, _, instantiation_kind::memoization), 1, 0},
+        {frame( type("int_<1>"), _, _, instantiation_kind::template_instantiation), 1, 0}
+      }
+    ),
+    *i
+  );
+#else
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -233,11 +252,12 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges) {
         {frame(  type("fib<0>::ENUM"), _, _, instantiation_kind::memoization), 2, 0},
         {frame( fib<2>(), _, _, instantiation_kind::memoization), 1, 0},
         {frame( type("fib<2>::ENUM"), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<1>"), _, _, instantiation_kind::template_instantiation), 1,0}
+        {frame( type("int_<1>"), _, _, instantiation_kind::template_instantiation), 1, 0}
       }
     ),
     *i
   );
+#endif
 }
 
 JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints) {
