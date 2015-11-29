@@ -2,7 +2,10 @@
 
 set -ex
 
-if [ "$CXX" == "g++" ]; then export CXX="g++-4.8"; fi
+brew update
+brew install homebrew/versions/gcc5
+
+if [ "$CXX" == "g++" ]; then export CXX="g++-5"; fi
 
 # Test the code
 
@@ -15,10 +18,7 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 
 # Run the system tests
 
-sudo apt-get install clang-3.7
-sudo mkdir /usr/include/c++/v1
-sudo cp -r ../3rd/templight/libcxx/include/* /usr/include/c++/v1/
-test/system/app/core/metashell_core_system_test app/metashell -I../3rd/boost/include --clang /usr/bin/clang++-3.7 -stdlib=libc++
+test/system/app/core/metashell_core_system_test app/metashell -I../3rd/boost/include
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
