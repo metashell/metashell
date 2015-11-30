@@ -2,7 +2,9 @@
 
 set -ex
 
-if [ "$CXX" == "g++" ]; then export CXX="g++-4.8"; fi
+if [ "$CXX" == "g++" ]; then
+  export CXX="g++-4.8";
+fi
 
 # Test the code
 

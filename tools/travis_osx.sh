@@ -2,10 +2,11 @@
 
 set -ex
 
-brew update
-brew install homebrew/versions/gcc5
-
-if [ "$CXX" == "g++" ]; then export CXX="g++-5"; fi
+if [ "$CXX" = "g++" ]; then
+  brew update >/dev/null
+  brew install homebrew/versions/gcc5
+  export CXX="g++-5"
+fi
 
 # Test the code
 
@@ -16,9 +17,7 @@ cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror" -DTEMPLIGHT_DEBUG=true
 make -j2
 make test || (cat Testing/Temporary/LastTest.log && false)
 
-# Run the system tests
-
-test/system/app/core/metashell_core_system_test app/metashell -I../3rd/boost/include
+# TODO set up clang binary for core STs
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
