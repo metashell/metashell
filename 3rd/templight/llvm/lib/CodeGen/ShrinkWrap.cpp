@@ -43,9 +43,11 @@
 // points must be in the same loop.
 // Property #3 is ensured via the MachineBlockFrequencyInfo.
 //
-// If this pass found points matching all this properties, then
+// If this pass found points matching all these properties, then
 // MachineFrameInfo is updated this that information.
 //===----------------------------------------------------------------------===//
+#include "llvm/ADT/BitVector.h"
+#include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/Statistic.h"
 // To check for profitability.
 #include "llvm/CodeGen/MachineBlockFrequencyInfo.h"
@@ -68,20 +70,19 @@
 #include "llvm/Target/TargetInstrInfo.h"
 // To access TargetInstrInfo.
 #include "llvm/Target/TargetSubtargetInfo.h"
-#include "llvm/Support/CommandLine.h"
 
 #define DEBUG_TYPE "shrink-wrap"
 
 using namespace llvm;
 
-static cl::opt<cl::boolOrDefault>
-    EnableShrinkWrapOpt("enable-shrink-wrap", cl::Hidden,
-                        cl::desc("enable the shrink-wrapping pass"));
-
 STATISTIC(NumFunc, "Number of functions");
 STATISTIC(NumCandidates, "Number of shrink-wrapping candidates");
 STATISTIC(NumCandidatesDropped,
           "Number of shrink-wrapping candidates dropped because of frequency");
+
+static cl::opt<cl::boolOrDefault>
+    EnableShrinkWrapOpt("enable-shrink-wrap", cl::Hidden,
+                        cl::desc("enable the shrink-wrapping pass"));
 
 namespace {
 /// \brief Class to determine where the safe point to insert the
@@ -118,11 +119,31 @@ class ShrinkWrap : public MachineFunctionPass {
   unsigned FrameDestroyOpcode;
   /// Entry block.
   const MachineBasicBlock *Entry;
+  typedef SmallSetVector<unsigned, 16> SetOfRegs;
+  /// Registers that need to be saved for the current function.
+  mutable SetOfRegs CurrentCSRs;
+  /// Current MachineFunction.
+  MachineFunction *MachineFunc;
 
   /// \brief Check if \p MI uses or defines a callee-saved register or
   /// a frame index. If this is the case, this means \p MI must happen
   /// after Save and before Restore.
   bool useOrDefCSROrFI(const MachineInstr &MI) const;
+
+  const SetOfRegs &getCurrentCSRs() const {
+    if (CurrentCSRs.empty()) {
+      BitVector SavedRegs;
+      const TargetFrameLowering *TFI =
+          MachineFunc->getSubtarget().getFrameLowering();
+
+      TFI->determineCalleeSaves(*MachineFunc, SavedRegs, nullptr);
+
+      for (int Reg = SavedRegs.find_first(); Reg != -1;
+           Reg = SavedRegs.find_next(Reg))
+        CurrentCSRs.insert((unsigned)Reg);
+    }
+    return CurrentCSRs;
+  }
 
   /// \brief Update the Save and Restore points such that \p MBB is in
   /// the region that is dominated by Save and post-dominated by Restore
@@ -145,6 +166,8 @@ class ShrinkWrap : public MachineFunctionPass {
     FrameSetupOpcode = TII.getCallFrameSetupOpcode();
     FrameDestroyOpcode = TII.getCallFrameDestroyOpcode();
     Entry = &MF.front();
+    CurrentCSRs.clear();
+    MachineFunc = &MF;
 
     ++NumFunc;
   }
@@ -153,15 +176,13 @@ class ShrinkWrap : public MachineFunctionPass {
   /// shrink-wrapping.
   bool ArePointsInteresting() const { return Save != Entry && Save && Restore; }
 
+  /// \brief Check if shrink wrapping is enabled for this target and function.
+  static bool isShrinkWrapEnabled(const MachineFunction &MF);
+  
 public:
   static char ID;
 
   ShrinkWrap() : MachineFunctionPass(ID) {
-    initializeShrinkWrapPass(*PassRegistry::getPassRegistry());
-  }
-  
-  ShrinkWrap(std::function<bool(const MachineFunction &)> Ftor) :
-      MachineFunctionPass(ID), PredicateFtor(Ftor) {
     initializeShrinkWrapPass(*PassRegistry::getPassRegistry());
   }
 
@@ -181,15 +202,6 @@ public:
   /// \brief Perform the shrink-wrapping analysis and update
   /// the MachineFrameInfo attached to \p MF with the results.
   bool runOnMachineFunction(MachineFunction &MF) override;
-
-private:
-  /// \brief Predicate function to determine if shrink wrapping should run.
-  ///
-  /// This function will be run at the beginning of shrink wrapping and
-  /// determine whether shrink wrapping should run on the given MachineFunction.
-  /// \arg MF The MachineFunction to run shrink wrapping on.
-  /// It returns true if shrink wrapping should be run, false otherwise.
-  std::function<bool(const MachineFunction &MF)> PredicateFtor;
 };
 } // End anonymous namespace.
 
@@ -211,20 +223,26 @@ bool ShrinkWrap::useOrDefCSROrFI(const MachineInstr &MI) const {
     return true;
   }
   for (const MachineOperand &MO : MI.operands()) {
-    bool UseCSR = false;
+    bool UseOrDefCSR = false;
     if (MO.isReg()) {
       unsigned PhysReg = MO.getReg();
       if (!PhysReg)
         continue;
       assert(TargetRegisterInfo::isPhysicalRegister(PhysReg) &&
              "Unallocated register?!");
-      UseCSR = RCI.getLastCalleeSavedAlias(PhysReg);
+      UseOrDefCSR = RCI.getLastCalleeSavedAlias(PhysReg);
+    } else if (MO.isRegMask()) {
+      // Check if this regmask clobbers any of the CSRs.
+      for (unsigned Reg : getCurrentCSRs()) {
+        if (MO.clobbersPhysReg(Reg)) {
+          UseOrDefCSR = true;
+          break;
+        }
+      }
     }
-    // TODO: Handle regmask more accurately.
-    // For now, be conservative about them.
-    if (UseCSR || MO.isFI() || MO.isRegMask()) {
-      DEBUG(dbgs() << "Use or define CSR(" << UseCSR << ") or FI(" << MO.isFI()
-                   << "): " << MI << '\n');
+    if (UseOrDefCSR || MO.isFI()) {
+      DEBUG(dbgs() << "Use or define CSR(" << UseOrDefCSR << ") or FI("
+                   << MO.isFI() << "): " << MI << '\n');
       return true;
     }
   }
@@ -321,12 +339,22 @@ void ShrinkWrap::updateSaveRestorePoints(MachineBasicBlock &MBB) {
         }
       }
       else {
-        // Push Restore outside of this loop if immediate post-dominator is
-        // different from restore block. If immediate post-dominator is not
-        // different, bail out. 
-        MachineBasicBlock *IPdom =
-          FindIDom<>(*Restore, Restore->successors(), *MPDT);
-        if (IPdom != Restore)
+        // If the loop does not exit, there is no point in looking
+        // for a post-dominator outside the loop.
+        SmallVector<MachineBasicBlock*, 4> ExitBlocks;
+        MLI->getLoopFor(Restore)->getExitingBlocks(ExitBlocks);
+        // Push Restore outside of this loop.
+        // Look for the immediate post-dominator of the loop exits.
+        MachineBasicBlock *IPdom = Restore;
+        for (MachineBasicBlock *LoopExitBB: ExitBlocks) {
+          IPdom = FindIDom<>(*IPdom, LoopExitBB->successors(), *MPDT);
+          if (!IPdom)
+            break;
+        }
+        // If the immediate post-dominator is not in a less nested loop,
+        // then we are stuck in a program with an infinite loop.
+        // In that case, we will not find a safe point, hence, bail out.
+        if (IPdom && MLI->getLoopDepth(IPdom) < MLI->getLoopDepth(Restore))
           Restore = IPdom; 
         else {
           Restore = nullptr;
@@ -338,10 +366,7 @@ void ShrinkWrap::updateSaveRestorePoints(MachineBasicBlock &MBB) {
 }
 
 bool ShrinkWrap::runOnMachineFunction(MachineFunction &MF) {
-  if (PredicateFtor && !PredicateFtor(MF)) 
-    return false;
-  
-  if (MF.empty() || skipOptnoneFunction(*MF.getFunction()))
+  if (MF.empty() || !isShrinkWrapEnabled(MF))
     return false;
 
   DEBUG(dbgs() << "**** Analysing " << MF.getName() << '\n');
@@ -428,25 +453,19 @@ bool ShrinkWrap::runOnMachineFunction(MachineFunction &MF) {
   return false;
 }
 
-/// If EnableShrinkWrap is set run shrink wrapping on the given Machine
-/// Function. Otherwise, shrink wrapping is disabled.
-/// This function can be overridden in each target-specific TargetPassConfig
-/// class to allow different predicate logic for each target. 
-bool TargetPassConfig::runShrinkWrap(const MachineFunction &Fn) const {
+bool ShrinkWrap::isShrinkWrapEnabled(const MachineFunction &MF) {
+  const TargetFrameLowering *TFI = MF.getSubtarget().getFrameLowering();
+
   switch (EnableShrinkWrapOpt) {
+  case cl::BOU_UNSET:
+    return TFI->enableShrinkWrapping(MF);
+  // If EnableShrinkWrap is set, it takes precedence on whatever the
+  // target sets. The rational is that we assume we want to test
+  // something related to shrink-wrapping.
   case cl::BOU_TRUE:
     return true;
-  case cl::BOU_UNSET:
   case cl::BOU_FALSE:
     return false;
   }
   llvm_unreachable("Invalid shrink-wrapping state");
-}
-
-/// Create a ShrinkWrap FunctionPass using the runShrinkWrap predicate
-/// function.
-FunctionPass *TargetPassConfig::createShrinkWrapPass() {
-  std::function<bool(const MachineFunction &Fn)> Ftor =
-    std::bind(&TargetPassConfig::runShrinkWrap, this, std::placeholders::_1);
-  return new ShrinkWrap(Ftor);
 }

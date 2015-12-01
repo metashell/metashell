@@ -15,6 +15,7 @@
 #define LLVM_TRANSFORMS_INSTRUMENTATION_H
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/IR/BasicBlock.h"
 #include <vector>
 
 #if defined(__GNUC__) && defined(__linux__) && !defined(ANDROID)
@@ -32,6 +33,16 @@ inline void *getDFSanRetValTLSPtrForJIT() {
 #endif
 
 namespace llvm {
+
+class TargetMachine;
+
+/// Instrumentation passes often insert conditional checks into entry blocks.
+/// Call this function before splitting the entry block to move instructions
+/// that must remain in the entry block up before the split point. Static
+/// allocas and llvm.localescape calls, for example, must remain in the entry
+/// block.
+BasicBlock::iterator PrepareToSplitEntryBlock(BasicBlock &BB,
+                                              BasicBlock::iterator IP);
 
 class ModulePass;
 class FunctionPass;
@@ -84,8 +95,10 @@ ModulePass *createInstrProfilingPass(
     const InstrProfOptions &Options = InstrProfOptions());
 
 // Insert AddressSanitizer (address sanity checking) instrumentation
-FunctionPass *createAddressSanitizerFunctionPass(bool CompileKernel = false);
-ModulePass *createAddressSanitizerModulePass(bool CompileKernel = false);
+FunctionPass *createAddressSanitizerFunctionPass(bool CompileKernel = false,
+                                                 bool Recover = false);
+ModulePass *createAddressSanitizerModulePass(bool CompileKernel = false,
+                                             bool Recover = false);
 
 // Insert MemorySanitizer instrumentation (detection of uninitialized reads)
 FunctionPass *createMemorySanitizerPass(int TrackOrigins = 0);
@@ -134,7 +147,7 @@ FunctionPass *createBoundsCheckingPass();
 
 /// \brief This pass splits the stack into a safe stack and an unsafe stack to
 /// protect against stack-based overflow vulnerabilities.
-FunctionPass *createSafeStackPass();
+FunctionPass *createSafeStackPass(const TargetMachine *TM = nullptr);
 
 } // End llvm namespace
 

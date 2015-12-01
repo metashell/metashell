@@ -41,6 +41,9 @@ namespace metashell
     virtual const data::headers& get_headers() const override;
 
     virtual std::string get_all() const override;
+
+    std::string env_filename() const;
+
   private:
     just::temp::directory _dir;
     in_memory_environment _buffer;
@@ -51,7 +54,6 @@ namespace metashell
     std::string _clang_path;
 
     void save();
-    std::string env_filename() const;
   };
 }
 

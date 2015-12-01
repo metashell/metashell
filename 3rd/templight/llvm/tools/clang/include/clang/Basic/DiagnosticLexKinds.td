@@ -157,10 +157,8 @@ def ext_unknown_escape : ExtWarn<"unknown escape sequence '\\%0'">,
 def err_invalid_decimal_digit : Error<"invalid digit '%0' in decimal constant">;
 def err_invalid_binary_digit : Error<"invalid digit '%0' in binary constant">;
 def err_invalid_octal_digit : Error<"invalid digit '%0' in octal constant">;
-def err_invalid_suffix_integer_constant : Error<
-  "invalid suffix '%0' on integer constant">;
-def err_invalid_suffix_float_constant : Error<
-  "invalid suffix '%0' on floating constant">;
+def err_invalid_suffix_constant : Error<
+  "invalid suffix '%0' on %select{integer|floating}1 constant">;
 def warn_cxx11_compat_digit_separator : Warning<
   "digit separators are incompatible with C++ standards before C++14">,
   InGroup<CXXPre14Compat>, DefaultIgnore;
@@ -184,7 +182,7 @@ def ext_hexconstant_invalid : Extension<
 def ext_binary_literal : Extension<
   "binary integer literals are a GNU extension">, InGroup<GNUBinaryLiteral>;
 def ext_binary_literal_cxx14 : Extension<
-  "binary integer literals are a C++14 extension">, InGroup<CXX14>;
+  "binary integer literals are a C++14 extension">, InGroup<CXX14BinaryLiteral>;
 def warn_cxx11_compat_binary_literal : Warning<
   "binary integer literals are incompatible with C++ standards before C++14">,
   InGroup<CXXPre14CompatPedantic>, DefaultIgnore;
@@ -256,10 +254,13 @@ def err_pp_hash_error : Error<"%0">;
 }
 
 def pp_include_next_in_primary : Warning<
-  "#include_next in primary source file">;
+  "#include_next in primary source file">,
+  InGroup<DiagGroup<"include-next-outside-header">>;
 def pp_include_macros_out_of_predefines : Error<
   "the #__include_macros directive is only for internal use by -imacros">;
-def pp_include_next_absolute_path : Warning<"#include_next with absolute path">;
+def pp_include_next_absolute_path : Warning<
+  "#include_next with absolute path">,
+  InGroup<DiagGroup<"include-next-absolute-path">>;
 def ext_c99_whitespace_required_after_macro_name : ExtWarn<
   "ISO C99 requires whitespace after the macro name">, InGroup<C99>;
 def ext_missing_whitespace_after_macro_name : ExtWarn<
@@ -267,9 +268,11 @@ def ext_missing_whitespace_after_macro_name : ExtWarn<
 def warn_missing_whitespace_after_macro_name : Warning<
   "whitespace recommended after macro name">;
   
-def pp_pragma_once_in_main_file : Warning<"#pragma once in main file">;
+def pp_pragma_once_in_main_file : Warning<"#pragma once in main file">,
+  InGroup<DiagGroup<"pragma-once-outside-header">>;
 def pp_pragma_sysheader_in_main_file : Warning<
-  "#pragma system_header ignored in main file">;
+  "#pragma system_header ignored in main file">,
+  InGroup<DiagGroup<"pragma-system-header-outside-header">>;
 def pp_poisoning_existing_macro : Warning<"poisoning existing macro">;
 def pp_out_of_date_dependency : Warning<
   "current file is older than dependency %0">;
@@ -316,7 +319,7 @@ def ext_pp_include_search_ms : ExtWarn<
 
 def ext_pp_ident_directive : Extension<"#ident is a language extension">;
 def ext_pp_include_next_directive : Extension<
-  "#include_next is a language extension">;
+  "#include_next is a language extension">, InGroup<GNUIncludeNext>;
 def ext_pp_warning_directive : Extension<"#warning is a language extension">;
 
 def ext_pp_extra_tokens_at_eol : ExtWarn<
@@ -623,6 +626,8 @@ def warn_mmap_unknown_attribute : Warning<"unknown attribute '%0'">,
 def warn_auto_module_import : Warning<
   "treating #%select{include|import|include_next|__include_macros}0 as an "
   "import of module '%1'">, InGroup<AutoImport>, DefaultIgnore;
+def note_implicit_top_level_module_import_here : Note<
+  "submodule of top-level module '%0' implicitly imported here">;
 def warn_uncovered_module_header : Warning<
   "umbrella header for module '%0' does not include header '%1'">, 
   InGroup<IncompleteUmbrella>;

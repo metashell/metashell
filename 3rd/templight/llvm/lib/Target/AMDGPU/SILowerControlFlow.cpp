@@ -103,6 +103,10 @@ public:
     return "SI Lower control flow instructions";
   }
 
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesCFG();
+    MachineFunctionPass::getAnalysisUsage(AU);
+  }
 };
 
 } // End anonymous namespace
@@ -434,7 +438,6 @@ void SILowerControlFlowPass::IndirectSrc(MachineInstr &MI) {
   MachineInstr *MovRel =
     BuildMI(*MBB.getParent(), DL, TII->get(AMDGPU::V_MOVRELS_B32_e32), Dst)
             .addReg(Reg)
-            .addReg(AMDGPU::M0, RegState::Implicit)
             .addReg(Vec, RegState::Implicit);
 
   LoadM0(MI, MovRel, Off);
@@ -456,7 +459,6 @@ void SILowerControlFlowPass::IndirectDst(MachineInstr &MI) {
     BuildMI(*MBB.getParent(), DL, TII->get(AMDGPU::V_MOVRELD_B32_e32))
             .addReg(Reg, RegState::Define)
             .addReg(Val)
-            .addReg(AMDGPU::M0, RegState::Implicit)
             .addReg(Dst, RegState::Implicit);
 
   LoadM0(MI, MovRel, Off);
@@ -482,11 +484,11 @@ bool SILowerControlFlowPass::runOnMachineFunction(MachineFunction &MF) {
       Next = std::next(I);
 
       MachineInstr &MI = *I;
-      if (TII->isWQM(MI.getOpcode()) || TII->isDS(MI.getOpcode()))
+      if (TII->isWQM(MI) || TII->isDS(MI))
         NeedWQM = true;
 
       // Flat uses m0 in case it needs to access LDS.
-      if (TII->isFLAT(MI.getOpcode()))
+      if (TII->isFLAT(MI))
         NeedFlat = true;
 
       switch (MI.getOpcode()) {
@@ -537,7 +539,11 @@ bool SILowerControlFlowPass::runOnMachineFunction(MachineFunction &MF) {
           Branch(MI);
           break;
 
-        case AMDGPU::SI_INDIRECT_SRC:
+        case AMDGPU::SI_INDIRECT_SRC_V1:
+        case AMDGPU::SI_INDIRECT_SRC_V2:
+        case AMDGPU::SI_INDIRECT_SRC_V4:
+        case AMDGPU::SI_INDIRECT_SRC_V8:
+        case AMDGPU::SI_INDIRECT_SRC_V16:
           IndirectSrc(MI);
           break;
 

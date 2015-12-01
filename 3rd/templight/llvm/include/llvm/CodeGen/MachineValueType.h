@@ -87,7 +87,7 @@ class MVT {
       v8i64          =  40,   //  8 x i64
       v16i64         =  41,   // 16 x i64
       v1i128         =  42,   //  1 x i128
-      
+
       FIRST_INTEGER_VECTOR_VALUETYPE = v2i1,
       LAST_INTEGER_VECTOR_VALUETYPE = v1i128,
 
@@ -127,6 +127,9 @@ class MVT {
       // MVT::MAX_ALLOWED_VALUETYPE is used for asserts and to size bit vectors
       // This value must be a multiple of 32.
       MAX_ALLOWED_VALUETYPE = 64,
+
+      // Token - A value of type llvm::TokenTy
+      token          = 249,
 
       // Metadata - This is MDNode or MDString.
       Metadata       = 250,
@@ -390,6 +393,9 @@ class MVT {
       case vAny:
       case Any:
         llvm_unreachable("Value type is overloaded.");
+      case token:
+        llvm_unreachable("Token type is a sentinel that cannot be used "
+                         "in codegen and has no size");
       case Metadata:
         llvm_unreachable("Value type is metadata.");
       case i1  :  return 1;

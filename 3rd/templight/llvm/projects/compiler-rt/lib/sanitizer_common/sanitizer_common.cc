@@ -105,24 +105,47 @@ uptr stoptheworld_tracer_pid = 0;
 // writing to the same log file.
 uptr stoptheworld_tracer_ppid = 0;
 
-static DieCallbackType InternalDieCallback, UserDieCallback;
-void SetDieCallback(DieCallbackType callback) {
-  InternalDieCallback = callback;
-}
-void SetUserDieCallback(DieCallbackType callback) {
-  UserDieCallback = callback;
+static const int kMaxNumOfInternalDieCallbacks = 5;
+static DieCallbackType InternalDieCallbacks[kMaxNumOfInternalDieCallbacks];
+
+bool AddDieCallback(DieCallbackType callback) {
+  for (int i = 0; i < kMaxNumOfInternalDieCallbacks; i++) {
+    if (InternalDieCallbacks[i] == nullptr) {
+      InternalDieCallbacks[i] = callback;
+      return true;
+    }
+  }
+  return false;
 }
 
-DieCallbackType GetDieCallback() {
-  return InternalDieCallback;
+bool RemoveDieCallback(DieCallbackType callback) {
+  for (int i = 0; i < kMaxNumOfInternalDieCallbacks; i++) {
+    if (InternalDieCallbacks[i] == callback) {
+      internal_memmove(&InternalDieCallbacks[i], &InternalDieCallbacks[i + 1],
+                       sizeof(InternalDieCallbacks[0]) *
+                           (kMaxNumOfInternalDieCallbacks - i - 1));
+      InternalDieCallbacks[kMaxNumOfInternalDieCallbacks - 1] = nullptr;
+      return true;
+    }
+  }
+  return false;
+}
+
+static DieCallbackType UserDieCallback;
+void SetUserDieCallback(DieCallbackType callback) {
+  UserDieCallback = callback;
 }
 
 void NORETURN Die() {
   if (UserDieCallback)
     UserDieCallback();
-  if (InternalDieCallback)
-    InternalDieCallback();
-  internal__exit(1);
+  for (int i = kMaxNumOfInternalDieCallbacks - 1; i >= 0; i--) {
+    if (InternalDieCallbacks[i])
+      InternalDieCallbacks[i]();
+  }
+  if (common_flags()->abort_on_error)
+    Abort();
+  internal__exit(common_flags()->exitcode);
 }
 
 static CheckFailedCallbackType CheckFailedCallback;
@@ -138,6 +161,23 @@ void NORETURN CheckFailed(const char *file, int line, const char *cond,
   Report("Sanitizer CHECK failed: %s:%d %s (%lld, %lld)\n", file, line, cond,
                                                             v1, v2);
   Die();
+}
+
+void NORETURN ReportMmapFailureAndDie(uptr size, const char *mem_type,
+                                      const char *mmap_type, error_t err) {
+  static int recursion_count;
+  if (recursion_count) {
+    // The Report() and CHECK calls below may call mmap recursively and fail.
+    // If we went into recursion, just die.
+    RawWrite("ERROR: Failed to mmap\n");
+    Die();
+  }
+  recursion_count++;
+  Report("ERROR: %s failed to "
+         "%s 0x%zx (%zd) bytes of %s (error code: %d)\n",
+         SanitizerToolName, mmap_type, size, size, mem_type, err);
+  DumpProcessMap();
+  UNREACHABLE("unable to mmap");
 }
 
 bool ReadFileToBuffer(const char *file_name, char **buff, uptr *buff_size,
@@ -210,8 +250,8 @@ void *MmapAlignedOrDie(uptr size, uptr alignment, const char *mem_type) {
 
 const char *StripPathPrefix(const char *filepath,
                             const char *strip_path_prefix) {
-  if (filepath == 0) return 0;
-  if (strip_path_prefix == 0) return filepath;
+  if (!filepath) return nullptr;
+  if (!strip_path_prefix) return filepath;
   const char *res = filepath;
   if (const char *pos = internal_strstr(filepath, strip_path_prefix))
     res = pos + internal_strlen(strip_path_prefix);
@@ -221,8 +261,8 @@ const char *StripPathPrefix(const char *filepath,
 }
 
 const char *StripModuleName(const char *module) {
-  if (module == 0)
-    return 0;
+  if (!module)
+    return nullptr;
   if (SANITIZER_WINDOWS) {
     // On Windows, both slash and backslash are possible.
     // Pick the one that goes last.
@@ -303,7 +343,7 @@ void DecreaseTotalMmap(uptr size) {
 }
 
 bool TemplateMatch(const char *templ, const char *str) {
-  if (str == 0 || str[0] == 0)
+  if ((!str) || str[0] == 0)
     return false;
   bool start = false;
   if (templ && templ[0] == '^') {
@@ -324,9 +364,9 @@ bool TemplateMatch(const char *templ, const char *str) {
       return false;
     char *tpos = (char*)internal_strchr(templ, '*');
     char *tpos1 = (char*)internal_strchr(templ, '$');
-    if (tpos == 0 || (tpos1 && tpos1 < tpos))
+    if ((!tpos) || (tpos1 && tpos1 < tpos))
       tpos = tpos1;
-    if (tpos != 0)
+    if (tpos)
       tpos[0] = 0;
     const char *str0 = str;
     const char *spos = internal_strstr(str, templ);
@@ -334,7 +374,7 @@ bool TemplateMatch(const char *templ, const char *str) {
     templ = tpos;
     if (tpos)
       tpos[0] = tpos == tpos1 ? '$' : '*';
-    if (spos == 0)
+    if (!spos)
       return false;
     if (start && spos != str0)
       return false;
@@ -342,6 +382,32 @@ bool TemplateMatch(const char *templ, const char *str) {
     asterisk = false;
   }
   return true;
+}
+
+static const char kPathSeparator = SANITIZER_WINDOWS ? ';' : ':';
+
+char *FindPathToBinary(const char *name) {
+  const char *path = GetEnv("PATH");
+  if (!path)
+    return nullptr;
+  uptr name_len = internal_strlen(name);
+  InternalScopedBuffer<char> buffer(kMaxPathLength);
+  const char *beg = path;
+  while (true) {
+    const char *end = internal_strchrnul(beg, kPathSeparator);
+    uptr prefix_len = end - beg;
+    if (prefix_len + name_len + 2 <= kMaxPathLength) {
+      internal_memcpy(buffer.data(), beg, prefix_len);
+      buffer[prefix_len] = '/';
+      internal_memcpy(&buffer[prefix_len + 1], name, name_len);
+      buffer[prefix_len + 1 + name_len] = '\0';
+      if (FileExists(buffer.data()))
+        return internal_strdup(buffer.data());
+    }
+    if (*end == '\0') break;
+    beg = end + 1;
+  }
+  return nullptr;
 }
 
 static char binary_name_cache_str[kMaxPathLength];
@@ -385,7 +451,7 @@ uptr ReadBinaryNameCached(/*out*/char *buf, uptr buf_len) {
   return name_len;
 }
 
-}  // namespace __sanitizer
+} // namespace __sanitizer
 
 using namespace __sanitizer;  // NOLINT
 
@@ -402,4 +468,4 @@ SANITIZER_INTERFACE_ATTRIBUTE
 void __sanitizer_set_death_callback(void (*callback)(void)) {
   SetUserDieCallback(callback);
 }
-}  // extern "C"
+} // extern "C"

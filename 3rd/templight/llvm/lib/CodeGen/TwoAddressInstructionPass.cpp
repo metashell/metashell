@@ -110,8 +110,8 @@ class TwoAddressInstructionPass : public MachineFunctionPass {
   bool isProfitableToCommute(unsigned regA, unsigned regB, unsigned regC,
                              MachineInstr *MI, unsigned Dist);
 
-  bool commuteInstruction(MachineBasicBlock::iterator &mi,
-                          unsigned RegB, unsigned RegC, unsigned Dist);
+  bool commuteInstruction(MachineInstr *MI,
+                          unsigned RegBIdx, unsigned RegCIdx, unsigned Dist);
 
   bool isProfitableToConv3Addr(unsigned RegA, unsigned RegB);
 
@@ -133,6 +133,11 @@ class TwoAddressInstructionPass : public MachineFunctionPass {
                                unsigned SrcIdx, unsigned DstIdx,
                                unsigned Dist, bool shouldOnlyCommute);
 
+  bool tryInstructionCommute(MachineInstr *MI,
+                             unsigned DstOpIdx,
+                             unsigned BaseOpIdx,
+                             bool BaseOpKilled,
+                             unsigned Dist);
   void scanUses(unsigned DstReg);
 
   void processCopy(MachineInstr *MI);
@@ -151,7 +156,7 @@ public:
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesCFG();
-    AU.addRequired<AliasAnalysis>();
+    AU.addRequired<AAResultsWrapperPass>();
     AU.addPreserved<LiveVariables>();
     AU.addPreserved<SlotIndexes>();
     AU.addPreserved<LiveIntervals>();
@@ -168,7 +173,7 @@ public:
 char TwoAddressInstructionPass::ID = 0;
 INITIALIZE_PASS_BEGIN(TwoAddressInstructionPass, "twoaddressinstruction",
                 "Two-Address instruction pass", false, false)
-INITIALIZE_AG_DEPENDENCY(AliasAnalysis)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
 INITIALIZE_PASS_END(TwoAddressInstructionPass, "twoaddressinstruction",
                 "Two-Address instruction pass", false, false)
 
@@ -195,8 +200,7 @@ sink3AddrInstruction(MachineInstr *MI, unsigned SavedReg,
   unsigned DefReg = 0;
   SmallSet<unsigned, 4> UseRegs;
 
-  for (unsigned i = 0, e = MI->getNumOperands(); i != e; ++i) {
-    const MachineOperand &MO = MI->getOperand(i);
+  for (const MachineOperand &MO : MI->operands()) {
     if (!MO.isReg())
       continue;
     unsigned MOReg = MO.getReg();
@@ -231,10 +235,7 @@ sink3AddrInstruction(MachineInstr *MI, unsigned SavedReg,
     KillMI = LIS->getInstructionFromIndex(I->end);
   }
   if (!KillMI) {
-    for (MachineRegisterInfo::use_nodbg_iterator
-           UI = MRI->use_nodbg_begin(SavedReg),
-           UE = MRI->use_nodbg_end(); UI != UE; ++UI) {
-      MachineOperand &UseMO = *UI;
+    for (MachineOperand &UseMO : MRI->use_nodbg_operands(SavedReg)) {
       if (!UseMO.isKill())
         continue;
       KillMI = UseMO.getParent();
@@ -645,12 +646,13 @@ isProfitableToCommute(unsigned regA, unsigned regB, unsigned regC,
 /// commuteInstruction - Commute a two-address instruction and update the basic
 /// block, distance map, and live variables if needed. Return true if it is
 /// successful.
-bool TwoAddressInstructionPass::
-commuteInstruction(MachineBasicBlock::iterator &mi,
-                   unsigned RegB, unsigned RegC, unsigned Dist) {
-  MachineInstr *MI = mi;
+bool TwoAddressInstructionPass::commuteInstruction(MachineInstr *MI,
+                                                   unsigned RegBIdx,
+                                                   unsigned RegCIdx,
+                                                   unsigned Dist) {
+  unsigned RegC = MI->getOperand(RegCIdx).getReg();
   DEBUG(dbgs() << "2addr: COMMUTING  : " << *MI);
-  MachineInstr *NewMI = TII->commuteInstruction(MI);
+  MachineInstr *NewMI = TII->commuteInstruction(MI, false, RegBIdx, RegCIdx);
 
   if (NewMI == nullptr) {
     DEBUG(dbgs() << "2addr: COMMUTING FAILED!\n");
@@ -697,9 +699,10 @@ TwoAddressInstructionPass::convertInstTo3Addr(MachineBasicBlock::iterator &mi,
                                               unsigned RegA, unsigned RegB,
                                               unsigned Dist) {
   // FIXME: Why does convertToThreeAddress() need an iterator reference?
-  MachineFunction::iterator MFI = MBB;
+  MachineFunction::iterator MFI = MBB->getIterator();
   MachineInstr *NewMI = TII->convertToThreeAddress(MFI, mi, LV);
-  assert(MBB == MFI && "convertToThreeAddress changed iterator reference");
+  assert(MBB->getIterator() == MFI &&
+         "convertToThreeAddress changed iterator reference");
   if (!NewMI)
     return false;
 
@@ -1155,6 +1158,61 @@ rescheduleKillAboveMI(MachineBasicBlock::iterator &mi,
   return true;
 }
 
+/// Tries to commute the operand 'BaseOpIdx' and some other operand in the
+/// given machine instruction to improve opportunities for coalescing and
+/// elimination of a register to register copy.
+///
+/// 'DstOpIdx' specifies the index of MI def operand.
+/// 'BaseOpKilled' specifies if the register associated with 'BaseOpIdx'
+/// operand is killed by the given instruction.
+/// The 'Dist' arguments provides the distance of MI from the start of the
+/// current basic block and it is used to determine if it is profitable
+/// to commute operands in the instruction.
+///
+/// Returns true if the transformation happened. Otherwise, returns false.
+bool TwoAddressInstructionPass::tryInstructionCommute(MachineInstr *MI,
+                                                      unsigned DstOpIdx,
+                                                      unsigned BaseOpIdx,
+                                                      bool BaseOpKilled,
+                                                      unsigned Dist) {
+  unsigned DstOpReg = MI->getOperand(DstOpIdx).getReg();
+  unsigned BaseOpReg = MI->getOperand(BaseOpIdx).getReg();
+  unsigned OpsNum = MI->getDesc().getNumOperands();
+  unsigned OtherOpIdx = MI->getDesc().getNumDefs();
+  for (; OtherOpIdx < OpsNum; OtherOpIdx++) {
+    // The call of findCommutedOpIndices below only checks if BaseOpIdx
+    // and OtherOpIdx are commutable, it does not really searches for
+    // other commutable operands and does not change the values of passed
+    // variables.
+    if (OtherOpIdx == BaseOpIdx ||
+        !TII->findCommutedOpIndices(MI, BaseOpIdx, OtherOpIdx))
+      continue;
+
+    unsigned OtherOpReg = MI->getOperand(OtherOpIdx).getReg();
+    bool AggressiveCommute = false;
+
+    // If OtherOp dies but BaseOp does not, swap the OtherOp and BaseOp
+    // operands. This makes the live ranges of DstOp and OtherOp joinable.
+    bool DoCommute =
+        !BaseOpKilled && isKilled(*MI, OtherOpReg, MRI, TII, LIS, false);
+
+    if (!DoCommute &&
+        isProfitableToCommute(DstOpReg, BaseOpReg, OtherOpReg, MI, Dist)) {
+      DoCommute = true;
+      AggressiveCommute = true;
+    }
+
+    // If it's profitable to commute, try to do so.
+    if (DoCommute && commuteInstruction(MI, BaseOpIdx, OtherOpIdx, Dist)) {
+      ++NumCommuted;
+      if (AggressiveCommute)
+        ++NumAggrCommuted;
+      return true;
+    }
+  }
+  return false;
+}
+
 /// tryInstructionTransform - For the case where an instruction has a single
 /// pair of tied register operands, attempt some transformations that may
 /// either eliminate the tied operands or improve the opportunities for
@@ -1181,51 +1239,18 @@ tryInstructionTransform(MachineBasicBlock::iterator &mi,
   if (TargetRegisterInfo::isVirtualRegister(regA))
     scanUses(regA);
 
-  // Check if it is profitable to commute the operands.
-  unsigned SrcOp1, SrcOp2;
-  unsigned regC = 0;
-  unsigned regCIdx = ~0U;
-  bool TryCommute = false;
-  bool AggressiveCommute = false;
-  if (MI.isCommutable() && MI.getNumOperands() >= 3 &&
-      TII->findCommutedOpIndices(&MI, SrcOp1, SrcOp2)) {
-    if (SrcIdx == SrcOp1)
-      regCIdx = SrcOp2;
-    else if (SrcIdx == SrcOp2)
-      regCIdx = SrcOp1;
-
-    if (regCIdx != ~0U) {
-      regC = MI.getOperand(regCIdx).getReg();
-      if (!regBKilled && isKilled(MI, regC, MRI, TII, LIS, false))
-        // If C dies but B does not, swap the B and C operands.
-        // This makes the live ranges of A and C joinable.
-        TryCommute = true;
-      else if (isProfitableToCommute(regA, regB, regC, &MI, Dist)) {
-        TryCommute = true;
-        AggressiveCommute = true;
-      }
-    }
-  }
+  bool Commuted = tryInstructionCommute(&MI, DstIdx, SrcIdx, regBKilled, Dist);
 
   // If the instruction is convertible to 3 Addr, instead
   // of returning try 3 Addr transformation aggresively and
   // use this variable to check later. Because it might be better.
   // For example, we can just use `leal (%rsi,%rdi), %eax` and `ret`
   // instead of the following code.
-  //   addl	%esi, %edi
-  //   movl	%edi, %eax
+  //   addl     %esi, %edi
+  //   movl     %edi, %eax
   //   ret
-  bool Commuted = false;
-
-  // If it's profitable to commute, try to do so.
-  if (TryCommute && commuteInstruction(mi, regB, regC, Dist)) {
-    Commuted = true;
-    ++NumCommuted;
-    if (AggressiveCommute)
-      ++NumAggrCommuted;
-    if (!MI.isConvertibleTo3Addr())
-      return false;
-  }
+  if (Commuted && !MI.isConvertibleTo3Addr())
+    return false;
 
   if (shouldOnlyCommute)
     return false;
@@ -1235,6 +1260,13 @@ tryInstructionTransform(MachineBasicBlock::iterator &mi,
   if (!Commuted && EnableRescheduling && rescheduleMIBelowKill(mi, nmi, regB)) {
     ++NumReSchedDowns;
     return true;
+  }
+
+  // If we commuted, regB may have changed so we should re-sample it to avoid
+  // confusing the three address conversion below.
+  if (Commuted) {
+    regB = MI.getOperand(SrcIdx).getReg();
+    regBKilled = isKilled(MI, regB, MRI, TII, LIS, true);
   }
 
   if (MI.isConvertibleTo3Addr()) {
@@ -1348,10 +1380,9 @@ tryInstructionTransform(MachineBasicBlock::iterator &mi,
 
           SmallVector<unsigned, 4> OrigRegs;
           if (LIS) {
-            for (MachineInstr::const_mop_iterator MOI = MI.operands_begin(),
-                 MOE = MI.operands_end(); MOI != MOE; ++MOI) {
-              if (MOI->isReg())
-                OrigRegs.push_back(MOI->getReg());
+            for (const MachineOperand &MO : MI.operands()) {
+              if (MO.isReg())
+                OrigRegs.push_back(MO.getReg());
             }
           }
 
@@ -1536,7 +1567,6 @@ TwoAddressInstructionPass::processTiedPairs(MachineInstr *MI,
     SrcRegMap[RegA] = RegB;
   }
 
-
   if (AllUsesCopied) {
     if (!IsEarlyClobber) {
       // Replace other (un-tied) uses of regB with LastCopiedReg.
@@ -1599,7 +1629,7 @@ bool TwoAddressInstructionPass::runOnMachineFunction(MachineFunction &Func) {
   InstrItins = MF->getSubtarget().getInstrItineraryData();
   LV = getAnalysisIfAvailable<LiveVariables>();
   LIS = getAnalysisIfAvailable<LiveIntervals>();
-  AA = &getAnalysis<AliasAnalysis>();
+  AA = &getAnalysis<AAResultsWrapperPass>().getAAResults();
   OptLevel = TM.getOptLevel();
 
   bool MadeChange = false;
@@ -1614,7 +1644,7 @@ bool TwoAddressInstructionPass::runOnMachineFunction(MachineFunction &Func) {
   TiedOperandMap TiedOperands;
   for (MachineFunction::iterator MBBI = MF->begin(), MBBE = MF->end();
        MBBI != MBBE; ++MBBI) {
-    MBB = MBBI;
+    MBB = &*MBBI;
     unsigned Dist = 0;
     DistanceMap.clear();
     SrcRegMap.clear();
@@ -1661,8 +1691,8 @@ bool TwoAddressInstructionPass::runOnMachineFunction(MachineFunction &Func) {
           unsigned DstReg = mi->getOperand(DstIdx).getReg();
           if (SrcReg != DstReg &&
               tryInstructionTransform(mi, nmi, SrcIdx, DstIdx, Dist, false)) {
-            // The tied operands have been eliminated or shifted further down the
-            // block to ease elimination. Continue processing with 'nmi'.
+            // The tied operands have been eliminated or shifted further down
+            // the block to ease elimination. Continue processing with 'nmi'.
             TiedOperands.clear();
             mi = nmi;
             continue;
@@ -1671,9 +1701,8 @@ bool TwoAddressInstructionPass::runOnMachineFunction(MachineFunction &Func) {
       }
 
       // Now iterate over the information collected above.
-      for (TiedOperandMap::iterator OI = TiedOperands.begin(),
-             OE = TiedOperands.end(); OI != OE; ++OI) {
-        processTiedPairs(mi, OI->second, Dist);
+      for (auto &TO : TiedOperands) {
+        processTiedPairs(mi, TO.second, Dist);
         DEBUG(dbgs() << "\t\trewrite to:\t" << *mi);
       }
 

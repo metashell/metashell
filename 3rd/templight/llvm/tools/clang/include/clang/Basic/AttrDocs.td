@@ -580,6 +580,14 @@ are:
   Apple's Mac OS X operating system.  The minimum deployment target is
   specified by the ``-mmacosx-version-min=*version*`` command-line argument.
 
+``tvos``
+  Apple's tvOS operating system.  The minimum deployment target is specified by
+  the ``-mtvos-version-min=*version*`` command-line argument.
+
+``watchos``
+  Apple's watchOS operating system.  The minimum deployment target is specified by
+  the ``-mwatchos-version-min=*version*`` command-line argument.
+
 A declaration can be used even when deploying back to a platform version prior
 to when the declaration was introduced.  When this happens, the declaration is
 `weakly linked
@@ -1371,7 +1379,9 @@ Loop unrolling optimization hints can be specified with ``#pragma unroll`` and
 do-while, or c++11 range-based for loop.
 
 Specifying ``#pragma unroll`` without a parameter directs the loop unroller to
-attempt to fully unroll the loop if the trip count is known at compile time:
+attempt to fully unroll the loop if the trip count is known at compile time and
+attempt to partially unroll the loop if the trip count is not known at compile
+time:
 
 .. code-block:: c++
 
@@ -1608,5 +1618,69 @@ def NoAliasDocs : Documentation {
 The ``noalias`` attribute indicates that the only memory accesses inside
 function are loads and stores from objects pointed to by its pointer-typed
 arguments, with arbitrary offsets.
+  }];
+}
+
+def NotTailCalledDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+The ``not_tail_called`` attribute prevents tail-call optimization on statically bound calls. It has no effect on indirect calls. Virtual functions, objective-c methods, and functions marked as ``always_inline`` cannot be marked as ``not_tail_called``.
+
+For example, it prevents tail-call optimization in the following case:
+
+  .. code-block: c
+
+    int __attribute__((not_tail_called)) foo1(int);
+
+    int foo2(int a) {
+      return foo1(a); // No tail-call optimization on direct calls.
+    }
+
+However, it doesn't prevent tail-call optimization in this case:
+
+  .. code-block: c
+
+    int __attribute__((not_tail_called)) foo1(int);
+
+    int foo2(int a) {
+      int (*fn)(int) = &foo1;
+
+      // not_tail_called has no effect on an indirect call even if the call can be
+      // resolved at compile time.
+      return (*fn)(a);
+    }
+
+Marking virtual functions as ``not_tail_called`` is an error:
+
+  .. code-block: c++
+
+    class Base {
+    public:
+      // not_tail_called on a virtual function is an error.
+      [[clang::not_tail_called]] virtual int foo1();
+
+      virtual int foo2();
+
+      // Non-virtual functions can be marked ``not_tail_called``.
+      [[clang::not_tail_called]] int foo3();
+    };
+
+    class Derived1 : public Base {
+    public:
+      int foo1() override;
+
+      // not_tail_called on a virtual function is an error.
+      [[clang::not_tail_called]] int foo2() override;
+    };
+  }];
+}
+
+def InternalLinkageDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+The ``internal_linkage`` attribute changes the linkage type of the declaration to internal.
+This is similar to C-style ``static``, but can be used on classes and class methods. When applied to a class definition,
+this attribute affects all methods and static data members of that class.
+This can be used to contain the ABI of a C++ library by excluding unwanted class methods from the export tables.
   }];
 }

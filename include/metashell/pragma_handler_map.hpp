@@ -22,6 +22,8 @@
 #include <metashell/logger.hpp>
 #include <metashell/command_processor_queue.hpp>
 
+#include <metashell/iface/executable.hpp>
+
 #include <map>
 #include <vector>
 #include <string>
@@ -110,6 +112,7 @@ namespace metashell
     iterator find(const std::vector<std::string>& p_) const;
 
     static pragma_handler_map build_default(
+      iface::executable& clang_binary_,
       shell& shell_,
       command_processor_queue* cpq_,
       logger* logger_

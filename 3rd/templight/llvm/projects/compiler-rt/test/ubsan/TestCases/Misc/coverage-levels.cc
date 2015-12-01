@@ -1,18 +1,20 @@
 // Test various levels of coverage
 //
+// FIXME: Port the environment variable logic below for the lit shell.
+// REQUIRES: shell
+//
 // RUN: mkdir -p %T/coverage-levels
-// RUN: OPT=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels
 // RUN: %clangxx -fsanitize=shift                        -DGOOD_SHIFT=1 -O1 -fsanitize-coverage=func  %s -o %t
-// RUN: UBSAN_OPTIONS=$OPT %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_NOWARN
+// RUN: %env_ubsan_opts=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_NOWARN
 // RUN: %clangxx -fsanitize=undefined                    -DGOOD_SHIFT=1 -O1 -fsanitize-coverage=func  %s -o %t
-// RUN: UBSAN_OPTIONS=$OPT %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_NOWARN
+// RUN: %env_ubsan_opts=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_NOWARN
 
 // RUN: %clangxx -fsanitize=shift -O1 -fsanitize-coverage=func  %s -o %t
-// RUN: UBSAN_OPTIONS=$OPT %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_WARN
+// RUN: %env_ubsan_opts=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels %run %t 2>&1 | FileCheck %s --check-prefix=CHECK1 --check-prefix=CHECK_WARN
 // RUN: %clangxx -fsanitize=shift -O1 -fsanitize-coverage=bb  %s -o %t
-// RUN: UBSAN_OPTIONS=$OPT %run %t 2>&1 | FileCheck %s --check-prefix=CHECK2 --check-prefix=CHECK_WARN
+// RUN: %env_ubsan_opts=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels %run %t 2>&1 | FileCheck %s --check-prefix=CHECK2 --check-prefix=CHECK_WARN
 // RUN: %clangxx -fsanitize=shift -O1 -fsanitize-coverage=edge  %s -o %t
-// RUN: UBSAN_OPTIONS=$OPT %run %t 2>&1 | FileCheck %s --check-prefix=CHECK3 --check-prefix=CHECK_WARN
+// RUN: %env_ubsan_opts=coverage=1:verbosity=1:coverage_dir=%T/coverage-levels %run %t 2>&1 | FileCheck %s --check-prefix=CHECK3 --check-prefix=CHECK_WARN
 
 // Coverage is not yet implemented in TSan.
 // XFAIL: ubsan-tsan
@@ -36,4 +38,4 @@ int main(int argc, char **argv) {
 // to dump coverage.
 // CHECK1:  1 PCs written
 // CHECK2:  3 PCs written
-// CHECK3:  4 PCs written
+// CHECK3:  3 PCs written

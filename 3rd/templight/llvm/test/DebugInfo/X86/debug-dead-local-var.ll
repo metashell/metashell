@@ -16,7 +16,7 @@
 ; CHECK: DW_TAG_structure_type
 
 ; Function Attrs: nounwind readnone uwtable
-define i32 @bar() #0 {
+define i32 @bar() #0 !dbg !4 {
 entry:
   ret i32 1, !dbg !21
 }
@@ -31,12 +31,12 @@ attributes #0 = { nounwind readnone uwtable "less-precise-fpmad"="false" "no-fra
 !1 = !DIFile(filename: "debug-dead-local-var.c", directory: "/usr/local/google/home/echristo")
 !2 = !{}
 !3 = !{!4, !9}
-!4 = !DISubprogram(name: "bar", line: 11, isLocal: false, isDefinition: true, virtualIndex: 6, isOptimized: true, scopeLine: 11, file: !1, scope: !5, type: !6, function: i32 ()* @bar, variables: !2)
+!4 = distinct !DISubprogram(name: "bar", line: 11, isLocal: false, isDefinition: true, virtualIndex: 6, isOptimized: true, scopeLine: 11, file: !1, scope: !5, type: !6, variables: !2)
 !5 = !DIFile(filename: "debug-dead-local-var.c", directory: "/usr/local/google/home/echristo")
 !6 = !DISubroutineType(types: !7)
 !7 = !{!8}
 !8 = !DIBasicType(tag: DW_TAG_base_type, name: "int", size: 32, align: 32, encoding: DW_ATE_signed)
-!9 = !DISubprogram(name: "foo", line: 6, isLocal: true, isDefinition: true, virtualIndex: 6, isOptimized: true, scopeLine: 6, file: !1, scope: !5, type: !10, variables: !12)
+!9 = distinct !DISubprogram(name: "foo", line: 6, isLocal: true, isDefinition: true, virtualIndex: 6, isOptimized: true, scopeLine: 6, file: !1, scope: !5, type: !10, variables: !12)
 !10 = !DISubroutineType(types: !11)
 !11 = !{null}
 !12 = !{!13}

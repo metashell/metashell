@@ -44,6 +44,7 @@ protected:
   bool HasNEON;
   bool HasCrypto;
   bool HasCRC;
+  bool HasPerfMon;
 
   // HasZeroCycleRegMove - Has zero-cycle register mov instructions.
   bool HasZeroCycleRegMove;
@@ -114,6 +115,11 @@ public:
   bool hasNEON() const { return HasNEON; }
   bool hasCrypto() const { return HasCrypto; }
   bool hasCRC() const { return HasCRC; }
+  /// CPU has TBI (top byte of addresses is ignored during HW address
+  /// translation) and OS enables it.
+  bool supportsAddressTopByteIgnored() const;
+
+  bool hasPerfMon() const { return HasPerfMon; }
 
   bool isLittleEndian() const { return IsLittle; }
 
@@ -121,6 +127,7 @@ public:
   bool isTargetIOS() const { return TargetTriple.isiOS(); }
   bool isTargetLinux() const { return TargetTriple.isOSLinux(); }
   bool isTargetWindows() const { return TargetTriple.isOSWindows(); }
+  bool isTargetAndroid() const { return TargetTriple.isAndroid(); }
 
   bool isTargetCOFF() const { return TargetTriple.isOSBinFormatCOFF(); }
   bool isTargetELF() const { return TargetTriple.isOSBinFormatELF(); }

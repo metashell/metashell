@@ -7,7 +7,7 @@ LLVM 3.8 Release Notes
 
 .. warning::
    These are in-progress notes for the upcoming LLVM 3.8 release.  You may
-   prefer the `LLVM 3.6 Release Notes <http://llvm.org/releases/3.6.0/docs
+   prefer the `LLVM 3.7 Release Notes <http://llvm.org/releases/3.7.0/docs
    /ReleaseNotes.html>`_.
 
 
@@ -33,6 +33,13 @@ page <http://llvm.org/releases/>`_.
 
 Non-comprehensive list of changes in this release
 =================================================
+* With this release, the minimum Windows version required for running LLVM is
+  Windows 7. Earlier versions, including Windows Vista and XP are no longer
+  supported.
+
+* With this release, the autoconf build system is deprecated. It will be removed
+  in the 3.9 release. Please migrate to using CMake. For more information see:
+  `Building LLVM with CMake <CMake.html>`_
 
 .. NOTE
    For small 1-3 sentence descriptions, just add an entry at the end of

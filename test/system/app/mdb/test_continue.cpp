@@ -103,9 +103,9 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
 
   auto i = r.begin() + 6;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<0>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<0>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<0>"), instantiation_kind::memoization), *i);
+      frame(type("fib<0>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
@@ -121,9 +121,9 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
 
   auto i = r.begin() + 6;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
@@ -140,14 +140,14 @@ JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
 
   auto i = r.begin() + 6;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
@@ -165,14 +165,14 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
 
   auto i = r.begin() + 8;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<6>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"fib<6>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
@@ -189,9 +189,9 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
 
   auto i = r.begin() + 8;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints) {
@@ -270,15 +270,15 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
     );
   auto i = r.begin() + 8;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<6>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<6>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
@@ -294,9 +294,9 @@ JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
     );
   auto i = r.begin() + 6;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
@@ -366,7 +366,7 @@ JUST_TEST_CASE(
       *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<5>\" reached"), *i++);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL( frame(type("fib<5>")), *i);
 
   i += 2;

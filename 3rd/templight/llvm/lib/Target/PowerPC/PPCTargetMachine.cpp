@@ -42,6 +42,10 @@ static cl::
 opt<bool> DisableVSXSwapRemoval("disable-ppc-vsx-swap-removal", cl::Hidden,
                                 cl::desc("Disable VSX Swap Removal for PPC"));
 
+static cl::
+opt<bool> DisableMIPeephole("disable-ppc-peephole", cl::Hidden,
+                            cl::desc("Disable machine peepholes for PPC"));
+
 static cl::opt<bool>
 EnableGEPOpt("ppc-gep-opt", cl::Hidden,
              cl::desc("Enable optimizations on complex GEPs"),
@@ -123,7 +127,7 @@ static std::string computeFSAdditions(StringRef FS, CodeGenOpt::Level OL,
   }
 
   if (OL != CodeGenOpt::None) {
-     if (!FullFS.empty())
+    if (!FullFS.empty())
       FullFS = "+invariant-function-descriptors," + FullFS;
     else
       FullFS = "+invariant-function-descriptors";
@@ -149,7 +153,7 @@ static PPCTargetMachine::PPCABI computeTargetABI(const Triple &TT,
     return PPCTargetMachine::PPC_ABI_ELFv2;
 
   assert(Options.MCOptions.getABIName().empty() &&
-	 "Unknown target-abi option!");
+         "Unknown target-abi option!");
 
   if (!TT.isMacOSX()) {
     switch (TT.getArch()) {
@@ -165,9 +169,9 @@ static PPCTargetMachine::PPCABI computeTargetABI(const Triple &TT,
   return PPCTargetMachine::PPC_ABI_UNKNOWN;
 }
 
-// The FeatureString here is a little subtle. We are modifying the feature string
-// with what are (currently) non-function specific overrides as it goes into the
-// LLVMTargetMachine constructor and then using the stored value in the
+// The FeatureString here is a little subtle. We are modifying the feature
+// string with what are (currently) non-function specific overrides as it goes
+// into the LLVMTargetMachine constructor and then using the stored value in the
 // Subtarget constructor below it.
 PPCTargetMachine::PPCTargetMachine(const Target &T, const Triple &TT,
                                    StringRef CPU, StringRef FS,
@@ -348,6 +352,12 @@ void PPCPassConfig::addMachineSSAOptimization() {
   if (TM->getTargetTriple().getArch() == Triple::ppc64le &&
       !DisableVSXSwapRemoval)
     addPass(createPPCVSXSwapRemovalPass());
+  // Target-specific peephole cleanups performed after instruction
+  // selection.
+  if (!DisableMIPeephole) {
+    addPass(createPPCMIPeepholePass());
+    addPass(&DeadMachineInstructionElimID);
+  }
 }
 
 void PPCPassConfig::addPreRegAlloc() {
@@ -373,6 +383,7 @@ void PPCPassConfig::addPreEmitPass() {
 }
 
 TargetIRAnalysis PPCTargetMachine::getTargetIRAnalysis() {
-  return TargetIRAnalysis(
-      [this](Function &F) { return TargetTransformInfo(PPCTTIImpl(this, F)); });
+  return TargetIRAnalysis([this](const Function &F) {
+    return TargetTransformInfo(PPCTTIImpl(this, F));
+  });
 }

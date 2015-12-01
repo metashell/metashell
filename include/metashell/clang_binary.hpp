@@ -17,32 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
-
-#include <just/process.hpp>
-
-#include <string>
-#include <vector>
 
 namespace metashell
 {
-  class clang_binary
+  class clang_binary : public iface::executable
   {
   public:
     clang_binary(const std::string& path_, logger* logger_);
 
-    just::process::output run(
-        const std::vector<std::string>& args_,
-        const std::string& stdin_ = "") const;
+    virtual data::process_output run(
+      const std::vector<std::string>& args_,
+      const std::string& stdin_
+    ) const override;
   private:
     std::string _path;
     logger* _logger;
   };
-
-  std::vector<std::string> default_sysinclude(
-    const clang_binary& clang_,
-    logger* logger_
-  );
 }
 
 #endif

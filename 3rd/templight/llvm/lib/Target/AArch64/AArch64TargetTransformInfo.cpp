@@ -186,7 +186,30 @@ int AArch64TTIImpl::getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src) {
   if (!SrcTy.isSimple() || !DstTy.isSimple())
     return BaseT::getCastInstrCost(Opcode, Dst, Src);
 
-  static const TypeConversionCostTblEntry<MVT> ConversionTbl[] = {
+  static const TypeConversionCostTblEntry
+  ConversionTbl[] = {
+    { ISD::SIGN_EXTEND, MVT::v4i32, MVT::v4i16, 0 },
+    { ISD::ZERO_EXTEND, MVT::v4i32, MVT::v4i16, 0 },
+    { ISD::SIGN_EXTEND, MVT::v2i64, MVT::v2i32, 1 },
+    { ISD::ZERO_EXTEND, MVT::v2i64, MVT::v2i32, 1 },
+    { ISD::TRUNCATE,    MVT::v4i32, MVT::v4i64, 0 },
+    { ISD::TRUNCATE,    MVT::v4i16, MVT::v4i32, 1 },
+
+    // The number of shll instructions for the extension.
+    { ISD::SIGN_EXTEND, MVT::v4i64, MVT::v4i16, 3 },
+    { ISD::ZERO_EXTEND, MVT::v4i64, MVT::v4i16, 3 },
+    { ISD::SIGN_EXTEND, MVT::v8i32, MVT::v8i8, 3 },
+    { ISD::ZERO_EXTEND, MVT::v8i32, MVT::v8i8, 3 },
+    { ISD::SIGN_EXTEND, MVT::v8i64, MVT::v8i8, 7 },
+    { ISD::ZERO_EXTEND, MVT::v8i64, MVT::v8i8, 7 },
+    { ISD::SIGN_EXTEND, MVT::v8i64, MVT::v8i16, 6 },
+    { ISD::ZERO_EXTEND, MVT::v8i64, MVT::v8i16, 6 },
+    { ISD::SIGN_EXTEND, MVT::v16i32, MVT::v16i8, 6 },
+    { ISD::ZERO_EXTEND, MVT::v16i32, MVT::v16i8, 6 },
+
+    { ISD::TRUNCATE,    MVT::v16i8, MVT::v16i32, 6 },
+    { ISD::TRUNCATE,    MVT::v8i8, MVT::v8i32, 3 },
+
     // LowerVectorINT_TO_FP:
     { ISD::SINT_TO_FP, MVT::v2f32, MVT::v2i32, 1 },
     { ISD::SINT_TO_FP, MVT::v4f32, MVT::v4i32, 1 },
@@ -208,6 +231,16 @@ int AArch64TTIImpl::getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src) {
     { ISD::SINT_TO_FP, MVT::v4f32, MVT::v4i16, 2 },
     { ISD::UINT_TO_FP, MVT::v4f32, MVT::v4i8,  3 },
     { ISD::UINT_TO_FP, MVT::v4f32, MVT::v4i16, 2 },
+
+    // Complex: to v8f32
+    { ISD::SINT_TO_FP, MVT::v8f32, MVT::v8i8,  10 },
+    { ISD::SINT_TO_FP, MVT::v8f32, MVT::v8i16, 4 },
+    { ISD::UINT_TO_FP, MVT::v8f32, MVT::v8i8,  10 },
+    { ISD::UINT_TO_FP, MVT::v8f32, MVT::v8i16, 4 },
+
+    // Complex: to v16f32
+    { ISD::SINT_TO_FP, MVT::v16f32, MVT::v16i8, 21 },
+    { ISD::UINT_TO_FP, MVT::v16f32, MVT::v16i8, 21 },
 
     // Complex: to v2f64
     { ISD::SINT_TO_FP, MVT::v2f64, MVT::v2i8,  4 },
@@ -249,11 +282,10 @@ int AArch64TTIImpl::getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src) {
     { ISD::FP_TO_UINT, MVT::v2i8,  MVT::v2f64, 2 },
   };
 
-  int Idx = ConvertCostTableLookup<MVT>(
-      ConversionTbl, array_lengthof(ConversionTbl), ISD, DstTy.getSimpleVT(),
-      SrcTy.getSimpleVT());
-  if (Idx != -1)
-    return ConversionTbl[Idx].Cost;
+  if (const auto *Entry = ConvertCostTableLookup(ConversionTbl, ISD,
+                                                 DstTy.getSimpleVT(),
+                                                 SrcTy.getSimpleVT()))
+    return Entry->Cost;
 
   return BaseT::getCastInstrCost(Opcode, Dst, Src);
 }
@@ -280,7 +312,7 @@ int AArch64TTIImpl::getVectorInstrCost(unsigned Opcode, Type *Val,
   }
 
   // All other insert/extracts cost this much.
-  return 2;
+  return 3;
 }
 
 int AArch64TTIImpl::getArithmeticInstrCost(
@@ -348,15 +380,16 @@ int AArch64TTIImpl::getCmpSelInstrCost(unsigned Opcode, Type *ValTy,
                                        Type *CondTy) {
 
   int ISD = TLI->InstructionOpcodeToISD(Opcode);
-  // We don't lower vector selects well that are wider than the register width.
+  // We don't lower some vector selects well that are wider than the register
+  // width.
   if (ValTy->isVectorTy() && ISD == ISD::SELECT) {
     // We would need this many instructions to hide the scalarization happening.
     const int AmortizationCost = 20;
-    static const TypeConversionCostTblEntry<MVT::SimpleValueType>
+    static const TypeConversionCostTblEntry
     VectorSelectTbl[] = {
-      { ISD::SELECT, MVT::v16i1, MVT::v16i16, 16 * AmortizationCost },
-      { ISD::SELECT, MVT::v8i1, MVT::v8i32, 8 * AmortizationCost },
-      { ISD::SELECT, MVT::v16i1, MVT::v16i32, 16 * AmortizationCost },
+      { ISD::SELECT, MVT::v16i1, MVT::v16i16, 16 },
+      { ISD::SELECT, MVT::v8i1, MVT::v8i32, 8 },
+      { ISD::SELECT, MVT::v16i1, MVT::v16i32, 16 },
       { ISD::SELECT, MVT::v4i1, MVT::v4i64, 4 * AmortizationCost },
       { ISD::SELECT, MVT::v8i1, MVT::v8i64, 8 * AmortizationCost },
       { ISD::SELECT, MVT::v16i1, MVT::v16i64, 16 * AmortizationCost }
@@ -365,11 +398,10 @@ int AArch64TTIImpl::getCmpSelInstrCost(unsigned Opcode, Type *ValTy,
     EVT SelCondTy = TLI->getValueType(DL, CondTy);
     EVT SelValTy = TLI->getValueType(DL, ValTy);
     if (SelCondTy.isSimple() && SelValTy.isSimple()) {
-      int Idx =
-          ConvertCostTableLookup(VectorSelectTbl, ISD, SelCondTy.getSimpleVT(),
-                                 SelValTy.getSimpleVT());
-      if (Idx != -1)
-        return VectorSelectTbl[Idx].Cost;
+      if (const auto *Entry = ConvertCostTableLookup(VectorSelectTbl, ISD,
+                                                     SelCondTy.getSimpleVT(),
+                                                     SelValTy.getSimpleVT()))
+        return Entry->Cost;
     }
   }
   return BaseT::getCmpSelInstrCost(Opcode, ValTy, CondTy);

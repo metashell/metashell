@@ -74,7 +74,7 @@ if test ${srcdir} != "." ; then
 fi
 
 dnl Quit if it is an in-source build
-if test ${srcdir} == "." ; then
+if test ${srcdir} = "." ; then
   AC_MSG_ERROR([In-source builds are not allowed. Please configure from a separate build directory!])
 fi
 
@@ -133,6 +133,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#if ! __clang__
                                      llvm_cv_cxx_compiler=gcc, [])])
 AC_LANG_POP([C++])
 AC_MSG_RESULT([${llvm_cv_cxx_compiler}])
+AC_SUBST(CXX_COMPILER,$llvm_cv_cxx_compiler)
 
 dnl Configure all of the projects present in our source tree. While we could
 dnl just AC_CONFIG_SUBDIRS on the set of directories in projects that have a
@@ -430,6 +431,7 @@ AC_CACHE_CHECK([target architecture],[llvm_cv_target_arch],
   arm64*-*)               llvm_cv_target_arch="AArch64" ;;
   arm*-*)                 llvm_cv_target_arch="ARM" ;;
   aarch64*-*)             llvm_cv_target_arch="AArch64" ;;
+  avr-*)                  llvm_cv_target_arch="AVR" ;;
   mips-* | mips64-*)      llvm_cv_target_arch="Mips" ;;
   mipsel-* | mips64el-*)  llvm_cv_target_arch="Mips" ;;
   xcore-*)                llvm_cv_target_arch="XCore" ;;
@@ -467,6 +469,7 @@ case $host in
   arm64*-*)               host_arch="AArch64" ;;
   arm*-*)                 host_arch="ARM" ;;
   aarch64*-*)             host_arch="AArch64" ;;
+  avr-*)                  host_arch="AVR" ;;
   mips-* | mips64-*)      host_arch="Mips" ;;
   mipsel-* | mips64el-*)  host_arch="Mips" ;;
   xcore-*)                host_arch="XCore" ;;
@@ -800,6 +803,7 @@ else
     PowerPC)     AC_SUBST(TARGET_HAS_JIT,1) ;;
     x86_64)      AC_SUBST(TARGET_HAS_JIT,1) ;;
     ARM)         AC_SUBST(TARGET_HAS_JIT,1) ;;
+    AVR)         AC_SUBST(TARGET_HAS_JIT,0) ;;
     Mips)        AC_SUBST(TARGET_HAS_JIT,1) ;;
     XCore)       AC_SUBST(TARGET_HAS_JIT,0) ;;
     MSP430)      AC_SUBST(TARGET_HAS_JIT,0) ;;

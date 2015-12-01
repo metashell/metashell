@@ -21,10 +21,8 @@ namespace fuzzer {
 
 static long GetEpoch(const std::string &Path) {
   struct stat St;
-  if (stat(Path.c_str(), &St)) {
-    Printf("Can not stat: %s; exiting\n", Path.c_str());
-    exit(1);
-  }
+  if (stat(Path.c_str(), &St))
+    return 0;  // Can't stat, be conservative.
   return St.st_mtime;
 }
 
@@ -32,7 +30,7 @@ static std::vector<std::string> ListFilesInDir(const std::string &Dir,
                                                long *Epoch) {
   std::vector<std::string> V;
   if (Epoch) {
-    auto E = GetEpoch(Dir.c_str());
+    auto E = GetEpoch(Dir);
     if (*Epoch >= E) return V;
     *Epoch = E;
   }
@@ -51,6 +49,10 @@ static std::vector<std::string> ListFilesInDir(const std::string &Dir,
 
 Unit FileToVector(const std::string &Path) {
   std::ifstream T(Path);
+  if (!T) {
+    Printf("No such directory: %s; exiting\n", Path.c_str());
+    exit(1);
+  }
   return Unit((std::istreambuf_iterator<char>(T)),
               std::istreambuf_iterator<char>());
 }
@@ -66,8 +68,11 @@ void CopyFileToErr(const std::string &Path) {
 }
 
 void WriteToFile(const Unit &U, const std::string &Path) {
-  std::ofstream OF(Path);
-  OF.write((const char*)U.data(), U.size());
+  // Use raw C interface because this function may be called from a sig handler.
+  FILE *Out = fopen(Path.c_str(), "w");
+  if (!Out) return;
+  fwrite(U.data(), sizeof(U[0]), U.size(), Out);
+  fclose(Out);
 }
 
 void ReadDirToVectorOfUnits(const char *Path, std::vector<Unit> *V,

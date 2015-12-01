@@ -107,18 +107,13 @@ static const AllocFnsTy *getAllocationData(const Value *V, AllocType AllocTy,
   if (!TLI || !TLI->getLibFunc(FnName, TLIFn) || !TLI->has(TLIFn))
     return nullptr;
 
-  unsigned i = 0;
-  bool found = false;
-  for ( ; i < array_lengthof(AllocationFnData); ++i) {
-    if (AllocationFnData[i].Func == TLIFn) {
-      found = true;
-      break;
-    }
-  }
-  if (!found)
+  const AllocFnsTy *FnData =
+      std::find_if(std::begin(AllocationFnData), std::end(AllocationFnData),
+                   [TLIFn](const AllocFnsTy &Fn) { return Fn.Func == TLIFn; });
+
+  if (FnData == std::end(AllocationFnData))
     return nullptr;
 
-  const AllocFnsTy *FnData = &AllocationFnData[i];
   if ((FnData->AllocTy & AllocTy) != FnData->AllocTy)
     return nullptr;
 
@@ -621,7 +616,7 @@ SizeOffsetEvalType ObjectSizeOffsetEvaluator::compute_(Value *V) {
 
   // always generate code immediately before the instruction being
   // processed, so that the generated code dominates the same BBs
-  Instruction *PrevInsertPoint = Builder.GetInsertPoint();
+  BuilderTy::InsertPointGuard Guard(Builder);
   if (Instruction *I = dyn_cast<Instruction>(V))
     Builder.SetInsertPoint(I);
 
@@ -649,9 +644,6 @@ SizeOffsetEvalType ObjectSizeOffsetEvaluator::compute_(Value *V) {
           << *V << '\n');
     Result = unknown();
   }
-
-  if (PrevInsertPoint)
-    Builder.SetInsertPoint(PrevInsertPoint);
 
   // Don't reuse CacheIt since it may be invalid at this point.
   CacheMap[V] = Result;
@@ -742,7 +734,7 @@ SizeOffsetEvalType ObjectSizeOffsetEvaluator::visitPHINode(PHINode &PHI) {
 
   // compute offset/size for each PHI incoming pointer
   for (unsigned i = 0, e = PHI.getNumIncomingValues(); i != e; ++i) {
-    Builder.SetInsertPoint(PHI.getIncomingBlock(i)->getFirstInsertionPt());
+    Builder.SetInsertPoint(&*PHI.getIncomingBlock(i)->getFirstInsertionPt());
     SizeOffsetEvalType EdgeData = compute_(PHI.getIncomingValue(i));
 
     if (!bothKnown(EdgeData)) {

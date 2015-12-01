@@ -13,7 +13,10 @@
 #include "llvm/ADT/StringRef.h"
 
 namespace llvm {
+class MCStreamer;
+class raw_fd_ostream;
 namespace dsymutil {
+class DebugMap;
 struct LinkOptions;
 namespace MachOUtils {
 
@@ -23,7 +26,13 @@ struct ArchAndFilename {
 };
 
 bool generateUniversalBinary(SmallVectorImpl<ArchAndFilename> &ArchFiles,
-                             StringRef OutputFileName, const LinkOptions &);
+                             StringRef OutputFileName, const LinkOptions &,
+                             StringRef SDKPath);
+
+bool generateDsymCompanion(const DebugMap &DM, MCStreamer &MS,
+                           raw_fd_ostream &OutFile);
+
+std::string getArchName(StringRef Arch);
 }
 }
 }

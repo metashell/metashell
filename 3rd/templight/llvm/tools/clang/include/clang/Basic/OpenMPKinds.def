@@ -63,6 +63,12 @@
 #ifndef OPENMP_TEAMS_CLAUSE
 #  define OPENMP_TEAMS_CLAUSE(Name)
 #endif
+#ifndef OPENMP_CANCEL_CLAUSE
+#  define OPENMP_CANCEL_CLAUSE(Name)
+#endif
+#ifndef OPENMP_ORDERED_CLAUSE
+#  define OPENMP_ORDERED_CLAUSE(Name)
+#endif
 #ifndef OPENMP_DEFAULT_KIND
 #  define OPENMP_DEFAULT_KIND(Name)
 #endif
@@ -74,6 +80,9 @@
 #endif
 #ifndef OPENMP_DEPEND_KIND
 #define OPENMP_DEPEND_KIND(Name)
+#endif
+#ifndef OPENMP_LINEAR_KIND
+#define OPENMP_LINEAR_KIND(Name)
 #endif
 
 // OpenMP directives.
@@ -109,6 +118,7 @@ OPENMP_CLAUSE(if, OMPIfClause)
 OPENMP_CLAUSE(final, OMPFinalClause)
 OPENMP_CLAUSE(num_threads, OMPNumThreadsClause)
 OPENMP_CLAUSE(safelen, OMPSafelenClause)
+OPENMP_CLAUSE(simdlen, OMPSimdlenClause)
 OPENMP_CLAUSE(collapse, OMPCollapseClause)
 OPENMP_CLAUSE(default, OMPDefaultClause)
 OPENMP_CLAUSE(private, OMPPrivateClause)
@@ -134,6 +144,8 @@ OPENMP_CLAUSE(capture, OMPCaptureClause)
 OPENMP_CLAUSE(seq_cst, OMPSeqCstClause)
 OPENMP_CLAUSE(depend, OMPDependClause)
 OPENMP_CLAUSE(device, OMPDeviceClause)
+OPENMP_CLAUSE(threads, OMPThreadsClause)
+OPENMP_CLAUSE(simd, OMPSIMDClause)
 
 // Clauses allowed for OpenMP directive 'parallel'.
 OPENMP_PARALLEL_CLAUSE(if)
@@ -152,6 +164,7 @@ OPENMP_SIMD_CLAUSE(lastprivate)
 OPENMP_SIMD_CLAUSE(linear)
 OPENMP_SIMD_CLAUSE(aligned)
 OPENMP_SIMD_CLAUSE(safelen)
+OPENMP_SIMD_CLAUSE(simdlen)
 OPENMP_SIMD_CLAUSE(collapse)
 OPENMP_SIMD_CLAUSE(reduction)
 
@@ -175,6 +188,7 @@ OPENMP_FOR_SIMD_CLAUSE(schedule)
 OPENMP_FOR_SIMD_CLAUSE(collapse)
 OPENMP_FOR_SIMD_CLAUSE(nowait)
 OPENMP_FOR_SIMD_CLAUSE(safelen)
+OPENMP_FOR_SIMD_CLAUSE(simdlen)
 OPENMP_FOR_SIMD_CLAUSE(linear)
 OPENMP_FOR_SIMD_CLAUSE(aligned)
 
@@ -190,6 +204,9 @@ OPENMP_SINGLE_CLAUSE(private)
 OPENMP_SINGLE_CLAUSE(firstprivate)
 OPENMP_SINGLE_CLAUSE(copyprivate)
 OPENMP_SINGLE_CLAUSE(nowait)
+
+// Clauses allowed for OpenMP directive 'cancel'.
+OPENMP_CANCEL_CLAUSE(if)
 
 // Static attributes for 'default' clause.
 OPENMP_DEFAULT_KIND(none)
@@ -211,6 +228,11 @@ OPENMP_SCHEDULE_KIND(runtime)
 OPENMP_DEPEND_KIND(in)
 OPENMP_DEPEND_KIND(out)
 OPENMP_DEPEND_KIND(inout)
+
+// Modifiers for 'linear' clause.
+OPENMP_LINEAR_KIND(val)
+OPENMP_LINEAR_KIND(ref)
+OPENMP_LINEAR_KIND(uval)
 
 // Clauses allowed for OpenMP directive 'parallel for'.
 OPENMP_PARALLEL_FOR_CLAUSE(if)
@@ -242,6 +264,7 @@ OPENMP_PARALLEL_FOR_SIMD_CLAUSE(lastprivate)
 OPENMP_PARALLEL_FOR_SIMD_CLAUSE(collapse)
 OPENMP_PARALLEL_FOR_SIMD_CLAUSE(schedule)
 OPENMP_PARALLEL_FOR_SIMD_CLAUSE(safelen)
+OPENMP_PARALLEL_FOR_SIMD_CLAUSE(simdlen)
 OPENMP_PARALLEL_FOR_SIMD_CLAUSE(linear)
 OPENMP_PARALLEL_FOR_SIMD_CLAUSE(aligned)
 
@@ -293,6 +316,12 @@ OPENMP_TEAMS_CLAUSE(firstprivate)
 OPENMP_TEAMS_CLAUSE(shared)
 OPENMP_TEAMS_CLAUSE(reduction)
 
+// Clauses allowed for OpenMP directive 'ordered'.
+// TODO More clauses for 'ordered' directive.
+OPENMP_ORDERED_CLAUSE(threads)
+OPENMP_ORDERED_CLAUSE(simd)
+
+#undef OPENMP_LINEAR_KIND
 #undef OPENMP_DEPEND_KIND
 #undef OPENMP_SCHEDULE_KIND
 #undef OPENMP_PROC_BIND_KIND
@@ -300,6 +329,8 @@ OPENMP_TEAMS_CLAUSE(reduction)
 #undef OPENMP_DIRECTIVE
 #undef OPENMP_DIRECTIVE_EXT
 #undef OPENMP_CLAUSE
+#undef OPENMP_ORDERED_CLAUSE
+#undef OPENMP_CANCEL_CLAUSE
 #undef OPENMP_SINGLE_CLAUSE
 #undef OPENMP_SECTIONS_CLAUSE
 #undef OPENMP_PARALLEL_CLAUSE

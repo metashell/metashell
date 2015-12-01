@@ -1,5 +1,6 @@
 ; RUN: llc < %s -mcpu=x86-64 -mattr=+avx | FileCheck %s --check-prefix=ALL --check-prefix=AVX --check-prefix=AVX1
 ; RUN: llc < %s -mcpu=x86-64 -mattr=+avx2 | FileCheck %s --check-prefix=ALL --check-prefix=AVX --check-prefix=AVX2
+; RUN: llc < %s -mcpu=knl -mattr=+avx512vl | FileCheck %s --check-prefix=AVX512VL
 
 target triple = "x86_64-unknown-unknown"
 
@@ -133,6 +134,11 @@ define <4 x double> @shuffle_v4f64_0023(<4 x double> %a, <4 x double> %b) {
 ; ALL:       # BB#0:
 ; ALL-NEXT:    vpermilpd {{.*#+}} ymm0 = ymm0[0,0,2,3]
 ; ALL-NEXT:    retq
+
+; AVX512VL-LABEL: shuffle_v4f64_0023:
+; AVX512VL:       # BB#0:
+; AVX512VL-NEXT:    vpermilpd $8, %ymm0, %ymm0
+; AVX512VL-NEXT:    retq
   %shuffle = shufflevector <4 x double> %a, <4 x double> %b, <4 x i32> <i32 0, i32 0, i32 2, i32 3>
   ret <4 x double> %shuffle
 }
@@ -971,4 +977,45 @@ define <4 x double> @bitcast_v4f64_0426(<4 x double> %a, <4 x double> %b) {
   %shuffle16 = shufflevector <16 x i16> %bitcast16, <16 x i16> undef, <16 x i32> <i32 2, i32 3, i32 0, i32 1, i32 6, i32 7, i32 4, i32 5, i32 10, i32 11, i32 8, i32 9, i32 14, i32 15, i32 12, i32 13>
   %bitcast64 = bitcast <16 x i16> %shuffle16 to <4 x double>
   ret <4 x double> %bitcast64
+}
+
+define <4 x i64> @concat_v4i64_0167(<4 x i64> %a0, <4 x i64> %a1) {
+; AVX1-LABEL: concat_v4i64_0167:
+; AVX1:       # BB#0:
+; AVX1-NEXT:    vblendpd {{.*#+}} ymm0 = ymm0[0,1],ymm1[2,3]
+; AVX1-NEXT:    retq
+;
+; AVX2-LABEL: concat_v4i64_0167:
+; AVX2:       # BB#0:
+; AVX2-NEXT:    vpblendd {{.*#+}} ymm0 = ymm0[0,1,2,3],ymm1[4,5,6,7]
+; AVX2-NEXT:    retq
+  %a0lo = shufflevector <4 x i64> %a0, <4 x i64> %a1, <2 x i32> <i32 0, i32 1>
+  %a1hi = shufflevector <4 x i64> %a0, <4 x i64> %a1, <2 x i32> <i32 6, i32 7>
+  %shuffle64 = shufflevector <2 x i64> %a0lo, <2 x i64> %a1hi, <4 x i32> <i32 0, i32 1, i32 2, i32 3>
+  ret <4 x i64> %shuffle64
+}
+
+define <4 x i64> @concat_v4i64_0145_bc(<4 x i64> %a0, <4 x i64> %a1) {
+; ALL-LABEL: concat_v4i64_0145_bc:
+; ALL:       # BB#0:
+; ALL-NEXT:    vinsertf128 $1, %xmm1, %ymm0, %ymm0
+; ALL-NEXT:    retq
+  %a0lo = shufflevector <4 x i64> %a0, <4 x i64> %a1, <2 x i32> <i32 0, i32 1>
+  %a1lo = shufflevector <4 x i64> %a0, <4 x i64> %a1, <2 x i32> <i32 4, i32 5>
+  %bc0lo = bitcast <2 x i64> %a0lo to <4 x i32>
+  %bc1lo = bitcast <2 x i64> %a1lo to <4 x i32>
+  %shuffle32 = shufflevector <4 x i32> %bc0lo, <4 x i32> %bc1lo, <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7>
+  %shuffle64 = bitcast <8 x i32> %shuffle32 to <4 x i64>
+  ret <4 x i64> %shuffle64
+}
+
+define <4 x i64> @insert_dup_mem_v4i64(i64* %ptr) {
+; ALL-LABEL: insert_dup_mem_v4i64:
+; ALL:       # BB#0:
+; ALL-NEXT:    vbroadcastsd (%rdi), %ymm0
+; ALL-NEXT:    retq
+  %tmp = load i64, i64* %ptr, align 1
+  %tmp1 = insertelement <2 x i64> undef, i64 %tmp, i32 0
+  %tmp2 = shufflevector <2 x i64> %tmp1, <2 x i64> undef, <4 x i32> zeroinitializer
+  ret <4 x i64> %tmp2
 }

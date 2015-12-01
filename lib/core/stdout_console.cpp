@@ -64,7 +64,7 @@ int stdout_console::width() const
     CONSOLE_SCREEN_BUFFER_INFO info;
 
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-    return info.srWindow.Right - info.srWindow.Left + 1;
+    return info.srWindow.Right - info.srWindow.Left;
 #else
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);

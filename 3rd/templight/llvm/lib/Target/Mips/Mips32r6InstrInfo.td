@@ -186,54 +186,56 @@ class CMP_CONDN_DESC_BASE<string CondStr, string Typestr,
 
 multiclass CMP_CC_M <FIELD_CMP_FORMAT Format, string Typestr,
                      RegisterOperand FGROpnd>{
-  def CMP_F_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_AF>,
-                    CMP_CONDN_DESC_BASE<"af", Typestr, FGROpnd>,
-                    ISA_MIPS32R6, HARDFLOAT;
-  def CMP_UN_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_UN>,
-                     CMP_CONDN_DESC_BASE<"un", Typestr, FGROpnd, setuo>,
-                     ISA_MIPS32R6, HARDFLOAT;
-  def CMP_EQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_EQ>,
-                     CMP_CONDN_DESC_BASE<"eq", Typestr, FGROpnd, setoeq>,
-                     ISA_MIPS32R6, HARDFLOAT;
-  def CMP_UEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_UEQ>,
-                      CMP_CONDN_DESC_BASE<"ueq", Typestr, FGROpnd, setueq>,
+  let AdditionalPredicates = [NotInMicroMips] in {
+    def CMP_F_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_AF>,
+                      CMP_CONDN_DESC_BASE<"af", Typestr, FGROpnd>,
                       ISA_MIPS32R6, HARDFLOAT;
-  def CMP_LT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_LT>,
-                     CMP_CONDN_DESC_BASE<"lt", Typestr, FGROpnd, setolt>,
-                     ISA_MIPS32R6, HARDFLOAT;
-  def CMP_ULT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_ULT>,
-                      CMP_CONDN_DESC_BASE<"ult", Typestr, FGROpnd, setult>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_LE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_LE>,
-                     CMP_CONDN_DESC_BASE<"le", Typestr, FGROpnd, setole>,
-                     ISA_MIPS32R6, HARDFLOAT;
-  def CMP_ULE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_ULE>,
-                      CMP_CONDN_DESC_BASE<"ule", Typestr, FGROpnd, setule>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SAF_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SAF>,
-                      CMP_CONDN_DESC_BASE<"saf", Typestr, FGROpnd>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SUN_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SUN>,
-                      CMP_CONDN_DESC_BASE<"sun", Typestr, FGROpnd>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SEQ>,
-                      CMP_CONDN_DESC_BASE<"seq", Typestr, FGROpnd>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SUEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SUEQ>,
-                       CMP_CONDN_DESC_BASE<"sueq", Typestr, FGROpnd>,
+    def CMP_UN_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_UN>,
+                       CMP_CONDN_DESC_BASE<"un", Typestr, FGROpnd, setuo>,
                        ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SLT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SLT>,
-                      CMP_CONDN_DESC_BASE<"slt", Typestr, FGROpnd>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SULT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SULT>,
-                       CMP_CONDN_DESC_BASE<"sult", Typestr, FGROpnd>,
+    def CMP_EQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_EQ>,
+                       CMP_CONDN_DESC_BASE<"eq", Typestr, FGROpnd, setoeq>,
                        ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SLE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SLE>,
-                      CMP_CONDN_DESC_BASE<"sle", Typestr, FGROpnd>,
-                      ISA_MIPS32R6, HARDFLOAT;
-  def CMP_SULE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SULE>,
-                       CMP_CONDN_DESC_BASE<"sule", Typestr, FGROpnd>,
+    def CMP_UEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_UEQ>,
+                        CMP_CONDN_DESC_BASE<"ueq", Typestr, FGROpnd, setueq>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_LT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_LT>,
+                       CMP_CONDN_DESC_BASE<"lt", Typestr, FGROpnd, setolt>,
                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_ULT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_ULT>,
+                        CMP_CONDN_DESC_BASE<"ult", Typestr, FGROpnd, setult>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_LE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_LE>,
+                       CMP_CONDN_DESC_BASE<"le", Typestr, FGROpnd, setole>,
+                       ISA_MIPS32R6, HARDFLOAT;
+    def CMP_ULE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_ULE>,
+                        CMP_CONDN_DESC_BASE<"ule", Typestr, FGROpnd, setule>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SAF_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SAF>,
+                        CMP_CONDN_DESC_BASE<"saf", Typestr, FGROpnd>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SUN_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SUN>,
+                        CMP_CONDN_DESC_BASE<"sun", Typestr, FGROpnd>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SEQ>,
+                        CMP_CONDN_DESC_BASE<"seq", Typestr, FGROpnd>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SUEQ_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SUEQ>,
+                         CMP_CONDN_DESC_BASE<"sueq", Typestr, FGROpnd>,
+                         ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SLT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SLT>,
+                        CMP_CONDN_DESC_BASE<"slt", Typestr, FGROpnd>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SULT_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SULT>,
+                         CMP_CONDN_DESC_BASE<"sult", Typestr, FGROpnd>,
+                         ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SLE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SLE>,
+                        CMP_CONDN_DESC_BASE<"sle", Typestr, FGROpnd>,
+                        ISA_MIPS32R6, HARDFLOAT;
+    def CMP_SULE_#NAME : COP1_CMP_CONDN_FM<Format, FIELD_CMP_COND_SULE>,
+                         CMP_CONDN_DESC_BASE<"sule", Typestr, FGROpnd>,
+                         ISA_MIPS32R6, HARDFLOAT;
+  }
 }
 
 //===----------------------------------------------------------------------===//
@@ -557,7 +559,7 @@ class CACHE_HINT_DESC<string instr_asm, Operand MemOpnd,
   dag InOperandList = (ins MemOpnd:$addr, uimm5:$hint);
   string AsmString = !strconcat(instr_asm, "\t$hint, $addr");
   list<dag> Pattern = [];
-  string DecoderMethod = "DecodeCacheOpR6";
+  string DecoderMethod = "DecodeCacheeOp_CacheOpR6";
 }
 
 class CACHE_DESC : CACHE_HINT_DESC<"cache", mem_simm9, GPR32Opnd>;
@@ -595,7 +597,7 @@ class LSA_R6_DESC_BASE<string instr_asm, RegisterOperand GPROpnd,
   list<dag> Pattern = [];
 }
 
-class LSA_R6_DESC : LSA_R6_DESC_BASE<"lsa", GPR32Opnd, uimm2>;
+class LSA_R6_DESC : LSA_R6_DESC_BASE<"lsa", GPR32Opnd, uimm2_plus1>;
 
 class LL_R6_DESC_BASE<string instr_asm, RegisterOperand GPROpnd> {
   dag OutOperandList = (outs GPROpnd:$rt);
@@ -702,20 +704,24 @@ def LSA_R6 : R6MMR6Rel, LSA_R6_ENC, LSA_R6_DESC, ISA_MIPS32R6;
 def LWC2_R6 : LWC2_R6_ENC, LWC2_R6_DESC, ISA_MIPS32R6;
 def LWPC : R6MMR6Rel, LWPC_ENC, LWPC_DESC, ISA_MIPS32R6;
 def LWUPC : LWUPC_ENC, LWUPC_DESC, ISA_MIPS32R6;
-def MADDF_S : MADDF_S_ENC, MADDF_S_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MADDF_D : MADDF_D_ENC, MADDF_D_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MAXA_D  : MAXA_D_ENC, MAXA_D_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MAXA_S  : MAXA_S_ENC, MAXA_S_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MAX_D   : MAX_D_ENC, MAX_D_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MAX_S   : MAX_S_ENC, MAX_S_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MINA_D  : MINA_D_ENC, MINA_D_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MINA_S  : MINA_S_ENC, MINA_S_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MIN_D   : MIN_D_ENC, MIN_D_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MIN_S   : MIN_S_ENC, MIN_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+let AdditionalPredicates = [NotInMicroMips] in {
+  def MADDF_S : MADDF_S_ENC, MADDF_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MADDF_D : MADDF_D_ENC, MADDF_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MAXA_D  : MAXA_D_ENC, MAXA_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MAXA_S  : MAXA_S_ENC, MAXA_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MAX_D   : MAX_D_ENC, MAX_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MAX_S   : MAX_S_ENC, MAX_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MINA_D  : MINA_D_ENC, MINA_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MINA_S  : MINA_S_ENC, MINA_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MIN_D   : MIN_D_ENC, MIN_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MIN_S   : MIN_S_ENC, MIN_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+}
 def MOD : R6MMR6Rel, MOD_ENC, MOD_DESC, ISA_MIPS32R6;
 def MODU : R6MMR6Rel, MODU_ENC, MODU_DESC, ISA_MIPS32R6;
-def MSUBF_S : MSUBF_S_ENC, MSUBF_S_DESC, ISA_MIPS32R6, HARDFLOAT;
-def MSUBF_D : MSUBF_D_ENC, MSUBF_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+let AdditionalPredicates = [NotInMicroMips] in {
+  def MSUBF_S : MSUBF_S_ENC, MSUBF_S_DESC, ISA_MIPS32R6, HARDFLOAT;
+  def MSUBF_D : MSUBF_D_ENC, MSUBF_D_DESC, ISA_MIPS32R6, HARDFLOAT;
+}
 def MUH    : R6MMR6Rel, MUH_ENC, MUH_DESC, ISA_MIPS32R6;
 def MUHU   : R6MMR6Rel, MUHU_ENC, MUHU_DESC, ISA_MIPS32R6;
 def MUL_R6 : R6MMR6Rel, MUL_R6_ENC, MUL_R6_DESC, ISA_MIPS32R6;
@@ -725,7 +731,9 @@ def PREF_R6 : R6MMR6Rel, PREF_ENC, PREF_DESC, ISA_MIPS32R6;
 def RINT_D : RINT_D_ENC, RINT_D_DESC, ISA_MIPS32R6, HARDFLOAT;
 def RINT_S : RINT_S_ENC, RINT_S_DESC, ISA_MIPS32R6, HARDFLOAT;
 def SC_R6 : SC_R6_ENC, SC_R6_DESC, ISA_MIPS32R6;
+let AdditionalPredicates = [NotInMicroMips] in {
 def SDBBP_R6 : SDBBP_R6_ENC, SDBBP_R6_DESC, ISA_MIPS32R6;
+}
 def SDC2_R6 : SDC2_R6_ENC, SDC2_R6_DESC, ISA_MIPS32R6;
 def SELEQZ : R6MMR6Rel, SELEQZ_ENC, SELEQZ_DESC, ISA_MIPS32R6, GPR_32;
 def SELEQZ_D : SELEQZ_D_ENC, SELEQZ_D_DESC, ISA_MIPS32R6, HARDFLOAT;
@@ -743,7 +751,9 @@ def SWC2_R6 : SWC2_R6_ENC, SWC2_R6_DESC, ISA_MIPS32R6;
 //
 //===----------------------------------------------------------------------===//
 
+let AdditionalPredicates = [NotInMicroMips] in {
 def : MipsInstAlias<"sdbbp", (SDBBP_R6 0)>, ISA_MIPS32R6;
+}
 def : MipsInstAlias<"jr $rs", (JALR ZERO, GPR32Opnd:$rs), 1>, ISA_MIPS32R6;
 
 //===----------------------------------------------------------------------===//

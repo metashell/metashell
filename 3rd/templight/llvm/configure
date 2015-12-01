@@ -655,6 +655,7 @@ CXX
 CXXFLAGS
 ac_ct_CXX
 CPP
+CXX_COMPILER
 subdirs
 ENABLE_POLLY
 LLVM_HAS_POLLY
@@ -2032,7 +2033,7 @@ echo "$as_me: error: Already configured in ${srcdir}" >&2;}
   fi
 fi
 
-if test ${srcdir} == "." ; then
+if test ${srcdir} = "." ; then
   { { echo "$as_me:$LINENO: error: In-source builds are not allowed. Please configure from a separate build directory!" >&5
 echo "$as_me: error: In-source builds are not allowed. Please configure from a separate build directory!" >&2;}
    { (exit 1); exit 1; }; }
@@ -3752,6 +3753,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 { echo "$as_me:$LINENO: result: ${llvm_cv_cxx_compiler}" >&5
 echo "${ECHO_T}${llvm_cv_cxx_compiler}" >&6; }
+CXX_COMPILER=$llvm_cv_cxx_compiler
+
 
 
 
@@ -4185,6 +4188,7 @@ else
   arm64*-*)               llvm_cv_target_arch="AArch64" ;;
   arm*-*)                 llvm_cv_target_arch="ARM" ;;
   aarch64*-*)             llvm_cv_target_arch="AArch64" ;;
+  avr-*)                  llvm_cv_target_arch="AVR" ;;
   mips-* | mips64-*)      llvm_cv_target_arch="Mips" ;;
   mipsel-* | mips64el-*)  llvm_cv_target_arch="Mips" ;;
   xcore-*)                llvm_cv_target_arch="XCore" ;;
@@ -4223,6 +4227,7 @@ case $host in
   arm64*-*)               host_arch="AArch64" ;;
   arm*-*)                 host_arch="ARM" ;;
   aarch64*-*)             host_arch="AArch64" ;;
+  avr-*)                  host_arch="AVR" ;;
   mips-* | mips64-*)      host_arch="Mips" ;;
   mipsel-* | mips64el-*)  host_arch="Mips" ;;
   xcore-*)                host_arch="XCore" ;;
@@ -5144,6 +5149,8 @@ else
     x86_64)      TARGET_HAS_JIT=1
  ;;
     ARM)         TARGET_HAS_JIT=1
+ ;;
+    AVR)         TARGET_HAS_JIT=0
  ;;
     Mips)        TARGET_HAS_JIT=1
  ;;
@@ -18498,6 +18505,7 @@ CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 ac_ct_CXX!$ac_ct_CXX$ac_delim
 CPP!$CPP$ac_delim
+CXX_COMPILER!$CXX_COMPILER$ac_delim
 subdirs!$subdirs$ac_delim
 ENABLE_POLLY!$ENABLE_POLLY$ac_delim
 LLVM_HAS_POLLY!$LLVM_HAS_POLLY$ac_delim
@@ -18541,7 +18549,6 @@ ENABLE_WERROR!$ENABLE_WERROR$ac_delim
 ENABLE_EXPENSIVE_CHECKS!$ENABLE_EXPENSIVE_CHECKS$ac_delim
 EXPENSIVE_CHECKS!$EXPENSIVE_CHECKS$ac_delim
 ENABLE_ABI_BREAKING_CHECKS!$ENABLE_ABI_BREAKING_CHECKS$ac_delim
-DEBUG_RUNTIME!$DEBUG_RUNTIME$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -18583,6 +18590,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+DEBUG_RUNTIME!$DEBUG_RUNTIME$ac_delim
 DEBUG_SYMBOLS!$DEBUG_SYMBOLS$ac_delim
 KEEP_SYMBOLS!$KEEP_SYMBOLS$ac_delim
 JIT!$JIT$ac_delim
@@ -18679,7 +18687,6 @@ HAVE_LIBZ!$HAVE_LIBZ$ac_delim
 HUGE_VAL_SANITY!$HUGE_VAL_SANITY$ac_delim
 MMAP_FILE!$MMAP_FILE$ac_delim
 SHLIBEXT!$SHLIBEXT$ac_delim
-LLVM_PREFIX!$LLVM_PREFIX$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -18721,6 +18728,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LLVM_PREFIX!$LLVM_PREFIX$ac_delim
 LLVM_BINDIR!$LLVM_BINDIR$ac_delim
 LLVM_DATADIR!$LLVM_DATADIR$ac_delim
 LLVM_DOCSDIR!$LLVM_DOCSDIR$ac_delim
@@ -18741,7 +18749,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 18; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 19; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -19374,4 +19382,16 @@ echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
     cd "$ac_popdir"
   done
 fi
+
+echo ""
+echo ""
+echo "################################################################################"
+echo "################################################################################"
+echo "The LLVM project has deprecated building with configure & make."
+echo "The autoconf-based makefile build system will be removed in the 3.9 release."
+echo ""
+echo "Please migrate to the CMake-based build system."
+echo "For more information see: http://llvm.org/docs/CMake.html"
+echo "################################################################################"
+echo "################################################################################"
 

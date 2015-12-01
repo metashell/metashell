@@ -1230,9 +1230,9 @@ bool Sema::CheckConstexprFunctionBody(const FunctionDecl *Dcl, Stmt *Body) {
       Diag(Dcl->getLocation(),
            OK ? diag::warn_cxx11_compat_constexpr_body_no_return
               : diag::err_constexpr_body_no_return);
-      return OK;
-    }
-    if (ReturnStmts.size() > 1) {
+      if (!OK)
+        return false;
+    } else if (ReturnStmts.size() > 1) {
       Diag(ReturnStmts.back(),
            getLangOpts().CPlusPlus14
              ? diag::warn_cxx11_compat_constexpr_body_multiple_return
@@ -3481,7 +3481,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
                                          /*TemplateKWLoc=*/SourceLocation(),
                                          /*FirstQualifierInScope=*/nullptr,
                                          MemberLookup,
-                                         /*TemplateArgs=*/nullptr);
+                                         /*TemplateArgs=*/nullptr,
+                                         /*S*/nullptr);
     if (CtorArg.isInvalid())
       return true;
 
@@ -4682,6 +4683,60 @@ static void CheckAbstractClassUsage(AbstractUsageInfo &Info,
   }
 }
 
+static void ReferenceDllExportedMethods(Sema &S, CXXRecordDecl *Class) {
+  Attr *ClassAttr = getDLLAttr(Class);
+  if (!ClassAttr)
+    return;
+
+  assert(ClassAttr->getKind() == attr::DLLExport);
+
+  TemplateSpecializationKind TSK = Class->getTemplateSpecializationKind();
+
+  if (TSK == TSK_ExplicitInstantiationDeclaration)
+    // Don't go any further if this is just an explicit instantiation
+    // declaration.
+    return;
+
+  for (Decl *Member : Class->decls()) {
+    auto *MD = dyn_cast<CXXMethodDecl>(Member);
+    if (!MD)
+      continue;
+
+    if (Member->getAttr<DLLExportAttr>()) {
+      if (MD->isUserProvided()) {
+        // Instantiate non-default class member functions ...
+
+        // .. except for certain kinds of template specializations.
+        if (TSK == TSK_ImplicitInstantiation && !ClassAttr->isInherited())
+          continue;
+
+        S.MarkFunctionReferenced(Class->getLocation(), MD);
+
+        // The function will be passed to the consumer when its definition is
+        // encountered.
+      } else if (!MD->isTrivial() || MD->isExplicitlyDefaulted() ||
+                 MD->isCopyAssignmentOperator() ||
+                 MD->isMoveAssignmentOperator()) {
+        // Synthesize and instantiate non-trivial implicit methods, explicitly
+        // defaulted methods, and the copy and move assignment operators. The
+        // latter are exported even if they are trivial, because the address of
+        // an operator can be taken and should compare equal accross libraries.
+        DiagnosticErrorTrap Trap(S.Diags);
+        S.MarkFunctionReferenced(Class->getLocation(), MD);
+        if (Trap.hasErrorOccurred()) {
+          S.Diag(ClassAttr->getLocation(), diag::note_due_to_dllexported_class)
+              << Class->getName() << !S.getLangOpts().CPlusPlus11;
+          break;
+        }
+
+        // There is no later point when we will see the definition of this
+        // function, so pass it to the consumer now.
+        S.Consumer.HandleTopLevelDecl(DeclGroupRef(MD));
+      }
+    }
+  }
+}
+
 /// \brief Check class-level dllimport/dllexport attribute.
 void Sema::checkClassLevelDLLAttribute(CXXRecordDecl *Class) {
   Attr *ClassAttr = getDLLAttr(Class);
@@ -4783,45 +4838,10 @@ void Sema::checkClassLevelDLLAttribute(CXXRecordDecl *Class) {
       NewAttr->setInherited(true);
       Member->addAttr(NewAttr);
     }
-
-    if (MD && ClassExported) {
-      if (TSK == TSK_ExplicitInstantiationDeclaration)
-        // Don't go any further if this is just an explicit instantiation
-        // declaration.
-        continue;
-
-      if (MD->isUserProvided()) {
-        // Instantiate non-default class member functions ...
-
-        // .. except for certain kinds of template specializations.
-        if (TSK == TSK_ImplicitInstantiation && !ClassAttr->isInherited())
-          continue;
-
-        MarkFunctionReferenced(Class->getLocation(), MD);
-
-        // The function will be passed to the consumer when its definition is
-        // encountered.
-      } else if (!MD->isTrivial() || MD->isExplicitlyDefaulted() ||
-                 MD->isCopyAssignmentOperator() ||
-                 MD->isMoveAssignmentOperator()) {
-        // Synthesize and instantiate non-trivial implicit methods, explicitly
-        // defaulted methods, and the copy and move assignment operators. The
-        // latter are exported even if they are trivial, because the address of
-        // an operator can be taken and should compare equal accross libraries.
-        DiagnosticErrorTrap Trap(Diags);
-        MarkFunctionReferenced(Class->getLocation(), MD);
-        if (Trap.hasErrorOccurred()) {
-          Diag(ClassAttr->getLocation(), diag::note_due_to_dllexported_class)
-              << Class->getName() << !getLangOpts().CPlusPlus11;
-          break;
-        }
-
-        // There is no later point when we will see the definition of this
-        // function, so pass it to the consumer now.
-        Consumer.HandleTopLevelDecl(DeclGroupRef(MD));
-      }
-    }
   }
+
+  if (ClassExported)
+    DelayedDllExportClasses.push_back(Class);
 }
 
 /// \brief Perform propagation of DLL attributes from a derived class to a
@@ -6893,7 +6913,7 @@ QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
   return Context.getFunctionType(Context.VoidTy, None, EPI);
 }
 
-static void extendLeft(SourceRange &R, const SourceRange &Before) {
+static void extendLeft(SourceRange &R, SourceRange Before) {
   if (Before.isInvalid())
     return;
   R.setBegin(Before.getBegin());
@@ -6901,7 +6921,7 @@ static void extendLeft(SourceRange &R, const SourceRange &Before) {
     R.setEnd(Before.getEnd());
 }
 
-static void extendRight(SourceRange &R, const SourceRange &After) {
+static void extendRight(SourceRange &R, SourceRange After) {
   if (After.isInvalid())
     return;
   if (R.getBegin().isInvalid())
@@ -7552,7 +7572,7 @@ Decl *Sema::ActOnUsingDirective(Scope *S,
   assert(IdentLoc.isValid() && "Invalid NamespceName location.");
 
   // This can only happen along a recovery path.
-  while (S->getFlags() & Scope::TemplateParamScope)
+  while (S->isTemplateParamScope())
     S = S->getParent();
   assert(S->getFlags() & Scope::DeclScope && "Invalid Scope.");
 
@@ -7801,7 +7821,8 @@ bool Sema::CheckUsingShadowDecl(UsingDecl *Using, NamedDecl *Orig,
       FoundEquivalentDecl = true;
     }
 
-    (isa<TagDecl>(D) ? Tag : NonTag) = D;
+    if (isVisible(D))
+      (isa<TagDecl>(D) ? Tag : NonTag) = D;
   }
 
   if (FoundEquivalentDecl)
@@ -8010,6 +8031,10 @@ public:
 
         // FIXME: Check that the base class member is accessible?
       }
+    } else {
+      auto *FoundRecord = dyn_cast<CXXRecordDecl>(ND);
+      if (FoundRecord && FoundRecord->isInjectedClassName())
+        return false;
     }
 
     if (isa<TypeDecl>(ND))
@@ -8506,7 +8531,7 @@ Decl *Sema::ActOnAliasDeclaration(Scope *S,
                                   TypeResult Type,
                                   Decl *DeclFromDeclSpec) {
   // Skip up to the relevant declaration scope.
-  while (S->getFlags() & Scope::TemplateParamScope)
+  while (S->isTemplateParamScope())
     S = S->getParent();
   assert((S->getFlags() & Scope::DeclScope) &&
          "got alias-declaration outside of declaration scope");
@@ -9479,7 +9504,7 @@ static void getDefaultArgExprsForConstructors(Sema &S, CXXRecordDecl *Class) {
   }
 }
 
-void Sema::ActOnFinishCXXMemberDefaultArgs(Decl *D) {
+void Sema::ActOnFinishCXXNonNestedClass(Decl *D) {
   auto *RD = dyn_cast<CXXRecordDecl>(D);
 
   // Default constructors that are annotated with __declspec(dllexport) which
@@ -9487,6 +9512,15 @@ void Sema::ActOnFinishCXXMemberDefaultArgs(Decl *D) {
   // wrapped with a thunk called the default constructor closure.
   if (RD && Context.getTargetInfo().getCXXABI().isMicrosoft())
     getDefaultArgExprsForConstructors(*this, RD);
+
+  if (!DelayedDllExportClasses.empty()) {
+    // Calling ReferenceDllExportedMethods might cause the current function to
+    // be called again, so use a local copy of DelayedDllExportClasses.
+    SmallVector<CXXRecordDecl *, 4> WorkList;
+    std::swap(DelayedDllExportClasses, WorkList);
+    for (CXXRecordDecl *Class : WorkList)
+      ReferenceDllExportedMethods(*this, Class);
+  }
 }
 
 void Sema::AdjustDestructorExceptionSpec(CXXRecordDecl *ClassDecl,
@@ -9600,7 +9634,7 @@ public:
   Expr *build(Sema &S, SourceLocation Loc) const override {
     return assertNotNull(S.BuildMemberReferenceExpr(
         Builder.build(S, Loc), Type, Loc, IsArrow, SS, SourceLocation(),
-        nullptr, MemberLookup, nullptr).get());
+        nullptr, MemberLookup, nullptr, nullptr).get());
   }
 
   MemberBuilder(const ExprBuilder &Builder, QualType Type, bool IsArrow,
@@ -9810,7 +9844,7 @@ buildSingleCopyAssignRecursively(Sema &S, SourceLocation Loc, QualType T,
                                    SS, /*TemplateKWLoc=*/SourceLocation(),
                                    /*FirstQualifierInScope=*/nullptr,
                                    OpLookup,
-                                   /*TemplateArgs=*/nullptr,
+                                   /*TemplateArgs=*/nullptr, /*S*/nullptr,
                                    /*SuppressQualifierCheck=*/true);
     if (OpEqualRef.isInvalid())
       return StmtError();
@@ -12655,15 +12689,30 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
     DC = CurContext;
     assert(isa<CXXRecordDecl>(DC) && "friend declaration not in class?");
   }
-  
+
   if (!DC->isRecord()) {
+    int DiagArg = -1;
+    switch (D.getName().getKind()) {
+    case UnqualifiedId::IK_ConstructorTemplateId:
+    case UnqualifiedId::IK_ConstructorName:
+      DiagArg = 0;
+      break;
+    case UnqualifiedId::IK_DestructorName:
+      DiagArg = 1;
+      break;
+    case UnqualifiedId::IK_ConversionFunctionId:
+      DiagArg = 2;
+      break;
+    case UnqualifiedId::IK_Identifier:
+    case UnqualifiedId::IK_ImplicitSelfParam:
+    case UnqualifiedId::IK_LiteralOperatorId:
+    case UnqualifiedId::IK_OperatorFunctionId:
+    case UnqualifiedId::IK_TemplateId:
+      break;
+    }
     // This implies that it has to be an operator or function.
-    if (D.getName().getKind() == UnqualifiedId::IK_ConstructorName ||
-        D.getName().getKind() == UnqualifiedId::IK_DestructorName ||
-        D.getName().getKind() == UnqualifiedId::IK_ConversionFunctionId) {
-      Diag(Loc, diag::err_introducing_special_friend) <<
-        (D.getName().getKind() == UnqualifiedId::IK_ConstructorName ? 0 :
-         D.getName().getKind() == UnqualifiedId::IK_DestructorName ? 1 : 2);
+    if (DiagArg >= 0) {
+      Diag(Loc, diag::err_introducing_special_friend) << DiagArg;
       return nullptr;
     }
   }

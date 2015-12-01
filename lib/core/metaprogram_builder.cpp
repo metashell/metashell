@@ -24,22 +24,28 @@ namespace metashell {
 metaprogram_builder::metaprogram_builder(
     metaprogram::mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result) :
-  mp(mode, root_name, evaluation_result)
+  mp(mode, root_name, root_source_location, evaluation_result)
 {}
 
 void metaprogram_builder::handle_template_begin(
   data::instantiation_kind kind,
-  const std::string& context,
+  const data::type& type,
   const data::file_location& point_of_instantiation,
+  const data::file_location& source_location,
   double timestamp)
 {
-  vertex_descriptor vertex = add_vertex(context);
+  vertex_descriptor vertex = add_vertex(type, source_location);
   vertex_descriptor top_vertex = edge_stack.empty() ?
     mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
-  auto edge =
-    mp.add_edge(top_vertex, vertex, kind, point_of_instantiation, timestamp);
+  auto edge = mp.add_edge(
+    top_vertex,
+    vertex,
+    kind,
+    point_of_instantiation,
+    timestamp);
   edge_stack.push(edge);
 }
 
@@ -63,16 +69,20 @@ const metaprogram& metaprogram_builder::get_metaprogram() const {
 }
 
 metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const std::string& context)
+    const data::type& type,
+    const data::file_location& source_location)
 {
   element_vertex_map_t::iterator pos;
   bool inserted;
 
   std::tie(pos, inserted) = element_vertex_map.insert(
-      std::make_pair(context, vertex_descriptor()));
+      std::make_pair(
+        std::make_tuple(type, source_location),
+        vertex_descriptor()
+      ));
 
   if (inserted) {
-    pos->second = mp.add_vertex(context);
+    pos->second = mp.add_vertex(type, source_location);
   }
   return pos->second;
 }

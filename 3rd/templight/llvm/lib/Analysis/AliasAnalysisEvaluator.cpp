@@ -59,7 +59,7 @@ namespace {
     }
 
     void getAnalysisUsage(AnalysisUsage &AU) const override {
-      AU.addRequired<AliasAnalysis>();
+      AU.addRequired<AAResultsWrapperPass>();
       AU.setPreservesAll();
     }
 
@@ -83,7 +83,7 @@ namespace {
 char AAEval::ID = 0;
 INITIALIZE_PASS_BEGIN(AAEval, "aa-eval",
                 "Exhaustive Alias Analysis Precision Evaluator", false, true)
-INITIALIZE_AG_DEPENDENCY(AliasAnalysis)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
 INITIALIZE_PASS_END(AAEval, "aa-eval",
                 "Exhaustive Alias Analysis Precision Evaluator", false, true)
 
@@ -142,16 +142,16 @@ static inline bool isInterestingPointer(Value *V) {
 
 bool AAEval::runOnFunction(Function &F) {
   const DataLayout &DL = F.getParent()->getDataLayout();
-  AliasAnalysis &AA = getAnalysis<AliasAnalysis>();
+  AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
 
   SetVector<Value *> Pointers;
   SetVector<CallSite> CallSites;
   SetVector<Value *> Loads;
   SetVector<Value *> Stores;
 
-  for (Function::arg_iterator I = F.arg_begin(), E = F.arg_end(); I != E; ++I)
-    if (I->getType()->isPointerTy())    // Add all pointer arguments.
-      Pointers.insert(I);
+  for (auto &I : F.args())
+    if (I.getType()->isPointerTy())    // Add all pointer arguments.
+      Pointers.insert(&I);
 
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
     if (I->getType()->isPointerTy()) // Add all pointer instructions.

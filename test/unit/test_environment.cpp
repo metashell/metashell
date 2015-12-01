@@ -18,7 +18,7 @@
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <metashell/config.hpp>
 
@@ -90,8 +90,8 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
 JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   const iface::environment* old_env_ptr = &sh.env();
 
   sh.line_available("#msh environment reload", d);
@@ -116,8 +116,8 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
 JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment foo", d);
 
@@ -127,8 +127,8 @@ JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment push", d);
   sh.line_available("#msh environment pop foo", d);
@@ -139,8 +139,8 @@ JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment push foo", d);
 
@@ -150,8 +150,8 @@ JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment reload foo", d);
 
@@ -161,8 +161,8 @@ JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment stack foo", d);
 
@@ -172,8 +172,8 @@ JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment reset foo", d);
 
@@ -183,8 +183,8 @@ JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh quit foo", d);
 
@@ -196,8 +196,8 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment save", d);
 
@@ -214,8 +214,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer disp;
-  metashell::null_libclang lc;
-  shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  shell sh(cfg, clang_binary);
 
   sh.line_available("#msh environment save " + fn, disp);
 
@@ -230,8 +230,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  shell sh(cfg, clang_binary);
 
   sh.line_available("#msh environment save    ", d);
 
@@ -245,8 +245,8 @@ JUST_TEST_CASE(
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  shell sh(cfg, clang_binary);
 
 #ifdef _WIN32
   sh.line_available("#msh environment save /foo *? bar", d);

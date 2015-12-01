@@ -1,5 +1,5 @@
-#ifndef METASHELL_HEADERS_HPP
-#define METASHELL_HEADERS_HPP
+#ifndef METASHELL_DATA_HEADERS_HPP
+#define METASHELL_DATA_HEADERS_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)

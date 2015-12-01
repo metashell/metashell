@@ -33,11 +33,9 @@ CodeGenABITypes::CodeGenABITypes(ASTContext &C, llvm::Module &M,
       CGM(new CodeGen::CodeGenModule(C, *HSO, *PPO, *CGO, M, C.getDiagnostics(),
                                      CoverageInfo)) {}
 
-CodeGenABITypes::~CodeGenABITypes()
-{
-  delete CGO;
-  delete CGM;
-}
+// Explicitly out-of-line because ~CodeGenModule() is private but
+// CodeGenABITypes.h is part of clang's API.
+CodeGenABITypes::~CodeGenABITypes() = default;
 
 const CGFunctionInfo &
 CodeGenABITypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
@@ -61,11 +59,9 @@ CodeGenABITypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
   return CGM->getTypes().arrangeCXXMethodType(RD, FTP);
 }
 
-const CGFunctionInfo &
-CodeGenABITypes::arrangeFreeFunctionCall(CanQualType returnType,
-                                         ArrayRef<CanQualType> argTypes,
-                                         FunctionType::ExtInfo info,
-                                         RequiredArgs args) {
+const CGFunctionInfo &CodeGenABITypes::arrangeFreeFunctionCall(
+    CanQualType returnType, ArrayRef<CanQualType> argTypes,
+    FunctionType::ExtInfo info, RequiredArgs args) {
   return CGM->getTypes().arrangeLLVMFunctionInfo(
       returnType, /*IsInstanceMethod=*/false, /*IsChainCall=*/false, argTypes,
       info, args);

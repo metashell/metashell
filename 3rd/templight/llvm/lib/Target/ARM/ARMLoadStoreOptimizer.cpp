@@ -630,9 +630,10 @@ MachineInstr *ARMLoadStoreOpt::CreateLoadStoreMulti(MachineBasicBlock &MBB,
 
     unsigned NewBase;
     if (isi32Load(Opcode)) {
-      // If it is a load, then just use one of the destination register to
-      // use as the new base.
+      // If it is a load, then just use one of the destination registers
+      // as the new base. Will no longer be writeback in Thumb1.
       NewBase = Regs[NumRegs-1].first;
+      Writeback = false;
     } else {
       // Find a free register that we can use as scratch register.
       moveLiveRegsBefore(MBB, InsertBefore);
@@ -736,9 +737,12 @@ MachineInstr *ARMLoadStoreOpt::CreateLoadStoreMulti(MachineBasicBlock &MBB,
   MachineInstrBuilder MIB;
 
   if (Writeback) {
-    if (Opcode == ARM::tLDMIA)
+    assert(isThumb1 && "expected Writeback only inThumb1");
+    if (Opcode == ARM::tLDMIA) {
+      assert(!(ContainsReg(Regs, Base)) && "Thumb1 can't LDM ! with Base in Regs");
       // Update tLDMIA with writeback if necessary.
       Opcode = ARM::tLDMIA_UPD;
+    }
 
     MIB = BuildMI(MBB, InsertBefore, DL, TII->get(Opcode));
 
@@ -1842,12 +1846,21 @@ bool ARMLoadStoreOpt::runOnMachineFunction(MachineFunction &Fn) {
   return Modified;
 }
 
+namespace llvm {
+void initializeARMPreAllocLoadStoreOptPass(PassRegistry &);
+}
+
+#define ARM_PREALLOC_LOAD_STORE_OPT_NAME                                       \
+  "ARM pre- register allocation load / store optimization pass"
+
 namespace {
   /// Pre- register allocation pass that move load / stores from consecutive
   /// locations close to make it more likely they will be combined later.
   struct ARMPreAllocLoadStoreOpt : public MachineFunctionPass{
     static char ID;
-    ARMPreAllocLoadStoreOpt() : MachineFunctionPass(ID) {}
+    ARMPreAllocLoadStoreOpt() : MachineFunctionPass(ID) {
+      initializeARMPreAllocLoadStoreOptPass(*PassRegistry::getPassRegistry());
+    }
 
     const DataLayout *TD;
     const TargetInstrInfo *TII;
@@ -1859,7 +1872,7 @@ namespace {
     bool runOnMachineFunction(MachineFunction &Fn) override;
 
     const char *getPassName() const override {
-      return "ARM pre- register allocation load / store optimization pass";
+      return ARM_PREALLOC_LOAD_STORE_OPT_NAME;
     }
 
   private:
@@ -1878,6 +1891,9 @@ namespace {
   char ARMPreAllocLoadStoreOpt::ID = 0;
 }
 
+INITIALIZE_PASS(ARMPreAllocLoadStoreOpt, "arm-prera-load-store-opt",
+                ARM_PREALLOC_LOAD_STORE_OPT_NAME, false, false)
+
 bool ARMPreAllocLoadStoreOpt::runOnMachineFunction(MachineFunction &Fn) {
   TD = &Fn.getDataLayout();
   STI = &static_cast<const ARMSubtarget &>(Fn.getSubtarget());
@@ -1887,9 +1903,8 @@ bool ARMPreAllocLoadStoreOpt::runOnMachineFunction(MachineFunction &Fn) {
   MF  = &Fn;
 
   bool Modified = false;
-  for (MachineFunction::iterator MFI = Fn.begin(), E = Fn.end(); MFI != E;
-       ++MFI)
-    Modified |= RescheduleLoadStoreInstrs(MFI);
+  for (MachineBasicBlock &MFI : Fn)
+    Modified |= RescheduleLoadStoreInstrs(&MFI);
 
   return Modified;
 }

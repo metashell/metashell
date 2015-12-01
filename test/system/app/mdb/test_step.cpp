@@ -55,7 +55,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 
@@ -72,7 +72,7 @@ JUST_TEST_CASE(test_mdb_step_2_fibonacci) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 
@@ -90,12 +90,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 
@@ -113,12 +113,12 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_empty_second_line) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 
   ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 
@@ -136,7 +136,7 @@ JUST_TEST_CASE(test_mdb_step_fibonacci_twice_with_space_second_line) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i++);
@@ -173,12 +173,12 @@ JUST_TEST_CASE(test_mdb_step_0_fibonacci_after_step) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i++);
 }
 
@@ -234,7 +234,7 @@ JUST_TEST_CASE(test_mdb_step_int_non_template_type) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("int"), instantiation_kind::non_template_type),
+      frame(type("int"), _, _, instantiation_kind::non_template_type),
       *i);
 
   i +=2 ;
@@ -257,67 +257,67 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<2>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<2>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<0>"), instantiation_kind::memoization), *i);
+      frame(type("fib<0>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+      frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+      frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<2>"), instantiation_kind::memoization), *i);
+      frame(type("fib<2>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), instantiation_kind::memoization), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), instantiation_kind::memoization), *i);
+      frame(type("fib<4>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<7>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<7>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::memoization), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<9>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<9>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<7>"), instantiation_kind::memoization), *i);
+      frame(type("fib<7>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::memoization), *i);
+      frame(type("fib<8>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::memoization), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<55>"), instantiation_kind::template_instantiation), *i);
+      frame(type("int_<55>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
@@ -342,58 +342,58 @@ JUST_TEST_CASE(test_mdb_step_over_environment_multiple_steps) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+      frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<2>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<2>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<0>"), instantiation_kind::memoization), *i);
+      frame(type("fib<0>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<1>"), instantiation_kind::memoization), *i);
+      frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<2>"), instantiation_kind::memoization), *i);
+      frame(type("fib<2>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), instantiation_kind::memoization), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<5>"), instantiation_kind::template_instantiation), *i);
+      frame(type("int_<5>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<5>"), instantiation_kind::memoization), *i);
+      frame(type("int_<5>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), instantiation_kind::memoization), *i);
+      frame(type("fib<4>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), instantiation_kind::memoization), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<8>"), instantiation_kind::template_instantiation), *i);
+      frame(type("int_<8>"), _, _, instantiation_kind::template_instantiation), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<8>"), instantiation_kind::memoization), *i);
+      frame(type("int_<8>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
@@ -495,7 +495,7 @@ JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2) {
   i += 2;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_minus_1_after_step_2_in_full_mode) {
@@ -545,12 +545,12 @@ JUST_TEST_CASE(test_mdb_step_over_fib_from_after_step) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::memoization),
+      frame(type("fib<10>"), _, _, instantiation_kind::memoization),
       *i);
 }
 
@@ -569,17 +569,17 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_fib_from_after_step) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::memoization),
+      frame(type("fib<10>"), _, _, instantiation_kind::memoization),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation),
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
 }
@@ -599,22 +599,22 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step) {
 
   auto i = r.begin() + 4;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<4>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<5>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<5>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<8>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<8>"), _, _, instantiation_kind::template_instantiation),
       *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<6>"), instantiation_kind::template_instantiation),
+      frame(type("multi_fib<6>"), _, _, instantiation_kind::template_instantiation),
       *i);
 }
 
@@ -667,7 +667,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_two_steps) {
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps) {
@@ -685,7 +685,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps) {
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps) {
@@ -703,7 +703,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps) {
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), instantiation_kind::memoization), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_three_after_five_steps) {
@@ -772,7 +772,7 @@ JUST_TEST_CASE(test_mdb_step_out_minus_1_after_step_4_in_fib) {
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
@@ -784,6 +784,7 @@ JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
         command("step"),
         command("step"),
         command("step"),
+        command("step"),
         command("step")
       }
     );
@@ -791,15 +792,20 @@ JUST_TEST_CASE(test_mdb_step_over_template_spec_no_deduced_event) {
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
-      frame(type("foo<3, 1>"), instantiation_kind::template_instantiation), *i);
+      frame(type("foo<N, 1>"), _, _,
+        instantiation_kind::deduced_template_argument_substitution), *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("foo<3, 1>"), instantiation_kind::memoization), *i);
+      frame(type("foo<3, 1>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("int_<45>"), instantiation_kind::template_instantiation), *i);
+      frame(type("foo<3, 1>"), _, _, instantiation_kind::memoization), *i);
+
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("int_<45>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);

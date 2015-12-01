@@ -18,7 +18,7 @@
 #include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
-#include <climits>
+#include <limits>
 using namespace llvm;
 using namespace dwarf;
 using namespace syntax;
@@ -110,7 +110,7 @@ static const DWARFFormValue::FormClass DWARF4FormClasses[] = {
 
 bool DWARFFormValue::isFormClass(DWARFFormValue::FormClass FC) const {
   // First, check DWARF4 form classes.
-  if (Form < ArrayRef<FormClass>(DWARF4FormClasses).size() &&
+  if (Form < makeArrayRef(DWARF4FormClasses).size() &&
       DWARF4FormClasses[Form] == FC)
     return true;
   // Check more forms from DWARF4 and DWARF5 proposals.
@@ -565,7 +565,7 @@ Optional<uint64_t> DWARFFormValue::getAsUnsignedConstant() const {
 
 Optional<int64_t> DWARFFormValue::getAsSignedConstant() const {
   if ((!isFormClass(FC_Constant) && !isFormClass(FC_Flag)) ||
-      (Form == DW_FORM_udata && uint64_t(LLONG_MAX) < Value.uval))
+      (Form == DW_FORM_udata && uint64_t(std::numeric_limits<int64_t>::max()) < Value.uval))
     return None;
   switch (Form) {
   case DW_FORM_data4:
@@ -584,6 +584,6 @@ Optional<int64_t> DWARFFormValue::getAsSignedConstant() const {
 Optional<ArrayRef<uint8_t>> DWARFFormValue::getAsBlock() const {
   if (!isFormClass(FC_Block) && !isFormClass(FC_Exprloc))
     return None;
-  return ArrayRef<uint8_t>(Value.data, Value.uval);
+  return makeArrayRef(Value.data, Value.uval);
 }
 

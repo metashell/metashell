@@ -31,7 +31,6 @@ fi
 # Getting the arguments #
 #########################
 
-MIRROR="$1" # TODO
 OUT_DIR="windows_headers"
 TMP_DIR="tmp"
 GCC_VERSION="4.8.1"

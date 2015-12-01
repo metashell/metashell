@@ -32,8 +32,10 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/JamCRC.h"
 #include "llvm/Support/TimeValue.h"
 #include <cstdio>
+#include <ctime>
 
 using namespace llvm;
 
@@ -125,7 +127,7 @@ public:
   COFF::header Header;
   sections Sections;
   symbols Symbols;
-  StringTableBuilder Strings;
+  StringTableBuilder Strings{StringTableBuilder::WinCOFF};
 
   // Maps used during object file creation.
   section_map SectionMap;
@@ -708,6 +710,11 @@ void WinCOFFObjectWriter::recordRelocation(
     Asm.getContext().reportFatalError(Fixup.getLoc(),
                                       Twine("symbol '") + A.getName() +
                                           "' can not be undefined");
+  if (A.isTemporary() && A.isUndefined()) {
+    Asm.getContext().reportFatalError(Fixup.getLoc(),
+                                      Twine("assembler label '") + A.getName() +
+                                          "' can not be undefined");
+  }
 
   MCSection *Section = Fragment->getParent();
 
@@ -901,7 +908,7 @@ void WinCOFFObjectWriter::writeObject(MCAssembler &Asm,
   for (const auto &S : Symbols)
     if (S->should_keep() && S->Name.size() > COFF::NameSize)
       Strings.add(S->Name);
-  Strings.finalize(StringTableBuilder::WinCOFF);
+  Strings.finalize();
 
   // Set names.
   for (const auto &S : Sections)
@@ -1011,8 +1018,17 @@ void WinCOFFObjectWriter::writeObject(MCAssembler &Asm,
 
   Header.PointerToSymbolTable = offset;
 
+#if (ENABLE_TIMESTAMPS == 1)
+  // MS LINK expects to be able to use this timestamp to implement their
+  // /INCREMENTAL feature.
+  std::time_t Now = time(nullptr);
+  if (Now < 0 || !isUInt<32>(Now))
+    Now = UINT32_MAX;
+  Header.TimeDateStamp = Now;
+#else
   // We want a deterministic output. It looks like GNU as also writes 0 in here.
   Header.TimeDateStamp = 0;
+#endif
 
   // Write it all to disk...
   WriteFileHeader(Header);
@@ -1029,6 +1045,7 @@ void WinCOFFObjectWriter::writeObject(MCAssembler &Asm,
       }
     }
 
+    SmallVector<char, 128> SectionContents;
     for (i = Sections.begin(), ie = Sections.end(), j = Asm.begin(),
         je = Asm.end();
          (i != ie) && (j != je); ++i, ++j) {
@@ -1037,20 +1054,47 @@ void WinCOFFObjectWriter::writeObject(MCAssembler &Asm,
         continue;
 
       if ((*i)->Header.PointerToRawData != 0) {
-        assert(OS.tell() <= (*i)->Header.PointerToRawData &&
+        assert(getStream().tell() <= (*i)->Header.PointerToRawData &&
                "Section::PointerToRawData is insane!");
 
-        unsigned SectionDataPadding = (*i)->Header.PointerToRawData - OS.tell();
+        unsigned SectionDataPadding =
+            (*i)->Header.PointerToRawData - getStream().tell();
         assert(SectionDataPadding < 4 &&
                "Should only need at most three bytes of padding!");
 
         WriteZeros(SectionDataPadding);
 
+        // Save the contents of the section to a temporary buffer, we need this
+        // to CRC the data before we dump it into the object file.
+        SectionContents.clear();
+        raw_svector_ostream VecOS(SectionContents);
+        raw_pwrite_stream &OldStream = getStream();
+        // Redirect the output stream to our buffer.
+        setStream(VecOS);
+        // Fill our buffer with the section data.
         Asm.writeSectionData(&*j, Layout);
+        // Reset the stream back to what it was before.
+        setStream(OldStream);
+
+        // Calculate our CRC with an initial value of '0', this is not how
+        // JamCRC is specified but it aligns with the expected output.
+        JamCRC JC(/*Init=*/0x00000000U);
+        JC.update(SectionContents);
+
+        // Write the section contents to the object file.
+        getStream() << SectionContents;
+
+        // Update the section definition auxiliary symbol to record the CRC.
+        COFFSection *Sec = SectionMap[&*j];
+        COFFSymbol::AuxiliarySymbols &AuxSyms = Sec->Symbol->Aux;
+        assert(AuxSyms.size() == 1 &&
+               AuxSyms[0].AuxType == ATSectionDefinition);
+        AuxSymbol &SecDef = AuxSyms[0];
+        SecDef.Aux.SectionDefinition.CheckSum = JC.getCRC();
       }
 
       if ((*i)->Relocations.size() > 0) {
-        assert(OS.tell() == (*i)->Header.PointerToRelocations &&
+        assert(getStream().tell() == (*i)->Header.PointerToRelocations &&
                "Section::PointerToRelocations is insane!");
 
         if ((*i)->Relocations.size() >= 0xffff) {
@@ -1071,14 +1115,14 @@ void WinCOFFObjectWriter::writeObject(MCAssembler &Asm,
     }
   }
 
-  assert(OS.tell() == Header.PointerToSymbolTable &&
+  assert(getStream().tell() == Header.PointerToSymbolTable &&
          "Header::PointerToSymbolTable is insane!");
 
   for (auto &Symbol : Symbols)
     if (Symbol->getIndex() != -1)
       WriteSymbol(*Symbol);
 
-  OS.write(Strings.data().data(), Strings.data().size());
+  getStream().write(Strings.data().data(), Strings.data().size());
 }
 
 MCWinCOFFObjectTargetWriter::MCWinCOFFObjectTargetWriter(unsigned Machine_)

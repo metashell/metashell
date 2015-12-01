@@ -33,7 +33,6 @@
 
 namespace llvm {
 
-class BumpPtrStringSaver;
 class StringSaver;
 
 /// cl Namespace - This namespace contains all of the command line option
@@ -715,7 +714,7 @@ public:
 //
 class basic_parser_impl { // non-template implementation of basic_parser<t>
 public:
-  basic_parser_impl(Option &O) {}
+  basic_parser_impl(Option &) {}
 
 
   enum ValueExpected getValueExpectedFlagDefault() const {

@@ -6,22 +6,25 @@ set(PROFILE_SOURCES
   InstrProfilingBuffer.c
   InstrProfilingFile.c
   InstrProfilingPlatformDarwin.c
+  InstrProfilingPlatformLinux.c
   InstrProfilingPlatformOther.c
   InstrProfilingRuntime.cc
   InstrProfilingUtil.c)
 
 if(APPLE)
-  add_compiler_rt_osx_static_runtime(clang_rt.profile_osx
+  add_compiler_rt_runtime(clang_rt.profile
+    STATIC
+    OS ${PROFILE_SUPPORTED_OS}
     ARCHS ${PROFILE_SUPPORTED_ARCH}
-    SOURCES ${PROFILE_SOURCES})
-  add_dependencies(profile clang_rt.profile_osx)
+    SOURCES ${PROFILE_SOURCES}
+    PARENT_TARGET profile)
 else()
-  foreach(arch ${PROFILE_SUPPORTED_ARCH})
-    add_compiler_rt_runtime(clang_rt.profile-${arch} ${arch} STATIC
-      CFLAGS -fPIC
-      SOURCES ${PROFILE_SOURCES})
-    add_dependencies(profile clang_rt.profile-${arch})
-  endforeach()
+  add_compiler_rt_runtime(clang_rt.profile
+    STATIC
+    ARCHS ${PROFILE_SUPPORTED_ARCH}
+    CFLAGS -fPIC
+    SOURCES ${PROFILE_SOURCES}
+    PARENT_TARGET profile)
 endif()
 
 add_dependencies(compiler-rt profile)

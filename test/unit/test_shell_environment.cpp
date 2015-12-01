@@ -15,12 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_config.hpp"
-#include "mock_libclang.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/path_builder.hpp>
 #include <metashell/in_memory_displayer.hpp>
-#include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <just/test.hpp>
 
@@ -39,8 +38,8 @@ namespace
 
 JUST_TEST_CASE(test_popping_environment_from_empty_queue)
 {
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
 
   JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
 }
@@ -48,9 +47,8 @@ JUST_TEST_CASE(test_popping_environment_from_empty_queue)
 JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 {
   metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -62,21 +60,20 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 
 JUST_TEST_CASE(test_more_pops_than_pushes_throws)
 {
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
 
   sh.push_environment();
   sh.pop_environment();
+
   JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
 }
 
 JUST_TEST_CASE(test_env_two_level_environment_stack)
 {
   metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc); // TODO: rename expect_parsing_return_empty -> expect_parsing_return_empty
-  expect_parsing_return_empty(lc);
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -94,8 +91,8 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
 JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
 {
   metashell::in_memory_displayer d;
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
   sh.display_environment_stack_size(d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -107,8 +104,8 @@ JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
 JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
 {
   metashell::in_memory_displayer d;
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
   sh.push_environment();
   sh.display_environment_stack_size(d);
 
@@ -121,8 +118,8 @@ JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
 JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
 {
   metashell::in_memory_displayer d;
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
   sh.push_environment();
   sh.push_environment();
   sh.display_environment_stack_size(d);
@@ -146,9 +143,8 @@ JUST_TEST_CASE(test_appended_since_when_something_appended)
 JUST_TEST_CASE(test_extending_environment_with_pragma)
 {
   metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
   const std::string original_env = sh.env().get_all();
 
   sh.line_available("#pragma metashell environment add typedef int x;", d);
@@ -158,36 +154,5 @@ JUST_TEST_CASE(test_extending_environment_with_pragma)
     "\ntypedef int x;",
     appended_since(original_env, sh.env().get_all())
   );
-}
-
-JUST_TEST_CASE(test_environment_add_invalid_code_does_not_change_environment)
-{
-  metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_fails(lc);
-  metashell::shell sh(metashell::test_config(), lc);
-  const std::string original_env = sh.env().get_all();
-
-  sh.line_available(
-    "#pragma metashell environment add typedef nonexisting_type x;",
-    d
-  );
-  sh.line_available("#pragma metashell environment", d);
-
-  JUST_ASSERT_EQUAL(original_env, sh.env().get_all());
-}
-
-JUST_TEST_CASE(test_environment_add_invalid_code_displays_error)
-{
-  metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_fails(lc);
-  metashell::shell sh(metashell::test_config(), lc);
-  sh.line_available(
-    "#pragma metashell environment add typedef nonexisting_type x;",
-    d
-  );
-
-  JUST_ASSERT(!d.errors().empty());
 }
 

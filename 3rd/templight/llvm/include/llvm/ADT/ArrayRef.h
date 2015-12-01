@@ -10,6 +10,7 @@
 #ifndef LLVM_ADT_ARRAYREF_H
 #define LLVM_ADT_ARRAYREF_H
 
+#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/None.h"
 #include "llvm/ADT/SmallVector.h"
 #include <vector>
@@ -156,8 +157,6 @@ namespace llvm {
     bool equals(ArrayRef RHS) const {
       if (Length != RHS.Length)
         return false;
-      if (Length == 0)
-        return true;
       return std::equal(begin(), end(), RHS.begin());
     }
 
@@ -339,6 +338,16 @@ namespace llvm {
     return Vec;
   }
 
+  /// Construct an ArrayRef from an ArrayRef (no-op) (const)
+  template <typename T> ArrayRef<T> makeArrayRef(const ArrayRef<T> &Vec) {
+    return Vec;
+  }
+
+  /// Construct an ArrayRef from an ArrayRef (no-op)
+  template <typename T> ArrayRef<T> &makeArrayRef(ArrayRef<T> &Vec) {
+    return Vec;
+  }
+
   /// Construct an ArrayRef from a C array.
   template<typename T, size_t N>
   ArrayRef<T> makeArrayRef(const T (&Arr)[N]) {
@@ -366,6 +375,10 @@ namespace llvm {
   template <typename T> struct isPodLike<ArrayRef<T> > {
     static const bool value = true;
   };
+
+  template <typename T> hash_code hash_value(ArrayRef<T> S) {
+    return hash_combine_range(S.begin(), S.end());
+  }
 }
 
 #endif

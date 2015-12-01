@@ -12,7 +12,7 @@
 ; altered. If they are, it means that the discriminators pass added a
 ; new lexical scope.
 
-define i32 @foo(i64 %i) #0 {
+define i32 @foo(i64 %i) #0 !dbg !4 {
 entry:
   %retval = alloca i32, align 4
   %i.addr = alloca i64, align 8
@@ -44,6 +44,10 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone }
 
+; We should be able to add discriminators even in the absence of llvm.dbg.cu.
+; When using sample profiles, the front end will generate line tables but it
+; does not generate llvm.dbg.cu to prevent codegen from emitting debug info
+; to the final binary.
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!10, !11}
 !llvm.ident = !{!12}
@@ -52,8 +56,8 @@ attributes #1 = { nounwind readnone }
 !1 = !DIFile(filename: "no-discriminators", directory: ".")
 !2 = !{}
 !3 = !{!4}
-!4 = !DISubprogram(name: "foo", line: 1, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: false, scopeLine: 1, file: !1, scope: !5, type: !6, function: i32 (i64)* @foo, variables: !2)
-; CHECK: ![[FOO:[0-9]+]] = !DISubprogram(name: "foo"
+!4 = distinct !DISubprogram(name: "foo", line: 1, isLocal: false, isDefinition: true, virtualIndex: 6, flags: DIFlagPrototyped, isOptimized: false, scopeLine: 1, file: !1, scope: !5, type: !6, variables: !2)
+; CHECK: ![[FOO:[0-9]+]] = distinct !DISubprogram(name: "foo"
 !5 = !DIFile(filename: "no-discriminators", directory: ".")
 !6 = !DISubroutineType(types: !7)
 !7 = !{!8, !9}

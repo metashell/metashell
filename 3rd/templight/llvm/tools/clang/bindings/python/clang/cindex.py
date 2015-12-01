@@ -1100,6 +1100,8 @@ CursorKind.CUDAGLOBAL_ATTR = CursorKind(414)
 CursorKind.CUDAHOST_ATTR = CursorKind(415)
 CursorKind.CUDASHARED_ATTR = CursorKind(416)
 
+CursorKind.VISIBILITY_ATTR = CursorKind(417)
+
 ###
 # Preprocessing
 CursorKind.PREPROCESSING_DIRECTIVE = CursorKind(500)
@@ -1162,11 +1164,35 @@ class Cursor(Structure):
         """
         return conf.lib.clang_isCursorDefinition(self)
 
+    def is_const_method(self):
+        """Returns True if the cursor refers to a C++ member function or member
+        function template that is declared 'const'.
+        """
+        return conf.lib.clang_CXXMethod_isConst(self)
+
+    def is_mutable_field(self):
+        """Returns True if the cursor refers to a C++ field that is declared
+        'mutable'.
+        """
+        return conf.lib.clang_CXXField_isMutable(self)
+
+    def is_pure_virtual_method(self):
+        """Returns True if the cursor refers to a C++ member function or member
+        function template that is declared pure virtual.
+        """
+        return conf.lib.clang_CXXMethod_isPureVirtual(self)
+
     def is_static_method(self):
         """Returns True if the cursor refers to a C++ member function or member
         function template that is declared 'static'.
         """
         return conf.lib.clang_CXXMethod_isStatic(self)
+
+    def is_virtual_method(self):
+        """Returns True if the cursor refers to a C++ member function or member
+        function template that is declared 'virtual'.
+        """
+        return conf.lib.clang_CXXMethod_isVirtual(self)
 
     def get_definition(self):
         """
@@ -2876,6 +2902,14 @@ functionList = [
   ("clang_createTranslationUnit",
    [Index, c_char_p],
    c_object_p),
+
+  ("clang_CXXField_isMutable",
+   [Cursor],
+   bool),
+
+  ("clang_CXXMethod_isConst",
+   [Cursor],
+   bool),
 
   ("clang_CXXMethod_isPureVirtual",
    [Cursor],

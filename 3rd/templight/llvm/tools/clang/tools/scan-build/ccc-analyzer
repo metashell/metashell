@@ -282,7 +282,7 @@ sub Analyze {
   # We save the output file in the 'crashes' directory if clang encounters
   # any problems with the file.
   my ($ofh, $ofile) = tempfile("clang_output_XXXXXX", DIR => $HtmlDir);
-  
+
   my $OutputStream = silent_system($HtmlDir, $Cmd, @CmdArgs);
   while ( <$OutputStream> ) {
     print $ofh $_;
@@ -586,7 +586,7 @@ foreach (my $i = 0; $i < scalar(@ARGV); ++$i) {
   }
 
   # Compile mode flags.
-  if ($Arg =~ /^-[D,I,U,isystem](.*)$/) {
+  if ($Arg =~ /^-(?:[DIU]|isystem)(.*)$/) {
     my $Tmp = $Arg;
     if ($1 eq '') {
       # FIXME: Check if we are going off the end.
@@ -664,6 +664,15 @@ foreach (my $i = 0; $i < scalar(@ARGV); ++$i) {
   # we should suppress ones that we don't want to see.
   if ($Arg =~ /^-Wno-/) {
     push @CompileOpts, $Arg;
+    next;
+  }
+
+  # Handle -Xclang some-arg. Add both arguments to the compiler options.
+  if ($Arg =~ /^-Xclang$/) {
+    # FIXME: Check if we are going off the end.
+    ++$i;
+    push @CompileOpts, $Arg;
+    push @CompileOpts, $ARGV[$i];
     next;
   }
 

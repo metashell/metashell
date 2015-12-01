@@ -40,7 +40,7 @@ subdirectories =
  llvm-profdata
  llvm-rtdyld
  llvm-size
- macho-dump
+ llvm-split
  opt
  verify-uselistorder
 

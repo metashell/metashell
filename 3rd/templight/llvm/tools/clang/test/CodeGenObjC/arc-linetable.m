@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -emit-llvm -fblocks -fobjc-arc -g -triple x86_64-apple-darwin10 %s -o - | FileCheck %s
+// RUN: %clang_cc1 -emit-llvm -fblocks -fobjc-arc -debug-info-kind=standalone -dwarf-version=4 -triple x86_64-apple-darwin10 %s -o - | FileCheck %s
 
 // Legend: EXP = Return expression, RET = ret instruction
 
@@ -54,9 +54,9 @@ typedef signed char BOOL;
 
 @implementation AppDelegate : NSObject
 
-// CHECK: ![[TESTNOSIDEEFFECT:.*]] = !DISubprogram(name: "-[AppDelegate testNoSideEffect:]"
-// CHECK-SAME:                                     line: [[@LINE+2]]
-// CHECK-SAME:                                     isLocal: true, isDefinition: true
+// CHECK: ![[TESTNOSIDEEFFECT:.*]] = distinct !DISubprogram(name: "-[AppDelegate testNoSideEffect:]"
+// CHECK-SAME:                                              line: [[@LINE+2]]
+// CHECK-SAME:                                              isLocal: true, isDefinition: true
 - (int)testNoSideEffect:(NSString *)foo {
   int x = 1;
   return 1; // Return expression

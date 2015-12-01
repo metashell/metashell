@@ -497,8 +497,8 @@ void PBQPRAConstraintList::anchor() {}
 
 void RegAllocPBQP::getAnalysisUsage(AnalysisUsage &au) const {
   au.setPreservesCFG();
-  au.addRequired<AliasAnalysis>();
-  au.addPreserved<AliasAnalysis>();
+  au.addRequired<AAResultsWrapperPass>();
+  au.addPreserved<AAResultsWrapperPass>();
   au.addRequired<SlotIndexes>();
   au.addPreserved<SlotIndexes>();
   au.addRequired<LiveIntervals>();
@@ -724,10 +724,10 @@ bool RegAllocPBQP::runOnMachineFunction(MachineFunction &MF) {
   MachineBlockFrequencyInfo &MBFI =
     getAnalysis<MachineBlockFrequencyInfo>();
 
-  calculateSpillWeightsAndHints(LIS, MF, getAnalysis<MachineLoopInfo>(), MBFI,
-                                normalizePBQPSpillWeight);
-
   VirtRegMap &VRM = getAnalysis<VirtRegMap>();
+
+  calculateSpillWeightsAndHints(LIS, MF, &VRM, getAnalysis<MachineLoopInfo>(),
+                                MBFI, normalizePBQPSpillWeight);
 
   std::unique_ptr<Spiller> VRegSpiller(createInlineSpiller(*this, MF, VRM));
 

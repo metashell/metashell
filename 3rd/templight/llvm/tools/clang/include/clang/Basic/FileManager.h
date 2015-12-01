@@ -218,7 +218,8 @@ public:
                            bool CacheFailure = true);
 
   /// \brief Returns the current file system options
-  const FileSystemOptions &getFileSystemOptions() { return FileSystemOpts; }
+  FileSystemOptions &getFileSystemOpts() { return FileSystemOpts; }
+  const FileSystemOptions &getFileSystemOpts() const { return FileSystemOpts; }
 
   IntrusiveRefCntPtr<vfs::FileSystem> getVirtualFileSystem() const {
     return FS;
@@ -271,9 +272,6 @@ public:
   /// FileEntry. Use with caution.
   static void modifyFileEntry(FileEntry *File, off_t Size,
                               time_t ModificationTime);
-
-  /// \brief Remove any './' components from a path.
-  static bool removeDotPaths(SmallVectorImpl<char> &Path, bool RemoveDotDot = false);
 
   /// \brief Retrieve the canonical name for a given directory.
   ///

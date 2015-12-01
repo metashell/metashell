@@ -134,6 +134,11 @@ const mdb_command_handler_map mdb_shell::command_handler =
         "<regex>",
         "Add breakpoint for all types matching `<regex>`.",
         ""},
+      {{"break"}, repeatable_t::non_repeatable,
+        callback(&mdb_shell::command_break),
+        "list",
+        "List breakpoints.",
+        ""},
       {{"continue"}, repeatable_t::repeatable,
         callback(&mdb_shell::command_continue),
         "[n]",
@@ -186,10 +191,12 @@ config set_pch_false(config c) {
 mdb_shell::mdb_shell(
     const config& conf_,
     const iface::environment& env_arg,
+    iface::executable& clang_binary,
     logger* logger_) :
   conf(set_pch_false(conf_)),
   env(conf),
-  _logger(logger_)
+  _logger(logger_),
+  _clang_binary(clang_binary)
 {
   env.append(env_arg.get_all());
 }
@@ -254,12 +261,6 @@ void mdb_shell::line_available(
   } catch (...) {
     displayer_.show_error("Unknown error\n");
   }
-}
-bool mdb_shell::breakpoint_match(
-    metaprogram::vertex_descriptor vertex, const breakpoint_t& breakpoint)
-{
-  return boost::regex_search(
-      mp->get_vertex_property(vertex).name, std::get<1>(breakpoint));
 }
 
 bool mdb_shell::require_empty_args(
@@ -331,16 +332,15 @@ void mdb_shell::command_continue(
   direction_t direction =
     *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
 
-  breakpoints_t::iterator breakpoint_it = breakpoints.end();
+  const breakpoint* breakpoint_ptr = nullptr;
   for (int i = 0;
       i < std::abs(*continue_count) && !mp->is_at_endpoint(direction); ++i)
   {
-    breakpoint_it = continue_metaprogram(direction);
+    breakpoint_ptr = continue_metaprogram(direction);
   }
 
-  if (breakpoint_it != breakpoints.end()) {
-    displayer_.show_raw_text(
-        "Breakpoint \"" + std::get<0>(*breakpoint_it) + "\" reached");
+  if (breakpoint_ptr) {
+    displayer_.show_raw_text(breakpoint_ptr->to_string() + " reached");
   }
   display_movement_info(*continue_count != 0, displayer_);
 }
@@ -460,18 +460,20 @@ void mdb_shell::command_next(
   display_movement_info(next_count != 0, displayer_);
 }
 
-bool mdb_shell::is_wrap_type(const std::string& type) {
+bool mdb_shell::is_wrap_type(const data::type& type) {
   // TODO this check could be made more strict,
   // since we know whats inside wrap<...> (mp->get_evaluation_result)
-  return boost::starts_with(type, wrap_prefix) &&
-         boost::ends_with(type, wrap_suffix);
+  return boost::starts_with(type.name(), wrap_prefix) &&
+         boost::ends_with(type.name(), wrap_suffix);
 }
 
-std::string mdb_shell::trim_wrap_type(const std::string& type) {
+data::type mdb_shell::trim_wrap_type(const data::type& type) {
   assert(is_wrap_type(type));
-  return boost::trim_copy(type.substr(
-         wrap_prefix.size(),
-         type.size() - wrap_prefix.size() - wrap_suffix.size()));
+  return data::type(
+    boost::trim_copy(type.name().substr(
+       wrap_prefix.size(),
+       type.name().size() - wrap_prefix.size() - wrap_suffix.size()))
+  );
 }
 
 void mdb_shell::filter_disable_everything() {
@@ -479,7 +481,6 @@ void mdb_shell::filter_disable_everything() {
     mp->get_edge_property(edge).enabled = false;
   }
 }
-
 
 void mdb_shell::filter_enable_reachable(bool for_current_line) {
   using vertex_descriptor = metaprogram::vertex_descriptor;
@@ -496,8 +497,8 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
   // Enable the interesting root edges
   for (edge_descriptor edge : mp->get_out_edges(mp->get_root_vertex())) {
     edge_property& property = mp->get_edge_property(edge);
-    const std::string& target_name =
-      mp->get_vertex_property(mp->get_target(edge)).name;
+    const data::type& target_type =
+      mp->get_vertex_property(mp->get_target(edge)).type;
     // Filter out edges, that is not instantiated
     // by the entered type if requested
     const bool current_line_filter = !for_current_line || (
@@ -505,15 +506,22 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
       property.point_of_instantiation.row == line_number + 1
     );
 
-    if (current_line_filter &&
-        (property.kind == data::instantiation_kind::template_instantiation ||
-        property.kind == data::instantiation_kind::memoization) &&
-        (!is_wrap_type(target_name) ||
-         property.kind != data::instantiation_kind::memoization))
-    {
-      property.enabled = true;
-      edge_stack.push(edge);
+    if (!current_line_filter) {
+      continue;
     }
+
+    if (!is_instantiation_kind_enabled(property.kind)) {
+      continue;
+    }
+
+    if (property.kind == data::instantiation_kind::memoization &&
+        is_wrap_type(target_type))
+    {
+      continue;
+    }
+
+    property.enabled = true;
+    edge_stack.push(edge);
   }
 
   discovered_t discovered(mp->get_num_vertices());
@@ -534,9 +542,7 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
 
     for (edge_descriptor out_edge : mp->get_out_edges(vertex)) {
       edge_property& property = mp->get_edge_property(out_edge);
-      if (property.kind == data::instantiation_kind::template_instantiation ||
-         property.kind == data::instantiation_kind::memoization)
-      {
+      if (is_instantiation_kind_enabled(property.kind)) {
         property.enabled = true;
         edge_stack.push(out_edge);
       }
@@ -546,10 +552,10 @@ void mdb_shell::filter_enable_reachable(bool for_current_line) {
 
 void mdb_shell::filter_unwrap_vertices() {
   for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-    std::string& name = mp->get_vertex_property(vertex).name;
-    if (is_wrap_type(name)) {
-      name = trim_wrap_type(name);
-      if (!is_template_type(name)) {
+    data::type& type = mp->get_vertex_property(vertex).type;
+    if (is_wrap_type(type)) {
+      type = trim_wrap_type(type);
+      if (!is_template_type(type)) {
         for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex)) {
           mp->get_edge_property(in_edge).kind =
             data::instantiation_kind::non_template_type;
@@ -602,6 +608,18 @@ void mdb_shell::filter_metaprogram(bool for_current_line) {
   mp->init_full_time_taken();
 }
 
+bool mdb_shell::is_instantiation_kind_enabled(data::instantiation_kind kind) {
+  switch (kind) {
+    case data::instantiation_kind::memoization:
+    case data::instantiation_kind::template_instantiation:
+    case data::instantiation_kind::deduced_template_argument_substitution:
+    case data::instantiation_kind::explicit_template_argument_substitution:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void mdb_shell::command_evaluate(
     const std::string& arg_copy,
     iface::displayer& displayer_)
@@ -651,6 +669,7 @@ void mdb_shell::command_evaluate(
     expression = boost::none;
   }
 
+  next_breakpoint_id = 1;
   breakpoints.clear();
 
   metaprogram::mode_t mode = [&] {
@@ -752,11 +771,12 @@ void mdb_shell::command_rbreak(
     return;
   }
   try {
-    breakpoint_t breakpoint = std::make_tuple(arg, boost::regex(arg));
+    breakpoint bp{next_breakpoint_id, boost::regex(arg)};
+    ++next_breakpoint_id;
 
     unsigned match_count = 0;
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices()) {
-      if (breakpoint_match(vertex, breakpoint)) {
+      if (bp.match(mp->get_vertex_property(vertex).type)) {
         match_count += mp->get_traversal_count(vertex);
       }
     }
@@ -768,10 +788,31 @@ void mdb_shell::command_rbreak(
           "Breakpoint \"" + arg + "\" will stop the execution on " +
           std::to_string(match_count) +
           (match_count > 1 ? " locations" : " location"));
-      breakpoints.push_back(breakpoint);
+      breakpoints.push_back(bp);
     }
   } catch (const boost::regex_error&) {
     displayer_.show_error("\"" + arg + "\" is not a valid regex");
+  }
+}
+
+void mdb_shell::command_break(
+    const std::string& arg,
+    iface::displayer& displayer_)
+{
+  // TODO there will other more kinds of arguments here but needs a proper but
+  // it needs a proper command parser
+  if (arg != "list") {
+    displayer_.show_error("Call break like this: \"break list\"");
+    return;
+  }
+
+  if (breakpoints.empty()) {
+    displayer_.show_raw_text("No breakpoints currently set");
+    return;
+  }
+
+  for (const breakpoint& bp : breakpoints) {
+    displayer_.show_raw_text(bp.to_string());
   }
 }
 
@@ -865,6 +906,7 @@ bool mdb_shell::run_metaprogram_with_templight(
       protobuf_stream,
       mode,
       expression ? *expression : "<environment>",
+      data::file_location{}, // TODO something sensible here?
       evaluation_result);
 
   assert(mp);
@@ -883,9 +925,9 @@ data::type_or_error mdb_shell::run_metaprogram(
     const boost::optional<std::string>& expression,
     iface::displayer& displayer_)
 {
-  result res = expression ?
-    eval_tmp(env, *expression, conf, _logger) :
-    eval_environment(env, conf, _logger);
+  const result res = expression ?
+    eval_tmp(_clang_binary, env, *expression) :
+    eval_environment(_clang_binary, env);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
@@ -956,19 +998,17 @@ boost::optional<int> mdb_shell::parse_mandatory_integer(
   return value;
 }
 
-mdb_shell::breakpoints_t::iterator mdb_shell::continue_metaprogram(
-    direction_t direction)
-{
+const breakpoint* mdb_shell::continue_metaprogram(direction_t direction) {
   assert(!mp->is_at_endpoint(direction));
 
   while (true) {
     mp->step(direction);
     if (mp->is_at_endpoint(direction)) {
-      return breakpoints.end();
+      return nullptr;
     }
-    for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
-      if (breakpoint_match(mp->get_current_vertex(), *it)) {
-        return it;
+    for (const breakpoint& bp : breakpoints) {
+      if (bp.match(mp->get_current_frame())) {
+        return &bp;
       }
     }
   }
@@ -998,15 +1038,19 @@ void mdb_shell::display_frame(
   const data::frame& frame, iface::displayer& displayer_) const
 {
   displayer_.show_frame(frame);
-  if (frame.is_full()) {
-    // TODO: we should somehow compensate the file_locations returned by
-    // clang for the <stdin> file. This is hard because the file clang sees
-    // is just two lines (an include for the PCH and the current line)
-    // Until this is figured out, printing file sections for <stdin> is
-    // turned off
-    // displayer_.show_file_section(frame.point_of_instantiation(), env.get());
-    displayer_.show_file_section(frame.point_of_instantiation(), "");
+
+  data::file_location source_location = frame.source_location();
+  if (source_location.name == env.env_filename()) {
+    // We don't want to show stuff from the internal header
+    source_location = data::file_location();
   }
+  // TODO: we should somehow compensate the file_locations returned by
+  // clang for the <stdin> file. This is hard because the file clang sees
+  // is just two lines (an include for the PCH and the current line)
+  // Until this is figured out, printing file sections for <stdin> is
+  // turned off
+  // displayer_.show_file_section(source_location, env.get());
+  displayer_.show_file_section(source_location, "");
 }
 
 void mdb_shell::display_current_frame(iface::displayer& displayer_) const {

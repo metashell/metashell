@@ -48,7 +48,7 @@ class AArch64TTIImpl : public BasicTTIImplBase<AArch64TTIImpl> {
   };
 
 public:
-  explicit AArch64TTIImpl(const AArch64TargetMachine *TM, Function &F)
+  explicit AArch64TTIImpl(const AArch64TargetMachine *TM, const Function &F)
       : BaseT(TM, F.getParent()->getDataLayout()), ST(TM->getSubtargetImpl(F)),
         TLI(ST->getTargetLowering()) {}
 
@@ -74,6 +74,8 @@ public:
 
   /// \name Vector TTI Implementations
   /// @{
+
+  bool enableInterleavedAccessVectorization() { return true; }
 
   unsigned getNumberOfRegisters(bool Vector) {
     if (Vector) {

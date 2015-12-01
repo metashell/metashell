@@ -62,8 +62,6 @@ ASAN_FLAG(
     "bytes that will be filled with malloc_fill_byte on malloc.")
 ASAN_FLAG(int, malloc_fill_byte, 0xbe,
           "Value used to fill the newly allocated memory.")
-ASAN_FLAG(int, exitcode, ASAN_DEFAULT_FAILURE_EXITCODE,
-          "Override the program exit status if the tool found an error.")
 ASAN_FLAG(bool, allow_user_poisoning, true,
           "If set, user may manually mark memory regions as poisoned or "
           "unpoisoned.")
@@ -77,10 +75,6 @@ ASAN_FLAG(bool, check_malloc_usable_size, true,
           "295.*.")
 ASAN_FLAG(bool, unmap_shadow_on_exit, false,
           "If set, explicitly unmaps the (huge) shadow at exit.")
-ASAN_FLAG(
-    bool, abort_on_error, SANITIZER_MAC,
-    "If set, the tool calls abort() instead of _exit() after printing the "
-    "error report.")
 ASAN_FLAG(bool, print_stats, false,
           "Print various statistics after printing an error message or if "
           "atexit=1.")
@@ -140,3 +134,6 @@ ASAN_FLAG(int, detect_odr_violation, 2,
 ASAN_FLAG(bool, dump_instruction_bytes, false,
           "If true, dump 16 bytes starting at the instruction that caused SEGV")
 ASAN_FLAG(const char *, suppressions, "", "Suppressions file name.")
+ASAN_FLAG(bool, halt_on_error, true,
+          "Crash the program after printing the first error report "
+          "(WARNING: USE AT YOUR OWN RISK!)")

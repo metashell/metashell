@@ -7,6 +7,16 @@
     * Experimental support for profiling metaprograms in MDB
     * Experimental support for traversing the whole environment in MDB
     * New MDB command: `finish`
+    * New MDB command: `break`
+    * MDB now shows DeducedTemplateArgumentSubstitution events, which helps
+      you to debug expressions involving SFINAE.
+
+* Changes to existing behaviour
+    * File sections displayed by MDB now shows the source location of the
+      instantiated template instead of the point of instantiation.
+
+* Documentation updates
+    * New "How to..." section about debugging SFINAE.
 
 ## Version 2.1.0
 

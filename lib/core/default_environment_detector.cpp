@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <iostream>
 #include <algorithm>
 #include <stdexcept>
 #include <fstream>
@@ -46,12 +47,6 @@ using namespace metashell;
 
 namespace
 {
-  const char* extra_sysinclude[] =
-    {
-      ""
-      #include "extra_sysinclude.hpp"
-    };
-
   const char* default_clang_search_path[] =
     {
       ""
@@ -111,13 +106,9 @@ namespace
 }
 
 default_environment_detector::default_environment_detector(
-  const std::string& argv0_,
-  logger* logger_,
-  iface::libclang& libclang_
+  const std::string& argv0_
 ) :
-  _argv0(argv0_),
-  _logger(logger_),
-  _libclang(&libclang_)
+  _argv0(argv0_)
 {}
 
 std::string default_environment_detector::search_clang_binary()
@@ -146,19 +137,6 @@ bool default_environment_detector::on_osx()
 #else
   return false;
 #endif
-}
-
-void default_environment_detector::append_to_path(const std::string& path_)
-{
-  METASHELL_LOG(_logger, "Appending to PATH: " + path_);
-  just::environment::append_to_path(path_);
-}
-
-std::vector<std::string> default_environment_detector::default_clang_sysinclude(
-  const std::string& clang_path_
-)
-{
-  return default_sysinclude(clang_binary(clang_path_, _logger), _logger);
 }
 
 std::string default_environment_detector::path_of_executable()
@@ -214,46 +192,5 @@ std::string default_environment_detector::path_of_executable()
 #else
   return read_link("/proc/self/exe");
 #endif
-}
-
-std::vector<std::string> default_environment_detector::extra_sysinclude()
-{
-  return
-    std::vector<std::string>(
-      ::extra_sysinclude + 1,
-      ::extra_sysinclude
-        + sizeof(::extra_sysinclude) / sizeof(const char*)
-    );
-}
-
-bool default_environment_detector::clang_binary_works_with_libclang(
-  const config& cfg_
-)
-{
-  METASHELL_LOG(
-    _logger,
-    "Checking if libclang can use the Clang binary's precompiled headers."
-  );
-
-  config cfg(cfg_);
-  cfg.use_precompiled_headers = true;
-
-  const data::unsaved_file src("<stdin>", "typedef foo bar;");
-
-  try
-  {
-    header_file_environment env(cfg, _logger);
-    env.append("struct foo {};");
-
-    std::unique_ptr<iface::cxindex>
-      index = _libclang->create_index(env, _logger);
-
-    std::unique_ptr<iface::cxtranslationunit> tu = index->parse_code(src);
-    return tu->get_error_string().empty();
-  }
-  catch (...)
-  {
-    return false;
-  }
 }
 

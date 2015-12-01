@@ -100,7 +100,7 @@ private:
 };
 typedef content_iterator<ExportEntry> export_iterator;
 
-/// MachORebaseEntry encapsulates the current state in the decompression of   
+/// MachORebaseEntry encapsulates the current state in the decompression of
 /// rebasing opcodes. This allows you to iterate through the compressed table of
 /// rebasing using:
 ///    for (const llvm::object::MachORebaseEntry &Entry : Obj->rebaseTable()) {
@@ -116,7 +116,7 @@ public:
   bool operator==(const MachORebaseEntry &) const;
 
   void moveNext();
-  
+
 private:
   friend class MachOObjectFile;
   void moveToFirst();
@@ -422,6 +422,24 @@ public:
     return v->isMachO();
   }
 
+  static uint32_t
+  getVersionMinMajor(MachO::version_min_command &C, bool SDK) {
+    uint32_t VersionOrSDK = (SDK) ? C.sdk : C.version;
+    return (VersionOrSDK >> 16) & 0xffff;
+  }
+
+  static uint32_t
+  getVersionMinMinor(MachO::version_min_command &C, bool SDK) {
+    uint32_t VersionOrSDK = (SDK) ? C.sdk : C.version;
+    return (VersionOrSDK >> 8) & 0xff;
+  }
+
+  static uint32_t
+  getVersionMinUpdate(MachO::version_min_command &C, bool SDK) {
+    uint32_t VersionOrSDK = (SDK) ? C.sdk : C.version;
+    return VersionOrSDK & 0xff;
+  }
+
 private:
   uint64_t getSymbolValueImpl(DataRefImpl Symb) const override;
 
@@ -503,4 +521,3 @@ inline const ObjectFile *DiceRef::getObjectFile() const {
 }
 
 #endif
-

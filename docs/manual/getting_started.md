@@ -202,6 +202,7 @@ calls: which metafunction calls which other metafunctions. The events in the
 output of forwardtrace happen in that order from the top down.
 
 You probably noticed that there are two kinds of events metadebugger shows you:
+
 * __TemplateInstantiation__ event happens when the compiler first encounters and
   instantiates a new template type. During a TemplateInstantiation event the
   compiler will instantiate every subtype it needs to get to the result.
@@ -212,7 +213,7 @@ You probably noticed that there are two kinds of events metadebugger shows you:
   compilation. This basically means that the compiler remembers every type it
   had instantiated, and reuses them when it encounters them again.
 
-  Full template specializations (e.g. `fib<0>` and `fib<1>`) only appear in
+  Full template specializations (e.g. `fib<0>` and `fib<1>`) also appear as
   Memoization events.
 
 For example, in the above forwardtrace output, you can see that `fib<5>`
@@ -220,6 +221,19 @@ creates `fib<4>` in a TemplateInstantiation event, which in turn instantiates
 `fib<3>` also in a TemplateInstantiation event and so on. You can also see,
 that when `fib<5>` gets to the point to instantiate `fib<3>` it has already
 been instantiated by `fib<4>`, so only a Memoization event happens.
+
+There are a few more type of template events that we haven't seen so far:
+
+* __ExplicitTemplateArgumentSubstitution__: event happens when the compiler
+  substitutes explicit template arguments provided for a function template.
+* __DeducedTemplateArgumentSubstitution__: event happens when the compiler
+  substitutes template arguments determined as part of template argument
+  deduction for either a class template partial specialization or a function
+  template.
+
+Check out the section about
+[How to debug expressions involving SFINAE?](how_to.md#debug-expressions-involving-sfinae)
+for more information about these event types.
 
 ### Breakpoints and continue
 
@@ -234,7 +248,7 @@ Now let's continue the execution until the first breakpoint:
 
 ```cpp
 (mdb) continue
-Breakpoint "fib<3>" reached
+Breakpoint 1: regex("fib<3>") reached
 fib<3> (TemplateInstantiation)
 ```
 
@@ -243,7 +257,7 @@ instead of `continue`:
 
 ```cpp
 (mdb) c
-Breakpoint "fib<3>" reached
+Breakpoint 1: regex("fib<3>") reached
 fib<3> (Memoization)
 ```
 

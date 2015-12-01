@@ -26,48 +26,26 @@ class mock_environment_detector : public metashell::iface::environment_detector
 public:
   mock_environment_detector();
 
-  virtual std::string search_clang_binary();
+  virtual std::string search_clang_binary() override;
   void search_clang_binary_returns(const std::string& result_);
   int search_clang_binary_called_times() const;
 
-  virtual bool file_exists(const std::string& path_);
+  virtual bool file_exists(const std::string& path_) override;
   void file_exists_returns(bool result_);
   int file_exists_called_times() const;
   const std::string& file_exists_last_arg() const;
 
-  virtual bool on_windows();
+  virtual bool on_windows() override;
   void on_windows_returns(bool result_);
   int on_windows_called_times() const;
 
-  virtual bool on_osx();
+  virtual bool on_osx() override;
   void on_osx_returns(bool result_);
   int on_osx_called_times() const;
 
-  virtual void append_to_path(const std::string& path_);
-  int append_to_path_called_times() const;
-  const std::string& append_to_path_last_arg() const;
-
-  virtual std::vector<std::string> default_clang_sysinclude(
-    const std::string& clang_path_
-  );
-  int default_clang_sysinclude_called_times() const;
-  void default_clang_sysinclude_returns_append(const std::string& path_);
-
-  virtual std::vector<std::string> extra_sysinclude();
-  int extra_sysinclude_called_times() const;
-  void extra_sysinclude_returns_append(const std::string& path_);
-
-  virtual std::string path_of_executable();
+  virtual std::string path_of_executable() override;
   int path_of_executable_called_times() const;
   void path_of_executable_returns(const std::string& result_);
-
-  virtual bool clang_binary_works_with_libclang(
-    const metashell::config& clang_path_
-  );
-  int clang_binary_works_with_libclang_called_times() const;
-  void set_clang_binary_works_with_libclang_callback(
-    const std::function<bool(const std::string&)> cb_
-  );
 private:
   std::string _search_clang_binary_returns;
   int _search_clang_binary_called_times;
@@ -82,20 +60,8 @@ private:
   bool _on_osx_returns;
   int _on_osx_called_times;
 
-  int _append_to_path_called_times;
-  std::string _append_to_path_last_arg;
-
-  int _default_clang_sysinclude_called_times;
-  std::vector<std::string> _default_clang_sysinclude_returns;
-
-  int _extra_sysinclude_called_times;
-  std::vector<std::string> _extra_sysinclude_returns;
-
   int _path_of_executable_called_times;
   std::string _path_of_executable_returns;
-
-  int _clang_binary_works_with_libclang_called_times;
-  std::function<bool(const std::string&)> _clang_binary_works_with_libclang_cb;
 };
 
 #endif

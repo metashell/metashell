@@ -32,19 +32,20 @@ static const Builtin::Info BuiltinInfo[] = {
 const Builtin::Info &Builtin::Context::getRecord(unsigned ID) const {
   if (ID < Builtin::FirstTSBuiltin)
     return BuiltinInfo[ID];
-  assert(ID - Builtin::FirstTSBuiltin < NumTSRecords && "Invalid builtin ID!");
+  assert(((ID - Builtin::FirstTSBuiltin) <
+          (TSRecords.size() + AuxTSRecords.size())) &&
+         "Invalid builtin ID!");
+  if (isAuxBuiltinID(ID))
+    return AuxTSRecords[getAuxBuiltinID(ID) - Builtin::FirstTSBuiltin];
   return TSRecords[ID - Builtin::FirstTSBuiltin];
 }
 
-Builtin::Context::Context() {
-  // Get the target specific builtins from the target.
-  TSRecords = nullptr;
-  NumTSRecords = 0;
-}
-
-void Builtin::Context::initializeTarget(const TargetInfo &Target) {
-  assert(NumTSRecords == 0 && "Already initialized target?");
-  Target.getTargetBuiltins(TSRecords, NumTSRecords);  
+void Builtin::Context::InitializeTarget(const TargetInfo &Target,
+                                        const TargetInfo *AuxTarget) {
+  assert(TSRecords.empty() && "Already initialized target?");
+  TSRecords = Target.getTargetBuiltins();
+  if (AuxTarget)
+    AuxTSRecords = AuxTarget->getTargetBuiltins();
 }
 
 bool Builtin::Context::builtinIsSupported(const Builtin::Info &BuiltinInfo,
@@ -52,7 +53,7 @@ bool Builtin::Context::builtinIsSupported(const Builtin::Info &BuiltinInfo,
   bool BuiltinsUnsupported = LangOpts.NoBuiltin &&
                              strchr(BuiltinInfo.Attributes, 'f');
   bool MathBuiltinsUnsupported =
-    LangOpts.NoMathBuiltin && BuiltinInfo.HeaderName &&      
+    LangOpts.NoMathBuiltin && BuiltinInfo.HeaderName &&
     llvm::StringRef(BuiltinInfo.HeaderName).equals("math.h");
   bool GnuModeUnsupported = !LangOpts.GNUMode && (BuiltinInfo.Langs & GNU_LANG);
   bool MSModeUnsupported =
@@ -62,7 +63,7 @@ bool Builtin::Context::builtinIsSupported(const Builtin::Info &BuiltinInfo,
          !GnuModeUnsupported && !MSModeUnsupported && !ObjCUnsupported;
 }
 
-/// InitializeBuiltins - Mark the identifiers for all the builtins with their
+/// initializeBuiltins - Mark the identifiers for all the builtins with their
 /// appropriate builtin ID # and mark any non-portable builtin identifiers as
 /// such.
 void Builtin::Context::initializeBuiltins(IdentifierTable &Table,
@@ -74,9 +75,14 @@ void Builtin::Context::initializeBuiltins(IdentifierTable &Table,
     }
 
   // Step #2: Register target-specific builtins.
-  for (unsigned i = 0, e = NumTSRecords; i != e; ++i)
+  for (unsigned i = 0, e = TSRecords.size(); i != e; ++i)
     if (builtinIsSupported(TSRecords[i], LangOpts))
-      Table.get(TSRecords[i].Name).setBuiltinID(i+Builtin::FirstTSBuiltin);
+      Table.get(TSRecords[i].Name).setBuiltinID(i + Builtin::FirstTSBuiltin);
+
+  // Step #3: Register target-specific builtins for AuxTarget.
+  for (unsigned i = 0, e = AuxTSRecords.size(); i != e; ++i)
+    Table.get(AuxTSRecords[i].Name)
+        .setBuiltinID(i + Builtin::FirstTSBuiltin + TSRecords.size());
 }
 
 void Builtin::Context::forgetBuiltin(unsigned ID, IdentifierTable &Table) {

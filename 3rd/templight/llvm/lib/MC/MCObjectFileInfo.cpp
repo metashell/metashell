@@ -16,6 +16,8 @@
 #include "llvm/MC/MCSectionCOFF.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCSectionMachO.h"
+#include "llvm/Support/COFF.h"
+
 using namespace llvm;
 
 static bool useCompactUnwind(const Triple &T) {
@@ -25,6 +27,10 @@ static bool useCompactUnwind(const Triple &T) {
 
   // aarch64 always has it.
   if (T.getArch() == Triple::aarch64)
+    return true;
+
+  // armv7k always has it.
+  if (T.isWatchOS())
     return true;
 
   // Use it on newer version of OS X.
@@ -43,8 +49,17 @@ void MCObjectFileInfo::initMachOMCObjectFileInfo(Triple T) {
   // MachO
   SupportsWeakOmittedEHFrame = false;
 
+  EHFrameSection = Ctx->getMachOSection(
+      "__TEXT", "__eh_frame",
+      MachO::S_COALESCED | MachO::S_ATTR_NO_TOC |
+          MachO::S_ATTR_STRIP_STATIC_SYMS | MachO::S_ATTR_LIVE_SUPPORT,
+      SectionKind::getReadOnly());
+
   if (T.isOSDarwin() && T.getArch() == Triple::aarch64)
     SupportsCompactUnwindWithoutEHFrame = true;
+
+  if (T.isWatchOS())
+    OmitDwarfIfHaveCompactUnwind = true;
 
   PersonalityEncoding = dwarf::DW_EH_PE_indirect | dwarf::DW_EH_PE_pcrel
     | dwarf::DW_EH_PE_sdata4;
@@ -112,22 +127,37 @@ void MCObjectFileInfo::initMachOMCObjectFileInfo(Triple T) {
     = Ctx->getMachOSection("__TEXT", "__const", 0,
                            SectionKind::getReadOnly());
 
-  TextCoalSection
-    = Ctx->getMachOSection("__TEXT", "__textcoal_nt",
-                           MachO::S_COALESCED |
-                           MachO::S_ATTR_PURE_INSTRUCTIONS,
-                           SectionKind::getText());
-  ConstTextCoalSection
-    = Ctx->getMachOSection("__TEXT", "__const_coal",
-                           MachO::S_COALESCED,
-                           SectionKind::getReadOnly());
+  // If the target is not powerpc, map the coal sections to the non-coal
+  // sections.
+  //
+  // "__TEXT/__textcoal_nt" => section "__TEXT/__text"
+  // "__TEXT/__const_coal"  => section "__TEXT/__const"
+  // "__DATA/__datacoal_nt" => section "__DATA/__data"
+  Triple::ArchType ArchTy = T.getArch();
+
+  if (ArchTy == Triple::ppc || ArchTy == Triple::ppc64) {
+    TextCoalSection
+      = Ctx->getMachOSection("__TEXT", "__textcoal_nt",
+                             MachO::S_COALESCED |
+                             MachO::S_ATTR_PURE_INSTRUCTIONS,
+                             SectionKind::getText());
+    ConstTextCoalSection
+      = Ctx->getMachOSection("__TEXT", "__const_coal",
+                             MachO::S_COALESCED,
+                             SectionKind::getReadOnly());
+    DataCoalSection
+      = Ctx->getMachOSection("__DATA","__datacoal_nt",
+                             MachO::S_COALESCED,
+                             SectionKind::getDataRel());
+  } else {
+    TextCoalSection = TextSection;
+    ConstTextCoalSection = ReadOnlySection;
+    DataCoalSection = DataSection;
+  }
+
   ConstDataSection  // .const_data
     = Ctx->getMachOSection("__DATA", "__const", 0,
                            SectionKind::getReadOnlyWithRel());
-  DataCoalSection
-    = Ctx->getMachOSection("__DATA","__datacoal_nt",
-                           MachO::S_COALESCED,
-                           SectionKind::getDataRel());
   DataCommonSection
     = Ctx->getMachOSection("__DATA","__common",
                            MachO::S_ZEROFILL,
@@ -176,9 +206,11 @@ void MCObjectFileInfo::initMachOMCObjectFileInfo(Triple T) {
                              SectionKind::getReadOnly());
 
     if (T.getArch() == Triple::x86_64 || T.getArch() == Triple::x86)
-      CompactUnwindDwarfEHFrameOnly = 0x04000000;
+      CompactUnwindDwarfEHFrameOnly = 0x04000000;  // UNWIND_X86_64_MODE_DWARF
     else if (T.getArch() == Triple::aarch64)
-      CompactUnwindDwarfEHFrameOnly = 0x03000000;
+      CompactUnwindDwarfEHFrameOnly = 0x03000000;  // UNWIND_ARM64_MODE_DWARF
+    else if (T.getArch() == Triple::arm || T.getArch() == Triple::thumb)
+      CompactUnwindDwarfEHFrameOnly = 0x04000000;  // UNWIND_ARM_MODE_DWARF
   }
 
   // Debug Information.
@@ -258,7 +290,6 @@ void MCObjectFileInfo::initELFMCObjectFileInfo(Triple T) {
     FDECFIEncoding = dwarf::DW_EH_PE_pcrel |
                      ((CMModel == CodeModel::Large) ? dwarf::DW_EH_PE_sdata8
                                                     : dwarf::DW_EH_PE_sdata4);
-
     break;
   default:
     FDECFIEncoding = dwarf::DW_EH_PE_pcrel | dwarf::DW_EH_PE_sdata4;
@@ -391,17 +422,15 @@ void MCObjectFileInfo::initELFMCObjectFileInfo(Triple T) {
     break;
   }
 
+  unsigned EHSectionType = T.getArch() == Triple::x86_64
+                               ? ELF::SHT_X86_64_UNWIND
+                               : ELF::SHT_PROGBITS;
+
   // Solaris requires different flags for .eh_frame to seemingly every other
   // platform.
-  EHSectionType = ELF::SHT_PROGBITS;
-  EHSectionFlags = ELF::SHF_ALLOC;
-  if (T.isOSSolaris()) {
-    if (T.getArch() == Triple::x86_64)
-      EHSectionType = ELF::SHT_X86_64_UNWIND;
-    else
-      EHSectionFlags |= ELF::SHF_WRITE;
-  }
-
+  unsigned EHSectionFlags = ELF::SHF_ALLOC;
+  if (T.isOSSolaris() && T.getArch() != Triple::x86_64)
+    EHSectionFlags |= ELF::SHF_WRITE;
 
   // ELF
   BSSSection = Ctx->getELFSection(".bss", ELF::SHT_NOBITS,
@@ -524,9 +553,17 @@ void MCObjectFileInfo::initELFMCObjectFileInfo(Triple T) {
 
   FaultMapSection =
       Ctx->getELFSection(".llvm_faultmaps", ELF::SHT_PROGBITS, ELF::SHF_ALLOC);
+
+  EHFrameSection =
+      Ctx->getELFSection(".eh_frame", EHSectionType, EHSectionFlags);
 }
 
 void MCObjectFileInfo::initCOFFMCObjectFileInfo(Triple T) {
+  EHFrameSection = Ctx->getCOFFSection(
+      ".eh_frame", COFF::IMAGE_SCN_CNT_INITIALIZED_DATA |
+                       COFF::IMAGE_SCN_MEM_READ | COFF::IMAGE_SCN_MEM_WRITE,
+      SectionKind::getDataRel());
+
   bool IsWoA = T.getArch() == Triple::arm || T.getArch() == Triple::thumb;
 
   CommDirectiveSupportsAlignment = true;
@@ -577,7 +614,7 @@ void MCObjectFileInfo::initCOFFMCObjectFileInfo(Triple T) {
   assert(T.isOSWindows() && "Windows is the only supported COFF target");
   if (T.getArch() == Triple::x86_64) {
     // On Windows 64 with SEH, the LSDA is emitted into the .xdata section
-    LSDASection = 0;
+    LSDASection = nullptr;
   } else {
     LSDASection = Ctx->getCOFFSection(".gcc_except_table",
                                       COFF::IMAGE_SCN_CNT_INITIALIZED_DATA |
@@ -733,11 +770,11 @@ void MCObjectFileInfo::initCOFFMCObjectFileInfo(Triple T) {
       ".tls$", COFF::IMAGE_SCN_CNT_INITIALIZED_DATA | COFF::IMAGE_SCN_MEM_READ |
                    COFF::IMAGE_SCN_MEM_WRITE,
       SectionKind::getDataRel());
-	  
+
   StackMapSection = Ctx->getCOFFSection(".llvm_stackmaps",
                                         COFF::IMAGE_SCN_CNT_INITIALIZED_DATA |
                                             COFF::IMAGE_SCN_MEM_READ,
-                                        SectionKind::getReadOnly());	
+                                        SectionKind::getReadOnly());
 }
 
 void MCObjectFileInfo::InitMCObjectFileInfo(const Triple &TheTriple,
@@ -752,6 +789,7 @@ void MCObjectFileInfo::InitMCObjectFileInfo(const Triple &TheTriple,
   CommDirectiveSupportsAlignment = true;
   SupportsWeakOmittedEHFrame = true;
   SupportsCompactUnwindWithoutEHFrame = false;
+  OmitDwarfIfHaveCompactUnwind = false;
 
   PersonalityEncoding = LSDAEncoding = FDECFIEncoding = TTypeEncoding =
       dwarf::DW_EH_PE_absptr;
@@ -798,25 +836,4 @@ void MCObjectFileInfo::InitMCObjectFileInfo(StringRef TT, Reloc::Model RM,
 MCSection *MCObjectFileInfo::getDwarfTypesSection(uint64_t Hash) const {
   return Ctx->getELFSection(".debug_types", ELF::SHT_PROGBITS, ELF::SHF_GROUP,
                             0, utostr(Hash));
-}
-
-void MCObjectFileInfo::InitEHFrameSection() {
-  if (Env == IsMachO)
-    EHFrameSection =
-      Ctx->getMachOSection("__TEXT", "__eh_frame",
-                           MachO::S_COALESCED |
-                           MachO::S_ATTR_NO_TOC |
-                           MachO::S_ATTR_STRIP_STATIC_SYMS |
-                           MachO::S_ATTR_LIVE_SUPPORT,
-                           SectionKind::getReadOnly());
-  else if (Env == IsELF)
-    EHFrameSection =
-        Ctx->getELFSection(".eh_frame", EHSectionType, EHSectionFlags);
-  else
-    EHFrameSection =
-      Ctx->getCOFFSection(".eh_frame",
-                          COFF::IMAGE_SCN_CNT_INITIALIZED_DATA |
-                          COFF::IMAGE_SCN_MEM_READ |
-                          COFF::IMAGE_SCN_MEM_WRITE,
-                          SectionKind::getDataRel());
 }

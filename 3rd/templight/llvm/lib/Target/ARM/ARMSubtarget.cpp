@@ -60,6 +60,12 @@ IT(cl::desc("IT block support"), cl::Hidden, cl::init(DefaultIT),
                          "Allow IT blocks based on ARMv7"),
               clEnumValEnd));
 
+/// ForceFastISel - Use the fast-isel, even for subtargets where it is not
+/// currently supported (for testing only).
+static cl::opt<bool>
+ForceFastISel("arm-force-fast-isel",
+               cl::init(false), cl::Hidden);
+
 /// initializeSubtargetDependencies - Initializes using a CPU and feature string
 /// so that we can use initializer lists for subtarget initialization.
 ARMSubtarget &ARMSubtarget::initializeSubtargetDependencies(StringRef CPU,
@@ -141,19 +147,28 @@ void ARMSubtarget::initializeEnvironment() {
   HasCRC = false;
   HasZeroCycleZeroing = false;
   StrictAlign = false;
-  Thumb2DSP = false;
+  HasDSP = false;
   UseNaClTrap = false;
   GenLongCalls = false;
   UnsafeFPMath = false;
+  UseSjLjEH = (isTargetDarwin() &&
+               TargetTriple.getSubArch() != Triple::ARMSubArch_v7k);
 }
 
 void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
   if (CPUString.empty()) {
-    if (isTargetDarwin() && TargetTriple.getArchName().endswith("v7s"))
-      // Default to the Swift CPU when targeting armv7s/thumbv7s.
-      CPUString = "swift";
-    else
-      CPUString = "generic";
+    CPUString = "generic";
+
+    if (isTargetDarwin()) {
+      StringRef ArchName = TargetTriple.getArchName();
+      if (ArchName.endswith("v7s"))
+        // Default to the Swift CPU when targeting armv7s/thumbv7s.
+        CPUString = "swift";
+      else if (ArchName.endswith("v7k"))
+        // Default to the Cortex-a7 CPU when targeting armv7k/thumbv7k.
+        // ARMv7k does not use SjLj exception handling.
+        CPUString = "cortex-a7";
+    }
   }
 
   // Insert the architecture feature derived from the target triple into the
@@ -184,13 +199,31 @@ void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
 
   if (isAAPCS_ABI())
     stackAlignment = 8;
-  if (isTargetNaCl())
+  if (isTargetNaCl() || isAAPCS16_ABI())
     stackAlignment = 16;
 
-  if (isTargetMachO())
-    SupportsTailCall = !isTargetIOS() || !getTargetTriple().isOSVersionLT(5, 0);
-  else
-    SupportsTailCall = !isThumb1Only();
+  // FIXME: Completely disable sibcall for Thumb1 since ThumbRegisterInfo::
+  // emitEpilogue is not ready for them. Thumb tail calls also use t2B, as
+  // the Thumb1 16-bit unconditional branch doesn't have sufficient relocation
+  // support in the assembler and linker to be used. This would need to be
+  // fixed to fully support tail calls in Thumb1.
+  //
+  // Doing this is tricky, since the LDM/POP instruction on Thumb doesn't take
+  // LR.  This means if we need to reload LR, it takes an extra instructions,
+  // which outweighs the value of the tail call; but here we don't know yet
+  // whether LR is going to be used.  Probably the right approach is to
+  // generate the tail call here and turn it back into CALL/RET in
+  // emitEpilogue if LR is used.
+
+  // Thumb1 PIC calls to external symbols use BX, so they can be tail calls,
+  // but we need to make sure there are enough registers; the only valid
+  // registers are the 4 used for parameters.  We don't currently do this
+  // case.
+
+  SupportsTailCall = !isThumb1Only();
+
+  if (isTargetMachO() && isTargetIOS() && getTargetTriple().isOSVersionLT(5, 0))
+    SupportsTailCall = false;
 
   switch (IT) {
   case DefaultIT:
@@ -217,8 +250,14 @@ bool ARMSubtarget::isAPCS_ABI() const {
 }
 bool ARMSubtarget::isAAPCS_ABI() const {
   assert(TM.TargetABI != ARMBaseTargetMachine::ARM_ABI_UNKNOWN);
-  return TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_AAPCS;
+  return TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_AAPCS ||
+         TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_AAPCS16;
 }
+bool ARMSubtarget::isAAPCS16_ABI() const {
+  assert(TM.TargetABI != ARMBaseTargetMachine::ARM_ABI_UNKNOWN);
+  return TM.TargetABI == ARMBaseTargetMachine::ARM_ABI_AAPCS16;
+}
+
 
 /// GVIsIndirectSymbol - true if the GV will be accessed via an indirect symbol.
 bool
@@ -262,7 +301,8 @@ unsigned ARMSubtarget::getMispredictionPenalty() const {
 }
 
 bool ARMSubtarget::hasSinCos() const {
-  return getTargetTriple().isiOS() && !getTargetTriple().isOSVersionLT(7, 0);
+  return isTargetWatchOS() ||
+    (isTargetIOS() && !getTargetTriple().isOSVersionLT(7, 0));
 }
 
 bool ARMSubtarget::enableMachineScheduler() const {
@@ -286,7 +326,10 @@ bool ARMSubtarget::enableAtomicExpand() const {
 }
 
 bool ARMSubtarget::useStride4VFPs(const MachineFunction &MF) const {
-  return isSwift() && !MF.getFunction()->hasFnAttribute(Attribute::MinSize);
+  // For general targets, the prologue can grow when VFPs are allocated with
+  // stride 4 (more vpush instructions). But WatchOS uses a compact unwind
+  // format which it's more important to get right.
+  return isTargetWatchOS() || (isSwift() && !MF.getFunction()->optForMinSize());
 }
 
 bool ARMSubtarget::useMovt(const MachineFunction &MF) const {
@@ -298,6 +341,14 @@ bool ARMSubtarget::useMovt(const MachineFunction &MF) const {
 }
 
 bool ARMSubtarget::useFastISel() const {
+  // Enable fast-isel for any target, for testing only.
+  if (ForceFastISel)
+    return true;
+
+  // Limit fast-isel to the targets that are or have been tested.
+  if (!hasV6Ops())
+    return false;
+
   // Thumb2 support on iOS; ARM support on iOS, Linux and NaCl.
   return TM.Options.EnableFastISel &&
          ((isTargetMachO() && !isThumb1Only()) ||

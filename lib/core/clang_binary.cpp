@@ -16,12 +16,9 @@
 
 #include <metashell/clang_binary.hpp>
 
-#include <boost/algorithm/string/trim_all.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include <boost/assign/list_of.hpp>
+#include <just/process.hpp>
 
 #include <algorithm>
 
@@ -37,11 +34,6 @@ namespace
     return arg_;
 #endif
   }
-
-  bool is_new_line(char c_)
-  {
-    return c_ == '\n';
-  }
 }
 
 clang_binary::clang_binary(const std::string& path_, logger* logger_) :
@@ -49,7 +41,7 @@ clang_binary::clang_binary(const std::string& path_, logger* logger_) :
   _logger(logger_)
 {}
 
-just::process::output clang_binary::run(
+data::process_output clang_binary::run(
   const std::vector<std::string>& args_,
   const std::string& stdin_
 ) const
@@ -65,60 +57,15 @@ just::process::output clang_binary::run(
 
   const just::process::output o = just::process::run(cmd, stdin_);
 
+  METASHELL_LOG(_logger, "Clang's exit code: " + std::to_string(o.exit_code()));
   METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output());
   METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error());
 
-  return o;
-}
-
-std::vector<std::string> metashell::default_sysinclude(
-  const clang_binary& clang_,
-  logger* logger_
-)
-{
-  using boost::algorithm::trim_all_copy;
-  using boost::algorithm::split;
-  using boost::starts_with;
-  using boost::assign::list_of;
-
-  using std::vector;
-  using std::string;
-
-  METASHELL_LOG(logger_, "Determining Clang's sysinclude.");
-
-  const just::process::output o =
-    clang_.run(list_of<string>("-v")("-xc++")("-"));
-
-  const string s = o.standard_output() + o.standard_error();
-
-  vector<string> lines;
-  split(lines, s, is_new_line);
-
-  vector<string> result;
-  bool in_sysinclude = false;
-  for (const string& line : lines)
-  {
-    if (in_sysinclude)
-    {
-      if (starts_with(line, " "))
-      {
-        result.push_back(trim_all_copy(line));
-      }
-      else
-      {
-        break;
-      }
-    }
-    else if (starts_with(line, "#include <"))
-    {
-      in_sysinclude = true;
-    }
-  }
-
-  METASHELL_LOG(
-    logger_,
-    "Clang's sysinclude: " + boost::algorithm::join(result, ";")
-  );
-  return result;
+  return
+    data::process_output(
+      data::exit_code_t(o.exit_code()),
+      o.standard_output(),
+      o.standard_error()
+    );
 }
 

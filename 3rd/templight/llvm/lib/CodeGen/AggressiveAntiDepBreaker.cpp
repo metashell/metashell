@@ -142,16 +142,15 @@ void AggressiveAntiDepBreaker::StartBlock(MachineBasicBlock *BB) {
   assert(!State);
   State = new AggressiveAntiDepState(TRI->getNumRegs(), BB);
 
-  bool IsReturnBlock = (!BB->empty() && BB->back().isReturn());
+  bool IsReturnBlock = BB->isReturnBlock();
   std::vector<unsigned> &KillIndices = State->GetKillIndices();
   std::vector<unsigned> &DefIndices = State->GetDefIndices();
 
   // Examine the live-in regs of all successors.
   for (MachineBasicBlock::succ_iterator SI = BB->succ_begin(),
          SE = BB->succ_end(); SI != SE; ++SI)
-    for (MachineBasicBlock::livein_iterator I = (*SI)->livein_begin(),
-           E = (*SI)->livein_end(); I != E; ++I) {
-      for (MCRegAliasIterator AI(*I, TRI, true); AI.isValid(); ++AI) {
+    for (const auto &LI : (*SI)->liveins()) {
+      for (MCRegAliasIterator AI(LI.PhysReg, TRI, true); AI.isValid(); ++AI) {
         unsigned Reg = *AI;
         State->UnionGroups(Reg, 0);
         KillIndices[Reg] = BB->size();
@@ -685,6 +684,20 @@ bool AggressiveAntiDepBreaker::FindSuitableFreeRegisters(
           continue;
 
         if (UseMI->getOperand(Idx).isEarlyClobber()) {
+          DEBUG(dbgs() << "(ec)");
+          goto next_super_reg;
+        }
+      }
+
+      // Also, we cannot rename 'Reg' to 'NewReg' if the instruction defining
+      // 'Reg' is an early-clobber define and that instruction also uses
+      // 'NewReg'.
+      for (const auto &Q : make_range(RegRefs.equal_range(Reg))) {
+        if (!Q.second.Operand->isDef() || !Q.second.Operand->isEarlyClobber())
+          continue;
+
+        MachineInstr *DefMI = Q.second.Operand->getParent();
+        if (DefMI->readsRegister(NewReg, TRI)) {
           DEBUG(dbgs() << "(ec)");
           goto next_super_reg;
         }

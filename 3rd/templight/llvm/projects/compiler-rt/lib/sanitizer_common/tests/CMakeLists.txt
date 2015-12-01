@@ -4,6 +4,9 @@ clang_compiler_add_cxx_check()
 
 # FIXME: use SANITIZER_COMMON_SUPPORTED_ARCH here
 filter_available_targets(SANITIZER_UNITTEST_SUPPORTED_ARCH x86_64 i386 mips64 mips64el)
+if(APPLE)
+  darwin_filter_host_archs(SANITIZER_UNITTEST_SUPPORTED_ARCH SANITIZER_COMMON_SUPPORTED_ARCH)
+endif()
 
 set(SANITIZER_UNITTESTS
   sanitizer_allocator_test.cc
@@ -168,7 +171,8 @@ if(COMPILER_RT_CAN_EXECUTE_TESTS AND NOT ANDROID)
   # be sure that produced binaries would work.
   if(APPLE)
     add_sanitizer_common_lib("RTSanitizerCommon.test.osx"
-                             $<TARGET_OBJECTS:RTSanitizerCommon.osx>)
+                             $<TARGET_OBJECTS:RTSanitizerCommon.osx>
+                             $<TARGET_OBJECTS:RTSanitizerCommonLibc.osx>)
   else()
     if(CAN_TARGET_x86_64)
       add_sanitizer_common_lib("RTSanitizerCommon.test.nolibc.x86_64"

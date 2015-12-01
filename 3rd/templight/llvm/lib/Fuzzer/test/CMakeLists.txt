@@ -13,14 +13,16 @@ set(DFSanTests
   )
 
 set(Tests
+  CallerCalleeTest
   CounterTest
-  CxxTokensTest
   FourIndependentBranchesTest
   FullCoverageSetTest
   InfiniteTest
   MemcmpTest
   NullDerefTest
   SimpleCmpTest
+  SimpleDictionaryTest
+  SimpleHashTest
   SimpleTest
   StrcmpTest
   StrncmpTest
@@ -30,6 +32,10 @@ set(Tests
 
 set(CustomMainTests
   UserSuppliedFuzzerTest
+  )
+
+set(UninstrumentedTests
+  UninstrumentedTest
   )
 
 
@@ -85,6 +91,12 @@ add_subdirectory(dfsan)
 
 foreach(Test ${DFSanTests})
   set(TestBinaries ${TestBinaries} LLVMFuzzer-${Test}-DFSan)
+endforeach()
+
+add_subdirectory(uninstrumented)
+
+foreach(Test ${UninstrumentedTests})
+  set(TestBinaries ${TestBinaries} LLVMFuzzer-${Test}-Uninstrumented)
 endforeach()
 
 

@@ -14,6 +14,7 @@
 
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/ADT/SetVector.h"
+#include "llvm/Analysis/GlobalsModRef.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CodeMetrics.h"
 #include "llvm/Analysis/InstructionSimplify.h"
@@ -144,14 +145,15 @@ namespace {
       AU.addPreservedID(LoopSimplifyID);
       AU.addRequiredID(LCSSAID);
       AU.addPreservedID(LCSSAID);
-      AU.addRequired<ScalarEvolution>();
-      AU.addPreserved<ScalarEvolution>();
+      AU.addRequired<ScalarEvolutionWrapperPass>();
+      AU.addPreserved<ScalarEvolutionWrapperPass>();
       AU.addRequired<TargetTransformInfoWrapperPass>();
       // FIXME: Loop unroll requires LCSSA. And LCSSA requires dom info.
       // If loop unroll does not preserve dom info then LCSSA pass on next
       // loop will receive invalid dom info.
       // For now, recreate dom info, if loop is unrolled.
       AU.addPreserved<DominatorTreeWrapperPass>();
+      AU.addPreserved<GlobalsAAWrapperPass>();
     }
 
     // Fill in the UnrollingPreferences parameter with values from the
@@ -187,7 +189,7 @@ namespace {
     // total unrolled size.  Parameters Threshold and PartialThreshold
     // are set to the maximum unrolled size for fully and partially
     // unrolled loops respectively.
-    void selectThresholds(const Loop *L, bool HasPragma,
+    void selectThresholds(const Loop *L, bool UsePragmaThreshold,
                           const TargetTransformInfo::UnrollingPreferences &UP,
                           unsigned &Threshold, unsigned &PartialThreshold,
                           unsigned &PercentDynamicCostSavedThreshold,
@@ -214,7 +216,7 @@ namespace {
         Threshold = UP.OptSizeThreshold;
         PartialThreshold = UP.PartialOptSizeThreshold;
       }
-      if (HasPragma) {
+      if (UsePragmaThreshold) {
         // If the loop has an unrolling pragma, we want to be more
         // aggressive with unrolling limits.  Set thresholds to at
         // least the PragmaTheshold value which is larger than the
@@ -241,7 +243,7 @@ INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LoopSimplify)
 INITIALIZE_PASS_DEPENDENCY(LCSSA)
-INITIALIZE_PASS_DEPENDENCY(ScalarEvolution)
+INITIALIZE_PASS_DEPENDENCY(ScalarEvolutionWrapperPass)
 INITIALIZE_PASS_END(LoopUnroll, "loop-unroll", "Unroll loops", false, false)
 
 Pass *llvm::createLoopUnrollPass(int Threshold, int Count, int AllowPartial,
@@ -281,8 +283,8 @@ class UnrolledInstAnalyzer : private InstVisitor<UnrolledInstAnalyzer, bool> {
 public:
   UnrolledInstAnalyzer(unsigned Iteration,
                        DenseMap<Value *, Constant *> &SimplifiedValues,
-                       const Loop *L, ScalarEvolution &SE)
-      : Iteration(Iteration), SimplifiedValues(SimplifiedValues), L(L), SE(SE) {
+                       ScalarEvolution &SE)
+      : SimplifiedValues(SimplifiedValues), SE(SE) {
       IterationNumber = SE.getConstant(APInt(64, Iteration));
   }
 
@@ -298,13 +300,6 @@ private:
   /// results saved.
   DenseMap<Value *, SimplifiedAddress> SimplifiedAddresses;
 
-  /// \brief Number of currently simulated iteration.
-  ///
-  /// If an expression is ConstAddress+Constant, then the Constant is
-  /// Start + Iteration*Step, where Start and Step could be obtained from
-  /// SCEVGEPCache.
-  unsigned Iteration;
-
   /// \brief SCEV expression corresponding to number of currently simulated
   /// iteration.
   const SCEV *IterationNumber;
@@ -319,7 +314,6 @@ private:
   /// post-unrolling.
   DenseMap<Value *, Constant *> &SimplifiedValues;
 
-  const Loop *L;
   ScalarEvolution &SE;
 
   /// \brief Try to simplify instruction \param I using its SCEV expression.
@@ -413,12 +407,18 @@ private:
     auto *GV = dyn_cast<GlobalVariable>(AddressIt->second.Base);
     // We're only interested in loads that can be completely folded to a
     // constant.
-    if (!GV || !GV->hasInitializer())
+    if (!GV || !GV->hasDefinitiveInitializer() || !GV->isConstant())
       return false;
 
     ConstantDataSequential *CDS =
         dyn_cast<ConstantDataSequential>(GV->getInitializer());
     if (!CDS)
+      return false;
+
+    // We might have a vector load from an array. FIXME: for now we just bail
+    // out in this case, but we should be able to resolve and simplify such
+    // loads.
+    if(!CDS->isElementTypeCompatible(I.getType()))
       return false;
 
     int ElemSize = CDS->getElementType()->getPrimitiveSizeInBits() / 8U;
@@ -518,7 +518,7 @@ struct EstimatedUnrollCost {
 /// \returns Optional value, holding the RolledDynamicCost and UnrolledCost. If
 /// the analysis failed (no benefits expected from the unrolling, or the loop is
 /// too big to analyze), the returned value is None.
-Optional<EstimatedUnrollCost>
+static Optional<EstimatedUnrollCost>
 analyzeLoopUnrollCost(const Loop *L, unsigned TripCount, DominatorTree &DT,
                       ScalarEvolution &SE, const TargetTransformInfo &TTI,
                       int MaxUnrolledLoopSize) {
@@ -589,7 +589,7 @@ analyzeLoopUnrollCost(const Loop *L, unsigned TripCount, DominatorTree &DT,
     while (!SimplifiedInputValues.empty())
       SimplifiedValues.insert(SimplifiedInputValues.pop_back_val());
 
-    UnrolledInstAnalyzer Analyzer(Iteration, SimplifiedValues, L, SE);
+    UnrolledInstAnalyzer Analyzer(Iteration, SimplifiedValues, SE);
 
     BBWorklist.clear();
     BBWorklist.insert(L->getHeader());
@@ -724,6 +724,12 @@ static MDNode *GetUnrollMetadataForLoop(const Loop *L, StringRef Name) {
 // Returns true if the loop has an unroll(full) pragma.
 static bool HasUnrollFullPragma(const Loop *L) {
   return GetUnrollMetadataForLoop(L, "llvm.loop.unroll.full");
+}
+
+// Returns true if the loop has an unroll(enable) pragma. This metadata is used
+// for both "#pragma unroll" and "#pragma clang loop unroll(enable)" directives.
+static bool HasUnrollEnablePragma(const Loop *L) {
+  return GetUnrollMetadataForLoop(L, "llvm.loop.unroll.enable");
 }
 
 // Returns true if the loop has an unroll(disable) pragma.
@@ -888,7 +894,7 @@ bool LoopUnroll::runOnLoop(Loop *L, LPPassManager &LPM) {
 
   auto &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
   LoopInfo *LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-  ScalarEvolution *SE = &getAnalysis<ScalarEvolution>();
+  ScalarEvolution *SE = &getAnalysis<ScalarEvolutionWrapperPass>().getSE();
   const TargetTransformInfo &TTI =
       getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
   auto &AC = getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
@@ -901,8 +907,9 @@ bool LoopUnroll::runOnLoop(Loop *L, LPPassManager &LPM) {
     return false;
   }
   bool PragmaFullUnroll = HasUnrollFullPragma(L);
+  bool PragmaEnableUnroll = HasUnrollEnablePragma(L);
   unsigned PragmaCount = UnrollCountPragmaValue(L);
-  bool HasPragma = PragmaFullUnroll || PragmaCount > 0;
+  bool HasPragma = PragmaFullUnroll || PragmaEnableUnroll || PragmaCount > 0;
 
   TargetTransformInfo::UnrollingPreferences UP;
   getUnrollingPreferences(L, TTI, UP);
@@ -950,7 +957,15 @@ bool LoopUnroll::runOnLoop(Loop *L, LPPassManager &LPM) {
   unsigned Threshold, PartialThreshold;
   unsigned PercentDynamicCostSavedThreshold;
   unsigned DynamicCostSavingsDiscount;
-  selectThresholds(L, HasPragma, UP, Threshold, PartialThreshold,
+  // Only use the high pragma threshold when we have a target unroll factor such
+  // as with "#pragma unroll N" or a pragma indicating full unrolling and the
+  // trip count is known. Otherwise we rely on the standard threshold to
+  // heuristically select a reasonable unroll count.
+  bool UsePragmaThreshold =
+      PragmaCount > 0 ||
+      ((PragmaFullUnroll || PragmaEnableUnroll) && TripCount != 0);
+
+  selectThresholds(L, UsePragmaThreshold, UP, Threshold, PartialThreshold,
                    PercentDynamicCostSavedThreshold,
                    DynamicCostSavingsDiscount);
 
@@ -985,14 +1000,15 @@ bool LoopUnroll::runOnLoop(Loop *L, LPPassManager &LPM) {
 
   // Reduce count based on the type of unrolling and the threshold values.
   unsigned OriginalCount = Count;
-  bool AllowRuntime =
-      (PragmaCount > 0) || (UserRuntime ? CurrentRuntime : UP.Runtime);
+  bool AllowRuntime = PragmaEnableUnroll || (PragmaCount > 0) ||
+                      (UserRuntime ? CurrentRuntime : UP.Runtime);
   // Don't unroll a runtime trip count loop with unroll full pragma.
   if (HasRuntimeUnrollDisablePragma(L) || PragmaFullUnroll) {
     AllowRuntime = false;
   }
   if (Unrolling == Partial) {
-    bool AllowPartial = UserAllowPartial ? CurrentAllowPartial : UP.Partial;
+    bool AllowPartial = PragmaEnableUnroll ||
+                        (UserAllowPartial ? CurrentAllowPartial : UP.Partial);
     if (!AllowPartial && !CountSetExplicitly) {
       DEBUG(dbgs() << "  will not try to unroll partially because "
                    << "-unroll-allow-partial not given\n");
@@ -1032,23 +1048,27 @@ bool LoopUnroll::runOnLoop(Loop *L, LPPassManager &LPM) {
     DebugLoc LoopLoc = L->getStartLoc();
     Function *F = Header->getParent();
     LLVMContext &Ctx = F->getContext();
-    if (PragmaFullUnroll && PragmaCount == 0) {
-      if (TripCount && Count != TripCount) {
-        emitOptimizationRemarkMissed(
-            Ctx, DEBUG_TYPE, *F, LoopLoc,
-            "Unable to fully unroll loop as directed by unroll(full) pragma "
-            "because unrolled size is too large.");
-      } else if (!TripCount) {
-        emitOptimizationRemarkMissed(
-            Ctx, DEBUG_TYPE, *F, LoopLoc,
-            "Unable to fully unroll loop as directed by unroll(full) pragma "
-            "because loop has a runtime trip count.");
-      }
-    } else if (PragmaCount > 0 && Count != OriginalCount) {
+    if ((PragmaCount > 0) && Count != OriginalCount) {
       emitOptimizationRemarkMissed(
           Ctx, DEBUG_TYPE, *F, LoopLoc,
           "Unable to unroll loop the number of times directed by "
           "unroll_count pragma because unrolled size is too large.");
+    } else if (PragmaFullUnroll && !TripCount) {
+      emitOptimizationRemarkMissed(
+          Ctx, DEBUG_TYPE, *F, LoopLoc,
+          "Unable to fully unroll loop as directed by unroll(full) pragma "
+          "because loop has a runtime trip count.");
+    } else if (PragmaEnableUnroll && Count != TripCount && Count < 2) {
+      emitOptimizationRemarkMissed(
+          Ctx, DEBUG_TYPE, *F, LoopLoc,
+          "Unable to unroll loop as directed by unroll(enable) pragma because "
+          "unrolled size is too large.");
+    } else if ((PragmaFullUnroll || PragmaEnableUnroll) && TripCount &&
+               Count != TripCount) {
+      emitOptimizationRemarkMissed(
+          Ctx, DEBUG_TYPE, *F, LoopLoc,
+          "Unable to fully unroll loop as directed by unroll pragma because "
+          "unrolled size is too large.");
     }
   }
 

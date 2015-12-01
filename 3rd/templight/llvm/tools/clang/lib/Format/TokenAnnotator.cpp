@@ -120,8 +120,9 @@ private:
     }
 
     if (Left->Previous &&
-        (Left->Previous->isOneOf(tok::kw_static_assert, tok::kw_if,
-                                 tok::kw_while, tok::l_paren, tok::comma) ||
+        (Left->Previous->isOneOf(tok::kw_static_assert, tok::kw_decltype,
+                                 tok::kw_if, tok::kw_while, tok::l_paren,
+                                 tok::comma) ||
          Left->Previous->is(TT_BinaryOperator))) {
       // static_assert, if and while usually contain expressions.
       Contexts.back().IsExpression = true;
@@ -154,7 +155,7 @@ private:
       Left->Type = TT_ObjCMethodExpr;
     }
 
-    bool MightBeFunctionType = CurrentToken->is(tok::star);
+    bool MightBeFunctionType = CurrentToken->isOneOf(tok::star, tok::amp);
     bool HasMultipleLines = false;
     bool HasMultipleParametersOnALine = false;
     bool MightBeObjCForRangeLoop =
@@ -371,9 +372,11 @@ private:
         updateParameterCount(Left, CurrentToken);
         if (CurrentToken->isOneOf(tok::colon, tok::l_brace)) {
           FormatToken *Previous = CurrentToken->getPreviousNonComment();
-          if ((CurrentToken->is(tok::colon) ||
+          if (((CurrentToken->is(tok::colon) &&
+                (!Contexts.back().ColonIsDictLiteral ||
+                 Style.Language != FormatStyle::LK_Cpp)) ||
                Style.Language == FormatStyle::LK_Proto) &&
-              Previous->is(tok::identifier))
+              Previous->Tok.getIdentifierInfo())
             Previous->Type = TT_SelectorName;
           if (CurrentToken->is(tok::colon) ||
               Style.Language == FormatStyle::LK_JavaScript)
@@ -387,12 +390,8 @@ private:
   }
 
   void updateParameterCount(FormatToken *Left, FormatToken *Current) {
-    if (Current->is(TT_LambdaLSquare) ||
-        (Current->is(tok::caret) && Current->is(TT_UnaryOperator)) ||
-        (Style.Language == FormatStyle::LK_JavaScript &&
-         Current->is(Keywords.kw_function))) {
+    if (Current->is(tok::l_brace) && !Current->is(TT_DictLiteral))
       ++Left->BlockParameterCount;
-    }
     if (Current->is(tok::comma)) {
       ++Left->ParameterCount;
       if (!Left->Role)
@@ -728,7 +727,7 @@ public:
     while (CurrentToken) {
       if (CurrentToken->is(tok::kw_virtual))
         KeywordVirtualFound = true;
-      if (IsImportStatement(*CurrentToken))
+      if (isImportStatement(*CurrentToken))
         ImportStatement = true;
       if (!consumeToken())
         return LT_Invalid;
@@ -749,14 +748,15 @@ public:
   }
 
 private:
-  bool IsImportStatement(const FormatToken &Tok) {
+  bool isImportStatement(const FormatToken &Tok) {
     // FIXME: Closure-library specific stuff should not be hard-coded but be
     // configurable.
     return Style.Language == FormatStyle::LK_JavaScript &&
            Tok.TokenText == "goog" && Tok.Next && Tok.Next->is(tok::period) &&
            Tok.Next->Next && (Tok.Next->Next->TokenText == "module" ||
+                              Tok.Next->Next->TokenText == "provide" ||
                               Tok.Next->Next->TokenText == "require" ||
-                              Tok.Next->Next->TokenText == "provide") &&
+                              Tok.Next->Next->TokenText == "setTestOnly") &&
            Tok.Next->Next->Next && Tok.Next->Next->Next->is(tok::l_paren);
   }
 
@@ -859,7 +859,7 @@ private:
       Contexts.back().IsExpression = true;
     } else if (Current.is(TT_TrailingReturnArrow)) {
       Contexts.back().IsExpression = false;
-    } else if (Current.is(TT_LambdaArrow)) {
+    } else if (Current.is(TT_LambdaArrow) || Current.is(Keywords.kw_assert)) {
       Contexts.back().IsExpression = Style.Language == FormatStyle::LK_Java;
     } else if (Current.is(tok::l_paren) && !Line.MustBeDeclaration &&
                !Line.InPPDirective &&
@@ -905,7 +905,7 @@ private:
                (!Line.MightBeFunctionDecl || Current.NestingLevel != 0)) {
       Contexts.back().FirstStartOfName = &Current;
       Current.Type = TT_StartOfName;
-    } else if (Current.is(tok::kw_auto)) {
+    } else if (Current.isOneOf(tok::kw_auto, tok::kw___auto_type)) {
       AutoFound = true;
     } else if (Current.is(tok::arrow) &&
                Style.Language == FormatStyle::LK_Java) {
@@ -1049,7 +1049,8 @@ private:
         PreviousNotConst->MatchingParen->Previous->is(tok::kw_decltype))
       return true;
 
-    return (!IsPPKeyword && PreviousNotConst->is(tok::identifier)) ||
+    return (!IsPPKeyword &&
+            PreviousNotConst->isOneOf(tok::identifier, tok::kw_auto)) ||
            PreviousNotConst->is(TT_PointerOrReference) ||
            PreviousNotConst->isSimpleTypeSpecifier();
   }
@@ -1082,7 +1083,8 @@ private:
         Tok.Previous->isOneOf(TT_PointerOrReference, TT_TemplateCloser) ||
         Tok.Previous->isSimpleTypeSpecifier();
     bool ParensCouldEndDecl =
-        Tok.Next && Tok.Next->isOneOf(tok::equal, tok::semi, tok::l_brace);
+        Tok.Next &&
+        Tok.Next->isOneOf(tok::equal, tok::semi, tok::l_brace, tok::greater);
     bool IsSizeOfOrAlignOf =
         LeftOfParens && LeftOfParens->isOneOf(tok::kw_sizeof, tok::kw_alignof);
     if (ParensAreType && !ParensCouldEndDecl && !IsSizeOfOrAlignOf &&
@@ -1138,9 +1140,11 @@ private:
       return TT_UnaryOperator;
 
     const FormatToken *NextToken = Tok.getNextNonComment();
-    if (!NextToken || NextToken->is(tok::arrow) ||
+    if (!NextToken ||
+        NextToken->isOneOf(tok::arrow, Keywords.kw_final,
+                           Keywords.kw_override) ||
         (NextToken->is(tok::l_brace) && !NextToken->getNextNonComment()))
-      return TT_Unknown;
+      return TT_PointerOrReference;
 
     if (PrevToken->is(tok::coloncolon))
       return TT_PointerOrReference;
@@ -1154,7 +1158,9 @@ private:
 
     if (NextToken->is(tok::l_square) && NextToken->isNot(TT_LambdaLSquare))
       return TT_PointerOrReference;
-    if (NextToken->isOneOf(tok::kw_operator, tok::comma, tok::semi))
+    if (NextToken->is(tok::kw_operator) && !IsExpression)
+      return TT_PointerOrReference;
+    if (NextToken->isOneOf(tok::comma, tok::semi))
       return TT_PointerOrReference;
 
     if (PrevToken->is(tok::r_paren) && PrevToken->MatchingParen &&
@@ -1751,7 +1757,8 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
   if (Left.is(tok::colon) && Left.is(TT_ObjCMethodExpr))
     return Line.MightBeFunctionDecl ? 50 : 500;
 
-  if (Left.is(tok::l_paren) && InFunctionDecl && Style.AlignAfterOpenBracket)
+  if (Left.is(tok::l_paren) && InFunctionDecl &&
+      Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign)
     return 100;
   if (Left.is(tok::l_paren) && Left.Previous &&
       Left.Previous->isOneOf(tok::kw_if, tok::kw_for))
@@ -1763,7 +1770,7 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
   if (Left.is(TT_TemplateOpener))
     return 100;
   if (Left.opensScope()) {
-    if (!Style.AlignAfterOpenBracket)
+    if (Style.AlignAfterOpenBracket == FormatStyle::BAS_DontAlign)
       return 0;
     return Left.ParameterCount > 1 ? Style.PenaltyBreakBeforeFirstCallParameter
                                    : 19;
@@ -1839,11 +1846,10 @@ bool TokenAnnotator::spaceRequiredBetween(const AnnotatedLine &Line,
   if (Left.is(tok::l_square) && Right.is(tok::amp))
     return false;
   if (Right.is(TT_PointerOrReference))
-    return !(Left.is(tok::r_paren) && Left.MatchingParen &&
-             (Left.MatchingParen->is(TT_OverloadedOperatorLParen) ||
-              (Left.MatchingParen->Previous &&
-               Left.MatchingParen->Previous->is(
-                   TT_FunctionDeclarationName)))) &&
+    return (Left.is(tok::r_paren) && Left.MatchingParen &&
+            (Left.MatchingParen->is(TT_OverloadedOperatorLParen) ||
+             (Left.MatchingParen->Previous &&
+              Left.MatchingParen->Previous->is(TT_FunctionDeclarationName)))) ||
            (Left.Tok.isLiteral() ||
             (!Left.isOneOf(TT_PointerOrReference, tok::l_paren) &&
              (Style.PointerAlignment != FormatStyle::PAS_Left ||
@@ -1854,7 +1860,9 @@ bool TokenAnnotator::spaceRequiredBetween(const AnnotatedLine &Line,
         !Line.IsMultiVariableDeclStmt)))
     return true;
   if (Left.is(TT_PointerOrReference))
-    return Right.Tok.isLiteral() || Right.is(TT_BlockComment) ||
+    return Right.Tok.isLiteral() ||
+           Right.isOneOf(TT_BlockComment, Keywords.kw_final,
+                         Keywords.kw_override) ||
            (Right.is(tok::l_brace) && Right.BlockKind == BK_Block) ||
            (!Right.isOneOf(TT_PointerOrReference, TT_ArraySubscriptLSquare,
                            tok::l_paren) &&
@@ -1894,8 +1902,9 @@ bool TokenAnnotator::spaceRequiredBetween(const AnnotatedLine &Line,
       return true;
     return Line.Type == LT_ObjCDecl || Left.is(tok::semi) ||
            (Style.SpaceBeforeParens != FormatStyle::SBPO_Never &&
-            (Left.isOneOf(tok::kw_if, tok::kw_for, tok::kw_while,
-                          tok::kw_switch, tok::kw_case, TT_ForEachMacro) ||
+            (Left.isOneOf(tok::kw_if, tok::pp_elif, tok::kw_for, tok::kw_while,
+                          tok::kw_switch, tok::kw_case, TT_ForEachMacro,
+                          TT_ObjCForIn) ||
              (Left.isOneOf(tok::kw_try, Keywords.kw___except, tok::kw_catch,
                            tok::kw_new, tok::kw_delete) &&
               (!Left.Previous || Left.Previous->isNot(tok::period))))) ||
@@ -1946,7 +1955,7 @@ bool TokenAnnotator::spaceRequiredBefore(const AnnotatedLine &Line,
         Left.isOneOf(Keywords.kw_returns, Keywords.kw_option))
       return true;
   } else if (Style.Language == FormatStyle::LK_JavaScript) {
-    if (Left.isOneOf(Keywords.kw_var, TT_JsFatArrow))
+    if (Left.isOneOf(Keywords.kw_let, Keywords.kw_var, TT_JsFatArrow))
       return true;
     if (Right.isOneOf(TT_JsTypeColon, TT_JsTypeOptionalQuestion))
       return false;
@@ -1997,7 +2006,7 @@ bool TokenAnnotator::spaceRequiredBefore(const AnnotatedLine &Line,
   if (Right.isOneOf(TT_CtorInitializerColon, TT_ObjCBlockLParen))
     return true;
   if (Right.is(TT_OverloadedOperatorLParen))
-    return false;
+    return Style.SpaceBeforeParens == FormatStyle::SBPO_Always;
   if (Right.is(tok::colon)) {
     if (Line.First->isOneOf(tok::kw_case, tok::kw_default) ||
         !Right.getNextNonComment() || Right.getNextNonComment()->is(tok::semi))
@@ -2077,8 +2086,9 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
         Left.Previous && Left.Previous->is(tok::equal) &&
         Line.First->isOneOf(tok::identifier, Keywords.kw_import, tok::kw_export,
                             tok::kw_const) &&
-        // kw_var is a pseudo-token that's a tok::identifier, so matches above.
-        !Line.startsWith(Keywords.kw_var))
+        // kw_var/kw_let are pseudo-tokens that are tok::identifier, so match
+        // above.
+        !Line.First->isOneOf(Keywords.kw_var, Keywords.kw_let))
       // Object literals on the top level of a file are treated as "enum-style".
       // Each key/value pair is put on a separate line, instead of bin-packing.
       return true;
@@ -2152,10 +2162,9 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
   if (Right.is(TT_InlineASMBrace))
     return Right.HasUnescapedNewline;
   if (isAllmanBrace(Left) || isAllmanBrace(Right))
-    return Style.BreakBeforeBraces == FormatStyle::BS_Allman ||
-           Style.BreakBeforeBraces == FormatStyle::BS_GNU ||
-           (Style.BreakBeforeBraces == FormatStyle::BS_Mozilla &&
-            Line.startsWith(tok::kw_enum));
+    return (Line.startsWith(tok::kw_enum) && Style.BraceWrapping.AfterEnum) ||
+           (Line.startsWith(tok::kw_class) && Style.BraceWrapping.AfterClass) ||
+           (Line.startsWith(tok::kw_struct) && Style.BraceWrapping.AfterStruct);
   if (Style.Language == FormatStyle::LK_Proto && Left.isNot(tok::l_brace) &&
       Right.is(TT_SelectorName))
     return true;
@@ -2166,7 +2175,7 @@ bool TokenAnnotator::mustBreakBefore(const AnnotatedLine &Line,
        Style.Language == FormatStyle::LK_JavaScript) &&
       Left.is(TT_LeadingJavaAnnotation) &&
       Right.isNot(TT_LeadingJavaAnnotation) && Right.isNot(tok::l_paren) &&
-      Line.Last->is(tok::l_brace))
+      (Line.Last->is(tok::l_brace) || Style.BreakAfterJavaFieldAnnotations))
     return true;
 
   return false;
@@ -2231,7 +2240,7 @@ bool TokenAnnotator::canBreakBefore(const AnnotatedLine &Line,
     return Left.isNot(tok::period); // FIXME: Properly parse ObjC calls.
   if (Left.is(tok::r_paren) && Line.Type == LT_ObjCProperty)
     return true;
-  if (Left.ClosesTemplateDeclaration)
+  if (Left.ClosesTemplateDeclaration || Left.is(TT_FunctionAnnotationRParen))
     return true;
   if (Right.isOneOf(TT_RangeBasedForLoopColon, TT_OverloadedOperatorLParen,
                     TT_OverloadedOperator))
@@ -2244,7 +2253,7 @@ bool TokenAnnotator::canBreakBefore(const AnnotatedLine &Line,
       Left.is(tok::kw_operator))
     return false;
   if (Left.is(tok::equal) && !Right.isOneOf(tok::kw_default, tok::kw_delete) &&
-      Line.Type == LT_VirtualFunctionDecl)
+      Line.Type == LT_VirtualFunctionDecl && Left.NestingLevel == 0)
     return false;
   if (Left.is(tok::l_paren) && Left.is(TT_AttributeParen))
     return false;

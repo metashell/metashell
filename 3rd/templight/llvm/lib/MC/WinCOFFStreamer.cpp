@@ -49,7 +49,6 @@ void MCWinCOFFStreamer::EmitInstToData(const MCInst &Inst,
   SmallString<256> Code;
   raw_svector_ostream VecOS(Code);
   getAssembler().getEmitter().encodeInstruction(Inst, VecOS, Fixups, STI);
-  VecOS.flush();
 
   // Add the fixups and data.
   for (unsigned i = 0, e = Fixups.size(); i != e; ++i) {
@@ -215,8 +214,6 @@ void MCWinCOFFStreamer::EmitCommonSymbol(MCSymbol *Symbol, uint64_t Size,
     Size = std::max(Size, static_cast<uint64_t>(ByteAlignment));
   }
 
-  AssignSection(Symbol, nullptr);
-
   getAssembler().registerSymbol(*Symbol);
   Symbol->setExternal(true);
   Symbol->setCommon(Size, ByteAlignment);
@@ -228,7 +225,6 @@ void MCWinCOFFStreamer::EmitCommonSymbol(MCSymbol *Symbol, uint64_t Size,
 
     OS << " -aligncomm:\"" << Symbol->getName() << "\","
        << Log2_32_Ceil(ByteAlignment);
-    OS.flush();
 
     PushSection();
     SwitchSection(MFI->getDrectveSection());
@@ -248,8 +244,6 @@ void MCWinCOFFStreamer::EmitLocalCommonSymbol(MCSymbol *Symbol, uint64_t Size,
 
   getAssembler().registerSymbol(*Symbol);
   Symbol->setExternal(false);
-
-  AssignSection(Symbol, Section);
 
   if (ByteAlignment != 1)
     new MCAlignFragment(ByteAlignment, /*Value=*/0, /*ValueSize=*/0,

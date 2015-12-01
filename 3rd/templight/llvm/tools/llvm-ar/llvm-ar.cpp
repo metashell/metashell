@@ -81,7 +81,7 @@ static cl::opt<Format>
                          clEnumValN(GNU, "gnu", "gnu"),
                          clEnumValN(BSD, "bsd", "bsd"), clEnumValEnd));
 
-std::string Options;
+static std::string Options;
 
 // Provide additional help output explaining the operations and modifiers of
 // llvm-ar. This object instructs the CommandLine library to print the text of
@@ -338,7 +338,9 @@ static void doDisplayTable(StringRef Name, const object::Archive::Child &C) {
     printMode(Mode & 007);
     outs() << ' ' << C.getUID();
     outs() << '/' << C.getGID();
-    outs() << ' ' << format("%6llu", C.getSize());
+    ErrorOr<uint64_t> Size = C.getSize();
+    failIfError(Size.getError());
+    outs() << ' ' << format("%6llu", Size.get());
     outs() << ' ' << C.getLastModified().str();
     outs() << ' ';
   }
@@ -403,7 +405,10 @@ static void performReadOperation(ArchiveOperation Operation,
   }
 
   bool Filter = !Members.empty();
-  for (const object::Archive::Child &C : OldArchive->children()) {
+  for (auto &ChildOrErr : OldArchive->children()) {
+    failIfError(ChildOrErr.getError());
+    const object::Archive::Child &C = *ChildOrErr;
+
     ErrorOr<StringRef> NameOrErr = C.getName();
     failIfError(NameOrErr.getError());
     StringRef Name = NameOrErr.get();
@@ -436,8 +441,8 @@ static void performReadOperation(ArchiveOperation Operation,
   std::exit(1);
 }
 
-void addMember(std::vector<NewArchiveIterator> &Members, StringRef FileName,
-               int Pos = -1) {
+static void addMember(std::vector<NewArchiveIterator> &Members,
+                      StringRef FileName, int Pos = -1) {
   NewArchiveIterator NI(FileName);
   if (Pos == -1)
     Members.push_back(NI);
@@ -445,12 +450,12 @@ void addMember(std::vector<NewArchiveIterator> &Members, StringRef FileName,
     Members[Pos] = NI;
 }
 
-void addMember(std::vector<NewArchiveIterator> &Members,
-               object::Archive::child_iterator I, StringRef Name,
-               int Pos = -1) {
-  if (Thin && !I->getParent()->isThin())
+static void addMember(std::vector<NewArchiveIterator> &Members,
+                      const object::Archive::Child &M, StringRef Name,
+                      int Pos = -1) {
+  if (Thin && !M.getParent()->isThin())
     fail("Cannot convert a regular archive to a thin one");
-  NewArchiveIterator NI(I, Name);
+  NewArchiveIterator NI(M, Name);
   if (Pos == -1)
     Members.push_back(NI);
   else
@@ -466,7 +471,7 @@ enum InsertAction {
 };
 
 static InsertAction computeInsertAction(ArchiveOperation Operation,
-                                        object::Archive::child_iterator I,
+                                        const object::Archive::Child &Member,
                                         StringRef Name,
                                         std::vector<StringRef>::iterator &Pos) {
   if (Operation == QuickAppend || Members.empty())
@@ -500,7 +505,7 @@ static InsertAction computeInsertAction(ArchiveOperation Operation,
     // operation.
     sys::fs::file_status Status;
     failIfError(sys::fs::status(*MI, Status), *MI);
-    if (Status.getLastModificationTime() < I->getLastModified()) {
+    if (Status.getLastModificationTime() < Member.getLastModified()) {
       if (PosName.empty())
         return IA_AddOldMember;
       return IA_MoveOldMember;
@@ -523,7 +528,9 @@ computeNewArchiveMembers(ArchiveOperation Operation,
   int InsertPos = -1;
   StringRef PosName = sys::path::filename(RelPos);
   if (OldArchive) {
-    for (auto &Child : OldArchive->children()) {
+    for (auto &ChildOrErr : OldArchive->children()) {
+      failIfError(ChildOrErr.getError());
+      auto &Child = ChildOrErr.get();
       int Pos = Ret.size();
       ErrorOr<StringRef> NameOrErr = Child.getName();
       failIfError(NameOrErr.getError());
@@ -726,7 +733,9 @@ static void runMRIScript() {
       failIfError(LibOrErr.getError(), "Could not parse library");
       Archives.push_back(std::move(*LibOrErr));
       object::Archive &Lib = *Archives.back();
-      for (auto &Member : Lib.children()) {
+      for (auto &MemberOrErr : Lib.children()) {
+        failIfError(MemberOrErr.getError());
+        auto &Member = MemberOrErr.get();
         ErrorOr<StringRef> NameOrErr = Member.getName();
         failIfError(NameOrErr.getError());
         addMember(NewMembers, Member, *NameOrErr);
@@ -797,9 +806,9 @@ int main(int argc, char **argv) {
     "  This program archives bitcode files into single libraries\n"
   );
 
-  if (Stem.find("ar") != StringRef::npos)
-    return ar_main();
   if (Stem.find("ranlib") != StringRef::npos)
     return ranlib_main();
+  if (Stem.find("ar") != StringRef::npos)
+    return ar_main();
   fail("Not ranlib, ar or lib!");
 }

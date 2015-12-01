@@ -19,6 +19,7 @@
 
 #include <metashell_system_test/json_string.hpp>
 #include <metashell_system_test/placeholder.hpp>
+#include <metashell_system_test/query_json.hpp>
 
 #include <boost/optional.hpp>
 
@@ -44,6 +45,12 @@ namespace metashell_system_test
   json_string to_json_string(const type& t_);
 
   bool operator==(const type& type_, const json_string& s_);
+
+  template <class JsonDocument>
+  bool matches(const type& type_, const JsonDocument& doc_)
+  {
+    return !type_.name_specified() || is_string(type_.name(), doc_);
+  }
 }
 
 #endif

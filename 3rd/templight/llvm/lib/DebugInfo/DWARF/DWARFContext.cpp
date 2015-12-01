@@ -12,6 +12,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/DebugInfo/DWARF/DWARFAcceleratorTable.h"
 #include "llvm/DebugInfo/DWARF/DWARFDebugArangeSet.h"
+#include "llvm/DebugInfo/DWARF/DWARFUnitIndex.h"
 #include "llvm/Support/Compression.h"
 #include "llvm/Support/Dwarf.h"
 #include "llvm/Support/Format.h"
@@ -126,6 +127,11 @@ void DWARFContext::dump(raw_ostream &OS, DIDumpType DumpType) {
     getDebugFrame()->dump(OS);
   }
 
+  if (DumpType == DIDT_All || DumpType == DIDT_Macro) {
+    OS << "\n.debug_macinfo contents:\n";
+    getDebugMacro()->dump(OS);
+  }
+
   uint32_t offset = 0;
   if (DumpType == DIDT_All || DumpType == DIDT_Aranges) {
     OS << "\n.debug_aranges contents:\n";
@@ -153,6 +159,24 @@ void DWARFContext::dump(raw_ostream &OS, DIDumpType DumpType) {
         LineTable.dump(OS);
       }
     }
+  }
+
+  if (DumpType == DIDT_All || DumpType == DIDT_CUIndex) {
+    OS << "\n.debug_cu_index contents:\n";
+    DataExtractor CUIndexData(getCUIndexSection(), isLittleEndian(),
+                              savedAddressByteSize);
+    DWARFUnitIndex CUIndex;
+    if (CUIndex.parse(CUIndexData))
+      CUIndex.dump(OS);
+  }
+
+  if (DumpType == DIDT_All || DumpType == DIDT_TUIndex) {
+    OS << "\n.debug_tu_index contents:\n";
+    DataExtractor TUIndexData(getTUIndexSection(), isLittleEndian(),
+                              savedAddressByteSize);
+    DWARFUnitIndex TUIndex;
+    if (TUIndex.parse(TUIndexData))
+      TUIndex.dump(OS);
   }
 
   if (DumpType == DIDT_All || DumpType == DIDT_LineDwo) {
@@ -320,6 +344,16 @@ const DWARFDebugFrame *DWARFContext::getDebugFrame() {
   DebugFrame.reset(new DWARFDebugFrame());
   DebugFrame->parse(debugFrameData);
   return DebugFrame.get();
+}
+
+const DWARFDebugMacro *DWARFContext::getDebugMacro() {
+  if (Macro)
+    return Macro.get();
+
+  DataExtractor MacinfoData(getMacinfoSection(), isLittleEndian(), 0);
+  Macro.reset(new DWARFDebugMacro());
+  Macro->parse(MacinfoData);
+  return Macro.get();
 }
 
 const DWARFLineTable *
@@ -592,6 +626,7 @@ DWARFContextInMemory::DWARFContextInMemory(const object::ObjectFile &Obj,
             .Case("debug_frame", &DebugFrameSection)
             .Case("debug_str", &StringSection)
             .Case("debug_ranges", &RangeSection)
+            .Case("debug_macinfo", &MacinfoSection)
             .Case("debug_pubnames", &PubNamesSection)
             .Case("debug_pubtypes", &PubTypesSection)
             .Case("debug_gnu_pubnames", &GnuPubNamesSection)
@@ -608,6 +643,8 @@ DWARFContextInMemory::DWARFContextInMemory(const object::ObjectFile &Obj,
             .Case("apple_namespaces", &AppleNamespacesSection.Data)
             .Case("apple_namespac", &AppleNamespacesSection.Data)
             .Case("apple_objc", &AppleObjCSection.Data)
+            .Case("debug_cu_index", &CUIndexSection)
+            .Case("debug_tu_index", &TUIndexSection)
             // Any more debug info sections go here.
             .Default(nullptr);
     if (SectionData) {
@@ -635,6 +672,14 @@ DWARFContextInMemory::DWARFContextInMemory(const object::ObjectFile &Obj,
     // then we used the relocated version above, so we do not need to process
     // relocations for it now.
     if (L && L->getLoadedSectionContents(*RelocatedSection,RelSecData))
+      continue;
+
+    // In Mach-o files, the relocations do not need to be applied if
+    // there is no load offset to apply. The value read at the
+    // relocation point already factors in the section address
+    // (actually applying the relocations will produce wrong results
+    // as the section address will be added twice).
+    if (!L && dyn_cast<MachOObjectFile>(&Obj))
       continue;
 
     RelSecName = RelSecName.substr(

@@ -681,3 +681,44 @@ outsd
 // CHECK: outsb (%rsi), %dx
 // CHECK: outsw (%rsi), %dx
 // CHECK: outsl (%rsi), %dx
+
+imul bx, 123
+imul ebx, 123
+imul rbx, 123
+// CHECK: imulw $123, %bx
+// CHECK: imull $123, %ebx
+// CHECK: imulq $123, %rbx
+
+repe cmpsb
+repz cmpsb
+repne cmpsb
+repnz cmpsb
+// CHECK: rep
+// CHECK: cmpsb	%es:(%rdi), (%rsi)
+// CHECK: rep
+// CHECK: cmpsb	%es:(%rdi), (%rsi)
+// CHECK: repne
+// CHECK: cmpsb	%es:(%rdi), (%rsi)
+// CHECK: repne
+// CHECK: cmpsb	%es:(%rdi), (%rsi)
+
+sal eax, 123
+// CHECK: shll	$123, %eax
+
+psignw    mm0, MMWORD PTR t2
+// CHECK: psignw t2, %mm0
+
+comisd xmm0, QWORD PTR [eax]
+comiss xmm0, DWORD PTR [eax]
+vcomisd xmm0, QWORD PTR [eax]
+vcomiss xmm0, DWORD PTR [eax]
+
+// CHECK: comisd (%eax), %xmm0
+// CHECK: comiss (%eax), %xmm0
+// CHECK: vcomisd (%eax), %xmm0
+// CHECK: vcomiss (%eax), %xmm0
+
+fbld tbyte ptr [eax]
+fbstp tbyte ptr [eax]
+// CHECK: fbld (%eax)
+// CHECK: fbstp (%eax)

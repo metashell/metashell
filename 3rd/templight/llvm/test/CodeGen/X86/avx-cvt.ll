@@ -113,8 +113,7 @@ define float @funcD(i64* nocapture %e) nounwind uwtable readonly ssp {
 define void @fpext() nounwind uwtable {
 ; CHECK-LABEL: fpext:
 ; CHECK:       # BB#0:
-; CHECK-NEXT:    vmovss {{.*#+}} xmm0 = mem[0],zero,zero,zero
-; CHECK-NEXT:    vcvtss2sd %xmm0, %xmm0, %xmm0
+; CHECK-NEXT:    vcvtss2sd -{{[0-9]+}}(%rsp), %xmm0, %xmm0
 ; CHECK-NEXT:    vmovsd %xmm0, -{{[0-9]+}}(%rsp)
 ; CHECK-NEXT:    retq
   %f = alloca float, align 4
@@ -138,7 +137,7 @@ declare double @llvm.nearbyint.f64(double %p)
 define float @floor_f32(float %a) {
 ; CHECK-LABEL: floor_f32:
 ; CHECK:       # BB#0:
-; CHECK-NEXT:    vroundss $1, %xmm0, %xmm0, %xmm0
+; CHECK-NEXT:    vroundss $9, %xmm0, %xmm0, %xmm0
 ; CHECK-NEXT:    retq
   %res = call float @llvm.floor.f32(float %a)
   ret float %res

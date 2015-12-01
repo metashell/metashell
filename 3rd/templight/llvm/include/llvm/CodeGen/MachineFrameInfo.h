@@ -168,7 +168,7 @@ class MachineFrameInfo {
   /// SP then OffsetAdjustment is zero; if FP is used, OffsetAdjustment is set
   /// to the distance between the initial SP and the value in FP.  For many
   /// targets, this value is only used when generating debug info (via
-  /// TargetRegisterInfo::getFrameIndexOffset); when generating code, the
+  /// TargetRegisterInfo::getFrameIndexReference); when generating code, the
   /// corresponding adjustments are performed directly.
   int OffsetAdjustment;
 
@@ -288,6 +288,7 @@ public:
   /// Return the index for the stack protector object.
   int getStackProtectorIndex() const { return StackProtectorIdx; }
   void setStackProtectorIndex(int I) { StackProtectorIdx = I; }
+  bool hasStackProtectorIndex() const { return StackProtectorIdx != -1; }
 
   /// Return the index for the function context object.
   /// This object is used for SjLj exceptions.

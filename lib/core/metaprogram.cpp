@@ -30,16 +30,18 @@ namespace metashell {
 metaprogram::metaprogram(
     mode_t mode,
     const std::string& root_name,
+    const data::file_location& root_source_location,
     const data::type_or_error& evaluation_result) :
   mode(mode),
   evaluation_result(evaluation_result)
 {
-  root_vertex = add_vertex(root_name);
+  root_vertex = add_vertex(data::type(root_name), root_source_location);
   reset_state();
 }
 
 metaprogram::vertex_descriptor metaprogram::add_vertex(
-  const std::string& element)
+  const data::type& type,
+  const data::file_location& source_location)
 {
   vertex_descriptor vertex = boost::add_vertex(graph);
 
@@ -49,7 +51,10 @@ metaprogram::vertex_descriptor metaprogram::add_vertex(
   state.discovered.push_back(false);
   state.parent_edge.push_back(boost::none);
 
-  get_vertex_property(vertex).name = element;
+  auto& vertex_property = get_vertex_property(vertex);
+
+  vertex_property.type = type;
+  vertex_property.source_location = source_location;
 
   return vertex;
 }
@@ -374,14 +379,16 @@ metaprogram::optional_edge_descriptor metaprogram::get_current_edge() const {
 
 data::frame metaprogram::to_frame(const edge_descriptor& e_) const
 {
-  const data::type t(get_vertex_property(get_target(e_)).name);
+  const auto& vp = get_vertex_property(get_target(e_));
   const auto& ep = get_edge_property(e_);
 
   switch (get_mode()) {
     case mode_t::normal:
-      return data::frame(t, ep.point_of_instantiation, ep.kind);
+      return data::frame(
+        vp.type, vp.source_location, ep.point_of_instantiation, ep.kind);
+    default:
     case mode_t::full:
-      return data::frame(t);
+      return data::frame(vp.type, vp.source_location);
     case mode_t::profile:
       double ratio = [&] {
         if (full_time_taken <= 0.0) {
@@ -391,11 +398,9 @@ data::frame metaprogram::to_frame(const edge_descriptor& e_) const
         }
       }();
       return data::frame(
-        t, ep.point_of_instantiation, ep.kind, ep.time_taken, ratio);
+        vp.type, vp.source_location, ep.point_of_instantiation, ep.kind,
+        ep.time_taken, ratio);
   };
-  // unreachable
-  assert(false);
-  return data::frame(t);
 }
 
 data::frame metaprogram::get_current_frame() const {
@@ -406,7 +411,8 @@ data::frame metaprogram::get_current_frame() const {
 }
 
 data::frame metaprogram::get_root_frame() const {
-  return data::frame(data::type(get_vertex_property(get_root_vertex()).name));
+  const auto& vp = get_vertex_property(get_root_vertex());
+  return data::frame(vp.type, vp.source_location);
 }
 
 data::backtrace metaprogram::get_backtrace() const {

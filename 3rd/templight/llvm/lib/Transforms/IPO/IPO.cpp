@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements the common infrastructure (including C bindings) for 
-// libLLVMIPO.a, which implements several transformations over the LLVM 
+// This file implements the common infrastructure (including C bindings) for
+// libLLVMIPO.a, which implements several transformations over the LLVM
 // intermediate representation.
 //
 //===----------------------------------------------------------------------===//
@@ -40,13 +40,14 @@ void llvm::initializeIPO(PassRegistry &Registry) {
   initializeMergeFunctionsPass(Registry);
   initializePartialInlinerPass(Registry);
   initializePruneEHPass(Registry);
-  initializeStripDeadPrototypesPassPass(Registry);
+  initializeStripDeadPrototypesLegacyPassPass(Registry);
   initializeStripSymbolsPass(Registry);
   initializeStripDebugDeclarePass(Registry);
   initializeStripDeadDebugInfoPass(Registry);
   initializeStripNonDebugSymbolsPass(Registry);
   initializeBarrierNoopPass(Registry);
   initializeEliminateAvailableExternallyPass(Registry);
+  initializeSampleProfileLoaderPass(Registry);
 }
 
 void LLVMInitializeIPO(LLVMPassRegistryRef R) {

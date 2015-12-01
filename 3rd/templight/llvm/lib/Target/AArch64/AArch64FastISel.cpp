@@ -1058,8 +1058,8 @@ void AArch64FastISel::addLoadStoreOperands(Address &Addr,
     // FIXME: We shouldn't be using getObjectSize/getObjectAlignment.  The size
     // and alignment should be based on the VT.
     MMO = FuncInfo.MF->getMachineMemOperand(
-      MachinePointerInfo::getFixedStack(FI, Offset), Flags,
-      MFI.getObjectSize(FI), MFI.getObjectAlignment(FI));
+        MachinePointerInfo::getFixedStack(*FuncInfo.MF, FI, Offset), Flags,
+        MFI.getObjectSize(FI), MFI.getObjectAlignment(FI));
     // Now add the rest of the operands.
     MIB.addFrameIndex(FI).addImm(Offset);
   } else {
@@ -1178,7 +1178,7 @@ unsigned AArch64FastISel::emitAddSub(bool UseAdd, MVT RetVT, const Value *LHS,
   }
 
   // Check if the mul can be folded into the instruction.
-  if (RHS->hasOneUse() && isValueAvailable(RHS))
+  if (RHS->hasOneUse() && isValueAvailable(RHS)) {
     if (isMulPowOf2(RHS)) {
       const Value *MulLHS = cast<MulOperator>(RHS)->getOperand(0);
       const Value *MulRHS = cast<MulOperator>(RHS)->getOperand(1);
@@ -1193,12 +1193,16 @@ unsigned AArch64FastISel::emitAddSub(bool UseAdd, MVT RetVT, const Value *LHS,
       if (!RHSReg)
         return 0;
       bool RHSIsKill = hasTrivialKill(MulLHS);
-      return emitAddSub_rs(UseAdd, RetVT, LHSReg, LHSIsKill, RHSReg, RHSIsKill,
-                           AArch64_AM::LSL, ShiftVal, SetFlags, WantResult);
+      ResultReg = emitAddSub_rs(UseAdd, RetVT, LHSReg, LHSIsKill, RHSReg,
+                                RHSIsKill, AArch64_AM::LSL, ShiftVal, SetFlags,
+                                WantResult);
+      if (ResultReg)
+        return ResultReg;
     }
+  }
 
   // Check if the shift can be folded into the instruction.
-  if (RHS->hasOneUse() && isValueAvailable(RHS))
+  if (RHS->hasOneUse() && isValueAvailable(RHS)) {
     if (const auto *SI = dyn_cast<BinaryOperator>(RHS)) {
       if (const auto *C = dyn_cast<ConstantInt>(SI->getOperand(1))) {
         AArch64_AM::ShiftExtendType ShiftType = AArch64_AM::InvalidShiftExtend;
@@ -1214,12 +1218,15 @@ unsigned AArch64FastISel::emitAddSub(bool UseAdd, MVT RetVT, const Value *LHS,
           if (!RHSReg)
             return 0;
           bool RHSIsKill = hasTrivialKill(SI->getOperand(0));
-          return emitAddSub_rs(UseAdd, RetVT, LHSReg, LHSIsKill, RHSReg,
-                               RHSIsKill, ShiftType, ShiftVal, SetFlags,
-                               WantResult);
+          ResultReg = emitAddSub_rs(UseAdd, RetVT, LHSReg, LHSIsKill, RHSReg,
+                                    RHSIsKill, ShiftType, ShiftVal, SetFlags,
+                                    WantResult);
+          if (ResultReg)
+            return ResultReg;
         }
       }
     }
+  }
 
   unsigned RHSReg = getRegForValue(RHS);
   if (!RHSReg)
@@ -1323,6 +1330,10 @@ unsigned AArch64FastISel::emitAddSub_rs(bool UseAdd, MVT RetVT, unsigned LHSReg,
   if (RetVT != MVT::i32 && RetVT != MVT::i64)
     return 0;
 
+  // Don't deal with undefined shifts.
+  if (ShiftImm >= RetVT.getSizeInBits())
+    return 0;
+
   static const unsigned OpcTable[2][2][2] = {
     { { AArch64::SUBWrs,  AArch64::SUBXrs  },
       { AArch64::ADDWrs,  AArch64::ADDXrs  }  },
@@ -1358,6 +1369,9 @@ unsigned AArch64FastISel::emitAddSub_rx(bool UseAdd, MVT RetVT, unsigned LHSReg,
   assert(LHSReg && RHSReg && "Invalid register number.");
 
   if (RetVT != MVT::i32 && RetVT != MVT::i64)
+    return 0;
+
+  if (ShiftImm >= 4)
     return 0;
 
   static const unsigned OpcTable[2][2][2] = {
@@ -1542,7 +1556,7 @@ unsigned AArch64FastISel::emitLogicalOp(unsigned ISDOpc, MVT RetVT,
     return ResultReg;
 
   // Check if the mul can be folded into the instruction.
-  if (RHS->hasOneUse() && isValueAvailable(RHS))
+  if (RHS->hasOneUse() && isValueAvailable(RHS)) {
     if (isMulPowOf2(RHS)) {
       const Value *MulLHS = cast<MulOperator>(RHS)->getOperand(0);
       const Value *MulRHS = cast<MulOperator>(RHS)->getOperand(1);
@@ -1558,12 +1572,15 @@ unsigned AArch64FastISel::emitLogicalOp(unsigned ISDOpc, MVT RetVT,
       if (!RHSReg)
         return 0;
       bool RHSIsKill = hasTrivialKill(MulLHS);
-      return emitLogicalOp_rs(ISDOpc, RetVT, LHSReg, LHSIsKill, RHSReg,
-                              RHSIsKill, ShiftVal);
+      ResultReg = emitLogicalOp_rs(ISDOpc, RetVT, LHSReg, LHSIsKill, RHSReg,
+                                   RHSIsKill, ShiftVal);
+      if (ResultReg)
+        return ResultReg;
     }
+  }
 
   // Check if the shift can be folded into the instruction.
-  if (RHS->hasOneUse() && isValueAvailable(RHS))
+  if (RHS->hasOneUse() && isValueAvailable(RHS)) {
     if (const auto *SI = dyn_cast<ShlOperator>(RHS))
       if (const auto *C = dyn_cast<ConstantInt>(SI->getOperand(1))) {
         uint64_t ShiftVal = C->getZExtValue();
@@ -1571,9 +1588,12 @@ unsigned AArch64FastISel::emitLogicalOp(unsigned ISDOpc, MVT RetVT,
         if (!RHSReg)
           return 0;
         bool RHSIsKill = hasTrivialKill(SI->getOperand(0));
-        return emitLogicalOp_rs(ISDOpc, RetVT, LHSReg, LHSIsKill, RHSReg,
-                                RHSIsKill, ShiftVal);
+        ResultReg = emitLogicalOp_rs(ISDOpc, RetVT, LHSReg, LHSIsKill, RHSReg,
+                                     RHSIsKill, ShiftVal);
+        if (ResultReg)
+          return ResultReg;
       }
+  }
 
   unsigned RHSReg = getRegForValue(RHS);
   if (!RHSReg)
@@ -1646,6 +1666,11 @@ unsigned AArch64FastISel::emitLogicalOp_rs(unsigned ISDOpc, MVT RetVT,
     { AArch64::ORRWrs, AArch64::ORRXrs },
     { AArch64::EORWrs, AArch64::EORXrs }
   };
+
+  // Don't deal with undefined shifts.
+  if (ShiftImm >= RetVT.getSizeInBits())
+    return 0;
+
   const TargetRegisterClass *RC;
   unsigned Opc;
   switch (RetVT.SimpleTy) {
@@ -2235,14 +2260,7 @@ bool AArch64FastISel::emitCompareAndBranch(const BranchInst *BI) {
     MIB.addImm(TestBit);
   MIB.addMBB(TBB);
 
-  // Obtain the branch weight and add the TrueBB to the successor list.
-  uint32_t BranchWeight = 0;
-  if (FuncInfo.BPI)
-    BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                               TBB->getBasicBlock());
-  FuncInfo.MBB->addSuccessor(TBB, BranchWeight);
-  fastEmitBranch(FBB, DbgLoc);
-
+  finishCondBranch(BI->getParent(), TBB, FBB);
   return true;
 }
 
@@ -2317,14 +2335,7 @@ bool AArch64FastISel::selectBranch(const Instruction *I) {
           .addImm(CC)
           .addMBB(TBB);
 
-      // Obtain the branch weight and add the TrueBB to the successor list.
-      uint32_t BranchWeight = 0;
-      if (FuncInfo.BPI)
-        BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                                  TBB->getBasicBlock());
-      FuncInfo.MBB->addSuccessor(TBB, BranchWeight);
-
-      fastEmitBranch(FBB, DbgLoc);
+      finishCondBranch(BI->getParent(), TBB, FBB);
       return true;
     }
   } else if (TruncInst *TI = dyn_cast<TruncInst>(BI->getCondition())) {
@@ -2355,14 +2366,7 @@ bool AArch64FastISel::selectBranch(const Instruction *I) {
           .addImm(CC)
           .addMBB(TBB);
 
-      // Obtain the branch weight and add the TrueBB to the successor list.
-      uint32_t BranchWeight = 0;
-      if (FuncInfo.BPI)
-        BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                                  TBB->getBasicBlock());
-      FuncInfo.MBB->addSuccessor(TBB, BranchWeight);
-
-      fastEmitBranch(FBB, DbgLoc);
+      finishCondBranch(BI->getParent(), TBB, FBB);
       return true;
     }
   } else if (const auto *CI = dyn_cast<ConstantInt>(BI->getCondition())) {
@@ -2372,11 +2376,12 @@ bool AArch64FastISel::selectBranch(const Instruction *I) {
         .addMBB(Target);
 
     // Obtain the branch weight and add the target to the successor list.
-    uint32_t BranchWeight = 0;
-    if (FuncInfo.BPI)
-      BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                                 Target->getBasicBlock());
-    FuncInfo.MBB->addSuccessor(Target, BranchWeight);
+    if (FuncInfo.BPI) {
+      uint32_t BranchWeight =
+          FuncInfo.BPI->getEdgeWeight(BI->getParent(), Target->getBasicBlock());
+      FuncInfo.MBB->addSuccessor(Target, BranchWeight);
+    } else
+      FuncInfo.MBB->addSuccessorWithoutWeight(Target);
     return true;
   } else if (foldXALUIntrinsic(CC, I, BI->getCondition())) {
     // Fake request the condition, otherwise the intrinsic might be completely
@@ -2390,14 +2395,7 @@ bool AArch64FastISel::selectBranch(const Instruction *I) {
       .addImm(CC)
       .addMBB(TBB);
 
-    // Obtain the branch weight and add the TrueBB to the successor list.
-    uint32_t BranchWeight = 0;
-    if (FuncInfo.BPI)
-      BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                                 TBB->getBasicBlock());
-    FuncInfo.MBB->addSuccessor(TBB, BranchWeight);
-
-    fastEmitBranch(FBB, DbgLoc);
+    finishCondBranch(BI->getParent(), TBB, FBB);
     return true;
   }
 
@@ -2428,14 +2426,7 @@ bool AArch64FastISel::selectBranch(const Instruction *I) {
       .addImm(CC)
       .addMBB(TBB);
 
-  // Obtain the branch weight and add the TrueBB to the successor list.
-  uint32_t BranchWeight = 0;
-  if (FuncInfo.BPI)
-    BranchWeight = FuncInfo.BPI->getEdgeWeight(BI->getParent(),
-                                               TBB->getBasicBlock());
-  FuncInfo.MBB->addSuccessor(TBB, BranchWeight);
-
-  fastEmitBranch(FBB, DbgLoc);
+  finishCondBranch(BI->getParent(), TBB, FBB);
   return true;
 }
 
@@ -2459,6 +2450,10 @@ bool AArch64FastISel::selectIndirectBr(const Instruction *I) {
 
 bool AArch64FastISel::selectCmp(const Instruction *I) {
   const CmpInst *CI = cast<CmpInst>(I);
+
+  // Vectors of i1 are weird: bail out.
+  if (CI->getType()->isVectorTy())
+    return false;
 
   // Try to optimize or fold the cmp.
   CmpInst::Predicate Predicate = optimizeCmpPredicate(CI);
@@ -3021,8 +3016,8 @@ bool AArch64FastISel::processCallArgs(CallLoweringInfo &CLI,
 
       unsigned Alignment = DL.getABITypeAlignment(ArgVal->getType());
       MachineMemOperand *MMO = FuncInfo.MF->getMachineMemOperand(
-        MachinePointerInfo::getStack(Addr.getOffset()),
-        MachineMemOperand::MOStore, ArgVT.getStoreSize(), Alignment);
+          MachinePointerInfo::getStack(*FuncInfo.MF, Addr.getOffset()),
+          MachineMemOperand::MOStore, ArgVT.getStoreSize(), Alignment);
 
       if (!emitStore(ArgVT, ArgReg, Addr, MMO))
         return false;
@@ -3321,8 +3316,8 @@ bool AArch64FastISel::foldXALUIntrinsic(AArch64CC::CondCode &CC,
     return false;
 
   // Make sure nothing is in the way
-  BasicBlock::const_iterator Start = I;
-  BasicBlock::const_iterator End = II;
+  BasicBlock::const_iterator Start(I);
+  BasicBlock::const_iterator End(II);
   for (auto Itr = std::prev(Start); Itr != End; --Itr) {
     // We only expect extractvalue instructions between the intrinsic and the
     // instruction to be selected.

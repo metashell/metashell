@@ -62,7 +62,6 @@ struct SubobjectAdjustment {
     MemberPointerAdjustment
   } Kind;
 
-
   struct DTB {
     const CastExpr *BasePath;
     const CXXRecordDecl *DerivedClass;
@@ -149,8 +148,6 @@ public:
   /// \brief Set whether this expression is value-dependent or not.
   void setValueDependent(bool VD) {
     ExprBits.ValueDependent = VD;
-    if (VD)
-      ExprBits.InstantiationDependent = true;
   }
 
   /// isTypeDependent - Determines whether this expression is
@@ -169,8 +166,6 @@ public:
   /// \brief Set whether this expression is type-dependent or not.
   void setTypeDependent(bool TD) {
     ExprBits.TypeDependent = TD;
-    if (TD)
-      ExprBits.InstantiationDependent = true;
   }
 
   /// \brief Whether this expression is instantiation-dependent, meaning that
@@ -810,7 +805,6 @@ public:
            T->getStmtClass() <= lastExprConstant;
   }
 };
-
 
 //===----------------------------------------------------------------------===//
 // Primary Expressions.
@@ -1679,7 +1673,6 @@ public:
   child_range children() { return child_range(&Val, &Val+1); }
 };
 
-
 /// UnaryOperator - This represents the unary-expression's (except sizeof and
 /// alignof), the postinc/postdec operators from postfix-expression, and various
 /// extensions.
@@ -2162,7 +2155,6 @@ public:
     return child_range(&SubExprs[0], &SubExprs[0]+END_EXPR);
   }
 };
-
 
 /// CallExpr - Represents a function call (C99 6.5.2.2, C++ [expr.call]).
 /// CallExpr itself represents a normal function call, e.g., "f(x, 2)",
@@ -3460,7 +3452,6 @@ public:
   child_range children() { return child_range(&SubStmt, &SubStmt+1); }
 };
 
-
 /// ShuffleVectorExpr - clang-specific builtin-in function
 /// __builtin_shufflevector.
 /// This AST node represents a operator that does a constant
@@ -3699,33 +3690,35 @@ public:
   }
 };
 
-/// VAArgExpr, used for the builtin function __builtin_va_arg.
+/// Represents a call to the builtin function \c __builtin_va_arg.
 class VAArgExpr : public Expr {
   Stmt *Val;
-  TypeSourceInfo *TInfo;
+  llvm::PointerIntPair<TypeSourceInfo *, 1, bool> TInfo;
   SourceLocation BuiltinLoc, RParenLoc;
 public:
-  VAArgExpr(SourceLocation BLoc, Expr* e, TypeSourceInfo *TInfo,
-            SourceLocation RPLoc, QualType t)
-    : Expr(VAArgExprClass, t, VK_RValue, OK_Ordinary,
-           t->isDependentType(), false,
-           (TInfo->getType()->isInstantiationDependentType() ||
-            e->isInstantiationDependent()),
-           (TInfo->getType()->containsUnexpandedParameterPack() ||
-            e->containsUnexpandedParameterPack())),
-      Val(e), TInfo(TInfo),
-      BuiltinLoc(BLoc),
-      RParenLoc(RPLoc) { }
+  VAArgExpr(SourceLocation BLoc, Expr *e, TypeSourceInfo *TInfo,
+            SourceLocation RPLoc, QualType t, bool IsMS)
+      : Expr(VAArgExprClass, t, VK_RValue, OK_Ordinary, t->isDependentType(),
+             false, (TInfo->getType()->isInstantiationDependentType() ||
+                     e->isInstantiationDependent()),
+             (TInfo->getType()->containsUnexpandedParameterPack() ||
+              e->containsUnexpandedParameterPack())),
+        Val(e), TInfo(TInfo, IsMS), BuiltinLoc(BLoc), RParenLoc(RPLoc) {}
 
-  /// \brief Create an empty __builtin_va_arg expression.
-  explicit VAArgExpr(EmptyShell Empty) : Expr(VAArgExprClass, Empty) { }
+  /// Create an empty __builtin_va_arg expression.
+  explicit VAArgExpr(EmptyShell Empty)
+      : Expr(VAArgExprClass, Empty), Val(nullptr), TInfo(nullptr, false) {}
 
   const Expr *getSubExpr() const { return cast<Expr>(Val); }
   Expr *getSubExpr() { return cast<Expr>(Val); }
   void setSubExpr(Expr *E) { Val = E; }
 
-  TypeSourceInfo *getWrittenTypeInfo() const { return TInfo; }
-  void setWrittenTypeInfo(TypeSourceInfo *TI) { TInfo = TI; }
+  /// Returns whether this is really a Win64 ABI va_arg expression.
+  bool isMicrosoftABI() const { return TInfo.getInt(); }
+  void setIsMicrosoftABI(bool IsMS) { TInfo.setInt(IsMS); }
+
+  TypeSourceInfo *getWrittenTypeInfo() const { return TInfo.getPointer(); }
+  void setWrittenTypeInfo(TypeSourceInfo *TI) { TInfo.setPointer(TI); }
 
   SourceLocation getBuiltinLoc() const { return BuiltinLoc; }
   void setBuiltinLoc(SourceLocation L) { BuiltinLoc = L; }
@@ -3823,6 +3816,10 @@ public:
 
   /// \brief Retrieve the set of initializers.
   Expr **getInits() { return reinterpret_cast<Expr **>(InitExprs.data()); }
+
+  ArrayRef<Expr *> inits() {
+    return llvm::makeArrayRef(getInits(), getNumInits());
+  }
 
   const Expr *getInit(unsigned Init) const {
     assert(Init < getNumInits() && "Initializer access out of range!");
@@ -4408,7 +4405,6 @@ public:
   }
 };
 
-
 class ParenListExpr : public Expr {
   Stmt **Exprs;
   unsigned NumExprs;
@@ -4435,6 +4431,10 @@ public:
 
   Expr **getExprs() { return reinterpret_cast<Expr **>(Exprs); }
 
+  ArrayRef<Expr *> exprs() {
+    return llvm::makeArrayRef(getExprs(), getNumExprs());
+  }
+
   SourceLocation getLParenLoc() const { return LParenLoc; }
   SourceLocation getRParenLoc() const { return RParenLoc; }
 
@@ -4453,7 +4453,6 @@ public:
   friend class ASTStmtReader;
   friend class ASTStmtWriter;
 };
-
 
 /// \brief Represents a C11 generic selection.
 ///
@@ -4570,7 +4569,6 @@ public:
 // Clang Extensions
 //===----------------------------------------------------------------------===//
 
-
 /// ExtVectorElementExpr - This represents access to specific elements of a
 /// vector, and may occur on the left hand side or right hand side.  For example
 /// the following is legal:  "V.xy = V.zw" if V is a 4 element extended vector.
@@ -4633,7 +4631,6 @@ public:
   // Iterators
   child_range children() { return child_range(&Base, &Base+1); }
 };
-
 
 /// BlockExpr - Adaptor class for mixing a BlockDecl with expressions.
 /// ^{ statement-body }   or   ^(int arg1, float arg2){ statement-body }
@@ -4980,7 +4977,12 @@ public:
   }
   SourceLocation getLocStart() const LLVM_READONLY { return SourceLocation(); }
   SourceLocation getLocEnd() const LLVM_READONLY { return SourceLocation(); }
-};
-}  // end namespace clang
+  
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == TypoExprClass;
+  }
 
-#endif
+};
+} // end namespace clang
+
+#endif // LLVM_CLANG_AST_EXPR_H

@@ -1,5 +1,5 @@
-#ifndef METASHELL_UNSAVED_FILE_HPP
-#define METASHELL_UNSAVED_FILE_HPP
+#ifndef METASHELL_DATA_UNSAVED_FILE_HPP
+#define METASHELL_DATA_UNSAVED_FILE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)

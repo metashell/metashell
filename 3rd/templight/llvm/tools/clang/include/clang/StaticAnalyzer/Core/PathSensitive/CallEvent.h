@@ -164,7 +164,8 @@ protected:
 
   /// \brief Used to specify non-argument regions that will be invalidated as a
   /// result of this call.
-  virtual void getExtraInvalidatedValues(ValueList &Values) const {}
+  virtual void getExtraInvalidatedValues(ValueList &Values,
+                 RegionAndSymbolInvalidationTraits *ETraits) const {}
 
 public:
   virtual ~CallEvent() {}
@@ -253,8 +254,15 @@ public:
   /// which the return value has already been bound to the origin expression.
   SVal getReturnValue() const;
 
+  /// \brief Returns true if the type of any of the non-null arguments satisfies
+  /// the condition.
+  bool hasNonNullArgumentsWithType(bool (*Condition)(QualType)) const;
+
   /// \brief Returns true if any of the arguments appear to represent callbacks.
   bool hasNonZeroCallbackArg() const;
+
+  /// \brief Returns true if any of the arguments is void*.
+  bool hasVoidPointerToNonConstArg() const;
 
   /// \brief Returns true if any of the arguments are known to escape to long-
   /// term storage, even if this method will not modify them.
@@ -472,7 +480,8 @@ protected:
   BlockCall(const BlockCall &Other) : CallEvent(Other) {}
   void cloneTo(void *Dest) const override { new (Dest) BlockCall(*this); }
 
-  void getExtraInvalidatedValues(ValueList &Values) const override;
+  void getExtraInvalidatedValues(ValueList &Values,
+         RegionAndSymbolInvalidationTraits *ETraits) const override;
 
 public:
   virtual const CallExpr *getOriginExpr() const {
@@ -521,7 +530,8 @@ public:
 /// it is written.
 class CXXInstanceCall : public AnyFunctionCall {
 protected:
-  void getExtraInvalidatedValues(ValueList &Values) const override;
+  void getExtraInvalidatedValues(ValueList &Values, 
+         RegionAndSymbolInvalidationTraits *ETraits) const override;
 
   CXXInstanceCall(const CallExpr *CE, ProgramStateRef St,
                   const LocationContext *LCtx)
@@ -704,7 +714,8 @@ protected:
   CXXConstructorCall(const CXXConstructorCall &Other) : AnyFunctionCall(Other){}
   void cloneTo(void *Dest) const override { new (Dest) CXXConstructorCall(*this); }
 
-  void getExtraInvalidatedValues(ValueList &Values) const override;
+  void getExtraInvalidatedValues(ValueList &Values,
+         RegionAndSymbolInvalidationTraits *ETraits) const override;
 
 public:
   virtual const CXXConstructExpr *getOriginExpr() const {
@@ -803,7 +814,8 @@ protected:
   ObjCMethodCall(const ObjCMethodCall &Other) : CallEvent(Other) {}
   void cloneTo(void *Dest) const override { new (Dest) ObjCMethodCall(*this); }
 
-  void getExtraInvalidatedValues(ValueList &Values) const override;
+  void getExtraInvalidatedValues(ValueList &Values,
+         RegionAndSymbolInvalidationTraits *ETraits) const override;
 
   /// Check if the selector may have multiple definitions (may have overrides).
   virtual bool canBeOverridenInSubclass(ObjCInterfaceDecl *IDecl,

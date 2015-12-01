@@ -147,7 +147,7 @@ CXSourceRange cxloc::translateSourceRange(const SourceManager &SM,
   SourceLocation EndLoc = R.getEnd();
   if (EndLoc.isValid() && EndLoc.isMacroID() && !SM.isMacroArgExpansion(EndLoc))
     EndLoc = SM.getExpansionRange(EndLoc).second;
-  if (R.isTokenRange() && !EndLoc.isInvalid()) {
+  if (R.isTokenRange() && EndLoc.isValid()) {
     unsigned Length = Lexer::MeasureTokenLength(SM.getSpellingLoc(EndLoc),
                                                 SM, LangOpts);
     EndLoc = EndLoc.getLocWithOffset(Length);
@@ -1460,9 +1460,19 @@ bool CursorVisitor::VisitBuiltinTypeLoc(BuiltinTypeLoc TL) {
   case BuiltinType::OCLImage1dBuffer:
   case BuiltinType::OCLImage2d:
   case BuiltinType::OCLImage2dArray:
+  case BuiltinType::OCLImage2dDepth:
+  case BuiltinType::OCLImage2dArrayDepth:
+  case BuiltinType::OCLImage2dMSAA:
+  case BuiltinType::OCLImage2dArrayMSAA:
+  case BuiltinType::OCLImage2dMSAADepth:
+  case BuiltinType::OCLImage2dArrayMSAADepth:
   case BuiltinType::OCLImage3d:
   case BuiltinType::OCLSampler:
   case BuiltinType::OCLEvent:
+  case BuiltinType::OCLClkEvent:
+  case BuiltinType::OCLQueue:
+  case BuiltinType::OCLNDRange:
+  case BuiltinType::OCLReserveID:
 #define BUILTIN_TYPE(Id, SingletonId)
 #define SIGNED_TYPE(Id, SingletonId) case BuiltinType::Id:
 #define UNSIGNED_TYPE(Id, SingletonId) case BuiltinType::Id:
@@ -1513,10 +1523,7 @@ bool CursorVisitor::VisitTemplateTypeParmTypeLoc(TemplateTypeParmTypeLoc TL) {
 }
 
 bool CursorVisitor::VisitObjCInterfaceTypeLoc(ObjCInterfaceTypeLoc TL) {
-  if (Visit(MakeCursorObjCClassRef(TL.getIFaceDecl(), TL.getNameLoc(), TU)))
-    return true;
-
-  return false;
+  return Visit(MakeCursorObjCClassRef(TL.getIFaceDecl(), TL.getNameLoc(), TU));
 }
 
 bool CursorVisitor::VisitObjCObjectTypeLoc(ObjCObjectTypeLoc TL) {
@@ -1634,10 +1641,7 @@ bool CursorVisitor::VisitUnaryTransformTypeLoc(UnaryTransformTypeLoc TL) {
 }
 
 bool CursorVisitor::VisitDependentNameTypeLoc(DependentNameTypeLoc TL) {
-  if (VisitNestedNameSpecifierLoc(TL.getQualifierLoc()))
-    return true;
-  
-  return false;
+  return VisitNestedNameSpecifierLoc(TL.getQualifierLoc());
 }
 
 bool CursorVisitor::VisitDependentTemplateSpecializationTypeLoc(
@@ -2019,6 +2023,10 @@ void OMPClauseEnqueue::VisitOMPSafelenClause(const OMPSafelenClause *C) {
   Visitor->AddStmt(C->getSafelen());
 }
 
+void OMPClauseEnqueue::VisitOMPSimdlenClause(const OMPSimdlenClause *C) {
+  Visitor->AddStmt(C->getSimdlen());
+}
+
 void OMPClauseEnqueue::VisitOMPCollapseClause(const OMPCollapseClause *C) {
   Visitor->AddStmt(C->getNumForLoops());
 }
@@ -2051,6 +2059,10 @@ void OMPClauseEnqueue::VisitOMPUpdateClause(const OMPUpdateClause *) {}
 void OMPClauseEnqueue::VisitOMPCaptureClause(const OMPCaptureClause *) {}
 
 void OMPClauseEnqueue::VisitOMPSeqCstClause(const OMPSeqCstClause *) {}
+
+void OMPClauseEnqueue::VisitOMPThreadsClause(const OMPThreadsClause *) {}
+
+void OMPClauseEnqueue::VisitOMPSIMDClause(const OMPSIMDClause *) {}
 
 void OMPClauseEnqueue::VisitOMPDeviceClause(const OMPDeviceClause *C) {
   Visitor->AddStmt(C->getDevice());
@@ -2094,6 +2106,9 @@ void OMPClauseEnqueue::VisitOMPSharedClause(const OMPSharedClause *C) {
 }
 void OMPClauseEnqueue::VisitOMPReductionClause(const OMPReductionClause *C) {
   VisitOMPClauseList(C);
+  for (auto *E : C->privates()) {
+    Visitor->AddStmt(E);
+  }
   for (auto *E : C->lhs_exprs()) {
     Visitor->AddStmt(E);
   }
@@ -2106,6 +2121,9 @@ void OMPClauseEnqueue::VisitOMPReductionClause(const OMPReductionClause *C) {
 }
 void OMPClauseEnqueue::VisitOMPLinearClause(const OMPLinearClause *C) {
   VisitOMPClauseList(C);
+  for (const auto *E : C->privates()) {
+    Visitor->AddStmt(E);
+  }
   for (const auto *E : C->inits()) {
     Visitor->AddStmt(E);
   }
@@ -2815,7 +2833,7 @@ namespace {
 typedef SmallVector<SourceRange, 4> RefNamePieces;
 RefNamePieces
 buildPieces(unsigned NameFlags, bool IsMemberRefExpr,
-            const DeclarationNameInfo &NI, const SourceRange &QLoc,
+            const DeclarationNameInfo &NI, SourceRange QLoc,
             const ASTTemplateArgumentListInfo *TemplateArgs = nullptr) {
   const bool WantQualifier = NameFlags & CXNameRange_WantQualifier;
   const bool WantTemplateArgs = NameFlags & CXNameRange_WantTemplateArgs;
@@ -2964,7 +2982,8 @@ enum CXErrorCode clang_createTranslationUnit2(CXIndex CIdx,
       CompilerInstance::createDiagnostics(new DiagnosticOptions());
   std::unique_ptr<ASTUnit> AU = ASTUnit::LoadFromASTFile(
       ast_filename, CXXIdx->getPCHContainerOperations()->getRawReader(), Diags,
-      FileSystemOpts, CXXIdx->getOnlyLocalDecls(), None,
+      FileSystemOpts, /*UseDebugInfo=*/false,
+      CXXIdx->getOnlyLocalDecls(), None,
       /*CaptureDiagnostics=*/true,
       /*AllowPCHWithCompilerErrors=*/true,
       /*UserFilesAreVolatile=*/true);
@@ -3748,6 +3767,19 @@ CXString clang_getCursorSpelling(CXCursor C) {
     return cxstring::createRef("packed");
   }
 
+  if (C.kind == CXCursor_VisibilityAttr) {
+    const VisibilityAttr *AA = cast<VisibilityAttr>(cxcursor::getCursorAttr(C));
+    switch (AA->getVisibility()) {
+    case VisibilityAttr::VisibilityType::Default:
+      return cxstring::createRef("default");
+    case VisibilityAttr::VisibilityType::Hidden:
+      return cxstring::createRef("hidden");
+    case VisibilityAttr::VisibilityType::Protected:
+      return cxstring::createRef("protected");
+    }
+    llvm_unreachable("unknown visibility type");
+  }
+
   return cxstring::createEmpty();
 }
 
@@ -3861,7 +3893,11 @@ CXString clang_Cursor_getMangling(CXCursor C) {
 
   std::string FrontendBuf;
   llvm::raw_string_ostream FrontendBufOS(FrontendBuf);
-  MC->mangleName(ND, FrontendBufOS);
+  if (MC->shouldMangleDeclName(ND)) {
+    MC->mangleName(ND, FrontendBufOS);
+  } else {
+    ND->printName(FrontendBufOS);
+  }
 
   // Now apply backend mangling.
   std::unique_ptr<llvm::DataLayout> DL(
@@ -3873,6 +3909,75 @@ CXString clang_Cursor_getMangling(CXCursor C) {
                                    *DL);
 
   return cxstring::createDup(FinalBufOS.str());
+}
+
+static std::string getMangledStructor(std::unique_ptr<MangleContext> &M,
+                                      std::unique_ptr<llvm::DataLayout> &DL,
+                                      const NamedDecl *ND,
+                                      unsigned StructorType) {
+  std::string FrontendBuf;
+  llvm::raw_string_ostream FOS(FrontendBuf);
+
+  if (const auto *CD = dyn_cast_or_null<CXXConstructorDecl>(ND))
+    M->mangleCXXCtor(CD, static_cast<CXXCtorType>(StructorType), FOS);
+  else if (const auto *DD = dyn_cast_or_null<CXXDestructorDecl>(ND))
+    M->mangleCXXDtor(DD, static_cast<CXXDtorType>(StructorType), FOS);
+
+  std::string BackendBuf;
+  llvm::raw_string_ostream BOS(BackendBuf);
+
+  llvm::Mangler::getNameWithPrefix(BOS, llvm::Twine(FOS.str()), *DL);
+
+  return BOS.str();
+}
+
+CXStringSet *clang_Cursor_getCXXManglings(CXCursor C) {
+  if (clang_isInvalid(C.kind) || !clang_isDeclaration(C.kind))
+    return nullptr;
+
+  const Decl *D = getCursorDecl(C);
+  if (!(isa<CXXRecordDecl>(D) || isa<CXXMethodDecl>(D)))
+    return nullptr;
+
+  const NamedDecl *ND = cast<NamedDecl>(D);
+
+  ASTContext &Ctx = ND->getASTContext();
+  std::unique_ptr<MangleContext> M(Ctx.createMangleContext());
+  std::unique_ptr<llvm::DataLayout> DL(
+      new llvm::DataLayout(Ctx.getTargetInfo().getDataLayoutString()));
+
+  std::vector<std::string> Manglings;
+
+  auto hasDefaultCXXMethodCC = [](ASTContext &C, const CXXMethodDecl *MD) {
+    auto DefaultCC = C.getDefaultCallingConvention(/*IsVariadic=*/false,
+                                                   /*IsCSSMethod=*/true);
+    auto CC = MD->getType()->getAs<FunctionProtoType>()->getCallConv();
+    return CC == DefaultCC;
+  };
+
+  if (const auto *CD = dyn_cast_or_null<CXXConstructorDecl>(ND)) {
+    Manglings.emplace_back(getMangledStructor(M, DL, CD, Ctor_Base));
+
+    if (Ctx.getTargetInfo().getCXXABI().isItaniumFamily())
+      if (!CD->getParent()->isAbstract())
+        Manglings.emplace_back(getMangledStructor(M, DL, CD, Ctor_Complete));
+
+    if (Ctx.getTargetInfo().getCXXABI().isMicrosoft())
+      if (CD->hasAttr<DLLExportAttr>() && CD->isDefaultConstructor())
+        if (!(hasDefaultCXXMethodCC(Ctx, CD) && CD->getNumParams() == 0))
+          Manglings.emplace_back(getMangledStructor(M, DL, CD,
+                                                    Ctor_DefaultClosure));
+  } else if (const auto *DD = dyn_cast_or_null<CXXDestructorDecl>(ND)) {
+    Manglings.emplace_back(getMangledStructor(M, DL, DD, Dtor_Base));
+    if (Ctx.getTargetInfo().getCXXABI().isItaniumFamily()) {
+      Manglings.emplace_back(getMangledStructor(M, DL, DD, Dtor_Complete));
+
+      if (!DD->isVirtual())
+        Manglings.emplace_back(getMangledStructor(M, DL, DD, Dtor_Deleting));
+    }
+  }
+
+  return cxstring::createSet(Manglings);
 }
 
 CXString clang_getCursorDisplayName(CXCursor C) {
@@ -4039,6 +4144,8 @@ CXString clang_getCursorKindSpelling(enum CXCursorKind Kind) {
       return cxstring::createRef("UnaryOperator");
   case CXCursor_ArraySubscriptExpr:
       return cxstring::createRef("ArraySubscriptExpr");
+  case CXCursor_OMPArraySectionExpr:
+      return cxstring::createRef("OMPArraySectionExpr");
   case CXCursor_BinaryOperator:
       return cxstring::createRef("BinaryOperator");
   case CXCursor_CompoundAssignOperator:
@@ -4227,6 +4334,8 @@ CXString clang_getCursorKindSpelling(enum CXCursorKind Kind) {
     return cxstring::createRef("attribute(host)");
   case CXCursor_CUDASharedAttr:
     return cxstring::createRef("attribute(shared)");
+  case CXCursor_VisibilityAttr:
+    return cxstring::createRef("attribute(visibility)");
   case CXCursor_PreprocessingDirective:
     return cxstring::createRef("preprocessing directive");
   case CXCursor_MacroDefinition:
@@ -5070,6 +5179,7 @@ CXCursor clang_getCursorDefinition(CXCursor C) {
   case Decl::Import:
   case Decl::OMPThreadPrivate:
   case Decl::ObjCTypeParam:
+  case Decl::BuiltinTemplate:
     return C;
 
   // Declaration kinds that don't make any sense here, but are
@@ -6375,7 +6485,7 @@ extern "C" {
 
 static CXAvailabilityKind getCursorAvailabilityForDecl(const Decl *D) {
   if (isa<FunctionDecl>(D) && cast<FunctionDecl>(D)->isDeleted())
-    return CXAvailability_Available;
+    return CXAvailability_NotAvailable;
   
   switch (D->getAvailability()) {
   case AR_Available:
@@ -6569,8 +6679,6 @@ enum CX_StorageClass clang_Cursor_getStorageClass(CXCursor C) {
     return CX_SC_Static;
   case SC_PrivateExtern:
     return CX_SC_PrivateExtern;
-  case SC_OpenCLWorkGroupLocal:
-    return CX_SC_OpenCLWorkGroupLocal;
   case SC_Auto:
     return CX_SC_Auto;
   case SC_Register:
@@ -6850,6 +6958,16 @@ CXFile clang_Module_getTopLevelHeader(CXTranslationUnit TU,
 //===----------------------------------------------------------------------===//
 
 extern "C" {
+unsigned clang_CXXField_isMutable(CXCursor C) {
+  if (!clang_isDeclaration(C.kind))
+    return 0;
+
+  if (const auto D = cxcursor::getCursorDecl(C))
+    if (const auto FD = dyn_cast_or_null<FieldDecl>(D))
+      return FD->isMutable() ? 1 : 0;
+  return 0;
+}
+
 unsigned clang_CXXMethod_isPureVirtual(CXCursor C) {
   if (!clang_isDeclaration(C.kind))
     return 0;
@@ -7364,8 +7482,6 @@ Logger &cxindex::Logger::operator<<(const llvm::format_object_base &Fmt) {
 static llvm::ManagedStatic<llvm::sys::Mutex> LoggingMutex;
 
 cxindex::Logger::~Logger() {
-  LogOS.flush();
-
   llvm::sys::ScopedLock L(*LoggingMutex);
 
   static llvm::TimeRecord sBeginTR = llvm::TimeRecord::getCurrentTime();

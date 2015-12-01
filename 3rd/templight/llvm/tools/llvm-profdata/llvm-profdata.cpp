@@ -58,9 +58,8 @@ static void mergeInstrProfile(const cl::list<std::string> &Inputs,
       exitWithError(ec.message(), Filename);
 
     auto Reader = std::move(ReaderOrErr.get());
-    for (const auto &I : *Reader)
-      if (std::error_code EC =
-              Writer.addFunctionCounts(I.Name, I.Hash, I.Counts))
+    for (auto &I : *Reader)
+      if (std::error_code EC = Writer.addRecord(std::move(I)))
         errs() << Filename << ": " << I.Name << ": " << EC.message() << "\n";
     if (Reader->hasError())
       exitWithError(Reader->getError().message(), Filename);
@@ -78,13 +77,19 @@ static void mergeSampleProfile(const cl::list<std::string> &Inputs,
 
   auto Writer = std::move(WriterOrErr.get());
   StringMap<FunctionSamples> ProfileMap;
+  SmallVector<std::unique_ptr<sampleprof::SampleProfileReader>, 5> Readers;
   for (const auto &Filename : Inputs) {
     auto ReaderOrErr =
         SampleProfileReader::create(Filename, getGlobalContext());
     if (std::error_code EC = ReaderOrErr.getError())
       exitWithError(EC.message(), Filename);
 
-    auto Reader = std::move(ReaderOrErr.get());
+    // We need to keep the readers around until after all the files are
+    // read so that we do not lose the function names stored in each
+    // reader's memory. The function names are needed to write out the
+    // merged profile map.
+    Readers.push_back(std::move(ReaderOrErr.get()));
+    const auto Reader = Readers.back().get();
     if (std::error_code EC = Reader->read())
       exitWithError(EC.message(), Filename);
 
@@ -134,8 +139,8 @@ static int merge_main(int argc, const char *argv[]) {
 }
 
 static int showInstrProfile(std::string Filename, bool ShowCounts,
-                            bool ShowAllFunctions, std::string ShowFunction,
-                            raw_fd_ostream &OS) {
+                            bool ShowIndirectCallTargets, bool ShowAllFunctions,
+                            std::string ShowFunction, raw_fd_ostream &OS) {
   auto ReaderOrErr = InstrProfReader::create(Filename);
   if (std::error_code EC = ReaderOrErr.getError())
     exitWithError(EC.message(), Filename);
@@ -162,6 +167,9 @@ static int showInstrProfile(std::string Filename, bool ShowCounts,
          << "    Hash: " << format("0x%016" PRIx64, Func.Hash) << "\n"
          << "    Counters: " << Func.Counts.size() << "\n"
          << "    Function count: " << Func.Counts[0] << "\n";
+      if (ShowIndirectCallTargets)
+        OS << "    Indirect Call Site Count: "
+           << Func.getNumValueSites(IPVK_IndirectCallTarget) << "\n";
     }
 
     if (Show && ShowCounts)
@@ -174,6 +182,20 @@ static int showInstrProfile(std::string Filename, bool ShowCounts,
     }
     if (Show && ShowCounts)
       OS << "]\n";
+
+    if (Show && ShowIndirectCallTargets) {
+      uint32_t NS = Func.getNumValueSites(IPVK_IndirectCallTarget);
+      OS << "    Indirect Target Results: \n";
+      for (size_t I = 0; I < NS; ++I) {
+        uint32_t NV = Func.getNumValueDataForSite(IPVK_IndirectCallTarget, I);
+        std::unique_ptr<InstrProfValueData[]> VD =
+            Func.getValueForSite(IPVK_IndirectCallTarget, I);
+        for (uint32_t V = 0; V < NV; V++) {
+          OS << "\t[ " << I << ", ";
+          OS << (const char *)VD[V].Value << ", " << VD[V].Count << " ]\n";
+        }
+      }
+    }
   }
   if (Reader->hasError())
     exitWithError(Reader->getError().message(), Filename);
@@ -195,7 +217,9 @@ static int showSampleProfile(std::string Filename, bool ShowCounts,
     exitWithError(EC.message(), Filename);
 
   auto Reader = std::move(ReaderOrErr.get());
-  Reader->read();
+  if (std::error_code EC = Reader->read())
+    exitWithError(EC.message(), Filename);
+
   if (ShowAllFunctions || ShowFunction.empty())
     Reader->dump(OS);
   else
@@ -210,6 +234,9 @@ static int show_main(int argc, const char *argv[]) {
 
   cl::opt<bool> ShowCounts("counts", cl::init(false),
                            cl::desc("Show counter values for shown functions"));
+  cl::opt<bool> ShowIndirectCallTargets(
+      "ic-targets", cl::init(false),
+      cl::desc("Show indirect call site target values for shown functions"));
   cl::opt<bool> ShowAllFunctions("all-functions", cl::init(false),
                                  cl::desc("Details for every function"));
   cl::opt<std::string> ShowFunction("function",
@@ -238,8 +265,8 @@ static int show_main(int argc, const char *argv[]) {
     errs() << "warning: -function argument ignored: showing all functions\n";
 
   if (ProfileKind == instr)
-    return showInstrProfile(Filename, ShowCounts, ShowAllFunctions,
-                            ShowFunction, OS);
+    return showInstrProfile(Filename, ShowCounts, ShowIndirectCallTargets,
+                            ShowAllFunctions, ShowFunction, OS);
   else
     return showSampleProfile(Filename, ShowCounts, ShowAllFunctions,
                              ShowFunction, OS);

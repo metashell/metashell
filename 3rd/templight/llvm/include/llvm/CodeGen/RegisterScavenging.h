@@ -104,10 +104,8 @@ public:
     MBBI = I;
   }
 
-  MachineBasicBlock::iterator getCurrentPosition() const {
-    return MBBI;
-  }
-  
+  MachineBasicBlock::iterator getCurrentPosition() const { return MBBI; }
+
   /// Return if a specific register is currently used.
   bool isRegUsed(unsigned Reg, bool includeReserved = true) const;
 
@@ -152,7 +150,7 @@ public:
   }
 
   /// Tell the scavenger a register is used.
-  void setRegUsed(unsigned Reg);
+  void setRegUsed(unsigned Reg, LaneBitmask LaneMask = ~0u);
 private:
   /// Returns true if a register is reserved. It is never "unused".
   bool isReserved(unsigned Reg) const { return MRI->isReserved(Reg); }
@@ -169,10 +167,10 @@ private:
   /// Processes the current instruction and fill the KillRegUnits and
   /// DefRegUnits bit vectors.
   void determineKillsAndDefs();
-  
+
   /// Add all Reg Units that Reg contains to BV.
   void addRegUnits(BitVector &BV, unsigned Reg);
-  
+
   /// Return the candidate register that is unused for the longest after
   /// StartMI. UseMI is set to the instruction where the search stopped.
   ///

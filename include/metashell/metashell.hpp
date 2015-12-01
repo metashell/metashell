@@ -19,7 +19,7 @@
 
 #include <metashell/config.hpp>
 #include <metashell/iface/environment.hpp>
-#include <metashell/iface/libclang.hpp>
+#include <metashell/iface/executable.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/result.hpp>
@@ -34,39 +34,35 @@ namespace metashell
   std::string get_type_from_ast_string(const std::string& ast);
 
   result eval_tmp_formatted(
+    iface::executable& clang_binary_,
     const iface::environment& env_,
     const std::string& tmp_exp_,
-    const config& config_,
     logger* logger_
   );
 
   result eval_tmp(
+    iface::executable& clang_binary_,
     const iface::environment& env_,
-    const std::string& tmp_exp_,
-    const config& config_,
-    logger* logger_);
+    const std::string& tmp_exp_);
 
   result eval_environment(
-    const iface::environment& env_,
-    const config& config_,
-    logger* logger_);
+    iface::executable& clang_binary_,
+    const iface::environment& env_);
 
   result validate_code(
     const std::string& s_,
     const config& config_,
     const iface::environment& env_,
-    const std::string& intput_filename_,
     logger* logger_,
-    iface::libclang& libclang_
+    iface::executable& clang_binary_
   );
 
   void code_complete(
+    iface::executable& clang_binary_,
     const iface::environment& env_,
     const std::string& src_,
-    const std::string& input_filename_,
     std::set<std::string>& out_,
-    logger* logger_,
-    iface::libclang& libclang_
+    logger* logger_
   );
 
   bool is_environment_setup_command(

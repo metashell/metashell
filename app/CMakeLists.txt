@@ -24,7 +24,6 @@ use_cpp11()
 target_link_libraries(metashell
   metashell_core_lib
   metashell_readline_lib
-  metashell_clang_lib
   metashell_data_lib
 )
 
@@ -66,40 +65,27 @@ target_link_libraries(metashell boost_program_options)
 # Regex
 target_link_libraries(metashell boost_regex)
 
-# Clang
-if (MSVC)
-  # libclang calls its import library libclang.imp instead of libclang.lib
-  set(CMAKE_IMPORT_LIBRARY_SUFFIX ".imp")
-
-  # delayload libclang
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:libclang.dll")
-endif()
-target_link_libraries(metashell ${CLANG_LIBRARY})
-include_directories(${CLANG_INCLUDE_DIR})
-
-if (CLANG_STATIC)
-  target_link_libraries(metashell ${ZLIB_LIBRARIES})
-endif()
-
 install(TARGETS metashell DESTINATION bin COMPONENT metashell)
 
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)
 
-#########################################
-# Install a custom Clang with Metashell #
-#########################################
-
-include(MetashellClang)
-
-copy_clang_next_to_binary(true)
-
-if (WIN32)
-  # Windows header files
-  copy_all_files_to_binary_dir(
-    "${CMAKE_SOURCE_DIR}/windows_headers"
-    "windows_headers"
-    true
-    windows_headers
-  )
+if (TEMPLIGHT_FOUND)
+  #############################################
+  # Install a custom Templight with Metashell #
+  #############################################
+  
+  include(MetashellTemplight)
+  
+  copy_templight_next_to_binary(true)
+  
+  if (WIN32)
+    # Windows header files
+    copy_all_files_to_binary_dir(
+      "${CMAKE_SOURCE_DIR}/windows_headers"
+      "windows_headers"
+      true
+      windows_headers
+    )
+  endif ()
 endif ()
 

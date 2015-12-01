@@ -24,6 +24,8 @@
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
 
+#include "test_metaprograms.hpp"
+
 #include <just/test.hpp>
 
 using namespace metashell_system_test;
@@ -200,7 +202,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   ++i;
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<4>"), instantiation_kind::template_instantiation),
+    frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
@@ -208,7 +210,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   ++i;
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<5>"), instantiation_kind::template_instantiation),
+    frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
@@ -218,8 +220,8 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(
     backtrace(
       {
-        frame(type("fib<5>"), instantiation_kind::template_instantiation),
-        frame(type("fib<6>"), instantiation_kind::template_instantiation),
+        frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+        frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
         frame(type("int_<fib<6>::value>"))
       }
     ),
@@ -232,15 +234,15 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(
     call_graph(
       {
-        {frame(type("fib<5>"), instantiation_kind::template_instantiation), 0, 2},
-        {frame( type("fib<4>"), instantiation_kind::template_instantiation), 1, 2},
-        {frame(  type("fib<3>"), instantiation_kind::template_instantiation), 2, 2},
-        {frame(   type("fib<2>"), instantiation_kind::template_instantiation), 3, 2},
-        {frame(    type("fib<1>"), instantiation_kind::memoization), 4, 0},
-        {frame(    type("fib<0>"), instantiation_kind::memoization), 4, 0},
-        {frame(   type("fib<1>"), instantiation_kind::memoization), 3, 0},
-        {frame(  type("fib<2>"), instantiation_kind::memoization), 2, 0},
-        {frame( type("fib<3>"), instantiation_kind::memoization), 1, 0}
+        {frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), 0, 2},
+        {frame( type("fib<4>"), _, _, instantiation_kind::template_instantiation), 1, 2},
+        {frame(  type("fib<3>"), _, _, instantiation_kind::template_instantiation), 2, 2},
+        {frame(   type("fib<2>"), _, _, instantiation_kind::template_instantiation), 3, 2},
+        {frame(    type("fib<1>"), _, _, instantiation_kind::memoization), 4, 0},
+        {frame(    type("fib<0>"), _, _, instantiation_kind::memoization), 4, 0},
+        {frame(   type("fib<1>"), _, _, instantiation_kind::memoization), 3, 0},
+        {frame(  type("fib<2>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("fib<3>"), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
     *i
@@ -257,19 +259,19 @@ JUST_TEST_CASE(test_readme_getting_started)
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
-    frame(type("fib<3>"), instantiation_kind::template_instantiation),
+    frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
     *i
   );
   ++i;
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"fib<3>\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(frame(type("fib<3>"), instantiation_kind::memoization), *i);
+  JUST_ASSERT_EQUAL(frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
   ++i;
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
@@ -331,7 +333,7 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
         command("ft"),
         command("eval decltype(foo(std::vector<int>{}))"),
         command("rbreak foo"),
-        command("continue")
+        command("continue 2")
       }
     );
 
@@ -354,9 +356,10 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT_EQUAL(
     call_graph(
       {
-        {frame(type("decltype(foo(13))")), 0, 2},
-        {frame( type("foo<int>"), instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("void"), instantiation_kind::non_template_type), 1, 0}
+        {frame(type("decltype(foo(13))")), 0, 3},
+        {frame(type("foo"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("foo<int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
+        {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
     *i
@@ -371,23 +374,27 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
-    raw_text("Breakpoint \"foo\" will stop the execution on 1 location"),
+    raw_text("Breakpoint \"foo\" will stop the execution on 2 locations"),
     *i
   );
   ++i;
 
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint \"foo\" reached"), *i);
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"foo\") reached"), *i);
   ++i;
   JUST_ASSERT(
     frame(
       type("foo<std::vector<int, std::allocator<int> > >"),
+      _,
+      _,
       instantiation_kind::template_instantiation
     ) == *i
     ||
     frame(
       type("foo<std::__1::vector<int, std::__1::allocator<int> > >"),
+      _,
+      _,
       instantiation_kind::template_instantiation
     ) == *i
   );
@@ -401,3 +408,34 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
   JUST_ASSERT(i == r.end());
 }
 
+JUST_TEST_CASE(test_readme_how_to_sfinae) {
+  const auto r =
+    run_metashell(
+      {
+        command(make_unique_sfinae_mp),
+        command("#msh mdb decltype(make_unique<int>(15))"),
+        command("ft")
+      }
+    );
+
+  auto i = r.begin() + 4;
+
+  JUST_ASSERT_EQUAL(
+    call_graph(
+      {
+        {frame(type("decltype(make_unique<int>(15))")), 0, 6},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::template_instantiation), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("make_unique<int, int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
+        {frame( type("_std::unique_ptr<int>"), _, _, instantiation_kind::template_instantiation), 1, 0}
+      }
+    ),
+    *i
+  );
+}

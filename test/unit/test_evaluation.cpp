@@ -17,7 +17,6 @@
 #include "test_config.hpp"
 #include "breaking_environment.hpp"
 #include "util.hpp"
-#include "mock_libclang.hpp"
 
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
@@ -26,7 +25,7 @@
 #include <metashell/null_history.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/in_memory_history.hpp>
-#include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <just/test.hpp>
 
@@ -35,8 +34,8 @@ using namespace metashell;
 JUST_TEST_CASE(test_accept_empty_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -46,8 +45,8 @@ JUST_TEST_CASE(test_accept_empty_input)
 JUST_TEST_CASE(test_accept_space_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available(" ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -57,8 +56,8 @@ JUST_TEST_CASE(test_accept_space_input)
 JUST_TEST_CASE(test_accept_tab_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("\t", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -68,8 +67,8 @@ JUST_TEST_CASE(test_accept_tab_input)
 JUST_TEST_CASE(test_accept_vertical_tab_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("\v", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -79,8 +78,8 @@ JUST_TEST_CASE(test_accept_vertical_tab_input)
 JUST_TEST_CASE(test_accept_new_line_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("\n", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -90,8 +89,8 @@ JUST_TEST_CASE(test_accept_new_line_input)
 JUST_TEST_CASE(test_accept_carrige_return_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("\r", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -101,8 +100,8 @@ JUST_TEST_CASE(test_accept_carrige_return_input)
 JUST_TEST_CASE(test_accept_two_space_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("  ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -113,9 +112,8 @@ JUST_TEST_CASE(test_history_is_stored)
 {
   null_displayer d;
   in_memory_history h;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc, 2);
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("int", d, h);
 
@@ -126,8 +124,8 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("", d, h);
 
@@ -140,8 +138,8 @@ JUST_TEST_CASE(
 {
   null_displayer d;
   in_memory_history h;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available(" ", d, h);
 
@@ -154,10 +152,8 @@ JUST_TEST_CASE(
 {
   null_displayer d;
   in_memory_history h;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc, 2);
-  expect_parsing_return_empty(lc, 2);
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("int", d, h);
   sh.line_available("int", d, h);
@@ -168,8 +164,8 @@ JUST_TEST_CASE(
 JUST_TEST_CASE(test_accept_c_comment_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("/* some comment */", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -179,8 +175,8 @@ JUST_TEST_CASE(test_accept_c_comment_input)
 JUST_TEST_CASE(test_accept_cpp_comment_input)
 {
   in_memory_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("// some comment", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -191,8 +187,8 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
 
   sh.line_available("// some comment", d, h);
 
@@ -207,9 +203,8 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   null_history h;
   command_processor_queue cpq;
   cpq.history(h);
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
-  shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq, lc);
+  metashell::null_executable clang_binary;
+  shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq, clang_binary);
   e->append_throw_from_now();
 
   sh.store_in_buffer("typedef int foo;", d);
@@ -222,17 +217,9 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   metashell::config cfg;
   breaking_environment e(cfg);
   e.get_appended_throw_from_now();
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
+  metashell::null_executable clang_binary;
   const metashell::result r =
-    metashell::validate_code(
-      "typedef int foo;",
-      cfg,
-      e,
-      "<input>",
-      nullptr,
-      lc
-    );
+    metashell::validate_code("typedef int foo;", cfg, e, nullptr, clang_binary);
 
   JUST_ASSERT(!r.successful);
   JUST_ASSERT(!r.error.empty());
@@ -265,8 +252,8 @@ JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
 JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
 {
   null_displayer d;
-  metashell::null_libclang lc;
-  shell sh(test_config(), lc);
+  metashell::null_executable clang_binary;
+  shell sh(test_config(), clang_binary);
   sh.line_available("const \\", d);
 
   JUST_ASSERT_EQUAL("...>", sh.prompt());

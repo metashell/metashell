@@ -22,7 +22,7 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -73,11 +73,11 @@ namespace
   void show_pragma_help()
   {
     const config cfg;
-    null_libclang lclang;
+    null_executable clang_binary;
     command_processor_queue cpq;
-    shell sh(cfg, cpq, lclang);
+    shell sh(cfg, cpq, clang_binary);
     const pragma_handler_map
-      m = pragma_handler_map::build_default(sh, &cpq, nullptr);
+      m = pragma_handler_map::build_default(clang_binary, sh, &cpq, nullptr);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)
@@ -169,6 +169,7 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string cppstd("c++0x");
+  std::string svalue("tdlib=libstdc++");
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
   std::string fvalue;
@@ -222,6 +223,12 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
+    (
+      ",s",
+      value(&svalue),
+      "-stdlib=value: Standard library to use."
+      " Currently supported: libc++, libstdc++"
+    )
     ;
 
   try
@@ -252,6 +259,19 @@ parse_config_result metashell::parse_config(
     if (!fvalue.empty())
     {
       ucfg.max_template_depth = parse_max_template_depth(fvalue);
+    }
+
+    if (svalue == "tdlib=libc++")
+    {
+      ucfg.stdlib_to_use = stdlib::libcxx;
+    }
+    else if (svalue == "tdlib=libstdc++")
+    {
+      ucfg.stdlib_to_use = stdlib::libstdcxx;
+    }
+    else
+    {
+      throw std::runtime_error("Invalid argument -s" + svalue);
     }
 
     if (vm.count("help"))

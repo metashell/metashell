@@ -20,13 +20,18 @@
 #include "clang/Lex/Pragma.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Parse/Parser.h"
+#include "clang/Sema/Sema.h"
+#include "clang/Sema/TemplateInstCallbacks.h"
 #include "clang/Serialization/ASTReader.h"
 #include "clang/Serialization/ASTWriter.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/YAMLTraits.h"
 #include <memory>
 #include <system_error>
+
+#include <iostream>
 
 using namespace clang;
 
@@ -91,12 +96,10 @@ GeneratePCHAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   auto Buffer = std::make_shared<PCHBuffer>();
   std::vector<std::unique_ptr<ASTConsumer>> Consumers;
   Consumers.push_back(llvm::make_unique<PCHGenerator>(
-      CI.getPreprocessor(), OutputFile, nullptr, Sysroot, Buffer));
-  Consumers.push_back(
-      CI.getPCHContainerWriter().CreatePCHContainerGenerator(
-          CI.getDiagnostics(), CI.getHeaderSearchOpts(),
-          CI.getPreprocessorOpts(), CI.getTargetOpts(), CI.getLangOpts(),
-          InFile, OutputFile, OS, Buffer));
+                        CI.getPreprocessor(), OutputFile, nullptr, Sysroot,
+                        Buffer, CI.getFrontendOpts().ModuleFileExtensions));
+  Consumers.push_back(CI.getPCHContainerWriter().CreatePCHContainerGenerator(
+      CI, InFile, OutputFile, OS, Buffer));
 
   return llvm::make_unique<MultiplexConsumer>(std::move(Consumers));
 }
@@ -136,13 +139,15 @@ GenerateModuleAction::CreateASTConsumer(CompilerInstance &CI,
 
   auto Buffer = std::make_shared<PCHBuffer>();
   std::vector<std::unique_ptr<ASTConsumer>> Consumers;
+
   Consumers.push_back(llvm::make_unique<PCHGenerator>(
-      CI.getPreprocessor(), OutputFile, Module, Sysroot, Buffer));
-  Consumers.push_back(
-      CI.getPCHContainerWriter().CreatePCHContainerGenerator(
-          CI.getDiagnostics(), CI.getHeaderSearchOpts(),
-          CI.getPreprocessorOpts(), CI.getTargetOpts(), CI.getLangOpts(),
-          InFile, OutputFile, OS, Buffer));
+                        CI.getPreprocessor(), OutputFile, Module, Sysroot,
+                        Buffer, CI.getFrontendOpts().ModuleFileExtensions,
+                        /*AllowASTWithErrors=*/false,
+                        /*IncludeTimestamps=*/
+                          +CI.getFrontendOpts().BuildingImplicitModule));
+  Consumers.push_back(CI.getPCHContainerWriter().CreatePCHContainerGenerator(
+      CI, InFile, OutputFile, OS, Buffer));
   return llvm::make_unique<MultiplexConsumer>(std::move(Consumers));
 }
 
@@ -268,8 +273,9 @@ collectModuleHeaderIncludes(const LangOptions &LangOpts, FileManager &FileMgr,
 
 bool GenerateModuleAction::BeginSourceFileAction(CompilerInstance &CI, 
                                                  StringRef Filename) {
-  // Find the module map file.  
-  const FileEntry *ModuleMap = CI.getFileManager().getFile(Filename);
+  // Find the module map file.
+  const FileEntry *ModuleMap =
+      CI.getFileManager().getFile(Filename, /*openFile*/true);
   if (!ModuleMap)  {
     CI.getDiagnostics().Report(diag::err_module_map_not_found)
       << Filename;
@@ -289,6 +295,14 @@ bool GenerateModuleAction::BeginSourceFileAction(CompilerInstance &CI,
     // default. Then it would be fairly trivial to just "compile" a module
     // map with a single module (the common case).
     return false;
+  }
+
+  // Set up embedding for any specified files.
+  for (const auto &F : CI.getFrontendOpts().ModulesEmbedFiles) {
+    if (const auto *FE = CI.getFileManager().getFile(F, /*openFile*/true))
+      CI.getSourceManager().embedFileContentsInModule(FE);
+    else
+      CI.getDiagnostics().Report(diag::err_modules_embed_file_not_found) << F;
   }
 
   // If we're being run from the command-line, the module build stack will not
@@ -416,6 +430,7 @@ void VerifyPCHAction::ExecuteAction() {
   const std::string &Sysroot = CI.getHeaderSearchOpts().Sysroot;
   std::unique_ptr<ASTReader> Reader(new ASTReader(
       CI.getPreprocessor(), CI.getASTContext(), CI.getPCHContainerReader(),
+      CI.getFrontendOpts().ModuleFileExtensions,
       Sysroot.empty() ? "" : Sysroot.c_str(),
       /*DisableValidation*/ false,
       /*AllowPCHWithCompilerErrors*/ false,
@@ -427,6 +442,143 @@ void VerifyPCHAction::ExecuteAction() {
                            : serialization::MK_PCH,
                   SourceLocation(),
                   ASTReader::ARR_ConfigurationMismatch);
+}
+
+namespace {
+  struct TemplightEntry
+  {
+    std::string Name;
+    std::string Kind;
+    std::string Event;
+    std::string PointOfInstantiation;
+  };
+}
+
+namespace llvm {
+namespace yaml {
+  template <>
+  struct MappingTraits<TemplightEntry> {
+    static void mapping(IO &io,
+      TemplightEntry &fields) {
+      io.mapRequired("name", fields.Name);
+      io.mapRequired("kind", fields.Kind);
+      io.mapRequired("event", fields.Event);
+      io.mapRequired("poi", fields.PointOfInstantiation);
+    }
+  };
+}
+}
+
+namespace {
+  class DefaultTemplateInstCallbacks : public TemplateInstantiationCallbacks {
+  protected:
+    virtual void atTemplateBeginImpl(const Sema &TheSema,
+      const ActiveTemplateInstantiation &Inst) override
+    {
+      DisplayTemplightEntry<true>(std::cout, TheSema, Inst);
+    }
+
+    virtual void atTemplateEndImpl(const Sema &TheSema,
+      const ActiveTemplateInstantiation &Inst) override
+    {
+      DisplayTemplightEntry<false>(std::cout, TheSema, Inst);
+    }
+  private:
+    static std::string ToString(
+      ActiveTemplateInstantiation::InstantiationKind Kind) {
+      switch (Kind) {
+      case ActiveTemplateInstantiation::TemplateInstantiation:
+        return "TemplateInstantiation";
+      case ActiveTemplateInstantiation::DefaultTemplateArgumentInstantiation:
+        return "DefaultTemplateArgumentInstantiation";
+      case ActiveTemplateInstantiation::DefaultFunctionArgumentInstantiation:
+        return "DefaultFunctionArgumentInstantiation";
+      case ActiveTemplateInstantiation::ExplicitTemplateArgumentSubstitution:
+        return "ExplicitTemplateArgumentSubstitution";
+      case ActiveTemplateInstantiation::DeducedTemplateArgumentSubstitution:
+        return "DeducedTemplateArgumentSubstitution";
+      case ActiveTemplateInstantiation::PriorTemplateArgumentSubstitution:
+        return "PriorTemplateArgumentSubstitution";
+      case ActiveTemplateInstantiation::DefaultTemplateArgumentChecking:
+        return "DefaultTemplateArgumentChecking";
+      case ActiveTemplateInstantiation::ExceptionSpecInstantiation:
+        return "ExceptionSpecInstantiation";
+      case ActiveTemplateInstantiation::Memoization:
+        return "Memoization";
+      }
+      return "";
+    }
+
+    template <bool BeginInstantiation>
+    static void DisplayTemplightEntry(std::ostream &Out, const Sema &TheSema,
+      const ActiveTemplateInstantiation &Inst)
+    {
+      std::string YAML;
+      {
+        llvm::raw_string_ostream OS(YAML);
+        llvm::yaml::Output YO(OS);
+        TemplightEntry Entry =
+          GetTemplightEntry<BeginInstantiation>(TheSema, Inst);
+        llvm::yaml::yamlize(YO, Entry, true);
+      }
+      Out << "---" << YAML << "\n";
+    }
+
+    template <bool BeginInstantiation>
+    static TemplightEntry GetTemplightEntry(const Sema &TheSema,
+      const ActiveTemplateInstantiation &Inst)
+    {
+      TemplightEntry Entry;
+      Entry.Kind = ToString(Inst.Kind);
+      Entry.Event = BeginInstantiation ? "Begin" : "End";
+      if (NamedDecl* NamedTemplate = dyn_cast_or_null<NamedDecl>(Inst.Entity))
+      {
+        llvm::raw_string_ostream OS(Entry.Name);
+        NamedTemplate->getNameForDiagnostic(OS, TheSema.getLangOpts(), true);
+      }
+      const PresumedLoc Loc =
+        TheSema.getSourceManager().getPresumedLoc(Inst.PointOfInstantiation);
+      if (!Loc.isInvalid())
+      {
+        Entry.PointOfInstantiation =
+          std::string(Loc.getFilename())
+          + ":" + std::to_string(Loc.getLine())
+          + ":" + std::to_string(Loc.getColumn());
+      }
+      return Entry;
+    }
+  };
+}
+
+std::unique_ptr<ASTConsumer>
+TemplightDumpAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
+  return llvm::make_unique<ASTConsumer>();
+}
+
+void TemplightDumpAction::ExecuteAction() {
+  CompilerInstance &CI = getCompilerInstance();
+
+  // This part is normally done by ASTFrontEndAction, but needs to happen
+  //  before Templight observers can be created ----------------------->>
+  // FIXME: Move the truncation aspect of this into Sema, we delayed this till
+  // here so the source manager would be initialized.
+  if (hasCodeCompletionSupport() &&
+      !CI.getFrontendOpts().CodeCompletionAt.FileName.empty())
+    CI.createCodeCompletionConsumer();
+
+  // Use a code completion consumer?
+  CodeCompleteConsumer *CompletionConsumer = nullptr;
+  if (CI.hasCodeCompletionConsumer())
+    CompletionConsumer = &CI.getCodeCompletionConsumer();
+
+  if (!CI.hasSema())
+    CI.createSema(getTranslationUnitKind(), CompletionConsumer);
+  //<<--------------------------------------------------------------
+
+  TemplateInstantiationCallbacks::appendNewCallbacks(
+    CI.getSema().TemplateInstCallbacksChain,
+    new DefaultTemplateInstCallbacks());
+  ASTFrontendAction::ExecuteAction();
 }
 
 namespace {
@@ -559,6 +711,20 @@ namespace {
       }
       return false;
     }
+
+    /// Indicates that a particular module file extension has been read.
+    void readModuleFileExtension(
+           const ModuleFileExtensionMetadata &Metadata) override {
+      Out.indent(2) << "Module file extension '"
+                    << Metadata.BlockName << "' " << Metadata.MajorVersion
+                    << "." << Metadata.MinorVersion;
+      if (!Metadata.UserInfo.empty()) {
+        Out << ": ";
+        Out.write_escaped(Metadata.UserInfo);
+      }
+
+      Out << "\n";
+    }
 #undef DUMP_BOOLEAN
   };
 }
@@ -578,7 +744,8 @@ void DumpModuleInfoAction::ExecuteAction() {
   DumpModuleInfoListener Listener(Out);
   ASTReader::readASTFileControlBlock(
       getCurrentFile(), getCompilerInstance().getFileManager(),
-      getCompilerInstance().getPCHContainerReader(), Listener);
+      getCompilerInstance().getPCHContainerReader(),
+      /*FindModuleFileExtensions=*/true, Listener);
 }
 
 //===----------------------------------------------------------------------===//

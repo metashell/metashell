@@ -47,18 +47,21 @@ public:
   metaprogram(
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_stream(
       std::istream& stream,
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   static metaprogram create_from_protobuf_string(
       const std::string& string,
       mode_t mode,
       const std::string& root_name,
+      const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   struct vertex_property_tag {
@@ -69,7 +72,8 @@ public:
   };
 
   struct vertex_property {
-    std::string name;
+    data::type type;
+    data::file_location source_location;
   };
   struct edge_property {
     data::instantiation_kind kind;
@@ -120,7 +124,9 @@ public:
 
   typedef std::stack<step_rollback_t> state_history_t;
 
-  vertex_descriptor add_vertex(const std::string& element);
+  vertex_descriptor add_vertex(
+    const data::type& type,
+    const data::file_location& source_location);
 
   edge_descriptor add_edge(
       vertex_descriptor from,

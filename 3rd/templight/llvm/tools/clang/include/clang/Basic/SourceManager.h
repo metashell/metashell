@@ -851,6 +851,13 @@ public:
   /// This should be called before parsing has begun.
   void disableFileContentsOverride(const FileEntry *File);
 
+  /// \brief Request that the contents of the given source file are written
+  /// to a created module file if they are used in this compilation. This
+  /// removes the requirement that the file still exist when the module is used
+  /// (but does not make the file visible to header search and the like when
+  /// the module is used).
+  void embedFileContentsInModule(const FileEntry *SourceFile);
+
   //===--------------------------------------------------------------------===//
   // FileID manipulation methods.
   //===--------------------------------------------------------------------===//
@@ -1139,10 +1146,14 @@ public:
   /// \brief Tests whether the given source location represents a macro
   /// argument's expansion into the function-like macro definition.
   ///
+  /// \param StartLoc If non-null and function returns true, it is set to the
+  /// start location of the macro argument expansion.
+  ///
   /// Such source locations only appear inside of the expansion
   /// locations representing where a particular function-like macro was
   /// expanded.
-  bool isMacroArgExpansion(SourceLocation Loc) const;
+  bool isMacroArgExpansion(SourceLocation Loc,
+                           SourceLocation *StartLoc = nullptr) const;
 
   /// \brief Tests whether the given source location represents the expansion of
   /// a macro body.
@@ -1462,6 +1473,8 @@ public:
   /// \brief Print statistics to stderr.
   ///
   void PrintStats() const;
+
+  void dump() const;
 
   /// \brief Get the number of local SLocEntries we have.
   unsigned local_sloc_entry_size() const { return LocalSLocEntryTable.size(); }

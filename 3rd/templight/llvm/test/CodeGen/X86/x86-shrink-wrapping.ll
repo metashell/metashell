@@ -532,7 +532,11 @@ declare hidden fastcc %struct.temp_slot* @find_temp_slot_from_address(%struct.rt
 ;
 ; CHECK: movl $24599, [[TMP2:%e[a-z]+]]
 ; CHECK-NEXT: btl [[TMP]], [[TMP2]]
-; CHECK-NEXT: jb [[CLEANUP]]
+; CHECK-NEXT: jae [[LOR_LHS_FALSE:LBB[0-9_]+]]
+;
+; CHECK: [[CLEANUP]]: ## %cleanup
+; DISABLE: popq
+; CHECK-NEXT: retq
 ;
 ; CHECK: [[LOR_LHS_FALSE]]: ## %lor.lhs.false
 ; CHECK: cmpl $134, %e[[BF_LOAD2]]
@@ -551,10 +555,6 @@ declare hidden fastcc %struct.temp_slot* @find_temp_slot_from_address(%struct.rt
 ; CHECK-NEXT: je [[CLEANUP]]
 ;
 ; CHECK: movb $1, 57(%rax)
-;
-; CHECK: [[CLEANUP]]: ## %cleanup
-; DISABLE: popq
-; CHECK-NEXT: retq
 define void @useLEA(%struct.rtx_def* readonly %x) {
 entry:
   %cmp = icmp eq %struct.rtx_def* %x, null
@@ -666,4 +666,125 @@ for.body:                                         ; preds = %for.body, %entry
 
 if.end:
   ret void
+}
+
+; Another infinite loop test this time with a body bigger than just one block.
+; CHECK-LABEL: infiniteloop2
+; CHECK: retq
+define void @infiniteloop2() {
+entry:
+  br i1 undef, label %if.then, label %if.end
+
+if.then:
+  %ptr = alloca i32, i32 4
+  br label %for.body
+
+for.body:                                         ; preds = %for.body, %entry
+  %sum.03 = phi i32 [ 0, %if.then ], [ %add, %body1 ], [ 1, %body2]
+  %call = tail call i32 asm "movl $$1, $0", "=r,~{ebx}"()
+  %add = add nsw i32 %call, %sum.03
+  store i32 %add, i32* %ptr
+  br i1 undef, label %body1, label %body2
+
+body1:
+  tail call void asm sideeffect "nop", "~{ebx}"()
+  br label %for.body
+
+body2:
+  tail call void asm sideeffect "nop", "~{ebx}"()
+  br label %for.body
+
+if.end:
+  ret void
+}
+
+; Another infinite loop test this time with two nested infinite loop.
+; CHECK-LABEL: infiniteloop3
+; CHECK: retq
+define void @infiniteloop3() {
+entry:
+  br i1 undef, label %loop2a, label %body
+
+body:                                             ; preds = %entry
+  br i1 undef, label %loop2a, label %end
+
+loop1:                                            ; preds = %loop2a, %loop2b
+  %var.phi = phi i32* [ %next.phi, %loop2b ], [ %var, %loop2a ]
+  %next.phi = phi i32* [ %next.load, %loop2b ], [ %next.var, %loop2a ]
+  %0 = icmp eq i32* %var, null
+  %next.load = load i32*, i32** undef
+  br i1 %0, label %loop2a, label %loop2b
+
+loop2a:                                           ; preds = %loop1, %body, %entry
+  %var = phi i32* [ null, %body ], [ null, %entry ], [ %next.phi, %loop1 ]
+  %next.var = phi i32* [ undef, %body ], [ null, %entry ], [ %next.load, %loop1 ]
+  br label %loop1
+
+loop2b:                                           ; preds = %loop1
+  %gep1 = bitcast i32* %var.phi to i32*
+  %next.ptr = bitcast i32* %gep1 to i32**
+  store i32* %next.phi, i32** %next.ptr
+  br label %loop1
+
+end:
+  ret void
+}
+
+; Check that we just don't bail out on RegMask.
+; In this case, the RegMask does not touch a CSR so we are good to go!
+; CHECK-LABEL: regmask:
+;
+; Compare the arguments and jump to exit.
+; No prologue needed.
+; ENABLE: cmpl %esi, %edi
+; ENABLE-NEXT: jge [[EXIT_LABEL:LBB[0-9_]+]]
+;
+; Prologue code.
+; (What we push does not matter. It should be some random sratch register.)
+; CHECK: pushq
+;
+; Compare the arguments and jump to exit.
+; After the prologue is set.
+; DISABLE: cmpl %esi, %edi
+; DISABLE-NEXT: jge [[EXIT_LABEL:LBB[0-9_]+]]
+;
+; CHECK: nop
+; Set the first argument to zero.
+; CHECK: xorl %edi, %edi
+; Set the second argument to addr.
+; CHECK-NEXT: movq %rdx, %rsi
+; CHECK-NEXT: callq _doSomething
+; CHECK-NEXT: popq
+; CHECK-NEXT: retq
+;
+; CHECK: [[EXIT_LABEL]]:
+; Set the first argument to 6.
+; CHECK-NEXT: movl $6, %edi
+; Set the second argument to addr.
+; CHECK-NEXT: movq %rdx, %rsi
+;
+; Without shrink-wrapping, we need to restore the stack before
+; making the tail call.
+; Epilogue code.
+; DISABLE-NEXT: popq
+;
+; CHECK-NEXT: jmp _doSomething
+define i32 @regmask(i32 %a, i32 %b, i32* %addr) {
+  %tmp2 = icmp slt i32 %a, %b
+  br i1 %tmp2, label %true, label %false
+
+true:
+  ; Clobber a CSR so that we check something on the regmask
+  ; of the tail call.
+  tail call void asm sideeffect "nop", "~{ebx}"()
+  %tmp4 = call i32 @doSomething(i32 0, i32* %addr)
+  br label %end
+
+false:
+  %tmp5 = tail call i32 @doSomething(i32 6, i32* %addr)
+  br label %end
+
+end:
+  %tmp.0 = phi i32 [ %tmp4, %true ], [ %tmp5, %false ]
+  ret i32 %tmp.0
 }

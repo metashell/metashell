@@ -132,26 +132,6 @@ def SEG_ALLOCA_64 : I<0, Pseudo, (outs GR64:$dst), (ins GR64:$size),
                     Requires<[In64BitMode]>;
 }
 
-// The MSVC runtime contains an _ftol2 routine for converting floating-point
-// to integer values. It has a strange calling convention: the input is
-// popped from the x87 stack, and the return value is given in EDX:EAX. ECX is
-// used as a temporary register. No other registers (aside from flags) are
-// touched.
-// Microsoft toolchains do not support 80-bit precision, so a WIN_FTOL_80
-// variant is unnecessary.
-
-let Defs = [EAX, EDX, ECX, EFLAGS], FPForm = SpecialFP in {
-  def WIN_FTOL_32 : I<0, Pseudo, (outs), (ins RFP32:$src),
-                      "# win32 fptoui",
-                      [(X86WinFTOL RFP32:$src)]>,
-                    Requires<[Not64BitMode]>;
-
-  def WIN_FTOL_64 : I<0, Pseudo, (outs), (ins RFP64:$src),
-                      "# win32 fptoui",
-                      [(X86WinFTOL RFP64:$src)]>,
-                    Requires<[Not64BitMode]>;
-}
-
 //===----------------------------------------------------------------------===//
 // EH Pseudo Instructions
 //
@@ -171,6 +151,29 @@ def EH_RETURN64   : I<0xC3, RawFrm, (outs), (ins GR64:$addr),
                      [(X86ehret GR64:$addr)], IIC_RET>, Sched<[WriteJumpLd]>;
 
 }
+
+let isTerminator = 1, hasSideEffects = 1, isBarrier = 1, hasCtrlDep = 1,
+    isCodeGenOnly = 1, isReturn = 1 in {
+  def CLEANUPRET : I<0, Pseudo, (outs), (ins), "# CLEANUPRET", [(cleanupret)]>;
+
+  // CATCHRET needs a custom inserter for SEH.
+  let usesCustomInserter = 1 in
+    def CATCHRET : I<0, Pseudo, (outs), (ins brtarget32:$dst, brtarget32:$from),
+                     "# CATCHRET",
+                     [(catchret bb:$dst, bb:$from)]>;
+}
+
+let hasSideEffects = 1, hasCtrlDep = 1, isCodeGenOnly = 1,
+    usesCustomInserter = 1 in
+def CATCHPAD : I<0, Pseudo, (outs), (ins), "# CATCHPAD", [(catchpad)]>;
+
+// This instruction is responsible for re-establishing stack pointers after an
+// exception has been caught and we are rejoining normal control flow in the
+// parent function or funclet. It generally sets ESP and EBP, and optionally
+// ESI. It is only needed for 32-bit WinEH, as the runtime restores CSRs for us
+// elsewhere.
+let hasSideEffects = 1, hasCtrlDep = 1, isCodeGenOnly = 1 in
+def EH_RESTORE : I<0, Pseudo, (outs), (ins), "# EH_RESTORE", []>;
 
 let hasSideEffects = 1, isBarrier = 1, isCodeGenOnly = 1,
     usesCustomInserter = 1 in {
@@ -268,9 +271,9 @@ def MOV32ri64 : Ii32<0xb8, AddRegFrm, (outs GR32:$dst), (ins i64i32imm:$src),
                      "", [], IIC_ALU_NONMEM>, Sched<[WriteALU]>;
 
 // This 64-bit pseudo-move can be used for both a 64-bit constant that is
-// actually the zero-extension of a 32-bit constant, and for labels in the
+// actually the zero-extension of a 32-bit constant and for labels in the
 // x86-64 small code model.
-def mov64imm32 : ComplexPattern<i64, 1, "SelectMOV64Imm32", [imm, X86Wrapper]>;
+def mov64imm32 : ComplexPattern<i64, 1, "selectMOV64Imm32", [imm, X86Wrapper]>;
 
 let AddedComplexity = 1 in
 def : Pat<(i64 mov64imm32:$src),
@@ -787,12 +790,14 @@ multiclass RELEASE_BINOP_MI<SDNode op> {
         [(atomic_store_64 addr:$dst, (op
             (atomic_load_64 addr:$dst), GR64:$src))]>;
 }
-defm RELEASE_ADD : RELEASE_BINOP_MI<add>;
-defm RELEASE_AND : RELEASE_BINOP_MI<and>;
-defm RELEASE_OR  : RELEASE_BINOP_MI<or>;
-defm RELEASE_XOR : RELEASE_BINOP_MI<xor>;
-// Note: we don't deal with sub, because substractions of constants are
-// optimized into additions before this code can run
+let Defs = [EFLAGS] in {
+  defm RELEASE_ADD : RELEASE_BINOP_MI<add>;
+  defm RELEASE_AND : RELEASE_BINOP_MI<and>;
+  defm RELEASE_OR  : RELEASE_BINOP_MI<or>;
+  defm RELEASE_XOR : RELEASE_BINOP_MI<xor>;
+  // Note: we don't deal with sub, because substractions of constants are
+  //       optimized into additions before this code can run.
+}
 
 // Same as above, but for floating-point.
 // FIXME: imm version.
@@ -832,24 +837,29 @@ multiclass RELEASE_UNOP<dag dag8, dag dag16, dag dag32, dag dag64> {
         [(atomic_store_64 addr:$dst, dag64)]>;
 }
 
-defm RELEASE_INC : RELEASE_UNOP<
-    (add (atomic_load_8  addr:$dst), (i8 1)),
-    (add (atomic_load_16 addr:$dst), (i16 1)),
-    (add (atomic_load_32 addr:$dst), (i32 1)),
-    (add (atomic_load_64 addr:$dst), (i64 1))>, Requires<[NotSlowIncDec]>;
-defm RELEASE_DEC : RELEASE_UNOP<
-    (add (atomic_load_8  addr:$dst), (i8 -1)),
-    (add (atomic_load_16 addr:$dst), (i16 -1)),
-    (add (atomic_load_32 addr:$dst), (i32 -1)),
-    (add (atomic_load_64 addr:$dst), (i64 -1))>, Requires<[NotSlowIncDec]>;
+let Defs = [EFLAGS] in {
+  defm RELEASE_INC : RELEASE_UNOP<
+      (add (atomic_load_8  addr:$dst), (i8 1)),
+      (add (atomic_load_16 addr:$dst), (i16 1)),
+      (add (atomic_load_32 addr:$dst), (i32 1)),
+      (add (atomic_load_64 addr:$dst), (i64 1))>, Requires<[NotSlowIncDec]>;
+  defm RELEASE_DEC : RELEASE_UNOP<
+      (add (atomic_load_8  addr:$dst), (i8 -1)),
+      (add (atomic_load_16 addr:$dst), (i16 -1)),
+      (add (atomic_load_32 addr:$dst), (i32 -1)),
+      (add (atomic_load_64 addr:$dst), (i64 -1))>, Requires<[NotSlowIncDec]>;
+}
 /*
 TODO: These don't work because the type inference of TableGen fails.
 TODO: find a way to fix it.
-defm RELEASE_NEG : RELEASE_UNOP<
-    (ineg (atomic_load_8  addr:$dst)),
-    (ineg (atomic_load_16 addr:$dst)),
-    (ineg (atomic_load_32 addr:$dst)),
-    (ineg (atomic_load_64 addr:$dst))>;
+let Defs = [EFLAGS] in {
+  defm RELEASE_NEG : RELEASE_UNOP<
+      (ineg (atomic_load_8  addr:$dst)),
+      (ineg (atomic_load_16 addr:$dst)),
+      (ineg (atomic_load_32 addr:$dst)),
+      (ineg (atomic_load_64 addr:$dst))>;
+}
+// NOT doesn't set flags.
 defm RELEASE_NOT : RELEASE_UNOP<
     (not (atomic_load_8  addr:$dst)),
     (not (atomic_load_16 addr:$dst)),
@@ -1335,7 +1345,6 @@ def : Pat<(and GR64:$src, 0x00000000FFFFFFFF),
                          (MOV32rr (EXTRACT_SUBREG GR64:$src, sub_32bit)),
                          sub_32bit)>;
 // r & (2^16-1) ==> movz
-let AddedComplexity = 1 in // Give priority over i64immZExt32.
 def : Pat<(and GR64:$src, 0xffff),
           (SUBREG_TO_REG (i64 0),
                       (MOVZX32rr16 (i16 (EXTRACT_SUBREG GR64:$src, sub_16bit))),

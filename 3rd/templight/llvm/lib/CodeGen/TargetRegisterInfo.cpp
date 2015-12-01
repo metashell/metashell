@@ -18,19 +18,12 @@
 #include "llvm/CodeGen/VirtRegMap.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetFrameLowering.h"
 #include "llvm/Target/TargetRegisterInfo.h"
 
 #define DEBUG_TYPE "target-reg-info"
-
-namespace llvm {
-cl::opt<bool>
-    ForceStackAlign("force-align-stack",
-                    cl::desc("Force align the stack to the minimum alignment"
-                             " needed for the function."),
-                    cl::init(false), cl::Hidden);
-} // end namespace llvm
 
 using namespace llvm;
 
@@ -93,6 +86,10 @@ void PrintVRegOrUnit::print(raw_ostream &OS) const {
     return;
   }
   PrintRegUnit::print(OS);
+}
+
+void PrintLaneMask::print(raw_ostream &OS) const {
+  OS << format("%08X", LaneMask);
 }
 
 /// getAllocatableClass - Return the maximal subclass of the given register
@@ -273,6 +270,47 @@ getCommonSuperRegClass(const TargetRegisterClass *RCA, unsigned SubA,
   return BestRC;
 }
 
+/// \brief Check if the registers defined by the pair (RegisterClass, SubReg)
+/// share the same register file.
+static bool shareSameRegisterFile(const TargetRegisterInfo &TRI,
+                                  const TargetRegisterClass *DefRC,
+                                  unsigned DefSubReg,
+                                  const TargetRegisterClass *SrcRC,
+                                  unsigned SrcSubReg) {
+  // Same register class.
+  if (DefRC == SrcRC)
+    return true;
+
+  // Both operands are sub registers. Check if they share a register class.
+  unsigned SrcIdx, DefIdx;
+  if (SrcSubReg && DefSubReg) {
+    return TRI.getCommonSuperRegClass(SrcRC, SrcSubReg, DefRC, DefSubReg,
+                                      SrcIdx, DefIdx) != nullptr;
+  }
+
+  // At most one of the register is a sub register, make it Src to avoid
+  // duplicating the test.
+  if (!SrcSubReg) {
+    std::swap(DefSubReg, SrcSubReg);
+    std::swap(DefRC, SrcRC);
+  }
+
+  // One of the register is a sub register, check if we can get a superclass.
+  if (SrcSubReg)
+    return TRI.getMatchingSuperRegClass(SrcRC, DefRC, SrcSubReg) != nullptr;
+
+  // Plain copy.
+  return TRI.getCommonSubClass(DefRC, SrcRC) != nullptr;
+}
+
+bool TargetRegisterInfo::shouldRewriteCopySrc(const TargetRegisterClass *DefRC,
+                                              unsigned DefSubReg,
+                                              const TargetRegisterClass *SrcRC,
+                                              unsigned SrcSubReg) const {
+  // If this source does not incur a cross register bank copy, use it.
+  return shareSameRegisterFile(*this, DefRC, DefSubReg, SrcRC, SrcSubReg);
+}
+
 // Compute target-independent register allocator hints to help eliminate copies.
 void
 TargetRegisterInfo::getRegAllocationHints(unsigned VirtReg,
@@ -321,7 +359,7 @@ bool TargetRegisterInfo::needsStackRealignment(
   unsigned StackAlign = TFI->getStackAlignment();
   bool requiresRealignment = ((MFI->getMaxAlignment() > StackAlign) ||
                               F->hasFnAttribute(Attribute::StackAlignment));
-  if (ForceStackAlign || requiresRealignment) {
+  if (MF.getFunction()->hasFnAttribute("stackrealign") || requiresRealignment) {
     if (canRealignStack(MF))
       return true;
     DEBUG(dbgs() << "Can't realign function's stack: " << F->getName() << "\n");

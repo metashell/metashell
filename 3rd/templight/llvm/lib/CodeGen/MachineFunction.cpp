@@ -26,6 +26,7 @@
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/Passes.h"
+#include "llvm/CodeGen/PseudoSourceValue.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/Function.h"
@@ -90,6 +91,8 @@ MachineFunction::MachineFunction(const Function *F, const TargetMachine &TM,
   assert(TM.isCompatibleDataLayout(getDataLayout()) &&
          "Can't create a MachineFunction using a Module with a "
          "Target-incompatible DataLayout attached\n");
+
+  PSVManager = llvm::make_unique<PseudoSourceValueManager>();
 }
 
 MachineFunction::~MachineFunction() {
@@ -154,7 +157,7 @@ void MachineFunction::RenumberBlocks(MachineBasicBlock *MBB) {
   if (MBB == nullptr)
     MBBI = begin();
   else
-    MBBI = MBB;
+    MBBI = MBB->getIterator();
 
   // Figure out the block number this should have.
   unsigned BlockNo = 0;
@@ -174,7 +177,7 @@ void MachineFunction::RenumberBlocks(MachineBasicBlock *MBB) {
       if (MBBNumbering[BlockNo])
         MBBNumbering[BlockNo]->setNumber(-1);
 
-      MBBNumbering[BlockNo] = MBBI;
+      MBBNumbering[BlockNo] = &*MBBI;
       MBBI->setNumber(BlockNo);
     }
   }

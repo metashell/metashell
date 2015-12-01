@@ -17,8 +17,6 @@
 #include "test_config.hpp"
 #include "argv0.hpp"
 
-#include "mock_libclang.hpp"
-
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/user_config.hpp>
@@ -26,7 +24,7 @@
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
-#include <metashell/null_libclang.hpp>
+#include <metashell/null_executable.hpp>
 
 #include <just/test.hpp>
 
@@ -37,8 +35,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   metashell::config cfg;
   cfg.verbose = false;
 
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(cfg, clang_binary);
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -48,8 +46,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(cfg, clang_binary);
 
   JUST_ASSERT(sh.verbose());
 }
@@ -59,8 +57,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = false;
 
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(cfg, clang_binary);
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -71,8 +69,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(cfg, clang_binary);
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -80,16 +78,16 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
 
   JUST_ASSERT(!sh.stopped());
 }
 
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
-  metashell::null_libclang lc;
-  metashell::shell sh(metashell::test_config(), lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(metashell::test_config(), clang_binary);
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -100,112 +98,9 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   metashell::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
+  metashell::null_executable clang_binary;
+  metashell::shell sh(cfg, clang_binary);
 
   JUST_ASSERT(!sh.using_precompiled_headers());
-}
-
-JUST_TEST_CASE(test_shell_using_precompiled_headers)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = true;
-
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
-
-  JUST_ASSERT(sh.using_precompiled_headers());
-}
-
-JUST_TEST_CASE(test_shell_enabling_using_precompiled_headers)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = false;
-
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
-  sh.using_precompiled_headers(true);
-
-  JUST_ASSERT(sh.using_precompiled_headers());
-}
-
-JUST_TEST_CASE(test_shell_disabling_using_precompiled_headers)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = true;
-
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
-  sh.using_precompiled_headers(false);
-
-  JUST_ASSERT(!sh.using_precompiled_headers());
-}
-
-JUST_TEST_CASE(
-  test_shell_with_enabled_precompiled_headers_uses_header_file_environment
-)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = false;
-
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
-  sh.using_precompiled_headers(true);
-
-  JUST_ASSERT(
-    dynamic_cast<const metashell::header_file_environment*>(&sh.env())
-    != nullptr
-  );
-}
-
-JUST_TEST_CASE(
-  test_shell_with_disabled_precompiled_headers_uses_header_file_environment
-)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = true;
-
-  metashell::null_libclang lc;
-  metashell::shell sh(cfg, lc);
-  sh.using_precompiled_headers(false);
-
-  JUST_ASSERT(
-    dynamic_cast<const metashell::header_file_environment*>(&sh.env())
-    != nullptr
-  );
-}
-
-JUST_TEST_CASE(test_shell_enabling_precompiled_headers_keeps_the_environment)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = false;
-
-  metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
-  metashell::shell sh(cfg, lc);
-  sh.store_in_buffer("typedef int foo;\n", d);
-  const std::string env_before = sh.env().get_all();
-
-  sh.using_precompiled_headers(true);
-
-  JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
-}
-
-JUST_TEST_CASE(test_shell_disabling_precompiled_headers_keeps_the_environment)
-{
-  metashell::config cfg = metashell::empty_config(argv0::get());
-  cfg.use_precompiled_headers = true;
-
-  metashell::in_memory_displayer d;
-  metashell::mock_libclang lc;
-  expect_parsing_return_empty(lc);
-  metashell::shell sh(cfg, lc);
-  sh.store_in_buffer("typedef int foo;\n", d);
-  const std::string env_before = sh.env().get_all();
-
-  sh.using_precompiled_headers(false);
-
-  JUST_ASSERT_EQUAL(env_before, sh.env().get_all());
 }
 

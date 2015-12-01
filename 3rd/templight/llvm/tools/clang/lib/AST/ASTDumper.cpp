@@ -21,6 +21,7 @@
 #include "clang/AST/DeclVisitor.h"
 #include "clang/AST/StmtVisitor.h"
 #include "clang/AST/TypeVisitor.h"
+#include "clang/Basic/Builtins.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/raw_ostream.h"
@@ -447,6 +448,7 @@ namespace  {
         const ClassTemplatePartialSpecializationDecl *D);
     void VisitClassScopeFunctionSpecializationDecl(
         const ClassScopeFunctionSpecializationDecl *D);
+    void VisitBuiltinTemplateDecl(const BuiltinTemplateDecl *D);
     void VisitVarTemplateDecl(const VarTemplateDecl *D);
     void VisitVarTemplateSpecializationDecl(
         const VarTemplateSpecializationDecl *D);
@@ -1333,6 +1335,11 @@ void ASTDumper::VisitVarTemplateDecl(const VarTemplateDecl *D) {
   VisitTemplateDecl(D, false);
 }
 
+void ASTDumper::VisitBuiltinTemplateDecl(const BuiltinTemplateDecl *D) {
+  dumpName(D);
+  dumpTemplateParameters(D->getTemplateParameters());
+}
+
 void ASTDumper::VisitVarTemplateSpecializationDecl(
     const VarTemplateSpecializationDecl *D) {
   dumpTemplateArgumentList(D->getTemplateArgs());
@@ -2017,6 +2024,9 @@ void ASTDumper::VisitSizeOfPackExpr(const SizeOfPackExpr *Node) {
   VisitExpr(Node);
   dumpPointer(Node->getPack());
   dumpName(Node->getPack());
+  if (Node->isPartiallySubstituted())
+    for (const auto &A : Node->getPartialArguments())
+      dumpTemplateArgument(A);
 }
 
 

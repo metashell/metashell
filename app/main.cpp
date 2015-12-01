@@ -22,12 +22,11 @@
 #include <metashell/shell.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
+#include <metashell/clang_binary.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
-#include <metashell/clang/version.hpp>
-#include <metashell/clang/libclang.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -46,7 +45,6 @@ namespace
 
     return
       {
-        {"libclang", metashell::clang::libclang_version()},
         {"Boost.Wave", metashell::wave_version()},
         {readline_name, metashell::readline::version()}
       };
@@ -83,19 +81,24 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    metashell::clang::libclang libclang;
-
-    metashell::default_environment_detector det(argv_[0], &logger, libclang);
-    const metashell::config
-      cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
-
     if (r.should_run_shell())
     {
+      metashell::default_environment_detector det(argv_[0]);
+      const metashell::config
+        cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
+
       METASHELL_LOG(&logger, "Running shell");
+
+      metashell::clang_binary clang_binary(cfg.clang_path, &logger);
 
       std::unique_ptr<metashell::shell>
         shell(
-          new metashell::shell(cfg, ccfg.processor_queue(), libclang, &logger)
+          new metashell::shell(
+            cfg,
+            ccfg.processor_queue(),
+            clang_binary,
+            &logger
+          )
         );
 
       if (cfg.splash_enabled)

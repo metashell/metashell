@@ -90,61 +90,61 @@ namespace
   }
 
   const char default_env[] =
-    "#define __METASHELL\n"
-    "#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
-    "#define __METASHELL_MINOR " TO_STRING(METASHELL_MINOR) "\n"
-    "#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
+"#define __METASHELL\n"
+"#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
+"#define __METASHELL_MINOR " TO_STRING(METASHELL_MINOR) "\n"
+"#define __METASHELL_PATCH " TO_STRING(METASHELL_PATCH) "\n"
 
-    "namespace metashell { "
-      "namespace impl { "
-        "template <class T> "
-        "struct wrap {}; "
+R"(
+namespace metashell {
+  namespace impl {
+    template <class T>
+    struct wrap {}; // This is a metashell internal type
 
-        "template <class T> "
-        "typename T::tag* tag_of(::metashell::impl::wrap<T>); "
+    template <class T>
+    typename T::tag* tag_of(::metashell::impl::wrap<T>);
 
-        "void* tag_of(...); "
+    void* tag_of(...);
 
-        "template <class T> "
-        "struct remove_ptr; "
+    template <class T>
+    struct remove_ptr;
 
-        "template <class T> "
-        "struct remove_ptr<T*> { typedef T type; }; "
-      "} "
+    template <class T>
+    struct remove_ptr<T*> { typedef T type; };
+  } // namespace impl
 
-      "template <class Tag> "
-      "struct format_impl "
-      "{ "
-        "typedef format_impl type; "
+  template <class Tag>
+  struct format_impl
+  {
+    typedef format_impl type;
 
-        "template <class T> "
-        "struct apply { typedef T type; }; "
-      "}; "
+    template <class T>
+    struct apply { typedef T type; };
+  };
 
-      "template <class T> "
-      "struct format : "
-        "::metashell::format_impl<"
-          "typename ::metashell::impl::remove_ptr<"
-            "decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))"
-          ">::type"
-        ">::template apply<T>"
-        "{}; "
+  template <class T>
+  struct format :
+    ::metashell::format_impl<
+      typename ::metashell::impl::remove_ptr<
+        decltype(::metashell::impl::tag_of(::metashell::impl::wrap<T>()))
+      >::type
+    >::template apply<T>
+  {};
+} // namespace metashell
+)";
 
-      ""
-    "}"
-    "\n";
 }
 
 shell::shell(
   const config& config_,
-  iface::libclang& libclang_,
+  iface::executable& clang_binary_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   rebuild_environment();
   init(nullptr);
@@ -153,14 +153,14 @@ shell::shell(
 shell::shell(
   const config& config_,
   command_processor_queue& cpq_,
-  iface::libclang& libclang_,
+  iface::executable& clang_binary_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   rebuild_environment();
   init(&cpq_);
@@ -170,14 +170,14 @@ shell::shell(
   const config& config_,
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
-  iface::libclang& libclang_,
+  iface::executable& clang_binary_,
   logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _libclang(&libclang_)
+  _clang_binary(clang_binary_)
 {
   init(&cpq_);
 }
@@ -315,8 +315,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r =
-    validate_code(s_, _config, *_env, input_filename(), _logger, *_libclang);
+  const result r = validate_code(s_, _config, *_env, _logger, _clang_binary);
 
   if (r.successful)
   {
@@ -334,11 +333,6 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
   return r.successful;
 }
 
-const char* shell::input_filename()
-{
-  return "<stdin>";
-}
-
 void shell::code_complete(
   const std::string& s_,
   std::set<std::string>& out_
@@ -346,14 +340,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(
-      *_env,
-      s_,
-      input_filename(),
-      out_,
-      _logger,
-      *_libclang
-    );
+    metashell::code_complete(_clang_binary, *_env, s_, out_, _logger);
   }
   catch (...)
   {
@@ -366,7 +353,8 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
+  _pragma_handlers =
+    pragma_handler_map::build_default(_clang_binary, *this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -467,15 +455,7 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(
-    eval_tmp_formatted(
-      *_env,
-      s_,
-      _config,
-      _logger
-    ),
-    displayer_
-  );
+  display(eval_tmp_formatted(_clang_binary, *_env, s_, _logger), displayer_);
 }
 
 void shell::reset_environment()

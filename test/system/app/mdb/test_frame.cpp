@@ -71,7 +71,7 @@ JUST_TEST_CASE(test_mdb_frame_fib_step_1) {
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
 
@@ -94,12 +94,12 @@ JUST_TEST_CASE(test_mdb_frame_fib_step_2) {
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
 
   i += 2;
 

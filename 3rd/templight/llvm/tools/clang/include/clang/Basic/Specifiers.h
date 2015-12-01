@@ -64,6 +64,7 @@ namespace clang {
     TST_underlyingType,   // __underlying_type for C++11
     TST_auto,             // C++11 auto
     TST_decltype_auto,    // C++1y decltype(auto)
+    TST_auto_type,        // __auto_type extension
     TST_unknown_anytype,  // __unknown_anytype extension
     TST_atomic,           // C11 _Atomic
     TST_error         // erroneous type
@@ -178,7 +179,6 @@ namespace clang {
     SC_PrivateExtern,
 
     // These are only legal on variables.
-    SC_OpenCLWorkGroupLocal,
     SC_Auto,
     SC_Register
   };

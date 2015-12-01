@@ -195,16 +195,16 @@ void ARMTargetAsmStreamer::emitIntTextAttribute(unsigned Attribute,
   OS << "\n";
 }
 void ARMTargetAsmStreamer::emitArch(unsigned Arch) {
-  OS << "\t.arch\t" << ARMTargetParser::getArchName(Arch) << "\n";
+  OS << "\t.arch\t" << ARM::getArchName(Arch) << "\n";
 }
 void ARMTargetAsmStreamer::emitArchExtension(unsigned ArchExt) {
-  OS << "\t.arch_extension\t" << ARMTargetParser::getArchExtName(ArchExt) << "\n";
+  OS << "\t.arch_extension\t" << ARM::getArchExtName(ArchExt) << "\n";
 }
 void ARMTargetAsmStreamer::emitObjectArch(unsigned Arch) {
-  OS << "\t.object_arch\t" << ARMTargetParser::getArchName(Arch) << '\n';
+  OS << "\t.object_arch\t" << ARM::getArchName(Arch) << '\n';
 }
 void ARMTargetAsmStreamer::emitFPU(unsigned FPU) {
-  OS << "\t.fpu\t" << ARMTargetParser::getFPUName(FPU) << "\n";
+  OS << "\t.fpu\t" << ARM::getFPUName(FPU) << "\n";
 }
 void ARMTargetAsmStreamer::finishAttributeSection() {
 }
@@ -507,8 +507,7 @@ public:
   /// This is one of the functions used to emit data into an ELF section, so the
   /// ARM streamer overrides it to add the appropriate mapping symbol ($d) if
   /// necessary.
-  void EmitValueImpl(const MCExpr *Value, unsigned Size,
-                     const SMLoc &Loc) override {
+  void EmitValueImpl(const MCExpr *Value, unsigned Size, SMLoc Loc) override {
     if (const MCSymbolRefExpr *SRE = dyn_cast_or_null<MCSymbolRefExpr>(Value))
       if (SRE->getKind() == MCSymbolRefExpr::VK_ARM_SBREL && !(Size == 4))
         getContext().reportFatalError(Loc, "relocated expression must be 32-bit");
@@ -684,16 +683,16 @@ void ARMTargetELFStreamer::emitArchDefaultAttributes() {
   using namespace ARMBuildAttrs;
 
   setAttributeItem(CPU_name,
-                   ARMTargetParser::getCPUAttr(Arch),
+                   ARM::getCPUAttr(Arch),
                    false);
 
   if (EmittedArch == ARM::AK_INVALID)
     setAttributeItem(CPU_arch,
-                     ARMTargetParser::getArchAttr(Arch),
+                     ARM::getArchAttr(Arch),
                      false);
   else
     setAttributeItem(CPU_arch,
-                     ARMTargetParser::getArchAttr(EmittedArch),
+                     ARM::getArchAttr(EmittedArch),
                      false);
 
   switch (Arch) {

@@ -47,15 +47,16 @@ namespace {
     Loop             *L;
     LoopInfo         *LI;
     ScalarEvolution  *SE;
+    DominatorTree    *DT;
 
     SmallVectorImpl<WeakVH> &DeadInsts;
 
     bool Changed;
 
   public:
-    SimplifyIndvar(Loop *Loop, ScalarEvolution *SE, LoopInfo *LI,
-                   SmallVectorImpl<WeakVH> &Dead)
-        : L(Loop), LI(LI), SE(SE), DeadInsts(Dead), Changed(false) {
+    SimplifyIndvar(Loop *Loop, ScalarEvolution *SE, DominatorTree *DT,
+                   LoopInfo *LI,SmallVectorImpl<WeakVH> &Dead)
+        : L(Loop), LI(LI), SE(SE), DT(DT), DeadInsts(Dead), Changed(false) {
       assert(LI && "IV simplification requires LoopInfo");
     }
 
@@ -67,6 +68,8 @@ namespace {
     void simplifyUsers(PHINode *CurrIV, IVVisitor *V = nullptr);
 
     Value *foldIVUser(Instruction *UseInst, Instruction *IVOperand);
+
+    bool eliminateIdentitySCEV(Instruction *UseInst, Instruction *IVOperand);
 
     bool eliminateIVUser(Instruction *UseInst, Instruction *IVOperand);
     void eliminateIVComparison(ICmpInst *ICmp, Value *IVOperand);
@@ -253,8 +256,7 @@ void SimplifyIndvar::eliminateIVRemainder(BinaryOperator *Rem,
     Rem->replaceAllUsesWith(Rem->getOperand(0));
   else {
     // (i+1) % n  -->  (i+1)==n?0:(i+1)  if i is in [0,n).
-    const SCEV *LessOne =
-      SE->getMinusSCEV(S, SE->getConstant(S->getType(), 1));
+    const SCEV *LessOne = SE->getMinusSCEV(S, SE->getOne(S->getType()));
     if (IsSigned && !SE->isKnownNonNegative(LessOne))
       return;
 
@@ -278,9 +280,9 @@ void SimplifyIndvar::eliminateIVRemainder(BinaryOperator *Rem,
   DeadInsts.emplace_back(Rem);
 }
 
-/// Eliminate an operation that consumes a simple IV and has
-/// no observable side-effect given the range of IV values.
-/// IVOperand is guaranteed SCEVable, but UseInst may not be.
+/// Eliminate an operation that consumes a simple IV and has no observable
+/// side-effect given the range of IV values.  IVOperand is guaranteed SCEVable,
+/// but UseInst may not be.
 bool SimplifyIndvar::eliminateIVUser(Instruction *UseInst,
                                      Instruction *IVOperand) {
   if (ICmpInst *ICmp = dyn_cast<ICmpInst>(UseInst)) {
@@ -295,10 +297,43 @@ bool SimplifyIndvar::eliminateIVUser(Instruction *UseInst,
     }
   }
 
-  // Eliminate any operation that SCEV can prove is an identity function.
+  if (eliminateIdentitySCEV(UseInst, IVOperand))
+    return true;
+
+  return false;
+}
+
+/// Eliminate any operation that SCEV can prove is an identity function.
+bool SimplifyIndvar::eliminateIdentitySCEV(Instruction *UseInst,
+                                           Instruction *IVOperand) {
   if (!SE->isSCEVable(UseInst->getType()) ||
       (UseInst->getType() != IVOperand->getType()) ||
       (SE->getSCEV(UseInst) != SE->getSCEV(IVOperand)))
+    return false;
+
+  // getSCEV(X) == getSCEV(Y) does not guarantee that X and Y are related in the
+  // dominator tree, even if X is an operand to Y.  For instance, in
+  //
+  //     %iv = phi i32 {0,+,1}
+  //     br %cond, label %left, label %merge
+  //
+  //   left:
+  //     %X = add i32 %iv, 0
+  //     br label %merge
+  //
+  //   merge:
+  //     %M = phi (%X, %iv)
+  //
+  // getSCEV(%M) == getSCEV(%X) == {0,+,1}, but %X does not dominate %M, and
+  // %M.replaceAllUsesWith(%X) would be incorrect.
+
+  if (isa<PHINode>(UseInst))
+    // If UseInst is not a PHI node then we know that IVOperand dominates
+    // UseInst directly from the legality of SSA.
+    if (!DT || !DT->dominates(IVOperand, UseInst))
+      return false;
+
+  if (!LI->replacementPreservesLCSSAForm(UseInst, IVOperand))
     return false;
 
   DEBUG(dbgs() << "INDVARS: Eliminated identity: " << *UseInst << '\n');
@@ -559,22 +594,23 @@ void IVVisitor::anchor() { }
 
 /// Simplify instructions that use this induction variable
 /// by using ScalarEvolution to analyze the IV's recurrence.
-bool simplifyUsersOfIV(PHINode *CurrIV, ScalarEvolution *SE, LPPassManager *LPM,
-                       SmallVectorImpl<WeakVH> &Dead, IVVisitor *V)
+bool simplifyUsersOfIV(PHINode *CurrIV, ScalarEvolution *SE, DominatorTree *DT,
+                       LPPassManager *LPM, SmallVectorImpl<WeakVH> &Dead, IVVisitor *V)
 {
   LoopInfo *LI = &LPM->getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-  SimplifyIndvar SIV(LI->getLoopFor(CurrIV->getParent()), SE, LI, Dead);
+
+  SimplifyIndvar SIV(LI->getLoopFor(CurrIV->getParent()), SE, DT, LI, Dead);
   SIV.simplifyUsers(CurrIV, V);
   return SIV.hasChanged();
 }
 
 /// Simplify users of induction variables within this
 /// loop. This does not actually change or add IVs.
-bool simplifyLoopIVs(Loop *L, ScalarEvolution *SE, LPPassManager *LPM,
-                     SmallVectorImpl<WeakVH> &Dead) {
+bool simplifyLoopIVs(Loop *L, ScalarEvolution *SE, DominatorTree *DT,
+                     LPPassManager *LPM, SmallVectorImpl<WeakVH> &Dead) {
   bool Changed = false;
   for (BasicBlock::iterator I = L->getHeader()->begin(); isa<PHINode>(I); ++I) {
-    Changed |= simplifyUsersOfIV(cast<PHINode>(I), SE, LPM, Dead);
+    Changed |= simplifyUsersOfIV(cast<PHINode>(I), SE, DT, LPM, Dead);
   }
   return Changed;
 }

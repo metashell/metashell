@@ -24,29 +24,89 @@
 
 namespace metashell_system_test
 {
+  namespace impl
+  {
+    template <class Encoding, class Allocator, bool ExpectFullMatch>
+    bool member_compare(
+      const std::set<std::string>& members_,
+      const rapidjson::GenericValue<Encoding, Allocator>& v_
+    )
+    {
+      if (v_.IsObject())
+      {
+        decltype(members_.size()) n = 0;
+        for (auto i = v_.MemberBegin(), e = v_.MemberEnd(); i != e; ++i)
+        {
+          const auto& name = i->name;
+          if (
+            !name.IsString() ||
+            members_.find(std::string(name.GetString(), name.GetStringLength()))
+              == members_.end()
+          )
+          {
+            return false;
+          }
+          if (ExpectFullMatch)
+          {
+            ++n;
+          }
+        }
+        return !ExpectFullMatch || n == members_.size();
+      }
+      else
+      {
+        return false;
+      }
+    }
+  }
+
   template <class Encoding, class Allocator>
+  bool no_other_members_than(
+    const std::set<std::string>& members_,
+    const rapidjson::GenericValue<Encoding, Allocator>& v_
+  )
+  {
+    return impl::member_compare<Encoding, Allocator, false>(members_, v_);
+  }
+
+  // members_are(m, v) == no_other_members_than(m, v) && has_members(m, v)
+  template <class Encoding, class Allocator, bool ExpectFullMatch = true>
   bool members_are(
     const std::set<std::string>& members_,
     const rapidjson::GenericValue<Encoding, Allocator>& v_
   )
   {
+    return impl::member_compare<Encoding, Allocator, true>(members_, v_);
+  }
+
+  template <class Encoding, class Allocator>
+  bool has_members(
+    std::set<std::string> members_,
+    const rapidjson::GenericValue<Encoding, Allocator>& v_
+  )
+  {
     if (v_.IsObject())
     {
-      unsigned int n = 0;
       for (auto i = v_.MemberBegin(), e = v_.MemberEnd(); i != e; ++i)
       {
         const auto& name = i->name;
-        if (
-          !name.IsString() ||
-          members_.find(std::string(name.GetString(), name.GetStringLength()))
-            == members_.end()
-        )
+        if (name.IsString())
         {
-          return false;
+          const auto m =
+            members_.find(
+              std::string(name.GetString(), name.GetStringLength())
+            );
+          if (m != members_.end())
+          {
+            members_.erase(m);
+            if (members_.empty())
+            {
+              return true;
+            }
+          }
         }
-        ++n;
       }
-      return n == members_.size();
+      return members_.empty();
     }
     return false;
   }

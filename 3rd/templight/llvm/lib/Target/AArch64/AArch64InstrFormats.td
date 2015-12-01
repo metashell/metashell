@@ -248,6 +248,12 @@ def simm7s16 : Operand<i32> {
   let PrintMethod = "printImmScale<16>";
 }
 
+def am_indexed7s8   : ComplexPattern<i64, 2, "SelectAddrModeIndexed7S8", []>;
+def am_indexed7s16  : ComplexPattern<i64, 2, "SelectAddrModeIndexed7S16", []>;
+def am_indexed7s32  : ComplexPattern<i64, 2, "SelectAddrModeIndexed7S32", []>;
+def am_indexed7s64  : ComplexPattern<i64, 2, "SelectAddrModeIndexed7S64", []>;
+def am_indexed7s128 : ComplexPattern<i64, 2, "SelectAddrModeIndexed7S128", []>;
+
 class AsmImmRange<int Low, int High> : AsmOperandClass {
   let Name = "Imm" # Low # "_" # High;
   let DiagnosticType = "InvalidImm" # Low # "_" # High;
@@ -402,6 +408,7 @@ def vecshiftR64Narrow : Operand<i32>, ImmLeaf<i32, [{
   let ParserMatchClass = Imm1_32Operand;
 }
 
+def Imm0_1Operand : AsmImmRange<0, 1>;
 def Imm0_7Operand : AsmImmRange<0, 7>;
 def Imm0_15Operand : AsmImmRange<0, 15>;
 def Imm0_31Operand : AsmImmRange<0, 31>;
@@ -530,6 +537,13 @@ def imm32_0_31 : Operand<i32>, ImmLeaf<i32, [{
   return ((uint64_t)Imm) < 32;
 }]> {
   let ParserMatchClass = Imm0_31Operand;
+}
+
+// imm0_1 predicate - True if the immediate is in the range [0,1]
+def imm0_1 : Operand<i64>, ImmLeaf<i64, [{
+  return ((uint64_t)Imm) < 2;
+}]> {
+  let ParserMatchClass = Imm0_1Operand;
 }
 
 // imm0_15 predicate - True if the immediate is in the range [0,15]
@@ -831,7 +845,7 @@ class RtSystemI<bit L, dag oops, dag iops, string asm, string operands>
 // model patterns with sufficiently fine granularity
 let mayStore = 1, mayLoad = 1, hasSideEffects = 1 in
   class HintI<string mnemonic>
-      : SimpleSystemI<0, (ins imm0_127:$imm), mnemonic#" $imm", "",
+      : SimpleSystemI<0, (ins imm0_127:$imm), mnemonic#"\t$imm", "",
                       [(int_aarch64_hint imm0_127:$imm)]>,
         Sched<[WriteHint]> {
     bits <7> imm;
@@ -899,19 +913,19 @@ class MSRI : RtSystemI<0, (outs), (ins msr_sysreg_op:$systemreg, GPR64:$Rt),
   let Inst{20-5} = systemreg;
 }
 
-def SystemPStateFieldOperand : AsmOperandClass {
-  let Name = "SystemPStateField";
+def SystemPStateFieldWithImm0_15Operand : AsmOperandClass {
+  let Name = "SystemPStateFieldWithImm0_15";
   let ParserMethod = "tryParseSysReg";
 }
-def pstatefield_op : Operand<i32> {
-  let ParserMatchClass = SystemPStateFieldOperand;
+def pstatefield4_op : Operand<i32> {
+  let ParserMatchClass = SystemPStateFieldWithImm0_15Operand;
   let PrintMethod = "printSystemPStateField";
 }
 
 let Defs = [NZCV] in
-class MSRpstateI
-  : SimpleSystemI<0, (ins pstatefield_op:$pstate_field, imm0_15:$imm),
-                  "msr", "\t$pstate_field, $imm">,
+class MSRpstateImm0_15
+  : SimpleSystemI<0, (ins pstatefield4_op:$pstatefield, imm0_15:$imm),
+                  "msr", "\t$pstatefield, $imm">,
     Sched<[WriteSys]> {
   bits<6> pstatefield;
   bits<4> imm;
@@ -919,6 +933,34 @@ class MSRpstateI
   let Inst{18-16} = pstatefield{5-3};
   let Inst{15-12} = 0b0100;
   let Inst{11-8} = imm;
+  let Inst{7-5} = pstatefield{2-0};
+
+  let DecoderMethod = "DecodeSystemPStateInstruction";
+  // MSRpstateI aliases with MSRI. When the MSRpstateI decoder method returns
+  // Fail the decoder should attempt to decode the instruction as MSRI.
+  let hasCompleteDecoder = 0;
+}
+
+def SystemPStateFieldWithImm0_1Operand : AsmOperandClass {
+  let Name = "SystemPStateFieldWithImm0_1";
+  let ParserMethod = "tryParseSysReg";
+}
+def pstatefield1_op : Operand<i32> {
+  let ParserMatchClass = SystemPStateFieldWithImm0_1Operand;
+  let PrintMethod = "printSystemPStateField";
+}
+
+let Defs = [NZCV] in
+class MSRpstateImm0_1
+  : SimpleSystemI<0, (ins pstatefield1_op:$pstatefield, imm0_1:$imm),
+                  "msr", "\t$pstatefield, $imm">,
+    Sched<[WriteSys]> {
+  bits<6> pstatefield;
+  bit imm;
+  let Inst{20-19} = 0b00;
+  let Inst{18-16} = pstatefield{5-3};
+  let Inst{15-9} = 0b0100000;
+  let Inst{8} = imm;
   let Inst{7-5} = pstatefield{2-0};
 
   let DecoderMethod = "DecodeSystemPStateInstruction";
@@ -1353,7 +1395,7 @@ multiclass Shift<bits<2> shift_type, string asm, SDNode OpNode> {
 }
 
 class ShiftAlias<string asm, Instruction inst, RegisterClass regtype>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst regtype:$dst, regtype:$src1, regtype:$src2), 0>;
 
 class BaseMulAccum<bit isSub, bits<3> opc, RegisterClass multype,
@@ -1419,13 +1461,13 @@ class MulHi<bits<3> opc, string asm, SDNode OpNode>
 }
 
 class MulAccumWAlias<string asm, Instruction inst>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst GPR32:$dst, GPR32:$src1, GPR32:$src2, WZR)>;
 class MulAccumXAlias<string asm, Instruction inst>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst GPR64:$dst, GPR64:$src1, GPR64:$src2, XZR)>;
 class WideMulAccumAlias<string asm, Instruction inst>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst GPR64:$dst, GPR32:$src1, GPR32:$src2, XZR)>;
 
 class BaseCRC32<bit sf, bits<2> sz, bit C, RegisterClass StreamReg,
@@ -1655,7 +1697,7 @@ class BaseAddSubEReg64<bit isSub, bit setFlags, RegisterClass dstRegtype,
 class AddSubRegAlias<string asm, Instruction inst, RegisterClass dstRegtype,
                      RegisterClass src1Regtype, RegisterClass src2Regtype,
                      int shiftExt>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst dstRegtype:$dst, src1Regtype:$src1, src2Regtype:$src2,
                       shiftExt)>;
 
@@ -1713,10 +1755,10 @@ multiclass AddSub<bit isSub, string mnemonic, string alias,
   }
 
   // add Rd, Rb, -imm -> sub Rd, Rn, imm
-  def : InstAlias<alias#" $Rd, $Rn, $imm",
+  def : InstAlias<alias#"\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Wri") GPR32sp:$Rd, GPR32sp:$Rn,
                       addsub_shifted_imm32_neg:$imm), 0>;
-  def : InstAlias<alias#" $Rd, $Rn, $imm",
+  def : InstAlias<alias#"\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Xri") GPR64sp:$Rd, GPR64sp:$Rn,
                        addsub_shifted_imm64_neg:$imm), 0>;
 
@@ -1788,43 +1830,43 @@ multiclass AddSubS<bit isSub, string mnemonic, SDNode OpNode, string cmp,
   } // Defs = [NZCV]
 
   // Support negative immediates, e.g. adds Rd, Rn, -imm -> subs Rd, Rn, imm
-  def : InstAlias<alias#" $Rd, $Rn, $imm",
+  def : InstAlias<alias#"\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Wri") GPR32:$Rd, GPR32sp:$Rn,
                       addsub_shifted_imm32_neg:$imm), 0>;
-  def : InstAlias<alias#" $Rd, $Rn, $imm",
+  def : InstAlias<alias#"\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Xri") GPR64:$Rd, GPR64sp:$Rn,
                        addsub_shifted_imm64_neg:$imm), 0>;
 
   // Compare aliases
-  def : InstAlias<cmp#" $src, $imm", (!cast<Instruction>(NAME#"Wri")
+  def : InstAlias<cmp#"\t$src, $imm", (!cast<Instruction>(NAME#"Wri")
                   WZR, GPR32sp:$src, addsub_shifted_imm32:$imm), 5>;
-  def : InstAlias<cmp#" $src, $imm", (!cast<Instruction>(NAME#"Xri")
+  def : InstAlias<cmp#"\t$src, $imm", (!cast<Instruction>(NAME#"Xri")
                   XZR, GPR64sp:$src, addsub_shifted_imm64:$imm), 5>;
-  def : InstAlias<cmp#" $src1, $src2$sh", (!cast<Instruction>(NAME#"Wrx")
+  def : InstAlias<cmp#"\t$src1, $src2$sh", (!cast<Instruction>(NAME#"Wrx")
                   WZR, GPR32sp:$src1, GPR32:$src2, arith_extend:$sh), 4>;
-  def : InstAlias<cmp#" $src1, $src2$sh", (!cast<Instruction>(NAME#"Xrx")
+  def : InstAlias<cmp#"\t$src1, $src2$sh", (!cast<Instruction>(NAME#"Xrx")
                   XZR, GPR64sp:$src1, GPR32:$src2, arith_extend:$sh), 4>;
-  def : InstAlias<cmp#" $src1, $src2$sh", (!cast<Instruction>(NAME#"Xrx64")
+  def : InstAlias<cmp#"\t$src1, $src2$sh", (!cast<Instruction>(NAME#"Xrx64")
                   XZR, GPR64sp:$src1, GPR64:$src2, arith_extendlsl64:$sh), 4>;
-  def : InstAlias<cmp#" $src1, $src2$sh", (!cast<Instruction>(NAME#"Wrs")
+  def : InstAlias<cmp#"\t$src1, $src2$sh", (!cast<Instruction>(NAME#"Wrs")
                   WZR, GPR32:$src1, GPR32:$src2, arith_shift32:$sh), 4>;
-  def : InstAlias<cmp#" $src1, $src2$sh", (!cast<Instruction>(NAME#"Xrs")
+  def : InstAlias<cmp#"\t$src1, $src2$sh", (!cast<Instruction>(NAME#"Xrs")
                   XZR, GPR64:$src1, GPR64:$src2, arith_shift64:$sh), 4>;
 
   // Support negative immediates, e.g. cmp Rn, -imm -> cmn Rn, imm
-  def : InstAlias<cmpAlias#" $src, $imm", (!cast<Instruction>(NAME#"Wri")
+  def : InstAlias<cmpAlias#"\t$src, $imm", (!cast<Instruction>(NAME#"Wri")
                   WZR, GPR32sp:$src, addsub_shifted_imm32_neg:$imm), 0>;
-  def : InstAlias<cmpAlias#" $src, $imm", (!cast<Instruction>(NAME#"Xri")
+  def : InstAlias<cmpAlias#"\t$src, $imm", (!cast<Instruction>(NAME#"Xri")
                   XZR, GPR64sp:$src, addsub_shifted_imm64_neg:$imm), 0>;
 
   // Compare shorthands
-  def : InstAlias<cmp#" $src1, $src2", (!cast<Instruction>(NAME#"Wrs")
+  def : InstAlias<cmp#"\t$src1, $src2", (!cast<Instruction>(NAME#"Wrs")
                   WZR, GPR32:$src1, GPR32:$src2, 0), 5>;
-  def : InstAlias<cmp#" $src1, $src2", (!cast<Instruction>(NAME#"Xrs")
+  def : InstAlias<cmp#"\t$src1, $src2", (!cast<Instruction>(NAME#"Xrs")
                   XZR, GPR64:$src1, GPR64:$src2, 0), 5>;
-  def : InstAlias<cmp#" $src1, $src2", (!cast<Instruction>(NAME#"Wrx")
+  def : InstAlias<cmp#"\t$src1, $src2", (!cast<Instruction>(NAME#"Wrx")
                   WZR, GPR32sponly:$src1, GPR32:$src2, 16), 5>;
-  def : InstAlias<cmp#" $src1, $src2", (!cast<Instruction>(NAME#"Xrx64")
+  def : InstAlias<cmp#"\t$src1, $src2", (!cast<Instruction>(NAME#"Xrx64")
                   XZR, GPR64sponly:$src1, GPR64:$src2, 24), 5>;
 
   // Register/register aliases with no shift when SP is not used.
@@ -2010,7 +2052,7 @@ class BaseLogicalSReg<bits<2> opc, bit N, RegisterClass regtype,
 
 // Aliases for register+register logical instructions.
 class LogicalRegAlias<string asm, Instruction inst, RegisterClass regtype>
-    : InstAlias<asm#" $dst, $src1, $src2",
+    : InstAlias<asm#"\t$dst, $src1, $src2",
                 (inst regtype:$dst, regtype:$src1, regtype:$src2, 0)>;
 
 multiclass LogicalImm<bits<2> opc, string mnemonic, SDNode OpNode,
@@ -2029,10 +2071,10 @@ multiclass LogicalImm<bits<2> opc, string mnemonic, SDNode OpNode,
     let Inst{31} = 1;
   }
 
-  def : InstAlias<Alias # " $Rd, $Rn, $imm",
+  def : InstAlias<Alias # "\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Wri") GPR32sp:$Rd, GPR32:$Rn,
                       logical_imm32_not:$imm), 0>;
-  def : InstAlias<Alias # " $Rd, $Rn, $imm",
+  def : InstAlias<Alias # "\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Xri") GPR64sp:$Rd, GPR64:$Rn,
                        logical_imm64_not:$imm), 0>;
 }
@@ -2051,10 +2093,10 @@ multiclass LogicalImmS<bits<2> opc, string mnemonic, SDNode OpNode,
   }
   } // end Defs = [NZCV]
 
-  def : InstAlias<Alias # " $Rd, $Rn, $imm",
+  def : InstAlias<Alias # "\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Wri") GPR32:$Rd, GPR32:$Rn,
                       logical_imm32_not:$imm), 0>;
-  def : InstAlias<Alias # " $Rd, $Rn, $imm",
+  def : InstAlias<Alias # "\t$Rd, $Rn, $imm",
                   (!cast<Instruction>(NAME # "Xri") GPR64:$Rd, GPR64:$Rn,
                        logical_imm64_not:$imm), 0>;
 }
@@ -2345,7 +2387,7 @@ multiclass LoadUI<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
                            asm, pattern>,
            Sched<[WriteLD]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "ui") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -2357,7 +2399,7 @@ multiclass StoreUI<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
                            asm, pattern>,
            Sched<[WriteST]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "ui") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -2525,7 +2567,7 @@ class LoadStore8RO<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
 }
 
 class ROInstAlias<string asm, RegisterClass regtype, Instruction INST>
-  : InstAlias<asm # " $Rt, [$Rn, $Rm]",
+  : InstAlias<asm # "\t$Rt, [$Rn, $Rm]",
               (INST regtype:$Rt, GPR64sp:$Rn, GPR64:$Rm, 0, 0)>;
 
 multiclass Load8RO<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
@@ -2951,7 +2993,7 @@ multiclass LoadUnscaled<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
                                (ins GPR64sp:$Rn, simm9:$offset), asm, pattern>,
           Sched<[WriteLD]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -2963,7 +3005,7 @@ multiclass StoreUnscaled<bits<2> sz, bit V, bits<2> opc, RegisterClass regtype,
                                asm, pattern>,
           Sched<[WriteST]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -2975,7 +3017,7 @@ multiclass PrefetchUnscaled<bits<2> sz, bit V, bits<2> opc, string asm,
                                asm, pat>,
           Sched<[WriteLD]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "i") prfop:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -3010,7 +3052,7 @@ multiclass LoadUnprivileged<bits<2> sz, bit V, bits<2> opc,
                                     (ins GPR64sp:$Rn, simm9:$offset), asm>,
           Sched<[WriteLD]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -3022,7 +3064,7 @@ multiclass StoreUnprivileged<bits<2> sz, bit V, bits<2> opc,
                                  asm>,
           Sched<[WriteST]>;
 
-  def : InstAlias<asm # " $Rt, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, GPR64sp:$Rn, 0)>;
 }
 
@@ -3153,7 +3195,7 @@ multiclass LoadPairOffset<bits<2> opc, bit V, RegisterClass regtype,
                                   (ins GPR64sp:$Rn, indextype:$offset), asm>,
           Sched<[WriteLD, WriteLDHi]>;
 
-  def : InstAlias<asm # " $Rt, $Rt2, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, $Rt2, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, regtype:$Rt2,
                                                   GPR64sp:$Rn, 0)>;
 }
@@ -3168,7 +3210,7 @@ multiclass StorePairOffset<bits<2> opc, bit V, RegisterClass regtype,
                                   asm>,
           Sched<[WriteSTP]>;
 
-  def : InstAlias<asm # " $Rt, $Rt2, [$Rn]",
+  def : InstAlias<asm # "\t$Rt, $Rt2, [$Rn]",
                   (!cast<Instruction>(NAME # "i") regtype:$Rt, regtype:$Rt2,
                                                   GPR64sp:$Rn, 0)>;
 }
@@ -3247,8 +3289,8 @@ class LoadPairPostIdx<bits<2> opc, bit V, RegisterClass regtype,
 let mayStore = 1, mayLoad = 0 in
 class StorePairPostIdx<bits<2> opc, bit V, RegisterClass regtype,
                        Operand idxtype, string asm>
-    : BaseLoadStorePairPostIdx<opc, V, 0, (outs),
-                             (ins GPR64sp:$wback, regtype:$Rt, regtype:$Rt2,
+    : BaseLoadStorePairPostIdx<opc, V, 0, (outs GPR64sp:$wback),
+                             (ins regtype:$Rt, regtype:$Rt2,
                                   GPR64sp:$Rn, idxtype:$offset),
                              asm>,
       Sched<[WriteAdr, WriteSTP]>;
@@ -4791,17 +4833,17 @@ multiclass SIMDFPCmpTwoVector<bit U, bit S, bits<5> opc,
                                      asm, ".2d", "0.0",
                                      v2i64, v2f64, OpNode>;
 
-  def : InstAlias<asm # " $Vd.2s, $Vn.2s, #0",
+  def : InstAlias<asm # "\t$Vd.2s, $Vn.2s, #0",
                   (!cast<Instruction>(NAME # v2i32rz) V64:$Vd, V64:$Vn), 0>;
-  def : InstAlias<asm # " $Vd.4s, $Vn.4s, #0",
+  def : InstAlias<asm # "\t$Vd.4s, $Vn.4s, #0",
                   (!cast<Instruction>(NAME # v4i32rz) V128:$Vd, V128:$Vn), 0>;
-  def : InstAlias<asm # " $Vd.2d, $Vn.2d, #0",
+  def : InstAlias<asm # "\t$Vd.2d, $Vn.2d, #0",
                   (!cast<Instruction>(NAME # v2i64rz) V128:$Vd, V128:$Vn), 0>;
-  def : InstAlias<asm # ".2s $Vd, $Vn, #0",
+  def : InstAlias<asm # ".2s\t$Vd, $Vn, #0",
                   (!cast<Instruction>(NAME # v2i32rz) V64:$Vd, V64:$Vn), 0>;
-  def : InstAlias<asm # ".4s $Vd, $Vn, #0",
+  def : InstAlias<asm # ".4s\t$Vd, $Vn, #0",
                   (!cast<Instruction>(NAME # v4i32rz) V128:$Vd, V128:$Vn), 0>;
-  def : InstAlias<asm # ".2d $Vd, $Vn, #0",
+  def : InstAlias<asm # ".2d\t$Vd, $Vn, #0",
                   (!cast<Instruction>(NAME # v2i64rz) V128:$Vd, V128:$Vn), 0>;
 }
 
@@ -5589,9 +5631,9 @@ multiclass SIMDFPCmpTwoScalar<bit U, bit S, bits<5> opc, string asm,
   def v1i64rz  : BaseSIMDCmpTwoScalar<U, {S,1}, opc, FPR64, asm, "0.0">;
   def v1i32rz  : BaseSIMDCmpTwoScalar<U, {S,0}, opc, FPR32, asm, "0.0">;
 
-  def : InstAlias<asm # " $Rd, $Rn, #0",
+  def : InstAlias<asm # "\t$Rd, $Rn, #0",
                   (!cast<Instruction>(NAME # v1i64rz) FPR64:$Rd, FPR64:$Rn), 0>;
-  def : InstAlias<asm # " $Rd, $Rn, #0",
+  def : InstAlias<asm # "\t$Rd, $Rn, #0",
                   (!cast<Instruction>(NAME # v1i32rz) FPR32:$Rd, FPR32:$Rn), 0>;
 
   def : Pat<(v1i64 (OpNode (v1f64 FPR64:$Rn))),
@@ -5947,7 +5989,7 @@ class SIMDInsMainMovAlias<string size, Instruction inst,
 class SIMDInsElementMovAlias<string size, Instruction inst,
                              Operand idxtype>
     : InstAlias<"mov" # "{\t$dst" # size # "$idx, $src" # size # "$idx2" #
-                      # "|" # size #" $dst$idx, $src$idx2}",
+                      # "|" # size #"\t$dst$idx, $src$idx2}",
                 (inst V128:$dst, idxtype:$idx, V128:$src, idxtype:$idx2)>;
 
 

@@ -124,6 +124,10 @@ NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM,
   // condition branches.
   setJumpIsExpensive(true);
 
+  // Wide divides are _very_ slow. Try to reduce the width of the divide if
+  // possible.
+  addBypassSlowDiv(64, 32);
+
   // By default, use the Source scheduling
   if (sched4reg)
     setSchedulingPreference(Sched::RegPressure);
@@ -275,6 +279,7 @@ NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM,
   setTargetDAGCombine(ISD::FADD);
   setTargetDAGCombine(ISD::MUL);
   setTargetDAGCombine(ISD::SHL);
+  setTargetDAGCombine(ISD::SELECT);
 
   // Now deduce the information based on the above mentioned
   // actions
@@ -2007,15 +2012,6 @@ SDValue NVPTXTargetLowering::LowerSTOREi1(SDValue Op, SelectionDAG &DAG) const {
   return Result;
 }
 
-SDValue NVPTXTargetLowering::getExtSymb(SelectionDAG &DAG, const char *inname,
-                                        int idx, EVT v) const {
-  std::string *name = nvTM->getManagedStrPool()->getManagedString(inname);
-  std::stringstream suffix;
-  suffix << idx;
-  *name += suffix.str();
-  return DAG.getTargetExternalSymbol(name->c_str(), v);
-}
-
 SDValue
 NVPTXTargetLowering::getParamSymbol(SelectionDAG &DAG, int idx, EVT v) const {
   std::string ParamSym;
@@ -2027,10 +2023,6 @@ NVPTXTargetLowering::getParamSymbol(SelectionDAG &DAG, int idx, EVT v) const {
   std::string *SavedStr =
     nvTM->getManagedStrPool()->getManagedString(ParamSym.c_str());
   return DAG.getTargetExternalSymbol(SavedStr->c_str(), v);
-}
-
-SDValue NVPTXTargetLowering::getParamHelpSymbol(SelectionDAG &DAG, int idx) {
-  return getExtSymb(DAG, ".HLPPARAM", idx);
 }
 
 // Check to see if the kernel argument is image*_t or sampler_t
@@ -2052,11 +2044,8 @@ bool llvm::isImageOrSamplerVal(const Value *arg, const Module *context) {
   auto *STy = dyn_cast<StructType>(PTy->getElementType());
   const std::string TypeName = STy && !STy->isLiteral() ? STy->getName() : "";
 
-  for (int i = 0, e = array_lengthof(specialTypes); i != e; ++i)
-    if (TypeName == specialTypes[i])
-      return true;
-
-  return false;
+  return std::find(std::begin(specialTypes), std::end(specialTypes),
+                   TypeName) != std::end(specialTypes);
 }
 
 SDValue NVPTXTargetLowering::LowerFormalArguments(
@@ -2082,10 +2071,9 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
 
   std::vector<Type *> argTypes;
   std::vector<const Argument *> theArgs;
-  for (Function::const_arg_iterator I = F->arg_begin(), E = F->arg_end();
-       I != E; ++I) {
-    theArgs.push_back(I);
-    argTypes.push_back(I->getType());
+  for (const Argument &I : F->args()) {
+    theArgs.push_back(&I);
+    argTypes.push_back(I.getType());
   }
   // argTypes.size() (or theArgs.size()) and Ins.size() need not match.
   // Ins.size() will be larger
@@ -2543,20 +2531,6 @@ void NVPTXTargetLowering::LowerAsmOperandForConstraint(
     return;
   else
     TargetLowering::LowerAsmOperandForConstraint(Op, Constraint, Ops, DAG);
-}
-
-// NVPTX suuport vector of legal types of any length in Intrinsics because the
-// NVPTX specific type legalizer
-// will legalize them to the PTX supported length.
-bool NVPTXTargetLowering::isTypeSupportedInIntrinsic(MVT VT) const {
-  if (isTypeLegal(VT))
-    return true;
-  if (VT.isVector()) {
-    MVT eVT = VT.getVectorElementType();
-    if (isTypeLegal(eVT))
-      return true;
-  }
-  return false;
 }
 
 static unsigned getOpcForTextureInstr(unsigned Intrinsic) {
@@ -3818,11 +3792,6 @@ NVPTXTargetLowering::getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
   return TargetLowering::getRegForInlineAsmConstraint(TRI, Constraint, VT);
 }
 
-/// getFunctionAlignment - Return the Log2 alignment of this function.
-unsigned NVPTXTargetLowering::getFunctionAlignment(const Function *) const {
-  return 4;
-}
-
 //===----------------------------------------------------------------------===//
 //                         NVPTX DAG Combining
 //===----------------------------------------------------------------------===//
@@ -4055,6 +4024,67 @@ static SDValue PerformANDCombine(SDNode *N,
   return SDValue();
 }
 
+static SDValue PerformSELECTCombine(SDNode *N,
+                                    TargetLowering::DAGCombinerInfo &DCI) {
+  // Currently this detects patterns for integer min and max and
+  // lowers them to PTX-specific intrinsics that enable hardware
+  // support.
+
+  const SDValue Cond = N->getOperand(0);
+  if (Cond.getOpcode() != ISD::SETCC) return SDValue();
+
+  const SDValue LHS = Cond.getOperand(0);
+  const SDValue RHS = Cond.getOperand(1);
+  const SDValue True = N->getOperand(1);
+  const SDValue False = N->getOperand(2);
+  if (!(LHS == True && RHS == False) && !(LHS == False && RHS == True))
+    return SDValue();
+
+  const EVT VT = N->getValueType(0);
+  if (VT != MVT::i32 && VT != MVT::i64) return SDValue();
+
+  const ISD::CondCode CC = cast<CondCodeSDNode>(Cond.getOperand(2))->get();
+  SDValue Larger;  // The larger of LHS and RHS when condition is true.
+  switch (CC) {
+    case ISD::SETULT:
+    case ISD::SETULE:
+    case ISD::SETLT:
+    case ISD::SETLE:
+      Larger = RHS;
+      break;
+
+    case ISD::SETGT:
+    case ISD::SETGE:
+    case ISD::SETUGT:
+    case ISD::SETUGE:
+      Larger = LHS;
+      break;
+
+    default:
+      return SDValue();
+  }
+  const bool IsMax = (Larger == True);
+  const bool IsSigned = ISD::isSignedIntSetCC(CC);
+
+  unsigned IntrinsicId;
+  if (VT == MVT::i32) {
+    if (IsSigned)
+      IntrinsicId = IsMax ? Intrinsic::nvvm_max_i : Intrinsic::nvvm_min_i;
+    else
+      IntrinsicId = IsMax ? Intrinsic::nvvm_max_ui : Intrinsic::nvvm_min_ui;
+  } else {
+    assert(VT == MVT::i64);
+    if (IsSigned)
+      IntrinsicId = IsMax ? Intrinsic::nvvm_max_ll : Intrinsic::nvvm_min_ll;
+    else
+      IntrinsicId = IsMax ? Intrinsic::nvvm_max_ull : Intrinsic::nvvm_min_ull;
+  }
+
+  SDLoc DL(N);
+  return DCI.DAG.getNode(ISD::INTRINSIC_WO_CHAIN, DL, VT,
+                         DCI.DAG.getConstant(IntrinsicId, DL, VT), LHS, RHS);
+}
+
 enum OperandSignedness {
   Signed = 0,
   Unsigned,
@@ -4236,6 +4266,8 @@ SDValue NVPTXTargetLowering::PerformDAGCombine(SDNode *N,
       return PerformSHLCombine(N, DCI, OptLevel);
     case ISD::AND:
       return PerformANDCombine(N, DCI);
+    case ISD::SELECT:
+      return PerformSELECTCombine(N, DCI);
   }
   return SDValue();
 }
@@ -4498,25 +4530,25 @@ void NVPTXTargetLowering::ReplaceNodeResults(
 void NVPTXSection::anchor() {}
 
 NVPTXTargetObjectFile::~NVPTXTargetObjectFile() {
-  delete TextSection;
-  delete DataSection;
-  delete BSSSection;
-  delete ReadOnlySection;
+  delete static_cast<NVPTXSection *>(TextSection);
+  delete static_cast<NVPTXSection *>(DataSection);
+  delete static_cast<NVPTXSection *>(BSSSection);
+  delete static_cast<NVPTXSection *>(ReadOnlySection);
 
-  delete StaticCtorSection;
-  delete StaticDtorSection;
-  delete LSDASection;
-  delete EHFrameSection;
-  delete DwarfAbbrevSection;
-  delete DwarfInfoSection;
-  delete DwarfLineSection;
-  delete DwarfFrameSection;
-  delete DwarfPubTypesSection;
-  delete DwarfDebugInlineSection;
-  delete DwarfStrSection;
-  delete DwarfLocSection;
-  delete DwarfARangesSection;
-  delete DwarfRangesSection;
+  delete static_cast<NVPTXSection *>(StaticCtorSection);
+  delete static_cast<NVPTXSection *>(StaticDtorSection);
+  delete static_cast<NVPTXSection *>(LSDASection);
+  delete static_cast<NVPTXSection *>(EHFrameSection);
+  delete static_cast<NVPTXSection *>(DwarfAbbrevSection);
+  delete static_cast<NVPTXSection *>(DwarfInfoSection);
+  delete static_cast<NVPTXSection *>(DwarfLineSection);
+  delete static_cast<NVPTXSection *>(DwarfFrameSection);
+  delete static_cast<NVPTXSection *>(DwarfPubTypesSection);
+  delete static_cast<const NVPTXSection *>(DwarfDebugInlineSection);
+  delete static_cast<NVPTXSection *>(DwarfStrSection);
+  delete static_cast<NVPTXSection *>(DwarfLocSection);
+  delete static_cast<NVPTXSection *>(DwarfARangesSection);
+  delete static_cast<NVPTXSection *>(DwarfRangesSection);
 }
 
 MCSection *

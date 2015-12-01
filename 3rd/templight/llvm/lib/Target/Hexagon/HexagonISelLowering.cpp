@@ -555,7 +555,8 @@ HexagonTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
         MemOpChains.push_back(CreateCopyOfByValArgument(Arg, MemAddr, Chain,
                                                         Flags, DAG, dl));
       } else {
-        MachinePointerInfo LocPI = MachinePointerInfo::getStack(LocMemOffset);
+        MachinePointerInfo LocPI = MachinePointerInfo::getStack(
+            DAG.getMachineFunction(), LocMemOffset);
         SDValue S = DAG.getStore(Chain, dl, Arg, MemAddr, LocPI, false,
                                  false, 0);
         MemOpChains.push_back(S);
@@ -850,7 +851,10 @@ HexagonTargetLowering::LowerDYNAMIC_STACKALLOC(SDValue Op,
 
   SDValue AC = DAG.getConstant(A, dl, MVT::i32);
   SDVTList VTs = DAG.getVTList(MVT::i32, MVT::Other);
-  return DAG.getNode(HexagonISD::ALLOCA, dl, VTs, Chain, Size, AC);
+  SDValue AA = DAG.getNode(HexagonISD::ALLOCA, dl, VTs, Chain, Size, AC);
+  if (Op.getNode()->getHasDebugValue())
+    DAG.TransferDbgValues(Op, AA);
+  return AA;
 }
 
 SDValue
@@ -1282,8 +1286,6 @@ HexagonTargetLowering::HexagonTargetLowering(const TargetMachine &TM,
   setPrefFunctionAlignment(4);
   setMinFunctionAlignment(2);
   setInsertFencesForAtomic(false);
-  setExceptionPointerRegister(Hexagon::R0);
-  setExceptionSelectorRegister(Hexagon::R1);
   setStackPointerRegisterToSaveRestore(HRI.getStackRegister());
 
   if (EnableHexSDNodeSched)
@@ -1475,7 +1477,7 @@ HexagonTargetLowering::HexagonTargetLowering(const TargetMachine &TM,
 
   // Set the action for vector operations to "expand", then override it with
   // either "custom" or "legal" for specific cases.
-  static unsigned VectExpOps[] = {
+  static const unsigned VectExpOps[] = {
     // Integer arithmetic:
     ISD::ADD,     ISD::SUB,     ISD::MUL,     ISD::SDIV,    ISD::UDIV,
     ISD::SREM,    ISD::UREM,    ISD::SDIVREM, ISD::UDIVREM, ISD::ADDC,
@@ -2498,9 +2500,12 @@ Value *HexagonTargetLowering::emitStoreConditional(IRBuilder<> &Builder,
   return Ext;
 }
 
-bool HexagonTargetLowering::shouldExpandAtomicLoadInIR(LoadInst *LI) const {
+TargetLowering::AtomicExpansionKind
+HexagonTargetLowering::shouldExpandAtomicLoadInIR(LoadInst *LI) const {
   // Do not expand loads and stores that don't exceed 64 bits.
-  return LI->getType()->getPrimitiveSizeInBits() > 64;
+  return LI->getType()->getPrimitiveSizeInBits() > 64
+             ? AtomicExpansionKind::LLSC
+             : AtomicExpansionKind::None;
 }
 
 bool HexagonTargetLowering::shouldExpandAtomicStoreInIR(StoreInst *SI) const {

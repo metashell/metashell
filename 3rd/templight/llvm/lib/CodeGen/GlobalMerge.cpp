@@ -135,7 +135,7 @@ namespace {
                  Module &M, bool isConst, unsigned AddrSpace) const;
     /// \brief Merge everything in \p Globals for which the corresponding bit
     /// in \p GlobalSet is set.
-    bool doMerge(SmallVectorImpl<GlobalVariable *> &Globals,
+    bool doMerge(const SmallVectorImpl<GlobalVariable *> &Globals,
                  const BitVector &GlobalSet, Module &M, bool isConst,
                  unsigned AddrSpace) const;
 
@@ -193,14 +193,11 @@ bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable*> &Globals,
                           Module &M, bool isConst, unsigned AddrSpace) const {
   auto &DL = M.getDataLayout();
   // FIXME: Find better heuristics
-  std::stable_sort(
-      Globals.begin(), Globals.end(),
-      [&DL](const GlobalVariable *GV1, const GlobalVariable *GV2) {
-        Type *Ty1 = cast<PointerType>(GV1->getType())->getElementType();
-        Type *Ty2 = cast<PointerType>(GV2->getType())->getElementType();
-
-        return (DL.getTypeAllocSize(Ty1) < DL.getTypeAllocSize(Ty2));
-      });
+  std::stable_sort(Globals.begin(), Globals.end(),
+                   [&DL](const GlobalVariable *GV1, const GlobalVariable *GV2) {
+                     return DL.getTypeAllocSize(GV1->getValueType()) <
+                            DL.getTypeAllocSize(GV2->getValueType());
+                   });
 
   // If we want to just blindly group all globals together, do so.
   if (!GlobalMergeGroupByUse) {
@@ -306,8 +303,7 @@ bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable*> &Globals,
         Function *ParentFn = I->getParent()->getParent();
 
         // If we're only optimizing for size, ignore non-minsize functions.
-        if (OnlyOptimizeForSize &&
-            !ParentFn->hasFnAttribute(Attribute::MinSize))
+        if (OnlyOptimizeForSize && !ParentFn->optForMinSize())
           continue;
 
         size_t UGSIdx = GlobalUsesByFunction[ParentFn];
@@ -410,14 +406,13 @@ bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable*> &Globals,
   return Changed;
 }
 
-bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable *> &Globals,
+bool GlobalMerge::doMerge(const SmallVectorImpl<GlobalVariable *> &Globals,
                           const BitVector &GlobalSet, Module &M, bool isConst,
                           unsigned AddrSpace) const {
+  assert(Globals.size() > 1);
 
   Type *Int32Ty = Type::getInt32Ty(M.getContext());
   auto &DL = M.getDataLayout();
-
-  assert(Globals.size() > 1);
 
   DEBUG(dbgs() << " Trying to merge set, starts with #"
                << GlobalSet.find_first() << "\n");
@@ -429,58 +424,44 @@ bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable *> &Globals,
     std::vector<Type*> Tys;
     std::vector<Constant*> Inits;
 
-    bool HasExternal = false;
-    GlobalVariable *TheFirstExternal = 0;
     for (j = i; j != -1; j = GlobalSet.find_next(j)) {
-      Type *Ty = Globals[j]->getType()->getElementType();
+      Type *Ty = Globals[j]->getValueType();
       MergedSize += DL.getTypeAllocSize(Ty);
       if (MergedSize > MaxOffset) {
         break;
       }
       Tys.push_back(Ty);
       Inits.push_back(Globals[j]->getInitializer());
-
-      if (Globals[j]->hasExternalLinkage() && !HasExternal) {
-        HasExternal = true;
-        TheFirstExternal = Globals[j];
-      }
     }
-
-    // If merged variables doesn't have external linkage, we needn't to expose
-    // the symbol after merging.
-    GlobalValue::LinkageTypes Linkage = HasExternal
-                                            ? GlobalValue::ExternalLinkage
-                                            : GlobalValue::InternalLinkage;
 
     StructType *MergedTy = StructType::get(M.getContext(), Tys);
     Constant *MergedInit = ConstantStruct::get(MergedTy, Inits);
 
-    // If merged variables have external linkage, we use symbol name of the
-    // first variable merged as the suffix of global symbol name. This would
-    // be able to avoid the link-time naming conflict for globalm symbols.
     GlobalVariable *MergedGV = new GlobalVariable(
-        M, MergedTy, isConst, Linkage, MergedInit,
-        HasExternal ? "_MergedGlobals_" + TheFirstExternal->getName()
-                    : "_MergedGlobals",
-        nullptr, GlobalVariable::NotThreadLocal, AddrSpace);
+        M, MergedTy, isConst, GlobalValue::PrivateLinkage, MergedInit,
+        "_MergedGlobals", nullptr, GlobalVariable::NotThreadLocal, AddrSpace);
 
-    for (ssize_t k = i, idx = 0; k != j; k = GlobalSet.find_next(k)) {
+    for (ssize_t k = i, idx = 0; k != j; k = GlobalSet.find_next(k), ++idx) {
       GlobalValue::LinkageTypes Linkage = Globals[k]->getLinkage();
       std::string Name = Globals[k]->getName();
 
       Constant *Idx[2] = {
         ConstantInt::get(Int32Ty, 0),
-        ConstantInt::get(Int32Ty, idx++)
+        ConstantInt::get(Int32Ty, idx),
       };
       Constant *GEP =
           ConstantExpr::getInBoundsGetElementPtr(MergedTy, MergedGV, Idx);
       Globals[k]->replaceAllUsesWith(GEP);
       Globals[k]->eraseFromParent();
 
-      if (Linkage != GlobalValue::InternalLinkage) {
-        // Generate a new alias...
-        auto *PTy = cast<PointerType>(GEP->getType());
-        GlobalAlias::create(PTy, Linkage, Name, GEP, &M);
+      // When the linkage is not internal we must emit an alias for the original
+      // variable name as it may be accessed from another object. On non-Mach-O
+      // we can also emit an alias for internal linkage as it's safe to do so.
+      // It's not safe on Mach-O as the alias (and thus the portion of the
+      // MergedGlobals variable) may be dead stripped at link time.
+      if (Linkage != GlobalValue::InternalLinkage ||
+          !TM->getTargetTriple().isOSBinFormatMachO()) {
+        GlobalAlias::create(Tys[idx], AddrSpace, Linkage, Name, GEP, &M);
       }
 
       NumMerged++;
@@ -539,61 +520,57 @@ bool GlobalMerge::doInitialization(Module &M) {
   setMustKeepGlobalVariables(M);
 
   // Grab all non-const globals.
-  for (Module::global_iterator I = M.global_begin(),
-         E = M.global_end(); I != E; ++I) {
+  for (auto &GV : M.globals()) {
     // Merge is safe for "normal" internal or external globals only
-    if (I->isDeclaration() || I->isThreadLocal() || I->hasSection())
+    if (GV.isDeclaration() || GV.isThreadLocal() || GV.hasSection())
       continue;
 
-    if (!(MergeExternalGlobals && I->hasExternalLinkage()) &&
-        !I->hasInternalLinkage())
+    if (!(MergeExternalGlobals && GV.hasExternalLinkage()) &&
+        !GV.hasInternalLinkage())
       continue;
 
-    PointerType *PT = dyn_cast<PointerType>(I->getType());
+    PointerType *PT = dyn_cast<PointerType>(GV.getType());
     assert(PT && "Global variable is not a pointer!");
 
     unsigned AddressSpace = PT->getAddressSpace();
 
     // Ignore fancy-aligned globals for now.
-    unsigned Alignment = DL.getPreferredAlignment(I);
-    Type *Ty = I->getType()->getElementType();
+    unsigned Alignment = DL.getPreferredAlignment(&GV);
+    Type *Ty = GV.getValueType();
     if (Alignment > DL.getABITypeAlignment(Ty))
       continue;
 
     // Ignore all 'special' globals.
-    if (I->getName().startswith("llvm.") ||
-        I->getName().startswith(".llvm."))
+    if (GV.getName().startswith("llvm.") ||
+        GV.getName().startswith(".llvm."))
       continue;
 
     // Ignore all "required" globals:
-    if (isMustKeepGlobalVariable(I))
+    if (isMustKeepGlobalVariable(&GV))
       continue;
 
     if (DL.getTypeAllocSize(Ty) < MaxOffset) {
-      if (TargetLoweringObjectFile::getKindForGlobal(I, *TM).isBSSLocal())
-        BSSGlobals[AddressSpace].push_back(I);
-      else if (I->isConstant())
-        ConstGlobals[AddressSpace].push_back(I);
+      if (TargetLoweringObjectFile::getKindForGlobal(&GV, *TM).isBSSLocal())
+        BSSGlobals[AddressSpace].push_back(&GV);
+      else if (GV.isConstant())
+        ConstGlobals[AddressSpace].push_back(&GV);
       else
-        Globals[AddressSpace].push_back(I);
+        Globals[AddressSpace].push_back(&GV);
     }
   }
 
-  for (DenseMap<unsigned, SmallVector<GlobalVariable*, 16> >::iterator
-       I = Globals.begin(), E = Globals.end(); I != E; ++I)
-    if (I->second.size() > 1)
-      Changed |= doMerge(I->second, M, false, I->first);
+  for (auto &P : Globals)
+    if (P.second.size() > 1)
+      Changed |= doMerge(P.second, M, false, P.first);
 
-  for (DenseMap<unsigned, SmallVector<GlobalVariable*, 16> >::iterator
-       I = BSSGlobals.begin(), E = BSSGlobals.end(); I != E; ++I)
-    if (I->second.size() > 1)
-      Changed |= doMerge(I->second, M, false, I->first);
+  for (auto &P : BSSGlobals)
+    if (P.second.size() > 1)
+      Changed |= doMerge(P.second, M, false, P.first);
 
   if (EnableGlobalMergeOnConst)
-    for (DenseMap<unsigned, SmallVector<GlobalVariable*, 16> >::iterator
-         I = ConstGlobals.begin(), E = ConstGlobals.end(); I != E; ++I)
-      if (I->second.size() > 1)
-        Changed |= doMerge(I->second, M, true, I->first);
+    for (auto &P : ConstGlobals)
+      if (P.second.size() > 1)
+        Changed |= doMerge(P.second, M, true, P.first);
 
   return Changed;
 }

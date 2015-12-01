@@ -237,6 +237,11 @@ public:
   /// \brief Determine whether this lookup is permitted to see hidden
   /// declarations, such as those in modules that have not yet been imported.
   bool isHiddenDeclarationVisible(NamedDecl *ND) const {
+    // If a using-shadow declaration is hidden, it's never visible, not
+    // even to redeclaration lookup.
+    // FIXME: Should this apply to typedefs and namespace aliases too?
+    if (isa<UsingShadowDecl>(ND) && LookupKind != Sema::LookupUsingDeclName)
+      return false;
     return (AllowHidden &&
             (AllowHiddenInternal || ND->isExternallyVisible())) ||
            LookupKind == Sema::LookupTagName;
@@ -575,6 +580,11 @@ public:
     {}
 
   public:
+    Filter(Filter &&F)
+        : Results(F.Results), I(F.I), Changed(F.Changed),
+          CalledDone(F.CalledDone) {
+      F.CalledDone = true;
+    }
     ~Filter() {
       assert(CalledDone &&
              "LookupResult::Filter destroyed without done() call");

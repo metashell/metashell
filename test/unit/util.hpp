@@ -33,5 +33,17 @@ metashell::data::type fib()
   return metashell::data::type("fib<" + std::to_string(N) + ">");
 }
 
+template <int N>
+metashell::data::type v1fib()
+{
+  return metashell::data::type("v1::fib<" + std::to_string(N) + ">");
+}
+
+template <int N>
+metashell::data::type v2fib()
+{
+  return metashell::data::type("v2::fib<" + std::to_string(N) + ">");
+}
+
 #endif
 
