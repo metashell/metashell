@@ -6,7 +6,7 @@
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
 
 [![Try online](https://raw.github.com/sabel83/metashell/master/try_online.png "Try online")](http://abel.web.elte.hu/shell/metashell)
-[![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](http://metashell.readthedocs.org/en/latest/getting_metashell/installers/#version-200)
+[![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](http://metashell.readthedocs.org/en/latest/getting_metashell/installers/#version-210)
 
 The goal of this project is to provide an interactive template metaprogramming
 shell.

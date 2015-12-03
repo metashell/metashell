@@ -9,7 +9,7 @@
   <a href="http://abel.web.elte.hu/shell/metashell">
     <img src="img/try_online.png">
   </a>
-  <a href="getting_metashell/installers/#version-200">
+  <a href="getting_metashell/installers/#version-210">
     <img src="img/download.png">
   </a>
 </p>
