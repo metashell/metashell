@@ -14,6 +14,9 @@ addons:
 script:
   - if [ "$CXX" == "g++" ]; then export CXX="g++-4.8"; fi
 
+  # Test that the download version links are correct
+  - egrep $(tools/latest_release --no_dots --prefix=version-) README.md
+  - egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
   # Test the code
   - mkdir bin
   - cd bin
