@@ -1,6 +1,7 @@
 # Metashell
 
 [![Build Status](https://travis-ci.org/sabel83/metashell.svg?branch=master "Build Status")](https://travis-ci.org/sabel83/metashell)
+[![Build status](https://ci.appveyor.com/api/projects/status/2t30o2h0kieh2ovm/branch/master?svg=true)](https://ci.appveyor.com/project/sabel83/metashell/branch/master)
 [![Documentation Status](https://readthedocs.org/projects/metashell/badge/?version=latest "Documentation Status")](http://metashell.readthedocs.org/en/latest/?badge=latest)
 
 ![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
