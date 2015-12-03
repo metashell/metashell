@@ -1,8 +1,5 @@
 <h1>Metashell</h1>
 
-[![Build Status](https://travis-ci.org/sabel83/metashell.svg?branch=master "Build Status")](https://travis-ci.org/sabel83/metashell)
-[![Documentation Status](https://readthedocs.org/projects/metashell/badge/?version=latest "Documentation Status")](http://metashell.readthedocs.org/en/latest/?badge=latest)
-
 ![](img/metashell.png "Metashell")
 
 <p align="center">
