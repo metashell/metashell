@@ -2,7 +2,6 @@
 
 set -ex
 
-brew install wget
 if [ "$CXX" = "g++" ]; then
   brew update >/dev/null
   brew install homebrew/versions/gcc5
