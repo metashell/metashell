@@ -28,7 +28,7 @@ function(enable_warnings)
   if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(
       CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic"
+      "${CMAKE_CXX_FLAGS} -Wall -Wextra"
       PARENT_SCOPE
     )
     message(STATUS "Turning on warnings for GCC")
