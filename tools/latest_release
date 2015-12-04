@@ -1,0 +1,59 @@
+#!/usr/bin/python
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import subprocess
+import argparse
+
+def parse_version(s):
+  return tuple([int(n) for n in s[1:].split('.')])
+
+def format_version(v, show_dots):
+  return ('.' if show_dots else '').join([str(n) for n in v])
+
+def run(prefix, show_dots):
+  (stdout, _) = subprocess.Popen(
+    ['git', 'tag'],
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE
+  ).communicate()
+  print ''.join([
+    prefix,
+    format_version(
+      max([parse_version(s) for s in stdout.split('\n') if s.startswith('v')]),
+      show_dots
+    )
+  ])
+
+def main():
+  parser = argparse.ArgumentParser(
+    description='Get the latest release from Git'
+  )
+  parser.add_argument(
+    '--no_dots',
+    action='store_true',
+    help='Omit dots from output'
+  )
+  parser.add_argument(
+    '--prefix',
+    default='',
+    help='Prefix output'
+  )
+  args = parser.parse_args()
+  run(args.prefix, not args.no_dots)
+
+if __name__ == '__main__':
+  main()
+
