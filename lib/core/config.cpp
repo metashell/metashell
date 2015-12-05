@@ -271,7 +271,7 @@ namespace
 config::config() :
   include_path(),
   verbose(false),
-  standard_to_use(standard::cpp11),
+  standard_to_use(data::standard::cpp11),
   warnings_enabled(true),
   use_precompiled_headers(false),
   clang_path(),

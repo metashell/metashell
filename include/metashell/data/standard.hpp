@@ -1,5 +1,5 @@
-#ifndef METASHELL_STANDARD_HPP
-#define METASHELL_STANDARD_HPP
+#ifndef METASHELL_DATA_STANDARD_HPP
+#define METASHELL_DATA_STANDARD_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -22,16 +22,19 @@
 
 namespace metashell
 {
-  enum class standard {
-    cpp11,
-    cpp14,
-    cpp1z
-  };
+  namespace data
+  {
+    enum class standard {
+      cpp11,
+      cpp14,
+      cpp1z
+    };
 
-  standard parse_standard(const std::string& std_);
-  std::string clang_argument(standard std_);
+    standard parse_standard(const std::string& std_);
+    std::string clang_argument(standard std_);
 
-  std::ostream& operator<<(std::ostream& os, standard std_);
+    std::ostream& operator<<(std::ostream& os, standard std_);
+  }
 }
 
 #endif

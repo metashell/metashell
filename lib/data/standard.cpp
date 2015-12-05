@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
+#include <metashell/data/standard.hpp>
 
 #include <ostream>
 #include <stdexcept>
 
-using namespace metashell;
+using namespace metashell::data;
 
-standard metashell::parse_standard(const std::string& std_)
+standard metashell::data::parse_standard(const std::string& std_)
 {
   if (std_ == "c++0x" || std_ == "c++11")
   {
@@ -41,7 +41,7 @@ standard metashell::parse_standard(const std::string& std_)
   }
 }
 
-std::string metashell::clang_argument(standard std_)
+std::string metashell::data::clang_argument(standard std_)
 {
   switch (std_)
   {
@@ -52,7 +52,7 @@ std::string metashell::clang_argument(standard std_)
   throw std::runtime_error("Invalid standard value");
 }
 
-std::ostream& metashell::operator<<(std::ostream& os, standard std_) {
+std::ostream& metashell::data::operator<<(std::ostream& os, standard std_) {
   switch (std_)
   {
   case standard::cpp11: os << "C++11";
@@ -62,3 +62,4 @@ std::ostream& metashell::operator<<(std::ostream& os, standard std_) {
   }
   return os;
 }
+

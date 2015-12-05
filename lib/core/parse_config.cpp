@@ -240,7 +240,7 @@ parse_config_result metashell::parse_config(
     ucfg.verbose = vm.count("verbose") || vm.count("V");
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     ucfg.indent = vm.count("indent") != 0;
-    ucfg.standard_to_use = metashell::parse_standard(cppstd);
+    ucfg.standard_to_use = metashell::data::parse_standard(cppstd);
     ucfg.con_type = metashell::parse_console_type(con_type);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");

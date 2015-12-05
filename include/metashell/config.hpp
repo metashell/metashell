@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
+#include <metashell/data/standard.hpp>
 #include <metashell/stdlib.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
@@ -36,7 +36,7 @@ namespace metashell
   public:
     std::vector<std::string> include_path;
     bool verbose;
-    standard standard_to_use;
+    data::standard standard_to_use;
     std::vector<std::string> macros;
     bool warnings_enabled;
     std::vector<std::string> extra_clang_args;

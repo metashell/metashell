@@ -119,10 +119,10 @@ JUST_TEST_CASE(test_standard_to_use_is_kept)
   mock_environment_detector dstub;
 
   user_config ucfg;
-  ucfg.standard_to_use = standard::cpp14;
+  ucfg.standard_to_use = data::standard::cpp14;
 
   JUST_ASSERT_EQUAL(
-    standard::cpp14,
+    data::standard::cpp14,
     detect_config(ucfg, dstub).standard_to_use
   );
 }

@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_environment.hpp>
-#include <metashell/standard.hpp>
 #include <metashell/config.hpp>
 #include <metashell/path_builder.hpp>
 

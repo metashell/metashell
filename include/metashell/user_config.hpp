@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/standard.hpp>
+#include <metashell/data/standard.hpp>
 #include <metashell/stdlib.hpp>
 #include <metashell/console_type.hpp>
 #include <metashell/logging_mode.hpp>
@@ -33,7 +33,7 @@ namespace metashell
     bool verbose = false;
     bool syntax_highlight = true;
     bool indent = true;
-    standard standard_to_use = standard::cpp11;
+    data::standard standard_to_use = data::standard::cpp11;
     std::vector<std::string> macros;
     bool warnings_enabled = true;
     std::vector<std::string> extra_clang_args;
