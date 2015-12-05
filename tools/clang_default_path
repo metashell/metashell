@@ -1,0 +1,111 @@
+#!/usr/bin/python
+"""
+Utility to query the default include PATH of gcc or clang.
+
+Supported options:
+
+ -g, --gcc <path>       The binary to use as gcc or clang (default: clang)
+ -h, --help             Display this help message
+ -t, --type sys|normal  The type of include path to query (default: sys)
+
+Depending on its argument, the script queries the default
+(system) include path.
+"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import subprocess
+import getopt
+import json
+
+def run(cmd):
+  try:
+    return subprocess.Popen(
+      cmd,
+      stderr=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      stdin=subprocess.PIPE
+    ).communicate()
+  except OSError:
+    raise Exception('%s: %s' % (' '.join(cmd), sys.exc_info()[1]))
+
+def bytes_to_string(bs):
+  # Support Python 2 and 3
+  return bs if isinstance(bs, str) else "".join(map(chr, bs))
+
+def get_standard_gcc_includes(gcc):
+  includes = []
+  sysincludes = []
+  current = None
+  for l in bytes_to_string(run([gcc, '-v', '-xc++', '-'])[1]).split('\n'):
+    retry = True
+    while retry:
+      retry = False
+      if current == None:
+        if l.startswith('#include "'):
+          current = includes
+        elif l.startswith('#include <'):
+          current = sysincludes
+      else:
+        if l.startswith(' '):
+          current.append(l.strip())
+        else:
+          current = None
+          retry = True
+  return (includes, sysincludes)
+
+def main():
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], 'ht:g:', ['help', 'type=', 'gcc='])
+  except getopt.error:
+    msg = sys.exc_info()[1]
+    print(msg)
+    print("Getting help: --help")
+    sys.exit(1)
+
+  type = 'sys'
+  gcc = 'clang'
+
+  for o, a in opts:
+    if o in ('-t', '--type'):
+      if a in ('sys', 'normal'):
+        type = a
+      else:
+        print('Invalid type: %s' % (a))
+        sys.exit(1)
+    elif o in('-h', '--help'):
+      print(__doc__)
+      sys.exit(0)
+    elif o in('-g', '--gcc'):
+      gcc = a
+  
+  try:
+    (normal, system) = get_standard_gcc_includes(gcc)
+    if type == 'sys':
+      paths = system
+    else:
+      paths = normal
+    print('\n'.join([', %s' % (json.dumps(s)) for s in paths]))
+    print('')
+  except:
+    sys.stderr.write('Error: %s\n' % (sys.exc_info()[1]))
+
+if __name__ == '__main__':
+  main()
+
+
