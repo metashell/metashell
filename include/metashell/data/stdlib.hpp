@@ -1,5 +1,5 @@
-#ifndef METASHELL_STDLIB_HPP
-#define METASHELL_STDLIB_HPP
+#ifndef METASHELL_DATA_STDLIB_HPP
+#define METASHELL_DATA_STDLIB_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -22,15 +22,18 @@
 
 namespace metashell
 {
-  enum class stdlib {
-    libcxx,
-    libstdcxx
-  };
+  namespace data
+  {
+    enum class stdlib {
+      libcxx,
+      libstdcxx
+    };
 
-  stdlib parse_stdlib(const std::string& std_);
-  std::string clang_argument(stdlib std_);
+    stdlib parse_stdlib(const std::string& std_);
+    std::string clang_argument(stdlib std_);
 
-  std::ostream& operator<<(std::ostream& os, stdlib std_);
+    std::ostream& operator<<(std::ostream& os, stdlib std_);
+  }
 }
 
 #endif

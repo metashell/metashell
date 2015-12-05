@@ -502,8 +502,11 @@ JUST_TEST_CASE(test_stdlib_version_is_kept)
   mock_environment_detector dstub;
 
   user_config ucfg;
-  ucfg.stdlib_to_use = stdlib::libcxx;
+  ucfg.stdlib_to_use = data::stdlib::libcxx;
 
-  JUST_ASSERT_EQUAL(stdlib::libcxx, detect_config(ucfg, dstub).stdlib_to_use);
+  JUST_ASSERT_EQUAL(
+    data::stdlib::libcxx,
+    detect_config(ucfg, dstub).stdlib_to_use
+  );
 }
 

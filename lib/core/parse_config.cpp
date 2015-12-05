@@ -263,11 +263,11 @@ parse_config_result metashell::parse_config(
 
     if (svalue == "tdlib=libc++")
     {
-      ucfg.stdlib_to_use = stdlib::libcxx;
+      ucfg.stdlib_to_use = data::stdlib::libcxx;
     }
     else if (svalue == "tdlib=libstdc++")
     {
-      ucfg.stdlib_to_use = stdlib::libstdcxx;
+      ucfg.stdlib_to_use = data::stdlib::libstdcxx;
     }
     else
     {

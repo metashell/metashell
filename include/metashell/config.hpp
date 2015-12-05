@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/standard.hpp>
-#include <metashell/stdlib.hpp>
+#include <metashell/data/stdlib.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -46,7 +46,7 @@ namespace metashell
     unsigned templight_trace_capacity;
     bool saving_enabled;
     bool splash_enabled;
-    stdlib stdlib_to_use;
+    data::stdlib stdlib_to_use;
 
     config();
   };

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/stdlib.hpp>
+#include <metashell/data/stdlib.hpp>
 
 #include <ostream>
 #include <stdexcept>
 
-using namespace metashell;
+using namespace metashell::data;
 
-stdlib metashell::parse_stdlib(const std::string& std_)
+stdlib metashell::data::parse_stdlib(const std::string& std_)
 {
   if (std_ == "libc++")
   {
@@ -37,7 +37,7 @@ stdlib metashell::parse_stdlib(const std::string& std_)
   }
 }
 
-std::string metashell::clang_argument(stdlib std_)
+std::string metashell::data::clang_argument(stdlib std_)
 {
   switch (std_)
   {
@@ -47,7 +47,7 @@ std::string metashell::clang_argument(stdlib std_)
   throw std::runtime_error("Invalid stdlib value");
 }
 
-std::ostream& metashell::operator<<(std::ostream& os, stdlib std_) {
+std::ostream& metashell::data::operator<<(std::ostream& os, stdlib std_) {
   switch (std_)
   {
   case stdlib::libstdcxx: os << "libstdc++";

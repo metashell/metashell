@@ -276,7 +276,7 @@ config::config() :
   use_precompiled_headers(false),
   clang_path(),
   splash_enabled(true),
-  stdlib_to_use(stdlib::libstdcxx)
+  stdlib_to_use(data::stdlib::libstdcxx)
 {}
 
 config metashell::detect_config(

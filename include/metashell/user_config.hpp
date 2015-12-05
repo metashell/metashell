@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/standard.hpp>
-#include <metashell/stdlib.hpp>
+#include <metashell/data/stdlib.hpp>
 #include <metashell/console_type.hpp>
 #include <metashell/logging_mode.hpp>
 
@@ -45,7 +45,7 @@ namespace metashell
     bool splash_enabled = true;
     logging_mode log_mode = logging_mode::none;
     std::string log_file;
-    stdlib stdlib_to_use = stdlib::libstdcxx;
+    data::stdlib stdlib_to_use = data::stdlib::libstdcxx;
   };
 }
 
