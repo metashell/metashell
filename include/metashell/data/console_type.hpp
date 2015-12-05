@@ -1,5 +1,5 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_DATA_CONSOLE_TYPE_HPP
+#define METASHELL_DATA_CONSOLE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -22,16 +22,19 @@
 
 namespace metashell
 {
-  enum class console_type
+  namespace data
   {
-    plain,
-    readline,
-    json
-  };
+    enum class console_type
+    {
+      plain,
+      readline,
+      json
+    };
 
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
+    std::ostream& operator<<(std::ostream& o_, console_type t_);
 
-  console_type parse_console_type(const std::string& con_type_);
+    console_type parse_console_type(const std::string& con_type_);
+  }
 }
 
 #endif

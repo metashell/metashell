@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
+#include <metashell/data/console_type.hpp>
 
 #include <just/test.hpp>
 
@@ -22,7 +22,7 @@
 #include <iostream>
 #include <sstream>
 
-using namespace metashell;
+using namespace metashell::data;
 
 namespace
 {

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
+#include <metashell/data/console_type.hpp>
 
 #include <ostream>
 #include <stdexcept>
 
-using namespace metashell;
+using namespace metashell::data;
 
-std::ostream& metashell::operator<<(std::ostream& o_, console_type t_)
+std::ostream& metashell::data::operator<<(std::ostream& o_, console_type t_)
 {
   switch (t_)
   {
@@ -32,7 +32,7 @@ std::ostream& metashell::operator<<(std::ostream& o_, console_type t_)
   return o_; // avoid "control reaches end of function" warnings
 }
 
-console_type metashell::parse_console_type(const std::string& con_type_)
+console_type metashell::data::parse_console_type(const std::string& con_type_)
 {
   if (con_type_ == "plain")
   {

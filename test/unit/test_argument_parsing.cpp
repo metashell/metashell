@@ -157,28 +157,28 @@ JUST_TEST_CASE(test_default_console_type_is_readline)
 {
   const user_config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::readline, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_plain)
 {
   const user_config cfg = parse_config({"--console", "plain"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::plain, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::plain, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_readline)
 {
   const user_config cfg = parse_config({"--console", "readline"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::readline, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_json)
 {
   const user_config cfg = parse_config({"--console", "json"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::json, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::json, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_splash_is_enabled_by_default)

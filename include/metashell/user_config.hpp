@@ -19,7 +19,7 @@
 
 #include <metashell/data/standard.hpp>
 #include <metashell/data/stdlib.hpp>
-#include <metashell/console_type.hpp>
+#include <metashell/data/console_type.hpp>
 #include <metashell/logging_mode.hpp>
 
 #include <string>
@@ -41,7 +41,7 @@ namespace metashell
     std::string clang_path;
     int max_template_depth = 256;
     bool saving_enabled = false;
-    console_type con_type = console_type::plain;
+    data::console_type con_type = data::console_type::plain;
     bool splash_enabled = true;
     logging_mode log_mode = logging_mode::none;
     std::string log_file;

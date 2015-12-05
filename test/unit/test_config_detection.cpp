@@ -485,7 +485,7 @@ JUST_TEST_CASE(
 
 JUST_TEST_CASE(test_default_constructed_config_has_plain_console_type)
 {
-  JUST_ASSERT_EQUAL(console_type::plain, user_config().con_type);
+  JUST_ASSERT_EQUAL(data::console_type::plain, user_config().con_type);
 }
 
 JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)

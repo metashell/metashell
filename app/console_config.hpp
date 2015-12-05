@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
+#include <metashell/data/console_type.hpp>
 #include <metashell/line_reader.hpp>
 #include <metashell/command_processor_queue.hpp>
 
@@ -33,7 +33,11 @@ namespace metashell
   class console_config
   {
   public:
-    console_config(console_type type_, bool indent_, bool syntax_highlight_);
+    console_config(
+      data::console_type type_,
+      bool indent_,
+      bool syntax_highlight_
+    );
 
     iface::displayer& displayer();
     iface::history& history();
