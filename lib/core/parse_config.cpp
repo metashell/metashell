@@ -154,7 +154,7 @@ parse_config_result metashell::parse_config(
   using boost::program_options::parse_command_line;
   using boost::program_options::value;
 
-  user_config ucfg;
+  data::user_config ucfg;
 
   const char** const
     minus_minus = std::find(argv_, argv_ + argc_, std::string("--"));
@@ -318,7 +318,9 @@ parse_config_result parse_config_result::exit(bool with_error_)
   return r;
 }
 
-parse_config_result parse_config_result::start_shell(const user_config& cfg_)
+parse_config_result parse_config_result::start_shell(
+  const data::user_config& cfg_
+)
 {
   parse_config_result r;
   r.action = action_t::run_shell;

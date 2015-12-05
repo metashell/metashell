@@ -19,7 +19,6 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
-#include <metashell/user_config.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>

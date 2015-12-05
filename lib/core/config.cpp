@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
-#include <metashell/user_config.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/fstream_file_writer.hpp>
@@ -269,7 +268,7 @@ namespace
 }
 
 data::config metashell::detect_config(
-  const user_config& ucfg_,
+  const data::user_config& ucfg_,
   iface::environment_detector& env_detector_,
   iface::displayer& displayer_,
   logger* logger_
@@ -320,6 +319,6 @@ data::config metashell::empty_config(const std::string& argv0_)
 {
   default_environment_detector ed(argv0_);
   null_displayer d;
-  return detect_config(user_config(), ed, d, nullptr);
+  return detect_config(data::user_config(), ed, d, nullptr);
 }
 

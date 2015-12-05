@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/user_config.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/iface/environment_detector.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -28,10 +29,8 @@
 
 namespace metashell
 {
-  struct user_config;
-
   data::config detect_config(
-    const user_config& ucfg_,
+    const data::user_config& ucfg_,
     iface::environment_detector& env_detector_,
     iface::displayer& displayer_,
     logger* logger_
