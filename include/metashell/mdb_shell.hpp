@@ -42,7 +42,7 @@ public:
   const static mdb_command_handler_map command_handler;
 
   mdb_shell(
-      const config& conf,
+      const data::config& conf,
       const iface::environment& env,
       iface::executable& clang_binary,
       logger* logger_);
@@ -137,7 +137,7 @@ protected:
   void display_metaprogram_finished(iface::displayer& displayer_) const;
   void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
-  config conf;
+  data::config conf;
   templight_environment env;
 
   boost::optional<metaprogram> mp;

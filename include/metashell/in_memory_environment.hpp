@@ -19,20 +19,19 @@
 
 #include <metashell/iface/environment.hpp>
 #include <metashell/data/headers.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
 #include <string>
 
 namespace metashell
 {
-  class config;
-
   class in_memory_environment : public iface::environment
   {
   public:
     in_memory_environment(
       const std::string& internal_dir_,
-      const config& config_,
+      const data::config& config_,
       const std::string& clang_extra_arg_ = "",
       logger* logger = nullptr
     );

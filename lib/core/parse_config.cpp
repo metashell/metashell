@@ -72,7 +72,7 @@ namespace
 
   void show_pragma_help()
   {
-    const config cfg;
+    const data::config cfg{};
     null_executable clang_binary;
     command_processor_queue cpq;
     shell sh(cfg, cpq, clang_binary);

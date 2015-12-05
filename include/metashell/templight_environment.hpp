@@ -23,7 +23,7 @@ namespace metashell {
 class templight_environment : public header_file_environment {
 public:
   explicit templight_environment(
-    const config& config,
+    const data::config& config,
     logger* logger_ = nullptr
   );
 

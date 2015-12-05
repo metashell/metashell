@@ -30,13 +30,13 @@ using namespace metashell;
 
 namespace
 {
-  metashell::config detect_config(
-    const metashell::user_config& ucfg_,
-    metashell::iface::environment_detector& env_detector_
+  data::config detect_config(
+    const user_config& ucfg_,
+    iface::environment_detector& env_detector_
   )
   {
     null_displayer d;
-    return metashell::detect_config(ucfg_, env_detector_, d, nullptr);
+    return detect_config(ucfg_, env_detector_, d, nullptr);
   }
 
   template <class T, class Ts>
@@ -48,7 +48,7 @@ namespace
 
   void check_flag_is_kept(
     bool user_config::* ucfg_field_,
-    bool config::* cfg_field_
+    bool data::config::* cfg_field_
   )
   {
     mock_environment_detector dstub;
@@ -76,12 +76,15 @@ JUST_TEST_CASE(test_include_path_entry_is_kept)
 
 JUST_TEST_CASE(test_verbosity_is_kept)
 {
-  check_flag_is_kept(&user_config::verbose, &config::verbose);
+  check_flag_is_kept(&user_config::verbose, &data::config::verbose);
 }
 
 JUST_TEST_CASE(test_warnings_enabled_is_kept)
 {
-  check_flag_is_kept(&user_config::warnings_enabled, &config::warnings_enabled);
+  check_flag_is_kept(
+    &user_config::warnings_enabled,
+    &data::config::warnings_enabled
+  );
 }
 
 JUST_TEST_CASE(test_macro_definition_is_kept)
@@ -133,7 +136,7 @@ JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
   envd.search_clang_binary_returns("/foo/bar/clang");
   envd.file_exists_returns(false);
 
-  const config cfg = detect_config(user_config(), envd);
+  const data::config cfg = detect_config(user_config(), envd);
 
   JUST_ASSERT_EQUAL(1, envd.search_clang_binary_called_times());
   JUST_ASSERT_EQUAL("/foo/bar/clang", cfg.clang_path);
@@ -146,7 +149,7 @@ JUST_TEST_CASE(test_clang_binary_is_not_searched_when_specified)
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
-  const config cfg = detect_config(ucfg, envd);
+  const data::config cfg = detect_config(ucfg, envd);
 
   JUST_ASSERT_EQUAL(0, envd.search_clang_binary_called_times());
 }
@@ -160,7 +163,7 @@ JUST_TEST_CASE(
   user_config ucfg;
   ucfg.clang_path = "/foo/clang";
 
-  const config cfg = detect_config(ucfg, envd);
+  const data::config cfg = detect_config(ucfg, envd);
 
   JUST_ASSERT_EQUAL(1, envd.file_exists_called_times());
   JUST_ASSERT_EQUAL("/foo/clang", envd.file_exists_last_arg());
@@ -186,7 +189,7 @@ JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
   ucfg.clang_path = "/foo/clang";
 
   in_memory_displayer d;
-  metashell::detect_config(ucfg, envd, d, nullptr);
+  detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(!d.errors().empty());
 }
@@ -199,7 +202,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   in_memory_displayer d;
-  metashell::detect_config(user_config(), envd, d, nullptr);
+  detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(!d.errors().empty());
 }
@@ -212,7 +215,7 @@ JUST_TEST_CASE(
   envd.search_clang_binary_returns("/foo/bar/clang");
 
   in_memory_displayer d;
-  metashell::detect_config(user_config(), envd, d, nullptr);
+  detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
@@ -226,7 +229,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_disabled_when_no_clang_is_found)
   ucfg.use_precompiled_headers = true;
 
   in_memory_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(!cfg.use_precompiled_headers);
   JUST_ASSERT(
@@ -249,7 +252,7 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
   ucfg.use_precompiled_headers = true;
 
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(cfg.use_precompiled_headers);
 }
@@ -264,7 +267,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(contains("c:/program files\\windows_headers", cfg.include_path));
   JUST_ASSERT(
@@ -284,7 +287,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("c:\\foo\\bar");
 
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(!cfg.include_path.empty());
   JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
@@ -300,7 +303,7 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   envd.file_exists_returns(false);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EQUAL_CONTAINER(
     {
@@ -324,7 +327,7 @@ JUST_TEST_CASE(
   ucfg.include_path.push_back("/user/1");
 
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
   JUST_ASSERT_EQUAL("c:/program files\\templight\\include", cfg.include_path[2]);
@@ -342,7 +345,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(false);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EQUAL("/usr/local/bin/templight_metashell", cfg.clang_path);
 }
@@ -358,7 +361,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(false);
 
   in_memory_displayer d;
-  metashell::detect_config(user_config(), envd, d, nullptr);
+  detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EQUAL(1u, d.errors().size());
   JUST_ASSERT(
@@ -378,7 +381,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EQUAL("c:/foo/bar\\templight\\templight.exe", cfg.clang_path);
 }
@@ -393,7 +396,7 @@ JUST_TEST_CASE(
   envd.on_windows_returns(true);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(contains("c:/foo/bar\\templight\\include", cfg.include_path));
 }
@@ -404,7 +407,7 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
   envd.on_windows_returns(true);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
   JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
@@ -418,7 +421,7 @@ JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
   envd.file_exists_returns(false);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT_EQUAL(1u, cfg.include_path.size());
   JUST_ASSERT_EQUAL(
@@ -435,7 +438,7 @@ JUST_TEST_CASE(test_detect_max_template_depth)
   ucfg.max_template_depth = 13;
 
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
 }
@@ -445,7 +448,7 @@ JUST_TEST_CASE(test_saving_is_disabled_by_default)
   mock_environment_detector envd;
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(!cfg.saving_enabled);
 }
@@ -458,7 +461,7 @@ JUST_TEST_CASE(test_saving_is_enabled_when_enabled_by_user_config)
   ucfg.saving_enabled = true;
 
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(cfg.saving_enabled);
 }
@@ -473,7 +476,7 @@ JUST_TEST_CASE(
   envd.file_exists_returns(false);
 
   null_displayer d;
-  const config cfg = metashell::detect_config(user_config(), envd, d, nullptr);
+  const data::config cfg = detect_config(user_config(), envd, d, nullptr);
 
   JUST_ASSERT(
     contains("/foo/bar/bin/../include/metashell/libcxx", cfg.include_path)
@@ -492,7 +495,7 @@ JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)
 
   mock_environment_detector envd;
   null_displayer d;
-  const config cfg = metashell::detect_config(ucfg, envd, d, nullptr);
+  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
   
   JUST_ASSERT(!cfg.splash_enabled);
 }

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/command_processor_queue.hpp>
 #include <metashell/logger.hpp>
@@ -42,20 +42,20 @@ namespace metashell
   {
   public:
     shell(
-      const config& config_,
+      const data::config& config_,
       iface::executable& clang_binary_,
       logger* logger_ = nullptr
     );
 
     shell(
-      const config& config_,
+      const data::config& config_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
       logger* logger_ = nullptr
     );
 
     shell(
-      const config& config_,
+      const data::config& config_,
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
@@ -104,11 +104,11 @@ namespace metashell
     void display_environment_stack_size(iface::displayer& displayer_);
     void rebuild_environment();
 
-    const config& get_config() const;
+    const data::config& get_config() const;
   private:
     std::string _line_prefix;
     std::unique_ptr<iface::environment> _env;
-    config _config;
+    data::config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;

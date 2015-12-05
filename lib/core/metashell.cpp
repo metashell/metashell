@@ -128,7 +128,7 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
 
 data::result metashell::validate_code(
   const std::string& src_,
-  const config& config_,
+  const data::config& config_,
   const iface::environment& env_,
   logger* logger_,
   iface::executable& clang_binary_

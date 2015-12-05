@@ -136,7 +136,7 @@ namespace metashell {
 }
 
 shell::shell(
-  const config& config_,
+  const data::config& config_,
   iface::executable& clang_binary_,
   logger* logger_
 ) :
@@ -151,7 +151,7 @@ shell::shell(
 }
 
 shell::shell(
-  const config& config_,
+  const data::config& config_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
   logger* logger_
@@ -167,7 +167,7 @@ shell::shell(
 }
 
 shell::shell(
-  const config& config_,
+  const data::config& config_,
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
@@ -465,7 +465,7 @@ void shell::reset_environment()
   _env->append(default_env);
 }
 
-const config& shell::get_config() const {
+const data::config& shell::get_config() const {
   return _config;
 }
 

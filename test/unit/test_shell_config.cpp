@@ -32,7 +32,7 @@
 
 JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
 {
-  metashell::config cfg;
+  metashell::data::config cfg;
   cfg.verbose = false;
 
   metashell::null_executable clang_binary;
@@ -43,7 +43,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
 
 JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  metashell::data::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
   metashell::null_executable clang_binary;
@@ -54,7 +54,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
 
 JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  metashell::data::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = false;
 
   metashell::null_executable clang_binary;
@@ -66,7 +66,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
 
 JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  metashell::data::config cfg = metashell::empty_config(argv0::get());
   cfg.verbose = true;
 
   metashell::null_executable clang_binary;
@@ -95,7 +95,7 @@ JUST_TEST_CASE(test_shell_stopped_after_stop)
 
 JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  metashell::data::config cfg = metashell::empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   metashell::null_executable clang_binary;

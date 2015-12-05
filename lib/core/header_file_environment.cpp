@@ -76,7 +76,7 @@ namespace
 }
 
 header_file_environment::header_file_environment(
-  const config& config_,
+  const data::config& config_,
   logger* logger_
 ) :
   _dir(),

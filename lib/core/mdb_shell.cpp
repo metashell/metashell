@@ -181,7 +181,7 @@ const mdb_command_handler_map mdb_shell::command_handler =
 
 namespace {
 
-config set_pch_false(config c) {
+data::config set_pch_false(data::config c) {
   c.use_precompiled_headers = false;
   return c;
 }
@@ -189,7 +189,7 @@ config set_pch_false(config c) {
 }
 
 mdb_shell::mdb_shell(
-    const config& conf_,
+    const data::config& conf_,
     const iface::environment& env_arg,
     iface::executable& clang_binary,
     logger* logger_) :

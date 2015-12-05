@@ -1,8 +1,8 @@
-#ifndef METASHELL_IFACE_ENVIRONMENT_DETECTOR_HPP
-#define METASHELL_IFACE_ENVIRONMENT_DETECTOR_HPP
+#ifndef METASHELL_DATA_CONFIG_HPP
+#define METASHELL_DATA_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/standard.hpp>
+#include <metashell/data/stdlib.hpp>
+
 #include <string>
+#include <vector>
 
 namespace metashell
 {
-  namespace iface
+  namespace data
   {
-    class environment_detector
+    class config
     {
     public:
-      virtual ~environment_detector() {}
-
-      virtual std::string search_clang_binary() = 0;
-      virtual bool file_exists(const std::string& path_) = 0;
-
-      // Available as a runtime function for cross-platform unit testing
-      virtual bool on_windows() = 0;
-      virtual bool on_osx() = 0;
-
-      virtual std::string path_of_executable() = 0;
+      std::vector<std::string> include_path;
+      bool verbose = false;
+      standard standard_to_use = standard::cpp11;
+      std::vector<std::string> macros;
+      bool warnings_enabled = true;
+      std::vector<std::string> extra_clang_args;
+      bool use_precompiled_headers = false;
+      std::string clang_path;
+      int max_template_depth;
+      unsigned templight_trace_capacity;
+      bool saving_enabled;
+      bool splash_enabled = true;
+      stdlib stdlib_to_use = stdlib::libstdcxx;
     };
   }
 }

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/data/command.hpp>
@@ -51,7 +51,7 @@ namespace metashell
 
   data::result validate_code(
     const std::string& s_,
-    const config& config_,
+    const data::config& config_,
     const iface::environment& env_,
     logger* logger_,
     iface::executable& clang_binary_

@@ -51,7 +51,7 @@ namespace
 
 JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
 {
-  const config cfg = empty_config(argv0::get());
+  const data::config cfg = empty_config(argv0::get());
 
   in_memory_environment env("foo", cfg);
 
@@ -60,7 +60,7 @@ JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
 
 JUST_TEST_CASE(test_append_text_to_in_memory_environment)
 {
-  const config cfg = empty_config(argv0::get());
+  const data::config cfg = empty_config(argv0::get());
 
   in_memory_environment env("foo", cfg);
 
@@ -69,7 +69,7 @@ JUST_TEST_CASE(test_append_text_to_in_memory_environment)
 
 JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 {
-  config cfg = empty_config(argv0::get());
+  data::config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg, nullptr);
@@ -79,7 +79,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 
 JUST_TEST_CASE(test_append_text_to_header_file_environment)
 {
-  config cfg = empty_config(argv0::get());
+  data::config cfg = empty_config(argv0::get());
   cfg.use_precompiled_headers = false;
 
   header_file_environment env(cfg, nullptr);
@@ -90,7 +90,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
 JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
   const iface::environment* old_env_ptr = &sh.env();
 
@@ -101,7 +101,7 @@ JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 
 JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
 {
-  config cfg;
+  data::config cfg;
   cfg.max_template_depth = 13;
 
   in_memory_environment e(".", cfg);
@@ -116,7 +116,7 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
 JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment foo", d);
@@ -127,7 +127,7 @@ JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment push", d);
@@ -139,7 +139,7 @@ JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment push foo", d);
@@ -150,7 +150,7 @@ JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment reload foo", d);
@@ -161,7 +161,7 @@ JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment stack foo", d);
@@ -172,7 +172,7 @@ JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment reset foo", d);
@@ -183,7 +183,7 @@ JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
 JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh quit foo", d);
@@ -196,7 +196,7 @@ JUST_TEST_CASE(
 )
 {
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(test_config(), clang_binary);
 
   sh.line_available("#msh environment save", d);
@@ -211,10 +211,10 @@ JUST_TEST_CASE(
   just::temp::directory d;
   const std::string fn = d.path() + "/test.hpp";
 
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  data::config cfg = empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer disp;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(cfg, clang_binary);
 
   sh.line_available("#msh environment save " + fn, disp);
@@ -227,10 +227,10 @@ JUST_TEST_CASE(
   test_environment_save_displays_an_error_when_filename_is_missing
 )
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  data::config cfg = empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(cfg, clang_binary);
 
   sh.line_available("#msh environment save    ", d);
@@ -242,10 +242,10 @@ JUST_TEST_CASE(
   test_environment_save_displays_an_error_when_io_error_happens
 )
 {
-  metashell::config cfg = metashell::empty_config(argv0::get());
+  data::config cfg = empty_config(argv0::get());
   cfg.saving_enabled = true;
   in_memory_displayer d;
-  metashell::null_executable clang_binary;
+  null_executable clang_binary;
   shell sh(cfg, clang_binary);
 
 #ifdef _WIN32

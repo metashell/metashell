@@ -22,7 +22,7 @@
 
 JUST_TEST_CASE(test_breaking_environment_does_not_throw)
 {
-  const metashell::config cfg;
+  const metashell::data::config cfg{};
   breaking_environment e(cfg);
 
   // should not throw
@@ -37,7 +37,7 @@ JUST_TEST_CASE(test_breaking_environment_does_not_throw)
 
 JUST_TEST_CASE(test_breaking_environment_append_throws)
 {
-  const metashell::config cfg;
+  const metashell::data::config cfg{};
   breaking_environment e(cfg);
   e.append_throw_from_now();
 
@@ -51,7 +51,7 @@ JUST_TEST_CASE(test_breaking_environment_append_throws)
 
 JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
 {
-  const metashell::config cfg;
+  const metashell::data::config cfg{};
   breaking_environment e(cfg);
   e.get_appended_throw_from_now();
 

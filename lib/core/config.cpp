@@ -171,7 +171,7 @@ namespace
 
   bool detect_precompiled_header_usage(
     bool user_wants_precompiled_headers_,
-    const config& cfg_,
+    const data::config& cfg_,
     iface::displayer& displayer_,
     logger* logger_
   )
@@ -268,18 +268,7 @@ namespace
   }
 }
 
-config::config() :
-  include_path(),
-  verbose(false),
-  standard_to_use(data::standard::cpp11),
-  warnings_enabled(true),
-  use_precompiled_headers(false),
-  clang_path(),
-  splash_enabled(true),
-  stdlib_to_use(data::stdlib::libstdcxx)
-{}
-
-config metashell::detect_config(
+data::config metashell::detect_config(
   const user_config& ucfg_,
   iface::environment_detector& env_detector_,
   iface::displayer& displayer_,
@@ -288,7 +277,7 @@ config metashell::detect_config(
 {
   METASHELL_LOG(logger_, "Detecting config");
 
-  config cfg;
+  data::config cfg;
 
   cfg.verbose = ucfg_.verbose;
   cfg.standard_to_use = ucfg_.standard_to_use;
@@ -327,7 +316,7 @@ config metashell::detect_config(
   return cfg;
 }
 
-config metashell::empty_config(const std::string& argv0_)
+data::config metashell::empty_config(const std::string& argv0_)
 {
   default_environment_detector ed(argv0_);
   null_displayer d;

@@ -17,7 +17,9 @@
 #include "test_config.hpp"
 #include "argv0.hpp"
 
-using namespace metashell;
+#include <metashell/config.hpp>
+
+using namespace metashell::data;
 
 config metashell::test_config()
 {

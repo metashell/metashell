@@ -27,7 +27,7 @@ namespace metashell
   class header_file_environment : public iface::environment
   {
   public:
-    header_file_environment(const config& config_, logger* logger_);
+    header_file_environment(const data::config& config_, logger* logger_);
 
     virtual void append(const std::string& s_) override;
     virtual std::string get() const override;

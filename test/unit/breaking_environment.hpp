@@ -22,7 +22,7 @@
 class breaking_environment : public metashell::in_memory_environment
 {
 public:
-  explicit breaking_environment(const metashell::config& cfg_);
+  explicit breaking_environment(const metashell::data::config& cfg_);
 
   virtual void append(const std::string& s_);
   virtual std::string get_appended(const std::string& s_) const;

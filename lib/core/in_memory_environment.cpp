@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/in_memory_environment.hpp>
-#include <metashell/config.hpp>
+#include <metashell/data/standard.hpp>
 #include <metashell/path_builder.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -186,7 +186,7 @@ namespace
 
 in_memory_environment::in_memory_environment(
   const std::string& internal_dir_,
-  const config& config_,
+  const data::config& config_,
   const std::string& clang_extra_arg_,
   logger* logger_
 ) :

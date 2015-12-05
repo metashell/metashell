@@ -20,7 +20,7 @@
 namespace metashell {
 
 templight_environment::templight_environment(
-  const config& config,
+  const data::config& config,
   logger* logger_
 ) : header_file_environment(config, logger_)
 {
