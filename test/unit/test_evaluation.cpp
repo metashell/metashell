@@ -218,7 +218,7 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   breaking_environment e(cfg);
   e.get_appended_throw_from_now();
   metashell::null_executable clang_binary;
-  const metashell::result r =
+  const metashell::data::result r =
     metashell::validate_code("typedef int foo;", cfg, e, nullptr, clang_binary);
 
   JUST_ASSERT(!r.successful);

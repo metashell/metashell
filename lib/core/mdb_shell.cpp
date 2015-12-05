@@ -925,7 +925,7 @@ data::type_or_error mdb_shell::run_metaprogram(
     const boost::optional<std::string>& expression,
     iface::displayer& displayer_)
 {
-  const result res = expression ?
+  const data::result res = expression ?
     eval_tmp(_clang_binary, env, *expression) :
     eval_environment(_clang_binary, env);
 

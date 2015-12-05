@@ -46,7 +46,7 @@ namespace
     return s.str();
   }
 
-  void display(const result& r_, iface::displayer& displayer_)
+  void display(const data::result& r_, iface::displayer& displayer_)
   {
     if (!r_.info.empty())
     {
@@ -315,7 +315,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r = validate_code(s_, _config, *_env, _logger, _clang_binary);
+  const data::result
+    r = validate_code(s_, _config, *_env, _logger, _clang_binary);
 
   if (r.successful)
   {

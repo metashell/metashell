@@ -126,7 +126,7 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
   }
 }
 
-result metashell::validate_code(
+data::result metashell::validate_code(
   const std::string& src_,
   const config& config_,
   const iface::environment& env_,
@@ -148,7 +148,7 @@ result metashell::validate_code(
       && output.standard_error().empty();
 
     return
-      result{
+      data::result{
         accept,
         "",
         output.standard_error(),
@@ -157,11 +157,11 @@ result metashell::validate_code(
   }
   catch (const std::exception& e)
   {
-    return result(false, "", e.what(), "");
+    return data::result(false, "", e.what(), "");
   }
 }
 
-result metashell::eval_tmp_formatted(
+data::result metashell::eval_tmp_formatted(
   iface::executable& clang_binary_,
   const iface::environment& env_,
   const std::string& tmp_exp_,
@@ -177,7 +177,7 @@ result metashell::eval_tmp_formatted(
     + tmp_exp_
   );
 
-  result simple = eval_tmp(clang_binary_, env_, tmp_exp_);
+  const data::result simple = eval_tmp(clang_binary_, env_, tmp_exp_);
 
   METASHELL_LOG(
     logger_,
@@ -188,16 +188,17 @@ result metashell::eval_tmp_formatted(
       " metashell::format"
   );
 
-  result final_result = !simple.successful ? std::move(simple) :
-    eval_tmp(
-      clang_binary_,
-      env_,
-      "::metashell::format<" + tmp_exp_ + ">::type");
-
-  return final_result;
+  return
+    simple.successful ?
+      eval_tmp(
+        clang_binary_,
+        env_,
+        "::metashell::format<" + tmp_exp_ + ">::type"
+      ) :
+      simple;
 }
 
-result metashell::eval_tmp(
+data::result metashell::eval_tmp(
   iface::executable& clang_binary_,
   const iface::environment& env_,
   const std::string& tmp_exp_)
@@ -209,14 +210,14 @@ result metashell::eval_tmp(
       "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"));
 
   if (output.exit_code() != data::exit_code_t(0)) {
-    return result{false, "", output.standard_error(), ""};
+    return data::result{false, "", output.standard_error(), ""};
   }
 
-  return result{
+  return data::result{
     true, get_type_from_ast_string(output.standard_output()), "", ""};
 }
 
-result metashell::eval_environment(
+data::result metashell::eval_environment(
   iface::executable& clang_binary_,
   const iface::environment& env_)
 {
@@ -226,9 +227,9 @@ result metashell::eval_environment(
     env_.get());
 
   if (output.exit_code() != data::exit_code_t(0)) {
-    return result{false, "", output.standard_error(), ""};
+    return data::result{false, "", output.standard_error(), ""};
   }
-  return result{true, "", "", ""};
+  return data::result{true, "", "", ""};
 }
 
 namespace

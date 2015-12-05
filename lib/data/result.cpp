@@ -1,6 +1,3 @@
-#ifndef METASHELL_RESULT_HPP
-#define METASHELL_RESULT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,28 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
-#include <vector>
+#include <metashell/data/result.hpp>
 
-namespace metashell
-{
-  struct result
-  {
-    bool successful = false;
+namespace metashell {
 
-    std::string output;
-    std::string error;
-    std::string info;
+namespace data {
 
-    result();
+result::result() {}
 
-    result(
-      bool successful,
-      const std::string& output_,
-      const std::string& error_,
-      const std::string& info_);
-  };
+result::result(
+  bool successful,
+  const std::string& output_,
+  const std::string& error_,
+  const std::string& info_) :
+    successful(successful), output(output_), error(error_), info(info_) {}
+
 }
 
-#endif
+}
 
