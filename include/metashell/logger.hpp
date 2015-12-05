@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/logging_mode.hpp>
+#include <metashell/data/logging_mode.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/file_writer.hpp>
 
@@ -31,7 +31,7 @@ namespace metashell
     logger(iface::displayer& displayer_, iface::file_writer& fwriter_);
 
     bool logging() const;
-    logging_mode mode() const;
+    data::logging_mode mode() const;
 
     void log_into_file(const std::string& filename_);
     void log_to_console();
@@ -39,7 +39,7 @@ namespace metashell
 
     void log(const std::string& msg_);
   private:
-    logging_mode _mode;
+    data::logging_mode _mode;
     iface::file_writer& _fwriter;
     iface::displayer& _displayer;
   };

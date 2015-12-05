@@ -199,21 +199,21 @@ JUST_TEST_CASE(test_logging_mode_is_none_by_default)
 {
   const user_config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::none, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::none, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_console)
 {
   const user_config cfg = parse_config({"--log", "-"}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::console, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::console, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_file)
 {
   const user_config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::file, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::file, cfg.log_mode);
   JUST_ASSERT_EQUAL("/tmp/foo.txt", cfg.log_file);
 }
 

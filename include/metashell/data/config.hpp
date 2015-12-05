@@ -32,7 +32,7 @@ namespace metashell
     public:
       std::vector<std::string> include_path;
       bool verbose = false;
-      standard standard_to_use = standard::cpp11;
+      data::standard standard_to_use = data::standard::cpp11;
       std::vector<std::string> macros;
       bool warnings_enabled = true;
       std::vector<std::string> extra_clang_args;
@@ -42,7 +42,7 @@ namespace metashell
       unsigned templight_trace_capacity;
       bool saving_enabled;
       bool splash_enabled = true;
-      stdlib stdlib_to_use = stdlib::libstdcxx;
+      data::stdlib stdlib_to_use = data::stdlib::libstdcxx;
     };
   }
 }

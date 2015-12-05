@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/logging_mode.hpp>
+#include <metashell/data/logging_mode.hpp>
 
 #include <ostream>
 
-using namespace metashell;
+using namespace metashell::data;
 
-std::ostream& metashell::operator<<(std::ostream& out_, logging_mode m_)
+std::ostream& metashell::data::operator<<(std::ostream& out_, logging_mode m_)
 {
   switch (m_)
   {

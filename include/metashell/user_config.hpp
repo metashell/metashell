@@ -20,7 +20,7 @@
 #include <metashell/data/standard.hpp>
 #include <metashell/data/stdlib.hpp>
 #include <metashell/data/console_type.hpp>
-#include <metashell/logging_mode.hpp>
+#include <metashell/data/logging_mode.hpp>
 
 #include <string>
 #include <vector>
@@ -43,7 +43,7 @@ namespace metashell
     bool saving_enabled = false;
     data::console_type con_type = data::console_type::plain;
     bool splash_enabled = true;
-    logging_mode log_mode = logging_mode::none;
+    data::logging_mode log_mode = data::logging_mode::none;
     std::string log_file;
     data::stdlib stdlib_to_use = data::stdlib::libstdcxx;
   };

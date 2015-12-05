@@ -19,17 +19,17 @@
 using namespace metashell;
 
 logger::logger(iface::displayer& displayer_, iface::file_writer& fwriter_) :
-  _mode(logging_mode::none),
+  _mode(data::logging_mode::none),
   _fwriter(fwriter_),
   _displayer(displayer_)
 {}
 
 bool logger::logging() const
 {
-  return _mode != logging_mode::none;
+  return _mode != data::logging_mode::none;
 }
 
-logging_mode logger::mode() const
+data::logging_mode logger::mode() const
 {
   return _mode;
 }
@@ -40,7 +40,7 @@ void logger::log_into_file(const std::string& filename_)
 
   if (_fwriter.open(filename_))
   {
-    _mode = logging_mode::file;
+    _mode = data::logging_mode::file;
   }
 }
 
@@ -48,7 +48,7 @@ void logger::log_to_console()
 {
   stop_logging();
 
-  _mode = logging_mode::console;
+  _mode = data::logging_mode::console;
 }
 
 void logger::stop_logging()
@@ -57,20 +57,20 @@ void logger::stop_logging()
   {
     _fwriter.close();
   }
-  _mode = logging_mode::none;
+  _mode = data::logging_mode::none;
 }
 
 void logger::log(const std::string& msg_)
 {
   switch (_mode)
   {
-  case logging_mode::none:
+  case data::logging_mode::none:
     // do nothing
     break;
-  case logging_mode::file:
+  case data::logging_mode::file:
     _fwriter.write(msg_ + "\n");
     break;
-  case logging_mode::console:
+  case data::logging_mode::console:
     _displayer.show_comment(data::text("Log: " + msg_));
     break;
   }

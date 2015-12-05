@@ -68,13 +68,13 @@ int main(int argc_, const char* argv_[])
     metashell::logger logger(ccfg.displayer(), file_writer);
     switch (r.cfg.log_mode)
     {
-    case metashell::logging_mode::none:
+    case metashell::data::logging_mode::none:
       // do nothing
       break;
-    case metashell::logging_mode::console:
+    case metashell::data::logging_mode::console:
       logger.log_to_console();
       break;
-    case metashell::logging_mode::file:
+    case metashell::data::logging_mode::file:
       logger.log_into_file(r.cfg.log_file);
       break;
     }
