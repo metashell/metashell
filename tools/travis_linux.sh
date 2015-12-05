@@ -13,6 +13,16 @@ git tag
 egrep $(tools/latest_release --no_dots --prefix=version-) README.md
 egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 
+# Get the templight binary
+
+cd 3rd/templight
+mkdir -p build/bin
+  cd build/bin
+    wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974/templight_ubuntu12.04_x86_64.tar.bz2
+    tar -xvjf templight_ubuntu12.04_x86_64.tar.bz2
+  cd ../..
+cd ../..
+
 # Test the code
 
 mkdir bin
@@ -24,10 +34,11 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 
 # Run the system tests
 
-sudo apt-get install clang-3.7
-sudo mkdir /usr/include/c++/v1
-sudo cp -r ../3rd/templight/libcxx/include/* /usr/include/c++/v1/
-test/system/app/core/metashell_core_system_test app/metashell -I../3rd/boost/include --clang /usr/bin/clang++-3.7 -stdlib=libc++
+sudo apt-get remove g++-4.8
+sudo apt-get install -y --force-yes clang-3.7 g++-4.9
+for t in core mdb; do
+  test/system/app/${t}/metashell_${t}_system_test app/metashell -I../3rd/boost/include $(../tools/clang_default_path --gcc /usr/bin/clang++-3.7 | sed 's/, "/-I/g' | sed 's/"//g' | awk '{printf("%s ", $0);}')
+done
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
