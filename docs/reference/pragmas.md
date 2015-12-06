@@ -1,4 +1,4 @@
-<h1>The pragmas Metashell provides</h1>
+# The pragmas Metashell provides
 
 Metashell provides a number of pragmas controlling the shell. Note that these
 pragmas are available only from the shell's command prompt. If you put them in a
@@ -59,6 +59,3 @@ Turns verbose mode on or off. When no arguments are used, it displays if verbose
 
 
 <!-- pragma_info -->
-
-<p>&nbsp;</p>
-

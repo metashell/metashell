@@ -1,4 +1,4 @@
-<h1>Changelog</h1>
+# Changelog
 
 ## Not in any release yet
 
@@ -75,6 +75,3 @@
 ## Version 1.0.0
 
 * First release
-
-<p>&nbsp;</p>
-

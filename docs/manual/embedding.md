@@ -255,4 +255,3 @@ Format:
 ```
 
 Display a C++ type.
-

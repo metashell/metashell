@@ -1,4 +1,4 @@
-<h1>Troubleshooting</h1>
+# Troubleshooting
 
 When you are having difficulties with setting up Metashell or you would like to
 know more about how it works internally, you can enable logging by starting
@@ -10,6 +10,3 @@ To save the logs into a file instead of displaying them in the console, you need
 to start Metashell with the `--log <filename>` argument.
 
 If you can't fix things using the logs, please contact the authors of Metashell.
-
-<p>&nbsp;</p>
-

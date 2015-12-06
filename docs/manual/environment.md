@@ -1,4 +1,4 @@
-<h1>The environment in Metashell</h1>
+# The environment in Metashell
 
 Metashell maintains an *environment*, which is a piece of C++ code. When you
 evaluate a metaprogram in the shell (eg. `fib<3>::value`), the metaprogram is
@@ -119,6 +119,3 @@ following command in the shell:
 ```
 
 This command disables precompiled header usage in the current shell.
-
-<p>&nbsp;</p>
-

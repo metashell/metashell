@@ -4,10 +4,10 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/2t30o2h0kieh2ovm/branch/master?svg=true)](https://ci.appveyor.com/project/sabel83/metashell/branch/master)
 [![Documentation Status](https://readthedocs.org/projects/metashell/badge/?version=latest "Documentation Status")](http://metashell.readthedocs.org/en/latest/?badge=latest)
 
-![](https://raw.github.com/sabel83/metashell/master/metashell.png "Metashell")
+![](https://raw.githubusercontent.com/sabel83/metashell/master/docs/img/metashell.png "Metashell")
 
-[![Try online](https://raw.github.com/sabel83/metashell/master/try_online.png "Try online")](http://abel.web.elte.hu/shell/metashell)
-[![Download](https://raw.github.com/sabel83/metashell/master/download.png "Download")](http://metashell.readthedocs.org/en/latest/getting_metashell/installers/#version-210)
+[![Try online](https://raw.githubusercontent.com/sabel83/metashell/master/docs/img/try_online.png "Try online")](http://abel.web.elte.hu/shell/metashell)
+[![Download](https://raw.githubusercontent.com/sabel83/metashell/master/docs/img/download.png "Download")](http://metashell.readthedocs.org/en/latest/getting_metashell/installers/#version-210)
 
 The goal of this project is to provide an interactive template metaprogramming
 shell.
