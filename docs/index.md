@@ -1,4 +1,4 @@
-<h1>Metashell</h1>
+# Metashell
 
 ![](img/metashell.png "Metashell")
 
@@ -43,6 +43,3 @@ metaprograms.
 
 Metashell is published under the
 [GNU General Public License, version 3](http://www.gnu.org/licenses/gpl.html).
-
-<p>&nbsp;</p>
-

@@ -1,4 +1,4 @@
-<h1>Getting started</h1>
+# Getting started
 
 This section presents how to use Metashell to do simple debugging.
 
@@ -697,6 +697,3 @@ by calling `format` recursively on each element (see `format<Head>::type`).
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.
-
-<p>&nbsp;</p>
-

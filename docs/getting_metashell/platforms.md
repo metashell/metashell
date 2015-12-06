@@ -1,4 +1,4 @@
-<h1>Supported platforms</h1>
+# Supported platforms
 
 The following platforms are supported:
 
@@ -13,6 +13,3 @@ The following platforms are supported:
   Thanks to [Gabor Marton](https://github.com/martong),
   [Pavel Morozkin](https://github.com/PavelMorozkin), and
   [ortho](https://github.com/ortho) for their help.
-
-<p>&nbsp;</p>
-

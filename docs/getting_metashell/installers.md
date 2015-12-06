@@ -1,4 +1,4 @@
-<h1>Binary installers</h1>
+# Binary installers
 
 You can get binary installers for a number of platforms. If you can't or don't
 want to install them, you can build Metashell yourself.

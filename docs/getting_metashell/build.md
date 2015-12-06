@@ -1,4 +1,4 @@
-<h1>Building Metashell</h1>
+# Building Metashell
 
 ## Linux, FreeBSD and OpenBSD
 

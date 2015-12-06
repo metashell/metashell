@@ -1,4 +1,4 @@
-<h1>Metadebugger command reference</h1>
+# Metadebugger command reference
 
 You can find the list of MDB commands here.
 
@@ -80,6 +80,3 @@ Quit metadebugger.
 
 
 <!-- mdb_info -->
-
-<p>&nbsp;</p>
-

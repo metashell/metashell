@@ -1,4 +1,4 @@
-<h1>How to...</h1>
+# How to...
 
 ## see what happens during template argument deduction?
 

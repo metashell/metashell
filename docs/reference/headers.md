@@ -1,4 +1,4 @@
-<h1>The full list of built-in header files</h1>
+# The full list of built-in header files
 
 These header files are available in Metashell:
 
@@ -44,6 +44,3 @@ These header files are available in Metashell:
     <td>Defines the <code>SCALAR</code> macro.</td>
   </tr>
 </table>
-
-<p>&nbsp;</p>
-
