@@ -58,6 +58,7 @@ JUST_TEST_CASE(test_pragma_help_with_no_arguments)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.line_available("#pragma metashell help", d);
@@ -74,6 +75,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.line_available("#pragma metashell help foo", d);
@@ -90,6 +92,7 @@ JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.line_available("#pragma metashell help foo bar", d);
@@ -106,6 +109,7 @@ JUST_TEST_CASE(test_pragma_help_for_a_pragma)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.line_available("#pragma metashell help help", d);
@@ -124,6 +128,7 @@ JUST_TEST_CASE(
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.line_available("#msh help environment", d);

@@ -76,9 +76,16 @@ namespace
     const data::config cfg{};
     null_executable clang_binary;
     command_processor_queue cpq;
-    shell sh(cfg, cpq, clang_binary, create_failing_engine());
-    const pragma_handler_map
-      m = pragma_handler_map::build_default(clang_binary, sh, &cpq, nullptr);
+    const std::string internal_dir;
+    shell sh(cfg, cpq, clang_binary, internal_dir, create_failing_engine());
+    const pragma_handler_map m =
+      pragma_handler_map::build_default(
+        clang_binary,
+        internal_dir,
+        sh,
+        &cpq,
+        nullptr
+      );
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)

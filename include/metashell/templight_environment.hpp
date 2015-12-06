@@ -22,8 +22,9 @@ namespace metashell {
 
 class templight_environment : public header_file_environment {
 public:
-  explicit templight_environment(
+  templight_environment(
     const data::config& config,
+    const std::string& internal_dir_,
     logger* logger_ = nullptr
   );
 

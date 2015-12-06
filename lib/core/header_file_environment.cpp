@@ -264,13 +264,14 @@ namespace
 
 header_file_environment::header_file_environment(
   const data::config& config_,
+  const std::string& internal_dir_,
   logger* logger_
 ) :
-  _dir(),
+  _internal_dir(internal_dir_),
   _buffer(),
-  _base_clang_args(base_clang_args(config_, _dir.path())),
+  _base_clang_args(base_clang_args(config_, internal_dir_)),
   _clang_args(_base_clang_args),
-  _headers(_dir.path()),
+  _headers(internal_dir_),
   _use_precompiled_headers(config_.use_precompiled_headers),
   _clang_path(config_.clang_path),
   _logger(logger_)
@@ -340,6 +341,7 @@ std::string header_file_environment::env_filename() const
 void header_file_environment::save()
 {
   const std::string fn = env_filename();
+  if (!internal_dir().empty())
   {
     std::ofstream f(fn.c_str());
     if (f)
@@ -360,7 +362,7 @@ void header_file_environment::save()
 
 std::string header_file_environment::internal_dir() const
 {
-  return _dir.path();
+  return _internal_dir;
 }
 
 const data::headers& header_file_environment::get_headers() const

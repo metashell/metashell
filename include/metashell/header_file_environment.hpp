@@ -22,14 +22,16 @@
 #include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
-#include <just/temp.hpp>
-
 namespace metashell
 {
   class header_file_environment : public iface::environment
   {
   public:
-    header_file_environment(const data::config& config_, logger* logger_);
+    header_file_environment(
+      const data::config& config_,
+      const std::string& internal_dir_,
+      logger* logger_
+    );
 
     virtual void append(const std::string& s_) override;
     virtual std::string get() const override;
@@ -47,7 +49,7 @@ namespace metashell
     std::string env_filename() const;
 
   private:
-    just::temp::directory _dir;
+    std::string _internal_dir;
     std::string _buffer;
     std::vector<std::string> _base_clang_args;
     std::vector<std::string> _clang_args;

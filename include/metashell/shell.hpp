@@ -45,6 +45,7 @@ namespace metashell
     shell(
       const data::config& config_,
       iface::executable& clang_binary_,
+      const std::string& internal_dir_,
       std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
@@ -53,6 +54,7 @@ namespace metashell
       const data::config& config_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
+      const std::string& internal_dir_,
       std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
@@ -62,6 +64,7 @@ namespace metashell
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
+      const std::string& internal_dir_,
       std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
@@ -112,6 +115,7 @@ namespace metashell
 
     iface::engine& engine();
   private:
+    std::string _internal_dir;
     std::string _line_prefix;
     std::unique_ptr<iface::environment> _env;
     data::config _config;

@@ -47,6 +47,7 @@ public:
       const iface::environment& env,
       iface::engine& engine_,
       iface::executable& clang_binary,
+      const std::string& internal_dir,
       logger* logger_);
 
   virtual std::string prompt() const override;

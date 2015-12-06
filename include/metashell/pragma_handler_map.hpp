@@ -113,6 +113,7 @@ namespace metashell
 
     static pragma_handler_map build_default(
       iface::executable& clang_binary_,
+      const std::string& internal_dir_,
       shell& shell_,
       command_processor_queue* cpq_,
       logger* logger_

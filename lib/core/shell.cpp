@@ -138,9 +138,11 @@ namespace metashell {
 shell::shell(
   const data::config& config_,
   iface::executable& clang_binary_,
+  const std::string& internal_dir_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
   _env(),
   _config(config_),
   _stopped(false),
@@ -156,9 +158,11 @@ shell::shell(
   const data::config& config_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
+  const std::string& internal_dir_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
   _env(),
   _config(config_),
   _stopped(false),
@@ -175,9 +179,11 @@ shell::shell(
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
+  const std::string& internal_dir_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
@@ -360,7 +366,13 @@ void shell::init(command_processor_queue* cpq_)
 
   // TODO: move it to initialisation later
   _pragma_handlers =
-    pragma_handler_map::build_default(_clang_binary, *this, cpq_, _logger);
+    pragma_handler_map::build_default(
+      _clang_binary,
+      _internal_dir,
+      *this,
+      cpq_,
+      _logger
+    );
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -411,7 +423,7 @@ const iface::environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(_config, _logger));
+  _env.reset(new header_file_environment(_config, _internal_dir, _logger));
   if (!content_.empty())
   {
     _env->append(content_);

@@ -35,7 +35,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   cfg.verbose = false;
 
   metashell::null_executable clang_binary;
-  metashell::shell sh(cfg, clang_binary, metashell::create_failing_engine());
+  metashell::shell
+    sh(cfg, clang_binary, "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -46,7 +47,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   cfg.verbose = true;
 
   metashell::null_executable clang_binary;
-  metashell::shell sh(cfg, clang_binary, metashell::create_failing_engine());
+  metashell::shell
+    sh(cfg, clang_binary, "", metashell::create_failing_engine());
 
   JUST_ASSERT(sh.verbose());
 }
@@ -57,7 +59,8 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   cfg.verbose = false;
 
   metashell::null_executable clang_binary;
-  metashell::shell sh(cfg, clang_binary, metashell::create_failing_engine());
+  metashell::shell
+    sh(cfg, clang_binary, "", metashell::create_failing_engine());
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -69,7 +72,8 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   cfg.verbose = true;
 
   metashell::null_executable clang_binary;
-  metashell::shell sh(cfg, clang_binary, metashell::create_failing_engine());
+  metashell::shell
+    sh(cfg, clang_binary, "", metashell::create_failing_engine());
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -82,6 +86,7 @@ JUST_TEST_CASE(test_new_shell_not_stopped)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
 
@@ -95,6 +100,7 @@ JUST_TEST_CASE(test_shell_stopped_after_stop)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       metashell::create_failing_engine()
     );
   sh.stop();
@@ -108,7 +114,8 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   cfg.use_precompiled_headers = false;
 
   metashell::null_executable clang_binary;
-  metashell::shell sh(cfg, clang_binary, metashell::create_failing_engine());
+  metashell::shell
+    sh(cfg, clang_binary, "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }

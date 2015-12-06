@@ -193,9 +193,10 @@ mdb_shell::mdb_shell(
     const iface::environment& env_arg,
     iface::engine& engine_,
     iface::executable& clang_binary,
+    const std::string& internal_dir,
     logger* logger_) :
   conf(set_pch_false(conf_)),
-  env(conf),
+  env(conf, internal_dir),
   _logger(logger_),
   _clang_binary(clang_binary),
   _engine(engine_)

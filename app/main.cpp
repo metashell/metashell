@@ -29,6 +29,8 @@
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
 
+#include <just/temp.hpp>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -92,12 +94,15 @@ int main(int argc_, const char* argv_[])
 
       metashell::clang_binary clang_binary(cfg.clang_path, {}, &logger);
 
+      just::temp::directory dir;
+
       std::unique_ptr<metashell::shell>
         shell(
           new metashell::shell(
             cfg,
             ccfg.processor_queue(),
             clang_binary,
+            dir.path(),
             metashell::create_clang_engine(clang_binary, &logger),
             &logger
           )
