@@ -57,15 +57,16 @@ namespace
 
     METASHELL_LOG(logger_, "Generating percompiled header for " + fn_);
 
-    std::vector<std::string> args(clang_args_);
-    extend_to_find_headers_in_local_dir(args);
-    args.push_back("-w");
-    args.push_back("-o");
-    args.push_back(fn_ + ".pch");
-    args.push_back(fn_);
+    std::vector<std::string>
+      args{
+        "-iquote", ".",
+        "-w",
+        "-o", fn_ + ".pch",
+        fn_
+      };
 
     const data::process_output
-      o = clang_binary(clang_path_, logger_).run(args, "");
+      o = clang_binary(clang_path_, clang_args_, logger_).run(args, "");
     const std::string err = o.standard_output() + o.standard_error();
     if (
       !err.empty()

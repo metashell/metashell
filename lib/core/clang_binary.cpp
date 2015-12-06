@@ -36,22 +36,36 @@ namespace
   }
 }
 
-clang_binary::clang_binary(const std::string& path_, logger* logger_) :
-  _path(path_),
+clang_binary::clang_binary(
+  const std::string& path_,
+  const std::vector<std::string>& base_args_,
+  logger* logger_
+) :
+  _base_args(base_args_.size() + 1),
   _logger(logger_)
-{}
+{
+  _base_args[0] = quote_argument(path_);
+  std::transform(
+    base_args_.begin(),
+    base_args_.end(),
+    _base_args.begin() + 1,
+    quote_argument
+  );
+}
 
 data::process_output clang_binary::run(
   const std::vector<std::string>& args_,
   const std::string& stdin_
 ) const
 {
-  std::vector<std::string> cmd(args_.size() + 1);
+  std::vector<std::string> cmd(_base_args.size() + args_.size());
 
-  std::vector<std::string>::iterator i = cmd.begin();
-  *i = quote_argument(_path);
-  ++i;
-  std::transform(args_.begin(), args_.end(), i, quote_argument);
+  std::transform(
+    args_.begin(),
+    args_.end(),
+    std::copy(_base_args.begin(), _base_args.end(), cmd.begin()),
+    quote_argument
+  );
 
   METASHELL_LOG(_logger, "Running Clang: " + boost::algorithm::join(cmd, " "));
 

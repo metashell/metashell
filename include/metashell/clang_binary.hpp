@@ -25,14 +25,18 @@ namespace metashell
   class clang_binary : public iface::executable
   {
   public:
-    clang_binary(const std::string& path_, logger* logger_);
+    clang_binary(
+      const std::string& path_,
+      const std::vector<std::string>& base_args_,
+      logger* logger_
+    );
 
     virtual data::process_output run(
       const std::vector<std::string>& args_,
       const std::string& stdin_
     ) const override;
   private:
-    std::string _path;
+    std::vector<std::string> _base_args;
     logger* _logger;
   };
 }

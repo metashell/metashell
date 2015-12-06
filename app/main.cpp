@@ -90,7 +90,7 @@ int main(int argc_, const char* argv_[])
 
       METASHELL_LOG(&logger, "Running shell");
 
-      metashell::clang_binary clang_binary(cfg.clang_path, &logger);
+      metashell::clang_binary clang_binary(cfg.clang_path, {}, &logger);
 
       std::unique_ptr<metashell::shell>
         shell(
