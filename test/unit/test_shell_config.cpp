@@ -20,7 +20,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
 #include <metashell/header_file_environment.hpp>
-#include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_executable.hpp>

@@ -200,7 +200,7 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
 JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 {
   data::config cfg;
-  breaking_environment* e = new breaking_environment(cfg);
+  breaking_environment* e = new breaking_environment();
   in_memory_displayer d;
   null_history h;
   command_processor_queue cpq;
@@ -224,7 +224,7 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
 {
   data::config cfg;
-  breaking_environment e(cfg);
+  breaking_environment e;
   e.get_appended_throw_from_now();
   null_executable clang_binary;
   const data::result r =

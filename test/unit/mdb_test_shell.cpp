@@ -19,7 +19,6 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
-#include <metashell/in_memory_environment.hpp>
 #include <metashell/null_executable.hpp>
 #include <metashell/engine_constant.hpp>
 

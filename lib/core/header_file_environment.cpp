@@ -21,11 +21,15 @@
 #include <metashell/exception.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/headers.hpp>
+#include <metashell/path_builder.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/join.hpp>
+
+#include <boost/range/adaptors.hpp>
 
 #include <fstream>
 #include <vector>
@@ -73,6 +77,187 @@ namespace
       throw exception("Error precompiling header " + fn_ + ": " + err);
     }
   }
+
+  std::string seq_formatter(const std::string& name_)
+  {
+    return
+      "#include <boost/mpl/fold.hpp>\n"
+      "#include <boost/mpl/" + name_ + ".hpp>\n"
+
+      "namespace boost_"
+      "{"
+        "namespace mpl"
+        "{"
+          "template <class... Ts>"
+          "struct " + name_ +
+          "{"
+            "typedef " + name_ + " type;"
+          "};"
+        "}"
+      "}"
+
+      "namespace metashell"
+      "{"
+        "namespace impl "
+        "{ "
+          "template <class C, class Item> "
+          "struct " + name_ + "_builder;\n"
+
+          "template <class... Ts, class Item>"
+          "struct "
+            + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
+            "::boost_::mpl::" + name_ + "<"
+              "Ts..., typename ::metashell::format<Item>::type"
+            ">"
+          "{};"
+        "} "
+
+        "template <> "
+        "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
+        "{ "
+          "typedef format_impl type; "
+
+          "template <class V> "
+          "struct apply : "
+            "::boost::mpl::fold<"
+              "V,"
+              "::boost_::mpl::" + name_ + "<>,"
+              "::metashell::impl::" + name_ + "_builder<"
+                "::boost::mpl::_1, "
+                "::boost::mpl::_2"
+              ">"
+            ">"
+          "{};"
+        "};"
+      "}"
+      "\n"
+      ;
+  }
+
+  std::string include_formatter(const std::string& name_)
+  {
+    using std::string;
+
+    return
+      "#include <"
+        + string(path_builder() / "metashell" / "formatter" / (name_ + ".hpp"))
+        + ">";
+  }
+
+  void add_internal_headers(data::headers& headers_)
+  {
+    using boost::algorithm::join;
+    using boost::adaptors::transformed;
+
+    using std::string;
+
+    const path_builder internal_dir(headers_.internal_dir());
+    const string hpp(".hpp");
+
+    const char* formatters[] = {"vector", "list", "set", "map"};
+
+    for (const char* f : formatters)
+    {
+      headers_.add(
+        internal_dir / "metashell" / "formatter" / (f + hpp),
+        seq_formatter(f)
+      );
+    }
+
+    const string vector_formatter =
+       string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+
+    headers_.add(
+      internal_dir / "metashell" / "formatter" / "deque.hpp",
+      "#include <" + vector_formatter + ">\n"
+    );
+
+    headers_.add(
+      internal_dir / "metashell" / "formatter.hpp",
+      join(formatters | transformed(include_formatter), "\n") + "\n"
+    );
+
+    headers_.add(
+      internal_dir / "metashell" / "scalar.hpp",
+      "#include <type_traits>\n"
+
+      "#define SCALAR(...) "
+        "std::integral_constant<"
+          "std::remove_reference<"
+            "std::remove_cv<"
+              "std::remove_reference<"
+                "decltype((__VA_ARGS__))"
+              ">::type"
+            ">::type"
+          ">::type,"
+          "(__VA_ARGS__)"
+        ">\n"
+    );
+
+    headers_.add(
+      internal_dir / "metashell" / "instantiate_expression.hpp",
+      "namespace metashell\n"
+      "{\n"
+      "  template <bool> struct expression_instantiated;\n"
+      "}\n"
+
+      "#define METASHELL_INSTANTIATE_EXPRESSION(...) \\\n"
+      "  ::metashell::expression_instantiated<true ? true : ((__VA_ARGS__), false)>\n"
+    );
+  }
+
+  template <class Cont>
+  void add_with_prefix(
+    const std::string& prefix_,
+    const Cont& cont_,
+    std::vector<std::string>& v_
+  )
+  {
+    std::transform(
+      cont_.begin(),
+      cont_.end(),
+      std::back_insert_iterator<std::vector<std::string> >(v_),
+      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
+    );
+  }
+
+  std::string set_max_template_depth(int v_)
+  {
+    std::ostringstream s;
+    s << "-ftemplate-depth=" << v_;
+    return s.str();
+  }
+
+  std::vector<std::string> base_clang_args(
+    const data::config& config_,
+    const std::string& internal_dir_
+  )
+  {
+    std::vector<std::string>
+      clang_args{
+        "-x",
+        "c++-header",
+        clang_argument(config_.standard_to_use),
+        "-I" + internal_dir_,
+        set_max_template_depth(config_.max_template_depth)
+      };
+
+    add_with_prefix("-I", config_.include_path, clang_args);
+    add_with_prefix("-D", config_.macros, clang_args);
+
+    if (!config_.warnings_enabled)
+    {
+      clang_args.push_back("-w");
+    }
+
+    clang_args.insert(
+      clang_args.end(),
+      config_.extra_clang_args.begin(),
+      config_.extra_clang_args.end()
+    );
+
+    return clang_args;
+  }
 }
 
 header_file_environment::header_file_environment(
@@ -80,13 +265,16 @@ header_file_environment::header_file_environment(
   logger* logger_
 ) :
   _dir(),
-  _buffer(_dir.path(), config_, "-I" + _dir.path(), logger_),
-  _clang_args(),
-  _empty_headers(_buffer.internal_dir()),
+  _buffer(),
+  _base_clang_args(base_clang_args(config_, _dir.path())),
+  _clang_args(_base_clang_args),
+  _headers(_dir.path()),
   _use_precompiled_headers(config_.use_precompiled_headers),
-  _clang_path(config_.clang_path)
+  _clang_path(config_.clang_path),
+  _logger(logger_)
 {
-  _clang_args = _buffer.clang_arguments();
+  add_internal_headers(_headers);
+
   if (_use_precompiled_headers)
   {
     _clang_args.push_back("-include");
@@ -101,12 +289,20 @@ header_file_environment::header_file_environment(
   extend_to_find_headers_in_local_dir(_clang_args);
 
   save();
-  generate(_buffer.get_headers());
+  generate(_headers);
 }
 
 void header_file_environment::append(const std::string& s_)
 {
-  _buffer.append(s_);
+  if (_buffer.empty())
+  {
+    _buffer = s_;
+  }
+  else
+  {
+    _buffer += '\n' + s_;
+  }
+
   save();
 }
 
@@ -136,7 +332,7 @@ const std::vector<std::string>&
 
 std::string header_file_environment::env_filename() const
 {
-  return internal_dir() + "/" + env_fn;
+  return _headers.internal_dir() + "/" + env_fn;
 }
 
 void header_file_environment::save()
@@ -146,7 +342,7 @@ void header_file_environment::save()
     std::ofstream f(fn.c_str());
     if (f)
     {
-      f << _buffer.get();
+      f << _buffer;
     }
     else
     {
@@ -156,12 +352,7 @@ void header_file_environment::save()
 
   if (_use_precompiled_headers)
   {
-    precompile(
-      _clang_path,
-      _buffer.clang_arguments(),
-      fn,
-      _buffer.get_logger()
-    );
+    precompile(_clang_path, _base_clang_args, fn, _logger);
   }
 }
 
@@ -172,11 +363,11 @@ std::string header_file_environment::internal_dir() const
 
 const data::headers& header_file_environment::get_headers() const
 {
-  return _empty_headers;
+  return _headers;
 }
 
 std::string header_file_environment::get_all() const
 {
-  return _buffer.get_all();
+  return _buffer;
 }
 

@@ -17,19 +17,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_environment.hpp>
+#include <metashell/iface/environment.hpp>
 
-class breaking_environment : public metashell::in_memory_environment
+class breaking_environment : public metashell::iface::environment
 {
 public:
-  explicit breaking_environment(const metashell::data::config& cfg_);
+  breaking_environment();
 
-  virtual void append(const std::string& s_);
-  virtual std::string get_appended(const std::string& s_) const;
+  virtual void append(const std::string& s_) override;
+  virtual std::string get() const override;
+  virtual std::string get_appended(const std::string& s_) const override;
+
+  virtual std::string internal_dir() const override;
+
+  virtual std::vector<std::string>& clang_arguments() override;
+  virtual const std::vector<std::string>& clang_arguments() const override;
+
+  virtual const metashell::data::headers& get_headers() const override;
+
+  virtual std::string get_all() const override;
 
   void append_throw_from_now();
   void get_appended_throw_from_now();
 private:
+  metashell::data::headers _headers;
+  std::vector<std::string> _clang_args;
+
   bool _append_throw;
   bool _get_appended_throw;
 

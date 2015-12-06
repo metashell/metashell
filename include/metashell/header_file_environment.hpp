@@ -17,8 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_environment.hpp>
+#include <metashell/iface/environment.hpp>
 #include <metashell/data/headers.hpp>
+#include <metashell/data/config.hpp>
+#include <metashell/logger.hpp>
 
 #include <just/temp.hpp>
 
@@ -46,12 +48,15 @@ namespace metashell
 
   private:
     just::temp::directory _dir;
-    in_memory_environment _buffer;
+    std::string _buffer;
+    std::vector<std::string> _base_clang_args;
     std::vector<std::string> _clang_args;
-    data::headers _empty_headers;
+    data::headers _headers;
 
     bool _use_precompiled_headers;
     std::string _clang_path;
+
+    logger* _logger;
 
     void save();
   };

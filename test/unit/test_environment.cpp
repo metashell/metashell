@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/header_file_environment.hpp>
-#include <metashell/in_memory_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/null_executable.hpp>
@@ -48,24 +47,6 @@ namespace
     std::ifstream f(path_.c_str());
     return !(f.fail() || f.bad());
   }
-}
-
-JUST_TEST_CASE(test_empty_in_memory_environment_is_empty)
-{
-  const data::config cfg = empty_config(argv0::get());
-
-  in_memory_environment env("foo", cfg);
-
-  JUST_ASSERT_EQUAL("", env.get_all());
-}
-
-JUST_TEST_CASE(test_append_text_to_in_memory_environment)
-{
-  const data::config cfg = empty_config(argv0::get());
-
-  in_memory_environment env("foo", cfg);
-
-  test_append_text_to_environment(env);
 }
 
 JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
@@ -105,7 +86,7 @@ JUST_TEST_CASE(test_template_depth_is_set_by_the_environment)
   data::config cfg;
   cfg.max_template_depth = 13;
 
-  in_memory_environment e(".", cfg);
+  header_file_environment e(cfg, nullptr);
 
   const auto& as = e.clang_arguments();
 
