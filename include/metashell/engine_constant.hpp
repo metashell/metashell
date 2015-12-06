@@ -1,8 +1,8 @@
-#ifndef METASHELL_METASHELL_HPP
-#define METASHELL_METASHELL_HPP
+#ifndef METASHELL_ENGINE_CONSTANT_HPP
+#define METASHELL_ENGINE_CONSTANT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,31 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/iface/environment.hpp>
-#include <metashell/iface/executable.hpp>
-#include <metashell/data/command.hpp>
-#include <metashell/data/result.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/iface/engine.hpp>
 
-#include <set>
+#include <memory>
 #include <string>
-#include <vector>
 
 namespace metashell
 {
-  std::string repair_type_string(const std::string& type);
-  std::string get_type_from_ast_string(const std::string& ast);
-
-  bool is_environment_setup_command(
-    data::command::iterator begin_,
-    const data::command::iterator& end_
+  std::unique_ptr<iface::engine> create_failing_engine(
+    const std::string& msg_ = "Using failing engine"
   );
 
-  inline bool is_environment_setup_command(const data::command& cmd_)
-  {
-    return is_environment_setup_command(cmd_.begin(), cmd_.end());
-  }
+  std::unique_ptr<iface::engine> create_engine_returning_type(
+    const std::string& type_
+  );
 }
 
 #endif

@@ -23,6 +23,7 @@
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/clang_binary.hpp>
+#include <metashell/engine_clang.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
@@ -97,6 +98,7 @@ int main(int argc_, const char* argv_[])
             cfg,
             ccfg.processor_queue(),
             clang_binary,
+            metashell::create_clang_engine(clang_binary, &logger),
             &logger
           )
         );

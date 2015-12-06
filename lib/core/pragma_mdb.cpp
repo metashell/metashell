@@ -63,7 +63,13 @@ void pragma_mdb::run(
 
   std::unique_ptr<mdb_shell>
     sh(
-      new mdb_shell(_shell.get_config(), _shell.env(), _clang_binary, _logger)
+      new mdb_shell(
+        _shell.get_config(),
+        _shell.env(),
+        _shell.engine(),
+        _clang_binary,
+        _logger
+      )
     );
 
   if (_shell.get_config().splash_enabled)

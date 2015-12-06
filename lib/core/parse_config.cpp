@@ -23,6 +23,7 @@
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/null_executable.hpp>
+#include <metashell/engine_constant.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -75,7 +76,7 @@ namespace
     const data::config cfg{};
     null_executable clang_binary;
     command_processor_queue cpq;
-    shell sh(cfg, cpq, clang_binary);
+    shell sh(cfg, cpq, clang_binary, create_failing_engine());
     const pragma_handler_map
       m = pragma_handler_map::build_default(clang_binary, sh, &cpq, nullptr);
 

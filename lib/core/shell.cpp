@@ -138,13 +138,15 @@ namespace metashell {
 shell::shell(
   const data::config& config_,
   iface::executable& clang_binary_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _clang_binary(clang_binary_),
+  _engine(std::move(engine_))
 {
   rebuild_environment();
   init(nullptr);
@@ -154,13 +156,15 @@ shell::shell(
   const data::config& config_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _clang_binary(clang_binary_),
+  _engine(std::move(engine_))
 {
   rebuild_environment();
   init(&cpq_);
@@ -171,13 +175,15 @@ shell::shell(
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _clang_binary(clang_binary_),
+  _engine(std::move(engine_))
 {
   init(&cpq_);
 }
@@ -315,8 +321,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result
-    r = validate_code(s_, _config, *_env, _logger, _clang_binary);
+  const data::result r = _engine->validate_code(s_, _config, *_env);
 
   if (r.successful)
   {
@@ -341,7 +346,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(_clang_binary, *_env, s_, out_, _logger);
+    _engine->code_complete(*_env, s_, out_);
   }
   catch (...)
   {
@@ -456,7 +461,7 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(eval_tmp_formatted(_clang_binary, *_env, s_, _logger), displayer_);
+  display(_engine->eval_tmp_formatted(*_env, s_), displayer_);
 }
 
 void shell::reset_environment()
@@ -473,5 +478,10 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   null_history h;
   line_available(s_, displayer_, h);
+}
+
+iface::engine& shell::engine()
+{
+  return *_engine;
 }
 

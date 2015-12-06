@@ -191,12 +191,14 @@ data::config set_pch_false(data::config c) {
 mdb_shell::mdb_shell(
     const data::config& conf_,
     const iface::environment& env_arg,
+    iface::engine& engine_,
     iface::executable& clang_binary,
     logger* logger_) :
   conf(set_pch_false(conf_)),
   env(conf),
   _logger(logger_),
-  _clang_binary(clang_binary)
+  _clang_binary(clang_binary),
+  _engine(engine_)
 {
   env.append(env_arg.get_all());
 }
@@ -926,8 +928,8 @@ data::type_or_error mdb_shell::run_metaprogram(
     iface::displayer& displayer_)
 {
   const data::result res = expression ?
-    eval_tmp(_clang_binary, env, *expression) :
-    eval_environment(_clang_binary, env);
+    _engine.eval_tmp(env, *expression) :
+    _engine.eval_environment(env);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);

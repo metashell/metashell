@@ -27,6 +27,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 #include <metashell/iface/executable.hpp>
+#include <metashell/iface/engine.hpp>
 
 #include <boost/optional.hpp>
 
@@ -44,6 +45,7 @@ namespace metashell
     shell(
       const data::config& config_,
       iface::executable& clang_binary_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
@@ -51,6 +53,7 @@ namespace metashell
       const data::config& config_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
@@ -59,6 +62,7 @@ namespace metashell
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
       iface::executable& clang_binary_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
@@ -105,6 +109,8 @@ namespace metashell
     void rebuild_environment();
 
     const data::config& get_config() const;
+
+    iface::engine& engine();
   private:
     std::string _line_prefix;
     std::unique_ptr<iface::environment> _env;
@@ -115,6 +121,7 @@ namespace metashell
     std::stack<std::string> _environment_stack;
     logger* _logger;
     iface::executable& _clang_binary;
+    std::unique_ptr<iface::engine> _engine;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);
