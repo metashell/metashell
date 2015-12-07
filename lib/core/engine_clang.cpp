@@ -22,6 +22,7 @@
 #include <metashell/source_position.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/metashell.hpp>
+#include <metashell/clang_binary.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -144,8 +145,8 @@ namespace
   class engine_clang : public iface::engine
   {
   public:
-    engine_clang(iface::executable& clang_binary_, logger* logger_) :
-      _clang_binary(clang_binary_),
+    engine_clang(const std::string& clang_path_, logger* logger_) :
+      _clang_binary(clang_path_, {}, logger_),
       _logger(logger_)
     {}
 
@@ -321,18 +322,17 @@ namespace
         }
       );
     }  private:
-    iface::executable& _clang_binary;
+    clang_binary _clang_binary;
     logger* _logger;
   };
 
 } // anonymous namespace
 
 std::unique_ptr<iface::engine> metashell::create_clang_engine(
-  iface::executable& clang_binary_,
+  const std::string& clang_path_,
   logger* logger_
 )
 {
-  return
-    std::unique_ptr<iface::engine>(new engine_clang(clang_binary_, logger_));
+  return std::unique_ptr<iface::engine>(new engine_clang(clang_path_, logger_));
 }
 

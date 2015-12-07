@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/engine.hpp>
-#include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
 
 #include <memory>
@@ -26,7 +25,7 @@
 namespace metashell
 {
   std::unique_ptr<iface::engine> create_clang_engine(
-    iface::executable& clang_binary_,
+    const std::string& clang_path_,
     logger* logger_
   );
 }

@@ -229,8 +229,7 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   e.get_appended_throw_from_now();
   null_executable clang_binary;
   const data::result r =
-    create_clang_engine(clang_binary, nullptr)
-      ->validate_code("typedef int foo;", cfg, e);
+    create_clang_engine("", nullptr)->validate_code("typedef int foo;", cfg, e);
 
   JUST_ASSERT(!r.successful);
   JUST_ASSERT(!r.error.empty());

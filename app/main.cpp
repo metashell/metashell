@@ -103,7 +103,7 @@ int main(int argc_, const char* argv_[])
             ccfg.processor_queue(),
             clang_binary,
             dir.path(),
-            metashell::create_clang_engine(clang_binary, &logger),
+            metashell::create_clang_engine(cfg.clang_path, &logger),
             &logger
           )
         );
