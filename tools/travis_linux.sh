@@ -13,6 +13,10 @@ git tag
 egrep $(tools/latest_release --no_dots --prefix=version-) README.md
 egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 
+# Test mkdocs.yml
+
+tools/check_mkdocs mkdocs.yml
+
 # Get the templight binary
 
 cd 3rd/templight

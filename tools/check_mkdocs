@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+# Copyright Abel Sinkovics (abel@sinkovics.hu)  2015.
+# Distributed under the Boost Software License, Version 1.0.
+#    (See accompanying file LICENSE_1_0.txt or copy at
+#          http://www.boost.org/LICENSE_1_0.txt)
+
+import sys
+import os
+import yaml
+import itertools
+
+def join_path(a, b):
+  return b if a == '' else a + '/' + b
+
+def find_md_files(path):
+  return sum([
+    [join_path(root[len(path)+1:], f) for f in files if f.endswith('.md')]
+    for root, subdirs, files in os.walk(path)
+  ], [])
+
+def validate(yml, docs_path):
+  pages = [p[0] for p in yml['pages']]
+  missing = [f for f in find_md_files(docs_path) if f not in pages]
+  return ['{0} is not added to mkdocs.yml'.format(f) for f in missing]
+
+def load_yml(path):
+  with open(path, 'r') as f:
+    return yaml.load(f)
+
+def run(mkdocs_yml):
+  errors = validate(
+    load_yml(mkdocs_yml), os.path.dirname(os.path.abspath(mkdocs_yml)) + '/docs'
+  )
+  if len(errors) > 0:
+    for e in errors:
+      print e
+    sys.exit(1)
+  else:
+    sys.exit(0)
+
+def main():
+  if len(sys.argv) == 2:
+    run(sys.argv[1])
+  else:
+    print 'Usage: {0} <path to mkdocs.yml>'.format(sys.argv[0])
+    sys.exit(1)
+
+if __name__ == '__main__':
+  main()
+
