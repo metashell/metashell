@@ -32,7 +32,6 @@ namespace metashell
   public:
     pragma_mdb(
       iface::executable& clang_binary_,
-      const std::string& internal_dir_,
       shell& shell_,
       command_processor_queue* cpq_,
       logger* logger_
@@ -50,7 +49,6 @@ namespace metashell
     ) const override;
   private:
     iface::executable& _clang_binary;
-    std::string _internal_dir;
     shell& _shell;
     command_processor_queue* _cpq;
     logger* _logger;

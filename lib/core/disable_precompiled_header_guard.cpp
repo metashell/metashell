@@ -1,6 +1,3 @@
-#ifndef METASHELL_ENGINE_CLANG_HPP
-#define METASHELL_ENGINE_CLANG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,21 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/engine.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/disable_precompiled_header_guard.hpp>
 
-#include <memory>
+using namespace metashell;
 
-namespace metashell
+disable_precompiled_header_guard::disable_precompiled_header_guard(
+  shell& shell_
+) :
+  _shell(shell_),
+  _was_using(shell_.using_precompiled_headers())
 {
-  std::unique_ptr<iface::engine> create_clang_engine(
-    const std::string& clang_path_,
-    const std::string& internal_dir_,
-    const std::string& env_filename_,
-    const std::vector<std::string>& extra_args_,
-    logger* logger_
-  );
+  if (_was_using)
+  {
+    _shell.using_precompiled_headers(false);
+  }
 }
 
-#endif
+disable_precompiled_header_guard::~disable_precompiled_header_guard()
+{
+  if (_was_using)
+  {
+    _shell.using_precompiled_headers(true);
+  }
+}
+
+std::unique_ptr<disable_precompiled_header_guard>
+disable_precompiled_header_guard::create(shell& shell_)
+{
+  return
+    std::unique_ptr<disable_precompiled_header_guard>(
+      new disable_precompiled_header_guard(shell_)
+    );
+}
 

@@ -77,11 +77,10 @@ namespace
     null_executable clang_binary;
     command_processor_queue cpq;
     const std::string internal_dir;
-    shell sh(cfg, cpq, clang_binary, internal_dir, create_failing_engine());
+    shell sh(cfg, cpq, clang_binary, internal_dir, "", create_failing_engine());
     const pragma_handler_map m =
       pragma_handler_map::build_default(
         clang_binary,
-        internal_dir,
         sh,
         &cpq,
         nullptr

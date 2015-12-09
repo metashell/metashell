@@ -100,13 +100,3 @@ const data::headers& breaking_environment::get_headers() const
   return _headers;
 }
 
-std::vector<std::string>& breaking_environment::clang_arguments()
-{
-  return _clang_args;
-}
-
-const std::vector<std::string>& breaking_environment::clang_arguments() const
-{
-  return _clang_args;
-}
-

@@ -25,7 +25,6 @@
 #include <metashell/config.hpp>
 #include <metashell/breakpoint.hpp>
 #include <metashell/metaprogram.hpp>
-#include <metashell/templight_environment.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/logger.hpp>
 
@@ -35,6 +34,8 @@
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/iface/engine.hpp>
+#include <metashell/iface/environment.hpp>
+#include <metashell/iface/destroyable.hpp>
 
 namespace metashell {
 
@@ -44,11 +45,13 @@ public:
 
   mdb_shell(
       const data::config& conf,
-      const iface::environment& env,
+      iface::environment& env,
       iface::engine& engine_,
       iface::executable& clang_binary,
-      const std::string& internal_dir,
-      logger* logger_);
+      const std::string& env_path_,
+      logger* logger_,
+      std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
+        std::unique_ptr<iface::destroyable>());
 
   virtual std::string prompt() const override;
   virtual bool stopped() const override;
@@ -100,6 +103,7 @@ protected:
   );
   data::type_or_error run_metaprogram(
     const boost::optional<std::string>& expression,
+    const std::string& output_path_,
     iface::displayer& displayer_
   );
 
@@ -141,7 +145,7 @@ protected:
   void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
   data::config conf;
-  templight_environment env;
+  iface::environment& env;
 
   boost::optional<metaprogram> mp;
 
@@ -159,6 +163,9 @@ protected:
   logger* _logger;
   iface::executable& _clang_binary;
   iface::engine& _engine;
+  std::string _env_path;
+
+  std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
 };
 
 }

@@ -139,10 +139,12 @@ shell::shell(
   const data::config& config_,
   iface::executable& clang_binary_,
   const std::string& internal_dir_,
+  const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(),
   _config(config_),
   _stopped(false),
@@ -159,10 +161,12 @@ shell::shell(
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
   const std::string& internal_dir_,
+  const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(),
   _config(config_),
   _stopped(false),
@@ -180,10 +184,12 @@ shell::shell(
   command_processor_queue& cpq_,
   iface::executable& clang_binary_,
   const std::string& internal_dir_,
+  const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
   _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
@@ -327,7 +333,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result r = _engine->validate_code(s_, _config, *_env);
+  const data::result
+    r = _engine->validate_code(s_, _config, *_env, using_precompiled_headers());
 
   if (r.successful)
   {
@@ -352,7 +359,7 @@ void shell::code_complete(
 {
   try
   {
-    _engine->code_complete(*_env, s_, out_);
+    _engine->code_complete(*_env, s_, out_, using_precompiled_headers());
   }
   catch (...)
   {
@@ -368,7 +375,6 @@ void shell::init(command_processor_queue* cpq_)
   _pragma_handlers =
     pragma_handler_map::build_default(
       _clang_binary,
-      _internal_dir,
       *this,
       cpq_,
       _logger
@@ -423,7 +429,15 @@ const iface::environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(_config, _internal_dir, _logger));
+  _env.reset(
+    new header_file_environment(
+      *_engine,
+      _config,
+      _internal_dir,
+      _env_filename,
+      _logger
+    )
+  );
   if (!content_.empty())
   {
     _env->append(content_);
@@ -473,7 +487,10 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(_engine->eval_tmp_formatted(*_env, s_), displayer_);
+  display(
+    _engine->eval_tmp_formatted(*_env, s_, using_precompiled_headers()),
+    displayer_
+  );
 }
 
 void shell::reset_environment()
@@ -495,5 +512,10 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 iface::engine& shell::engine()
 {
   return *_engine;
+}
+
+std::string shell::env_path() const
+{
+  return _internal_dir + "/" + _env_filename;
 }
 

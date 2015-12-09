@@ -29,6 +29,11 @@ namespace
     return std::string();
   }
 
+  std::string env_filename()
+  {
+    return std::string();
+  }
+
   metashell::iface::executable& get_clang_binary()
   {
     static metashell::null_executable clang_binary;
@@ -42,6 +47,7 @@ namespace
         metashell::test_config(),
         get_clang_binary(),
         temp_dir(),
+        env_filename(),
         metashell::create_failing_engine()
       );
     return sh;
@@ -54,7 +60,7 @@ mdb_test_shell::mdb_test_shell(const std::string& line) :
     get_shell().env(),
     get_shell().engine(),
     get_clang_binary(),
-    temp_dir(),
+    get_shell().env_path(),
     nullptr
   )
 {
@@ -68,7 +74,7 @@ mdb_test_shell::mdb_test_shell(
     shell.env(),
     shell.engine(),
     get_clang_binary(),
-    temp_dir(),
+    shell.env_path(),
     nullptr
   )
 {

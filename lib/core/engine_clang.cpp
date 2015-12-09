@@ -142,17 +142,48 @@ namespace
     }
   }
 
+  std::vector<std::string> clang_args(
+    const std::string& internal_dir_,
+    const std::vector<std::string>& extra_args_
+  )
+  {
+    std::vector<std::string>
+      args{
+        "-Wfatal-errors",
+        "-iquote", ".",
+        "-x", "c++-header",
+        "-I", internal_dir_
+      };
+
+    args.insert(args.end(), extra_args_.begin(), extra_args_.end());
+
+    return args;
+  }
+
   class engine_clang : public iface::engine
   {
   public:
-    engine_clang(const std::string& clang_path_, logger* logger_) :
-      _clang_binary(clang_path_, {}, logger_),
+    engine_clang(
+      const std::string& clang_path_,
+      const std::string& internal_dir_,
+      const std::string& env_path_,
+      const std::vector<std::string>& extra_args_,
+      logger* logger_
+    ) :
+      _clang_binary(
+        clang_path_,
+        clang_args(internal_dir_, extra_args_),
+        logger_
+      ),
+      _internal_dir(internal_dir_),
+      _env_path(env_path_),
       _logger(logger_)
     {}
 
     virtual data::result eval_tmp_formatted(
       const iface::environment& env_,
-      const std::string& tmp_exp_
+      const std::string& tmp_exp_,
+      bool use_precompiled_headers_
     ) override
     {
       using std::string;
@@ -164,7 +195,8 @@ namespace
         + tmp_exp_
       );
     
-      const data::result simple = eval_tmp(env_, tmp_exp_);
+      const data::result
+        simple = eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
     
       METASHELL_LOG(
         _logger,
@@ -177,48 +209,72 @@ namespace
     
       return
         simple.successful ?
-          eval_tmp(env_, "::metashell::format<" + tmp_exp_ + ">::type") :
+          eval(
+            env_,
+            "::metashell::format<" + tmp_exp_ + ">::type",
+            boost::none,
+            use_precompiled_headers_
+          ) :
           simple;
     }
 
-    virtual data::result eval_tmp(
+    virtual data::result eval(
       const iface::environment& env_,
-      const std::string& tmp_exp_
+      const boost::optional<std::string>& tmp_exp_,
+      const boost::optional<std::string>& templight_dump_path_,
+      bool use_precompiled_headers_
     ) override
     {
-      const data::process_output output = run_clang(
-        _clang_binary,
-        env_.clang_arguments(),
-        env_.get_appended(
-          "::metashell::impl::wrap< " + tmp_exp_ + " > __metashell_v;\n"));
-    
-      if (output.exit_code() != data::exit_code_t(0)) {
-        return data::result{false, "", output.standard_error(), ""};
+      std::vector<std::string> clang_args{"-Xclang", "-ast-dump"};
+      if (use_precompiled_headers_)
+      {
+        clang_args.push_back("-include");
+        clang_args.push_back(_env_path);
       }
-    
-      return data::result{
-        true, get_type_from_ast_string(output.standard_output()), "", ""};
-    }
+      if (templight_dump_path_)
+      {
+        clang_args.push_back("-Xtemplight");
+        clang_args.push_back("-profiler");
+        clang_args.push_back("-Xtemplight");
+        clang_args.push_back("-safe-mode");
+      
+        // templight can't be forced to generate output file with
+        // -Xtemplight -output=<file> for some reason
+        // A workaround is to specify a standard output location with -o
+        // then append ".trace.pbf" to the specified file (on the calling side)
+        clang_args.push_back("-o");
+        clang_args.push_back(*templight_dump_path_);
+      }
 
-    virtual data::result eval_environment(
-      const iface::environment& env_
-    ) override
-    {
-      const data::process_output output = run_clang(
-        _clang_binary,
-        env_.clang_arguments(),
-        env_.get());
+      const data::process_output output =
+        run_clang(
+          _clang_binary,
+          clang_args,
+          tmp_exp_ ?
+            env_.get_appended(
+              "::metashell::impl::wrap< " + *tmp_exp_ + " > __metashell_v;\n"
+            ) :
+            env_.get()
+        );
     
-      if (output.exit_code() != data::exit_code_t(0)) {
-        return data::result{false, "", output.standard_error(), ""};
-      }
-      return data::result{true, "", "", ""};
+      const bool success = output.exit_code() == data::exit_code_t(0);
+    
+      return
+        data::result{
+          success,
+          success && tmp_exp_ ?
+            get_type_from_ast_string(output.standard_output()) :
+            "",
+          success ? "" : output.standard_error(),
+          ""
+        };
     }
 
     virtual data::result validate_code(
       const std::string& src_,
       const data::config& config_,
-      const iface::environment& env_
+      const iface::environment& env_,
+      bool use_precompiled_headers_
     ) override
     {
       METASHELL_LOG(_logger, "Validating code " + src_);
@@ -226,9 +282,15 @@ namespace
       try
       {
         const std::string src = env_.get_appended(src_);
+        std::vector<std::string> clang_args;
+        if (use_precompiled_headers_)
+        {
+          clang_args.push_back("-include");
+          clang_args.push_back(_env_path);
+        }
     
         const data::process_output
-          output = run_clang(_clang_binary, env_.clang_arguments(), src);
+          output = run_clang(_clang_binary, clang_args, src);
     
         const bool accept =
           output.exit_code() == data::exit_code_t(0)
@@ -251,7 +313,8 @@ namespace
     virtual void code_complete(
       const iface::environment& env_,
       const std::string& src_,
-      std::set<std::string>& out_
+      std::set<std::string>& out_,
+      bool use_precompiled_headers_
     ) override
     {
       using boost::starts_with;
@@ -278,26 +341,20 @@ namespace
     
       const source_position sp = source_position_of(src.content());
     
-      std::vector<std::string> clang_args = env_.clang_arguments();
-    
-      const auto ast_dump =
-        std::find(clang_args.begin(), clang_args.end(), "-ast-dump");
-      if (ast_dump != clang_args.end() && ast_dump != clang_args.begin())
+      std::vector<std::string>
+        clang_args{
+          "-fsyntax-only",
+          "-Xclang",
+          "-code-completion-at=" + src.filename() + ":" + to_string(sp),
+          src.filename()
+        };
+     
+      if (use_precompiled_headers_)
       {
-        const auto xclang = ast_dump - 1;
-        if (*xclang == "-Xclang")
-        {
-          clang_args.erase(xclang, ast_dump + 1);
-        }
+        clang_args.push_back("-include");
+        clang_args.push_back(_env_path);
       }
-    
-      clang_args.push_back("-fsyntax-only");
-      clang_args.push_back("-Xclang");
-      clang_args.push_back(
-        "-code-completion-at=" + src.filename() + ":" + to_string(sp)
-      );
-      clang_args.push_back(src.filename());
-    
+   
       const data::process_output o = _clang_binary.run(clang_args, "");
     
       METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code()));
@@ -321,8 +378,39 @@ namespace
           }
         }
       );
-    }  private:
+    }
+
+    virtual void precompile(const std::string& fn_) override
+    {
+      using boost::algorithm::trim_copy;
+
+      METASHELL_LOG(_logger, "Generating percompiled header for " + fn_);
+
+      std::vector<std::string>
+        args{
+          "-iquote", ".",
+          "-w",
+          "-o", fn_ + ".pch",
+          fn_
+        };
+
+      const data::process_output o = _clang_binary.run(args, "");
+      const std::string err = o.standard_output() + o.standard_error();
+      if (
+        !err.empty()
+        // clang displays this even when "-w" is used. This can be ignored
+        && trim_copy(err) !=
+          "warning: precompiled header used __DATE__ or __TIME__."
+      )
+      {
+        throw exception("Error precompiling header " + fn_ + ": " + err);
+      }
+    }
+
+  private:
     clang_binary _clang_binary;
+    std::string _internal_dir;
+    std::string _env_path;
     logger* _logger;
   };
 
@@ -330,9 +418,21 @@ namespace
 
 std::unique_ptr<iface::engine> metashell::create_clang_engine(
   const std::string& clang_path_,
+  const std::string& internal_dir_,
+  const std::string& env_filename_,
+  const std::vector<std::string>& extra_args_,
   logger* logger_
 )
 {
-  return std::unique_ptr<iface::engine>(new engine_clang(clang_path_, logger_));
+  return
+    std::unique_ptr<iface::engine>(
+      new engine_clang(
+        clang_path_,
+        internal_dir_,
+        internal_dir_ + "/" + env_filename_,
+        extra_args_,
+        logger_
+      )
+    );
 }
 

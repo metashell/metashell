@@ -39,47 +39,6 @@ using namespace metashell;
 
 namespace
 {
-  const char env_fn[] = "metashell_environment.hpp";
-
-  void extend_to_find_headers_in_local_dir(std::vector<std::string>& v_)
-  {
-    v_.push_back("-iquote");
-    v_.push_back(".");
-  }
-
-  void precompile(
-    const std::string& clang_path_,
-    const std::vector<std::string>& clang_args_,
-    const std::string& fn_,
-    logger* logger_
-  )
-  {
-    using boost::algorithm::trim_copy;
-
-    METASHELL_LOG(logger_, "Generating percompiled header for " + fn_);
-
-    std::vector<std::string>
-      args{
-        "-iquote", ".",
-        "-w",
-        "-o", fn_ + ".pch",
-        fn_
-      };
-
-    const data::process_output
-      o = clang_binary(clang_path_, clang_args_, logger_).run(args, "");
-    const std::string err = o.standard_output() + o.standard_error();
-    if (
-      !err.empty()
-      // clang displays this even when "-w" is used. This can be ignored
-      && trim_copy(err) !=
-        "warning: precompiled header used __DATE__ or __TIME__."
-    )
-    {
-      throw exception("Error precompiling header " + fn_ + ": " + err);
-    }
-  }
-
   std::string seq_formatter(const std::string& name_)
   {
     return
@@ -207,89 +166,24 @@ namespace
       "  ::metashell::expression_instantiated<true ? true : ((__VA_ARGS__), false)>\n"
     );
   }
-
-  template <class Cont>
-  void add_with_prefix(
-    const std::string& prefix_,
-    const Cont& cont_,
-    std::vector<std::string>& v_
-  )
-  {
-    std::transform(
-      cont_.begin(),
-      cont_.end(),
-      std::back_insert_iterator<std::vector<std::string> >(v_),
-      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
-    );
-  }
-
-  std::string set_max_template_depth(int v_)
-  {
-    std::ostringstream s;
-    s << "-ftemplate-depth=" << v_;
-    return s.str();
-  }
-
-  std::vector<std::string> base_clang_args(
-    const data::config& config_,
-    const std::string& internal_dir_
-  )
-  {
-    std::vector<std::string>
-      clang_args{
-        "-x",
-        "c++-header",
-        clang_argument(config_.standard_to_use),
-        "-I" + internal_dir_,
-        set_max_template_depth(config_.max_template_depth)
-      };
-
-    add_with_prefix("-I", config_.include_path, clang_args);
-    add_with_prefix("-D", config_.macros, clang_args);
-
-    if (!config_.warnings_enabled)
-    {
-      clang_args.push_back("-w");
-    }
-
-    clang_args.insert(
-      clang_args.end(),
-      config_.extra_clang_args.begin(),
-      config_.extra_clang_args.end()
-    );
-
-    return clang_args;
-  }
 }
 
 header_file_environment::header_file_environment(
+  iface::engine& engine_,
   const data::config& config_,
   const std::string& internal_dir_,
+  const std::string& env_filename_,
   logger* logger_
 ) :
   _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _buffer(),
-  _base_clang_args(base_clang_args(config_, internal_dir_)),
-  _clang_args(_base_clang_args),
   _headers(internal_dir_),
   _use_precompiled_headers(config_.use_precompiled_headers),
-  _clang_path(config_.clang_path),
-  _logger(logger_)
+  _logger(logger_),
+  _engine(engine_)
 {
   add_internal_headers(_headers);
-
-  if (_use_precompiled_headers)
-  {
-    _clang_args.push_back("-include");
-    _clang_args.push_back(env_filename());
-  }
-
-  _clang_args.push_back("-Xclang");
-  _clang_args.push_back("-ast-dump");
-
-  _clang_args.push_back("-Wfatal-errors");
-
-  extend_to_find_headers_in_local_dir(_clang_args);
 
   save();
   generate(_headers);
@@ -314,7 +208,7 @@ std::string header_file_environment::get() const
   return
     _use_precompiled_headers ?
       std::string() : // The -include directive includes the header
-      "#include <" + std::string(env_fn) + ">\n";
+      "#include <" + _env_filename + ">\n";
 }
 
 std::string header_file_environment::get_appended(const std::string& s_) const
@@ -322,25 +216,9 @@ std::string header_file_environment::get_appended(const std::string& s_) const
   return get() + s_;
 }
 
-std::vector<std::string>& header_file_environment::clang_arguments()
-{
-  return _clang_args;
-}
-
-const std::vector<std::string>&
-  header_file_environment::clang_arguments() const
-{
-  return _clang_args;
-}
-
-std::string header_file_environment::env_filename() const
-{
-  return _headers.internal_dir() + "/" + env_fn;
-}
-
 void header_file_environment::save()
 {
-  const std::string fn = env_filename();
+  const std::string fn = _headers.internal_dir() + "/" + _env_filename;
   if (!internal_dir().empty())
   {
     std::ofstream f(fn.c_str());
@@ -356,7 +234,7 @@ void header_file_environment::save()
 
   if (_use_precompiled_headers)
   {
-    precompile(_clang_path, _base_clang_args, fn, _logger);
+    _engine.precompile(fn);
   }
 }
 

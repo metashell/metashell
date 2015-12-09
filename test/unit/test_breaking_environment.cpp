@@ -30,7 +30,6 @@ JUST_TEST_CASE(test_breaking_environment_does_not_throw)
   e.get();
   e.get_appended("bar");
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 
@@ -43,7 +42,6 @@ JUST_TEST_CASE(test_breaking_environment_append_throws)
   e.get();
   e.get_appended("bar");
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 
@@ -56,7 +54,6 @@ JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
   e.get();
   JUST_ASSERT_THROWS([&e] { e.get_appended("bar"); });
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 

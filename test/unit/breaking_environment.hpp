@@ -30,9 +30,6 @@ public:
 
   virtual std::string internal_dir() const override;
 
-  virtual std::vector<std::string>& clang_arguments() override;
-  virtual const std::vector<std::string>& clang_arguments() const override;
-
   virtual const metashell::data::headers& get_headers() const override;
 
   virtual std::string get_all() const override;
@@ -41,7 +38,6 @@ public:
   void get_appended_throw_from_now();
 private:
   metashell::data::headers _headers;
-  std::vector<std::string> _clang_args;
 
   bool _append_throw;
   bool _get_appended_throw;

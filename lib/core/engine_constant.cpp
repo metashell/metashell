@@ -29,21 +29,19 @@ namespace
 
     virtual data::result eval_tmp_formatted(
       const iface::environment&,
-      const std::string&
+      const std::string&,
+      bool
     ) override
     {
       return _result;
     }
 
-    virtual data::result eval_tmp(
+    virtual data::result eval(
       const iface::environment&,
-      const std::string&
+      const boost::optional<std::string>&,
+      const boost::optional<std::string>&,
+      bool
     ) override
-    {
-      return _result;
-    }
-
-    virtual data::result eval_environment(const iface::environment&) override
     {
       return _result;
     }
@@ -51,7 +49,8 @@ namespace
     virtual data::result validate_code(
       const std::string&,
       const data::config&,
-      const iface::environment&
+      const iface::environment&,
+      bool
     ) override
     {
       return _result;
@@ -60,8 +59,14 @@ namespace
     virtual void code_complete(
       const iface::environment&,
       const std::string&,
-      std::set<std::string>&
+      std::set<std::string>&,
+      bool
     ) override
+    {
+      // ignore
+    }
+
+    virtual void precompile(const std::string&) override
     {
       // ignore
     }

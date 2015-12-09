@@ -37,7 +37,7 @@ JUST_TEST_CASE(test_accept_empty_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -48,7 +48,7 @@ JUST_TEST_CASE(test_accept_space_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available(" ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -59,7 +59,7 @@ JUST_TEST_CASE(test_accept_tab_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("\t", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -70,7 +70,7 @@ JUST_TEST_CASE(test_accept_vertical_tab_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("\v", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -81,7 +81,7 @@ JUST_TEST_CASE(test_accept_new_line_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("\n", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -92,7 +92,7 @@ JUST_TEST_CASE(test_accept_carrige_return_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("\r", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -103,7 +103,7 @@ JUST_TEST_CASE(test_accept_two_space_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("  ", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -115,7 +115,7 @@ JUST_TEST_CASE(test_history_is_stored)
   null_displayer d;
   in_memory_history h;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
 
   sh.line_available("int", d, h);
 
@@ -127,7 +127,7 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
   null_displayer d;
   in_memory_history h;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
 
   sh.line_available("", d, h);
 
@@ -141,7 +141,7 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
 
   sh.line_available(" ", d, h);
 
@@ -155,7 +155,7 @@ JUST_TEST_CASE(
   null_displayer d;
   in_memory_history h;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
 
   sh.line_available("int", d, h);
   sh.line_available("int", d, h);
@@ -167,7 +167,7 @@ JUST_TEST_CASE(test_accept_c_comment_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("/* some comment */", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -178,7 +178,7 @@ JUST_TEST_CASE(test_accept_cpp_comment_input)
 {
   in_memory_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("// some comment", d);
 
   JUST_ASSERT_EMPTY_CONTAINER(d.types());
@@ -190,7 +190,7 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
   null_displayer d;
   in_memory_history h;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
 
   sh.line_available("// some comment", d, h);
 
@@ -213,6 +213,7 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
       cpq,
       clang_binary,
       "",
+      "",
       create_failing_engine()
     );
   e->append_throw_from_now();
@@ -229,7 +230,8 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   e.get_appended_throw_from_now();
   null_executable clang_binary;
   const data::result r =
-    create_clang_engine("", nullptr)->validate_code("typedef int foo;", cfg, e);
+    create_clang_engine("", "", "env.hpp", {}, nullptr)
+      ->validate_code("typedef int foo;", cfg, e, false);
 
   JUST_ASSERT(!r.successful);
   JUST_ASSERT(!r.error.empty());
@@ -263,7 +265,7 @@ JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
 {
   null_displayer d;
   null_executable clang_binary;
-  shell sh(test_config(), clang_binary, "", create_failing_engine());
+  shell sh(test_config(), clang_binary, "", "", create_failing_engine());
   sh.line_available("const \\", d);
 
   JUST_ASSERT_EQUAL("...>", sh.prompt());

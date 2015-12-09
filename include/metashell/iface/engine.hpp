@@ -21,6 +21,8 @@
 #include <metashell/data/config.hpp>
 #include <metashell/iface/environment.hpp>
 
+#include <boost/optional.hpp>
+
 #include <string>
 #include <set>
 
@@ -35,28 +37,32 @@ namespace metashell
 
       virtual data::result eval_tmp_formatted(
         const environment& env_,
-        const std::string& tmp_exp_
+        const std::string& tmp_exp_,
+        bool use_precompiled_headers_
       ) = 0;
 
-      virtual data::result eval_tmp(
+      virtual data::result eval(
         const environment& env_,
-        const std::string& tmp_exp_
+        const boost::optional<std::string>& tmp_exp_,
+        const boost::optional<std::string>& templight_dump_path_,
+        bool use_precompiled_headers_
       ) = 0;
-
-      virtual data::result eval_environment(const environment& env_) = 0;
 
       virtual data::result validate_code(
         const std::string& s_,
         const data::config& config_,
-        const environment& env_
+        const environment& env_,
+        bool use_precompiled_headers_
       ) = 0;
 
       virtual void code_complete(
         const environment& env_,
         const std::string& src_,
-        std::set<std::string>& out_
+        std::set<std::string>& out_,
+        bool use_precompiled_headers_
       ) = 0;
 
+      virtual void precompile(const std::string& fn_) = 0;
     };
   }
 }

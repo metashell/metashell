@@ -45,6 +45,7 @@ JUST_TEST_CASE(test_popping_environment_from_empty_queue)
       metashell::test_config(),
       clang_binary,
       "",
+      "",
       metashell::create_failing_engine()
     );
 
@@ -59,6 +60,7 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       "",
       metashell::create_failing_engine()
     );
@@ -79,6 +81,7 @@ JUST_TEST_CASE(test_more_pops_than_pushes_throws)
       metashell::test_config(),
       clang_binary,
       "",
+      "",
       metashell::create_failing_engine()
     );
 
@@ -96,6 +99,7 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       "",
       metashell::create_failing_engine()
     );
@@ -122,6 +126,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
       metashell::test_config(),
       clang_binary,
       "",
+      "",
       metashell::create_failing_engine()
     );
   sh.display_environment_stack_size(d);
@@ -140,6 +145,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       "",
       metashell::create_failing_engine()
     );
@@ -160,6 +166,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       "",
       metashell::create_failing_engine()
     );
@@ -191,6 +198,7 @@ JUST_TEST_CASE(test_extending_environment_with_pragma)
     sh(
       metashell::test_config(),
       clang_binary,
+      "",
       "",
       metashell::create_engine_returning_type("void")
     );

@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/environment.hpp>
+#include <metashell/iface/engine.hpp>
 #include <metashell/data/headers.hpp>
 #include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
@@ -28,8 +29,10 @@ namespace metashell
   {
   public:
     header_file_environment(
+      iface::engine& engine_,
       const data::config& config_,
       const std::string& internal_dir_,
+      const std::string& env_filename_,
       logger* logger_
     );
 
@@ -39,26 +42,20 @@ namespace metashell
 
     virtual std::string internal_dir() const override;
 
-    virtual std::vector<std::string>& clang_arguments() override;
-    virtual const std::vector<std::string>& clang_arguments() const override;
-
     virtual const data::headers& get_headers() const override;
 
     virtual std::string get_all() const override;
 
-    std::string env_filename() const;
-
   private:
     std::string _internal_dir;
+    std::string _env_filename;
     std::string _buffer;
-    std::vector<std::string> _base_clang_args;
-    std::vector<std::string> _clang_args;
     data::headers _headers;
 
     bool _use_precompiled_headers;
-    std::string _clang_path;
 
     logger* _logger;
+    iface::engine& _engine;
 
     void save();
   };

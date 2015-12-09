@@ -1,6 +1,8 @@
+#ifndef METASHELL_DISABLE_PRECOMPILED_HEADER_GUARD_HPP
+#define METASHELL_DISABLE_PRECOMPILED_HEADER_GUARD_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,26 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/logger.hpp>
-#include <metashell/header_file_environment.hpp>
+#include <metashell/shell.hpp>
+#include <metashell/iface/destroyable.hpp>
 
-namespace metashell {
+#include <memory>
 
-class templight_environment : public header_file_environment {
-public:
-  templight_environment(
-    const data::config& config,
-    const std::string& internal_dir_,
-    logger* logger_ = nullptr
-  );
+namespace metashell
+{
+  class disable_precompiled_header_guard : public iface::destroyable
+  {
+  public:
+    explicit disable_precompiled_header_guard(shell& shell_);
+    ~disable_precompiled_header_guard();
 
-  // This should be called before the first evaluation
-  // with this environment
-  void set_output_location(const std::string& output_location);
-
-private:
-  // Indexes into clang_arguments()
-  std::size_t output_path_index;
-};
-
+    static std::unique_ptr<disable_precompiled_header_guard> create(
+      shell& shell_
+    );
+  private:
+    shell& _shell;
+    bool _was_using;
+  };
 }
+
+#endif
+
