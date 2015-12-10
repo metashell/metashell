@@ -434,8 +434,7 @@ void shell::rebuild_environment(const std::string& content_)
       *_engine,
       _config,
       _internal_dir,
-      _env_filename,
-      _logger
+      _env_filename
     )
   );
   if (!content_.empty())

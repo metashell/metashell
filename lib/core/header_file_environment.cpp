@@ -172,15 +172,13 @@ header_file_environment::header_file_environment(
   iface::engine& engine_,
   const data::config& config_,
   const std::string& internal_dir_,
-  const std::string& env_filename_,
-  logger* logger_
+  const std::string& env_filename_
 ) :
   _internal_dir(internal_dir_),
   _env_filename(env_filename_),
   _buffer(),
   _headers(internal_dir_),
   _use_precompiled_headers(config_.use_precompiled_headers),
-  _logger(logger_),
   _engine(engine_)
 {
   add_internal_headers(_headers);

@@ -21,7 +21,6 @@
 #include <metashell/iface/engine.hpp>
 #include <metashell/data/headers.hpp>
 #include <metashell/data/config.hpp>
-#include <metashell/logger.hpp>
 
 namespace metashell
 {
@@ -32,8 +31,7 @@ namespace metashell
       iface::engine& engine_,
       const data::config& config_,
       const std::string& internal_dir_,
-      const std::string& env_filename_,
-      logger* logger_
+      const std::string& env_filename_
     );
 
     virtual void append(const std::string& s_) override;
@@ -54,7 +52,6 @@ namespace metashell
 
     bool _use_precompiled_headers;
 
-    logger* _logger;
     iface::engine& _engine;
 
     void save();

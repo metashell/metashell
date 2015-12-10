@@ -55,7 +55,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
   cfg.use_precompiled_headers = false;
 
   auto engine = create_failing_engine();
-  header_file_environment env(*engine, cfg, "", "", nullptr);
+  header_file_environment env(*engine, cfg, "", "");
 
   JUST_ASSERT_EQUAL("", env.get_all());
 }
@@ -66,7 +66,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
   cfg.use_precompiled_headers = false;
 
   auto engine = create_failing_engine();
-  header_file_environment env(*engine, cfg, "", "", nullptr);
+  header_file_environment env(*engine, cfg, "", "");
 
   test_append_text_to_environment(env);
 }
