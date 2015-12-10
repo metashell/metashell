@@ -25,12 +25,10 @@
 using namespace metashell;
 
 pragma_mdb::pragma_mdb(
-  iface::executable& clang_binary_,
   shell& shell_,
   command_processor_queue* cpq_,
   logger* logger_
 ) :
-  _clang_binary(clang_binary_),
   _shell(shell_),
   _cpq(cpq_),
   _logger(logger_)
@@ -38,7 +36,7 @@ pragma_mdb::pragma_mdb(
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_clang_binary, _shell, _cpq, _logger);
+  return new pragma_mdb(_shell, _cpq, _logger);
 }
 
 std::string pragma_mdb::arguments() const
@@ -70,7 +68,6 @@ void pragma_mdb::run(
         _shell.get_config(),
         _shell.env(),
         _shell.engine(),
-        _clang_binary,
         _shell.env_path(),
         _logger,
         std::move(g)

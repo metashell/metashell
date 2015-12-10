@@ -22,7 +22,6 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/null_executable.hpp>
 #include <metashell/engine_constant.hpp>
 
 #include <boost/program_options/options_description.hpp>
@@ -74,17 +73,11 @@ namespace
   void show_pragma_help()
   {
     const data::config cfg{};
-    null_executable clang_binary;
     command_processor_queue cpq;
     const std::string internal_dir;
-    shell sh(cfg, cpq, clang_binary, internal_dir, "", create_failing_engine());
-    const pragma_handler_map m =
-      pragma_handler_map::build_default(
-        clang_binary,
-        sh,
-        &cpq,
-        nullptr
-      );
+    shell sh(cfg, cpq, internal_dir, "", create_failing_engine());
+    const pragma_handler_map
+      m = pragma_handler_map::build_default(sh, &cpq, nullptr);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)

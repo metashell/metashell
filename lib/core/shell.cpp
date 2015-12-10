@@ -137,7 +137,6 @@ namespace metashell {
 
 shell::shell(
   const data::config& config_,
-  iface::executable& clang_binary_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
@@ -149,7 +148,6 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
   _engine(std::move(engine_))
 {
   rebuild_environment();
@@ -159,7 +157,6 @@ shell::shell(
 shell::shell(
   const data::config& config_,
   command_processor_queue& cpq_,
-  iface::executable& clang_binary_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
@@ -171,7 +168,6 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
   _engine(std::move(engine_))
 {
   rebuild_environment();
@@ -182,7 +178,6 @@ shell::shell(
   const data::config& config_,
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
-  iface::executable& clang_binary_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
   std::unique_ptr<iface::engine> engine_,
@@ -194,7 +189,6 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_),
   _engine(std::move(engine_))
 {
   init(&cpq_);
@@ -372,13 +366,7 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers =
-    pragma_handler_map::build_default(
-      _clang_binary,
-      *this,
-      cpq_,
-      _logger
-    );
+  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -430,12 +418,7 @@ const iface::environment& shell::env() const
 void shell::rebuild_environment(const std::string& content_)
 {
   _env.reset(
-    new header_file_environment(
-      *_engine,
-      _config,
-      _internal_dir,
-      _env_filename
-    )
+    new header_file_environment(*_engine, _config, _internal_dir, _env_filename)
   );
   if (!content_.empty())
   {

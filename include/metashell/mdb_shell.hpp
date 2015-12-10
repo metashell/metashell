@@ -32,7 +32,6 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 #include <metashell/iface/command_processor.hpp>
-#include <metashell/iface/executable.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/destroyable.hpp>
@@ -47,7 +46,6 @@ public:
       const data::config& conf,
       iface::environment& env,
       iface::engine& engine_,
-      iface::executable& clang_binary,
       const std::string& env_path_,
       logger* logger_,
       std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
@@ -161,7 +159,6 @@ protected:
 
   bool is_stopped = false;
   logger* _logger;
-  iface::executable& _clang_binary;
   iface::engine& _engine;
   std::string _env_path;
 

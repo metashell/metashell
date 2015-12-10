@@ -22,7 +22,6 @@
 #include <metashell/shell.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
-#include <metashell/clang_binary.hpp>
 #include <metashell/engine_clang.hpp>
 
 #include <metashell/version.hpp>
@@ -116,8 +115,6 @@ int main(int argc_, const char* argv_[])
 
       METASHELL_LOG(&logger, "Running shell");
 
-      metashell::clang_binary clang_binary(cfg.clang_path, {}, &logger);
-
       just::temp::directory dir;
 
       std::vector<std::string> clang_args{
@@ -144,7 +141,6 @@ int main(int argc_, const char* argv_[])
           new metashell::shell(
             cfg,
             ccfg.processor_queue(),
-            clang_binary,
             dir.path(),
             env_filename,
             metashell::create_clang_engine(

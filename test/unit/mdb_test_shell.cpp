@@ -19,7 +19,6 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/config.hpp>
-#include <metashell/null_executable.hpp>
 #include <metashell/engine_constant.hpp>
 
 namespace
@@ -34,18 +33,11 @@ namespace
     return std::string();
   }
 
-  metashell::iface::executable& get_clang_binary()
-  {
-    static metashell::null_executable clang_binary;
-    return clang_binary;
-  }
-
   metashell::shell& get_shell()
   {
     static metashell::shell
       sh(
         metashell::test_config(),
-        get_clang_binary(),
         temp_dir(),
         env_filename(),
         metashell::create_failing_engine()
@@ -59,7 +51,6 @@ mdb_test_shell::mdb_test_shell(const std::string& line) :
     get_shell().get_config(),
     get_shell().env(),
     get_shell().engine(),
-    get_clang_binary(),
     get_shell().env_path(),
     nullptr
   )
@@ -73,7 +64,6 @@ mdb_test_shell::mdb_test_shell(
     shell.get_config(),
     shell.env(),
     shell.engine(),
-    get_clang_binary(),
     shell.env_path(),
     nullptr
   )

@@ -183,14 +183,12 @@ mdb_shell::mdb_shell(
     const data::config& conf_,
     iface::environment& env_arg,
     iface::engine& engine_,
-    iface::executable& clang_binary,
     const std::string& env_path_,
     logger* logger_,
     std::unique_ptr<iface::destroyable> keep_alive_with_shell_):
   conf(conf_),
   env(env_arg),
   _logger(logger_),
-  _clang_binary(clang_binary),
   _engine(engine_),
   _env_path(env_path_),
   _keep_alive_with_shell(std::move(keep_alive_with_shell_))

@@ -26,7 +26,6 @@
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
-#include <metashell/iface/executable.hpp>
 #include <metashell/iface/engine.hpp>
 
 #include <boost/optional.hpp>
@@ -44,7 +43,6 @@ namespace metashell
   public:
     shell(
       const data::config& config_,
-      iface::executable& clang_binary_,
       const std::string& internal_dir_,
       const std::string& env_filename_,
       std::unique_ptr<iface::engine> engine_,
@@ -54,7 +52,6 @@ namespace metashell
     shell(
       const data::config& config_,
       command_processor_queue& cpq_,
-      iface::executable& clang_binary_,
       const std::string& internal_dir_,
       const std::string& env_filename_,
       std::unique_ptr<iface::engine> engine_,
@@ -65,7 +62,6 @@ namespace metashell
       const data::config& config_,
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
-      iface::executable& clang_binary_,
       const std::string& internal_dir_,
       const std::string& env_filename_,
       std::unique_ptr<iface::engine> engine_,
@@ -130,7 +126,6 @@ namespace metashell
     bool _stopped;
     std::stack<std::string> _environment_stack;
     logger* _logger;
-    iface::executable& _clang_binary;
     std::unique_ptr<iface::engine> _engine;
 
     void init(command_processor_queue* cpq_);
