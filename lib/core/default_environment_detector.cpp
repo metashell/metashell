@@ -16,7 +16,6 @@
 
 #include <metashell/metashell.hpp>
 #include <metashell/default_environment_detector.hpp>
-#include <metashell/clang_binary.hpp>
 #include <metashell/header_file_environment.hpp>
 
 #include <just/environment.hpp>

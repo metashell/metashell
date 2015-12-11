@@ -24,7 +24,7 @@
 using namespace metashell;
 
 pragma_environment_save::pragma_environment_save(
-  const config& config_,
+  const data::config& config_,
   const iface::environment& env_
 ) :
   _config(config_),

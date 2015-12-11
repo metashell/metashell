@@ -20,7 +20,7 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 #include <metashell/iface/environment.hpp>
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 
 #include <string>
 
@@ -30,7 +30,7 @@ namespace metashell
   {
   public:
     pragma_environment_save(
-      const config& config_,
+      const data::config& config_,
       const iface::environment& env_
     );
 
@@ -45,7 +45,7 @@ namespace metashell
       iface::displayer& displayer_
     ) const override;
   private:
-    const config& _config;
+    const data::config& _config;
     const iface::environment& _env;
   };
 }

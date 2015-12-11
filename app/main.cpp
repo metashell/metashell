@@ -22,14 +22,18 @@
 #include <metashell/shell.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
-#include <metashell/clang_binary.hpp>
+#include <metashell/engine_clang.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
 
+#include <just/temp.hpp>
+
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
+#include <iterator>
 
 namespace
 {
@@ -49,10 +53,32 @@ namespace
         {readline_name, metashell::readline::version()}
       };
   }
+
+  std::string set_max_template_depth(int v_)
+  {
+    return "-ftemplate-depth=" + std::to_string(v_);
+  }
+
+  template <class Cont>
+  void add_with_prefix(
+    const std::string& prefix_,
+    const Cont& cont_,
+    std::vector<std::string>& v_
+  )
+  {
+    std::transform(
+      cont_.begin(),
+      cont_.end(),
+      std::back_insert_iterator<std::vector<std::string> >(v_),
+      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
+    );
+  }
 }
 
 int main(int argc_, const char* argv_[])
 {
+  const std::string env_filename = "metashell_environment.hpp";
+
   try
   {
     using metashell::parse_config;
@@ -68,13 +94,13 @@ int main(int argc_, const char* argv_[])
     metashell::logger logger(ccfg.displayer(), file_writer);
     switch (r.cfg.log_mode)
     {
-    case metashell::logging_mode::none:
+    case metashell::data::logging_mode::none:
       // do nothing
       break;
-    case metashell::logging_mode::console:
+    case metashell::data::logging_mode::console:
       logger.log_to_console();
       break;
-    case metashell::logging_mode::file:
+    case metashell::data::logging_mode::file:
       logger.log_into_file(r.cfg.log_file);
       break;
     }
@@ -84,19 +110,46 @@ int main(int argc_, const char* argv_[])
     if (r.should_run_shell())
     {
       metashell::default_environment_detector det(argv_[0]);
-      const metashell::config
+      const metashell::data::config
         cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 
       METASHELL_LOG(&logger, "Running shell");
 
-      metashell::clang_binary clang_binary(cfg.clang_path, &logger);
+      just::temp::directory dir;
+
+      std::vector<std::string> clang_args{
+        clang_argument(cfg.standard_to_use),
+        set_max_template_depth(cfg.max_template_depth)
+      };
+
+      add_with_prefix("-I", cfg.include_path, clang_args);
+      add_with_prefix("-D", cfg.macros, clang_args);
+
+      if (!cfg.warnings_enabled)
+      {
+        clang_args.push_back("-w");
+      }
+
+      clang_args.insert(
+        clang_args.end(),
+        cfg.extra_clang_args.begin(),
+        cfg.extra_clang_args.end()
+      );
 
       std::unique_ptr<metashell::shell>
         shell(
           new metashell::shell(
             cfg,
             ccfg.processor_queue(),
-            clang_binary,
+            dir.path(),
+            env_filename,
+            metashell::create_clang_engine(
+              cfg.clang_path,
+              dir.path(),
+              env_filename,
+              clang_args,
+              &logger
+            ),
             &logger
           )
         );

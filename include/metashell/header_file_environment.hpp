@@ -17,17 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_environment.hpp>
+#include <metashell/iface/environment.hpp>
+#include <metashell/iface/engine.hpp>
 #include <metashell/data/headers.hpp>
-
-#include <just/temp.hpp>
+#include <metashell/data/config.hpp>
 
 namespace metashell
 {
   class header_file_environment : public iface::environment
   {
   public:
-    header_file_environment(const config& config_, logger* logger_);
+    header_file_environment(
+      iface::engine& engine_,
+      const data::config& config_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_
+    );
 
     virtual void append(const std::string& s_) override;
     virtual std::string get() const override;
@@ -35,23 +40,19 @@ namespace metashell
 
     virtual std::string internal_dir() const override;
 
-    virtual std::vector<std::string>& clang_arguments() override;
-    virtual const std::vector<std::string>& clang_arguments() const override;
-
     virtual const data::headers& get_headers() const override;
 
     virtual std::string get_all() const override;
 
-    std::string env_filename() const;
-
   private:
-    just::temp::directory _dir;
-    in_memory_environment _buffer;
-    std::vector<std::string> _clang_args;
-    data::headers _empty_headers;
+    std::string _internal_dir;
+    std::string _env_filename;
+    std::string _buffer;
+    data::headers _headers;
 
     bool _use_precompiled_headers;
-    std::string _clang_path;
+
+    iface::engine& _engine;
 
     void save();
   };

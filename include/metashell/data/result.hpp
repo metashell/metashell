@@ -1,8 +1,8 @@
-#ifndef METASHELL_STDLIB_HPP
-#define METASHELL_STDLIB_HPP
+#ifndef METASHELL_RESULT_HPP
+#define METASHELL_RESULT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,20 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
-  enum class stdlib {
-    libcxx,
-    libstdcxx
-  };
+  namespace data
+  {
+    struct result
+    {
+      bool successful = false;
 
-  stdlib parse_stdlib(const std::string& std_);
-  std::string clang_argument(stdlib std_);
+      std::string output;
+      std::string error;
+      std::string info;
 
-  std::ostream& operator<<(std::ostream& os, stdlib std_);
+      result();
+
+      result(
+        bool successful,
+        const std::string& output_,
+        const std::string& error_,
+        const std::string& info_);
+    };
+  }
 }
 
 #endif

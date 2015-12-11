@@ -22,8 +22,7 @@
 
 JUST_TEST_CASE(test_breaking_environment_does_not_throw)
 {
-  const metashell::config cfg;
-  breaking_environment e(cfg);
+  breaking_environment e;
 
   // should not throw
 
@@ -31,35 +30,30 @@ JUST_TEST_CASE(test_breaking_environment_does_not_throw)
   e.get();
   e.get_appended("bar");
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 
 JUST_TEST_CASE(test_breaking_environment_append_throws)
 {
-  const metashell::config cfg;
-  breaking_environment e(cfg);
+  breaking_environment e;
   e.append_throw_from_now();
 
   JUST_ASSERT_THROWS([&e] { e.append("foo"); });
   e.get();
   e.get_appended("bar");
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 
 JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
 {
-  const metashell::config cfg;
-  breaking_environment e(cfg);
+  breaking_environment e;
   e.get_appended_throw_from_now();
 
   e.append("foo");
   e.get();
   JUST_ASSERT_THROWS([&e] { e.get_appended("bar"); });
   e.internal_dir();
-  e.clang_arguments();
   e.get_headers();
 }
 

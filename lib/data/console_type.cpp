@@ -14,25 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_config.hpp"
-#include "argv0.hpp"
+#include <metashell/data/console_type.hpp>
 
-#include <metashell/config.hpp>
+#include <ostream>
+#include <stdexcept>
 
 using namespace metashell::data;
 
-config metashell::test_config()
+std::ostream& metashell::data::operator<<(std::ostream& o_, console_type t_)
 {
-  config cfg = empty_config(argv0::get());
-#ifdef WINDOWS_HEADERS
-  const std::string windows_headers = WINDOWS_HEADERS;
-  cfg.include_path.push_back(windows_headers);
-  cfg.include_path.push_back(windows_headers + "\\mingw32");
-#endif
-  cfg.include_path.push_back(BOOST_INCLUDE_PATH);
-#ifdef LIBCXX_INCLUDE_PATH
-  cfg.include_path.push_back(LIBCXX_INCLUDE_PATH);
-#endif
-  return cfg;
+  switch (t_)
+  {
+  case console_type::plain: return o_ << "plain";
+  case console_type::readline: return o_ << "readline";
+  case console_type::json: return o_ << "json";
+  }
+  return o_; // avoid "control reaches end of function" warnings
+}
+
+console_type metashell::data::parse_console_type(const std::string& con_type_)
+{
+  if (con_type_ == "plain")
+  {
+    return console_type::plain;
+  }
+  else if (con_type_ == "readline")
+  {
+    return console_type::readline;
+  }
+  else if (con_type_ == "json")
+  {
+    return console_type::json;
+  }
+  else
+  {
+    throw std::runtime_error("Not supported console type " + con_type_);
+  }
 }
 

@@ -1,8 +1,8 @@
-#ifndef METASHELL_CONSOLE_TYPE_HPP
-#define METASHELL_CONSOLE_TYPE_HPP
+#ifndef METASHELL_ENGINE_CONSTANT_HPP
+#define METASHELL_ENGINE_CONSTANT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,21 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/engine.hpp>
+
+#include <memory>
 #include <string>
-#include <iosfwd>
 
 namespace metashell
 {
-  enum class console_type
-  {
-    plain,
-    readline,
-    json
-  };
+  std::unique_ptr<iface::engine> create_failing_engine(
+    const std::string& msg_ = "Using failing engine"
+  );
 
-  std::ostream& operator<<(std::ostream& o_, console_type t_);
-
-  console_type parse_console_type(const std::string& con_type_);
+  std::unique_ptr<iface::engine> create_engine_returning_type(
+    const std::string& type_
+  );
 }
 
 #endif

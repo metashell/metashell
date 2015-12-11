@@ -91,7 +91,7 @@ JUST_TEST_CASE(test_log_into_file_tries_to_open_the_file)
   JUST_ASSERT(open_called);
   JUST_ASSERT_EQUAL("/tmp/foo.txt", fn);
   JUST_ASSERT(l.logging());
-  JUST_ASSERT_EQUAL(logging_mode::file, l.mode());
+  JUST_ASSERT_EQUAL(data::logging_mode::file, l.mode());
 }
 
 JUST_TEST_CASE(test_failure_when_opening_log_file)
@@ -105,7 +105,7 @@ JUST_TEST_CASE(test_failure_when_opening_log_file)
   l.log_into_file("/tmp/foo.txt");
 
   JUST_ASSERT(!l.logging());
-  JUST_ASSERT_EQUAL(logging_mode::none, l.mode());
+  JUST_ASSERT_EQUAL(data::logging_mode::none, l.mode());
 }
 
 JUST_TEST_CASE(test_logging_into_a_different_file)
@@ -144,7 +144,7 @@ JUST_TEST_CASE(
   l.log_into_file("/tmp/bar.txt");
 
   JUST_ASSERT(!l.logging());
-  JUST_ASSERT_EQUAL(logging_mode::none, l.mode());
+  JUST_ASSERT_EQUAL(data::logging_mode::none, l.mode());
 }
 
 JUST_TEST_CASE(test_log_file_is_closed_when_starting_to_log_to_console)

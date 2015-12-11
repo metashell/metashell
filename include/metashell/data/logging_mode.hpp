@@ -1,5 +1,5 @@
-#ifndef METASHELL_LOGGING_MODE_HPP
-#define METASHELL_LOGGING_MODE_HPP
+#ifndef METASHELL_DATA_LOGGING_MODE_HPP
+#define METASHELL_DATA_LOGGING_MODE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -22,9 +22,12 @@
 
 namespace metashell
 {
-  enum class logging_mode { none, console, file };
+  namespace data
+  {
+    enum class logging_mode { none, console, file };
 
-  std::ostream& operator<<(std::ostream& out_, logging_mode m_);
+    std::ostream& operator<<(std::ostream& out_, logging_mode m_);
+  }
 }
 
 #endif

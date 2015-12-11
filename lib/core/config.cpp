@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/config.hpp>
-#include <metashell/user_config.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/fstream_file_writer.hpp>
@@ -171,7 +170,7 @@ namespace
 
   bool detect_precompiled_header_usage(
     bool user_wants_precompiled_headers_,
-    const config& cfg_,
+    const data::config& cfg_,
     iface::displayer& displayer_,
     logger* logger_
   )
@@ -268,19 +267,8 @@ namespace
   }
 }
 
-config::config() :
-  include_path(),
-  verbose(false),
-  standard_to_use(standard::cpp11),
-  warnings_enabled(true),
-  use_precompiled_headers(false),
-  clang_path(),
-  splash_enabled(true),
-  stdlib_to_use(stdlib::libstdcxx)
-{}
-
-config metashell::detect_config(
-  const user_config& ucfg_,
+data::config metashell::detect_config(
+  const data::user_config& ucfg_,
   iface::environment_detector& env_detector_,
   iface::displayer& displayer_,
   logger* logger_
@@ -288,7 +276,7 @@ config metashell::detect_config(
 {
   METASHELL_LOG(logger_, "Detecting config");
 
-  config cfg;
+  data::config cfg;
 
   cfg.verbose = ucfg_.verbose;
   cfg.standard_to_use = ucfg_.standard_to_use;
@@ -327,10 +315,10 @@ config metashell::detect_config(
   return cfg;
 }
 
-config metashell::empty_config(const std::string& argv0_)
+data::config metashell::empty_config(const std::string& argv0_)
 {
   default_environment_detector ed(argv0_);
   null_displayer d;
-  return detect_config(user_config(), ed, d, nullptr);
+  return detect_config(data::user_config(), ed, d, nullptr);
 }
 

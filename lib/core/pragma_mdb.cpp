@@ -18,18 +18,17 @@
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/mdb_shell.hpp>
+#include <metashell/disable_precompiled_header_guard.hpp>
 
 #include <cassert>
 
 using namespace metashell;
 
 pragma_mdb::pragma_mdb(
-  iface::executable& clang_binary_,
   shell& shell_,
   command_processor_queue* cpq_,
   logger* logger_
 ) :
-  _clang_binary(clang_binary_),
   _shell(shell_),
   _cpq(cpq_),
   _logger(logger_)
@@ -37,7 +36,7 @@ pragma_mdb::pragma_mdb(
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_clang_binary, _shell, _cpq, _logger);
+  return new pragma_mdb(_shell, _cpq, _logger);
 }
 
 std::string pragma_mdb::arguments() const
@@ -61,9 +60,18 @@ void pragma_mdb::run(
 
   std::string args = tokens_to_string(args_begin_, args_end_);
 
+  auto g = disable_precompiled_header_guard::create(_shell);
+
   std::unique_ptr<mdb_shell>
     sh(
-      new mdb_shell(_shell.get_config(), _shell.env(), _clang_binary, _logger)
+      new mdb_shell(
+        _shell.get_config(),
+        _shell.env(),
+        _shell.engine(),
+        _shell.env_path(),
+        _logger,
+        std::move(g)
+      )
     );
 
   if (_shell.get_config().splash_enabled)

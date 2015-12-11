@@ -1,8 +1,8 @@
-#ifndef METASHELL_NULL_EXECUTABLE_HPP
-#define METASHELL_NULL_EXECUTABLE_HPP
+#ifndef METASHELL_DATA_STANDARD_HPP
+#define METASHELL_DATA_STANDARD_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,18 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/executable.hpp>
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
-  class null_executable : public iface::executable
+  namespace data
   {
-  public:
-    virtual data::process_output run(
-      const std::vector<std::string>& args_,
-      const std::string& stdin_
-    ) const override;
-  };
+    enum class standard {
+      cpp11,
+      cpp14,
+      cpp1z
+    };
+
+    standard parse_standard(const std::string& std_);
+    std::string clang_argument(standard std_);
+
+    std::ostream& operator<<(std::ostream& os, standard std_);
+  }
 }
 
 #endif

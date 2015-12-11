@@ -14,46 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/stdlib.hpp>
-
-#include <ostream>
-#include <stdexcept>
+#include <metashell/disable_precompiled_header_guard.hpp>
 
 using namespace metashell;
 
-stdlib metashell::parse_stdlib(const std::string& std_)
+disable_precompiled_header_guard::disable_precompiled_header_guard(
+  shell& shell_
+) :
+  _shell(shell_),
+  _was_using(shell_.using_precompiled_headers())
 {
-  if (std_ == "libc++")
+  if (_was_using)
   {
-    return stdlib::libcxx;
-  }
-  else if (std_ == "libstdc++")
-  {
-    return stdlib::libstdcxx;
-  }
-  else
-  {
-    throw std::runtime_error("Invalid stdlib: " + std_);
+    _shell.using_precompiled_headers(false);
   }
 }
 
-std::string metashell::clang_argument(stdlib std_)
+disable_precompiled_header_guard::~disable_precompiled_header_guard()
 {
-  switch (std_)
+  if (_was_using)
   {
-  case stdlib::libstdcxx: return "-stdlib=libstdc++";
-  case stdlib::libcxx: return "-stdlib=libc++";
+    _shell.using_precompiled_headers(true);
   }
-  throw std::runtime_error("Invalid stdlib value");
 }
 
-std::ostream& metashell::operator<<(std::ostream& os, stdlib std_) {
-  switch (std_)
-  {
-  case stdlib::libstdcxx: os << "libstdc++";
-  case stdlib::libcxx: os << "libc++";
-  default: os << "Unknown stdlib";
-  }
-  return os;
+std::unique_ptr<disable_precompiled_header_guard>
+disable_precompiled_header_guard::create(shell& shell_)
+{
+  return
+    std::unique_ptr<disable_precompiled_header_guard>(
+      new disable_precompiled_header_guard(shell_)
+    );
 }
 

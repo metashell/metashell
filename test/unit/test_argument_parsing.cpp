@@ -51,7 +51,7 @@ namespace
 
 JUST_TEST_CASE(test_recognising_extra_clang_arg)
 {
-  const user_config cfg = parse_config({"--", "foo"}).cfg;
+  const data::user_config cfg = parse_config({"--", "foo"}).cfg;
 
   JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
   JUST_ASSERT_EQUAL("foo", cfg.extra_clang_args.front());
@@ -64,14 +64,14 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 
 JUST_TEST_CASE(test_default_template_depth)
 {
-  const user_config cfg = parse_config({}).cfg;
+  const data::user_config cfg = parse_config({}).cfg;
 
   JUST_ASSERT_EQUAL(256, cfg.max_template_depth);
 }
 
 JUST_TEST_CASE(test_template_depth_parsing)
 {
-  const user_config cfg = parse_config({"-ftemplate-depth=13"}).cfg;
+  const data::user_config cfg = parse_config({"-ftemplate-depth=13"}).cfg;
 
   JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
 }
@@ -141,79 +141,79 @@ JUST_TEST_CASE(test_only_template_depth_can_follow_f)
 
 JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
 {
-  const user_config cfg = parse_config({}).cfg;
+  const data::user_config cfg = parse_config({}).cfg;
 
   JUST_ASSERT(!cfg.saving_enabled);
 }
 
 JUST_TEST_CASE(test_enabling_saving)
 {
-  const user_config cfg = parse_config({"--enable_saving"}).cfg;
+  const data::user_config cfg = parse_config({"--enable_saving"}).cfg;
 
   JUST_ASSERT(cfg.saving_enabled);
 }
 
 JUST_TEST_CASE(test_default_console_type_is_readline)
 {
-  const user_config cfg = parse_config({}).cfg;
+  const data::user_config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::readline, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_plain)
 {
-  const user_config cfg = parse_config({"--console", "plain"}).cfg;
+  const data::user_config cfg = parse_config({"--console", "plain"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::plain, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::plain, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_readline)
 {
-  const user_config cfg = parse_config({"--console", "readline"}).cfg;
+  const data::user_config cfg = parse_config({"--console", "readline"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::readline, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_json)
 {
-  const user_config cfg = parse_config({"--console", "json"}).cfg;
+  const data::user_config cfg = parse_config({"--console", "json"}).cfg;
 
-  JUST_ASSERT_EQUAL(console_type::json, cfg.con_type);
+  JUST_ASSERT_EQUAL(data::console_type::json, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_splash_is_enabled_by_default)
 {
-  const user_config cfg = parse_config({}).cfg;
+  const data::user_config cfg = parse_config({}).cfg;
 
   JUST_ASSERT(cfg.splash_enabled);
 }
 
 JUST_TEST_CASE(test_disabling_splash)
 {
-  const user_config cfg = parse_config({"--nosplash"}).cfg;
+  const data::user_config cfg = parse_config({"--nosplash"}).cfg;
 
   JUST_ASSERT(!cfg.splash_enabled);
 }
 
 JUST_TEST_CASE(test_logging_mode_is_none_by_default)
 {
-  const user_config cfg = parse_config({}).cfg;
+  const data::user_config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::none, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::none, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_console)
 {
-  const user_config cfg = parse_config({"--log", "-"}).cfg;
+  const data::user_config cfg = parse_config({"--log", "-"}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::console, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::console, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_file)
 {
-  const user_config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
+  const data::user_config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
 
-  JUST_ASSERT_EQUAL(logging_mode::file, cfg.log_mode);
+  JUST_ASSERT_EQUAL(data::logging_mode::file, cfg.log_mode);
   JUST_ASSERT_EQUAL("/tmp/foo.txt", cfg.log_file);
 }
 
@@ -230,7 +230,7 @@ JUST_TEST_CASE(test_not_setting_stdlib)
   const parse_config_result r = parse_config({});
 
   JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(stdlib::libstdcxx, r.cfg.stdlib_to_use);
+  JUST_ASSERT_EQUAL(data::stdlib::libstdcxx, r.cfg.stdlib_to_use);
 }
 
 JUST_TEST_CASE(test_using_libcxx)
@@ -238,7 +238,7 @@ JUST_TEST_CASE(test_using_libcxx)
   const parse_config_result r = parse_config({"-stdlib=libc++"});
 
   JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(stdlib::libcxx, r.cfg.stdlib_to_use);
+  JUST_ASSERT_EQUAL(data::stdlib::libcxx, r.cfg.stdlib_to_use);
 }
 
 JUST_TEST_CASE(test_using_libstdcxx)
@@ -246,6 +246,6 @@ JUST_TEST_CASE(test_using_libstdcxx)
   const parse_config_result r = parse_config({"-stdlib=libstdc++"});
 
   JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(stdlib::libstdcxx, r.cfg.stdlib_to_use);
+  JUST_ASSERT_EQUAL(data::stdlib::libstdcxx, r.cfg.stdlib_to_use);
 }
 

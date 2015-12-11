@@ -14,41 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_type.hpp>
+#include <metashell/data/logging_mode.hpp>
 
 #include <ostream>
-#include <stdexcept>
 
-using namespace metashell;
+using namespace metashell::data;
 
-std::ostream& metashell::operator<<(std::ostream& o_, console_type t_)
+std::ostream& metashell::data::operator<<(std::ostream& out_, logging_mode m_)
 {
-  switch (t_)
+  switch (m_)
   {
-  case console_type::plain: return o_ << "plain";
-  case console_type::readline: return o_ << "readline";
-  case console_type::json: return o_ << "json";
+  case logging_mode::none: return out_ << "none";
+  case logging_mode::console: return out_ << "console";
+  case logging_mode::file: return out_ << "file";
   }
-  return o_; // avoid "control reaches end of function" warnings
-}
-
-console_type metashell::parse_console_type(const std::string& con_type_)
-{
-  if (con_type_ == "plain")
-  {
-    return console_type::plain;
-  }
-  else if (con_type_ == "readline")
-  {
-    return console_type::readline;
-  }
-  else if (con_type_ == "json")
-  {
-    return console_type::json;
-  }
-  else
-  {
-    throw std::runtime_error("Not supported console type " + con_type_);
-  }
+  return out_;
 }
 

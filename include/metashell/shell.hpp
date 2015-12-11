@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/command_processor_queue.hpp>
 #include <metashell/logger.hpp>
@@ -26,7 +26,7 @@
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
-#include <metashell/iface/executable.hpp>
+#include <metashell/iface/engine.hpp>
 
 #include <boost/optional.hpp>
 
@@ -42,23 +42,29 @@ namespace metashell
   {
   public:
     shell(
-      const config& config_,
-      iface::executable& clang_binary_,
+      const data::config& config_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
     shell(
-      const config& config_,
+      const data::config& config_,
       command_processor_queue& cpq_,
-      iface::executable& clang_binary_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
     shell(
-      const config& config_,
+      const data::config& config_,
       std::unique_ptr<iface::environment> env_,
       command_processor_queue& cpq_,
-      iface::executable& clang_binary_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_,
+      std::unique_ptr<iface::engine> engine_,
       logger* logger_ = nullptr
     );
 
@@ -104,17 +110,23 @@ namespace metashell
     void display_environment_stack_size(iface::displayer& displayer_);
     void rebuild_environment();
 
-    const config& get_config() const;
+    const data::config& get_config() const;
+
+    iface::engine& engine();
+
+    std::string env_path() const;
   private:
+    std::string _internal_dir;
+    std::string _env_filename;
     std::string _line_prefix;
     std::unique_ptr<iface::environment> _env;
-    config _config;
+    data::config _config;
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;
     std::stack<std::string> _environment_stack;
     logger* _logger;
-    iface::executable& _clang_binary;
+    std::unique_ptr<iface::engine> _engine;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

@@ -1,3 +1,6 @@
+#ifndef METASHELL_DATA_STDLIB_HPP
+#define METASHELL_DATA_STDLIB_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,15 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/null_executable.hpp>
+#include <iosfwd>
+#include <string>
 
-using namespace metashell;
-
-data::process_output null_executable::run(
-  const std::vector<std::string>&,
-  const std::string&
-) const
+namespace metashell
 {
-  return data::process_output(data::exit_code_t(0), "", "");
+  namespace data
+  {
+    enum class stdlib {
+      libcxx,
+      libstdcxx
+    };
+
+    stdlib parse_stdlib(const std::string& std_);
+    std::string clang_argument(stdlib std_);
+
+    std::ostream& operator<<(std::ostream& os, stdlib std_);
+  }
 }
+
+#endif
 

@@ -52,20 +52,20 @@ namespace
 }
 
 console_config::console_config(
-  console_type type_,
+  data::console_type type_,
   bool indent_,
   bool syntax_highlight_
 )
 {
   switch (type_)
   {
-  case console_type::plain:
+  case data::console_type::plain:
     _console.reset(new stream_console(std::cout));
     _displayer.reset(new console_displayer(*_console, false, false));
     _history.reset(new null_history);
     _reader = plain_line_reader;
     break;
-  case console_type::readline:
+  case data::console_type::readline:
     _console.reset(new stdout_console());
     _displayer.reset(
       new console_displayer(*_console, indent_, syntax_highlight_)
@@ -73,7 +73,7 @@ console_config::console_config(
     _history.reset(new readline::history);
     _reader = metashell::readline::line_reader(_processor_queue);
     break;
-  case console_type::json:
+  case data::console_type::json:
     _json_writer.reset(new rapid_json_writer(std::cout));
     _displayer.reset(new json_displayer(*_json_writer));
     _history.reset(new null_history);

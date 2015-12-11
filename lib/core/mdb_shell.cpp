@@ -179,26 +179,21 @@ const mdb_command_handler_map mdb_shell::command_handler =
         ""}
     });
 
-namespace {
-
-config set_pch_false(config c) {
-  c.use_precompiled_headers = false;
-  return c;
-}
-
-}
-
 mdb_shell::mdb_shell(
-    const config& conf_,
-    const iface::environment& env_arg,
-    iface::executable& clang_binary,
-    logger* logger_) :
-  conf(set_pch_false(conf_)),
-  env(conf),
+    const data::config& conf_,
+    iface::environment& env_arg,
+    iface::engine& engine_,
+    const std::string& env_path_,
+    logger* logger_,
+    std::unique_ptr<iface::destroyable> keep_alive_with_shell_):
+  conf(conf_),
+  env(env_arg),
   _logger(logger_),
-  _clang_binary(clang_binary)
+  _engine(engine_),
+  _env_path(env_path_),
+  _keep_alive_with_shell(std::move(keep_alive_with_shell_))
 {
-  env.append(env_arg.get_all());
+  assert(!conf.use_precompiled_headers);
 }
 
 std::string mdb_shell::prompt() const {
@@ -879,12 +874,10 @@ bool mdb_shell::run_metaprogram_with_templight(
     iface::displayer& displayer_)
 {
   temporary_file templight_output_file("templight.pb");
-  std::string output_path = templight_output_file.get_path();
-
-  env.set_output_location(output_path);
+  const std::string output_path = templight_output_file.get_path();
 
   data::type_or_error evaluation_result =
-    run_metaprogram(expression, displayer_);
+    run_metaprogram(expression, output_path, displayer_);
 
   // Opening in binary mode, because some platforms interpret some characters
   // specially in text mode, which caused parsing to fail.
@@ -923,11 +916,11 @@ bool mdb_shell::run_metaprogram_with_templight(
 
 data::type_or_error mdb_shell::run_metaprogram(
     const boost::optional<std::string>& expression,
+    const std::string& output_path_,
     iface::displayer& displayer_)
 {
-  const result res = expression ?
-    eval_tmp(_clang_binary, env, *expression) :
-    eval_environment(_clang_binary, env);
+  const data::result res =
+    _engine.eval(env, expression, output_path_, conf.use_precompiled_headers);
 
   if (!res.info.empty()) {
     displayer_.show_raw_text(res.info);
@@ -1040,7 +1033,7 @@ void mdb_shell::display_frame(
   displayer_.show_frame(frame);
 
   data::file_location source_location = frame.source_location();
-  if (source_location.name == env.env_filename()) {
+  if (source_location.name == _env_path) {
     // We don't want to show stuff from the internal header
     source_location = data::file_location();
   }

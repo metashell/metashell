@@ -48,25 +48,34 @@ namespace
   };
 }
 
-breaking_environment::breaking_environment(const config& cfg_) :
-  in_memory_environment("__breaking_environment", cfg_),
+breaking_environment::breaking_environment() :
+  _headers("__breaking_environment"),
   _append_throw(false),
   _get_appended_throw(false),
   _in_append(false)
 {}
 
-void breaking_environment::append(const std::string& s_)
+void breaking_environment::append(const std::string&)
 {
   throw_(_append_throw);
 
   bool_override_guard g(_in_append);
-  in_memory_environment::append(s_);
 }
 
-std::string breaking_environment::get_appended(const std::string& s_) const
+std::string breaking_environment::get() const
+{
+  return std::string();
+}
+
+std::string breaking_environment::get_all() const
+{
+  return std::string();
+}
+
+std::string breaking_environment::get_appended(const std::string&) const
 {
   throw_(!_in_append && _get_appended_throw);
-  return in_memory_environment::get_appended(s_);
+  return std::string();
 }
 
 void breaking_environment::append_throw_from_now()
@@ -79,5 +88,15 @@ void breaking_environment::get_appended_throw_from_now()
 {
   assert(!_get_appended_throw);
   _get_appended_throw = true;
+}
+
+std::string breaking_environment::internal_dir() const
+{
+  return get_headers().internal_dir();
+}
+
+const data::headers& breaking_environment::get_headers() const
+{
+  return _headers;
 }
 

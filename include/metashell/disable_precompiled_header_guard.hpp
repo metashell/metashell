@@ -1,5 +1,8 @@
+#ifndef METASHELL_DISABLE_PRECOMPILED_HEADER_GUARD_HPP
+#define METASHELL_DISABLE_PRECOMPILED_HEADER_GUARD_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,20 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/logging_mode.hpp>
+#include <metashell/shell.hpp>
+#include <metashell/iface/destroyable.hpp>
 
-#include <ostream>
+#include <memory>
 
-using namespace metashell;
-
-std::ostream& metashell::operator<<(std::ostream& out_, logging_mode m_)
+namespace metashell
 {
-  switch (m_)
+  class disable_precompiled_header_guard : public iface::destroyable
   {
-  case logging_mode::none: return out_ << "none";
-  case logging_mode::console: return out_ << "console";
-  case logging_mode::file: return out_ << "file";
-  }
-  return out_;
+  public:
+    explicit disable_precompiled_header_guard(shell& shell_);
+    ~disable_precompiled_header_guard();
+
+    static std::unique_ptr<disable_precompiled_header_guard> create(
+      shell& shell_
+    );
+  private:
+    shell& _shell;
+    bool _was_using;
+  };
 }
+
+#endif
 

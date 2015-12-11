@@ -1,5 +1,5 @@
-#ifndef METASHELL_STANDARD_HPP
-#define METASHELL_STANDARD_HPP
+#ifndef METASHELL_DATA_CONFIG_HPP
+#define METASHELL_DATA_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
+#include <metashell/data/standard.hpp>
+#include <metashell/data/stdlib.hpp>
+
 #include <string>
+#include <vector>
 
 namespace metashell
 {
-  enum class standard {
-    cpp11,
-    cpp14,
-    cpp1z
-  };
-
-  standard parse_standard(const std::string& std_);
-  std::string clang_argument(standard std_);
-
-  std::ostream& operator<<(std::ostream& os, standard std_);
+  namespace data
+  {
+    class config
+    {
+    public:
+      std::vector<std::string> include_path;
+      bool verbose = false;
+      data::standard standard_to_use = data::standard::cpp11;
+      std::vector<std::string> macros;
+      bool warnings_enabled = true;
+      std::vector<std::string> extra_clang_args;
+      bool use_precompiled_headers = false;
+      std::string clang_path;
+      int max_template_depth;
+      unsigned templight_trace_capacity;
+      bool saving_enabled;
+      bool splash_enabled = true;
+      data::stdlib stdlib_to_use = data::stdlib::libstdcxx;
+    };
+  }
 }
 
 #endif

@@ -21,8 +21,6 @@
 
 namespace metashell
 {
-  class config;
-
   namespace iface
   {
     class environment_detector

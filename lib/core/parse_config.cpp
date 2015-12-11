@@ -22,7 +22,7 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/null_executable.hpp>
+#include <metashell/engine_constant.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -72,12 +72,12 @@ namespace
 
   void show_pragma_help()
   {
-    const config cfg;
-    null_executable clang_binary;
+    const data::config cfg{};
     command_processor_queue cpq;
-    shell sh(cfg, cpq, clang_binary);
+    const std::string internal_dir;
+    shell sh(cfg, cpq, internal_dir, "", create_failing_engine());
     const pragma_handler_map
-      m = pragma_handler_map::build_default(clang_binary, sh, &cpq, nullptr);
+      m = pragma_handler_map::build_default(sh, &cpq, nullptr);
 
     typedef std::pair<std::vector<std::string>, pragma_handler> sp;
     for (const sp& p : m)
@@ -154,7 +154,7 @@ parse_config_result metashell::parse_config(
   using boost::program_options::parse_command_line;
   using boost::program_options::value;
 
-  user_config ucfg;
+  data::user_config ucfg;
 
   const char** const
     minus_minus = std::find(argv_, argv_ + argc_, std::string("--"));
@@ -240,20 +240,22 @@ parse_config_result metashell::parse_config(
     ucfg.verbose = vm.count("verbose") || vm.count("V");
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     ucfg.indent = vm.count("indent") != 0;
-    ucfg.standard_to_use = metashell::parse_standard(cppstd);
-    ucfg.con_type = metashell::parse_console_type(con_type);
+    ucfg.standard_to_use = metashell::data::parse_standard(cppstd);
+    ucfg.con_type = metashell::data::parse_console_type(con_type);
     ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");
     ucfg.splash_enabled = vm.count("nosplash") == 0;
     if (vm.count("log") == 0)
     {
-      ucfg.log_mode = logging_mode::none;
+      ucfg.log_mode = data::logging_mode::none;
     }
     else
     {
       ucfg.log_mode =
-        (ucfg.log_file == "-") ? logging_mode::console : logging_mode::file;
+        (ucfg.log_file == "-") ?
+          data::logging_mode::console :
+          data::logging_mode::file;
     }
 
     if (!fvalue.empty())
@@ -263,11 +265,11 @@ parse_config_result metashell::parse_config(
 
     if (svalue == "tdlib=libc++")
     {
-      ucfg.stdlib_to_use = stdlib::libcxx;
+      ucfg.stdlib_to_use = data::stdlib::libcxx;
     }
     else if (svalue == "tdlib=libstdc++")
     {
-      ucfg.stdlib_to_use = stdlib::libstdcxx;
+      ucfg.stdlib_to_use = data::stdlib::libstdcxx;
     }
     else
     {
@@ -316,7 +318,9 @@ parse_config_result parse_config_result::exit(bool with_error_)
   return r;
 }
 
-parse_config_result parse_config_result::start_shell(const user_config& cfg_)
+parse_config_result parse_config_result::start_shell(
+  const data::user_config& cfg_
+)
 {
   parse_config_result r;
   r.action = action_t::run_shell;

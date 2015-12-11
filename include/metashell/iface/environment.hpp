@@ -37,9 +37,6 @@ namespace metashell
 
       virtual std::string internal_dir() const = 0;
 
-      virtual std::vector<std::string>& clang_arguments() = 0;
-      virtual const std::vector<std::string>& clang_arguments() const = 0;
-
       virtual const data::headers& get_headers() const = 0;
 
       // Returns parts that are in precompiled header files as well

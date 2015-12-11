@@ -1,5 +1,5 @@
-#ifndef METASHELL_CLANG_BINARY_HPP
-#define METASHELL_CLANG_BINARY_HPP
+#ifndef METASHELL_DATA_CONSOLE_TYPE_HPP
+#define METASHELL_DATA_CONSOLE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,28 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/executable.hpp>
-#include <metashell/logger.hpp>
+#include <string>
+#include <iosfwd>
 
 namespace metashell
 {
-  class clang_binary : public iface::executable
+  namespace data
   {
-  public:
-    clang_binary(
-      const std::string& path_,
-      const std::vector<std::string>& base_args_,
-      logger* logger_
-    );
+    enum class console_type
+    {
+      plain,
+      readline,
+      json
+    };
 
-    virtual data::process_output run(
-      const std::vector<std::string>& args_,
-      const std::string& stdin_
-    ) const override;
-  private:
-    std::vector<std::string> _base_args;
-    logger* _logger;
-  };
+    std::ostream& operator<<(std::ostream& o_, console_type t_);
+
+    console_type parse_console_type(const std::string& con_type_);
+  }
 }
 
 #endif

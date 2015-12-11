@@ -46,7 +46,7 @@ namespace
     return s.str();
   }
 
-  void display(const result& r_, iface::displayer& displayer_)
+  void display(const data::result& r_, iface::displayer& displayer_)
   {
     if (!r_.info.empty())
     {
@@ -136,48 +136,60 @@ namespace metashell {
 }
 
 shell::shell(
-  const config& config_,
-  iface::executable& clang_binary_,
+  const data::config& config_,
+  const std::string& internal_dir_,
+  const std::string& env_filename_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _engine(std::move(engine_))
 {
   rebuild_environment();
   init(nullptr);
 }
 
 shell::shell(
-  const config& config_,
+  const data::config& config_,
   command_processor_queue& cpq_,
-  iface::executable& clang_binary_,
+  const std::string& internal_dir_,
+  const std::string& env_filename_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _engine(std::move(engine_))
 {
   rebuild_environment();
   init(&cpq_);
 }
 
 shell::shell(
-  const config& config_,
+  const data::config& config_,
   std::unique_ptr<iface::environment> env_,
   command_processor_queue& cpq_,
-  iface::executable& clang_binary_,
+  const std::string& internal_dir_,
+  const std::string& env_filename_,
+  std::unique_ptr<iface::engine> engine_,
   logger* logger_
 ) :
+  _internal_dir(internal_dir_),
+  _env_filename(env_filename_),
   _env(std::move(env_)),
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _clang_binary(clang_binary_)
+  _engine(std::move(engine_))
 {
   init(&cpq_);
 }
@@ -315,7 +327,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const result r = validate_code(s_, _config, *_env, _logger, _clang_binary);
+  const data::result
+    r = _engine->validate_code(s_, _config, *_env, using_precompiled_headers());
 
   if (r.successful)
   {
@@ -340,7 +353,7 @@ void shell::code_complete(
 {
   try
   {
-    metashell::code_complete(_clang_binary, *_env, s_, out_, _logger);
+    _engine->code_complete(*_env, s_, out_, using_precompiled_headers());
   }
   catch (...)
   {
@@ -353,8 +366,7 @@ void shell::init(command_processor_queue* cpq_)
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers =
-    pragma_handler_map::build_default(_clang_binary, *this, cpq_, _logger);
+  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const
@@ -405,7 +417,9 @@ const iface::environment& shell::env() const
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(_config, _logger));
+  _env.reset(
+    new header_file_environment(*_engine, _config, _internal_dir, _env_filename)
+  );
   if (!content_.empty())
   {
     _env->append(content_);
@@ -455,7 +469,10 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(eval_tmp_formatted(_clang_binary, *_env, s_, _logger), displayer_);
+  display(
+    _engine->eval_tmp_formatted(*_env, s_, using_precompiled_headers()),
+    displayer_
+  );
 }
 
 void shell::reset_environment()
@@ -464,7 +481,7 @@ void shell::reset_environment()
   _env->append(default_env);
 }
 
-const config& shell::get_config() const {
+const data::config& shell::get_config() const {
   return _config;
 }
 
@@ -472,5 +489,15 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   null_history h;
   line_available(s_, displayer_, h);
+}
+
+iface::engine& shell::engine()
+{
+  return *_engine;
+}
+
+std::string shell::env_path() const
+{
+  return _internal_dir + "/" + _env_filename;
 }
 
