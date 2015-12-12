@@ -23,6 +23,7 @@
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/engine_clang.hpp>
+#include <metashell/has_prefix.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
@@ -73,6 +74,16 @@ namespace
       [&prefix_] (const std::string& s_) { return prefix_ + s_; }
     );
   }
+
+  bool cpp_standard_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"--std", "-std"});
+  }
+
+  bool max_template_depth_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"-ftemplate-depth"});
+  }
 }
 
 int main(int argc_, const char* argv_[])
@@ -117,13 +128,19 @@ int main(int argc_, const char* argv_[])
 
       just::temp::directory dir;
 
-      std::vector<std::string> clang_args{
-        clang_argument(cfg.standard_to_use),
-        set_max_template_depth(cfg.max_template_depth)
-      };
+      std::vector<std::string> clang_args;
 
       add_with_prefix("-I", cfg.include_path, clang_args);
       add_with_prefix("-D", cfg.macros, clang_args);
+      if (!cpp_standard_set(cfg.extra_clang_args))
+      {
+        clang_args.push_back("-std=c++0x");
+      }
+
+      if (!max_template_depth_set(cfg.extra_clang_args))
+      {
+        clang_args.push_back(set_max_template_depth(256));
+      }
 
       if (!cfg.warnings_enabled)
       {
