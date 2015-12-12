@@ -203,61 +203,6 @@ namespace
     }
     return extra_clang_args_;
   }
-
-  std::vector<std::string> determine_include_path(
-    const std::string& clang_binary_path_,
-    const std::vector<std::string>& user_include_path_,
-    iface::environment_detector& env_detector_,
-    logger* logger_
-  )
-  {
-    METASHELL_LOG(
-      logger_,
-      "Determining include path of Clang: " + clang_binary_path_
-    );
-
-    std::vector<std::string> result;
-
-    const std::string dir_of_executable =
-      env_detector_.directory_of_executable();
-
-    if (env_detector_.on_windows())
-    {
-      // mingw headers shipped with Metashell
-      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
-
-      result.push_back(mingw_headers);
-      result.push_back(mingw_headers + "\\mingw32");
-      if (
-        clang_binary_path_.empty()
-        || clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
-      )
-      {
-        result.push_back(dir_of_executable + "\\templight\\include");
-      }
-    }
-    else
-    {
-      if (env_detector_.on_osx())
-      {
-        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
-      }
-      result.push_back(dir_of_executable + "/../include/metashell/templight");
-    }
-
-    result.insert(
-      result.end(),
-      user_include_path_.begin(),
-      user_include_path_.end()
-    );
-
-    METASHELL_LOG(
-      logger_,
-      "Include path determined: " + boost::algorithm::join(result, ";")
-    );
-
-    return result;
-  }
 }
 
 data::config metashell::detect_config(
@@ -281,13 +226,7 @@ data::config metashell::detect_config(
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, displayer_, logger_);
 
-  cfg.include_path =
-    determine_include_path(
-      cfg.clang_path,
-      ucfg_.include_path,
-      env_detector_,
-      logger_
-    );
+  cfg.include_path = ucfg_.include_path;
 
   cfg.max_template_depth = ucfg_.max_template_depth;
   cfg.saving_enabled = ucfg_.saving_enabled;

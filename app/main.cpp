@@ -165,6 +165,7 @@ int main(int argc_, const char* argv_[])
               dir.path(),
               env_filename,
               clang_args,
+              det,
               &logger
             ),
             &logger

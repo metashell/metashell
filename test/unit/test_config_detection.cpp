@@ -258,24 +258,6 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 }
 
 JUST_TEST_CASE(
-  test_adding_standard_headers_next_to_the_binary_to_include_path_on_windows
-)
-{
-  mock_environment_detector envd;
-  envd.on_windows_returns(true);
-  envd.directory_of_executable_returns("c:/program files");
-  envd.file_exists_returns(false);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT(contains("c:/program files\\windows_headers", cfg.include_path));
-  JUST_ASSERT(
-    contains("c:/program files\\windows_headers\\mingw32", cfg.include_path)
-  );
-}
-
-JUST_TEST_CASE(
   test_standard_headers_next_to_the_binary_are_prepended_to_include_path
 )
 {
@@ -291,47 +273,6 @@ JUST_TEST_CASE(
 
   JUST_ASSERT(!cfg.include_path.empty());
   JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
-}
-
-JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
-{
-  mock_environment_detector envd;
-  envd.search_clang_binary_returns("/foo/bar/clang");
-  envd.on_windows_returns(true);
-  envd.directory_of_executable_returns("c:/program files");
-  // It should not find Clang shipped with Metashell
-  envd.file_exists_returns(false);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-    {
-      "c:/program files\\windows_headers",
-      "c:/program files\\windows_headers\\mingw32"
-    },
-    cfg.include_path
-  );
-}
-
-JUST_TEST_CASE(
-  test_when_no_clang_binary_is_available_on_windows_clang_include_dir_is_added_to_include_path
-)
-{
-  mock_environment_detector envd;
-  envd.on_windows_returns(true);
-  envd.directory_of_executable_returns("c:/program files");
-  envd.file_exists_returns(false);
-
-  data::user_config ucfg;
-  ucfg.include_path.push_back("/user/1");
-
-  null_displayer d;
-  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(4u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL("c:/program files\\templight\\include", cfg.include_path[2]);
-  JUST_ASSERT_EQUAL("/user/1", cfg.include_path[3]);
 }
 
 JUST_TEST_CASE(
@@ -386,21 +327,6 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL("c:/foo/bar\\templight\\templight.exe", cfg.clang_path);
 }
 
-JUST_TEST_CASE(
-  test_when_clang_shipped_with_metashell_is_used_on_windows_its_include_directory_is_added_to_include_path
-)
-{
-  mock_environment_detector envd;
-  envd.directory_of_executable_returns("c:/foo/bar");
-  envd.file_exists_returns(true);
-  envd.on_windows_returns(true);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT(contains("c:/foo/bar\\templight\\include", cfg.include_path));
-}
-
 JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
 {
   mock_environment_detector envd;
@@ -411,23 +337,6 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
 
   JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
   JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
-}
-
-JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
-{
-  mock_environment_detector envd;
-  envd.on_windows_returns(false);
-  envd.directory_of_executable_returns("/usr/bin");
-  envd.file_exists_returns(false);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(1u, cfg.include_path.size());
-  JUST_ASSERT_EQUAL(
-    "/usr/bin/../include/metashell/templight",
-    cfg.include_path[0]
-  );
 }
 
 JUST_TEST_CASE(test_detect_max_template_depth)
@@ -464,23 +373,6 @@ JUST_TEST_CASE(test_saving_is_enabled_when_enabled_by_user_config)
   const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(cfg.saving_enabled);
-}
-
-JUST_TEST_CASE(
-  test_adding_standard_headers_next_to_the_binary_to_include_path_on_osx
-)
-{
-  mock_environment_detector envd;
-  envd.on_osx_returns(true);
-  envd.directory_of_executable_returns("/foo/bar/bin");
-  envd.file_exists_returns(false);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT(
-    contains("/foo/bar/bin/../include/metashell/libcxx", cfg.include_path)
-  );
 }
 
 JUST_TEST_CASE(test_default_constructed_config_has_plain_console_type)

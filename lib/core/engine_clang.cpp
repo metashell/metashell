@@ -27,6 +27,7 @@
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
@@ -414,16 +415,86 @@ namespace
     logger* _logger;
   };
 
+  std::string templight_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      env_detector_.directory_of_executable()
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
+  }
+
+  std::vector<std::string> determine_include_path(
+    const std::string& clang_binary_path_,
+    iface::environment_detector& env_detector_,
+    logger* logger_
+  )
+  {
+    METASHELL_LOG(
+      logger_,
+      "Determining include path of Clang: " + clang_binary_path_
+    );
+
+    std::vector<std::string> result;
+
+    const std::string
+      dir_of_executable = env_detector_.directory_of_executable();
+
+    if (env_detector_.on_windows())
+    {
+      // mingw headers shipped with Metashell
+      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
+
+      result.push_back(mingw_headers);
+      result.push_back(mingw_headers + "\\mingw32");
+      if (
+        clang_binary_path_.empty()
+        || clang_binary_path_ == templight_shipped_with_metashell(env_detector_)
+      )
+      {
+        result.push_back(dir_of_executable + "\\templight\\include");
+      }
+    }
+    else
+    {
+      if (env_detector_.on_osx())
+      {
+        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
+      }
+      result.push_back(dir_of_executable + "/../include/metashell/templight");
+    }
+
+    METASHELL_LOG(
+      logger_,
+      "Include path determined: " + boost::algorithm::join(result, ";")
+    );
+
+    return result;
+  }
 } // anonymous namespace
 
 std::unique_ptr<iface::engine> metashell::create_clang_engine(
   const std::string& clang_path_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
-  const std::vector<std::string>& extra_args_,
+  std::vector<std::string> extra_args_,
+  iface::environment_detector& env_detector_,
   logger* logger_
 )
 {
+  {
+    const std::vector<std::string> include_path =
+      determine_include_path(clang_path_, env_detector_, logger_);
+    extra_args_.reserve(extra_args_.size() + include_path.size());
+    for (const std::string& p : include_path)
+    {
+      extra_args_.push_back("-I" + p);
+    }
+  }
   return
     std::unique_ptr<iface::engine>(
       new engine_clang(

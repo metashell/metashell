@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/engine.hpp>
+#include <metashell/iface/environment_detector.hpp>
 #include <metashell/logger.hpp>
 
 #include <memory>
@@ -28,7 +29,8 @@ namespace metashell
     const std::string& clang_path_,
     const std::string& internal_dir_,
     const std::string& env_filename_,
-    const std::vector<std::string>& extra_args_,
+    std::vector<std::string> extra_args_,
+    iface::environment_detector& env_detector_,
     logger* logger_
   );
 }
