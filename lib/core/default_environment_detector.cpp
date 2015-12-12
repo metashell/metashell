@@ -21,6 +21,7 @@
 #include <just/environment.hpp>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -102,6 +103,68 @@ namespace
     return buff.data();
   }
 #endif
+
+  std::string directory_of_file(const std::string& path_)
+  {
+    boost::filesystem::path p(path_);
+    p.remove_filename();
+    return p.string();
+  }
+
+  std::string path_of_executable()
+  {
+#ifdef _WIN32
+    char path[MAX_PATH];
+    GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
+    return path;
+#elif defined __FreeBSD__
+    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+    std::vector<char> buff(1);
+    size_t cb = buff.size();
+    while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
+    {
+      buff.resize(buff.size() * 2);
+      cb = buff.size();
+    }
+    return std::string(buff.begin(), buff.begin() + cb);
+#elif defined __OpenBSD__
+    if (_argv0.empty() || _argv0[0] == '/')
+    {
+      return _argv0;
+    }
+    else if (_argv0.find('/') != std::string::npos)
+    {
+      // This code assumes that the application never changes the working
+      // directory
+      return current_working_directory() + "/" + _argv0;
+    }
+    else
+    {
+      const std::string p = just::environment::get("PATH");
+      std::vector<std::string> path;
+      boost::split(path, p, [](char c_) { return c_ == ';'; });
+      for (const auto& s : path)
+      {
+        const std::string fn = s + "/" + _argv0;
+        if (file_exists(fn))
+        {
+          return fn;
+        }
+      }
+      return "";
+    }
+#elif defined __APPLE__
+    char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+    const pid_t pid = getpid();
+    if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) <= 0) {
+      std::cerr << "PID " << pid << ": proc_pidpath ();\n"
+            << "   " << strerror(errno) << '\n';
+    }
+    return pathbuf;
+#else
+    return read_link("/proc/self/exe");
+#endif
+  }
 }
 
 default_environment_detector::default_environment_detector(
@@ -138,58 +201,8 @@ bool default_environment_detector::on_osx()
 #endif
 }
 
-std::string default_environment_detector::path_of_executable()
+std::string default_environment_detector::directory_of_executable()
 {
-#ifdef _WIN32
-  char path[MAX_PATH];
-  GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
-  return path;
-#elif defined __FreeBSD__
-  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
-  std::vector<char> buff(1);
-  size_t cb = buff.size();
-  while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
-  {
-    buff.resize(buff.size() * 2);
-    cb = buff.size();
-  }
-  return std::string(buff.begin(), buff.begin() + cb);
-#elif defined __OpenBSD__
-  if (_argv0.empty() || _argv0[0] == '/')
-  {
-    return _argv0;
-  }
-  else if (_argv0.find('/') != std::string::npos)
-  {
-    // This code assumes that the application never changes the working
-    // directory
-    return current_working_directory() + "/" + _argv0;
-  }
-  else
-  {
-    const std::string p = just::environment::get("PATH");
-    std::vector<std::string> path;
-    boost::split(path, p, [](char c_) { return c_ == ';'; });
-    for (const auto& s : path)
-    {
-      const std::string fn = s + "/" + _argv0;
-      if (file_exists(fn))
-      {
-        return fn;
-      }
-    }
-    return "";
-  }
-#elif defined __APPLE__
-  char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
-  const pid_t pid = getpid();
-  if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) <= 0) {
-    std::cerr << "PID " << pid << ": proc_pidpath ();\n"
-	  << "   " << strerror(errno) << '\n';
-  }
-  return pathbuf;
-#else
-  return read_link("/proc/self/exe");
-#endif
+  return directory_of_file(path_of_executable());
 }
 

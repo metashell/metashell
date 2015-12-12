@@ -35,7 +35,7 @@ namespace metashell
       virtual bool on_windows() = 0;
       virtual bool on_osx() = 0;
 
-      virtual std::string path_of_executable() = 0;
+      virtual std::string directory_of_executable() = 0;
     };
   }
 }

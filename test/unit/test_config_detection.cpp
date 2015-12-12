@@ -263,7 +263,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.on_windows_returns(true);
-  envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.directory_of_executable_returns("c:/program files");
   envd.file_exists_returns(false);
 
   null_displayer d;
@@ -281,7 +281,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.on_windows_returns(true);
-  envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.directory_of_executable_returns("c:/program files");
 
   data::user_config ucfg;
   ucfg.include_path.push_back("c:\\foo\\bar");
@@ -298,7 +298,7 @@ JUST_TEST_CASE(test_mingw_header_path_follows_clang_sysinclude_path)
   mock_environment_detector envd;
   envd.search_clang_binary_returns("/foo/bar/clang");
   envd.on_windows_returns(true);
-  envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.directory_of_executable_returns("c:/program files");
   // It should not find Clang shipped with Metashell
   envd.file_exists_returns(false);
 
@@ -320,7 +320,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.on_windows_returns(true);
-  envd.path_of_executable_returns("c:/program files/metashell.exe");
+  envd.directory_of_executable_returns("c:/program files");
   envd.file_exists_returns(false);
 
   data::user_config ucfg;
@@ -339,7 +339,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  envd.path_of_executable_returns("/usr/local/bin/metashell");
+  envd.directory_of_executable_returns("/usr/local/bin");
   envd.search_clang_binary_returns("/some/other/path");
   envd.file_exists_returns(true);
   envd.on_windows_returns(false);
@@ -355,7 +355,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  envd.path_of_executable_returns("/usr/local/bin/metashell");
+  envd.directory_of_executable_returns("/usr/local/bin");
   envd.search_clang_binary_returns("");
   envd.file_exists_returns(false);
   envd.on_windows_returns(false);
@@ -375,7 +375,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.directory_of_executable_returns("c:/foo/bar");
   envd.search_clang_binary_returns("c:/some/other/path");
   envd.file_exists_returns(true);
   envd.on_windows_returns(true);
@@ -391,7 +391,7 @@ JUST_TEST_CASE(
 )
 {
   mock_environment_detector envd;
-  envd.path_of_executable_returns("c:/foo/bar/metashell.exe");
+  envd.directory_of_executable_returns("c:/foo/bar");
   envd.file_exists_returns(true);
   envd.on_windows_returns(true);
 
@@ -417,7 +417,7 @@ JUST_TEST_CASE(test_setting_the_clang_include_path_on_linux)
 {
   mock_environment_detector envd;
   envd.on_windows_returns(false);
-  envd.path_of_executable_returns("/usr/bin/metashell");
+  envd.directory_of_executable_returns("/usr/bin");
   envd.file_exists_returns(false);
 
   null_displayer d;
@@ -472,7 +472,7 @@ JUST_TEST_CASE(
 {
   mock_environment_detector envd;
   envd.on_osx_returns(true);
-  envd.path_of_executable_returns("/foo/bar/bin/metashell");
+  envd.directory_of_executable_returns("/foo/bar/bin");
   envd.file_exists_returns(false);
 
   null_displayer d;

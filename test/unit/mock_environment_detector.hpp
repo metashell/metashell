@@ -43,9 +43,9 @@ public:
   void on_osx_returns(bool result_);
   int on_osx_called_times() const;
 
-  virtual std::string path_of_executable() override;
-  int path_of_executable_called_times() const;
-  void path_of_executable_returns(const std::string& result_);
+  virtual std::string directory_of_executable() override;
+  int directory_of_executable_called_times() const;
+  void directory_of_executable_returns(const std::string& result_);
 private:
   std::string _search_clang_binary_returns;
   int _search_clang_binary_called_times;
@@ -60,8 +60,8 @@ private:
   bool _on_osx_returns;
   int _on_osx_called_times;
 
-  int _path_of_executable_called_times;
-  std::string _path_of_executable_returns;
+  int _directory_of_executable_called_times;
+  std::string _directory_of_executable_returns;
 };
 
 #endif

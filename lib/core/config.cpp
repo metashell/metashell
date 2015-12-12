@@ -58,19 +58,12 @@ namespace
     return s.str();
   }
 
-  std::string directory_of_file(const std::string& path_)
-  {
-    boost::filesystem::path p(path_);
-    p.remove_filename();
-    return p.string();
-  }
-
   std::string clang_shipped_with_metashell(
     iface::environment_detector& env_detector_
   )
   {
     return
-      directory_of_file(env_detector_.path_of_executable())
+      env_detector_.directory_of_executable()
       + (
         env_detector_.on_windows() ?
           "\\templight\\templight.exe" :
@@ -226,7 +219,7 @@ namespace
     std::vector<std::string> result;
 
     const std::string dir_of_executable =
-      directory_of_file(env_detector_.path_of_executable());
+      env_detector_.directory_of_executable();
 
     if (env_detector_.on_windows())
     {
