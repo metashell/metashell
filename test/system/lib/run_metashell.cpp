@@ -25,6 +25,7 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <algorithm>
 
 using namespace metashell_system_test;
 
@@ -104,7 +105,20 @@ namespace
       system_test_config::metashell_args().begin(),
       system_test_config::metashell_args().end()
     );
-    cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
+    if (!extra_args_.empty())
+    {
+      if (
+        std::find(cmd.begin(), cmd.end(), "--") == cmd.end()
+        || extra_args_.front() != "--"
+      )
+      {
+        cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
+      }
+      else
+      {
+        cmd.insert(cmd.end(), extra_args_.begin() + 1, extra_args_.end());
+      }
+    }
 
     return run(move(cmd), join(commands_));
   }
