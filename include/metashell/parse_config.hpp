@@ -48,6 +48,11 @@ namespace metashell
     std::ostream* out_ = 0,
     std::ostream* err_ = 0
   );
+
+  std::ostream& operator<<(
+    std::ostream& out_,
+    parse_config_result::action_t a_
+  );
 }
 
 #endif
