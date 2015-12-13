@@ -38,16 +38,6 @@ namespace
     return metashell::parse_config(args.size(), args.data(), out_, err_);
   }
 
-  std::string first_line_of(const std::string& s_)
-  {
-    return s_.substr(0, s_.find('\n'));
-  }
-
-  std::string first_line_of(const std::ostringstream& s_)
-  {
-    return first_line_of(s_.str());
-  }
-
   bool fails_and_displays_error(std::initializer_list<const char*> args_)
   {
     std::ostringstream err;
