@@ -110,37 +110,6 @@ namespace
     }
   }
 
-  int parse_max_template_depth(const std::string& key_value_)
-  {
-    const auto eq = key_value_.find('=');
-    if (eq == std::string::npos || key_value_.substr(0, eq) != "template-depth")
-    {
-      throw
-        std::runtime_error("-f has to be followed by template-depth=<value>");
-    }
-    else if (eq == key_value_.size() - 1)
-    {
-      throw std::runtime_error("The value of -ftemplate-depth is missing.");
-    }
-    else
-    {
-      std::istringstream s(key_value_.substr(eq + 1));
-      int v;
-      if (!(s >> v))
-      {
-        throw std::runtime_error("Invalid value for -ftemplate-depth.");
-      }
-      else if (v < 0)
-      {
-        throw std::runtime_error("Template depth can not be negative.");
-      }
-      else
-      {
-        return v;
-      }
-    }
-  }
-
   class decommissioned_argument
   {
   public:
