@@ -20,11 +20,8 @@ tools/check_mkdocs mkdocs.yml
 # Get the templight binary
 
 cd 3rd/templight
-mkdir -p build/bin
-  cd build/bin
-    wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974/templight_ubuntu12.04_x86_64.tar.bz2
-    tar -xvjf templight_ubuntu12.04_x86_64.tar.bz2
-  cd ../..
+  wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974_v2/templight_ubuntu12.04_x86_64.tar.bz2
+  tar -xvjf templight_ubuntu12.04_x86_64.tar.bz2
 cd ../..
 
 # Test the code
