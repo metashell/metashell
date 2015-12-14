@@ -35,8 +35,6 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 
 # Run the system tests
 
-sudo apt-get remove g++-4.8
-sudo apt-get install -y --force-yes clang-3.7 g++-4.9
 for t in core mdb; do
   test/system/app/${t}/metashell_${t}_system_test app/metashell -I../3rd/boost/include
 done
