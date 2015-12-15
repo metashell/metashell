@@ -18,7 +18,7 @@ before_build:
   - cd bin
   - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 12
   - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 12 Win64
-  - cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE=%configuration% ..
+  - cmake -G "%CMAKE_GENERATOR_NAME%" ..
 
 build:
   project: c:\projects\metashell\bin\metashell.sln
