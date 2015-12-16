@@ -20,7 +20,7 @@
 #include <metashell/iface/pragma_handler.hpp>
 #include <metashell/data/command.hpp>
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 namespace metashell
 {
@@ -45,7 +45,7 @@ namespace metashell
       iface::displayer& displayer_
     ) const;
   private:
-    boost::scoped_ptr<iface::pragma_handler> _body;
+    std::unique_ptr<iface::pragma_handler> _body;
   };
 
   void run(

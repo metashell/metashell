@@ -18,11 +18,8 @@ egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 # Get the templight binary
 
 cd 3rd/templight
-mkdir -p build/bin
-  cd build/bin
-    wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974/templight_osx10.10.4_x86_64.tar.bz2
-    tar -xvjf templight_osx10.10.4_x86_64.tar.bz2
-  cd ../..
+  wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974_v2/templight_osx10.10.4_x86_64.tar.bz2
+  tar -xvjf templight_osx10.10.4_x86_64.tar.bz2
 cd ../..
 
 # Test the code
@@ -35,8 +32,7 @@ make -j2
 make test || (cat Testing/Temporary/LastTest.log && false)
 
 for t in core mdb; do
-  test/system/app/${t}/metashell_${t}_system_test app/metashell -I../3rd/boost/include $(../tools/clang_default_path --gcc clang++ | sed 's/, "/-I/g' | sed 's/"//g' | awk '{printf("%s ", $0);}')
-
+  test/system/app/${t}/metashell_${t}_system_test app/metashell -I../3rd/boost/include
 done
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
