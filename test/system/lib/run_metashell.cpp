@@ -30,10 +30,42 @@ using namespace metashell_system_test;
 
 namespace
 {
-  void pop_item(const std::string& item_, std::vector<std::string>& v_)
+  void run_metashell_assert(
+    const std::string& cond_,
+    bool cond_value_,
+    const process_execution& execution_,
+    const std::string& filename_,
+    int line_
+  )
   {
-    assert(!v_.empty());
-    assert(v_.back() == item_);
+    if (!cond_value_)
+    {
+      const char sep[] = "----------------------------------";
+      std::cerr
+        << sep << std::endl
+        << "Assertion failed: " << cond_ << " at "
+        << filename_ << ":" << line_ << std::endl
+        << "Related child process execution:" << std::endl
+        << execution_
+        << sep << std::endl;
+      std::abort();
+    }
+  }
+
+#ifdef rm_assert
+#  error rm_assert already defined
+#endif
+#define rm_assert(cond, execution) \
+  ::run_metashell_assert(#cond, (cond), execution, __FILE__, __LINE__)
+
+  void pop_item(
+    const std::string& item_,
+    std::vector<std::string>& v_,
+    const process_execution& execution_
+  )
+  {
+    rm_assert(!v_.empty(), execution_);
+    rm_assert(v_.back() == item_, execution_);
     v_.pop_back();
   }
 
@@ -136,11 +168,11 @@ namespace
     split_at_new_lines(me.standard_output(), rsp);
 
     // The result of the new line at the end of the last response
-    pop_item("", rsp);
+    pop_item("", rsp, me);
 
     // The result of the end of the input
-    pop_item(to_json_string(raw_text("")).get(), rsp);
-    pop_item(to_json_string(prompt(">")).get(), rsp);
+    pop_item(to_json_string(raw_text("")).get(), rsp, me);
+    pop_item(to_json_string(prompt(">")).get(), rsp, me);
 
     result_.reserve(result_.size() + rsp.size());
     for (const std::string& s : rsp)
@@ -167,10 +199,10 @@ json_string metashell_system_test::run_metashell_command(
 )
 {
   std::vector<json_string> jv;
-  run_metashell_impl({command(command_)}, {}, jv);
+  const auto execution = run_metashell_impl({command(command_)}, {}, jv);
 
-  assert(jv.size() == 2);
-  assert(jv.front() == to_json_string(prompt(">")));
+  rm_assert(jv.size() == 2, execution);
+  rm_assert(jv.front() == to_json_string(prompt(">")), execution);
 
   return jv.back();
 }
