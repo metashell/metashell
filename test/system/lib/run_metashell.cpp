@@ -56,7 +56,7 @@ namespace
 #  error rm_assert already defined
 #endif
 #define rm_assert(cond, execution) \
-  ::run_metashell_assert(#cond, (cond), execution, __FILE__, __LINE__)
+  run_metashell_assert(#cond, (cond), execution, __FILE__, __LINE__)
 
   void pop_item(
     const std::string& item_,
