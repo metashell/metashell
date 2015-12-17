@@ -20,11 +20,15 @@
 #include <metashell_system_test/json_string.hpp>
 
 #include <string>
+#include <vector>
 
 namespace metashell_system_test
 {
   json_string command(const std::string& cmd_);
   json_string code_completion(const std::string& code_);
+
+  json_string to_json(const std::string& s_);
+  json_string to_json(const std::vector<std::string>& strings_);
 }
 
 #endif

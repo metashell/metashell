@@ -56,3 +56,32 @@ json_string metashell_system_test::code_completion(const std::string& code_)
   return json_object({{"type", "code_completion"}, {"code", code_}});
 }
 
+json_string metashell_system_test::to_json(const std::string& s_)
+{
+  rapidjson::StringBuffer buff;
+  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+  w.String(s_.c_str());
+
+  return json_string(buff.GetString());
+}
+
+json_string metashell_system_test::to_json(
+  const std::vector<std::string>& strings_
+)
+{
+  rapidjson::StringBuffer buff;
+  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+  w.StartArray();
+
+  for (const auto& s : strings_)
+  {
+    w.String(s.c_str());
+  }
+
+  w.EndArray();
+
+  return json_string(buff.GetString());
+}
+

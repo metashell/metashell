@@ -24,9 +24,6 @@ target_link_libraries(metashell_mdb_system_test
   metashell_system_test_lib
   boost_regex)
 
-# Boost for the unit tests
-add_definitions( -DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/boost/include\" )
-
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 
