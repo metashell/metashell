@@ -48,7 +48,7 @@ namespace
         << "Related child process execution:" << std::endl
         << execution_
         << sep << std::endl;
-      std::abort();
+      std::exit(1);
     }
   }
 
