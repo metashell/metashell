@@ -25,16 +25,6 @@ target_link_libraries(metashell_unit_test
   metashell_data_lib
 )
 
-# Boost for the unit tests
-add_definitions(-DBOOST_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/3rd/boost/include\")
-
-# Libc++ for the unit tests
-if (APPLE)
-  add_definitions(
-    -DLIBCXX_INCLUDE_PATH=\"${CMAKE_SOURCE_DIR}/3rd/templight/libcxx/include\"
-  )
-endif()
-
 # Wave
 target_link_libraries(metashell_unit_test
   boost_system

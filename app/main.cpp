@@ -60,21 +60,6 @@ namespace
     return "-ftemplate-depth=" + std::to_string(v_);
   }
 
-  template <class Cont>
-  void add_with_prefix(
-    const std::string& prefix_,
-    const Cont& cont_,
-    std::vector<std::string>& v_
-  )
-  {
-    std::transform(
-      cont_.begin(),
-      cont_.end(),
-      std::back_insert_iterator<std::vector<std::string> >(v_),
-      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
-    );
-  }
-
   bool cpp_standard_set(const std::vector<std::string>& args_)
   {
     return metashell::has_prefix(args_, {"--std", "-std"});
@@ -130,8 +115,6 @@ int main(int argc_, const char* argv_[])
 
       std::vector<std::string> clang_args;
 
-      add_with_prefix("-I", cfg.include_path, clang_args);
-      add_with_prefix("-D", cfg.macros, clang_args);
       if (!cpp_standard_set(cfg.extra_clang_args))
       {
         clang_args.push_back("-std=c++0x");

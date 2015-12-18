@@ -62,13 +62,6 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
   JUST_ASSERT(parse_config({"--", "foo"}).should_run_shell());
 }
 
-JUST_TEST_CASE(test_default_template_depth)
-{
-  const data::user_config cfg = parse_config({}).cfg;
-
-  JUST_ASSERT_EQUAL(256, cfg.max_template_depth);
-}
-
 JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
 {
   const data::user_config cfg = parse_config({}).cfg;
@@ -153,14 +146,6 @@ JUST_TEST_CASE(test_it_is_an_error_to_specify_log_twice)
 
   JUST_ASSERT(!r.should_run_shell());
   JUST_ASSERT(r.should_error_at_exit());
-}
-
-JUST_TEST_CASE(test_not_setting_stdlib)
-{
-  const parse_config_result r = parse_config({});
-
-  JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(data::stdlib::libstdcxx, r.cfg.stdlib_to_use);
 }
 
 JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)

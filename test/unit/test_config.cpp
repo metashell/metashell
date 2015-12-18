@@ -23,16 +23,6 @@ using namespace metashell::data;
 
 config metashell::test_config()
 {
-  config cfg = empty_config(argv0::get());
-#ifdef WINDOWS_HEADERS
-  const std::string windows_headers = WINDOWS_HEADERS;
-  cfg.include_path.push_back(windows_headers);
-  cfg.include_path.push_back(windows_headers + "\\mingw32");
-#endif
-  cfg.include_path.push_back(BOOST_INCLUDE_PATH);
-#ifdef LIBCXX_INCLUDE_PATH
-  cfg.include_path.push_back(LIBCXX_INCLUDE_PATH);
-#endif
-  return cfg;
+  return empty_config(argv0::get());
 }
 

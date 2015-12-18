@@ -64,16 +64,6 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_include_path_entry_is_kept)
-{
-  mock_environment_detector dstub;
-
-  data::user_config ucfg;
-  ucfg.include_path.push_back("/foo/bar");
-
-  JUST_ASSERT(contains("/foo/bar", detect_config(ucfg, dstub).include_path));
-}
-
 JUST_TEST_CASE(test_verbosity_is_kept)
 {
   check_flag_is_kept(&data::user_config::verbose, &data::config::verbose);
@@ -85,16 +75,6 @@ JUST_TEST_CASE(test_warnings_enabled_is_kept)
     &data::user_config::warnings_enabled,
     &data::config::warnings_enabled
   );
-}
-
-JUST_TEST_CASE(test_macro_definition_is_kept)
-{
-  mock_environment_detector dstub;
-
-  data::user_config ucfg;
-  ucfg.macros.push_back("FOO=bar");
-
-  JUST_ASSERT(contains("FOO=bar", detect_config(ucfg, dstub).macros));
 }
 
 JUST_TEST_CASE(test_extra_clang_arg_is_kept)
@@ -115,19 +95,6 @@ JUST_TEST_CASE(test_clang_path_is_kept)
   ucfg.clang_path = "/foo/clang";
 
   JUST_ASSERT_EQUAL("/foo/clang", detect_config(ucfg, dstub).clang_path);
-}
-
-JUST_TEST_CASE(test_standard_to_use_is_kept)
-{
-  mock_environment_detector dstub;
-
-  data::user_config ucfg;
-  ucfg.standard_to_use = data::standard::cpp14;
-
-  JUST_ASSERT_EQUAL(
-    data::standard::cpp14,
-    detect_config(ucfg, dstub).standard_to_use
-  );
 }
 
 JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
@@ -258,24 +225,6 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 }
 
 JUST_TEST_CASE(
-  test_standard_headers_next_to_the_binary_are_prepended_to_include_path
-)
-{
-  mock_environment_detector envd;
-  envd.on_windows_returns(true);
-  envd.directory_of_executable_returns("c:/program files");
-
-  data::user_config ucfg;
-  ucfg.include_path.push_back("c:\\foo\\bar");
-
-  null_displayer d;
-  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT(!cfg.include_path.empty());
-  JUST_ASSERT_EQUAL("c:\\foo\\bar", cfg.include_path.back());
-}
-
-JUST_TEST_CASE(
   test_clang_shipped_with_metashell_is_used_on_linux_when_user_does_not_override
 )
 {
@@ -339,19 +288,6 @@ JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
   JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
 }
 
-JUST_TEST_CASE(test_detect_max_template_depth)
-{
-  mock_environment_detector envd;
-
-  data::user_config ucfg;
-  ucfg.max_template_depth = 13;
-
-  null_displayer d;
-  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
-}
-
 JUST_TEST_CASE(test_saving_is_disabled_by_default)
 {
   mock_environment_detector envd;
@@ -390,18 +326,5 @@ JUST_TEST_CASE(test_splash_enabled_is_copied_from_user_config)
   const data::config cfg = detect_config(ucfg, envd, d, nullptr);
   
   JUST_ASSERT(!cfg.splash_enabled);
-}
-
-JUST_TEST_CASE(test_stdlib_version_is_kept)
-{
-  mock_environment_detector dstub;
-
-  data::user_config ucfg;
-  ucfg.stdlib_to_use = data::stdlib::libcxx;
-
-  JUST_ASSERT_EQUAL(
-    data::stdlib::libcxx,
-    detect_config(ucfg, dstub).stdlib_to_use
-  );
 }
 

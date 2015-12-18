@@ -217,8 +217,6 @@ data::config metashell::detect_config(
   data::config cfg;
 
   cfg.verbose = ucfg_.verbose;
-  cfg.standard_to_use = ucfg_.standard_to_use;
-  cfg.macros = ucfg_.macros;
   cfg.warnings_enabled = ucfg_.warnings_enabled;
   cfg.extra_clang_args =
     determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
@@ -226,9 +224,6 @@ data::config metashell::detect_config(
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, displayer_, logger_);
 
-  cfg.include_path = ucfg_.include_path;
-
-  cfg.max_template_depth = ucfg_.max_template_depth;
   cfg.saving_enabled = ucfg_.saving_enabled;
 
   cfg.use_precompiled_headers =
@@ -240,7 +235,6 @@ data::config metashell::detect_config(
     );
 
   cfg.splash_enabled = ucfg_.splash_enabled;
-  cfg.stdlib_to_use = ucfg_.stdlib_to_use;
 
   METASHELL_LOG(logger_, "Config detection completed");
 
