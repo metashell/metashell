@@ -19,6 +19,7 @@
 
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment_detector.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
 #include <memory>
@@ -26,10 +27,9 @@
 namespace metashell
 {
   std::unique_ptr<iface::engine> create_clang_engine(
-    const std::string& clang_path_,
+    const data::config& config_,
     const std::string& internal_dir_,
     const std::string& env_filename_,
-    std::vector<std::string> extra_args_,
     iface::environment_detector& env_detector_,
     logger* logger_
   );

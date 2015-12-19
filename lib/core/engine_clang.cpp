@@ -23,6 +23,7 @@
 #include <metashell/unsaved_file.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/clang_binary.hpp>
+#include <metashell/has_prefix.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -38,6 +39,21 @@ using namespace metashell;
 
 namespace
 {
+  std::string set_max_template_depth(int v_)
+  {
+    return "-ftemplate-depth=" + std::to_string(v_);
+  }
+
+  bool cpp_standard_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"--std", "-std"});
+  }
+
+  bool max_template_depth_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"-ftemplate-depth"});
+  }
+
   data::process_output run_clang(
     iface::executable& clang_binary_,
     std::vector<std::string> clang_args_,
@@ -486,31 +502,54 @@ namespace
 } // anonymous namespace
 
 std::unique_ptr<iface::engine> metashell::create_clang_engine(
-  const std::string& clang_path_,
+  const data::config& config_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
-  std::vector<std::string> extra_args_,
   iface::environment_detector& env_detector_,
   logger* logger_
 )
 {
+  std::vector<std::string> clang_args;
+
+  if (!cpp_standard_set(config_.extra_clang_args))
+  {
+    clang_args.push_back("-std=c++0x");
+  }
+
+  if (!max_template_depth_set(config_.extra_clang_args))
+  {
+    clang_args.push_back(set_max_template_depth(256));
+  }
+
+  if (!config_.warnings_enabled)
+  {
+    clang_args.push_back("-w");
+  }
+
+  clang_args.insert(
+    clang_args.end(),
+    config_.extra_clang_args.begin(),
+    config_.extra_clang_args.end()
+  );
+
   {
     const std::vector<std::string> include_path =
-      determine_include_path(clang_path_, env_detector_, logger_);
-    extra_args_.reserve(extra_args_.size() + include_path.size());
+      determine_include_path(config_.clang_path, env_detector_, logger_);
+    clang_args.reserve(clang_args.size() + include_path.size());
     for (const std::string& p : include_path)
     {
-      extra_args_.push_back("-I" + p);
+      clang_args.push_back("-I" + p);
     }
   }
+
   return
     std::unique_ptr<iface::engine>(
       new engine_clang(
-        clang_path_,
+        config_.clang_path,
         internal_dir_,
         internal_dir_ + "/" + env_filename_,
         env_detector_,
-        extra_args_,
+        clang_args,
         logger_
       )
     );

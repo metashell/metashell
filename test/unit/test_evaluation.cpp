@@ -214,7 +214,7 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   breaking_environment e;
   e.get_appended_throw_from_now();
   const data::result r =
-    create_clang_engine("", "", "env.hpp", {}, det, nullptr)
+    create_clang_engine(cfg, "", "env.hpp", det, nullptr)
       ->validate_code("typedef int foo;", cfg, e, false);
 
   JUST_ASSERT(!r.successful);

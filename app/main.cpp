@@ -23,7 +23,6 @@
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/engine_clang.hpp>
-#include <metashell/has_prefix.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
@@ -53,21 +52,6 @@ namespace
         {"Boost.Wave", metashell::wave_version()},
         {readline_name, metashell::readline::version()}
       };
-  }
-
-  std::string set_max_template_depth(int v_)
-  {
-    return "-ftemplate-depth=" + std::to_string(v_);
-  }
-
-  bool cpp_standard_set(const std::vector<std::string>& args_)
-  {
-    return metashell::has_prefix(args_, {"--std", "-std"});
-  }
-
-  bool max_template_depth_set(const std::vector<std::string>& args_)
-  {
-    return metashell::has_prefix(args_, {"-ftemplate-depth"});
   }
 }
 
@@ -113,29 +97,6 @@ int main(int argc_, const char* argv_[])
 
       just::temp::directory dir;
 
-      std::vector<std::string> clang_args;
-
-      if (!cpp_standard_set(cfg.extra_clang_args))
-      {
-        clang_args.push_back("-std=c++0x");
-      }
-
-      if (!max_template_depth_set(cfg.extra_clang_args))
-      {
-        clang_args.push_back(set_max_template_depth(256));
-      }
-
-      if (!cfg.warnings_enabled)
-      {
-        clang_args.push_back("-w");
-      }
-
-      clang_args.insert(
-        clang_args.end(),
-        cfg.extra_clang_args.begin(),
-        cfg.extra_clang_args.end()
-      );
-
       std::unique_ptr<metashell::shell>
         shell(
           new metashell::shell(
@@ -144,10 +105,9 @@ int main(int argc_, const char* argv_[])
             dir.path(),
             env_filename,
             metashell::create_clang_engine(
-              cfg.clang_path,
+              cfg,
               dir.path(),
               env_filename,
-              clang_args,
               det,
               &logger
             ),
