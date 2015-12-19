@@ -69,14 +69,6 @@ JUST_TEST_CASE(test_verbosity_is_kept)
   check_flag_is_kept(&data::user_config::verbose, &data::config::verbose);
 }
 
-JUST_TEST_CASE(test_warnings_enabled_is_kept)
-{
-  check_flag_is_kept(
-    &data::user_config::warnings_enabled,
-    &data::config::warnings_enabled
-  );
-}
-
 JUST_TEST_CASE(test_extra_clang_arg_is_kept)
 {
   mock_environment_detector dstub;

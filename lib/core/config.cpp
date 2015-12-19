@@ -174,7 +174,6 @@ data::config metashell::detect_config(
   data::config cfg;
 
   cfg.verbose = ucfg_.verbose;
-  cfg.warnings_enabled = ucfg_.warnings_enabled;
   cfg.extra_clang_args = ucfg_.extra_clang_args;
 
   cfg.clang_path =

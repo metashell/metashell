@@ -294,7 +294,6 @@ parse_config_result metashell::parse_config(
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     ucfg.indent = vm.count("indent") != 0;
     ucfg.con_type = metashell::data::parse_console_type(con_type);
-    ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");
     ucfg.splash_enabled = vm.count("nosplash") == 0;

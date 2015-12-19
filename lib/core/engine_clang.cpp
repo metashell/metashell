@@ -521,11 +521,6 @@ std::unique_ptr<iface::engine> metashell::create_clang_engine(
     clang_args.push_back(set_max_template_depth(256));
   }
 
-  if (!config_.warnings_enabled)
-  {
-    clang_args.push_back("-w");
-  }
-
   clang_args.insert(
     clang_args.end(),
     config_.extra_clang_args.begin(),

@@ -32,7 +32,6 @@ namespace metashell
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;
-      bool warnings_enabled = true;
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
       std::string clang_path;

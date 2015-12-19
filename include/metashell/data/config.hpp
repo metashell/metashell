@@ -28,7 +28,6 @@ namespace metashell
     {
     public:
       bool verbose = false;
-      bool warnings_enabled = true;
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
       std::string clang_path;
