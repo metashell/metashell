@@ -38,6 +38,8 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
+#include <cstdlib>
+#include <cassert>
 
 using namespace metashell;
 
@@ -386,6 +388,7 @@ std::ostream& metashell::operator<<(
     return out_ << "exit_without_error";
   default:
     assert(!"Invalid action");
+    std::abort();
   }
 }
 
