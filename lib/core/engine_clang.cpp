@@ -145,6 +145,7 @@ namespace
 
   std::vector<std::string> clang_args(
     const std::string& internal_dir_,
+    iface::environment_detector& env_detector_,
     const std::vector<std::string>& extra_args_
   )
   {
@@ -155,6 +156,12 @@ namespace
         "-x", "c++-header",
         "-I", internal_dir_
       };
+
+    if (env_detector_.on_windows())
+    {
+      args.push_back("-fno-ms-compatibility");
+      args.push_back("-U_MSC_VER");
+    }
 
     args.insert(args.end(), extra_args_.begin(), extra_args_.end());
 
@@ -168,12 +175,13 @@ namespace
       const std::string& clang_path_,
       const std::string& internal_dir_,
       const std::string& env_path_,
+      iface::environment_detector& env_detector_,
       const std::vector<std::string>& extra_args_,
       logger* logger_
     ) :
       _clang_binary(
         clang_path_,
-        clang_args(internal_dir_, extra_args_),
+        clang_args(internal_dir_, env_detector_, extra_args_),
         logger_
       ),
       _internal_dir(internal_dir_),
@@ -501,6 +509,7 @@ std::unique_ptr<iface::engine> metashell::create_clang_engine(
         clang_path_,
         internal_dir_,
         internal_dir_ + "/" + env_filename_,
+        env_detector_,
         extra_args_,
         logger_
       )

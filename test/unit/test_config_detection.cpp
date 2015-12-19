@@ -276,18 +276,6 @@ JUST_TEST_CASE(
   JUST_ASSERT_EQUAL("c:/foo/bar\\templight\\templight.exe", cfg.clang_path);
 }
 
-JUST_TEST_CASE(test_ms_compatibility_is_disabled_on_windows)
-{
-  mock_environment_detector envd;
-  envd.on_windows_returns(true);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT(contains("-fno-ms-compatibility", cfg.extra_clang_args));
-  JUST_ASSERT(contains("-U_MSC_VER", cfg.extra_clang_args));
-}
-
 JUST_TEST_CASE(test_saving_is_disabled_by_default)
 {
   mock_environment_detector envd;

@@ -190,19 +190,6 @@ namespace
     }
     return false;
   }
-
-  std::vector<std::string> determine_extra_clang_args(
-    std::vector<std::string> extra_clang_args_,
-    iface::environment_detector& env_detector_
-  )
-  {
-    if (env_detector_.on_windows())
-    {
-      extra_clang_args_.push_back("-fno-ms-compatibility");
-      extra_clang_args_.push_back("-U_MSC_VER");
-    }
-    return extra_clang_args_;
-  }
 }
 
 data::config metashell::detect_config(
@@ -218,8 +205,7 @@ data::config metashell::detect_config(
 
   cfg.verbose = ucfg_.verbose;
   cfg.warnings_enabled = ucfg_.warnings_enabled;
-  cfg.extra_clang_args =
-    determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
+  cfg.extra_clang_args = ucfg_.extra_clang_args;
 
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, displayer_, logger_);
