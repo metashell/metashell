@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_STANDARD_HPP
-#define METASHELL_DATA_STANDARD_HPP
+#ifndef METASHELL_HAS_PREFIX_HPP
+#define METASHELL_HAS_PREFIX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,24 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
 #include <string>
+#include <vector>
 
 namespace metashell
 {
-  namespace data
-  {
-    enum class standard {
-      cpp11,
-      cpp14,
-      cpp1z
-    };
-
-    standard parse_standard(const std::string& std_);
-    std::string clang_argument(standard std_);
-
-    std::ostream& operator<<(std::ostream& os, standard std_);
-  }
+  bool has_prefix(
+    const std::vector<std::string>& args_,
+    const std::vector<std::string>& prefixes_
+  );
 }
 
 #endif

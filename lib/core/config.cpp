@@ -58,19 +58,12 @@ namespace
     return s.str();
   }
 
-  std::string directory_of_file(const std::string& path_)
-  {
-    boost::filesystem::path p(path_);
-    p.remove_filename();
-    return p.string();
-  }
-
   std::string clang_shipped_with_metashell(
     iface::environment_detector& env_detector_
   )
   {
     return
-      directory_of_file(env_detector_.path_of_executable())
+      env_detector_.directory_of_executable()
       + (
         env_detector_.on_windows() ?
           "\\templight\\templight.exe" :
@@ -167,104 +160,6 @@ namespace
       }
     }
   }
-
-  bool detect_precompiled_header_usage(
-    bool user_wants_precompiled_headers_,
-    const data::config& cfg_,
-    iface::displayer& displayer_,
-    logger* logger_
-  )
-  {
-    if (user_wants_precompiled_headers_)
-    {
-      METASHELL_LOG(logger_, "Checking if precompiled headers can be used.");
-      if (cfg_.clang_path.empty())
-      {
-        displayer_.show_error("Disabling precompiled headers");
-        METASHELL_LOG(
-          logger_,
-          "Disabling precompiled headers: no Clang binary is available."
-        );
-      }
-      else
-      {
-        return true;
-      }
-    }
-    else
-    {
-      METASHELL_LOG(logger_, "User disabled precompiled header usage.");
-    }
-    return false;
-  }
-
-  std::vector<std::string> determine_extra_clang_args(
-    std::vector<std::string> extra_clang_args_,
-    iface::environment_detector& env_detector_
-  )
-  {
-    if (env_detector_.on_windows())
-    {
-      extra_clang_args_.push_back("-fno-ms-compatibility");
-      extra_clang_args_.push_back("-U_MSC_VER");
-    }
-    return extra_clang_args_;
-  }
-
-  std::vector<std::string> determine_include_path(
-    const std::string& clang_binary_path_,
-    const std::vector<std::string>& user_include_path_,
-    iface::environment_detector& env_detector_,
-    logger* logger_
-  )
-  {
-    METASHELL_LOG(
-      logger_,
-      "Determining include path of Clang: " + clang_binary_path_
-    );
-
-    std::vector<std::string> result;
-
-    const std::string dir_of_executable =
-      directory_of_file(env_detector_.path_of_executable());
-
-    if (env_detector_.on_windows())
-    {
-      // mingw headers shipped with Metashell
-      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
-
-      result.push_back(mingw_headers);
-      result.push_back(mingw_headers + "\\mingw32");
-      if (
-        clang_binary_path_.empty()
-        || clang_binary_path_ == clang_shipped_with_metashell(env_detector_)
-      )
-      {
-        result.push_back(dir_of_executable + "\\templight\\include");
-      }
-    }
-    else
-    {
-      if (env_detector_.on_osx())
-      {
-        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
-      }
-      result.push_back(dir_of_executable + "/../include/metashell/templight");
-    }
-
-    result.insert(
-      result.end(),
-      user_include_path_.begin(),
-      user_include_path_.end()
-    );
-
-    METASHELL_LOG(
-      logger_,
-      "Include path determined: " + boost::algorithm::join(result, ";")
-    );
-
-    return result;
-  }
 }
 
 data::config metashell::detect_config(
@@ -279,36 +174,16 @@ data::config metashell::detect_config(
   data::config cfg;
 
   cfg.verbose = ucfg_.verbose;
-  cfg.standard_to_use = ucfg_.standard_to_use;
-  cfg.macros = ucfg_.macros;
-  cfg.warnings_enabled = ucfg_.warnings_enabled;
-  cfg.extra_clang_args =
-    determine_extra_clang_args(ucfg_.extra_clang_args, env_detector_);
+  cfg.extra_clang_args = ucfg_.extra_clang_args;
 
   cfg.clang_path =
     detect_clang_binary(ucfg_.clang_path, env_detector_, displayer_, logger_);
 
-  cfg.include_path =
-    determine_include_path(
-      cfg.clang_path,
-      ucfg_.include_path,
-      env_detector_,
-      logger_
-    );
-
-  cfg.max_template_depth = ucfg_.max_template_depth;
   cfg.saving_enabled = ucfg_.saving_enabled;
 
-  cfg.use_precompiled_headers =
-    detect_precompiled_header_usage(
-      ucfg_.use_precompiled_headers,
-      cfg,
-      displayer_,
-      logger_
-    );
+  cfg.use_precompiled_headers = ucfg_.use_precompiled_headers;
 
   cfg.splash_enabled = ucfg_.splash_enabled;
-  cfg.stdlib_to_use = ucfg_.stdlib_to_use;
 
   METASHELL_LOG(logger_, "Config detection completed");
 

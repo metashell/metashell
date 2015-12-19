@@ -17,9 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/standard.hpp>
-#include <metashell/data/stdlib.hpp>
-
 #include <string>
 #include <vector>
 
@@ -30,11 +27,7 @@ namespace metashell
     class config
     {
     public:
-      std::vector<std::string> include_path;
       bool verbose = false;
-      data::standard standard_to_use = data::standard::cpp11;
-      std::vector<std::string> macros;
-      bool warnings_enabled = true;
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
       std::string clang_path;
@@ -42,7 +35,6 @@ namespace metashell
       unsigned templight_trace_capacity;
       bool saving_enabled;
       bool splash_enabled = true;
-      data::stdlib stdlib_to_use = data::stdlib::libstdcxx;
     };
   }
 }

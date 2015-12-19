@@ -14,6 +14,9 @@
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
       instantiated template instead of the point of instantiation.
+    * **Breaking change** Compiler-dependent command line arguments (eg. -I, -D,
+      etc) are accepted as compiler arguments only (after the --) and are not
+      allowed as "normal" Metashell arguments.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

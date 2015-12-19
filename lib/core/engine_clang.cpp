@@ -23,10 +23,12 @@
 #include <metashell/unsaved_file.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/clang_binary.hpp>
+#include <metashell/has_prefix.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
@@ -37,6 +39,21 @@ using namespace metashell;
 
 namespace
 {
+  std::string set_max_template_depth(int v_)
+  {
+    return "-ftemplate-depth=" + std::to_string(v_);
+  }
+
+  bool cpp_standard_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"--std", "-std"});
+  }
+
+  bool max_template_depth_set(const std::vector<std::string>& args_)
+  {
+    return metashell::has_prefix(args_, {"-ftemplate-depth"});
+  }
+
   data::process_output run_clang(
     iface::executable& clang_binary_,
     std::vector<std::string> clang_args_,
@@ -144,6 +161,7 @@ namespace
 
   std::vector<std::string> clang_args(
     const std::string& internal_dir_,
+    iface::environment_detector& env_detector_,
     const std::vector<std::string>& extra_args_
   )
   {
@@ -154,6 +172,12 @@ namespace
         "-x", "c++-header",
         "-I", internal_dir_
       };
+
+    if (env_detector_.on_windows())
+    {
+      args.push_back("-fno-ms-compatibility");
+      args.push_back("-U_MSC_VER");
+    }
 
     args.insert(args.end(), extra_args_.begin(), extra_args_.end());
 
@@ -167,12 +191,13 @@ namespace
       const std::string& clang_path_,
       const std::string& internal_dir_,
       const std::string& env_path_,
+      iface::environment_detector& env_detector_,
       const std::vector<std::string>& extra_args_,
       logger* logger_
     ) :
       _clang_binary(
         clang_path_,
-        clang_args(internal_dir_, extra_args_),
+        clang_args(internal_dir_, env_detector_, extra_args_),
         logger_
       ),
       _internal_dir(internal_dir_),
@@ -414,23 +439,112 @@ namespace
     logger* _logger;
   };
 
+  std::string templight_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      env_detector_.directory_of_executable()
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
+  }
+
+  std::vector<std::string> determine_include_path(
+    const std::string& clang_binary_path_,
+    iface::environment_detector& env_detector_,
+    logger* logger_
+  )
+  {
+    METASHELL_LOG(
+      logger_,
+      "Determining include path of Clang: " + clang_binary_path_
+    );
+
+    std::vector<std::string> result;
+
+    const std::string
+      dir_of_executable = env_detector_.directory_of_executable();
+
+    if (env_detector_.on_windows())
+    {
+      // mingw headers shipped with Metashell
+      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
+
+      result.push_back(mingw_headers);
+      result.push_back(mingw_headers + "\\mingw32");
+      if (
+        clang_binary_path_.empty()
+        || clang_binary_path_ == templight_shipped_with_metashell(env_detector_)
+      )
+      {
+        result.push_back(dir_of_executable + "\\templight\\include");
+      }
+    }
+    else
+    {
+      if (env_detector_.on_osx())
+      {
+        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
+      }
+      result.push_back(dir_of_executable + "/../include/metashell/templight");
+    }
+
+    METASHELL_LOG(
+      logger_,
+      "Include path determined: " + boost::algorithm::join(result, ";")
+    );
+
+    return result;
+  }
 } // anonymous namespace
 
 std::unique_ptr<iface::engine> metashell::create_clang_engine(
-  const std::string& clang_path_,
+  const data::config& config_,
   const std::string& internal_dir_,
   const std::string& env_filename_,
-  const std::vector<std::string>& extra_args_,
+  iface::environment_detector& env_detector_,
   logger* logger_
 )
 {
+  std::vector<std::string> clang_args;
+
+  if (!cpp_standard_set(config_.extra_clang_args))
+  {
+    clang_args.push_back("-std=c++0x");
+  }
+
+  if (!max_template_depth_set(config_.extra_clang_args))
+  {
+    clang_args.push_back(set_max_template_depth(256));
+  }
+
+  clang_args.insert(
+    clang_args.end(),
+    config_.extra_clang_args.begin(),
+    config_.extra_clang_args.end()
+  );
+
+  {
+    const std::vector<std::string> include_path =
+      determine_include_path(config_.clang_path, env_detector_, logger_);
+    clang_args.reserve(clang_args.size() + include_path.size());
+    for (const std::string& p : include_path)
+    {
+      clang_args.push_back("-I" + p);
+    }
+  }
+
   return
     std::unique_ptr<iface::engine>(
       new engine_clang(
-        clang_path_,
+        config_.clang_path,
         internal_dir_,
         internal_dir_ + "/" + env_filename_,
-        extra_args_,
+        env_detector_,
+        clang_args,
         logger_
       )
     );

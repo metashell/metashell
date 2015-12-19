@@ -31,11 +31,15 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <boost/optional.hpp>
+
 #include <string>
 #include <iostream>
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
+#include <cstdlib>
+#include <cassert>
 
 using namespace metashell;
 
@@ -108,36 +112,86 @@ namespace
     }
   }
 
-  int parse_max_template_depth(const std::string& key_value_)
+  class decommissioned_argument
   {
-    const auto eq = key_value_.find('=');
-    if (eq == std::string::npos || key_value_.substr(0, eq) != "template-depth")
+  public:
+    enum class type { flag, one_value, multiple_values  };
+
+    decommissioned_argument(
+      const std::string& long_form_,
+      char short_form_,
+      type type_
+    ) :
+      _long_form(long_form_),
+      _short_form(std::string(1, short_form_)),
+      _type(type_)
+    {}
+
+    decommissioned_argument(const std::string& long_form_, type type_) :
+      _long_form(long_form_),
+      _short_form(boost::none),
+      _type(type_)
+    {}
+
+    decommissioned_argument(char short_form_, type type_) :
+      _long_form(boost::none),
+      _short_form(std::string(1, short_form_)),
+      _type(type_)
+    {}
+
+    void add_to(boost::program_options::options_description& desc_)
     {
-      throw
-        std::runtime_error("-f has to be followed by template-depth=<value>");
+      using boost::program_options::value;
+
+      const char desc[] =
+        "DECOMMISSIONED argument."
+        " Please provide it as a compiler argument after --";
+
+      const std::string
+        fmt =
+          (_long_form ? *_long_form : "")
+          + (_short_form ? "," + *_short_form : "");
+
+      switch (_type)
+      {
+      case type::flag:
+        desc_.add_options()(fmt.c_str(), desc);
+        break;
+      case type::one_value:
+        desc_.add_options()(fmt.c_str(), value(&_ignore), desc);
+        break;
+      case type::multiple_values:
+        desc_.add_options()(fmt.c_str(), value(&_ignores), desc);
+        break;
+      }
     }
-    else if (eq == key_value_.size() - 1)
+
+    void check(const boost::program_options::variables_map& vm_) const
     {
-      throw std::runtime_error("The value of -ftemplate-depth is missing.");
-    }
-    else
-    {
-      std::istringstream s(key_value_.substr(eq + 1));
-      int v;
-      if (!(s >> v))
+      if (
+        (_long_form && vm_.count(*_long_form))
+        || (_short_form && vm_.count(*_short_form))
+        || !_ignore.empty()
+        || !_ignores.empty()
+      )
       {
-        throw std::runtime_error("Invalid value for -ftemplate-depth.");
-      }
-      else if (v < 0)
-      {
-        throw std::runtime_error("Template depth can not be negative.");
-      }
-      else
-      {
-        return v;
+        const std::string
+          name = _short_form ? "-" + *_short_form : "--" + *_long_form;
+        throw
+          std::runtime_error(
+            "Argument " + name + " has been decommissioned."
+            " Please provide it as a compiler argument after --"
+          );
       }
     }
-  }
+  private:
+    boost::optional<std::string> _long_form;
+    boost::optional<std::string> _short_form;
+    type _type;
+
+    std::string _ignore;
+    std::vector<std::string> _ignores;
+  };
 }
 
 parse_config_result metashell::parse_config(
@@ -168,25 +222,15 @@ parse_config_result metashell::parse_config(
   }
   const int argc = minus_minus - argv_;
 
-  std::string cppstd("c++0x");
-  std::string svalue("tdlib=libstdc++");
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
-  std::string fvalue;
 
   options_description desc("Options");
   desc.add_options()
     ("help", "Display help")
-    ("include,I", value(&ucfg.include_path), "Additional include directory")
-    ("define,D", value(&ucfg.macros), "Additional macro definitions")
     ("verbose,V", "Verbose mode")
     ("no_highlight,H", "Disable syntax highlighting")
     ("indent", "Enable indenting (experimental)")
-    (
-      "std", value(&cppstd)->default_value(cppstd),
-      "C++ standard to use. Possible values: c++0x/c++11, c++1y/c++14, c++1z."
-    )
-    ("no_warnings,w", "Disable warnings")
     (
       "no_precompiled_headers",
       "Disable precompiled header usage."
@@ -206,11 +250,6 @@ parse_config_result metashell::parse_config(
       "Display help for mdb commands in MarkDown format and exit"
     )
     (
-      ",f",
-      value(&fvalue),
-      "Feature option. Currently supported: -ftemplate-depth=<value>"
-    )
-    (
       "enable_saving",
       "Enable saving the environment using the #msh environment save"
     )
@@ -223,13 +262,24 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
-    (
-      ",s",
-      value(&svalue),
-      "-stdlib=value: Standard library to use."
-      " Currently supported: libc++, libstdc++"
-    )
     ;
+
+  using dec_arg = decommissioned_argument;
+  using dec_type = decommissioned_argument::type;
+  std::vector<dec_arg>
+    dec_args{
+      dec_arg{"include", 'I', dec_type::multiple_values},
+      dec_arg{"define", 'D', dec_type::multiple_values},
+      dec_arg{"std", dec_type::one_value},
+      dec_arg{"no_warnings", 'w', dec_type::flag},
+      dec_arg{'f', dec_type::one_value},
+      dec_arg{'s', dec_type::one_value}
+    };
+
+  for (auto& a : dec_args)
+  {
+    a.add_to(desc);
+  }
 
   try
   {
@@ -237,12 +287,15 @@ parse_config_result metashell::parse_config(
     store(parse_command_line(argc, argv_, desc), vm);
     notify(vm);
 
+    for (const auto& a : dec_args)
+    {
+      a.check(vm);
+    }
+
     ucfg.verbose = vm.count("verbose") || vm.count("V");
     ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     ucfg.indent = vm.count("indent") != 0;
-    ucfg.standard_to_use = metashell::data::parse_standard(cppstd);
     ucfg.con_type = metashell::data::parse_console_type(con_type);
-    ucfg.warnings_enabled = !(vm.count("no_warnings") || vm.count("w"));
     ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     ucfg.saving_enabled = vm.count("enable_saving");
     ucfg.splash_enabled = vm.count("nosplash") == 0;
@@ -256,24 +309,6 @@ parse_config_result metashell::parse_config(
         (ucfg.log_file == "-") ?
           data::logging_mode::console :
           data::logging_mode::file;
-    }
-
-    if (!fvalue.empty())
-    {
-      ucfg.max_template_depth = parse_max_template_depth(fvalue);
-    }
-
-    if (svalue == "tdlib=libc++")
-    {
-      ucfg.stdlib_to_use = data::stdlib::libcxx;
-    }
-    else if (svalue == "tdlib=libstdc++")
-    {
-      ucfg.stdlib_to_use = data::stdlib::libstdcxx;
-    }
-    else
-    {
-      throw std::runtime_error("Invalid argument -s" + svalue);
     }
 
     if (vm.count("help"))
@@ -336,5 +371,24 @@ bool parse_config_result::should_run_shell() const
 bool parse_config_result::should_error_at_exit() const
 {
   return action == action_t::exit_with_error;
+}
+
+std::ostream& metashell::operator<<(
+  std::ostream& out_,
+  parse_config_result::action_t a_
+)
+{
+  switch (a_)
+  {
+  case parse_config_result::action_t::run_shell:
+    return out_ << "run_shell";
+  case parse_config_result::action_t::exit_with_error:
+    return out_ << "exit_with_error";
+  case parse_config_result::action_t::exit_without_error:
+    return out_ << "exit_without_error";
+  default:
+    assert(!"Invalid action");
+    std::abort();
+  }
 }
 

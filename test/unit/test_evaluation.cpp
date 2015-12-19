@@ -16,6 +16,7 @@
 
 #include "test_config.hpp"
 #include "breaking_environment.hpp"
+#include "mock_environment_detector.hpp"
 #include "util.hpp"
 
 #include <metashell/shell.hpp>
@@ -209,10 +210,11 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
 {
   data::config cfg;
+  mock_environment_detector det;
   breaking_environment e;
   e.get_appended_throw_from_now();
   const data::result r =
-    create_clang_engine("", "", "env.hpp", {}, nullptr)
+    create_clang_engine(cfg, "", "env.hpp", det, nullptr)
       ->validate_code("typedef int foo;", cfg, e, false);
 
   JUST_ASSERT(!r.successful);

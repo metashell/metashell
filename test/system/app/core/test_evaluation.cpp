@@ -87,7 +87,7 @@ JUST_TEST_CASE(test_non_existing_class)
 
 JUST_TEST_CASE(test_macro_in_config)
 {
-  const auto r = run_metashell({command("FOO")}, {"-DFOO=int"});
+  const auto r = run_metashell({command("FOO")}, {"--", "-DFOO=int"});
 
   auto i = r.begin();
 
@@ -230,7 +230,7 @@ JUST_TEST_CASE(test_warnings)
 
 JUST_TEST_CASE(test_disabled_warnings)
 {
-  const auto r = run_metashell({ generate_warning() }, {"-w"});
+  const auto r = run_metashell({ generate_warning() }, {"--", "-w"});
 
   auto i = r.begin();
 

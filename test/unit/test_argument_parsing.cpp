@@ -38,14 +38,14 @@ namespace
     return metashell::parse_config(args.size(), args.data(), out_, err_);
   }
 
-  std::string first_line_of(const std::string& s_)
+  bool fails_and_displays_error(std::initializer_list<const char*> args_)
   {
-    return s_.substr(0, s_.find('\n'));
-  }
-
-  std::string first_line_of(const std::ostringstream& s_)
-  {
-    return first_line_of(s_.str());
+    std::ostringstream err;
+    const parse_config_result r = parse_config(args_, nullptr, &err);
+  
+    return
+      parse_config_result::action_t::exit_with_error == r.action
+      && !err.str().empty();
   }
 }
 
@@ -60,83 +60,6 @@ JUST_TEST_CASE(test_recognising_extra_clang_arg)
 JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 {
   JUST_ASSERT(parse_config({"--", "foo"}).should_run_shell());
-}
-
-JUST_TEST_CASE(test_default_template_depth)
-{
-  const data::user_config cfg = parse_config({}).cfg;
-
-  JUST_ASSERT_EQUAL(256, cfg.max_template_depth);
-}
-
-JUST_TEST_CASE(test_template_depth_parsing)
-{
-  const data::user_config cfg = parse_config({"-ftemplate-depth=13"}).cfg;
-
-  JUST_ASSERT_EQUAL(13, cfg.max_template_depth);
-}
-
-JUST_TEST_CASE(test_negative_template_depth_is_an_error)
-{
-  std::ostringstream err;
-  const parse_config_result
-    r = parse_config({"-ftemplate-depth=-1"}, nullptr, &err);
-
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
-  JUST_ASSERT_EQUAL("Template depth can not be negative.", first_line_of(err));
-}
-
-JUST_TEST_CASE(test_missing_template_depth_value_is_an_error)
-{
-  std::ostringstream err;
-  const parse_config_result
-    r = parse_config({"-ftemplate-depth="}, nullptr, &err);
-
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
-  JUST_ASSERT_EQUAL(
-    "The value of -ftemplate-depth is missing.",
-    first_line_of(err)
-  );
-}
-
-JUST_TEST_CASE(test_non_numeric_template_depth_is_an_error)
-{
-  std::ostringstream err;
-  const parse_config_result
-    r = parse_config({"-ftemplate-depth=foo"}, nullptr, &err);
-
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
-  JUST_ASSERT_EQUAL("Invalid value for -ftemplate-depth.", first_line_of(err));
-}
-
-JUST_TEST_CASE(test_missing_equal_in_the_value_of_minus_f_is_an_error)
-{
-  std::ostringstream err;
-  const parse_config_result
-    r = parse_config({"-ftemplate-depth"}, nullptr, &err);
-
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
-  JUST_ASSERT_EQUAL(
-    "-f has to be followed by template-depth=<value>",
-    first_line_of(err)
-  );
-}
-
-JUST_TEST_CASE(test_only_template_depth_can_follow_f)
-{
-  std::ostringstream err;
-  const parse_config_result r = parse_config({"-ffoo="}, nullptr, &err);
-
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
-  JUST_ASSERT_EQUAL(
-    "-f has to be followed by template-depth=<value>",
-    first_line_of(err)
-  );
 }
 
 JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
@@ -225,27 +148,16 @@ JUST_TEST_CASE(test_it_is_an_error_to_specify_log_twice)
   JUST_ASSERT(r.should_error_at_exit());
 }
 
-JUST_TEST_CASE(test_not_setting_stdlib)
+JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)
 {
-  const parse_config_result r = parse_config({});
-
-  JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(data::stdlib::libstdcxx, r.cfg.stdlib_to_use);
-}
-
-JUST_TEST_CASE(test_using_libcxx)
-{
-  const parse_config_result r = parse_config({"-stdlib=libc++"});
-
-  JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(data::stdlib::libcxx, r.cfg.stdlib_to_use);
-}
-
-JUST_TEST_CASE(test_using_libstdcxx)
-{
-  const parse_config_result r = parse_config({"-stdlib=libstdc++"});
-
-  JUST_ASSERT(r.should_run_shell());
-  JUST_ASSERT_EQUAL(data::stdlib::libstdcxx, r.cfg.stdlib_to_use);
+  JUST_ASSERT(fails_and_displays_error({"-I/usr/include"}));
+  JUST_ASSERT(fails_and_displays_error({"--include", "/usr/include"}));
+  JUST_ASSERT(fails_and_displays_error({"-DFOO=bar"}));
+  JUST_ASSERT(fails_and_displays_error({"--define", "FOO=bar"}));
+  JUST_ASSERT(fails_and_displays_error({"--std", "c++11"}));
+  JUST_ASSERT(fails_and_displays_error({"-w"}));
+  JUST_ASSERT(fails_and_displays_error({"--no_warnings"}));
+  JUST_ASSERT(fails_and_displays_error({"-ftemplate-depth=13"}));
+  JUST_ASSERT(fails_and_displays_error({"-stdlib=libstdc++"}));
 }
 

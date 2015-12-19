@@ -53,26 +53,6 @@ namespace
         {readline_name, metashell::readline::version()}
       };
   }
-
-  std::string set_max_template_depth(int v_)
-  {
-    return "-ftemplate-depth=" + std::to_string(v_);
-  }
-
-  template <class Cont>
-  void add_with_prefix(
-    const std::string& prefix_,
-    const Cont& cont_,
-    std::vector<std::string>& v_
-  )
-  {
-    std::transform(
-      cont_.begin(),
-      cont_.end(),
-      std::back_insert_iterator<std::vector<std::string> >(v_),
-      [&prefix_] (const std::string& s_) { return prefix_ + s_; }
-    );
-  }
 }
 
 int main(int argc_, const char* argv_[])
@@ -117,25 +97,6 @@ int main(int argc_, const char* argv_[])
 
       just::temp::directory dir;
 
-      std::vector<std::string> clang_args{
-        clang_argument(cfg.standard_to_use),
-        set_max_template_depth(cfg.max_template_depth)
-      };
-
-      add_with_prefix("-I", cfg.include_path, clang_args);
-      add_with_prefix("-D", cfg.macros, clang_args);
-
-      if (!cfg.warnings_enabled)
-      {
-        clang_args.push_back("-w");
-      }
-
-      clang_args.insert(
-        clang_args.end(),
-        cfg.extra_clang_args.begin(),
-        cfg.extra_clang_args.end()
-      );
-
       std::unique_ptr<metashell::shell>
         shell(
           new metashell::shell(
@@ -144,10 +105,10 @@ int main(int argc_, const char* argv_[])
             dir.path(),
             env_filename,
             metashell::create_clang_engine(
-              cfg.clang_path,
+              cfg,
               dir.path(),
               env_filename,
-              clang_args,
+              det,
               &logger
             ),
             &logger

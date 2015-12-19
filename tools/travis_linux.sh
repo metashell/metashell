@@ -36,7 +36,7 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 # Run the system tests
 
 for t in core mdb; do
-  test/system/app/${t}/metashell_${t}_system_test app/metashell -I../3rd/boost/include
+  test/system/app/${t}/metashell_${t}_system_test app/metashell -- -I../3rd/boost/include --
 done
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date

@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_STDLIB_HPP
-#define METASHELL_DATA_STDLIB_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,24 +14,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
-#include <string>
+#include <metashell/has_prefix.hpp>
 
-namespace metashell
+#include <boost/algorithm/string/predicate.hpp>
+
+#include <algorithm>
+
+using namespace metashell;
+
+namespace
 {
-  namespace data
+  bool has_prefix(
+    const std::string& arg_,
+    const std::vector<std::string>& prefixes_
+  )
   {
-    enum class stdlib {
-      libcxx,
-      libstdcxx
-    };
-
-    stdlib parse_stdlib(const std::string& std_);
-    std::string clang_argument(stdlib std_);
-
-    std::ostream& operator<<(std::ostream& os, stdlib std_);
+    return
+      std::any_of(
+        prefixes_.begin(),
+        prefixes_.end(),
+        [&arg_](const std::string& prefix_)
+        {
+          return boost::algorithm::starts_with(arg_, prefix_);
+        }
+      );
   }
 }
 
-#endif
+bool metashell::has_prefix(
+  const std::vector<std::string>& args_,
+  const std::vector<std::string>& prefixes_
+)
+{
+  return
+    std::any_of(
+      args_.begin(),
+      args_.end(),
+      [&prefixes_](const std::string& arg_)
+      {
+        return ::has_prefix(arg_, prefixes_);
+      }
+    );
+}
 
