@@ -160,36 +160,6 @@ namespace
       }
     }
   }
-
-  bool detect_precompiled_header_usage(
-    bool user_wants_precompiled_headers_,
-    const data::config& cfg_,
-    iface::displayer& displayer_,
-    logger* logger_
-  )
-  {
-    if (user_wants_precompiled_headers_)
-    {
-      METASHELL_LOG(logger_, "Checking if precompiled headers can be used.");
-      if (cfg_.clang_path.empty())
-      {
-        displayer_.show_error("Disabling precompiled headers");
-        METASHELL_LOG(
-          logger_,
-          "Disabling precompiled headers: no Clang binary is available."
-        );
-      }
-      else
-      {
-        return true;
-      }
-    }
-    else
-    {
-      METASHELL_LOG(logger_, "User disabled precompiled header usage.");
-    }
-    return false;
-  }
 }
 
 data::config metashell::detect_config(
@@ -212,13 +182,7 @@ data::config metashell::detect_config(
 
   cfg.saving_enabled = ucfg_.saving_enabled;
 
-  cfg.use_precompiled_headers =
-    detect_precompiled_header_usage(
-      ucfg_.use_precompiled_headers,
-      cfg,
-      displayer_,
-      logger_
-    );
+  cfg.use_precompiled_headers = ucfg_.use_precompiled_headers;
 
   cfg.splash_enabled = ucfg_.splash_enabled;
 

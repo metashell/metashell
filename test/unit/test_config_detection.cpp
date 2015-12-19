@@ -187,29 +187,6 @@ JUST_TEST_CASE(
   JUST_ASSERT_EMPTY_CONTAINER(d.errors());
 }
 
-JUST_TEST_CASE(test_precompiled_headers_are_disabled_when_no_clang_is_found)
-{
-  mock_environment_detector envd;
-  envd.file_exists_returns(false);
-
-  data::user_config ucfg;
-  ucfg.use_precompiled_headers = true;
-
-  in_memory_displayer d;
-  const data::config cfg = detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT(!cfg.use_precompiled_headers);
-  JUST_ASSERT(
-    std::find(
-      d.errors().begin(),
-      d.errors().end(),
-      "Disabling precompiled headers"
-    )
-    !=
-    d.errors().end()
-  );
-}
-
 JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
 {
   mock_environment_detector envd;
