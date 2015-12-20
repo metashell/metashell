@@ -262,6 +262,7 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
+    ("engine", value(&ucfg.engine), "The engine (C++ compiler) to use.")
     ;
 
   using dec_arg = decommissioned_argument;

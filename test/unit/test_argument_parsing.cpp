@@ -161,3 +161,17 @@ JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)
   JUST_ASSERT(fails_and_displays_error({"-stdlib=libstdc++"}));
 }
 
+JUST_TEST_CASE(test_not_specifying_the_engine)
+{
+  const data::user_config cfg = parse_config({}).cfg;
+
+  JUST_ASSERT_EQUAL("internal", cfg.engine);
+}
+
+JUST_TEST_CASE(test_specifying_the_engine)
+{
+  const data::user_config cfg = parse_config({"--engine", "foo"}).cfg;
+
+  JUST_ASSERT_EQUAL("foo", cfg.engine);
+}
+

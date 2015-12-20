@@ -35,6 +35,7 @@ namespace metashell
       unsigned templight_trace_capacity;
       bool saving_enabled;
       bool splash_enabled = true;
+      std::string engine;
     };
   }
 }
