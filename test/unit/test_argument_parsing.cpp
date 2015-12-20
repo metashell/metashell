@@ -35,7 +35,14 @@ namespace
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
 
-    return metashell::parse_config(args.size(), args.data(), {}, out_, err_);
+    return
+      metashell::parse_config(
+        args.size(),
+        args.data(),
+        std::map<std::string, engine_entry>(),
+        out_,
+        err_
+      );
   }
 
   bool fails_and_displays_error(std::initializer_list<const char*> args_)
