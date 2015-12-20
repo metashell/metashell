@@ -18,8 +18,13 @@
 
 using namespace metashell;
 
-engine_entry::engine_entry(engine_factory factory_, std::string description_) :
+engine_entry::engine_entry(
+  engine_factory factory_,
+  std::string args_,
+  std::string description_
+) :
   _factory(move(factory_)),
+  _args(move(args_)),
   _description(move(description_))
 {}
 
@@ -33,6 +38,11 @@ std::unique_ptr<iface::engine> engine_entry::build(
 {
   return
     _factory(config_, internal_dir_, env_filename_, env_detector_, logger_);
+}
+
+const std::string& engine_entry::args() const
+{
+  return _args;
 }
 
 const std::string& engine_entry::description() const

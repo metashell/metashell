@@ -528,8 +528,9 @@ engine_entry metashell::get_engine_clang_entry()
   return
     engine_entry(
       factory_for<engine_clang>(),
-      "Uses the Clang compiler or Templight. The engine arguments are passed to"
-      " the compiler as command line-arguments."
+      "<Clang args>",
+      "Uses the Clang compiler or Templight. <Clang args> are passed to the"
+      " compiler as command line-arguments."
     );
 }
 
