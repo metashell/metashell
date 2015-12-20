@@ -76,7 +76,7 @@ int main(int argc_, const char* argv_[])
       };
 
     const parse_config_result
-      r = parse_config(argc_, argv_, &std::cout, &std::cerr);
+      r = parse_config(argc_, argv_, engines, &std::cout, &std::cerr);
 
     metashell::console_config
       ccfg(r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);

@@ -31,6 +31,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <boost/range/adaptor/map.hpp>
+
 #include <boost/optional.hpp>
 
 #include <string>
@@ -197,6 +199,7 @@ namespace
 parse_config_result metashell::parse_config(
   int argc_,
   const char* argv_[],
+  const std::map<std::string, engine_entry>& engines_,
   std::ostream* out_,
   std::ostream* err_
 )
@@ -224,6 +227,12 @@ parse_config_result metashell::parse_config(
 
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
+
+  const std::string engine_info =
+    "The engine (C++ compiler) to use. Available engines: " +
+     boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
+     ". Default: " + ucfg.engine
+    ;
 
   options_description desc("Options");
   desc.add_options()
@@ -262,7 +271,7 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
-    ("engine", value(&ucfg.engine), "The engine (C++ compiler) to use.")
+    ("engine", value(&ucfg.engine), engine_info.c_str())
     ;
 
   using dec_arg = decommissioned_argument;
