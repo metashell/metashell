@@ -33,11 +33,19 @@ std::unique_ptr<iface::engine> engine_entry::build(
   const std::string& internal_dir_,
   const std::string& env_filename_,
   iface::environment_detector& env_detector_,
+  iface::displayer& displayer_,
   logger* logger_
 ) const
 {
   return
-    _factory(config_, internal_dir_, env_filename_, env_detector_, logger_);
+    _factory(
+      config_,
+      internal_dir_,
+      env_filename_,
+      env_detector_,
+      displayer_,
+      logger_
+    );
 }
 
 const std::string& engine_entry::args() const

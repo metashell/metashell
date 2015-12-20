@@ -89,18 +89,6 @@ JUST_TEST_CASE(test_clang_path_is_kept)
   JUST_ASSERT_EQUAL("/foo/clang", detect_config(ucfg, dstub).clang_path);
 }
 
-JUST_TEST_CASE(test_clang_binary_is_searched_when_not_specified)
-{
-  mock_environment_detector envd;
-  envd.search_clang_binary_returns("/foo/bar/clang");
-  envd.file_exists_returns(false);
-
-  const data::config cfg = detect_config(data::user_config(), envd);
-
-  JUST_ASSERT_EQUAL(1, envd.search_clang_binary_called_times());
-  JUST_ASSERT_EQUAL("/foo/bar/clang", cfg.clang_path);
-}
-
 JUST_TEST_CASE(test_clang_binary_is_not_searched_when_specified)
 {
   mock_environment_detector envd;
@@ -111,59 +99,6 @@ JUST_TEST_CASE(test_clang_binary_is_not_searched_when_specified)
   const data::config cfg = detect_config(ucfg, envd);
 
   JUST_ASSERT_EQUAL(0, envd.search_clang_binary_called_times());
-}
-
-JUST_TEST_CASE(
-  test_clang_binarys_existence_is_checked_when_path_is_manually_specified
-)
-{
-  mock_environment_detector envd;
-
-  data::user_config ucfg;
-  ucfg.clang_path = "/foo/clang";
-
-  const data::config cfg = detect_config(ucfg, envd);
-
-  JUST_ASSERT_EQUAL(1, envd.file_exists_called_times());
-  JUST_ASSERT_EQUAL("/foo/clang", envd.file_exists_last_arg());
-}
-
-JUST_TEST_CASE(test_custom_clang_binary_is_not_used_when_does_not_exist)
-{
-  mock_environment_detector envd;
-  envd.file_exists_returns(false);
-
-  data::user_config ucfg;
-  ucfg.clang_path = "/foo/clang";
-
-  JUST_ASSERT_EQUAL("", detect_config(ucfg, envd).clang_path);
-}
-
-JUST_TEST_CASE(test_error_is_displayed_when_custom_clang_binary_is_not_found)
-{
-  mock_environment_detector envd;
-  envd.file_exists_returns(false);
-
-  data::user_config ucfg;
-  ucfg.clang_path = "/foo/clang";
-
-  in_memory_displayer d;
-  detect_config(ucfg, envd, d, nullptr);
-
-  JUST_ASSERT(!d.errors().empty());
-}
-
-JUST_TEST_CASE(
-  test_error_is_displayed_when_clang_binary_is_not_found_at_default_locations
-)
-{
-  mock_environment_detector envd;
-  envd.file_exists_returns(false);
-
-  in_memory_displayer d;
-  detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT(!d.errors().empty());
 }
 
 JUST_TEST_CASE(
@@ -191,58 +126,6 @@ JUST_TEST_CASE(test_precompiled_headers_are_enabled_when_clang_is_found)
   const data::config cfg = detect_config(ucfg, envd, d, nullptr);
 
   JUST_ASSERT(cfg.use_precompiled_headers);
-}
-
-JUST_TEST_CASE(
-  test_clang_shipped_with_metashell_is_used_on_linux_when_user_does_not_override
-)
-{
-  mock_environment_detector envd;
-  envd.directory_of_executable_returns("/usr/local/bin");
-  envd.search_clang_binary_returns("/some/other/path");
-  envd.file_exists_returns(true);
-  envd.on_windows_returns(false);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL("/usr/local/bin/templight_metashell", cfg.clang_path);
-}
-
-JUST_TEST_CASE(
-  test_when_clang_is_not_found_clang_metashell_appears_in_the_error_message_as_well
-)
-{
-  mock_environment_detector envd;
-  envd.directory_of_executable_returns("/usr/local/bin");
-  envd.search_clang_binary_returns("");
-  envd.file_exists_returns(false);
-  envd.on_windows_returns(false);
-
-  in_memory_displayer d;
-  detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL(1u, d.errors().size());
-  JUST_ASSERT(
-    d.errors().front().find("/usr/local/bin/templight_metashell")
-    != std::string::npos
-  );
-}
-
-JUST_TEST_CASE(
-  test_clang_shipped_with_metashell_is_used_on_windows_when_user_does_not_override
-)
-{
-  mock_environment_detector envd;
-  envd.directory_of_executable_returns("c:/foo/bar");
-  envd.search_clang_binary_returns("c:/some/other/path");
-  envd.file_exists_returns(true);
-  envd.on_windows_returns(true);
-
-  null_displayer d;
-  const data::config cfg = detect_config(data::user_config(), envd, d, nullptr);
-
-  JUST_ASSERT_EQUAL("c:/foo/bar\\templight\\templight.exe", cfg.clang_path);
 }
 
 JUST_TEST_CASE(test_saving_is_disabled_by_default)

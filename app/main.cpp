@@ -126,7 +126,14 @@ int main(int argc_, const char* argv_[])
               ccfg.processor_queue(),
               dir.path(),
               env_filename,
-              eentry->second.build(cfg, dir.path(), env_filename, det, &logger),
+              eentry->second.build(
+                cfg,
+                dir.path(),
+                env_filename,
+                det,
+                ccfg.displayer(),
+                &logger
+              ),
               &logger
             )
           );

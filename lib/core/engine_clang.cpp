@@ -39,6 +39,115 @@ using namespace metashell;
 
 namespace
 {
+  const std::string default_clang_search_path[] =
+    {
+      ""
+      #include "default_clang_search_path.hpp"
+    };
+
+  std::string clang_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      env_detector_.directory_of_executable()
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
+  }
+
+  std::string detect_clang_binary(
+    const std::string& user_defined_path_,
+    iface::environment_detector& env_detector_,
+    iface::displayer& displayer_,
+    logger* logger_
+  )
+  {
+    METASHELL_LOG(logger_, "Searching Clang binary");
+    if (user_defined_path_.empty())
+    {
+      METASHELL_LOG(logger_, "No user override for Clang binary path.");
+
+      const std::string clang_metashell =
+        clang_shipped_with_metashell(env_detector_);
+
+      METASHELL_LOG(
+        logger_,
+        "Path of Clang shipped with Metashell: " + clang_metashell
+      );
+
+      if (env_detector_.file_exists(clang_metashell))
+      {
+        METASHELL_LOG(
+          logger_,
+          "Clang shipped with Metashell is there. Choosing that."
+        );
+        return clang_metashell;
+      }
+      else
+      {
+        METASHELL_LOG(
+          logger_,
+          "Clang binary shipped with Metashell is missing. Searching for"
+          " another Clang binary at the following locations: "
+          +  boost::algorithm::join(default_clang_search_path, ", ")
+        );
+        const std::string clang = env_detector_.search_clang_binary();
+
+        if (clang.empty())
+        {
+          METASHELL_LOG(logger_, "No Clang binary found.");
+
+          std::ostringstream s;
+          s
+            << "clang++ not found. Checked:" << std::endl
+            << clang_metashell << std::endl;
+          std::copy(
+            default_clang_search_path + 1,
+            default_clang_search_path
+              + sizeof(default_clang_search_path) / sizeof(const char*),
+            std::ostream_iterator<std::string>(s, "\n")
+          );
+
+          displayer_.show_error(s.str());
+        }
+        else
+        {
+          METASHELL_LOG(logger_, "Clang binary found: " + clang);
+        }
+
+        return clang;
+      }
+    }
+    else
+    {
+      METASHELL_LOG(
+        logger_,
+        "User override for Clang binary: " + user_defined_path_
+      );
+
+      if (env_detector_.file_exists(user_defined_path_))
+      {
+        METASHELL_LOG(
+          logger_,
+          "User defined Clang binary exists. Choosing that."
+        );
+        return user_defined_path_;
+      }
+      else
+      {
+        METASHELL_LOG(logger_, "User defined Clang binary not found.");
+        displayer_.show_error(
+          "clang++ not found. Checked:\n" + user_defined_path_ + "\n"
+        );
+
+        return std::string();
+      }
+    }
+  }
+
   std::string set_max_template_depth(int v_)
   {
     return "-ftemplate-depth=" + std::to_string(v_);
@@ -224,7 +333,8 @@ namespace
     const data::config& config_,
     const std::string& internal_dir_,
     iface::environment_detector& env_detector_,
-    logger* logger_
+    logger* logger_,
+    const std::string& clang_path_
   )
   {
     std::vector<std::string>
@@ -252,7 +362,7 @@ namespace
     }
 
     const std::vector<std::string> include_path =
-      determine_include_path(config_.clang_path, env_detector_, logger_);
+      determine_include_path(clang_path_, env_detector_, logger_);
     args.reserve(args.size() + include_path.size());
     for (const std::string& p : include_path)
     {
@@ -276,11 +386,35 @@ namespace
       const std::string& internal_dir_,
       const std::string& env_filename_,
       iface::environment_detector& env_detector_,
+      iface::displayer& displayer_,
+      logger* logger_
+    ) :
+      engine_clang(
+        config_,
+        internal_dir_,
+        env_filename_,
+        env_detector_,
+        detect_clang_binary(
+          config_.clang_path,
+          env_detector_,
+          displayer_,
+          logger_
+        ),
+        logger_
+      )
+    {}
+
+    engine_clang(
+      const data::config& config_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_,
+      iface::environment_detector& env_detector_,
+      std::string clang_path_,
       logger* logger_
     ) :
       _clang_binary(
-        config_.clang_path,
-        clang_args(config_, internal_dir_, env_detector_, logger_),
+        clang_path_,
+        clang_args(config_, internal_dir_, env_detector_, logger_, clang_path_),
         logger_
       ),
       _internal_dir(internal_dir_),
