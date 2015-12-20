@@ -499,54 +499,64 @@ namespace
 
     return result;
   }
+
+  std::unique_ptr<iface::engine> create_clang_engine(
+    const data::config& config_,
+    const std::string& internal_dir_,
+    const std::string& env_filename_,
+    iface::environment_detector& env_detector_,
+    logger* logger_
+  )
+  {
+    std::vector<std::string> clang_args;
+  
+    if (!cpp_standard_set(config_.extra_clang_args))
+    {
+      clang_args.push_back("-std=c++0x");
+    }
+  
+    if (!max_template_depth_set(config_.extra_clang_args))
+    {
+      clang_args.push_back(set_max_template_depth(256));
+    }
+  
+    clang_args.insert(
+      clang_args.end(),
+      config_.extra_clang_args.begin(),
+      config_.extra_clang_args.end()
+    );
+  
+    {
+      const std::vector<std::string> include_path =
+        determine_include_path(config_.clang_path, env_detector_, logger_);
+      clang_args.reserve(clang_args.size() + include_path.size());
+      for (const std::string& p : include_path)
+      {
+        clang_args.push_back("-I" + p);
+      }
+    }
+  
+    return
+      std::unique_ptr<iface::engine>(
+        new engine_clang(
+          config_.clang_path,
+          internal_dir_,
+          internal_dir_ + "/" + env_filename_,
+          env_detector_,
+          clang_args,
+          logger_
+        )
+      );
+  }
 } // anonymous namespace
 
-std::unique_ptr<iface::engine> metashell::create_clang_engine(
-  const data::config& config_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  iface::environment_detector& env_detector_,
-  logger* logger_
-)
+engine_entry metashell::get_engine_clang_entry()
 {
-  std::vector<std::string> clang_args;
-
-  if (!cpp_standard_set(config_.extra_clang_args))
-  {
-    clang_args.push_back("-std=c++0x");
-  }
-
-  if (!max_template_depth_set(config_.extra_clang_args))
-  {
-    clang_args.push_back(set_max_template_depth(256));
-  }
-
-  clang_args.insert(
-    clang_args.end(),
-    config_.extra_clang_args.begin(),
-    config_.extra_clang_args.end()
-  );
-
-  {
-    const std::vector<std::string> include_path =
-      determine_include_path(config_.clang_path, env_detector_, logger_);
-    clang_args.reserve(clang_args.size() + include_path.size());
-    for (const std::string& p : include_path)
-    {
-      clang_args.push_back("-I" + p);
-    }
-  }
-
   return
-    std::unique_ptr<iface::engine>(
-      new engine_clang(
-        config_.clang_path,
-        internal_dir_,
-        internal_dir_ + "/" + env_filename_,
-        env_detector_,
-        clang_args,
-        logger_
-      )
+    engine_entry(
+      create_clang_engine,
+      "Uses the Clang compiler or Templight. The engine arguments are passed to"
+      " the compiler as command line-arguments."
     );
 }
 

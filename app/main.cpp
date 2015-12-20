@@ -104,7 +104,7 @@ int main(int argc_, const char* argv_[])
             ccfg.processor_queue(),
             dir.path(),
             env_filename,
-            metashell::create_clang_engine(
+            metashell::get_engine_clang_entry().build(
               cfg,
               dir.path(),
               env_filename,

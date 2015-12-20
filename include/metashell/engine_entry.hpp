@@ -1,5 +1,5 @@
-#ifndef METASHELL_ENGINE_CLANG_HPP
-#define METASHELL_ENGINE_CLANG_HPP
+#ifndef METASHELL_ENGINE_ENTRY_HPP
+#define METASHELL_ENGINE_ENTRY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,11 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine_entry.hpp>
+#include <metashell/engine_factory.hpp>
+
+#include <string>
 
 namespace metashell
 {
-  engine_entry get_engine_clang_entry();
+  class engine_entry
+  {
+  public:
+    engine_entry(engine_factory factory_, std::string description_);
+
+    std::unique_ptr<iface::engine> build(
+      const data::config& config_,
+      const std::string& internal_dir_,
+      const std::string& env_filename_,
+      iface::environment_detector& env_detector_,
+      logger* logger_
+    ) const;
+
+    const std::string& description() const;
+  private:
+    engine_factory _factory;
+    std::string _description;
+  };
 }
 
 #endif
