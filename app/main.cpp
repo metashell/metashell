@@ -23,10 +23,14 @@
 #include <metashell/logger.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/engine_clang.hpp>
+#include <metashell/engine_entry.hpp>
 
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
+
+#include <boost/range/adaptor/map.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <just/temp.hpp>
 
@@ -34,6 +38,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
+#include <string>
+#include <map>
 
 namespace
 {
@@ -64,6 +70,11 @@ int main(int argc_, const char* argv_[])
     using metashell::parse_config;
     using metashell::parse_config_result;
 
+    const std::map<std::string, metashell::engine_entry>
+      engines{
+        {"internal", metashell::get_engine_clang_entry()}
+      };
+
     const parse_config_result
       r = parse_config(argc_, argv_, &std::cout, &std::cerr);
 
@@ -87,60 +98,67 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    if (r.should_run_shell())
+    const auto eentry = engines.find(r.cfg.engine);
+    if (eentry == engines.end())
     {
-      metashell::default_environment_detector det(argv_[0]);
-      const metashell::data::config
-        cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
-
-      METASHELL_LOG(&logger, "Running shell");
-
-      just::temp::directory dir;
-
-      std::unique_ptr<metashell::shell>
-        shell(
-          new metashell::shell(
-            cfg,
-            ccfg.processor_queue(),
-            dir.path(),
-            env_filename,
-            metashell::get_engine_clang_entry().build(
-              cfg,
-              dir.path(),
-              env_filename,
-              det,
-              &logger
-            ),
-            &logger
-          )
+      throw
+        std::runtime_error(
+          "Engine " + r.cfg.engine + " not found. Available engines: " +
+          boost::algorithm::join(engines | boost::adaptors::map_keys, ", ")
         );
-
-      if (cfg.splash_enabled)
-      {
-        shell->display_splash(ccfg.displayer(), get_dependency_versions());
-      }
-
-      ccfg.processor_queue().push(move(shell));
-
-      METASHELL_LOG(&logger, "Starting input loop");
-      
-      metashell::input_loop(
-        ccfg.processor_queue(),
-        ccfg.displayer(),
-        ccfg.reader()
-      );
-
-      METASHELL_LOG(&logger, "Input loop finished");
     }
     else
     {
-      METASHELL_LOG(&logger, "Not running shell");
+      if (r.should_run_shell())
+      {
+        metashell::default_environment_detector det(argv_[0]);
+        const metashell::data::config
+          cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
+
+        METASHELL_LOG(&logger, "Running shell");
+
+        just::temp::directory dir;
+
+        std::unique_ptr<metashell::shell>
+          shell(
+            new metashell::shell(
+              cfg,
+              ccfg.processor_queue(),
+              dir.path(),
+              env_filename,
+              eentry->second.build(cfg, dir.path(), env_filename, det, &logger),
+              &logger
+            )
+          );
+
+        if (cfg.splash_enabled)
+        {
+          shell->display_splash(ccfg.displayer(), get_dependency_versions());
+        }
+
+        ccfg.processor_queue().push(move(shell));
+
+        METASHELL_LOG(&logger, "Starting input loop");
+        
+        metashell::input_loop(
+          ccfg.processor_queue(),
+          ccfg.displayer(),
+          ccfg.reader()
+        );
+
+        METASHELL_LOG(&logger, "Input loop finished");
+      }
+      else
+      {
+        METASHELL_LOG(&logger, "Not running shell");
+      }
+      return r.should_error_at_exit() ? 1 : 0;
     }
-    return r.should_error_at_exit() ? 1 : 0;
   }
   catch (std::exception& e_)
   {
     std::cerr << "Error: " << e_.what() << std::endl;
+    return 1;
   }
 }
 
