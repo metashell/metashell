@@ -1,6 +1,3 @@
-#ifndef METASHELL_ENGINE_CLANG_HPP
-#define METASHELL_ENGINE_CLANG_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -19,10 +16,37 @@
 
 #include <metashell/engine_entry.hpp>
 
-namespace metashell
+using namespace metashell;
+
+engine_entry::engine_entry(
+  engine_factory factory_,
+  std::string args_,
+  std::string description_
+) :
+  _factory(move(factory_)),
+  _args(move(args_)),
+  _description(move(description_))
+{}
+
+std::unique_ptr<iface::engine> engine_entry::build(
+  const data::config& config_,
+  const std::string& internal_dir_,
+  const std::string& env_filename_,
+  iface::environment_detector& env_detector_,
+  logger* logger_
+) const
 {
-  engine_entry get_engine_clang_entry();
+  return
+    _factory(config_, internal_dir_, env_filename_, env_detector_, logger_);
 }
 
-#endif
+const std::string& engine_entry::args() const
+{
+  return _args;
+}
+
+const std::string& engine_entry::description() const
+{
+  return _description;
+}
 

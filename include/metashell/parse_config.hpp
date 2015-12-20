@@ -18,8 +18,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/user_config.hpp>
+#include <metashell/engine_entry.hpp>
 
 #include <iosfwd>
+#include <string>
+#include <map>
 
 namespace metashell
 {
@@ -45,6 +48,7 @@ namespace metashell
   parse_config_result parse_config(
     int argc_,
     const char* argv_[],
+    const std::map<std::string, engine_entry>& engines_,
     std::ostream* out_ = 0,
     std::ostream* err_ = 0
   );

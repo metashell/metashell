@@ -35,7 +35,14 @@ namespace
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
 
-    return metashell::parse_config(args.size(), args.data(), out_, err_);
+    return
+      metashell::parse_config(
+        args.size(),
+        args.data(),
+        std::map<std::string, engine_entry>(),
+        out_,
+        err_
+      );
   }
 
   bool fails_and_displays_error(std::initializer_list<const char*> args_)
@@ -159,5 +166,19 @@ JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)
   JUST_ASSERT(fails_and_displays_error({"--no_warnings"}));
   JUST_ASSERT(fails_and_displays_error({"-ftemplate-depth=13"}));
   JUST_ASSERT(fails_and_displays_error({"-stdlib=libstdc++"}));
+}
+
+JUST_TEST_CASE(test_not_specifying_the_engine)
+{
+  const data::user_config cfg = parse_config({}).cfg;
+
+  JUST_ASSERT_EQUAL("internal", cfg.engine);
+}
+
+JUST_TEST_CASE(test_specifying_the_engine)
+{
+  const data::user_config cfg = parse_config({"--engine", "foo"}).cfg;
+
+  JUST_ASSERT_EQUAL("foo", cfg.engine);
 }
 

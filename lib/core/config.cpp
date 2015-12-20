@@ -185,6 +185,8 @@ data::config metashell::detect_config(
 
   cfg.splash_enabled = ucfg_.splash_enabled;
 
+  cfg.engine = ucfg_.engine;
+
   METASHELL_LOG(logger_, "Config detection completed");
 
   return cfg;

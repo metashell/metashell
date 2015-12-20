@@ -159,10 +159,72 @@ namespace
     }
   }
 
+  std::string templight_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      env_detector_.directory_of_executable()
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
+  }
+
+  std::vector<std::string> determine_include_path(
+    const std::string& clang_binary_path_,
+    iface::environment_detector& env_detector_,
+    logger* logger_
+  )
+  {
+    METASHELL_LOG(
+      logger_,
+      "Determining include path of Clang: " + clang_binary_path_
+    );
+
+    std::vector<std::string> result;
+
+    const std::string
+      dir_of_executable = env_detector_.directory_of_executable();
+
+    if (env_detector_.on_windows())
+    {
+      // mingw headers shipped with Metashell
+      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
+
+      result.push_back(mingw_headers);
+      result.push_back(mingw_headers + "\\mingw32");
+      if (
+        clang_binary_path_.empty()
+        || clang_binary_path_ == templight_shipped_with_metashell(env_detector_)
+      )
+      {
+        result.push_back(dir_of_executable + "\\templight\\include");
+      }
+    }
+    else
+    {
+      if (env_detector_.on_osx())
+      {
+        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
+      }
+      result.push_back(dir_of_executable + "/../include/metashell/templight");
+    }
+
+    METASHELL_LOG(
+      logger_,
+      "Include path determined: " + boost::algorithm::join(result, ";")
+    );
+
+    return result;
+  }
+
   std::vector<std::string> clang_args(
+    const data::config& config_,
     const std::string& internal_dir_,
     iface::environment_detector& env_detector_,
-    const std::vector<std::string>& extra_args_
+    logger* logger_
   )
   {
     std::vector<std::string>
@@ -179,7 +241,29 @@ namespace
       args.push_back("-U_MSC_VER");
     }
 
-    args.insert(args.end(), extra_args_.begin(), extra_args_.end());
+    if (!cpp_standard_set(config_.extra_clang_args))
+    {
+      args.push_back("-std=c++0x");
+    }
+  
+    if (!max_template_depth_set(config_.extra_clang_args))
+    {
+      args.push_back(set_max_template_depth(256));
+    }
+
+    const std::vector<std::string> include_path =
+      determine_include_path(config_.clang_path, env_detector_, logger_);
+    args.reserve(args.size() + include_path.size());
+    for (const std::string& p : include_path)
+    {
+      args.push_back("-I" + p);
+    }
+
+    args.insert(
+      args.end(),
+      config_.extra_clang_args.begin(),
+      config_.extra_clang_args.end()
+    );
 
     return args;
   }
@@ -188,20 +272,19 @@ namespace
   {
   public:
     engine_clang(
-      const std::string& clang_path_,
+      const data::config& config_,
       const std::string& internal_dir_,
-      const std::string& env_path_,
+      const std::string& env_filename_,
       iface::environment_detector& env_detector_,
-      const std::vector<std::string>& extra_args_,
       logger* logger_
     ) :
       _clang_binary(
-        clang_path_,
-        clang_args(internal_dir_, env_detector_, extra_args_),
+        config_.clang_path,
+        clang_args(config_, internal_dir_, env_detector_, logger_),
         logger_
       ),
       _internal_dir(internal_dir_),
-      _env_path(env_path_),
+      _env_path(internal_dir_ + "/" + env_filename_),
       _logger(logger_)
     {}
 
@@ -438,115 +521,16 @@ namespace
     std::string _env_path;
     logger* _logger;
   };
-
-  std::string templight_shipped_with_metashell(
-    iface::environment_detector& env_detector_
-  )
-  {
-    return
-      env_detector_.directory_of_executable()
-      + (
-        env_detector_.on_windows() ?
-          "\\templight\\templight.exe" :
-          "/templight_metashell"
-      );
-  }
-
-  std::vector<std::string> determine_include_path(
-    const std::string& clang_binary_path_,
-    iface::environment_detector& env_detector_,
-    logger* logger_
-  )
-  {
-    METASHELL_LOG(
-      logger_,
-      "Determining include path of Clang: " + clang_binary_path_
-    );
-
-    std::vector<std::string> result;
-
-    const std::string
-      dir_of_executable = env_detector_.directory_of_executable();
-
-    if (env_detector_.on_windows())
-    {
-      // mingw headers shipped with Metashell
-      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
-
-      result.push_back(mingw_headers);
-      result.push_back(mingw_headers + "\\mingw32");
-      if (
-        clang_binary_path_.empty()
-        || clang_binary_path_ == templight_shipped_with_metashell(env_detector_)
-      )
-      {
-        result.push_back(dir_of_executable + "\\templight\\include");
-      }
-    }
-    else
-    {
-      if (env_detector_.on_osx())
-      {
-        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
-      }
-      result.push_back(dir_of_executable + "/../include/metashell/templight");
-    }
-
-    METASHELL_LOG(
-      logger_,
-      "Include path determined: " + boost::algorithm::join(result, ";")
-    );
-
-    return result;
-  }
 } // anonymous namespace
 
-std::unique_ptr<iface::engine> metashell::create_clang_engine(
-  const data::config& config_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  iface::environment_detector& env_detector_,
-  logger* logger_
-)
+engine_entry metashell::get_engine_clang_entry()
 {
-  std::vector<std::string> clang_args;
-
-  if (!cpp_standard_set(config_.extra_clang_args))
-  {
-    clang_args.push_back("-std=c++0x");
-  }
-
-  if (!max_template_depth_set(config_.extra_clang_args))
-  {
-    clang_args.push_back(set_max_template_depth(256));
-  }
-
-  clang_args.insert(
-    clang_args.end(),
-    config_.extra_clang_args.begin(),
-    config_.extra_clang_args.end()
-  );
-
-  {
-    const std::vector<std::string> include_path =
-      determine_include_path(config_.clang_path, env_detector_, logger_);
-    clang_args.reserve(clang_args.size() + include_path.size());
-    for (const std::string& p : include_path)
-    {
-      clang_args.push_back("-I" + p);
-    }
-  }
-
   return
-    std::unique_ptr<iface::engine>(
-      new engine_clang(
-        config_.clang_path,
-        internal_dir_,
-        internal_dir_ + "/" + env_filename_,
-        env_detector_,
-        clang_args,
-        logger_
-      )
+    engine_entry(
+      factory_for<engine_clang>(),
+      "<Clang args>",
+      "Uses the Clang compiler or Templight. <Clang args> are passed to the"
+      " compiler as command line-arguments."
     );
 }
 

@@ -40,6 +40,7 @@ namespace metashell
       bool splash_enabled = true;
       logging_mode log_mode = logging_mode::none;
       std::string log_file;
+      std::string engine = "internal";
     };
   }
 }

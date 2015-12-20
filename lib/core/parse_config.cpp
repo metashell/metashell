@@ -31,6 +31,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <boost/range/adaptor/map.hpp>
+
 #include <boost/optional.hpp>
 
 #include <string>
@@ -109,6 +111,31 @@ namespace
           replace_all_copy(cmd.get_long_description(), "\n", "\n  ");
       }
       std::cout << '\n' << std::endl;
+    }
+  }
+
+  void show_engine_help(
+    const std::map<std::string, engine_entry>& engines_,
+    const std::string& engine_,
+    std::ostream* out_,
+    const std::string& app_name_
+  )
+  {
+    const auto e = engines_.find(engine_);
+    if (e == engines_.end())
+    {
+      throw std::runtime_error("Engine " + engine_ + " not found.");
+    }
+    else if (out_)
+    {
+      *out_
+        << "Usage: " << std::endl
+        << std::endl
+        << "  " << app_name_ << " --engine " << e->first
+        << " -- " << e->second.args() << std::endl
+        << std::endl
+        << e->second.description() << std::endl
+        << std::endl;
     }
   }
 
@@ -197,6 +224,7 @@ namespace
 parse_config_result metashell::parse_config(
   int argc_,
   const char* argv_[],
+  const std::map<std::string, engine_entry>& engines_,
   std::ostream* out_,
   std::ostream* err_
 )
@@ -224,6 +252,14 @@ parse_config_result metashell::parse_config(
 
   std::string con_type("readline");
   ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
+
+  std::string help_engine;
+
+  const std::string engine_info =
+    "The engine (C++ compiler) to use. Available engines: " +
+     boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
+     ". Default: " + ucfg.engine
+    ;
 
   options_description desc("Options");
   desc.add_options()
@@ -262,6 +298,8 @@ parse_config_result metashell::parse_config(
       "log", value(&ucfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
+    ("engine", value(&ucfg.engine), engine_info.c_str())
+    ("help_engine", value(&help_engine), "Display help about the engine")
     ;
 
   using dec_arg = decommissioned_argument;
@@ -327,6 +365,11 @@ parse_config_result metashell::parse_config(
     else if (vm.count("show_mdb_help"))
     {
       show_mdb_help();
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("help_engine"))
+    {
+      show_engine_help(engines_, help_engine, out_, argv_[0]);
       return parse_config_result::exit(false);
     }
     else
