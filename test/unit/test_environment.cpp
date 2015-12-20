@@ -19,13 +19,12 @@
 #include <metashell/shell.hpp>
 #include <metashell/engine_constant.hpp>
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 
 #include <just/test.hpp>
 #include <just/temp.hpp>
 
 #include "test_config.hpp"
-#include "argv0.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -50,7 +49,7 @@ namespace
 
 JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 {
-  data::config cfg = empty_config(argv0::get());
+  data::config cfg{};
   cfg.use_precompiled_headers = false;
 
   auto engine = create_failing_engine();
@@ -61,7 +60,7 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
 
 JUST_TEST_CASE(test_append_text_to_header_file_environment)
 {
-  data::config cfg = empty_config(argv0::get());
+  data::config cfg{};
   cfg.use_precompiled_headers = false;
 
   auto engine = create_failing_engine();
@@ -171,7 +170,7 @@ JUST_TEST_CASE(
   just::temp::directory d;
   const std::string fn = d.path() + "/test.hpp";
 
-  data::config cfg = empty_config(argv0::get());
+  data::config cfg{};
   cfg.saving_enabled = true;
   in_memory_displayer disp;
   shell sh(cfg, "", "", create_failing_engine());
@@ -186,7 +185,7 @@ JUST_TEST_CASE(
   test_environment_save_displays_an_error_when_filename_is_missing
 )
 {
-  data::config cfg = empty_config(argv0::get());
+  data::config cfg{};
   cfg.saving_enabled = true;
   in_memory_displayer d;
   shell sh(cfg, "", "", create_failing_engine());
@@ -200,7 +199,7 @@ JUST_TEST_CASE(
   test_environment_save_displays_an_error_when_io_error_happens
 )
 {
-  data::config cfg = empty_config(argv0::get());
+  data::config cfg{};
   cfg.saving_enabled = true;
   in_memory_displayer d;
   shell sh(cfg, "", "", create_failing_engine());

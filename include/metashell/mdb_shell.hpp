@@ -22,11 +22,12 @@
 #include <boost/regex.hpp>
 #include <boost/optional.hpp>
 
-#include <metashell/config.hpp>
 #include <metashell/breakpoint.hpp>
 #include <metashell/metaprogram.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/logger.hpp>
+
+#include <metashell/data/config.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/displayer.hpp>

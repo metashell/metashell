@@ -16,7 +16,7 @@
 
 #include <metashell/header_file_environment.hpp>
 #include <metashell/data/headers.hpp>
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/headers.hpp>

@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/parse_config.hpp>
-#include <metashell/config.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
@@ -23,6 +22,8 @@
 #include <metashell/mdb_shell.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/engine_constant.hpp>
+
+#include <metashell/data/config.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -236,14 +237,14 @@ parse_config_result metashell::parse_config(
   using boost::program_options::parse_command_line;
   using boost::program_options::value;
 
-  data::user_config ucfg;
+  data::config cfg;
 
   const char** const
     minus_minus = std::find(argv_, argv_ + argc_, std::string("--"));
   if (minus_minus != argv_ + argc_)
   {
-    ucfg.extra_clang_args.insert(
-      ucfg.extra_clang_args.end(),
+    cfg.extra_clang_args.insert(
+      cfg.extra_clang_args.end(),
       minus_minus + 1,
       argv_ + argc_
     );
@@ -251,14 +252,14 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string con_type("readline");
-  ucfg.use_precompiled_headers = !ucfg.clang_path.empty();
+  cfg.use_precompiled_headers = !cfg.clang_path.empty();
 
   std::string help_engine;
 
   const std::string engine_info =
     "The engine (C++ compiler) to use. Available engines: " +
      boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
-     ". Default: " + ucfg.engine
+     ". Default: " + cfg.engine
     ;
 
   options_description desc("Options");
@@ -273,7 +274,7 @@ parse_config_result metashell::parse_config(
       " (It needs clang++ to be available and writes to the local disc.)"
     )
     (
-      "clang", value(&ucfg.clang_path),
+      "clang", value(&cfg.clang_path),
       "The path of the clang++ binary to use for"
       " generating precompiled headers."
     )
@@ -295,10 +296,10 @@ parse_config_result metashell::parse_config(
     )
     ("nosplash", "Disable the splash messages")
     (
-      "log", value(&ucfg.log_file),
+      "log", value(&cfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
-    ("engine", value(&ucfg.engine), engine_info.c_str())
+    ("engine", value(&cfg.engine), engine_info.c_str())
     ("help_engine", value(&help_engine), "Display help about the engine")
     ;
 
@@ -330,21 +331,21 @@ parse_config_result metashell::parse_config(
       a.check(vm);
     }
 
-    ucfg.verbose = vm.count("verbose") || vm.count("V");
-    ucfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
-    ucfg.indent = vm.count("indent") != 0;
-    ucfg.con_type = metashell::data::parse_console_type(con_type);
-    ucfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
-    ucfg.saving_enabled = vm.count("enable_saving");
-    ucfg.splash_enabled = vm.count("nosplash") == 0;
+    cfg.verbose = vm.count("verbose") || vm.count("V");
+    cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
+    cfg.indent = vm.count("indent") != 0;
+    cfg.con_type = metashell::data::parse_console_type(con_type);
+    cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
+    cfg.saving_enabled = vm.count("enable_saving");
+    cfg.splash_enabled = vm.count("nosplash") == 0;
     if (vm.count("log") == 0)
     {
-      ucfg.log_mode = data::logging_mode::none;
+      cfg.log_mode = data::logging_mode::none;
     }
     else
     {
-      ucfg.log_mode =
-        (ucfg.log_file == "-") ?
+      cfg.log_mode =
+        (cfg.log_file == "-") ?
           data::logging_mode::console :
           data::logging_mode::file;
     }
@@ -374,7 +375,7 @@ parse_config_result metashell::parse_config(
     }
     else
     {
-      return parse_config_result::start_shell(ucfg);
+      return parse_config_result::start_shell(cfg);
     }
   }
   catch (const std::exception& e_)
@@ -396,9 +397,7 @@ parse_config_result parse_config_result::exit(bool with_error_)
   return r;
 }
 
-parse_config_result parse_config_result::start_shell(
-  const data::user_config& cfg_
-)
+parse_config_result parse_config_result::start_shell(const data::config& cfg_)
 {
   parse_config_result r;
   r.action = action_t::run_shell;

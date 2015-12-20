@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/user_config.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/engine_entry.hpp>
 
 #include <iosfwd>
@@ -36,13 +36,13 @@ namespace metashell
     };
 
     action_t action;
-    data::user_config cfg;
+    data::config cfg;
 
     bool should_run_shell() const;
     bool should_error_at_exit() const;
 
     static parse_config_result exit(bool with_error_);
-    static parse_config_result start_shell(const data::user_config& cfg_);
+    static parse_config_result start_shell(const data::config& cfg_);
   };
 
   parse_config_result parse_config(
