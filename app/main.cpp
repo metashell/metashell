@@ -73,7 +73,8 @@ int main(int argc_, const char* argv_[])
 
     const std::map<std::string, metashell::engine_entry>
       engines{
-        {"internal", metashell::get_engine_clang_entry()}
+        {"internal", metashell::get_internal_templight_entry()},
+        {"clang", metashell::get_engine_clang_entry()}
       };
 
     const parse_config_result

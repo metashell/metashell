@@ -58,6 +58,41 @@ namespace
       );
   }
 
+  std::string extract_clang_binary(
+    const std::vector<std::string>& engine_args_,
+    iface::environment_detector& env_detector_
+  )
+  {
+    if (engine_args_.empty())
+    {
+      const std::string sample_path =
+        env_detector_.on_windows() ?
+          "c:\\Program Files\\LLVM\\bin\\clang++.exe" :
+          "/usr/bin/clang++";
+      throw
+        std::runtime_error(
+          "The engine requires that you specify the path to the clang compiler"
+          " after --. For example: -- " + sample_path + " -std=c++11"
+        );
+    }
+    else
+    {
+      const std::string path = engine_args_.front();
+      if (env_detector_.file_exists(path))
+      {
+        return path;
+      }
+      else
+      {
+        throw
+          std::runtime_error(
+            "The path specified as the Clang binary to use (" + path
+            + ") does not exist."
+          );
+      }
+    }
+  }
+
   std::string detect_clang_binary(
     const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
@@ -329,6 +364,7 @@ namespace
     return result;
   }
 
+  template <bool UseInternalTemplight>
   std::vector<std::string> clang_args(
     const data::config& config_,
     const std::string& internal_dir_,
@@ -339,45 +375,58 @@ namespace
   {
     std::vector<std::string>
       args{
-        "-Wfatal-errors",
         "-iquote", ".",
         "-x", "c++-header",
         "-I", internal_dir_
       };
 
-    if (env_detector_.on_windows())
+    if (UseInternalTemplight)
     {
-      args.push_back("-fno-ms-compatibility");
-      args.push_back("-U_MSC_VER");
-    }
+      args.push_back("-Wfatal-errors");
 
-    if (!cpp_standard_set(config_.extra_clang_args))
-    {
-      args.push_back("-std=c++0x");
-    }
+      if (env_detector_.on_windows())
+      {
+        args.push_back("-fno-ms-compatibility");
+        args.push_back("-U_MSC_VER");
+      }
+
+      if (!cpp_standard_set(config_.extra_clang_args))
+      {
+        args.push_back("-std=c++0x");
+      }
+
+      if (!max_template_depth_set(config_.extra_clang_args))
+      {
+        args.push_back(set_max_template_depth(256));
+      }
   
-    if (!max_template_depth_set(config_.extra_clang_args))
-    {
-      args.push_back(set_max_template_depth(256));
-    }
+      const std::vector<std::string> include_path =
+        determine_include_path(clang_path_, env_detector_, logger_);
+      args.reserve(args.size() + include_path.size());
+      for (const std::string& p : include_path)
+      {
+        args.push_back("-I" + p);
+      }
 
-    const std::vector<std::string> include_path =
-      determine_include_path(clang_path_, env_detector_, logger_);
-    args.reserve(args.size() + include_path.size());
-    for (const std::string& p : include_path)
-    {
-      args.push_back("-I" + p);
+      args.insert(
+        args.end(),
+        config_.extra_clang_args.begin(),
+        config_.extra_clang_args.end()
+      );
     }
-
-    args.insert(
-      args.end(),
-      config_.extra_clang_args.begin(),
-      config_.extra_clang_args.end()
-    );
+    else if (config_.extra_clang_args.size() > 1)
+    {
+      args.insert(
+        args.end(),
+        config_.extra_clang_args.begin() + 1,
+        config_.extra_clang_args.end()
+      );
+    }
 
     return args;
   }
 
+  template <bool UseInternalTemplight>
   class engine_clang : public iface::engine
   {
   public:
@@ -394,12 +443,14 @@ namespace
         internal_dir_,
         env_filename_,
         env_detector_,
-        detect_clang_binary(
-          config_.clang_path,
-          env_detector_,
-          displayer_,
-          logger_
-        ),
+        UseInternalTemplight ?
+          detect_clang_binary(
+            config_.clang_path,
+            env_detector_,
+            displayer_,
+            logger_
+          ) :
+          extract_clang_binary(config_.extra_clang_args, env_detector_),
         logger_
       )
     {}
@@ -414,7 +465,13 @@ namespace
     ) :
       _clang_binary(
         clang_path_,
-        clang_args(config_, internal_dir_, env_detector_, logger_, clang_path_),
+        clang_args<UseInternalTemplight>(
+          config_,
+          internal_dir_,
+          env_detector_,
+          logger_,
+          clang_path_
+        ),
         logger_
       ),
       _internal_dir(internal_dir_),
@@ -661,10 +718,23 @@ engine_entry metashell::get_engine_clang_entry()
 {
   return
     engine_entry(
-      factory_for<engine_clang>(),
-      "<Clang args>",
+      factory_for<engine_clang<false>>(),
+      "<Clang binary> -std=<standard to use> [<Clang args>]",
       "Uses the Clang compiler or Templight. <Clang args> are passed to the"
-      " compiler as command line-arguments."
+      " compiler as command line-arguments. Note that Metashell requires C++11"
+      " or above. If your Clang uses such a standard by default, you can omit"
+      " the -std argument."
+    );
+}
+
+engine_entry metashell::get_internal_templight_entry()
+{
+  return
+    engine_entry(
+      factory_for<engine_clang<true>>(),
+      "[<Clang args>]",
+      "Uses the Templight shipped with Metashell. <Clang args> are passed to"
+      " the compiler as command line-arguments."
     );
 }
 
