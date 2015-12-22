@@ -281,7 +281,7 @@ parse_config_result metashell::parse_config(
   const int argc = minus_minus - argv_;
 
   std::string con_type("readline");
-  cfg.use_precompiled_headers = !cfg.clang_path.empty();
+  cfg.use_precompiled_headers = true;
 
   std::string help_engine;
 

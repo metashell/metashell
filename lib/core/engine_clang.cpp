@@ -94,92 +94,62 @@ namespace
   }
 
   std::string detect_clang_binary(
-    const std::string& user_defined_path_,
     iface::environment_detector& env_detector_,
     iface::displayer& displayer_,
     logger* logger_
   )
   {
     METASHELL_LOG(logger_, "Searching Clang binary");
-    if (user_defined_path_.empty())
+
+    const std::string clang_metashell =
+      clang_shipped_with_metashell(env_detector_);
+
+    METASHELL_LOG(
+      logger_,
+      "Path of Clang shipped with Metashell: " + clang_metashell
+    );
+
+    if (env_detector_.file_exists(clang_metashell))
     {
-      METASHELL_LOG(logger_, "No user override for Clang binary path.");
-
-      const std::string clang_metashell =
-        clang_shipped_with_metashell(env_detector_);
-
       METASHELL_LOG(
         logger_,
-        "Path of Clang shipped with Metashell: " + clang_metashell
+        "Clang shipped with Metashell is there. Choosing that."
       );
-
-      if (env_detector_.file_exists(clang_metashell))
-      {
-        METASHELL_LOG(
-          logger_,
-          "Clang shipped with Metashell is there. Choosing that."
-        );
-        return clang_metashell;
-      }
-      else
-      {
-        METASHELL_LOG(
-          logger_,
-          "Clang binary shipped with Metashell is missing. Searching for"
-          " another Clang binary at the following locations: "
-          +  boost::algorithm::join(default_clang_search_path, ", ")
-        );
-        const std::string clang = env_detector_.search_clang_binary();
-
-        if (clang.empty())
-        {
-          METASHELL_LOG(logger_, "No Clang binary found.");
-
-          std::ostringstream s;
-          s
-            << "clang++ not found. Checked:" << std::endl
-            << clang_metashell << std::endl;
-          std::copy(
-            default_clang_search_path + 1,
-            default_clang_search_path
-              + sizeof(default_clang_search_path) / sizeof(const char*),
-            std::ostream_iterator<std::string>(s, "\n")
-          );
-
-          displayer_.show_error(s.str());
-        }
-        else
-        {
-          METASHELL_LOG(logger_, "Clang binary found: " + clang);
-        }
-
-        return clang;
-      }
+      return clang_metashell;
     }
     else
     {
       METASHELL_LOG(
         logger_,
-        "User override for Clang binary: " + user_defined_path_
+        "Clang binary shipped with Metashell is missing. Searching for"
+        " another Clang binary at the following locations: "
+        +  boost::algorithm::join(default_clang_search_path, ", ")
       );
+      const std::string clang = env_detector_.search_clang_binary();
 
-      if (env_detector_.file_exists(user_defined_path_))
+      if (clang.empty())
       {
-        METASHELL_LOG(
-          logger_,
-          "User defined Clang binary exists. Choosing that."
+        METASHELL_LOG(logger_, "No Clang binary found.");
+
+        std::ostringstream s;
+        s
+          << "clang++ not found. Checked:" << std::endl
+          << clang_metashell << std::endl;
+        std::copy(
+          default_clang_search_path + 1,
+          default_clang_search_path
+            + sizeof(default_clang_search_path) / sizeof(const char*),
+          std::ostream_iterator<std::string>(s, "\n")
         );
-        return user_defined_path_;
+
+        displayer_.show_error(s.str());
       }
       else
       {
-        METASHELL_LOG(logger_, "User defined Clang binary not found.");
-        displayer_.show_error(
-          "clang++ not found. Checked:\n" + user_defined_path_ + "\n"
-        );
-
-        return std::string();
+        METASHELL_LOG(logger_, "Clang binary found: " + clang);
       }
+
+      return clang;
     }
   }
 
@@ -444,12 +414,7 @@ namespace
         env_filename_,
         env_detector_,
         UseInternalTemplight ?
-          detect_clang_binary(
-            config_.clang_path,
-            env_detector_,
-            displayer_,
-            logger_
-          ) :
+          detect_clang_binary(env_detector_, displayer_, logger_) :
           extract_clang_binary(config_.extra_clang_args, env_detector_),
         logger_
       )
