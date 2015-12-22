@@ -16,6 +16,8 @@
 
 #include <metashell/parse_config.hpp>
 
+#include "mock_environment_detector.hpp"
+
 #include <just/test.hpp>
 
 #include <sstream>
@@ -34,12 +36,14 @@ namespace
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
+    mock_environment_detector env_detector;
 
     return
       metashell::parse_config(
         args.size(),
         args.data(),
         std::map<std::string, engine_entry>(),
+        env_detector,
         out_,
         err_
       );

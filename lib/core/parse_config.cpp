@@ -140,6 +140,19 @@ namespace
     }
   }
 
+  std::string replace_all(
+    std::string s_,
+    const std::string& pattern_,
+    const std::string& replacement_
+  )
+  {
+    for (size_t p; (p = s_.find(pattern_)) != std::string::npos;)
+    {
+      s_.replace(p, pattern_.length(), replacement_);
+    }
+    return s_;
+  }
+
   class decommissioned_argument
   {
   public:
@@ -153,6 +166,19 @@ namespace
       _long_form(long_form_),
       _short_form(std::string(1, short_form_)),
       _type(type_)
+    {}
+
+    decommissioned_argument(
+      const std::string& long_form_,
+      type type_,
+      const std::string& suggestion_,
+      const std::string& msg_
+    ) :
+      _long_form(long_form_),
+      _short_form(boost::none),
+      _type(type_),
+      _suggestion(suggestion_),
+      _msg(msg_)
     {}
 
     decommissioned_argument(const std::string& long_form_, type type_) :
@@ -171,9 +197,7 @@ namespace
     {
       using boost::program_options::value;
 
-      const char desc[] =
-        "DECOMMISSIONED argument."
-        " Please provide it as a compiler argument after --";
+      const std::string desc = "DECOMMISSIONED argument. " + _suggestion;
 
       const std::string
         fmt =
@@ -183,13 +207,13 @@ namespace
       switch (_type)
       {
       case type::flag:
-        desc_.add_options()(fmt.c_str(), desc);
+        desc_.add_options()(fmt.c_str(), desc.c_str());
         break;
       case type::one_value:
-        desc_.add_options()(fmt.c_str(), value(&_ignore), desc);
+        desc_.add_options()(fmt.c_str(), value(&_ignore), desc.c_str());
         break;
       case type::multiple_values:
-        desc_.add_options()(fmt.c_str(), value(&_ignores), desc);
+        desc_.add_options()(fmt.c_str(), value(&_ignores), desc.c_str());
         break;
       }
     }
@@ -207,8 +231,7 @@ namespace
           name = _short_form ? "-" + *_short_form : "--" + *_long_form;
         throw
           std::runtime_error(
-            "Argument " + name + " has been decommissioned."
-            " Please provide it as a compiler argument after --"
+            replace_all(replace_all(_msg, "{NAME}", name), "{VALUE}", _ignore)
           );
       }
     }
@@ -219,6 +242,11 @@ namespace
 
     std::string _ignore;
     std::vector<std::string> _ignores;
+    std::string _suggestion =
+      "Please provide it as a compiler argument after --";
+    std::string _msg =
+      "Argument {NAME} has been decommissioned. Please provide it as a compiler"
+      " argument after --";
   };
 }
 
@@ -226,6 +254,7 @@ parse_config_result metashell::parse_config(
   int argc_,
   const char* argv_[],
   const std::map<std::string, engine_entry>& engines_,
+  iface::environment_detector& env_detector_,
   std::ostream* out_,
   std::ostream* err_
 )
@@ -274,11 +303,6 @@ parse_config_result metashell::parse_config(
       " (It needs clang++ to be available and writes to the local disc.)"
     )
     (
-      "clang", value(&cfg.clang_path),
-      "The path of the clang++ binary to use for"
-      " generating precompiled headers."
-    )
-    (
       "show_pragma_help",
       "Display help for pragmas in MarkDown format and exit."
     )
@@ -312,7 +336,21 @@ parse_config_result metashell::parse_config(
       dec_arg{"std", dec_type::one_value},
       dec_arg{"no_warnings", 'w', dec_type::flag},
       dec_arg{'f', dec_type::one_value},
-      dec_arg{'s', dec_type::one_value}
+      dec_arg{'s', dec_type::one_value},
+      dec_arg{
+        "clang",
+        dec_type::one_value,
+        "Please use \"--engine clang\" with the custom clang binary instead.",
+        "{NAME} has been decommissioned. You can specify the clang binary to"
+        " use by using the clang engine. For example:\n"
+        "\n"
+        + std::string(argv_[0])
+        + " --engine clang -- {VALUE} -std=c++0x -ftemplate-depth=256"
+        " -Wfatal-errors"
+        + (
+          env_detector_.on_windows() ? " -fno-ms-compatibility -U_MSC_VER" : ""
+        )
+      }
     };
 
   for (auto& a : dec_args)
