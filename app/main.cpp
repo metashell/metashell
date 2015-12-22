@@ -17,7 +17,6 @@
 #include "console_config.hpp"
 
 #include <metashell/parse_config.hpp>
-#include <metashell/config.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/logger.hpp>
@@ -28,6 +27,8 @@
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
 #include <metashell/readline/version.hpp>
+
+#include <metashell/data/config.hpp>
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -112,8 +113,6 @@ int main(int argc_, const char* argv_[])
       if (r.should_run_shell())
       {
         metashell::default_environment_detector det(argv_[0]);
-        const metashell::data::config
-          cfg = detect_config(r.cfg, det, ccfg.displayer(), &logger);
 
         METASHELL_LOG(&logger, "Running shell");
 
@@ -122,16 +121,23 @@ int main(int argc_, const char* argv_[])
         std::unique_ptr<metashell::shell>
           shell(
             new metashell::shell(
-              cfg,
+              r.cfg,
               ccfg.processor_queue(),
               dir.path(),
               env_filename,
-              eentry->second.build(cfg, dir.path(), env_filename, det, &logger),
+              eentry->second.build(
+                r.cfg,
+                dir.path(),
+                env_filename,
+                det,
+                ccfg.displayer(),
+                &logger
+              ),
               &logger
             )
           );
 
-        if (cfg.splash_enabled)
+        if (r.cfg.splash_enabled)
         {
           shell->display_splash(ccfg.displayer(), get_dependency_versions());
         }

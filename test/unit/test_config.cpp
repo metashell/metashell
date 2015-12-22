@@ -15,14 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "test_config.hpp"
-#include "argv0.hpp"
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 
 using namespace metashell::data;
 
 config metashell::test_config()
 {
-  return empty_config(argv0::get());
+  return config{};
 }
 

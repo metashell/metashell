@@ -16,7 +16,7 @@
 
 #include "breaking_environment.hpp"
 
-#include <metashell/config.hpp>
+#include <metashell/data/config.hpp>
 
 #include <just/test.hpp>
 

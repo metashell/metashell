@@ -58,7 +58,7 @@ namespace
 
 JUST_TEST_CASE(test_recognising_extra_clang_arg)
 {
-  const data::user_config cfg = parse_config({"--", "foo"}).cfg;
+  const data::config cfg = parse_config({"--", "foo"}).cfg;
 
   JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
   JUST_ASSERT_EQUAL("foo", cfg.extra_clang_args.front());
@@ -71,77 +71,77 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
 
 JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
 {
-  const data::user_config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_config({}).cfg;
 
   JUST_ASSERT(!cfg.saving_enabled);
 }
 
 JUST_TEST_CASE(test_enabling_saving)
 {
-  const data::user_config cfg = parse_config({"--enable_saving"}).cfg;
+  const data::config cfg = parse_config({"--enable_saving"}).cfg;
 
   JUST_ASSERT(cfg.saving_enabled);
 }
 
 JUST_TEST_CASE(test_default_console_type_is_readline)
 {
-  const data::user_config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_config({}).cfg;
 
   JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_plain)
 {
-  const data::user_config cfg = parse_config({"--console", "plain"}).cfg;
+  const data::config cfg = parse_config({"--console", "plain"}).cfg;
 
   JUST_ASSERT_EQUAL(data::console_type::plain, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_readline)
 {
-  const data::user_config cfg = parse_config({"--console", "readline"}).cfg;
+  const data::config cfg = parse_config({"--console", "readline"}).cfg;
 
   JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_setting_console_type_to_json)
 {
-  const data::user_config cfg = parse_config({"--console", "json"}).cfg;
+  const data::config cfg = parse_config({"--console", "json"}).cfg;
 
   JUST_ASSERT_EQUAL(data::console_type::json, cfg.con_type);
 }
 
 JUST_TEST_CASE(test_splash_is_enabled_by_default)
 {
-  const data::user_config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_config({}).cfg;
 
   JUST_ASSERT(cfg.splash_enabled);
 }
 
 JUST_TEST_CASE(test_disabling_splash)
 {
-  const data::user_config cfg = parse_config({"--nosplash"}).cfg;
+  const data::config cfg = parse_config({"--nosplash"}).cfg;
 
   JUST_ASSERT(!cfg.splash_enabled);
 }
 
 JUST_TEST_CASE(test_logging_mode_is_none_by_default)
 {
-  const data::user_config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_config({}).cfg;
 
   JUST_ASSERT_EQUAL(data::logging_mode::none, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_console)
 {
-  const data::user_config cfg = parse_config({"--log", "-"}).cfg;
+  const data::config cfg = parse_config({"--log", "-"}).cfg;
 
   JUST_ASSERT_EQUAL(data::logging_mode::console, cfg.log_mode);
 }
 
 JUST_TEST_CASE(test_logging_to_file)
 {
-  const data::user_config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
+  const data::config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
 
   JUST_ASSERT_EQUAL(data::logging_mode::file, cfg.log_mode);
   JUST_ASSERT_EQUAL("/tmp/foo.txt", cfg.log_file);
@@ -170,14 +170,14 @@ JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)
 
 JUST_TEST_CASE(test_not_specifying_the_engine)
 {
-  const data::user_config cfg = parse_config({}).cfg;
+  const data::config cfg = parse_config({}).cfg;
 
   JUST_ASSERT_EQUAL("internal", cfg.engine);
 }
 
 JUST_TEST_CASE(test_specifying_the_engine)
 {
-  const data::user_config cfg = parse_config({"--engine", "foo"}).cfg;
+  const data::config cfg = parse_config({"--engine", "foo"}).cfg;
 
   JUST_ASSERT_EQUAL("foo", cfg.engine);
 }

@@ -19,6 +19,7 @@
 
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment_detector.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
@@ -34,6 +35,7 @@ namespace metashell
         const std::string&,
         const std::string&,
         iface::environment_detector&,
+        iface::displayer&,
         logger*
       )
     >
@@ -48,6 +50,7 @@ namespace metashell
         const std::string& internal_dir_,
         const std::string& env_filename_,
         iface::environment_detector& env_detector_,
+        iface::displayer& displayer_,
         logger* logger_
       )
       {
@@ -58,6 +61,7 @@ namespace metashell
               internal_dir_,
               env_filename_,
               env_detector_,
+              displayer_,
               logger_
             )
           );

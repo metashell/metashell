@@ -37,6 +37,7 @@ namespace metashell
       const std::string& internal_dir_,
       const std::string& env_filename_,
       iface::environment_detector& env_detector_,
+      iface::displayer& displayer_,
       logger* logger_
     ) const;
 

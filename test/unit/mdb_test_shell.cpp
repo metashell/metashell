@@ -18,8 +18,9 @@
 #include "mdb_test_shell.hpp"
 
 #include <metashell/shell.hpp>
-#include <metashell/config.hpp>
 #include <metashell/engine_constant.hpp>
+
+#include <metashell/data/config.hpp>
 
 namespace
 {

@@ -17,6 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/console_type.hpp>
+#include <metashell/data/logging_mode.hpp>
+
 #include <string>
 #include <vector>
 
@@ -28,14 +31,19 @@ namespace metashell
     {
     public:
       bool verbose = false;
+      bool syntax_highlight = true;
+      bool indent = true;
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
       std::string clang_path;
       int max_template_depth;
       unsigned templight_trace_capacity;
-      bool saving_enabled;
+      bool saving_enabled = false;
+      console_type con_type = console_type::plain;
       bool splash_enabled = true;
-      std::string engine;
+      logging_mode log_mode = logging_mode::none;
+      std::string log_file;
+      std::string engine = "internal";
     };
   }
 }

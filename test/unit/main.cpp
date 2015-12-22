@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "argv0.hpp"
-
 #include <just/test.hpp>
 
 int main(int argc_, char* argv_[])
 {
-  argv0::set(argv_[0]);
   return ::just::test::run(argc_, argv_);
 }
 
