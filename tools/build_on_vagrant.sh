@@ -41,12 +41,16 @@ then
   exit 1
 fi
 
-# VAGRANT_DIR will be mounted up to the guest to /vagrant
-# Rename it, so it's easy to ignore with .gitignore
-cp tools/full_build.sh "${VAGRANT_DIR}/ignored_full_build.sh"
+# Cleanup if there was a previous run
+rm -rf "${VAGRANT_DIR}/metashell"
+
+# VAGRANT_DIR will be mounted up to the guest to /vagrant.
+# Clone the local repo there.
+git clone . "${VAGRANT_DIR}/metashell"
+git -C "${VAGRANT_DIR}/metashell" checkout "$(git rev-parse HEAD)"
 
 cd "${VAGRANT_DIR}"
   vagrant up --provider virtualbox
-  vagrant ssh -c "/vagrant/ignored_full_build.sh"
+  vagrant ssh -c "/vagrant/metashell/tools/vagrant_full_build.sh"
   vagrant halt
 cd ../../..

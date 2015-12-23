@@ -1,2 +1,5 @@
 .vagrant
+
+# Things we put into the directory mounted by Vagrant
+metashell
 ignored_full_build.sh

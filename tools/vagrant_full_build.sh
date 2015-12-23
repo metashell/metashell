@@ -18,13 +18,12 @@
 
 set -ex
 
-rm -rf metashell
+# Clone the repo to home. Build doesn't work directly in the mounted directory
+git clone /vagrant/metashell .
 
-git clone https://github.com/sabel83/metashell.git
 cd metashell
   ./tools/install_system_deps.sh
   ./build.sh
-  # TODO implement some nicer way to detect the name of the package file.
-  # /vagrant is mounted on the host
+  # TODO some nicer way to get the name of the generated package
   cp bin/*.rpm /vagrant
 cd ..
