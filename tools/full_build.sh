@@ -24,7 +24,7 @@ git clone --branch vagrant-build https://github.com/r0mai/metashell.git
 cd metashell
   ./tools/install_system_deps.sh
   ./build.sh
-  # TODO implement some nicer way to detect the name of the package file
+  # TODO implement some nicer way to detect the name of the package file.
   # /vagrant is mounted on the host
-  cp *.rpm /vagrant
+  cp bin/*.rpm /vagrant
 cd ..
