@@ -20,7 +20,7 @@ set -e
 
 rm -rf metashell
 
-git clone --branch vagrant-build https://github.com/r0mai/metashell.git
+git clone https://github.com/sabel83/metashell.git
 cd metashell
   ./tools/install_system_deps.sh
   ./build.sh
