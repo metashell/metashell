@@ -32,7 +32,21 @@ make -j2
 make test || (cat Testing/Temporary/LastTest.log && false)
 
 for t in core mdb; do
-  test/system/app/${t}/metashell_${t}_system_test app/metashell -- -I../3rd/boost/include --
+  test/system/app/${t}/metashell_${t}_system_test \
+    app/metashell -- -I../3rd/boost/include --
+
+  test/system/app/${t}/metashell_${t}_system_test \
+    app/metashell \
+    --engine clang \
+    -- \
+    app/templight_metashell \
+    -std=c++0x \
+    -ftemplate-depth=256 \
+    -Wfatal-errors \
+    -Iinclude/metashell/libcxx \
+    -Iinclude/metashell/templight \
+    -I../3rd/boost/include \
+    --
 done
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
