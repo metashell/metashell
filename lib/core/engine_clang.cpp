@@ -45,19 +45,6 @@ namespace
       #include "default_clang_search_path.hpp"
     };
 
-  std::string clang_shipped_with_metashell(
-    iface::environment_detector& env_detector_
-  )
-  {
-    return
-      env_detector_.directory_of_executable()
-      + (
-        env_detector_.on_windows() ?
-          "\\templight\\templight.exe" :
-          "/templight_metashell"
-      );
-  }
-
   std::string extract_clang_binary(
     const std::vector<std::string>& engine_args_,
     iface::environment_detector& env_detector_
@@ -93,6 +80,19 @@ namespace
     }
   }
 
+  std::string templight_shipped_with_metashell(
+    iface::environment_detector& env_detector_
+  )
+  {
+    return
+      env_detector_.directory_of_executable()
+      + (
+        env_detector_.on_windows() ?
+          "\\templight\\templight.exe" :
+          "/templight_metashell"
+      );
+  }
+
   std::string detect_clang_binary(
     iface::environment_detector& env_detector_,
     iface::displayer& displayer_,
@@ -102,7 +102,7 @@ namespace
     METASHELL_LOG(logger_, "Searching Clang binary");
 
     const std::string clang_metashell =
-      clang_shipped_with_metashell(env_detector_);
+      templight_shipped_with_metashell(env_detector_);
 
     METASHELL_LOG(
       logger_,
@@ -271,19 +271,6 @@ namespace
     {
       return boost::none;
     }
-  }
-
-  std::string templight_shipped_with_metashell(
-    iface::environment_detector& env_detector_
-  )
-  {
-    return
-      env_detector_.directory_of_executable()
-      + (
-        env_detector_.on_windows() ?
-          "\\templight\\templight.exe" :
-          "/templight_metashell"
-      );
   }
 
   std::vector<std::string> determine_include_path(
