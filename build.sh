@@ -30,35 +30,7 @@ then
   BUILD_THREADS=1
 fi
 
-# Detect platform
-if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
-then
-  PLATFORM=fedora
-elif [ -e /etc/SuSE-release ]
-then
-  PLATFORM=opensuse
-elif [ "$(uname)" = "Darwin" ]
-then
-  PLATFORM=osx
-  PLATFORM_VERSION=$(sw_vers -productVersion)
-elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
-then
-  PLATFORM=ubuntu
-elif [ -e /etc/debian_version ]
-then
-  PLATFORM=debian
-elif [ -e /etc/arch-release ]
-then
-  PLATFORM=arch
-elif [ `uname` = "FreeBSD" ]
-then
-  PLATFORM=freebsd
-elif [ `uname` = "OpenBSD" ]
-then
-  PLATFORM=openbsd
-else
-  PLATFORM=unknown
-fi
+PLATFORM="$(tools/detect_platform.sh)"
 
 # Config
 if [ "${PLATFORM}" = "openbsd" ]
