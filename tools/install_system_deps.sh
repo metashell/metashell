@@ -30,7 +30,7 @@ echo "Platform: ${PLATFORM}"
 
 if [ "${PLATFORM}" = "opensuse" ]
 then
-  sudo zypper --non-interactive addrepo http://download.opensuse.org/repositories/home:namtrac:clang/openSUSE_Factory/home:namtrac:clang.repo
+  sudo zypper --non-interactive addrepo --no-gpgcheck http://download.opensuse.org/repositories/home:namtrac:clang/openSUSE_Factory/home:namtrac:clang.repo
   sudo zypper --non-interactive refresh
   sudo zypper --non-interactive install cmake llvm-clang readline-devel termcap rpm-build
 else
