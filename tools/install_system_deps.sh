@@ -30,10 +30,8 @@ echo "Platform: ${PLATFORM}"
 
 if [ "${PLATFORM}" = "opensuse" ]
 then
-  sudo zypper --non-interactive addrepo http://download.opensuse.org/repositories/server:irc/openSUSE_13.2/server:irc.repo
   sudo zypper --non-interactive addrepo http://download.opensuse.org/repositories/home:namtrac:clang/openSUSE_Factory/home:namtrac:clang.repo
-  # refresh always failes because there is an outdated repository
-  sudo zypper --non-interactive refresh || true
+  sudo zypper --non-interactive refresh
   sudo zypper --non-interactive install cmake llvm-clang readline-devel termcap rpm-build
 else
   echo "Installing system dependiencies on ${PLATFORM} is unsupported"
