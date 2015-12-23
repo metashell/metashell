@@ -51,6 +51,6 @@ git -C "${VAGRANT_DIR}/metashell" checkout "$(git rev-parse HEAD)"
 
 cd "${VAGRANT_DIR}"
   vagrant up --provider virtualbox
-  vagrant ssh -c "/vagrant/metashell/tools/vagrant_full_build.sh"
+  vagrant ssh -c "/vagrant/metashell/tools/vagrant/guest_full_build.sh"
   vagrant halt
 cd ../../..
