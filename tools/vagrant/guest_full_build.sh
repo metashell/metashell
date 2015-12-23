@@ -19,7 +19,7 @@
 set -ex
 
 # Clone the repo to home. Build doesn't work directly in the mounted directory
-git clone /vagrant/metashell .
+git clone /vagrant/metashell
 
 cd metashell
   ./tools/vagrant/install_system_deps.sh
