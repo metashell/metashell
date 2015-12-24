@@ -22,7 +22,7 @@ set -ex
 git clone /vagrant/metashell
 
 cd metashell
-  ./tools/vagrant/install_system_deps.sh
+  ./install_build_dependencies.sh
   ./build.sh
   # TODO some nicer way to get the name of the generated package
   cp bin/*.rpm /vagrant
