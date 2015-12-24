@@ -68,4 +68,5 @@ openbsd)
 *)
   echo Unknown platform. Please install dependencies manually.
   exit 1
+  ;;
 esac
