@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2013, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2015, Andras Kucsma (andras.kucsma@gmail.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -ex
 
 if [ ! -d cmake ]
 then
@@ -24,40 +24,33 @@ then
   exit 1
 fi
 
-# Arguments
-if [ -z "${BUILD_THREADS}" ]
+if [ -z "$1" ];
 then
-  BUILD_THREADS=1
+  echo "Usage: $0 <platform>"
+  exit 1
 fi
 
-PLATFORM="$(tools/detect_platform.sh)"
+TARGET_PLATFORM="$1"
 
-# Config
-if [ "${PLATFORM}" = "openbsd" ]
+VAGRANT_DIR="tools/vagrant/${TARGET_PLATFORM}"
+VAGRANT_FILE="${VAGRANT_DIR}/Vagrantfile"
+
+if [ ! -f "${VAGRANT_FILE}" ];
 then
-  export CC=egcc
-  export CXX=eg++
+  echo "Error: ${VAGRANT_FILE} doesn't exist"
+  exit 1
 fi
 
-# Show argument & config summary
-echo "Number of threads used: ${BUILD_THREADS}"
-echo "Platform: ${PLATFORM}"
+# Cleanup if there was a previous run
+rm -rf "${VAGRANT_DIR}/metashell"
 
-# Build Templight
-cd 3rd
-  cd templight
-    mkdir -p build; cd build
-      cmake ../llvm \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLLVM_ENABLE_TERMINFO=OFF \
-        && make templight -j${BUILD_THREADS}
-    cd ..
-  cd ..
-cd ..
+# VAGRANT_DIR will be mounted up to the guest to /vagrant.
+# Clone the local repo there.
+git clone . "${VAGRANT_DIR}/metashell"
+git -C "${VAGRANT_DIR}/metashell" checkout "$(git rev-parse HEAD)"
 
-mkdir -p bin; cd bin
-  cmake .. \
-    && make -j${BUILD_THREADS} \
-    && make test \
-    && cpack
-cd ..
+cd "${VAGRANT_DIR}"
+  vagrant up --provider virtualbox
+  vagrant ssh -c "/vagrant/metashell/tools/vagrant/guest_full_build.sh"
+  vagrant halt
+cd ../../..
