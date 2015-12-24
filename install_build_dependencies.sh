@@ -28,7 +28,7 @@ echo "Platform: ${PLATFORM}"
 
 case "${PLATFORM}" in
 fedora)
-  yum -y install \
+  sudo yum -y install \
     git \
     gcc \
     gcc-c++ \
