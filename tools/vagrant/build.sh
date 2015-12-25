@@ -21,7 +21,7 @@ set -e
 function print_usage_and_exit() {
   echo "Usage: $0 <platform>"
   echo "Avaliable platforms:"
-  (cd tools/vagrant && ls -d */ | sed 's#/$##g')
+  (cd "${MACHINE_DIR}" && ls | cat)
   exit 1
 }
 
@@ -31,6 +31,8 @@ then
   exit 1
 fi
 
+MACHINE_DIR="tools/vagrant/machines"
+
 if [ -z "$1" ];
 then
   print_usage_and_exit
@@ -38,7 +40,7 @@ fi
 
 TARGET_PLATFORM="$1"
 
-VAGRANT_DIR="tools/vagrant/${TARGET_PLATFORM}"
+VAGRANT_DIR="${MACHINE_DIR}/${TARGET_PLATFORM}"
 VAGRANT_FILE="${VAGRANT_DIR}/Vagrantfile"
 
 if [ ! -f "${VAGRANT_FILE}" ];
