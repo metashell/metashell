@@ -73,11 +73,14 @@ int main(int argc_, const char* argv_[])
 
     const std::map<std::string, metashell::engine_entry>
       engines{
-        {"internal", metashell::get_engine_clang_entry()}
+        {"internal", metashell::get_internal_templight_entry()},
+        {"clang", metashell::get_engine_clang_entry()}
       };
 
+    metashell::default_environment_detector det(argv_[0]);
+
     const parse_config_result
-      r = parse_config(argc_, argv_, engines, &std::cout, &std::cerr);
+      r = parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
 
     metashell::console_config
       ccfg(r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
@@ -112,8 +115,6 @@ int main(int argc_, const char* argv_[])
     {
       if (r.should_run_shell())
       {
-        metashell::default_environment_detector det(argv_[0]);
-
         METASHELL_LOG(&logger, "Running shell");
 
         just::temp::directory dir;
