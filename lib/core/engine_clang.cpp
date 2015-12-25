@@ -47,7 +47,9 @@ namespace
 
   std::string extract_clang_binary(
     const std::vector<std::string>& engine_args_,
-    iface::environment_detector& env_detector_
+    iface::environment_detector& env_detector_,
+    const std::string& metashell_path_,
+    const std::string& engine_name_
   )
   {
     if (engine_args_.empty())
@@ -59,7 +61,8 @@ namespace
       throw
         std::runtime_error(
           "The engine requires that you specify the path to the clang compiler"
-          " after --. For example: -- " + sample_path + " -std=c++11"
+          " after --. For example: " + metashell_path_ + " --engine "
+          + engine_name_ + " -- " + sample_path + " -std=c++11"
         );
     }
     else
@@ -402,7 +405,12 @@ namespace
         env_detector_,
         UseInternalTemplight ?
           detect_clang_binary(env_detector_, displayer_, logger_) :
-          extract_clang_binary(config_.extra_clang_args, env_detector_),
+          extract_clang_binary(
+            config_.extra_clang_args,
+            env_detector_,
+            config_.metashell_binary,
+            config_.engine
+          ),
         logger_
       )
     {}
