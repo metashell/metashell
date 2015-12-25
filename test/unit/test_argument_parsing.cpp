@@ -186,3 +186,21 @@ JUST_TEST_CASE(test_specifying_the_engine)
   JUST_ASSERT_EQUAL("foo", cfg.engine);
 }
 
+JUST_TEST_CASE(test_metashell_path_is_filled)
+{
+  std::vector<const char*> args{"the_path"};
+  mock_environment_detector env_detector;
+
+  const metashell::data::config cfg =
+    metashell::parse_config(
+      args.size(),
+      args.data(),
+      std::map<std::string, engine_entry>(),
+      env_detector,
+      nullptr,
+      nullptr
+    ).cfg;
+
+  JUST_ASSERT_EQUAL("the_path", cfg.metashell_binary);
+}
+

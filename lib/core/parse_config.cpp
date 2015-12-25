@@ -268,6 +268,11 @@ parse_config_result metashell::parse_config(
 
   data::config cfg;
 
+  if (argc_ > 0)
+  {
+    cfg.metashell_binary = argv_[0];
+  }
+
   const char** const
     minus_minus = std::find(argv_, argv_ + argc_, std::string("--"));
   if (minus_minus != argv_ + argc_)

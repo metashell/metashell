@@ -30,6 +30,8 @@ namespace metashell
     class config
     {
     public:
+      std::string metashell_binary;
+
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;
