@@ -45,9 +45,11 @@ fi
 rm -rf "${VAGRANT_DIR}/metashell"
 
 # VAGRANT_DIR will be mounted up to the guest to /vagrant.
-# Clone the local repo there.
-git clone . "${VAGRANT_DIR}/metashell"
-git -C "${VAGRANT_DIR}/metashell" checkout "$(git rev-parse HEAD)"
+rsync -r \
+  --exclude=".git" \
+  --exclude="bin" \
+  --exclude="3rd/templight/build" \
+  --exclude="${VAGRANT_DIR}" . "${VAGRANT_DIR}/metashell"
 
 cd "${VAGRANT_DIR}"
   vagrant up --provider virtualbox
