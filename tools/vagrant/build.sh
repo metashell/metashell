@@ -16,7 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -ex
+set -e
+
+function print_usage_and_exit() {
+  echo "Usage: $0 <platform>"
+  echo "Avaliable platforms:"
+  (cd "${MACHINE_DIR}" && ls | cat)
+  exit 1
+}
 
 if [ ! -d cmake ]
 then
@@ -24,32 +31,40 @@ then
   exit 1
 fi
 
+MACHINE_DIR="tools/vagrant/machines"
+
 if [ -z "$1" ];
 then
-  echo "Usage: $0 <platform>"
-  exit 1
+  print_usage_and_exit
 fi
 
 TARGET_PLATFORM="$1"
 
-VAGRANT_DIR="tools/vagrant/${TARGET_PLATFORM}"
+VAGRANT_DIR="${MACHINE_DIR}/${TARGET_PLATFORM}"
 VAGRANT_FILE="${VAGRANT_DIR}/Vagrantfile"
 
 if [ ! -f "${VAGRANT_FILE}" ];
 then
   echo "Error: ${VAGRANT_FILE} doesn't exist"
-  exit 1
+  print_usage_and_exit
 fi
+
+set -x
 
 # Cleanup if there was a previous run
 rm -rf "${VAGRANT_DIR}/metashell"
 
 # VAGRANT_DIR will be mounted up to the guest to /vagrant.
-# Clone the local repo there.
-git clone . "${VAGRANT_DIR}/metashell"
-git -C "${VAGRANT_DIR}/metashell" checkout "$(git rev-parse HEAD)"
+# Copy almost everything from the repo over there
+mkdir "${VAGRANT_DIR}/metashell"
+tar cf - \
+  --exclude=".git" \
+  --exclude="bin" \
+  --exclude="3rd/templight/build" \
+  --exclude="${VAGRANT_DIR}" . | (cd "${VAGRANT_DIR}/metashell" && tar xf -)
 
 cd "${VAGRANT_DIR}"
+  vagrant destroy -f # Destroy previous VM if any
   vagrant up --provider virtualbox
   vagrant ssh -c "/vagrant/metashell/tools/vagrant/guest_full_build.sh"
   vagrant halt
