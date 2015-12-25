@@ -16,7 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -ex
+set -e
+
+function print_usage_and_exit() {
+  echo "Usage: $0 <platform>"
+  echo "Avaliable platforms:"
+  (cd tools/vagrant && ls -d */ | sed 's#/$##g')
+  exit 1
+}
 
 if [ ! -d cmake ]
 then
@@ -26,8 +33,7 @@ fi
 
 if [ -z "$1" ];
 then
-  echo "Usage: $0 <platform>"
-  exit 1
+  print_usage_and_exit
 fi
 
 TARGET_PLATFORM="$1"
@@ -38,8 +44,10 @@ VAGRANT_FILE="${VAGRANT_DIR}/Vagrantfile"
 if [ ! -f "${VAGRANT_FILE}" ];
 then
   echo "Error: ${VAGRANT_FILE} doesn't exist"
-  exit 1
+  print_usage_and_exit
 fi
+
+set -x
 
 # Cleanup if there was a previous run
 rm -rf "${VAGRANT_DIR}/metashell"
