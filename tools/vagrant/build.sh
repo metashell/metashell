@@ -55,11 +55,13 @@ set -x
 rm -rf "${VAGRANT_DIR}/metashell"
 
 # VAGRANT_DIR will be mounted up to the guest to /vagrant.
-rsync -r \
+# Copy almost everything from the repo over there
+mkdir "${VAGRANT_DIR}/metashell"
+tar cf - \
   --exclude=".git" \
   --exclude="bin" \
   --exclude="3rd/templight/build" \
-  --exclude="${VAGRANT_DIR}" . "${VAGRANT_DIR}/metashell"
+  --exclude="${VAGRANT_DIR}" . | (cd "${VAGRANT_DIR}/metashell" && tar xf -)
 
 cd "${VAGRANT_DIR}"
   vagrant destroy -f # Destroy previous VM if any
