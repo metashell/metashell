@@ -30,12 +30,13 @@ namespace metashell
     class config
     {
     public:
+      std::string metashell_binary;
+
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
-      std::string clang_path;
       int max_template_depth;
       unsigned templight_trace_capacity;
       bool saving_enabled = false;

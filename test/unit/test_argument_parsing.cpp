@@ -16,6 +16,8 @@
 
 #include <metashell/parse_config.hpp>
 
+#include "mock_environment_detector.hpp"
+
 #include <just/test.hpp>
 
 #include <sstream>
@@ -34,12 +36,14 @@ namespace
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
+    mock_environment_detector env_detector;
 
     return
       metashell::parse_config(
         args.size(),
         args.data(),
         std::map<std::string, engine_entry>(),
+        env_detector,
         out_,
         err_
       );
@@ -180,5 +184,23 @@ JUST_TEST_CASE(test_specifying_the_engine)
   const data::config cfg = parse_config({"--engine", "foo"}).cfg;
 
   JUST_ASSERT_EQUAL("foo", cfg.engine);
+}
+
+JUST_TEST_CASE(test_metashell_path_is_filled)
+{
+  std::vector<const char*> args{"the_path"};
+  mock_environment_detector env_detector;
+
+  const metashell::data::config cfg =
+    metashell::parse_config(
+      args.size(),
+      args.data(),
+      std::map<std::string, engine_entry>(),
+      env_detector,
+      nullptr,
+      nullptr
+    ).cfg;
+
+  JUST_ASSERT_EQUAL("the_path", cfg.metashell_binary);
 }
 

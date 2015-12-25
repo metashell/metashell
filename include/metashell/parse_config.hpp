@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/iface/environment_detector.hpp>
 #include <metashell/engine_entry.hpp>
 
 #include <iosfwd>
@@ -49,6 +50,7 @@ namespace metashell
     int argc_,
     const char* argv_[],
     const std::map<std::string, engine_entry>& engines_,
+    iface::environment_detector& env_detector_,
     std::ostream* out_ = 0,
     std::ostream* err_ = 0
   );

@@ -17,6 +17,10 @@
     * **Breaking change** Compiler-dependent command line arguments (eg. -I, -D,
       etc) are accepted as compiler arguments only (after the --) and are not
       allowed as "normal" Metashell arguments.
+    * **Breaking change** `--clang <clang path>` is not supported. To use a
+      custom Clang, one has to use `--engine clang -- <clang path> -std=c++0x
+      -ftemplate-depth=256 -Wfatal-errors`. On Windows the
+      `-fno-ms-compatibility -U_MSC_VER` arguments also need to be added.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.
