@@ -60,6 +60,7 @@ rsync -r \
   --exclude="${VAGRANT_DIR}" . "${VAGRANT_DIR}/metashell"
 
 cd "${VAGRANT_DIR}"
+  vagrant destroy -f # Destroy previous VM if any
   vagrant up --provider virtualbox
   vagrant ssh -c "/vagrant/metashell/tools/vagrant/guest_full_build.sh"
   vagrant halt
