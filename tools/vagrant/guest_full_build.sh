@@ -18,11 +18,15 @@
 
 set -ex
 
+# First install the dependencies, so we guaranteed to have git
+cd /vagrant/metashell
+  ./install_build_dependencies.sh
+cd ~
+
 # Clone the repo to home. Build doesn't work directly in the mounted directory
 git clone /vagrant/metashell
 
 cd metashell
-  ./install_build_dependencies.sh
   ./build.sh
   # TODO some nicer way to get the name of the generated package
   cp bin/*.rpm /vagrant
