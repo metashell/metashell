@@ -89,6 +89,51 @@ namespace
       ) == cmd_.end();
   }
 
+  data::result eval_tmp_formatted(
+    const iface::environment& env_,
+    const std::string& tmp_exp_,
+    bool use_precompiled_headers_,
+    iface::engine& engine_,
+    logger* logger_
+  )
+  {
+    using std::string;
+    using std::pair;
+  
+    METASHELL_LOG(
+      logger_,
+      "Checking if metaprogram can be evaluated without metashell::format: "
+      + tmp_exp_
+    );
+  
+    const data::result
+      simple = engine_.eval(
+        env_,
+        tmp_exp_,
+        boost::none,
+        use_precompiled_headers_
+      );
+  
+    METASHELL_LOG(
+      logger_,
+      !simple.successful ?
+        "Errors occured during metaprogram evaluation. Displaying errors"
+        " coming from the metaprogram without metashell::format" :
+        "No errors occured during metaprogram evaluation. Re-evaluating it"
+        " with metashell::format"
+    );
+  
+    return
+      simple.successful ?
+        engine_.eval(
+          env_,
+          "::metashell::format<" + tmp_exp_ + ">::type",
+          boost::none,
+          use_precompiled_headers_
+        ) :
+        simple;
+  }
+
   const char default_env[] =
 "#define __METASHELL\n"
 "#define __METASHELL_MAJOR " TO_STRING(METASHELL_MAJOR) "\n"
@@ -470,7 +515,13 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
   display(
-    _engine->eval_tmp_formatted(*_env, s_, using_precompiled_headers()),
+    eval_tmp_formatted(
+      *_env,
+      s_,
+      using_precompiled_headers(),
+      *_engine,
+      _logger
+    ),
     displayer_
   );
 }
