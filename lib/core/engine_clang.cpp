@@ -439,6 +439,22 @@ namespace
       _logger(logger_)
     {}
 
+    virtual data::result precompile(const std::string& exp_) override
+    {
+      const data::process_output
+        output = run_clang(_clang_binary, {"-E"}, exp_);
+      
+      const bool success = output.exit_code() == data::exit_code_t(0);
+    
+      return
+        data::result{
+          success,
+          success ? output.standard_output() : "",
+          success ? "" : output.standard_error(),
+          ""
+        };
+    }
+
     virtual data::result eval(
       const iface::environment& env_,
       const boost::optional<std::string>& tmp_exp_,

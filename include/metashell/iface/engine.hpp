@@ -35,6 +35,8 @@ namespace metashell
     public:
       virtual ~engine() {}
 
+      virtual data::result precompile(const std::string& exp_) = 0;
+
       virtual data::result eval(
         const environment& env_,
         const boost::optional<std::string>& tmp_exp_,

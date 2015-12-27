@@ -35,7 +35,7 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 
 # Run the system tests
 
-for t in core mdb; do
+for t in core pp mdb; do
   test/system/app/${t}/metashell_${t}_system_test \
     app/metashell -- -I../3rd/boost/include --
 

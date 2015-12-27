@@ -27,6 +27,11 @@ namespace
       _result(std::move(result_))
     {}
 
+    virtual data::result precompile(const std::string&) override
+    {
+      return _result;
+    }
+
     virtual data::result eval(
       const iface::environment&,
       const boost::optional<std::string>&,

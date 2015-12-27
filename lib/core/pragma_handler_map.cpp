@@ -32,6 +32,7 @@
 #include <metashell/pragma_environment_save.hpp>
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/pragma_evaluate.hpp>
+#include <metashell/pragma_pp.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -180,6 +181,7 @@ pragma_handler_map pragma_handler_map::build_default(
       )
       .add("mdb", pragma_mdb(shell_, cpq_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
+      .add("pp", pragma_pp(shell_))
       .add("quit", pragma_quit(shell_))
     ;
 }

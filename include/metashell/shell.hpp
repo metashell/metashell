@@ -115,6 +115,11 @@ namespace metashell
     iface::engine& engine();
 
     std::string env_path() const;
+
+    void preprocess(
+      iface::displayer& displayer_,
+      const std::string& exp_
+    ) const;
   private:
     std::string _internal_dir;
     std::string _env_filename;

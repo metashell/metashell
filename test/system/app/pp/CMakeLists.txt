@@ -14,5 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(core pp mdb)
+aux_source_directory(. SOURCES)
+add_executable(metashell_pp_system_test ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+target_link_libraries(metashell_pp_system_test
+  metashell_system_test_lib
+  boost_regex)
+
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 

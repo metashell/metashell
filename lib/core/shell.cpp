@@ -33,6 +33,13 @@ using namespace metashell;
 
 namespace
 {
+  void make_failure(data::result& r_, const std::string& msg_)
+  {
+    r_.successful = false;
+    r_.output.clear();
+    r_.error = msg_;
+  }
+
   std::string extend(const std::string& s_, int width_)
   {
     const int len = s_.length();
@@ -46,7 +53,11 @@ namespace
     return s.str();
   }
 
-  void display(const data::result& r_, iface::displayer& displayer_)
+  void display(
+    const data::result& r_,
+    iface::displayer& displayer_,
+    bool show_as_type_
+  )
   {
     if (!r_.info.empty())
     {
@@ -57,7 +68,14 @@ namespace
     }
     if (r_.successful && !r_.output.empty())
     {
-      displayer_.show_type(data::type(r_.output));
+      if (show_as_type_)
+      {
+        displayer_.show_type(data::type(r_.output));
+      }
+      else
+      {
+        displayer_.show_cpp_code(r_.output);
+      }
     }
   }
 
@@ -387,7 +405,7 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
       return false;
     }
   }
-  ::display(r, displayer_);
+  display(r, displayer_, true);
   return r.successful;
 }
 
@@ -522,7 +540,8 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
       *_engine,
       _logger
     ),
-    displayer_
+    displayer_,
+    true
   );
 }
 
@@ -550,5 +569,55 @@ iface::engine& shell::engine()
 std::string shell::env_path() const
 {
   return _internal_dir + "/" + _env_filename;
+}
+
+void shell::preprocess(
+  iface::displayer& displayer_,
+  const std::string& exp_
+) const
+{
+  const std::string marker = "* __METASHELL_PP_MARKER *";
+
+  data::result
+    r = _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
+
+  if (r.successful)
+  {
+    const auto p1 = r.output.find(marker);
+    if (p1 == std::string::npos)
+    {
+      make_failure(
+        r,
+        "Marker (" + marker + ") not found in preprocessed output."
+        " Does it contain a macro that has been defined?"
+      );
+    }
+    else
+    {
+      const auto m_len = marker.size();
+      const auto p2 = r.output.find(marker, p1 + m_len);
+      if (p2 == std::string::npos)
+      {
+        make_failure(
+          r,
+          "Marker (" + marker + ") found only once in preprocessed output."
+        );
+      }
+      else if (r.output.find(marker, p2 + m_len) == std::string::npos)
+      {
+        r.output = r.output.substr(p1 + m_len, p2 - p1 - m_len);
+      }
+      else
+      {
+        make_failure(
+          r,
+          "Marker (" + marker
+          + ") found more than two times in preprocessed output."
+        );
+      }
+    }
+  }
+
+  display(r, displayer_, false);
 }
 

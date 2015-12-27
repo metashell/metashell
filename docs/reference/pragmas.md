@@ -48,6 +48,9 @@ Displays a help message.
 * __`#msh mdb [-full] [<type>]`__ <br />
 Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
 
+* __`#msh pp <exp>`__ <br />
+Displays the preprocessed expression.
+
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
