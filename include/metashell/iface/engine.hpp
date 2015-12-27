@@ -35,12 +35,6 @@ namespace metashell
     public:
       virtual ~engine() {}
 
-      virtual data::result eval_tmp_formatted(
-        const environment& env_,
-        const std::string& tmp_exp_,
-        bool use_precompiled_headers_
-      ) = 0;
-
       virtual data::result eval(
         const environment& env_,
         const boost::optional<std::string>& tmp_exp_,

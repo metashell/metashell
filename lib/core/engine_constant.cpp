@@ -27,15 +27,6 @@ namespace
       _result(std::move(result_))
     {}
 
-    virtual data::result eval_tmp_formatted(
-      const iface::environment&,
-      const std::string&,
-      bool
-    ) override
-    {
-      return _result;
-    }
-
     virtual data::result eval(
       const iface::environment&,
       const boost::optional<std::string>&,

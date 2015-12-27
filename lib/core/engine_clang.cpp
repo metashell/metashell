@@ -439,44 +439,6 @@ namespace
       _logger(logger_)
     {}
 
-    virtual data::result eval_tmp_formatted(
-      const iface::environment& env_,
-      const std::string& tmp_exp_,
-      bool use_precompiled_headers_
-    ) override
-    {
-      using std::string;
-      using std::pair;
-    
-      METASHELL_LOG(
-        _logger,
-        "Checking if metaprogram can be evaluated without metashell::format: "
-        + tmp_exp_
-      );
-    
-      const data::result
-        simple = eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
-    
-      METASHELL_LOG(
-        _logger,
-        !simple.successful ?
-          "Errors occured during metaprogram evaluation. Displaying errors"
-          " coming from the metaprogram without metashell::format" :
-          "No errors occured during metaprogram evaluation. Re-evaluating it"
-          " with metashell::format"
-      );
-    
-      return
-        simple.successful ?
-          eval(
-            env_,
-            "::metashell::format<" + tmp_exp_ + ">::type",
-            boost::none,
-            use_precompiled_headers_
-          ) :
-          simple;
-    }
-
     virtual data::result eval(
       const iface::environment& env_,
       const boost::optional<std::string>& tmp_exp_,
