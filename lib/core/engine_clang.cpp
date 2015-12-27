@@ -601,7 +601,7 @@ namespace
       );
     }
 
-    virtual void precompile(const std::string& fn_) override
+    virtual void generate_precompiled_header(const std::string& fn_) override
     {
       using boost::algorithm::trim_copy;
 

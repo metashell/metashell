@@ -57,7 +57,7 @@ namespace
       // ignore
     }
 
-    virtual void precompile(const std::string&) override
+    virtual void generate_precompiled_header(const std::string&) override
     {
       // ignore
     }

@@ -56,7 +56,7 @@ namespace metashell
         bool use_precompiled_headers_
       ) = 0;
 
-      virtual void precompile(const std::string& fn_) = 0;
+      virtual void generate_precompiled_header(const std::string& fn_) = 0;
     };
   }
 }
