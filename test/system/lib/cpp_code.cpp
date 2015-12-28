@@ -15,11 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/cpp_code.hpp>
+#include <metashell_system_test/query_json.hpp>
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/document.h>
+
 
 #include <iostream>
+#include <cassert>
 
 using namespace metashell_system_test;
 
@@ -27,9 +31,19 @@ cpp_code::cpp_code(const std::string& code_) :
   _code(code_)
 {}
 
+cpp_code::cpp_code(placeholder) :
+  _code(boost::none)
+{}
+
+bool cpp_code::code_specified() const
+{
+  return _code != boost::none;
+}
+
 const std::string& cpp_code::code() const
 {
-  return _code;
+  assert(code_specified());
+  return *_code;
 }
 
 std::ostream& metashell_system_test::operator<<(
@@ -51,7 +65,14 @@ json_string metashell_system_test::to_json_string(const cpp_code& t_)
   w.String("cpp_code");
 
   w.Key("code");
-  w.String(t_.code().c_str());
+  if (t_.code_specified())
+  {
+    w.String(t_.code().c_str());
+  }
+  else
+  {
+    w.Null();
+  }
 
   w.EndObject();
 
@@ -63,6 +84,12 @@ bool metashell_system_test::operator==(
   const json_string& s_
 )
 {
-  return to_json_string(cpp_code_) == s_;
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  return
+    members_are({"type", "code"}, d)
+    && is_string("cpp_code", d["type"])
+    && (!cpp_code_.code_specified() || is_string(cpp_code_.code(), d["code"]));
 }
 
