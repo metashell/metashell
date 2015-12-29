@@ -10,6 +10,9 @@
     * New MDB command: `break`
     * MDB now shows DeducedTemplateArgumentSubstitution events, which helps
       you to debug expressions involving SFINAE.
+    * Support for displaying preprocessed code (`#msh pp`)
+    * Support for displaying the preprocessed version of the shell commands
+      (`#msh echo preprocessed`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
