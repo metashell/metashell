@@ -19,12 +19,14 @@
 
 #include <metashell_system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <string>
 #include <iosfwd>
 
 namespace metashell_system_test
 {
-  class raw_text
+  class raw_text : boost::equality_comparable<raw_text, json_string>
   {
   public:
     explicit raw_text(const std::string& text_);

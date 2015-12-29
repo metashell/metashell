@@ -20,6 +20,7 @@
 #include <metashell_system_test/json_string.hpp>
 #include <metashell_system_test/placeholder.hpp>
 
+#include <boost/operators.hpp>
 #include <boost/optional.hpp>
 
 #include <string>
@@ -27,7 +28,7 @@
 
 namespace metashell_system_test
 {
-  class cpp_code
+  class cpp_code : boost::equality_comparable<cpp_code, json_string>
   {
   public:
     explicit cpp_code(const std::string& code_);

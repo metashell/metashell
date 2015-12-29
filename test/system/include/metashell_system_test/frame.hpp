@@ -23,12 +23,13 @@
 #include <metashell_system_test/placeholder.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/operators.hpp>
 
 #include <iosfwd>
 
 namespace metashell_system_test
 {
-  class frame
+  class frame : boost::equality_comparable<frame, json_string>
   {
   public:
     explicit frame(const type& name_);

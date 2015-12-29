@@ -20,11 +20,13 @@
 #include <metashell_system_test/call_graph_node.hpp>
 #include <metashell_system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <vector>
 
 namespace metashell_system_test
 {
-  class call_graph
+  class call_graph : boost::equality_comparable<call_graph, json_string>
   {
   public:
     explicit call_graph(std::vector<call_graph_node> call_graph_nodes_);
