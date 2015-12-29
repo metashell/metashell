@@ -15,6 +15,9 @@ complete list of accepted forms. All of them are equivalent:
 Metashell supports the following pragmas:
 
 <!-- pragma_info -->
+* __`#msh echo preprocessed [on|1|off|0]`__ <br />
+Turns display preprocessed commands on or off. When no arguments are used, it displays if display preprocessed commands is turned on.
+
 * __`#msh environment`__ <br />
 Displays the entire content of the environment.
 

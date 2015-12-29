@@ -179,6 +179,14 @@ pragma_handler_map pragma_handler_map::build_default(
         "save",
         pragma_environment_save(shell_.get_config(), shell_.env())
       )
+      .add(
+        "echo", "preprocessed",
+        pragma_switch(
+          "display preprocessed commands",
+          [&shell_] () { return shell_.echo(); },
+          [&shell_] (bool v_) { shell_.echo(v_); }
+        )
+      )
       .add("mdb", pragma_mdb(shell_, cpq_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("pp", pragma_pp(shell_))

@@ -33,6 +33,11 @@ using namespace metashell;
 
 namespace
 {
+  std::string wrap(const std::string& s_, const std::string& wrapper_)
+  {
+    return wrapper_ + s_ + wrapper_;
+  }
+
   void make_failure(data::result& r_, const std::string& msg_)
   {
     r_.successful = false;
@@ -357,13 +362,16 @@ void shell::line_available(
           {
             _pragma_handlers.process(*p, cmd.end(), displayer_);
           }
-          else if (is_environment_setup_command(cmd))
+          else if (!_echo || preprocess(displayer_, s, true))
           {
-            store_in_buffer(s, displayer_);
-          }
-          else
-          {
-            run_metaprogram(s, displayer_);
+            if (is_environment_setup_command(cmd))
+            {
+              store_in_buffer(s, displayer_);
+            }
+            else
+            {
+              run_metaprogram(s, displayer_);
+            }
           }
         }
       }
@@ -571,12 +579,14 @@ std::string shell::env_path() const
   return _internal_dir + "/" + _env_filename;
 }
 
-void shell::preprocess(
+bool shell::preprocess(
   iface::displayer& displayer_,
-  const std::string& exp_
+  const std::string& exp_,
+  bool process_directives_
 ) const
 {
-  const std::string marker = "* __METASHELL_PP_MARKER *";
+  const std::string
+    marker = wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
 
   data::result
     r = _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
@@ -619,5 +629,16 @@ void shell::preprocess(
   }
 
   display(r, displayer_, false);
+  return r.successful;
+}
+
+void shell::echo(bool enabled_)
+{
+  _echo = enabled_;
+}
+
+bool shell::echo() const
+{
+  return _echo;
 }
 

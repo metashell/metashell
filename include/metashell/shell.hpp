@@ -116,10 +116,14 @@ namespace metashell
 
     std::string env_path() const;
 
-    void preprocess(
+    bool preprocess(
       iface::displayer& displayer_,
-      const std::string& exp_
+      const std::string& exp_,
+      bool process_directives_
     ) const;
+
+    void echo(bool enabled_);
+    bool echo() const;
   private:
     std::string _internal_dir;
     std::string _env_filename;
@@ -132,6 +136,7 @@ namespace metashell
     std::stack<std::string> _environment_stack;
     logger* _logger;
     std::unique_ptr<iface::engine> _engine;
+    bool _echo = false;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

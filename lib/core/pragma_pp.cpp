@@ -43,6 +43,10 @@ void pragma_pp::run(
   iface::displayer& displayer_
 ) const
 {
-  _shell.preprocess(displayer_, tokens_to_string(args_begin_, args_end_));
+  _shell.preprocess(
+    displayer_,
+    tokens_to_string(args_begin_, args_end_),
+    false
+  );
 }
 
