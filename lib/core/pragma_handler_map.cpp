@@ -198,6 +198,14 @@ pragma_handler_map pragma_handler_map::build_default(
           [&shell_] (bool v_) { shell_.show_cpp_errors(v_); }
         )
       )
+      .add(
+        "metaprogram", "evaluation",
+        pragma_switch(
+          "evaluation of metaprograms",
+          [&shell_] () { return shell_.evaluate_metaprograms(); },
+          [&shell_] (bool v_) { shell_.evaluate_metaprograms(v_); }
+        )
+      )
       .add("quit", pragma_quit(shell_))
     ;
 }

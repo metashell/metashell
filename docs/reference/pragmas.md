@@ -51,6 +51,9 @@ Displays a help message.
 * __`#msh mdb [-full] [<type>]`__ <br />
 Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
 
+* __`#msh metaprogram evaluation [on|1|off|0]`__ <br />
+Turns evaluation of metaprograms on or off. When no arguments are used, it displays if evaluation of metaprograms is turned on.
+
 * __`#msh pp <exp>`__ <br />
 Displays the preprocessed expression.
 

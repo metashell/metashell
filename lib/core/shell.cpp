@@ -543,17 +543,20 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result r =
-    eval_tmp_formatted(
-      *_env,
-      s_,
-      using_precompiled_headers(),
-      *_engine,
-      _logger
-    );
-  if (_show_cpp_errors || r.successful)
+  if (_evaluate_metaprograms)
   {
-    display(r, displayer_, true);
+    const data::result r =
+      eval_tmp_formatted(
+        *_env,
+        s_,
+        using_precompiled_headers(),
+        *_engine,
+        _logger
+      );
+    if (_show_cpp_errors || r.successful)
+    {
+      display(r, displayer_, true);
+    }
   }
 }
 
@@ -654,5 +657,15 @@ void shell::show_cpp_errors(bool enabled_)
 bool shell::show_cpp_errors() const
 {
   return _show_cpp_errors;
+}
+
+void shell::evaluate_metaprograms(bool enabled_)
+{
+  _evaluate_metaprograms = enabled_;
+}
+
+bool shell::evaluate_metaprograms() const
+{
+  return _evaluate_metaprograms;
 }
 

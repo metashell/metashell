@@ -14,6 +14,8 @@
     * Support for displaying the preprocessed version of the shell commands
       (`#msh echo preprocessed`)
     * Support for hiding C++ errors (`#msh show cpp_errors`)
+    * Support for disabling the evaluation of metaprograms
+      (`#msh metaprogram evaluation`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
