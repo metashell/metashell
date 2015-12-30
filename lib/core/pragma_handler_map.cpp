@@ -107,7 +107,7 @@ namespace
       pragma_macro(
         "Set Metashell to " + name_ + " mode",
         {
-          "#msh echo preprocessed " + on_off(preprocessing_mode_),
+          "#msh preprocessed echo " + on_off(preprocessing_mode_),
           "#msh show cpp_errors " + on_off(!preprocessing_mode_),
           "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)
         },
@@ -210,7 +210,7 @@ pragma_handler_map pragma_handler_map::build_default(
         pragma_environment_save(shell_.get_config(), shell_.env())
       )
       .add(
-        "echo", "preprocessed",
+        "preprocessed", "echo",
         pragma_switch(
           "display preprocessed commands",
           [&shell_] () { return shell_.echo(); },

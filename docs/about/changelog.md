@@ -12,7 +12,7 @@
       you to debug expressions involving SFINAE.
     * Support for displaying preprocessed code (`#msh pp`)
     * Support for displaying the preprocessed version of the shell commands
-      (`#msh echo preprocessed`)
+      (`#msh preprocessed echo`)
     * Support for hiding C++ errors (`#msh show cpp_errors`)
     * Support for disabling the evaluation of metaprograms
       (`#msh metaprogram evaluation`)

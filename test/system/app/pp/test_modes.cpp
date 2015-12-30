@@ -28,7 +28,7 @@ JUST_TEST_CASE(test_preprocessor_mode)
     run_metashell(
       {
         command("#msh preprocessor mode"),
-        command("#msh echo preprocessed"),
+        command("#msh preprocessed echo"),
         command("#msh show cpp_errors"),
         command("#msh metaprogram evaluation")
       }
@@ -55,7 +55,7 @@ JUST_TEST_CASE(test_metaprogram_mode)
     run_metashell(
       {
         command("#msh metaprogram mode"),
-        command("#msh echo preprocessed"),
+        command("#msh preprocessed echo"),
         command("#msh show cpp_errors"),
         command("#msh metaprogram evaluation")
       }

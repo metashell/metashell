@@ -29,7 +29,7 @@ JUST_TEST_CASE(test_echoing_definition)
   const auto r =
     run_metashell(
       {
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("void f() {}")
       }
     );
@@ -44,7 +44,7 @@ JUST_TEST_CASE(test_echoing_definition_with_macro)
   const auto r =
     run_metashell(
       {
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("#define FOO f"),
         command("void FOO() {}")
       }
@@ -60,7 +60,7 @@ JUST_TEST_CASE(test_echoing_evaluation)
   const auto r =
     run_metashell(
       {
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("#define FOO int"),
         command("FOO")
       }
@@ -79,7 +79,7 @@ JUST_TEST_CASE(test_echoing_include)
   const auto r =
     run_metashell(
       {
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("#include <string>")
       }
     );
@@ -95,7 +95,7 @@ JUST_TEST_CASE(test_echoing_invalid_cpp_code)
     run_metashell(
       {
         command("#define FOO bar"),
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("void FOO() { return 13; }")
       }
     );
@@ -114,7 +114,7 @@ JUST_TEST_CASE(test_when_echoing_code_displaying_pp_errors_only_once)
     run_metashell(
       {
         command("#define FOO(x) bar"),
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("FOO(foo;")
       }
     );
@@ -132,7 +132,7 @@ JUST_TEST_CASE(test_echoing_invalid_cpp_code_during_evaluation)
     run_metashell(
       {
         command("#define FOO int"),
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("void FOO")
       }
     );
@@ -153,7 +153,7 @@ JUST_TEST_CASE(
     run_metashell(
       {
         command("#define FOO(x) bar"),
-        command("#msh echo preprocessed on"),
+        command("#msh preprocessed echo on"),
         command("FOO(foo")
       }
     );
