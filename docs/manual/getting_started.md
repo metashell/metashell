@@ -697,3 +697,85 @@ by calling `format` recursively on each element (see `format<Head>::type`).
 
 The version of the shell is also available for the headers. Metashell defines
 the `__METASHELL_MAJOR`, `__METASHELL_MINOR` and `__METASHELL_PATCH` macros.
+
+## Testing macros
+
+Metashell can be used as an interactive shell for testing macros. The easiest
+way to get started with it is to run the following command in Metashell:
+
+```cpp
+> #msh perprocessor mode
+```
+
+This updates the shell's settings to turn it into an ideal environment for
+testing macros.
+
+### Evaluating simple expressions
+
+Let's look at how to evaluate the expression `6 + 7`. If you have access to
+`python`, `ghci` or `erl`, start it and type `6 + 7` (`6 + 7.` in Erlang) and
+press enter. You will see `13`, the result of this expression immediately.
+
+Let's do the same in preprocessor metaprogramming. Start Metashell and run
+`#msh preprocessor mode` to turn it into a preprocessor shell. Addition is
+implemented by the `BOOST_PP_ADD` macro - get it by running the following
+command:
+
+```cpp
+> #include <boost/preprocessor/arithmetic/add.hpp>
+```
+
+You will see a number of empty lines and lines starting with `#` printed on your
+screen. The reason behind it is that Metashell displays the result of
+preprocessing the included file. The preprocessor directives are processed (and
+produce no output) but all the empty lines in the included file are displayed.
+The lines starting with `#` provide source file name and line information to any
+C++ compiler processing the precompiled code, so the compiler can provide useful
+source locations in the error messages.
+
+Once you have set your environment up, you can evaluate the expression `6 + 7`
+by running the following:
+
+```cpp
+> BOOST_PP_ADD(6, 7)
+```
+
+You get `13`, which is the result of this addition. You can try adding other
+numbers as well.
+
+Note that you can add arbitrarily large numbers using `BOOST_PP_ADD`. The
+arguments (and the result) have to be in the range `0 .. BOOST_PP_LIMIT_MAG`
+where `BOOST_PP_LIMIT_MAG` is a macro. Let's find out its value. It is defined
+in the following header:
+
+```cpp
+> #include <boost/preprocessor/config/limits.hpp>
+```
+
+The above command makes the `BOOST_PP_LIMIT_MAG` macro available, so it is easy
+to check its value:
+
+```cpp
+> BOOST_PP_LIMIT_MAG
+256
+```
+
+### Checking which macros are available
+
+Preshell can be used to get the list of available macros. The following command
+lists the names of the macros:
+
+```cpp
+> #msh macro names
+```
+
+The result of it is the list of macros defined at point where the pragma was
+used. The following command displays the definition of the macros as well:
+
+```cpp
+> #msh macros
+```
+
+The output of this command can be long, since it displays all macros and their
+actual definition.
+
