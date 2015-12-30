@@ -48,6 +48,9 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
+* __`#msh macro names`__ <br />
+Displays the names of the defined macros
+
 * __`#msh macros`__ <br />
 Displays the macro definitions
 

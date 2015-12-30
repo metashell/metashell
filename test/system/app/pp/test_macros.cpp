@@ -39,3 +39,21 @@ JUST_TEST_CASE(test_getting_defined_macro)
   JUST_ASSERT(macros.find("#define FOO bar") != std::string::npos);
 }
 
+JUST_TEST_CASE(test_getting_defined_macro_name)
+{
+  const auto r =
+    run_metashell(
+      {
+        command("#define FOO bar"),
+        command("#msh macro names")
+      }
+    );
+
+  auto i = r.begin() + 2;
+
+  std::string names;
+  JUST_ASSERT_EQUAL(cpp_code(&names), *i);
+  JUST_ASSERT(names.find("FOO") != std::string::npos);
+  JUST_ASSERT(names.find("#define") == std::string::npos);
+}
+
