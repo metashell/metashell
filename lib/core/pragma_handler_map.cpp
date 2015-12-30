@@ -21,6 +21,7 @@
 
 #include <metashell/pragma_help.hpp>
 #include <metashell/pragma_switch.hpp>
+#include <metashell/pragma_macro.hpp>
 #include <metashell/pragma_quit.hpp>
 #include <metashell/pragma_environment.hpp>
 #include <metashell/pragma_environment_push.hpp>
@@ -89,6 +90,29 @@ namespace
       first = false;
     }
     return s.str();
+  }
+
+  std::string on_off(bool v_)
+  {
+    return v_ ? "on" : "off";
+  }
+
+  pragma_macro shell_mode(
+    const std::string& name_,
+    bool preprocessing_mode_,
+    iface::command_processor& shell_
+  )
+  {
+    return
+      pragma_macro(
+        "Set Metashell to " + name_ + " mode",
+        {
+          "#msh echo preprocessed " + on_off(preprocessing_mode_),
+          "#msh show cpp_errors " + on_off(!preprocessing_mode_),
+          "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)
+        },
+        shell_
+      );
   }
 }
 
@@ -212,6 +236,8 @@ pragma_handler_map pragma_handler_map::build_default(
           [&shell_] (bool v_) { shell_.evaluate_metaprograms(v_); }
         )
       )
+      .add("preprocessor", "mode", shell_mode("preprocessor", true, shell_))
+      .add("metaprogram", "mode", shell_mode("metaprogram", false, shell_))
       .add("quit", pragma_quit(shell_))
     ;
 }

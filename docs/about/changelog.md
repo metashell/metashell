@@ -16,6 +16,10 @@
     * Support for hiding C++ errors (`#msh show cpp_errors`)
     * Support for disabling the evaluation of metaprograms
       (`#msh metaprogram evaluation`)
+    * Add command to set the shell to preprocessor mode
+      (`#msh preprocessor mode`)
+    * Add command to set the shell to metaprogramming mode
+      (`#msh metaprogram mode`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
