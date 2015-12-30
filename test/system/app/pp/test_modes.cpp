@@ -34,7 +34,7 @@ JUST_TEST_CASE(test_preprocessor_mode)
       }
     );
 
-  auto i = r.begin() + 5;
+  auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
     comment({paragraph("display preprocessed commands is on")}),

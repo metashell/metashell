@@ -100,20 +100,25 @@ namespace
 
   pragma_macro shell_mode(
     const std::string& name_,
+    const std::string& comment_,
     bool preprocessing_mode_,
     iface::command_processor& shell_
   )
   {
+    std::vector<std::string>
+      cmds{
+        "#msh preprocessed echo " + on_off(preprocessing_mode_),
+        "#msh show cpp_errors " + on_off(!preprocessing_mode_),
+        "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)
+      };
+
+    if (!comment_.empty())
+    {
+      cmds.push_back("#msh echo " + comment_);
+    }
+
     return
-      pragma_macro(
-        "Set Metashell to " + name_ + " mode",
-        {
-          "#msh preprocessed echo " + on_off(preprocessing_mode_),
-          "#msh show cpp_errors " + on_off(!preprocessing_mode_),
-          "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)
-        },
-        shell_
-      );
+      pragma_macro("Set Metashell to " + name_ + " mode", move(cmds), shell_);
   }
 }
 
@@ -237,8 +242,16 @@ pragma_handler_map pragma_handler_map::build_default(
           [&shell_] (bool v_) { shell_.evaluate_metaprograms(v_); }
         )
       )
-      .add("preprocessor", "mode", shell_mode("preprocessor", true, shell_))
-      .add("metaprogram", "mode", shell_mode("metaprogram", false, shell_))
+      .add(
+        "preprocessor", "mode",
+        shell_mode(
+          "preprocessor",
+          "To switch back to the default mode, run #msh metaprogram mode",
+          true,
+          shell_
+        )
+      )
+      .add("metaprogram", "mode", shell_mode("metaprogram", "", false, shell_))
       .add("echo", pragma_echo())
       .add("quit", pragma_quit(shell_))
     ;
