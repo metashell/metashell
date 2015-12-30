@@ -15,9 +15,6 @@ complete list of accepted forms. All of them are equivalent:
 Metashell supports the following pragmas:
 
 <!-- pragma_info -->
-* __`#msh echo preprocessed [on|1|off|0]`__ <br />
-Turns display preprocessed commands on or off. When no arguments are used, it displays if display preprocessed commands is turned on.
-
 * __`#msh environment`__ <br />
 Displays the entire content of the environment.
 
@@ -54,11 +51,20 @@ Starts the metadebugger. For more information see evaluate in the Metadebugger c
 * __`#msh metaprogram evaluation [on|1|off|0]`__ <br />
 Turns evaluation of metaprograms on or off. When no arguments are used, it displays if evaluation of metaprograms is turned on.
 
+* __`#msh metaprogram mode`__ <br />
+Set Metashell to metaprogram mode
+
 * __`#msh pp <exp>`__ <br />
 Displays the preprocessed expression.
 
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
+
+* __`#msh preprocessed echo [on|1|off|0]`__ <br />
+Turns display preprocessed commands on or off. When no arguments are used, it displays if display preprocessed commands is turned on.
+
+* __`#msh preprocessor mode`__ <br />
+Set Metashell to preprocessor mode
 
 * __`#msh quit`__ <br />
 Terminates the shell.
