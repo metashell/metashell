@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
+#ifndef METASHELL_PRAGMA_MACROS_HPP
+#define METASHELL_PRAGMA_MACROS_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,31 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/pattern.hpp>
-
-#include <boost/operators.hpp>
+#include <metashell/pragma_without_arguments.hpp>
+#include <metashell/shell.hpp>
 
 #include <string>
-#include <iosfwd>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class cpp_code : boost::equality_comparable<cpp_code, json_string>
+  class pragma_macros : public pragma_without_arguments
   {
   public:
-    explicit cpp_code(pattern<std::string> code_);
-  
-    const pattern<std::string>& code() const;
+    explicit pragma_macros(shell& shell_);
+
+    virtual iface::pragma_handler* clone() const override;
+
+    virtual std::string description() const override;
+
+    virtual void run(iface::displayer& displayer_) const override;
   private:
-    pattern<std::string> _code;
+    shell& _shell;
   };
-
-  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
-
-  json_string to_json_string(const cpp_code& code_);
-
-  bool operator==(const cpp_code& code_, const json_string& s_);
 }
 
 #endif

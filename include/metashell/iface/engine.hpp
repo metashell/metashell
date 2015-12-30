@@ -59,6 +59,8 @@ namespace metashell
       ) = 0;
 
       virtual void generate_precompiled_header(const std::string& fn_) = 0;
+
+      virtual std::string macros(const iface::environment& env_) = 0;
     };
   }
 }

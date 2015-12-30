@@ -48,6 +48,9 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
+* __`#msh macros`__ <br />
+Displays the macro definitions
+
 * __`#msh mdb [-full] [<type>]`__ <br />
 Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
 

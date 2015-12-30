@@ -1,6 +1,3 @@
-#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,32 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/pattern.hpp>
+#include <metashell/pragma_macros.hpp>
 
-#include <boost/operators.hpp>
+using namespace metashell;
 
-#include <string>
-#include <iosfwd>
+pragma_macros::pragma_macros(shell& shell_) :
+  _shell(shell_)
+{}
 
-namespace metashell_system_test
+iface::pragma_handler* pragma_macros::clone() const
 {
-  class cpp_code : boost::equality_comparable<cpp_code, json_string>
-  {
-  public:
-    explicit cpp_code(pattern<std::string> code_);
-  
-    const pattern<std::string>& code() const;
-  private:
-    pattern<std::string> _code;
-  };
-
-  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
-
-  json_string to_json_string(const cpp_code& code_);
-
-  bool operator==(const cpp_code& code_, const json_string& s_);
+  return new pragma_macros(_shell);
 }
 
-#endif
+std::string pragma_macros::description() const
+{
+  return "Displays the macro definitions";
+}
+
+void pragma_macros::run(iface::displayer& displayer_) const
+{
+  displayer_.show_cpp_code(_shell.engine().macros(_shell.env()));
+}
 

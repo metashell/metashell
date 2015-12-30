@@ -21,29 +21,17 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/document.h>
 
-
 #include <iostream>
-#include <cassert>
 
 using namespace metashell_system_test;
 
-cpp_code::cpp_code(const std::string& code_) :
+cpp_code::cpp_code(pattern<std::string> code_) :
   _code(code_)
 {}
 
-cpp_code::cpp_code(placeholder) :
-  _code(boost::none)
-{}
-
-bool cpp_code::code_specified() const
+const pattern<std::string>& cpp_code::code() const
 {
-  return _code != boost::none;
-}
-
-const std::string& cpp_code::code() const
-{
-  assert(code_specified());
-  return *_code;
+  return _code;
 }
 
 std::ostream& metashell_system_test::operator<<(
@@ -65,14 +53,7 @@ json_string metashell_system_test::to_json_string(const cpp_code& t_)
   w.String("cpp_code");
 
   w.Key("code");
-  if (t_.code_specified())
-  {
-    w.String(t_.code().c_str());
-  }
-  else
-  {
-    w.Null();
-  }
+  write(t_.code(), w);
 
   w.EndObject();
 
@@ -87,9 +68,16 @@ bool metashell_system_test::operator==(
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
 
-  return
-    members_are({"type", "code"}, d)
-    && is_string("cpp_code", d["type"])
-    && (!cpp_code_.code_specified() || is_string(cpp_code_.code(), d["code"]));
+  if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]))
+  {
+    const auto& code = d["code"];
+    return
+      cpp_code_.code()
+        .match(std::string(code.GetString(), code.GetStringLength()));
+  }
+  else
+  {
+    return false;
+  }
 }
 

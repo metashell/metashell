@@ -644,6 +644,24 @@ namespace
       }
     }
 
+    virtual std::string macros(const iface::environment& env_) override
+    {
+      const data::process_output
+        output = run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
+      
+      if (output.exit_code() == data::exit_code_t(0))
+      {
+        return output.standard_output();
+      }
+      else
+      {
+        throw
+          std::runtime_error(
+            "Error getting list of macros: " + output.standard_error()
+          );
+      }
+    }
+
   private:
     clang_binary _clang_binary;
     std::string _internal_dir;

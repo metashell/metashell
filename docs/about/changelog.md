@@ -21,6 +21,7 @@
     * Add command to set the shell to metaprogramming mode
       (`#msh metaprogram mode`)
     * Add command to display a comment in the shell (`#msh echo`)
+    * Add command to display macro definitions (`#msh macros`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the

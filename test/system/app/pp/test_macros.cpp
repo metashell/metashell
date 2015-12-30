@@ -1,6 +1,3 @@
-#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,32 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/pattern.hpp>
+#include <metashell_system_test/cpp_code.hpp>
+#include <metashell_system_test/json_generator.hpp>
+#include <metashell_system_test/run_metashell.hpp>
 
-#include <boost/operators.hpp>
+#include <just/test.hpp>
 
-#include <string>
-#include <iosfwd>
+using namespace metashell_system_test;
 
-namespace metashell_system_test
+JUST_TEST_CASE(test_getting_defined_macro)
 {
-  class cpp_code : boost::equality_comparable<cpp_code, json_string>
-  {
-  public:
-    explicit cpp_code(pattern<std::string> code_);
-  
-    const pattern<std::string>& code() const;
-  private:
-    pattern<std::string> _code;
-  };
+  const auto r =
+    run_metashell(
+      {
+        command("#define FOO bar"),
+        command("#msh macros")
+      }
+    );
 
-  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
+  auto i = r.begin() + 2;
 
-  json_string to_json_string(const cpp_code& code_);
-
-  bool operator==(const cpp_code& code_, const json_string& s_);
+  std::string macros;
+  JUST_ASSERT_EQUAL(cpp_code(&macros), *i);
+  JUST_ASSERT(macros.find("#define FOO bar") != std::string::npos);
 }
-
-#endif
 

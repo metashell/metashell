@@ -66,6 +66,11 @@ namespace
     {
       // ignore
     }
+
+    virtual std::string macros(const iface::environment&) override
+    {
+      return "";
+    }
   private:
     data::result _result;
   };

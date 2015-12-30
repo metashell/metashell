@@ -35,6 +35,7 @@
 #include <metashell/pragma_evaluate.hpp>
 #include <metashell/pragma_pp.hpp>
 #include <metashell/pragma_echo.hpp>
+#include <metashell/pragma_macros.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -253,6 +254,7 @@ pragma_handler_map pragma_handler_map::build_default(
       )
       .add("metaprogram", "mode", shell_mode("metaprogram", "", false, shell_))
       .add("echo", pragma_echo())
+      .add("macros", pragma_macros(shell_))
       .add("quit", pragma_quit(shell_))
     ;
 }
