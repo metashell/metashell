@@ -50,7 +50,7 @@ ubuntu)
   sudo pip install mkdocs
   ;;
 debian)
-  apt-get -y install git g++ cmake libreadline-dev
+  sudo apt-get -y install git g++ cmake libreadline-dev
   ;;
 freebsd)
   pkg install -y git cmake gcc

@@ -61,6 +61,7 @@ tar cf - \
   --exclude=".git" \
   --exclude="bin" \
   --exclude="3rd/templight/build" \
+  --exclude="tools/vagrant/machines" \
   --exclude="${VAGRANT_DIR}" . | (cd "${VAGRANT_DIR}/metashell" && tar xf -)
 
 cd "${VAGRANT_DIR}"
