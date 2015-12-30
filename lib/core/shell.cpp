@@ -413,7 +413,10 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
       return false;
     }
   }
-  display(r, displayer_, true);
+  if (_show_cpp_errors || r.successful)
+  {
+    display(r, displayer_, true);
+  }
   return r.successful;
 }
 
@@ -540,17 +543,18 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(
+  const data::result r =
     eval_tmp_formatted(
       *_env,
       s_,
       using_precompiled_headers(),
       *_engine,
       _logger
-    ),
-    displayer_,
-    true
-  );
+    );
+  if (_show_cpp_errors || r.successful)
+  {
+    display(r, displayer_, true);
+  }
 }
 
 void shell::reset_environment()
@@ -640,5 +644,15 @@ void shell::echo(bool enabled_)
 bool shell::echo() const
 {
   return _echo;
+}
+
+void shell::show_cpp_errors(bool enabled_)
+{
+  _show_cpp_errors = enabled_;
+}
+
+bool shell::show_cpp_errors() const
+{
+  return _show_cpp_errors;
 }
 

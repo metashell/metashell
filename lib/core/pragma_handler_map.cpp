@@ -190,6 +190,14 @@ pragma_handler_map pragma_handler_map::build_default(
       .add("mdb", pragma_mdb(shell_, cpq_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("pp", pragma_pp(shell_))
+      .add(
+        "show", "cpp_errors",
+        pragma_switch(
+          "display C++ errors",
+          [&shell_] () { return shell_.show_cpp_errors(); },
+          [&shell_] (bool v_) { shell_.show_cpp_errors(v_); }
+        )
+      )
       .add("quit", pragma_quit(shell_))
     ;
 }

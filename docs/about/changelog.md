@@ -13,6 +13,7 @@
     * Support for displaying preprocessed code (`#msh pp`)
     * Support for displaying the preprocessed version of the shell commands
       (`#msh echo preprocessed`)
+    * Support for hiding C++ errors (`#msh show cpp_errors`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the

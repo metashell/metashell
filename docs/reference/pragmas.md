@@ -60,6 +60,9 @@ Turns precompiled header usage on or off. When no arguments are used, it display
 * __`#msh quit`__ <br />
 Terminates the shell.
 
+* __`#msh show cpp_errors [on|1|off|0]`__ <br />
+Turns display C++ errors on or off. When no arguments are used, it displays if display C++ errors is turned on.
+
 * __`#msh verbose [on|1|off|0]`__ <br />
 Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 

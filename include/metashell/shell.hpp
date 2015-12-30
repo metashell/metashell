@@ -124,6 +124,9 @@ namespace metashell
 
     void echo(bool enabled_);
     bool echo() const;
+
+    void show_cpp_errors(bool enabled_);
+    bool show_cpp_errors() const;
   private:
     std::string _internal_dir;
     std::string _env_filename;
@@ -137,6 +140,7 @@ namespace metashell
     logger* _logger;
     std::unique_ptr<iface::engine> _engine;
     bool _echo = false;
+    bool _show_cpp_errors = true;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);
