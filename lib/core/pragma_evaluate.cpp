@@ -42,6 +42,8 @@ std::string pragma_evaluate::description() const
 }
 
 void pragma_evaluate::run(
+  const data::command::iterator&,
+  const data::command::iterator&,
   const data::command::iterator& args_begin_,
   const data::command::iterator& args_end_,
   iface::displayer& displayer_

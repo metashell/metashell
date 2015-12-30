@@ -19,7 +19,6 @@
 using namespace metashell;
 
 pragma_environment::pragma_environment(iface::environment& env_) :
-  pragma_without_arguments("environment"),
   _env(env_)
 {}
 

@@ -20,7 +20,6 @@
 using namespace metashell;
 
 pragma_environment_pop::pragma_environment_pop(shell& shell_) :
-  pragma_without_arguments("environment pop"),
   _shell(shell_)
 {}
 

@@ -20,7 +20,6 @@
 using namespace metashell;
 
 pragma_environment_stack::pragma_environment_stack(shell& shell_) :
-  pragma_without_arguments("environment stack"),
   _shell(shell_)
 {}
 

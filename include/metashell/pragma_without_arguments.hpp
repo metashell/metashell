@@ -20,8 +20,6 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
-#include <string>
-
 namespace metashell
 {
   class shell;
@@ -29,19 +27,17 @@ namespace metashell
   class pragma_without_arguments : public iface::pragma_handler
   {
   public:
-    explicit pragma_without_arguments(const std::string& name_);
-
     virtual std::string arguments() const override;
 
     virtual void run(
+      const data::command::iterator& name_begin_,
+      const data::command::iterator& name_end_,
       const data::command::iterator& args_begin_,
       const data::command::iterator& args_end_,
       iface::displayer& displayer_
     ) const override;
 
     virtual void run(iface::displayer& displayer_) const = 0;
-  private:
-    std::string _name;
   };
 }
 

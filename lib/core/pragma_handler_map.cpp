@@ -124,7 +124,13 @@ void pragma_handler_map::process(
   }
   if (longest_fit_handler)
   {
-    longest_fit_handler->run(longest_fit_begin, e, displayer_);
+    longest_fit_handler->run(
+      begin_,
+      longest_fit_begin,
+      longest_fit_begin,
+      e,
+      displayer_
+    );
   }
   else
   {

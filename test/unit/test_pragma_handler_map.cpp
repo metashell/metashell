@@ -40,6 +40,8 @@ namespace
     virtual void run(
       const data::command::iterator&,
       const data::command::iterator&,
+      const data::command::iterator&,
+      const data::command::iterator&,
       iface::displayer&
     ) const override
     {

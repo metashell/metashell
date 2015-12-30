@@ -38,6 +38,8 @@ std::string pragma_pp::description() const
 }
 
 void pragma_pp::run(
+  const data::command::iterator&,
+  const data::command::iterator&,
   const data::command::iterator& args_begin_,
   const data::command::iterator& args_end_,
   iface::displayer& displayer_
