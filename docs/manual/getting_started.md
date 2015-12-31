@@ -708,7 +708,8 @@ way to get started with it is to run the following command in Metashell:
 ```
 
 This updates the shell's settings to turn it into an ideal environment for
-testing macros.
+testing macros. You can start Metashell in this mode by using the
+`--preprocessor` command line argument.
 
 ### Evaluating simple expressions
 
