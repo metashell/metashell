@@ -33,6 +33,21 @@ using namespace metashell;
 
 namespace
 {
+  bool determine_echo(const data::config& cfg_)
+  {
+    return cfg_.preprocessor_mode;
+  }
+
+  bool determine_show_cpp_errors(const data::config& cfg_)
+  {
+    return !cfg_.preprocessor_mode;
+  }
+
+  bool determine_evaluate_metaprograms(const data::config& cfg_)
+  {
+    return !cfg_.preprocessor_mode;
+  }
+
   std::string wrap(const std::string& s_, const std::string& wrapper_)
   {
     return wrapper_ + s_ + wrapper_;
@@ -216,7 +231,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(nullptr);
@@ -236,7 +254,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(&cpq_);
@@ -257,7 +278,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   init(&cpq_);
 }

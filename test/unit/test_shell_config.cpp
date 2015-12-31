@@ -97,3 +97,27 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
 
+JUST_TEST_CASE(test_starting_shell_in_metaprogramming_mode)
+{
+  metashell::data::config cfg;
+  cfg.preprocessor_mode = false;
+
+  const metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+
+  JUST_ASSERT(!sh.echo());
+  JUST_ASSERT(sh.show_cpp_errors());
+  JUST_ASSERT(sh.evaluate_metaprograms());
+}
+
+JUST_TEST_CASE(test_starting_shell_in_preprocessor_mode)
+{
+  metashell::data::config cfg;
+  cfg.preprocessor_mode = true;
+
+  const metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+
+  JUST_ASSERT(sh.echo());
+  JUST_ASSERT(!sh.show_cpp_errors());
+  JUST_ASSERT(!sh.evaluate_metaprograms());
+}
+
