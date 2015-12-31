@@ -26,16 +26,28 @@
 
 namespace metashell_system_test
 {
+  // This (template) class implements simple pattern matching. An object of type
+  // pattern<T> represents a pattern a value of T can be matched against.
+  // A pattern can be:
+  //
+  // 1.  a specified value (created by providing a value of type T in the
+  //     constructor)
+  // 2a. an unspecified value that matches everything (created by providing the
+  //     _ object in the constructor)
+  // 2b. the same as 2a, but a variable of type T is provided. In this case the
+  //     value the pattern is matched against gets stored in that variable.
+  //     This is created by providing a pointer to the variable to store the
+  //     value in.
   template <class T>
   class pattern
   {
   public:
-    pattern(T value_) : _pattern(value_) {}
-    pattern(T* var_) : _pattern(var_) {}
-    pattern(placeholder) : _pattern(static_cast<T*>(nullptr)) {}
+    pattern(T value_) : _pattern(value_) {} // case 1.
+    pattern(T* var_) : _pattern(var_) {} // case 2a.
+    pattern(placeholder) : _pattern(static_cast<T*>(nullptr)) {} // case 2b.
 
     template <class U>
-    pattern(U value_) : _pattern(T(value_)) {}
+    pattern(U value_) : _pattern(T(value_)) {} // case 1.
 
     template <class U>
     bool match(U value_) const
