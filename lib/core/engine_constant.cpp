@@ -27,6 +27,11 @@ namespace
       _result(std::move(result_))
     {}
 
+    virtual data::result precompile(const std::string&) override
+    {
+      return _result;
+    }
+
     virtual data::result eval(
       const iface::environment&,
       const boost::optional<std::string>&,
@@ -57,9 +62,14 @@ namespace
       // ignore
     }
 
-    virtual void precompile(const std::string&) override
+    virtual void generate_precompiled_header(const std::string&) override
     {
       // ignore
+    }
+
+    virtual std::string macros(const iface::environment&) override
+    {
+      return "";
     }
   private:
     data::result _result;

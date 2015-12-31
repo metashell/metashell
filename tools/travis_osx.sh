@@ -31,7 +31,7 @@ cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror" -DTEMPLIGHT_DEBUG=true
 make -j2
 make test || (cat Testing/Temporary/LastTest.log && false)
 
-for t in core mdb; do
+for t in core pp mdb; do
   test/system/app/${t}/metashell_${t}_system_test \
     app/metashell -- -I../3rd/boost/include --
 

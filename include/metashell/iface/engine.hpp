@@ -35,6 +35,8 @@ namespace metashell
     public:
       virtual ~engine() {}
 
+      virtual data::result precompile(const std::string& exp_) = 0;
+
       virtual data::result eval(
         const environment& env_,
         const boost::optional<std::string>& tmp_exp_,
@@ -56,7 +58,9 @@ namespace metashell
         bool use_precompiled_headers_
       ) = 0;
 
-      virtual void precompile(const std::string& fn_) = 0;
+      virtual void generate_precompiled_header(const std::string& fn_) = 0;
+
+      virtual std::string macros(const iface::environment& env_) = 0;
     };
   }
 }

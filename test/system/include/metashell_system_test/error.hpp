@@ -21,13 +21,14 @@
 #include <metashell_system_test/placeholder.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/operators.hpp>
 
 #include <string>
 #include <iosfwd>
 
 namespace metashell_system_test
 {
-  class error
+  class error : boost::equality_comparable<error, json_string>
   {
   public:
     explicit error(const std::string& msg_);

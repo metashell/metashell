@@ -439,6 +439,22 @@ namespace
       _logger(logger_)
     {}
 
+    virtual data::result precompile(const std::string& exp_) override
+    {
+      const data::process_output
+        output = run_clang(_clang_binary, {"-E"}, exp_);
+      
+      const bool success = output.exit_code() == data::exit_code_t(0);
+    
+      return
+        data::result{
+          success,
+          success ? output.standard_output() : "",
+          success ? "" : output.standard_error(),
+          ""
+        };
+    }
+
     virtual data::result eval(
       const iface::environment& env_,
       const boost::optional<std::string>& tmp_exp_,
@@ -601,7 +617,7 @@ namespace
       );
     }
 
-    virtual void precompile(const std::string& fn_) override
+    virtual void generate_precompiled_header(const std::string& fn_) override
     {
       using boost::algorithm::trim_copy;
 
@@ -625,6 +641,24 @@ namespace
       )
       {
         throw exception("Error precompiling header " + fn_ + ": " + err);
+      }
+    }
+
+    virtual std::string macros(const iface::environment& env_) override
+    {
+      const data::process_output
+        output = run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
+      
+      if (output.exit_code() == data::exit_code_t(0))
+      {
+        return output.standard_output();
+      }
+      else
+      {
+        throw
+          std::runtime_error(
+            "Error getting list of macros: " + output.standard_error()
+          );
       }
     }
 

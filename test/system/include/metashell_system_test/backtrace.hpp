@@ -20,11 +20,13 @@
 #include <metashell_system_test/frame.hpp>
 #include <metashell_system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <vector>
 
 namespace metashell_system_test
 {
-  class backtrace
+  class backtrace : boost::equality_comparable<backtrace, json_string>
   {
   public:
     explicit backtrace(std::vector<frame> frames_);

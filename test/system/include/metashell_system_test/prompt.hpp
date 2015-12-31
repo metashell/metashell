@@ -19,12 +19,14 @@
 
 #include <metashell_system_test/json_string.hpp>
 
+#include <boost/operators.hpp>
+
 #include <string>
 #include <iosfwd>
 
 namespace metashell_system_test
 {
-  class prompt
+  class prompt : boost::equality_comparable<prompt, json_string>
   {
   public:
     explicit prompt(const std::string& prompt_);

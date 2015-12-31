@@ -147,7 +147,7 @@ JUST_TEST_CASE(
     run_metashell(
       {
         command("#pragma metashell environment"),
-        command("#pragma metashell environment add " + breaking.code()),
+        command("#pragma metashell environment add "+*breaking.code().value()),
         command("#pragma metashell environment")
       }
     );

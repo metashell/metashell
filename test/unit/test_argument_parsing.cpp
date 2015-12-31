@@ -204,3 +204,17 @@ JUST_TEST_CASE(test_metashell_path_is_filled)
   JUST_ASSERT_EQUAL("the_path", cfg.metashell_binary);
 }
 
+JUST_TEST_CASE(test_preprocessor_mode_is_off_by_default)
+{
+  const metashell::data::config cfg = parse_config({}).cfg;
+
+  JUST_ASSERT(!cfg.preprocessor_mode);
+}
+
+JUST_TEST_CASE(test_preprocessor_mode_is_set_from_command_line)
+{
+  const metashell::data::config cfg = parse_config({"--preprocessor"}).cfg;
+
+  JUST_ASSERT(cfg.preprocessor_mode);
+}
+

@@ -330,6 +330,7 @@ parse_config_result metashell::parse_config(
     )
     ("engine", value(&cfg.engine), engine_info.c_str())
     ("help_engine", value(&help_engine), "Display help about the engine")
+    ("preprocessor", "Starts the shell in preprocessor mode")
     ;
 
   using dec_arg = decommissioned_argument;
@@ -381,6 +382,7 @@ parse_config_result metashell::parse_config(
     cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     cfg.saving_enabled = vm.count("enable_saving");
     cfg.splash_enabled = vm.count("nosplash") == 0;
+    cfg.preprocessor_mode = vm.count("preprocessor");
     if (vm.count("log") == 0)
     {
       cfg.log_mode = data::logging_mode::none;

@@ -100,6 +100,8 @@ std::string pragma_help::description() const
 }
 
 void pragma_help::run(
+  const data::command::iterator&,
+  const data::command::iterator&,
   const data::command::iterator& args_begin_,
   const data::command::iterator& args_end_,
   iface::displayer& displayer_

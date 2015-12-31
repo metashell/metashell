@@ -33,6 +33,33 @@ using namespace metashell;
 
 namespace
 {
+  bool determine_echo(const data::config& cfg_)
+  {
+    return cfg_.preprocessor_mode;
+  }
+
+  bool determine_show_cpp_errors(const data::config& cfg_)
+  {
+    return !cfg_.preprocessor_mode;
+  }
+
+  bool determine_evaluate_metaprograms(const data::config& cfg_)
+  {
+    return !cfg_.preprocessor_mode;
+  }
+
+  std::string wrap(const std::string& s_, const std::string& wrapper_)
+  {
+    return wrapper_ + s_ + wrapper_;
+  }
+
+  void make_failure(data::result& r_, const std::string& msg_)
+  {
+    r_.successful = false;
+    r_.output.clear();
+    r_.error = msg_;
+  }
+
   std::string extend(const std::string& s_, int width_)
   {
     const int len = s_.length();
@@ -46,7 +73,11 @@ namespace
     return s.str();
   }
 
-  void display(const data::result& r_, iface::displayer& displayer_)
+  void display(
+    const data::result& r_,
+    iface::displayer& displayer_,
+    bool show_as_type_
+  )
   {
     if (!r_.info.empty())
     {
@@ -57,7 +88,14 @@ namespace
     }
     if (r_.successful && !r_.output.empty())
     {
-      displayer_.show_type(data::type(r_.output));
+      if (show_as_type_)
+      {
+        displayer_.show_type(data::type(r_.output));
+      }
+      else
+      {
+        displayer_.show_cpp_code(r_.output);
+      }
     }
   }
 
@@ -193,7 +231,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(nullptr);
@@ -213,7 +254,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(&cpq_);
@@ -234,7 +278,10 @@ shell::shell(
   _config(config_),
   _stopped(false),
   _logger(logger_),
-  _engine(std::move(engine_))
+  _engine(std::move(engine_)),
+  _echo(determine_echo(config_)),
+  _show_cpp_errors(determine_show_cpp_errors(config_)),
+  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   init(&cpq_);
 }
@@ -339,13 +386,16 @@ void shell::line_available(
           {
             _pragma_handlers.process(*p, cmd.end(), displayer_);
           }
-          else if (is_environment_setup_command(cmd))
+          else if (!_echo || preprocess(displayer_, s, true))
           {
-            store_in_buffer(s, displayer_);
-          }
-          else
-          {
-            run_metaprogram(s, displayer_);
+            if (is_environment_setup_command(cmd))
+            {
+              store_in_buffer(s, displayer_);
+            }
+            else
+            {
+              run_metaprogram(s, displayer_);
+            }
           }
         }
       }
@@ -387,7 +437,10 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
       return false;
     }
   }
-  ::display(r, displayer_);
+  if (_show_cpp_errors || r.successful)
+  {
+    display(r, displayer_, true);
+  }
   return r.successful;
 }
 
@@ -514,16 +567,21 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
 
 void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
-  display(
-    eval_tmp_formatted(
-      *_env,
-      s_,
-      using_precompiled_headers(),
-      *_engine,
-      _logger
-    ),
-    displayer_
-  );
+  if (_evaluate_metaprograms)
+  {
+    const data::result r =
+      eval_tmp_formatted(
+        *_env,
+        s_,
+        using_precompiled_headers(),
+        *_engine,
+        _logger
+      );
+    if (_show_cpp_errors || r.successful)
+    {
+      display(r, displayer_, true);
+    }
+  }
 }
 
 void shell::reset_environment()
@@ -550,5 +608,88 @@ iface::engine& shell::engine()
 std::string shell::env_path() const
 {
   return _internal_dir + "/" + _env_filename;
+}
+
+bool shell::preprocess(
+  iface::displayer& displayer_,
+  const std::string& exp_,
+  bool process_directives_
+) const
+{
+  const std::string
+    marker = wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
+
+  data::result
+    r = _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
+
+  if (r.successful)
+  {
+    const auto p1 = r.output.find(marker);
+    if (p1 == std::string::npos)
+    {
+      make_failure(
+        r,
+        "Marker (" + marker + ") not found in preprocessed output."
+        " Does it contain a macro that has been defined?"
+      );
+    }
+    else
+    {
+      const auto m_len = marker.size();
+      const auto p2 = r.output.find(marker, p1 + m_len);
+      if (p2 == std::string::npos)
+      {
+        make_failure(
+          r,
+          "Marker (" + marker + ") found only once in preprocessed output."
+        );
+      }
+      else if (r.output.find(marker, p2 + m_len) == std::string::npos)
+      {
+        r.output = r.output.substr(p1 + m_len, p2 - p1 - m_len);
+      }
+      else
+      {
+        make_failure(
+          r,
+          "Marker (" + marker
+          + ") found more than two times in preprocessed output."
+        );
+      }
+    }
+  }
+
+  display(r, displayer_, false);
+  return r.successful;
+}
+
+void shell::echo(bool enabled_)
+{
+  _echo = enabled_;
+}
+
+bool shell::echo() const
+{
+  return _echo;
+}
+
+void shell::show_cpp_errors(bool enabled_)
+{
+  _show_cpp_errors = enabled_;
+}
+
+bool shell::show_cpp_errors() const
+{
+  return _show_cpp_errors;
+}
+
+void shell::evaluate_metaprograms(bool enabled_)
+{
+  _evaluate_metaprograms = enabled_;
+}
+
+bool shell::evaluate_metaprograms() const
+{
+  return _evaluate_metaprograms;
 }
 

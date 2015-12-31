@@ -21,6 +21,7 @@
 #include <metashell_system_test/placeholder.hpp>
 #include <metashell_system_test/query_json.hpp>
 
+#include <boost/operators.hpp>
 #include <boost/optional.hpp>
 
 #include <string>
@@ -28,7 +29,7 @@
 
 namespace metashell_system_test
 {
-  class type
+  class type : boost::equality_comparable<type, json_string>
   {
   public:
     explicit type(const std::string& name_);

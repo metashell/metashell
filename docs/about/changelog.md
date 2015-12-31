@@ -10,6 +10,19 @@
     * New MDB command: `break`
     * MDB now shows DeducedTemplateArgumentSubstitution events, which helps
       you to debug expressions involving SFINAE.
+    * Support for displaying preprocessed code (`#msh pp`)
+    * Support for displaying the preprocessed version of the shell commands
+      (`#msh preprocessed echo`)
+    * Support for hiding C++ errors (`#msh show cpp_errors`)
+    * Support for disabling the evaluation of metaprograms
+      (`#msh metaprogram evaluation`)
+    * Add command to set the shell to preprocessor mode
+      (`#msh preprocessor mode`)
+    * Add command to set the shell to metaprogramming mode
+      (`#msh metaprogram mode`)
+    * Add command to display a comment in the shell (`#msh echo`)
+    * Add command to display macro definitions (`#msh macros`)
+    * Add command to display macro names (`#msh macro names`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the

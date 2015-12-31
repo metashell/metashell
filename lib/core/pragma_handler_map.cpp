@@ -21,6 +21,7 @@
 
 #include <metashell/pragma_help.hpp>
 #include <metashell/pragma_switch.hpp>
+#include <metashell/pragma_macro.hpp>
 #include <metashell/pragma_quit.hpp>
 #include <metashell/pragma_environment.hpp>
 #include <metashell/pragma_environment_push.hpp>
@@ -32,6 +33,10 @@
 #include <metashell/pragma_environment_save.hpp>
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/pragma_evaluate.hpp>
+#include <metashell/pragma_pp.hpp>
+#include <metashell/pragma_echo.hpp>
+#include <metashell/pragma_macros.hpp>
+#include <metashell/pragma_macro_names.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -89,6 +94,34 @@ namespace
     }
     return s.str();
   }
+
+  std::string on_off(bool v_)
+  {
+    return v_ ? "on" : "off";
+  }
+
+  pragma_macro shell_mode(
+    const std::string& name_,
+    const std::string& comment_,
+    bool preprocessing_mode_,
+    iface::command_processor& shell_
+  )
+  {
+    std::vector<std::string>
+      cmds{
+        "#msh preprocessed echo " + on_off(preprocessing_mode_),
+        "#msh show cpp_errors " + on_off(!preprocessing_mode_),
+        "#msh metaprogram evaluation " + on_off(!preprocessing_mode_)
+      };
+
+    if (!comment_.empty())
+    {
+      cmds.push_back("#msh echo " + comment_);
+    }
+
+    return
+      pragma_macro("Set Metashell to " + name_ + " mode", move(cmds), shell_);
+  }
 }
 
 void pragma_handler_map::process(
@@ -123,7 +156,13 @@ void pragma_handler_map::process(
   }
   if (longest_fit_handler)
   {
-    longest_fit_handler->run(longest_fit_begin, e, displayer_);
+    longest_fit_handler->run(
+      begin_,
+      longest_fit_begin,
+      longest_fit_begin,
+      e,
+      displayer_
+    );
   }
   else
   {
@@ -178,8 +217,46 @@ pragma_handler_map pragma_handler_map::build_default(
         "save",
         pragma_environment_save(shell_.get_config(), shell_.env())
       )
+      .add(
+        "preprocessed", "echo",
+        pragma_switch(
+          "display preprocessed commands",
+          [&shell_] () { return shell_.echo(); },
+          [&shell_] (bool v_) { shell_.echo(v_); }
+        )
+      )
       .add("mdb", pragma_mdb(shell_, cpq_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
+      .add("pp", pragma_pp(shell_))
+      .add(
+        "show", "cpp_errors",
+        pragma_switch(
+          "display C++ errors",
+          [&shell_] () { return shell_.show_cpp_errors(); },
+          [&shell_] (bool v_) { shell_.show_cpp_errors(v_); }
+        )
+      )
+      .add(
+        "metaprogram", "evaluation",
+        pragma_switch(
+          "evaluation of metaprograms",
+          [&shell_] () { return shell_.evaluate_metaprograms(); },
+          [&shell_] (bool v_) { shell_.evaluate_metaprograms(v_); }
+        )
+      )
+      .add(
+        "preprocessor", "mode",
+        shell_mode(
+          "preprocessor",
+          "To switch back to the default mode, run #msh metaprogram mode",
+          true,
+          shell_
+        )
+      )
+      .add("metaprogram", "mode", shell_mode("metaprogram", "", false, shell_))
+      .add("echo", pragma_echo())
+      .add("macros", pragma_macros(shell_))
+      .add("macro", "names", pragma_macro_names(shell_))
       .add("quit", pragma_quit(shell_))
     ;
 }

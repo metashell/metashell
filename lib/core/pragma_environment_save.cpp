@@ -49,6 +49,8 @@ std::string pragma_environment_save::description() const
 }
 
 void pragma_environment_save::run(
+  const data::command::iterator&,
+  const data::command::iterator&,
   const data::command::iterator& args_begin_,
   const data::command::iterator& args_end_,
   iface::displayer& displayer_

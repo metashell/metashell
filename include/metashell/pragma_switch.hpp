@@ -42,6 +42,8 @@ namespace metashell
     virtual std::string description() const override;
 
     virtual void run(
+      const data::command::iterator& name_begin_,
+      const data::command::iterator& name_end_,
       const data::command::iterator& args_begin_,
       const data::command::iterator& args_end_,
       iface::displayer& displayer_

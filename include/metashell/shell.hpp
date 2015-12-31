@@ -115,6 +115,21 @@ namespace metashell
     iface::engine& engine();
 
     std::string env_path() const;
+
+    bool preprocess(
+      iface::displayer& displayer_,
+      const std::string& exp_,
+      bool process_directives_
+    ) const;
+
+    void echo(bool enabled_);
+    bool echo() const;
+
+    void show_cpp_errors(bool enabled_);
+    bool show_cpp_errors() const;
+
+    void evaluate_metaprograms(bool enabled_);
+    bool evaluate_metaprograms() const;
   private:
     std::string _internal_dir;
     std::string _env_filename;
@@ -127,6 +142,9 @@ namespace metashell
     std::stack<std::string> _environment_stack;
     logger* _logger;
     std::unique_ptr<iface::engine> _engine;
+    bool _echo = false;
+    bool _show_cpp_errors = true;
+    bool _evaluate_metaprograms = true;
 
     void init(command_processor_queue* cpq_);
     void rebuild_environment(const std::string& content_);

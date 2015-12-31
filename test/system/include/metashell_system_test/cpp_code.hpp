@@ -18,20 +18,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/json_string.hpp>
+#include <metashell_system_test/pattern.hpp>
+
+#include <boost/operators.hpp>
 
 #include <string>
 #include <iosfwd>
 
 namespace metashell_system_test
 {
-  class cpp_code
+  class cpp_code : boost::equality_comparable<cpp_code, json_string>
   {
   public:
-    explicit cpp_code(const std::string& code_);
+    explicit cpp_code(pattern<std::string> code_);
   
-    const std::string& code() const;
+    const pattern<std::string>& code() const;
   private:
-    std::string _code;
+    pattern<std::string> _code;
   };
 
   std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);

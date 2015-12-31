@@ -15,6 +15,9 @@ complete list of accepted forms. All of them are equivalent:
 Metashell supports the following pragmas:
 
 <!-- pragma_info -->
+* __`#msh echo <text>`__ <br />
+Display a comment containing <text>.
+
 * __`#msh environment`__ <br />
 Displays the entire content of the environment.
 
@@ -45,14 +48,38 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
+* __`#msh macro names`__ <br />
+Displays the names of the defined macros
+
+* __`#msh macros`__ <br />
+Displays the macro definitions
+
 * __`#msh mdb [-full] [<type>]`__ <br />
 Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
+
+* __`#msh metaprogram evaluation [on|1|off|0]`__ <br />
+Turns evaluation of metaprograms on or off. When no arguments are used, it displays if evaluation of metaprograms is turned on.
+
+* __`#msh metaprogram mode`__ <br />
+Set Metashell to metaprogram mode
+
+* __`#msh pp <exp>`__ <br />
+Displays the preprocessed expression.
 
 * __`#msh precompiled_headers [on|1|off|0]`__ <br />
 Turns precompiled header usage on or off. When no arguments are used, it displays if precompiled header usage is turned on.
 
+* __`#msh preprocessed echo [on|1|off|0]`__ <br />
+Turns display preprocessed commands on or off. When no arguments are used, it displays if display preprocessed commands is turned on.
+
+* __`#msh preprocessor mode`__ <br />
+Set Metashell to preprocessor mode
+
 * __`#msh quit`__ <br />
 Terminates the shell.
+
+* __`#msh show cpp_errors [on|1|off|0]`__ <br />
+Turns display C++ errors on or off. When no arguments are used, it displays if display C++ errors is turned on.
 
 * __`#msh verbose [on|1|off|0]`__ <br />
 Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.

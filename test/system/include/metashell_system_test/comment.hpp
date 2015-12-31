@@ -21,12 +21,14 @@
 #include <metashell_system_test/json_string.hpp>
 #include <metashell_system_test/placeholder.hpp>
 
+#include <boost/operators.hpp>
+
 #include <iosfwd>
 #include <vector>
 
 namespace metashell_system_test
 {
-  class comment
+  class comment : boost::equality_comparable<comment, json_string>
   {
   public:
     explicit comment(std::vector<paragraph> paragraphs_);

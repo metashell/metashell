@@ -231,7 +231,7 @@ void header_file_environment::save()
 
   if (_use_precompiled_headers)
   {
-    _engine.precompile(fn);
+    _engine.generate_precompiled_header(fn);
   }
 }
 

@@ -15,19 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/cpp_code.hpp>
+#include <metashell_system_test/query_json.hpp>
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/document.h>
 
 #include <iostream>
 
 using namespace metashell_system_test;
 
-cpp_code::cpp_code(const std::string& code_) :
+cpp_code::cpp_code(pattern<std::string> code_) :
   _code(code_)
 {}
 
-const std::string& cpp_code::code() const
+const pattern<std::string>& cpp_code::code() const
 {
   return _code;
 }
@@ -51,7 +53,7 @@ json_string metashell_system_test::to_json_string(const cpp_code& t_)
   w.String("cpp_code");
 
   w.Key("code");
-  w.String(t_.code().c_str());
+  write(t_.code(), w);
 
   w.EndObject();
 
@@ -63,6 +65,19 @@ bool metashell_system_test::operator==(
   const json_string& s_
 )
 {
-  return to_json_string(cpp_code_) == s_;
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]))
+  {
+    const auto& code = d["code"];
+    return
+      cpp_code_.code()
+        .match(std::string(code.GetString(), code.GetStringLength()));
+  }
+  else
+  {
+    return false;
+  }
 }
 

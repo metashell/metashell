@@ -20,7 +20,6 @@
 using namespace metashell;
 
 pragma_quit::pragma_quit(shell& shell_) :
-  pragma_without_arguments("quit"),
   _shell(shell_)
 {}
 

@@ -20,7 +20,6 @@
 using namespace metashell;
 
 pragma_environment_reload::pragma_environment_reload(shell& shell_) :
-  pragma_without_arguments("environment reload"),
   _shell(shell_)
 {}
 
