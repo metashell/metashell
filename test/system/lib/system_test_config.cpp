@@ -43,4 +43,3 @@ const std::vector<std::string>& system_test_config::metashell_args()
 {
   return ::metashell_args;
 }
-

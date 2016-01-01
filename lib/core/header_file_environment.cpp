@@ -40,68 +40,81 @@ namespace
 {
   std::string seq_formatter(const std::string& name_)
   {
-    return
-      "#include <boost/mpl/fold.hpp>\n"
-      "#include <boost/mpl/" + name_ + ".hpp>\n"
+    return "#include <boost/mpl/fold.hpp>\n"
+           "#include <boost/mpl/" +
+           name_ +
+           ".hpp>\n"
 
-      "namespace boost_"
-      "{"
-        "namespace mpl"
-        "{"
-          "template <class... Ts>"
-          "struct " + name_ +
-          "{"
-            "typedef " + name_ + " type;"
-          "};"
-        "}"
-      "}"
+           "namespace boost_"
+           "{"
+           "namespace mpl"
+           "{"
+           "template <class... Ts>"
+           "struct " +
+           name_ +
+           "{"
+           "typedef " +
+           name_ +
+           " type;"
+           "};"
+           "}"
+           "}"
 
-      "namespace metashell"
-      "{"
-        "namespace impl "
-        "{ "
-          "template <class C, class Item> "
-          "struct " + name_ + "_builder;\n"
+           "namespace metashell"
+           "{"
+           "namespace impl "
+           "{ "
+           "template <class C, class Item> "
+           "struct " +
+           name_ +
+           "_builder;\n"
 
-          "template <class... Ts, class Item>"
-          "struct "
-            + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
-            "::boost_::mpl::" + name_ + "<"
-              "Ts..., typename ::metashell::format<Item>::type"
-            ">"
-          "{};"
-        "} "
+           "template <class... Ts, class Item>"
+           "struct " +
+           name_ + "_builder<::boost_::mpl::" + name_ +
+           "<Ts...>, Item> : "
+           "::boost_::mpl::" +
+           name_ +
+           "<"
+           "Ts..., typename ::metashell::format<Item>::type"
+           ">"
+           "{};"
+           "} "
 
-        "template <> "
-        "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
-        "{ "
-          "typedef format_impl type; "
+           "template <> "
+           "struct format_impl<::boost::mpl::" +
+           name_ +
+           "<>::tag> "
+           "{ "
+           "typedef format_impl type; "
 
-          "template <class V> "
-          "struct apply : "
-            "::boost::mpl::fold<"
-              "V,"
-              "::boost_::mpl::" + name_ + "<>,"
-              "::metashell::impl::" + name_ + "_builder<"
-                "::boost::mpl::_1, "
-                "::boost::mpl::_2"
-              ">"
-            ">"
-          "{};"
-        "};"
-      "}"
-      "\n"
-      ;
+           "template <class V> "
+           "struct apply : "
+           "::boost::mpl::fold<"
+           "V,"
+           "::boost_::mpl::" +
+           name_ +
+           "<>,"
+           "::metashell::impl::" +
+           name_ +
+           "_builder<"
+           "::boost::mpl::_1, "
+           "::boost::mpl::_2"
+           ">"
+           ">"
+           "{};"
+           "};"
+           "}"
+           "\n";
   }
 
   std::string include_formatter(const std::string& name_)
   {
     using std::string;
 
-    return
-      "#include <"
-        + string(path_builder() / "metashell" / "formatter" / (name_ + ".hpp"))
-        + ">";
+    return "#include <" + string(path_builder() / "metashell" / "formatter" /
+                                 (name_ + ".hpp")) +
+           ">";
   }
 
   void add_internal_headers(data::headers& headers_)
@@ -118,67 +131,58 @@ namespace
 
     for (const char* f : formatters)
     {
-      headers_.add(
-        internal_dir / "metashell" / "formatter" / (f + hpp),
-        seq_formatter(f)
-      );
+      headers_.add(internal_dir / "metashell" / "formatter" / (f + hpp),
+                   seq_formatter(f));
     }
 
     const string vector_formatter =
-       string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+        string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+
+    headers_.add(internal_dir / "metashell" / "formatter" / "deque.hpp",
+                 "#include <" + vector_formatter + ">\n");
 
     headers_.add(
-      internal_dir / "metashell" / "formatter" / "deque.hpp",
-      "#include <" + vector_formatter + ">\n"
-    );
+        internal_dir / "metashell" / "formatter.hpp",
+        join(formatters | transformed(include_formatter), "\n") + "\n");
 
-    headers_.add(
-      internal_dir / "metashell" / "formatter.hpp",
-      join(formatters | transformed(include_formatter), "\n") + "\n"
-    );
+    headers_.add(internal_dir / "metashell" / "scalar.hpp",
+                 "#include <type_traits>\n"
 
-    headers_.add(
-      internal_dir / "metashell" / "scalar.hpp",
-      "#include <type_traits>\n"
+                 "#define SCALAR(...) "
+                 "std::integral_constant<"
+                 "std::remove_reference<"
+                 "std::remove_cv<"
+                 "std::remove_reference<"
+                 "decltype((__VA_ARGS__))"
+                 ">::type"
+                 ">::type"
+                 ">::type,"
+                 "(__VA_ARGS__)"
+                 ">\n");
 
-      "#define SCALAR(...) "
-        "std::integral_constant<"
-          "std::remove_reference<"
-            "std::remove_cv<"
-              "std::remove_reference<"
-                "decltype((__VA_ARGS__))"
-              ">::type"
-            ">::type"
-          ">::type,"
-          "(__VA_ARGS__)"
-        ">\n"
-    );
+    headers_.add(internal_dir / "metashell" / "instantiate_expression.hpp",
+                 "namespace metashell\n"
+                 "{\n"
+                 "  template <bool> struct expression_instantiated;\n"
+                 "}\n"
 
-    headers_.add(
-      internal_dir / "metashell" / "instantiate_expression.hpp",
-      "namespace metashell\n"
-      "{\n"
-      "  template <bool> struct expression_instantiated;\n"
-      "}\n"
-
-      "#define METASHELL_INSTANTIATE_EXPRESSION(...) \\\n"
-      "  ::metashell::expression_instantiated<true ? true : ((__VA_ARGS__), false)>\n"
-    );
+                 "#define METASHELL_INSTANTIATE_EXPRESSION(...) \\\n"
+                 "  ::metashell::expression_instantiated<true ? true : "
+                 "((__VA_ARGS__), false)>\n");
   }
 }
 
 header_file_environment::header_file_environment(
-  iface::engine& engine_,
-  const data::config& config_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_
-) :
-  _internal_dir(internal_dir_),
-  _env_filename(env_filename_),
-  _buffer(),
-  _headers(internal_dir_),
-  _use_precompiled_headers(config_.use_precompiled_headers),
-  _engine(engine_)
+    iface::engine& engine_,
+    const data::config& config_,
+    const std::string& internal_dir_,
+    const std::string& env_filename_)
+  : _internal_dir(internal_dir_),
+    _env_filename(env_filename_),
+    _buffer(),
+    _headers(internal_dir_),
+    _use_precompiled_headers(config_.use_precompiled_headers),
+    _engine(engine_)
 {
   add_internal_headers(_headers);
 
@@ -202,10 +206,9 @@ void header_file_environment::append(const std::string& s_)
 
 std::string header_file_environment::get() const
 {
-  return
-    _use_precompiled_headers ?
-      std::string() : // The -include directive includes the header
-      "#include <" + _env_filename + ">\n";
+  return _use_precompiled_headers ?
+             std::string() : // The -include directive includes the header
+             "#include <" + _env_filename + ">\n";
 }
 
 std::string header_file_environment::get_appended(const std::string& s_) const
@@ -245,8 +248,4 @@ const data::headers& header_file_environment::get_headers() const
   return _headers;
 }
 
-std::string header_file_environment::get_all() const
-{
-  return _buffer;
-}
-
+std::string header_file_environment::get_all() const { return _buffer; }

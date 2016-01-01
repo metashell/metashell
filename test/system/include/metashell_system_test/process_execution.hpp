@@ -26,13 +26,11 @@ namespace metashell_system_test
   class process_execution
   {
   public:
-    process_execution(
-      std::vector<std::string> cmd_,
-      std::string stdin_,
-      std::string stdout_,
-      std::string stderr_,
-      int exit_code_
-    );
+    process_execution(std::vector<std::string> cmd_,
+                      std::string stdin_,
+                      std::string stdout_,
+                      std::string stderr_,
+                      int exit_code_);
 
     const std::vector<std::string>& cmd() const;
     const std::string& standard_input() const;
@@ -40,6 +38,7 @@ namespace metashell_system_test
     const std::string& standard_output() const;
     const std::string& standard_error() const;
     int exit_code() const;
+
   private:
     std::vector<std::string> _cmd;
     std::string _stdin;
@@ -54,4 +53,3 @@ namespace metashell_system_test
 }
 
 #endif
-

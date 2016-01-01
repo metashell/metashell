@@ -37,16 +37,15 @@ namespace
     virtual std::string arguments() const override { return "a|b|c"; }
     virtual std::string description() const override { return "Foo bar"; }
 
-    virtual void run(
-      const data::command::iterator&,
-      const data::command::iterator&,
-      const data::command::iterator&,
-      const data::command::iterator&,
-      iface::displayer&
-    ) const override
+    virtual void run(const data::command::iterator&,
+                     const data::command::iterator&,
+                     const data::command::iterator&,
+                     const data::command::iterator&,
+                     iface::displayer&) const override
     {
       _run_flag = true;
     }
+
   private:
     bool& _run_flag;
   };
@@ -67,7 +66,10 @@ JUST_TEST_CASE(test_processing_non_existing_handler)
   const data::command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
-  JUST_ASSERT_THROWS([&m, &cmd, &d] { m.process(cmd.begin(), cmd.end(), d); });
+  JUST_ASSERT_THROWS([&m, &cmd, &d]
+                     {
+                       m.process(cmd.begin(), cmd.end(), d);
+                     });
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)
@@ -97,8 +99,7 @@ JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
 }
 
 JUST_TEST_CASE(
-  test_pragma_with_two_token_name_is_called_when_prefix_is_available
-)
+    test_pragma_with_two_token_name_is_called_when_prefix_is_available)
 {
   bool foo_bar_run = false;
   bool foo_run = false;
@@ -129,4 +130,3 @@ JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
   JUST_ASSERT(foo_run);
   JUST_ASSERT(!foo_bar_run);
 }
-

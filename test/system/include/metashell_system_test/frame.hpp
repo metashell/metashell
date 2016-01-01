@@ -34,12 +34,10 @@ namespace metashell_system_test
   public:
     explicit frame(const type& name_);
 
-    frame(
-      const type& name_,
-      placeholder,
-      placeholder,
-      instantiation_kind kind_
-    );
+    frame(const type& name_,
+          placeholder,
+          placeholder,
+          instantiation_kind kind_);
 
     const type& name() const;
 
@@ -47,6 +45,7 @@ namespace metashell_system_test
 
     // precondition: has_kind()
     instantiation_kind kind() const;
+
   private:
     type _name;
     boost::optional<instantiation_kind> _kind;
@@ -61,30 +60,16 @@ namespace metashell_system_test
   template <class JsonDocument>
   bool matches(const frame& frame_, const JsonDocument& doc_)
   {
-    return
-      no_other_members_than(
-        {
-          "type",
-          "name",
-          "source_location",
-          "kind",
-          "point_of_instantiation",
-          "time_taken",
-          "time_taken_ratio"
-        },
-        doc_
-      )
-      && has_members({"name", "source_location"}, doc_)
-      && matches(frame_.name(), doc_["name"])
-      && (
-        !frame_.has_kind()
-        || (
-          doc_.HasMember("kind")
-          && is_string(to_string(frame_.kind()), doc_["kind"])
-        )
-      );
+    return no_other_members_than(
+               {"type", "name", "source_location", "kind",
+                "point_of_instantiation", "time_taken", "time_taken_ratio"},
+               doc_) &&
+           has_members({"name", "source_location"}, doc_) &&
+           matches(frame_.name(), doc_["name"]) &&
+           (!frame_.has_kind() ||
+            (doc_.HasMember("kind") &&
+             is_string(to_string(frame_.kind()), doc_["kind"])));
   }
 }
 
 #endif
-

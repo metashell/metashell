@@ -20,13 +20,12 @@
 
 using namespace metashell::data;
 
-text::text(const std::string& s_) :
-  paragraphs(1, paragraph(s_))
-{}
+text::text(const std::string& s_) : paragraphs(1, paragraph(s_)) {}
 
-text::text(const std::initializer_list<paragraph>& paragraphs_) :
-  paragraphs(paragraphs_)
-{}
+text::text(const std::initializer_list<paragraph>& paragraphs_)
+  : paragraphs(paragraphs_)
+{
+}
 
 bool text::operator==(const text& t_) const
 {
@@ -51,4 +50,3 @@ std::ostream& metashell::data::operator<<(std::ostream& o_, const text& t_)
   }
   return o_ << "})";
 }
-

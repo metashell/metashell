@@ -21,47 +21,42 @@
 #include <ostream>
 #include <sstream>
 
-namespace metashell {
-namespace data {
-
-type::type() {}
-
-type::type(const std::string& name_) :
-  _name(name_)
-{}
-
-const std::string& type::name() const
+namespace metashell
 {
-  return _name;
-}
+  namespace data
+  {
 
-bool type::is_integral_constant(
-  const type& type_,
-  const std::string& value_
-) const
-{
-  using boost::regex;
-  using boost::regex_match;
+    type::type() {}
 
-  std::ostringstream s;
-  s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
+    type::type(const std::string& name_) : _name(name_) {}
 
-  return regex_match(name(), regex(s.str()));
-}
+    const std::string& type::name() const { return _name; }
 
-std::ostream& operator<<(std::ostream& o_, const type& t_)
-{
-  return o_ << t_.name();
-}
+    bool type::is_integral_constant(const type& type_,
+                                    const std::string& value_) const
+    {
+      using boost::regex;
+      using boost::regex_match;
 
-bool operator==(const type& a_, const type& b_)
-{
-  return a_.name() == b_.name();
-}
+      std::ostringstream s;
+      s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
 
-bool operator<(const type& a_, const type& b_)
-{
-  return a_.name() < b_.name();
-}
+      return regex_match(name(), regex(s.str()));
+    }
 
-}} // namespace metashell:data
+    std::ostream& operator<<(std::ostream& o_, const type& t_)
+    {
+      return o_ << t_.name();
+    }
+
+    bool operator==(const type& a_, const type& b_)
+    {
+      return a_.name() == b_.name();
+    }
+
+    bool operator<(const type& a_, const type& b_)
+    {
+      return a_.name() < b_.name();
+    }
+  }
+} // namespace metashell:data

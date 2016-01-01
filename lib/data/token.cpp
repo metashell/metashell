@@ -18,28 +18,15 @@
 
 using namespace metashell::data;
 
-token::token() :
-  _type(token_type::unknown),
-  _value()
-{}
+token::token() : _type(token_type::unknown), _value() {}
 
-token::token(std::string value_, token_type type_) :
-  _type(type_),
-  _value(std::move(value_))
-{}
-
-token_type token::type() const
+token::token(std::string value_, token_type type_)
+  : _type(type_), _value(std::move(value_))
 {
-  return _type;
 }
 
-token_category token::category() const
-{
-  return category_of_token(_type);
-}
+token_type token::type() const { return _type; }
 
-const std::string& token::value() const
-{
-  return _value;
-}
+token_category token::category() const { return category_of_token(_type); }
 
+const std::string& token::value() const { return _value; }

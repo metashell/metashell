@@ -34,14 +34,13 @@ namespace metashell
 
     void cancel_operation();
     void line_available(const std::string& cmd_, iface::displayer& displayer_);
-    void code_complete(
-      const std::string& s_,
-      std::set<std::string>& out_
-    ) const;
+    void code_complete(const std::string& s_,
+                       std::set<std::string>& out_) const;
 
     std::string prompt() const;
 
     void history(iface::history& history_);
+
   private:
     iface::history* _history; // not owning
     std::vector<std::unique_ptr<iface::command_processor>> _items;
@@ -49,4 +48,3 @@ namespace metashell
 }
 
 #endif
-

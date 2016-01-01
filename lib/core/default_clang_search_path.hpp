@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-, "/usr/bin/clang++"
-, "/usr/local/bin/clang++"
-, "c:\\Program Files (x86)\\LLVM\\bin\\clang++.exe"
-, "c:\\Program Files\\LLVM\\bin\\clang++.exe"
-
+, "/usr/bin/clang++", "/usr/local/bin/clang++",
+    "c:\\Program Files (x86)\\LLVM\\bin\\clang++.exe",
+    "c:\\Program Files\\LLVM\\bin\\clang++.exe"

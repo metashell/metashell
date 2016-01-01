@@ -26,8 +26,7 @@ using namespace metashell_system_test;
 namespace
 {
   json_string json_object(
-    std::initializer_list<std::pair<std::string, std::string>> values_
-  )
+      std::initializer_list<std::pair<std::string, std::string>> values_)
   {
     rapidjson::StringBuffer buff;
     rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -66,9 +65,8 @@ json_string metashell_system_test::to_json(const std::string& s_)
   return json_string(buff.GetString());
 }
 
-json_string metashell_system_test::to_json(
-  const std::vector<std::string>& strings_
-)
+json_string
+metashell_system_test::to_json(const std::vector<std::string>& strings_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -84,4 +82,3 @@ json_string metashell_system_test::to_json(
 
   return json_string(buff.GetString());
 }
-

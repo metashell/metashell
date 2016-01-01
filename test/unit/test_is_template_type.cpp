@@ -20,7 +20,8 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_is_template_type_primitive_types) {
+JUST_TEST_CASE(test_is_template_type_primitive_types)
+{
   JUST_ASSERT(!is_template_type(data::type("int")));
   JUST_ASSERT(!is_template_type(data::type("void")));
   JUST_ASSERT(!is_template_type(data::type("float")));
@@ -28,7 +29,8 @@ JUST_TEST_CASE(test_is_template_type_primitive_types) {
   JUST_ASSERT(!is_template_type(data::type("const double")));
 }
 
-JUST_TEST_CASE(test_is_template_type_array_type_of_non_template_types) {
+JUST_TEST_CASE(test_is_template_type_array_type_of_non_template_types)
+{
   JUST_ASSERT(!is_template_type(data::type("int[3]")));
   JUST_ASSERT(!is_template_type(data::type("int&[3]")));
   JUST_ASSERT(!is_template_type(data::type("char[0]")));
@@ -36,19 +38,22 @@ JUST_TEST_CASE(test_is_template_type_array_type_of_non_template_types) {
   JUST_ASSERT(!is_template_type(data::type("foo[100]")));
 }
 
-JUST_TEST_CASE(test_is_template_type_pointer_to_non_template_types) {
+JUST_TEST_CASE(test_is_template_type_pointer_to_non_template_types)
+{
   JUST_ASSERT(!is_template_type(data::type("int*")));
   JUST_ASSERT(!is_template_type(data::type("char *[1]")));
   JUST_ASSERT(!is_template_type(data::type("foo ***")));
 }
 
-JUST_TEST_CASE(test_is_template_type_templates) {
+JUST_TEST_CASE(test_is_template_type_templates)
+{
   JUST_ASSERT(is_template_type(data::type("std::vector<int>")));
   JUST_ASSERT(is_template_type(data::type("foo::bar::foobar<x>")));
   JUST_ASSERT(is_template_type(data::type("a<b<c, d> > >")));
 }
 
-JUST_TEST_CASE(test_is_template_type_char_literals) {
+JUST_TEST_CASE(test_is_template_type_char_literals)
+{
   JUST_ASSERT(is_template_type(data::type("foo<'<'>")));
   JUST_ASSERT(is_template_type(data::type("foo<'>'>")));
   JUST_ASSERT(is_template_type(data::type("foo<'<','>'>")));

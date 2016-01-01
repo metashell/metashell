@@ -40,4 +40,3 @@ JUST_TEST_CASE(test_logging_mode_displayer)
   JUST_ASSERT_EQUAL("console", display(logging_mode::console));
   JUST_ASSERT_EQUAL("file", display(logging_mode::file));
 }
-

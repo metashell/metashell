@@ -21,21 +21,11 @@
 
 using namespace metashell;
 
-bool line_number::invariant() const
-{
-  return _value > 0;
-}
+bool line_number::invariant() const { return _value > 0; }
 
-line_number::line_number(int value_) :
-  _value(value_)
-{
-  assert(invariant());
-}
+line_number::line_number(int value_) : _value(value_) { assert(invariant()); }
 
-int line_number::value() const
-{
-  return _value;
-}
+int line_number::value() const { return _value; }
 
 line_number& line_number::operator+=(int n_)
 {
@@ -65,4 +55,3 @@ bool metashell::operator==(line_number a_, line_number b_)
 {
   return a_.value() == b_.value();
 }
-

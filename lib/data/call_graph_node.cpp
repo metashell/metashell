@@ -18,53 +18,29 @@
 
 using namespace metashell::data;
 
-call_graph_node::call_graph_node(
-  const frame& frame_,
-  int depth_,
-  int number_of_children_
-) :
-  _frame(frame_),
-  _depth(depth_),
-  _number_of_children(number_of_children_)
-{}
-
-const frame& call_graph_node::current_frame() const
+call_graph_node::call_graph_node(const frame& frame_,
+                                 int depth_,
+                                 int number_of_children_)
+  : _frame(frame_), _depth(depth_), _number_of_children(number_of_children_)
 {
-  return _frame;
 }
 
-int call_graph_node::depth() const
+const frame& call_graph_node::current_frame() const { return _frame; }
+
+int call_graph_node::depth() const { return _depth; }
+
+int call_graph_node::number_of_children() const { return _number_of_children; }
+
+bool metashell::data::operator==(const call_graph_node& a_,
+                                 const call_graph_node& b_)
 {
-  return _depth;
+  return a_.number_of_children() == b_.number_of_children() &&
+         a_.depth() == b_.depth() && a_.current_frame() == b_.current_frame();
 }
 
-int call_graph_node::number_of_children() const
+std::ostream& metashell::data::operator<<(std::ostream& o_,
+                                          const call_graph_node& n_)
 {
-  return _number_of_children;
+  return o_ << "call_graph_node(" << n_.current_frame() << ", " << n_.depth()
+            << ", " << n_.number_of_children() << ")";
 }
-
-bool metashell::data::operator==(
-  const call_graph_node& a_,
-  const call_graph_node& b_
-)
-{
-  return
-    a_.number_of_children() == b_.number_of_children()
-    && a_.depth() == b_.depth()
-    && a_.current_frame() == b_.current_frame();
-}
-
-std::ostream& metashell::data::operator<<(
-  std::ostream& o_,
-  const call_graph_node& n_
-)
-{
-  return
-    o_
-      << "call_graph_node("
-        << n_.current_frame()
-        << ", " << n_.depth()
-        << ", " << n_.number_of_children()
-      << ")";
-}
-

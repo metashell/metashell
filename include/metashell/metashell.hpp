@@ -33,10 +33,8 @@ namespace metashell
   std::string repair_type_string(const std::string& type);
   std::string get_type_from_ast_string(const std::string& ast);
 
-  bool is_environment_setup_command(
-    data::command::iterator begin_,
-    const data::command::iterator& end_
-  );
+  bool is_environment_setup_command(data::command::iterator begin_,
+                                    const data::command::iterator& end_);
 
   inline bool is_environment_setup_command(const data::command& cmd_)
   {
@@ -45,4 +43,3 @@ namespace metashell
 }
 
 #endif
-

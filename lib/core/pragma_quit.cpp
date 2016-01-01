@@ -19,22 +19,13 @@
 
 using namespace metashell;
 
-pragma_quit::pragma_quit(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_quit::pragma_quit(shell& shell_) : _shell(shell_) {}
 
 iface::pragma_handler* pragma_quit::clone() const
 {
   return new pragma_quit(_shell);
 }
 
-std::string pragma_quit::description() const
-{
-  return "Terminates the shell.";
-}
+std::string pragma_quit::description() const { return "Terminates the shell."; }
 
-void pragma_quit::run(iface::displayer&) const
-{
-  _shell.stop();
-}
-
+void pragma_quit::run(iface::displayer&) const { _shell.stop(); }

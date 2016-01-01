@@ -39,9 +39,9 @@ public:
   virtual void end_document() override;
 
   const std::vector<std::string>& calls() const;
+
 private:
   std::vector<std::string> _calls;
 };
 
 #endif
-

@@ -154,8 +154,7 @@ JUST_TEST_CASE(test_rapid_object_handler_returns_none_for_non_existing_fields)
 }
 
 JUST_TEST_CASE(
-  test_rapid_object_handler_is_failed_after_parsing_non_whitelisted_key
-)
+    test_rapid_object_handler_is_failed_after_parsing_non_whitelisted_key)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
@@ -229,4 +228,3 @@ JUST_TEST_CASE(test_rapid_object_handler_end_object_after_start_object_succeeds)
 
   JUST_ASSERT(!r.failed());
 }
-

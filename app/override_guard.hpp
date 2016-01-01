@@ -23,21 +23,15 @@ template <class T>
 class override_guard : boost::noncopyable
 {
 public:
-  override_guard(T& var_, T new_value_) :
-    _var(var_),
-    _old_value(_var)
+  override_guard(T& var_, T new_value_) : _var(var_), _old_value(_var)
   {
     _var = new_value_;
   }
 
-  ~override_guard()
-  {
-    _var = _old_value;
-  }
+  ~override_guard() { _var = _old_value; }
 private:
   T& _var;
   T _old_value;
 };
 
 #endif
-

@@ -18,14 +18,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef TO_STRING_IMPL
-#  error TO_STRING_IMPL already defined
+#error TO_STRING_IMPL already defined
 #endif
 #define TO_STRING_IMPL(x) #x
 
 #ifdef TO_STRING
-#  error TO_STRING already defined
+#error TO_STRING already defined
 #endif
 #define TO_STRING(x) TO_STRING_IMPL(x)
 
 #endif
-

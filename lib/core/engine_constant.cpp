@@ -23,41 +23,35 @@ namespace
   class engine_constant : public iface::engine
   {
   public:
-    explicit engine_constant(data::result result_) :
-      _result(std::move(result_))
-    {}
+    explicit engine_constant(data::result result_) : _result(std::move(result_))
+    {
+    }
 
     virtual data::result precompile(const std::string&) override
     {
       return _result;
     }
 
-    virtual data::result eval(
-      const iface::environment&,
-      const boost::optional<std::string>&,
-      const boost::optional<std::string>&,
-      bool
-    ) override
+    virtual data::result eval(const iface::environment&,
+                              const boost::optional<std::string>&,
+                              const boost::optional<std::string>&,
+                              bool) override
     {
       return _result;
     }
 
-    virtual data::result validate_code(
-      const std::string&,
-      const data::config&,
-      const iface::environment&,
-      bool
-    ) override
+    virtual data::result validate_code(const std::string&,
+                                       const data::config&,
+                                       const iface::environment&,
+                                       bool) override
     {
       return _result;
     }
 
-    virtual void code_complete(
-      const iface::environment&,
-      const std::string&,
-      std::set<std::string>&,
-      bool
-    ) override
+    virtual void code_complete(const iface::environment&,
+                               const std::string&,
+                               std::set<std::string>&,
+                               bool) override
     {
       // ignore
     }
@@ -71,28 +65,26 @@ namespace
     {
       return "";
     }
+
   private:
     data::result _result;
   };
 
   std::unique_ptr<engine_constant> create(data::result result_)
   {
-    return
-      std::unique_ptr<engine_constant>(new engine_constant(std::move(result_)));
+    return std::unique_ptr<engine_constant>(
+        new engine_constant(std::move(result_)));
   }
 }
 
-std::unique_ptr<iface::engine> metashell::create_failing_engine(
-  const std::string& msg_
-)
+std::unique_ptr<iface::engine>
+metashell::create_failing_engine(const std::string& msg_)
 {
   return create(data::result(false, "", msg_, ""));
 }
 
-std::unique_ptr<iface::engine> metashell::create_engine_returning_type(
-  const std::string& type_
-)
+std::unique_ptr<iface::engine>
+metashell::create_engine_returning_type(const std::string& type_)
 {
   return create(data::result(true, type_, "", ""));
 }
-

@@ -18,13 +18,9 @@
 
 using namespace metashell;
 
-void in_memory_history::add(const std::string& cmd_)
-{
-  _cmds.push_back(cmd_);
-}
+void in_memory_history::add(const std::string& cmd_) { _cmds.push_back(cmd_); }
 
 const std::vector<std::string>& in_memory_history::commands() const
 {
   return _cmds;
 }
-

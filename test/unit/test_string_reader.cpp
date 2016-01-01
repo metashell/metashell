@@ -53,4 +53,3 @@ JUST_TEST_CASE(test_string_reader_with_two_elements)
   JUST_ASSERT_EQUAL("bar", *s2);
   JUST_ASSERT(boost::none == s3);
 }
-

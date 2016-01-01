@@ -19,9 +19,10 @@
 
 using namespace metashell;
 
-pragma_environment_reset::pragma_environment_reset(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_environment_reset::pragma_environment_reset(shell& shell_)
+  : _shell(shell_)
+{
+}
 
 iface::pragma_handler* pragma_environment_reset::clone() const
 {
@@ -30,13 +31,11 @@ iface::pragma_handler* pragma_environment_reset::clone() const
 
 std::string pragma_environment_reset::description() const
 {
-  return
-    "Resets the environment to its initial state."
-    " It does not change the environment stack.";
+  return "Resets the environment to its initial state."
+         " It does not change the environment stack.";
 }
 
 void pragma_environment_reset::run(iface::displayer&) const
 {
   _shell.reset_environment();
 }
-

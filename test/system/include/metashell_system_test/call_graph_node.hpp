@@ -25,10 +25,11 @@ namespace metashell_system_test
   {
   public:
     call_graph_node(const frame& frame_, int depth_, int number_of_children_);
-  
+
     const frame& current_frame() const;
     int depth() const;
     int number_of_children() const;
+
   private:
     frame _frame;
     int _depth;
@@ -37,4 +38,3 @@ namespace metashell_system_test
 }
 
 #endif
-

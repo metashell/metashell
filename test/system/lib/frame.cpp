@@ -24,29 +24,19 @@
 
 using namespace metashell_system_test;
 
-frame::frame(const type& name_) :
-  _name(name_)
-{}
+frame::frame(const type& name_) : _name(name_) {}
 
-frame::frame(
-  const type& name_,
-  placeholder,
-  placeholder,
-  instantiation_kind kind_
-) :
-  _name(name_),
-  _kind(kind_)
-{}
-
-const type& frame::name() const
+frame::frame(const type& name_,
+             placeholder,
+             placeholder,
+             instantiation_kind kind_)
+  : _name(name_), _kind(kind_)
 {
-  return _name;
 }
 
-bool frame::has_kind() const
-{
-  return _kind != boost::none;
-}
+const type& frame::name() const { return _name; }
+
+bool frame::has_kind() const { return _kind != boost::none; }
 
 instantiation_kind frame::kind() const
 {
@@ -54,10 +44,8 @@ instantiation_kind frame::kind() const
   return *_kind;
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& o_,
-  const frame& f_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& o_,
+                                                const frame& f_)
 {
   return o_ << to_json_string(f_);
 }
@@ -87,15 +75,11 @@ json_string metashell_system_test::to_json_string(const frame& f_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const frame& frame_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const frame& frame_,
+                                       const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
-  return
-    d.IsObject() && d.HasMember("type") && is_string("frame", d["type"])
-    && matches(frame_, d);
+  return d.IsObject() && d.HasMember("type") && is_string("frame", d["type"]) &&
+         matches(frame_, d);
 }
-

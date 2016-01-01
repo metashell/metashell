@@ -18,9 +18,8 @@
 
 using namespace metashell::data;
 
-headers::headers(const std::string& internal_dir_) :
-  _headers(),
-  _internal_dir(internal_dir_)
+headers::headers(const std::string& internal_dir_)
+  : _headers(), _internal_dir(internal_dir_)
 {
 }
 
@@ -29,23 +28,10 @@ void headers::add(const std::string& filename_, const std::string& content_)
   _headers.push_back(data::unsaved_file(filename_, content_));
 }
 
-headers::iterator headers::begin() const
-{
-  return _headers.begin();
-}
+headers::iterator headers::begin() const { return _headers.begin(); }
 
-headers::iterator headers::end() const
-{
-  return _headers.end();
-}
+headers::iterator headers::end() const { return _headers.end(); }
 
-headers::size_type headers::size() const
-{
-  return _headers.size();
-}
+headers::size_type headers::size() const { return _headers.size(); }
 
-const std::string& headers::internal_dir() const
-{
-  return _internal_dir;
-}
-
+const std::string& headers::internal_dir() const { return _internal_dir; }

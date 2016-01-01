@@ -46,6 +46,7 @@ namespace metashell
 
       iterator begin() const;
       iterator end() const;
+
     private:
       std::vector<frame> _frames;
     };
@@ -56,4 +57,3 @@ namespace metashell
 }
 
 #endif
-

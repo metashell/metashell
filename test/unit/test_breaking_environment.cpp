@@ -38,7 +38,10 @@ JUST_TEST_CASE(test_breaking_environment_append_throws)
   breaking_environment e;
   e.append_throw_from_now();
 
-  JUST_ASSERT_THROWS([&e] { e.append("foo"); });
+  JUST_ASSERT_THROWS([&e]
+                     {
+                       e.append("foo");
+                     });
   e.get();
   e.get_appended("bar");
   e.internal_dir();
@@ -52,9 +55,10 @@ JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
 
   e.append("foo");
   e.get();
-  JUST_ASSERT_THROWS([&e] { e.get_appended("bar"); });
+  JUST_ASSERT_THROWS([&e]
+                     {
+                       e.get_appended("bar");
+                     });
   e.internal_dir();
   e.get_headers();
 }
-
-

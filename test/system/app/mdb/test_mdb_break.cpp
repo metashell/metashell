@@ -25,48 +25,33 @@
 
 using namespace metashell_system_test;
 
-JUST_TEST_CASE(test_mdb_break_list_with_no_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("break list")
-      }
-    );
+JUST_TEST_CASE(test_mdb_break_list_with_no_breakpoints)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("break list")});
 
   auto i = r.begin() + 2;
 
   JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_break_list_with_one_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("rbreak i"),
-        command("break list")
-      }
-    );
+JUST_TEST_CASE(test_mdb_break_list_with_one_breakpoint)
+{
+  const auto r = run_metashell(
+      {command("#msh mdb int"), command("rbreak i"), command("break list")});
 
   auto i = r.begin() + 5;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"i\")"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_break_list_with_two_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("rbreak i"),
-        command("rbreak n"),
-        command("break list")
-      }
-    );
+JUST_TEST_CASE(test_mdb_break_list_with_two_breakpoints)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("rbreak i"),
+                                command("rbreak n"), command("break list")});
 
   auto i = r.begin() + 7;
 
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"i\")"), *i); ++i;
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"i\")"), *i);
+  ++i;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"n\")"), *i);
 }

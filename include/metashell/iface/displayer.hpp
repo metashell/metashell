@@ -44,16 +44,19 @@ namespace metashell
       virtual void show_cpp_code(const std::string& code_) = 0;
 
       virtual void show_frame(const data::frame& frame_) = 0;
-      virtual void show_file_section(
-        const data::file_location& location_,
-        const std::string& env_buffer_) = 0;
+      virtual void show_file_section(const data::file_location& location_,
+                                     const std::string& env_buffer_) = 0;
       virtual void show_backtrace(const data::backtrace& trace_) = 0;
       virtual void show_call_graph(const iface::call_graph& cg_) = 0;
 
-      void show_type_or_error(const data::type_or_error& te_) {
-        if (te_.is_type()) {
+      void show_type_or_error(const data::type_or_error& te_)
+      {
+        if (te_.is_type())
+        {
           show_type(te_.get_type());
-        } else if (te_.is_error()) {
+        }
+        else if (te_.is_error())
+        {
           show_error(te_.get_error());
         }
       }
@@ -62,4 +65,3 @@ namespace metashell
 }
 
 #endif
-

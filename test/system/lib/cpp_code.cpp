@@ -25,19 +25,12 @@
 
 using namespace metashell_system_test;
 
-cpp_code::cpp_code(pattern<std::string> code_) :
-  _code(code_)
-{}
+cpp_code::cpp_code(pattern<std::string> code_) : _code(code_) {}
 
-const pattern<std::string>& cpp_code::code() const
-{
-  return _code;
-}
+const pattern<std::string>& cpp_code::code() const { return _code; }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const cpp_code& cpp_code_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const cpp_code& cpp_code_)
 {
   return out_ << to_json_string(cpp_code_);
 }
@@ -60,10 +53,8 @@ json_string metashell_system_test::to_json_string(const cpp_code& t_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const cpp_code& cpp_code_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const cpp_code& cpp_code_,
+                                       const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
@@ -71,13 +62,11 @@ bool metashell_system_test::operator==(
   if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]))
   {
     const auto& code = d["code"];
-    return
-      cpp_code_.code()
-        .match(std::string(code.GetString(), code.GetStringLength()));
+    return cpp_code_.code().match(
+        std::string(code.GetString(), code.GetStringLength()));
   }
   else
   {
     return false;
   }
 }
-

@@ -20,71 +20,76 @@
 #include <string>
 
 const std::string fibonacci_mp =
-  "template <int N> struct fib {"
+    "template <int N> struct fib {"
     "static constexpr int value = fib<N - 2>::value + fib<N - 1>::value;"
-  "};"
-  "template <> struct fib<0> { static constexpr int value = 0; };"
-  "template <> struct fib<1> { static constexpr int value = 1; };"
-  "template <int N> struct int_ {};";
+    "};"
+    "template <> struct fib<0> { static constexpr int value = 0; };"
+    "template <> struct fib<1> { static constexpr int value = 1; };"
+    "template <int N> struct int_ {};";
 
 const std::string missing_value_fibonacci_mp =
-  "template <int N> struct fib {"
+    "template <int N> struct fib {"
     "static constexpr int value = fib<N - 2>::value + fib<N - 1>::value;"
-  "};"
-  "template <> struct fib<0> {};"
-  "template <> struct fib<1> { static constexpr int value = 1; };"
-  "template <int N> struct int_ {};";
+    "};"
+    "template <> struct fib<0> {};"
+    "template <> struct fib<1> { static constexpr int value = 1; };"
+    "template <int N> struct int_ {};";
 
 const std::string fibonacci_with_enum_mp =
-  "template <int N> struct fib {"
+    "template <int N> struct fib {"
     "enum ENUM { value = fib<N - 2>::value + fib<N - 1>::value };"
-  "};"
-  "template <> struct fib<0> { enum ENUM { value = 0 }; };"
-  "template <> struct fib<1> { enum ENUM { value = 1 }; };"
-  "template <int N> struct int_ {};";
+    "};"
+    "template <> struct fib<0> { enum ENUM { value = 0 }; };"
+    "template <> struct fib<1> { enum ENUM { value = 1 }; };"
+    "template <int N> struct int_ {};";
 
 const std::string multi_fibonacci_mp =
-  "template <int N>"
-  "struct multi_fib {"
+    "template <int N>"
+    "struct multi_fib {"
     "static constexpr int value ="
-        "multi_fib<N - 4>::value +"
-        "multi_fib<N - 2>::value +"
-        "multi_fib<N - 3>::value +"
-        "multi_fib<N - 1>::value;"
-  "};"
-  "template <> struct multi_fib<0> { static constexpr int value = 1; };"
-  "template <> struct multi_fib<1> { static constexpr int value = 1; };"
-  "template <> struct multi_fib<2> { static constexpr int value = 1; };"
-  "template <> struct multi_fib<3> { static constexpr int value = 1; };"
-  "template <int N> struct int_ {};";
+    "multi_fib<N - 4>::value +"
+    "multi_fib<N - 2>::value +"
+    "multi_fib<N - 3>::value +"
+    "multi_fib<N - 1>::value;"
+    "};"
+    "template <> struct multi_fib<0> { static constexpr int value = 1; };"
+    "template <> struct multi_fib<1> { static constexpr int value = 1; };"
+    "template <> struct multi_fib<2> { static constexpr int value = 1; };"
+    "template <> struct multi_fib<3> { static constexpr int value = 1; };"
+    "template <int N> struct int_ {};";
 
 const std::string template_specialization_mp =
-  "template<int N, int M> struct foo;"
-  "template<int N> struct foo<N, 1> {"
+    "template<int N, int M> struct foo;"
+    "template<int N> struct foo<N, 1> {"
     "static constexpr int value = 42 + N;"
-  "};"
-  "template <int N> struct int_ {};";
+    "};"
+    "template <int N> struct int_ {};";
 
 const std::string fibonacci_sfinae_mp =
-  "template<bool B, class T = void> struct enable_if {};"
-  "template<class T> struct enable_if<true, T> { typedef T type; };"
+    "template<bool B, class T = void> struct enable_if {};"
+    "template<class T> struct enable_if<true, T> { typedef T type; };"
 
-  "namespace v1 {" + fibonacci_mp + "}"
-  "namespace v2 {" + fibonacci_mp + "}"
+    "namespace v1 {" +
+    fibonacci_mp +
+    "}"
+    "namespace v2 {" +
+    fibonacci_mp +
+    "}"
 
-  "template <int N>"
-  "typename enable_if<v1::fib<N>::value == 3, void>::type foo() {}"
+    "template <int N>"
+    "typename enable_if<v1::fib<N>::value == 3, void>::type foo() {}"
 
-  "template <int N>"
-  "typename enable_if<v2::fib<N>::value != 3, char>::type foo() { return{}; }";
+    "template <int N>"
+    "typename enable_if<v2::fib<N>::value != 3, char>::type foo() { return{}; "
+    "}";
 
 // Using fake unique_ptr in namespace _std to avoid slight signature and
 // namespace differences between STLs (like the std::__1 namespace).
 const std::string make_unique_sfinae_mp =
-  "#include <utility>\n"
-  "#include <type_traits>\n"
+    "#include <utility>\n"
+    "#include <type_traits>\n"
 
- R"(
+    R"(
   namespace _std {
     template<class T> struct unique_ptr {
       unique_ptr(T*) {}
@@ -125,5 +130,3 @@ const std::string make_unique_sfinae_mp =
 )";
 
 #endif
-
-

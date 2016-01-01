@@ -34,6 +34,7 @@ namespace metashell
 
     line_number line() const;
     column col() const;
+
   private:
     line_number _line;
     column _column;
@@ -49,4 +50,3 @@ namespace metashell
 }
 
 #endif
-

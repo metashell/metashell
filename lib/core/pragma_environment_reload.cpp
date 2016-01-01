@@ -19,9 +19,10 @@
 
 using namespace metashell;
 
-pragma_environment_reload::pragma_environment_reload(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_environment_reload::pragma_environment_reload(shell& shell_)
+  : _shell(shell_)
+{
+}
 
 iface::pragma_handler* pragma_environment_reload::clone() const
 {
@@ -37,4 +38,3 @@ void pragma_environment_reload::run(iface::displayer&) const
 {
   _shell.rebuild_environment();
 }
-

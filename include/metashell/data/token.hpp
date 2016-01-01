@@ -37,6 +37,7 @@ namespace metashell
       token_category category() const;
       const std::string& value() const;
       token_type type() const;
+
     private:
       token_type _type;
       std::string _value;
@@ -70,52 +71,44 @@ namespace mindent
 
     static bool is_double_colon(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::operator_token
-        && t_.value() == "::";
+      return t_.category() == metashell::data::token_category::operator_token &&
+             t_.value() == "::";
     }
 
     static bool is_c_comment(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::comment
-        && t_.value().size() >= 4
-        && t_.value()[0] == '/'
-        && t_.value()[1] == '*';
+      return t_.category() == metashell::data::token_category::comment &&
+             t_.value().size() >= 4 && t_.value()[0] == '/' &&
+             t_.value()[1] == '*';
     }
 
     static bool is_less(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::operator_token
-        && t_.value() == "<";
+      return t_.category() == metashell::data::token_category::operator_token &&
+             t_.value() == "<";
     }
 
     static bool is_greater(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::operator_token
-        && t_.value() == ">";
+      return t_.category() == metashell::data::token_category::operator_token &&
+             t_.value() == ">";
     }
 
     static bool is_comma(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::operator_token
-        && t_.value() == ",";
+      return t_.category() == metashell::data::token_category::operator_token &&
+             t_.value() == ",";
     }
 
     static bool is_space(const token_type& t_)
     {
-      return
-        t_.category() == metashell::data::token_category::unknown ||
-        t_.category() == metashell::data::token_category::whitespace;
+      return t_.category() == metashell::data::token_category::unknown ||
+             t_.category() == metashell::data::token_category::whitespace;
     }
 
     static token_type empty_token()
     {
-      return
-        token_type("", metashell::data::token_type::unknown);
+      return token_type("", metashell::data::token_type::unknown);
     }
 
     static token_type space_token(int len_)
@@ -123,8 +116,8 @@ namespace mindent
       using std::string;
 
       assert(len_ > 0);
-      return
-        token_type(string(len_, ' '), metashell::data::token_type::whitespace);
+      return token_type(
+          string(len_, ' '), metashell::data::token_type::whitespace);
     }
 
     static token_type new_line_token()
@@ -132,20 +125,14 @@ namespace mindent
       return token_type("\n", metashell::data::token_type::new_line);
     }
 
-    static token_type change_value(
-      const string_type& value_,
-      const token_type& t_
-    )
+    static token_type change_value(const string_type& value_,
+                                   const token_type& t_)
     {
       return token_type(value_, t_.type());
     }
 
-    static string_type value(const token_type& t_)
-    {
-      return t_.value();
-    }
+    static string_type value(const token_type& t_) { return t_.value(); }
   };
 }
 
 #endif
-

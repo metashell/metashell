@@ -22,19 +22,22 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_highlight_syntax_comment_without_linebreak) {
+JUST_TEST_CASE(test_highlight_syntax_comment_without_linebreak)
+{
   // wave can't lex this string, because there is no new line at the end
   data::colored_string cs = highlight_syntax("int x; // some comment");
 
   // Still, we get back the original string (without syntax highlighting)
   JUST_ASSERT_EQUAL("int x; // some comment", cs.get_string());
 
-  for (auto opt_color : cs.get_colors()) {
+  for (auto opt_color : cs.get_colors())
+  {
     JUST_ASSERT(!bool(opt_color));
   }
 }
 
-JUST_TEST_CASE(test_highlight_syntax_comment_with_linebreak) {
+JUST_TEST_CASE(test_highlight_syntax_comment_with_linebreak)
+{
   data::colored_string cs = highlight_syntax("int x; // some comment\n");
 
   JUST_ASSERT_EQUAL("int x; // some comment\n", cs.get_string());

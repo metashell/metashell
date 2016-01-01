@@ -26,4 +26,3 @@ void metashell::data::generate(const headers& headers_)
     generate(h);
   }
 }
-

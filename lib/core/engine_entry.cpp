@@ -18,43 +18,27 @@
 
 using namespace metashell;
 
-engine_entry::engine_entry(
-  engine_factory factory_,
-  std::string args_,
-  std::string description_
-) :
-  _factory(move(factory_)),
-  _args(move(args_)),
-  _description(move(description_))
-{}
-
-std::unique_ptr<iface::engine> engine_entry::build(
-  const data::config& config_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  iface::environment_detector& env_detector_,
-  iface::displayer& displayer_,
-  logger* logger_
-) const
+engine_entry::engine_entry(engine_factory factory_,
+                           std::string args_,
+                           std::string description_)
+  : _factory(move(factory_)),
+    _args(move(args_)),
+    _description(move(description_))
 {
-  return
-    _factory(
-      config_,
-      internal_dir_,
-      env_filename_,
-      env_detector_,
-      displayer_,
-      logger_
-    );
 }
 
-const std::string& engine_entry::args() const
+std::unique_ptr<iface::engine>
+engine_entry::build(const data::config& config_,
+                    const std::string& internal_dir_,
+                    const std::string& env_filename_,
+                    iface::environment_detector& env_detector_,
+                    iface::displayer& displayer_,
+                    logger* logger_) const
 {
-  return _args;
+  return _factory(config_, internal_dir_, env_filename_, env_detector_,
+                  displayer_, logger_);
 }
 
-const std::string& engine_entry::description() const
-{
-  return _description;
-}
+const std::string& engine_entry::args() const { return _args; }
 
+const std::string& engine_entry::description() const { return _description; }

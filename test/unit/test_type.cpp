@@ -29,22 +29,16 @@ JUST_TEST_CASE(test_integral_constant)
   JUST_ASSERT(!type("").is_integral_constant(int_, "13"));
 
   JUST_ASSERT(
-    type("std::integral_constant<int, 13>").is_integral_constant(int_, "13")
-  );
+      type("std::integral_constant<int, 13>").is_integral_constant(int_, "13"));
 
   JUST_ASSERT(!type("int").is_integral_constant(int_, "13"));
 
   JUST_ASSERT(
-    type("std::integral_constant<int, 21>").is_integral_constant(int_, "21")
-  );
+      type("std::integral_constant<int, 21>").is_integral_constant(int_, "21"));
 
-  JUST_ASSERT(
-    type("std::integral_constant<unsigned int, 21>")
-      .is_integral_constant(type("unsigned int"), "21")
-  );
+  JUST_ASSERT(type("std::integral_constant<unsigned int, 21>")
+                  .is_integral_constant(type("unsigned int"), "21"));
 
-  JUST_ASSERT(
-    type("std::_1::integral_constant<int, 13>").is_integral_constant(int_, "13")
-  );
+  JUST_ASSERT(type("std::_1::integral_constant<int, 13>")
+                  .is_integral_constant(int_, "13"));
 }
-

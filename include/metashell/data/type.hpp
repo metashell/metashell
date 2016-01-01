@@ -34,10 +34,9 @@ namespace metashell
 
       const std::string& name() const;
 
-      bool is_integral_constant(
-        const type& type_,
-        const std::string& value_
-      ) const;
+      bool is_integral_constant(const type& type_,
+                                const std::string& value_) const;
+
     private:
       std::string _name;
     };
@@ -49,4 +48,3 @@ namespace metashell
 }
 
 #endif
-

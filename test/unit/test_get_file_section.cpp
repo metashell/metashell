@@ -20,12 +20,14 @@
 
 using namespace metashell;
 
-void indexed_line_assert_equal(const indexed_line& a, const indexed_line& b) {
+void indexed_line_assert_equal(const indexed_line& a, const indexed_line& b)
+{
   JUST_ASSERT_EQUAL(a.line_index, b.line_index);
   JUST_ASSERT_EQUAL(a.line, b.line);
 }
 
-JUST_TEST_CASE(test_get_file_section_empty) {
+JUST_TEST_CASE(test_get_file_section_empty)
+{
   std::string buffer = "";
 
   auto section = get_file_section_from_buffer(buffer, 3, 2);
@@ -33,7 +35,8 @@ JUST_TEST_CASE(test_get_file_section_empty) {
   JUST_ASSERT_EQUAL(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line) {
+JUST_TEST_CASE(test_get_file_section_one_line)
+{
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 1, 2);
@@ -42,7 +45,8 @@ JUST_TEST_CASE(test_get_file_section_one_line) {
   indexed_line_assert_equal({1, "the first line"}, section[0]);
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds) {
+JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds)
+{
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
@@ -50,7 +54,8 @@ JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds) {
   JUST_ASSERT_EQUAL(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds_zero) {
+JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds_zero)
+{
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 0, 2);
@@ -58,7 +63,8 @@ JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds_zero) {
   JUST_ASSERT_EQUAL(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_two_line_1) {
+JUST_TEST_CASE(test_get_file_section_two_line_1)
+{
   std::string buffer = "the first line\nthe second line\n";
 
   auto section = get_file_section_from_buffer(buffer, 1, 2);
@@ -68,7 +74,8 @@ JUST_TEST_CASE(test_get_file_section_two_line_1) {
   indexed_line_assert_equal({2, "the second line"}, section[1]);
 }
 
-JUST_TEST_CASE(test_get_file_section_two_lines_2) {
+JUST_TEST_CASE(test_get_file_section_two_lines_2)
+{
   std::string buffer = "the first line\nthe second line\n";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
@@ -78,9 +85,9 @@ JUST_TEST_CASE(test_get_file_section_two_lines_2) {
   indexed_line_assert_equal({2, "the second line"}, section[1]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_1) {
-  std::string buffer =
-    "the first line\nthe second line\nthird\n4\nfifth\n6";
+JUST_TEST_CASE(test_get_file_section_six_lines_1)
+{
+  std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
 
@@ -91,9 +98,9 @@ JUST_TEST_CASE(test_get_file_section_six_lines_1) {
   indexed_line_assert_equal({4, "4"}, section[3]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_2) {
-  std::string buffer =
-    "the first line\nthe second line\nthird\n4\nfifth\n6";
+JUST_TEST_CASE(test_get_file_section_six_lines_2)
+{
+  std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 3, 2);
 
@@ -105,9 +112,9 @@ JUST_TEST_CASE(test_get_file_section_six_lines_2) {
   indexed_line_assert_equal({5, "fifth"}, section[4]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_3) {
-  std::string buffer =
-    "the first line\nthe second line\nthird\n4\nfifth\n6";
+JUST_TEST_CASE(test_get_file_section_six_lines_3)
+{
+  std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 4, 2);
 
@@ -119,9 +126,9 @@ JUST_TEST_CASE(test_get_file_section_six_lines_3) {
   indexed_line_assert_equal({6, "6"}, section[4]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_4) {
-  std::string buffer =
-    "the first line\nthe second line\nthird\n4\nfifth\n6";
+JUST_TEST_CASE(test_get_file_section_six_lines_4)
+{
+  std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 5, 2);
 

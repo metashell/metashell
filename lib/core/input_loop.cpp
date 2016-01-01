@@ -33,10 +33,7 @@ namespace
       _active = true;
     }
 
-    ~single_entry_guard()
-    {
-      _active = false;
-    }
+    ~single_entry_guard() { _active = false; }
   private:
     static bool _active;
   };
@@ -44,16 +41,16 @@ namespace
   bool single_entry_guard::_active = false;
 }
 
-void metashell::input_loop(
-  command_processor_queue& processor_queue_,
-  iface::displayer& displayer_,
-  const line_reader& line_reader_
-)
+void metashell::input_loop(command_processor_queue& processor_queue_,
+                           iface::displayer& displayer_,
+                           const line_reader& line_reader_)
 {
   single_entry_guard g;
 
-  interrupt_handler_override
-    ovr3( [&processor_queue_]() { processor_queue_.cancel_operation(); } );
+  interrupt_handler_override ovr3([&processor_queue_]()
+                                  {
+                                    processor_queue_.cancel_operation();
+                                  });
 
   while (!processor_queue_.empty())
   {
@@ -72,4 +69,3 @@ void metashell::input_loop(
     }
   }
 }
-

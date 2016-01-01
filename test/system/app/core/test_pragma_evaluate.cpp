@@ -28,32 +28,24 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("typedef int x;"),
-        command("#pragma metashell evaluate x")
-      }
-    );
+  const auto r = run_metashell(
+      {command("typedef int x;"), command("#pragma metashell evaluate x")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type("int"), *i);
+  ++i;
 
   JUST_ASSERT_EQUAL(
-    comment(
-      {
-        paragraph(
-          "You don't need the evaluate add pragma to evaluate this metaprogram."
-          " The following command does this as well:"
-        ),
-        paragraph("x")
-      }
-    ),
-    *i
-  );
+      comment({paragraph("You don't need the evaluate add pragma to evaluate "
+                         "this metaprogram."
+                         " The following command does this as well:"),
+               paragraph("x")}),
+      *i);
   ++i;
 
   JUST_ASSERT(i == r.end());
@@ -62,25 +54,21 @@ JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 {
   const auto r =
-    run_metashell({ command("#pragma metashell evaluate nonexisting_type") });
+      run_metashell({command("#pragma metashell evaluate nonexisting_type")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(error(_), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(error(_), *i);
+  ++i;
 
   JUST_ASSERT_EQUAL(
-    comment(
-      {
-        paragraph(
-          "You don't need the evaluate add pragma to evaluate this metaprogram."
-          " The following command does this as well:"
-        ),
-        paragraph("nonexisting_type")
-      }
-    ),
-    *i
-  );
+      comment({paragraph("You don't need the evaluate add pragma to evaluate "
+                         "this metaprogram."
+                         " The following command does this as well:"),
+               paragraph("nonexisting_type")}),
+      *i);
   ++i;
 
   JUST_ASSERT(i == r.end());
@@ -88,27 +76,22 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
-  const auto r = run_metashell({ command("#pragma metashell evaluate int") });
+  const auto r = run_metashell({command("#pragma metashell evaluate int")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type("int"), *i);
+  ++i;
 
   JUST_ASSERT_EQUAL(
-    comment(
-      {
-        paragraph(
-          "You don't need the evaluate add pragma to evaluate this metaprogram."
-          " The following command does this as well:"
-        ),
-        paragraph("int")
-      }
-    ),
-    *i
-  );
+      comment({paragraph("You don't need the evaluate add pragma to evaluate "
+                         "this metaprogram."
+                         " The following command does this as well:"),
+               paragraph("int")}),
+      *i);
   ++i;
 
   JUST_ASSERT(i == r.end());
 }
-

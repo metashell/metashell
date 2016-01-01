@@ -32,23 +32,18 @@ namespace metashell
     public:
       virtual ~command_processor() {}
 
-      virtual void line_available(
-        const std::string& cmd_,
-        iface::displayer& displayer_,
-        iface::history& history_
-      ) = 0;
+      virtual void line_available(const std::string& cmd_,
+                                  iface::displayer& displayer_,
+                                  iface::history& history_) = 0;
       virtual void cancel_operation() = 0;
 
       virtual std::string prompt() const = 0;
       virtual bool stopped() const = 0;
 
-      virtual void code_complete(
-        const std::string& s_,
-        std::set<std::string>& out_
-      ) const = 0;
+      virtual void code_complete(const std::string& s_,
+                                 std::set<std::string>& out_) const = 0;
     };
   }
 }
 
 #endif
-

@@ -30,15 +30,14 @@ namespace metashell
   public:
     explicit indenter(int width_);
 
-    indenter& left_align(
-      const std::string& s_,
-      const std::string& line_prefix_,
-      const std::string& first_line_prefix_
-    );
+    indenter& left_align(const std::string& s_,
+                         const std::string& line_prefix_,
+                         const std::string& first_line_prefix_);
 
     indenter& raw(const std::string& s_);
 
     std::string str() const;
+
   private:
     int _width;
     std::ostringstream _buff;
@@ -46,4 +45,3 @@ namespace metashell
 }
 
 #endif
-

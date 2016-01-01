@@ -23,12 +23,8 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_hide_definition_error)
 {
-  const auto r = run_metashell(
-    {
-      command("#msh show cpp_errors off"),
-      command("void f() { return 13; }")
-    }
-  );
+  const auto r = run_metashell({command("#msh show cpp_errors off"),
+                                command("void f() { return 13; }")});
 
   auto i = r.begin() + 3;
 
@@ -37,15 +33,10 @@ JUST_TEST_CASE(test_hide_definition_error)
 
 JUST_TEST_CASE(test_hide_evaluation_error)
 {
-  const auto r = run_metashell(
-    {
-      command("#msh show cpp_errors off"),
-      command("void int")
-    }
-  );
+  const auto r =
+      run_metashell({command("#msh show cpp_errors off"), command("void int")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT(i == r.end());
 }
-

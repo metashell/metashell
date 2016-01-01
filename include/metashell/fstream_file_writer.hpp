@@ -31,10 +31,10 @@ namespace metashell
     virtual bool is_open() const override;
 
     virtual bool write(const std::string& content_) override;
+
   private:
     std::ofstream _f;
   };
 }
 
 #endif
-

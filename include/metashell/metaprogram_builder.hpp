@@ -22,46 +22,44 @@
 
 #include <metashell/metaprogram.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-class metaprogram_builder {
-public:
+  class metaprogram_builder
+  {
+  public:
+    metaprogram_builder(metaprogram::mode_t mode,
+                        const std::string& root_name,
+                        const data::file_location& root_source_location,
+                        const data::type_or_error& evaluation_result);
 
-  metaprogram_builder(
-      metaprogram::mode_t mode,
-      const std::string& root_name,
-      const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result);
+    void
+    handle_template_begin(data::instantiation_kind kind,
+                          const data::type& type,
+                          const data::file_location& point_of_instantiation,
+                          const data::file_location& source_location,
+                          double timestamp);
 
-  void handle_template_begin(
-    data::instantiation_kind kind,
-    const data::type& type,
-    const data::file_location& point_of_instantiation,
-    const data::file_location& source_location,
-    double timestamp);
+    void handle_template_end(double timestamp);
 
-  void handle_template_end(double timestamp);
+    const metaprogram& get_metaprogram() const;
 
-  const metaprogram& get_metaprogram() const;
+  private:
+    typedef metaprogram::vertex_descriptor vertex_descriptor;
+    typedef metaprogram::edge_descriptor edge_descriptor;
 
-private:
-  typedef metaprogram::vertex_descriptor vertex_descriptor;
-  typedef metaprogram::edge_descriptor edge_descriptor;
+    typedef std::tuple<data::type, data::file_location> element_key_t;
+    typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
 
-  typedef std::tuple<data::type, data::file_location> element_key_t;
-  typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
+    vertex_descriptor add_vertex(const data::type& type,
+                                 const data::file_location& source_location);
 
-  vertex_descriptor add_vertex(
-    const data::type& type,
-    const data::file_location& source_location);
+    metaprogram mp;
 
-  metaprogram mp;
+    std::stack<edge_descriptor> edge_stack;
 
-  std::stack<edge_descriptor> edge_stack;
-
-  element_vertex_map_t element_vertex_map;
-};
-
+    element_vertex_map_t element_vertex_map;
+  };
 }
 
 #endif

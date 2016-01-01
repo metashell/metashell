@@ -17,4 +17,3 @@
 #include <metashell_system_test/placeholder.hpp>
 
 const metashell_system_test::placeholder metashell_system_test::_;
-

@@ -36,11 +36,12 @@ namespace metashell_system_test
 
     bool paragraphs_specified() const;
     const std::vector<paragraph>& paragraphs() const;
+
   private:
     bool _paragraphs_specified;
     std::vector<paragraph> _paragraphs;
   };
-  
+
   std::ostream& operator<<(std::ostream& out_, const comment& comment_);
 
   json_string to_json_string(const comment& comment_);
@@ -49,4 +50,3 @@ namespace metashell_system_test
 }
 
 #endif
-

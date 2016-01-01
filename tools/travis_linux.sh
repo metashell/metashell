@@ -1,10 +1,18 @@
 #!/bin/bash
 
+function assert_no_git_tracked_files_changed {
+  git diff-index --quiet HEAD --
+}
+
 set -ex
 
 if [ "$CXX" == "g++" ]; then
   export CXX="g++-4.8";
 fi
+
+# Test that code formatting is correct
+tools/reformat.sh
+assert_no_git_tracked_files_changed
 
 # Test that the download version links are correct
 

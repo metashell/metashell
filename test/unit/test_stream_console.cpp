@@ -49,4 +49,3 @@ JUST_TEST_CASE(test_text_is_displayed_on_stream_console_without_color)
 
   JUST_ASSERT_EQUAL("hello", s.str());
 }
-

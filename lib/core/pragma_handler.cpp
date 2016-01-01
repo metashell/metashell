@@ -24,9 +24,10 @@
 using namespace metashell;
 
 // assumes: h_._body is not null pointer
-pragma_handler::pragma_handler(const pragma_handler& h_) :
-  _body(h_._body->clone())
-{}
+pragma_handler::pragma_handler(const pragma_handler& h_)
+  : _body(h_._body->clone())
+{
+}
 
 pragma_handler& pragma_handler::operator=(pragma_handler h_)
 {
@@ -34,18 +35,13 @@ pragma_handler& pragma_handler::operator=(pragma_handler h_)
   return *this;
 }
 
-void pragma_handler::swap(pragma_handler& h_)
-{
-  _body.swap(h_._body);
-}
+void pragma_handler::swap(pragma_handler& h_) { _body.swap(h_._body); }
 
-void pragma_handler::run(
-  const data::command::iterator& name_begin_,
-  const data::command::iterator& name_end_,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_handler::run(const data::command::iterator& name_begin_,
+                         const data::command::iterator& name_end_,
+                         const data::command::iterator& args_begin_,
+                         const data::command::iterator& args_end_,
+                         iface::displayer& displayer_) const
 {
   assert(_body);
   _body->run(name_begin_, name_end_, args_begin_, args_end_, displayer_);
@@ -63,19 +59,11 @@ std::string pragma_handler::description() const
   return _body->description();
 }
 
-void metashell::run(
-  const iface::pragma_handler& handler_,
-  const std::string& args_,
-  iface::displayer& displayer_
-)
+void metashell::run(const iface::pragma_handler& handler_,
+                    const std::string& args_,
+                    iface::displayer& displayer_)
 {
   const data::command cmd(args_);
-  handler_.run(
-    cmd.begin(),
-    cmd.begin(),
-    cmd.begin(),
-    end_of_pragma_argument_list(cmd.begin(), cmd.end()),
-    displayer_
-  );
+  handler_.run(cmd.begin(), cmd.begin(), cmd.begin(),
+               end_of_pragma_argument_list(cmd.begin(), cmd.end()), displayer_);
 }
-

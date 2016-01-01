@@ -49,10 +49,8 @@ std::string metashell_system_test::to_string(instantiation_kind kind_)
   return "UnknownKind";
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& o_,
-  instantiation_kind kind_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& o_,
+                                                instantiation_kind kind_)
 {
   return o_ << to_string(kind_);
 }
@@ -104,4 +102,3 @@ instantiation_kind parse_kind(const std::string& kind_)
     throw std::runtime_error("Invalid instantion_kind: " + kind_);
   }
 }
-

@@ -22,4 +22,3 @@ void null_history::add(const std::string&)
 {
   // throw away
 }
-

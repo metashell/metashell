@@ -32,30 +32,26 @@ namespace metashell
   // Customized DFS
   //   The algorithm only checks vertices which are reachable from root_vertex
   // ----
-  class forward_trace_iterator :
-    public boost::forward_iterator_helper<
-      forward_trace_iterator,
-      const data::call_graph_node
-    >
+  class forward_trace_iterator
+      : public boost::forward_iterator_helper<forward_trace_iterator,
+                                              const data::call_graph_node>
   {
   public:
     forward_trace_iterator();
 
-    forward_trace_iterator(
-      const metaprogram& mp_,
-      const boost::optional<int>& max_depth_
-    );
+    forward_trace_iterator(const metaprogram& mp_,
+                           const boost::optional<int>& max_depth_);
 
     forward_trace_iterator& operator++();
 
     bool operator==(const forward_trace_iterator& i_) const;
 
     const data::call_graph_node& operator*() const;
+
   private:
-    typedef std::tuple<
-      metaprogram::optional_edge_descriptor,
-      int // Depth
-    > stack_element;
+    typedef std::tuple<metaprogram::optional_edge_descriptor,
+                       int // Depth
+                       > stack_element;
 
     data::call_graph_node _current;
     bool _finished;
@@ -72,4 +68,3 @@ namespace metashell
 }
 
 #endif
-

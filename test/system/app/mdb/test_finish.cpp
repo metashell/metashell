@@ -28,43 +28,30 @@
 
 using namespace metashell_system_test;
 
-JUST_TEST_CASE(test_mdb_finish_without_evaluation) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("finish")
-      }
-    );
+JUST_TEST_CASE(test_mdb_finish_without_evaluation)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("finish")});
 
   auto i = r.begin() + 2;
 
   JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_finish_with_argument) {
+JUST_TEST_CASE(test_mdb_finish_with_argument)
+{
   const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("finish asd")
-      }
-    );
+      run_metashell({command("#msh mdb int"), command("finish asd")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(error("This command doesn't accept arguments"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_finish_fibonacci) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("finish")
-      }
-    );
+JUST_TEST_CASE(test_mdb_finish_fibonacci)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("finish")});
 
   auto i = r.begin() + 4;
 
@@ -72,15 +59,11 @@ JUST_TEST_CASE(test_mdb_finish_fibonacci) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_finish_will_print_error_message_if_errored) {
-  const auto r =
-    run_metashell(
-      {
-        command(missing_value_fibonacci_mp),
-        command("#msh mdb int_<fib<5>::value>"),
-        command("finish")
-      }
-    );
+JUST_TEST_CASE(test_mdb_finish_will_print_error_message_if_errored)
+{
+  const auto r = run_metashell({command(missing_value_fibonacci_mp),
+                                command("#msh mdb int_<fib<5>::value>"),
+                                command("finish")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);

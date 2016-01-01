@@ -34,14 +34,12 @@ namespace metashell
 
       result();
 
-      result(
-        bool successful,
-        const std::string& output_,
-        const std::string& error_,
-        const std::string& info_);
+      result(bool successful,
+             const std::string& output_,
+             const std::string& error_,
+             const std::string& info_);
     };
   }
 }
 
 #endif
-

@@ -17,42 +17,41 @@
 #include <metashell/stdout_console.hpp>
 
 #ifdef _WIN32
-#  include <windows.h>
+#include <windows.h>
 #else
-#  include <sys/ioctl.h>
+#include <sys/ioctl.h>
 #endif
 
 #include <iostream>
 
 using namespace metashell;
 
-void stdout_console::show(const data::colored_string& s_)
-{
-  print_to_cout(s_);
-}
+void stdout_console::show(const data::colored_string& s_) { print_to_cout(s_); }
 
-void stdout_console::new_line()
-{
-  std::cout << std::endl;
-}
+void stdout_console::new_line() { std::cout << std::endl; }
 
 iface::console::user_answer stdout_console::ask_for_continuation()
 {
   std::string line;
-  while (true) {
+  while (true)
+  {
     std::cout << "Next page (RETURN), Show all (a), Quit (q): ";
 
-    if (!std::getline(std::cin, line)) {
+    if (!std::getline(std::cin, line))
+    {
       new_line();
       return iface::console::user_answer::quit;
     }
-    if (line.empty()) {
+    if (line.empty())
+    {
       return iface::console::user_answer::next_page;
     }
-    if (line == "a" || line == "A") {
+    if (line == "a" || line == "A")
+    {
       return iface::console::user_answer::show_all;
     }
-    if (line == "q" || line == "Q") {
+    if (line == "q" || line == "Q")
+    {
       return iface::console::user_answer::quit;
     }
   }
@@ -61,27 +60,27 @@ iface::console::user_answer stdout_console::ask_for_continuation()
 int stdout_console::width() const
 {
 #ifdef _WIN32
-    CONSOLE_SCREEN_BUFFER_INFO info;
+  CONSOLE_SCREEN_BUFFER_INFO info;
 
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-    return info.srWindow.Right - info.srWindow.Left;
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+  return info.srWindow.Right - info.srWindow.Left;
 #else
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    return w.ws_col;
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  return w.ws_col;
 #endif
 }
 
 int stdout_console::height() const
 {
 #ifdef _WIN32
-    CONSOLE_SCREEN_BUFFER_INFO info;
+  CONSOLE_SCREEN_BUFFER_INFO info;
 
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-    return info.srWindow.Bottom - info.srWindow.Top + 1;
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+  return info.srWindow.Bottom - info.srWindow.Top + 1;
 #else
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    return w.ws_row;
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  return w.ws_row;
 #endif
 }

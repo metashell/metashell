@@ -30,10 +30,10 @@ namespace metashell
     virtual void add(const std::string& cmd_) override;
 
     const std::vector<std::string>& commands() const;
+
   private:
     std::vector<std::string> _cmds;
   };
 }
 
 #endif
-

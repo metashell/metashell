@@ -19,5 +19,3 @@
 using namespace metashell;
 
 exception::exception(const std::string& msg_) : std::runtime_error(msg_) {}
-
-

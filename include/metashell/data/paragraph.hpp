@@ -30,15 +30,11 @@ namespace metashell
     {
     public:
       paragraph() = default;
-      explicit paragraph(
-        const std::string& content_,
-        const std::string& indentation_ = std::string()
-      );
-      paragraph(
-        const std::string& content_,
-        const std::string& indentation_,
-        const std::string& first_line_indentation_
-      );
+      explicit paragraph(const std::string& content_,
+                         const std::string& indentation_ = std::string());
+      paragraph(const std::string& content_,
+                const std::string& indentation_,
+                const std::string& first_line_indentation_);
 
       bool operator==(const paragraph& p_) const;
 
@@ -52,4 +48,3 @@ namespace metashell
 }
 
 #endif
-

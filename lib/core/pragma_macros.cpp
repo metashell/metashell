@@ -18,9 +18,7 @@
 
 using namespace metashell;
 
-pragma_macros::pragma_macros(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_macros::pragma_macros(shell& shell_) : _shell(shell_) {}
 
 iface::pragma_handler* pragma_macros::clone() const
 {
@@ -36,4 +34,3 @@ void pragma_macros::run(iface::displayer& displayer_) const
 {
   displayer_.show_cpp_code(_shell.engine().macros(_shell.env()));
 }
-

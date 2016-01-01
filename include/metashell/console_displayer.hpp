@@ -27,11 +27,9 @@ namespace metashell
   class console_displayer : public iface::displayer
   {
   public:
-    console_displayer(
-      iface::console& console_,
-      bool indent_,
-      bool syntax_highlight_
-    );
+    console_displayer(iface::console& console_,
+                      bool indent_,
+                      bool syntax_highlight_);
 
     virtual void show_raw_text(const std::string& text_) override;
     virtual void show_error(const std::string& msg_) override;
@@ -40,11 +38,11 @@ namespace metashell
     virtual void show_cpp_code(const std::string& code_) override;
 
     virtual void show_frame(const data::frame& frame_) override;
-    virtual void show_file_section(
-      const data::file_location& location_,
-      const std::string& env_buffer_) override;
+    virtual void show_file_section(const data::file_location& location_,
+                                   const std::string& env_buffer_) override;
     virtual void show_backtrace(const data::backtrace& trace_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
+
   private:
     iface::console* _console;
     bool _indent;
@@ -57,12 +55,10 @@ namespace metashell
 
     bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
 
-    bool display_node(
-      const data::call_graph_node& node_,
-      const std::vector<int>& depth_counter_,
-      pager& pager_);
+    bool display_node(const data::call_graph_node& node_,
+                      const std::vector<int>& depth_counter_,
+                      pager& pager_);
   };
 }
 
 #endif
-

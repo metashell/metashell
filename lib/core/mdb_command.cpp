@@ -17,49 +17,51 @@
 
 #include <metashell/mdb_command.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-mdb_command::mdb_command(
-    const keys_t& keys,
-    repeatable_t rep,
-    function func,
-    const std::string& usage,
-    const std::string& short_description,
-    const std::string& long_description) :
-  keys(keys), rep(rep), func(func), usage(usage),
-  short_description(short_description), long_description(long_description)
-{}
+  mdb_command::mdb_command(const keys_t& keys,
+                           repeatable_t rep,
+                           function func,
+                           const std::string& usage,
+                           const std::string& short_description,
+                           const std::string& long_description)
+    : keys(keys),
+      rep(rep),
+      func(func),
+      usage(usage),
+      short_description(short_description),
+      long_description(long_description)
+  {
+  }
 
-const mdb_command::keys_t& mdb_command::get_keys() const {
-  return keys;
-}
+  const mdb_command::keys_t& mdb_command::get_keys() const { return keys; }
 
-bool mdb_command::is_repeatable() const {
-  return rep == repeatable_t::repeatable;
-}
+  bool mdb_command::is_repeatable() const
+  {
+    return rep == repeatable_t::repeatable;
+  }
 
-mdb_command::function mdb_command::get_func() const {
-  return func;
-}
+  mdb_command::function mdb_command::get_func() const { return func; }
 
-const std::string& mdb_command::get_usage() const {
-  return usage;
-}
+  const std::string& mdb_command::get_usage() const { return usage; }
 
-const std::string& mdb_command::get_short_description() const {
-  return short_description;
-}
-
-const std::string& mdb_command::get_long_description() const {
-  return long_description;
-}
-
-std::string mdb_command::get_full_description() const {
-  if (long_description.empty()) {
+  const std::string& mdb_command::get_short_description() const
+  {
     return short_description;
   }
-  return short_description + "\n" + long_description;
-}
 
-}
+  const std::string& mdb_command::get_long_description() const
+  {
+    return long_description;
+  }
 
+  std::string mdb_command::get_full_description() const
+  {
+    if (long_description.empty())
+    {
+      return short_description;
+    }
+    return short_description + "\n" + long_description;
+  }
+}

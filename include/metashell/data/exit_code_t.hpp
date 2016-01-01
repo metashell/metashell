@@ -32,6 +32,7 @@ namespace metashell
       explicit exit_code_t(int value_);
 
       int value() const;
+
     private:
       int _value;
     };
@@ -43,4 +44,3 @@ namespace metashell
 }
 
 #endif
-

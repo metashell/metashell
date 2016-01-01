@@ -28,14 +28,9 @@ namespace metashell
 {
   namespace iface
   {
-    typedef
-      boost::any_range<
-        const data::call_graph_node,
-        boost::forward_traversal_tag
-      >
-      call_graph;
+    typedef boost::any_range<const data::call_graph_node,
+                             boost::forward_traversal_tag> call_graph;
   }
 }
 
 #endif
-

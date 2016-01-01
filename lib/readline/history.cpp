@@ -19,18 +19,17 @@
 #include <vector>
 
 #ifdef USE_EDITLINE
-#  include <editline/readline.h>
+#include <editline/readline.h>
 #else
-#  include <readline/readline.h>
-#  include <readline/history.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #endif
 
 using namespace metashell::readline;
 
 void history::add(const std::string& cmd_)
 {
-  //TODO save/restore history
+  // TODO save/restore history
   std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
   ::add_history(l.data());
 }
-

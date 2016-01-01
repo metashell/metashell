@@ -52,7 +52,7 @@ JUST_TEST_CASE(test_pp_non_macro)
 JUST_TEST_CASE(test_pp_macro)
 {
   const auto r =
-    run_metashell({command("#define FOO bar"), command("#msh pp FOO")});
+      run_metashell({command("#define FOO bar"), command("#msh pp FOO")});
 
   auto i = r.begin() + 2;
 
@@ -62,7 +62,7 @@ JUST_TEST_CASE(test_pp_macro)
 JUST_TEST_CASE(test_pp_exp_with_multiple_tokens)
 {
   const auto r =
-    run_metashell({command("#define FOO bar"), command("#msh pp FOO int")});
+      run_metashell({command("#define FOO bar"), command("#msh pp FOO int")});
 
   auto i = r.begin() + 2;
 
@@ -76,33 +76,23 @@ JUST_TEST_CASE(test_pp_marker)
   auto i = r.begin() + 1;
 
   JUST_ASSERT_EQUAL(
-    error(
-      "Marker (" + marker()
-      + ") found more than two times in preprocessed output."
-    ),
-    *i
-  );
+      error("Marker (" + marker() +
+            ") found more than two times in preprocessed output."),
+      *i);
 }
 
 JUST_TEST_CASE(test_pp_with_marker_defined)
 {
   const auto r =
-    run_metashell(
-      {
-        command("#define " + macro_in_marker() + " foo"),
-        command("#msh pp " + marker())
-      }
-    );
+      run_metashell({command("#define " + macro_in_marker() + " foo"),
+                     command("#msh pp " + marker())});
 
   auto i = r.begin() + 2;
 
-  JUST_ASSERT_EQUAL(
-    error(
-      "Marker (" + marker() + ") not found in preprocessed output."
-      " Does it contain a macro that has been defined?"
-    ),
-    *i
-  );
+  JUST_ASSERT_EQUAL(error("Marker (" + marker() +
+                          ") not found in preprocessed output."
+                          " Does it contain a macro that has been defined?"),
+                    *i);
 }
 
 JUST_TEST_CASE(test_pp_preprocessor_directive)
@@ -113,4 +103,3 @@ JUST_TEST_CASE(test_pp_preprocessor_directive)
 
   JUST_ASSERT_EQUAL(cpp_code("#error foo"), *i);
 }
-

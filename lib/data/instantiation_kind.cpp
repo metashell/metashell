@@ -18,43 +18,57 @@
 
 #include <sstream>
 
-namespace metashell {
-namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-std::ostream& operator<<(std::ostream& os, data::instantiation_kind kind) {
-  switch (kind) {
-    default:
-        os << "UnknownKind"; break;
-    case data::instantiation_kind::template_instantiation:
-        os << "TemplateInstantiation"; break;
-    case data::instantiation_kind::default_template_argument_instantiation:
-        os << "DefaultTemplateArgumentInstantiation"; break;
-    case data::instantiation_kind::default_function_argument_instantiation:
-        os << "DefaultFunctionArgumentInstantiation"; break;
-    case data::instantiation_kind::explicit_template_argument_substitution:
-        os << "ExplicitTemplateArgumentSubstitution"; break;
-    case data::instantiation_kind::deduced_template_argument_substitution:
-        os << "DeducedTemplateArgumentSubstitution"; break;
-    case data::instantiation_kind::prior_template_argument_substitution:
-        os << "PriorTemplateArgumentSubstitution"; break;
-    case data::instantiation_kind::default_template_argument_checking:
-        os << "DefaultTemplateArgumentChecking"; break;
-    case data::instantiation_kind::exception_spec_instantiation:
-        os << "ExceptionSpecInstantiation"; break;
-    case data::instantiation_kind::memoization:
-        os << "Memoization"; break;
-    case data::instantiation_kind::non_template_type:
-        os << "NonTemplateType"; break;
+    std::ostream& operator<<(std::ostream& os, data::instantiation_kind kind)
+    {
+      switch (kind)
+      {
+      default:
+        os << "UnknownKind";
+        break;
+      case data::instantiation_kind::template_instantiation:
+        os << "TemplateInstantiation";
+        break;
+      case data::instantiation_kind::default_template_argument_instantiation:
+        os << "DefaultTemplateArgumentInstantiation";
+        break;
+      case data::instantiation_kind::default_function_argument_instantiation:
+        os << "DefaultFunctionArgumentInstantiation";
+        break;
+      case data::instantiation_kind::explicit_template_argument_substitution:
+        os << "ExplicitTemplateArgumentSubstitution";
+        break;
+      case data::instantiation_kind::deduced_template_argument_substitution:
+        os << "DeducedTemplateArgumentSubstitution";
+        break;
+      case data::instantiation_kind::prior_template_argument_substitution:
+        os << "PriorTemplateArgumentSubstitution";
+        break;
+      case data::instantiation_kind::default_template_argument_checking:
+        os << "DefaultTemplateArgumentChecking";
+        break;
+      case data::instantiation_kind::exception_spec_instantiation:
+        os << "ExceptionSpecInstantiation";
+        break;
+      case data::instantiation_kind::memoization:
+        os << "Memoization";
+        break;
+      case data::instantiation_kind::non_template_type:
+        os << "NonTemplateType";
+        break;
+      }
+      return os;
+    }
+
+    std::string to_string(data::instantiation_kind kind)
+    {
+      std::stringstream ss;
+      ss << kind;
+      return ss.str();
+    }
   }
-  return os;
 }
-
-std::string to_string(data::instantiation_kind kind) {
-  std::stringstream ss;
-  ss << kind;
-  return ss.str();
-}
-
-}
-}
-

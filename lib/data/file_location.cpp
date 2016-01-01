@@ -20,35 +20,41 @@
 #include <tuple>
 #include <sstream>
 
-namespace metashell {
-namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-file_location::file_location() : name(), row(-1), column(-1) {}
+    file_location::file_location() : name(), row(-1), column(-1) {}
 
-file_location::file_location(const std::string& name, int row, int column) :
-  name(name), row(row), column(column) {}
+    file_location::file_location(const std::string& name, int row, int column)
+      : name(name), row(row), column(column)
+    {
+    }
 
-std::ostream& operator<<(std::ostream& os, const file_location& location) {
-  os << location.name << ":" << location.row << ":" << location.column;
-  return os;
+    std::ostream& operator<<(std::ostream& os, const file_location& location)
+    {
+      os << location.name << ":" << location.row << ":" << location.column;
+      return os;
+    }
+
+    bool operator<(const file_location& lhs, const file_location& rhs)
+    {
+      return std::tie(lhs.name, lhs.row, lhs.column) <
+             std::tie(rhs.name, rhs.row, rhs.column);
+    }
+
+    bool operator==(const file_location& lhs, const file_location& rhs)
+    {
+      return std::tie(lhs.name, lhs.row, lhs.column) ==
+             std::tie(rhs.name, rhs.row, rhs.column);
+    }
+
+    std::string to_string(const file_location& location)
+    {
+      std::stringstream ss;
+      ss << location;
+      return ss.str();
+    }
+  }
 }
-
-bool operator<(const file_location& lhs, const file_location& rhs) {
-  return std::tie(lhs.name, lhs.row, lhs.column) <
-         std::tie(rhs.name, rhs.row, rhs.column);
-}
-
-bool operator==(const file_location& lhs, const file_location& rhs) {
-  return std::tie(lhs.name, lhs.row, lhs.column) ==
-         std::tie(rhs.name, rhs.row, rhs.column);
-}
-
-std::string to_string(const file_location& location) {
-  std::stringstream ss;
-  ss << location;
-  return ss.str();
-}
-
-}
-}
-

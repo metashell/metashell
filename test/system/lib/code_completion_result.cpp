@@ -27,10 +27,10 @@
 using namespace metashell_system_test;
 
 code_completion_result::code_completion_result(
-  const std::initializer_list<std::string>& results_
-) :
-  _results(results_)
-{}
+    const std::initializer_list<std::string>& results_)
+  : _results(results_)
+{
+}
 
 code_completion_result::iterator code_completion_result::begin() const
 {
@@ -42,10 +42,7 @@ code_completion_result::iterator code_completion_result::end() const
   return _results.end();
 }
 
-int code_completion_result::size() const
-{
-  return _results.size();
-}
+int code_completion_result::size() const { return _results.size(); }
 
 bool code_completion_result::contains(const std::string& result_) const
 {
@@ -53,25 +50,21 @@ bool code_completion_result::contains(const std::string& result_) const
 }
 
 code_completion_result code_completion_result::with(
-  const std::initializer_list<std::string>& members_
-) const
+    const std::initializer_list<std::string>& members_) const
 {
   code_completion_result r(*this);
   r._results.insert(members_.begin(), members_.end());
   return std::move(r);
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const code_completion_result& r_
-)
+std::ostream& metashell_system_test::
+operator<<(std::ostream& out_, const code_completion_result& r_)
 {
   return out_ << to_json_string(r_);
 }
 
-json_string metashell_system_test::to_json_string(
-  const code_completion_result& r_
-)
+json_string
+metashell_system_test::to_json_string(const code_completion_result& r_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -94,30 +87,21 @@ json_string metashell_system_test::to_json_string(
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const code_completion_result& r_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const code_completion_result& r_,
+                                       const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
 
-  if (
-    members_are({"type", "completions"}, d)
-    && is_string("code_completion_result", d["type"])
-    && d["completions"].IsArray()
-    && int(d["completions"].Size()) == r_.size()
-  )
+  if (members_are({"type", "completions"}, d) &&
+      is_string("code_completion_result", d["type"]) &&
+      d["completions"].IsArray() && int(d["completions"].Size()) == r_.size())
   {
     auto& completions = d["completions"];
     for (auto i = completions.Begin(), e = completions.End(); i != e; ++i)
     {
-      if (
-        !(
-          i->IsString() &&
-          r_.contains(std::string(i->GetString(), i->GetStringLength()))
-        )
-      )
+      if (!(i->IsString() &&
+            r_.contains(std::string(i->GetString(), i->GetStringLength()))))
       {
         return false;
       }
@@ -129,4 +113,3 @@ bool metashell_system_test::operator==(
     return false;
   }
 }
-

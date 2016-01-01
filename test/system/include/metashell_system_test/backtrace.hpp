@@ -30,16 +30,17 @@ namespace metashell_system_test
   {
   public:
     explicit backtrace(std::vector<frame> frames_);
-  
+
     typedef std::vector<frame>::const_iterator iterator;
     typedef iterator const_iterator;
-  
+
     iterator begin() const;
     iterator end() const;
+
   private:
     std::vector<frame> _frames;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const backtrace& c_);
 
   json_string to_json_string(const backtrace& c_);
@@ -48,4 +49,3 @@ namespace metashell_system_test
 }
 
 #endif
-

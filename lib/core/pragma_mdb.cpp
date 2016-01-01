@@ -24,39 +24,31 @@
 
 using namespace metashell;
 
-pragma_mdb::pragma_mdb(
-  shell& shell_,
-  command_processor_queue* cpq_,
-  logger* logger_
-) :
-  _shell(shell_),
-  _cpq(cpq_),
-  _logger(logger_)
-{}
+pragma_mdb::pragma_mdb(shell& shell_,
+                       command_processor_queue* cpq_,
+                       logger* logger_)
+  : _shell(shell_), _cpq(cpq_), _logger(logger_)
+{
+}
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
   return new pragma_mdb(_shell, _cpq, _logger);
 }
 
-std::string pragma_mdb::arguments() const
-{
-  return "[-full] [<type>]";
-}
+std::string pragma_mdb::arguments() const { return "[-full] [<type>]"; }
 
 std::string pragma_mdb::description() const
 {
   return "Starts the metadebugger. For more information see evaluate in the "
-    "Metadebugger command reference.";
+         "Metadebugger command reference.";
 }
 
-void pragma_mdb::run(
-  const data::command::iterator&,
-  const data::command::iterator&,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_mdb::run(const data::command::iterator&,
+                     const data::command::iterator&,
+                     const data::command::iterator& args_begin_,
+                     const data::command::iterator& args_end_,
+                     iface::displayer& displayer_) const
 {
   assert(_cpq != nullptr);
 
@@ -64,27 +56,19 @@ void pragma_mdb::run(
 
   auto g = disable_precompiled_header_guard::create(_shell);
 
-  std::unique_ptr<mdb_shell>
-    sh(
-      new mdb_shell(
-        _shell.get_config(),
-        _shell.env(),
-        _shell.engine(),
-        _shell.env_path(),
-        _logger,
-        std::move(g)
-      )
-    );
+  std::unique_ptr<mdb_shell> sh(
+      new mdb_shell(_shell.get_config(), _shell.env(), _shell.engine(),
+                    _shell.env_path(), _logger, std::move(g)));
 
   if (_shell.get_config().splash_enabled)
   {
     sh->display_splash(displayer_);
   }
 
-  if (!args.empty()) {
+  if (!args.empty())
+  {
     sh->command_evaluate(args, displayer_);
   }
 
   _cpq->push(move(sh));
 }
-

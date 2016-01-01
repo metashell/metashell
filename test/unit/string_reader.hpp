@@ -28,6 +28,7 @@ public:
   explicit string_reader(std::initializer_list<std::string> strings_);
 
   boost::optional<std::string> operator()(const std::string&);
+
 private:
   std::vector<std::string> _strings;
   // storing the index instead of an iterator makes the default copy
@@ -36,4 +37,3 @@ private:
 };
 
 #endif
-

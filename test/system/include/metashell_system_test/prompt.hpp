@@ -30,12 +30,13 @@ namespace metashell_system_test
   {
   public:
     explicit prompt(const std::string& prompt_);
-  
+
     const std::string& value() const;
+
   private:
     std::string _prompt;
   };
-  
+
   std::ostream& operator<<(std::ostream& out_, const prompt& prompt_);
 
   json_string to_json_string(const prompt& p_);
@@ -44,4 +45,3 @@ namespace metashell_system_test
 }
 
 #endif
-

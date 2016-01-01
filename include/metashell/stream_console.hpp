@@ -35,10 +35,10 @@ namespace metashell
 
     virtual int width() const override;
     virtual int height() const override;
+
   private:
     std::ostream* _s;
   };
 }
 
 #endif
-

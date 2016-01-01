@@ -22,10 +22,8 @@ using namespace metashell;
 
 namespace
 {
-  void test_type_of_a_token(
-    const std::string& token_,
-    data::token_type expected_type_
-  )
+  void test_type_of_a_token(const std::string& token_,
+                            data::token_type expected_type_)
   {
     const auto t = create_wave_tokeniser(token_);
 
@@ -33,10 +31,8 @@ namespace
     JUST_ASSERT(expected_type_ == t->current_token().type());
   }
 
-  void test_category_of_a_token(
-    const std::string& token_,
-    data::token_category expected_category_
-  )
+  void test_category_of_a_token(const std::string& token_,
+                                data::token_category expected_category_)
   {
     const auto t = create_wave_tokeniser(token_);
 
@@ -189,12 +185,12 @@ JUST_TEST_CASE(test_type_of_new_line_token)
 }
 
 #ifdef TEST_KEYWORD
-#  error TEST_KEYWORD already defined
+#error TEST_KEYWORD already defined
 #endif
-#define TEST_KEYWORD(name) \
-  JUST_TEST_CASE(test_type_of_ ## name ## _keyword_token) \
-  { \
-    test_type_of_a_token(#name, data::token_type::keyword_ ## name); \
+#define TEST_KEYWORD(name)                                                     \
+  JUST_TEST_CASE(test_type_of_##name##_keyword_token)                          \
+  {                                                                            \
+    test_type_of_a_token(#name, data::token_type::keyword_##name);             \
   }
 
 TEST_KEYWORD(asm)
@@ -236,7 +232,7 @@ TEST_KEYWORD(protected)
 TEST_KEYWORD(public)
 TEST_KEYWORD(register)
 TEST_KEYWORD(reinterpret_cast)
-TEST_KEYWORD(return)
+TEST_KEYWORD(return )
 TEST_KEYWORD(short)
 TEST_KEYWORD(signed)
 TEST_KEYWORD(sizeof)
@@ -263,30 +259,30 @@ TEST_KEYWORD(while)
 #undef TEST_KEYWORD
 
 #ifdef TEST_OPERATOR
-#  error TEST_OPERATOR already defined
+#error TEST_OPERATOR already defined
 #endif
-#define TEST_OPERATOR(name, code) \
-  JUST_TEST_CASE(test_type_of_ ## name ## _operator_token) \
-  { \
-    test_type_of_a_token(code, data::token_type::operator_ ## name); \
+#define TEST_OPERATOR(name, code)                                              \
+  JUST_TEST_CASE(test_type_of_##name##_operator_token)                         \
+  {                                                                            \
+    test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
 
 #ifdef TEST_OPERATOR_ALT
-#  error TEST_OPERATOR_ALT already defined
+#error TEST_OPERATOR_ALT already defined
 #endif
-#define TEST_OPERATOR_ALT(name, code) \
-  JUST_TEST_CASE(test_type_of_ ## name ## _alt_operator_token) \
-  { \
-    test_type_of_a_token(code, data::token_type::operator_ ## name); \
+#define TEST_OPERATOR_ALT(name, code)                                          \
+  JUST_TEST_CASE(test_type_of_##name##_alt_operator_token)                     \
+  {                                                                            \
+    test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
 
 #ifdef TEST_OPERATOR_TRIGRAPH
-#  error TEST_OPERATOR_TRIGRAPH already defined
+#error TEST_OPERATOR_TRIGRAPH already defined
 #endif
-#define TEST_OPERATOR_TRIGRAPH(name, code) \
-  JUST_TEST_CASE(test_type_of_ ## name ## _trigraph_operator_token) \
-  { \
-    test_type_of_a_token(code, data::token_type::operator_ ## name); \
+#define TEST_OPERATOR_TRIGRAPH(name, code)                                     \
+  JUST_TEST_CASE(test_type_of_##name##_trigraph_operator_token)                \
+  {                                                                            \
+    test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
 
 TEST_OPERATOR(bitwise_and, "&")
@@ -368,17 +364,14 @@ TEST_OPERATOR_TRIGRAPH(pound, "\?\?=")
 #undef TEST_OPERATOR_ALT
 #undef TEST_OPERATOR
 
-
-
-
 #ifdef TEST_PP_TOKEN
-#  error TEST_PP_TOKEN already defined
+#error TEST_PP_TOKEN already defined
 #endif
-#define TEST_PP_TOKEN(name) \
-  JUST_TEST_CASE(test_type_of_p_ ## name ## _token) \
-  { \
-    test_type_of_a_token("#" #name, data::token_type::p_ ## name); \
-    test_type_of_a_token("#  " #name, data::token_type::p_ ## name); \
+#define TEST_PP_TOKEN(name)                                                    \
+  JUST_TEST_CASE(test_type_of_p_##name##_token)                                \
+  {                                                                            \
+    test_type_of_a_token("#" #name, data::token_type::p_##name);               \
+    test_type_of_a_token("#  " #name, data::token_type::p_##name);             \
   }
 
 TEST_PP_TOKEN(define)
@@ -399,8 +392,8 @@ TEST_PP_TOKEN(include)
 
 JUST_TEST_CASE(test_error_flag_is_set)
 {
-  std::unique_ptr<iface::tokeniser>
-    t = create_wave_tokeniser("/* unclosed comment");
+  std::unique_ptr<iface::tokeniser> t =
+      create_wave_tokeniser("/* unclosed comment");
 
   while (t->has_further_tokens())
   {
@@ -414,4 +407,3 @@ JUST_TEST_CASE(test_constexpr_is_in_keyword_category)
 {
   test_category_of_a_token("constexpr", data::token_category::keyword);
 }
-

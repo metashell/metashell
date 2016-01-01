@@ -28,35 +28,26 @@ using namespace metashell;
 
 namespace
 {
-  parse_config_result parse_config(
-    std::initializer_list<const char*> args_,
-    std::ostringstream* out_ = nullptr,
-    std::ostringstream* err_ = nullptr
-  )
+  parse_config_result parse_config(std::initializer_list<const char*> args_,
+                                   std::ostringstream* out_ = nullptr,
+                                   std::ostringstream* err_ = nullptr)
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
     mock_environment_detector env_detector;
 
-    return
-      metashell::parse_config(
-        args.size(),
-        args.data(),
-        std::map<std::string, engine_entry>(),
-        env_detector,
-        out_,
-        err_
-      );
+    return metashell::parse_config(args.size(), args.data(),
+                                   std::map<std::string, engine_entry>(),
+                                   env_detector, out_, err_);
   }
 
   bool fails_and_displays_error(std::initializer_list<const char*> args_)
   {
     std::ostringstream err;
     const parse_config_result r = parse_config(args_, nullptr, &err);
-  
-    return
-      parse_config_result::action_t::exit_with_error == r.action
-      && !err.str().empty();
+
+    return parse_config_result::action_t::exit_with_error == r.action &&
+           !err.str().empty();
   }
 }
 
@@ -192,14 +183,10 @@ JUST_TEST_CASE(test_metashell_path_is_filled)
   mock_environment_detector env_detector;
 
   const metashell::data::config cfg =
-    metashell::parse_config(
-      args.size(),
-      args.data(),
-      std::map<std::string, engine_entry>(),
-      env_detector,
-      nullptr,
-      nullptr
-    ).cfg;
+      metashell::parse_config(args.size(), args.data(),
+                              std::map<std::string, engine_entry>(),
+                              env_detector, nullptr, nullptr)
+          .cfg;
 
   JUST_ASSERT_EQUAL("the_path", cfg.metashell_binary);
 }
@@ -217,4 +204,3 @@ JUST_TEST_CASE(test_preprocessor_mode_is_set_from_command_line)
 
   JUST_ASSERT(cfg.preprocessor_mode);
 }
-

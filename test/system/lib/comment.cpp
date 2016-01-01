@@ -26,20 +26,14 @@
 
 using namespace metashell_system_test;
 
-comment::comment(std::vector<paragraph> paragraphs_) :
-  _paragraphs_specified(true),
-  _paragraphs(move(paragraphs_))
-{}
-
-comment::comment(placeholder) :
-  _paragraphs_specified(false),
-  _paragraphs()
-{}
-
-bool comment::paragraphs_specified() const
+comment::comment(std::vector<paragraph> paragraphs_)
+  : _paragraphs_specified(true), _paragraphs(move(paragraphs_))
 {
-  return _paragraphs_specified;
 }
+
+comment::comment(placeholder) : _paragraphs_specified(false), _paragraphs() {}
+
+bool comment::paragraphs_specified() const { return _paragraphs_specified; }
 
 const std::vector<paragraph>& comment::paragraphs() const
 {
@@ -47,10 +41,8 @@ const std::vector<paragraph>& comment::paragraphs() const
   return _paragraphs;
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const comment& comment_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const comment& comment_)
 {
   return out_ << to_json_string(comment_);
 }
@@ -85,10 +77,7 @@ json_string metashell_system_test::to_json_string(const comment& c_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const comment& c_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const comment& c_, const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
@@ -97,10 +86,8 @@ bool metashell_system_test::operator==(
   {
     if (c_.paragraphs_specified())
     {
-      if (
-        d["paragraphs"].IsArray()
-        && d["paragraphs"].Size() == c_.paragraphs().size()
-      )
+      if (d["paragraphs"].IsArray() &&
+          d["paragraphs"].Size() == c_.paragraphs().size())
       {
         auto i = d["paragraphs"].Begin();
         for (const paragraph& p : c_.paragraphs())
@@ -121,4 +108,3 @@ bool metashell_system_test::operator==(
   }
   return false;
 }
-

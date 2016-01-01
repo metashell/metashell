@@ -23,29 +23,24 @@
 
 using namespace metashell_system_test;
 
-paragraph::paragraph(
-  const std::string& content_,
-  const std::string& indentation_
-) :
-  _content(content_),
-  _first_line_indentation(indentation_),
-  _rest_of_lines_indentation(indentation_)
-{}
-
-paragraph::paragraph(
-  const std::string& content_,
-  const std::string& rest_of_lines_indentation_,
-  const std::string& first_line_indentation_
-) :
-  _content(content_),
-  _first_line_indentation(first_line_indentation_),
-  _rest_of_lines_indentation(rest_of_lines_indentation_)
-{}
-  
-const std::string& paragraph::content() const
+paragraph::paragraph(const std::string& content_,
+                     const std::string& indentation_)
+  : _content(content_),
+    _first_line_indentation(indentation_),
+    _rest_of_lines_indentation(indentation_)
 {
-  return _content;
 }
+
+paragraph::paragraph(const std::string& content_,
+                     const std::string& rest_of_lines_indentation_,
+                     const std::string& first_line_indentation_)
+  : _content(content_),
+    _first_line_indentation(first_line_indentation_),
+    _rest_of_lines_indentation(rest_of_lines_indentation_)
+{
+}
+
+const std::string& paragraph::content() const { return _content; }
 
 const std::string& paragraph::first_line_indentation() const
 {
@@ -56,11 +51,9 @@ const std::string& paragraph::rest_of_lines_indentation() const
 {
   return _rest_of_lines_indentation;
 }
- 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const paragraph& p_
-)
+
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const paragraph& p_)
 {
   return out_ << to_json_string(p_);
 }
@@ -74,4 +67,3 @@ json_string metashell_system_test::to_json_string(const paragraph& p_)
 
   return json_string(buff.GetString());
 }
-

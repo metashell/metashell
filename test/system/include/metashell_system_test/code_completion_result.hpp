@@ -29,9 +29,8 @@ namespace metashell_system_test
   {
   public:
     explicit code_completion_result(
-      const std::initializer_list<std::string>& results_
-    );
-  
+        const std::initializer_list<std::string>& results_);
+
     typedef std::set<std::string>::const_iterator iterator;
     typedef iterator const_iterator;
 
@@ -42,17 +41,15 @@ namespace metashell_system_test
 
     int size() const;
 
-    code_completion_result with(
-      const std::initializer_list<std::string>& members_
-    ) const;
+    code_completion_result
+    with(const std::initializer_list<std::string>& members_) const;
+
   private:
     std::set<std::string> _results;
   };
 
-  std::ostream& operator<<(
-    std::ostream& out_,
-    const code_completion_result& r_
-  );
+  std::ostream& operator<<(std::ostream& out_,
+                           const code_completion_result& r_);
 
   json_string to_json_string(const code_completion_result& r_);
 
@@ -60,4 +57,3 @@ namespace metashell_system_test
 }
 
 #endif
-

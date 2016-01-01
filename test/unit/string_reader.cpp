@@ -16,10 +16,10 @@
 
 #include "string_reader.hpp"
 
-string_reader::string_reader(std::initializer_list<std::string> strings_) :
-  _strings(strings_),
-  _next(0)
-{}
+string_reader::string_reader(std::initializer_list<std::string> strings_)
+  : _strings(strings_), _next(0)
+{
+}
 
 boost::optional<std::string> string_reader::operator()(const std::string&)
 {
@@ -32,4 +32,3 @@ boost::optional<std::string> string_reader::operator()(const std::string&)
     return _strings[_next++];
   }
 }
-

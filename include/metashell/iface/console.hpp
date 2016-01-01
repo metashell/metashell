@@ -26,7 +26,8 @@ namespace metashell
     class console
     {
     public:
-      enum class user_answer {
+      enum class user_answer
+      {
         next_page,
         show_all,
         quit
@@ -46,4 +47,3 @@ namespace metashell
 }
 
 #endif
-

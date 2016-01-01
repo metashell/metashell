@@ -18,32 +18,39 @@
 
 #include <sstream>
 
-namespace metashell {
+namespace metashell
+{
 
-breakpoint::breakpoint(int id, const boost::regex& name_regex) :
-  id(id), name_regex(name_regex) {}
-
-bool breakpoint::match(const data::type& type) const {
-  return name_regex && boost::regex_search(type.name(), *name_regex);
-}
-
-bool breakpoint::match(const data::frame& frame) const {
-  return name_regex && boost::regex_search(frame.type().name(), *name_regex);
-}
-
-int breakpoint::get_id() const {
-  return id;
-}
-
-std::string breakpoint::to_string() const {
-  std::stringstream ss;
-  ss << "Breakpoint " << id << ": ";
-  if (name_regex) {
-    ss << "regex(\"" + name_regex->str() + "\")";
-  } else {
-    ss << "unknown()";
+  breakpoint::breakpoint(int id, const boost::regex& name_regex)
+    : id(id), name_regex(name_regex)
+  {
   }
-  return ss.str();
-}
+
+  bool breakpoint::match(const data::type& type) const
+  {
+    return name_regex && boost::regex_search(type.name(), *name_regex);
+  }
+
+  bool breakpoint::match(const data::frame& frame) const
+  {
+    return name_regex && boost::regex_search(frame.type().name(), *name_regex);
+  }
+
+  int breakpoint::get_id() const { return id; }
+
+  std::string breakpoint::to_string() const
+  {
+    std::stringstream ss;
+    ss << "Breakpoint " << id << ": ";
+    if (name_regex)
+    {
+      ss << "regex(\"" + name_regex->str() + "\")";
+    }
+    else
+    {
+      ss << "unknown()";
+    }
+    return ss.str();
+  }
 
 } // namespace metashell

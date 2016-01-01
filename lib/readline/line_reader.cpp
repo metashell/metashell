@@ -18,10 +18,10 @@
 #include <metashell/line_reader.hpp>
 
 #ifdef USE_EDITLINE
-#  include <editline/readline.h>
+#include <editline/readline.h>
 #else
-#  include <readline/readline.h>
-#  include <readline/history.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #endif
 
 #include <cassert>
@@ -78,9 +78,7 @@ namespace
 
       const auto eb = edited_text.begin();
       processor_queue->code_complete(
-        std::string(eb, eb + completion_end),
-        values
-      );
+          std::string(eb, eb + completion_end), values);
       pos = values.begin();
     }
 
@@ -107,16 +105,15 @@ namespace
     return rl_completion_matches(const_cast<char*>(text_), &tab_generator);
   }
 
-  boost::optional<std::string> read_next_line(
-    const std::string& prompt_,
-    command_processor_queue& processor_queue_
-  )
+  boost::optional<std::string>
+  read_next_line(const std::string& prompt_,
+                 command_processor_queue& processor_queue_)
   {
     processor_queue = &processor_queue_;
     rl_attempted_completion_function = tab_completion;
     rl_completion_append_character = '\0';
 
-    if (char *line = ::readline(prompt_.c_str()))
+    if (char* line = ::readline(prompt_.c_str()))
     {
       const std::string str(line);
 
@@ -134,14 +131,11 @@ namespace
   }
 }
 
-metashell::line_reader metashell::readline::line_reader(
-  command_processor_queue& processor_queue_
-)
+metashell::line_reader
+metashell::readline::line_reader(command_processor_queue& processor_queue_)
 {
-  return
-    [&processor_queue_](const std::string& prompt_)
-    {
-      return read_next_line(prompt_ + " ", processor_queue_);
-    };
+  return [&processor_queue_](const std::string& prompt_)
+  {
+    return read_next_line(prompt_ + " ", processor_queue_);
+  };
 }
-

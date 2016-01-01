@@ -31,13 +31,10 @@ namespace metashell
     public:
       virtual ~executable() {}
 
-      virtual data::process_output run(
-        const std::vector<std::string>& args_,
-        const std::string& stdin_
-      ) const = 0;
+      virtual data::process_output run(const std::vector<std::string>& args_,
+                                       const std::string& stdin_) const = 0;
     };
   }
 }
 
 #endif
-

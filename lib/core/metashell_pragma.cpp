@@ -43,33 +43,23 @@ namespace
   bool argument_token(const data::token& t_)
   {
     const data::token_category c = t_.category();
-    return
-      c != data::token_category::whitespace
-      && c != data::token_category::comment;
+    return c != data::token_category::whitespace &&
+           c != data::token_category::comment;
   }
 }
 
-boost::optional<data::command::iterator> metashell::parse_pragma(
-  const data::command& cmd_
-)
+boost::optional<data::command::iterator>
+metashell::parse_pragma(const data::command& cmd_)
 {
   data::command::iterator i = skip_whitespace(cmd_.begin(), cmd_.end());
 
-  if (
-    i != cmd_.end()
-    && (
-      i->type() == data::token_type::p_pragma
-      || i->type() == data::token_type::operator_pound
-    )
-  )
+  if (i != cmd_.end() && (i->type() == data::token_type::p_pragma ||
+                          i->type() == data::token_type::operator_pound))
   {
     i = skip_whitespace(skip(i), cmd_.end());
 
-    if (
-      i != cmd_.end()
-      && i->type() == data::token_type::identifier
-      && (i->value() == "metashell" || i->value() == "msh")
-    )
+    if (i != cmd_.end() && i->type() == data::token_type::identifier &&
+        (i->value() == "metashell" || i->value() == "msh"))
     {
       i = skip_whitespace(skip(i), cmd_.end());
       if (i == cmd_.end() || i->value().empty())
@@ -92,10 +82,9 @@ boost::optional<data::command::iterator> metashell::parse_pragma(
   return boost::none;
 }
 
-data::command::iterator metashell::end_of_pragma_argument_list(
-  data::command::iterator begin_,
-  const data::command::iterator& end_
-)
+data::command::iterator
+metashell::end_of_pragma_argument_list(data::command::iterator begin_,
+                                       const data::command::iterator& end_)
 {
   data::command::iterator result = find_last_if(begin_, end_, argument_token);
 
@@ -109,4 +98,3 @@ data::command::iterator metashell::end_of_pragma_argument_list(
     return result;
   }
 }
-

@@ -27,36 +27,36 @@
 
 #include <metashell/mdb_command.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-class mdb_command_handler_map {
-public:
-  typedef std::vector<mdb_command> commands_t;
+  class mdb_command_handler_map
+  {
+  public:
+    typedef std::vector<mdb_command> commands_t;
 
-  mdb_command_handler_map(const commands_t& commands);
+    mdb_command_handler_map(const commands_t& commands);
 
-  // <command, args>
-  boost::optional<std::tuple<mdb_command, std::string>>
+    // <command, args>
+    boost::optional<std::tuple<mdb_command, std::string>>
     get_command_for_line(const std::string& line) const;
 
-  const commands_t& get_commands() const;
+    const commands_t& get_commands() const;
 
-private:
+  private:
 #ifdef _WIN32
-  // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)
-  typedef std::map<std::string, std::size_t> key_command_map_t;
+    // Fails to compile on Windows (Visual C++ 2013, Boost 1.55)
+    typedef std::map<std::string, std::size_t> key_command_map_t;
 #else
-  typedef boost::container::flat_map<std::string, std::size_t>
-    key_command_map_t;
+    typedef boost::container::flat_map<std::string, std::size_t>
+        key_command_map_t;
 #endif
 
-  commands_t commands;
+    commands_t commands;
 
-  // This map's key indexes into commands
-  key_command_map_t key_command_map;
-};
-
+    // This map's key indexes into commands
+    key_command_map_t key_command_map;
+  };
 }
 
 #endif
-

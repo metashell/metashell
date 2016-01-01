@@ -37,11 +37,8 @@ namespace
   {
     std::vector<std::string> names;
     state st = state::start_line;
-    for (
-      auto tokeniser = create_wave_tokeniser(definitions_);
-      tokeniser->has_further_tokens();
-      tokeniser->move_to_next_token()
-    )
+    for (auto tokeniser = create_wave_tokeniser(definitions_);
+         tokeniser->has_further_tokens(); tokeniser->move_to_next_token())
     {
       const data::token token = tokeniser->current_token();
       if (token.type() == data::token_type::new_line)
@@ -55,10 +52,8 @@ namespace
         case state::ignore:
           break;
         case state::start_line:
-          st =
-            token.type() == data::token_type::p_define ?
-              state::was_define :
-              state::ignore;
+          st = token.type() == data::token_type::p_define ? state::was_define :
+                                                            state::ignore;
           break;
         case state::was_define:
           if (token.type() == data::token_type::identifier)
@@ -70,14 +65,12 @@ namespace
         }
       }
     }
-    
+
     return boost::algorithm::join(names, "\n");
   }
 }
 
-pragma_macro_names::pragma_macro_names(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_macro_names::pragma_macro_names(shell& shell_) : _shell(shell_) {}
 
 iface::pragma_handler* pragma_macro_names::clone() const
 {
@@ -92,7 +85,5 @@ std::string pragma_macro_names::description() const
 void pragma_macro_names::run(iface::displayer& displayer_) const
 {
   displayer_.show_cpp_code(
-    extract_macro_names(_shell.engine().macros(_shell.env()))
-  );
+      extract_macro_names(_shell.engine().macros(_shell.env())));
 }
-

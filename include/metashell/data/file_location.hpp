@@ -23,26 +23,27 @@
 
 #include <boost/operators.hpp>
 
-namespace metashell {
-namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-struct file_location : boost::totally_ordered<file_location> {
-  file_location();
-  file_location(const std::string& name, int row, int column);
+    struct file_location : boost::totally_ordered<file_location>
+    {
+      file_location();
+      file_location(const std::string& name, int row, int column);
 
-  std::string name;
-  int row;
-  int column;
+      std::string name;
+      int row;
+      int column;
+    };
 
-};
+    bool operator<(const file_location& lhs, const file_location& rhs);
+    bool operator==(const file_location& lhs, const file_location& rhs);
+    std::ostream& operator<<(std::ostream& os, const file_location& location);
 
-bool operator<(const file_location& lhs, const file_location& rhs);
-bool operator==(const file_location& lhs, const file_location& rhs);
-std::ostream& operator<<(std::ostream& os, const file_location& location);
-
-std::string to_string(const file_location& location);
-
-}
+    std::string to_string(const file_location& location);
+  }
 }
 
 #endif

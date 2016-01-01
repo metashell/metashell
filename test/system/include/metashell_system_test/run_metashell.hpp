@@ -24,13 +24,11 @@
 
 namespace metashell_system_test
 {
-  std::vector<json_string> run_metashell(
-    const std::vector<json_string>& commands_,
-    const std::vector<std::string>& extra_args_ = {}
-  );
+  std::vector<json_string>
+  run_metashell(const std::vector<json_string>& commands_,
+                const std::vector<std::string>& extra_args_ = {});
 
   json_string run_metashell_command(const std::string& command_);
 }
 
 #endif
-

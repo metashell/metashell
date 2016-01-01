@@ -30,12 +30,13 @@ namespace metashell_system_test
   {
   public:
     explicit raw_text(const std::string& text_);
-  
+
     const std::string& text() const;
+
   private:
     std::string _text;
   };
-  
+
   std::ostream& operator<<(std::ostream& out_, const raw_text& raw_text_);
 
   json_string to_json_string(const raw_text& t_);
@@ -44,4 +45,3 @@ namespace metashell_system_test
 }
 
 #endif
-

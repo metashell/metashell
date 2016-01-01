@@ -125,9 +125,7 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
   JUST_ASSERT_EMPTY_CONTAINER(h.commands());
 }
 
-JUST_TEST_CASE(
-  test_line_containing_just_whitespace_is_not_stored_in_history
-)
+JUST_TEST_CASE(test_line_containing_just_whitespace_is_not_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
@@ -139,8 +137,7 @@ JUST_TEST_CASE(
 }
 
 JUST_TEST_CASE(
-  test_the_same_thing_following_each_other_is_not_added_to_history_twice
-)
+    test_the_same_thing_following_each_other_is_not_added_to_history_twice)
 {
   null_displayer d;
   in_memory_history h;
@@ -191,15 +188,8 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
   null_history h;
   command_processor_queue cpq;
   cpq.history(h);
-  shell
-    sh(
-      cfg,
-      std::unique_ptr<breaking_environment>(e),
-      cpq,
-      "",
-      "",
-      create_failing_engine()
-    );
+  shell sh(cfg, std::unique_ptr<breaking_environment>(e), cpq, "", "",
+           create_failing_engine());
   e->append_throw_from_now();
 
   sh.store_in_buffer("typedef int foo;", d);
@@ -214,9 +204,9 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   breaking_environment e;
   e.get_appended_throw_from_now();
   null_displayer d;
-  const data::result r =
-    get_internal_templight_entry().build(cfg, "", "env.hpp", det, d, nullptr)
-      ->validate_code("typedef int foo;", cfg, e, false);
+  const data::result r = get_internal_templight_entry()
+                             .build(cfg, "", "env.hpp", det, d, nullptr)
+                             ->validate_code("typedef int foo;", cfg, e, false);
 
   JUST_ASSERT(!r.successful);
   JUST_ASSERT(!r.error.empty());
@@ -261,4 +251,3 @@ JUST_TEST_CASE(test_command_macro_usage_with_semicolon_is_environment_setup)
 
   JUST_ASSERT(is_environment_setup_command(command("SOME_MACRO(13);")));
 }
-

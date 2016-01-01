@@ -27,29 +27,18 @@ namespace
   }
 }
 
-command::command(const std::string& cmd_) :
-  _cmd(cmd_),
-  _tokens()
+command::command(const std::string& cmd_) : _cmd(cmd_), _tokens()
 {
-  for (
-    auto t = create_wave_tokeniser(cmd_, "<command>");
-    t->has_further_tokens();
-    t->move_to_next_token()
-  )
+  for (auto t = create_wave_tokeniser(cmd_, "<command>");
+       t->has_further_tokens(); t->move_to_next_token())
   {
     _tokens.push_back(t->current_token());
   }
 }
 
-command::iterator command::begin() const
-{
-  return _tokens.begin();
-}
+command::iterator command::begin() const { return _tokens.begin(); }
 
-command::iterator command::end() const
-{
-  return _tokens.end();
-}
+command::iterator command::end() const { return _tokens.end(); }
 
 command::iterator metashell::data::skip(command::iterator i_)
 {
@@ -57,21 +46,17 @@ command::iterator metashell::data::skip(command::iterator i_)
   return i_;
 }
 
-command::iterator metashell::data::skip_whitespace(
-  command::iterator begin_,
-  const command::iterator& end_
-)
+command::iterator
+metashell::data::skip_whitespace(command::iterator begin_,
+                                 const command::iterator& end_)
 {
-  return
-    (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
-      skip(begin_) :
-      begin_;
+  return (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
+             skip(begin_) :
+             begin_;
 }
 
-std::string metashell::data::tokens_to_string(
-  command::iterator begin_,
-  const command::iterator& end_
-)
+std::string metashell::data::tokens_to_string(command::iterator begin_,
+                                              const command::iterator& end_)
 {
   std::ostringstream s;
   for (; begin_ != end_; ++begin_)
@@ -80,4 +65,3 @@ std::string metashell::data::tokens_to_string(
   }
   return s.str();
 }
-

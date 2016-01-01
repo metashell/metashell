@@ -35,23 +35,19 @@ namespace metashell
 
       iterator begin() const;
       iterator end() const;
+
     private:
       std::string _cmd;
       std::vector<data::token> _tokens;
     };
 
     command::iterator skip(command::iterator i_);
-    command::iterator skip_whitespace(
-      command::iterator begin_,
-      const command::iterator& end_
-    );
+    command::iterator skip_whitespace(command::iterator begin_,
+                                      const command::iterator& end_);
 
-    std::string tokens_to_string(
-      command::iterator begin_,
-      const command::iterator& end_
-    );
+    std::string tokens_to_string(command::iterator begin_,
+                                 const command::iterator& end_);
   }
 }
 
 #endif
-

@@ -20,14 +20,9 @@
 
 using namespace metashell::data;
 
-exit_code_t::exit_code_t(int value_) :
-  _value(value_)
-{}
+exit_code_t::exit_code_t(int value_) : _value(value_) {}
 
-int exit_code_t::value() const
-{
-  return _value;
-}
+int exit_code_t::value() const { return _value; }
 
 bool metashell::data::operator==(exit_code_t a_, exit_code_t b_)
 {
@@ -43,4 +38,3 @@ std::string metashell::data::to_string(exit_code_t e_)
 {
   return std::to_string(e_.value());
 }
-

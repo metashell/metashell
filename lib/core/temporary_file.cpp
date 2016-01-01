@@ -17,14 +17,16 @@
 
 #include <metashell/temporary_file.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-temporary_file::temporary_file(const std::string& file_name) :
-  file_name(file_name) {}
+  temporary_file::temporary_file(const std::string& file_name)
+    : file_name(file_name)
+  {
+  }
 
-std::string temporary_file::get_path() const {
-  return dir.path() + "/" + file_name;
+  std::string temporary_file::get_path() const
+  {
+    return dir.path() + "/" + file_name;
+  }
 }
-
-}
-

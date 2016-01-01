@@ -38,4 +38,3 @@ void metashell::data::generate(const data::unsaved_file& f_)
     throw exception("Error creating file " + f_.filename());
   }
 }
-

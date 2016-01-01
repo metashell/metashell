@@ -26,13 +26,8 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_echoing_definition)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh preprocessed echo on"),
-        command("void f() {}")
-      }
-    );
+  const auto r = run_metashell(
+      {command("#msh preprocessed echo on"), command("void f() {}")});
 
   auto i = r.begin() + 3;
 
@@ -42,13 +37,8 @@ JUST_TEST_CASE(test_echoing_definition)
 JUST_TEST_CASE(test_echoing_definition_with_macro)
 {
   const auto r =
-    run_metashell(
-      {
-        command("#msh preprocessed echo on"),
-        command("#define FOO f"),
-        command("void FOO() {}")
-      }
-    );
+      run_metashell({command("#msh preprocessed echo on"),
+                     command("#define FOO f"), command("void FOO() {}")});
 
   auto i = r.begin() + 4;
 
@@ -57,14 +47,8 @@ JUST_TEST_CASE(test_echoing_definition_with_macro)
 
 JUST_TEST_CASE(test_echoing_evaluation)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh preprocessed echo on"),
-        command("#define FOO int"),
-        command("FOO")
-      }
-    );
+  const auto r = run_metashell({command("#msh preprocessed echo on"),
+                                command("#define FOO int"), command("FOO")});
 
   auto i = r.begin() + 4;
 
@@ -76,13 +60,8 @@ JUST_TEST_CASE(test_echoing_evaluation)
 
 JUST_TEST_CASE(test_echoing_include)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh preprocessed echo on"),
-        command("#include <string>")
-      }
-    );
+  const auto r = run_metashell(
+      {command("#msh preprocessed echo on"), command("#include <string>")});
 
   auto i = r.begin() + 3;
 
@@ -91,14 +70,9 @@ JUST_TEST_CASE(test_echoing_include)
 
 JUST_TEST_CASE(test_echoing_invalid_cpp_code)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#define FOO bar"),
-        command("#msh preprocessed echo on"),
-        command("void FOO() { return 13; }")
-      }
-    );
+  const auto r = run_metashell({command("#define FOO bar"),
+                                command("#msh preprocessed echo on"),
+                                command("void FOO() { return 13; }")});
 
   auto i = r.begin() + 4;
 
@@ -110,14 +84,9 @@ JUST_TEST_CASE(test_echoing_invalid_cpp_code)
 
 JUST_TEST_CASE(test_when_echoing_code_displaying_pp_errors_only_once)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#define FOO(x) bar"),
-        command("#msh preprocessed echo on"),
-        command("FOO(foo;")
-      }
-    );
+  const auto r = run_metashell({command("#define FOO(x) bar"),
+                                command("#msh preprocessed echo on"),
+                                command("FOO(foo;")});
 
   auto i = r.begin() + 4;
 
@@ -128,14 +97,9 @@ JUST_TEST_CASE(test_when_echoing_code_displaying_pp_errors_only_once)
 
 JUST_TEST_CASE(test_echoing_invalid_cpp_code_during_evaluation)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#define FOO int"),
-        command("#msh preprocessed echo on"),
-        command("void FOO")
-      }
-    );
+  const auto r = run_metashell({command("#define FOO int"),
+                                command("#msh preprocessed echo on"),
+                                command("void FOO")});
 
   auto i = r.begin() + 4;
 
@@ -146,17 +110,11 @@ JUST_TEST_CASE(test_echoing_invalid_cpp_code_during_evaluation)
 }
 
 JUST_TEST_CASE(
-  test_when_echoing_code_displaying_pp_errors_only_once_during_evaluation
-)
+    test_when_echoing_code_displaying_pp_errors_only_once_during_evaluation)
 {
   const auto r =
-    run_metashell(
-      {
-        command("#define FOO(x) bar"),
-        command("#msh preprocessed echo on"),
-        command("FOO(foo")
-      }
-    );
+      run_metashell({command("#define FOO(x) bar"),
+                     command("#msh preprocessed echo on"), command("FOO(foo")});
 
   auto i = r.begin() + 4;
 
@@ -164,4 +122,3 @@ JUST_TEST_CASE(
   ++i;
   JUST_ASSERT(i == r.end());
 }
-

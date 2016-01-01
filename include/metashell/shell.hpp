@@ -41,42 +41,33 @@ namespace metashell
   class shell : public iface::command_processor
   {
   public:
-    shell(
-      const data::config& config_,
-      const std::string& internal_dir_,
-      const std::string& env_filename_,
-      std::unique_ptr<iface::engine> engine_,
-      logger* logger_ = nullptr
-    );
+    shell(const data::config& config_,
+          const std::string& internal_dir_,
+          const std::string& env_filename_,
+          std::unique_ptr<iface::engine> engine_,
+          logger* logger_ = nullptr);
 
-    shell(
-      const data::config& config_,
-      command_processor_queue& cpq_,
-      const std::string& internal_dir_,
-      const std::string& env_filename_,
-      std::unique_ptr<iface::engine> engine_,
-      logger* logger_ = nullptr
-    );
+    shell(const data::config& config_,
+          command_processor_queue& cpq_,
+          const std::string& internal_dir_,
+          const std::string& env_filename_,
+          std::unique_ptr<iface::engine> engine_,
+          logger* logger_ = nullptr);
 
-    shell(
-      const data::config& config_,
-      std::unique_ptr<iface::environment> env_,
-      command_processor_queue& cpq_,
-      const std::string& internal_dir_,
-      const std::string& env_filename_,
-      std::unique_ptr<iface::engine> engine_,
-      logger* logger_ = nullptr
-    );
+    shell(const data::config& config_,
+          std::unique_ptr<iface::environment> env_,
+          command_processor_queue& cpq_,
+          const std::string& internal_dir_,
+          const std::string& env_filename_,
+          std::unique_ptr<iface::engine> engine_,
+          logger* logger_ = nullptr);
 
     void display_splash(
-      iface::displayer& displayer_,
-      const std::map<std::string, std::string>& dependency_versions_
-    );
-    virtual void line_available(
-      const std::string& s_,
-      iface::displayer& displayer_,
-      iface::history& history_
-    ) override;
+        iface::displayer& displayer_,
+        const std::map<std::string, std::string>& dependency_versions_);
+    virtual void line_available(const std::string& s_,
+                                iface::displayer& displayer_,
+                                iface::history& history_) override;
     void line_available(const std::string& s_, iface::displayer& displayer_);
     virtual std::string prompt() const override;
 
@@ -85,10 +76,8 @@ namespace metashell
     bool store_in_buffer(const std::string& s_, iface::displayer& displayer_);
     void run_metaprogram(const std::string& s_, iface::displayer& displayer_);
 
-    virtual void code_complete(
-      const std::string& s_,
-      std::set<std::string>& out_
-    ) const override;
+    virtual void code_complete(const std::string& s_,
+                               std::set<std::string>& out_) const override;
 
     const pragma_handler_map& pragma_handlers() const;
 
@@ -116,11 +105,9 @@ namespace metashell
 
     std::string env_path() const;
 
-    bool preprocess(
-      iface::displayer& displayer_,
-      const std::string& exp_,
-      bool process_directives_
-    ) const;
+    bool preprocess(iface::displayer& displayer_,
+                    const std::string& exp_,
+                    bool process_directives_) const;
 
     void echo(bool enabled_);
     bool echo() const;
@@ -130,6 +117,7 @@ namespace metashell
 
     void evaluate_metaprograms(bool enabled_);
     bool evaluate_metaprograms() const;
+
   private:
     std::string _internal_dir;
     std::string _env_filename;
@@ -152,4 +140,3 @@ namespace metashell
 }
 
 #endif
-

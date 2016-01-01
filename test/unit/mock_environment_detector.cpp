@@ -18,20 +18,20 @@
 
 #include "mock_environment_detector.hpp"
 
-mock_environment_detector::mock_environment_detector() :
-  _search_clang_binary_called_times(0),
-  _file_exists_returns(true),
-  _file_exists_called_times(0),
-  _on_windows_returns(false),
-  _on_windows_called_times(0),
-  _on_osx_returns(false),
-  _on_osx_called_times(0),
-  _directory_of_executable_called_times(0)
-{}
+mock_environment_detector::mock_environment_detector()
+  : _search_clang_binary_called_times(0),
+    _file_exists_returns(true),
+    _file_exists_called_times(0),
+    _on_windows_returns(false),
+    _on_windows_called_times(0),
+    _on_osx_returns(false),
+    _on_osx_called_times(0),
+    _directory_of_executable_called_times(0)
+{
+}
 
 void mock_environment_detector::search_clang_binary_returns(
-  const std::string& result_
-)
+    const std::string& result_)
 {
   _search_clang_binary_returns = result_;
 }
@@ -108,8 +108,7 @@ std::string mock_environment_detector::directory_of_executable()
 }
 
 void mock_environment_detector::directory_of_executable_returns(
-  const std::string& result_
-)
+    const std::string& result_)
 {
   _directory_of_executable_returns = result_;
 }
@@ -118,4 +117,3 @@ int mock_environment_detector::directory_of_executable_called_times() const
 {
   return _directory_of_executable_called_times;
 }
-

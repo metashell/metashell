@@ -39,6 +39,7 @@ namespace metashell
       void next_line();
 
       bool operator==(const text_position& pos_) const;
+
     private:
       int _line;
       int _column;
@@ -57,4 +58,3 @@ namespace metashell
 }
 
 #endif
-

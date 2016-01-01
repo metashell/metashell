@@ -53,15 +53,18 @@ namespace
   template <class It>
   It first_non_whitespace(It begin_, It end_)
   {
-    return
-      std::find_if(begin_, end_, [](char c_) { return !is_whitespace(c_); });
+    return std::find_if(begin_, end_, [](char c_)
+                        {
+                          return !is_whitespace(c_);
+                        });
   }
 
   template <class It>
   void word_wrap(It begin_, It end_, int width_, std::vector<std::string>& out_)
   {
     // Some environments report 0 width
-    if (width_ <= 0) {
+    if (width_ <= 0)
+    {
       width_ = 80;
     }
 
@@ -78,10 +81,10 @@ namespace
         }
       }
 
-      const auto bp =
-        (static_cast<int>(break_at - i) == width_ && last_whitespace != end_) ?
-          last_whitespace :
-          break_at;
+      const auto bp = (static_cast<int>(break_at - i) == width_ &&
+                       last_whitespace != end_) ?
+                          last_whitespace :
+                          break_at;
 
       out_.push_back(std::string(i, pos_after_last_non_whitespace(i, bp)));
 
@@ -93,14 +96,9 @@ namespace
   }
 }
 
-indenter::indenter(int width_) :
-  _width(width_)
-{}
+indenter::indenter(int width_) : _width(width_) {}
 
-std::string indenter::str() const
-{
-  return _buff.str();
-}
+std::string indenter::str() const { return _buff.str(); }
 
 indenter& indenter::raw(const std::string& s_)
 {
@@ -108,11 +106,9 @@ indenter& indenter::raw(const std::string& s_)
   return *this;
 }
 
-indenter& indenter::left_align(
-  const std::string& s_,
-  const std::string& line_prefix_,
-  const std::string& first_line_prefix_
-)
+indenter& indenter::left_align(const std::string& s_,
+                               const std::string& line_prefix_,
+                               const std::string& first_line_prefix_)
 {
   assert(first_line_prefix_.length() == line_prefix_.length());
 
@@ -126,5 +122,3 @@ indenter& indenter::left_align(
   }
   return *this;
 }
-
-

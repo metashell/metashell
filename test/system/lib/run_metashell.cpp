@@ -31,39 +31,33 @@ using namespace metashell_system_test;
 
 namespace
 {
-  void run_metashell_assert(
-    const std::string& cond_,
-    bool cond_value_,
-    const process_execution& execution_,
-    const std::string& filename_,
-    int line_
-  )
+  void run_metashell_assert(const std::string& cond_,
+                            bool cond_value_,
+                            const process_execution& execution_,
+                            const std::string& filename_,
+                            int line_)
   {
     if (!cond_value_)
     {
       const char sep[] = "----------------------------------";
-      std::cerr
-        << sep << std::endl
-        << "Assertion failed: " << cond_ << " at "
-        << filename_ << ":" << line_ << std::endl
-        << "Related child process execution:" << std::endl
-        << execution_
-        << sep << std::endl;
+      std::cerr << sep << std::endl
+                << "Assertion failed: " << cond_ << " at " << filename_ << ":"
+                << line_ << std::endl
+                << "Related child process execution:" << std::endl
+                << execution_ << sep << std::endl;
       std::exit(1);
     }
   }
 
 #ifdef rm_assert
-#  error rm_assert already defined
+#error rm_assert already defined
 #endif
-#define rm_assert(cond, execution) \
+#define rm_assert(cond, execution)                                             \
   run_metashell_assert(#cond, (cond), execution, __FILE__, __LINE__)
 
-  void pop_item(
-    const std::string& item_,
-    std::vector<std::string>& v_,
-    const process_execution& execution_
-  )
+  void pop_item(const std::string& item_,
+                std::vector<std::string>& v_,
+                const process_execution& execution_)
   {
     rm_assert(!v_.empty(), execution_);
     rm_assert(v_.back() == item_, execution_);
@@ -89,28 +83,17 @@ namespace
     return s.str();
   }
 
-  process_execution execute(
-    const std::vector<json_string>& commands_,
-    const std::vector<std::string>& extra_args_
-  )
+  process_execution execute(const std::vector<json_string>& commands_,
+                            const std::vector<std::string>& extra_args_)
   {
-    std::vector<std::string>
-      cmd{
-        system_test_config::metashell_binary(),
-        "--console=json",
-        "--nosplash"
-      };
-    cmd.insert(
-      cmd.end(),
-      system_test_config::metashell_args().begin(),
-      system_test_config::metashell_args().end()
-    );
+    std::vector<std::string> cmd{
+        system_test_config::metashell_binary(), "--console=json", "--nosplash"};
+    cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
+               system_test_config::metashell_args().end());
     if (!extra_args_.empty())
     {
-      if (
-        std::find(cmd.begin(), cmd.end(), "--") == cmd.end()
-        || extra_args_.front() != "--"
-      )
+      if (std::find(cmd.begin(), cmd.end(), "--") == cmd.end() ||
+          extra_args_.front() != "--")
       {
         cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
       }
@@ -170,11 +153,10 @@ namespace
     out_.push_back(std::string(from, was_r ? s_.end() - 1 : s_.end()));
   }
 
-  process_execution run_metashell_impl(
-    const std::vector<json_string>& commands_,
-    const std::vector<std::string>& extra_args_,
-    std::vector<json_string>& result_
-  )
+  process_execution
+  run_metashell_impl(const std::vector<json_string>& commands_,
+                     const std::vector<std::string>& extra_args_,
+                     std::vector<json_string>& result_)
   {
     process_execution me = execute(commands_, extra_args_);
 
@@ -199,18 +181,16 @@ namespace
 }
 
 std::vector<json_string> metashell_system_test::run_metashell(
-  const std::vector<json_string>& commands_,
-  const std::vector<std::string>& extra_args_
-)
+    const std::vector<json_string>& commands_,
+    const std::vector<std::string>& extra_args_)
 {
   std::vector<json_string> jv;
   run_metashell_impl(commands_, extra_args_, jv);
   return jv;
 }
 
-json_string metashell_system_test::run_metashell_command(
-  const std::string& command_
-)
+json_string
+metashell_system_test::run_metashell_command(const std::string& command_)
 {
   std::vector<json_string> jv;
   const auto execution = run_metashell_impl({command(command_)}, {}, jv);
@@ -220,4 +200,3 @@ json_string metashell_system_test::run_metashell_command(
 
   return jv.back();
 }
-

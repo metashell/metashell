@@ -43,6 +43,7 @@ namespace metashell
       const std::string& internal_dir() const;
 
       void add(const std::string& filename_, const std::string& content_);
+
     private:
       std::vector<data::unsaved_file> _headers;
       std::string _internal_dir;
@@ -51,4 +52,3 @@ namespace metashell
 }
 
 #endif
-

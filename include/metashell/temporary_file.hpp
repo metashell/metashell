@@ -19,19 +19,20 @@
 
 #include <just/temp.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-class temporary_file {
-public:
-  explicit temporary_file(const std::string& file_name);
+  class temporary_file
+  {
+  public:
+    explicit temporary_file(const std::string& file_name);
 
-  std::string get_path() const;
+    std::string get_path() const;
 
-private:
-  just::temp::directory dir;
-  std::string file_name;
-};
-
+  private:
+    just::temp::directory dir;
+    std::string file_name;
+  };
 }
 
 #endif

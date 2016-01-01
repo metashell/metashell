@@ -35,11 +35,10 @@ namespace metashell_system_test
     memoization,
     non_template_type
   };
-  
+
   std::string to_string(instantiation_kind kind_);
   std::ostream& operator<<(std::ostream& o_, instantiation_kind kind_);
   instantiation_kind parse_kind(const std::string& kind_);
 }
 
 #endif
-

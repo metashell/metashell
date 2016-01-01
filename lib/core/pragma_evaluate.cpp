@@ -20,34 +20,27 @@
 
 using namespace metashell;
 
-pragma_evaluate::pragma_evaluate(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_evaluate::pragma_evaluate(shell& shell_) : _shell(shell_) {}
 
 iface::pragma_handler* pragma_evaluate::clone() const
 {
   return new pragma_evaluate(_shell);
 }
 
-std::string pragma_evaluate::arguments() const
-{
-  return "<code>";
-}
+std::string pragma_evaluate::arguments() const { return "<code>"; }
 
 std::string pragma_evaluate::description() const
 {
-  return
-    "Evaluates code as a metaprogram. Use this if Metashell thinks about the"
-    " code that it is an addition to the environment.";
+  return "Evaluates code as a metaprogram. Use this if Metashell thinks about "
+         "the"
+         " code that it is an addition to the environment.";
 }
 
-void pragma_evaluate::run(
-  const data::command::iterator&,
-  const data::command::iterator&,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_evaluate::run(const data::command::iterator&,
+                          const data::command::iterator&,
+                          const data::command::iterator& args_begin_,
+                          const data::command::iterator& args_end_,
+                          iface::displayer& displayer_) const
 {
   const std::string cmd = tokens_to_string(args_begin_, args_end_);
 
@@ -56,26 +49,20 @@ void pragma_evaluate::run(
   if (!is_environment_setup_command(args_begin_, args_end_))
   {
     displayer_.show_comment(
-      data::text{
-        data::paragraph(
-          "You don't need the evaluate add pragma to evaluate this metaprogram."
-          " The following command does this as well:"
-        ),
-        data::paragraph(cmd)
-      }
-    );
+        data::text{data::paragraph("You don't need the evaluate add pragma to "
+                                   "evaluate this metaprogram."
+                                   " The following command does this as well:"),
+                   data::paragraph(cmd)});
   }
   else
   {
-    displayer_.show_comment(
-      data::text(
+    displayer_.show_comment(data::text(
         "Metashell (incorrectly) thinks that this command should be added to"
         " the environment and would not execute it as a metaprogram without"
         " the \"evaluate\" pragma. Please file a bug report containing"
-        " this command (" + cmd + ") at"
-        " https://github.com/sabel83/metashell/issues. Thank you."
-      )
-    );
+        " this command (" +
+        cmd +
+        ") at"
+        " https://github.com/sabel83/metashell/issues. Thank you."));
   }
 }
-

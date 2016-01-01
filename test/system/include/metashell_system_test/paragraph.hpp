@@ -30,25 +30,22 @@ namespace metashell_system_test
   class paragraph
   {
   public:
-    explicit paragraph(
-      const std::string& content_,
-      const std::string& indentation_ = std::string()
-    );
-    paragraph(
-      const std::string& content_,
-      const std::string& rest_of_lines_indentation_,
-      const std::string& first_line_indentation_
-    );
-  
+    explicit paragraph(const std::string& content_,
+                       const std::string& indentation_ = std::string());
+    paragraph(const std::string& content_,
+              const std::string& rest_of_lines_indentation_,
+              const std::string& first_line_indentation_);
+
     const std::string& content() const;
     const std::string& first_line_indentation() const;
     const std::string& rest_of_lines_indentation() const;
+
   private:
     std::string _content;
     std::string _first_line_indentation;
     std::string _rest_of_lines_indentation;
   };
-  
+
   std::ostream& operator<<(std::ostream& out_, const paragraph& p_);
 
   json_string to_json_string(const paragraph& p_);
@@ -71,34 +68,25 @@ namespace metashell_system_test
   }
 
   template <class Encoding, class Allocator>
-  bool operator==(
-    const paragraph& p_,
-    const rapidjson::GenericValue<Encoding, Allocator>& v_
-  )
+  bool operator==(const paragraph& p_,
+                  const rapidjson::GenericValue<Encoding, Allocator>& v_)
   {
-    return
-      members_are(
-        {"first_line_indentation", "rest_of_lines_indentation", "content"},
-        v_
-      )
-      && is_string(p_.first_line_indentation(), v_["first_line_indentation"])
-      &&
-        is_string(
-          p_.rest_of_lines_indentation(),
-          v_["rest_of_lines_indentation"]
-        )
-      && is_string(p_.content(), v_["content"]);
+    return members_are({"first_line_indentation", "rest_of_lines_indentation",
+                        "content"},
+                       v_) &&
+           is_string(
+               p_.first_line_indentation(), v_["first_line_indentation"]) &&
+           is_string(p_.rest_of_lines_indentation(),
+                     v_["rest_of_lines_indentation"]) &&
+           is_string(p_.content(), v_["content"]);
   }
 
   template <class Encoding, class Allocator>
-  bool operator!=(
-    const paragraph& p_,
-    const rapidjson::GenericValue<Encoding, Allocator>& v_
-  )
+  bool operator!=(const paragraph& p_,
+                  const rapidjson::GenericValue<Encoding, Allocator>& v_)
   {
     return !metashell_system_test::operator==(p_, v_);
   }
 }
 
 #endif
-

@@ -46,6 +46,7 @@ public:
   virtual std::string directory_of_executable() override;
   int directory_of_executable_called_times() const;
   void directory_of_executable_returns(const std::string& result_);
+
 private:
   std::string _search_clang_binary_returns;
   int _search_clang_binary_called_times;
@@ -65,4 +66,3 @@ private:
 };
 
 #endif
-

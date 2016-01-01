@@ -26,24 +26,19 @@ class mock_command_processor : public metashell::iface::command_processor
 public:
   mock_command_processor();
 
-  virtual void line_available(
-    const std::string& cmd_,
-    metashell::iface::displayer& displayer_,
-    metashell::iface::history& history_
-  ) override;
+  virtual void line_available(const std::string& cmd_,
+                              metashell::iface::displayer& displayer_,
+                              metashell::iface::history& history_) override;
   virtual void cancel_operation() override;
 
   virtual std::string prompt() const override;
   virtual bool stopped() const override;
 
-  virtual void code_complete(
-    const std::string& s_,
-    std::set<std::string>& out_
-  ) const override;
+  virtual void code_complete(const std::string& s_,
+                             std::set<std::string>& out_) const override;
 
   std::function<void(const std::string&, std::set<std::string>&)>
-    code_complete_callback;
+      code_complete_callback;
 };
 
 #endif
-

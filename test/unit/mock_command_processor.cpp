@@ -18,15 +18,16 @@
 
 using namespace metashell;
 
-mock_command_processor::mock_command_processor() :
-  code_complete_callback([](const std::string&, std::set<std::string>&) {})
-{}
+mock_command_processor::mock_command_processor()
+  : code_complete_callback([](const std::string&, std::set<std::string>&)
+                           {
+                           })
+{
+}
 
-void mock_command_processor::line_available(
-  const std::string&,
-  iface::displayer&,
-  iface::history&
-)
+void mock_command_processor::line_available(const std::string&,
+                                            iface::displayer&,
+                                            iface::history&)
 {
   // ignore
 }
@@ -36,21 +37,12 @@ void mock_command_processor::cancel_operation()
   // ignore
 }
 
-std::string mock_command_processor::prompt() const
-{
-  return ">";
-}
+std::string mock_command_processor::prompt() const { return ">"; }
 
-bool mock_command_processor::stopped() const
-{
-  return false;
-}
+bool mock_command_processor::stopped() const { return false; }
 
-void mock_command_processor::code_complete(
-  const std::string& s_,
-  std::set<std::string>& out_
-) const
+void mock_command_processor::code_complete(const std::string& s_,
+                                           std::set<std::string>& out_) const
 {
   code_complete_callback(s_, out_);
 }
-

@@ -152,8 +152,7 @@ JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
 }
 
 JUST_TEST_CASE(
-  test_environment_save_displays_an_error_when_not_enabled_in_config
-)
+    test_environment_save_displays_an_error_when_not_enabled_in_config)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", create_failing_engine());
@@ -164,8 +163,7 @@ JUST_TEST_CASE(
 }
 
 JUST_TEST_CASE(
-  test_environment_save_saves_the_environment_when_enabled_in_config
-)
+    test_environment_save_saves_the_environment_when_enabled_in_config)
 {
   just::temp::directory d;
   const std::string fn = d.path() + "/test.hpp";
@@ -181,9 +179,7 @@ JUST_TEST_CASE(
   JUST_ASSERT(file_exists(fn));
 }
 
-JUST_TEST_CASE(
-  test_environment_save_displays_an_error_when_filename_is_missing
-)
+JUST_TEST_CASE(test_environment_save_displays_an_error_when_filename_is_missing)
 {
   data::config cfg{};
   cfg.saving_enabled = true;
@@ -195,9 +191,7 @@ JUST_TEST_CASE(
   JUST_ASSERT(!d.errors().empty());
 }
 
-JUST_TEST_CASE(
-  test_environment_save_displays_an_error_when_io_error_happens
-)
+JUST_TEST_CASE(test_environment_save_displays_an_error_when_io_error_happens)
 {
   data::config cfg{};
   cfg.saving_enabled = true;
@@ -212,4 +206,3 @@ JUST_TEST_CASE(
 
   JUST_ASSERT(!d.errors().empty());
 }
-

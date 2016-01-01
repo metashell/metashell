@@ -20,55 +20,68 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_repair_string_type_1) {
+JUST_TEST_CASE(test_repair_string_type_1)
+{
   JUST_ASSERT_EQUAL("bool", repair_type_string("_Bool"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_2) {
+JUST_TEST_CASE(test_repair_string_type_2)
+{
   JUST_ASSERT_EQUAL("<bool", repair_type_string("<_Bool"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_3) {
+JUST_TEST_CASE(test_repair_string_type_3)
+{
   JUST_ASSERT_EQUAL("bool>", repair_type_string("_Bool>"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_4) {
+JUST_TEST_CASE(test_repair_string_type_4)
+{
   JUST_ASSERT_EQUAL(" bool>", repair_type_string(" _Bool>"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_5) {
+JUST_TEST_CASE(test_repair_string_type_5)
+{
   JUST_ASSERT_EQUAL("a_Bool", repair_type_string("a_Bool"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_6) {
+JUST_TEST_CASE(test_repair_string_type_6)
+{
   JUST_ASSERT_EQUAL("_Boola", repair_type_string("_Boola"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_7) {
+JUST_TEST_CASE(test_repair_string_type_7)
+{
   JUST_ASSERT_EQUAL("b_Boola", repair_type_string("b_Boola"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_8) {
+JUST_TEST_CASE(test_repair_string_type_8)
+{
   JUST_ASSERT_EQUAL("X", repair_type_string("struct X"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_9) {
+JUST_TEST_CASE(test_repair_string_type_9)
+{
   JUST_ASSERT_EQUAL("X", repair_type_string("class X"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_10) {
+JUST_TEST_CASE(test_repair_string_type_10)
+{
   JUST_ASSERT_EQUAL("X", repair_type_string("union X"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_11) {
+JUST_TEST_CASE(test_repair_string_type_11)
+{
   JUST_ASSERT_EQUAL("X", repair_type_string("enum X"));
 }
 
-JUST_TEST_CASE(test_repair_string_type_12) {
+JUST_TEST_CASE(test_repair_string_type_12)
+{
   JUST_ASSERT_EQUAL("X<Y>", repair_type_string("struct X<struct Y>"));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_int) {
+JUST_TEST_CASE(test_type_from_ast_string_int)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7feb5300cb10 <<stdin>:1:1, col:59> col:59 __metashell_v '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' callinit
@@ -78,7 +91,8 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_int_no_noexcept) {
+JUST_TEST_CASE(test_type_from_ast_string_int_no_noexcept)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7feb5300cb10 <<stdin>:1:1, col:59> col:59 __metashell_v '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' callinit
@@ -88,7 +102,8 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_bool) {
+JUST_TEST_CASE(test_type_from_ast_string_bool)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7f9c5c8278c0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7f9c5d000910 <<stdin>:1:1, col:60> col:60 __metashell_v '::metashell::impl::wrap< ::metashell::format<_Bool>::type>':'struct metashell::impl::wrap<_Bool>' callinit
@@ -98,7 +113,8 @@ TranslationUnitDecl 0x7f9c5c8278c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("bool", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_int_int_struct) {
+JUST_TEST_CASE(test_type_from_ast_string_int_int_struct)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7f9cca020470 <<stdin>:1:1, col:65> col:65 __metashell_v '::metashell::impl::wrap< ::metashell::format<int_<int> >::type>':'struct metashell::impl::wrap<struct int_<int> >' callinit
@@ -108,7 +124,8 @@ TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int_<int>", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_int_int_class) {
+JUST_TEST_CASE(test_type_from_ast_string_int_int_class)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7f9cca020470 <<stdin>:1:1, col:65> col:65 __metashell_v '::metashell::impl::wrap< ::metashell::format<int_<int> >::type>':'struct metashell::impl::wrap<class int_<int> >' callinit
@@ -118,7 +135,8 @@ TranslationUnitDecl 0x7f9cca00eac0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int_<int>", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_enum) {
+JUST_TEST_CASE(test_type_from_ast_string_enum)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7fb81c0278c0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7fb81d802860 <<stdin>:1:1, col:57> col:57 __metashell_v '::metashell::impl::wrap< ::metashell::format<X>::type>':'struct metashell::impl::wrap<enum X>' callinit
@@ -128,7 +146,8 @@ TranslationUnitDecl 0x7fb81c0278c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("X", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_union) {
+JUST_TEST_CASE(test_type_from_ast_string_union)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7fd6c3031cc0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7fd6c304e460 <<stdin>:1:1, col:57> col:57 __metashell_v '::metashell::impl::wrap< ::metashell::format<X>::type>':'struct metashell::impl::wrap<union X>' callinit
@@ -138,8 +157,9 @@ TranslationUnitDecl 0x7fd6c3031cc0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("X", get_type_from_ast_string(ast));
 }
 
-//This happens on windows
-JUST_TEST_CASE(test_type_from_ast_string_int_with_attribute_thiscall) {
+// This happens on windows
+JUST_TEST_CASE(test_type_from_ast_string_int_with_attribute_thiscall)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7feb5300cb10 <<stdin>:1:1, col:59> col:59 __metashell_v '::metashell::impl::wrap< ::metashell::format<int>::type>':'struct metashell::impl::wrap<int>' callinit
@@ -149,7 +169,8 @@ TranslationUnitDecl 0x7feb540124c0 <<invalid sloc>> <invalid sloc>
   JUST_ASSERT_EQUAL("int", get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_with_extra_trailing_lines) {
+JUST_TEST_CASE(test_type_from_ast_string_with_extra_trailing_lines)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7fee54031cc0 <<invalid sloc>> <invalid sloc>
 |-VarDecl 0x7fee5486c0e0 <<stdin>:1:1, col:40> col:40 __metashell_v '::metashell::impl::wrap<str_hello_t>':'struct metashell::impl::wrap<struct boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807> >' callinit
@@ -162,10 +183,18 @@ TranslationUnitDecl 0x7fee54031cc0 <<invalid sloc>> <invalid sloc>
 |   `-NoThrowAttr 0x7fee549fddd0 <col:12> Implicit
 `-<undeserialized declarations>
 )";
-  JUST_ASSERT_EQUAL("boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807, 9223372036854775807>", get_type_from_ast_string(ast));
+  JUST_ASSERT_EQUAL(
+      "boost::mpl::list_c<char, 104, 101, 108, 108, 111, 32, 9, "
+      "9223372036854775807, 9223372036854775807, 9223372036854775807, "
+      "9223372036854775807, 9223372036854775807, 9223372036854775807, "
+      "9223372036854775807, 9223372036854775807, 9223372036854775807, "
+      "9223372036854775807, 9223372036854775807, 9223372036854775807, "
+      "9223372036854775807>",
+      get_type_from_ast_string(ast));
 }
 
-JUST_TEST_CASE(test_type_from_ast_string_no_pch) {
+JUST_TEST_CASE(test_type_from_ast_string_no_pch)
+{
   std::string ast = R"(
 TranslationUnitDecl 0x7febd883d2c0 <<invalid sloc>> <invalid sloc>
 |-TypedefDecl 0x7febd883d800 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'

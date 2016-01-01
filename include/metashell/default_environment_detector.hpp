@@ -33,11 +33,10 @@ namespace metashell
     virtual bool on_osx() override;
 
     virtual std::string directory_of_executable() override;
+
   private:
     std::string _argv0;
   };
 }
 
 #endif
-
-
