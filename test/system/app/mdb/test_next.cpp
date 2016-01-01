@@ -26,15 +26,11 @@
 
 using namespace metashell_system_test;
 
-JUST_TEST_CASE(test_mdb_next_fib_from_root) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("next")
-      }
-    );
+JUST_TEST_CASE(test_mdb_next_fib_from_root)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("next")});
 
   auto i = r.begin() + 4;
 
@@ -42,37 +38,30 @@ JUST_TEST_CASE(test_mdb_next_fib_from_root) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i++);
 }
 
-JUST_TEST_CASE(test_mdb_next_minus_1_multi_fib_from_after_step) {
-  const auto r =
-    run_metashell(
-      {
-        command(multi_fibonacci_mp),
-        command("#msh mdb int_<multi_fib<10>::value>"),
-        command("step 4"),
-        command("next"),
-        command("next"),
-        command("next -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_next_minus_1_multi_fib_from_after_step)
+{
+  const auto r = run_metashell({command(multi_fibonacci_mp),
+                                command("#msh mdb int_<multi_fib<10>::value>"),
+                                command("step 4"), command("next"),
+                                command("next"), command("next -1")});
 
   auto i = r.begin() + 4;
-  JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<4>"), _, _, instantiation_kind::template_instantiation),
-      *i++);
+  JUST_ASSERT_EQUAL(frame(type("multi_fib<4>"), _, _,
+                          instantiation_kind::template_instantiation),
+                    *i++);
 
   ++i;
-  JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<5>"), _, _, instantiation_kind::template_instantiation),
-      *i++);
+  JUST_ASSERT_EQUAL(frame(type("multi_fib<5>"), _, _,
+                          instantiation_kind::template_instantiation),
+                    *i++);
 
   ++i;
-  JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<8>"), _, _, instantiation_kind::template_instantiation),
-      *i++);
+  JUST_ASSERT_EQUAL(frame(type("multi_fib<8>"), _, _,
+                          instantiation_kind::template_instantiation),
+                    *i++);
 
   ++i;
-  JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<6>"), _, _, instantiation_kind::template_instantiation),
-      *i);
+  JUST_ASSERT_EQUAL(frame(type("multi_fib<6>"), _, _,
+                          instantiation_kind::template_instantiation),
+                    *i);
 }
-

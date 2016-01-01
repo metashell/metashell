@@ -19,10 +19,8 @@
 using namespace metashell;
 
 disable_precompiled_header_guard::disable_precompiled_header_guard(
-  shell& shell_
-) :
-  _shell(shell_),
-  _was_using(shell_.using_precompiled_headers())
+    shell& shell_)
+  : _shell(shell_), _was_using(shell_.using_precompiled_headers())
 {
   if (_was_using)
   {
@@ -41,9 +39,6 @@ disable_precompiled_header_guard::~disable_precompiled_header_guard()
 std::unique_ptr<disable_precompiled_header_guard>
 disable_precompiled_header_guard::create(shell& shell_)
 {
-  return
-    std::unique_ptr<disable_precompiled_header_guard>(
-      new disable_precompiled_header_guard(shell_)
-    );
+  return std::unique_ptr<disable_precompiled_header_guard>(
+      new disable_precompiled_header_guard(shell_));
 }
-

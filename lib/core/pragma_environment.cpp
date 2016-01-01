@@ -18,9 +18,7 @@
 
 using namespace metashell;
 
-pragma_environment::pragma_environment(iface::environment& env_) :
-  _env(env_)
-{}
+pragma_environment::pragma_environment(iface::environment& env_) : _env(env_) {}
 
 iface::pragma_handler* pragma_environment::clone() const
 {
@@ -36,4 +34,3 @@ void pragma_environment::run(iface::displayer& displayer_) const
 {
   displayer_.show_cpp_code(_env.get_all());
 }
-

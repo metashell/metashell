@@ -24,11 +24,15 @@ namespace metashell
 {
   namespace data
   {
-    enum class logging_mode { none, console, file };
+    enum class logging_mode
+    {
+      none,
+      console,
+      file
+    };
 
     std::ostream& operator<<(std::ostream& out_, logging_mode m_);
   }
 }
 
 #endif
-

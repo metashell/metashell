@@ -35,9 +35,8 @@ namespace metashell
     virtual void show_cpp_code(const std::string& code_) override;
 
     virtual void show_backtrace(const data::backtrace& trace_) override;
-    virtual void show_file_section(
-      const data::file_location& location_,
-      const std::string& env_buffer_) override;
+    virtual void show_file_section(const data::file_location& location_,
+                                   const std::string& env_buffer_) override;
     virtual void show_frame(const data::frame& frame_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
 
@@ -54,6 +53,7 @@ namespace metashell
 
     bool empty() const;
     void clear();
+
   private:
     std::vector<std::string> _errors;
     std::vector<std::string> _raw_texts;
@@ -68,5 +68,3 @@ namespace metashell
 }
 
 #endif
-
-

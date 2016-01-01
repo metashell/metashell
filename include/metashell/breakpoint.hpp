@@ -25,25 +25,28 @@
 
 #include <metashell/data/frame.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-class breakpoint {
-public:
-  explicit breakpoint(int id, const boost::regex& name_regex);
+  class breakpoint
+  {
+  public:
+    explicit breakpoint(int id, const boost::regex& name_regex);
 
-  // TODO: type overload should be removed, once this gets more complicated
-  bool match(const data::type& type) const;
-  bool match(const data::frame& frame) const;
+    // TODO: type overload should be removed, once this gets more complicated
+    bool match(const data::type& type) const;
+    bool match(const data::frame& frame) const;
 
-  int get_id() const;
+    int get_id() const;
 
-  std::string to_string() const;
-private:
-  int id;
-  boost::optional<boost::regex> name_regex;
-};
+    std::string to_string() const;
 
-using breakpoints_t = std::vector<breakpoint>;
+  private:
+    int id;
+    boost::optional<boost::regex> name_regex;
+  };
+
+  using breakpoints_t = std::vector<breakpoint>;
 
 } // namespace metashell
 

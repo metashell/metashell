@@ -24,8 +24,8 @@
 class mock_console : public metashell::iface::console
 {
 public:
-  explicit mock_console(
-    int width_ = 80, int height_ = std::numeric_limits<int>::max());
+  explicit mock_console(int width_ = 80,
+                        int height_ = std::numeric_limits<int>::max());
 
   virtual void show(const metashell::data::colored_string& s_) override;
   virtual void new_line() override;
@@ -42,6 +42,7 @@ public:
 
   const metashell::data::colored_string& content() const;
   int ask_for_continuation_count() const;
+
 private:
   metashell::data::colored_string _content;
   int _ask_for_continuation_count = 0;
@@ -52,4 +53,3 @@ private:
 };
 
 #endif
-

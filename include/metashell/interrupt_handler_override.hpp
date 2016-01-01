@@ -26,10 +26,9 @@ namespace metashell
   class interrupt_handler_override : boost::noncopyable
   {
   public:
-    interrupt_handler_override(const std::function<void ()>& handler_);
+    interrupt_handler_override(const std::function<void()>& handler_);
     ~interrupt_handler_override();
   };
 }
 
 #endif
-

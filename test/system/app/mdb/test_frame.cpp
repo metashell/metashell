@@ -28,93 +28,69 @@
 
 using namespace metashell_system_test;
 
-JUST_TEST_CASE(test_mdb_frame_without_evaluation) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("frame")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_without_evaluation)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("frame")});
 
   auto i = r.begin() + 2;
 
   JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_before_starting) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("frame 0")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_before_starting)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("frame 0")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(frame(type("int")), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_step_1) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("step"),
-        command("frame 0"),
-        command("frame 1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_step_1)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("step"), command("frame 0"), command("frame 1")});
 
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
 
   JUST_ASSERT_EQUAL(frame(type("int_<fib<10>::value>")), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_step_2) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("step 2"),
-        command("frame 0"),
-        command("frame 1"),
-        command("frame 2")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_step_2)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("step 2"), command("frame 0"),
+                                command("frame 1"), command("frame 2")});
 
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
 
   JUST_ASSERT_EQUAL(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
 
   JUST_ASSERT_EQUAL(frame(type("int_<fib<10>::value>")), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_at_end) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("continue"),
-        command("frame 0")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_at_end)
+{
+  const auto r = run_metashell(
+      {command("#msh mdb int"), command("continue"), command("frame 0")});
 
   auto i = r.begin() + 6;
 
@@ -122,56 +98,36 @@ JUST_TEST_CASE(test_mdb_frame_fib_at_end) {
   JUST_ASSERT_EQUAL(type("int"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_no_argument) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("frame")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_no_argument)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("frame")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_garbage_argument) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("frame asd")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_garbage_argument)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("frame asd")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_negative) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("frame -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_negative)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("frame -1")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(error("Frame index out of range"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_too_large) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("frame 1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_too_large)
+{
+  const auto r = run_metashell({command("#msh mdb int"), command("frame 1")});
 
   auto i = r.begin() + 3;
 

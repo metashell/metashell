@@ -18,9 +18,9 @@
 
 #include <just/test.hpp>
 
-std::tuple<metashell::mdb_command, std::string> get_command_from_map(
-    const metashell::mdb_command_handler_map& map,
-    const std::string& line)
+std::tuple<metashell::mdb_command, std::string>
+get_command_from_map(const metashell::mdb_command_handler_map& map,
+                     const std::string& line)
 {
   auto opt_pair = map.get_command_for_line(line);
 
@@ -28,4 +28,3 @@ std::tuple<metashell::mdb_command, std::string> get_command_from_map(
 
   return *opt_pair;
 }
-

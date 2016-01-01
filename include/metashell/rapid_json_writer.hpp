@@ -43,6 +43,7 @@ namespace metashell
     virtual void end_array() override;
 
     virtual void end_document() override;
+
   private:
     rapid_ostream_wrapper _os;
     rapidjson::Writer<rapid_ostream_wrapper> _writer;
@@ -50,4 +51,3 @@ namespace metashell
 }
 
 #endif
-

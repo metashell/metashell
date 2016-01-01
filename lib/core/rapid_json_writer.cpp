@@ -24,54 +24,35 @@
 
 using namespace metashell;
 
-rapid_json_writer::rapid_json_writer(std::ostream& out_) :
-  _os(out_),
-  _writer(_os)
-{}
+rapid_json_writer::rapid_json_writer(std::ostream& out_)
+  : _os(out_), _writer(_os)
+{
+}
 
 void rapid_json_writer::string(const std::string& value_)
 {
   _writer.String(value_.c_str(), value_.size());
 }
 
-void rapid_json_writer::int_(int value_)
-{
-  _writer.Int(value_);
-}
+void rapid_json_writer::int_(int value_) { _writer.Int(value_); }
 
-void rapid_json_writer::double_(double value_)
-{
-  _writer.Double(value_);
-}
+void rapid_json_writer::double_(double value_) { _writer.Double(value_); }
 
-void rapid_json_writer::start_object()
-{
-  _writer.StartObject();
-}
+void rapid_json_writer::start_object() { _writer.StartObject(); }
 
 void rapid_json_writer::key(const std::string& key_)
 {
   _writer.Key(key_.c_str(), key_.size());
 }
 
-void rapid_json_writer::end_object()
-{
-  _writer.EndObject();
-}
+void rapid_json_writer::end_object() { _writer.EndObject(); }
 
-void rapid_json_writer::start_array()
-{
-  _writer.StartArray();
-}
+void rapid_json_writer::start_array() { _writer.StartArray(); }
 
-void rapid_json_writer::end_array()
-{
-  _writer.EndArray();
-}
+void rapid_json_writer::end_array() { _writer.EndArray(); }
 
 void rapid_json_writer::end_document()
 {
   _os.new_line();
   _writer.Reset(_os);
 }
-

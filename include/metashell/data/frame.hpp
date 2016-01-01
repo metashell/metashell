@@ -36,11 +36,11 @@ namespace metashell
       frame(const data::type& type_, const file_location& source_location_);
 
       frame(const data::type& type_,
-        const file_location& source_location_,
-        const file_location& point_of_instantiation_,
-        instantiation_kind kind_,
-        boost::optional<double> time_taken = boost::none,
-        boost::optional<double> time_taken_ratio = boost::none);
+            const file_location& source_location_,
+            const file_location& point_of_instantiation_,
+            instantiation_kind kind_,
+            boost::optional<double> time_taken = boost::none,
+            boost::optional<double> time_taken_ratio = boost::none);
 
       const data::type& type() const;
       const file_location& source_location() const;
@@ -55,6 +55,7 @@ namespace metashell
       // precondition: is_profiled()
       double time_taken() const;
       double time_taken_ratio() const;
+
     private:
       data::type _type;
       file_location _source_location;
@@ -70,4 +71,3 @@ namespace metashell
 }
 
 #endif
-

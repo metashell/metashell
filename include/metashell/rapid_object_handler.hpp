@@ -75,6 +75,7 @@ namespace metashell
     boost::optional<std::string> field(const std::string& name_) const;
 
     bool empty() const;
+
   private:
     bool _empty;
     bool _failed;
@@ -95,4 +96,3 @@ namespace metashell
 }
 
 #endif
-

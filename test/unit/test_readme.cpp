@@ -24,15 +24,15 @@ using namespace metashell;
 
 // If one of these TCs fail, then README modification might be needed
 
-JUST_TEST_CASE(test_readme_continue_abbreviated_as_c) {
+JUST_TEST_CASE(test_readme_continue_abbreviated_as_c)
+{
   mdb_command command;
   std::string args;
 
   std::tie(command, args) =
-    get_command_from_map(mdb_shell::command_handler, "c");
+      get_command_from_map(mdb_shell::command_handler, "c");
 
   auto keys = command.get_keys();
 
   JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }
-

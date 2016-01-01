@@ -26,73 +26,79 @@
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
 
-namespace metashell {
-namespace data {
-
-class colored_string :
-  boost::addable<colored_string>,
-  boost::equality_comparable<colored_string>
+namespace metashell
 {
-public:
-  typedef boost::optional<color> color_t;
-  typedef std::vector<color_t> colors_t;
+  namespace data
+  {
 
-  typedef std::string::size_type size_type;
+    class colored_string : boost::addable<colored_string>,
+                           boost::equality_comparable<colored_string>
+    {
+    public:
+      typedef boost::optional<color> color_t;
+      typedef std::vector<color_t> colors_t;
 
-  colored_string() = default;
-  colored_string(const char *string, const color_t& color = boost::none);
-  colored_string(const std::string& string, const color_t& color = boost::none);
+      typedef std::string::size_type size_type;
 
-  colored_string& operator+=(const char *rhs);
-  colored_string& operator+=(const std::string& rhs);
-  colored_string& operator+=(const colored_string& rhs);
+      colored_string() = default;
+      colored_string(const char* string, const color_t& color = boost::none);
+      colored_string(const std::string& string,
+                     const color_t& color = boost::none);
 
-  size_type size() const;
+      colored_string& operator+=(const char* rhs);
+      colored_string& operator+=(const std::string& rhs);
+      colored_string& operator+=(const colored_string& rhs);
 
-  colored_string substr(size_type pos_, size_type len_) const;
+      size_type size() const;
 
-  const std::string& get_string() const;
-  const colors_t& get_colors() const;
+      colored_string substr(size_type pos_, size_type len_) const;
 
-  void clear();
-private:
-  template <class CharIt, class ColorIt>
-  colored_string(CharIt sbegin_, CharIt send_, ColorIt cbegin_, ColorIt cend_) :
-    string(sbegin_, send_),
-    colors(cbegin_, cend_)
-  {}
+      const std::string& get_string() const;
+      const colors_t& get_colors() const;
 
-  std::string string;
-  colors_t colors;
-};
+      void clear();
 
-void print_to_cout(const colored_string& s_);
+    private:
+      template <class CharIt, class ColorIt>
+      colored_string(CharIt sbegin_,
+                     CharIt send_,
+                     ColorIt cbegin_,
+                     ColorIt cend_)
+        : string(sbegin_, send_), colors(cbegin_, cend_)
+      {
+      }
 
-bool operator==(const colored_string& a_, const colored_string& b_);
+      std::string string;
+      colors_t colors;
+    };
 
-inline
-colored_string operator+(const char *rhs, const colored_string& lhs) {
-  return colored_string(rhs) + lhs;
-}
+    void print_to_cout(const colored_string& s_);
 
-inline
-colored_string operator+(const std::string& rhs, const colored_string& lhs) {
-  return colored_string(rhs) + lhs;
-}
+    bool operator==(const colored_string& a_, const colored_string& b_);
 
-inline
-colored_string operator+(colored_string rhs, const char *lhs) {
-  return rhs += lhs;
-}
+    inline colored_string operator+(const char* rhs, const colored_string& lhs)
+    {
+      return colored_string(rhs) + lhs;
+    }
 
-inline
-colored_string operator+(colored_string rhs, const std::string& lhs) {
-  return rhs += lhs;
-}
+    inline colored_string operator+(const std::string& rhs,
+                                    const colored_string& lhs)
+    {
+      return colored_string(rhs) + lhs;
+    }
 
-std::ostream& operator<<(std::ostream& os, const colored_string& cs);
+    inline colored_string operator+(colored_string rhs, const char* lhs)
+    {
+      return rhs += lhs;
+    }
 
-}
+    inline colored_string operator+(colored_string rhs, const std::string& lhs)
+    {
+      return rhs += lhs;
+    }
+
+    std::ostream& operator<<(std::ostream& os, const colored_string& cs);
+  }
 }
 
 #endif

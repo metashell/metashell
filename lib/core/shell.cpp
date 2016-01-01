@@ -73,17 +73,16 @@ namespace
     return s.str();
   }
 
-  void display(
-    const data::result& r_,
-    iface::displayer& displayer_,
-    bool show_as_type_
-  )
+  void display(const data::result& r_,
+               iface::displayer& displayer_,
+               bool show_as_type_)
   {
     if (!r_.info.empty())
     {
       displayer_.show_raw_text(r_.info);
     }
-    if (!r_.successful) {
+    if (!r_.successful)
+    {
       displayer_.show_error(r_.error);
     }
     if (r_.successful && !r_.output.empty())
@@ -113,63 +112,44 @@ namespace
 
   bool is_empty_line(const data::command& cmd_)
   {
-    return
-      std::find_if(
-        cmd_.begin(),
-        cmd_.end(),
-        [] (const data::token& t_) -> bool
-        {
-          const data::token_category c = t_.category();
-          return
-            c != data::token_category::whitespace
-            && c != data::token_category::comment;
-        }
-      ) == cmd_.end();
+    return std::find_if(cmd_.begin(), cmd_.end(),
+                        [](const data::token& t_) -> bool
+                        {
+                          const data::token_category c = t_.category();
+                          return c != data::token_category::whitespace &&
+                                 c != data::token_category::comment;
+                        }) == cmd_.end();
   }
 
-  data::result eval_tmp_formatted(
-    const iface::environment& env_,
-    const std::string& tmp_exp_,
-    bool use_precompiled_headers_,
-    iface::engine& engine_,
-    logger* logger_
-  )
+  data::result eval_tmp_formatted(const iface::environment& env_,
+                                  const std::string& tmp_exp_,
+                                  bool use_precompiled_headers_,
+                                  iface::engine& engine_,
+                                  logger* logger_)
   {
     using std::string;
     using std::pair;
-  
+
     METASHELL_LOG(
-      logger_,
-      "Checking if metaprogram can be evaluated without metashell::format: "
-      + tmp_exp_
-    );
-  
-    const data::result
-      simple = engine_.eval(
-        env_,
-        tmp_exp_,
-        boost::none,
-        use_precompiled_headers_
-      );
-  
+        logger_,
+        "Checking if metaprogram can be evaluated without metashell::format: " +
+            tmp_exp_);
+
+    const data::result simple =
+        engine_.eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
+
     METASHELL_LOG(
-      logger_,
-      !simple.successful ?
-        "Errors occured during metaprogram evaluation. Displaying errors"
-        " coming from the metaprogram without metashell::format" :
-        "No errors occured during metaprogram evaluation. Re-evaluating it"
-        " with metashell::format"
-    );
-  
-    return
-      simple.successful ?
-        engine_.eval(
-          env_,
-          "::metashell::format<" + tmp_exp_ + ">::type",
-          boost::none,
-          use_precompiled_headers_
-        ) :
-        simple;
+        logger_,
+        !simple.successful ?
+            "Errors occured during metaprogram evaluation. Displaying errors"
+            " coming from the metaprogram without metashell::format" :
+            "No errors occured during metaprogram evaluation. Re-evaluating it"
+            " with metashell::format");
+
+    return simple.successful ?
+               engine_.eval(env_, "::metashell::format<" + tmp_exp_ + ">::type",
+                            boost::none, use_precompiled_headers_) :
+               simple;
   }
 
   const char default_env[] =
@@ -215,73 +195,66 @@ namespace metashell {
   {};
 } // namespace metashell
 )";
-
 }
 
-shell::shell(
-  const data::config& config_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  std::unique_ptr<iface::engine> engine_,
-  logger* logger_
-) :
-  _internal_dir(internal_dir_),
-  _env_filename(env_filename_),
-  _env(),
-  _config(config_),
-  _stopped(false),
-  _logger(logger_),
-  _engine(std::move(engine_)),
-  _echo(determine_echo(config_)),
-  _show_cpp_errors(determine_show_cpp_errors(config_)),
-  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+shell::shell(const data::config& config_,
+             const std::string& internal_dir_,
+             const std::string& env_filename_,
+             std::unique_ptr<iface::engine> engine_,
+             logger* logger_)
+  : _internal_dir(internal_dir_),
+    _env_filename(env_filename_),
+    _env(),
+    _config(config_),
+    _stopped(false),
+    _logger(logger_),
+    _engine(std::move(engine_)),
+    _echo(determine_echo(config_)),
+    _show_cpp_errors(determine_show_cpp_errors(config_)),
+    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(nullptr);
 }
 
-shell::shell(
-  const data::config& config_,
-  command_processor_queue& cpq_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  std::unique_ptr<iface::engine> engine_,
-  logger* logger_
-) :
-  _internal_dir(internal_dir_),
-  _env_filename(env_filename_),
-  _env(),
-  _config(config_),
-  _stopped(false),
-  _logger(logger_),
-  _engine(std::move(engine_)),
-  _echo(determine_echo(config_)),
-  _show_cpp_errors(determine_show_cpp_errors(config_)),
-  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+shell::shell(const data::config& config_,
+             command_processor_queue& cpq_,
+             const std::string& internal_dir_,
+             const std::string& env_filename_,
+             std::unique_ptr<iface::engine> engine_,
+             logger* logger_)
+  : _internal_dir(internal_dir_),
+    _env_filename(env_filename_),
+    _env(),
+    _config(config_),
+    _stopped(false),
+    _logger(logger_),
+    _engine(std::move(engine_)),
+    _echo(determine_echo(config_)),
+    _show_cpp_errors(determine_show_cpp_errors(config_)),
+    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
   init(&cpq_);
 }
 
-shell::shell(
-  const data::config& config_,
-  std::unique_ptr<iface::environment> env_,
-  command_processor_queue& cpq_,
-  const std::string& internal_dir_,
-  const std::string& env_filename_,
-  std::unique_ptr<iface::engine> engine_,
-  logger* logger_
-) :
-  _internal_dir(internal_dir_),
-  _env_filename(env_filename_),
-  _env(std::move(env_)),
-  _config(config_),
-  _stopped(false),
-  _logger(logger_),
-  _engine(std::move(engine_)),
-  _echo(determine_echo(config_)),
-  _show_cpp_errors(determine_show_cpp_errors(config_)),
-  _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+shell::shell(const data::config& config_,
+             std::unique_ptr<iface::environment> env_,
+             command_processor_queue& cpq_,
+             const std::string& internal_dir_,
+             const std::string& env_filename_,
+             std::unique_ptr<iface::engine> engine_,
+             logger* logger_)
+  : _internal_dir(internal_dir_),
+    _env_filename(env_filename_),
+    _env(std::move(env_)),
+    _config(config_),
+    _stopped(false),
+    _logger(logger_),
+    _engine(std::move(engine_)),
+    _echo(determine_echo(config_)),
+    _show_cpp_errors(determine_show_cpp_errors(config_)),
+    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   init(&cpq_);
 }
@@ -289,22 +262,20 @@ shell::shell(
 void shell::cancel_operation() {}
 
 void shell::display_splash(
-  iface::displayer& displayer_,
-  const std::map<std::string, std::string>& dependency_versions_
-)
+    iface::displayer& displayer_,
+    const std::map<std::string, std::string>& dependency_versions_)
 {
   using data::paragraph;
 
   const std::string version_desc =
-    #include "version_desc.hpp"
-  ;
+#include "version_desc.hpp"
+      ;
 
   const paragraph empty_line("");
 
   data::text splash_text;
   splash_text.paragraphs.push_back(
-    paragraph("Template metaprogramming shell " + version())
-  );
+      paragraph("Template metaprogramming shell " + version()));
 
   if (!version_desc.empty())
   {
@@ -312,40 +283,27 @@ void shell::display_splash(
   }
 
   splash_text.paragraphs.push_back(empty_line);
-  splash_text.paragraphs.push_back(
-    paragraph("Metashell Copyright (C) 2015 Abel Sinkovics (abel@sinkovics.hu)")
-  );
-  splash_text.paragraphs.push_back(
-    paragraph(
-      "                             Andras Kucsma  (andras.kucsma@gmail.com)"
-    )
-  );
-  splash_text.paragraphs.push_back(
-    paragraph(
+  splash_text.paragraphs.push_back(paragraph(
+      "Metashell Copyright (C) 2015 Abel Sinkovics (abel@sinkovics.hu)"));
+  splash_text.paragraphs.push_back(paragraph(
+      "                             Andras Kucsma  (andras.kucsma@gmail.com)"));
+  splash_text.paragraphs.push_back(paragraph(
       "This program comes with ABSOLUTELY NO WARRANTY. This is free software,"
       " and you are welcome to redistribute it under certain conditions; for"
-      " details visit <http://www.gnu.org/licenses/>."
-    )
-  );
+      " details visit <http://www.gnu.org/licenses/>."));
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Based on"));
   for (const auto& d : dependency_versions_)
   {
     splash_text.paragraphs.push_back(
-      paragraph(d.second, "             ", extend("  " + d.first, 13))
-    );
+        paragraph(d.second, "             ", extend("  " + d.first, 13)));
   }
   splash_text.paragraphs.push_back(empty_line);
+  splash_text.paragraphs.push_back(paragraph(
+      _config.use_precompiled_headers ? "Using precompiled headers" :
+                                        "Not using precompiled headers"));
   splash_text.paragraphs.push_back(
-    paragraph(
-      _config.use_precompiled_headers ?
-        "Using precompiled headers" :
-        "Not using precompiled headers"
-    )
-  );
-  splash_text.paragraphs.push_back(
-    paragraph(max_template_depth_info(_config.max_template_depth))
-  );
+      paragraph(max_template_depth_info(_config.max_template_depth)));
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Getting help: #msh help"));
 
@@ -357,11 +315,9 @@ void shell::display_splash(
   }
 }
 
-void shell::line_available(
-  const std::string& s_,
-  iface::displayer& displayer_,
-  iface::history& history_
-)
+void shell::line_available(const std::string& s_,
+                           iface::displayer& displayer_,
+                           iface::history& history_)
 {
   try
   {
@@ -422,8 +378,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result
-    r = _engine->validate_code(s_, _config, *_env, using_precompiled_headers());
+  const data::result r =
+      _engine->validate_code(s_, _config, *_env, using_precompiled_headers());
 
   if (r.successful)
   {
@@ -444,10 +400,8 @@ bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
   return r.successful;
 }
 
-void shell::code_complete(
-  const std::string& s_,
-  std::set<std::string>& out_
-) const
+void shell::code_complete(const std::string& s_,
+                          std::set<std::string>& out_) const
 {
   try
   {
@@ -472,25 +426,13 @@ const pragma_handler_map& shell::pragma_handlers() const
   return _pragma_handlers;
 }
 
-void shell::verbose(bool enabled_)
-{
-  _config.verbose = enabled_;
-}
+void shell::verbose(bool enabled_) { _config.verbose = enabled_; }
 
-bool shell::verbose() const
-{
-  return _config.verbose;
-}
+bool shell::verbose() const { return _config.verbose; }
 
-bool shell::stopped() const
-{
-  return _stopped;
-}
+bool shell::stopped() const { return _stopped; }
 
-void shell::stop()
-{
-  _stopped = true;
-}
+void shell::stop() { _stopped = true; }
 
 bool shell::using_precompiled_headers() const
 {
@@ -503,21 +445,14 @@ void shell::using_precompiled_headers(bool enabled_)
   rebuild_environment();
 }
 
-iface::environment& shell::env()
-{
-  return *_env;
-}
+iface::environment& shell::env() { return *_env; }
 
-const iface::environment& shell::env() const
-{
-  return *_env;
-}
+const iface::environment& shell::env() const { return *_env; }
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(
-    new header_file_environment(*_engine, _config, _internal_dir, _env_filename)
-  );
+  _env.reset(new header_file_environment(
+      *_engine, _config, _internal_dir, _env_filename));
   if (!content_.empty())
   {
     _env->append(content_);
@@ -529,10 +464,7 @@ void shell::rebuild_environment()
   rebuild_environment(_env ? _env->get_all() : std::string());
 }
 
-void shell::push_environment()
-{
-  _environment_stack.push(_env->get_all());
-}
+void shell::push_environment() { _environment_stack.push(_env->get_all()); }
 
 void shell::pop_environment()
 {
@@ -569,14 +501,8 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 {
   if (_evaluate_metaprograms)
   {
-    const data::result r =
-      eval_tmp_formatted(
-        *_env,
-        s_,
-        using_precompiled_headers(),
-        *_engine,
-        _logger
-      );
+    const data::result r = eval_tmp_formatted(
+        *_env, s_, using_precompiled_headers(), *_engine, _logger);
     if (_show_cpp_errors || r.successful)
     {
       display(r, displayer_, true);
@@ -590,9 +516,7 @@ void shell::reset_environment()
   _env->append(default_env);
 }
 
-const data::config& shell::get_config() const {
-  return _config;
-}
+const data::config& shell::get_config() const { return _config; }
 
 void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
@@ -600,38 +524,31 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
   line_available(s_, displayer_, h);
 }
 
-iface::engine& shell::engine()
-{
-  return *_engine;
-}
+iface::engine& shell::engine() { return *_engine; }
 
 std::string shell::env_path() const
 {
   return _internal_dir + "/" + _env_filename;
 }
 
-bool shell::preprocess(
-  iface::displayer& displayer_,
-  const std::string& exp_,
-  bool process_directives_
-) const
+bool shell::preprocess(iface::displayer& displayer_,
+                       const std::string& exp_,
+                       bool process_directives_) const
 {
-  const std::string
-    marker = wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
+  const std::string marker =
+      wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
 
-  data::result
-    r = _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
+  data::result r =
+      _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
 
   if (r.successful)
   {
     const auto p1 = r.output.find(marker);
     if (p1 == std::string::npos)
     {
-      make_failure(
-        r,
-        "Marker (" + marker + ") not found in preprocessed output."
-        " Does it contain a macro that has been defined?"
-      );
+      make_failure(r, "Marker (" + marker +
+                          ") not found in preprocessed output."
+                          " Does it contain a macro that has been defined?");
     }
     else
     {
@@ -639,10 +556,8 @@ bool shell::preprocess(
       const auto p2 = r.output.find(marker, p1 + m_len);
       if (p2 == std::string::npos)
       {
-        make_failure(
-          r,
-          "Marker (" + marker + ") found only once in preprocessed output."
-        );
+        make_failure(r, "Marker (" + marker +
+                            ") found only once in preprocessed output.");
       }
       else if (r.output.find(marker, p2 + m_len) == std::string::npos)
       {
@@ -651,10 +566,8 @@ bool shell::preprocess(
       else
       {
         make_failure(
-          r,
-          "Marker (" + marker
-          + ") found more than two times in preprocessed output."
-        );
+            r, "Marker (" + marker +
+                   ") found more than two times in preprocessed output.");
       }
     }
   }
@@ -663,33 +576,17 @@ bool shell::preprocess(
   return r.successful;
 }
 
-void shell::echo(bool enabled_)
-{
-  _echo = enabled_;
-}
+void shell::echo(bool enabled_) { _echo = enabled_; }
 
-bool shell::echo() const
-{
-  return _echo;
-}
+bool shell::echo() const { return _echo; }
 
-void shell::show_cpp_errors(bool enabled_)
-{
-  _show_cpp_errors = enabled_;
-}
+void shell::show_cpp_errors(bool enabled_) { _show_cpp_errors = enabled_; }
 
-bool shell::show_cpp_errors() const
-{
-  return _show_cpp_errors;
-}
+bool shell::show_cpp_errors() const { return _show_cpp_errors; }
 
 void shell::evaluate_metaprograms(bool enabled_)
 {
   _evaluate_metaprograms = enabled_;
 }
 
-bool shell::evaluate_metaprograms() const
-{
-  return _evaluate_metaprograms;
-}
-
+bool shell::evaluate_metaprograms() const { return _evaluate_metaprograms; }

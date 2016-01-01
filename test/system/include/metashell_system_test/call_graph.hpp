@@ -30,16 +30,17 @@ namespace metashell_system_test
   {
   public:
     explicit call_graph(std::vector<call_graph_node> call_graph_nodes_);
-  
+
     typedef std::vector<call_graph_node>::const_iterator iterator;
     typedef iterator const_iterator;
-  
+
     iterator begin() const;
     iterator end() const;
+
   private:
     std::vector<call_graph_node> _call_graph_nodes;
   };
-  
+
   std::ostream& operator<<(std::ostream& o_, const call_graph& c_);
 
   json_string to_json_string(const call_graph& c_);
@@ -48,4 +49,3 @@ namespace metashell_system_test
 }
 
 #endif
-

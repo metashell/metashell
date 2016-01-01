@@ -38,16 +38,11 @@ namespace
     bool arg = !ExpectedResult;
     in_memory_displayer d;
 
-    pragma_switch
-      p(
-        "test",
-        always<true>,
-        [&was_called, &arg](bool value_)
-        {
-          was_called = true;
-          arg = value_;
-        }
-      );
+    pragma_switch p("test", always<true>, [&was_called, &arg](bool value_)
+                    {
+                      was_called = true;
+                      arg = value_;
+                    });
     run(p, arg_, d);
 
     JUST_ASSERT(was_called);
@@ -68,9 +63,10 @@ JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
 {
   in_memory_displayer d;
 
-  pragma_switch p("test", always<true>, [](bool) {});
+  pragma_switch p("test", always<true>, [](bool)
+                  {
+                  });
   run(p, "on foo", d);
 
   JUST_ASSERT(!d.errors().empty());
 }
-

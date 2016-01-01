@@ -18,18 +18,20 @@
 
 #include <metashell/data/command.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-bool is_template_type(const data::type& type) {
-  data::command cmd(type.name());
-  for (const data::token& t : cmd) {
-    if (t.type() == data::token_type::operator_greater ||
-        t.type() == data::token_type::operator_less)
+  bool is_template_type(const data::type& type)
+  {
+    data::command cmd(type.name());
+    for (const data::token& t : cmd)
     {
-      return true;
+      if (t.type() == data::token_type::operator_greater ||
+          t.type() == data::token_type::operator_less)
+      {
+        return true;
+      }
     }
+    return false;
   }
-  return false;
-}
-
 }

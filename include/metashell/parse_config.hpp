@@ -46,20 +46,16 @@ namespace metashell
     static parse_config_result start_shell(const data::config& cfg_);
   };
 
-  parse_config_result parse_config(
-    int argc_,
-    const char* argv_[],
-    const std::map<std::string, engine_entry>& engines_,
-    iface::environment_detector& env_detector_,
-    std::ostream* out_ = 0,
-    std::ostream* err_ = 0
-  );
+  parse_config_result
+  parse_config(int argc_,
+               const char* argv_[],
+               const std::map<std::string, engine_entry>& engines_,
+               iface::environment_detector& env_detector_,
+               std::ostream* out_ = 0,
+               std::ostream* err_ = 0);
 
-  std::ostream& operator<<(
-    std::ostream& out_,
-    parse_config_result::action_t a_
-  );
+  std::ostream& operator<<(std::ostream& out_,
+                           parse_config_result::action_t a_);
 }
 
 #endif
-

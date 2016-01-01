@@ -16,8 +16,4 @@
 
 #include <just/test.hpp>
 
-int main(int argc_, char* argv_[])
-{
-  return ::just::test::run(argc_, argv_);
-}
-
+int main(int argc_, char* argv_[]) { return ::just::test::run(argc_, argv_); }

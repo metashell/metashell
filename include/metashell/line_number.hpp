@@ -33,6 +33,7 @@ namespace metashell
 
     line_number& operator+=(int n_);
     line_number& operator-=(int n_);
+
   private:
     int _value;
 
@@ -51,4 +52,3 @@ namespace metashell
 }
 
 #endif
-

@@ -176,4 +176,3 @@ token_category metashell::data::category_of_token(token_type type_)
   // Avoid warning about not returning a value...
   return token_category::unknown;
 }
-

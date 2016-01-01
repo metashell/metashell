@@ -18,21 +18,14 @@
 
 using namespace metashell;
 
-logger::logger(iface::displayer& displayer_, iface::file_writer& fwriter_) :
-  _mode(data::logging_mode::none),
-  _fwriter(fwriter_),
-  _displayer(displayer_)
-{}
-
-bool logger::logging() const
+logger::logger(iface::displayer& displayer_, iface::file_writer& fwriter_)
+  : _mode(data::logging_mode::none), _fwriter(fwriter_), _displayer(displayer_)
 {
-  return _mode != data::logging_mode::none;
 }
 
-data::logging_mode logger::mode() const
-{
-  return _mode;
-}
+bool logger::logging() const { return _mode != data::logging_mode::none; }
+
+data::logging_mode logger::mode() const { return _mode; }
 
 void logger::log_into_file(const std::string& filename_)
 {
@@ -75,4 +68,3 @@ void logger::log(const std::string& msg_)
     break;
   }
 }
-

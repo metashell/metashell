@@ -38,20 +38,18 @@ JUST_TEST_CASE(test_simple_completion)
 
 JUST_TEST_CASE(test_member_completion)
 {
-  code_completer
-    c(
+  code_completer c(
       "struct foo"
       "{"
-        "typedef foo type;"
-        "typedef int bar;"
+      "typedef foo type;"
+      "typedef int bar;"
 
-        "double mem1;"
-        "char mem2;"
-      "};"
-    );
+      "double mem1;"
+      "char mem2;"
+      "};");
 
-  const code_completion_result
-    members_of_foo{"~foo", "mem2", "mem1", "foo", "operator="};
+  const code_completion_result members_of_foo{
+      "~foo", "mem2", "mem1", "foo", "operator="};
 
   JUST_ASSERT_EQUAL(members_of_foo, c("decltype(foo()."));
   JUST_ASSERT_EQUAL(members_of_foo, c("decltype(((foo*)0)->"));
@@ -59,46 +57,36 @@ JUST_TEST_CASE(test_member_completion)
   JUST_ASSERT_EQUAL(members_of_foo.with({"type", "bar"}), c("foo::"));
 
   JUST_ASSERT_EQUAL(
-    code_completion_result{"em1", "em2"},
-    c("decltype(foo().m")
-  );
+      code_completion_result{"em1", "em2"}, c("decltype(foo().m"));
 
   JUST_ASSERT_EQUAL(
-    code_completion_result{"em1", "em2"},
-    c("decltype(((foo*)0)->m")
-  );
+      code_completion_result{"em1", "em2"}, c("decltype(((foo*)0)->m"));
 }
 
 JUST_TEST_CASE(test_template_member_completion)
 {
-  code_completer
-    c(
+  code_completer c(
       "template <class T>"
       "struct foo"
       "{"
-        "typedef T type;"
-        "typedef int bar;"
+      "typedef T type;"
+      "typedef int bar;"
 
-        "double mem1;"
-        "char mem2;"
-      "};"
-    );
+      "double mem1;"
+      "char mem2;"
+      "};");
 
-  const code_completion_result
-    members_of_foo{"~foo", "mem2", "mem1", "foo", "operator="};
+  const code_completion_result members_of_foo{
+      "~foo", "mem2", "mem1", "foo", "operator="};
 
   JUST_ASSERT_EQUAL(members_of_foo, c("decltype(foo<int>()."));
-  JUST_ASSERT_EQUAL(members_of_foo, c( "decltype(((foo<int>*)0)->"));
+  JUST_ASSERT_EQUAL(members_of_foo, c("decltype(((foo<int>*)0)->"));
   JUST_ASSERT_EQUAL(members_of_foo.with({"type", "bar"}), c("foo<int>::"));
 
   JUST_ASSERT_EQUAL(
-    code_completion_result{"em1", "em2"},
-    c("decltype(foo<int>().m")
-  );
+      code_completion_result{"em1", "em2"}, c("decltype(foo<int>().m"));
   JUST_ASSERT_EQUAL(
-    code_completion_result{"em1", "em2"},
-    c("decltype(((foo<int>*)0)->m")
-  );
+      code_completion_result{"em1", "em2"}, c("decltype(((foo<int>*)0)->m"));
 }
 
 JUST_TEST_CASE(test_included_completion)
@@ -107,4 +95,3 @@ JUST_TEST_CASE(test_included_completion)
 
   JUST_ASSERT_EQUAL(code_completion_result{"r"}, c("std::vecto"));
 }
-

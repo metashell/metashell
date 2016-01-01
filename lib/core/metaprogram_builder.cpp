@@ -19,72 +19,71 @@
 
 #include <metashell/exception.hpp>
 
-namespace metashell {
-
-metaprogram_builder::metaprogram_builder(
-    metaprogram::mode_t mode,
-    const std::string& root_name,
-    const data::file_location& root_source_location,
-    const data::type_or_error& evaluation_result) :
-  mp(mode, root_name, root_source_location, evaluation_result)
-{}
-
-void metaprogram_builder::handle_template_begin(
-  data::instantiation_kind kind,
-  const data::type& type,
-  const data::file_location& point_of_instantiation,
-  const data::file_location& source_location,
-  double timestamp)
+namespace metashell
 {
-  vertex_descriptor vertex = add_vertex(type, source_location);
-  vertex_descriptor top_vertex = edge_stack.empty() ?
-    mp.get_root_vertex() : mp.get_target(edge_stack.top());
 
-  auto edge = mp.add_edge(
-    top_vertex,
-    vertex,
-    kind,
-    point_of_instantiation,
-    timestamp);
-  edge_stack.push(edge);
-}
-
-void metaprogram_builder::handle_template_end(double timestamp) {
-  if (edge_stack.empty()) {
-    throw exception(
-        "Mismatched Templight TemplateBegin and TemplateEnd events");
+  metaprogram_builder::metaprogram_builder(
+      metaprogram::mode_t mode,
+      const std::string& root_name,
+      const data::file_location& root_source_location,
+      const data::type_or_error& evaluation_result)
+    : mp(mode, root_name, root_source_location, evaluation_result)
+  {
   }
-  auto& ep = mp.get_edge_property(edge_stack.top());
-  ep.time_taken = timestamp - ep.begin_timestamp;
 
-  edge_stack.pop();
-}
+  void metaprogram_builder::handle_template_begin(
+      data::instantiation_kind kind,
+      const data::type& type,
+      const data::file_location& point_of_instantiation,
+      const data::file_location& source_location,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(type, source_location);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
 
-const metaprogram& metaprogram_builder::get_metaprogram() const {
-  if (!edge_stack.empty()) {
-    throw exception(
-        "Some Templight TemplateEnd events are missing");
+    auto edge = mp.add_edge(
+        top_vertex, vertex, kind, point_of_instantiation, timestamp);
+    edge_stack.push(edge);
   }
-  return mp;
-}
 
-metaprogram_builder::vertex_descriptor metaprogram_builder::add_vertex(
-    const data::type& type,
-    const data::file_location& source_location)
-{
-  element_vertex_map_t::iterator pos;
-  bool inserted;
+  void metaprogram_builder::handle_template_end(double timestamp)
+  {
+    if (edge_stack.empty())
+    {
+      throw exception(
+          "Mismatched Templight TemplateBegin and TemplateEnd events");
+    }
+    auto& ep = mp.get_edge_property(edge_stack.top());
+    ep.time_taken = timestamp - ep.begin_timestamp;
 
-  std::tie(pos, inserted) = element_vertex_map.insert(
-      std::make_pair(
-        std::make_tuple(type, source_location),
-        vertex_descriptor()
-      ));
-
-  if (inserted) {
-    pos->second = mp.add_vertex(type, source_location);
+    edge_stack.pop();
   }
-  return pos->second;
-}
 
+  const metaprogram& metaprogram_builder::get_metaprogram() const
+  {
+    if (!edge_stack.empty())
+    {
+      throw exception("Some Templight TemplateEnd events are missing");
+    }
+    return mp;
+  }
+
+  metaprogram_builder::vertex_descriptor
+  metaprogram_builder::add_vertex(const data::type& type,
+                                  const data::file_location& source_location)
+  {
+    element_vertex_map_t::iterator pos;
+    bool inserted;
+
+    std::tie(pos, inserted) = element_vertex_map.insert(std::make_pair(
+        std::make_tuple(type, source_location), vertex_descriptor()));
+
+    if (inserted)
+    {
+      pos->second = mp.add_vertex(type, source_location);
+    }
+    return pos->second;
+  }
 }

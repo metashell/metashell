@@ -26,10 +26,8 @@ using namespace metashell;
 
 namespace
 {
-  void show_code_complete_result(
-    iface::json_writer& writer_,
-    const std::set<std::string>& completions_
-  )
+  void show_code_complete_result(iface::json_writer& writer_,
+                                 const std::set<std::string>& completions_)
   {
     writer_.start_object();
 
@@ -62,23 +60,20 @@ namespace
     writer_.end_document();
   }
 
-  boost::optional<std::string> read_next_line(
-    const line_reader& line_reader_,
-    iface::json_writer& json_writer_,
-    const std::string& prompt_
-  )
+  boost::optional<std::string> read_next_line(const line_reader& line_reader_,
+                                              iface::json_writer& json_writer_,
+                                              const std::string& prompt_)
   {
     show_prompt(json_writer_, prompt_);
     return line_reader_("");
   }
 
-  boost::optional<std::string> json_line_reader(
-    const line_reader& line_reader_,
-    iface::displayer& displayer_,
-    iface::json_writer& json_writer_,
-    command_processor_queue& command_processor_queue_,
-    const std::string& prompt_
-  )
+  boost::optional<std::string>
+  json_line_reader(const line_reader& line_reader_,
+                   iface::displayer& displayer_,
+                   iface::json_writer& json_writer_,
+                   command_processor_queue& command_processor_queue_,
+                   const std::string& prompt_)
   {
     while (const auto s = read_next_line(line_reader_, json_writer_, prompt_))
     {
@@ -103,8 +98,7 @@ namespace
             else
             {
               displayer_.show_error(
-                "The cmd field of the cmd command is missing"
-              );
+                  "The cmd field of the cmd command is missing");
             }
           }
           else if (*type == "code_completion")
@@ -118,8 +112,7 @@ namespace
             else
             {
               displayer_.show_error(
-                "The code field of the code_completion command is missing"
-              );
+                  "The code field of the code_completion command is missing");
             }
           }
           else
@@ -138,25 +131,15 @@ namespace
 }
 
 line_reader metashell::build_json_line_reader(
-  const line_reader& line_reader_,
-  iface::displayer& displayer_,
-  iface::json_writer& json_writer_,
-  command_processor_queue& command_processor_queue_
-)
+    const line_reader& line_reader_,
+    iface::displayer& displayer_,
+    iface::json_writer& json_writer_,
+    command_processor_queue& command_processor_queue_)
 {
-  return
-    [line_reader_, &displayer_, &json_writer_, &command_processor_queue_](
-      const std::string& prompt_
-    )
-    {
-      return
-        json_line_reader(
-          line_reader_,
-          displayer_,
-          json_writer_,
-          command_processor_queue_,
-          prompt_
-        );
-    };
+  return [line_reader_, &displayer_, &json_writer_,
+          &command_processor_queue_](const std::string& prompt_)
+  {
+    return json_line_reader(line_reader_, displayer_, json_writer_,
+                            command_processor_queue_, prompt_);
+  };
 }
-

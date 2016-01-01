@@ -20,10 +20,7 @@ using namespace metashell;
 
 path_builder::path_builder(const std::string& s_) : _path(s_) {}
 
-path_builder metashell::operator/(
-  const path_builder& a_,
-  const std::string& b_
-)
+path_builder metashell::operator/(const path_builder& a_, const std::string& b_)
 {
 #ifdef _WIN32
   const char sep = '\\';
@@ -34,8 +31,4 @@ path_builder metashell::operator/(
   return path_builder(a.empty() ? b_ : a + sep + b_);
 }
 
-path_builder::operator std::string() const
-{
-  return _path;
-}
-
+path_builder::operator std::string() const { return _path; }

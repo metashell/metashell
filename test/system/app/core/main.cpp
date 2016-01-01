@@ -20,4 +20,3 @@ int main(int argc_, char* argv_[])
 {
   return metashell_system_test::main(argc_, argv_);
 }
-

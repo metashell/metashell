@@ -39,4 +39,3 @@ JUST_TEST_CASE(test_formatting_more_tokens)
 
   JUST_ASSERT_EQUAL("int hello", tokens_to_string(cmd.begin(), cmd.end()));
 }
-

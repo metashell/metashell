@@ -30,4 +30,3 @@ JUST_TEST_CASE(test_echoing)
 
   JUST_ASSERT_EQUAL(comment({paragraph("foo bar")}), *i);
 }
-

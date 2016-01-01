@@ -20,37 +20,29 @@
 
 using namespace metashell;
 
-forward_trace_iterator::forward_trace_iterator() :
-  _finished(true)
-{}
+forward_trace_iterator::forward_trace_iterator() : _finished(true) {}
 
 forward_trace_iterator::forward_trace_iterator(
-  const metaprogram& mp_,
-  const boost::optional<int>& max_depth_
-) :
-  _finished(false),
-  _max_depth(max_depth_),
-  _mp(&mp_),
-  _discovered(mp_.get_state().discovered)
+    const metaprogram& mp_, const boost::optional<int>& max_depth_)
+  : _finished(false),
+    _max_depth(max_depth_),
+    _mp(&mp_),
+    _discovered(mp_.get_state().discovered)
 {
   visit(_mp->get_current_edge(), 0);
 }
 
 void forward_trace_iterator::visit(
-  const metaprogram::optional_edge_descriptor& edge_,
-  int depth_
-)
+    const metaprogram::optional_edge_descriptor& edge_, int depth_)
 {
   metaprogram::vertex_descriptor vertex =
-    edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
+      edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
 
-  _current =
-    data::call_graph_node(
-      edge_ ? _mp->to_frame(*edge_) : _mp->get_root_frame(),
-      depth_,
+  _current = data::call_graph_node(
+      edge_ ? _mp->to_frame(*edge_) : _mp->get_root_frame(), depth_,
       (_discovered[vertex] || (_max_depth && *_max_depth <= depth_)) ?
-        0 : _mp->get_enabled_out_degree(vertex)
-    );
+          0 :
+          _mp->get_enabled_out_degree(vertex));
 
   if (!_discovered[vertex])
   {
@@ -96,4 +88,3 @@ bool forward_trace_iterator::operator==(const forward_trace_iterator& i_) const
 {
   return _finished == i_._finished;
 }
-

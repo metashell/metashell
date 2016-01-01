@@ -20,12 +20,12 @@
 #include <metashell/data/token.hpp>
 #include <metashell/data/colored_string.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-data::colored_string::color_t color_of_token(const data::token& t);
+  data::colored_string::color_t color_of_token(const data::token& t);
 
-data::colored_string highlight_syntax(const std::string& s);
-
+  data::colored_string highlight_syntax(const std::string& s);
 }
 
 #endif

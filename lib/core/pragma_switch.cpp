@@ -32,7 +32,7 @@ namespace
   const std::string false_values[] = {"off", "0"};
 
   template <int N>
-  bool element_of(const std::string (&a_)[N], const std::string& item_)
+  bool element_of(const std::string(&a_)[N], const std::string& item_)
   {
     return std::find(a_, a_ + N, item_) != a_ + N;
   }
@@ -49,15 +49,12 @@ namespace
   }
 }
 
-pragma_switch::pragma_switch(
-  const std::string& name_,
-  const std::function<bool()>& query_,
-  const std::function<void(bool)>& update_
-) :
-  _query(query_),
-  _update(update_),
-  _name(name_)
-{}
+pragma_switch::pragma_switch(const std::string& name_,
+                             const std::function<bool()>& query_,
+                             const std::function<void(bool)>& update_)
+  : _query(query_), _update(update_), _name(name_)
+{
+}
 
 iface::pragma_handler* pragma_switch::clone() const
 {
@@ -71,18 +68,16 @@ std::string pragma_switch::arguments() const
 
 std::string pragma_switch::description() const
 {
-  return
-    "Turns " + _name + " on or off. When no arguments are used, it displays if "
-    + _name + " is turned on.";
+  return "Turns " + _name +
+         " on or off. When no arguments are used, it displays if " + _name +
+         " is turned on.";
 }
 
-void pragma_switch::run(
-  const data::command::iterator&,
-  const data::command::iterator&,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_switch::run(const data::command::iterator&,
+                        const data::command::iterator&,
+                        const data::command::iterator& args_begin_,
+                        const data::command::iterator& args_end_,
+                        iface::displayer& displayer_) const
 {
   auto i = args_begin_;
 
@@ -98,20 +93,16 @@ void pragma_switch::run(
       }
       else
       {
-        displayer_.show_error(
-          "Invalid arguments after " + v + ": " + tokens_to_string(i, args_end_)
-        );
+        displayer_.show_error("Invalid arguments after " + v + ": " +
+                              tokens_to_string(i, args_end_));
       }
     }
     else
     {
-      displayer_.show_error(
-        "Invalid argument " + v + ". Valid values are: " + valid_arguments()
-      );
+      displayer_.show_error("Invalid argument " + v + ". Valid values are: " +
+                            valid_arguments());
     }
   }
   displayer_.show_comment(
-    data::text(_name + " is " + (_query() ? "on" : "off"))
-  );
+      data::text(_name + " is " + (_query() ? "on" : "off")));
 }
-

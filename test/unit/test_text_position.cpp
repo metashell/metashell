@@ -35,5 +35,3 @@ JUST_TEST_CASE(test_text_position)
   JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\n");
   JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\r");
 }
-
-

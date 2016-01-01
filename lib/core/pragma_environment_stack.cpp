@@ -19,9 +19,10 @@
 
 using namespace metashell;
 
-pragma_environment_stack::pragma_environment_stack(shell& shell_) :
-  _shell(shell_)
-{}
+pragma_environment_stack::pragma_environment_stack(shell& shell_)
+  : _shell(shell_)
+{
+}
 
 iface::pragma_handler* pragma_environment_stack::clone() const
 {
@@ -37,4 +38,3 @@ void pragma_environment_stack::run(iface::displayer& displayer_) const
 {
   _shell.display_environment_stack_size(displayer_);
 }
-

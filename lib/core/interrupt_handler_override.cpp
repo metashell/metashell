@@ -19,14 +19,14 @@
 #include <cassert>
 
 #ifndef _MSC_VER
-  #include <signal.h>
+#include <signal.h>
 #endif
 
 using namespace metashell;
 
 namespace
 {
-  std::function<void ()> handler_function;
+  std::function<void()> handler_function;
 
   void call_handler()
   {
@@ -35,44 +35,26 @@ namespace
   }
 
 #ifdef _MSC_VER
-  void install_callback()
-  {
-  }
+  void install_callback() {}
 
-  void remove_callback()
-  {
-  }
+  void remove_callback() {}
 #else
   void (*old_handler)(int);
 
-  void sigint_handler(int)
-  {
-    call_handler();
-  }
+  void sigint_handler(int) { call_handler(); }
 
-  void install_callback()
-  {
-    old_handler = signal(SIGINT, sigint_handler);
-  }
+  void install_callback() { old_handler = signal(SIGINT, sigint_handler); }
 
-  void remove_callback()
-  {
-    signal(SIGINT, old_handler);
-  }
+  void remove_callback() { signal(SIGINT, old_handler); }
 #endif
 }
 
 interrupt_handler_override::interrupt_handler_override(
-  const std::function<void ()>& handler_
-)
+    const std::function<void()>& handler_)
 {
   assert(!handler_function);
   handler_function = handler_;
   install_callback();
 }
 
-interrupt_handler_override::~interrupt_handler_override()
-{
-  remove_callback();
-}
-
+interrupt_handler_override::~interrupt_handler_override() { remove_callback(); }

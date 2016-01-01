@@ -20,27 +20,29 @@
 #include <string>
 #include <ostream>
 
-namespace metashell {
-namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-enum class instantiation_kind {
-  template_instantiation,
-  default_template_argument_instantiation,
-  default_function_argument_instantiation,
-  explicit_template_argument_substitution,
-  deduced_template_argument_substitution,
-  prior_template_argument_substitution,
-  default_template_argument_checking,
-  exception_spec_instantiation,
-  memoization,
-  non_template_type // Used only if an evaluation result is not a template
-};
+    enum class instantiation_kind
+    {
+      template_instantiation,
+      default_template_argument_instantiation,
+      default_function_argument_instantiation,
+      explicit_template_argument_substitution,
+      deduced_template_argument_substitution,
+      prior_template_argument_substitution,
+      default_template_argument_checking,
+      exception_spec_instantiation,
+      memoization,
+      non_template_type // Used only if an evaluation result is not a template
+    };
 
-std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
+    std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
 
-std::string to_string(instantiation_kind kind);
-
-}
+    std::string to_string(instantiation_kind kind);
+  }
 }
 
 #endif

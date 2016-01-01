@@ -26,23 +26,21 @@ namespace metashell
   class engine_entry
   {
   public:
-    engine_entry(
-      engine_factory factory_,
-      std::string args_,
-      std::string description_
-    );
+    engine_entry(engine_factory factory_,
+                 std::string args_,
+                 std::string description_);
 
-    std::unique_ptr<iface::engine> build(
-      const data::config& config_,
-      const std::string& internal_dir_,
-      const std::string& env_filename_,
-      iface::environment_detector& env_detector_,
-      iface::displayer& displayer_,
-      logger* logger_
-    ) const;
+    std::unique_ptr<iface::engine>
+    build(const data::config& config_,
+          const std::string& internal_dir_,
+          const std::string& env_filename_,
+          iface::environment_detector& env_detector_,
+          iface::displayer& displayer_,
+          logger* logger_) const;
 
     const std::string& args() const;
     const std::string& description() const;
+
   private:
     engine_factory _factory;
     std::string _args;
@@ -51,4 +49,3 @@ namespace metashell
 }
 
 #endif
-

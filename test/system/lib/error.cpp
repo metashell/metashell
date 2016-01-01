@@ -26,18 +26,11 @@
 
 using namespace metashell_system_test;
 
-error::error(const std::string& msg_) :
-  _msg(msg_)
-{}
+error::error(const std::string& msg_) : _msg(msg_) {}
 
-error::error(placeholder) :
-  _msg(boost::none)
-{}
+error::error(placeholder) : _msg(boost::none) {}
 
-bool error::message_specified() const
-{
-  return _msg != boost::none;
-}
+bool error::message_specified() const { return _msg != boost::none; }
 
 const std::string& error::message() const
 {
@@ -45,10 +38,8 @@ const std::string& error::message() const
   return *_msg;
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const error& error_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const error& error_)
 {
   return out_ << to_json_string(error_);
 }
@@ -78,17 +69,12 @@ json_string metashell_system_test::to_json_string(const error& e_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const error& error_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const error& error_,
+                                       const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
 
-  return
-    members_are({"type", "msg"}, d)
-    && is_string("error", d["type"])
-    && (!error_.message_specified() || is_string(error_.message(), d["msg"]));
+  return members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
+         (!error_.message_specified() || is_string(error_.message(), d["msg"]));
 }
-

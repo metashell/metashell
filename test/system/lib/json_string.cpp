@@ -22,19 +22,12 @@
 
 using namespace metashell_system_test;
 
-json_string::json_string(const std::string& json_) :
-  _json(json_)
-{}
+json_string::json_string(const std::string& json_) : _json(json_) {}
 
-const std::string& json_string::get() const
-{
-  return _json;
-}
+const std::string& json_string::get() const { return _json; }
 
-bool metashell_system_test::operator==(
-  const json_string& a_,
-  const json_string& b_
-)
+bool metashell_system_test::operator==(const json_string& a_,
+                                       const json_string& b_)
 {
   // Not testing point_of_instantiation and source_location
   auto flags = boost::match_default | boost::format_all;
@@ -50,11 +43,8 @@ bool metashell_system_test::operator==(
   return filtered_a == filtered_b;
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const json_string& s_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const json_string& s_)
 {
   return out_ << s_.get();
 }
-

@@ -24,13 +24,11 @@
 
 namespace metashell
 {
-  std::unique_ptr<iface::tokeniser> create_wave_tokeniser(
-    std::string src_,
-    std::string input_filename_ = std::string()
-  );
+  std::unique_ptr<iface::tokeniser>
+  create_wave_tokeniser(std::string src_,
+                        std::string input_filename_ = std::string());
 
   std::string wave_version();
 }
 
 #endif
-

@@ -21,21 +21,11 @@
 
 using namespace metashell;
 
-bool column::invariant() const
-{
-  return _value > 0;
-}
+bool column::invariant() const { return _value > 0; }
 
-column::column(int value_) :
-  _value(value_)
-{
-  assert(invariant());
-}
+column::column(int value_) : _value(value_) { assert(invariant()); }
 
-int column::value() const
-{
-  return _value;
-}
+int column::value() const { return _value; }
 
 column& column::operator+=(int n_)
 {
@@ -65,4 +55,3 @@ bool metashell::operator==(column a_, column b_)
 {
   return a_.value() == b_.value();
 }
-

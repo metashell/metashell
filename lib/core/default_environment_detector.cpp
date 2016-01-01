@@ -30,28 +30,26 @@
 #include <vector>
 
 #ifdef __APPLE__
-#  include <errno.h>
-#  include <libproc.h>
+#include <errno.h>
+#include <libproc.h>
 #endif
 
 #ifndef _WIN32
-#  include <unistd.h>
+#include <unistd.h>
 #endif
 
 #ifdef __FreeBSD__
-#  include <sys/types.h>
-#  include <sys/sysctl.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
 #endif
 
 using namespace metashell;
 
 namespace
 {
-  const char* default_clang_search_path[] =
-    {
-      ""
-      #include "default_clang_search_path.hpp"
-    };
+  const char* default_clang_search_path[] = {""
+#include "default_clang_search_path.hpp"
+  };
 
   bool file_exists(const std::string& path_)
   {
@@ -68,12 +66,10 @@ namespace
 
   std::string default_clang_path()
   {
-    return
-      search_clang(
+    return search_clang(
         default_clang_search_path + 1,
-        default_clang_search_path
-          + sizeof(default_clang_search_path) / sizeof(const char*)
-      );
+        default_clang_search_path +
+            sizeof(default_clang_search_path) / sizeof(const char*));
   }
 
 #if !(defined _WIN32 || defined __FreeBSD__ || defined __APPLE__)
@@ -86,8 +82,7 @@ namespace
     {
       buff.resize(buff.size() + step);
       res = readlink(path_.c_str(), buff.data(), buff.size());
-    }
-    while (res == ssize_t(buff.size()));
+    } while (res == ssize_t(buff.size()));
     return res == -1 ? path_ : std::string(buff.begin(), buff.begin() + res);
   }
 #endif
@@ -118,7 +113,7 @@ namespace
     GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
     return path;
 #elif defined __FreeBSD__
-    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
     std::vector<char> buff(1);
     size_t cb = buff.size();
     while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
@@ -142,7 +137,10 @@ namespace
     {
       const std::string p = just::environment::get("PATH");
       std::vector<std::string> path;
-      boost::split(path, p, [](char c_) { return c_ == ';'; });
+      boost::split(path, p, [](char c_)
+                   {
+                     return c_ == ';';
+                   });
       for (const auto& s : path)
       {
         const std::string fn = s + "/" + _argv0;
@@ -156,9 +154,10 @@ namespace
 #elif defined __APPLE__
     char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
     const pid_t pid = getpid();
-    if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) <= 0) {
+    if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) <= 0)
+    {
       std::cerr << "PID " << pid << ": proc_pidpath ();\n"
-            << "   " << strerror(errno) << '\n';
+                << "   " << strerror(errno) << '\n';
     }
     return pathbuf;
 #else
@@ -168,10 +167,10 @@ namespace
 }
 
 default_environment_detector::default_environment_detector(
-  const std::string& argv0_
-) :
-  _argv0(argv0_)
-{}
+    const std::string& argv0_)
+  : _argv0(argv0_)
+{
+}
 
 std::string default_environment_detector::search_clang_binary()
 {
@@ -205,4 +204,3 @@ std::string default_environment_detector::directory_of_executable()
 {
   return directory_of_file(path_of_executable());
 }
-

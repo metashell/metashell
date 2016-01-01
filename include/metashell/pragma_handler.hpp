@@ -28,8 +28,11 @@ namespace metashell
   {
   public:
     template <class Impl>
-      // requires: Impl publicly inherits from iface::pragma_handler
-    pragma_handler(Impl impl_) : _body(new Impl(impl_)) {}
+    // requires: Impl publicly inherits from iface::pragma_handler
+    pragma_handler(Impl impl_)
+      : _body(new Impl(impl_))
+    {
+    }
 
     pragma_handler(const pragma_handler& h_);
     pragma_handler& operator=(pragma_handler h_);
@@ -39,23 +42,19 @@ namespace metashell
     std::string arguments() const;
     std::string description() const;
 
-    void run(
-      const data::command::iterator& name_begin_,
-      const data::command::iterator& name_end_,
-      const data::command::iterator& args_begin_,
-      const data::command::iterator& args_end_,
-      iface::displayer& displayer_
-    ) const;
+    void run(const data::command::iterator& name_begin_,
+             const data::command::iterator& name_end_,
+             const data::command::iterator& args_begin_,
+             const data::command::iterator& args_end_,
+             iface::displayer& displayer_) const;
+
   private:
     std::unique_ptr<iface::pragma_handler> _body;
   };
 
-  void run(
-    const iface::pragma_handler& handler_,
-    const std::string& args_,
-    iface::displayer& displayer_
-  );
+  void run(const iface::pragma_handler& handler_,
+           const std::string& args_,
+           iface::displayer& displayer_);
 }
 
 #endif
-

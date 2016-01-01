@@ -19,10 +19,10 @@
 
 #include <metashell/data/type.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-bool is_template_type(const data::type& type);
-
+  bool is_template_type(const data::type& type);
 }
 
 #endif

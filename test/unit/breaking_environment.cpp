@@ -34,26 +34,21 @@ namespace
   class bool_override_guard
   {
   public:
-    explicit bool_override_guard(bool& b_) : _b(b_)
-    {
-      _b = true;
-    }
+    explicit bool_override_guard(bool& b_) : _b(b_) { _b = true; }
 
-    ~bool_override_guard()
-    {
-      _b = false;
-    }
+    ~bool_override_guard() { _b = false; }
   private:
     bool& _b;
   };
 }
 
-breaking_environment::breaking_environment() :
-  _headers("__breaking_environment"),
-  _append_throw(false),
-  _get_appended_throw(false),
-  _in_append(false)
-{}
+breaking_environment::breaking_environment()
+  : _headers("__breaking_environment"),
+    _append_throw(false),
+    _get_appended_throw(false),
+    _in_append(false)
+{
+}
 
 void breaking_environment::append(const std::string&)
 {
@@ -62,15 +57,9 @@ void breaking_environment::append(const std::string&)
   bool_override_guard g(_in_append);
 }
 
-std::string breaking_environment::get() const
-{
-  return std::string();
-}
+std::string breaking_environment::get() const { return std::string(); }
 
-std::string breaking_environment::get_all() const
-{
-  return std::string();
-}
+std::string breaking_environment::get_all() const { return std::string(); }
 
 std::string breaking_environment::get_appended(const std::string&) const
 {
@@ -99,4 +88,3 @@ const data::headers& breaking_environment::get_headers() const
 {
   return _headers;
 }
-

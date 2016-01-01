@@ -52,9 +52,9 @@ int metashell_system_test::main(int argc_, char* argv_[])
   if (argc_ < 2)
   {
     std::cerr
-      << "Usage: " << argv_[0]
-      << " <metashell_binary> <metashell arguments> -- <just::test arguments>"
-      << std::endl;
+        << "Usage: " << argv_[0]
+        << " <metashell_binary> <metashell arguments> -- <just::test arguments>"
+        << std::endl;
     return -1;
   }
   else
@@ -75,12 +75,12 @@ int metashell_system_test::main(int argc_, char* argv_[])
       system_test_config::metashell_arg(*i);
     }
 
-    std::vector<char*> just_test_args = { argv_[0] };
-    if (sep != end) {
+    std::vector<char*> just_test_args = {argv_[0]};
+    if (sep != end)
+    {
       just_test_args.insert(just_test_args.end(), sep + 1, end);
     }
 
     return ::just::test::run(just_test_args.size(), just_test_args.data());
   }
 }
-

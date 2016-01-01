@@ -21,31 +21,20 @@
 
 using namespace metashell;
 
-stream_console::stream_console(std::ostream& s_) :
-  _s(&s_)
-{}
+stream_console::stream_console(std::ostream& s_) : _s(&s_) {}
 
 void stream_console::show(const data::colored_string& s_)
 {
   *_s << s_.get_string();
 }
 
-void stream_console::new_line()
-{
-  *_s << std::endl;
-}
+void stream_console::new_line() { *_s << std::endl; }
 
 iface::console::user_answer stream_console::ask_for_continuation()
 {
   return iface::console::user_answer::show_all;
 }
 
-int stream_console::width() const
-{
-  return std::numeric_limits<int>::max();
-}
+int stream_console::width() const { return std::numeric_limits<int>::max(); }
 
-int stream_console::height() const
-{
-  return std::numeric_limits<int>::max();
-}
+int stream_console::height() const { return std::numeric_limits<int>::max(); }

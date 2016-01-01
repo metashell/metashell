@@ -47,12 +47,15 @@ namespace metashell_system_test
     pattern(placeholder) : _pattern(static_cast<T*>(nullptr)) {} // case 2b.
 
     template <class U>
-    pattern(U value_) : _pattern(T(value_)) {} // case 1.
+    pattern(U value_)
+      : _pattern(T(value_))
+    {
+    } // case 1.
 
     template <class U>
     bool match(U value_) const
     {
-      if (T* const * p = boost::get<T*>(&_pattern))
+      if (T* const* p = boost::get<T*>(&_pattern))
       {
         if (*p)
         {
@@ -81,6 +84,7 @@ namespace metashell_system_test
         return boost::none;
       }
     }
+
   private:
     boost::variant<T, T*> _pattern;
   };
@@ -100,4 +104,3 @@ namespace metashell_system_test
 }
 
 #endif
-

@@ -21,44 +21,29 @@
 
 using namespace metashell;
 
-source_position::source_position() :
-  _line(1),
-  _column(1)
-{}
+source_position::source_position() : _line(1), _column(1) {}
 
-source_position::source_position(line_number line_, column column_) :
-  _line(line_),
-  _column(column_)
+source_position::source_position(line_number line_, column column_)
+  : _line(line_), _column(column_)
 {
 }
 
-line_number source_position::line() const
-{
-  return _line;
-}
+line_number source_position::line() const { return _line; }
 
-column source_position::col() const
-{
-  return _column;
-}
+column source_position::col() const { return _column; }
 
 std::string metashell::to_string(const source_position& p_)
 {
   return to_string(p_.line()) + ":" + to_string(p_.col());
 }
 
-std::ostream& metashell::operator<<(
-  std::ostream& out_,
-  const source_position& p_
-)
+std::ostream& metashell::operator<<(std::ostream& out_,
+                                    const source_position& p_)
 {
   return out_ << to_string(p_);
 }
 
-bool metashell::operator==(
-  const source_position& a_,
-  const source_position& b_
-)
+bool metashell::operator==(const source_position& a_, const source_position& b_)
 {
   return a_.line() == b_.line() && a_.col() == b_.col();
 }
@@ -68,20 +53,18 @@ source_position metashell::source_position_of(const std::string& s_)
   source_position result;
   bool first_line = true;
   for_each_line(
-    s_,
-    [&result, &first_line](const std::string& line_)
-    {
-      if (first_line)
+      s_, [&result, &first_line](const std::string& line_)
       {
-        result = source_position(result.line(), column(line_.length() + 1));
-        first_line = false;
-      }
-      else
-      {
-        result = source_position(result.line() + 1, column(line_.length() + 1));
-      }
-    }
-  );
+        if (first_line)
+        {
+          result = source_position(result.line(), column(line_.length() + 1));
+          first_line = false;
+        }
+        else
+        {
+          result =
+              source_position(result.line() + 1, column(line_.length() + 1));
+        }
+      });
   return result;
 }
-

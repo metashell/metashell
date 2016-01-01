@@ -27,6 +27,7 @@ namespace metashell_system_test
     explicit path_builder(const std::string& s_ = std::string());
 
     operator std::string() const;
+
   private:
     std::string _path;
   };
@@ -35,4 +36,3 @@ namespace metashell_system_test
 }
 
 #endif
-

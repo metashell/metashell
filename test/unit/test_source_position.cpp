@@ -26,22 +26,17 @@ using namespace metashell;
 
 namespace
 {
-  source_position position_of(
-    const std::initializer_list<std::string>& lines_,
-    const std::string& line_separator_
-  )
+  source_position position_of(const std::initializer_list<std::string>& lines_,
+                              const std::string& line_separator_)
   {
     return source_position_of(boost::algorithm::join(lines_, line_separator_));
   }
 
   source_position position_of(const std::initializer_list<std::string>& lines_)
   {
-    const std::vector<source_position>
-      source_positions{
-        position_of(lines_, "\n"),
-        position_of(lines_, "\r"),
-        position_of(lines_, "\r\n")
-      };
+    const std::vector<source_position> source_positions{
+        position_of(lines_, "\n"), position_of(lines_, "\r"),
+        position_of(lines_, "\r\n")};
     for (unsigned int i = 1; i != source_positions.size(); ++i)
     {
       JUST_ASSERT_EQUAL(source_positions[0], source_positions[i]);
@@ -69,4 +64,3 @@ JUST_TEST_CASE(test_source_position)
   JUST_ASSERT_EQUAL(source_position(l1, c3), position_of({"ab"}));
   JUST_ASSERT_EQUAL(source_position(l2, c2), position_of({"ab", "c"}));
 }
-

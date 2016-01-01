@@ -25,18 +25,11 @@
 
 using namespace metashell_system_test;
 
-type::type(const std::string& name_) :
-  _name(name_)
-{}
+type::type(const std::string& name_) : _name(name_) {}
 
-type::type(placeholder) :
-  _name(boost::none)
-{}
+type::type(placeholder) : _name(boost::none) {}
 
-bool type::name_specified() const
-{
-  return _name != boost::none;
-}
+bool type::name_specified() const { return _name != boost::none; }
 
 const std::string& type::name() const
 {
@@ -44,10 +37,8 @@ const std::string& type::name() const
   return *_name;
 }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const type& type_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const type& type_)
 {
   return out_ << to_json_string(type_);
 }
@@ -83,4 +74,3 @@ bool metashell_system_test::operator==(const type& type_, const json_string& s_)
   d.Parse(s_.get().c_str());
   return members_are({"type", "name"}, d) && matches(type_, d["name"]);
 }
-

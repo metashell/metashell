@@ -102,4 +102,3 @@ JUST_TEST_CASE(test_left_aligning_text_with_trailing_whitespace)
   ind.left_align("foo ", "-", ".");
   JUST_ASSERT_EQUAL(".foo\n", ind.str());
 }
-

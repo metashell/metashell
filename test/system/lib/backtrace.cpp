@@ -21,24 +21,14 @@
 
 using namespace metashell_system_test;
 
-backtrace::backtrace(std::vector<frame> frames_) :
-  _frames(frames_)
-{}
+backtrace::backtrace(std::vector<frame> frames_) : _frames(frames_) {}
 
-backtrace::iterator backtrace::begin() const
-{
-  return _frames.begin();
-}
+backtrace::iterator backtrace::begin() const { return _frames.begin(); }
 
-backtrace::iterator backtrace::end() const
-{
-  return _frames.end();
-}
+backtrace::iterator backtrace::end() const { return _frames.end(); }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& o_,
-  const backtrace& c_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& o_,
+                                                const backtrace& c_)
 {
   return o_ << to_json_string(c_);
 }
@@ -58,7 +48,7 @@ json_string metashell_system_test::to_json_string(const backtrace& c_)
   for (const frame& f : c_)
   {
     w.StartObject();
-    
+
     w.Key("name");
     const std::string name = f.name().name();
     w.String(name.c_str());
@@ -69,7 +59,7 @@ json_string metashell_system_test::to_json_string(const backtrace& c_)
       const std::string kind = to_string(f.kind());
       w.String(kind.c_str());
     }
- 
+
     w.EndObject();
   }
   w.EndArray();
@@ -79,11 +69,8 @@ json_string metashell_system_test::to_json_string(const backtrace& c_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const backtrace& c_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const backtrace& c_,
+                                       const json_string& s_)
 {
   return to_json_string(c_) == s_;
 }
-

@@ -25,25 +25,27 @@
 
 using namespace metashell_system_test;
 
-code_completer::code_completer(const std::string& init_code_) :
-  _init_code(init_code_)
-{}
+code_completer::code_completer(const std::string& init_code_)
+  : _init_code(init_code_)
+{
+}
 
 json_string code_completer::operator()(const std::string& code_) const
 {
-  const auto r =
-    run_metashell({ command(_init_code), code_completion(code_) });
+  const auto r = run_metashell({command(_init_code), code_completion(code_)});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
 
   JUST_ASSERT(i != r.end());
-  const json_string result = *i; ++i;
+  const json_string result = *i;
+  ++i;
 
   JUST_ASSERT(i == r.end());
 
   return result;
 }
-

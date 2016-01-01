@@ -30,9 +30,9 @@ namespace metashell
     explicit disable_precompiled_header_guard(shell& shell_);
     ~disable_precompiled_header_guard();
 
-    static std::unique_ptr<disable_precompiled_header_guard> create(
-      shell& shell_
-    );
+    static std::unique_ptr<disable_precompiled_header_guard>
+    create(shell& shell_);
+
   private:
     shell& _shell;
     bool _was_using;
@@ -40,4 +40,3 @@ namespace metashell
 }
 
 #endif
-

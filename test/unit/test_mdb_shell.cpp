@@ -24,13 +24,15 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_mdb_shell_is_stopped_false_by_default) {
+JUST_TEST_CASE(test_mdb_shell_is_stopped_false_by_default)
+{
   mdb_test_shell sh;
 
   JUST_ASSERT(!sh.stopped());
 }
 
-JUST_TEST_CASE(test_mdb_shell_empty_lines) {
+JUST_TEST_CASE(test_mdb_shell_empty_lines)
+{
   in_memory_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
@@ -56,7 +58,8 @@ JUST_TEST_CASE(test_mdb_shell_empty_lines) {
   JUST_ASSERT(d.call_graphs().empty());
 }
 
-JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
+JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history)
+{
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
@@ -76,7 +79,8 @@ JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history) {
   JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz", "asd"}, h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history) {
+JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history)
+{
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
@@ -96,7 +100,8 @@ JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history) {
   JUST_ASSERT_EQUAL_CONTAINER({" ", "  ", " "}, h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_skips_empty_lines) {
+JUST_TEST_CASE(test_mdb_shell_skips_empty_lines)
+{
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
@@ -113,9 +118,9 @@ JUST_TEST_CASE(test_mdb_shell_skips_empty_lines) {
   JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_prompt) {
+JUST_TEST_CASE(test_mdb_shell_prompt)
+{
   mdb_test_shell sh;
 
   JUST_ASSERT_EQUAL(sh.prompt(), "(mdb)");
 }
-

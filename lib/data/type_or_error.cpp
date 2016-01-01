@@ -19,61 +19,76 @@
 
 #include <cassert>
 
-namespace metashell { namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-type_or_error::type_or_error() : data(boost::blank{}) {}
+    type_or_error::type_or_error() : data(boost::blank{}) {}
 
-type_or_error::type_or_error(const type_type& t) : data(t) {}
+    type_or_error::type_or_error(const type_type& t) : data(t) {}
 
-type_or_error::type_or_error(const error_type& e) : data(e) {}
+    type_or_error::type_or_error(const error_type& e) : data(e) {}
 
-type_or_error type_or_error::make_none() {
-  return type_or_error();
-}
+    type_or_error type_or_error::make_none() { return type_or_error(); }
 
-type_or_error type_or_error::make_type(const type_type& t) {
-  return type_or_error(t);
-}
+    type_or_error type_or_error::make_type(const type_type& t)
+    {
+      return type_or_error(t);
+    }
 
-type_or_error type_or_error::make_error(const error_type& e) {
-  return type_or_error(e);
-}
+    type_or_error type_or_error::make_error(const error_type& e)
+    {
+      return type_or_error(e);
+    }
 
-bool type_or_error::is_none() const {
-  return boost::get<boost::blank>(&data) != nullptr;
-}
+    bool type_or_error::is_none() const
+    {
+      return boost::get<boost::blank>(&data) != nullptr;
+    }
 
-bool type_or_error::is_type() const {
-  return boost::get<type_type>(&data) != nullptr;
-}
+    bool type_or_error::is_type() const
+    {
+      return boost::get<type_type>(&data) != nullptr;
+    }
 
-bool type_or_error::is_error() const {
-  return boost::get<error_type>(&data) != nullptr;
-}
+    bool type_or_error::is_error() const
+    {
+      return boost::get<error_type>(&data) != nullptr;
+    }
 
-const type_or_error::type_type& type_or_error::get_type() const {
-  assert(is_type());
-  return boost::get<type_type>(data);
-}
+    const type_or_error::type_type& type_or_error::get_type() const
+    {
+      assert(is_type());
+      return boost::get<type_type>(data);
+    }
 
-const type_or_error::error_type& type_or_error::get_error() const {
-  assert(is_error());
-  return boost::get<error_type>(data);
-}
+    const type_or_error::error_type& type_or_error::get_error() const
+    {
+      assert(is_error());
+      return boost::get<error_type>(data);
+    }
 
-bool type_or_error::operator==(const type_or_error& other) const {
-  return data == other.data;
-}
+    bool type_or_error::operator==(const type_or_error& other) const
+    {
+      return data == other.data;
+    }
 
-std::ostream& operator<<(std::ostream& os, const type_or_error& te) {
-  if (te.is_type()) {
-    os << "type[" << te.get_type() << "]";
-  } else if (te.is_error()) {
-    os << "error[" << te.get_error() << "]";
-  } else {
-    os << "none[]";
+    std::ostream& operator<<(std::ostream& os, const type_or_error& te)
+    {
+      if (te.is_type())
+      {
+        os << "type[" << te.get_type() << "]";
+      }
+      else if (te.is_error())
+      {
+        os << "error[" << te.get_error() << "]";
+      }
+      else
+      {
+        os << "none[]";
+      }
+      return os;
+    }
   }
-  return os;
 }
-
-}}

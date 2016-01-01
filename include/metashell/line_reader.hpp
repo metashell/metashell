@@ -27,16 +27,12 @@
 
 namespace metashell
 {
-  typedef
-    std::function<boost::optional<std::string>(const std::string&)>
-    line_reader;
+  typedef std::function<boost::optional<std::string>(const std::string&)>
+      line_reader;
 
-  void input_loop(
-    command_processor_queue& processor_queue_,
-    iface::displayer& displayer_,
-    const line_reader& line_reader_
-  );
+  void input_loop(command_processor_queue& processor_queue_,
+                  iface::displayer& displayer_,
+                  const line_reader& line_reader_);
 }
 
 #endif
-

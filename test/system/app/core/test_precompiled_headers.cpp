@@ -26,31 +26,35 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_enabling_and_disabling_precompiled_headers)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh precompiled_headers"),
-        command("#msh precompiled_headers off"),
-        command("#msh precompiled_headers"),
-        command("#msh precompiled_headers on"),
-        command("#msh precompiled_headers")
-      }
-    );
+  const auto r = run_metashell({command("#msh precompiled_headers"),
+                                command("#msh precompiled_headers off"),
+                                command("#msh precompiled_headers"),
+                                command("#msh precompiled_headers on"),
+                                command("#msh precompiled_headers")});
 
   const comment is_on({paragraph("precompiled header usage is on")});
   const comment is_off({paragraph("precompiled header usage is off")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(is_on, *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(is_off, *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(is_off, *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(is_on, *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(is_on, *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(is_on, *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(is_off, *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(is_off, *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(is_on, *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(is_on, *i);
+  ++i;
 }
-

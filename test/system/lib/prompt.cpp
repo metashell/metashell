@@ -23,19 +23,12 @@
 
 using namespace metashell_system_test;
 
-prompt::prompt(const std::string& prompt_) :
-  _prompt(prompt_)
-{}
+prompt::prompt(const std::string& prompt_) : _prompt(prompt_) {}
 
-const std::string& prompt::value() const
-{
-  return _prompt;
-}
+const std::string& prompt::value() const { return _prompt; }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const prompt& prompt_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const prompt& prompt_)
 {
   return out_ << to_json_string(prompt_);
 }
@@ -58,11 +51,8 @@ json_string metashell_system_test::to_json_string(const prompt& p_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const prompt& prompt_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const prompt& prompt_,
+                                       const json_string& s_)
 {
   return to_json_string(prompt_) == s_;
 }
-

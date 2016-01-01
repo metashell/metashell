@@ -28,43 +28,30 @@
 
 using namespace metashell_system_test;
 
-JUST_TEST_CASE(test_mdb_continue_without_evaluation) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_without_evaluation)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("continue")});
 
   auto i = r.begin() + 2;
 
   JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_garbage_argument) {
+JUST_TEST_CASE(test_mdb_continue_garbage_argument)
+{
   const auto r =
-    run_metashell(
-      {
-        command("#msh mdb int"),
-        command("continue asd")
-      }
-    );
+      run_metashell({command("#msh mdb int"), command("continue asd")});
 
   auto i = r.begin() + 3;
 
   JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("continue")});
 
   auto i = r.begin() + 4;
 
@@ -72,17 +59,12 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_no_breakpoint) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaluation_removes_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<0>"),
-        command("evaluate int_<fib<10>::value>"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaluation_removes_breakpoints)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<0>"), command("evaluate int_<fib<10>::value>"),
+       command("continue")});
 
   auto i = r.begin() + 8;
 
@@ -90,16 +72,11 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_reevaluation_removes_breakpoints) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<0>"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("rbreak fib<0>"), command("continue")});
 
   auto i = r.begin() + 6;
 
@@ -108,16 +85,11 @@ JUST_TEST_CASE(test_mdb_continue_fibonacci_1_breakpoint) {
       frame(type("fib<0>"), _, _, instantiation_kind::memoization), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 2")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<5>"), command("continue 2")});
 
   auto i = r.begin() + 6;
 
@@ -126,23 +98,18 @@ JUST_TEST_CASE(test_mdb_continue_2_fibonacci_1_breakpoint) {
       frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<5>"), command("continue"), command("continue")});
 
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
@@ -150,61 +117,48 @@ JUST_TEST_CASE(test_mdb_continue_twice_fibonacci_1_breakpoint) {
       frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("rbreak fib<6>"),
-        command("continue"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_fibonacci_2_breakpoints)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<5>"), command("rbreak fib<6>"), command("continue"),
+       command("continue")});
 
   auto i = r.begin() + 8;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"fib<6>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("rbreak fib<6>"),
-        command("continue 2")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_2_fibonacci_2_breakpoints)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<5>"), command("rbreak fib<6>"),
+       command("continue 2")});
 
   auto i = r.begin() + 8;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("rbreak fib<6>"),
-        command("continue 10")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<5>"), command("rbreak fib<6>"),
+       command("continue 10")});
 
   auto i = r.begin() + 8;
 
@@ -212,107 +166,81 @@ JUST_TEST_CASE(test_mdb_continue_10_fibonacci_2_breakpoints) {
   JUST_ASSERT_EQUAL(type("int_<55>"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_0_fibonacci_1_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<6>"),
-        command("continue 0")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_0_fibonacci_1_breakpoint)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<6>"), command("continue 0")});
   auto i = r.begin() + 6;
 
   // continue 0 doesn't print anything at start
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_minus_1_at_start) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("continue -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_minus_1_at_start)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("continue -1")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_minus_2_at_start) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("continue -2")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_minus_2_at_start)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("continue -2")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<6>"),
-        command("rbreak fib<5>"),
-        command("continue 2"),
-        command("continue -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_minus_1_with_preceding_breakpoint)
+{
+  const auto r = run_metashell(
+      {command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>"),
+       command("rbreak fib<6>"), command("rbreak fib<5>"),
+       command("continue 2"), command("continue -1")});
   auto i = r.begin() + 8;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<6>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 1"),
-        command("continue -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_minus_1_without_preceding_breakpoint)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("rbreak fib<5>"), command("continue 1"),
+                                command("continue -1")});
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), *i);
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 3"),
-        command("continue -3")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<10>::value>"),
+                                command("rbreak fib<5>"), command("continue 3"),
+                                command("continue -3")});
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
@@ -322,17 +250,12 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start) {
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb -full int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 9"),
-        command("continue -9")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode)
+{
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb -full int_<fib<10>::value>"),
+                                command("rbreak fib<5>"), command("continue 9"),
+                                command("continue -9")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
@@ -349,16 +272,10 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start_in_full_mode) {
 JUST_TEST_CASE(
     test_mdb_continue_to_one_before_end_and_back_to_start_in_full_mode)
 {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb -full int_<fib<10>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 8"),
-        command("continue -8")
-      }
-    );
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb -full int_<fib<10>::value>"),
+                                command("rbreak fib<5>"), command("continue 8"),
+                                command("continue -8")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(
@@ -367,37 +284,28 @@ JUST_TEST_CASE(
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), *i++);
-  JUST_ASSERT_EQUAL( frame(type("fib<5>")), *i);
+  JUST_ASSERT_EQUAL(frame(type("fib<5>")), *i);
 
   i += 2;
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_to_end_will_print_error_message_if_errored) {
-  const auto r =
-    run_metashell(
-      {
-        command(missing_value_fibonacci_mp),
-        command("#msh mdb int_<fib<5>::value>"),
-        command("continue")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_to_end_will_print_error_message_if_errored)
+{
+  const auto r = run_metashell({command(missing_value_fibonacci_mp),
+                                command("#msh mdb int_<fib<5>::value>"),
+                                command("continue")});
   auto i = r.begin() + 4;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
   JUST_ASSERT_EQUAL(error(_), *i);
 }
 
-JUST_TEST_CASE(test_mdb_continue_to_end_and_back_if_errored) {
-  const auto r =
-    run_metashell(
-      {
-        command(missing_value_fibonacci_mp),
-        command("#msh mdb int_<fib<5>::value>"),
-        command("continue"),
-        command("continue -1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_continue_to_end_and_back_if_errored)
+{
+  const auto r = run_metashell({command(missing_value_fibonacci_mp),
+                                command("#msh mdb int_<fib<5>::value>"),
+                                command("continue"), command("continue -1")});
   auto i = r.begin() + 7;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram reached the beginning"), *i);

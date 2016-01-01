@@ -24,8 +24,8 @@ using namespace metashell;
 
 JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 {
-  mdb_command x({"asdf"}, repeatable_t::repeatable, nullptr,
-    "[asd]", "fdsa", "xxyy");
+  mdb_command x(
+      {"asdf"}, repeatable_t::repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
   JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
   JUST_ASSERT(x.is_repeatable());
@@ -36,8 +36,8 @@ JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 {
-  mdb_command x({"asdf"}, repeatable_t::non_repeatable, nullptr,
-    "[asd]", "fdsa", "xxyy");
+  mdb_command x(
+      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
   JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
   JUST_ASSERT(!x.is_repeatable());
@@ -47,8 +47,8 @@ JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 {
-  mdb_command x({"asdf", "xxx"}, repeatable_t::non_repeatable, nullptr,
-    "[asd]", "fd", "xx");
+  mdb_command x({"asdf", "xxx"}, repeatable_t::non_repeatable, nullptr, "[asd]",
+                "fd", "xx");
 
   JUST_ASSERT_EQUAL_CONTAINER({"asdf", "xxx"}, x.get_keys());
   JUST_ASSERT(!x.is_repeatable());
@@ -59,8 +59,8 @@ JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
 
 JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
 {
-  mdb_command x({"asdf"}, repeatable_t::non_repeatable, nullptr,
-    "[asd]", "fd", "");
+  mdb_command x(
+      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fd", "");
 
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
@@ -70,12 +70,11 @@ JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
 
 JUST_TEST_CASE(test_mdb_command_full_description_non_empty_long_description)
 {
-  mdb_command x({"asdf"}, repeatable_t::non_repeatable, nullptr,
-    "[asd]", "fd", "xx");
+  mdb_command x(
+      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fd", "xx");
 
   JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
   JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
   JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
   JUST_ASSERT_EQUAL(x.get_full_description(), "fd\nxx");
 }
-

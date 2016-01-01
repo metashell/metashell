@@ -72,16 +72,16 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
-  metashell::shell
-    sh(metashell::test_config(), "", "", metashell::create_failing_engine());
+  metashell::shell sh(
+      metashell::test_config(), "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.stopped());
 }
 
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
-  metashell::shell
-    sh(metashell::test_config(), "", "", metashell::create_failing_engine());
+  metashell::shell sh(
+      metashell::test_config(), "", "", metashell::create_failing_engine());
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -120,4 +120,3 @@ JUST_TEST_CASE(test_starting_shell_in_preprocessor_mode)
   JUST_ASSERT(!sh.show_cpp_errors());
   JUST_ASSERT(!sh.evaluate_metaprograms());
 }
-

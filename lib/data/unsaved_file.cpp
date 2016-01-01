@@ -18,21 +18,12 @@
 
 using namespace metashell::data;
 
-unsaved_file::unsaved_file(
-  const std::string& filename_,
-  const std::string& content_
-) :
-  _filename(filename_),
-  _content(content_)
-{}
-
-const std::string& unsaved_file::filename() const
+unsaved_file::unsaved_file(const std::string& filename_,
+                           const std::string& content_)
+  : _filename(filename_), _content(content_)
 {
-  return _filename;
 }
 
-const std::string& unsaved_file::content() const
-{
-  return _content;
-}
+const std::string& unsaved_file::filename() const { return _filename; }
 
+const std::string& unsaved_file::content() const { return _content; }

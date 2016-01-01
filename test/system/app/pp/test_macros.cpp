@@ -25,12 +25,7 @@ using namespace metashell_system_test;
 JUST_TEST_CASE(test_getting_defined_macro)
 {
   const auto r =
-    run_metashell(
-      {
-        command("#define FOO bar"),
-        command("#msh macros")
-      }
-    );
+      run_metashell({command("#define FOO bar"), command("#msh macros")});
 
   auto i = r.begin() + 2;
 
@@ -42,12 +37,7 @@ JUST_TEST_CASE(test_getting_defined_macro)
 JUST_TEST_CASE(test_getting_defined_macro_name)
 {
   const auto r =
-    run_metashell(
-      {
-        command("#define FOO bar"),
-        command("#msh macro names")
-      }
-    );
+      run_metashell({command("#define FOO bar"), command("#msh macro names")});
 
   auto i = r.begin() + 2;
 
@@ -56,4 +46,3 @@ JUST_TEST_CASE(test_getting_defined_macro_name)
   JUST_ASSERT(names.find("FOO") != std::string::npos);
   JUST_ASSERT(names.find("#define") == std::string::npos);
 }
-

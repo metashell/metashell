@@ -22,10 +22,7 @@ using namespace metashell;
 
 namespace
 {
-  std::string to_string(bool b_)
-  {
-    return b_ ? "true" : "false";
-  }
+  std::string to_string(bool b_) { return b_ ? "true" : "false"; }
 
   template <class T>
   std::string unexpected_integer_element(T value_)
@@ -41,12 +38,10 @@ namespace
   }
 }
 
-rapid_object_handler::rapid_object_handler(iface::displayer& displayer_) :
-  _empty(true),
-  _failed(false),
-  _in_object(false),
-  _displayer(displayer_)
-{}
+rapid_object_handler::rapid_object_handler(iface::displayer& displayer_)
+  : _empty(true), _failed(false), _in_object(false), _displayer(displayer_)
+{
+}
 
 bool rapid_object_handler::Null()
 {
@@ -166,14 +161,10 @@ bool rapid_object_handler::end_array()
   return false;
 }
 
-bool rapid_object_handler::failed() const
-{
-  return _failed;
-}
+bool rapid_object_handler::failed() const { return _failed; }
 
-boost::optional<std::string> rapid_object_handler::field(
-  const std::string& name_
-) const
+boost::optional<std::string>
+rapid_object_handler::field(const std::string& name_) const
 {
   const auto i = _fields.find(name_);
   if (i == _fields.end())
@@ -186,10 +177,7 @@ boost::optional<std::string> rapid_object_handler::field(
   }
 }
 
-bool rapid_object_handler::empty() const
-{
-  return _empty;
-}
+bool rapid_object_handler::empty() const { return _empty; }
 
 void rapid_object_handler::fail(const std::string& msg_)
 {
@@ -199,4 +187,3 @@ void rapid_object_handler::fail(const std::string& msg_)
     _failed = true;
   }
 }
-

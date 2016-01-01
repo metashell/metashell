@@ -21,19 +21,11 @@
 
 using namespace metashell;
 
-rapid_ostream_wrapper::rapid_ostream_wrapper(std::ostream& os_) :
-  _os(os_)
-{}
+rapid_ostream_wrapper::rapid_ostream_wrapper(std::ostream& os_) : _os(os_) {}
 
-void rapid_ostream_wrapper::Put(Ch c_)
-{
-  _os.put(c_);
-}
+void rapid_ostream_wrapper::Put(Ch c_) { _os.put(c_); }
 
-void rapid_ostream_wrapper::Flush()
-{
-  _os.flush();
-}
+void rapid_ostream_wrapper::Flush() { _os.flush(); }
 
 rapid_ostream_wrapper::Ch rapid_ostream_wrapper::Peek() const
 {
@@ -65,8 +57,4 @@ size_t rapid_ostream_wrapper::PutEnd(Ch*)
   return 0;
 }
 
-void rapid_ostream_wrapper::new_line()
-{
-  _os << std::endl;
-}
-
+void rapid_ostream_wrapper::new_line() { _os << std::endl; }

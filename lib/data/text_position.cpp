@@ -19,30 +19,18 @@
 
 using namespace metashell::data;
 
-text_position::text_position() :
-  _line(1),
-  _column(1)
-{}
+text_position::text_position() : _line(1), _column(1) {}
 
-text_position::text_position(int line_, int column_) :
-  _line(line_),
-  _column(column_)
-{}
-
-int text_position::line() const
+text_position::text_position(int line_, int column_)
+  : _line(line_), _column(column_)
 {
-  return _line;
 }
 
-int text_position::column() const
-{
-  return _column;
-}
+int text_position::line() const { return _line; }
 
-void text_position::next_column()
-{
-  ++_column;
-}
+int text_position::column() const { return _column; }
+
+void text_position::next_column() { ++_column; }
 
 void text_position::next_line()
 {
@@ -50,10 +38,8 @@ void text_position::next_line()
   ++_line;
 }
 
-text_position metashell::data::operator+(
-  text_position pos_,
-  const std::string& s_
-)
+text_position metashell::data::operator+(text_position pos_,
+                                         const std::string& s_)
 {
   bool was13 = false;
 
@@ -89,12 +75,8 @@ bool text_position::operator==(const text_position& pos_) const
   return _line == pos_._line && _column == pos_._column;
 }
 
-std::ostream& metashell::data::operator<<(
-  std::ostream& o_,
-  const text_position& pos_
-)
+std::ostream& metashell::data::operator<<(std::ostream& o_,
+                                          const text_position& pos_)
 {
   return o_ << pos_.line() << ":" << pos_.column();
 }
-
-

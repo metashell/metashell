@@ -39,25 +39,17 @@ JUST_TEST_CASE(test_file_location_construction)
 JUST_TEST_CASE(test_file_location_equality)
 {
   JUST_ASSERT_EQUAL(
-      file_location("foo.cpp", 10, 20),
-      file_location("foo.cpp", 10, 20));
-  JUST_ASSERT_EQUAL(
-      file_location(),
-      file_location());
+      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 20));
+  JUST_ASSERT_EQUAL(file_location(), file_location());
+
+  JUST_ASSERT_NOT_EQUAL(file_location(), file_location("foo.cpp", 10, 20));
 
   JUST_ASSERT_NOT_EQUAL(
-      file_location(),
-      file_location("foo.cpp", 10, 20));
+      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 21));
 
   JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20),
-      file_location("foo.cpp", 10, 21));
+      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 11, 20));
 
   JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20),
-      file_location("foo.cpp", 11, 20));
-
-  JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20),
-      file_location("bar.cpp", 10, 20));
+      file_location("foo.cpp", 10, 20), file_location("bar.cpp", 10, 20));
 }

@@ -40,4 +40,3 @@ namespace metashell
 }
 
 #endif
-

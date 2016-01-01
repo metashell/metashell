@@ -36,6 +36,7 @@ public:
 
   void append_throw_from_now();
   void get_appended_throw_from_now();
+
 private:
   metashell::data::headers _headers;
 
@@ -46,5 +47,3 @@ private:
 };
 
 #endif
-
-

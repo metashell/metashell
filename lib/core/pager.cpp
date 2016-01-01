@@ -22,50 +22,62 @@
 
 #include <iostream>
 
-namespace metashell {
+namespace metashell
+{
 
-pager::pager(iface::console& console) : console_(console) {}
+  pager::pager(iface::console& console) : console_(console) {}
 
-void pager::show(const data::colored_string& string) {
-  console_.show(string);
+  void pager::show(const data::colored_string& string)
+  {
+    console_.show(string);
 
-  if (show_all) {
-    return;
-  }
+    if (show_all)
+    {
+      return;
+    }
 
-  int width = console_.width();
+    int width = console_.width();
 
-  for (char ch : string.get_string()) {
-    if (ch == '\n') {
-      ++lines_in_current_page;
-      chars_in_current_line = 0;
-    } else {
-      ++chars_in_current_line;
-      if (chars_in_current_line > width) {
+    for (char ch : string.get_string())
+    {
+      if (ch == '\n')
+      {
         ++lines_in_current_page;
         chars_in_current_line = 0;
       }
+      else
+      {
+        ++chars_in_current_line;
+        if (chars_in_current_line > width)
+        {
+          ++lines_in_current_page;
+          chars_in_current_line = 0;
+        }
+      }
     }
   }
-}
 
-bool pager::new_line() {
-  console_.new_line();
+  bool pager::new_line()
+  {
+    console_.new_line();
 
-  if (show_all) {
-    return true;
-  }
+    if (show_all)
+    {
+      return true;
+    }
 
-  chars_in_current_line = 0;
-  ++lines_in_current_page;
+    chars_in_current_line = 0;
+    ++lines_in_current_page;
 
-  int height = console_.height();
-  if (height <= lines_in_current_page + 1) {
-    lines_in_current_page = 0;
+    int height = console_.height();
+    if (height <= lines_in_current_page + 1)
+    {
+      lines_in_current_page = 0;
 
-    auto answer = console_.ask_for_continuation();
+      auto answer = console_.ask_for_continuation();
 
-    switch (answer) {
+      switch (answer)
+      {
       case iface::console::user_answer::show_all:
         show_all = true;
         return true;
@@ -73,9 +85,9 @@ bool pager::new_line() {
         return false;
       case iface::console::user_answer::next_page:
         return true;
+      }
     }
+    return true;
   }
-  return true;
-}
 
 } // namespace metashell

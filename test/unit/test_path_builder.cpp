@@ -55,4 +55,3 @@ JUST_TEST_CASE(test_appending_to_non_empty_path)
   const std::string p = path_builder("foo") / "bar";
   JUST_ASSERT_EQUAL(join_path("foo", "bar"), p);
 }
-

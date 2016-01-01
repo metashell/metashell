@@ -27,10 +27,13 @@
 
 #include <templight/ProtobufReader.h>
 
-namespace metashell {
+namespace metashell
+{
 
-data::instantiation_kind instantiation_kind_from_protobuf(int kind) {
-  switch (kind) {
+  data::instantiation_kind instantiation_kind_from_protobuf(int kind)
+  {
+    switch (kind)
+    {
     case 0:
       return data::instantiation_kind::template_instantiation;
     case 1:
@@ -52,70 +55,67 @@ data::instantiation_kind instantiation_kind_from_protobuf(int kind) {
     default:
       throw exception(
           "templight xml parse failed (invalid instantiation kind)");
+    }
   }
-}
 
-metaprogram metaprogram::create_from_protobuf_stream(
-    std::istream& stream,
-    mode_t mode,
-    const std::string& root_name,
-    const data::file_location& root_source_location,
-    const data::type_or_error& evaluation_result)
-{
+  metaprogram metaprogram::create_from_protobuf_stream(
+      std::istream& stream,
+      mode_t mode,
+      const std::string& root_name,
+      const data::file_location& root_source_location,
+      const data::type_or_error& evaluation_result)
+  {
 
-  metaprogram_builder builder(
-    mode, root_name, root_source_location, evaluation_result);
+    metaprogram_builder builder(
+        mode, root_name, root_source_location, evaluation_result);
 
-  templight::ProtobufReader reader;
-  reader.startOnBuffer(stream);
+    templight::ProtobufReader reader;
+    reader.startOnBuffer(stream);
 
-  while (reader.LastChunk != templight::ProtobufReader::EndOfFile) {
-    switch (reader.LastChunk) {
+    while (reader.LastChunk != templight::ProtobufReader::EndOfFile)
+    {
+      switch (reader.LastChunk)
+      {
       case templight::ProtobufReader::BeginEntry:
-        {
-          auto begin_entry = reader.LastBeginEntry;
-          builder.handle_template_begin(
-              instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
-              data::type(begin_entry.Name),
-              data::file_location(
-                begin_entry.FileName,
-                begin_entry.Line,
-                begin_entry.Column),
-              data::file_location(
-                begin_entry.TempOri_FileName,
-                begin_entry.TempOri_Line,
-                begin_entry.TempOri_Column),
-              begin_entry.TimeStamp);
-          break;
-        }
+      {
+        auto begin_entry = reader.LastBeginEntry;
+        builder.handle_template_begin(
+            instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
+            data::type(begin_entry.Name),
+            data::file_location(
+                begin_entry.FileName, begin_entry.Line, begin_entry.Column),
+            data::file_location(begin_entry.TempOri_FileName,
+                                begin_entry.TempOri_Line,
+                                begin_entry.TempOri_Column),
+            begin_entry.TimeStamp);
+        break;
+      }
       case templight::ProtobufReader::EndEntry:
-        {
-          auto end_entry = reader.LastEndEntry;
-          builder.handle_template_end(end_entry.TimeStamp);
-          break;
-        }
+      {
+        auto end_entry = reader.LastEndEntry;
+        builder.handle_template_end(end_entry.TimeStamp);
+        break;
+      }
       case templight::ProtobufReader::EndOfFile:
       case templight::ProtobufReader::Other:
       case templight::ProtobufReader::Header:
       default:
         break;
+      }
+      reader.next();
     }
-    reader.next();
+    return builder.get_metaprogram();
   }
-  return builder.get_metaprogram();
-}
 
-metaprogram metaprogram::create_from_protobuf_string(
-    const std::string& string,
-    mode_t mode,
-    const std::string& root_name,
-    const data::file_location& root_source_location,
-    const data::type_or_error& evaluation_result)
-{
-  std::istringstream ss(string);
-  return create_from_protobuf_stream(
-    ss, mode, root_name, root_source_location, evaluation_result);
+  metaprogram metaprogram::create_from_protobuf_string(
+      const std::string& string,
+      mode_t mode,
+      const std::string& root_name,
+      const data::file_location& root_source_location,
+      const data::type_or_error& evaluation_result)
+  {
+    std::istringstream ss(string);
+    return create_from_protobuf_stream(
+        ss, mode, root_name, root_source_location, evaluation_result);
+  }
 }
-
-}
-

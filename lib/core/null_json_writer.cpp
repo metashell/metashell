@@ -62,4 +62,3 @@ void null_json_writer::end_document()
 {
   // throw away
 }
-

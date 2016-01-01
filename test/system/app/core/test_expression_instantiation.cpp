@@ -29,21 +29,23 @@ using namespace metashell_system_test;
 JUST_TEST_CASE(test_instantiating_good_expression)
 {
   const std::string ie_hpp =
-    path_builder() / "metashell" / "instantiate_expression.hpp";
+      path_builder() / "metashell" / "instantiate_expression.hpp";
 
-  const auto r =
-    run_metashell({
-      command("#include <" + ie_hpp + ">"),
-      command("template <class T> T mod2(T t_) { return t_ % 2; }"),
-      command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )")
-    });
+  const auto r = run_metashell(
+      {command("#include <" + ie_hpp + ">"),
+       command("template <class T> T mod2(T t_) { return t_ % 2; }"),
+       command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("metashell::expression_instantiated<true>"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type("metashell::expression_instantiated<true>"), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
@@ -51,24 +53,25 @@ JUST_TEST_CASE(test_instantiating_good_expression)
 JUST_TEST_CASE(test_instantiating_expression_that_generates_an_error)
 {
   const std::string ie_hpp =
-    path_builder() / "metashell" / "instantiate_expression.hpp";
+      path_builder() / "metashell" / "instantiate_expression.hpp";
 
-  const auto r =
-    run_metashell({
-      command("#include <" + ie_hpp + ">"),
-      command("#include <string>"),
-      command("template <class T> T mod2(T t_) { return t_ % 2; }"),
-      command("METASHELL_INSTANTIATE_EXPRESSION( mod2(std::string()) )")
-    });
+  const auto r = run_metashell(
+      {command("#include <" + ie_hpp + ">"), command("#include <string>"),
+       command("template <class T> T mod2(T t_) { return t_ % 2; }"),
+       command("METASHELL_INSTANTIATE_EXPRESSION( mod2(std::string()) )")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(error(_), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(error(_), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
-

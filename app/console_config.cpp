@@ -51,11 +51,9 @@ namespace
   }
 }
 
-console_config::console_config(
-  data::console_type type_,
-  bool indent_,
-  bool syntax_highlight_
-)
+console_config::console_config(data::console_type type_,
+                               bool indent_,
+                               bool syntax_highlight_)
 {
   switch (type_)
   {
@@ -68,8 +66,7 @@ console_config::console_config(
   case data::console_type::readline:
     _console.reset(new stdout_console());
     _displayer.reset(
-      new console_displayer(*_console, indent_, syntax_highlight_)
-    );
+        new console_displayer(*_console, indent_, syntax_highlight_));
     _history.reset(new readline::history);
     _reader = metashell::readline::line_reader(_processor_queue);
     break;
@@ -77,36 +74,21 @@ console_config::console_config(
     _json_writer.reset(new rapid_json_writer(std::cout));
     _displayer.reset(new json_displayer(*_json_writer));
     _history.reset(new null_history);
-    _reader =
-      build_json_line_reader(
-        plain_line_reader,
-        *_displayer,
-        *_json_writer,
-        _processor_queue
-      );
+    _reader = build_json_line_reader(
+        plain_line_reader, *_displayer, *_json_writer, _processor_queue);
     break;
   }
 
   _processor_queue.history(*_history);
 }
 
-iface::displayer& console_config::displayer()
-{
-  return *_displayer;
-}
+iface::displayer& console_config::displayer() { return *_displayer; }
 
-iface::history& console_config::history()
-{
-  return *_history;
-}
+iface::history& console_config::history() { return *_history; }
 
-line_reader& console_config::reader()
-{
-  return _reader;
-}
+line_reader& console_config::reader() { return _reader; }
 
 command_processor_queue& console_config::processor_queue()
 {
   return _processor_queue;
 }
-

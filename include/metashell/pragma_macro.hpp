@@ -28,17 +28,16 @@ namespace metashell
   class pragma_macro : public pragma_without_arguments
   {
   public:
-    pragma_macro(
-      std::string description_,
-      std::vector<std::string> commands_,
-      iface::command_processor& shell_
-    );
+    pragma_macro(std::string description_,
+                 std::vector<std::string> commands_,
+                 iface::command_processor& shell_);
 
     virtual iface::pragma_handler* clone() const override;
 
     virtual std::string description() const override;
 
     virtual void run(iface::displayer& displayer_) const override;
+
   private:
     iface::command_processor& _shell;
     std::vector<std::string> _commands;
@@ -47,4 +46,3 @@ namespace metashell
 }
 
 #endif
-

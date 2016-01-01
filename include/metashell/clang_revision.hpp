@@ -5,7 +5,7 @@
  */
 
 #ifdef METASHELL_CLANG_REVISION
-#  error METASHELL_CLANG_REVISION already defined
+#error METASHELL_CLANG_REVISION already defined
 #endif
 #define METASHELL_CLANG_REVISION 252870
 

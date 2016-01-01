@@ -56,13 +56,8 @@ JUST_TEST_CASE(test_getting_line_with_json_line_reader)
   null_json_writer jw;
   null_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{"{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{\"type\":\"cmd\",\"cmd\":\"int\"}"}, d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
@@ -75,13 +70,9 @@ JUST_TEST_CASE(test_rejected_json_is_skipped)
   null_json_writer jw;
   null_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
+  const line_reader r = build_json_line_reader(
       string_reader{"\"invalid_json\"", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d,
-      jw,
-      cpq
-    );
+      d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
@@ -94,13 +85,8 @@ JUST_TEST_CASE(test_command_without_type)
   null_json_writer jw;
   in_memory_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{"{}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"}, d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
@@ -117,24 +103,16 @@ JUST_TEST_CASE(test_command_of_unknown_type)
   null_json_writer jw;
   in_memory_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{
-        "{\"type\":\"some unknown type\"}",
-        "{\"type\":\"cmd\",\"cmd\":\"int\"}"
-      },
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{\"type\":\"some unknown type\"}",
+                    "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
+      d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
   // generates an error
   JUST_ASSERT_EQUAL_CONTAINER(
-    {"Unknown command type: some unknown type"},
-    d.errors()
-  );
+      {"Unknown command type: some unknown type"}, d.errors());
 
   // skipped
   JUST_ASSERT(boost::none != l);
@@ -146,21 +124,15 @@ JUST_TEST_CASE(test_cmd_command_without_cmd_field)
   null_json_writer jw;
   in_memory_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
+  const line_reader r = build_json_line_reader(
       string_reader{"{\"type\":\"cmd\"}", "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
-      d,
-      jw,
-      cpq
-    );
+      d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
   // generates an error
   JUST_ASSERT_EQUAL_CONTAINER(
-    {"The cmd field of the cmd command is missing"},
-    d.errors()
-  );
+      {"The cmd field of the cmd command is missing"}, d.errors());
 
   // skipped
   JUST_ASSERT(boost::none != l);
@@ -178,15 +150,9 @@ JUST_TEST_CASE(test_json_line_reader_displays_prompt)
   r(">");
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {
-      "start_object",
-        "key type", "string prompt",
-        "key prompt", "string >",
-      "end_object",
-      "end_document"
-    },
-    jw.calls()
-  );
+      {"start_object", "key type", "string prompt", "key prompt", "string >",
+       "end_object", "end_document"},
+      jw.calls());
 }
 
 JUST_TEST_CASE(test_code_completion_without_code)
@@ -194,24 +160,16 @@ JUST_TEST_CASE(test_code_completion_without_code)
   null_json_writer jw;
   in_memory_displayer d;
   command_processor_queue cpq;
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{
-        "{\"type\":\"code_completion\"}",
-        "{\"type\":\"cmd\",\"cmd\":\"int\"}"
-      },
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{\"type\":\"code_completion\"}",
+                    "{\"type\":\"cmd\",\"cmd\":\"int\"}"},
+      d, jw, cpq);
 
   const boost::optional<std::string> l = r(">");
 
   // generates an error
   JUST_ASSERT_EQUAL_CONTAINER(
-    {"The code field of the code_completion command is missing"},
-    d.errors()
-  );
+      {"The code field of the code_completion command is missing"}, d.errors());
 
   // skipped
   JUST_ASSERT(boost::none != l);
@@ -227,23 +185,19 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_gets_code_completion)
   std::string called_with;
 
   mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback =
-    [&called, &called_with](const std::string& code_, std::set<std::string>&)
-    {
-      called = true;
-      called_with = code_;
-    };
+  cp->code_complete_callback = [&called, &called_with](
+      const std::string& code_, std::set<std::string>&)
+  {
+    called = true;
+    called_with = code_;
+  };
 
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"},
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, jw,
+      cpq);
 
   r(">");
 
@@ -257,51 +211,31 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_result)
   null_displayer d;
 
   mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback =
-    [](const std::string&, std::set<std::string>& out_)
-    {
-      out_.insert("hello");
-      out_.insert("world");
-    };
- 
+  cp->code_complete_callback = [](
+      const std::string&, std::set<std::string>& out_)
+  {
+    out_.insert("hello");
+    out_.insert("world");
+  };
+
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
-  const line_reader r =
-    build_json_line_reader(
-      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"},
-      d,
-      jw,
-      cpq
-    );
+  const line_reader r = build_json_line_reader(
+      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, jw,
+      cpq);
 
   r(">");
 
   JUST_ASSERT_EQUAL_CONTAINER(
-    {
-      "start_object",
-        "key type", "string prompt",
-        "key prompt", "string >",
-      "end_object",
-      "end_document",
+      {"start_object", "key type", "string prompt", "key prompt", "string >",
+       "end_object", "end_document",
 
-      "start_object",
-        "key type", "string code_completion_result",
-        "key completions",
-          "start_array",
-            "string hello",
-            "string world",
-          "end_array",
-      "end_object",
-      "end_document",
+       "start_object", "key type", "string code_completion_result",
+       "key completions", "start_array", "string hello", "string world",
+       "end_array", "end_object", "end_document",
 
-      "start_object",
-        "key type", "string prompt",
-        "key prompt", "string >",
-      "end_object",
-      "end_document"
-    },
-    jw.calls()
-  );
+       "start_object", "key type", "string prompt", "key prompt", "string >",
+       "end_object", "end_document"},
+      jw.calls());
 }
-

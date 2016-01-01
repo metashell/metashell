@@ -31,13 +31,11 @@ namespace metashell
     virtual void show_cpp_code(const std::string& code_) override;
 
     virtual void show_frame(const data::frame& frame_) override;
-    virtual void show_file_section(
-      const data::file_location& location_,
-      const std::string& env_buffer_) override;
+    virtual void show_file_section(const data::file_location& location_,
+                                   const std::string& env_buffer_) override;
     virtual void show_backtrace(const data::backtrace& trace_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
   };
 }
 
 #endif
-

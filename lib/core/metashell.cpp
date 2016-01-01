@@ -35,35 +35,25 @@ using namespace metashell;
 
 namespace
 {
-  bool has_typedef(
-    const data::command::iterator& begin_,
-    const data::command::iterator& end_
-  )
+  bool has_typedef(const data::command::iterator& begin_,
+                   const data::command::iterator& end_)
   {
-    return
-      std::find_if(
-        begin_,
-        end_,
-        [](const data::token& t_)
-        {
-          return t_.type() == data::token_type::keyword_typedef;
-        }
-      ) != end_;
+    return std::find_if(begin_, end_, [](const data::token& t_)
+                        {
+                          return t_.type() == data::token_type::keyword_typedef;
+                        }) != end_;
   }
 
-  data::token_type last_non_whitespace_token_type(
-    data::command::iterator begin_,
-    const data::command::iterator& end_
-  )
+  data::token_type
+  last_non_whitespace_token_type(data::command::iterator begin_,
+                                 const data::command::iterator& end_)
   {
     data::token_type t;
     for (; begin_ != end_; ++begin_)
     {
       const data::token_category c = begin_->category();
-      if (
-        c != data::token_category::whitespace
-        && c != data::token_category::comment
-      )
+      if (c != data::token_category::whitespace &&
+          c != data::token_category::comment)
       {
         t = begin_->type();
       }
@@ -72,20 +62,20 @@ namespace
   }
 } // anonymous namespace
 
-std::string metashell::repair_type_string(const std::string& type) {
-  boost::regex bool_regex(
-      "(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
-  boost::regex type_regex(
-      "(^|[^A-Za-z0-9_])(?:class |struct |union |enum )");
+std::string metashell::repair_type_string(const std::string& type)
+{
+  boost::regex bool_regex("(^|[^A-Za-z0-9_])_Bool([^A-Za-z0-9_]|$)");
+  boost::regex type_regex("(^|[^A-Za-z0-9_])(?:class |struct |union |enum )");
 
-  auto tmp = boost::regex_replace(type, bool_regex, "\\1bool\\2",
-      boost::match_default | boost::format_all);
+  auto tmp = boost::regex_replace(
+      type, bool_regex, "\\1bool\\2", boost::match_default | boost::format_all);
 
-  return boost::regex_replace(tmp, type_regex, "\\1",
-      boost::match_default | boost::format_all);
+  return boost::regex_replace(
+      tmp, type_regex, "\\1", boost::match_default | boost::format_all);
 }
 
-std::string metashell::get_type_from_ast_string(const std::string& ast) {
+std::string metashell::get_type_from_ast_string(const std::string& ast)
+{
   // This algorithm is very ugly, but it basically iterates on the
   // lines of the ast dump from the end until it finds the interesting line.
 
@@ -93,32 +83,33 @@ std::string metashell::get_type_from_ast_string(const std::string& ast) {
   std::size_t start_index = ast.find_last_of('\n');
 
   boost::regex reg(
-    ".*':'struct metashell::impl::wrap<?(.*)>' "
-    "'void \\(void\\)"
-    "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
+      ".*':'struct metashell::impl::wrap<?(.*)>' "
+      "'void \\(void\\)"
+      "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
 
   std::string line;
-  while (true) {
+  while (true)
+  {
     end_index = start_index;
     start_index = ast.find_last_of('\n', end_index - 1);
 
-    if (start_index == std::string::npos || end_index == std::string::npos) {
+    if (start_index == std::string::npos || end_index == std::string::npos)
+    {
       throw exception("No suitable ast line in dump");
     }
 
-    line = ast.substr(start_index + 1, end_index-start_index-1);
+    line = ast.substr(start_index + 1, end_index - start_index - 1);
 
     boost::smatch match;
-    if (boost::regex_match(line, match, reg)) {
+    if (boost::regex_match(line, match, reg))
+    {
       return repair_type_string(boost::trim_copy(std::string(match[1])));
     }
   }
 }
 
 bool metashell::is_environment_setup_command(
-  data::command::iterator begin_,
-  const data::command::iterator& end_
-)
+    data::command::iterator begin_, const data::command::iterator& end_)
 {
   try
   {
@@ -156,11 +147,10 @@ bool metashell::is_environment_setup_command(
           }
           else
           {
-            const data::token_type
-              lt = last_non_whitespace_token_type(begin_, end_);
-            return
-              lt == data::token_type::operator_semicolon
-              || lt == data::token_type::operator_right_brace;
+            const data::token_type lt =
+                last_non_whitespace_token_type(begin_, end_);
+            return lt == data::token_type::operator_semicolon ||
+                   lt == data::token_type::operator_right_brace;
           }
         case data::token_type::keyword_sizeof:
         case data::token_type::keyword_const_cast:
@@ -173,10 +163,9 @@ bool metashell::is_environment_setup_command(
         }
         assert(false);
       case data::token_category::identifier:
-        return
-          has_typedef(begin_, end_) ||
-            last_non_whitespace_token_type(begin_, end_)
-            == data::token_type::operator_semicolon;
+        return has_typedef(begin_, end_) ||
+               last_non_whitespace_token_type(begin_, end_) ==
+                   data::token_type::operator_semicolon;
       case data::token_category::preprocessor:
         return true;
       default:
@@ -189,4 +178,3 @@ bool metashell::is_environment_setup_command(
     return false;
   }
 }
-

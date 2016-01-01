@@ -56,9 +56,8 @@ JUST_TEST_CASE(test_name_of_pragma)
   const data::command c_foo("#pragma metashell foo");
   const data::command c_bar("#pragma metashell bar");
 
-  const data::command::iterator
-    op_foo = *parse_pragma(c_foo),
-    op_bar = *parse_pragma(c_bar);
+  const data::command::iterator op_foo = *parse_pragma(c_foo),
+                                op_bar = *parse_pragma(c_bar);
 
   JUST_ASSERT_EQUAL("foo", op_foo->value());
   JUST_ASSERT_EQUAL("bar", op_bar->value());
@@ -66,14 +65,18 @@ JUST_TEST_CASE(test_name_of_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS(
-    [] { parse_pragma(data::command("#pragma metashell 13")); }
-  );
+  JUST_ASSERT_THROWS([]
+                     {
+                       parse_pragma(data::command("#pragma metashell 13"));
+                     });
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS([] { parse_pragma(data::command("#pragma metashell")); });
+  JUST_ASSERT_THROWS([]
+                     {
+                       parse_pragma(data::command("#pragma metashell"));
+                     });
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)
@@ -98,9 +101,7 @@ JUST_TEST_CASE(test_check_verbosity)
   shell sh(test_config(), "", "", create_failing_engine());
   sh.line_available("#pragma metashell verbose", d);
   JUST_ASSERT_EQUAL_CONTAINER(
-    {data::text("verbose mode is off")},
-    d.comments()
-  );
+      {data::text("verbose mode is off")}, d.comments());
 }
 
 JUST_TEST_CASE(test_check_enabling_verbosity)
@@ -148,4 +149,3 @@ JUST_TEST_CASE(test_accept_pragma_msh_as_pragma_metashell)
   JUST_ASSERT(bool(parse_pragma(data::command("# pragma msh foo"))));
   JUST_ASSERT(bool(parse_pragma(data::command(" # pragma msh foo"))));
 }
-

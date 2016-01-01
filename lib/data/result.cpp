@@ -16,20 +16,20 @@
 
 #include <metashell/data/result.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-namespace data {
+  namespace data
+  {
 
-result::result() {}
+    result::result() {}
 
-result::result(
-  bool successful,
-  const std::string& output_,
-  const std::string& error_,
-  const std::string& info_) :
-    successful(successful), output(output_), error(error_), info(info_) {}
-
+    result::result(bool successful,
+                   const std::string& output_,
+                   const std::string& error_,
+                   const std::string& info_)
+      : successful(successful), output(output_), error(error_), info(info_)
+    {
+    }
+  }
 }
-
-}
-

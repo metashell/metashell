@@ -36,6 +36,7 @@ namespace metashell
       const frame& current_frame() const;
       int depth() const;
       int number_of_children() const;
+
     private:
       frame _frame;
       int _depth;
@@ -48,4 +49,3 @@ namespace metashell
 }
 
 #endif
-

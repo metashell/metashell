@@ -30,50 +30,43 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
 {
-  const auto r =
-    run_metashell(
-      { command("#pragma metashell environment add typedef int x;") }
-    );
+  const auto r = run_metashell(
+      {command("#pragma metashell environment add typedef int x;")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-
-  JUST_ASSERT_EQUAL(
-    comment(
-      {
-        paragraph(
-          "You don't need the environment add pragma to add this to the"
-          " environment. The following command does this as well:"
-        )
-      }
-    ),
-    *i
-  );
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;
 
-  JUST_ASSERT_EQUAL(cpp_code("typedef int x;"), *i); ++i;
+  JUST_ASSERT_EQUAL(
+      comment({paragraph(
+          "You don't need the environment add pragma to add this to the"
+          " environment. The following command does this as well:")}),
+      *i);
+  ++i;
+
+  JUST_ASSERT_EQUAL(cpp_code("typedef int x;"), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
 
 JUST_TEST_CASE(test_resetting_the_environment)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("typedef int foo;"),
-        command("#pragma metashell environment reset"),
-        command("foo")
-      }
-    );
+  const auto r = run_metashell({command("typedef int foo;"),
+                                command("#pragma metashell environment reset"),
+                                command("foo")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(error(_), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(error(_), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
@@ -82,87 +75,85 @@ JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
 {
   const std::string scalar_hpp = path_builder() / "metashell" / "scalar.hpp";
 
-  const auto r =
-    run_metashell(
-      {
-        command("#pragma metashell environment reset"),
-        command("#include <" + scalar_hpp + ">"),
-        command("SCALAR(__METASHELL_MAJOR)")
-      }
-    );
+  const auto r = run_metashell({command("#pragma metashell environment reset"),
+                                command("#include <" + scalar_hpp + ">"),
+                                command("SCALAR(__METASHELL_MAJOR)")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(type(_), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type(_), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
 
 JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("typedef int foo;"),
-        command("#pragma metashell environment push"),
-        command("#pragma metashell environment reset"),
-        command("#pragma metashell environment pop"),
-        command("foo")
-      }
-    );
+  const auto r = run_metashell({command("typedef int foo;"),
+                                command("#pragma metashell environment push"),
+                                command("#pragma metashell environment reset"),
+                                command("#pragma metashell environment pop"),
+                                command("foo")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-
-  JUST_ASSERT_EQUAL(
-    comment({paragraph("Environment stack has 1 entry")}),
-    *i
-  );
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
   ++i;
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(comment({paragraph("Environment stack has 1 entry")}), *i);
+  ++i;
+
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
 
   JUST_ASSERT_EQUAL(comment({paragraph("Environment stack is empty")}), *i);
   ++i;
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type("int"), *i);
+  ++i;
 
   JUST_ASSERT(i == r.end());
 }
 
 JUST_TEST_CASE(
-  test_environment_add_invalid_code_does_not_change_environment_and_displays_error
-)
+    test_environment_add_invalid_code_does_not_change_environment_and_displays_error)
 {
   const cpp_code breaking("typedef nonexisting_type x;");
 
-  const auto r =
-    run_metashell(
-      {
-        command("#pragma metashell environment"),
-        command("#pragma metashell environment add "+*breaking.code().value()),
-        command("#pragma metashell environment")
-      }
-    );
+  const auto r = run_metashell(
+      {command("#pragma metashell environment"),
+       command("#pragma metashell environment add " + *breaking.code().value()),
+       command("#pragma metashell environment")});
 
   auto i = r.begin();
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
 
-  const auto original_env = *i; ++i;
+  const auto original_env = *i;
+  ++i;
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
-  JUST_ASSERT_EQUAL(error(_), *i); ++i;
-  JUST_ASSERT_EQUAL(comment(_), *i); ++i;
-  JUST_ASSERT_EQUAL(breaking, *i); ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i); ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(error(_), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(comment(_), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(breaking, *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(">"), *i);
+  ++i;
   JUST_ASSERT_EQUAL(original_env, *i);
 }
-

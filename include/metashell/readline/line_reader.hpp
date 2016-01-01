@@ -29,4 +29,3 @@ namespace metashell
 }
 
 #endif
-

@@ -26,13 +26,12 @@ namespace metashell
     class unsaved_file
     {
     public:
-      explicit unsaved_file(
-        const std::string& filename_ = "",
-        const std::string& content_ = ""
-      );
+      explicit unsaved_file(const std::string& filename_ = "",
+                            const std::string& content_ = "");
 
       const std::string& filename() const;
       const std::string& content() const;
+
     private:
       std::string _filename;
       std::string _content;
@@ -41,4 +40,3 @@ namespace metashell
 }
 
 #endif
-

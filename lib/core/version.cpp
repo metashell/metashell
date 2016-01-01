@@ -22,21 +22,17 @@ using namespace metashell;
 std::string metashell::version()
 {
 #ifndef METASHELL_MAJOR
-  #error METASHELL_MAJOR not defined
+#error METASHELL_MAJOR not defined
 #endif
 
 #ifndef METASHELL_MINOR
-  #error METASHELL_MINOR not defined
+#error METASHELL_MINOR not defined
 #endif
 
 #ifndef METASHELL_PATCH
-  #error METASHELL_PATCH not defined
+#error METASHELL_PATCH not defined
 #endif
 
-  return
-    TO_STRING(METASHELL_MAJOR)
-    "." TO_STRING(METASHELL_MINOR)
-    "." TO_STRING(METASHELL_PATCH);
+  return TO_STRING(METASHELL_MAJOR) "." TO_STRING(
+      METASHELL_MINOR) "." TO_STRING(METASHELL_PATCH);
 }
-
-

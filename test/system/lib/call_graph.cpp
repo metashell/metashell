@@ -21,24 +21,20 @@
 
 using namespace metashell_system_test;
 
-call_graph::call_graph(std::vector<call_graph_node> call_graph_nodes_) :
-  _call_graph_nodes(call_graph_nodes_)
-{}
+call_graph::call_graph(std::vector<call_graph_node> call_graph_nodes_)
+  : _call_graph_nodes(call_graph_nodes_)
+{
+}
 
 call_graph::iterator call_graph::begin() const
 {
   return _call_graph_nodes.begin();
 }
 
-call_graph::iterator call_graph::end() const
-{
-  return _call_graph_nodes.end();
-}
+call_graph::iterator call_graph::end() const { return _call_graph_nodes.end(); }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& o_,
-  const call_graph& c_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& o_,
+                                                const call_graph& c_)
 {
   return o_ << to_json_string(c_);
 }
@@ -85,11 +81,8 @@ json_string metashell_system_test::to_json_string(const call_graph& c_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const call_graph& c_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const call_graph& c_,
+                                       const json_string& s_)
 {
   return to_json_string(c_) == s_;
 }
-

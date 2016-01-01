@@ -20,8 +20,4 @@
 
 using namespace metashell::data;
 
-config metashell::test_config()
-{
-  return config{};
-}
-
+config metashell::test_config() { return config{}; }

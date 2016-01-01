@@ -20,28 +20,15 @@
 
 using namespace metashell::data;
 
-process_output::process_output(
-  exit_code_t exit_code_,
-  const std::string& stdout_,
-  const std::string& stderr_
-) :
-  _exit_code(exit_code_),
-  _out(stdout_),
-  _err(stderr_)
-{}
-
-exit_code_t process_output::exit_code() const
+process_output::process_output(exit_code_t exit_code_,
+                               const std::string& stdout_,
+                               const std::string& stderr_)
+  : _exit_code(exit_code_), _out(stdout_), _err(stderr_)
 {
-  return _exit_code;
 }
 
-const std::string& process_output::standard_output() const
-{
-  return _out;
-}
+exit_code_t process_output::exit_code() const { return _exit_code; }
 
-const std::string& process_output::standard_error() const
-{
-  return _err;
-}
+const std::string& process_output::standard_output() const { return _out; }
 
+const std::string& process_output::standard_error() const { return _err; }

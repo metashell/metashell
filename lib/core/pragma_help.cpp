@@ -25,41 +25,32 @@ using namespace metashell;
 
 namespace
 {
-  void display_all(
-    iface::displayer& displayer_,
-    const pragma_handler_map& pragma_handlers_
-  )
+  void display_all(iface::displayer& displayer_,
+                   const pragma_handler_map& pragma_handlers_)
   {
     using boost::algorithm::join;
 
     data::text t;
     t.paragraphs.push_back(
-      data::paragraph("Metashell has the following built-in pragmas:")
-    );
+        data::paragraph("Metashell has the following built-in pragmas:"));
 
     for (const auto& p : pragma_handlers_)
     {
       const std::string args = p.second.arguments();
       t.paragraphs.push_back(
-        data::paragraph(
-          "#msh "
-            + join(p.first, " ") + (args.empty() ? std::string() : " " + args),
-          "  "
-        )
-      );
+          data::paragraph("#msh " + join(p.first, " ") +
+                              (args.empty() ? std::string() : " " + args),
+                          "  "));
     }
 
     const data::paragraph empty_line("");
 
     t.paragraphs.push_back(empty_line);
     t.paragraphs.push_back(
-      data::paragraph(
-        "#msh is the short form of #pragma metashell. Both forms are accepted"
-      )
-    );
+        data::paragraph("#msh is the short form of #pragma metashell. Both "
+                        "forms are accepted"));
     t.paragraphs.push_back(
-      data::paragraph("To quit Metashell run \"#msh quit\"")
-    );
+        data::paragraph("To quit Metashell run \"#msh quit\""));
     t.paragraphs.push_back(empty_line);
 
     displayer_.show_comment(t);
@@ -68,10 +59,8 @@ namespace
   template <class It1, class It2>
   bool prefix_of(It1 prefix_begin_, It1 prefix_end_, It2 begin_, It2 end_)
   {
-    while (
-      prefix_begin_ != prefix_end_ && begin_ != end_
-        && *prefix_begin_ == *begin_
-    )
+    while (prefix_begin_ != prefix_end_ && begin_ != end_ &&
+           *prefix_begin_ == *begin_)
     {
       ++prefix_begin_;
       ++begin_;
@@ -80,32 +69,28 @@ namespace
   }
 }
 
-pragma_help::pragma_help(const pragma_handler_map& pragma_handlers_) :
-  _pragma_handlers(pragma_handlers_)
-{}
+pragma_help::pragma_help(const pragma_handler_map& pragma_handlers_)
+  : _pragma_handlers(pragma_handlers_)
+{
+}
 
 iface::pragma_handler* pragma_help::clone() const
 {
   return new pragma_help(_pragma_handlers);
 }
 
-std::string pragma_help::arguments() const
-{
-  return "[<command>]";
-}
+std::string pragma_help::arguments() const { return "[<command>]"; }
 
 std::string pragma_help::description() const
 {
   return "Displays a help message.";
 }
 
-void pragma_help::run(
-  const data::command::iterator&,
-  const data::command::iterator&,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_help::run(const data::command::iterator&,
+                      const data::command::iterator&,
+                      const data::command::iterator& args_begin_,
+                      const data::command::iterator& args_end_,
+                      iface::displayer& displayer_) const
 {
   using boost::algorithm::join;
 
@@ -146,15 +131,10 @@ void pragma_help::run(
         }
         const std::string p_args = h.second.arguments();
         help_text.paragraphs.push_back(
-          data::paragraph(
-            "#msh "
-              + join(h.first, " ")
-              + (p_args.empty() ? std::string() : " " + p_args)
-          )
-        );
+            data::paragraph("#msh " + join(h.first, " ") +
+                            (p_args.empty() ? std::string() : " " + p_args)));
         help_text.paragraphs.push_back(
-          data::paragraph(h.second.description(), "    ")
-        );
+            data::paragraph(h.second.description(), "    "));
       }
     }
     if (was_pragma)
@@ -167,4 +147,3 @@ void pragma_help::run(
     }
   }
 }
-

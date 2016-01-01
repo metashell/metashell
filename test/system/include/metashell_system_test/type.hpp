@@ -34,9 +34,10 @@ namespace metashell_system_test
   public:
     explicit type(const std::string& name_);
     explicit type(placeholder);
-  
+
     bool name_specified() const;
     const std::string& name() const;
+
   private:
     boost::optional<std::string> _name;
   };
@@ -55,4 +56,3 @@ namespace metashell_system_test
 }
 
 #endif
-

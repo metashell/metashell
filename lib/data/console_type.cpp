@@ -25,9 +25,12 @@ std::ostream& metashell::data::operator<<(std::ostream& o_, console_type t_)
 {
   switch (t_)
   {
-  case console_type::plain: return o_ << "plain";
-  case console_type::readline: return o_ << "readline";
-  case console_type::json: return o_ << "json";
+  case console_type::plain:
+    return o_ << "plain";
+  case console_type::readline:
+    return o_ << "readline";
+  case console_type::json:
+    return o_ << "json";
   }
   return o_; // avoid "control reaches end of function" warnings
 }
@@ -51,4 +54,3 @@ console_type metashell::data::parse_console_type(const std::string& con_type_)
     throw std::runtime_error("Not supported console type " + con_type_);
   }
 }
-

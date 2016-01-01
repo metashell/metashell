@@ -19,39 +19,33 @@
 
 using namespace metashell::data;
 
-paragraph::paragraph(
-  const std::string& content_,
-  const std::string& indentation_
-) :
-  first_line_indentation(indentation_),
-  rest_of_lines_indentation(indentation_),
-  content(content_)
-{}
+paragraph::paragraph(const std::string& content_,
+                     const std::string& indentation_)
+  : first_line_indentation(indentation_),
+    rest_of_lines_indentation(indentation_),
+    content(content_)
+{
+}
 
-paragraph::paragraph(
-  const std::string& content_,
-  const std::string& indentation_,
-  const std::string& first_line_indentation_
-) :
-  first_line_indentation(first_line_indentation_),
-  rest_of_lines_indentation(indentation_),
-  content(content_)
-{}
+paragraph::paragraph(const std::string& content_,
+                     const std::string& indentation_,
+                     const std::string& first_line_indentation_)
+  : first_line_indentation(first_line_indentation_),
+    rest_of_lines_indentation(indentation_),
+    content(content_)
+{
+}
 
 bool paragraph::operator==(const paragraph& p_) const
 {
-  return
-    content == p_.content
-    && first_line_indentation == p_.first_line_indentation
-    && rest_of_lines_indentation == p_.rest_of_lines_indentation;
+  return content == p_.content &&
+         first_line_indentation == p_.first_line_indentation &&
+         rest_of_lines_indentation == p_.rest_of_lines_indentation;
 }
 
 std::ostream& metashell::data::operator<<(std::ostream& o_, const paragraph& p_)
 {
-  return
-    o_
-      << "paragraph(\"" << p_.content << "\", \""
-      << p_.rest_of_lines_indentation << "\", \"" << p_.first_line_indentation
-      << "\")";
+  return o_ << "paragraph(\"" << p_.content << "\", \""
+            << p_.rest_of_lines_indentation << "\", \""
+            << p_.first_line_indentation << "\")";
 }
-

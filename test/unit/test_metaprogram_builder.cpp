@@ -20,19 +20,16 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::normal,
-    "root_name",
-    data::file_location("stdin.hpp", 10, 20),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_normal_mode)
+{
+  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+                         data::file_location("stdin.hpp", 10, 20),
+                         data::type("eval_result"));
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    100.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
@@ -52,44 +49,37 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode) {
   JUST_ASSERT(!frame.is_profiled());
   JUST_ASSERT_EQUAL("type<A>", frame.type().name());
   JUST_ASSERT_EQUAL(
-    data::instantiation_kind::template_instantiation, frame.kind());
+      data::instantiation_kind::template_instantiation, frame.kind());
 
   mp.step();
 
   JUST_ASSERT(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::full,
-    "root_name",
-    data::file_location("stdin.hpp", 10, 20),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_full_mode)
+{
+  metaprogram_builder mb(metaprogram::mode_t::full, "root_name",
+                         data::file_location("stdin.hpp", 10, 20),
+                         data::type("eval_result"));
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    100.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 100.0);
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<B>"),
-    data::file_location("file", 20, 20),
-    data::file_location("file_sl", 15, 25),
-    110.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<B>"),
+                           data::file_location("file", 20, 20),
+                           data::file_location("file_sl", 15, 25), 110.0);
 
   mb.handle_template_end(120.0);
 
   mb.handle_template_end(130.0);
 
-  mb.handle_template_begin(
-    data::instantiation_kind::memoization,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    140.0);
+  mb.handle_template_begin(data::instantiation_kind::memoization,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 140.0);
 
   mb.handle_template_end(150.0);
 
@@ -144,31 +134,25 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode) {
   mp.step();
 
   JUST_ASSERT(mp.is_finished());
-
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::profile,
-    "root_name",
-    data::file_location("stdin.hpp", 10, 20),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_profile_mode)
+{
+  metaprogram_builder mb(metaprogram::mode_t::profile, "root_name",
+                         data::file_location("stdin.hpp", 10, 20),
+                         data::type("eval_result"));
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    100.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<B>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    120.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<B>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 120.0);
 
   mb.handle_template_end(140.0);
 
@@ -190,7 +174,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
     JUST_ASSERT(frame.is_profiled());
     JUST_ASSERT_EQUAL("type<B>", frame.type().name());
     JUST_ASSERT_EQUAL(
-      data::instantiation_kind::template_instantiation, frame.kind());
+        data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(20.0, frame.time_taken());
     JUST_ASSERT_EQUAL(0.5, frame.time_taken_ratio());
   }
@@ -204,7 +188,7 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
     JUST_ASSERT(frame.is_profiled());
     JUST_ASSERT_EQUAL("type<A>", frame.type().name());
     JUST_ASSERT_EQUAL(
-      data::instantiation_kind::template_instantiation, frame.kind());
+        data::instantiation_kind::template_instantiation, frame.kind());
     JUST_ASSERT_EQUAL(10.0, frame.time_taken());
     JUST_ASSERT_EQUAL(0.25, frame.time_taken_ratio());
   }
@@ -214,57 +198,56 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode) {
   JUST_ASSERT(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::normal,
-    "root_name",
-    data::file_location("stdin.hpp", 40, 50),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1)
+{
+  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+                         data::file_location("stdin.hpp", 40, 50),
+                         data::type("eval_result"));
 
-  JUST_ASSERT_THROWS<std::exception>([&] {
-    mb.handle_template_end(100.0);
-  }).check_exception(JUST_WHAT_RETURNS(
-    "Mismatched Templight TemplateBegin and TemplateEnd events"));
+  JUST_ASSERT_THROWS<std::exception>([&]
+                                     {
+                                       mb.handle_template_end(100.0);
+                                     })
+      .check_exception(JUST_WHAT_RETURNS(
+          "Mismatched Templight TemplateBegin and TemplateEnd events"));
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::normal,
-    "root_name",
-    data::file_location("stdin.hpp", 30, 45),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2)
+{
+  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+                         data::file_location("stdin.hpp", 30, 45),
+                         data::type("eval_result"));
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    100.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
-  JUST_ASSERT_THROWS<std::exception>([&] {
-    mb.handle_template_end(120.0);
-  }).check_exception(JUST_WHAT_RETURNS(
-    "Mismatched Templight TemplateBegin and TemplateEnd events"));
+  JUST_ASSERT_THROWS<std::exception>([&]
+                                     {
+                                       mb.handle_template_end(120.0);
+                                     })
+      .check_exception(JUST_WHAT_RETURNS(
+          "Mismatched Templight TemplateBegin and TemplateEnd events"));
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events) {
-  metaprogram_builder mb(
-    metaprogram::mode_t::normal,
-    "root_name",
-    data::file_location("stdin.hpp", 30, 31),
-    data::type("eval_result"));
+JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events)
+{
+  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+                         data::file_location("stdin.hpp", 30, 31),
+                         data::type("eval_result"));
 
-  mb.handle_template_begin(
-    data::instantiation_kind::template_instantiation,
-    data::type("type<A>"),
-    data::file_location("file", 10, 20),
-    data::file_location("file_sl", 15, 25),
-    100.0);
+  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+                           data::type("type<A>"),
+                           data::file_location("file", 10, 20),
+                           data::file_location("file_sl", 15, 25), 100.0);
 
-  JUST_ASSERT_THROWS<std::exception>([&] {
-    mb.get_metaprogram();
-  }).check_exception(JUST_WHAT_RETURNS(
-    "Some Templight TemplateEnd events are missing"));
+  JUST_ASSERT_THROWS<std::exception>([&]
+                                     {
+                                       mb.get_metaprogram();
+                                     })
+      .check_exception(
+          JUST_WHAT_RETURNS("Some Templight TemplateEnd events are missing"));
 }

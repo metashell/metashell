@@ -23,19 +23,12 @@
 
 using namespace metashell_system_test;
 
-raw_text::raw_text(const std::string& text_) :
-  _text(text_)
-{}
+raw_text::raw_text(const std::string& text_) : _text(text_) {}
 
-const std::string& raw_text::text() const
-{
-  return _text;
-}
+const std::string& raw_text::text() const { return _text; }
 
-std::ostream& metashell_system_test::operator<<(
-  std::ostream& out_,
-  const raw_text& raw_text_
-)
+std::ostream& metashell_system_test::operator<<(std::ostream& out_,
+                                                const raw_text& raw_text_)
 {
   return out_ << to_json_string(raw_text_);
 }
@@ -58,11 +51,8 @@ json_string metashell_system_test::to_json_string(const raw_text& t_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(
-  const raw_text& text_,
-  const json_string& s_
-)
+bool metashell_system_test::operator==(const raw_text& text_,
+                                       const json_string& s_)
 {
   return to_json_string(text_) == s_;
 }
-

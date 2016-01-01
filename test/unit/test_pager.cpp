@@ -23,7 +23,8 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_pager_one_line) {
+JUST_TEST_CASE(test_pager_one_line)
+{
   mock_console c(80, 100);
   pager p(c);
 
@@ -34,7 +35,8 @@ JUST_TEST_CASE(test_pager_one_line) {
   JUST_ASSERT_EQUAL("first\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_non_full_page) {
+JUST_TEST_CASE(test_pager_non_full_page)
+{
   mock_console c(80, 5);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -50,7 +52,8 @@ JUST_TEST_CASE(test_pager_non_full_page) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_almost_full_page) {
+JUST_TEST_CASE(test_pager_almost_full_page)
+{
   mock_console c(80, 4);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -70,7 +73,8 @@ JUST_TEST_CASE(test_pager_almost_full_page) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_full_page_by_one_line) {
+JUST_TEST_CASE(test_pager_full_page_by_one_line)
+{
   mock_console c(80, 4);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -94,7 +98,8 @@ JUST_TEST_CASE(test_pager_full_page_by_one_line) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_next_page_answer) {
+JUST_TEST_CASE(test_pager_multi_page_next_page_answer)
+{
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -122,7 +127,8 @@ JUST_TEST_CASE(test_pager_multi_page_next_page_answer) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_multiline_shows) {
+JUST_TEST_CASE(test_pager_multi_page_multiline_shows)
+{
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -142,7 +148,8 @@ JUST_TEST_CASE(test_pager_multi_page_multiline_shows) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_narrow_terminal) {
+JUST_TEST_CASE(test_pager_multi_page_narrow_terminal)
+{
   mock_console c(5, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
@@ -162,7 +169,8 @@ JUST_TEST_CASE(test_pager_multi_page_narrow_terminal) {
   JUST_ASSERT_EQUAL("firstsecond\nthird\nforthfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_show_all_answer) {
+JUST_TEST_CASE(test_pager_multi_page_show_all_answer)
+{
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::show_all);
@@ -190,7 +198,8 @@ JUST_TEST_CASE(test_pager_multi_page_show_all_answer) {
   JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_quit_answer) {
+JUST_TEST_CASE(test_pager_quit_answer)
+{
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::quit);

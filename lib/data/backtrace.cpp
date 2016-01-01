@@ -20,34 +20,20 @@
 
 using namespace metashell::data;
 
-backtrace::backtrace(const std::initializer_list<frame>& frames_) :
-  _frames(frames_)
-{}
-
-void backtrace::push_back(const frame& f_)
+backtrace::backtrace(const std::initializer_list<frame>& frames_)
+  : _frames(frames_)
 {
-  _frames.push_back(f_);
 }
 
-backtrace::size_type backtrace::size() const
-{
-  return _frames.size();
-}
+void backtrace::push_back(const frame& f_) { _frames.push_back(f_); }
 
-const frame& backtrace::operator[](size_type i) const
-{
-  return _frames[i];
-}
+backtrace::size_type backtrace::size() const { return _frames.size(); }
 
-backtrace::iterator backtrace::begin() const
-{
-  return _frames.begin();
-}
+const frame& backtrace::operator[](size_type i) const { return _frames[i]; }
 
-backtrace::iterator backtrace::end() const
-{
-  return _frames.end();
-}
+backtrace::iterator backtrace::begin() const { return _frames.begin(); }
+
+backtrace::iterator backtrace::end() const { return _frames.end(); }
 
 std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
 {
@@ -72,4 +58,3 @@ bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
 {
   return boost::equal(a_, b_);
 }
-

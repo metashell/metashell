@@ -16,30 +16,35 @@
 
 #include "mock_file_writer.hpp"
 
-mock_file_writer::mock_file_writer() :
-  open_callback([](const std::string&) { return false; }),
-  close_callback([] {}),
-  is_open_callback([] { return false; }),
-  write_callback([](const std::string&) { return false; })
-{}
+mock_file_writer::mock_file_writer()
+  : open_callback([](const std::string&)
+                  {
+                    return false;
+                  }),
+    close_callback([]
+                   {
+                   }),
+    is_open_callback([]
+                     {
+                       return false;
+                     }),
+    write_callback([](const std::string&)
+                   {
+                     return false;
+                   })
+{
+}
 
 bool mock_file_writer::open(const std::string& filename_)
 {
   return open_callback(filename_);
 }
 
-void mock_file_writer::close()
-{
-  close_callback();
-}
+void mock_file_writer::close() { close_callback(); }
 
-bool mock_file_writer::is_open() const
-{
-  return is_open_callback();
-}
+bool mock_file_writer::is_open() const { return is_open_callback(); }
 
 bool mock_file_writer::write(const std::string& content_)
 {
   return write_callback(content_);
 }
-

@@ -17,44 +17,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 #include <ostream>
 
 #include <boost/variant.hpp>
 
 #include <metashell/data/type.hpp>
 
-namespace metashell { namespace data {
+namespace metashell
+{
+  namespace data
+  {
 
-class type_or_error {
-public:
-  typedef type type_type;
-  typedef std::string error_type;
+    class type_or_error
+    {
+    public:
+      typedef type type_type;
+      typedef std::string error_type;
 
-  type_or_error();
-  type_or_error(const type_type& t);
-  type_or_error(const error_type& e);
+      type_or_error();
+      type_or_error(const type_type& t);
+      type_or_error(const error_type& e);
 
-  static type_or_error make_none();
-  static type_or_error make_type(const type_type& t);
-  static type_or_error make_error(const error_type& e);
+      static type_or_error make_none();
+      static type_or_error make_type(const type_type& t);
+      static type_or_error make_error(const error_type& e);
 
-  bool is_none() const;
-  bool is_type() const;
-  bool is_error() const;
+      bool is_none() const;
+      bool is_type() const;
+      bool is_error() const;
 
-  const type_type& get_type() const;
-  const error_type& get_error() const;
+      const type_type& get_type() const;
+      const error_type& get_error() const;
 
-  bool operator==(const type_or_error& other) const;
+      bool operator==(const type_or_error& other) const;
 
-private:
-  typedef boost::variant<boost::blank, type_type, error_type> data_type;
-  data_type data;
-};
+    private:
+      typedef boost::variant<boost::blank, type_type, error_type> data_type;
+      data_type data;
+    };
 
-std::ostream& operator<<(std::ostream& os, const type_or_error& te);
-
-}}
+    std::ostream& operator<<(std::ostream& os, const type_or_error& te);
+  }
+}
 
 #endif

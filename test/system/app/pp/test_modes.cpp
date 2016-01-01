@@ -24,56 +24,40 @@ using namespace metashell_system_test;
 
 JUST_TEST_CASE(test_preprocessor_mode)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh preprocessor mode"),
-        command("#msh preprocessed echo"),
-        command("#msh show cpp_errors"),
-        command("#msh metaprogram evaluation")
-      }
-    );
+  const auto r = run_metashell({command("#msh preprocessor mode"),
+                                command("#msh preprocessed echo"),
+                                command("#msh show cpp_errors"),
+                                command("#msh metaprogram evaluation")});
 
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(
-    comment({paragraph("display preprocessed commands is on")}),
-    *i
-  );
-  ++i; ++i;
+      comment({paragraph("display preprocessed commands is on")}), *i);
+  ++i;
+  ++i;
   JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is off")}), *i);
-  ++i; ++i;
+  ++i;
+  ++i;
   JUST_ASSERT_EQUAL(
-    comment({paragraph("evaluation of metaprograms is off")}),
-    *i
-  );
+      comment({paragraph("evaluation of metaprograms is off")}), *i);
 }
 
 JUST_TEST_CASE(test_metaprogram_mode)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh metaprogram mode"),
-        command("#msh preprocessed echo"),
-        command("#msh show cpp_errors"),
-        command("#msh metaprogram evaluation")
-      }
-    );
+  const auto r = run_metashell({command("#msh metaprogram mode"),
+                                command("#msh preprocessed echo"),
+                                command("#msh show cpp_errors"),
+                                command("#msh metaprogram evaluation")});
 
   auto i = r.begin() + 5;
 
   JUST_ASSERT_EQUAL(
-    comment({paragraph("display preprocessed commands is off")}),
-    *i
-  );
-  ++i; ++i;
+      comment({paragraph("display preprocessed commands is off")}), *i);
+  ++i;
+  ++i;
   JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is on")}), *i);
-  ++i; ++i;
+  ++i;
+  ++i;
   JUST_ASSERT_EQUAL(
-    comment({paragraph("evaluation of metaprograms is on")}),
-    *i
-  );
+      comment({paragraph("evaluation of metaprograms is on")}), *i);
 }
-
-

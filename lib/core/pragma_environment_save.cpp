@@ -23,49 +23,41 @@
 
 using namespace metashell;
 
-pragma_environment_save::pragma_environment_save(
-  const data::config& config_,
-  const iface::environment& env_
-) :
-  _config(config_),
-  _env(env_)
-{}
+pragma_environment_save::pragma_environment_save(const data::config& config_,
+                                                 const iface::environment& env_)
+  : _config(config_), _env(env_)
+{
+}
 
 iface::pragma_handler* pragma_environment_save::clone() const
 {
   return new pragma_environment_save(_config, _env);
 }
 
-std::string pragma_environment_save::arguments() const
-{
-  return "<path>";
-}
+std::string pragma_environment_save::arguments() const { return "<path>"; }
 
 std::string pragma_environment_save::description() const
 {
-  return
-    "Saves the environment into a file. This is disabled by default. It can be"
-    " enabled using the --enable_saving command line argument.";
+  return "Saves the environment into a file. This is disabled by default. It "
+         "can be"
+         " enabled using the --enable_saving command line argument.";
 }
 
-void pragma_environment_save::run(
-  const data::command::iterator&,
-  const data::command::iterator&,
-  const data::command::iterator& args_begin_,
-  const data::command::iterator& args_end_,
-  iface::displayer& displayer_
-) const
+void pragma_environment_save::run(const data::command::iterator&,
+                                  const data::command::iterator&,
+                                  const data::command::iterator& args_begin_,
+                                  const data::command::iterator& args_end_,
+                                  iface::displayer& displayer_) const
 {
   if (_config.saving_enabled)
   {
     const std::string fn =
-      boost::algorithm::trim_copy(tokens_to_string(args_begin_, args_end_));
+        boost::algorithm::trim_copy(tokens_to_string(args_begin_, args_end_));
 
     if (fn.empty())
     {
       displayer_.show_error(
-        "Filename to save the environment into is missing."
-      );
+          "Filename to save the environment into is missing.");
     }
     else
     {
@@ -80,9 +72,7 @@ void pragma_environment_save::run(
   else
   {
     displayer_.show_error(
-      "Saving is disabled. You can enable it using the --enable_saving"
-      " command line argument."
-    );
+        "Saving is disabled. You can enable it using the --enable_saving"
+        " command line argument.");
   }
 }
-

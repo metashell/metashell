@@ -25,18 +25,18 @@
 using namespace metashell;
 
 #ifdef METASHELL_STRING_SET_CONST_ADD
-  #error METASHELL_STRING_SET_CONST_ADD already defined
+#error METASHELL_STRING_SET_CONST_ADD already defined
 #endif
-#define METASHELL_STRING_SET_CONST_ADD(z, n, unused) \
+#define METASHELL_STRING_SET_CONST_ADD(z, n, unused)                           \
   _data.insert(BOOST_PP_CAT(s, n));
 
 #ifdef METASHELL_STRING_SET_CONST
-  #error METASHELL_STRING_SET_CONST already defined
+#error METASHELL_STRING_SET_CONST already defined
 #endif
-#define METASHELL_STRING_SET_CONST(z, n, unused) \
-  string_set::string_set(BOOST_PP_ENUM_PARAMS(n, const std::string& s)) \
-  { \
-    BOOST_PP_REPEAT(n, METASHELL_STRING_SET_CONST_ADD, ~); \
+#define METASHELL_STRING_SET_CONST(z, n, unused)                               \
+  string_set::string_set(BOOST_PP_ENUM_PARAMS(n, const std::string& s))        \
+  {                                                                            \
+    BOOST_PP_REPEAT(n, METASHELL_STRING_SET_CONST_ADD, ~);                     \
   }
 
 BOOST_PP_REPEAT(METASHELL_STRING_SET_CONST_LIMIT, METASHELL_STRING_SET_CONST, ~)
@@ -50,20 +50,14 @@ string_set::string_set(const shell& shell_, const std::string& s_)
   shell_.code_complete(s_, _data);
 }
 
-string_set::iterator string_set::begin() const
-{
-  return _data.begin();
-}
+string_set::iterator string_set::begin() const { return _data.begin(); }
 
-string_set::iterator string_set::end() const
-{
-  return _data.end();
-}
+string_set::iterator string_set::end() const { return _data.end(); }
 
 bool string_set::operator==(const string_set& a_) const
 {
-  return
-    _data.size() == a_._data.size() && std::equal(begin(), end(), a_.begin());
+  return _data.size() == a_._data.size() &&
+         std::equal(begin(), end(), a_.begin());
 }
 
 std::ostream& operator<<(std::ostream& o_, const string_set& a_)
@@ -82,5 +76,3 @@ string_set operator+(const string_set& a_, const string_set& b_)
 
   return r;
 }
-
-

@@ -26,16 +26,15 @@ using namespace metashell;
 
 namespace
 {
-  void test_with_lines(
-    const std::initializer_list<std::string>& lines_,
-    const std::string& line_separator_
-  )
+  void test_with_lines(const std::initializer_list<std::string>& lines_,
+                       const std::string& line_separator_)
   {
     std::vector<std::string> result;
-    for_each_line(
-      boost::algorithm::join(lines_, line_separator_),
-      [&result](const std::string& s_) { result.push_back(s_); }
-    );
+    for_each_line(boost::algorithm::join(lines_, line_separator_),
+                  [&result](const std::string& s_)
+                  {
+                    result.push_back(s_);
+                  });
     JUST_ASSERT_EQUAL_CONTAINER(lines_, result);
   }
 
@@ -57,4 +56,3 @@ JUST_TEST_CASE(test_for_each_line)
   test_with_lines({"foo", "", "bar"});
   test_with_lines({"ab", "c"});
 }
-

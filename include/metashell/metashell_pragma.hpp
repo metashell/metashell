@@ -26,13 +26,11 @@
 namespace metashell
 {
   boost::optional<data::command::iterator>
-    parse_pragma(const data::command& cmd_);
+  parse_pragma(const data::command& cmd_);
 
-  data::command::iterator end_of_pragma_argument_list(
-    data::command::iterator begin_,
-    const data::command::iterator& end_
-  );
+  data::command::iterator
+  end_of_pragma_argument_list(data::command::iterator begin_,
+                              const data::command::iterator& end_);
 }
 
 #endif
-

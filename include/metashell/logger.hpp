@@ -38,6 +38,7 @@ namespace metashell
     void stop_logging();
 
     void log(const std::string& msg_);
+
   private:
     data::logging_mode _mode;
     iface::file_writer& _fwriter;
@@ -46,16 +47,16 @@ namespace metashell
 }
 
 #ifdef METASHELL_LOG
-#  error METASHELL_LOG already defined
+#error METASHELL_LOG already defined
 #endif
-#define METASHELL_LOG(logger_ptr, msg) \
-  do { \
-    ::metashell::logger* l = (logger_ptr); \
-    if (l != nullptr && l->logging()) \
-    { \
-      l->log(msg); \
-    } \
+#define METASHELL_LOG(logger_ptr, msg)                                         \
+  do                                                                           \
+  {                                                                            \
+    ::metashell::logger* l = (logger_ptr);                                     \
+    if (l != nullptr && l->logging())                                          \
+    {                                                                          \
+      l->log(msg);                                                             \
+    }                                                                          \
   } while (false)
 
 #endif
-

@@ -31,38 +31,22 @@ void mock_json_writer::double_(double value_)
   _calls.push_back("double " + std::to_string(value_));
 }
 
-void mock_json_writer::start_object()
-{
-  _calls.push_back("start_object");
-}
+void mock_json_writer::start_object() { _calls.push_back("start_object"); }
 
 void mock_json_writer::key(const std::string& key_)
 {
   _calls.push_back("key " + key_);
 }
 
-void mock_json_writer::end_object()
-{
-  _calls.push_back("end_object");
-}
+void mock_json_writer::end_object() { _calls.push_back("end_object"); }
 
 const std::vector<std::string>& mock_json_writer::calls() const
 {
   return _calls;
 }
 
-void mock_json_writer::start_array()
-{
-  _calls.push_back("start_array");
-}
+void mock_json_writer::start_array() { _calls.push_back("start_array"); }
 
-void mock_json_writer::end_array()
-{
-  _calls.push_back("end_array");
-}
+void mock_json_writer::end_array() { _calls.push_back("end_array"); }
 
-void mock_json_writer::end_document()
-{
-  _calls.push_back("end_document");
-}
-
+void mock_json_writer::end_document() { _calls.push_back("end_document"); }

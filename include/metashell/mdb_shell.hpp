@@ -37,135 +37,123 @@
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/destroyable.hpp>
 
-namespace metashell {
+namespace metashell
+{
 
-class mdb_shell : public iface::command_processor {
-public:
-  const static mdb_command_handler_map command_handler;
+  class mdb_shell : public iface::command_processor
+  {
+  public:
+    const static mdb_command_handler_map command_handler;
 
-  mdb_shell(
-      const data::config& conf,
-      iface::environment& env,
-      iface::engine& engine_,
-      const std::string& env_path_,
-      logger* logger_,
-      std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
-        std::unique_ptr<iface::destroyable>());
+    mdb_shell(const data::config& conf,
+              iface::environment& env,
+              iface::engine& engine_,
+              const std::string& env_path_,
+              logger* logger_,
+              std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
+                  std::unique_ptr<iface::destroyable>());
 
-  virtual std::string prompt() const override;
-  virtual bool stopped() const override;
+    virtual std::string prompt() const override;
+    virtual bool stopped() const override;
 
-  void display_splash(iface::displayer& displayer_) const;
-  virtual void line_available(
-    const std::string& line,
-    iface::displayer& displayer_,
-    iface::history& history_
-  ) override;
-  void line_available(const std::string& line, iface::displayer& displayer_);
-  virtual void cancel_operation() override;
+    void display_splash(iface::displayer& displayer_) const;
+    virtual void line_available(const std::string& line,
+                                iface::displayer& displayer_,
+                                iface::history& history_) override;
+    void line_available(const std::string& line, iface::displayer& displayer_);
+    virtual void cancel_operation() override;
 
-  void command_continue(const std::string& arg, iface::displayer& displayer_);
-  void command_finish(const std::string& arg, iface::displayer& displayer_);
-  void command_step(const std::string& arg, iface::displayer& displayer_);
-  void command_next(const std::string& arg, iface::displayer& displayer_);
-  void command_evaluate(const std::string& arg, iface::displayer& displayer_);
-  void command_forwardtrace(
-    const std::string& arg,
-    iface::displayer& displayer_
-  );
-  void command_backtrace(const std::string& arg, iface::displayer& displayer_);
-  void command_frame(const std::string& arg, iface::displayer& displayer_);
-  void command_rbreak(const std::string& arg, iface::displayer& displayer_);
-  void command_break(const std::string& arg, iface::displayer& displayer_);
-  void command_help(const std::string& arg, iface::displayer& displayer_);
-  void command_quit(const std::string& arg, iface::displayer& displayer_);
+    void command_continue(const std::string& arg, iface::displayer& displayer_);
+    void command_finish(const std::string& arg, iface::displayer& displayer_);
+    void command_step(const std::string& arg, iface::displayer& displayer_);
+    void command_next(const std::string& arg, iface::displayer& displayer_);
+    void command_evaluate(const std::string& arg, iface::displayer& displayer_);
+    void command_forwardtrace(const std::string& arg,
+                              iface::displayer& displayer_);
+    void command_backtrace(const std::string& arg,
+                           iface::displayer& displayer_);
+    void command_frame(const std::string& arg, iface::displayer& displayer_);
+    void command_rbreak(const std::string& arg, iface::displayer& displayer_);
+    void command_break(const std::string& arg, iface::displayer& displayer_);
+    void command_help(const std::string& arg, iface::displayer& displayer_);
+    void command_quit(const std::string& arg, iface::displayer& displayer_);
 
-  virtual void code_complete(
-    const std::string& s_,
-    std::set<std::string>& out_
-  ) const override;
+    virtual void code_complete(const std::string& s_,
+                               std::set<std::string>& out_) const override;
 
-protected:
-  bool require_empty_args(
-    const std::string& args,
-    iface::displayer& displayer_
-  ) const;
-  bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
-  bool require_running_metaprogram(iface::displayer& displayer_) const;
-  bool require_running_or_errored_metaprogram(
-      iface::displayer& displayer_) const;
+  protected:
+    bool require_empty_args(const std::string& args,
+                            iface::displayer& displayer_) const;
+    bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
+    bool require_running_metaprogram(iface::displayer& displayer_) const;
+    bool
+    require_running_or_errored_metaprogram(iface::displayer& displayer_) const;
 
-  bool run_metaprogram_with_templight(
-    const boost::optional<std::string>& expression,
-    metaprogram::mode_t mode,
-    iface::displayer& displayer_
-  );
-  data::type_or_error run_metaprogram(
-    const boost::optional<std::string>& expression,
-    const std::string& output_path_,
-    iface::displayer& displayer_
-  );
+    bool run_metaprogram_with_templight(
+        const boost::optional<std::string>& expression,
+        metaprogram::mode_t mode,
+        iface::displayer& displayer_);
+    data::type_or_error
+    run_metaprogram(const boost::optional<std::string>& expression,
+                    const std::string& output_path_,
+                    iface::displayer& displayer_);
 
-  bool is_wrap_type(const data::type& type);
-  data::type trim_wrap_type(const data::type& type);
+    bool is_wrap_type(const data::type& type);
+    data::type trim_wrap_type(const data::type& type);
 
-  void filter_disable_everything();
-  void filter_enable_reachable(bool for_current_line);
-  void filter_unwrap_vertices();
-  void filter_similar_edges();
-  void filter_metaprogram(bool for_current_line);
+    void filter_disable_everything();
+    void filter_enable_reachable(bool for_current_line);
+    void filter_unwrap_vertices();
+    void filter_similar_edges();
+    void filter_metaprogram(bool for_current_line);
 
-  static bool is_instantiation_kind_enabled(data::instantiation_kind kind);
+    static bool is_instantiation_kind_enabled(data::instantiation_kind kind);
 
-  static boost::optional<int> parse_defaultable_integer(
-    const std::string& arg, int default_value);
+    static boost::optional<int>
+    parse_defaultable_integer(const std::string& arg, int default_value);
 
-  static boost::optional<int> parse_mandatory_integer(const std::string& arg);
+    static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
-  // may return nullptr
-  const breakpoint* continue_metaprogram(direction_t direction);
-  unsigned finish_metaprogram();
+    // may return nullptr
+    const breakpoint* continue_metaprogram(direction_t direction);
+    unsigned finish_metaprogram();
 
-  void next_metaprogram(direction_t direction, int n);
+    void next_metaprogram(direction_t direction, int n);
 
-  void display_frame(
-    const data::frame& frame, iface::displayer& displayer_) const;
-  void display_current_frame(iface::displayer& displayer_) const;
-  void display_current_forwardtrace(
-    boost::optional<int> max_depth,
-    iface::displayer& displayer_
-  ) const;
-  void display_backtrace(iface::displayer& displayer_) const;
-  void display_argument_parsing_failed(iface::displayer& displayer_) const;
-  void display_metaprogram_reached_the_beginning(
-    iface::displayer& displayer_
-  ) const;
-  void display_metaprogram_finished(iface::displayer& displayer_) const;
-  void display_movement_info(bool moved, iface::displayer& displayer_) const;
+    void display_frame(const data::frame& frame,
+                       iface::displayer& displayer_) const;
+    void display_current_frame(iface::displayer& displayer_) const;
+    void display_current_forwardtrace(boost::optional<int> max_depth,
+                                      iface::displayer& displayer_) const;
+    void display_backtrace(iface::displayer& displayer_) const;
+    void display_argument_parsing_failed(iface::displayer& displayer_) const;
+    void display_metaprogram_reached_the_beginning(
+        iface::displayer& displayer_) const;
+    void display_metaprogram_finished(iface::displayer& displayer_) const;
+    void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
-  data::config conf;
-  iface::environment& env;
+    data::config conf;
+    iface::environment& env;
 
-  boost::optional<metaprogram> mp;
+    boost::optional<metaprogram> mp;
 
-  int next_breakpoint_id = 1;
-  breakpoints_t breakpoints;
+    int next_breakpoint_id = 1;
+    breakpoints_t breakpoints;
 
-  std::string prev_line;
-  bool last_command_repeatable = false;
+    std::string prev_line;
+    bool last_command_repeatable = false;
 
-  // It is empty if evaluate was called with "-".
-  // mp is empty when there were no evaluations at all
-  boost::optional<std::string> last_evaluated_expression;
+    // It is empty if evaluate was called with "-".
+    // mp is empty when there were no evaluations at all
+    boost::optional<std::string> last_evaluated_expression;
 
-  bool is_stopped = false;
-  logger* _logger;
-  iface::engine& _engine;
-  std::string _env_path;
+    bool is_stopped = false;
+    logger* _logger;
+    iface::engine& _engine;
+    std::string _env_path;
 
-  std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
-};
-
+    std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
+  };
 }
 
 #endif

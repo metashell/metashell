@@ -17,4 +17,3 @@
 // You can put a message here that appears under the version number
 // in the splash message.
 ""
-

@@ -31,8 +31,9 @@ namespace metashell_system_test
   {
   public:
     explicit cpp_code(pattern<std::string> code_);
-  
+
     const pattern<std::string>& code() const;
+
   private:
     pattern<std::string> _code;
   };
@@ -45,4 +46,3 @@ namespace metashell_system_test
 }
 
 #endif
-

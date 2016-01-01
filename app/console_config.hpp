@@ -33,16 +33,15 @@ namespace metashell
   class console_config
   {
   public:
-    console_config(
-      data::console_type type_,
-      bool indent_,
-      bool syntax_highlight_
-    );
+    console_config(data::console_type type_,
+                   bool indent_,
+                   bool syntax_highlight_);
 
     iface::displayer& displayer();
     iface::history& history();
     line_reader& reader();
     command_processor_queue& processor_queue();
+
   private:
     command_processor_queue _processor_queue;
     std::unique_ptr<iface::console> _console;
@@ -55,4 +54,3 @@ namespace metashell
 }
 
 #endif
-

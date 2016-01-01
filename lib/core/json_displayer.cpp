@@ -22,10 +22,9 @@ using namespace metashell;
 
 namespace
 {
-  void show_object(
-    iface::json_writer& writer_,
-    std::initializer_list<std::pair<std::string, std::string>> l_
-  )
+  void
+  show_object(iface::json_writer& writer_,
+              std::initializer_list<std::pair<std::string, std::string>> l_)
   {
     writer_.start_object();
 
@@ -62,9 +61,9 @@ namespace
   }
 }
 
-json_displayer::json_displayer(iface::json_writer& writer_) :
-  _writer(writer_)
-{}
+json_displayer::json_displayer(iface::json_writer& writer_) : _writer(writer_)
+{
+}
 
 void json_displayer::show_raw_text(const std::string& text_)
 {
@@ -133,9 +132,8 @@ void json_displayer::show_frame(const data::frame& frame_)
   _writer.end_document();
 }
 
-void json_displayer::show_file_section(
-  const data::file_location& /*location_*/,
-  const std::string& /*env_buffer_*/)
+void json_displayer::show_file_section(const data::file_location& /*location_*/,
+                                       const std::string& /*env_buffer_*/)
 {
   // We don't show this in json. Whoever uses the json interface can do it
   // himself the way he wants it
@@ -192,4 +190,3 @@ void json_displayer::show_call_graph(const iface::call_graph& cg_)
   _writer.end_object();
   _writer.end_document();
 }
-
