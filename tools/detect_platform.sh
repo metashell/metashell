@@ -20,28 +20,44 @@ set -e
 
 if [ -e /etc/redhat-release ] || [ -e /etc/fedora-release ]
 then
-  echo "fedora"
+  PLATFORM="fedora"
 elif [ -e /etc/SuSE-release ]
 then
-  echo "opensuse"
+  PLATFORM="opensuse"
 elif [ "$(uname)" = "Darwin" ]
 then
-  echo "osx"
+  PLATFORM="osx"
 elif [ "`cat /etc/lsb-release 2>/dev/null | grep DISTRIB_ID`" = "DISTRIB_ID=Ubuntu" ]
 then
-  echo "ubuntu"
+  PLATFORM="ubuntu"
 elif [ -e /etc/debian_version ]
 then
-  echo "debian"
+  PLATFORM="debian"
 elif [ -e /etc/arch-release ]
 then
-  echo "arch"
+  PLATFORM="arch"
 elif [ "$(uname)" = "FreeBSD" ]
 then
-  echo "freebsd"
+  PLATFORM="freebsd"
 elif [ "$(uname)" = "OpenBSD" ]
 then
-  echo "openbsd"
+  PLATFORM="openbsd"
 else
-  echo "unknown"
+  PLATFORM="unknown"
+fi
+
+if [ "$1" = "--version" ]
+then
+  if [ "$PLATFORM" = "ubuntu" ]
+  then
+    lsb_release -a 2>/dev/null | grep Release | sed 's/^Release:[ \t]*//'
+  elif [ "$PLATFORM" = "openbsd" ]
+  then
+    uname -a | cut -d ' ' -f 3
+  else
+    echo "Detecting version of this platform has not been implemented"
+    exit 1
+  fi
+else
+  echo $PLATFORM
 fi
