@@ -1,73 +1,78 @@
 #!/usr/bin/python
+"""Replace a section of a file with the content of standard input"""
 
 # Copyright Abel Sinkovics (abel@sinkovics.hu)  2014.
 # Distributed under the Boost Software License, Version 1.0.
 #    (See accompanying file LICENSE_1_0.txt or copy at
 #          http://www.boost.org/LICENSE_1_0.txt)
 
-import re
 import sys
 import optparse
 
-def do_replace(f, doc, replace_with, marker):
-  in_text_to_replace = False
-  for s in doc:
-    if s.find(marker) != -1:
-      f.write(s)
-      in_text_to_replace = not in_text_to_replace
-      if in_text_to_replace:
-        f.write(''.join(replace_with))
-        f.write('\n')
-    elif not in_text_to_replace:
-      f.write(s)
+
+def do_replace(out_file, doc, replace_with, marker):
+    """Do the replacemenet of a specific part"""
+    in_text_to_replace = False
+    for line in doc:
+        if line.find(marker) != -1:
+            out_file.write(line)
+            in_text_to_replace = not in_text_to_replace
+            if in_text_to_replace:
+                out_file.write(''.join(replace_with))
+                out_file.write('\n')
+        elif not in_text_to_replace:
+            out_file.write(line)
+
 
 def main():
-  parser = optparse.OptionParser()
-  parser.add_option(
-    '-i', '--input',
-    action='store',
-    dest='input',
-    help='The file to process'
-  )
-  parser.add_option(
-    '-o', '--output',
-    action='store',
-    dest='output',
-    help='The file to write the result into. It defaults to the input file. To write output to stdout use: -'
-  )
-  parser.add_option(
-    '-r', '--replace_with',
-    action='store',
-    dest='replace_with',
-    help='The file containing the part to place into <input>'
-  )
-  parser.add_option(
-    '-m', '--marker',
-    action='store',
-    dest='marker',
-    help='The marker to search for'
-  )
+    """The main function of the script"""
+    parser = optparse.OptionParser()
+    parser.add_option(
+        '-i', '--input',
+        action='store',
+        dest='input',
+        help='The file to process'
+    )
+    parser.add_option(
+        '-o', '--output',
+        action='store',
+        dest='output',
+        help='The file to write the result into. It defaults to the input'
+             ' file. To write output to stdout use: -'
+    )
+    parser.add_option(
+        '-r', '--replace_with',
+        action='store',
+        dest='replace_with',
+        help='The file containing the part to place into <input>'
+    )
+    parser.add_option(
+        '-m', '--marker',
+        action='store',
+        dest='marker',
+        help='The marker to search for'
+    )
 
-  (options, args) = parser.parse_args()
-  if options.output == None:
-    options.output = options.input
+    options, _ = parser.parse_args()
+    if options.output is None:
+        options.output = options.input
 
-  if options.input == None:
-    parser.error('No input file specified')
-  elif options.replace_with == None:
-    parser.error('No file to replace with specified')
-  else:
-    doc = open(options.input, 'r').readlines()
-    if options.output == '-':
-      f = sys.stdout
+    if options.input is None:
+        parser.error('No input file specified')
+    elif options.replace_with is None:
+        parser.error('No file to replace with specified')
     else:
-      f = open(options.output, 'w')
-    if options.replace_with == '-':
-      r = sys.stdin.readlines()
-    else:
-      r = open(options.replace_with, 'r').readlines()
-    do_replace(f, doc, r, options.marker)
+        doc = open(options.input, 'r').readlines()
+        if options.output == '-':
+            out_file = sys.stdout
+        else:
+            out_file = open(options.output, 'w')
+        if options.replace_with == '-':
+            lines = sys.stdin.readlines()
+        else:
+            lines = open(options.replace_with, 'r').readlines()
+        do_replace(out_file, doc, lines, options.marker)
+
 
 if __name__ == '__main__':
-  main()
-
+    main()

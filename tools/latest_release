@@ -1,4 +1,6 @@
 #!/usr/bin/python
+"""Get the latest release tag from Git"""
+
 # Metashell - Interactive C++ template metaprogramming shell
 # Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 #
@@ -18,42 +20,51 @@
 import subprocess
 import argparse
 
-def parse_version(s):
-  return tuple([int(n) for n in s[1:].split('.')])
 
-def format_version(v, show_dots):
-  return ('.' if show_dots else '').join([str(n) for n in v])
+def parse_version(tag):
+    """Turn a tag into a version tuple"""
+    return tuple([int(n) for n in tag[1:].split('.')])
+
+
+def format_version(ver, show_dots):
+    """Turn a version tuple into a string"""
+    return ('.' if show_dots else '').join([str(n) for n in ver])
+
 
 def run(prefix, show_dots):
-  (stdout, _) = subprocess.Popen(
-    ['git', 'tag'],
-    stdout=subprocess.PIPE, stderr=subprocess.PIPE
-  ).communicate()
-  print ''.join([
-    prefix,
-    format_version(
-      max([parse_version(s) for s in stdout.split('\n') if s.startswith('v')]),
-      show_dots
-    )
-  ])
+    """Get and display the latest version"""
+    (stdout, _) = subprocess.Popen(
+        ['git', 'tag'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ).communicate()
+    print ''.join([
+        prefix,
+        format_version(
+            max([parse_version(s) for s in stdout.split('\n')
+                 if s.startswith('v')]),
+            show_dots
+        )
+    ])
+
 
 def main():
-  parser = argparse.ArgumentParser(
-    description='Get the latest release from Git'
-  )
-  parser.add_argument(
-    '--no_dots',
-    action='store_true',
-    help='Omit dots from output'
-  )
-  parser.add_argument(
-    '--prefix',
-    default='',
-    help='Prefix output'
-  )
-  args = parser.parse_args()
-  run(args.prefix, not args.no_dots)
+    """The main function of the script"""
+    parser = argparse.ArgumentParser(
+        description='Get the latest release from Git'
+    )
+    parser.add_argument(
+        '--no_dots',
+        action='store_true',
+        help='Omit dots from output'
+    )
+    parser.add_argument(
+        '--prefix',
+        default='',
+        help='Prefix output'
+    )
+    args = parser.parse_args()
+    run(args.prefix, not args.no_dots)
+
 
 if __name__ == '__main__':
-  main()
-
+    main()
