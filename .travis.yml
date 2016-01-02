@@ -16,5 +16,6 @@ addons:
       - g++-4.8
       - python-yaml
       - clang-format-3.7
+      - clang-tidy-3.7
 script:
   - tools/travis_${TRAVIS_OS_NAME}.sh

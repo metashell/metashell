@@ -41,6 +41,10 @@ cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror" -DTEMPLIGHT_DEBUG=true
 make -j2
 make test || (cat Testing/Temporary/LastTest.log && false)
 
+sudo apt-get install clang-3.7
+../tools/clang_tidy.sh | tee clang_tidy_output.txt
+[ ! -s clang_tidy_output.txt ]
+
 # Run the system tests
 
 for t in core pp mdb; do
