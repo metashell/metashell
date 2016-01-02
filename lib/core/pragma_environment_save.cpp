@@ -72,7 +72,6 @@ void pragma_environment_save::run(const data::command::iterator&,
   else
   {
     displayer_.show_error(
-        "Saving is disabled. You can enable it using the --enable_saving"
-        " command line argument.");
+        "Saving is disabled by the --disable_saving command line argument.");
   }
 }

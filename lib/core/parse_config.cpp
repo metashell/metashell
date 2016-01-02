@@ -295,8 +295,8 @@ metashell::parse_config(int argc_,
       "Display help for mdb commands in MarkDown format and exit"
     )
     (
-      "enable_saving",
-      "Enable saving the environment using the #msh environment save"
+      "disable_saving",
+      "Disable saving the environment using the #msh environment save"
     )
     (
       "console", value(&con_type)->default_value(con_type),
@@ -331,7 +331,11 @@ metashell::parse_config(int argc_,
               " -Wfatal-errors" +
               (env_detector_.on_windows() ?
                    " -fno-ms-compatibility -U_MSC_VER" :
-                   "")}};
+                   "")},
+      dec_arg{
+          "enable_saving", dec_type::flag,
+          "Saving is enabled by default. To disable it, use --disable_saving.",
+          "Saving is enabled by default."}};
 
   for (auto& a : dec_args)
   {
@@ -354,7 +358,7 @@ metashell::parse_config(int argc_,
     cfg.indent = vm.count("indent") != 0;
     cfg.con_type = metashell::data::parse_console_type(con_type);
     cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
-    cfg.saving_enabled = vm.count("enable_saving");
+    cfg.saving_enabled = !vm.count("disable_saving");
     cfg.splash_enabled = vm.count("nosplash") == 0;
     cfg.preprocessor_mode = vm.count("preprocessor");
     if (vm.count("log") == 0)
