@@ -77,8 +77,7 @@ namespace
     const pragma_handler_map m =
         pragma_handler_map::build_default(sh, &cpq, nullptr);
 
-    typedef std::pair<std::vector<std::string>, pragma_handler> sp;
-    for (const sp& p : m)
+    for (const auto& p : m)
     {
       show_markdown(p.first, p.second, std::cout);
     }

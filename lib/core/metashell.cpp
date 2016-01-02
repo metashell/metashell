@@ -46,16 +46,16 @@ namespace
 
   data::token_type
   last_non_whitespace_token_type(data::command::iterator begin_,
-                                 const data::command::iterator& end_)
+                                 data::command::iterator end_)
   {
-    data::token_type t;
-    for (; begin_ != end_; ++begin_)
+    data::token_type t = data::token_type::unknown;
+    for (data::command::iterator i = begin_; i != end_; ++i)
     {
-      const data::token_category c = begin_->category();
+      const data::token_category c = i->category();
       if (c != data::token_category::whitespace &&
           c != data::token_category::comment)
       {
-        t = begin_->type();
+        t = i->type();
       }
     }
     return t;
