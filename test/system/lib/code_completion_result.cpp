@@ -54,7 +54,7 @@ code_completion_result code_completion_result::with(
 {
   code_completion_result r(*this);
   r._results.insert(members_.begin(), members_.end());
-  return std::move(r);
+  return r;
 }
 
 std::ostream& metashell_system_test::
