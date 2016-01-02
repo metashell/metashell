@@ -23,8 +23,25 @@ then
   exit 1
 fi
 
+if command -v clang-format-3.7 >/dev/null 2>&1
+then
+  CLANG_FORMAT="clang-format-3.7"
+elif command -v clang-format >/dev/null 2>&1
+then
+  CLANG_FORMAT="clang-format"
+else
+  echo "clang-format not found"
+  exit 1
+fi
+
 for l in include lib test app
 do
-  clang-format-3.7 -i $(find "$l" -type f -regex '.*\.[hc]\(pp\|c\|\)')
+  "${CLANG_FORMAT}" -i $(find "$l" -type f -a '(' \
+    -name '*.hpp' -o \
+    -name '*.cpp' -o \
+    -name '*.cc' -o \
+    -name '*.c' -o \
+    -name '*.h' \
+  ')' )
 done
 

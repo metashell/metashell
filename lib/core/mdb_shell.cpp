@@ -74,120 +74,96 @@ namespace
 
 namespace metashell
 {
-
+  // clang-format off
   const mdb_command_handler_map mdb_shell::command_handler =
-      mdb_command_handler_map(
-          {{{"evaluate"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_evaluate),
-            "[-full|-profile] [<type>|-]",
-            "Evaluate and start debugging a new metaprogram.",
-            "Evaluating a metaprogram using the `-full` qualifier will expand "
-            "all\n"
-            "Memoization events.\n\n"
-            "Evaluating a metaprogram using the `-profile` qualifier will "
-            "enable\n"
-            "profile mode.\n\n"
-            "Instead of `<type>`, evaluate can be called with `-`, in which "
-            "case the\n"
-            "whole environment is being debugged not just a single type "
-            "expression.\n\n"
-            "If called without `<type>` or `-`, then the last evaluated "
-            "metaprogram will\n"
-            "be reevaluated.\n\n"
-            "Previous breakpoints are cleared.\n\n"
-            "Unlike metashell, evaluate doesn't use metashell::format to avoid "
-            "cluttering\n"
-            "the debugged metaprogram with unrelated code. If you need "
-            "formatting, you can\n"
-            "explicitly enter `metashell::format< <type> >::type` for the same "
-            "effect."},
-           {{"step"},
-            repeatable_t::repeatable,
-            callback(&mdb_shell::command_step),
-            "[over|out] [n]",
-            "Step the program.",
-            "Argument n means step n times. n defaults to 1 if not specified.\n"
-            "Negative n means step the program backwards.\n\n"
-            "`step over` is an alias for next.\n"
-            "Use of the `out` qualifier will jump out of the current "
-            "instantiation frame.\n"
-            "Similarly to `next`, `step out -1` is not always the inverse of "
-            "`step out`."},
-           {{"next"},
-            repeatable_t::repeatable,
-            callback(&mdb_shell::command_next),
-            "[n]",
-            "Jump over to the next instantiation skipping sub instantiations.",
-            "Argument n means jump n times. n defaults to 1 if not specified.\n"
-            "Negative n means step the program backwards.\n\n"
-            "Please note that `next -1` is not always the inverse of `next`.\n"
-            "In particular when there are no more instantiations that got "
-            "instantiated\n"
-            "by the current parent, then `next` will behave like a normal "
-            "`step`,\n"
-            "and will step out of one or more instantiation frames.\n\n"
-            "`step over` is an alias for next."},
-           {{"rbreak"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_rbreak),
-            "<regex>",
-            "Add breakpoint for all types matching `<regex>`.",
-            ""},
-           {{"break"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_break),
-            "list",
-            "List breakpoints.",
-            ""},
-           {{"continue"},
-            repeatable_t::repeatable,
-            callback(&mdb_shell::command_continue),
-            "[n]",
-            "Continue program being debugged.",
-            "The program is continued until the nth breakpoint or the end of "
-            "the program\n"
-            "is reached. n defaults to 1 if not specified.\n"
-            "Negative n means continue the program backwards."},
-           {{"finish"},
-            repeatable_t::repeatable,
-            callback(&mdb_shell::command_finish),
-            "",
-            "Finish program being debugged.",
-            "The program is continued until the end ignoring any breakpoints."},
-           {{"forwardtrace", "ft"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_forwardtrace),
-            "[n]",
-            "Print forwardtrace from the current point.",
-            "The n specifier limits the depth of the trace. If n is not "
-            "specified, then the\n"
-            "trace depth is unlimited."},
-           {{"backtrace", "bt"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_backtrace),
-            "",
-            "Print backtrace from the current point.",
-            ""},
-           {{"frame", "f"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_frame),
-            "n",
-            "Inspect the nth frame of the current backtrace.",
-            ""},
-           {{"help"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_help),
-            "[<command>]",
-            "Show help for commands.",
-            "If <command> is not specified, show a list of all available "
-            "commands."},
-           {{"quit"},
-            repeatable_t::non_repeatable,
-            callback(&mdb_shell::command_quit),
-            "",
-            "Quit metadebugger.",
-            ""}});
+    mdb_command_handler_map(
+      {
+        {{"evaluate"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_evaluate),
+          "[-full|-profile] [<type>|-]",
+          "Evaluate and start debugging a new metaprogram.",
+          "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
+          "Memoization events.\n\n"
+          "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
+          "profile mode.\n\n"
+          "Instead of `<type>`, evaluate can be called with `-`, in which case the\n"
+          "whole environment is being debugged not just a single type expression.\n\n"
+          "If called without `<type>` or `-`, then the last evaluated metaprogram will\n"
+          "be reevaluated.\n\n"
+          "Previous breakpoints are cleared.\n\n"
+          "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
+          "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
+          "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+        {{"step"}, repeatable_t::repeatable,
+          callback(&mdb_shell::command_step),
+          "[over|out] [n]",
+          "Step the program.",
+          "Argument n means step n times. n defaults to 1 if not specified.\n"
+          "Negative n means step the program backwards.\n\n"
+          "`step over` is an alias for next.\n"
+          "Use of the `out` qualifier will jump out of the current instantiation frame.\n"
+          "Similarly to `next`, `step out -1` is not always the inverse of `step out`."},
+        {{"next"}, repeatable_t::repeatable,
+          callback(&mdb_shell::command_next),
+          "[n]",
+          "Jump over to the next instantiation skipping sub instantiations.",
+          "Argument n means jump n times. n defaults to 1 if not specified.\n"
+          "Negative n means step the program backwards.\n\n"
+          "Please note that `next -1` is not always the inverse of `next`.\n"
+          "In particular when there are no more instantiations that got instantiated\n"
+          "by the current parent, then `next` will behave like a normal `step`,\n"
+          "and will step out of one or more instantiation frames.\n\n"
+          "`step over` is an alias for next."},
+        {{"rbreak"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_rbreak),
+          "<regex>",
+          "Add breakpoint for all types matching `<regex>`.",
+          ""},
+        {{"break"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_break),
+          "list",
+          "List breakpoints.",
+          ""},
+        {{"continue"}, repeatable_t::repeatable,
+          callback(&mdb_shell::command_continue),
+          "[n]",
+          "Continue program being debugged.",
+          "The program is continued until the nth breakpoint or the end of the program\n"
+          "is reached. n defaults to 1 if not specified.\n"
+          "Negative n means continue the program backwards."},
+        {{"finish"}, repeatable_t::repeatable,
+          callback(&mdb_shell::command_finish),
+          "",
+          "Finish program being debugged.",
+          "The program is continued until the end ignoring any breakpoints."},
+        {{"forwardtrace", "ft"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_forwardtrace),
+          "[n]",
+          "Print forwardtrace from the current point.",
+          "The n specifier limits the depth of the trace. If n is not specified, then the\n"
+          "trace depth is unlimited."},
+        {{"backtrace", "bt"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_backtrace),
+          "",
+          "Print backtrace from the current point.",
+          ""},
+        {{"frame", "f"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_frame),
+          "n",
+          "Inspect the nth frame of the current backtrace.",
+          ""},
+        {{"help"}, repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_help),
+          "[<command>]",
+          "Show help for commands.",
+          "If <command> is not specified, show a list of all available commands."},
+        {{"quit"} , repeatable_t::non_repeatable,
+          callback(&mdb_shell::command_quit),
+          "",
+          "Quit metadebugger.",
+          ""}
+      });
+  // clang-format on
 
   mdb_shell::mdb_shell(
       const data::config& conf_,
