@@ -56,7 +56,7 @@ freebsd)
   pkg install -y git cmake gcc
   ;;
 openbsd)
-  if [ "$(uname -a | cut -d ' ' -f 3)" = "5.5" ]
+  if [ "$(tools/detect_platform.sh --version)" = "5.5" ]
   then
     export PKG_PATH="ftp://ftp.fsn.hu/pub/OpenBSD/5.5/packages/$(machine -a)/"
     pkg_add git g++ cmake python
