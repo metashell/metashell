@@ -18,9 +18,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <pattern/placeholder.hpp>
+#include <pattern/basic_regex.hpp>
 
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
+#include <boost/regex.hpp>
 
 #include <string>
 
@@ -30,47 +32,43 @@ namespace pattern
   // string represents a pattern a string can be matched against.
   // A pattern can be:
   //
-  // 1.  a specified value (created by providing a string in the constructor)
-  // 2a. an unspecified value that matches everything (created by providing the
-  //     _ object in the constructor)
-  // 2b. the same as 2a, but a string variable is provided. In this case the
-  //     value the pattern is matched against gets stored in that variable.
-  //     This is created by providing a pointer to the variable to store the
-  //     value in.
+  // 1. a specified value (created by providing a string in the constructor)
+  // 2. an unspecified value that matches everything (created by providing the
+  //    _ object in the constructor)
+  // 3. a regular expression that is searched for in the value
   template <class CharT>
   class basic_string
   {
   public:
-    basic_string(std::basic_string<CharT> value_) : _pattern(move(value_)) {} // case 1.
-    basic_string(std::basic_string<CharT>* var_) : _pattern(var_) {} // case 2a.
-    basic_string(placeholder)
-      : _pattern(static_cast<std::basic_string<CharT>*>(nullptr))
-    {
-    } // case
-    // 2b.
+    // case 1.
+    basic_string(std::basic_string<CharT> value_) : _pattern(move(value_)) {}
 
+    // case 2.
+    basic_string(placeholder) : _pattern(basic_regex<CharT>()) {}
+
+    // case 3.
+    basic_string(basic_regex<CharT> regex_) : _pattern(std::move(regex_)) {}
+
+    // case 1.
     template <class T>
     basic_string(T value_)
       : _pattern(std::basic_string<CharT>(value_))
     {
-    } // case 1.
+    }
 
     template <class T>
     bool match(T value_) const
     {
-      if (std::basic_string<CharT>* const* p =
-              boost::get<std::basic_string<CharT>*>(&_pattern))
-      {
-        if (*p)
-        {
-          **p = value_;
-        }
-        return true;
-      }
-      else if (const std::basic_string<CharT>* p =
-                   boost::get<std::basic_string<CharT>>(&_pattern))
+      if (const std::basic_string<CharT>* p =
+              boost::get<std::basic_string<CharT>>(&_pattern))
       {
         return *p == value_;
+      }
+      else if (const basic_regex<CharT>* re =
+                   boost::get<basic_regex<CharT>>(&_pattern))
+      {
+        return boost::regex_search(std::basic_string<CharT>(value_),
+                                   boost::basic_regex<CharT>(re->value()));
       }
       else
       {
@@ -85,6 +83,18 @@ namespace pattern
       {
         return *p;
       }
+      else if (const basic_regex<CharT>* re =
+                   boost::get<basic_regex<CharT>>(&_pattern))
+      {
+        if (re->value().empty())
+        {
+          return boost::none;
+        }
+        else
+        {
+          return std::basic_string<CharT>(re->value());
+        }
+      }
       else
       {
         return boost::none;
@@ -92,8 +102,7 @@ namespace pattern
     }
 
   private:
-    boost::variant<std::basic_string<CharT>, std::basic_string<CharT>*>
-        _pattern;
+    boost::variant<std::basic_string<CharT>, basic_regex<CharT>> _pattern;
   };
 }
 

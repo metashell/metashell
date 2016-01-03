@@ -18,9 +18,13 @@
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
 
+#include <pattern/regex.hpp>
+
 #include <just/test.hpp>
 
 using namespace metashell_system_test;
+
+using pattern::regex;
 
 JUST_TEST_CASE(test_getting_defined_macro)
 {
@@ -29,9 +33,7 @@ JUST_TEST_CASE(test_getting_defined_macro)
 
   auto i = r.begin() + 2;
 
-  std::string macros;
-  JUST_ASSERT_EQUAL(cpp_code(&macros), *i);
-  JUST_ASSERT(macros.find("#define FOO bar") != std::string::npos);
+  JUST_ASSERT_EQUAL(cpp_code(regex("#define FOO bar")), *i);
 }
 
 JUST_TEST_CASE(test_getting_defined_macro_name)
@@ -41,8 +43,6 @@ JUST_TEST_CASE(test_getting_defined_macro_name)
 
   auto i = r.begin() + 2;
 
-  std::string names;
-  JUST_ASSERT_EQUAL(cpp_code(&names), *i);
-  JUST_ASSERT(names.find("FOO") != std::string::npos);
-  JUST_ASSERT(names.find("#define") == std::string::npos);
+  JUST_ASSERT_EQUAL(cpp_code(regex("FOO")), *i);
+  JUST_ASSERT_NOT_EQUAL(cpp_code(regex("#define")), *i);
 }
