@@ -40,72 +40,60 @@ namespace
 {
   std::string seq_formatter(const std::string& name_)
   {
-    return "#include <boost/mpl/fold.hpp>\n"
-           "#include <boost/mpl/" +
-           name_ +
-           ".hpp>\n"
+    // clang-format off
+    return
+      "#include <boost/mpl/fold.hpp>\n"
+      "#include <boost/mpl/" + name_ + ".hpp>\n"
 
-           "namespace boost_"
-           "{"
-           "namespace mpl"
-           "{"
-           "template <class... Ts>"
-           "struct " +
-           name_ +
-           "{"
-           "typedef " +
-           name_ +
-           " type;"
-           "};"
-           "}"
-           "}"
+      "namespace boost_"
+      "{"
+        "namespace mpl"
+        "{"
+          "template <class... Ts>"
+          "struct " + name_ +
+          "{"
+            "typedef " + name_ + " type;"
+          "};"
+        "}"
+      "}"
 
-           "namespace metashell"
-           "{"
-           "namespace impl "
-           "{ "
-           "template <class C, class Item> "
-           "struct " +
-           name_ +
-           "_builder;\n"
+      "namespace metashell"
+      "{"
+        "namespace impl "
+        "{ "
+          "template <class C, class Item> "
+          "struct " + name_ + "_builder;\n"
 
-           "template <class... Ts, class Item>"
-           "struct " +
-           name_ + "_builder<::boost_::mpl::" + name_ +
-           "<Ts...>, Item> : "
-           "::boost_::mpl::" +
-           name_ +
-           "<"
-           "Ts..., typename ::metashell::format<Item>::type"
-           ">"
-           "{};"
-           "} "
+          "template <class... Ts, class Item>"
+          "struct "
+            + name_ + "_builder<::boost_::mpl::" + name_ + "<Ts...>, Item> : "
+            "::boost_::mpl::" + name_ + "<"
+              "Ts..., typename ::metashell::format<Item>::type"
+            ">"
+          "{};"
+        "} "
 
-           "template <> "
-           "struct format_impl<::boost::mpl::" +
-           name_ +
-           "<>::tag> "
-           "{ "
-           "typedef format_impl type; "
+        "template <> "
+        "struct format_impl<::boost::mpl::" + name_ + "<>::tag> "
+        "{ "
+          "typedef format_impl type; "
 
-           "template <class V> "
-           "struct apply : "
-           "::boost::mpl::fold<"
-           "V,"
-           "::boost_::mpl::" +
-           name_ +
-           "<>,"
-           "::metashell::impl::" +
-           name_ +
-           "_builder<"
-           "::boost::mpl::_1, "
-           "::boost::mpl::_2"
-           ">"
-           ">"
-           "{};"
-           "};"
-           "}"
-           "\n";
+          "template <class V> "
+          "struct apply : "
+            "::boost::mpl::fold<"
+              "V,"
+              "::boost_::mpl::" + name_ + "<>,"
+              "::metashell::impl::" + name_ + "_builder<"
+                "::boost::mpl::_1, "
+                "::boost::mpl::_2"
+              ">"
+            ">"
+          "{};"
+        "};"
+      "}"
+      "\n"
+      ;
+    // clang-format on
   }
 
   std::string include_formatter(const std::string& name_)
