@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_PLACEHOLDER_HPP
-#define METASHELL_SYSTEM_TEST_PLACEHOLDER_HPP
+#ifndef PATTERN_REGEX_HPP
+#define PATTERN_REGEX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace metashell_system_test
-{
-  class placeholder
-  {
-  public:
-    placeholder() {}
-  };
+#include <pattern/basic_regex.hpp>
 
-  extern const placeholder _;
+namespace pattern
+{
+  typedef basic_regex<char> regex;
 }
 
 #endif

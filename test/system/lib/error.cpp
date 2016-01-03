@@ -28,7 +28,7 @@ using namespace metashell_system_test;
 
 error::error(const std::string& msg_) : _msg(msg_) {}
 
-error::error(placeholder) : _msg(boost::none) {}
+error::error(pattern::placeholder) : _msg(boost::none) {}
 
 bool error::message_specified() const { return _msg != boost::none; }
 

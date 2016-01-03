@@ -28,6 +28,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_mdb_finish_without_evaluation)
 {
   const auto r = run_metashell({command("#msh mdb"), command("finish")});

@@ -26,6 +26,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_instantiating_good_expression)
 {
   const std::string ie_hpp =

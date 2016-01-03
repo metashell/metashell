@@ -28,6 +28,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
 {
   const auto r = run_metashell(

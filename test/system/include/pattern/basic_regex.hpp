@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
+#ifndef PATTERN_BASIC_REGEX_HPP
+#define PATTERN_BASIC_REGEX_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,32 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <pattern/string.hpp>
-
-#include <boost/operators.hpp>
-
 #include <string>
-#include <iosfwd>
 
-namespace metashell_system_test
+namespace pattern
 {
-  class cpp_code : boost::equality_comparable<cpp_code, json_string>
+  template <class CharT>
+  class basic_regex
   {
   public:
-    explicit cpp_code(pattern::string code_);
+    /* implicit */ basic_regex(
+        std::basic_string<CharT> exp_ = std::basic_string<CharT>())
+      : _exp(exp_)
+    {
+    }
 
-    const pattern::string& code() const;
-
+    const std::basic_string<CharT>& value() const { return _exp; }
   private:
-    pattern::string _code;
+    std::basic_string<CharT> _exp;
   };
-
-  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
-
-  json_string to_json_string(const cpp_code& code_);
-
-  bool operator==(const cpp_code& code_, const json_string& s_);
 }
 
 #endif

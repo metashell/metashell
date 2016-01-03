@@ -19,7 +19,8 @@
 
 #include <metashell_system_test/paragraph.hpp>
 #include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/placeholder.hpp>
+
+#include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
 
@@ -32,7 +33,7 @@ namespace metashell_system_test
   {
   public:
     explicit comment(std::vector<paragraph> paragraphs_);
-    explicit comment(placeholder);
+    explicit comment(pattern::placeholder);
 
     bool paragraphs_specified() const;
     const std::vector<paragraph>& paragraphs() const;

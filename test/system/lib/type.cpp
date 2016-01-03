@@ -27,7 +27,7 @@ using namespace metashell_system_test;
 
 type::type(const std::string& name_) : _name(name_) {}
 
-type::type(placeholder) : _name(boost::none) {}
+type::type(pattern::placeholder) : _name(boost::none) {}
 
 bool type::name_specified() const { return _name != boost::none; }
 

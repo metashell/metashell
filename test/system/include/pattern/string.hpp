@@ -1,3 +1,6 @@
+#ifndef PATTERN_STRING_HPP
+#define PATTERN_STRING_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,35 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/cpp_code.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <pattern/basic_string.hpp>
 
-#include <pattern/regex.hpp>
-
-#include <just/test.hpp>
-
-using namespace metashell_system_test;
-
-using pattern::regex;
-
-JUST_TEST_CASE(test_getting_defined_macro)
+namespace pattern
 {
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh macros")});
+  typedef basic_string<char> string;
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code(regex("#define FOO bar")), *i);
+  template <class Writer>
+  void write(const string& pattern_, Writer& writer_)
+  {
+    if (const boost::optional<std::string> value = pattern_.value())
+    {
+      writer_.String(value->c_str());
+    }
+    else
+    {
+      writer_.Null();
+    }
+  }
 }
 
-JUST_TEST_CASE(test_getting_defined_macro_name)
-{
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh macro names")});
-
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code(regex("FOO")), *i);
-  JUST_ASSERT_NOT_EQUAL(cpp_code(regex("#define")), *i);
-}
+#endif

@@ -26,6 +26,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
   const auto r = run_metashell(

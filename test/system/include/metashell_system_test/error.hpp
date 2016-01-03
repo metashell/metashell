@@ -18,7 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/placeholder.hpp>
+
+#include <pattern/placeholder.hpp>
 
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
@@ -32,7 +33,7 @@ namespace metashell_system_test
   {
   public:
     explicit error(const std::string& msg_);
-    explicit error(placeholder);
+    explicit error(pattern::placeholder);
 
     bool message_specified() const;
     const std::string& message() const;

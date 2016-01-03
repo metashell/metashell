@@ -26,6 +26,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 namespace
 {
   void test_definition_and_query(const json_string& init_line_,
