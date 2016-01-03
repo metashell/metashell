@@ -23,7 +23,23 @@ then
   exit 1
 fi
 
-clang-tidy-3.7 \
+if command -v clang-tidy-3.7 >/dev/null 2>&1
+then
+  CLANG_TIDY="clang-tidy-3.7"
+elif command -v clang-tidy >/dev/null 2>&1
+then
+  CLANG_TIDY="clang-tidy"
+elif [ -x "/usr/local/opt/llvm/bin/clang-tidy" ]
+then
+  # Homebrew installs it here on OS X. This directry shouldn't be added to PATH,
+  # so the absolute path is used.
+  CLANG_TIDY="/usr/local/opt/llvm/bin/clang-tidy"
+else
+  echo "clang-tidy not found"
+  exit 1
+fi
+
+"${CLANG_TIDY}" \
   -p=compile_commands.json \
   $( \
     egrep '"file"' compile_commands.json \
