@@ -20,7 +20,8 @@
 #include <metashell_system_test/type.hpp>
 #include <metashell_system_test/instantiation_kind.hpp>
 #include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/placeholder.hpp>
+
+#include <pattern/placeholder.hpp>
 
 #include <boost/optional.hpp>
 #include <boost/operators.hpp>
@@ -35,8 +36,8 @@ namespace metashell_system_test
     explicit frame(const type& name_);
 
     frame(const type& name_,
-          placeholder,
-          placeholder,
+          pattern::placeholder,
+          pattern::placeholder,
           instantiation_kind kind_);
 
     const type& name() const;

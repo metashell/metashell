@@ -27,8 +27,8 @@ using namespace metashell_system_test;
 frame::frame(const type& name_) : _name(name_) {}
 
 frame::frame(const type& name_,
-             placeholder,
-             placeholder,
+             pattern::placeholder,
+             pattern::placeholder,
              instantiation_kind kind_)
   : _name(name_), _kind(kind_)
 {

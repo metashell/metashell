@@ -1,3 +1,6 @@
+#ifndef PATTERN_PLACEHOLDER_HPP
+#define PATTERN_PLACEHOLDER_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,6 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/placeholder.hpp>
+namespace pattern
+{
+  class placeholder_t
+  {
+  };
 
-const metashell_system_test::placeholder metashell_system_test::_;
+  typedef placeholder_t (*placeholder)();
+
+  inline placeholder_t _() { return placeholder_t(); }
+}
+
+#endif

@@ -29,6 +29,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_mdb_evaluate_int)
 {
   const auto r = run_metashell(

@@ -18,8 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/placeholder.hpp>
 #include <metashell_system_test/query_json.hpp>
+
+#include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
@@ -33,7 +34,7 @@ namespace metashell_system_test
   {
   public:
     explicit type(const std::string& name_);
-    explicit type(placeholder);
+    explicit type(pattern::placeholder);
 
     bool name_specified() const;
     const std::string& name() const;

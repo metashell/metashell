@@ -26,6 +26,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_mdb_next_fib_from_root)
 {
   const auto r = run_metashell({command(fibonacci_mp),

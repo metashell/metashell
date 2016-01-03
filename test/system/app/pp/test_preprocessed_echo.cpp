@@ -24,6 +24,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 JUST_TEST_CASE(test_echoing_definition)
 {
   const auto r = run_metashell(

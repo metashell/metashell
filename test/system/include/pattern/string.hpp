@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_PATTERN_HPP
-#define METASHELL_SYSTEM_TEST_PATTERN_HPP
+#ifndef PATTERN_STRING_HPP
+#define PATTERN_STRING_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,45 +17,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/placeholder.hpp>
+#include <pattern/placeholder.hpp>
 
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 
 #include <string>
 
-namespace metashell_system_test
+namespace pattern
 {
-  // This (template) class implements simple pattern matching. An object of type
-  // pattern<T> represents a pattern a value of T can be matched against.
+  // This class implements simple pattern matching. An object of type
+  // string represents a pattern a string can be matched against.
   // A pattern can be:
   //
-  // 1.  a specified value (created by providing a value of type T in the
-  //     constructor)
+  // 1.  a specified value (created by providing a string in the constructor)
   // 2a. an unspecified value that matches everything (created by providing the
   //     _ object in the constructor)
-  // 2b. the same as 2a, but a variable of type T is provided. In this case the
+  // 2b. the same as 2a, but a string variable is provided. In this case the
   //     value the pattern is matched against gets stored in that variable.
   //     This is created by providing a pointer to the variable to store the
   //     value in.
-  template <class T>
-  class pattern
+  class string
   {
   public:
-    pattern(T value_) : _pattern(value_) {} // case 1.
-    pattern(T* var_) : _pattern(var_) {} // case 2a.
-    pattern(placeholder) : _pattern(static_cast<T*>(nullptr)) {} // case 2b.
+    string(std::string value_) : _pattern(move(value_)) {} // case 1.
+    string(std::string* var_) : _pattern(var_) {} // case 2a.
+    string(placeholder) : _pattern(static_cast<std::string*>(nullptr)) {} // case
+                                                                          // 2b.
 
-    template <class U>
-    pattern(U value_)
-      : _pattern(T(value_))
+    template <class T>
+    string(T value_)
+      : _pattern(std::string(value_))
     {
     } // case 1.
 
-    template <class U>
-    bool match(U value_) const
+    template <class T>
+    bool match(T value_) const
     {
-      if (T* const* p = boost::get<T*>(&_pattern))
+      if (std::string* const* p = boost::get<std::string*>(&_pattern))
       {
         if (*p)
         {
@@ -63,7 +62,7 @@ namespace metashell_system_test
         }
         return true;
       }
-      else if (const T* p = boost::get<T>(&_pattern))
+      else if (const T* p = boost::get<std::string>(&_pattern))
       {
         return *p == value_;
       }
@@ -73,9 +72,9 @@ namespace metashell_system_test
       }
     }
 
-    boost::optional<T> value() const
+    boost::optional<std::string> value() const
     {
-      if (const T* p = boost::get<T>(&_pattern))
+      if (const std::string* p = boost::get<std::string>(&_pattern))
       {
         return *p;
       }
@@ -86,11 +85,11 @@ namespace metashell_system_test
     }
 
   private:
-    boost::variant<T, T*> _pattern;
+    boost::variant<std::string, std::string*> _pattern;
   };
 
   template <class Writer>
-  void write(const pattern<std::string>& pattern_, Writer& writer_)
+  void write(const string& pattern_, Writer& writer_)
   {
     if (const boost::optional<std::string> value = pattern_.value())
     {

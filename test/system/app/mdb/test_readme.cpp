@@ -30,6 +30,8 @@
 
 using namespace metashell_system_test;
 
+using pattern::_;
+
 // If one of these TCs fail, then README modification might be needed
 
 JUST_TEST_CASE(test_readme_getting_started)

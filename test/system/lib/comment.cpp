@@ -31,7 +31,10 @@ comment::comment(std::vector<paragraph> paragraphs_)
 {
 }
 
-comment::comment(placeholder) : _paragraphs_specified(false), _paragraphs() {}
+comment::comment(pattern::placeholder)
+  : _paragraphs_specified(false), _paragraphs()
+{
+}
 
 bool comment::paragraphs_specified() const { return _paragraphs_specified; }
 

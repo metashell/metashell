@@ -25,9 +25,9 @@
 
 using namespace metashell_system_test;
 
-cpp_code::cpp_code(pattern<std::string> code_) : _code(code_) {}
+cpp_code::cpp_code(pattern::string code_) : _code(code_) {}
 
-const pattern<std::string>& cpp_code::code() const { return _code; }
+const pattern::string& cpp_code::code() const { return _code; }
 
 std::ostream& metashell_system_test::operator<<(std::ostream& out_,
                                                 const cpp_code& cpp_code_)
