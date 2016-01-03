@@ -39,7 +39,7 @@ namespace metashell
       bool use_precompiled_headers = false;
       int max_template_depth;
       unsigned templight_trace_capacity;
-      bool saving_enabled = false;
+      bool saving_enabled = true;
       console_type con_type = console_type::plain;
       bool splash_enabled = true;
       logging_mode log_mode = logging_mode::none;

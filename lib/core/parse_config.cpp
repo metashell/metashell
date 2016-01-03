@@ -275,26 +275,42 @@ metashell::parse_config(int argc_,
       ". Default: " + cfg.engine;
 
   options_description desc("Options");
-  desc.add_options()("help", "Display help")("verbose,V", "Verbose mode")(
-      "no_highlight,H", "Disable syntax highlighting")(
-      "indent", "Enable indenting (experimental)")(
+  // clang-format off
+  desc.add_options()
+    ("help", "Display help")
+    ("verbose,V", "Verbose mode")
+    ("no_highlight,H", "Disable syntax highlighting")
+    ("indent", "Enable indenting (experimental)")
+    (
       "no_precompiled_headers",
       "Disable precompiled header usage."
-      " (It needs clang++ to be available and writes to the local disc.)")(
+      " (It needs clang++ to be available and writes to the local disc.)"
+    )
+    (
       "show_pragma_help",
-      "Display help for pragmas in MarkDown format and exit.")(
+      "Display help for pragmas in MarkDown format and exit."
+    )
+    (
       "show_mdb_help",
-      "Display help for mdb commands in MarkDown format and exit")(
-      "enable_saving",
-      "Enable saving the environment using the #msh environment save")(
+      "Display help for mdb commands in MarkDown format and exit"
+    )
+    (
+      "disable_saving",
+      "Disable saving the environment using the #msh environment save"
+    )
+    (
       "console", value(&con_type)->default_value(con_type),
-      "Console type. Possible values: plain, readline, json")(
-      "nosplash", "Disable the splash messages")(
+      "Console type. Possible values: plain, readline, json"
+    )
+    ("nosplash", "Disable the splash messages")
+    (
       "log", value(&cfg.log_file),
-      "Log into a file. When it is set to -, it logs into the console.")(
-      "engine", value(&cfg.engine), engine_info.c_str())(
-      "help_engine", value(&help_engine), "Display help about the engine")(
-      "preprocessor", "Starts the shell in preprocessor mode");
+      "Log into a file. When it is set to -, it logs into the console."
+    )
+    ("engine", value(&cfg.engine), engine_info.c_str())
+    ("help_engine", value(&help_engine), "Display help about the engine")
+    ("preprocessor", "Starts the shell in preprocessor mode");
+  // clang-format on
 
   using dec_arg = decommissioned_argument;
   using dec_type = decommissioned_argument::type;
@@ -315,7 +331,11 @@ metashell::parse_config(int argc_,
               " -Wfatal-errors" +
               (env_detector_.on_windows() ?
                    " -fno-ms-compatibility -U_MSC_VER" :
-                   "")}};
+                   "")},
+      dec_arg{
+          "enable_saving", dec_type::flag,
+          "Saving is enabled by default. To disable it, use --disable_saving.",
+          "Saving is enabled by default."}};
 
   for (auto& a : dec_args)
   {
@@ -338,7 +358,7 @@ metashell::parse_config(int argc_,
     cfg.indent = vm.count("indent") != 0;
     cfg.con_type = metashell::data::parse_console_type(con_type);
     cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
-    cfg.saving_enabled = vm.count("enable_saving");
+    cfg.saving_enabled = !vm.count("disable_saving");
     cfg.splash_enabled = vm.count("nosplash") == 0;
     cfg.preprocessor_mode = vm.count("preprocessor");
     if (vm.count("log") == 0)

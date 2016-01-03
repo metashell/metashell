@@ -34,6 +34,8 @@
       custom Clang, one has to use `--engine clang -- <clang path> -std=c++0x
       -ftemplate-depth=256 -Wfatal-errors`. On Windows the
       `-fno-ms-compatibility -U_MSC_VER` arguments also need to be added.
+    * **Breaking change** Environment saving is enabled by default and can be
+      disabled by using `--disable_saving`.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

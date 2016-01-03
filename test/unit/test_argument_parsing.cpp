@@ -64,18 +64,18 @@ JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
   JUST_ASSERT(parse_config({"--", "foo"}).should_run_shell());
 }
 
-JUST_TEST_CASE(test_saving_is_disabled_by_default_during_parsing)
+JUST_TEST_CASE(test_saving_is_enabled_by_default_during_parsing)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT(!cfg.saving_enabled);
+  JUST_ASSERT(cfg.saving_enabled);
 }
 
-JUST_TEST_CASE(test_enabling_saving)
+JUST_TEST_CASE(test_disabling_saving)
 {
-  const data::config cfg = parse_config({"--enable_saving"}).cfg;
+  const data::config cfg = parse_config({"--disable_saving"}).cfg;
 
-  JUST_ASSERT(cfg.saving_enabled);
+  JUST_ASSERT(!cfg.saving_enabled);
 }
 
 JUST_TEST_CASE(test_default_console_type_is_readline)
