@@ -1,5 +1,15 @@
 #!/bin/bash
 
+function python_files {
+  for f in $1/*
+  do
+    if [ -f "$f" ] && (head -1 "$f" | egrep '^#!.*python' > /dev/null)
+    then
+      echo $f
+    fi
+  done
+}
+
 function assert_no_git_tracked_files_changed {
   git diff-index --quiet HEAD --
 }
@@ -20,6 +30,12 @@ git fetch --tags
 git tag
 egrep $(tools/latest_release --no_dots --prefix=version-) README.md
 egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
+
+# Check the python scripts
+
+sudo pip install pep8 pylint
+pep8 $(python_files tools)
+pylint --disable=bare-except $(python_files tools)
 
 # Test mkdocs.yml
 

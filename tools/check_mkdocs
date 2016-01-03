@@ -1,4 +1,5 @@
 #!/usr/bin/python
+"""Check if mkdocs.yml is filled properly"""
 
 # Copyright Abel Sinkovics (abel@sinkovics.hu)  2015.
 # Distributed under the Boost Software License, Version 1.0.
@@ -8,44 +9,56 @@
 import sys
 import os
 import yaml
-import itertools
 
-def join_path(a, b):
-  return b if a == '' else a + '/' + b
+
+def join_path(path1, path2):
+    """Join two paths"""
+    return path2 if path1 == '' else path1 + '/' + path2
+
 
 def find_md_files(path):
-  return sum([
-    [join_path(root[len(path)+1:], f) for f in files if f.endswith('.md')]
-    for root, subdirs, files in os.walk(path)
-  ], [])
+    """Returns the list of md files on the given path (recursively)"""
+    return sum([
+        [join_path(root[len(path)+1:], f) for f in files if f.endswith('.md')]
+        for root, _, files in os.walk(path)
+    ], [])
+
 
 def validate(yml, docs_path):
-  pages = [p[0] for p in yml['pages']]
-  missing = [f for f in find_md_files(docs_path) if f not in pages]
-  return ['{0} is not added to mkdocs.yml'.format(f) for f in missing]
+    """Validate the mkdocs.yml content (yml) against the md files"""
+    pages = [p[0] for p in yml['pages']]
+    missing = [f for f in find_md_files(docs_path) if f not in pages]
+    return ['{0} is not added to mkdocs.yml'.format(f) for f in missing]
+
 
 def load_yml(path):
-  with open(path, 'r') as f:
-    return yaml.load(f)
+    """Load a yaml document"""
+    with open(path, 'r') as yaml_file:
+        return yaml.load(yaml_file)
+
 
 def run(mkdocs_yml):
-  errors = validate(
-    load_yml(mkdocs_yml), os.path.dirname(os.path.abspath(mkdocs_yml)) + '/docs'
-  )
-  if len(errors) > 0:
-    for e in errors:
-      print e
-    sys.exit(1)
-  else:
-    sys.exit(0)
+    """Check the mkdocs_yml file (path)"""
+    errors = validate(
+        load_yml(mkdocs_yml),
+        os.path.dirname(os.path.abspath(mkdocs_yml)) + '/docs'
+    )
+    if len(errors) > 0:
+        for err in errors:
+            print err
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
 
 def main():
-  if len(sys.argv) == 2:
-    run(sys.argv[1])
-  else:
-    print 'Usage: {0} <path to mkdocs.yml>'.format(sys.argv[0])
-    sys.exit(1)
+    """The main function of the script"""
+    if len(sys.argv) == 2:
+        run(sys.argv[1])
+    else:
+        print 'Usage: {0} <path to mkdocs.yml>'.format(sys.argv[0])
+        sys.exit(1)
+
 
 if __name__ == '__main__':
-  main()
-
+    main()
