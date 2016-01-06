@@ -19,6 +19,8 @@
 
 #include <metashell_system_test/json_string.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <vector>
 #include <string>
 
@@ -27,6 +29,19 @@ namespace metashell_system_test
   std::vector<json_string>
   run_metashell(const std::vector<json_string>& commands_,
                 const std::vector<std::string>& extra_args_ = {});
+
+  class in_directory
+  {
+  public:
+    explicit in_directory(boost::filesystem::path cwd_);
+
+    std::vector<json_string>
+    run_metashell(const std::vector<json_string>& commands_,
+                  const std::vector<std::string>& extra_args_ = {}) const;
+
+  private:
+    boost::filesystem::path _cwd;
+  };
 
   json_string run_metashell_command(const std::string& command_);
 }

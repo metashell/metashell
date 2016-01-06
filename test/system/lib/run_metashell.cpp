@@ -21,6 +21,9 @@
 #include <metashell_system_test/raw_text.hpp>
 #include <metashell_system_test/process_execution.hpp>
 
+#include <boost/optional.hpp>
+#include <boost/filesystem.hpp>
+
 #include <cassert>
 #include <sstream>
 #include <iostream>
@@ -83,11 +86,14 @@ namespace
     return s.str();
   }
 
-  process_execution execute(const std::vector<json_string>& commands_,
-                            const std::vector<std::string>& extra_args_)
+  process_execution
+  execute(const std::vector<json_string>& commands_,
+          const boost::optional<boost::filesystem::path>& cwd_,
+          const std::vector<std::string>& extra_args_)
   {
     std::vector<std::string> cmd{
-        system_test_config::metashell_binary(), "--console=json", "--nosplash"};
+        absolute(system_test_config::metashell_binary()).string(),
+        "--console=json", "--nosplash"};
     cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
                system_test_config::metashell_args().end());
     if (!extra_args_.empty())
@@ -103,7 +109,8 @@ namespace
       }
     }
 
-    return run(move(cmd), join(commands_));
+    return cwd_ ? run(move(cmd), *cwd_, join(commands_)) :
+                  run(move(cmd), join(commands_));
   }
 
   void split_at_new_lines(const std::string& s_, std::vector<std::string>& out_)
@@ -156,9 +163,10 @@ namespace
   process_execution
   run_metashell_impl(const std::vector<json_string>& commands_,
                      const std::vector<std::string>& extra_args_,
-                     std::vector<json_string>& result_)
+                     std::vector<json_string>& result_,
+                     const boost::optional<boost::filesystem::path>& cwd_)
   {
-    process_execution me = execute(commands_, extra_args_);
+    process_execution me = execute(commands_, cwd_, extra_args_);
 
     std::vector<std::string> rsp;
     split_at_new_lines(me.standard_output(), rsp);
@@ -185,7 +193,7 @@ std::vector<json_string> metashell_system_test::run_metashell(
     const std::vector<std::string>& extra_args_)
 {
   std::vector<json_string> jv;
-  run_metashell_impl(commands_, extra_args_, jv);
+  run_metashell_impl(commands_, extra_args_, jv, boost::none);
   return jv;
 }
 
@@ -193,10 +201,24 @@ json_string
 metashell_system_test::run_metashell_command(const std::string& command_)
 {
   std::vector<json_string> jv;
-  const auto execution = run_metashell_impl({command(command_)}, {}, jv);
+  const auto execution =
+      run_metashell_impl({command(command_)}, {}, jv, boost::none);
 
   rm_assert(jv.size() == 2, execution);
   rm_assert(jv.front() == to_json_string(prompt(">")), execution);
 
   return jv.back();
+}
+
+in_directory::in_directory(boost::filesystem::path cwd_) : _cwd(std::move(cwd_))
+{
+}
+
+std::vector<json_string>
+in_directory::run_metashell(const std::vector<json_string>& commands_,
+                            const std::vector<std::string>& extra_args_) const
+{
+  std::vector<json_string> jv;
+  run_metashell_impl(commands_, extra_args_, jv, _cwd);
+  return jv;
 }
