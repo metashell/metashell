@@ -27,3 +27,9 @@ target_link_libraries(metashell_core_system_test
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 
+# Boost
+target_link_libraries(metashell_core_system_test
+  boost_filesystem
+  boost_system
+)
+
