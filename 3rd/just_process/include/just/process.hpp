@@ -401,7 +401,11 @@ namespace just
      */
 #ifdef _WIN32
     template <class Seq>
-    output run(const Seq& cmd_, const std::string& input_)
+    output run(
+      const Seq& cmd_,
+      const std::string& input_,
+      const std::string& cwd_ = std::string()
+    )
     {
       const std::string cmds = impl::join(cmd_.begin(), cmd_.end());
       std::vector<char> cmd(cmds.begin(), cmds.end());
@@ -438,7 +442,18 @@ namespace just
       pi.dwThreadId = 0;
 
       if (
-        CreateProcess(NULL, &cmd[0], NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)
+        CreateProcess(
+          NULL,
+          &cmd[0],
+          NULL,
+          NULL,
+          TRUE,
+          0,
+          NULL,
+          cwd_.empty() ? NULL : cwd_.c_str(),
+          &si,
+          &pi
+        )
       )
       {
         CloseHandle(si.hStdInput);
@@ -525,7 +540,11 @@ namespace just
 
 #ifndef _WIN32
     template <class Seq>
-    output run(const Seq& cmd_, const std::string& input_)
+    output run(
+      const Seq& cmd_,
+      const std::string& input_,
+      const std::string& cwd_ = std::string()
+    )
     {
       using std::vector;
       using std::transform;
@@ -547,17 +566,20 @@ namespace just
       case -1:
         return output(-1, "", "");
       case 0: // in child
-        standard_input.output.close();
-        standard_output.input.close();
-        standard_error.input.close();
-        error_reporting.input.close();
-        error_reporting.output.close_on_exec();
+        if (cwd_.empty() || chdir(cwd_.c_str()) == 0)
+        {
+          standard_input.output.close();
+          standard_output.input.close();
+          standard_error.input.close();
+          error_reporting.input.close();
+          error_reporting.output.close_on_exec();
 
-        standard_input.input.use_as(STDIN_FILENO);
-        standard_output.output.use_as(STDOUT_FILENO);
-        standard_error.output.use_as(STDERR_FILENO);
+          standard_input.input.use_as(STDIN_FILENO);
+          standard_output.output.use_as(STDOUT_FILENO);
+          standard_error.output.use_as(STDERR_FILENO);
 
-        execv(cmd[0], const_cast<char*const*>(&cmd[0]));
+          execv(cmd[0], const_cast<char*const*>(&cmd[0]));
+        }
         {
           const int err = errno;
           std::ostringstream s;
