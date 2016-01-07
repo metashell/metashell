@@ -15,17 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/prompt.hpp>
+#include <metashell_system_test/query_json.hpp>
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/document.h>
 
 #include <iostream>
 
 using namespace metashell_system_test;
 
-prompt::prompt(const std::string& prompt_) : _prompt(prompt_) {}
+prompt::prompt(pattern::string prompt_) : _prompt(prompt_) {}
 
-const std::string& prompt::value() const { return _prompt; }
+const pattern::string& prompt::value() const { return _prompt; }
 
 std::ostream& metashell_system_test::operator<<(std::ostream& out_,
                                                 const prompt& prompt_)
@@ -44,7 +46,7 @@ json_string metashell_system_test::to_json_string(const prompt& p_)
   w.String("prompt");
 
   w.Key("prompt");
-  w.String(p_.value().c_str());
+  write(p_.value(), w);
 
   w.EndObject();
 
@@ -54,5 +56,17 @@ json_string metashell_system_test::to_json_string(const prompt& p_)
 bool metashell_system_test::operator==(const prompt& prompt_,
                                        const json_string& s_)
 {
-  return to_json_string(prompt_) == s_;
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "prompt"}, d) && is_string("prompt", d["type"]))
+  {
+    const auto& prompt = d["prompt"];
+    return prompt_.value().match(
+        std::string(prompt.GetString(), prompt.GetStringLength()));
+  }
+  else
+  {
+    return false;
+  }
 }
