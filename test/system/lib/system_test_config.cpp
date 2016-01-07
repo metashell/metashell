@@ -20,11 +20,11 @@ using namespace metashell_system_test;
 
 namespace
 {
-  std::string metashell_binary_path;
+  boost::filesystem::path metashell_binary_path;
   std::vector<std::string> metashell_args;
 }
 
-void system_test_config::metashell_binary(const std::string& path_)
+void system_test_config::metashell_binary(const boost::filesystem::path& path_)
 {
   metashell_binary_path = path_;
 }
@@ -34,7 +34,7 @@ void system_test_config::metashell_arg(const std::string& arg_)
   ::metashell_args.push_back(arg_);
 }
 
-std::string system_test_config::metashell_binary()
+boost::filesystem::path system_test_config::metashell_binary()
 {
   return metashell_binary_path;
 }

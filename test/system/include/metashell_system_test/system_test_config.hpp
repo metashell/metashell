@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 #include <vector>
 
@@ -24,10 +26,10 @@ namespace metashell_system_test
 {
   namespace system_test_config
   {
-    void metashell_binary(const std::string& path_);
+    void metashell_binary(const boost::filesystem::path& path_);
     void metashell_arg(const std::string& arg_);
 
-    std::string metashell_binary();
+    boost::filesystem::path metashell_binary();
     const std::vector<std::string>& metashell_args();
   }
 }
