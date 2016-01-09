@@ -33,19 +33,19 @@ make test || (cat Testing/Temporary/LastTest.log && false)
 
 for t in core pp mdb; do
   test/system/app/${t}/metashell_${t}_system_test \
-    app/metashell -- -I../3rd/boost/include --
+    app/metashell -- -I$(readlink -m ../3rd/boost/include) --
 
   test/system/app/${t}/metashell_${t}_system_test \
     app/metashell \
     --engine clang \
     -- \
-    app/templight_metashell \
+    $(readlink -m app/templight_metashell) \
     -std=c++0x \
     -ftemplate-depth=256 \
     -Wfatal-errors \
-    -Iinclude/metashell/libcxx \
-    -Iinclude/metashell/templight \
-    -I../3rd/boost/include \
+    -I$(readlink -m include/metashell/libcxx) \
+    -I$(readlink -m include/metashell/templight) \
+    -I$(readlink -m ../3rd/boost/include) \
     --
 done
 
