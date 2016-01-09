@@ -61,7 +61,7 @@ namespace
 
   bool can_create_file_in(const boost::filesystem::path& p_)
   {
-    return std::ofstream((p_ / "test.txt").string());
+    return !std::ofstream((p_ / "test.txt").string()).fail();
   }
 }
 
