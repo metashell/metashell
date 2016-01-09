@@ -117,7 +117,8 @@ namespace
     {
       const std::string str(line);
 
-#if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__ || defined USE_EDITLINE
+#if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__ ||         \
+    defined USE_EDITLINE
       free(line);
 #else
       rl_free(line);
