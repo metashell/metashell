@@ -16,7 +16,7 @@
 
 #include <metashell/data/type.hpp>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 
 #include <ostream>
 #include <sstream>

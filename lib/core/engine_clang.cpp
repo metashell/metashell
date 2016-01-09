@@ -25,7 +25,7 @@
 #include <metashell/clang_binary.hpp>
 #include <metashell/has_prefix.hpp>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>

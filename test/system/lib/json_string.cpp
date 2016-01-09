@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 
 using namespace metashell_system_test;
 
