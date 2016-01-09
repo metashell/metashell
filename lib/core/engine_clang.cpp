@@ -435,7 +435,7 @@ namespace
       try
       {
         const std::string src = env_.get_appended(src_);
-        std::vector<std::string> clang_args;
+        std::vector<std::string> clang_args{"-fsyntax-only"};
         if (use_precompiled_headers_)
         {
           clang_args.push_back("-include");

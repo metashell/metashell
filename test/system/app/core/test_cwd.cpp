@@ -49,6 +49,20 @@ namespace
       throw std::runtime_error("Failed to create file " + p);
     }
   }
+
+  boost::filesystem::path read_only_path()
+  {
+#ifdef _WIN32
+    return "C:\\";
+#else
+    return "/";
+#endif
+  }
+
+  bool can_create_file_in(const boost::filesystem::path& p_)
+  {
+    return std::ofstream((p_ / "test.txt").string());
+  }
 }
 
 JUST_TEST_CASE(test_include_from_cwd)
@@ -108,4 +122,23 @@ JUST_TEST_CASE(test_relative_include_directory)
   JUST_ASSERT_EQUAL(prompt(_), *i);
   ++i;
   JUST_ASSERT_EQUAL(type("int"), *i);
+}
+
+JUST_TEST_CASE(test_metashell_definition_succeeds_when_cwd_is_not_writable)
+{
+  const boost::filesystem::path read_only = read_only_path();
+
+  JUST_ASSERT(!can_create_file_in(read_only));
+
+  const auto r = in_directory(read_only).run_metashell(
+      {command("typedef int foo;"), command("foo")});
+
+  auto i = r.begin();
+  JUST_ASSERT_EQUAL(prompt(_), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(_), *i);
+  ++i;
+  JUST_ASSERT_EQUAL(type("int"), *i);
+  ++i;
+  JUST_ASSERT(i == r.end());
 }
