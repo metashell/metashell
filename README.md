@@ -8,6 +8,8 @@
 The goal of this project is to provide an interactive template metaprogramming
 shell.
 
+## Documentation
+
 The documentation can be found at
 [http://metashell.readthedocs.org](http://metashell.readthedocs.org).
 
