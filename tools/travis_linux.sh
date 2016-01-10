@@ -11,7 +11,12 @@ function python_files {
 }
 
 function assert_no_git_tracked_files_changed {
-  git diff-index --quiet HEAD --
+  if ! git diff-index --quiet HEAD --; then
+    echo "Diff found:"
+    git diff
+    return 1
+  fi
+  return 0
 }
 
 set -ex
