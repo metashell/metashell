@@ -11,7 +11,7 @@ shell.
 ## Documentation
 
 The documentation can be found at
-[http://metashell.readthedocs.org](http://metashell.readthedocs.org).
+[http://doc.metashell.org](http://doc.metashell.org)
 
 ## Current build status
 
