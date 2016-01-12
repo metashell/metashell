@@ -22,7 +22,7 @@
 
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
-#include <metashell/boost/regex.hpp>
+#include <pattern/boost_regex.hpp>
 
 #include <string>
 
