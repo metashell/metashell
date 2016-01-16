@@ -42,7 +42,7 @@ cd bin
   test\system\app\core\Release\metashell_core_system_test.exe ^
     app\Release\metashell.exe ^
     -- ^
-    -I..\3rd\boost\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
@@ -50,16 +50,16 @@ cd bin
     app\Release\metashell.exe ^
     --engine clang ^
     -- ^
-    app\Release\templight\templight.exe ^
+    %cd%\app\Release\templight\templight.exe ^
     -std=c++0x ^
     -ftemplate-depth=256 ^
     -Wfatal-errors ^
     -fno-ms-compatibility ^
     -U_MSC_VER ^
-    -Iapp\Release\windows_headers ^
-    -Iapp\Release\windows_headers\mingw32 ^
-    -Iapp\Release\templight\include ^
-    -I..\3rd\boost\include ^
+    -I%cd%\app\Release\windows_headers ^
+    -I%cd%\app\Release\windows_headers\mingw32 ^
+    -I%cd%\app\Release\templight\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
@@ -68,7 +68,7 @@ cd bin
   test\system\app\pp\Release\metashell_pp_system_test.exe ^
     app\Release\metashell.exe ^
     -- ^
-    -I..\3rd\boost\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
@@ -76,16 +76,16 @@ cd bin
     app\Release\metashell.exe ^
     --engine clang ^
     -- ^
-    app\Release\templight\templight.exe ^
+    %cd%\app\Release\templight\templight.exe ^
     -std=c++0x ^
     -ftemplate-depth=256 ^
     -Wfatal-errors ^
     -fno-ms-compatibility ^
     -U_MSC_VER ^
-    -Iapp\Release\windows_headers ^
-    -Iapp\Release\windows_headers\mingw32 ^
-    -Iapp\Release\templight\include ^
-    -I..\3rd\boost\include ^
+    -I%cd%\app\Release\windows_headers ^
+    -I%cd%\app\Release\windows_headers\mingw32 ^
+    -I%cd%\app\Release\templight\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
@@ -94,7 +94,7 @@ cd bin
   test\system\app\mdb\Release\metashell_mdb_system_test.exe ^
     app\Release\metashell.exe ^
     -- ^
-    -I..\3rd\boost\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
@@ -102,16 +102,16 @@ cd bin
     app\Release\metashell.exe ^
     --engine clang ^
     -- ^
-    app\Release\templight\templight.exe ^
+    %cd%\app\Release\templight\templight.exe ^
     -std=c++0x ^
     -ftemplate-depth=256 ^
     -Wfatal-errors ^
     -fno-ms-compatibility ^
     -U_MSC_VER ^
-    -Iapp\Release\windows_headers ^
-    -Iapp\Release\windows_headers\mingw32 ^
-    -Iapp\Release\templight\include ^
-    -I..\3rd\boost\include ^
+    -I%cd%\app\Release\windows_headers ^
+    -I%cd%\app\Release\windows_headers\mingw32 ^
+    -I%cd%\app\Release\templight\include ^
+    -I%cd%\..\3rd\boost\include ^
     --
   if errorlevel 1 goto test_failed
 
