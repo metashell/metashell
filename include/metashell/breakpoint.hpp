@@ -20,7 +20,8 @@
 #include <string>
 #include <vector>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
+
 #include <boost/optional.hpp>
 
 #include <metashell/data/frame.hpp>

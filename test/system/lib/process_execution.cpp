@@ -57,6 +57,16 @@ process_execution metashell_system_test::run(std::vector<std::string> cmd_,
                            r.standard_error(), r.exit_code());
 }
 
+process_execution
+metashell_system_test::run(std::vector<std::string> cmd_,
+                           const boost::filesystem::path& cwd_,
+                           std::string input_)
+{
+  const auto r = just::process::run(cmd_, input_, cwd_.string());
+  return process_execution(move(cmd_), move(input_), r.standard_output(),
+                           r.standard_error(), r.exit_code());
+}
+
 std::ostream& metashell_system_test::operator<<(std::ostream& out_,
                                                 const process_execution& e_)
 {

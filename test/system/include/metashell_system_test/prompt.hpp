@@ -19,6 +19,8 @@
 
 #include <metashell_system_test/json_string.hpp>
 
+#include <pattern/string.hpp>
+
 #include <boost/operators.hpp>
 
 #include <string>
@@ -29,12 +31,12 @@ namespace metashell_system_test
   class prompt : boost::equality_comparable<prompt, json_string>
   {
   public:
-    explicit prompt(const std::string& prompt_);
+    explicit prompt(pattern::string prompt_);
 
-    const std::string& value() const;
+    const pattern::string& value() const;
 
   private:
-    std::string _prompt;
+    pattern::string _prompt;
   };
 
   std::ostream& operator<<(std::ostream& out_, const prompt& prompt_);

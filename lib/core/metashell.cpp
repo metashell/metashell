@@ -22,7 +22,7 @@
 #include <metashell/source_position.hpp>
 #include <metashell/unsaved_file.hpp>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>

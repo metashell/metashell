@@ -1,5 +1,8 @@
+#ifndef METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
+#define METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,32 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/system_test_config.hpp>
+#include <just/temp.hpp>
 
-using namespace metashell_system_test;
+#include <boost/filesystem.hpp>
 
-namespace
+namespace metashell_system_test
 {
-  boost::filesystem::path metashell_binary_path;
-  std::vector<std::string> metashell_args;
+  class read_only_path
+  {
+  public:
+    read_only_path();
+
+    boost::filesystem::path path() const;
+
+  private:
+#ifdef _WIN32
+    just::temp::directory _temp;
+#endif
+  };
 }
 
-void system_test_config::metashell_binary(const boost::filesystem::path& path_)
-{
-  metashell_binary_path = path_;
-}
-
-void system_test_config::metashell_arg(const std::string& arg_)
-{
-  ::metashell_args.push_back(arg_);
-}
-
-boost::filesystem::path system_test_config::metashell_binary()
-{
-  return metashell_binary_path;
-}
-
-const std::vector<std::string>& system_test_config::metashell_args()
-{
-  return ::metashell_args;
-}
+#endif

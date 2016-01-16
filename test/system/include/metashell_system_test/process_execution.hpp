@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <boost/filesystem/path.hpp>
+
 #include <vector>
 #include <string>
 #include <iosfwd>
@@ -48,6 +50,9 @@ namespace metashell_system_test
   };
 
   process_execution run(std::vector<std::string> cmd_, std::string input_);
+  process_execution run(std::vector<std::string> cmd_,
+                        const boost::filesystem::path& cwd_,
+                        std::string input_);
 
   std::ostream& operator<<(std::ostream& out_, const process_execution& e_);
 }

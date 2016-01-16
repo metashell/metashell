@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 #include <boost/optional.hpp>
 
 #include <metashell/breakpoint.hpp>

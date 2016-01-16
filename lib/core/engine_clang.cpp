@@ -25,7 +25,7 @@
 #include <metashell/clang_binary.hpp>
 #include <metashell/has_prefix.hpp>
 
-#include <boost/regex.hpp>
+#include <metashell/boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -435,7 +435,7 @@ namespace
       try
       {
         const std::string src = env_.get_appended(src_);
-        std::vector<std::string> clang_args;
+        std::vector<std::string> clang_args{"-fsyntax-only"};
         if (use_precompiled_headers_)
         {
           clang_args.push_back("-include");
