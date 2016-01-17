@@ -55,8 +55,7 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh \
-  || (cat Testing/Temporary/LastTest.log && false)
+BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh
 
 sudo apt-get install clang-3.7
 cd bin

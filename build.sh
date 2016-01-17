@@ -63,7 +63,7 @@ fi
 mkdir -p bin; cd bin
   cmake ..
   make -j${BUILD_THREADS}
-  make test
+  test/unit/metashell_unit_test
 
   if [ "${PLATFORM}" = "osx" ]
   then
