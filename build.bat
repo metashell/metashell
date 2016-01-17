@@ -17,14 +17,19 @@ rem You should have received a copy of the GNU General Public License
 rem along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 rem Build Templight
-cd 3rd\templight
-  md build
-  cd build
-    cmake ..\llvm
-    msbuild LLVM.sln /p:Configuration=Release "/t:Clang executables\templight"
-    if errorlevel 1 goto no_dev
-  cd ..
-cd ..\..
+if defined no_templight goto skip_templight
+  cd 3rd\templight
+    md build
+    cd build
+      cmake ..\llvm
+      msbuild LLVM.sln /p:Configuration=Release "/t:Clang executables\templight"
+      if errorlevel 1 goto no_dev
+    cd ..
+  cd ..\..
+  goto build_metashell
+:skip_templight
+  echo Skipping Templight build, because %%NO_TEMPLIGHT%% = "%NO_TEMPLIGHT%"
+:build_metashell
 
 rem Build Metashell
 md bin
