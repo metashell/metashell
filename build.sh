@@ -61,8 +61,8 @@ else
 fi
 
 mkdir -p bin; cd bin
-  cmake .. \
-    && make -j${BUILD_THREADS} \
-    && make test \
-    && cpack
+  cmake ..
+  make -j${BUILD_THREADS}
+  make test
+  cpack
 cd ..
