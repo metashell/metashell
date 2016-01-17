@@ -44,16 +44,21 @@ echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
 # Build Templight
-cd 3rd
-  cd templight
-    mkdir -p build; cd build
-      cmake ../llvm \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLLVM_ENABLE_TERMINFO=OFF \
-        && make templight -j${BUILD_THREADS}
+if [ "${NO_TEMPLIGHT}" = "" ]
+then
+  cd 3rd
+    cd templight
+      mkdir -p build; cd build
+        cmake ../llvm \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_ENABLE_TERMINFO=OFF \
+          && make templight -j${BUILD_THREADS}
+      cd ..
     cd ..
   cd ..
-cd ..
+else
+  echo "Skipping Templight build, because \$NO_TEMPLIGHT = \"${NO_TEMPLIGHT}\""
+fi
 
 mkdir -p bin; cd bin
   cmake .. \
