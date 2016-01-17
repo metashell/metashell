@@ -121,7 +121,12 @@ cd bin
   if errorlevel 1 goto test_failed
 
   rem Create installer
-  cpack
+  if defined no_installer goto skip_cpack
+    cpack
+    goto after_cpack
+  :skip_cpack
+    echo Skipping installer generation, because %%NO_INSTALLER%% = "%NO_INSTALLER%"
+  :after_cpack
 cd ..
 
 exit /B 0
@@ -133,4 +138,3 @@ exit /B 1
 :test_failed
 echo "Tests failed"
 exit /B 1
-

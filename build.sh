@@ -90,5 +90,10 @@ mkdir -p bin; cd bin
       --
   done
 
-  cpack
+  if [ "${NO_INSTALLER}" = "" ]
+  then
+    cpack
+  else
+    echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
+  fi
 cd ..
