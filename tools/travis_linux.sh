@@ -55,35 +55,13 @@ cd ../..
 
 # Test the code
 
-mkdir bin
-cd bin
-
-cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror" -DTEMPLIGHT_DEBUG=true
-make -j2
-make test || (cat Testing/Temporary/LastTest.log && false)
+BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh \
+  || (cat Testing/Temporary/LastTest.log && false)
 
 sudo apt-get install clang-3.7
+cd bin
 ../tools/clang_tidy.sh | tee clang_tidy_output.txt
 [ ! -s clang_tidy_output.txt ]
-
-# Run the system tests
-
-for t in core pp mdb; do
-  test/system/app/${t}/metashell_${t}_system_test \
-    app/metashell -- -I$(readlink -m ../3rd/boost/include) --
-
-  test/system/app/${t}/metashell_${t}_system_test \
-    app/metashell \
-    --engine clang \
-    -- \
-    $(readlink -m app/templight_metashell) \
-    -std=c++0x \
-    -ftemplate-depth=256 \
-    -Wfatal-errors \
-    -I$(readlink -m include/metashell/templight) \
-    -I$(readlink -m ../3rd/boost/include) \
-    --
-done
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 

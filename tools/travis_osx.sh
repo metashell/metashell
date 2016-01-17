@@ -24,32 +24,12 @@ cd ../..
 
 # Test the code
 
-mkdir bin
-cd bin
-
-cmake .. -DCMAKE_CXX_FLAGS:STRING="-Werror" -DTEMPLIGHT_DEBUG=true
-make -j2
-make test || (cat Testing/Temporary/LastTest.log && false)
-
-for t in core pp mdb; do
-  test/system/app/${t}/metashell_${t}_system_test \
-    app/metashell -- -I$(pwd)/../3rd/boost/include --
-
-  test/system/app/${t}/metashell_${t}_system_test \
-    app/metashell \
-    --engine clang \
-    -- \
-    $(pwd)/app/templight_metashell \
-    -std=c++0x \
-    -ftemplate-depth=256 \
-    -Wfatal-errors \
-    -I$(pwd)/include/metashell/libcxx \
-    -I$(pwd)/include/metashell/templight \
-    -I$(pwd)/../3rd/boost/include \
-    --
-done
+BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh \
+  || (cat Testing/Temporary/LastTest.log && false)
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
+
+cd bin
 
 app/metashell --show_pragma_help | ../tools/replace_part -i ../docs/reference/pragmas.md -m '<!-- pragma_info -->' -o - -r - | diff ../docs/reference/pragmas.md -
 app/metashell --show_mdb_help | ../tools/replace_part -i ../docs/reference/mdb_commands.md -m '<!-- mdb_info -->' -o - -r - | diff ../docs/reference/mdb_commands.md -
