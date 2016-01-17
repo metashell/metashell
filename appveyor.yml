@@ -11,6 +11,7 @@ install:
   - cd c:\projects\metashell\3rd\templight
   - appveyor DownloadFile https://github.com/sabel83/templight_binary/releases/download/templight_35f974_v2/templight_windows.zip
   - 7z -y x templight_windows.zip
+  - choco install nsis
 
 before_build:
   - cd c:\projects\metashell
@@ -20,16 +21,7 @@ before_build:
   - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 12 Win64
   - cmake -G "%CMAKE_GENERATOR_NAME%" ..
 
-build:
-  project: c:\projects\metashell\bin\metashell.sln
-  parallel: true
-
-test_script:
-  - cd c:\projects\metashell\bin
-  - test\unit\%configuration%\metashell_unit_test.exe
-  - test\system\app\core\%configuration%\metashell_core_system_test.exe app\%configuration%\metashell.exe -- -I%cd%\..\3rd\boost\include --
-  - test\system\app\core\%configuration%\metashell_core_system_test.exe app\%configuration%\metashell.exe --engine clang -- %CD%\app\%configuration%\templight\templight.exe -std=c++0x -ftemplate-depth=256 -Wfatal-errors -fno-ms-compatibility -U_MSC_VER -I%cd%\app\%configuration%\windows_headers -I%cd%\app\%configuration%\windows_headers\mingw32 -I%cd%\app\%configuration%\templight\include -I%cd%\..\3rd\boost\include --
-  - test\system\app\pp\%configuration%\metashell_pp_system_test.exe app\%configuration%\metashell.exe -- -I%cd%\..\3rd\boost\include --
-  - test\system\app\pp\%configuration%\metashell_pp_system_test.exe app\%configuration%\metashell.exe --engine clang -- %cd%\app\%configuration%\templight\templight.exe -std=c++0x -ftemplate-depth=256 -Wfatal-errors -fno-ms-compatibility -U_MSC_VER -I%cd%\app\%configuration%\windows_headers -I%cd%\app\%configuration%\windows_headers\mingw32 -I%cd%\app\%configuration%\templight\include -I%cd%\..\3rd\boost\include --
-  - test\system\app\mdb\%configuration%\metashell_mdb_system_test.exe app\%configuration%\metashell.exe -- -I%cd%\..\3rd\boost\include --
-  - test\system\app\mdb\%configuration%\metashell_mdb_system_test.exe app\%configuration%\metashell.exe --engine clang -- %cd%\app\%configuration%\templight\templight.exe -std=c++0x -ftemplate-depth=256 -Wfatal-errors -fno-ms-compatibility -U_MSC_VER -I%cd%\app\%configuration%\windows_headers -I%cd%\app\%configuration%\windows_headers\mingw32 -I%cd%\app\%configuration%\templight\include -I%cd%\..\3rd\boost\include --
+build_script:
+  - cd c:\projects\metashell
+  - set NO_TEMPLIGHT=1
+  - build.bat
