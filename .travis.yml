@@ -18,4 +18,4 @@ addons:
       - clang-format-3.7
       - clang-tidy-3.7
 script:
-  - tools/travis_${TRAVIS_OS_NAME}.sh
+  - tools/travis/${TRAVIS_OS_NAME}.sh
