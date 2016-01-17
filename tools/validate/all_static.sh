@@ -23,4 +23,9 @@ then
   exit 1
 fi
 
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+for c in format.sh pep8.sh pylint.sh
+do
+  tools/validate/$c
+done
+
+tools/validate/mkdocs mkdocs.yml

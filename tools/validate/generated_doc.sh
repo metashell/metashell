@@ -23,4 +23,10 @@ then
   exit 1
 fi
 
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+"$1" --show_pragma_help \
+  | tools/replace_part -i docs/reference/pragmas.md -m '<!-- pragma_info -->' -o - -r - \
+  | diff docs/reference/pragmas.md -
+
+"$1" --show_mdb_help \
+  | tools/replace_part -i docs/reference/mdb_commands.md -m '<!-- mdb_info -->' -o - -r - \
+  | diff docs/reference/mdb_commands.md -
