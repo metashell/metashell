@@ -23,4 +23,10 @@ then
   exit 1
 fi
 
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+find include lib test app -type f -a '(' \
+  -name '*.hpp' -o \
+  -name '*.cpp' -o \
+  -name '*.cc' -o \
+  -name '*.c' -o \
+  -name '*.h' \
+')'

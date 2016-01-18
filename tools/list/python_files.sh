@@ -15,12 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
-
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
-
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+for f in $1/*
+do
+  if [ -f "$f" ] && (head -1 "$f" | egrep '^#!.*python' > /dev/null)
+  then
+    echo $f
+  fi
+done

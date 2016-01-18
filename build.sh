@@ -44,20 +44,56 @@ echo "Number of threads used: ${BUILD_THREADS}"
 echo "Platform: ${PLATFORM}"
 
 # Build Templight
-cd 3rd
-  cd templight
-    mkdir -p build; cd build
-      cmake ../llvm \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLLVM_ENABLE_TERMINFO=OFF \
-        && make templight -j${BUILD_THREADS}
+if [ "${NO_TEMPLIGHT}" = "" ]
+then
+  cd 3rd
+    cd templight
+      mkdir -p build; cd build
+        cmake ../llvm \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_ENABLE_TERMINFO=OFF \
+          && make templight -j${BUILD_THREADS}
+      cd ..
     cd ..
   cd ..
-cd ..
+else
+  echo "Skipping Templight build, because \$NO_TEMPLIGHT = \"${NO_TEMPLIGHT}\""
+fi
 
 mkdir -p bin; cd bin
-  cmake .. \
-    && make -j${BUILD_THREADS} \
-    && make test \
-    && cpack
+  cmake ..
+  make -j${BUILD_THREADS}
+  test/unit/metashell_unit_test
+
+  if [ "${PLATFORM}" = "osx" ]
+  then
+    OPTIONAL_LIBCXX="-I$(pwd)/include/metashell/libcxx"
+  else
+    OPTIONAL_LIBCXX=""
+  fi
+
+  for t in core pp mdb; do
+    test/system/app/${t}/metashell_${t}_system_test \
+      app/metashell -- "-I$(pwd)/../3rd/boost/include" --
+  
+    test/system/app/${t}/metashell_${t}_system_test \
+      app/metashell \
+      --engine clang \
+      -- \
+      "$(pwd)/app/templight_metashell" \
+      -std=c++0x \
+      -ftemplate-depth=256 \
+      -Wfatal-errors \
+      "${OPTIONAL_LIBCXX}" \
+      "-I$(pwd)/include/metashell/templight" \
+      "-I$(pwd)/../3rd/boost/include" \
+      --
+  done
+
+  if [ "${NO_INSTALLER}" = "" ]
+  then
+    cpack
+  else
+    echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
+  fi
 cd ..

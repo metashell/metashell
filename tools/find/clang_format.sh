@@ -17,10 +17,13 @@
 
 set -e
 
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
+for suffix in "-3.7" ""
+do
+  if command -v "clang-format${suffix}" >/dev/null 2>&1
+  then
+    echo "clang-format${suffix}"
+    exit 0
+  fi
+done
 
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+echo "clang-format not found" 1>&2

@@ -23,4 +23,4 @@ then
   exit 1
 fi
 
-"$(tools/find/clang_format.sh)" -i $(tools/list/cpp_files.sh)
+pep8 $(tools/list/python_files.sh tools)
