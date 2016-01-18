@@ -4,6 +4,7 @@ set -ex
 
 brew update >/dev/null
 brew install p7zip
+brew upgrade cmake
 
 if [ "$CXX" = "g++" ]; then
   brew install homebrew/versions/gcc5
