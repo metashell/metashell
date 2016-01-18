@@ -2,8 +2,10 @@
 
 set -ex
 
+brew update >/dev/null
+brew install p7zip
+
 if [ "$CXX" = "g++" ]; then
-  brew update >/dev/null
   brew install homebrew/versions/gcc5
   export CXX="g++-5"
 fi
@@ -24,7 +26,7 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 NO_INSTALLER=1 ./build.sh
+BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
