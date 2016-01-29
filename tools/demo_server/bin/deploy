@@ -106,10 +106,28 @@ def remove_prefix(prefix, string):
         )
 
 
+def root_of_a_git_repository(path):
+    """Checks if path is the root of a Git repository"""
+    return os.path.isdir(os.path.join(path, '.git'))
+
+
 def choose_initial_dir(out_dir):
     """Choose an initial directory for cloning the repository into"""
     dirs = os.listdir(out_dir)
-    return dirs[0] if len(dirs) > 0 else 'master'
+    while len(dirs) > 0:
+        current = dirs[0]
+
+        if root_of_a_git_repository(current):
+            return current
+        else:
+            dirs = dirs[1:]
+            dirs.extend([
+                os.path.join(current, d)
+                for d in os.listdir(os.path.join(out_dir, current))
+                if os.path.isdir(os.path.join(out_dir, current, d))
+            ])
+
+    return 'master'
 
 
 def git_repo(src_repository, out_dir, local_name, log):

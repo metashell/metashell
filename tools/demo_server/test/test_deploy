@@ -631,6 +631,22 @@ class TestDeploy(unittest.TestCase):
             self.assertFalse(env.out_dir.exists('src/repo1/feature0/foo.txt'))
             self.assertTrue(env.out_dir.exists('src/repo1/feature1/bar.txt'))
 
+    def test_updating_when_all_cloned_branches_have_slash(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature/foo', create=True)
+            env.repos[0].delete_branch('master')
+
+            env.write_config([{'name': 'repo', 'git': env.repository(0)}])
+            deploy(env)
+
+            env.repos[0].checkout_branch('develop', create=True)
+
+            deploy(env)
+
+            self.assertTrue(env.out_dir.exists('src/repo/develop/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo/feature/foo/foo.txt'))
+
 
 if __name__ == '__main__':
     unittest.main()
