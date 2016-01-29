@@ -446,7 +446,7 @@ def collect_symlinks(out_dir):
 
 def deploy(config_file, out_dir, log):
     """Do the deployment"""
-    for subdir in ['bin', 'include']:
+    for subdir in ['bin', 'include', 'empty']:
         makedirs(os.path.join(out_dir, subdir))
 
     configs = [

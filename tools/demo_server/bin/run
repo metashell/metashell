@@ -207,7 +207,10 @@ def main():
         try:
             cmd = config.metashell_command(args.root)
             log(args.log, {'peer': args.peer, 'cmd': cmd, 'url': args.url})
-            exit_code = subprocess.call(cmd)
+            exit_code = subprocess.call(
+                cmd,
+                cwd=os.path.join(args.root, 'empty')
+            )
         except Error, err:
             print in_red(err)
             sys.exit(1)

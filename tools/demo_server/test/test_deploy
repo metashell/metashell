@@ -599,6 +599,16 @@ class TestDeploy(unittest.TestCase):
                 os.path.realpath(symlink_path)
             )
 
+    def test_empty_directory_is_created(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo': 'asd'})
+            env.write_config([{'name': 'repo', 'git': env.repository(0)}])
+            deploy(env)
+
+            empty_path = env.out_dir.relative('empty')
+            self.assertTrue(os.path.isdir(empty_path))
+            self.assertEqual([], list(os.listdir(empty_path)))
+
 
 if __name__ == '__main__':
     unittest.main()
