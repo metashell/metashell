@@ -1,0 +1,107 @@
+#!/usr/bin/python
+"""Tool to run the daemon of the Metashell demo"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import os
+
+
+def ignore(parser, args):
+    """Configure parser to ignore args"""
+    for arg in args:
+        parser.add_argument(arg, required=False, help='Ignored')
+
+
+def main():
+    """The main function of the utility"""
+    parser = argparse.ArgumentParser(
+        description='Run the demo Metashell daemon'
+    )
+    parser.add_argument(
+        '--root',
+        required=True,
+        help='The root directory of the demo (the --out of deploy)'
+    )
+    parser.add_argument(
+        '--pidfile',
+        required=True,
+        help='The pidfile to use'
+    )
+    parser.add_argument(
+        '--port',
+        required=True,
+        help='The port to listen on'
+    )
+    parser.add_argument(
+        '--user',
+        required=True,
+        help='The user to run the commands as'
+    )
+    parser.add_argument(
+        '--group',
+        required=True,
+        help='The group to run the commands as'
+    )
+    parser.add_argument(
+        '--log',
+        required=True,
+        help='The log file'
+    )
+    parser.add_argument(
+        '--branch',
+        required=True,
+        help='The branch of the Metashell repository to use for the tools'
+    )
+    ignore(parser, ['--sleep'])
+    args = parser.parse_args()
+
+    demo_cmd = os.path.join(args.root, 'bin', '_'.join(['run', args.branch]))
+
+    cmd = [
+        '/usr/bin/shellinaboxd',
+        '--disable-ssl',
+        '--no-beep',
+        '-p', args.port,
+        '-u', args.user,
+        '-g', args.group,
+        '--css', os.path.join(
+            args.root,
+            'share',
+            '_'.join(['metashell', args.branch]),
+            'solarized.css'
+        ),
+        '-s',
+        '/:{0}:{1}:/:{2}'
+        ' --root "{3}"'
+        ' --peer ${{peer}}'
+        ' --url "${{url}}"'
+        ' --log "{4}"'.format(
+            args.user,
+            args.group,
+            demo_cmd,
+            args.root,
+            args.log
+        ),
+        '--background="{0}"'.format(args.pidfile)
+    ]
+
+    os.execv(cmd[0], cmd)
+
+
+if __name__ == '__main__':
+    main()

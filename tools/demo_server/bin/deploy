@@ -1,0 +1,502 @@
+#!/usr/bin/python
+"""Tool to deploy (and upgrade) software from source"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import subprocess
+import os
+import shutil
+import json
+import errno
+import datetime
+
+
+def makedirs(path):
+    """Create directories and don't throw if it exists"""
+    try:
+        os.makedirs(path)
+    except OSError, err:
+        if err.errno != errno.EEXIST:
+            raise
+
+
+class LogToFile(object):
+    """Logger writing logs into a file"""
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.file_obj = None
+
+    def start(self):
+        """Start logging"""
+        makedirs(os.path.dirname(self.filename))
+        self.file_obj = open(self.filename, 'w')
+        self('Start logging')
+
+    def stop(self):
+        """Stop logging"""
+        self('Stop logging')
+        self.file_obj.close()
+        self.file_obj = None
+
+    def __call__(self, msg):
+        self.file_obj.write('{0}: {1}\n'.format(datetime.datetime.now(), msg))
+        self.file_obj.flush()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, typ, value, traceback):
+        self.stop()
+
+
+def run_command(cmd, src_dir, log):
+    """Run an external command"""
+    log('Running command {0} in {1}'.format(' '.join(cmd), src_dir))
+    proc = subprocess.Popen(
+        cmd,
+        cwd=src_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = proc.communicate()
+    log('Exit code: {0}'.format(proc.returncode))
+    log('Stdout: {0}'.format(out))
+    log('Stderr: {0}'.format(err))
+    return out, err, proc.returncode
+
+
+def git(cwd, git_cmd, log):
+    """Run a git command. Returns standard output"""
+    cmd = ['git']
+    cmd.extend(git_cmd)
+    out, err, returncode = run_command(cmd, cwd, log)
+    if returncode == 0:
+        return out
+    else:
+        raise Exception(
+            'Command {0} exited with {1}.\n\nstdout:\n{2}\n\nstderr:\n{3}'
+            .format(' '.join(cmd), returncode, out, err)
+        )
+
+
+def remove_prefix(prefix, string):
+    """Removes the prefix from the string"""
+    if string.startswith(prefix):
+        return string[len(prefix):]
+    else:
+        raise Exception(
+            'String {0} does not start with {1}'.format(string, prefix)
+        )
+
+
+def choose_initial_dir(out_dir):
+    """Choose an initial directory for cloning the repository into"""
+    dirs = os.listdir(out_dir)
+    return dirs[0] if len(dirs) > 0 else 'master'
+
+
+def git_repo(src_repository, out_dir, local_name, log):
+    """Create and clone if does not exist"""
+    repo_path = os.path.join(out_dir, local_name)
+    if os.path.isdir(repo_path):
+        git(repo_path, ['fetch', 'origin', '--prune'], log)
+    else:
+        git(out_dir, ['clone', '--recursive', src_repository, local_name], log)
+    return repo_path
+
+
+def remote_branches(src_repository, out_dir, log):
+    """Returns the list of remote branches"""
+    return [
+        l.strip()
+
+        for l in git(
+            git_repo(
+                src_repository,
+                out_dir,
+                choose_initial_dir(out_dir),
+                log
+            ),
+            ['branch', '-r'],
+            log
+        ).splitlines()
+
+        if ' -> ' not in l
+    ]
+
+
+def origin_branches(src_repository, out_dir, log):
+    """Returns the list of branches in origin"""
+    return [
+        remove_prefix('origin/', l)
+        for l in remote_branches(src_repository, out_dir, log)
+        if l.startswith('origin/')
+    ]
+
+
+def git_clone(src_repository, out_dir, log):
+    """Clone a repository. Create a clone for each remote branch"""
+    log('Cloning {0} to {1}'.format(src_repository, out_dir))
+
+    remote_branch_list = origin_branches(src_repository, out_dir, log)
+
+    for filename in os.listdir(out_dir):
+        if filename not in remote_branch_list:
+            shutil.rmtree(os.path.join(out_dir, filename))
+
+    result = []
+    for branch in remote_branch_list:
+        remote_branch = 'origin/{0}'.format(branch)
+        repo = git_repo(src_repository, out_dir, branch, log)
+        git(repo, ['checkout', '-f', remote_branch], log)
+        git(repo, ['submodule', 'update'], log)
+        result.append(
+            Branch(
+                branch,
+                git(repo, ['rev-parse', remote_branch], log).strip()
+            )
+        )
+
+    return result
+
+
+def load_config_file(path, log):
+    """Loads the config file. If fails, it returns an empty array"""
+    try:
+        with open(path, 'r') as cfg_file:
+            json_config = cfg_file.read()
+    except IOError as err:
+        log('Error loading config file {0}: {1}'.format(path, err))
+        return []
+
+    try:
+        return json.loads(json_config)
+    except ValueError as err:
+        log(
+            'Invalid JSON in config file {0}.\nContent: {1}\n\nError: {2}'
+            .format(path, json_config, err)
+        )
+        return []
+
+
+def valid_config_entry(config, log):
+    """Validate the config entry. Logs errors"""
+    result = True
+    for field in ['name', 'git']:
+        if field not in config:
+            log('Missing field "{0}" in config entry {1}'.format(
+                field,
+                json.dumps(config)))
+            result = False
+    return result
+
+
+def optional_list(config, key):
+    """Returns empty list when key is missing"""
+    return config[key] if key in config else []
+
+
+def deploy_file(config_name, path_from, path_to, log):
+    """Deploy a file"""
+    makedirs(os.path.dirname(path_to))
+    if not os.path.exists(path_to):
+        try:
+            if os.path.isdir(path_from):
+                shutil.copytree(path_from, path_to)
+            else:
+                shutil.copy(path_from, path_to)
+        except IOError, err:
+            log(
+                'In {0} error deploying {1}: errno {2}'.format(
+                    config_name,
+                    os.path.basename(path_from),
+                    err.errno
+                )
+            )
+
+
+def escape_branch_name(name):
+    """Escape branch name to avoid special characters in it"""
+    return name.replace('/', '_')
+
+
+def symlink(dst, link, log):
+    """Create or update a symlink"""
+    log('Creating symlink {0} -> {1}'.format(link, dst))
+    try:
+        os.symlink(dst, link)
+    except OSError, err:
+        if err.errno == errno.EEXIST:
+            os.remove(link)
+            os.symlink(dst, link)
+        else:
+            log('Symlink creation failed. errno = {0}'.format(err.errno))
+            raise
+
+
+def delete_files(path):
+    """Delete the files and dirs"""
+    for filename in path:
+        if os.path.isdir(filename):
+            shutil.rmtree(filename)
+        else:
+            os.remove(filename)
+
+
+def files_not_symlinked_to(path):
+    """Returns the files and dirs which no symlinks (in path) point to"""
+    full_paths = [os.path.join(path, f) for f in os.listdir(path)]
+
+    symlink_targets = [
+        os.path.basename(os.path.realpath(l))
+        for l in full_paths if os.path.islink(l)
+    ]
+    return [
+        f for f in full_paths if
+        (not os.path.islink(f)) and os.path.basename(f) not in symlink_targets
+    ]
+
+
+def flatten(list_of_lists):
+    """Flatten a list of lists"""
+    return [item for sublist in list_of_lists for item in sublist]
+
+
+class Branch(object):
+    """Represents a branch of a git repository"""
+
+    def __init__(self, name, last_commit):
+        self.name = name
+        self.last_commit = last_commit
+
+    def src_dir(self, config_name, out_dir):
+        """src dir of the branch"""
+        return os.path.join(out_dir, 'src', config_name, self.name)
+
+    def deploy(self, config, out_dir, log):
+        """Deploy a branch"""
+        src_dir = self.src_dir(config['name'], out_dir)
+        for cmd in optional_list(config, 'build'):
+            returncode = run_command(cmd, src_dir, log)[2]
+            if returncode != 0:
+                log(
+                    'Aborting deployment of branch {0}/{1}'.format(
+                        config['name'],
+                        self.name
+                    )
+                )
+                return []
+
+        deployer = Deployer(config['name'], self, out_dir, log)
+        return flatten([
+            deployer.deploy(f, t)
+            for t in ['bin', 'include', 'share']
+            for f in optional_list(config, t)
+        ])
+
+
+def first_dir_in_path(path):
+    """Return the first directoryname of a path"""
+    last = ''
+    while path != '':
+        path, last = os.path.split(path)
+    return last
+
+
+def join_path(path1, path2):
+    """Join two paths. If path2 starts with /, it is still treated as a
+    relative path"""
+    if path2.startswith('/'):
+        path2 = path2[1:]
+    return os.path.join(path1, path2)
+
+
+class Deployer(object):
+    """Class for deploying files of a project"""
+
+    def __init__(self, name, branch, out_dir, log):
+        self.name = name
+        self.branch = branch
+        self.out_dir = out_dir
+        self.log = log
+        for path in ['bin', 'include', 'share']:
+            makedirs(self.relative(path))
+
+    def relative(self, path):
+        """Returns a path relative to the deploy path"""
+        return os.path.join(self.out_dir, path)
+
+    def _deploy(self, from_path, abs_to_path, to_path_suffix, create_link):
+        """Deploy one file"""
+        deployed_file = abs_to_path + first_dir_in_path(to_path_suffix)
+
+        deploy_file(
+            self.name,
+            os.path.join(
+                self.branch.src_dir(self.name, self.out_dir),
+                from_path
+            ),
+            abs_to_path + to_path_suffix,
+            self.log
+        )
+        if create_link:
+            link_name = \
+                abs_to_path + '_' + escape_branch_name(self.branch.name)
+            symlink(os.path.basename(deployed_file), link_name, self.log)
+            return link_name
+        else:
+            return deployed_file
+
+    def _complex_deploy(self, entry_config, to_path):
+        """Deploy one or more files in a (user) configurable way"""
+        if '*' in entry_config['src']:
+            commit_mode = False
+            from_path_pre, from_path_suff = entry_config['src'].split('*')
+            from_paths = [
+                from_path_pre + v
+                for v in os.listdir(
+                    os.path.join(
+                        self.branch.src_dir(self.name, self.out_dir),
+                        from_path_pre
+                    )
+                )
+            ]
+        else:
+            commit_mode = True
+            from_path_suff = entry_config['src']
+            from_paths = ['']
+
+        results = []
+        for from_path in from_paths:
+            base = \
+                entry_config['to_config'] if 'to_config' in entry_config \
+                else self.name
+            to_path_suffix = None
+            if 'dst' in entry_config:
+                if entry_config['dst'] not in ['', '.']:
+                    to_path_suffix = entry_config['dst']
+            else:
+                to_path_suffix = from_path_suff
+            file_id = \
+                self.branch.last_commit if commit_mode \
+                else os.path.basename(from_path)
+            results.append(
+                self._deploy(
+                    from_path + from_path_suff,
+                    os.path.join(self.relative(to_path), base),
+                    '_' + (
+                        file_id if to_path_suffix is None
+                        else join_path(file_id, to_path_suffix)
+                    ),
+                    commit_mode
+                )
+            )
+        return results
+
+    def deploy(self, entry_config, to_path):
+        """Deploy one or more files"""
+        if to_path in ['include', 'share']:
+            return self._complex_deploy(entry_config, to_path)
+        else:
+            return [
+                self._deploy(
+                    entry_config,
+                    os.path.join(
+                        self.relative(to_path),
+                        os.path.basename(entry_config)
+                    ),
+                    '_' + self.branch.last_commit,
+                    True
+                )
+            ]
+
+
+def collect_symlinks(out_dir):
+    """Collect all deployed symlinks of a repository"""
+    bin_dir = os.path.join(out_dir, 'bin')
+    include_dir = os.path.join(out_dir, 'include')
+
+    return [
+        f for f
+        in [os.path.join(bin_dir, f) for f in os.listdir(bin_dir)]
+        if os.path.islink(f)
+    ] + [
+        f for f
+        in [os.path.join(include_dir, f) for f in os.listdir(include_dir)]
+        if os.path.islink(f)
+    ]
+
+
+def deploy(config_file, out_dir, log):
+    """Do the deployment"""
+    for subdir in ['bin', 'include']:
+        makedirs(os.path.join(out_dir, subdir))
+
+    configs = [
+        c for c in load_config_file(config_file, log)
+        if valid_config_entry(c, log)
+    ]
+
+    symlinks_to_delete = collect_symlinks(out_dir)
+    files_to_delete = flatten([
+        files_not_symlinked_to(os.path.join(out_dir, subdir))
+        for subdir in ['bin', 'include']
+    ])
+
+    for config in configs:
+        cfg_path = os.path.join(out_dir, 'src', config['name'])
+        makedirs(cfg_path)
+
+        for branch in git_clone(config['git'], cfg_path, log):
+            used_links = branch.deploy(config, out_dir, log)
+            symlinks_to_delete = [
+                l for l in symlinks_to_delete if l not in used_links
+            ]
+            files_to_delete = [
+                f for f in files_to_delete if f not in used_links
+            ]
+
+    for link in symlinks_to_delete:
+        os.remove(link)
+    delete_files(files_to_delete)
+
+
+def main():
+    """The main function of the utility"""
+    parser = argparse.ArgumentParser(description='Deploy a Metashell demo')
+    parser.add_argument(
+        '--config',
+        required=True,
+        help='The config describing how to get the code'
+    )
+    parser.add_argument(
+        '--root',
+        required=True,
+        help='The root directory of the demo'
+    )
+    args = parser.parse_args()
+
+    makedirs(args.root)
+    with LogToFile(os.path.join(args.root, 'log.txt')) as log:
+        deploy(args.config, args.root, log)
+
+
+if __name__ == '__main__':
+    main()

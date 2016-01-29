@@ -35,3 +35,9 @@ dropped because:
   own, similar set of commands, macros, etc. (Note that the mdb shell is
   significantly different because of providing a gdb-like interface).
 
+## Code managing the server
+
+The code managing the demo server (setting up the service, upgrading Metashell,
+etc) is a small project inside Metashell itself. It is added to the main
+Metashell repository because in case of breaking changes to Metashell, it can be
+changed together with the code running the live demo.

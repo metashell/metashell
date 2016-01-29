@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Metashell - Interactive C++ template metaprogramming shell
 # Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 #
@@ -15,22 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
 
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
+INSTALL_DIR=${INSTALL_DIR-/usr/local/share/metashell}
 
-# When all python file are provided in one command, pylint seems to confuse
-# PYTHONPATH
-for f in $(tools/list/python_files.sh tools)
-do
-  pylint \
-    --disable=bare-except \
-    --disable=locally-disabled \
-    --disable=locally-enabled \
-    --disable=similarities \
-    "${f}"
-done
+function delete_init_symlink {
+  RUNLEVEL="$1"
+  DAEMON_NAME="$2"
+  START_OR_KILL="$3"
+
+  sudo rm "/etc/rc${RUNLEVEL}.d/${START_OR_KILL}20${DAEMON_NAME}"
+}
+
+function uninstall_daemon {
+  DAEMON_NAME="$1"
+  
+  sudo "/etc/init.d/${DAEMON_NAME}" stop
+  sudo rm "/etc/init.d/${DAEMON_NAME}"
+  delete_init_symlink 0 "${DAEMON_NAME}" K
+  delete_init_symlink 1 "${DAEMON_NAME}" K
+  delete_init_symlink 2 "${DAEMON_NAME}" S
+  delete_init_symlink 3 "${DAEMON_NAME}" S
+  delete_init_symlink 4 "${DAEMON_NAME}" S
+  delete_init_symlink 5 "${DAEMON_NAME}" S
+  delete_init_symlink 6 "${DAEMON_NAME}" K
+}
+
+uninstall_daemon metashell_demo
+uninstall_daemon metashell_upgrader
+sudo rm -rf "${INSTALL_DIR}"

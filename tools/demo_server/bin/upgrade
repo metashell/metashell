@@ -1,0 +1,135 @@
+#!/usr/bin/python
+"""Daemon for upgrading Metashell"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import subprocess
+import time
+import shutil
+import os
+import pwd
+import grp
+import sys
+import daemonize
+
+
+class Action(object):
+    """Functor implementing the upgrader's functionality"""
+
+    def __init__(self, uid_gid, install_dir, branch, delay_between_pulls):
+        self.install_dir = install_dir
+        self.branch = branch
+        self.delay_between_pulls = delay_between_pulls
+
+        os.setgid(uid_gid[1])
+        os.setuid(uid_gid[0])
+
+    def step(self):
+        """One iteration"""
+        subprocess.call([
+            '{0}/bin/deploy_{1}'.format(self.install_dir, self.branch),
+            '--config', '{0}/metashell.json'.format(self.install_dir),
+            '--root', self.install_dir
+        ])
+
+        try:
+            shutil.copyfile(
+                '{0}/src/metashell/master/tools/demo_server/config/'
+                'metashell.json'.format(self.install_dir),
+                '{0}/metashell.json'.format(self.install_dir)
+            )
+        except IOError:
+            pass
+
+    def sleep(self):
+        """Sleep between steps"""
+        time.sleep(self.delay_between_pulls)
+
+    def __call__(self):
+        while True:
+            self.step()
+            self.sleep()
+
+
+def ignore(parser, args):
+    """Configure parser to ignore args"""
+    for arg in args:
+        parser.add_argument(arg, required=False, help='Ignored')
+
+
+def main():
+    """The main function of the daemon"""
+    parser = argparse.ArgumentParser(
+        description='Upgrader daemon for Metashell demo'
+    )
+    parser.add_argument(
+        '--root',
+        required=True,
+        help='The root directory of the demo'
+    )
+    parser.add_argument(
+        '--pidfile',
+        required=True,
+        help='The pidfile to use'
+    )
+    parser.add_argument(
+        '--user',
+        required=True,
+        help='The user to run the commands as'
+    )
+    parser.add_argument(
+        '--group',
+        required=True,
+        help='The group to run the commands as'
+    )
+    parser.add_argument(
+        '--branch',
+        required=True,
+        help='The branch of the Metashell repository to use for the tools'
+    )
+    parser.add_argument(
+        '--sleep',
+        required=True,
+        help='The delay in secs between pulls'
+    )
+    ignore(parser, ['--port', '--log'])
+    args = parser.parse_args()
+
+    uid = pwd.getpwnam(args.user).pw_uid
+    gid = grp.getgrnam(args.group).gr_gid
+
+    try:
+        open(args.pidfile, 'w').close()
+    except IOError, err:
+        print 'Unable to create pidfile {0}: {1}'.format(
+            args.pidfile,
+            err.errno
+        )
+        sys.exit(1)
+    os.chown(args.pidfile, uid, gid)
+
+    daemon = daemonize.Daemonize(
+        app="metashell_upgrade",
+        pid=args.pidfile,
+        action=Action((uid, gid), args.root, args.branch, int(args.sleep))
+    )
+    daemon.start()
+
+
+if __name__ == '__main__':
+    main()

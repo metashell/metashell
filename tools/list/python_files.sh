@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-for f in $1/*
+for f in $(find "$1")
 do
   if [ -f "$f" ] && (head -1 "$f" | egrep '^#!.*python' > /dev/null)
   then
