@@ -609,6 +609,28 @@ class TestDeploy(unittest.TestCase):
             self.assertTrue(os.path.isdir(empty_path))
             self.assertEqual([], list(os.listdir(empty_path)))
 
+    def test_multiple_repositories_with_different_branches(self):
+        with util.CommonEnv(2) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature0', create=True)
+
+            env.commit(1, {'bar.txt': 'fgh'})
+            env.repos[1].checkout_branch('feature1', create=True)
+
+            env.write_config([
+                {'name': 'repo0', 'git': env.repository(0)},
+                {'name': 'repo1', 'git': env.repository(1)}
+            ])
+            deploy(env)
+
+            self.assertTrue(env.out_dir.exists('src/repo0/master/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo0/feature0/foo.txt'))
+            self.assertFalse(env.out_dir.exists('src/repo0/feature1/bar.txt'))
+
+            self.assertTrue(env.out_dir.exists('src/repo1/master/bar.txt'))
+            self.assertFalse(env.out_dir.exists('src/repo1/feature0/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo1/feature1/bar.txt'))
+
 
 if __name__ == '__main__':
     unittest.main()
