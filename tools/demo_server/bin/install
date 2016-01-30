@@ -227,6 +227,13 @@ function download_script {
   fix_owner "${INSTALL_DIR}/bin/${NAME}_${METASHELL_BRANCH}"
 }
 
+# Install dependencies
+
+sudo apt-get -y install shellinabox git g++ cmake libreadline-dev python-pip
+sudo pip install mkdocs pep8 pylint gitpython daemonize
+
+# Create the installation directories
+
 make_dir "${INSTALL_DIR}"
 make_dir "${INSTALL_DIR}/bin"
 
