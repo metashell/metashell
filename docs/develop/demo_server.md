@@ -23,7 +23,7 @@ different branch, you need to replace `master` with the name of your branch in
 the commands.
 
 * Install the dependent packages:
-  `sudo apt-get install shellinaboxi git g++ cmake libreadline-dev python-pip`
+  `sudo apt-get install shellinabox git g++ cmake libreadline-dev python-pip`
 * The above step will run
   [Shell in a Box](https://code.google.com/p/shellinabox/) on your server. If
   you don't need it, you can stop and disable it by running:
