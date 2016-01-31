@@ -22,14 +22,15 @@ should use `master`. These steps use this branch. If you'd like to use a
 different branch, you need to replace `master` with the name of your branch in
 the commands.
 
-* Install the dependent packages:
-  `sudo apt-get install shellinabox git g++ cmake libreadline-dev python-pip`
-* The above step will run
-  [Shell in a Box](https://code.google.com/p/shellinabox/) on your server. If
-  you don't need it, you can stop and disable it by running:
+* Download the installer:
+  `wget https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/bin/install`
+* Run the installer:
+  `METASHELL_BRANCH=master /bin/bash install`
+* The above step will install
+  [Shell in a Box](https://code.google.com/p/shellinabox/) on your server if it
+  was not installed already. Installing it will run it as well. If you don't
+  need it, you can stop and disable it by running:
   `sudo /etc/init.d/shellinabox stop` and `sudo update-rc.d shellinabox disable`
-* Install the demo itself:
-  `wget -O- https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/install | /bin/bash`
 
 The installation script is configurable using environment variables. Here are
 the options and ther default values:
