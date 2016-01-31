@@ -1,0 +1,652 @@
+#!/usr/bin/python
+"""Test deployment using deploy"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
+import unittest
+import util
+
+MODULE_UNDER_TEST = util.load_from_bin('deploy')
+
+
+def deploy(env):
+    """Call deploy in the enviornment"""
+    MODULE_UNDER_TEST.deploy(
+        env.config_dir.relative('config.json'),
+        env.out_dir.path,
+        env.log
+    )
+
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+# pylint: disable=too-many-public-methods
+
+
+class TestDeploy(unittest.TestCase):
+
+    def test_non_existing_config_file(self):
+        with util.TempDir() as config_dir, util.TempDir() as out_dir:
+            cfg_path = config_dir.relative('config.json')
+            log = util.LogCollector()
+            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            self.assertEqual(1, len(log.messages))
+            self.assertTrue(log.messages[0].startswith(
+                'Error loading config file {0}: '.format(cfg_path)
+            ))
+
+    def test_invalid_json_config_file(self):
+        with util.TempDir() as config_dir, util.TempDir() as out_dir:
+            config_dir.write('config.json', '{')
+            cfg_path = config_dir.relative('config.json')
+            log = util.LogCollector()
+            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            self.assertEqual(1, len(log.messages))
+            self.assertTrue(log.messages[0].startswith(
+                'Invalid JSON in config file {0}.\nContent: {{\n\nError: '
+                .format(cfg_path)
+            ))
+
+    def test_config_file_without_entries(self):
+        with util.TempDir() as config_dir, util.TempDir() as out_dir:
+            config_dir.write('config.json', '[]')
+            cfg_path = config_dir.relative('config.json')
+            log = util.LogCollector()
+            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            self.assertEqual([], log.messages)
+
+    def test_empty_entry_in_config_file(self):
+        with util.TempDir() as config_dir, util.TempDir() as out_dir:
+            config_dir.write('config.json', '[{}]')
+            cfg_path = config_dir.relative('config.json')
+            log = util.LogCollector()
+            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            self.assertEqual(
+                [
+                    'Missing field "name" in config entry {}',
+                    'Missing field "git" in config entry {}'
+                ],
+                log.messages
+            )
+
+    def test_cloning_all_repositories(self):
+        with util.CommonEnv(2) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.commit(1, {'bar.txt': 'fgh'})
+            env.write_config([
+                {'name': 'repo0', 'git': env.repository(0)},
+                {'name': 'repo1', 'git': env.repository(1)}
+            ])
+            deploy(env)
+            self.assertTrue(env.out_dir.exists('src/repo0/master/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo1/master/bar.txt'))
+
+    def test_running_build_commands(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['echo', 'hello']]
+            }])
+            deploy(env)
+            self.assertTrue(
+                'Running command echo hello in {0}'.format(
+                    env.out_dir.relative('src/repo/master')
+                ) in env.log.messages
+            )
+            self.assertTrue('Stdout: hello\n' in env.log.messages)
+            self.assertTrue('Stderr: ' in env.log.messages)
+
+    def test_build_commands_are_run_in_repo(self):
+        with util.CommonEnv(1) as env:
+
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature', create=True)
+
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['pwd']]
+            }])
+            deploy(env)
+            for branch in ['master', 'feature']:
+                path = env.out_dir.relative('src/repo/{0}'.format(branch))
+                self.assertTrue(
+                    'Running command pwd in {0}'.format(path)
+                    in env.log.messages
+                )
+                self.assertTrue(
+                    'Stdout: {0}\n'.format(path) in env.log.messages
+                )
+
+    def test_deploying_binary_after_build(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['cp', 'foo', 'bar']],
+                'bin': ['bar']
+            }])
+            deploy(env)
+
+            binary_path = 'bin/bar_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_binary_to_deploy_does_not_exist(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['no_such_file']
+            }])
+            deploy(env)
+            self.assertTrue(
+                'In repo error deploying no_such_file: errno 2'
+                in env.log.messages
+            )
+
+    def test_deploying_binary_from_subdirectory(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'sub'], ['cp', 'foo', 'sub/bar']],
+                'bin': ['sub/bar']
+            }])
+            deploy(env)
+
+            binary_path = 'bin/bar_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_headers(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'h'], ['cp', 'foo', 'h/bar']],
+                'include': [{'src': 'h'}]
+            }])
+            deploy(env)
+
+            header_dir = 'include/repo_{0}'.format(last_sha)
+            header_path = os.path.join(header_dir, 'h/bar')
+            symlink_path = env.out_dir.relative('include/repo_master')
+
+            self.assertTrue(env.out_dir.exists(header_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(header_dir),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_headers_to_other_path(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'h'], ['cp', 'foo', 'h/bar']],
+                'include': [{'src': 'h', 'dst': 'asd'}]
+            }])
+            deploy(env)
+
+            header_dir = 'include/repo_{0}'.format(last_sha)
+            header_path = os.path.join(header_dir, 'asd/bar')
+            symlink_path = env.out_dir.relative('include/repo_master')
+
+            self.assertTrue(env.out_dir.exists(header_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(header_dir),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_headers_to_root_of_include(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'h'], ['cp', 'foo', 'h/bar']],
+                'include': [{'src': 'h', 'dst': '.'}]
+            }])
+            deploy(env)
+
+            header_dir = 'include/repo_{0}'.format(last_sha)
+            header_path = os.path.join(header_dir, 'bar')
+            symlink_path = env.out_dir.relative('include/repo_master')
+
+            self.assertTrue(env.out_dir.exists(header_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(header_dir),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_update(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['cp', 'foo', 'bar']],
+                'bin': ['bar']
+            }])
+
+            sha1 = env.commit(0, {'foo': 'asd'})
+            deploy(env)
+
+            sha2 = env.commit(0, {'foo': 'fgh'})
+            deploy(env)
+
+            binary_path1 = 'bin/bar_{0}'.format(sha1)
+            binary_path2 = 'bin/bar_{0}'.format(sha2)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path1))
+            self.assertTrue(env.out_dir.exists(binary_path2))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path2),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_update_to_headers(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'h'}]
+            }])
+
+            sha1 = env.commit(0, {'h/bar': 'asd'})
+            deploy(env)
+
+            sha2 = env.commit(0, {'h/foo': 'fgh'})
+            deploy(env)
+
+            header_dir1 = 'include/repo_{0}'.format(sha1)
+            header_dir2 = 'include/repo_{0}'.format(sha2)
+            symlink_path = env.out_dir.relative('include/repo_master')
+
+            self.assertFalse(
+                env.out_dir.exists(os.path.join(header_dir1, 'h/foo'))
+            )
+            self.assertTrue(
+                env.out_dir.exists(os.path.join(header_dir1, 'h/bar'))
+            )
+            self.assertTrue(
+                env.out_dir.exists(os.path.join(header_dir2, 'h/foo'))
+            )
+            self.assertTrue(
+                env.out_dir.exists(os.path.join(header_dir2, 'h/bar'))
+            )
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(header_dir2),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deployed_code_is_not_redeployed(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'h'}]
+            }])
+
+            sha = env.commit(0, {'h/bar': 'asd'})
+            header_dir = 'include/repo_{0}'.format(sha)
+            deploy(env)
+            os.remove(env.out_dir.relative(os.path.join(header_dir, 'h/bar')))
+            deploy(env)
+
+            self.assertFalse(
+                env.out_dir.exists(os.path.join(header_dir, 'h/bar'))
+            )
+
+    def test_when_build_fails_nothing_is_deployed(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['/bin/false'], ['/bin/true']],
+                'bin': ['h/bar'],
+                'include': [{'src': 'h'}]
+            }])
+
+            sha = env.commit(0, {'h/bar': 'asd'})
+            deploy(env)
+
+            self.assertFalse(env.out_dir.exists('bin/bar_{0}'.format(sha)))
+            self.assertFalse(
+                env.out_dir.exists('include/repo_{0}/h/bar'.format(sha))
+            )
+
+    def test_deletion_of_non_referenced_binaries(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['cp', 'foo', 'bar']],
+                'bin': ['bar']
+            }])
+
+            sha1 = env.commit(0, {'foo': 'asd'})
+            deploy(env)
+
+            sha2 = env.commit(0, {'foo': 'fgh'})
+            deploy(env)
+
+            sha3 = env.commit(0, {'foo': 'jkl'})
+            deploy(env)
+
+            binary_path1 = 'bin/bar_{0}'.format(sha1)
+            binary_path2 = 'bin/bar_{0}'.format(sha2)
+            binary_path3 = 'bin/bar_{0}'.format(sha3)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertFalse(env.out_dir.exists(binary_path1))
+            self.assertTrue(env.out_dir.exists(binary_path2))
+            self.assertTrue(env.out_dir.exists(binary_path3))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path3),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deletion_of_non_referenced_headers(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'h'}]
+            }])
+
+            sha1 = env.commit(0, {'h/foo': 'asd'})
+            deploy(env)
+
+            sha2 = env.commit(0, {'h/foo': 'fgh'})
+            deploy(env)
+
+            sha3 = env.commit(0, {'h/foo': 'jkl'})
+            deploy(env)
+
+            header_path1 = 'include/repo_{0}/h/foo'.format(sha1)
+            header_path2 = 'include/repo_{0}/h/foo'.format(sha2)
+            header_path3 = 'include/repo_{0}/h/foo'.format(sha3)
+            symlink_path = env.out_dir.relative('include/repo_master')
+
+            self.assertFalse(env.out_dir.exists(header_path1))
+            self.assertTrue(env.out_dir.exists(header_path2))
+            self.assertTrue(env.out_dir.exists(header_path3))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative('include/repo_{0}'.format(sha3)),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_symlink_of_deleted_branch_is_deleted(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['foo'],
+                'include': [{'src': 'foo'}]
+            }])
+            master_bin_link = env.out_dir.relative('bin/foo_master')
+            feature_bin_link = env.out_dir.relative('bin/foo_feature')
+            master_include_link = env.out_dir.relative('include/repo_master')
+            feature_include_link = env.out_dir.relative('include/repo_feature')
+
+            env.commit(0, {'foo': 'asd'})
+            env.repos[0].checkout_branch('feature', create=True)
+            deploy(env)
+
+            self.assertTrue(os.path.islink(master_bin_link))
+            self.assertTrue(os.path.islink(feature_bin_link))
+            self.assertTrue(os.path.islink(master_include_link))
+            self.assertTrue(os.path.islink(feature_include_link))
+
+            env.repos[0].checkout_branch('master')
+            env.repos[0].delete_branch('feature')
+            deploy(env)
+
+            self.assertTrue(os.path.islink(master_bin_link))
+            self.assertFalse(os.path.islink(feature_bin_link))
+            self.assertTrue(os.path.islink(master_include_link))
+            self.assertFalse(os.path.islink(feature_include_link))
+
+    def test_deploying_from_branch_with_slash(self):
+        with util.CommonEnv(1) as env:
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['foo']
+            }])
+
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.repos[0].checkout_branch('feature/test', create=True)
+            deploy(env)
+
+            binary_path = 'bin/foo_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/foo_feature_test')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_deploying_from_two_repositories(self):
+        with util.CommonEnv(2) as env:
+            bin_names = ['foo', 'bar']
+
+            env.write_config([
+                {
+                    'name': 'repo{0}'.format(i),
+                    'git': env.repository(i),
+                    'bin': [bin_names[i]],
+                    'include': [{'src': bin_names[i]}]
+                }
+                for i in range(0, 2)
+            ])
+
+            sha = [env.commit(i, {bin_names[i]: 'asd'}) for i in range(0, 2)]
+            deploy(env)
+
+            for i in range(0, 2):
+                binary_path = 'bin/{0}_{1}'.format(bin_names[i], sha[i])
+                symlink_path = env.out_dir.relative(
+                    'bin/{0}_master'.format(bin_names[i])
+                )
+
+                self.assertTrue(env.out_dir.exists(binary_path))
+                self.assertTrue(os.path.islink(symlink_path))
+                self.assertEqual(
+                    env.out_dir.relative(binary_path),
+                    os.path.realpath(symlink_path)
+                )
+
+                header_dir = 'include/repo{0}_{1}'.format(i, sha[i])
+                header_path = os.path.join(header_dir, bin_names[i])
+                symlink_path = env.out_dir.relative(
+                    'include/repo{0}_master'.format(i)
+                )
+
+                self.assertTrue(env.out_dir.exists(header_path))
+                self.assertTrue(os.path.islink(symlink_path))
+                self.assertEqual(
+                    env.out_dir.relative(header_dir),
+                    os.path.realpath(symlink_path)
+                )
+
+    def test_deploying_headers_to_a_different_config(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'h'], ['cp', 'foo', 'h/bar']],
+                'include': [{'src': 'h', 'to_config': 'other_repo'}]
+            }])
+            deploy(env)
+
+            header_dir = 'include/other_repo_{0}'.format(last_sha)
+            header_path = os.path.join(header_dir, 'h/bar')
+            symlink_path = env.out_dir.relative('include/other_repo_master')
+
+            self.assertTrue(env.out_dir.exists(header_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(header_dir),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_overriding_header_version(self):
+        with util.CommonEnv(1) as env:
+            versions = ['1.0', '2.0']
+
+            for ver in versions:
+                env.commit(0, {'headers/{0}/foo/bar'.format(ver): 'asd'})
+
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'headers/*/foo/bar'}]
+            }])
+            deploy(env)
+
+            for ver in versions:
+                self.assertTrue(
+                    env.out_dir.exists('include/repo_{0}/foo/bar'.format(ver))
+                )
+
+    def test_when_one_branch_fails_other_is_deployed(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo': 'asd'})
+            env.repos[0].checkout_branch('good_branch', create=True)
+            last_sha = env.commit(0, {'real_foo': 'fgh'})
+
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['cp', 'real_foo', 'bar']],
+                'bin': ['bar']
+            }])
+            deploy(env)
+
+            binary_path = 'bin/bar_{0}'.format(last_sha)
+            master_path = env.out_dir.relative('bin/bar_master')
+            good_branch_path = env.out_dir.relative('bin/bar_good_branch')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertFalse(os.path.islink(master_path))
+            self.assertTrue(os.path.islink(good_branch_path))
+
+    def test_deploying_shared_files(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'build': [['mkdir', 'h'], ['cp', 'foo', 'h/bar']],
+                'share': [{'src': 'h', 'dst': 'g'}]
+            }])
+            deploy(env)
+
+            share_dir = 'share/repo_{0}'.format(last_sha)
+            share_path = os.path.join(share_dir, 'g/bar')
+            symlink_path = env.out_dir.relative('share/repo_master')
+
+            self.assertTrue(env.out_dir.exists(share_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(share_dir),
+                os.path.realpath(symlink_path)
+            )
+
+    def test_empty_directory_is_created(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo': 'asd'})
+            env.write_config([{'name': 'repo', 'git': env.repository(0)}])
+            deploy(env)
+
+            empty_path = env.out_dir.relative('empty')
+            self.assertTrue(os.path.isdir(empty_path))
+            self.assertEqual([], list(os.listdir(empty_path)))
+
+    def test_multiple_repositories_with_different_branches(self):
+        with util.CommonEnv(2) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature0', create=True)
+
+            env.commit(1, {'bar.txt': 'fgh'})
+            env.repos[1].checkout_branch('feature1', create=True)
+
+            env.write_config([
+                {'name': 'repo0', 'git': env.repository(0)},
+                {'name': 'repo1', 'git': env.repository(1)}
+            ])
+            deploy(env)
+
+            self.assertTrue(env.out_dir.exists('src/repo0/master/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo0/feature0/foo.txt'))
+            self.assertFalse(env.out_dir.exists('src/repo0/feature1/bar.txt'))
+
+            self.assertTrue(env.out_dir.exists('src/repo1/master/bar.txt'))
+            self.assertFalse(env.out_dir.exists('src/repo1/feature0/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo1/feature1/bar.txt'))
+
+    def test_updating_when_all_cloned_branches_have_slash(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature/foo', create=True)
+            env.repos[0].delete_branch('master')
+
+            env.write_config([{'name': 'repo', 'git': env.repository(0)}])
+            deploy(env)
+
+            env.repos[0].checkout_branch('develop', create=True)
+
+            deploy(env)
+
+            self.assertTrue(env.out_dir.exists('src/repo/develop/foo.txt'))
+            self.assertTrue(env.out_dir.exists('src/repo/feature/foo/foo.txt'))
+
+
+if __name__ == '__main__':
+    unittest.main()

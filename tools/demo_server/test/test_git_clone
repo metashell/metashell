@@ -1,0 +1,176 @@
+#!/usr/bin/python
+"""Test cloning using deploy"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import unittest
+import util
+
+MODULE_UNDER_TEST = util.load_from_bin('deploy')
+# pylint: disable=invalid-name
+git_clone = MODULE_UNDER_TEST.git_clone
+# pylint: enable=invalid-name
+
+
+def no_logs(_):
+    """Logging function dropping log messages"""
+    pass
+
+
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+# pylint: disable=too-many-public-methods
+
+class TestGitClone(unittest.TestCase):
+    def test_cloning(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertTrue(out_dir.exists('master/foo.txt'))
+
+    def test_cloning_multiple_branches(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+
+            repo.checkout_branch('feature', create=True)
+            util.commit(repo, {'bar.txt': 'fgh'})
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertTrue(out_dir.exists('master/foo.txt'))
+            self.assertFalse(out_dir.exists('master/bar.txt'))
+            self.assertTrue(out_dir.exists('feature/bar.txt'))
+
+    def test_fetching_updates_to_existing_branch(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            util.commit(repo, {'bar.txt': 'fgh'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertTrue(out_dir.exists('master/bar.txt'))
+
+    def test_detecting_new_branch(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            repo.checkout_branch('feature', create=True)
+            util.commit(repo, {'bar.txt': 'fgh'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertTrue(out_dir.exists('master/foo.txt'))
+            self.assertFalse(out_dir.exists('master/bar.txt'))
+            self.assertTrue(out_dir.exists('feature/bar.txt'))
+
+    def test_branch_deletion(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+
+            repo.checkout_branch('feature', create=True)
+            util.commit(repo, {'bar.txt': 'fgh'})
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            repo.checkout_branch('master')
+            repo.delete_branch('feature')
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertTrue(out_dir.exists('master/foo.txt'))
+            self.assertFalse(out_dir.exists('master/bar.txt'))
+            self.assertFalse(out_dir.exists('feature/bar.txt'))
+
+    def test_fetching_updates_to_force_updated_branch(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+
+            repo.checkout_branch('feature', create=True)
+            util.commit(repo, {'bar.txt': 'fgh'})
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            repo.checkout_branch('master')
+            repo.delete_branch('feature')
+            repo.checkout_branch('feature', create=True)
+            util.commit(repo, {'another_bar.txt': 'jkl'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertFalse(out_dir.exists('feature/bar.txt'))
+            self.assertTrue(out_dir.exists('feature/another_bar.txt'))
+
+    def test_fetching_updates_to_existing_branch_with_local_changes(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            util.commit(repo, {'foo.txt': 'fgh'})
+            out_dir.write('master/foo.txt', 'ASD')
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertEqual('fgh', out_dir.read('master/foo.txt'))
+
+    def test_cloning_repository_without_master_branch(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            repo.checkout_branch('release', create=True)
+            repo.delete_branch('master')
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertTrue(out_dir.exists('release/foo.txt'))
+            self.assertFalse(out_dir.exists('master/foo.txt'))
+
+    def test_updating_repository_without_master_branch(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            repo.checkout_branch('release', create=True)
+            repo.delete_branch('master')
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            util.commit(repo, {'bar.txt': 'fgh'})
+            git_clone(repo.repository(), out_dir.path, no_logs)
+
+            self.assertTrue(out_dir.exists('release/bar.txt'))
+            self.assertFalse(out_dir.exists('master/bar.txt'))
+
+    def test_returning_list_of_branches(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            head_of_master = util.commit(repo, {'foo.txt': 'asd'})
+
+            repo.checkout_branch('feature', create=True)
+            head_of_feature = util.commit(repo, {'bar.txt': 'fgh'})
+
+            branches = dict([
+                (b.name, b.last_commit)
+                for b in git_clone(repo.repository(), out_dir.path, no_logs)
+            ])
+            self.assertEqual(
+                {'feature': head_of_feature, 'master': head_of_master},
+                branches
+            )
+
+    def test_with_slash_in_branch_name(self):
+        with util.GitRepository() as repo, util.TempDir() as out_dir:
+            util.commit(repo, {'foo.txt': 'asd'})
+            repo.checkout_branch('feature/test', create=True)
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertTrue(out_dir.exists('feature/test/foo.txt'))
+
+
+if __name__ == '__main__':
+    unittest.main()

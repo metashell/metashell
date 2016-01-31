@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+METASHELL_BRANCH=${METASHELL_BRANCH-master}
+INSTALL_DIR=${INSTALL_DIR-/usr/local/share/metashell}
+SERVICE_USER=${SERVICE_USER-nobody}
+SERVICE_GROUP=${SERVICE_GROUP-nogroup}
+DELAY_SECS_BETWEEN_PULLS=${DELAY_SECS_BETWEEN_PULLS-60}
+SERVICE_PORT=${SERVICE_PORT-4202}
+
+METASHELL_REPO="https://raw.githubusercontent.com/sabel83/metashell/${METASHELL_BRANCH}"
+
+function fix_owner {
+  sudo chown ${SERVICE_USER}:${SERVICE_GROUP} "$1"
+}
+
+function installed_binary {
+  sudo chmod +x "$1"
+  fix_owner "$1"
+}
+
+function make_dir {
+  sudo mkdir -p "$1"
+  fix_owner "$1"
+}
+
+function create_init_symlink {
+  RUNLEVEL="$1"
+  DAEMON_NAME="$2"
+  START_OR_KILL="$3"
+
+  sudo \
+    ln -sf "/etc/init.d/${DAEMON_NAME}" \
+    "/etc/rc${RUNLEVEL}.d/${START_OR_KILL}20${DAEMON_NAME}"
+}
+
+function install_daemon {
+  DAEMON_NAME="$1"
+  DAEMON_SHORT_DESC="$2"
+  DAEMON_LONG_DESC="$3"
+  DAEMON_CMD="$4"
+
+  sudo tee "/etc/init.d/${DAEMON_NAME}" > /dev/null << EOF
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          ${DAEMON_NAME}
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: ${DAEMON_SHORT_DESC}
+# Description:       ${DAEMON_LONG_DESC}
+### END INIT INFO
+
+# Author: Abel Sinkovics <abel@sinkovics.hu>
+
+# Do NOT "set -e"
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="${DAEMON_SHORT_DESC}"
+NAME="${DAEMON_NAME}"
+DAEMON="${DAEMON_CMD}"
+PIDFILE=/var/run/\$NAME.pid
+SCRIPTNAME=/etc/init.d/\$NAME
+
+LOGFILE=/var/tmp/\${NAME}
+
+# Exit if the package is not installed
+[ -x "\$DAEMON" ] || exit 0
+
+# Read configuration variable file if it is present
+[ -r /etc/default/\$NAME ] && . /etc/default/\$NAME
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+  start-stop-daemon \\
+    --start \\
+    --oknodo \\
+    --pidfile "\$PIDFILE" \\
+    --exec "\$DAEMON" \\
+    -- \\
+    --root "${INSTALL_DIR}" \\
+    --pidfile "\$PIDFILE" \\
+    --port "${SERVICE_PORT}" \\
+    --user "${SERVICE_USER}" \\
+    --group "${SERVICE_GROUP}" \\
+    --branch "${METASHELL_BRANCH}" \\
+    --sleep "${DELAY_SECS_BETWEEN_PULLS}" \\
+    --log "/var/tmp/\$NAME" \\
+    || return 1
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+  start-stop-daemon --stop --oknodo --pidfile "\$PIDFILE"
+  rm -f "\$PIDFILE"
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+  # Only reload if there are no active sessions running
+  [ -r "\$PIDFILE" ] &&
+    [ \`ps o pid= --ppid "\\\`cat "\$PIDFILE"\\\`\\\`ps o pid= --ppid \\\\\\\`cat "\$PIDFILE"\\\\\\\` | xargs -r -n 1 printf ',%s'\\\`" | wc -l\` gt 1 ] &&
+    return 1
+	
+  do_stop
+  do_start
+}
+
+#
+# Function that check the status of the daemon/service
+#
+do_status()
+{
+  [ -r "\$PIDFILE" ] && kill -0 \`cat "\$PIDFILE"\` &&
+    echo "\$DESC is running" || echo "\$DESC is not running"
+}
+
+
+case "\$1" in
+  start)
+    [ "\$VERBOSE" != no ] && log_daemon_msg "Starting \$DESC" "\$NAME"
+    do_start
+    case "\$?" in
+      0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+      2) [ " \$VERBOSE" != no ] && log_end_msg 1 ;;
+    esac
+    ;;
+  stop)
+    [ "\$VERBOSE" != no ] && log_daemon_msg "Stopping \$DESC" "\$NAME"
+    do_stop
+    case "\$?" in
+      0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+      2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+    esac
+    ;;
+  status)
+    status_of_proc "\$DAEMON" "\$NAME" && exit 0 || exit \$?
+    ;;
+  restart|force-reload)
+    [ "\$VERBOSE" != no ] && log_daemon_msg "Restarting \$DESC" "\$NAME"
+    do_stop
+    case "\$?" in
+      0|1)
+        do_start
+        case "\$?" in
+          0) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+          1) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+          *) [ "\$VERBOSE" != no ] && log_end_msg 1 ;; # Failed to start
+        esac
+        ;;
+      *)
+        # Failed to stop
+        [ "\$VERBOSE" != no ] && log_end_msg 1
+        ;;
+    esac
+    ;;
+  status)
+    do_status
+    ;;
+  *)
+    echo "Usage: \$SCRIPTNAME {start|stop|status|restart|force-reload|status}" >&2
+    exit 3
+    ;;
+esac
+
+exit 0
+EOF
+
+  sudo chmod +x "/etc/init.d/${DAEMON_NAME}"
+
+  create_init_symlink 0 "${DAEMON_NAME}" K
+  create_init_symlink 1 "${DAEMON_NAME}" K
+  create_init_symlink 2 "${DAEMON_NAME}" S
+  create_init_symlink 3 "${DAEMON_NAME}" S
+  create_init_symlink 4 "${DAEMON_NAME}" S
+  create_init_symlink 5 "${DAEMON_NAME}" S
+  create_init_symlink 6 "${DAEMON_NAME}" K
+
+  sudo "/etc/init.d/${DAEMON_NAME}" start
+}
+
+function download_script {
+  NAME="$1"
+
+  sudo rm "${INSTALL_DIR}/bin/${NAME}_bootstrap" 2>/dev/null
+  sudo \
+    wget "${METASHELL_REPO}/tools/demo_server/bin/${NAME}" \
+    -O "${INSTALL_DIR}/bin/${NAME}_bootstrap"
+  installed_binary "${INSTALL_DIR}/bin/${NAME}_bootstrap"
+
+  sudo \
+    ln -sf "${NAME}_bootstrap" "${INSTALL_DIR}/bin/${NAME}_${METASHELL_BRANCH}"
+  fix_owner "${INSTALL_DIR}/bin/${NAME}_${METASHELL_BRANCH}"
+}
+
+# Install dependencies
+
+sudo apt-get -y install shellinabox git g++ cmake libreadline-dev python-pip
+sudo pip install mkdocs pep8 pylint gitpython daemonize
+
+# Create the installation directories
+
+make_dir "${INSTALL_DIR}"
+make_dir "${INSTALL_DIR}/bin"
+
+# Bootstrap the upgrade process: get the files doing the upgrade
+
+download_script deploy
+download_script upgrade
+
+sudo rm "${INSTALL_DIR}/metashell.json" 2>/dev/null
+sudo \
+  wget "${METASHELL_REPO}/tools/demo_server/config/metashell.json" \
+  -O "${INSTALL_DIR}/metashell.json"
+fix_owner "${INSTALL_DIR}/metashell.json"
+
+# Install the daemons
+install_daemon \
+  metashell_upgrader \
+  "Metashell upgrader daemon" \
+  "Daemon for upgrading Metashell (for the demo) on the server" \
+  "${INSTALL_DIR}/bin/upgrade_${METASHELL_BRANCH}"
+
+install_daemon \
+  metashell_demo \
+  "Metashell demo" \
+  "Daemon for running Metashell on the server" \
+  "${INSTALL_DIR}/bin/launch_demo_${METASHELL_BRANCH}"

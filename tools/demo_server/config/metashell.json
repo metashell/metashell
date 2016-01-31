@@ -1,0 +1,92 @@
+[
+  {
+    "name": "metashell",
+    "git": "https://github.com/sabel83/metashell.git",
+    "build": [
+      [
+        "/bin/bash",
+        "-c",
+        "git log -1 --pretty=\"%h %B\" | head -1 | sed 's/\\\\/\\\\\\\\/g' | sed 's/\"/\\\\\"/g' | sed 's/^/\"/' | sed 's/$/\\\\n This demo is supported by the Eotvos Lorand University, Faculty of Informatics\"/' > lib/core/version_desc.hpp"
+      ],
+      ["./build.sh"]
+    ],
+    "bin": [
+      "bin/app/metashell",
+      "bin/app/templight_metashell",
+      "tools/demo_server/bin/deploy",
+      "tools/demo_server/bin/upgrade",
+      "tools/demo_server/bin/launch_demo",
+      "tools/demo_server/bin/run"
+    ],
+    "include" : [
+      { "src": "3rd/templight/build/lib/clang/3.8.0/include", "dst": "" }
+    ],
+    "share" : [ { "src": "tools/demo_server/share", "dst": "" } ]
+  },
+
+  {
+    "name": "boost",
+    "git": "https://github.com/boostorg/boost.git",
+    "build": [
+      ["./bootstrap.sh"],
+      ["./b2", "headers"]
+    ],
+    "include" : [
+      { "src": "boost", "dst": "boost" }
+    ]
+  },
+
+  {
+    "name": "mpllibs",
+    "git": "https://github.com/sabel83/mpllibs.git",
+    "include" : [
+      { "src": "mpllibs", "dst": "mpllibs" }
+    ]
+  },
+
+  {
+    "name": "metatest",
+    "git": "https://github.com/sabel83/metatest.git",
+    "include" : [
+      { "src": "include/metatest", "dst": "metatest" }
+    ]
+  },
+
+  {
+    "name": "FTMP",
+    "git": "https://github.com/minamiyama1994/FTMP.git",
+    "include" : [
+      { "src": "include/FTMP", "dst": "FTMP" }
+    ]
+  },
+
+  {
+    "name": "fatal",
+    "git": "https://github.com/facebook/fatal.git",
+    "include" : [
+      { "src": "fatal", "dst": "fatal" }
+    ]
+  },
+
+  {
+    "name": "meta",
+    "git": "https://github.com/ericniebler/meta.git",
+    "include" : [
+      { "src": "include/meta", "dst": "meta" }
+    ]
+  },
+
+  {
+    "name": "headers",
+    "git": "https://github.com/sabel83/headers.git",
+    "include" : [
+      { "src": "headers/boost/*/boost", "dst": "boost", "to_config": "boost" },
+      { "src": "headers/loki/*/loki", "dst": "loki", "to_config": "loki" },
+      {
+        "src": "headers/mpllibs/*/mpllibs",
+        "dst": "mpllibs",
+        "to_config": "mpllibs"
+      }
+    ]
+  }
+]

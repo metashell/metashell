@@ -1,0 +1,221 @@
+#!/usr/bin/python
+"""Tool to run the demo Metashell"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import subprocess
+import os
+import sys
+import string
+import urlparse
+import json
+import fcntl
+import datetime
+import time
+
+
+class Error(Exception):
+    """Custom exception for runner-related errors"""
+
+    def __init__(self, reason):
+        super(Error, self).__init__(reason)
+
+
+def in_red(msg):
+    """Returns a string that displays msg in red on a console"""
+    return '\033[1;31m{0}\033[1;m'.format(msg)
+
+
+def valid_version(ver):
+    """Check if ver is a valid version number"""
+    alnum = string.ascii_letters + string.digits
+    whitelist = alnum + '_.'
+    return \
+        all([c in whitelist for c in ver]) and any([c in alnum for c in ver])
+
+
+def valid_standard(std):
+    """Check if std is a valid C++ standard"""
+    return std in ['c++0x', 'c++11', 'c++1y']
+
+
+def include_path_of(root, name, version):
+    """Returns the include path of a version of a library. Throws when it does
+    not exist"""
+    path = os.path.join(root, 'include', '_'.join([name, version]))
+    if os.path.exists(path):
+        return path
+    else:
+        raise Error(
+            'Version {0} of library {1} not found.'.format(version, name)
+        )
+
+
+class Config(object):
+    """Shell configuration"""
+
+    def __init__(self):
+        self.metashell_branch = 'master'
+        self.std = 'c++11'
+        self.libs = {}
+
+    def binary(self, root, name):
+        """Returns the path of a binary"""
+        path = os.path.join(
+            root,
+            'bin',
+            '_'.join([name, self.metashell_branch])
+        )
+        if os.path.exists(path):
+            return path
+        else:
+            raise Error(
+                '{0} binary of branch {1} not found'.format(
+                    name,
+                    self.metashell_branch
+                )
+            )
+
+    def metashell_command(self, root):
+        """Construct the command to run Metashell with this config"""
+        include_path = [
+            include_path_of(root, 'metashell', self.metashell_branch)
+        ] + [
+            include_path_of(root, l, v) for l, v in self.libs.items()
+        ]
+
+        return [
+            self.binary(root, 'metashell'),
+            '--engine', 'clang',
+            '--disable_saving',
+            '--',
+            self.binary(root, 'templight_metashell'),
+            '-std={0}'.format(self.std),
+            '-ftemplate-depth=256',
+            '-Wfatal-errors'
+        ] + [
+            '-I{0}'.format(os.path.realpath(i)) for i in include_path
+        ]
+
+    def add_library(self, name, version):
+        """Process a library addition"""
+        if name == 'metashell':
+            raise Error(
+                'Specifying the metashell library version is not supported'
+            )
+        elif valid_version(name):
+            if valid_version(version):
+                self.libs[name] = version
+            else:
+                raise Error('Invalid {0} version: {1}'.format(name, version))
+        else:
+            raise Error('Invalid library name: {0}'.format(name))
+
+    def process(self, name, value):
+        """Process a key/value config item"""
+        if name.endswith('_version'):
+            self.add_library(name[:len(name) - len('_version')], value)
+        elif name == '_std':
+            if valid_standard(value):
+                self.std = value
+            else:
+                raise Error('Invalid C++ standard: {0}'.format(value))
+        elif name == '_branch':
+            if valid_version(value):
+                self.metashell_branch = value
+            else:
+                raise Error('Invalid Metashell branch name: {0}'.format(value))
+        else:
+            raise Error('Invalid GET option: {0}'.format(name))
+
+
+def append_to_file(filename, msg):
+    """Append a string to a file"""
+    with open(filename, 'a') as out_file:
+        fcntl.flock(out_file, fcntl.LOCK_EX)
+        try:
+            out_file.write(msg)
+        finally:
+            fcntl.flock(out_file, fcntl.LOCK_UN)
+
+
+def log(filename, msg):
+    """Append a JSON document to the log file"""
+    if filename != '':
+        suffix = datetime.datetime.now().strftime("_%Y_%m_%d")
+        msg['timestamp'] = time.time()
+        append_to_file(filename + suffix, json.dumps(msg) + '\n')
+
+
+def run(root, config):
+    """Run Metashell and return its exit code"""
+    return subprocess.call(config.metashell_command(root))
+
+
+def main():
+    """The main function of the utility"""
+    parser = argparse.ArgumentParser(description='Run the demo Metashell')
+    parser.add_argument(
+        '--root',
+        required=True,
+        help='The root directory of the demo (the --out of deploy)'
+    )
+    parser.add_argument(
+        '--peer',
+        required=True,
+        help='The IP address of the client'
+    )
+    parser.add_argument(
+        '--url',
+        required=True,
+        help='The URL used by the client'
+    )
+    parser.add_argument(
+        '--log',
+        required=True,
+        help='The log file'
+    )
+    args = parser.parse_args()
+
+    config = Config()
+    was_error = False
+    for name, value in urlparse.parse_qsl(urlparse.urlparse(args.url).query):
+        try:
+            config.process(name, value)
+        except Error, err:
+            print in_red(err)
+            was_error = True
+
+    if was_error:
+        sys.exit(1)
+    else:
+        try:
+            cmd = config.metashell_command(args.root)
+            log(args.log, {'peer': args.peer, 'cmd': cmd, 'url': args.url})
+            exit_code = subprocess.call(
+                cmd,
+                cwd=os.path.join(args.root, 'empty')
+            )
+        except Error, err:
+            print in_red(err)
+            sys.exit(1)
+        sys.exit(exit_code)
+
+
+if __name__ == '__main__':
+    main()

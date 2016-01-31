@@ -1,0 +1,205 @@
+/* The original solarized.css was found here:
+ * https://github.com/georgegoh/configs/tree/master/shellinabox
+ */
+
+#vt100 a {
+  text-decoration:  none;
+  color:            inherit;
+}
+
+#vt100 a:hover {
+  text-decoration:  underline;
+}
+
+#vt100 #reconnect {
+  position:         absolute;
+  z-index:          2;
+}
+
+#vt100 #reconnect input {
+  padding:          1ex;
+  font-weight:      bold;
+  font-size:        x-large;
+}
+
+#vt100 #cursize {
+  background:       #EEEEEE;
+  border:           1px solid black;
+  font-family:      sans-serif;
+  font-size:        large;
+  font-weight:      bold;
+  padding:          1ex;
+  position:         absolute;
+  z-index:          2;
+}
+
+#vt100 pre {
+  margin:           0px;
+}
+
+#vt100 pre pre {
+  overflow:         hidden;
+}
+
+#vt100 #scrollable {
+  color:          #839496;
+  background-color: #002b36;
+
+  overflow-x:       hidden;
+  overflow-y:       scroll;
+  position:         relative;
+  padding:          1px;
+}
+
+#vt100 #console, #vt100 #alt_console, #vt100 #cursor, #vt100 #lineheight {
+  font-family:      "DejaVu Sans Mono", "Everson Mono", FreeMono, "Andale Mono", "Lucida Console", monospace;
+}
+
+#vt100 #lineheight {
+  position:         absolute;
+  visibility:       hidden;
+}
+
+#vt100 #cursor {
+  position:         absolute;
+  left:             0px;
+  top:              0px;
+  overflow:         hidden;
+  z-index:          1;
+}
+
+#vt100 #cursor.bright {
+  background-color: #839496;
+  color:            white;
+}
+
+#vt100 #cursor.dim {
+  visibility:       hidden;
+}
+
+#vt100 #cursor.inactive {
+  border:           1px solid #839496;
+  margin:           -1px;
+}
+
+#vt100 #padding {
+  visibility:       hidden;
+  width:            1px;
+  height:           0px;
+  overflow:         hidden;
+}
+
+#vt100 .hidden {
+  position:         absolute;
+  top:              -10000px;
+  left:             -10000px;
+  width:            0px;
+  height:           0px;
+}
+
+#vt100 #menu {
+  overflow:         visible;
+  position:         absolute;
+  z-index:          3;
+}
+
+#vt100 #menu .popup {
+  background-color: #EEEEEE;
+  border:           1px solid black;
+  font-family:      sans-serif;
+  position:         absolute;
+}
+
+#vt100 #menu .popup ul {
+  list-style-type:  none;
+  padding:          0px;
+  margin:           0px;
+  min-width:        10em;
+}
+
+#vt100 #menu .popup li {
+  padding:          3px 0.5ex 3px 0.5ex;
+}
+
+#vt100 #menu .popup li.hover {
+  background-color: #444444;
+  color:            white;
+}
+
+#vt100 #menu .popup li.disabled {
+  color:            #AAAAAA;
+}
+
+#vt100 #menu .popup hr {
+  margin:           0.5ex 0px 0.5ex 0px;
+}
+
+#vt100 #menu img {
+  margin-right:     0.5ex;
+  width:            1ex;
+  height:           1ex;
+}
+
+/*#vt100 #scrollable.inverted { color:            #002b36;
+                              background-color: #839496; }
+*/
+#vt100 #scrollable.inverted { color:            #839496;
+                              background-color: #002b36; }
+[if DEFINES_COLORS]
+/* IE cannot properly handle "inherit" properties. So, the monochrome.css/
+ * color.css style sheets cannot work, if we define colors in styles.css.
+ */
+[else DEFINES_COLORS]
+#vt100 .ansi0               {                            } /* base0 ? */
+#vt100 .ansi1               { color:            #dc322f; } /* red */
+#vt100 .ansi2               { color:            #859900; } /* green */
+#vt100 .ansi3               { color:            #b58900; } /* yellow */
+#vt100 .ansi4               { color:            #268bd2; } /* blue */
+#vt100 .ansi5               { color:            #d33682; } /* magenta */
+#vt100 .ansi6               { color:            #2aa198; } /* cyan */
+#vt100 .ansi7               { color:            #fdf6e3; } /* base3 */
+#vt100 .ansi8               { color:            #eee8d5; } /* base2 */
+#vt100 .ansi9               { color:            #cb4b16; } /* orange */
+#vt100 .ansi10              { color:            #586e75; } /* base01 */
+#vt100 .ansi11              { color:            #657b83; } /* base00 */
+#vt100 .ansi12              { color:            #839496; } /* base0 */
+#vt100 .ansi13              { color:            #073642; } /* base02 ? */
+#vt100 .ansi14              { color:            #93a1a1; } /* base1 */
+#vt100 .ansi15              { color:            #ffffff; } /* base03 (modified) */
+
+#vt100 .bgAnsi0             { background-color: #073642; }
+#vt100 .bgAnsi1             { background-color: #dc322f; }
+#vt100 .bgAnsi2             { background-color: #859900; }
+#vt100 .bgAnsi3             { background-color: #b58900; }
+#vt100 .bgAnsi4             { background-color: #268bd2; }
+#vt100 .bgAnsi5             { background-color: #d33682; }
+#vt100 .bgAnsi6             { background-color: #2aa198; }
+#vt100 .bgAnsi7             { background-color: #fdf6e3; }
+#vt100 .bgAnsi8             { background-color: #eee8d5; }
+#vt100 .bgAnsi9             { background-color: #cb4b16; }
+#vt100 .bgAnsi10            { background-color: #586e75; }
+#vt100 .bgAnsi11            { background-color: #657b83; }
+#vt100 .bgAnsi12            { background-color: #839496; }
+#vt100 .bgAnsi13            { background-color: #073642; }
+#vt100 .bgAnsi14            { background-color: #93a1a1; }
+#vt100 .bgAnsi15            {                            }
+[endif DEFINES_COLORS]
+
+@media print {
+  #vt100 .scrollback {
+    display:        none;
+  }
+
+  #vt100 #reconnect, #vt100 #cursor, #vt100 #menu {
+    visibility:     hidden;
+  }
+
+  #vt100 #scrollable {
+    overflow:       hidden;
+  }
+
+  #vt100 #console, #vt100 #alt_console {
+    overflow:       hidden;
+    width:          1000000ex;
+  }
+}
