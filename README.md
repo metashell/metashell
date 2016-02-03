@@ -18,7 +18,6 @@ The documentation can be found at
 Service | Status
 --- | ---
 [doc.metashell.org](http://doc.metashell.org/) | [![Documentation Status](https://readthedocs.org/projects/metashell/badge/?version=latest "Documentation Status")](http://metashell.readthedocs.org/en/latest/?badge=latest) |
-[ci.metashell.org](http://ci.metashell.org) | [![Jenkins Build Status](http://ci.metashell.org/job/metashell-master-flow/badge/icon)](http://ci.metashell.org/job/metashell-master-flow) |
 [travis-ci.org](https://travis-ci.org/sabel83/metashell) | [![Travis Build Status](https://travis-ci.org/sabel83/metashell.svg?branch=master "Build Status")](https://travis-ci.org/sabel83/metashell) |
 [ci.appveyor.com](https://ci.appveyor.com/project/sabel83/) | [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/2t30o2h0kieh2ovm/branch/master?svg=true)](https://ci.appveyor.com/project/sabel83/metashell/branch/master) |
 
