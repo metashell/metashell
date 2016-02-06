@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+function make_c_string {
+  sed 's/\\/\\\\/g' \
+    | sed 's/"/\\"/g' \
+    | awk '
+      BEGIN { first=1; }
+      {
+        if (first)
+        {
+          first = 0;
+        }
+        else
+        {
+          printf("\\n");
+        }
+        printf("%s", $0);
+      }
+    '
+}
+
+git log -1 --pretty="%h %B" \
+  | head -1 \
+  | make_c_string \
+  | sed 's/^/"/' \
+  | awk '{printf("%s", $0);}'
+
+if [ "$#" -eq 1 ] && [ -f "$1" ]
+then
+  echo -n '\n'
+  cat "$1" | make_c_string
+fi
+
+echo '"'

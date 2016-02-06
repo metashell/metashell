@@ -237,6 +237,14 @@ sudo pip install mkdocs pep8 pylint gitpython daemonize
 make_dir "${INSTALL_DIR}"
 make_dir "${INSTALL_DIR}/bin"
 
+# Create the file containing the splash text
+
+if [ "${SPLASH}" ]
+then
+  echo "${SPLASH}" > "${INSTALL_DIR}/splash.txt"
+  fix_owner "${INSTALL_DIR}/splash.txt"
+fi
+
 # Bootstrap the upgrade process: get the files doing the upgrade
 
 download_script deploy
