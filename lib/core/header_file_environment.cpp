@@ -20,7 +20,6 @@
 #include <metashell/exception.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/headers.hpp>
-#include <metashell/path_builder.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -99,20 +98,21 @@ namespace
   std::string include_formatter(const std::string& name_)
   {
     using std::string;
+    using boost::filesystem::path;
 
-    return "#include <" + string(path_builder() / "metashell" / "formatter" /
-                                 (name_ + ".hpp")) +
-           ">";
+    return "#include <" +
+           (path("metashell") / "formatter" / (name_ + ".hpp")).string() + ">";
   }
 
   void add_internal_headers(data::headers& headers_)
   {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
+    using boost::filesystem::path;
 
     using std::string;
 
-    const path_builder internal_dir(headers_.internal_dir());
+    const path internal_dir(headers_.internal_dir());
     const string hpp(".hpp");
 
     const char* formatters[] = {"vector", "list", "set", "map"};
@@ -123,11 +123,11 @@ namespace
                    seq_formatter(f));
     }
 
-    const string vector_formatter =
-        string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+    const path vector_formatter =
+        path("metashell") / "formatter" / "vector.hpp";
 
     headers_.add(internal_dir / "metashell" / "formatter" / "deque.hpp",
-                 "#include <" + vector_formatter + ">\n");
+                 "#include <" + vector_formatter.string() + ">\n");
 
     headers_.add(
         internal_dir / "metashell" / "formatter.hpp",

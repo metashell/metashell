@@ -21,7 +21,6 @@
 
 #include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
-#include <metashell/path_builder.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/null_history.hpp>
 #include <metashell/in_memory_displayer.hpp>

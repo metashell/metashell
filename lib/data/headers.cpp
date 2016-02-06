@@ -23,7 +23,8 @@ headers::headers(const std::string& internal_dir_)
 {
 }
 
-void headers::add(const std::string& filename_, const std::string& content_)
+void headers::add(const boost::filesystem::path& filename_,
+                  const std::string& content_)
 {
   _headers.push_back(data::unsaved_file(filename_, content_));
 }

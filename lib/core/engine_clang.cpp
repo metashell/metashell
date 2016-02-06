@@ -482,10 +482,11 @@ namespace
 
       const source_position sp = source_position_of(src.content());
 
-      std::vector<std::string> clang_args{
-          "-fsyntax-only", "-Xclang",
-          "-code-completion-at=" + src.filename() + ":" + to_string(sp),
-          src.filename()};
+      std::vector<std::string> clang_args{"-fsyntax-only", "-Xclang",
+                                          "-code-completion-at=" +
+                                              src.filename().string() + ":" +
+                                              to_string(sp),
+                                          src.filename().string()};
 
       if (use_precompiled_headers_)
       {

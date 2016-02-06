@@ -19,6 +19,8 @@
 
 #include <metashell/data/unsaved_file.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <vector>
 #include <string>
 
@@ -42,7 +44,8 @@ namespace metashell
 
       const std::string& internal_dir() const;
 
-      void add(const std::string& filename_, const std::string& content_);
+      void add(const boost::filesystem::path& filename_,
+               const std::string& content_);
 
     private:
       std::vector<data::unsaved_file> _headers;

@@ -17,7 +17,6 @@
 #include "test_config.hpp"
 
 #include <metashell/shell.hpp>
-#include <metashell/path_builder.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/engine_constant.hpp>
 
