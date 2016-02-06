@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include <boost/filesystem/path.hpp>
 
 namespace metashell
 {
@@ -28,14 +28,14 @@ namespace metashell
     public:
       virtual ~environment_detector() {}
 
-      virtual std::string search_clang_binary() = 0;
-      virtual bool file_exists(const std::string& path_) = 0;
+      virtual boost::filesystem::path search_clang_binary() = 0;
+      virtual bool file_exists(const boost::filesystem::path& path_) = 0;
 
       // Available as a runtime function for cross-platform unit testing
       virtual bool on_windows() = 0;
       virtual bool on_osx() = 0;
 
-      virtual std::string directory_of_executable() = 0;
+      virtual boost::filesystem::path directory_of_executable() = 0;
     };
   }
 }

@@ -18,7 +18,7 @@
 
 using namespace metashell::data;
 
-headers::headers(const std::string& internal_dir_)
+headers::headers(const boost::filesystem::path& internal_dir_)
   : _headers(), _internal_dir(internal_dir_)
 {
 }
@@ -35,4 +35,7 @@ headers::iterator headers::end() const { return _headers.end(); }
 
 headers::size_type headers::size() const { return _headers.size(); }
 
-const std::string& headers::internal_dir() const { return _internal_dir; }
+const boost::filesystem::path& headers::internal_dir() const
+{
+  return _internal_dir;
+}

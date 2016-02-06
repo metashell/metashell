@@ -23,6 +23,8 @@
 #include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <memory>
 #include <functional>
 
@@ -30,8 +32,8 @@ namespace metashell
 {
   typedef std::function<std::unique_ptr<iface::engine>(
       const data::config&,
-      const std::string&,
-      const std::string&,
+      const boost::filesystem::path&,
+      const boost::filesystem::path&,
       iface::environment_detector&,
       iface::displayer&,
       logger*)> engine_factory;
@@ -39,8 +41,9 @@ namespace metashell
   template <class Engine>
   engine_factory factory_for()
   {
-    return [](const data::config& config_, const std::string& internal_dir_,
-              const std::string& env_filename_,
+    return [](const data::config& config_,
+              const boost::filesystem::path& internal_dir_,
+              const boost::filesystem::path& env_filename_,
               iface::environment_detector& env_detector_,
               iface::displayer& displayer_, logger* logger_)
     {

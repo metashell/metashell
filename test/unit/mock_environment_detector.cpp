@@ -31,12 +31,12 @@ mock_environment_detector::mock_environment_detector()
 }
 
 void mock_environment_detector::search_clang_binary_returns(
-    const std::string& result_)
+    const boost::filesystem::path& result_)
 {
   _search_clang_binary_returns = result_;
 }
 
-std::string mock_environment_detector::search_clang_binary()
+boost::filesystem::path mock_environment_detector::search_clang_binary()
 {
   ++_search_clang_binary_called_times;
   return _search_clang_binary_returns;
@@ -47,7 +47,8 @@ int mock_environment_detector::search_clang_binary_called_times() const
   return _search_clang_binary_called_times;
 }
 
-bool mock_environment_detector::file_exists(const std::string& path_)
+bool mock_environment_detector::file_exists(
+    const boost::filesystem::path& path_)
 {
   ++_file_exists_called_times;
   _file_exists_last_arg = path_;
@@ -59,7 +60,8 @@ int mock_environment_detector::file_exists_called_times() const
   return _file_exists_called_times;
 }
 
-const std::string& mock_environment_detector::file_exists_last_arg() const
+const boost::filesystem::path&
+mock_environment_detector::file_exists_last_arg() const
 {
   return _file_exists_last_arg;
 }
@@ -101,14 +103,14 @@ int mock_environment_detector::on_osx_called_times() const
   return _on_osx_called_times;
 }
 
-std::string mock_environment_detector::directory_of_executable()
+boost::filesystem::path mock_environment_detector::directory_of_executable()
 {
   ++_directory_of_executable_called_times;
   return _directory_of_executable_returns;
 }
 
 void mock_environment_detector::directory_of_executable_returns(
-    const std::string& result_)
+    const boost::filesystem::path& result_)
 {
   _directory_of_executable_returns = result_;
 }

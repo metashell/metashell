@@ -56,7 +56,8 @@ namespace
       // ignore
     }
 
-    virtual void generate_precompiled_header(const std::string&) override
+    virtual void
+    generate_precompiled_header(const boost::filesystem::path&) override
     {
       // ignore
     }

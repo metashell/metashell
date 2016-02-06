@@ -198,8 +198,8 @@ namespace metashell {
 }
 
 shell::shell(const data::config& config_,
-             const std::string& internal_dir_,
-             const std::string& env_filename_,
+             const boost::filesystem::path& internal_dir_,
+             const boost::filesystem::path& env_filename_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -219,8 +219,8 @@ shell::shell(const data::config& config_,
 
 shell::shell(const data::config& config_,
              command_processor_queue& cpq_,
-             const std::string& internal_dir_,
-             const std::string& env_filename_,
+             const boost::filesystem::path& internal_dir_,
+             const boost::filesystem::path& env_filename_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -241,8 +241,8 @@ shell::shell(const data::config& config_,
 shell::shell(const data::config& config_,
              std::unique_ptr<iface::environment> env_,
              command_processor_queue& cpq_,
-             const std::string& internal_dir_,
-             const std::string& env_filename_,
+             const boost::filesystem::path& internal_dir_,
+             const boost::filesystem::path& env_filename_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -526,9 +526,9 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 
 iface::engine& shell::engine() { return *_engine; }
 
-std::string shell::env_path() const
+boost::filesystem::path shell::env_path() const
 {
-  return _internal_dir + "/" + _env_filename;
+  return _internal_dir / _env_filename;
 }
 
 bool shell::preprocess(iface::displayer& displayer_,
