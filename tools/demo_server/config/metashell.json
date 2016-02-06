@@ -6,7 +6,7 @@
       [
         "/bin/bash",
         "-c",
-        "git log -1 --pretty=\"%h %B\" | head -1 | sed 's/\\\\/\\\\\\\\/g' | sed 's/\"/\\\\\"/g' | sed 's/^/\"/' | sed 's/$/\\\\n This demo is supported by the Eotvos Lorand University, Faculty of Informatics\"/' > lib/core/version_desc.hpp"
+        "tools/demo_sever/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
       ["./build.sh"]
     ],

@@ -44,6 +44,7 @@ the options and ther default values:
 * `SERVICE_PORT=4202` The port ShellInABox will be listening on.
 * `DELAY_SECS_BETWEEN_PULLS=60` The delay the deployer script waits between the
   pulls (regardless of how long a pull & build takes)
+* `SPLASH=` Text to display in the splash message of the shell.
 
 ## Uninstalling the Metashell demo server
 
