@@ -31,4 +31,4 @@ BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
-tools/validate/generated_doc.sh bin/app/metashell
+tools/validate/generated_doc.sh bin/app/metashell/metashell
