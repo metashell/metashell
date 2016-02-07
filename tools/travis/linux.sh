@@ -37,7 +37,7 @@ cd ..
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
-tools/validate/generated_doc.sh bin/app/metashell
+tools/validate/generated_doc.sh bin/app/metashell/metashell
 
 # Test the demo server's code
 
