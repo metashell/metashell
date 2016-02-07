@@ -20,12 +20,14 @@
 #include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 namespace metashell
 {
   class clang_binary : public iface::executable
   {
   public:
-    clang_binary(const std::string& path_,
+    clang_binary(const boost::filesystem::path& path_,
                  const std::vector<std::string>& base_args_,
                  logger* logger_);
 

@@ -51,20 +51,20 @@ namespace
 #include "default_clang_search_path.hpp"
   };
 
-  bool file_exists(const std::string& path_)
+  bool file_exists(const boost::filesystem::path& path_)
   {
     std::ifstream f(path_.c_str());
     return !(f.fail() || f.bad());
   }
 
   template <class It>
-  std::string search_clang(It begin_, It end_)
+  boost::filesystem::path search_clang(It begin_, It end_)
   {
     const It p = std::find_if(begin_, end_, file_exists);
     return p == end_ ? "" : *p;
   }
 
-  std::string default_clang_path()
+  boost::filesystem::path default_clang_path()
   {
     return search_clang(
         default_clang_search_path + 1,
@@ -73,7 +73,7 @@ namespace
   }
 
 #if !(defined _WIN32 || defined __FreeBSD__ || defined __APPLE__)
-  std::string read_link(const std::string& path_)
+  boost::filesystem::path read_link(const boost::filesystem::path& path_)
   {
     const int step = 64;
     std::vector<char> buff;
@@ -88,7 +88,7 @@ namespace
 #endif
 
 #ifdef __OpenBSD__
-  std::string current_working_directory()
+  boost::filesystem::path current_working_directory()
   {
     std::vector<char> buff(1);
     while (getcwd(buff.data(), buff.size()) == NULL)
@@ -99,14 +99,7 @@ namespace
   }
 #endif
 
-  std::string directory_of_file(const std::string& path_)
-  {
-    boost::filesystem::path p(path_);
-    p.remove_filename();
-    return p.string();
-  }
-
-  std::string path_of_executable()
+  boost::filesystem::path path_of_executable()
   {
 #ifdef _WIN32
     char path[MAX_PATH];
@@ -131,19 +124,19 @@ namespace
     {
       // This code assumes that the application never changes the working
       // directory
-      return current_working_directory() + "/" + _argv0;
+      return current_working_directory() / _argv0;
     }
     else
     {
       const std::string p = just::environment::get("PATH");
-      std::vector<std::string> path;
+      std::vector<boost::filesystem::path> path;
       boost::split(path, p, [](char c_)
                    {
                      return c_ == ';';
                    });
       for (const auto& s : path)
       {
-        const std::string fn = s + "/" + _argv0;
+        const boost::filesystem::path fn = s / _argv0;
         if (file_exists(fn))
         {
           return fn;
@@ -172,12 +165,13 @@ default_environment_detector::default_environment_detector(
 {
 }
 
-std::string default_environment_detector::search_clang_binary()
+boost::filesystem::path default_environment_detector::search_clang_binary()
 {
   return default_clang_path();
 }
 
-bool default_environment_detector::file_exists(const std::string& path_)
+bool default_environment_detector::file_exists(
+    const boost::filesystem::path& path_)
 {
   return ::file_exists(path_);
 }
@@ -200,7 +194,9 @@ bool default_environment_detector::on_osx()
 #endif
 }
 
-std::string default_environment_detector::directory_of_executable()
+boost::filesystem::path default_environment_detector::directory_of_executable()
 {
-  return directory_of_file(path_of_executable());
+  boost::filesystem::path p = path_of_executable();
+  p.remove_filename();
+  return p;
 }

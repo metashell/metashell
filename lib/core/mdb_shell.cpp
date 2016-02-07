@@ -169,7 +169,7 @@ namespace metashell
       const data::config& conf_,
       iface::environment& env_arg,
       iface::engine& engine_,
-      const std::string& env_path_,
+      const boost::filesystem::path& env_path_,
       logger* logger_,
       std::unique_ptr<iface::destroyable> keep_alive_with_shell_)
     : conf(conf_),

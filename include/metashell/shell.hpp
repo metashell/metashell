@@ -29,6 +29,7 @@
 #include <metashell/iface/engine.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <set>
@@ -42,23 +43,23 @@ namespace metashell
   {
   public:
     shell(const data::config& config_,
-          const std::string& internal_dir_,
-          const std::string& env_filename_,
+          const boost::filesystem::path& internal_dir_,
+          const boost::filesystem::path& env_filename_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
     shell(const data::config& config_,
           command_processor_queue& cpq_,
-          const std::string& internal_dir_,
-          const std::string& env_filename_,
+          const boost::filesystem::path& internal_dir_,
+          const boost::filesystem::path& env_filename_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
     shell(const data::config& config_,
           std::unique_ptr<iface::environment> env_,
           command_processor_queue& cpq_,
-          const std::string& internal_dir_,
-          const std::string& env_filename_,
+          const boost::filesystem::path& internal_dir_,
+          const boost::filesystem::path& env_filename_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
@@ -103,7 +104,7 @@ namespace metashell
 
     iface::engine& engine();
 
-    std::string env_path() const;
+    boost::filesystem::path env_path() const;
 
     bool preprocess(iface::displayer& displayer_,
                     const std::string& exp_,
@@ -119,8 +120,8 @@ namespace metashell
     bool evaluate_metaprograms() const;
 
   private:
-    std::string _internal_dir;
-    std::string _env_filename;
+    boost::filesystem::path _internal_dir;
+    boost::filesystem::path _env_filename;
     std::string _line_prefix;
     std::unique_ptr<iface::environment> _env;
     data::config _config;

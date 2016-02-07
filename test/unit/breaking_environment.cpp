@@ -79,7 +79,7 @@ void breaking_environment::get_appended_throw_from_now()
   _get_appended_throw = true;
 }
 
-std::string breaking_environment::internal_dir() const
+boost::filesystem::path breaking_environment::internal_dir() const
 {
   return get_headers().internal_dir();
 }

@@ -26,14 +26,14 @@ class mock_environment_detector : public metashell::iface::environment_detector
 public:
   mock_environment_detector();
 
-  virtual std::string search_clang_binary() override;
-  void search_clang_binary_returns(const std::string& result_);
+  virtual boost::filesystem::path search_clang_binary() override;
+  void search_clang_binary_returns(const boost::filesystem::path& result_);
   int search_clang_binary_called_times() const;
 
-  virtual bool file_exists(const std::string& path_) override;
+  virtual bool file_exists(const boost::filesystem::path& path_) override;
   void file_exists_returns(bool result_);
   int file_exists_called_times() const;
-  const std::string& file_exists_last_arg() const;
+  const boost::filesystem::path& file_exists_last_arg() const;
 
   virtual bool on_windows() override;
   void on_windows_returns(bool result_);
@@ -43,17 +43,17 @@ public:
   void on_osx_returns(bool result_);
   int on_osx_called_times() const;
 
-  virtual std::string directory_of_executable() override;
+  virtual boost::filesystem::path directory_of_executable() override;
   int directory_of_executable_called_times() const;
-  void directory_of_executable_returns(const std::string& result_);
+  void directory_of_executable_returns(const boost::filesystem::path& result_);
 
 private:
-  std::string _search_clang_binary_returns;
+  boost::filesystem::path _search_clang_binary_returns;
   int _search_clang_binary_called_times;
 
   bool _file_exists_returns;
   int _file_exists_called_times;
-  std::string _file_exists_last_arg;
+  boost::filesystem::path _file_exists_last_arg;
 
   bool _on_windows_returns;
   int _on_windows_called_times;
@@ -62,7 +62,7 @@ private:
   int _on_osx_called_times;
 
   int _directory_of_executable_called_times;
-  std::string _directory_of_executable_returns;
+  boost::filesystem::path _directory_of_executable_returns;
 };
 
 #endif

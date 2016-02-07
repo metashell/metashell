@@ -48,7 +48,7 @@ namespace metashell
     mdb_shell(const data::config& conf,
               iface::environment& env,
               iface::engine& engine_,
-              const std::string& env_path_,
+              const boost::filesystem::path& env_path_,
               logger* logger_,
               std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
                   std::unique_ptr<iface::destroyable>());
@@ -150,7 +150,7 @@ namespace metashell
     bool is_stopped = false;
     logger* _logger;
     iface::engine& _engine;
-    std::string _env_path;
+    boost::filesystem::path _env_path;
 
     std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
   };

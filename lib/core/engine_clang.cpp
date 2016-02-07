@@ -31,6 +31,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 #include <fstream>
 #include <memory>
@@ -76,25 +77,26 @@ namespace
     }
   }
 
-  std::string
+  boost::filesystem::path
   templight_shipped_with_metashell(iface::environment_detector& env_detector_)
   {
-    return env_detector_.directory_of_executable() +
+    return env_detector_.directory_of_executable() /
            (env_detector_.on_windows() ? "\\templight\\templight.exe" :
                                          "/templight_metashell");
   }
 
-  std::string detect_clang_binary(iface::environment_detector& env_detector_,
-                                  iface::displayer& displayer_,
-                                  logger* logger_)
+  boost::filesystem::path
+  detect_clang_binary(iface::environment_detector& env_detector_,
+                      iface::displayer& displayer_,
+                      logger* logger_)
   {
     METASHELL_LOG(logger_, "Searching Clang binary");
 
-    const std::string clang_metashell =
+    const boost::filesystem::path clang_metashell =
         templight_shipped_with_metashell(env_detector_);
 
-    METASHELL_LOG(
-        logger_, "Path of Clang shipped with Metashell: " + clang_metashell);
+    METASHELL_LOG(logger_, "Path of Clang shipped with Metashell: " +
+                               clang_metashell.string());
 
     if (env_detector_.file_exists(clang_metashell))
     {
@@ -109,7 +111,7 @@ namespace
           "Clang binary shipped with Metashell is missing. Searching for"
           " another Clang binary at the following locations: " +
               boost::algorithm::join(default_clang_search_path, ", "));
-      const std::string clang = env_detector_.search_clang_binary();
+      const boost::filesystem::path clang = env_detector_.search_clang_binary();
 
       if (clang.empty())
       {
@@ -127,7 +129,7 @@ namespace
       }
       else
       {
-        METASHELL_LOG(logger_, "Clang binary found: " + clang);
+        METASHELL_LOG(logger_, "Clang binary found: " + clang.string());
       }
 
       return clang;
@@ -237,43 +239,53 @@ namespace
     }
   }
 
-  std::vector<std::string>
-  determine_include_path(const std::string& clang_binary_path_,
+  std::vector<boost::filesystem::path>
+  determine_include_path(const boost::filesystem::path& clang_binary_path_,
                          iface::environment_detector& env_detector_,
                          logger* logger_)
   {
-    METASHELL_LOG(
-        logger_, "Determining include path of Clang: " + clang_binary_path_);
+    METASHELL_LOG(logger_, "Determining include path of Clang: " +
+                               clang_binary_path_.string());
 
-    std::vector<std::string> result;
+    std::vector<boost::filesystem::path> result;
 
-    const std::string dir_of_executable =
+    const boost::filesystem::path dir_of_executable =
         env_detector_.directory_of_executable();
 
     if (env_detector_.on_windows())
     {
       // mingw headers shipped with Metashell
-      const std::string mingw_headers = dir_of_executable + "\\windows_headers";
+      const boost::filesystem::path mingw_headers =
+          dir_of_executable / "windows_headers";
 
       result.push_back(mingw_headers);
-      result.push_back(mingw_headers + "\\mingw32");
+      result.push_back(mingw_headers / "mingw32");
       if (clang_binary_path_.empty() ||
           clang_binary_path_ == templight_shipped_with_metashell(env_detector_))
       {
-        result.push_back(dir_of_executable + "\\templight\\include");
+        result.push_back(dir_of_executable / "templight" / "include");
       }
     }
     else
     {
       if (env_detector_.on_osx())
       {
-        result.push_back(dir_of_executable + "/../include/metashell/libcxx");
+        result.push_back(dir_of_executable / ".." / "include" / "metashell" /
+                         "libcxx");
       }
-      result.push_back(dir_of_executable + "/../include/metashell/templight");
+      result.push_back(dir_of_executable / ".." / "include" / "metashell" /
+                       "templight");
     }
 
-    METASHELL_LOG(logger_, "Include path determined: " +
-                               boost::algorithm::join(result, ";"));
+    METASHELL_LOG(
+        logger_, "Include path determined: " +
+                     boost::algorithm::join(
+                         result | boost::adaptors::transformed(
+                                      [](const boost::filesystem::path& p_)
+                                      {
+                                        return p_.string();
+                                      }),
+                         ";"));
 
     return result;
   }
@@ -281,13 +293,13 @@ namespace
   template <bool UseInternalTemplight>
   std::vector<std::string>
   clang_args(const data::config& config_,
-             const std::string& internal_dir_,
+             const boost::filesystem::path& internal_dir_,
              iface::environment_detector& env_detector_,
              logger* logger_,
-             const std::string& clang_path_)
+             const boost::filesystem::path& clang_path_)
   {
     std::vector<std::string> args{
-        "-iquote", ".", "-x", "c++-header", "-I", internal_dir_};
+        "-iquote", ".", "-x", "c++-header", "-I", internal_dir_.string()};
 
     if (UseInternalTemplight)
     {
@@ -309,12 +321,12 @@ namespace
         args.push_back(set_max_template_depth(256));
       }
 
-      const std::vector<std::string> include_path =
+      const std::vector<boost::filesystem::path> include_path =
           determine_include_path(clang_path_, env_detector_, logger_);
       args.reserve(args.size() + include_path.size());
-      for (const std::string& p : include_path)
+      for (const boost::filesystem::path& p : include_path)
       {
-        args.push_back("-I" + p);
+        args.push_back("-I" + p.string());
       }
 
       args.insert(args.end(), config_.extra_clang_args.begin(),
@@ -334,8 +346,8 @@ namespace
   {
   public:
     engine_clang(const data::config& config_,
-                 const std::string& internal_dir_,
-                 const std::string& env_filename_,
+                 const boost::filesystem::path& internal_dir_,
+                 const boost::filesystem::path& env_filename_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
                  logger* logger_)
@@ -355,10 +367,10 @@ namespace
     }
 
     engine_clang(const data::config& config_,
-                 const std::string& internal_dir_,
-                 const std::string& env_filename_,
+                 const boost::filesystem::path& internal_dir_,
+                 const boost::filesystem::path& env_filename_,
                  iface::environment_detector& env_detector_,
-                 std::string clang_path_,
+                 const boost::filesystem::path& clang_path_,
                  logger* logger_)
       : _clang_binary(
             clang_path_,
@@ -366,7 +378,7 @@ namespace
                 config_, internal_dir_, env_detector_, logger_, clang_path_),
             logger_),
         _internal_dir(internal_dir_),
-        _env_path(internal_dir_ + "/" + env_filename_),
+        _env_path(internal_dir_ / env_filename_),
         _logger(logger_)
     {
     }
@@ -392,7 +404,7 @@ namespace
       if (use_precompiled_headers_)
       {
         clang_args.push_back("-include");
-        clang_args.push_back(_env_path);
+        clang_args.push_back(_env_path.string());
       }
       if (templight_dump_path_)
       {
@@ -439,7 +451,7 @@ namespace
         if (use_precompiled_headers_)
         {
           clang_args.push_back("-include");
-          clang_args.push_back(_env_path);
+          clang_args.push_back(_env_path.string());
         }
 
         const data::process_output output =
@@ -475,22 +487,23 @@ namespace
       METASHELL_LOG(
           _logger, "Part kept for code completion: " + completion_start.first);
 
-      const data::unsaved_file src(env_.internal_dir() + "/code_complete.cpp",
+      const data::unsaved_file src(env_.internal_dir() / "code_complete.cpp",
                                    env_.get_appended(completion_start.first));
 
       generate(src);
 
       const source_position sp = source_position_of(src.content());
 
-      std::vector<std::string> clang_args{
-          "-fsyntax-only", "-Xclang",
-          "-code-completion-at=" + src.filename() + ":" + to_string(sp),
-          src.filename()};
+      std::vector<std::string> clang_args{"-fsyntax-only", "-Xclang",
+                                          "-code-completion-at=" +
+                                              src.filename().string() + ":" +
+                                              to_string(sp),
+                                          src.filename().string()};
 
       if (use_precompiled_headers_)
       {
         clang_args.push_back("-include");
-        clang_args.push_back(_env_path);
+        clang_args.push_back(_env_path.string());
       }
 
       const data::process_output o = _clang_binary.run(clang_args, "");
@@ -515,14 +528,17 @@ namespace
           });
     }
 
-    virtual void generate_precompiled_header(const std::string& fn_) override
+    virtual void
+    generate_precompiled_header(const boost::filesystem::path& fn_) override
     {
       using boost::algorithm::trim_copy;
 
-      METASHELL_LOG(_logger, "Generating percompiled header for " + fn_);
+      const std::string filename = fn_.string();
+
+      METASHELL_LOG(_logger, "Generating percompiled header for " + filename);
 
       std::vector<std::string> args{
-          "-iquote", ".", "-w", "-o", fn_ + ".pch", fn_};
+          "-iquote", ".", "-w", "-o", filename + ".pch", filename};
 
       const data::process_output o = _clang_binary.run(args, "");
       const std::string err = o.standard_output() + o.standard_error();
@@ -532,7 +548,7 @@ namespace
           trim_copy(err) !=
               "warning: precompiled header used __DATE__ or __TIME__.")
       {
-        throw exception("Error precompiling header " + fn_ + ": " + err);
+        throw exception("Error precompiling header " + filename + ": " + err);
       }
     }
 
@@ -554,8 +570,8 @@ namespace
 
   private:
     clang_binary _clang_binary;
-    std::string _internal_dir;
-    std::string _env_path;
+    boost::filesystem::path _internal_dir;
+    boost::filesystem::path _env_path;
     logger* _logger;
   };
 } // anonymous namespace
