@@ -32,6 +32,7 @@
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/filesystem.hpp>
 
 #include <just/temp.hpp>
 
@@ -108,14 +109,22 @@ int main(int argc_, const char* argv_[])
     {
       if (r.should_run_shell())
       {
+        using boost::filesystem::path;
+
         METASHELL_LOG(&logger, "Running shell");
 
         just::temp::directory dir;
 
+        const path temp_dir = path(dir.path()) / "shell";
+        const path mdb_dir = path(dir.path()) / "mdb";
+
+        create_directories(temp_dir);
+        create_directories(mdb_dir);
+
         std::unique_ptr<metashell::shell> shell(new metashell::shell(
-            r.cfg, ccfg.processor_queue(), dir.path(), env_filename,
-            eentry->second.build(r.cfg, dir.path(), env_filename, det,
-                                 ccfg.displayer(), &logger),
+            r.cfg, ccfg.processor_queue(), temp_dir, env_filename, mdb_dir,
+            eentry->second.build(
+                r.cfg, temp_dir, env_filename, det, ccfg.displayer(), &logger),
             &logger));
 
         if (r.cfg.splash_enabled)

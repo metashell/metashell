@@ -22,6 +22,8 @@
 #include <metashell/logger.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 
 namespace metashell
@@ -29,7 +31,10 @@ namespace metashell
   class pragma_mdb : public iface::pragma_handler
   {
   public:
-    pragma_mdb(shell& shell_, command_processor_queue* cpq_, logger* logger_);
+    pragma_mdb(shell& shell_,
+               command_processor_queue* cpq_,
+               const boost::filesystem::path& mdb_temp_dir_,
+               logger* logger_);
 
     virtual iface::pragma_handler* clone() const override;
 
@@ -45,6 +50,7 @@ namespace metashell
   private:
     shell& _shell;
     command_processor_queue* _cpq;
+    boost::filesystem::path _mdb_temp_dir;
     logger* _logger;
   };
 }

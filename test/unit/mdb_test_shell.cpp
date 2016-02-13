@@ -24,14 +24,15 @@
 
 namespace
 {
-  std::string temp_dir() { return std::string(); }
+  boost::filesystem::path temp_dir() { return boost::filesystem::path(); }
+  boost::filesystem::path mdb_temp_dir() { return boost::filesystem::path(); }
 
-  std::string env_filename() { return std::string(); }
+  boost::filesystem::path env_filename() { return boost::filesystem::path(); }
 
   metashell::shell& get_shell()
   {
     static metashell::shell sh(metashell::test_config(), temp_dir(),
-                               env_filename(),
+                               env_filename(), mdb_temp_dir(),
                                metashell::create_failing_engine());
     return sh;
   }
@@ -42,6 +43,7 @@ mdb_test_shell::mdb_test_shell(const std::string& line)
                          get_shell().env(),
                          get_shell().engine(),
                          get_shell().env_path(),
+                         mdb_temp_dir(),
                          nullptr)
 {
   env.append(line);
@@ -52,6 +54,7 @@ mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
                          shell.env(),
                          shell.engine(),
                          shell.env_path(),
+                         mdb_temp_dir(),
                          nullptr)
 {
   env.append(line);

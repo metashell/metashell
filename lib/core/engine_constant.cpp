@@ -34,7 +34,7 @@ namespace
 
     virtual data::result eval(const iface::environment&,
                               const boost::optional<std::string>&,
-                              const boost::optional<std::string>&,
+                              const boost::optional<boost::filesystem::path>&,
                               bool) override
     {
       return _result;

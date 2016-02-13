@@ -45,6 +45,7 @@ namespace metashell
     shell(const data::config& config_,
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
+          const boost::filesystem::path& mdb_temp_dir_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
@@ -52,6 +53,7 @@ namespace metashell
           command_processor_queue& cpq_,
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
+          const boost::filesystem::path& mdb_temp_dir_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
@@ -60,6 +62,7 @@ namespace metashell
           command_processor_queue& cpq_,
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
+          const boost::filesystem::path& mdb_temp_dir_,
           std::unique_ptr<iface::engine> engine_,
           logger* logger_ = nullptr);
 
@@ -135,7 +138,8 @@ namespace metashell
     bool _show_cpp_errors = true;
     bool _evaluate_metaprograms = true;
 
-    void init(command_processor_queue* cpq_);
+    void init(command_processor_queue* cpq_,
+              const boost::filesystem::path& mdb_temp_dir_);
     void rebuild_environment(const std::string& content_);
   };
 }

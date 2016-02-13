@@ -200,6 +200,7 @@ namespace metashell {
 shell::shell(const data::config& config_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
+             const boost::filesystem::path& mdb_temp_dir_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -214,13 +215,14 @@ shell::shell(const data::config& config_,
     _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
-  init(nullptr);
+  init(nullptr, mdb_temp_dir_);
 }
 
 shell::shell(const data::config& config_,
              command_processor_queue& cpq_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
+             const boost::filesystem::path& mdb_temp_dir_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -235,7 +237,7 @@ shell::shell(const data::config& config_,
     _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
   rebuild_environment();
-  init(&cpq_);
+  init(&cpq_, mdb_temp_dir_);
 }
 
 shell::shell(const data::config& config_,
@@ -243,6 +245,7 @@ shell::shell(const data::config& config_,
              command_processor_queue& cpq_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
+             const boost::filesystem::path& mdb_temp_dir_,
              std::unique_ptr<iface::engine> engine_,
              logger* logger_)
   : _internal_dir(internal_dir_),
@@ -256,7 +259,7 @@ shell::shell(const data::config& config_,
     _show_cpp_errors(determine_show_cpp_errors(config_)),
     _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
 {
-  init(&cpq_);
+  init(&cpq_, mdb_temp_dir_);
 }
 
 void shell::cancel_operation() {}
@@ -413,12 +416,14 @@ void shell::code_complete(const std::string& s_,
   }
 }
 
-void shell::init(command_processor_queue* cpq_)
+void shell::init(command_processor_queue* cpq_,
+                 const boost::filesystem::path& mdb_temp_dir_)
 {
   _env->append(default_env);
 
   // TODO: move it to initialisation later
-  _pragma_handlers = pragma_handler_map::build_default(*this, cpq_, _logger);
+  _pragma_handlers =
+      pragma_handler_map::build_default(*this, cpq_, mdb_temp_dir_, _logger);
 }
 
 const pragma_handler_map& shell::pragma_handlers() const

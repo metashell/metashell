@@ -41,7 +41,7 @@ namespace metashell
       virtual data::result
       eval(const environment& env_,
            const boost::optional<std::string>& tmp_exp_,
-           const boost::optional<std::string>& templight_dump_path_,
+           const boost::optional<boost::filesystem::path>& templight_dump_path_,
            bool use_precompiled_headers_) = 0;
 
       virtual data::result validate_code(const std::string& s_,
