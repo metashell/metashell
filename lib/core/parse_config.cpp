@@ -73,9 +73,10 @@ namespace
     const data::config cfg{};
     command_processor_queue cpq;
     const std::string internal_dir;
-    shell sh(cfg, cpq, internal_dir, "", create_failing_engine());
+    const boost::filesystem::path mdb_temp_dir;
+    shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir, create_failing_engine());
     const pragma_handler_map m =
-        pragma_handler_map::build_default(sh, &cpq, nullptr);
+        pragma_handler_map::build_default(sh, &cpq, mdb_temp_dir, nullptr);
 
     for (const auto& p : m)
     {

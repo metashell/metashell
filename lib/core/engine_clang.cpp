@@ -397,7 +397,7 @@ namespace
     virtual data::result
     eval(const iface::environment& env_,
          const boost::optional<std::string>& tmp_exp_,
-         const boost::optional<std::string>& templight_dump_path_,
+         const boost::optional<boost::filesystem::path>& templight_dump_path_,
          bool use_precompiled_headers_) override
     {
       std::vector<std::string> clang_args{"-Xclang", "-ast-dump"};
@@ -418,7 +418,7 @@ namespace
         // A workaround is to specify a standard output location with -o
         // then append ".trace.pbf" to the specified file (on the calling side)
         clang_args.push_back("-o");
-        clang_args.push_back(*templight_dump_path_);
+        clang_args.push_back(templight_dump_path_->string());
       }
 
       const data::process_output output =

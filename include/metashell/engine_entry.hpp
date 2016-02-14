@@ -19,6 +19,8 @@
 
 #include <metashell/engine_factory.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 
 namespace metashell
@@ -32,8 +34,8 @@ namespace metashell
 
     std::unique_ptr<iface::engine>
     build(const data::config& config_,
-          const std::string& internal_dir_,
-          const std::string& env_filename_,
+          const boost::filesystem::path& internal_dir_,
+          const boost::filesystem::path& env_filename_,
           iface::environment_detector& env_detector_,
           iface::displayer& displayer_,
           logger* logger_) const;

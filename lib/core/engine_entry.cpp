@@ -29,8 +29,8 @@ engine_entry::engine_entry(engine_factory factory_,
 
 std::unique_ptr<iface::engine>
 engine_entry::build(const data::config& config_,
-                    const std::string& internal_dir_,
-                    const std::string& env_filename_,
+                    const boost::filesystem::path& internal_dir_,
+                    const boost::filesystem::path& env_filename_,
                     iface::environment_detector& env_detector_,
                     iface::displayer& displayer_,
                     logger* logger_) const

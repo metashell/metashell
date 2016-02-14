@@ -33,7 +33,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_from_config)
   metashell::data::config cfg;
   cfg.verbose = false;
 
-  metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.verbose());
 }
@@ -43,7 +43,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_from_config)
   metashell::data::config cfg{};
   cfg.verbose = true;
 
-  metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(sh.verbose());
 }
@@ -53,7 +53,7 @@ JUST_TEST_CASE(test_verbose_mode_is_enabled_at_runtime)
   metashell::data::config cfg{};
   cfg.verbose = false;
 
-  metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
   sh.verbose(true);
 
   JUST_ASSERT(sh.verbose());
@@ -64,7 +64,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
   metashell::data::config cfg{};
   cfg.verbose = true;
 
-  metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
   sh.verbose(false);
 
   JUST_ASSERT(!sh.verbose());
@@ -73,7 +73,7 @@ JUST_TEST_CASE(test_verbose_mode_is_disabled_at_runtime)
 JUST_TEST_CASE(test_new_shell_not_stopped)
 {
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.stopped());
 }
@@ -81,7 +81,7 @@ JUST_TEST_CASE(test_new_shell_not_stopped)
 JUST_TEST_CASE(test_shell_stopped_after_stop)
 {
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.stop();
 
   JUST_ASSERT(sh.stopped());
@@ -92,7 +92,7 @@ JUST_TEST_CASE(test_shell_not_using_precompiled_headers)
   metashell::data::config cfg{};
   cfg.use_precompiled_headers = false;
 
-  metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  metashell::shell sh(cfg, "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.using_precompiled_headers());
 }
@@ -102,7 +102,8 @@ JUST_TEST_CASE(test_starting_shell_in_metaprogramming_mode)
   metashell::data::config cfg;
   cfg.preprocessor_mode = false;
 
-  const metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  const metashell::shell sh(
+      cfg, "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(!sh.echo());
   JUST_ASSERT(sh.show_cpp_errors());
@@ -114,7 +115,8 @@ JUST_TEST_CASE(test_starting_shell_in_preprocessor_mode)
   metashell::data::config cfg;
   cfg.preprocessor_mode = true;
 
-  const metashell::shell sh(cfg, "", "", metashell::create_failing_engine());
+  const metashell::shell sh(
+      cfg, "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT(sh.echo());
   JUST_ASSERT(!sh.show_cpp_errors());

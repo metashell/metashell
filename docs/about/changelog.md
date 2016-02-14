@@ -36,6 +36,8 @@
       `-fno-ms-compatibility -U_MSC_VER` arguments also need to be added.
     * **Breaking change** Environment saving is enabled by default and can be
       disabled by using `--disable_saving`.
+    * Reduced temporary directory creation: one shell creates one temporary
+      directory only and uses that (and its subdirectories)
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

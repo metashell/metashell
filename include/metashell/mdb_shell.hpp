@@ -49,6 +49,7 @@ namespace metashell
               iface::environment& env,
               iface::engine& engine_,
               const boost::filesystem::path& env_path_,
+              const boost::filesystem::path& mdb_temp_dir_,
               logger* logger_,
               std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
                   std::unique_ptr<iface::destroyable>());
@@ -95,7 +96,7 @@ namespace metashell
         iface::displayer& displayer_);
     data::type_or_error
     run_metaprogram(const boost::optional<std::string>& expression,
-                    const std::string& output_path_,
+                    const boost::filesystem::path& output_path_,
                     iface::displayer& displayer_);
 
     bool is_wrap_type(const data::type& type);
@@ -151,6 +152,7 @@ namespace metashell
     logger* _logger;
     iface::engine& _engine;
     boost::filesystem::path _env_path;
+    boost::filesystem::path _mdb_temp_dir;
 
     std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
   };
