@@ -647,6 +647,33 @@ class TestDeploy(unittest.TestCase):
             self.assertTrue(env.out_dir.exists('src/repo/develop/foo.txt'))
             self.assertTrue(env.out_dir.exists('src/repo/feature/foo/foo.txt'))
 
+    def test_git_cloning_failure_for_one_lib_does_not_affect_others(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'bar': 'asd'})
+            env.write_config([
+                {
+                    'name': 'broken_repo',
+                    'git': 'broken_git',
+                    'bin': ['bar']
+                },
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'bin': ['bar']
+                }
+            ])
+            deploy(env)
+
+            binary_path = 'bin/bar_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                os.path.realpath(symlink_path)
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

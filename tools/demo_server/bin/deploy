@@ -25,6 +25,9 @@ import json
 import errno
 import datetime
 
+# See comments where exceptions are caught
+# pylint: disable=broad-except
+
 
 def makedirs(path):
     """Create directories and don't throw if it exists"""
@@ -467,29 +470,30 @@ def deploy(config_file, out_dir, log):
     for subdir in ['bin', 'include', 'empty']:
         makedirs(os.path.join(out_dir, subdir))
 
-    configs = [
-        c for c in load_config_file(config_file, log)
-        if valid_config_entry(c, log)
-    ]
-
     symlinks_to_delete = collect_symlinks(out_dir)
     files_to_delete = flatten([
         files_not_symlinked_to(os.path.join(out_dir, subdir))
         for subdir in ['bin', 'include']
     ])
 
-    for config in configs:
-        cfg_path = os.path.join(out_dir, 'src', config['name'])
-        makedirs(cfg_path)
+    for config in load_config_file(config_file, log):
+        if valid_config_entry(config, log):
+            try:
+                cfg_path = os.path.join(out_dir, 'src', config['name'])
+                makedirs(cfg_path)
 
-        for branch in git_clone(config['git'], cfg_path, log):
-            used_links = branch.deploy(config, out_dir, log)
-            symlinks_to_delete = [
-                l for l in symlinks_to_delete if l not in used_links
-            ]
-            files_to_delete = [
-                f for f in files_to_delete if f not in used_links
-            ]
+                for branch in git_clone(config['git'], cfg_path, log):
+                    used_links = branch.deploy(config, out_dir, log)
+                    symlinks_to_delete = [
+                        l for l in symlinks_to_delete if l not in used_links
+                    ]
+                    files_to_delete = [
+                        f for f in files_to_delete if f not in used_links
+                    ]
+            except Exception, err:
+                # Catching all exceptions to avoid an error in one config
+                # preventing the deployment of the rest
+                log('Failed to deploy {0}: {1}'.format(config['name'], err))
 
     for link in symlinks_to_delete:
         os.remove(link)
