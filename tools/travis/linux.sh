@@ -15,8 +15,12 @@ egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 
 # Do static validations
 
-sudo pip install pep8 pylint gitpython daemonize
+sudo pip install pep8 pylint gitpython daemonize mkdocs
 tools/validate/all_static.sh
+
+# Build the docs
+
+mkdocs build
 
 # Get the templight binary
 
