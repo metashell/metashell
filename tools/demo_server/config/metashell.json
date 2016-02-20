@@ -6,7 +6,7 @@
       [
         "/bin/bash",
         "-c",
-        "tools/demo_sever/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
+        "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
       ["./build.sh"]
     ],
