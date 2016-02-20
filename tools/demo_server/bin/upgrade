@@ -58,8 +58,8 @@ class Action(object):
 
         try:
             shutil.copyfile(
-                '{0}/src/metashell/master/tools/demo_server/config/'
-                'metashell.json'.format(self.install_dir),
+                '{0}/src/metashell/{1}/tools/demo_server/config/'
+                'metashell.json'.format(self.install_dir, self.branch),
                 '{0}/metashell.json'.format(self.install_dir)
             )
         except IOError:
