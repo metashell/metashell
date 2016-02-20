@@ -21,11 +21,16 @@
     "include" : [
       { "src": "3rd/templight/build/lib/clang/3.8.0/include", "dst": "" }
     ],
-    "share" : [ { "src": "tools/demo_server/share", "dst": "" } ]
+    "share" : [ { "src": "tools/demo_server/share", "dst": "" } ],
+    "launcher" : {
+      "src": "tools/demo_server/launcher_template.html",
+      "dst": "html/demo.html"
+    }
   },
 
   {
     "name": "boost",
+    "url": "http://boost.org",
     "git": "https://github.com/boostorg/boost.git",
     "build": [
       ["./bootstrap.sh"],
@@ -38,6 +43,7 @@
 
   {
     "name": "mpllibs",
+    "url": "http://abel.web.elte.hu/mpllibs",
     "git": "https://github.com/sabel83/mpllibs.git",
     "include" : [
       { "src": "mpllibs", "dst": "mpllibs" }
@@ -46,6 +52,7 @@
 
   {
     "name": "metatest",
+    "url": "http://abel.web.elte.hu/metatest",
     "git": "https://github.com/sabel83/metatest.git",
     "include" : [
       { "src": "include/metatest", "dst": "metatest" }
@@ -54,6 +61,7 @@
 
   {
     "name": "FTMP",
+    "url": "https://github.com/minamiyama1994/FTMP",
     "git": "https://github.com/minamiyama1994/FTMP.git",
     "include" : [
       { "src": "include/FTMP", "dst": "FTMP" }
@@ -62,6 +70,7 @@
 
   {
     "name": "fatal",
+    "url": "https://github.com/facebook/fatal",
     "git": "https://github.com/facebook/fatal.git",
     "include" : [
       { "src": "fatal", "dst": "fatal" }
@@ -70,6 +79,7 @@
 
   {
     "name": "meta",
+    "url": "https://github.com/ericniebler/meta",
     "git": "https://github.com/ericniebler/meta.git",
     "include" : [
       { "src": "include/meta", "dst": "meta" }

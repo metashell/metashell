@@ -22,12 +22,14 @@ import unittest
 import util
 
 MODULE_UNDER_TEST = util.load_from_bin('deploy')
+SOME_PORT = '1234'
 
 
 def deploy(env):
     """Call deploy in the enviornment"""
     MODULE_UNDER_TEST.deploy(
         env.config_dir.relative('config.json'),
+        SOME_PORT,
         env.out_dir.path,
         env.log
     )
@@ -43,7 +45,7 @@ class TestDeploy(unittest.TestCase):
         with util.TempDir() as config_dir, util.TempDir() as out_dir:
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
             self.assertEqual(1, len(log.messages))
             self.assertTrue(log.messages[0].startswith(
                 'Error loading config file {0}: '.format(cfg_path)
@@ -54,7 +56,7 @@ class TestDeploy(unittest.TestCase):
             config_dir.write('config.json', '{')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
             self.assertEqual(1, len(log.messages))
             self.assertTrue(log.messages[0].startswith(
                 'Invalid JSON in config file {0}.\nContent: {{\n\nError: '
@@ -66,7 +68,7 @@ class TestDeploy(unittest.TestCase):
             config_dir.write('config.json', '[]')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
             self.assertEqual([], log.messages)
 
     def test_empty_entry_in_config_file(self):
@@ -74,7 +76,7 @@ class TestDeploy(unittest.TestCase):
             config_dir.write('config.json', '[{}]')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
             self.assertEqual(
                 [
                     'Missing field "name" in config entry {}',

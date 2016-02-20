@@ -1,0 +1,214 @@
+#!/usr/bin/python
+"""Test launcher HTML generation for the demo server"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import unittest
+import util
+
+MODULE_UNDER_TEST = util.load_from_bin('deploy')
+
+
+def read_file(filename):
+    """Reads the content of a file"""
+    try:
+        with open(filename, 'r') as in_file:
+            return in_file.read()
+    except IOError:
+        return ''
+
+
+def generate_launcher(env):
+    """Convenience wrapper for the function under test"""
+    config_path = env.config_dir.relative('config.json')
+    root = env.out_dir.path
+    configs = MODULE_UNDER_TEST.load_config_file(config_path, env.log)
+    summary = MODULE_UNDER_TEST.deploy_libs(configs, root, env.log).values()
+    return MODULE_UNDER_TEST.generate_launcher(summary)
+
+
+def get_config(name, configs):
+    """Get the config or return None"""
+    cfgs = [c for c in configs if c['name'] == name]
+    if len(cfgs) == 1:
+        return cfgs[0]
+    else:
+        return None
+
+
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+# pylint: disable=too-many-public-methods
+
+
+class TestGenerateLauncher(unittest.TestCase):
+
+    def test_branches_are_included_but_commits_are_not(self):
+        with util.CommonEnv(1) as env:
+            sha = env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature', create=True)
+
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'foo.txt'}]
+            }])
+            configs = generate_launcher(env)
+
+            config = get_config('repo', configs)
+            self.assertTrue(config is not None)
+
+            self.assertTrue('master' in config['versions'])
+            self.assertTrue('feature' in config['versions'])
+            self.assertTrue(sha not in config['versions'])
+
+    def test_branches_when_a_lib_name_is_a_prefix_of_another(self):
+        with util.CommonEnv(2) as env:
+
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature', create=True)
+
+            env.commit(1, {'foo.txt': 'asd'})
+            env.repos[1].checkout_branch('feature2', create=True)
+
+            env.write_config([
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'include': [{'src': 'foo.txt'}]
+                },
+                {
+                    'name': 'repo_other',
+                    'git': env.repository(1),
+                    'include': [{'src': 'foo.txt'}]
+                }
+            ])
+            configs = generate_launcher(env)
+
+            repo = get_config('repo', configs)
+            repo_other = get_config('repo_other', configs)
+
+            self.assertTrue(repo is not None)
+            self.assertTrue(repo_other is not None)
+
+            self.assertTrue('master' in repo['versions'])
+            self.assertTrue('feature' in repo['versions'])
+
+            self.assertTrue('master' in repo_other['versions'])
+            self.assertTrue('feature2' in repo_other['versions'])
+
+    def test_display_name(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'include': [{'src': 'foo.txt'}]
+            }])
+            configs = generate_launcher(env)
+
+            config = get_config('repo', configs)
+
+            self.assertTrue(config is not None)
+            self.assertEqual('Repo', config['display_name'])
+
+    def test_libs_with_no_version_are_not_added(self):
+        with util.CommonEnv(1) as env:
+
+            env.commit(0, {'foo.txt': 'asd'})
+            env.repos[0].checkout_branch('feature', create=True)
+
+            env.write_config([
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'include': [{'src': 'foo.txt'}]
+                },
+                {
+                    'name': 'repo_other',
+                    'git': 'broken_ref',
+                    'include': [{'src': 'foo.txt'}]
+                }
+            ])
+            configs = generate_launcher(env)
+
+            self.assertTrue(get_config('repo', configs) is not None)
+            self.assertTrue(get_config('repo_other', configs) is None)
+
+    def test_url(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo.txt': 'asd'})
+
+            env.write_config([
+                {
+                    'name': 'repo1',
+                    'git': env.repository(0),
+                    'include': [{'src': 'foo.txt'}]
+                },
+                {
+                    'name': 'repo2',
+                    'url': 'http://metashell.org',
+                    'git': env.repository(0),
+                    'include': [{'src': 'foo.txt'}]
+                }
+            ])
+            configs = generate_launcher(env)
+
+            repo1 = get_config('repo1', configs)
+            repo2 = get_config('repo2', configs)
+
+            self.assertTrue(repo1 is not None)
+            self.assertTrue(repo2 is not None)
+
+            self.assertEqual('', repo1['url'])
+            self.assertEqual('http://metashell.org', repo2['url'])
+
+    def test_generating_launcher(self):
+        with util.CommonEnv(1) as env:
+            env.commit(
+                0,
+                {
+                    'template':
+                        '#for $config in $configs\n'
+                        '$config.name - $config.display_name - $config.url\n'
+                        '#end for'
+                }
+            )
+            env.write_config([{
+                'name': 'repo',
+                'url': 'http://metashell.org',
+                'git': env.repository(0),
+                'include': [{'src': 'template'}],
+                'launcher': {'src': 'template', 'dst': 'foo'}
+            }])
+            MODULE_UNDER_TEST.deploy(
+                env.config_dir.relative('config.json'),
+                '1234',
+                env.out_dir.path,
+                env.log
+            )
+
+            self.assertTrue(env.out_dir.exists('share/repo_master/foo'))
+            self.assertEqual(
+                'repo - Repo - http://metashell.org\n',
+                read_file(env.out_dir.relative('share/repo_master/foo'))
+            )
+
+
+if __name__ == '__main__':
+    unittest.main()

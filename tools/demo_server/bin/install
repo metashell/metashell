@@ -229,7 +229,8 @@ function download_script {
 
 # Install dependencies
 
-sudo apt-get -y install shellinabox git g++ cmake libreadline-dev python-pip
+sudo apt-get -y install \
+  shellinabox git g++ cmake libreadline-dev python-pip python-cheetah
 sudo pip install mkdocs pep8 pylint gitpython daemonize
 
 # Create the installation directories

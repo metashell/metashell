@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html><head>
+  <title>Metashell demo</title>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+</head><body>
+
+<h1>Metashell</h1>
+
+<p>
+  You can start an on-line demo of
+  <a href='https://github.com/sabel83/metashell'>Metashell</a>
+  from this page. It uses
+  <a href='http://code.google.com/p/shellinabox/'>shellinabox</a> and in
+  Firefox some keys are not working properly. It is recommended to use other
+  browsers.
+</p>
+
+<p>
+  Metashell is an interactive shell for template metaprogramming. It is based on
+  the <a href='http://clang.llvm.org/doxygen/group__CINDEX.html'>libclang</a>,
+  the <a href='http://boost.org/libs/wave'>Boost.Wave</a> and the
+  <a href='http://www.gnu.org/software/readline'>Readline</a> libraries.
+</p>
+
+<form action=":$port" method="get">
+  <table cellspacing='0px' cellpadding='0' border='0'>
+  <tr>
+    <td>
+      The C++ standard to use:
+    </td>
+    <td>
+      <select name="_std">
+        <option value="c++11">c++11</option>
+        <option value="c++1y">c++14</option>
+      </select>
+    </td>
+  </tr>
+  <tr class="separator">
+    <td colspan="2">&nbsp;</td>
+  </tr>
+  #for $config in $configs
+    <tr>
+      <td>
+        The headers of the following
+        #if $config.url == ''
+          $config.display_name
+        #else
+          <a href="$config.url">$config.display_name</a>
+        #end if
+        version will be available:
+      </td>
+      <td>
+        <select name="$config.name">
+        #for version in $config.versions
+          <option value="$version">$version</option>
+        #end for
+        </select>
+      </td>
+    </tr>
+  #end for
+  </table>
+
+  <br />
+
+  <input type="submit" value="Start Metashell" />
+</form>
+
+</body></html>
