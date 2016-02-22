@@ -11,8 +11,8 @@
       ["./build.sh"]
     ],
     "bin": [
-      "bin/app/metashell",
-      "bin/app/templight_metashell",
+      "bin/app/metashell/metashell",
+      "bin/app/metashell/templight_metashell",
       "tools/demo_server/bin/deploy",
       "tools/demo_server/bin/upgrade",
       "tools/demo_server/bin/launch_demo",
