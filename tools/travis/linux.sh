@@ -47,3 +47,7 @@ tools/validate/generated_doc.sh bin/app/metashell/metashell
 
 tools/demo_server/test/test_git_clone
 tools/demo_server/test/test_deploy
+
+SRC_ROOT=. \
+  CONFIG=tools/demo_server/config/metashell.json \
+  tools/demo_server/test/test_config
