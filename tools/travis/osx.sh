@@ -27,7 +27,7 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh
+BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
 
 # Test that the documentation about the built-in pragmas and mdb commands is up to date
 
