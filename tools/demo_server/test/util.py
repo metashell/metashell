@@ -97,13 +97,13 @@ class GitRepository(object):
         self.temp_dir = TempDir()
         self.repo = None
 
-    def _in_repo(self, path):
+    def in_repo(self, path):
         """Turns a path relative to the repository to an absolute path"""
         return os.path.join(self.temp_dir.path, path)
 
     def write_file(self, path, content):
         """Create/write into a file in the repository"""
-        full_path = self._in_repo(path)
+        full_path = self.in_repo(path)
         dirname = os.path.dirname(full_path)
         if dirname != '':
             try:

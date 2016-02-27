@@ -21,6 +21,7 @@ import argparse
 import subprocess
 import os
 import shutil
+import stat
 import json
 import errno
 import datetime
@@ -31,13 +32,34 @@ import Cheetah.Template
 # pylint: disable=broad-except
 
 
+def set_permissions(path):
+    """Sets the permissions of a deployed file or directory recursively"""
+    paths = [path]
+    for root, dirs, files in os.walk(path):
+        paths.append(root)
+        paths.extend([os.path.join(root, d) for d in dirs])
+        paths.extend([os.path.join(root, f) for f in files])
+
+    for one_path in paths:
+        os.chmod(
+            one_path,
+            stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR |
+            stat.S_IRGRP | stat.S_IXGRP |
+            stat.S_IROTH | stat.S_IXOTH
+        )
+
+
 def makedirs(path):
     """Create directories and don't throw if it exists"""
-    try:
-        os.makedirs(path)
-    except OSError, err:
-        if err.errno != errno.EEXIST:
-            raise
+    paths = []
+    while path != '/':
+        paths.insert(0, path)
+        path, _ = os.path.split(path)
+
+    for subpath in paths:
+        if not os.path.exists(subpath):
+            os.mkdir(subpath)
+            set_permissions(subpath)
 
 
 class LogToFile(object):
@@ -250,6 +272,7 @@ def deploy_file(config_name, path_from, path_to, log):
                 shutil.copytree(path_from, path_to)
             else:
                 shutil.copy(path_from, path_to)
+            set_permissions(path_to)
         except IOError, err:
             log(
                 'In {0} error deploying {1}: errno {2}'.format(

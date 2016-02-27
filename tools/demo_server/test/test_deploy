@@ -18,11 +18,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import stat
 import unittest
 import util
 
 MODULE_UNDER_TEST = util.load_from_bin('deploy')
 SOME_PORT = '1234'
+
+
+def find(roots):
+    """Returns the list of files in roots recursively"""
+    for root in roots:
+        for path, dirs, files in os.walk(root):
+            for filename in dirs:
+                yield os.path.join(path, filename)
+            for filename in files:
+                yield os.path.join(path, filename)
+
+
+def world_readable(path):
+    """Check if the file is world readable"""
+    perms = stat.S_IMODE(os.stat(path).st_mode)
+    return \
+        bool(perms & stat.S_IRUSR) \
+        and bool(perms & stat.S_IRGRP) \
+        and bool(perms & stat.S_IROTH)
 
 
 def deploy(env):
@@ -666,6 +686,93 @@ class TestDeploy(unittest.TestCase):
                 env.out_dir.relative(binary_path),
                 symlink_to(symlink_path)
             )
+
+    def test_world_readable(self):
+        with util.TempDir() as tmp_dir:
+            tmp_dir.write('hello.txt', 'world')
+            tmp_path = tmp_dir.relative('hello.txt')
+
+            os.chmod(tmp_path, stat.S_IWUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(
+                tmp_path,
+                stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+            )
+            self.assertTrue(world_readable(tmp_path))
+
+    def test_deployed_files_are_world_readable(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo/bar': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['foo/bar'],
+                'include': [{'src': 'foo'}],
+                'share': [{'src': 'foo'}],
+                'launcher': {'src': 'foo/bar', 'dst': 'launcher'}
+            }])
+
+            deploy(env)
+
+            for path in find(
+                    env.out_dir.relative(d)
+                    for d in ['bin', 'include', 'share']
+            ):
+                self.assertEqual(
+                    path if world_readable(path) else '',
+                    path
+                )
+
+    def test_symlinks_are_deployed_by_copying_their_content(self):
+        with util.TempDir() as tmp_dir:
+            tmp_dir.write('hello.txt', 'world')
+            tmp_path = tmp_dir.relative('hello.txt')
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            with util.CommonEnv(1) as env:
+                repo = env.repos[0]
+
+                os.mkdir(repo.in_repo('foo'))
+                symlink_path = repo.in_repo('foo/link')
+                os.symlink(tmp_path, symlink_path)
+                self.assertEqual(tmp_path, symlink_to(symlink_path))
+
+                repo.add(symlink_path)
+                last_sha = repo.commit('Adding symlink')
+
+                env.write_config([{
+                    'name': 'repo',
+                    'git': repo.repository(),
+                    'bin': ['foo/link'],
+                    'include': [{'src': 'foo'}],
+                    'share': [{'src': 'foo'}],
+                    'launcher': {'src': 'foo/link', 'dst': 'launcher'}
+                }])
+                deploy(env)
+
+                for path_pattern in [
+                        'bin/link_{0}',
+                        'include/repo_{0}/foo/link',
+                        'share/repo_{0}/foo/link',
+                        'share/repo_{0}/launcher'
+                ]:
+                    path = path_pattern.format(last_sha)
+
+                    self.assertFalse(
+                        os.path.islink(env.out_dir.relative(path))
+                    )
+                    self.assertEqual('world', env.out_dir.read(path))
+
+                self.assertFalse(world_readable(tmp_path))
 
 
 if __name__ == '__main__':
