@@ -34,6 +34,12 @@ def deploy(env):
         env.log
     )
 
+
+def symlink_to(link):
+    """Returns where link points to. Returns None when link is not a symlink"""
+    return os.path.realpath(link) if os.path.islink(link) else None
+
+
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=too-many-public-methods
@@ -151,10 +157,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/bar_master')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_binary_to_deploy_does_not_exist(self):
@@ -186,10 +191,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/bar_master')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers(self):
@@ -208,10 +212,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers_to_other_path(self):
@@ -230,10 +233,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers_to_root_of_include(self):
@@ -252,10 +254,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_update(self):
@@ -279,10 +280,9 @@ class TestDeploy(unittest.TestCase):
 
             self.assertTrue(env.out_dir.exists(binary_path1))
             self.assertTrue(env.out_dir.exists(binary_path2))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path2),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_update_to_headers(self):
@@ -315,10 +315,9 @@ class TestDeploy(unittest.TestCase):
             self.assertTrue(
                 env.out_dir.exists(os.path.join(header_dir2, 'h/bar'))
             )
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir2),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deployed_code_is_not_redeployed(self):
@@ -383,10 +382,9 @@ class TestDeploy(unittest.TestCase):
             self.assertFalse(env.out_dir.exists(binary_path1))
             self.assertTrue(env.out_dir.exists(binary_path2))
             self.assertTrue(env.out_dir.exists(binary_path3))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path3),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deletion_of_non_referenced_headers(self):
@@ -414,10 +412,9 @@ class TestDeploy(unittest.TestCase):
             self.assertFalse(env.out_dir.exists(header_path1))
             self.assertTrue(env.out_dir.exists(header_path2))
             self.assertTrue(env.out_dir.exists(header_path3))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative('include/repo_{0}'.format(sha3)),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_symlink_of_deleted_branch_is_deleted(self):
@@ -467,10 +464,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/foo_feature_test')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_from_two_repositories(self):
@@ -497,10 +493,9 @@ class TestDeploy(unittest.TestCase):
                 )
 
                 self.assertTrue(env.out_dir.exists(binary_path))
-                self.assertTrue(os.path.islink(symlink_path))
                 self.assertEqual(
                     env.out_dir.relative(binary_path),
-                    os.path.realpath(symlink_path)
+                    symlink_to(symlink_path)
                 )
 
                 header_dir = 'include/repo{0}_{1}'.format(i, sha[i])
@@ -510,10 +505,9 @@ class TestDeploy(unittest.TestCase):
                 )
 
                 self.assertTrue(env.out_dir.exists(header_path))
-                self.assertTrue(os.path.islink(symlink_path))
                 self.assertEqual(
                     env.out_dir.relative(header_dir),
-                    os.path.realpath(symlink_path)
+                    symlink_to(symlink_path)
                 )
 
     def test_deploying_headers_to_a_different_config(self):
@@ -532,10 +526,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/other_repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_overriding_header_version(self):
@@ -595,10 +588,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('share/repo_master')
 
             self.assertTrue(env.out_dir.exists(share_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(share_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_empty_directory_is_created(self):
@@ -670,10 +662,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/bar_master')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
 
