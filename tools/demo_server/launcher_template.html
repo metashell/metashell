@@ -22,7 +22,11 @@
   <a href='http://www.gnu.org/software/readline'>Readline</a> libraries.
 </p>
 
-<form action=":$port" method="get">
+<script>
+  document.write(
+    '<form action="http://' + window.location.hostname + ':$port" method="get">'
+  );
+</script>
   <table cellspacing='0px' cellpadding='0' border='0'>
   <tr>
     <td>
