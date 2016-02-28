@@ -54,7 +54,11 @@
         version will be available:
       </td>
       <td>
+        #if $config.name == 'metashell'
+        <select name="_branch">
+        #else
         <select name="${config.name}_version">
+        #end if
         #for version in $config.versions
           <option value="$version">$version</option>
         #end for
