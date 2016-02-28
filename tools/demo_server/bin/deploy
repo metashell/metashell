@@ -645,6 +645,7 @@ def deploy(config_file, port, out_dir, log):
                                 'configs': launcher_info
                             }]
                         )))
+                        set_permissions(out_path)
                 except Exception, err:
                     # Catching all exceptions to avoid an error in one config
                     # preventing the deployment of the rest
