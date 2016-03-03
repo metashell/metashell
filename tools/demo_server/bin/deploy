@@ -631,7 +631,8 @@ def deploy(config_file, port, out_dir, log):
                         config['launcher']['dst']
                     )
                     makedirs(os.path.dirname(out_path))
-                    with open(out_path, 'w') as out_file:
+                    tmp_path = out_path + '.tmp'
+                    with open(tmp_path, 'w') as out_file:
                         out_file.write(str(Cheetah.Template.Template(
                             load_file(os.path.join(
                                 out_dir,
@@ -645,7 +646,8 @@ def deploy(config_file, port, out_dir, log):
                                 'configs': launcher_info
                             }]
                         )))
-                        set_permissions(out_path)
+                        set_permissions(tmp_path)
+                    os.rename(tmp_path, out_path)
                 except Exception, err:
                     # Catching all exceptions to avoid an error in one config
                     # preventing the deployment of the rest
