@@ -33,7 +33,7 @@ the commands.
   `sudo /etc/init.d/shellinabox stop` and `sudo update-rc.d shellinabox disable`
 
 The installation script is configurable using environment variables. Here are
-the options and ther default values:
+the options and their default values:
 
 * `METASHELL_BRANCH=master` The branch to get the server's code (eg. updater
   script, wrapper for Metashell, etc) from.
