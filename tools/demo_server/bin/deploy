@@ -269,7 +269,15 @@ def deploy_file(config_name, path_from, path_to, log):
     if not os.path.exists(path_to):
         try:
             if os.path.isdir(path_from):
-                shutil.copytree(path_from, path_to)
+                makedirs(path_to)
+                run_command(
+                    ['/usr/bin/rsync', '-rL'] + [
+                        os.path.join(path_from, f)
+                        for f in os.listdir(path_from)
+                    ] + [path_to],
+                    '/',
+                    log
+                )
             else:
                 shutil.copy(path_from, path_to)
             set_permissions(path_to)
