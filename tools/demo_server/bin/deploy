@@ -344,31 +344,55 @@ class Branch(object):
     def __init__(self, name, last_commit):
         self.name = name
         self.last_commit = last_commit
+        self.was_build_error = False
 
     def src_dir(self, config_name, out_dir):
         """src dir of the branch"""
         return os.path.join(out_dir, 'src', config_name, self.name)
 
-    def deploy(self, config, out_dir, log):
-        """Deploy a branch"""
-        src_dir = self.src_dir(config['name'], out_dir)
-        for cmd in optional_list(config, 'build'):
-            returncode = run_command(cmd, src_dir, log)[2]
-            if returncode != 0:
-                log(
-                    'Aborting deployment of branch {0}/{1}'.format(
-                        config['name'],
-                        self.name
-                    )
-                )
-                return []
+    def build(self, config_name, commands, out_dir, log):
+        """Build branch"""
+        src_dir = self.src_dir(config_name, out_dir)
+        for cmd in commands:
+            if run_command(cmd, src_dir, log)[2] != 0:
+                log('Aborting compilation of branch {0}/{1}'.format(
+                    config_name, self.name))
+                self.was_build_error = True
+                return
 
-        deployer = Deployer(config['name'], self, out_dir, log)
-        return flatten([
-            deployer.deploy(f, t)
-            for t in ['bin', 'include', 'share']
-            for f in optional_list(config, t)
-        ])
+    def deployment_info(self, config_name, deploy_info, out_dir):
+        """Collect deployment information"""
+        if self.was_build_error:
+            return []
+        else:
+            deployer = Deployer(config_name, self, out_dir)
+            return flatten(
+                deployer.deployment_info(f, t) for (t, f) in deploy_info
+            )
+
+    def generate_launcher(self, out_dir, launcher, config_name, search_list):
+        """Generate the launcher page"""
+        out_path = os.path.join(
+            out_dir,
+            'share',
+            '{0}_{1}'.format(config_name, self.name),
+            launcher['dst']
+        )
+        makedirs(os.path.dirname(out_path))
+        tmp_path = out_path + '.tmp'
+        with open(tmp_path, 'w') as out_file:
+            out_file.write(str(Cheetah.Template.Template(
+                load_file(os.path.join(
+                    out_dir,
+                    'src',
+                    config_name,
+                    self.name,
+                    launcher['src']
+                )),
+                searchList=search_list
+            )))
+            set_permissions(tmp_path)
+        os.rename(tmp_path, out_path)
 
 
 def first_dir_in_path(path):
@@ -382,19 +406,62 @@ def first_dir_in_path(path):
 def join_path(path1, path2):
     """Join two paths. If path2 starts with /, it is still treated as a
     relative path"""
-    if path2.startswith('/'):
-        path2 = path2[1:]
-    return os.path.join(path1, path2)
+    if path2:
+        if path2.startswith('/'):
+            path2 = path2[1:]
+        return os.path.join(path1, path2)
+    else:
+        return path1
+
+
+class FileDeployment(object):
+    """The deployment of one file"""
+
+    def __init__(self, name, deployed_file, path_from_to, link_name):
+        self.name = name
+        self.deployed_file = deployed_file
+        self.path_from, self.path_to = path_from_to
+        self.link_name = link_name
+        self.base = None
+        self.to_path = None
+
+    def with_base(self, base):
+        """Setter of base for fluent API"""
+        self.base = base
+        return self
+
+    def with_to_path(self, to_path):
+        """Setter of to_path for fluent API"""
+        self.to_path = to_path
+        return self
+
+    def deployed_filename(self):
+        """Returns the name of the deployed file (or link)"""
+        return self.link_name if self.link_name else self.deployed_file
+
+    def deploy(self, log):
+        """Do the deployment"""
+        deploy_file(self.name, self.path_from, self.path_to, log)
+        if self.link_name:
+            symlink(os.path.basename(self.deployed_file), self.link_name, log)
+
+
+def determine_to_path_suffix(entry_config, from_path_suffix):
+    """Determines the suffix for the path deployment"""
+    if 'dst' in entry_config:
+        return \
+            None if entry_config['dst'] in ['', '.'] else entry_config['dst']
+    else:
+        return from_path_suffix
 
 
 class Deployer(object):
     """Class for deploying files of a project"""
 
-    def __init__(self, name, branch, out_dir, log):
+    def __init__(self, name, branch, out_dir):
         self.name = name
         self.branch = branch
         self.out_dir = out_dir
-        self.log = log
         for path in ['bin', 'include', 'share']:
             makedirs(self.relative(path))
 
@@ -402,28 +469,14 @@ class Deployer(object):
         """Returns a path relative to the deploy path"""
         return os.path.join(self.out_dir, path)
 
-    def _deploy(self, from_path, abs_to_path, to_path_suffix, create_link):
-        """Deploy one file"""
-        deployed_file = abs_to_path + first_dir_in_path(to_path_suffix)
-
-        deploy_file(
-            self.name,
-            os.path.join(
-                self.branch.src_dir(self.name, self.out_dir),
-                from_path
-            ),
-            abs_to_path + to_path_suffix,
-            self.log
+    def in_src_dir(self, path):
+        """a path in the src dir of the branch"""
+        return os.path.join(
+            self.branch.src_dir(self.name, self.out_dir),
+            path
         )
-        if create_link:
-            link_name = \
-                abs_to_path + '_' + escape_branch_name(self.branch.name)
-            symlink(os.path.basename(deployed_file), link_name, self.log)
-            return link_name
-        else:
-            return deployed_file
 
-    def _complex_deploy(self, entry_config, to_path):
+    def _complex_deploy_info(self, entry_config, to_path):
         """Deploy one or more files in a (user) configurable way"""
         if '*' in entry_config['src']:
             commit_mode = False
@@ -444,52 +497,47 @@ class Deployer(object):
 
         results = []
         for from_path in from_paths:
-            base = \
-                entry_config['to_config'] if 'to_config' in entry_config \
+            base = entry_config['to_config'] if 'to_config' in entry_config \
                 else self.name
-            to_path_suffix = None
-            if 'dst' in entry_config:
-                if entry_config['dst'] not in ['', '.']:
-                    to_path_suffix = entry_config['dst']
-            else:
-                to_path_suffix = from_path_suff
-            file_id = \
-                self.branch.last_commit if commit_mode \
-                else os.path.basename(from_path)
-            results.append(
-                (
-                    base,
-                    to_path,
-                    self._deploy(
-                        from_path + from_path_suff,
-                        os.path.join(self.relative(to_path), base),
-                        '_' + (
-                            file_id if to_path_suffix is None
-                            else join_path(file_id, to_path_suffix)
-                        ),
-                        commit_mode
-                    )
-                )
+
+            abs_to_path = os.path.join(self.relative(to_path), base)
+            to_path_suffix = '_' + join_path(
+                self.branch.last_commit if commit_mode
+                else os.path.basename(from_path),
+                determine_to_path_suffix(entry_config, from_path_suff)
             )
+            results.append(FileDeployment(
+                self.name,
+                abs_to_path + first_dir_in_path(to_path_suffix),
+                (
+                    self.in_src_dir(from_path + from_path_suff),
+                    abs_to_path + to_path_suffix
+                ),
+                abs_to_path + '_' + escape_branch_name(self.branch.name)
+                if commit_mode else None
+            ).with_base(base).with_to_path(to_path))
         return results
 
-    def deploy(self, entry_config, to_path):
-        """Deploy one or more files"""
+    def deployment_info(self, entry_config, to_path):
+        """Collects the files to deploy"""
         if to_path in ['include', 'share']:
-            return self._complex_deploy(entry_config, to_path)
+            return self._complex_deploy_info(entry_config, to_path)
         else:
-            return [(
-                self.name,
-                to_path,
-                self._deploy(
-                    entry_config,
-                    os.path.join(
-                        self.relative(to_path),
-                        os.path.basename(entry_config)
+            abs_to_path = os.path.join(
+                self.relative(to_path),
+                os.path.basename(entry_config)
+            )
+            return [
+                FileDeployment(
+                    self.name,
+                    abs_to_path + '_' + self.branch.last_commit,
+                    (
+                        self.in_src_dir(entry_config),
+                        abs_to_path + '_' + self.branch.last_commit
                     ),
-                    '_' + self.branch.last_commit,
-                    True)
-            )]
+                    abs_to_path + '_' + escape_branch_name(self.branch.name)
+                ).with_base(self.name).with_to_path(to_path)
+            ]
 
 
 def collect_symlinks(out_dir):
@@ -521,34 +569,116 @@ def version_of(name, link):
 class DeployedLib(object):
     """Describes a deployed library's attributes"""
 
-    def __init__(self, name, url):
-        self.name = name
-        self.url = url
+    def __init__(self, config):
+        self.config = config
         self.branches = []
         self.used_links = []
         self.versions = []
+
+    def deploy_info(self):
+        """Getter for deployment information"""
+        return [
+            (t, f)
+            for t in ['bin', 'include', 'share']
+            for f in optional_list(self.config, t)
+        ]
+
+    def name(self):
+        """Getter for the name"""
+        return self.config['name']
 
     def uses_link(self, to_path, link):
         """Register a symlink deployed for the library"""
         self.used_links.append(link)
         if to_path == 'include':
-            self.versions.append(version_of(self.name, link))
+            self.versions.append(version_of(self.name(), link))
 
     def display_name(self):
         """Returns the display name of the library"""
-        if self.name == '':
+        if self.name() == '':
             return ''
         else:
-            return self.name[0].upper() + self.name[1:]
+            return self.name()[0].upper() + self.name()[1:]
 
     def launcher_info(self):
         """Builds the tuple describing the launcher information"""
         return {
-            'name': self.name,
+            'name': self.name(),
             'display_name': self.display_name(),
-            'url': self.url,
+            'url': self.config['url'] if 'url' in self.config else '',
             'versions': self.versions
         }
+
+    def clone(self, out_dir, log):
+        """Clone the source code"""
+        cfg_path = os.path.join(out_dir, 'src', self.name())
+        makedirs(cfg_path)
+        try:
+            self.branches = git_clone(self.config['git'], cfg_path, log)
+        except Exception, err:
+            # Catching all exceptions to avoid an error in one config
+            # preventing the deployment of the rest
+            log('Failed to deploy {0}: {1}'.format(self.name(), err))
+
+    def build(self, out_dir, log):
+        """Build all branches"""
+        if 'build' in self.config:
+            for branch in self.branches:
+                try:
+                    branch.build(
+                        self.name(),
+                        self.config['build'],
+                        out_dir,
+                        log
+                    )
+                except Exception, err:
+                    # Catching all exceptions to avoid an error in one branch
+                    # preventing the deployment of the rest
+                    log('Failed to deploy branch {0} of {1}: {2}'.format(
+                        branch.name, self.name(), err))
+
+    def deploy(self, out_dir, log):
+        """Deploy the files"""
+        for branch in self.branches:
+            for dep in branch.deployment_info(
+                    self.name(), self.deploy_info(), out_dir):
+                dep.deploy(log)
+                if dep.base == self.name():
+                    self.uses_link(dep.to_path, dep.deployed_filename())
+
+    def external_links(self, out_dir):
+        """Collect the external links of the library"""
+        return [
+            (d.base, d.to_path, d.deployed_filename())
+            for b in self.branches
+            for d in b.deployment_info(
+                self.name(),
+                self.deploy_info(),
+                out_dir
+            )
+            if d.base != self.name()
+        ]
+
+    def generate_launcher(self, out_dir, log, launcher_info, port):
+        """Generate the launcher page"""
+        if 'launcher' in self.config:
+            for branch in self.branches:
+                try:
+                    branch.generate_launcher(
+                        out_dir,
+                        self.config['launcher'],
+                        self.name(),
+                        [{'port': port, 'configs': launcher_info}]
+                    )
+                except Exception, err:
+                    # Catching all exceptions to avoid an error in one config
+                    # preventing the deployment of the rest
+                    log(
+                        'Failed to generate launcher for {0}: {1}'.format(
+                            self.name(),
+                            err
+                        )
+                    )
 
 
 def generate_launcher(summary):
@@ -556,38 +686,21 @@ def generate_launcher(summary):
     return [dl.launcher_info() for dl in summary if dl.versions]
 
 
-def deploy_lib(config, out_dir, log):
-    """Deploy one library. Returns the DeployedLib object and the external
-    links deployed by the lib"""
-    deploy_info = DeployedLib(
-        config['name'],
-        config['url'] if 'url' in config else ''
-    )
-    external_links = []
-    try:
-        name = config['name']
-        cfg_path = os.path.join(out_dir, 'src', name)
-        makedirs(cfg_path)
-
-        deploy_info.branches = git_clone(config['git'], cfg_path, log)
-
-        for branch in deploy_info.branches:
-            for in_config, to_path, link \
-                    in branch.deploy(config, out_dir, log):
-                if in_config == name:
-                    deploy_info.uses_link(to_path, link)
-                else:
-                    external_links.append((in_config, to_path, link))
-    except Exception, err:
-        # Catching all exceptions to avoid an error in one config
-        # preventing the deployment of the rest
-        log('Failed to deploy {0}: {1}'.format(config['name'], err))
-    return (deploy_info, external_links)
+def libs_to_deploy(configs, out_dir):
+    """Generates the map of deployment information"""
+    summary = {c['name']: DeployedLib(c) for c in configs}
+    for lib in summary.values():
+        for in_config, to_path, link in lib.external_links(out_dir):
+            if in_config not in summary:
+                summary[in_config] = DeployedLib(
+                    {'name': in_config, 'git': ''}
+                )
+            summary[in_config].uses_link(to_path, link)
+    return summary
 
 
-def deploy_libs(configs, out_dir, log):
+def deploy_libs(configs, port, out_dir, log):
     """Do the deployment of the libraries and return the deployment summary"""
-
     for subdir in ['bin', 'include', 'empty']:
         makedirs(os.path.join(out_dir, subdir))
 
@@ -597,16 +710,17 @@ def deploy_libs(configs, out_dir, log):
         for subdir in ['bin', 'include']
     ])
 
-    summary = {}
-    external_links = []
-    for config in configs:
-        lib, ext_links = deploy_lib(config, out_dir, log)
-        external_links.extend(ext_links)
-        summary[lib.name] = lib
-    for in_config, to_path, link in external_links:
-        if in_config not in summary:
-            summary[in_config] = DeployedLib(in_config, '')
-        summary[in_config].uses_link(to_path, link)
+    summary = libs_to_deploy(configs, out_dir)
+
+    for lib in summary.values():
+        lib.clone(out_dir, log)
+        lib.build(out_dir, log)
+        lib.deploy(out_dir, log)
+
+    launcher_info = generate_launcher(summary.values())
+
+    for lib in summary.values():
+        lib.generate_launcher(out_dir, log, launcher_info, port)
 
     for link in symlinks_to_delete:
         if all(link not in lib.used_links for lib in summary.values()):
@@ -616,55 +730,20 @@ def deploy_libs(configs, out_dir, log):
         if all(f not in lib.used_links for lib in summary.values())
     ])
 
-    return summary
+    return launcher_info
 
 
 def deploy(config_file, port, out_dir, log):
     """Do the deployment"""
-    configs = [
-        c for c in load_config_file(config_file, log)
-        if valid_config_entry(c, log)
-    ]
-    summary = deploy_libs(configs, out_dir, log)
-    launcher_info = generate_launcher(summary.values())
-
-    for config in configs:
-        if 'launcher' in config:
-            for branch in summary[config['name']].branches:
-                try:
-                    out_path = os.path.join(
-                        out_dir,
-                        'share',
-                        '{0}_{1}'.format(config['name'], branch.name),
-                        config['launcher']['dst']
-                    )
-                    makedirs(os.path.dirname(out_path))
-                    tmp_path = out_path + '.tmp'
-                    with open(tmp_path, 'w') as out_file:
-                        out_file.write(str(Cheetah.Template.Template(
-                            load_file(os.path.join(
-                                out_dir,
-                                'src',
-                                config['name'],
-                                branch.name,
-                                config['launcher']['src']
-                            )),
-                            searchList=[{
-                                'port': port,
-                                'configs': launcher_info
-                            }]
-                        )))
-                        set_permissions(tmp_path)
-                    os.rename(tmp_path, out_path)
-                except Exception, err:
-                    # Catching all exceptions to avoid an error in one config
-                    # preventing the deployment of the rest
-                    log(
-                        'Failed to generate launcher for {0}: {1}'.format(
-                            config['name'],
-                            err
-                        )
-                    )
+    deploy_libs(
+        [
+            c for c in load_config_file(config_file, log)
+            if valid_config_entry(c, log)
+        ],
+        port,
+        out_dir,
+        log
+    )
 
 
 def main():

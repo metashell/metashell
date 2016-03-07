@@ -37,8 +37,7 @@ def generate_launcher(env):
     config_path = env.config_dir.relative('config.json')
     root = env.out_dir.path
     configs = MODULE_UNDER_TEST.load_config_file(config_path, env.log)
-    summary = MODULE_UNDER_TEST.deploy_libs(configs, root, env.log).values()
-    return MODULE_UNDER_TEST.generate_launcher(summary)
+    return MODULE_UNDER_TEST.deploy_libs(configs, 1234, root, env.log)
 
 
 def get_config(name, configs):
