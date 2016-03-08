@@ -615,6 +615,11 @@ class DeployedLib(object):
         makedirs(cfg_path)
         try:
             self.branches = git_clone(self.config['git'], cfg_path, log)
+            for branch in self.branches:
+                for dep in branch.deployment_info(
+                        self.name(), self.deploy_info(), out_dir):
+                    if dep.base == self.name():
+                        self.uses_link(dep.to_path, dep.deployed_filename())
         except Exception, err:
             # Catching all exceptions to avoid an error in one config
             # preventing the deployment of the rest
@@ -643,8 +648,6 @@ class DeployedLib(object):
             for dep in branch.deployment_info(
                     self.name(), self.deploy_info(), out_dir):
                 dep.deploy(log)
-                if dep.base == self.name():
-                    self.uses_link(dep.to_path, dep.deployed_filename())
 
     def external_links(self, out_dir):
         """Collect the external links of the library"""
@@ -696,7 +699,7 @@ def libs_to_deploy(configs, out_dir):
                     {'name': in_config, 'git': ''}
                 )
             summary[in_config].uses_link(to_path, link)
-    return summary
+    return summary.values()
 
 
 def deploy_libs(configs, port, out_dir, log):
@@ -712,22 +715,26 @@ def deploy_libs(configs, port, out_dir, log):
 
     summary = libs_to_deploy(configs, out_dir)
 
-    for lib in summary.values():
+    for lib in summary:
         lib.clone(out_dir, log)
+
+    launcher_info = generate_launcher(summary)
+
+    for lib in summary:
         lib.build(out_dir, log)
+
+    for lib in summary:
         lib.deploy(out_dir, log)
 
-    launcher_info = generate_launcher(summary.values())
-
-    for lib in summary.values():
+    for lib in summary:
         lib.generate_launcher(out_dir, log, launcher_info, port)
 
     for link in symlinks_to_delete:
-        if all(link not in lib.used_links for lib in summary.values()):
+        if all(link not in lib.used_links for lib in summary):
             os.remove(link)
     delete_files([
         f for f in files_to_delete
-        if all(f not in lib.used_links for lib in summary.values())
+        if all(f not in lib.used_links for lib in summary)
     ])
 
     return launcher_info
