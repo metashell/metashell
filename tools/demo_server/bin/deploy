@@ -52,7 +52,7 @@ def set_permissions(path):
 def makedirs(path):
     """Create directories and don't throw if it exists"""
     paths = []
-    while path != '/':
+    while path not in ['', '/']:
         paths.insert(0, path)
         path, _ = os.path.split(path)
 
@@ -266,29 +266,42 @@ def optional_list(config, key):
 def deploy_file(config_name, path_from, path_to, log):
     """Deploy a file"""
     makedirs(os.path.dirname(path_to))
-    if not os.path.exists(path_to):
-        try:
-            if os.path.isdir(path_from):
-                makedirs(path_to)
-                run_command(
-                    ['/usr/bin/rsync', '-rL'] + [
-                        os.path.join(path_from, f)
-                        for f in os.listdir(path_from)
-                    ] + [path_to],
-                    '/',
-                    log
-                )
-            else:
-                shutil.copy(path_from, path_to)
-            set_permissions(path_to)
-        except IOError, err:
-            log(
-                'In {0} error deploying {1}: errno {2}'.format(
-                    config_name,
-                    os.path.basename(path_from),
-                    err.errno
-                )
+    try:
+        abs_from = os.path.abspath(path_from)
+        abs_to = os.path.abspath(path_to)
+        if os.path.isdir(abs_from):
+            makedirs(abs_to)
+            run_command(
+                ['/usr/bin/rsync', '-ruL'] + [
+                    os.path.join(abs_from, f)
+                    for f in os.listdir(abs_from)
+                ] + [abs_to],
+                '/',
+                log
             )
+        else:
+            run_command(
+                ['/usr/bin/rsync', '-uL', abs_from, abs_to],
+                '/',
+                log
+            )
+        set_permissions(abs_to)
+    except IOError, err:
+        log(
+            'In {0} error deploying {1}: errno {2}'.format(
+                config_name,
+                os.path.basename(path_from),
+                err.errno
+            )
+        )
+    except OSError, err:
+        log(
+            'In {0} error deploying {1}: errno {2}'.format(
+                config_name,
+                os.path.basename(path_from),
+                err.errno
+            )
+        )
 
 
 def escape_branch_name(name):
@@ -374,8 +387,9 @@ class Branch(object):
         """Generate the launcher page"""
         out_path = os.path.join(
             out_dir,
-            'share',
-            '{0}_{1}'.format(config_name, self.name),
+            'src',
+            config_name,
+            self.name,
             launcher['dst']
         )
         makedirs(os.path.dirname(out_path))
@@ -704,6 +718,7 @@ def libs_to_deploy(configs, out_dir):
 
 def deploy_libs(configs, port, out_dir, log):
     """Do the deployment of the libraries and return the deployment summary"""
+
     for subdir in ['bin', 'include', 'empty']:
         makedirs(os.path.join(out_dir, subdir))
 
@@ -721,13 +736,13 @@ def deploy_libs(configs, port, out_dir, log):
     launcher_info = generate_launcher(summary)
 
     for lib in summary:
+        lib.generate_launcher(out_dir, log, launcher_info, port)
+
+    for lib in summary:
         lib.build(out_dir, log)
 
     for lib in summary:
         lib.deploy(out_dir, log)
-
-    for lib in summary:
-        lib.generate_launcher(out_dir, log, launcher_info, port)
 
     for link in symlinks_to_delete:
         if all(link not in lib.used_links for lib in summary):

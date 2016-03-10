@@ -202,10 +202,64 @@ class TestGenerateLauncher(unittest.TestCase):
                 env.log
             )
 
-            self.assertTrue(env.out_dir.exists('share/repo_master/foo'))
+            self.assertTrue(env.out_dir.exists('src/repo/master/foo'))
             self.assertEqual(
                 'repo - Repo - http://metashell.org\n',
-                read_file(env.out_dir.relative('share/repo_master/foo'))
+                read_file(env.out_dir.relative('src/repo/master/foo'))
+            )
+
+    def test_launcher_is_regenerated_and_redeployed_when_a_dep_changes(self):
+        with util.CommonEnv(2) as env:
+            env.commit(0, {
+                'template':
+                '#for $config in $configs\n'
+                '$config.name\n'
+                '#for $version in $config.versions\n'
+                '  $version\n'
+                '#end for\n'
+                '#end for'
+            })
+            env.commit(1, {'bar.txt': 'asd'})
+
+            env.write_config([
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'share': [{'src': 'generated'}],
+                    'launcher': {'src': 'template', 'dst': 'generated'}
+                },
+                {
+                    'name': 'dep',
+                    'git': env.repository(1),
+                    'include': [{'src': 'bar.txt'}]
+                }
+            ])
+            generate_launcher(env)
+
+            expected = 'dep\n  master\n'
+            self.assertEqual(
+                expected,
+                read_file(env.out_dir.relative('src/repo/master/generated'))
+            )
+            self.assertEqual(
+                expected,
+                read_file(env.out_dir.relative('share/repo_master/generated'))
+            )
+
+            env.repos[1].checkout_branch('feature', create=True)
+            generate_launcher(env)
+
+            expected = [
+                'dep\n  master\n  feature\n',
+                'dep\n  feature\n  master\n'
+            ]
+            self.assertIn(
+                read_file(env.out_dir.relative('src/repo/master/generated')),
+                expected
+            )
+            self.assertIn(
+                read_file(env.out_dir.relative('share/repo_master/generated')),
+                expected
             )
 
 

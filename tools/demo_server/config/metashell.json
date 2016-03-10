@@ -24,7 +24,7 @@
     "share" : [ { "src": "tools/demo_server/share", "dst": "" } ],
     "launcher" : {
       "src": "tools/demo_server/launcher_template.html",
-      "dst": "html/demo.html"
+      "dst": "tools/demo_server/share/html/demo.html"
     }
   },
 
