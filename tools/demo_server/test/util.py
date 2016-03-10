@@ -164,7 +164,9 @@ class LogCollector(object):
         self.messages = []
 
     def __call__(self, msg):
-        self.append(msg)
+        prefix = '=========='
+        if not (msg.startswith(prefix) and msg.endswith(prefix)):
+            self.append(msg)
 
 
 class CommonEnv(object):

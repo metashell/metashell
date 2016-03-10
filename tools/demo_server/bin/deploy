@@ -32,6 +32,16 @@ import Cheetah.Template
 # pylint: disable=broad-except
 
 
+def deploy_event(step_name, action, name):
+    """Return a deploy event log entry"""
+    prefix = '=========='
+    act = '{0} {1}'.format(step_name, action)
+    if name is None:
+        return '{0} {1} {0}'.format(prefix, act)
+    else:
+        return '{0} {1}: {2} {0}'.format(prefix, name, act)
+
+
 def set_permissions(path):
     """Sets the permissions of a deployed file or directory recursively"""
     paths = [path]
@@ -625,6 +635,7 @@ class DeployedLib(object):
 
     def clone(self, out_dir, log):
         """Clone the source code"""
+        log(deploy_event('clone', 'start', self.name()))
         cfg_path = os.path.join(out_dir, 'src', self.name())
         makedirs(cfg_path)
         try:
@@ -634,15 +645,19 @@ class DeployedLib(object):
                         self.name(), self.deploy_info(), out_dir):
                     if dep.base == self.name():
                         self.uses_link(dep.to_path, dep.deployed_filename())
+            log(deploy_event('clone', 'success', self.name()))
         except Exception, err:
             # Catching all exceptions to avoid an error in one config
             # preventing the deployment of the rest
             log('Failed to deploy {0}: {1}'.format(self.name(), err))
+            log(deploy_event('clone', 'fail', self.name()))
 
     def build(self, out_dir, log):
         """Build all branches"""
         if 'build' in self.config:
             for branch in self.branches:
+                name = '{0}/{1}'.format(self.name(), branch.name)
+                log(deploy_event('build', 'start', name))
                 try:
                     branch.build(
                         self.name(),
@@ -650,18 +665,23 @@ class DeployedLib(object):
                         out_dir,
                         log
                     )
+                    log(deploy_event('build', 'success', name))
                 except Exception, err:
                     # Catching all exceptions to avoid an error in one branch
                     # preventing the deployment of the rest
                     log('Failed to deploy branch {0} of {1}: {2}'.format(
                         branch.name, self.name(), err))
+                    log(deploy_event('build', 'fail', name))
 
     def deploy(self, out_dir, log):
         """Deploy the files"""
         for branch in self.branches:
+            name = '{0}/{1}'.format(self.name(), branch.name)
+            log(deploy_event('deploy', 'start', name))
             for dep in branch.deployment_info(
                     self.name(), self.deploy_info(), out_dir):
                 dep.deploy(log)
+            log(deploy_event('deploy', 'finish', name))
 
     def external_links(self, out_dir):
         """Collect the external links of the library"""
@@ -680,6 +700,8 @@ class DeployedLib(object):
         """Generate the launcher page"""
         if 'launcher' in self.config:
             for branch in self.branches:
+                name = '{0}/{1}'.format(self.name(), branch.name)
+                log(deploy_event('generate_launcher', 'start', name))
                 try:
                     branch.generate_launcher(
                         out_dir,
@@ -687,6 +709,7 @@ class DeployedLib(object):
                         self.name(),
                         [{'port': port, 'configs': launcher_info}]
                     )
+                    log(deploy_event('generate_launcher', 'finish', name))
                 except Exception, err:
                     # Catching all exceptions to avoid an error in one config
                     # preventing the deployment of the rest
@@ -696,6 +719,7 @@ class DeployedLib(object):
                             err
                         )
                     )
+                    log(deploy_event('generate_launcher', 'fail', name))
 
 
 def generate_launcher(summary):
@@ -718,6 +742,8 @@ def libs_to_deploy(configs, out_dir):
 
 def deploy_libs(configs, port, out_dir, log):
     """Do the deployment of the libraries and return the deployment summary"""
+
+    log(deploy_event('deployment', 'start', None))
 
     for subdir in ['bin', 'include', 'empty']:
         makedirs(os.path.join(out_dir, subdir))
@@ -751,6 +777,8 @@ def deploy_libs(configs, port, out_dir, log):
         f for f in files_to_delete
         if all(f not in lib.used_links for lib in summary)
     ])
+
+    log(deploy_event('deployment', 'finish', None))
 
     return launcher_info
 
