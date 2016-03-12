@@ -239,17 +239,17 @@ class TestGenerateLauncher(unittest.TestCase):
             env.repos[1].checkout_branch('feature', create=True)
             generate_launcher(env)
 
-            expected = [
+            expected_options = [
                 'dep\n  master\n  feature\n',
                 'dep\n  feature\n  master\n'
             ]
             self.assertIn(
                 env.out_dir.read('src/repo/master/generated'),
-                expected
+                expected_options
             )
             self.assertIn(
                 env.out_dir.read('share/repo_master/generated'),
-                expected
+                expected_options
             )
 
     def test_versions_deployed_for_another_lib_are_in_launcher_info(self):
