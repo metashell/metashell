@@ -599,11 +599,13 @@ class DeployedLib(object):
         self.used_links = []
         self.versions = []
 
-    def deploy_info(self):
+    def deploy_info(self, of_dirs=None):
         """Getter for deployment information"""
+        if of_dirs is None:
+            of_dirs = ['bin', 'include', 'share']
         return [
             (t, f)
-            for t in ['bin', 'include', 'share']
+            for t in of_dirs
             for f in optional_list(self.config, t)
         ]
 
@@ -722,9 +724,25 @@ class DeployedLib(object):
                     log(deploy_event('generate_launcher', 'fail', name))
 
 
-def generate_launcher(summary):
+def generate_launcher(summary, out_dir):
     """Generates the launcher data"""
-    return [dl.launcher_info() for dl in summary if dl.versions]
+    launcher_info = [dl.launcher_info() for dl in summary if dl.versions]
+
+    for deployed_lib in summary:
+        for branch in deployed_lib.branches:
+            for dep in branch.deployment_info(
+                    deployed_lib.name(),
+                    deployed_lib.deploy_info(['include']),
+                    out_dir
+            ):
+                if dep.base != deployed_lib.name():
+                    for info in launcher_info:
+                        if info['name'] == dep.base:
+                            info['versions'].append(
+                                version_of(dep.base, dep.deployed_filename())
+                            )
+
+    return launcher_info
 
 
 def libs_to_deploy(configs, out_dir):
@@ -759,7 +777,7 @@ def deploy_libs(configs, port, out_dir, log):
     for lib in summary:
         lib.clone(out_dir, log)
 
-    launcher_info = generate_launcher(summary)
+    launcher_info = generate_launcher(summary, out_dir)
 
     for lib in summary:
         lib.generate_launcher(out_dir, log, launcher_info, port)

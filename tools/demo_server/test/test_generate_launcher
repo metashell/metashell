@@ -21,15 +21,13 @@ import unittest
 import util
 
 MODULE_UNDER_TEST = util.load_from_bin('deploy')
-
-
-def read_file(filename):
-    """Reads the content of a file"""
-    try:
-        with open(filename, 'r') as in_file:
-            return in_file.read()
-    except IOError:
-        return ''
+LIST_CONFIGS_AND_VERSIONS = \
+    '#for $config in $configs\n' \
+    '$config.name\n' \
+    '#for $version in $config.versions\n' \
+    '  $version\n' \
+    '#end for\n' \
+    '#end for'
 
 
 def generate_launcher(env):
@@ -205,20 +203,12 @@ class TestGenerateLauncher(unittest.TestCase):
             self.assertTrue(env.out_dir.exists('src/repo/master/foo'))
             self.assertEqual(
                 'repo - Repo - http://metashell.org\n',
-                read_file(env.out_dir.relative('src/repo/master/foo'))
+                env.out_dir.read('src/repo/master/foo')
             )
 
     def test_launcher_is_regenerated_and_redeployed_when_a_dep_changes(self):
         with util.CommonEnv(2) as env:
-            env.commit(0, {
-                'template':
-                '#for $config in $configs\n'
-                '$config.name\n'
-                '#for $version in $config.versions\n'
-                '  $version\n'
-                '#end for\n'
-                '#end for'
-            })
+            env.commit(0, {'template': LIST_CONFIGS_AND_VERSIONS})
             env.commit(1, {'bar.txt': 'asd'})
 
             env.write_config([
@@ -239,11 +229,11 @@ class TestGenerateLauncher(unittest.TestCase):
             expected = 'dep\n  master\n'
             self.assertEqual(
                 expected,
-                read_file(env.out_dir.relative('src/repo/master/generated'))
+                env.out_dir.read('src/repo/master/generated')
             )
             self.assertEqual(
                 expected,
-                read_file(env.out_dir.relative('share/repo_master/generated'))
+                env.out_dir.read('share/repo_master/generated')
             )
 
             env.repos[1].checkout_branch('feature', create=True)
@@ -254,12 +244,40 @@ class TestGenerateLauncher(unittest.TestCase):
                 'dep\n  feature\n  master\n'
             ]
             self.assertIn(
-                read_file(env.out_dir.relative('src/repo/master/generated')),
+                env.out_dir.read('src/repo/master/generated'),
                 expected
             )
             self.assertIn(
-                read_file(env.out_dir.relative('share/repo_master/generated')),
+                env.out_dir.read('share/repo_master/generated'),
                 expected
+            )
+
+    def test_versions_deployed_for_another_lib_are_in_launcher_info(self):
+        with util.CommonEnv(2) as env:
+
+            env.commit(0, {'template': LIST_CONFIGS_AND_VERSIONS})
+            env.commit(1, {'1.0/repo/foo.txt': 'asd'})
+
+            env.write_config([
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'include': [{'src': 'template'}],
+                    'launcher': {'src': 'template', 'dst': 'generated'}
+                },
+                {
+                    'name': 'repo_other',
+                    'git': env.repository(1),
+                    'include': [
+                        {'src': '*/repo', 'dst': 'repo', 'to_config': 'repo'}
+                    ]
+                }
+            ])
+            generate_launcher(env)
+
+            self.assertIn(
+                '1.0',
+                env.out_dir.read('src/repo/master/generated').split()
             )
 
 
