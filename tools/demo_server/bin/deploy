@@ -773,6 +773,7 @@ def generate_launcher(summary, out_dir):
     for info in launcher_info:
         if info['name'] in external_versions:
             info['versions'].extend(external_versions[info['name']])
+        info['versions'].sort()
 
     return launcher_info
 

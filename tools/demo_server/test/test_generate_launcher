@@ -280,6 +280,41 @@ class TestGenerateLauncher(unittest.TestCase):
                 env.out_dir.read('src/repo/master/generated').split()
             )
 
+    def test_versions_are_sorted(self):
+        with util.CommonEnv(2) as env:
+
+            env.commit(0, {'template': LIST_CONFIGS_AND_VERSIONS})
+            env.commit(1, {
+                'a/repo/foo.txt': 'asd',
+                'z/repo/foo.txt': 'asd'
+            })
+
+            env.write_config([
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'include': [{'src': 'template'}],
+                    'launcher': {'src': 'template', 'dst': 'generated'}
+                },
+                {
+                    'name': 'repo_other',
+                    'git': env.repository(1),
+                    'include': [
+                        {'src': '*/repo', 'dst': 'repo', 'to_config': 'repo'}
+                    ]
+                }
+            ])
+            generate_launcher(env)
+
+            versions = [
+                s
+                for s in env.out_dir.read('src/repo/master/generated').split()
+                if s in ['a', 'master', 'z']
+            ]
+
+            self.assertEqual(3, len(versions))
+            self.assertEqual(sorted(versions), versions)
+
 
 if __name__ == '__main__':
     unittest.main()
