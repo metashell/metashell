@@ -418,6 +418,18 @@ class Branch(object):
             set_permissions(tmp_path)
         os.rename(tmp_path, out_path)
 
+    def external_versions(self, config_name, deploy_info, out_dir):
+        """Map of externally (to another config) deployed versions"""
+        external_versions = {}
+        for dep in self.deployment_info(config_name, deploy_info, out_dir):
+            if dep.base != config_name:
+                if dep.base not in external_versions:
+                    external_versions[dep.base] = []
+                external_versions[dep.base].append(
+                    version_of(dep.base, dep.deployed_filename())
+                )
+        return external_versions
+
 
 def first_dir_in_path(path):
     """Return the first directoryname of a path"""
@@ -590,6 +602,15 @@ def version_of(name, link):
         raise Exception('Invalid link name {0} for {1}'.format(link, name))
 
 
+def merge_external_versions_to(versions1, versions2):
+    """Merges two lists of external versions"""
+    for name, versions in versions2.iteritems():
+        if name not in versions1:
+            versions1[name] = []
+        versions1[name].extend(versions)
+    return versions1
+
+
 class DeployedLib(object):
     """Describes a deployed library's attributes"""
 
@@ -723,24 +744,35 @@ class DeployedLib(object):
                     )
                     log(deploy_event('generate_launcher', 'fail', name))
 
+    def external_versions(self, out_dir):
+        """Map of externally (to another config) deployed versions"""
+        external_versions = {}
+        for branch in self.branches:
+            merge_external_versions_to(
+                external_versions,
+                branch.external_versions(
+                    self.name(),
+                    self.deploy_info(['include']),
+                    out_dir
+                )
+            )
+        return external_versions
+
 
 def generate_launcher(summary, out_dir):
     """Generates the launcher data"""
     launcher_info = [dl.launcher_info() for dl in summary if dl.versions]
 
+    external_versions = {}
     for deployed_lib in summary:
-        for branch in deployed_lib.branches:
-            for dep in branch.deployment_info(
-                    deployed_lib.name(),
-                    deployed_lib.deploy_info(['include']),
-                    out_dir
-            ):
-                if dep.base != deployed_lib.name():
-                    for info in launcher_info:
-                        if info['name'] == dep.base:
-                            info['versions'].append(
-                                version_of(dep.base, dep.deployed_filename())
-                            )
+        merge_external_versions_to(
+            external_versions,
+            deployed_lib.external_versions(out_dir)
+        )
+
+    for info in launcher_info:
+        if info['name'] in external_versions:
+            info['versions'].extend(external_versions[info['name']])
 
     return launcher_info
 
