@@ -315,6 +315,30 @@ class TestGenerateLauncher(unittest.TestCase):
             self.assertEqual(3, len(versions))
             self.assertEqual(sorted(versions), versions)
 
+    def test_default_version_information_is_available(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'template':
+                '#for $config in $configs\n'
+                '$config.name $config.default_version\n'
+                '#end for'
+            })
+
+            env.write_config([{
+               'name': 'repo',
+               'git': env.repository(0),
+               'share': [{'src': 'generated'}],
+               'include': [{'src': 'generated'}],
+               'launcher': {'src': 'template', 'dst': 'generated'},
+               'default_version': '1.0.0'
+            }])
+            generate_launcher(env)
+
+            self.assertEqual(
+                'repo 1.0.0\n',
+                env.out_dir.read('share/repo_master/generated')
+            )
+
+
 
 if __name__ == '__main__':
     unittest.main()

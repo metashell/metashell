@@ -640,6 +640,12 @@ class DeployedLib(object):
         if to_path == 'include':
             self.versions.append(version_of(self.name(), link))
 
+    def default_version(self):
+        """The default version of a library"""
+        return self.config['default_version'] \
+            if 'default_version' in self.config \
+            else ''
+
     def display_name(self):
         """Returns the display name of the library"""
         if self.name() == '':
@@ -653,7 +659,8 @@ class DeployedLib(object):
             'name': self.name(),
             'display_name': self.display_name(),
             'url': self.config['url'] if 'url' in self.config else '',
-            'versions': self.versions
+            'versions': self.versions,
+            'default_version': self.default_version()
         }
 
     def clone(self, out_dir, log):

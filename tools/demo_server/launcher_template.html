@@ -60,7 +60,7 @@
         <select name="${config.name}_version">
         #end if
         #for version in $config.versions
-          #if $version == 'master'
+          #if $version == $config.default_version
             <option selected="selected" value="$version">$version</option>
           #else
             <option value="$version">$version</option>

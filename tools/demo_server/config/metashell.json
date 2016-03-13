@@ -25,7 +25,8 @@
     "launcher" : {
       "src": "tools/demo_server/launcher_template.html",
       "dst": "tools/demo_server/share/html/demo.html"
-    }
+    },
+    "default_version": "master"
   },
 
   {
@@ -38,7 +39,8 @@
     ],
     "include" : [
       { "src": "boost", "dst": "boost" }
-    ]
+    ],
+    "default_version": "1.58.0"
   },
 
   {
@@ -47,7 +49,8 @@
     "git": "https://github.com/sabel83/mpllibs.git",
     "include" : [
       { "src": "mpllibs", "dst": "mpllibs" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
@@ -56,7 +59,8 @@
     "git": "https://github.com/sabel83/metatest.git",
     "include" : [
       { "src": "include/metatest", "dst": "metatest" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
@@ -65,7 +69,8 @@
     "git": "https://github.com/minamiyama1994/FTMP.git",
     "include" : [
       { "src": "include/FTMP", "dst": "FTMP" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
@@ -74,7 +79,8 @@
     "git": "https://github.com/facebook/fatal.git",
     "include" : [
       { "src": "fatal", "dst": "fatal" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
@@ -83,7 +89,8 @@
     "git": "https://github.com/ericniebler/meta.git",
     "include" : [
       { "src": "include/meta", "dst": "meta" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
