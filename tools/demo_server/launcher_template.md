@@ -1,33 +1,11 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html><head>
-  <title>Metashell demo</title>
-  <link rel="stylesheet" href="style.css" type="text/css" />
-</head><body>
-
-<h1>Metashell</h1>
-
-<p>
-  You can start an on-line demo of
-  <a href='https://github.com/sabel83/metashell'>Metashell</a>
-  from this page. It uses
-  <a href='http://code.google.com/p/shellinabox/'>shellinabox</a> and in
-  Firefox some keys are not working properly. It is recommended to use other
-  browsers.
-</p>
-
-<p>
-  Metashell is an interactive shell for template metaprogramming. It is based on
-  the <a href='http://clang.llvm.org/doxygen/group__CINDEX.html'>libclang</a>,
-  the <a href='http://boost.org/libs/wave'>Boost.Wave</a> and the
-  <a href='http://www.gnu.org/software/readline'>Readline</a> libraries.
-</p>
+# Demo
 
 <script>
   document.write(
-    '<form action="http://' + window.location.hostname + ':$port" method="get">'
+    '<form action="http://' + window.location.hostname + ':4202" method="get">'
   );
 </script>
-  <table cellspacing='0px' cellpadding='0' border='0'>
+  <table>
   <tr>
     <td>
       The C++ standard to use:
@@ -77,4 +55,3 @@
   <input type="submit" value="Start Metashell" />
 </form>
 
-</body></html>

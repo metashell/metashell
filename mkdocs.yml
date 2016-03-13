@@ -1,5 +1,6 @@
 site_name: Metashell
 site_description: Template metaprogramming shell
+site_dir: tools/demo_server/share/html
 repo_url: https://github.com/sabel83/metashell
 use_directory_urls: false
 pages:
