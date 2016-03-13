@@ -1,6 +1,7 @@
 site_name: Metashell
 site_description: Template metaprogramming shell
 repo_url: https://github.com/sabel83/metashell
+use_directory_urls: false
 pages:
 - ['index.md', Home]
 - ['getting_metashell/platforms.md', 'Getting Metashell', 'Supported platforms']
