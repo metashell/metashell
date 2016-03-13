@@ -16,6 +16,7 @@ pages:
 - ['reference/headers.md', 'Reference', 'The built-in headers']
 - ['develop/demo_server.md', 'Developer guide', 'Demo server']
 - ['develop/rationales.md', 'Developer guide', 'Rationales']
+- ['about/demo.md', 'About', 'Demo']
 - ['about/community.md', 'About', 'Community']
 - ['about/changelog.md', 'About', 'Changelog']
 theme: cosmo
