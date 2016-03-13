@@ -20,5 +20,5 @@ pages:
 - ['about/demo.md', 'About', 'Demo']
 - ['about/community.md', 'About', 'Community']
 - ['about/changelog.md', 'About', 'Changelog']
-theme: cosmo
+theme: readthedocs
 
