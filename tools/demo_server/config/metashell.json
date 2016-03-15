@@ -9,7 +9,7 @@
         "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
       ["./build.sh"],
-      ["mkdocs build --clean"]
+      ["/usr/local/bin/mkdocs", "build", "--clean"]
     ],
     "bin": [
       "bin/app/metashell/metashell",
