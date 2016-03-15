@@ -26,6 +26,11 @@ MODULE_UNDER_TEST = util.load_from_bin('deploy')
 SOME_PORT = '1234'
 
 
+def without_directory_creation(log_messages):
+    """Removes the "Creating directory ..." messages"""
+    return [m for m in log_messages if not m.startswith('Creating directory ')]
+
+
 def find(roots):
     """Returns the list of files in roots recursively"""
     for root in roots:
@@ -72,7 +77,7 @@ class TestDeploy(unittest.TestCase):
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
             MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
-            self.assertEqual(1, len(log.messages))
+            self.assertEqual(1, len(without_directory_creation(log.messages)))
             self.assertTrue(log.messages[0].startswith(
                 'Error loading config file {0}: '.format(cfg_path)
             ))
@@ -83,7 +88,7 @@ class TestDeploy(unittest.TestCase):
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
             MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
-            self.assertEqual(1, len(log.messages))
+            self.assertEqual(1, len(without_directory_creation(log.messages)))
             self.assertTrue(log.messages[0].startswith(
                 'Invalid JSON in config file {0}.\nContent: {{\n\nError: '
                 .format(cfg_path)
@@ -95,7 +100,7 @@ class TestDeploy(unittest.TestCase):
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
             MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
-            self.assertEqual([], log.messages)
+            self.assertEqual([], without_directory_creation(log.messages))
 
     def test_empty_entry_in_config_file(self):
         with util.TempDir() as config_dir, util.TempDir() as out_dir:
@@ -108,7 +113,7 @@ class TestDeploy(unittest.TestCase):
                     'Missing field "name" in config entry {}',
                     'Missing field "git" in config entry {}'
                 ],
-                log.messages
+                without_directory_creation(log.messages)
             )
 
     def test_cloning_all_repositories(self):

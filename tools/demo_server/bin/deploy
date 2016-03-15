@@ -32,6 +32,11 @@ import Cheetah.Template
 # pylint: disable=broad-except
 
 
+def no_logging(_):
+    """Ignore log messages"""
+    pass
+
+
 def deploy_event(step_name, action, name):
     """Return a deploy event log entry"""
     prefix = '=========='
@@ -59,7 +64,7 @@ def set_permissions(path):
         )
 
 
-def makedirs(path):
+def makedirs(path, log):
     """Create directories and don't throw if it exists"""
     paths = []
     while path not in ['', '/']:
@@ -68,6 +73,7 @@ def makedirs(path):
 
     for subpath in paths:
         if not os.path.exists(subpath):
+            log('Creating directory {0}'.format(subpath))
             os.mkdir(subpath)
             set_permissions(subpath)
 
@@ -81,7 +87,7 @@ class LogToFile(object):
 
     def start(self):
         """Start logging"""
-        makedirs(os.path.dirname(self.filename))
+        makedirs(os.path.dirname(self.filename), no_logging)
         self.file_obj = open(self.filename, 'w')
         self('Start logging')
 
@@ -225,7 +231,8 @@ def git_clone(src_repository, out_dir, log):
         result.append(
             Branch(
                 branch,
-                git(repo, ['rev-parse', remote_branch], log).strip()
+                git(repo, ['rev-parse', remote_branch], log).strip(),
+                log
             )
         )
 
@@ -275,12 +282,12 @@ def optional_list(config, key):
 
 def deploy_file(config_name, path_from, path_to, log):
     """Deploy a file"""
-    makedirs(os.path.dirname(path_to))
+    makedirs(os.path.dirname(path_to), log)
     try:
         abs_from = os.path.abspath(path_from)
         abs_to = os.path.abspath(path_to)
         if os.path.isdir(abs_from):
-            makedirs(abs_to)
+            makedirs(abs_to, log)
             run_command(
                 ['/usr/bin/rsync', '-ruL'] + [
                     os.path.join(abs_from, f)
@@ -364,21 +371,22 @@ def flatten(list_of_lists):
 class Branch(object):
     """Represents a branch of a git repository"""
 
-    def __init__(self, name, last_commit):
+    def __init__(self, name, last_commit, log):
         self.name = name
         self.last_commit = last_commit
         self.was_build_error = False
+        self.log = log
 
     def src_dir(self, config_name, out_dir):
         """src dir of the branch"""
         return os.path.join(out_dir, 'src', config_name, self.name)
 
-    def build(self, config_name, commands, out_dir, log):
+    def build(self, config_name, commands, out_dir):
         """Build branch"""
         src_dir = self.src_dir(config_name, out_dir)
         for cmd in commands:
-            if run_command(cmd, src_dir, log)[2] != 0:
-                log('Aborting compilation of branch {0}/{1}'.format(
+            if run_command(cmd, src_dir, self.log)[2] != 0:
+                self.log('Aborting compilation of branch {0}/{1}'.format(
                     config_name, self.name))
                 self.was_build_error = True
                 return
@@ -388,7 +396,7 @@ class Branch(object):
         if self.was_build_error:
             return []
         else:
-            deployer = Deployer(config_name, self, out_dir)
+            deployer = Deployer(config_name, self, out_dir, self.log)
             return flatten(
                 deployer.deployment_info(f, t) for (t, f) in deploy_info
             )
@@ -402,7 +410,7 @@ class Branch(object):
             self.name,
             launcher['dst']
         )
-        makedirs(os.path.dirname(out_path))
+        makedirs(os.path.dirname(out_path), self.log)
         tmp_path = out_path + '.tmp'
         with open(tmp_path, 'w') as out_file:
             out_file.write(str(Cheetah.Template.Template(
@@ -494,12 +502,12 @@ def determine_to_path_suffix(entry_config, from_path_suffix):
 class Deployer(object):
     """Class for deploying files of a project"""
 
-    def __init__(self, name, branch, out_dir):
+    def __init__(self, name, branch, out_dir, log):
         self.name = name
         self.branch = branch
         self.out_dir = out_dir
         for path in ['bin', 'include', 'share']:
-            makedirs(self.relative(path))
+            makedirs(self.relative(path), log)
 
     def relative(self, path):
         """Returns a path relative to the deploy path"""
@@ -667,7 +675,7 @@ class DeployedLib(object):
         """Clone the source code"""
         log(deploy_event('clone', 'start', self.name()))
         cfg_path = os.path.join(out_dir, 'src', self.name())
-        makedirs(cfg_path)
+        makedirs(cfg_path, log)
         try:
             self.branches = git_clone(self.config['git'], cfg_path, log)
             for branch in self.branches:
@@ -689,12 +697,7 @@ class DeployedLib(object):
                 name = '{0}/{1}'.format(self.name(), branch.name)
                 log(deploy_event('build', 'start', name))
                 try:
-                    branch.build(
-                        self.name(),
-                        self.config['build'],
-                        out_dir,
-                        log
-                    )
+                    branch.build(self.name(), self.config['build'], out_dir)
                     log(deploy_event('build', 'success', name))
                 except Exception, err:
                     # Catching all exceptions to avoid an error in one branch
@@ -804,7 +807,7 @@ def deploy_libs(configs, port, out_dir, log):
     log(deploy_event('deployment', 'start', None))
 
     for subdir in ['bin', 'include', 'empty']:
-        makedirs(os.path.join(out_dir, subdir))
+        makedirs(os.path.join(out_dir, subdir), log)
 
     symlinks_to_delete = collect_symlinks(out_dir)
     files_to_delete = flatten([
@@ -874,7 +877,7 @@ def main():
     )
     args = parser.parse_args()
 
-    makedirs(args.root)
+    makedirs(args.root, no_logging)
     with LogToFile(os.path.join(args.root, 'log.txt')) as log:
         deploy(args.config, args.port, args.root, log)
 
