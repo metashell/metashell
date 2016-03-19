@@ -86,7 +86,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match)
       raw_text("Breakpoint \"int\" will stop the execution on 1 location"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches)
+JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_three_matches)
 {
   const auto r = run_metashell({command(fibonacci_mp), command("#msh mdb"),
                                 command("evaluate int_<fib<5>::value>"),
@@ -95,7 +95,7 @@ JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_two_matches)
   auto i = r.begin() + 5;
 
   JUST_ASSERT_EQUAL(
-      raw_text("Breakpoint \"fib<3>\" will stop the execution on 2 locations"),
+      raw_text("Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
       *i);
 }
 
