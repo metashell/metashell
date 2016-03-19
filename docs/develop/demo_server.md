@@ -33,7 +33,7 @@ the commands.
   `sudo /etc/init.d/shellinabox stop` and `sudo update-rc.d shellinabox disable`
 
 The installation script is configurable using environment variables. Here are
-the options and ther default values:
+the options and their default values:
 
 * `METASHELL_BRANCH=master` The branch to get the server's code (eg. updater
   script, wrapper for Metashell, etc) from.
@@ -42,8 +42,8 @@ the options and ther default values:
 * `SERVICE_USER=nobody` The user to run the demo Metashell processes as.
 * `SERVICE_GROUP=nogroup` The group to use for the demo.
 * `SERVICE_PORT=4202` The port ShellInABox will be listening on.
-* `DELAY_SECS_BETWEEN_PULLS=60` The delay the deployer script waits between the
-  pulls (regardless of how long a pull & build takes)
+* `DELAY_SECS_BETWEEN_PULLS=3600` The delay the deployer script waits between
+  the pulls (regardless of how long a pull & build takes)
 * `SPLASH=` Text to display in the splash message of the shell.
 
 ## Uninstalling the Metashell demo server
@@ -172,4 +172,3 @@ matches will override the branch of the repository, the files are coming from.
 For example if `include/*/boost` is used and there is a directory called
 `include/1.0/boost`, then it will be deployed as if it was coming from the
 branch `1.0` of the repository referred to by the `git` element of the config.
-

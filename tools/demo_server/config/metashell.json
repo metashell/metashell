@@ -8,7 +8,8 @@
         "-c",
         "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
-      ["./build.sh"]
+      ["./build.sh"],
+      ["/usr/local/bin/mkdocs", "build", "--clean"]
     ],
     "bin": [
       "bin/app/metashell/metashell",
@@ -21,11 +22,17 @@
     "include" : [
       { "src": "3rd/templight/build/lib/clang/3.8.0/include", "dst": "" }
     ],
-    "share" : [ { "src": "tools/demo_server/share", "dst": "" } ]
+    "share" : [ { "src": "tools/demo_server/share", "dst": "" } ],
+    "launcher" : {
+      "src": "tools/demo_server/launcher_template.md",
+      "dst": "docs/about/demo.md"
+    },
+    "default_version": "master"
   },
 
   {
     "name": "boost",
+    "url": "http://boost.org",
     "git": "https://github.com/boostorg/boost.git",
     "build": [
       ["./bootstrap.sh"],
@@ -33,47 +40,58 @@
     ],
     "include" : [
       { "src": "boost", "dst": "boost" }
-    ]
+    ],
+    "default_version": "1.58.0"
   },
 
   {
     "name": "mpllibs",
+    "url": "http://abel.web.elte.hu/mpllibs",
     "git": "https://github.com/sabel83/mpllibs.git",
     "include" : [
       { "src": "mpllibs", "dst": "mpllibs" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
     "name": "metatest",
+    "url": "http://abel.web.elte.hu/metatest",
     "git": "https://github.com/sabel83/metatest.git",
     "include" : [
       { "src": "include/metatest", "dst": "metatest" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
     "name": "FTMP",
+    "url": "https://github.com/minamiyama1994/FTMP",
     "git": "https://github.com/minamiyama1994/FTMP.git",
     "include" : [
       { "src": "include/FTMP", "dst": "FTMP" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
     "name": "fatal",
+    "url": "https://github.com/facebook/fatal",
     "git": "https://github.com/facebook/fatal.git",
     "include" : [
       { "src": "fatal", "dst": "fatal" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
     "name": "meta",
+    "url": "https://github.com/ericniebler/meta",
     "git": "https://github.com/ericniebler/meta.git",
     "include" : [
       { "src": "include/meta", "dst": "meta" }
-    ]
+    ],
+    "default_version": "master"
   },
 
   {
