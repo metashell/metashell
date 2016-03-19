@@ -561,19 +561,16 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step)
                     *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<4>"), _, _,
-                          instantiation_kind::memoization),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<3>"), _, _,
-                          instantiation_kind::memoization),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<3>"), _, _, instantiation_kind::memoization), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<4>"), _, _,
-                          instantiation_kind::memoization),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_from_root)
@@ -624,8 +621,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps)
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<3>"), _, _, instantiation_kind::memoization),
-      *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps)
