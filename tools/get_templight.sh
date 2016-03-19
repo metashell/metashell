@@ -89,7 +89,7 @@ then
       echo " */" >> ${CLANG_REV_HEADER}
       echo >> ${CLANG_REV_HEADER}
       echo "#ifdef METASHELL_CLANG_REVISION">> ${CLANG_REV_HEADER}
-      echo "#  error METASHELL_CLANG_REVISION already defined">> ${CLANG_REV_HEADER}
+      echo "#error METASHELL_CLANG_REVISION already defined">> ${CLANG_REV_HEADER}
       echo "#endif" >> ${CLANG_REV_HEADER}
       echo -n "#define METASHELL_CLANG_REVISION \"${CLANG_REV_TEXT}\"" >> ${CLANG_REV_HEADER}
       echo >> ${CLANG_REV_HEADER}
