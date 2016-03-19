@@ -44,22 +44,22 @@ JUST_TEST_CASE(test_mdb_next_minus_1_multi_fib_from_after_step)
 {
   const auto r = run_metashell({command(multi_fibonacci_mp),
                                 command("#msh mdb int_<multi_fib<10>::value>"),
-                                command("step 4"), command("next"),
+                                command("step 15"), command("next"),
                                 command("next"), command("next -1")});
 
   auto i = r.begin() + 4;
   JUST_ASSERT_EQUAL(frame(type("multi_fib<4>"), _, _,
-                          instantiation_kind::template_instantiation),
+                          instantiation_kind::memoization),
                     *i++);
 
   ++i;
   JUST_ASSERT_EQUAL(frame(type("multi_fib<5>"), _, _,
-                          instantiation_kind::template_instantiation),
+                          instantiation_kind::memoization),
                     *i++);
 
   ++i;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<8>"), _, _,
-                          instantiation_kind::template_instantiation),
+  JUST_ASSERT_EQUAL(frame(type("multi_fib<6>"), _, _,
+                          instantiation_kind::memoization),
                     *i++);
 
   ++i;
