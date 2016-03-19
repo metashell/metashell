@@ -1,5 +1,7 @@
 option(CLANG_INSTALL_SCANBUILD "Install the scan-build tool" ON)
 
+include(GNUInstallDirs)
+
 if (WIN32 AND NOT CYGWIN)
   set(BinFiles
         scan-build.bat)
@@ -21,7 +23,7 @@ endif()
 set(ManPages
       scan-build.1)
 
-set(ResourceFiles
+set(ShareFiles
       scanview.css
       sorttable.js)
 
@@ -32,11 +34,11 @@ if(CLANG_INSTALL_SCANBUILD)
                        COMMAND ${CMAKE_COMMAND} -E make_directory
                          ${CMAKE_BINARY_DIR}/bin
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${BinFile}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile}
                          ${CMAKE_BINARY_DIR}/bin/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${BinFile})
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile})
     list(APPEND Depends ${CMAKE_BINARY_DIR}/bin/${BinFile})
-    install(PROGRAMS ${BinFile} DESTINATION bin)
+    install(PROGRAMS bin/${BinFile} DESTINATION bin)
   endforeach()
 
   foreach(LibexecFile ${LibexecFiles})
@@ -44,38 +46,37 @@ if(CLANG_INSTALL_SCANBUILD)
                        COMMAND ${CMAKE_COMMAND} -E make_directory
                          ${CMAKE_BINARY_DIR}/libexec
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${LibexecFile}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/libexec/${LibexecFile}
                          ${CMAKE_BINARY_DIR}/libexec/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${LibexecFile})
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/libexec/${LibexecFile})
     list(APPEND Depends ${CMAKE_BINARY_DIR}/libexec/${LibexecFile})
-    install(PROGRAMS ${LibexecFile} DESTINATION libexec)
+    install(PROGRAMS libexec/${LibexecFile} DESTINATION libexec)
   endforeach()
 
   foreach(ManPage ${ManPages})
-    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/man/man1/${ManPage}
+    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/${ManPage}
                        COMMAND ${CMAKE_COMMAND} -E make_directory
-                         ${CMAKE_BINARY_DIR}/share/man/man1
+                         ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${ManPage}
-                         ${CMAKE_BINARY_DIR}/share/man/man1/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${ManPage})
-    list(APPEND Depends ${CMAKE_BINARY_DIR}/share/man/man1/${ManPage})
-    install(PROGRAMS ${ManPage} DESTINATION share/man/man1)
+                         ${CMAKE_CURRENT_SOURCE_DIR}/man/${ManPage}
+                         ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/man/${ManPage})
+    list(APPEND Depends ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/${ManPage})
+    install(PROGRAMS man/${ManPage} DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
   endforeach()
 
-  foreach(ResourceFile ${ResourceFiles})
-    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/bin/${ResourceFile}
+  foreach(ShareFile ${ShareFiles})
+    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/scan-build/${ShareFile}
                        COMMAND ${CMAKE_COMMAND} -E make_directory
-                         ${CMAKE_BINARY_DIR}/bin
+                         ${CMAKE_BINARY_DIR}/share/scan-build
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${ResourceFile}
-                         ${CMAKE_BINARY_DIR}/bin/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${ResourceFile})
-    list(APPEND Depends ${CMAKE_BINARY_DIR}/bin/${ResourceFile})
-    install(FILES ${ResourceFile} DESTINATION bin)
+                         ${CMAKE_CURRENT_SOURCE_DIR}/share/scan-build/${ShareFile}
+                         ${CMAKE_BINARY_DIR}/share/scan-build/
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/share/scan-build/${ShareFile})
+    list(APPEND Depends ${CMAKE_BINARY_DIR}/share/scan-build/${ShareFile})
+    install(FILES share/scan-build/${ShareFile} DESTINATION share/scan-build)
   endforeach()
 
   add_custom_target(scan-build ALL DEPENDS ${Depends})
   set_target_properties(scan-build PROPERTIES FOLDER "Misc")
 endif()
-

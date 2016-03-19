@@ -164,11 +164,12 @@ void NORETURN CheckFailed(const char *file, int line, const char *cond,
 }
 
 void NORETURN ReportMmapFailureAndDie(uptr size, const char *mem_type,
-                                      const char *mmap_type, error_t err) {
+                                      const char *mmap_type, error_t err,
+                                      bool raw_report) {
   static int recursion_count;
-  if (recursion_count) {
+  if (raw_report || recursion_count) {
+    // If raw report is requested or we went into recursion, just die.
     // The Report() and CHECK calls below may call mmap recursively and fail.
-    // If we went into recursion, just die.
     RawWrite("ERROR: Failed to mmap\n");
     Die();
   }
@@ -176,7 +177,9 @@ void NORETURN ReportMmapFailureAndDie(uptr size, const char *mem_type,
   Report("ERROR: %s failed to "
          "%s 0x%zx (%zd) bytes of %s (error code: %d)\n",
          SanitizerToolName, mmap_type, size, size, mem_type, err);
+#ifndef SANITIZER_GO
   DumpProcessMap();
+#endif
   UNREACHABLE("unable to mmap");
 }
 
@@ -294,6 +297,40 @@ void ReportErrorSummary(const char *error_type, const AddressInfo &info) {
   ReportErrorSummary(buff.data());
 }
 #endif
+
+// Removes the ANSI escape sequences from the input string (in-place).
+void RemoveANSIEscapeSequencesFromString(char *str) {
+  if (!str)
+    return;
+
+  // We are going to remove the escape sequences in place.
+  char *s = str;
+  char *z = str;
+  while (*s != '\0') {
+    CHECK_GE(s, z);
+    // Skip over ANSI escape sequences with pointer 's'.
+    if (*s == '\033' && *(s + 1) == '[') {
+      s = internal_strchrnul(s, 'm');
+      if (*s == '\0') {
+        break;
+      }
+      s++;
+      continue;
+    }
+    // 's' now points at a character we want to keep. Copy over the buffer
+    // content if the escape sequence has been perviously skipped andadvance
+    // both pointers.
+    if (s != z)
+      *z = *s;
+
+    // If we have not seen an escape sequence, just advance both pointers.
+    z++;
+    s++;
+  }
+
+  // Null terminate the string.
+  *z = '\0';
+}
 
 void LoadedModule::set(const char *module_name, uptr base_address) {
   clear();

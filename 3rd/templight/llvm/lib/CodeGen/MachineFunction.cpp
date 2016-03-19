@@ -17,6 +17,7 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Analysis/ConstantFolding.h"
+#include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/CodeGen/MachineConstantPool.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunctionInitializer.h"
@@ -27,6 +28,7 @@
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/PseudoSourceValue.h"
+#include "llvm/CodeGen/WinEHFuncInfo.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/Function.h"
@@ -44,6 +46,11 @@
 using namespace llvm;
 
 #define DEBUG_TYPE "codegen"
+
+static cl::opt<unsigned>
+    AlignAllFunctions("align-all-functions",
+                      cl::desc("Force the alignment of all functions."),
+                      cl::init(0), cl::Hidden);
 
 void MachineFunctionInitializer::anchor() {}
 
@@ -85,8 +92,16 @@ MachineFunction::MachineFunction(const Function *F, const TargetMachine &TM,
     Alignment = std::max(Alignment,
                          STI->getTargetLowering()->getPrefFunctionAlignment());
 
+  if (AlignAllFunctions)
+    Alignment = AlignAllFunctions;
+
   FunctionNumber = FunctionNum;
   JumpTableInfo = nullptr;
+
+  if (isFuncletEHPersonality(classifyEHPersonality(
+          F->hasPersonalityFn() ? F->getPersonalityFn() : nullptr))) {
+    WinEHInfo = new (Allocator) WinEHFuncInfo();
+  }
 
   assert(TM.isCompatibleDataLayout(getDataLayout()) &&
          "Can't create a MachineFunction using a Module with a "
@@ -125,6 +140,11 @@ MachineFunction::~MachineFunction() {
     JumpTableInfo->~MachineJumpTableInfo();
     Allocator.Deallocate(JumpTableInfo);
   }
+
+  if (WinEHInfo) {
+    WinEHInfo->~WinEHFuncInfo();
+    Allocator.Deallocate(WinEHInfo);
+  }
 }
 
 const DataLayout &MachineFunction::getDataLayout() const {
@@ -143,7 +163,7 @@ getOrCreateJumpTableInfo(unsigned EntryKind) {
 }
 
 /// Should we be emitting segmented stack stuff for the function
-bool MachineFunction::shouldSplitStack() {
+bool MachineFunction::shouldSplitStack() const {
   return getFunction()->hasFnAttribute("split-stack");
 }
 
@@ -608,10 +628,9 @@ BitVector MachineFrameInfo::getPristineRegs(const MachineFunction &MF) const {
     BV.set(*CSR);
 
   // Saved CSRs are not pristine.
-  const std::vector<CalleeSavedInfo> &CSI = getCalleeSavedInfo();
-  for (std::vector<CalleeSavedInfo>::const_iterator I = CSI.begin(),
-         E = CSI.end(); I != E; ++I)
-    BV.reset(I->getReg());
+  for (auto &I : getCalleeSavedInfo())
+    for (MCSubRegIterator S(I.getReg(), TRI, true); S.isValid(); ++S)
+      BV.reset(*S);
 
   return BV;
 }
@@ -816,42 +835,26 @@ Type *MachineConstantPoolEntry::getType() const {
   return Val.ConstVal->getType();
 }
 
-
-unsigned MachineConstantPoolEntry::getRelocationInfo() const {
+bool MachineConstantPoolEntry::needsRelocation() const {
   if (isMachineConstantPoolEntry())
-    return Val.MachineCPVal->getRelocationInfo();
-  return Val.ConstVal->getRelocationInfo();
+    return true;
+  return Val.ConstVal->needsRelocation();
 }
 
 SectionKind
 MachineConstantPoolEntry::getSectionKind(const DataLayout *DL) const {
-  SectionKind Kind;
-  switch (getRelocationInfo()) {
+  if (needsRelocation())
+    return SectionKind::getReadOnlyWithRel();
+  switch (DL->getTypeAllocSize(getType())) {
+  case 4:
+    return SectionKind::getMergeableConst4();
+  case 8:
+    return SectionKind::getMergeableConst8();
+  case 16:
+    return SectionKind::getMergeableConst16();
   default:
-    llvm_unreachable("Unknown section kind");
-  case Constant::GlobalRelocations:
-    Kind = SectionKind::getReadOnlyWithRel();
-    break;
-  case Constant::LocalRelocation:
-    Kind = SectionKind::getReadOnlyWithRelLocal();
-    break;
-  case Constant::NoRelocation:
-    switch (DL->getTypeAllocSize(getType())) {
-    case 4:
-      Kind = SectionKind::getMergeableConst4();
-      break;
-    case 8:
-      Kind = SectionKind::getMergeableConst8();
-      break;
-    case 16:
-      Kind = SectionKind::getMergeableConst16();
-      break;
-    default:
-      Kind = SectionKind::getReadOnly();
-      break;
-    }
+    return SectionKind::getReadOnly();
   }
-  return Kind;
 }
 
 MachineConstantPool::~MachineConstantPool() {

@@ -1552,7 +1552,8 @@ void ItaniumRecordLayoutBuilder::LayoutBitField(const FieldDecl *D) {
     FieldAlign = 1;
 
   // But, if there's an 'aligned' attribute on the field, honor that.
-  if (unsigned ExplicitFieldAlign = D->getMaxAlignment()) {
+  unsigned ExplicitFieldAlign = D->getMaxAlignment();
+  if (ExplicitFieldAlign) {
     FieldAlign = std::max(FieldAlign, ExplicitFieldAlign);
     UnpackedFieldAlign = std::max(UnpackedFieldAlign, ExplicitFieldAlign);
   }
@@ -1601,6 +1602,10 @@ void ItaniumRecordLayoutBuilder::LayoutBitField(const FieldDecl *D) {
         (AllowPadding &&
          (FieldOffset & (FieldAlign-1)) + FieldSize > TypeSize)) {
       FieldOffset = llvm::RoundUpToAlignment(FieldOffset, FieldAlign);
+    } else if (ExplicitFieldAlign) {
+      // TODO: figure it out what needs to be done on targets that don't honor
+      // bit-field type alignment like ARM APCS ABI.
+      FieldOffset = llvm::RoundUpToAlignment(FieldOffset, ExplicitFieldAlign);
     }
 
     // Repeat the computation for diagnostic purposes.
@@ -1609,6 +1614,9 @@ void ItaniumRecordLayoutBuilder::LayoutBitField(const FieldDecl *D) {
          (UnpackedFieldOffset & (UnpackedFieldAlign-1)) + FieldSize > TypeSize))
       UnpackedFieldOffset = llvm::RoundUpToAlignment(UnpackedFieldOffset,
                                                      UnpackedFieldAlign);
+    else if (ExplicitFieldAlign)
+      UnpackedFieldOffset = llvm::RoundUpToAlignment(UnpackedFieldOffset,
+                                                     ExplicitFieldAlign);
   }
 
   // If we're using external layout, give the external layout a chance
@@ -2023,6 +2031,21 @@ static const CXXMethodDecl *computeKeyFunction(ASTContext &Context,
       const FunctionDecl *Def;
       if (MD->hasBody(Def) && Def->isInlineSpecified())
         continue;
+    }
+
+    if (Context.getLangOpts().CUDA) {
+      // While compiler may see key method in this TU, during CUDA
+      // compilation we should ignore methods that are not accessible
+      // on this side of compilation.
+      if (Context.getLangOpts().CUDAIsDevice) {
+        // In device mode ignore methods without __device__ attribute.
+        if (!MD->hasAttr<CUDADeviceAttr>())
+          continue;
+      } else {
+        // In host mode ignore __device__-only methods.
+        if (!MD->hasAttr<CUDAHostAttr>() && MD->hasAttr<CUDADeviceAttr>())
+          continue;
+      }
     }
 
     // If the key function is dllimport but the class isn't, then the class has

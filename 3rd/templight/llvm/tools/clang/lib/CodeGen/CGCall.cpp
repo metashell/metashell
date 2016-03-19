@@ -15,6 +15,7 @@
 #include "CGCall.h"
 #include "ABIInfo.h"
 #include "CGCXXABI.h"
+#include "CGCleanup.h"
 #include "CodeGenFunction.h"
 #include "CodeGenModule.h"
 #include "TargetInfo.h"
@@ -92,15 +93,41 @@ CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionNoProtoType> FTNP) {
                                  FTNP->getExtInfo(), RequiredArgs(0));
 }
 
+/// Adds the formal paramaters in FPT to the given prefix. If any parameter in
+/// FPT has pass_object_size attrs, then we'll add parameters for those, too.
+static void appendParameterTypes(const CodeGenTypes &CGT,
+                                 SmallVectorImpl<CanQualType> &prefix,
+                                 const CanQual<FunctionProtoType> &FPT,
+                                 const FunctionDecl *FD) {
+  // Fast path: unknown target.
+  if (FD == nullptr) {
+    prefix.append(FPT->param_type_begin(), FPT->param_type_end());
+    return;
+  }
+
+  // In the vast majority cases, we'll have precisely FPT->getNumParams()
+  // parameters; the only thing that can change this is the presence of
+  // pass_object_size. So, we preallocate for the common case.
+  prefix.reserve(prefix.size() + FPT->getNumParams());
+
+  assert(FD->getNumParams() == FPT->getNumParams());
+  for (unsigned I = 0, E = FPT->getNumParams(); I != E; ++I) {
+    prefix.push_back(FPT->getParamType(I));
+    if (FD->getParamDecl(I)->hasAttr<PassObjectSizeAttr>())
+      prefix.push_back(CGT.getContext().getSizeType());
+  }
+}
+
 /// Arrange the LLVM function layout for a value of the given function
 /// type, on top of any implicit parameters already stored.
 static const CGFunctionInfo &
 arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
                         SmallVectorImpl<CanQualType> &prefix,
-                        CanQual<FunctionProtoType> FTP) {
+                        CanQual<FunctionProtoType> FTP,
+                        const FunctionDecl *FD) {
   RequiredArgs required = RequiredArgs::forPrototypePlus(FTP, prefix.size());
   // FIXME: Kill copy.
-  prefix.append(FTP->param_type_begin(), FTP->param_type_end());
+  appendParameterTypes(CGT, prefix, FTP, FD);
   CanQualType resultType = FTP->getReturnType().getUnqualifiedType();
   return CGT.arrangeLLVMFunctionInfo(resultType, instanceMethod,
                                      /*chainCall=*/false, prefix,
@@ -110,10 +137,11 @@ arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
 /// Arrange the argument and result information for a value of the
 /// given freestanding function type.
 const CGFunctionInfo &
-CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
+CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP,
+                                      const FunctionDecl *FD) {
   SmallVector<CanQualType, 16> argTypes;
   return ::arrangeLLVMFunctionInfo(*this, /*instanceMethod=*/false, argTypes,
-                                   FTP);
+                                   FTP, FD);
 }
 
 static CallingConv getCallingConventionForDecl(const Decl *D, bool IsWindows) {
@@ -156,7 +184,8 @@ static CallingConv getCallingConventionForDecl(const Decl *D, bool IsWindows) {
 /// constructor or destructor.
 const CGFunctionInfo &
 CodeGenTypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
-                                   const FunctionProtoType *FTP) {
+                                   const FunctionProtoType *FTP,
+                                   const CXXMethodDecl *MD) {
   SmallVector<CanQualType, 16> argTypes;
 
   // Add the 'this' pointer.
@@ -167,7 +196,7 @@ CodeGenTypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
 
   return ::arrangeLLVMFunctionInfo(
       *this, true, argTypes,
-      FTP->getCanonicalTypeUnqualified().getAs<FunctionProtoType>());
+      FTP->getCanonicalTypeUnqualified().getAs<FunctionProtoType>(), MD);
 }
 
 /// Arrange the argument and result information for a declaration or
@@ -184,10 +213,10 @@ CodeGenTypes::arrangeCXXMethodDeclaration(const CXXMethodDecl *MD) {
   if (MD->isInstance()) {
     // The abstract case is perfectly fine.
     const CXXRecordDecl *ThisType = TheCXXABI.getThisArgumentTypeForMethod(MD);
-    return arrangeCXXMethodType(ThisType, prototype.getTypePtr());
+    return arrangeCXXMethodType(ThisType, prototype.getTypePtr(), MD);
   }
 
-  return arrangeFreeFunctionType(prototype);
+  return arrangeFreeFunctionType(prototype, MD);
 }
 
 const CGFunctionInfo &
@@ -208,7 +237,7 @@ CodeGenTypes::arrangeCXXStructorDeclaration(const CXXMethodDecl *MD,
   CanQual<FunctionProtoType> FTP = GetFormalType(MD);
 
   // Add the formal parameters.
-  argTypes.append(FTP->param_type_begin(), FTP->param_type_end());
+  appendParameterTypes(*this, argTypes, FTP, MD);
 
   TheCXXABI.buildStructorSignature(MD, Type, argTypes);
 
@@ -274,7 +303,7 @@ CodeGenTypes::arrangeFunctionDeclaration(const FunctionDecl *FD) {
   }
 
   assert(isa<FunctionProtoType>(FTy));
-  return arrangeFreeFunctionType(FTy.getAs<FunctionProtoType>());
+  return arrangeFreeFunctionType(FTy.getAs<FunctionProtoType>(), FD);
 }
 
 /// Arrange the argument and result information for the declaration or
@@ -1391,11 +1420,20 @@ llvm::Type *CodeGenTypes::GetFunctionTypeForVTable(GlobalDecl GD) {
   return GetFunctionType(*Info);
 }
 
-void CodeGenModule::ConstructAttributeList(const CGFunctionInfo &FI,
-                                           const Decl *TargetDecl,
-                                           AttributeListType &PAL,
-                                           unsigned &CallingConv,
-                                           bool AttrOnCallSite) {
+static void AddAttributesFromFunctionProtoType(ASTContext &Ctx,
+                                               llvm::AttrBuilder &FuncAttrs,
+                                               const FunctionProtoType *FPT) {
+  if (!FPT)
+    return;
+
+  if (!isUnresolvedExceptionSpec(FPT->getExceptionSpecType()) &&
+      FPT->isNothrow(Ctx))
+    FuncAttrs.addAttribute(llvm::Attribute::NoUnwind);
+}
+
+void CodeGenModule::ConstructAttributeList(
+    StringRef Name, const CGFunctionInfo &FI, CGCalleeInfo CalleeInfo,
+    AttributeListType &PAL, unsigned &CallingConv, bool AttrOnCallSite) {
   llvm::AttrBuilder FuncAttrs;
   llvm::AttrBuilder RetAttrs;
   bool HasOptnone = false;
@@ -1404,6 +1442,13 @@ void CodeGenModule::ConstructAttributeList(const CGFunctionInfo &FI,
 
   if (FI.isNoReturn())
     FuncAttrs.addAttribute(llvm::Attribute::NoReturn);
+
+  // If we have information about the function prototype, we can learn
+  // attributes form there.
+  AddAttributesFromFunctionProtoType(getContext(), FuncAttrs,
+                                     CalleeInfo.getCalleeFunctionProtoType());
+
+  const Decl *TargetDecl = CalleeInfo.getCalleeDecl();
 
   // FIXME: handle sseregparm someday...
   if (TargetDecl) {
@@ -1417,10 +1462,8 @@ void CodeGenModule::ConstructAttributeList(const CGFunctionInfo &FI,
       FuncAttrs.addAttribute(llvm::Attribute::NoDuplicate);
 
     if (const FunctionDecl *Fn = dyn_cast<FunctionDecl>(TargetDecl)) {
-      const FunctionProtoType *FPT = Fn->getType()->getAs<FunctionProtoType>();
-      if (FPT && !isUnresolvedExceptionSpec(FPT->getExceptionSpecType()) &&
-          FPT->isNothrow(getContext()))
-        FuncAttrs.addAttribute(llvm::Attribute::NoUnwind);
+      AddAttributesFromFunctionProtoType(
+          getContext(), FuncAttrs, Fn->getType()->getAs<FunctionProtoType>());
       // Don't use [[noreturn]] or _Noreturn for a call to a virtual function.
       // These attributes are not inherited by overloads.
       const CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(Fn);
@@ -1465,7 +1508,8 @@ void CodeGenModule::ConstructAttributeList(const CGFunctionInfo &FI,
 
   if (AttrOnCallSite) {
     // Attributes that should go on the call site only.
-    if (!CodeGenOpts.SimplifyLibCalls)
+    if (!CodeGenOpts.SimplifyLibCalls ||
+        CodeGenOpts.isNoBuiltinFunc(Name.data()))
       FuncAttrs.addAttribute(llvm::Attribute::NoBuiltin);
     if (!CodeGenOpts.TrapFuncName.empty())
       FuncAttrs.addAttribute("trap-func-name", CodeGenOpts.TrapFuncName);
@@ -1481,8 +1525,12 @@ void CodeGenModule::ConstructAttributeList(const CGFunctionInfo &FI,
       FuncAttrs.addAttribute("no-frame-pointer-elim-non-leaf");
     }
 
+    bool DisableTailCalls =
+        CodeGenOpts.DisableTailCalls ||
+        (TargetDecl && TargetDecl->hasAttr<DisableTailCallsAttr>());
     FuncAttrs.addAttribute("disable-tail-calls",
-                           llvm::toStringRef(CodeGenOpts.DisableTailCalls));
+                           llvm::toStringRef(DisableTailCalls));
+
     FuncAttrs.addAttribute("less-precise-fpmad",
                            llvm::toStringRef(CodeGenOpts.LessPreciseFPMAD));
     FuncAttrs.addAttribute("no-infs-fp-math",
@@ -2783,6 +2831,21 @@ void CodeGenFunction::EmitCallArgs(
     llvm::iterator_range<CallExpr::const_arg_iterator> ArgRange,
     const FunctionDecl *CalleeDecl, unsigned ParamsToSkip) {
   assert((int)ArgTypes.size() == (ArgRange.end() - ArgRange.begin()));
+
+  auto MaybeEmitImplicitObjectSize = [&](unsigned I, const Expr *Arg) {
+    if (CalleeDecl == nullptr || I >= CalleeDecl->getNumParams())
+      return;
+    auto *PS = CalleeDecl->getParamDecl(I)->getAttr<PassObjectSizeAttr>();
+    if (PS == nullptr)
+      return;
+
+    const auto &Context = getContext();
+    auto SizeTy = Context.getSizeType();
+    auto T = Builder.getIntNTy(Context.getTypeSize(SizeTy));
+    llvm::Value *V = evaluateOrEmitBuiltinObjectSize(Arg, PS->getType(), T);
+    Args.add(RValue::get(V), SizeTy);
+  };
+
   // We *have* to evaluate arguments from right to left in the MS C++ ABI,
   // because arguments are destroyed left to right in the callee.
   if (CGM.getTarget().getCXXABI().areArgsDestroyedLeftToRightInCallee()) {
@@ -2803,6 +2866,7 @@ void CodeGenFunction::EmitCallArgs(
       EmitCallArg(Args, *Arg, ArgTypes[I]);
       EmitNonNullArgCheck(Args.back().RV, ArgTypes[I], (*Arg)->getExprLoc(),
                           CalleeDecl, ParamsToSkip + I);
+      MaybeEmitImplicitObjectSize(I, *Arg);
     }
 
     // Un-reverse the arguments we just evaluated so they match up with the LLVM
@@ -2817,6 +2881,7 @@ void CodeGenFunction::EmitCallArgs(
     EmitCallArg(Args, *Arg, ArgTypes[I]);
     EmitNonNullArgCheck(Args.back().RV, ArgTypes[I], (*Arg)->getExprLoc(),
                         CalleeDecl, ParamsToSkip + I);
+    MaybeEmitImplicitObjectSize(I, *Arg);
   }
 }
 
@@ -2992,19 +3057,41 @@ CodeGenFunction::EmitRuntimeCall(llvm::Value *callee,
   return call;
 }
 
+// Calls which may throw must have operand bundles indicating which funclet
+// they are nested within.
+static void
+getBundlesForFunclet(llvm::Value *Callee,
+                     llvm::Instruction *CurrentFuncletPad,
+                     SmallVectorImpl<llvm::OperandBundleDef> &BundleList) {
+  // There is no need for a funclet operand bundle if we aren't inside a funclet.
+  if (!CurrentFuncletPad)
+    return;
+
+  // Skip intrinsics which cannot throw.
+  auto *CalleeFn = dyn_cast<llvm::Function>(Callee->stripPointerCasts());
+  if (CalleeFn && CalleeFn->isIntrinsic() && CalleeFn->doesNotThrow())
+    return;
+
+  BundleList.emplace_back("funclet", CurrentFuncletPad);
+}
+
 /// Emits a call or invoke to the given noreturn runtime function.
 void CodeGenFunction::EmitNoreturnRuntimeCallOrInvoke(llvm::Value *callee,
                                                ArrayRef<llvm::Value*> args) {
+  SmallVector<llvm::OperandBundleDef, 1> BundleList;
+  getBundlesForFunclet(callee, CurrentFuncletPad, BundleList);
+
   if (getInvokeDest()) {
     llvm::InvokeInst *invoke = 
       Builder.CreateInvoke(callee,
                            getUnreachableBlock(),
                            getInvokeDest(),
-                           args);
+                           args,
+                           BundleList);
     invoke->setDoesNotReturn();
     invoke->setCallingConv(getRuntimeCC());
   } else {
-    llvm::CallInst *call = Builder.CreateCall(callee, args);
+    llvm::CallInst *call = Builder.CreateCall(callee, args, BundleList);
     call->setDoesNotReturn();
     call->setCallingConv(getRuntimeCC());
     Builder.CreateUnreachable();
@@ -3073,7 +3160,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                  llvm::Value *Callee,
                                  ReturnValueSlot ReturnValue,
                                  const CallArgList &CallArgs,
-                                 const Decl *TargetDecl,
+                                 CGCalleeInfo CalleeInfo,
                                  llvm::Instruction **callOrInvoke) {
   // FIXME: We no longer need the types from CallArgs; lift up and simplify.
 
@@ -3402,23 +3489,38 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
 
   unsigned CallingConv;
   CodeGen::AttributeListType AttributeList;
-  CGM.ConstructAttributeList(CallInfo, TargetDecl, AttributeList,
-                             CallingConv, true);
+  CGM.ConstructAttributeList(Callee->getName(), CallInfo, CalleeInfo,
+                             AttributeList, CallingConv,
+                             /*AttrOnCallSite=*/true);
   llvm::AttributeSet Attrs = llvm::AttributeSet::get(getLLVMContext(),
                                                      AttributeList);
 
-  llvm::BasicBlock *InvokeDest = nullptr;
-  if (!Attrs.hasAttribute(llvm::AttributeSet::FunctionIndex,
-                          llvm::Attribute::NoUnwind) ||
-      currentFunctionUsesSEHTry())
-    InvokeDest = getInvokeDest();
+  bool CannotThrow;
+  if (currentFunctionUsesSEHTry()) {
+    // SEH cares about asynchronous exceptions, everything can "throw."
+    CannotThrow = false;
+  } else if (isCleanupPadScope() &&
+             EHPersonality::get(*this).isMSVCXXPersonality()) {
+    // The MSVC++ personality will implicitly terminate the program if an
+    // exception is thrown.  An unwind edge cannot be reached.
+    CannotThrow = true;
+  } else {
+    // Otherwise, nowunind callsites will never throw.
+    CannotThrow = Attrs.hasAttribute(llvm::AttributeSet::FunctionIndex,
+                                     llvm::Attribute::NoUnwind);
+  }
+  llvm::BasicBlock *InvokeDest = CannotThrow ? nullptr : getInvokeDest();
+
+  SmallVector<llvm::OperandBundleDef, 1> BundleList;
+  getBundlesForFunclet(Callee, CurrentFuncletPad, BundleList);
 
   llvm::CallSite CS;
   if (!InvokeDest) {
-    CS = Builder.CreateCall(Callee, IRCallArgs);
+    CS = Builder.CreateCall(Callee, IRCallArgs, BundleList);
   } else {
     llvm::BasicBlock *Cont = createBasicBlock("invoke.cont");
-    CS = Builder.CreateInvoke(Callee, Cont, InvokeDest, IRCallArgs);
+    CS = Builder.CreateInvoke(Callee, Cont, InvokeDest, IRCallArgs,
+                              BundleList);
     EmitBlock(Cont);
   }
   if (callOrInvoke)
@@ -3430,14 +3532,8 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
         Attrs.addAttribute(getLLVMContext(), llvm::AttributeSet::FunctionIndex,
                            llvm::Attribute::AlwaysInline);
 
-  // Disable inlining inside SEH __try blocks and cleanup funclets. None of the
-  // funclet EH personalities that clang supports have tables that are
-  // expressive enough to describe catching an exception inside a cleanup.
-  // __CxxFrameHandler3, for example, will terminate the program without
-  // catching it.
-  // FIXME: Move this decision to the LLVM inliner. Before we can do that, the
-  // inliner needs to know if a given call site is part of a cleanuppad.
-  if (isSEHTryScope() || isCleanupPadScope())
+  // Disable inlining inside SEH __try blocks.
+  if (isSEHTryScope())
     Attrs =
         Attrs.addAttribute(getLLVMContext(), llvm::AttributeSet::FunctionIndex,
                            llvm::Attribute::NoInline);
@@ -3483,9 +3579,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
   // lexical order, so deactivate it and run it manually here.
   CallArgs.freeArgumentMemory(*this);
 
-  if (llvm::CallInst *Call = dyn_cast<llvm::CallInst>(CI))
+  if (llvm::CallInst *Call = dyn_cast<llvm::CallInst>(CI)) {
+    const Decl *TargetDecl = CalleeInfo.getCalleeDecl();
     if (TargetDecl && TargetDecl->hasAttr<NotTailCalledAttr>())
       Call->setTailCallKind(llvm::CallInst::TCK_NoTail);
+  }
 
   RValue Ret = [&] {
     switch (RetAI.getKind()) {
@@ -3557,6 +3655,8 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
 
     llvm_unreachable("Unhandled ABIArgInfo::Kind");
   } ();
+
+  const Decl *TargetDecl = CalleeInfo.getCalleeDecl();
 
   if (Ret.isScalar() && TargetDecl) {
     if (const auto *AA = TargetDecl->getAttr<AssumeAlignedAttr>()) {

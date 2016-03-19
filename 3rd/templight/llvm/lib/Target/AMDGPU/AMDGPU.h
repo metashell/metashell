@@ -20,8 +20,10 @@ class AMDGPUInstrPrinter;
 class AMDGPUSubtarget;
 class AMDGPUTargetMachine;
 class FunctionPass;
+struct MachineSchedContext;
 class MCAsmInfo;
 class raw_ostream;
+class ScheduleDAGInstrs;
 class Target;
 class TargetMachine;
 
@@ -48,7 +50,8 @@ FunctionPass *createSIFixSGPRCopiesPass();
 FunctionPass *createSIFixSGPRLiveRangesPass();
 FunctionPass *createSICodeEmitterPass(formatted_raw_ostream &OS);
 FunctionPass *createSIInsertWaits(TargetMachine &tm);
-FunctionPass *createSIPrepareScratchRegs();
+
+ScheduleDAGInstrs *createSIMachineScheduler(MachineSchedContext *C);
 
 ModulePass *createAMDGPUAnnotateKernelFeaturesPass();
 void initializeAMDGPUAnnotateKernelFeaturesPass(PassRegistry &);
@@ -72,6 +75,7 @@ Pass *createAMDGPUStructurizeCFGPass();
 FunctionPass *createAMDGPUISelDag(TargetMachine &tm);
 ModulePass *createAMDGPUAlwaysInlinePass();
 ModulePass *createAMDGPUOpenCLImageTypeLoweringPass();
+FunctionPass *createAMDGPUAnnotateUniformValues();
 
 void initializeSIFixControlFlowLiveIntervalsPass(PassRegistry&);
 extern char &SIFixControlFlowLiveIntervalsID;
@@ -79,6 +83,8 @@ extern char &SIFixControlFlowLiveIntervalsID;
 void initializeSIFixSGPRLiveRangesPass(PassRegistry&);
 extern char &SIFixSGPRLiveRangesID;
 
+void initializeAMDGPUAnnotateUniformValuesPass(PassRegistry&);
+extern char &AMDGPUAnnotateUniformValuesPassID;
 
 extern Target TheAMDGPUTarget;
 extern Target TheGCNTarget;
@@ -92,8 +98,6 @@ enum TargetIndex {
   TI_SCRATCH_RSRC_DWORD3
 };
 }
-
-#define END_OF_TEXT_LABEL_NAME "EndOfTextLabel"
 
 } // End namespace llvm
 

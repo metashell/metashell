@@ -192,22 +192,26 @@ bool AsmPrinter::doInitialization(Module &M) {
   // use the directive, where it would need the same conditionalization
   // anyway.
   Triple TT(getTargetTriple());
-  if (TT.isOSDarwin()) {
+  // If there is a version specified, Major will be non-zero.
+  if (TT.isOSDarwin() && TT.getOSMajorVersion() != 0) {
     unsigned Major, Minor, Update;
-    TT.getOSVersion(Major, Minor, Update);
-    // If there is a version specified, Major will be non-zero.
-    if (Major) {
-      MCVersionMinType VersionType;
-      if (TT.isWatchOS())
-        VersionType = MCVM_WatchOSVersionMin;
-      else if (TT.isTvOS())
-        VersionType = MCVM_TvOSVersionMin;
-      else if (TT.isMacOSX())
-        VersionType = MCVM_OSXVersionMin;
-      else
-        VersionType = MCVM_IOSVersionMin;
-      OutStreamer->EmitVersionMin(VersionType, Major, Minor, Update);
+    MCVersionMinType VersionType;
+    if (TT.isWatchOS()) {
+      VersionType = MCVM_WatchOSVersionMin;
+      TT.getWatchOSVersion(Major, Minor, Update);
+    } else if (TT.isTvOS()) {
+      VersionType = MCVM_TvOSVersionMin;
+      TT.getiOSVersion(Major, Minor, Update);
+    } else if (TT.isMacOSX()) {
+      VersionType = MCVM_OSXVersionMin;
+      if (!TT.getMacOSXVersion(Major, Minor, Update))
+        Major = 0;
+    } else {
+      VersionType = MCVM_IOSVersionMin;
+      TT.getiOSVersion(Major, Minor, Update);
     }
+    if (Major != 0)
+      OutStreamer->EmitVersionMin(VersionType, Major, Minor, Update);
   }
 
   // Allow the target to emit any magic that it wants at the start of the file.
@@ -235,7 +239,8 @@ bool AsmPrinter::doInitialization(Module &M) {
         TM.getTargetFeatureString()));
     OutStreamer->AddComment("Start of file scope inline assembly");
     OutStreamer->AddBlankLine();
-    EmitInlineAsm(M.getModuleInlineAsm()+"\n", *STI, TM.Options.MCOptions);
+    EmitInlineAsm(M.getModuleInlineAsm()+"\n",
+                  OutContext.getSubtargetCopy(*STI), TM.Options.MCOptions);
     OutStreamer->AddComment("End of file scope inline assembly");
     OutStreamer->AddBlankLine();
   }
@@ -354,12 +359,7 @@ static MCSymbol *getOrCreateEmuTLSInitSym(MCSymbol *GVSym, MCContext &C) {
 void AsmPrinter::EmitEmulatedTLSControlVariable(const GlobalVariable *GV,
                                                 MCSymbol *EmittedSym,
                                                 bool AllZeroInitValue) {
-  // If there is init value, use .data.rel.local section;
-  // otherwise use the .data section.
-  MCSection *TLSVarSection = const_cast<MCSection*>(
-      (GV->hasInitializer() && !AllZeroInitValue)
-      ? getObjFileLowering().getDataRelLocalSection()
-      : getObjFileLowering().getDataSection());
+  MCSection *TLSVarSection = getObjFileLowering().getDataSection();
   OutStreamer->SwitchSection(TLSVarSection);
   MCSymbol *GVSym = getSymbol(GV);
   EmitLinkage(GV, EmittedSym);  // same linkage as GV
@@ -389,8 +389,6 @@ void AsmPrinter::EmitGlobalVariable(const GlobalVariable *GV) {
   bool IsEmuTLSVar =
       GV->getThreadLocalMode() != llvm::GlobalVariable::NotThreadLocal &&
       TM.Options.EmulatedTLS;
-  assert((!IsEmuTLSVar || getObjFileLowering().getDataRelLocalSection()) &&
-         "Need relocatable local section for emulated TLS variables");
   assert(!(IsEmuTLSVar && GV->hasCommonLinkage()) &&
          "No emulated TLS variables in the common section");
 
@@ -725,19 +723,27 @@ static void emitComments(const MachineInstr &MI, raw_ostream &CommentOS) {
 /// that is an implicit def.
 void AsmPrinter::emitImplicitDef(const MachineInstr *MI) const {
   unsigned RegNo = MI->getOperand(0).getReg();
-  OutStreamer->AddComment(Twine("implicit-def: ") +
-                          MMI->getContext().getRegisterInfo()->getName(RegNo));
+
+  SmallString<128> Str;
+  raw_svector_ostream OS(Str);
+  OS << "implicit-def: "
+     << PrintReg(RegNo, MF->getSubtarget().getRegisterInfo());
+
+  OutStreamer->AddComment(OS.str());
   OutStreamer->AddBlankLine();
 }
 
 static void emitKill(const MachineInstr *MI, AsmPrinter &AP) {
-  std::string Str = "kill:";
+  std::string Str;
+  raw_string_ostream OS(Str);
+  OS << "kill:";
   for (unsigned i = 0, e = MI->getNumOperands(); i != e; ++i) {
     const MachineOperand &Op = MI->getOperand(i);
     assert(Op.isReg() && "KILL instruction must have only register operands");
-    Str += ' ';
-    Str += AP.MMI->getContext().getRegisterInfo()->getName(Op.getReg());
-    Str += (Op.isDef() ? "<def>" : "<kill>");
+    OS << ' '
+       << PrintReg(Op.getReg(),
+                   AP.MF->getSubtarget().getRegisterInfo())
+       << (Op.isDef() ? "<def>" : "<kill>");
   }
   AP.OutStreamer->AddComment(Str);
   AP.OutStreamer->AddBlankLine();
@@ -772,6 +778,31 @@ static bool emitDebugValueComment(const MachineInstr *MI, AsmPrinter &AP) {
   // The second operand is only an offset if it's an immediate.
   bool Deref = MI->getOperand(0).isReg() && MI->getOperand(1).isImm();
   int64_t Offset = Deref ? MI->getOperand(1).getImm() : 0;
+
+  for (unsigned i = 0; i < Expr->getNumElements(); ++i) {
+    if (Deref) {
+      // We currently don't support extra Offsets or derefs after the first
+      // one. Bail out early instead of emitting an incorrect comment
+      OS << " [complex expression]";
+      AP.OutStreamer->emitRawComment(OS.str());
+      return true;
+    }
+    uint64_t Op = Expr->getElement(i);
+    if (Op == dwarf::DW_OP_deref) {
+      Deref = true;
+      continue;
+    } else if (Op == dwarf::DW_OP_bit_piece) {
+      // There can't be any operands after this in a valid expression
+      break;
+    }
+    uint64_t ExtraOffset = Expr->getElement(i++);
+    if (Op == dwarf::DW_OP_plus)
+      Offset += ExtraOffset;
+    else {
+      assert(Op == dwarf::DW_OP_minus);
+      Offset -= ExtraOffset;
+    }
+  }
 
   // Register or immediate value. Register 0 means undef.
   if (MI->getOperand(0).isFPImm()) {
@@ -812,7 +843,7 @@ static bool emitDebugValueComment(const MachineInstr *MI, AsmPrinter &AP) {
     }
     if (Deref)
       OS << '[';
-    OS << AP.MMI->getContext().getRegisterInfo()->getName(Reg);
+    OS << PrintReg(Reg, AP.MF->getSubtarget().getRegisterInfo());
   }
 
   if (Deref)
@@ -1132,7 +1163,7 @@ bool AsmPrinter::doFinalization(Module &M) {
     // Output stubs for external and common global variables.
     MachineModuleInfoELF::SymbolListTy Stubs = MMIELF.GetGVStubList();
     if (!Stubs.empty()) {
-      OutStreamer->SwitchSection(TLOF.getDataRelSection());
+      OutStreamer->SwitchSection(TLOF.getDataSection());
       const DataLayout &DL = M.getDataLayout();
 
       for (const auto &Stub : Stubs) {
@@ -1184,6 +1215,11 @@ bool AsmPrinter::doFinalization(Module &M) {
       OutStreamer->EmitSymbolAttribute(Name, MCSA_WeakReference);
     else
       assert(Alias.hasLocalLinkage() && "Invalid alias linkage");
+
+    // Set the symbol type to function if the alias has a function type.
+    // This affects codegen when the aliasee is not a function.
+    if (Alias.getType()->getPointerElementType()->isFunctionTy())
+      OutStreamer->EmitSymbolAttribute(Name, MCSA_ELF_TypeFunction);
 
     EmitVisibility(Name, Alias.getVisibility());
 
@@ -1866,6 +1902,8 @@ static void emitGlobalConstantImpl(const DataLayout &DL, const Constant *C,
                                    const Constant *BaseCV = nullptr,
                                    uint64_t Offset = 0);
 
+static void emitGlobalConstantFP(const ConstantFP *CFP, AsmPrinter &AP);
+
 /// isRepeatedByteSequence - Determine whether the given value is
 /// composed of a repeated sequence of identical bytes and return the
 /// byte value.  If it is not a repeated sequence, return -1.
@@ -1943,34 +1981,9 @@ static void emitGlobalConstantDataSequential(const DataLayout &DL,
       AP.OutStreamer->EmitIntValue(CDS->getElementAsInteger(i),
                                    ElementByteSize);
     }
-  } else if (ElementByteSize == 4) {
-    // FP Constants are printed as integer constants to avoid losing
-    // precision.
-    assert(CDS->getElementType()->isFloatTy());
-    for (unsigned i = 0, e = CDS->getNumElements(); i != e; ++i) {
-      union {
-        float F;
-        uint32_t I;
-      };
-
-      F = CDS->getElementAsFloat(i);
-      if (AP.isVerbose())
-        AP.OutStreamer->GetCommentOS() << "float " << F << '\n';
-      AP.OutStreamer->EmitIntValue(I, 4);
-    }
   } else {
-    assert(CDS->getElementType()->isDoubleTy());
-    for (unsigned i = 0, e = CDS->getNumElements(); i != e; ++i) {
-      union {
-        double F;
-        uint64_t I;
-      };
-
-      F = CDS->getElementAsDouble(i);
-      if (AP.isVerbose())
-        AP.OutStreamer->GetCommentOS() << "double " << F << '\n';
-      AP.OutStreamer->EmitIntValue(I, 8);
-    }
+    for (unsigned I = 0, E = CDS->getNumElements(); I != E; ++I)
+      emitGlobalConstantFP(cast<ConstantFP>(CDS->getElementAsConstant(I)), AP);
   }
 
   unsigned Size = DL.getTypeAllocSize(CDS->getType());
@@ -2494,9 +2507,13 @@ void AsmPrinter::EmitBasicBlockStart(const MachineBasicBlock &MBB) const {
 
   // Print some verbose block comments.
   if (isVerbose()) {
-    if (const BasicBlock *BB = MBB.getBasicBlock())
-      if (BB->hasName())
-        OutStreamer->AddComment("%" + BB->getName());
+    if (const BasicBlock *BB = MBB.getBasicBlock()) {
+      if (BB->hasName()) {
+        BB->printAsOperand(OutStreamer->GetCommentOS(),
+                           /*PrintType=*/false, BB->getModule());
+        OutStreamer->GetCommentOS() << '\n';
+      }
+    }
     emitBasicBlockLoopComments(MBB, LI, *this);
   }
 

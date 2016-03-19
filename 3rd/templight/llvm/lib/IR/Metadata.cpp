@@ -120,6 +120,38 @@ void MetadataAsValue::untrack() {
     MetadataTracking::untrack(MD);
 }
 
+bool MetadataTracking::track(void *Ref, Metadata &MD, OwnerTy Owner) {
+  assert(Ref && "Expected live reference");
+  assert((Owner || *static_cast<Metadata **>(Ref) == &MD) &&
+         "Reference without owner must be direct");
+  if (auto *R = ReplaceableMetadataImpl::get(MD)) {
+    R->addRef(Ref, Owner);
+    return true;
+  }
+  return false;
+}
+
+void MetadataTracking::untrack(void *Ref, Metadata &MD) {
+  assert(Ref && "Expected live reference");
+  if (auto *R = ReplaceableMetadataImpl::get(MD))
+    R->dropRef(Ref);
+}
+
+bool MetadataTracking::retrack(void *Ref, Metadata &MD, void *New) {
+  assert(Ref && "Expected live reference");
+  assert(New && "Expected live reference");
+  assert(Ref != New && "Expected change");
+  if (auto *R = ReplaceableMetadataImpl::get(MD)) {
+    R->moveRef(Ref, New, MD);
+    return true;
+  }
+  return false;
+}
+
+bool MetadataTracking::isReplaceable(const Metadata &MD) {
+  return ReplaceableMetadataImpl::get(const_cast<Metadata &>(MD));
+}
+
 void ReplaceableMetadataImpl::addRef(void *Ref, OwnerTy Owner) {
   bool WasInserted =
       UseMap.insert(std::make_pair(Ref, std::make_pair(Owner, NextIndex)))
@@ -158,6 +190,8 @@ void ReplaceableMetadataImpl::moveRef(void *Ref, void *New,
 void ReplaceableMetadataImpl::replaceAllUsesWith(Metadata *MD) {
   assert(!(MD && isa<MDNode>(MD) && cast<MDNode>(MD)->isTemporary()) &&
          "Expected non-temp node");
+  assert(CanReplace &&
+         "Attempted to replace Metadata marked for no replacement");
 
   if (UseMap.empty())
     return;
@@ -237,6 +271,12 @@ void ReplaceableMetadataImpl::resolveAllUses(bool ResolveUsers) {
       continue;
     OwnerMD->decrementUnresolvedOperandCount();
   }
+}
+
+ReplaceableMetadataImpl *ReplaceableMetadataImpl::get(Metadata &MD) {
+  if (auto *N = dyn_cast<MDNode>(&MD))
+    return N->Context.getReplaceableUses();
+  return dyn_cast<ValueAsMetadata>(&MD);
 }
 
 static Function *getLocalFunction(Value *V) {
@@ -517,7 +557,7 @@ void MDNode::decrementUnresolvedOperandCount() {
     resolve();
 }
 
-void MDNode::resolveCycles() {
+void MDNode::resolveRecursivelyImpl(bool AllowTemps) {
   if (isResolved())
     return;
 
@@ -530,6 +570,8 @@ void MDNode::resolveCycles() {
     if (!N)
       continue;
 
+    if (N->isTemporary() && AllowTemps)
+      continue;
     assert(!N->isTemporary() &&
            "Expected all forward declarations to be resolved");
     if (!N->isResolved())

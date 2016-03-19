@@ -29,6 +29,48 @@ class MCSymbol;
 class raw_ostream;
 class DwarfTypeUnit;
 
+// AsmStreamerBase - A base abstract interface class defines methods that
+// can be implemented to stream objects or can be implemented to
+// calculate the size of the streamed objects.
+// The derived classes will use an AsmPrinter to implement the methods.
+//
+// TODO: complete this interface and use it to merge EmitValue and SizeOf
+//       methods in the DIE classes below.
+class AsmStreamerBase {
+protected:
+  const AsmPrinter *AP;
+  AsmStreamerBase(const AsmPrinter *AP) : AP(AP) {}
+
+public:
+  virtual ~AsmStreamerBase() {}
+  virtual unsigned emitULEB128(uint64_t Value, const char *Desc = nullptr,
+                               unsigned PadTo = 0) = 0;
+  virtual unsigned emitInt8(unsigned char Value) = 0;
+  virtual unsigned emitBytes(StringRef Data) = 0;
+};
+
+/// EmittingAsmStreamer - Implements AbstractAsmStreamer to stream objects.
+/// Notice that the return value is not the actual size of the streamed object.
+/// For size calculation use SizeReporterAsmStreamer.
+class EmittingAsmStreamer : public AsmStreamerBase {
+public:
+  EmittingAsmStreamer(const AsmPrinter *AP) : AsmStreamerBase(AP) {}
+  unsigned emitULEB128(uint64_t Value, const char *Desc = nullptr,
+                       unsigned PadTo = 0) override;
+  unsigned emitInt8(unsigned char Value) override;
+  unsigned emitBytes(StringRef Data) override;
+};
+
+/// SizeReporterAsmStreamer - Only reports the size of the streamed objects.
+class SizeReporterAsmStreamer : public AsmStreamerBase {
+public:
+  SizeReporterAsmStreamer(const AsmPrinter *AP) : AsmStreamerBase(AP) {}
+  unsigned emitULEB128(uint64_t Value, const char *Desc = nullptr,
+                       unsigned PadTo = 0) override;
+  unsigned emitInt8(unsigned char Value) override;
+  unsigned emitBytes(StringRef Data) override;
+};
+
 //===--------------------------------------------------------------------===//
 /// DIEAbbrevData - Dwarf abbreviation data, describes one attribute of a
 /// Dwarf abbreviation.
@@ -100,10 +142,8 @@ public:
   ///
   void Emit(const AsmPrinter *AP) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O);
   void dump();
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -143,9 +183,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -164,9 +202,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -185,9 +221,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -203,9 +237,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -223,9 +255,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -252,9 +282,7 @@ public:
                                            : sizeof(int32_t);
   }
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -273,9 +301,7 @@ public:
     return 8;
   }
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -295,9 +321,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -444,10 +468,8 @@ public:
   ///
   unsigned SizeOf(const AsmPrinter *AP) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
   void dump() const;
-#endif
 };
 
 struct IntrusiveBackListNode {
@@ -710,10 +732,8 @@ public:
   /// gives \a DIEValue::isNone) if no such attribute exists.
   DIEValue findAttribute(dwarf::Attribute Attribute) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O, unsigned IndentCount = 0) const;
   void dump();
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -747,9 +767,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 //===--------------------------------------------------------------------===//
@@ -780,9 +798,7 @@ public:
   void EmitValue(const AsmPrinter *AP, dwarf::Form Form) const;
   unsigned SizeOf(const AsmPrinter *AP, dwarf::Form Form) const;
 
-#ifndef NDEBUG
   void print(raw_ostream &O) const;
-#endif
 };
 
 } // end llvm namespace

@@ -24,6 +24,7 @@
 #include "clang/Sema/ParsedTemplate.h"
 #include "clang/Sema/PrettyDeclStackTrace.h"
 #include "clang/Sema/Scope.h"
+#include "clang/Sema/SemaDiagnostic.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -1464,15 +1465,13 @@ Parser::DeclGroupPtrTy Parser::ParseDeclaration(unsigned Context,
     if (getLangOpts().CPlusPlus && NextToken().is(tok::kw_namespace)) {
       ProhibitAttributes(attrs);
       SourceLocation InlineLoc = ConsumeToken();
-      SingleDecl = ParseNamespace(Context, DeclEnd, InlineLoc);
-      break;
+      return ParseNamespace(Context, DeclEnd, InlineLoc);
     }
     return ParseSimpleDeclaration(Context, DeclEnd, attrs,
                                   true);
   case tok::kw_namespace:
     ProhibitAttributes(attrs);
-    SingleDecl = ParseNamespace(Context, DeclEnd);
-    break;
+    return ParseNamespace(Context, DeclEnd);
   case tok::kw_using:
     SingleDecl = ParseUsingDirectiveOrDeclaration(Context, ParsedTemplateInfo(),
                                                   DeclEnd, attrs, &OwnedType);
@@ -1975,8 +1974,8 @@ Decl *Parser::ParseDeclarationAfterDeclaratorAndAttributes(
         // Recover as if it were an explicit specialization.
         TemplateParameterLists FakedParamLists;
         FakedParamLists.push_back(Actions.ActOnTemplateParameterList(
-            0, SourceLocation(), TemplateInfo.TemplateLoc, LAngleLoc, nullptr,
-            0, LAngleLoc));
+            0, SourceLocation(), TemplateInfo.TemplateLoc, LAngleLoc, None,
+            LAngleLoc));
 
         ThisDecl =
             Actions.ActOnTemplateDeclarator(getCurScope(), FakedParamLists, D);
@@ -2157,7 +2156,7 @@ void Parser::ParseSpecifierQualifierList(DeclSpec &DS, AccessSpecifier AS,
     DS.ClearStorageClassSpecs();
   }
 
-  // Issue diagnostic and remove function specfier if present.
+  // Issue diagnostic and remove function specifier if present.
   if (Specs & DeclSpec::PQ_FunctionSpecifier) {
     if (DS.isInlineSpecified())
       Diag(DS.getInlineSpecLoc(), diag::err_typename_invalid_functionspec);
@@ -2670,7 +2669,7 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
 
       // If this is not a declaration specifier token, we're done reading decl
       // specifiers.  First verify that DeclSpec's are consistent.
-      DS.Finish(Diags, PP, Policy);
+      DS.Finish(Actions, Policy);
       return;
 
     case tok::l_square:
@@ -2785,8 +2784,8 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
           // arguments. Complain, then parse it as a type as the user
           // intended.
           Diag(TemplateId->TemplateNameLoc,
-               diag::err_out_of_line_template_id_names_constructor)
-            << TemplateId->Name;
+               diag::err_out_of_line_template_id_type_names_constructor)
+            << TemplateId->Name << 0 /* template name */;
         }
 
         DS.getTypeSpecScope() = SS;
@@ -2831,8 +2830,9 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
         // looked at the declarator, and the user probably meant this
         // to be a type. Complain that it isn't supposed to be treated
         // as a type, then proceed to parse it as a type.
-        Diag(Next.getLocation(), diag::err_out_of_line_type_names_constructor)
-          << Next.getIdentifierInfo();
+        Diag(Next.getLocation(),
+             diag::err_out_of_line_template_id_type_names_constructor)
+          << Next.getIdentifierInfo() << 1 /* type */;
       }
 
       ParsedType TypeRep = Actions.getTypeName(*Next.getIdentifierInfo(),
@@ -3326,6 +3326,15 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
     case tok::kw___bool:
       isInvalid = DS.SetTypeAltiVecBool(true, Loc, PrevSpec, DiagID, Policy);
       break;
+    case tok::kw_pipe:
+      if (!getLangOpts().OpenCL || (getLangOpts().OpenCLVersion < 200)) {
+        // OpenCL 2.0 defined this keyword. OpenCL 1.2 and earlier should
+        // support the "pipe" word as identifier.
+        Tok.getIdentifierInfo()->revertTokenIDToIdentifier();
+        goto DoneWithDeclSpec;
+      }
+      isInvalid = DS.SetTypePipe(true, Loc, PrevSpec, DiagID, Policy);
+      break;
     case tok::kw___unknown_anytype:
       isInvalid = DS.SetTypeSpecType(TST_unknown_anytype, Loc,
                                      PrevSpec, DiagID, Policy);
@@ -3587,8 +3596,8 @@ void Parser::ParseStructUnionBody(SourceLocation RecordLoc,
   SmallVector<Decl *, 32> FieldDecls;
 
   // While we still have something to read, read the declarations in the struct.
-  while (Tok.isNot(tok::r_brace) && Tok.isNot(tok::eof) &&
-         !tryParseMisplacedModuleImport()) {
+  while (!tryParseMisplacedModuleImport() && Tok.isNot(tok::r_brace) &&
+         Tok.isNot(tok::eof)) {
     // Each iteration of this loop reads one struct-declaration.
 
     // Check for extraneous top-level semicolon.
@@ -4401,6 +4410,9 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
   switch (Tok.getKind()) {
   default: return false;
 
+  case tok::kw_pipe:
+    return getLangOpts().OpenCL && (getLangOpts().OpenCLVersion >= 200);
+
   case tok::identifier:   // foo::bar
     // Unfortunate hack to support "Class.factoryMethod" notation.
     if (getLangOpts().ObjC1 && NextToken().is(tok::period))
@@ -4819,7 +4831,7 @@ void Parser::ParseTypeQualifierListOpt(DeclSpec &DS, unsigned AttrReqs,
       DoneWithTypeQuals:
       // If this is not a type-qualifier token, we're done reading type
       // qualifiers.  First verify that DeclSpec's are consistent.
-      DS.Finish(Diags, PP, Actions.getASTContext().getPrintingPolicy());
+      DS.Finish(Actions, Actions.getASTContext().getPrintingPolicy());
       if (EndLoc.isValid())
         DS.SetRangeEnd(EndLoc);
       return;
@@ -4847,6 +4859,9 @@ static bool isPtrOperatorToken(tok::TokenKind Kind, const LangOptions &Lang,
   if (Kind == tok::star || Kind == tok::caret)
     return true;
 
+  if ((Kind == tok::kw_pipe) && Lang.OpenCL && (Lang.OpenCLVersion >= 200))
+    return true;
+
   if (!Lang.CPlusPlus)
     return false;
 
@@ -4861,6 +4876,17 @@ static bool isPtrOperatorToken(tok::TokenKind Kind, const LangOptions &Lang,
   if (Kind == tok::ampamp)
     return Lang.CPlusPlus11 || (TheContext != Declarator::ConversionIdContext &&
                                 TheContext != Declarator::CXXNewContext);
+
+  return false;
+}
+
+// Indicates whether the given declarator is a pipe declarator.
+static bool isPipeDeclerator(const Declarator &D) {
+  const unsigned NumTypes = D.getNumTypeObjects();
+
+  for (unsigned Idx = 0; Idx != NumTypes; ++Idx)
+    if (DeclaratorChunk::Pipe == D.getTypeObject(Idx).Kind)
+      return true;
 
   return false;
 }
@@ -4941,6 +4967,15 @@ void Parser::ParseDeclaratorInternal(Declarator &D,
   }
 
   tok::TokenKind Kind = Tok.getKind();
+
+  if (D.getDeclSpec().isTypeSpecPipe() && !isPipeDeclerator(D)) {
+    DeclSpec &DS = D.getMutableDeclSpec();
+
+    D.AddTypeInfo(
+        DeclaratorChunk::getPipe(DS.getTypeQualifiers(), DS.getPipeLoc()),
+        DS.getAttributes(), SourceLocation());
+  }
+
   // Not a pointer, C++ reference, or block.
   if (!isPtrOperatorToken(Kind, getLangOpts(), D.getContext())) {
     if (DirectDeclParser)
@@ -5196,6 +5231,15 @@ void Parser::ParseDirectDeclarator(Declarator &D) {
           D.SetRangeBegin(D.getName().getSourceRange().getBegin());
         D.SetRangeEnd(D.getName().getSourceRange().getEnd());
       }
+      goto PastIdentifier;
+    }
+
+    if (D.getCXXScopeSpec().isNotEmpty()) {
+      // We have a scope specifier but no following unqualified-id.
+      Diag(PP.getLocForEndOfToken(D.getCXXScopeSpec().getEndLoc()),
+           diag::err_expected_unqualified_id)
+          << /*C++*/1;
+      D.SetIdentifier(nullptr, Tok.getLocation());
       goto PastIdentifier;
     }
   } else if (Tok.is(tok::identifier) && D.mayHaveIdentifier()) {
@@ -6083,6 +6127,7 @@ void Parser::ParseMisplacedBracketDeclarator(Declarator &D) {
     case DeclaratorChunk::Reference:
     case DeclaratorChunk::BlockPointer:
     case DeclaratorChunk::MemberPointer:
+    case DeclaratorChunk::Pipe:
       NeedParens = true;
       break;
     case DeclaratorChunk::Array:

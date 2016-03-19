@@ -22,6 +22,7 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/GraphWriter.h"
+#include "llvm/Support/Printable.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetInstrInfo.h"
 #include "llvm/Target/TargetIntrinsicInfo.h"
@@ -209,6 +210,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
 
   case ISD::FPOWI:                      return "fpowi";
   case ISD::SETCC:                      return "setcc";
+  case ISD::SETCCE:                     return "setcce";
   case ISD::SELECT:                     return "select";
   case ISD::VSELECT:                    return "vselect";
   case ISD::SELECT_CC:                  return "select_cc";
@@ -233,8 +235,6 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::SHL_PARTS:                  return "shl_parts";
   case ISD::SRA_PARTS:                  return "sra_parts";
   case ISD::SRL_PARTS:                  return "srl_parts";
-  case ISD::UABSDIFF:                   return "uabsdiff";
-  case ISD::SABSDIFF:                   return "sabsdiff";
 
   // Conversion operators.
   case ISD::SIGN_EXTEND:                return "sign_extend";
@@ -309,15 +309,17 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::LIFETIME_END:               return "lifetime.end";
   case ISD::GC_TRANSITION_START:        return "gc_transition.start";
   case ISD::GC_TRANSITION_END:          return "gc_transition.end";
+  case ISD::GET_DYNAMIC_AREA_OFFSET:    return "get.dynamic.area.offset";
 
   // Bit manipulation
+  case ISD::BITREVERSE:                 return "bitreverse";
   case ISD::BSWAP:                      return "bswap";
   case ISD::CTPOP:                      return "ctpop";
   case ISD::CTTZ:                       return "cttz";
   case ISD::CTTZ_ZERO_UNDEF:            return "cttz_zero_undef";
   case ISD::CTLZ:                       return "ctlz";
   case ISD::CTLZ_ZERO_UNDEF:            return "ctlz_zero_undef";
-
+    
   // Trampolines
   case ISD::INIT_TRAMPOLINE:            return "init_trampoline";
   case ISD::ADJUST_TRAMPOLINE:          return "adjust_trampoline";
@@ -366,25 +368,14 @@ const char *SDNode::getIndexedModeName(ISD::MemIndexedMode AM) {
   }
 }
 
-namespace {
-class PrintNodeId {
-  const SDNode &Node;
-public:
-  explicit PrintNodeId(const SDNode &Node)
-      : Node(Node) {}
-  void print(raw_ostream &OS) const {
+static Printable PrintNodeId(const SDNode &Node) {
+  return Printable([&Node](raw_ostream &OS) {
 #ifndef NDEBUG
     OS << 't' << Node.PersistentId;
 #else
     OS << (const void*)&Node;
 #endif
-  }
-};
-
-static inline raw_ostream &operator<<(raw_ostream &OS, const PrintNodeId &P) {
-  P.print(OS);
-  return OS;
-}
+  });
 }
 
 void SDNode::dump() const { dump(nullptr); }
@@ -623,7 +614,10 @@ void SDNode::printr(raw_ostream &OS, const SelectionDAG *G) const {
 
 static bool printOperand(raw_ostream &OS, const SelectionDAG *G,
                          const SDValue Value) {
-  if (shouldPrintInline(*Value.getNode())) {
+  if (!Value.getNode()) {
+    OS << "<null>";
+    return false;
+  } else if (shouldPrintInline(*Value.getNode())) {
     OS << Value->getOperationName(G) << ':';
     Value->print_types(OS, G);
     Value->print_details(OS, G);

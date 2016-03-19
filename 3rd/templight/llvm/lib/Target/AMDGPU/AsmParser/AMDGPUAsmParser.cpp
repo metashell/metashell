@@ -85,6 +85,7 @@ public:
     unsigned RegNo;
     int Modifiers;
     const MCRegisterInfo *TRI;
+    const MCSubtargetInfo *STI;
     bool IsForcedVOP3;
   };
 
@@ -104,7 +105,7 @@ public:
   }
 
   void addRegOperands(MCInst &Inst, unsigned N) const {
-    Inst.addOperand(MCOperand::createReg(getReg()));
+    Inst.addOperand(MCOperand::createReg(AMDGPU::getMCReg(getReg(), *Reg.STI)));
   }
 
   void addRegOrImmOperands(MCInst &Inst, unsigned N) const {
@@ -299,10 +300,12 @@ public:
   static std::unique_ptr<AMDGPUOperand> CreateReg(unsigned RegNo, SMLoc S,
                                                   SMLoc E,
                                                   const MCRegisterInfo *TRI,
+                                                  const MCSubtargetInfo *STI,
                                                   bool ForceVOP3) {
     auto Op = llvm::make_unique<AMDGPUOperand>(Register);
     Op->Reg.RegNo = RegNo;
     Op->Reg.TRI = TRI;
+    Op->Reg.STI = STI;
     Op->Reg.Modifiers = -1;
     Op->Reg.IsForcedVOP3 = ForceVOP3;
     Op->StartLoc = S;
@@ -327,14 +330,21 @@ public:
 };
 
 class AMDGPUAsmParser : public MCTargetAsmParser {
-  MCSubtargetInfo &STI;
   const MCInstrInfo &MII;
   MCAsmParser &Parser;
 
   unsigned ForcedEncodingSize;
 
+  bool isSI() const {
+    return AMDGPU::isSI(getSTI());
+  }
+
+  bool isCI() const {
+    return AMDGPU::isCI(getSTI());
+  }
+
   bool isVI() const {
-    return STI.getFeatureBits()[AMDGPU::FeatureVolcanicIslands];
+    return AMDGPU::isVI(getSTI());
   }
 
   bool hasSGPR102_SGPR103() const {
@@ -358,6 +368,11 @@ private:
   bool ParseSectionDirectiveHSAText();
   bool subtargetHasRegister(const MCRegisterInfo &MRI, unsigned RegNo) const;
   bool ParseDirectiveAMDGPUHsaKernel();
+  bool ParseDirectiveAMDGPUHsaModuleGlobal();
+  bool ParseDirectiveAMDGPUHsaProgramGlobal();
+  bool ParseSectionDirectiveHSADataGlobalAgent();
+  bool ParseSectionDirectiveHSADataGlobalProgram();
+  bool ParseSectionDirectiveHSARodataReadonlyAgent();
 
 public:
 public:
@@ -365,18 +380,19 @@ public:
     Match_PreferE32 = FIRST_TARGET_MATCH_RESULT_TY
   };
 
-  AMDGPUAsmParser(MCSubtargetInfo &STI, MCAsmParser &_Parser,
+  AMDGPUAsmParser(const MCSubtargetInfo &STI, MCAsmParser &_Parser,
                const MCInstrInfo &MII,
                const MCTargetOptions &Options)
-      : MCTargetAsmParser(Options), STI(STI), MII(MII), Parser(_Parser),
+      : MCTargetAsmParser(Options, STI), MII(MII), Parser(_Parser),
         ForcedEncodingSize(0) {
+    MCAsmParserExtension::Initialize(Parser);
 
-    if (STI.getFeatureBits().none()) {
+    if (getSTI().getFeatureBits().none()) {
       // Set default features.
-      STI.ToggleFeature("SOUTHERN_ISLANDS");
+      copySTI().ToggleFeature("SOUTHERN_ISLANDS");
     }
 
-    setAvailableFeatures(ComputeAvailableFeatures(STI.getFeatureBits()));
+    setAvailableFeatures(ComputeAvailableFeatures(getSTI().getFeatureBits()));
   }
 
   AMDGPUTargetStreamer &getTargetStreamer() {
@@ -504,12 +520,14 @@ bool AMDGPUAsmParser::ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &End
   const AsmToken Tok = Parser.getTok();
   StartLoc = Tok.getLoc();
   EndLoc = Tok.getEndLoc();
+  const MCRegisterInfo *TRI = getContext().getRegisterInfo();
+
   StringRef RegName = Tok.getString();
   RegNo = getRegForName(RegName);
 
   if (RegNo) {
     Parser.Lex();
-    return false;
+    return !subtargetHasRegister(*TRI, RegNo);
   }
 
   // Match vgprs and sgprs
@@ -562,7 +580,6 @@ bool AMDGPUAsmParser::ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &End
     }
   }
 
-  const MCRegisterInfo *TRI = getContext().getRegisterInfo();
   int RCID = getRegClass(IsVgpr, RegWidth);
   if (RCID == -1)
     return true;
@@ -603,7 +620,7 @@ bool AMDGPUAsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
     default: break;
     case Match_Success:
       Inst.setLoc(IDLoc);
-      Out.EmitInstruction(Inst, STI);
+      Out.EmitInstruction(Inst, getSTI());
       return false;
     case Match_MissingFeature:
       return Error(IDLoc, "instruction not supported on this GPU");
@@ -697,7 +714,7 @@ bool AMDGPUAsmParser::ParseDirectiveHSACodeObjectISA() {
   // If this directive has no arguments, then use the ISA version for the
   // targeted GPU.
   if (getLexer().is(AsmToken::EndOfStatement)) {
-    AMDGPU::IsaVersion Isa = AMDGPU::getIsaVersion(STI.getFeatureBits());
+    AMDGPU::IsaVersion Isa = AMDGPU::getIsaVersion(getSTI().getFeatureBits());
     getTargetStreamer().EmitDirectiveHSACodeObjectISA(Isa.Major, Isa.Minor,
                                                       Isa.Stepping,
                                                       "AMD", "AMDGPU");
@@ -909,7 +926,7 @@ bool AMDGPUAsmParser::ParseAMDKernelCodeTValue(StringRef ID,
 bool AMDGPUAsmParser::ParseDirectiveAMDKernelCodeT() {
 
   amd_kernel_code_t Header;
-  AMDGPU::initDefaultAMDKernelCodeT(Header, STI.getFeatureBits());
+  AMDGPU::initDefaultAMDKernelCodeT(Header, getSTI().getFeatureBits());
 
   while (true) {
 
@@ -957,6 +974,46 @@ bool AMDGPUAsmParser::ParseDirectiveAMDGPUHsaKernel() {
   return false;
 }
 
+bool AMDGPUAsmParser::ParseDirectiveAMDGPUHsaModuleGlobal() {
+  if (getLexer().isNot(AsmToken::Identifier))
+    return TokError("expected symbol name");
+
+  StringRef GlobalName = Parser.getTok().getIdentifier();
+
+  getTargetStreamer().EmitAMDGPUHsaModuleScopeGlobal(GlobalName);
+  Lex();
+  return false;
+}
+
+bool AMDGPUAsmParser::ParseDirectiveAMDGPUHsaProgramGlobal() {
+  if (getLexer().isNot(AsmToken::Identifier))
+    return TokError("expected symbol name");
+
+  StringRef GlobalName = Parser.getTok().getIdentifier();
+
+  getTargetStreamer().EmitAMDGPUHsaProgramScopeGlobal(GlobalName);
+  Lex();
+  return false;
+}
+
+bool AMDGPUAsmParser::ParseSectionDirectiveHSADataGlobalAgent() {
+  getParser().getStreamer().SwitchSection(
+      AMDGPU::getHSADataGlobalAgentSection(getContext()));
+  return false;
+}
+
+bool AMDGPUAsmParser::ParseSectionDirectiveHSADataGlobalProgram() {
+  getParser().getStreamer().SwitchSection(
+      AMDGPU::getHSADataGlobalProgramSection(getContext()));
+  return false;
+}
+
+bool AMDGPUAsmParser::ParseSectionDirectiveHSARodataReadonlyAgent() {
+  getParser().getStreamer().SwitchSection(
+      AMDGPU::getHSARodataReadonlyAgentSection(getContext()));
+  return false;
+}
+
 bool AMDGPUAsmParser::ParseDirective(AsmToken DirectiveID) {
   StringRef IDVal = DirectiveID.getString();
 
@@ -975,13 +1032,40 @@ bool AMDGPUAsmParser::ParseDirective(AsmToken DirectiveID) {
   if (IDVal == ".amdgpu_hsa_kernel")
     return ParseDirectiveAMDGPUHsaKernel();
 
+  if (IDVal == ".amdgpu_hsa_module_global")
+    return ParseDirectiveAMDGPUHsaModuleGlobal();
+
+  if (IDVal == ".amdgpu_hsa_program_global")
+    return ParseDirectiveAMDGPUHsaProgramGlobal();
+
+  if (IDVal == ".hsadata_global_agent")
+    return ParseSectionDirectiveHSADataGlobalAgent();
+
+  if (IDVal == ".hsadata_global_program")
+    return ParseSectionDirectiveHSADataGlobalProgram();
+
+  if (IDVal == ".hsarodata_readonly_agent")
+    return ParseSectionDirectiveHSARodataReadonlyAgent();
+
   return true;
 }
 
 bool AMDGPUAsmParser::subtargetHasRegister(const MCRegisterInfo &MRI,
                                            unsigned RegNo) const {
-  if (!isVI())
+  if (isCI())
     return true;
+
+  if (isSI()) {
+    // No flat_scr
+    switch (RegNo) {
+    case AMDGPU::FLAT_SCR:
+    case AMDGPU::FLAT_SCR_LO:
+    case AMDGPU::FLAT_SCR_HI:
+      return false;
+    default:
+      return true;
+    }
+  }
 
   // VI only has 102 SGPRs, so make sure we aren't trying to use the 2 more that
   // SI/CI have.
@@ -1097,7 +1181,7 @@ AMDGPUAsmParser::parseOperand(OperandVector &Operands, StringRef Mnemonic) {
 
 
         Operands.push_back(AMDGPUOperand::CreateReg(
-            RegNo, S, E, getContext().getRegisterInfo(),
+            RegNo, S, E, getContext().getRegisterInfo(), &getSTI(),
             isForcedVOP3()));
 
         if (HasModifiers || Modifiers) {

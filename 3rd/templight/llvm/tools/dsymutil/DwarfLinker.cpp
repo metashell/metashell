@@ -31,6 +31,7 @@
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCTargetOptionsCommandFlags.h"
 #include "llvm/Object/MachO.h"
 #include "llvm/Support/Dwarf.h"
 #include "llvm/Support/LEB128.h"
@@ -519,7 +520,7 @@ public:
 
   /// \brief Emit the abbreviation table \p Abbrevs to the
   /// debug_abbrev section.
-  void emitAbbrevs(const std::vector<DIEAbbrev *> &Abbrevs);
+  void emitAbbrevs(const std::vector<std::unique_ptr<DIEAbbrev>> &Abbrevs);
 
   /// \brief Emit the string table described by \p Pool.
   void emitStrings(const NonRelocatableStringpool &Pool);
@@ -618,9 +619,11 @@ bool DwarfStreamer::init(Triple TheTriple, StringRef OutputFilename) {
   if (EC)
     return error(Twine(OutputFilename) + ": " + EC.message(), Context);
 
-  MS = TheTarget->createMCObjectStreamer(TheTriple, *MC, *MAB, *OutFile, MCE,
-                                         *MSTI, false,
-                                         /*DWARFMustBeAtTheEnd*/ false);
+  MCTargetOptions MCOptions = InitMCTargetOptionsFromFlags();
+  MS = TheTarget->createMCObjectStreamer(
+      TheTriple, *MC, *MAB, *OutFile, MCE, *MSTI, MCOptions.MCRelaxAll,
+      MCOptions.MCIncrementalLinkerCompatible,
+      /*DWARFMustBeAtTheEnd*/ false);
   if (!MS)
     return error("no object streamer for target " + TripleName, Context);
 
@@ -683,7 +686,8 @@ void DwarfStreamer::emitCompileUnitHeader(CompileUnit &Unit) {
 
 /// \brief Emit the \p Abbrevs array as the shared abbreviation table
 /// for the linked Dwarf file.
-void DwarfStreamer::emitAbbrevs(const std::vector<DIEAbbrev *> &Abbrevs) {
+void DwarfStreamer::emitAbbrevs(
+    const std::vector<std::unique_ptr<DIEAbbrev>> &Abbrevs) {
   MS->SwitchSection(MOFI->getDwarfAbbrevSection());
   Asm->emitDwarfAbbrevs(Abbrevs);
 }
@@ -1111,11 +1115,6 @@ public:
       : OutputFilename(OutputFilename), Options(Options),
         BinHolder(Options.Verbose), LastCIEOffset(0) {}
 
-  ~DwarfLinker() {
-    for (auto *Abbrev : Abbreviations)
-      delete Abbrev;
-  }
-
   /// \brief Link the contents of the DebugMap.
   bool link(const DebugMap &);
 
@@ -1379,7 +1378,7 @@ private:
   /// \brief Storage for the unique Abbreviations.
   /// This is passed to AsmPrinter::emitDwarfAbbrevs(), thus it cannot
   /// be changed to a vecot of unique_ptrs.
-  std::vector<DIEAbbrev *> Abbreviations;
+  std::vector<std::unique_ptr<DIEAbbrev>> Abbreviations;
 
   /// \brief Compute and emit debug_ranges section for \p Unit, and
   /// patch the attributes referencing it.
@@ -2282,10 +2281,10 @@ void DwarfLinker::AssignAbbrev(DIEAbbrev &Abbrev) {
   } else {
     // Add to abbreviation list.
     Abbreviations.push_back(
-        new DIEAbbrev(Abbrev.getTag(), Abbrev.hasChildren()));
+        llvm::make_unique<DIEAbbrev>(Abbrev.getTag(), Abbrev.hasChildren()));
     for (const auto &Attr : Abbrev.getData())
       Abbreviations.back()->AddAttribute(Attr.getAttribute(), Attr.getForm());
-    AbbreviationsSet.InsertNode(Abbreviations.back(), InsertToken);
+    AbbreviationsSet.InsertNode(Abbreviations.back().get(), InsertToken);
     // Assign the unique abbreviation number.
     Abbrev.setNumber(Abbreviations.size());
     Abbreviations.back()->setNumber(Abbreviations.size());
@@ -2830,7 +2829,7 @@ void DwarfLinker::patchRangesForUnit(const CompileUnit &Unit,
   uint64_t OrigLowPc = OrigUnitDie->getAttributeValueAsAddress(
       &OrigUnit, dwarf::DW_AT_low_pc, -1ULL);
   // Ranges addresses are based on the unit's low_pc. Compute the
-  // offset we need to apply to adapt to the the new unit's low_pc.
+  // offset we need to apply to adapt to the new unit's low_pc.
   int64_t UnitPcOffset = 0;
   if (OrigLowPc != -1ULL)
     UnitPcOffset = int64_t(OrigLowPc) - Unit.getLowPc();

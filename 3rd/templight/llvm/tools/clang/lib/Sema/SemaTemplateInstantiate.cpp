@@ -1675,8 +1675,11 @@ ParmVarDecl *Sema::SubstParmVarDecl(ParmVarDecl *OldParm,
       Sema::ContextRAII SavedContext(*this, OwningFunc);
       LocalInstantiationScope Local(*this);
       ExprResult NewArg = SubstExpr(Arg, TemplateArgs);
-      if (NewArg.isUsable())
-        NewParm->setDefaultArg(NewArg.get());
+      if (NewArg.isUsable()) {
+        // It would be nice if we still had this.
+        SourceLocation EqualLoc = NewArg.get()->getLocStart();
+        SetParamDefaultArgument(NewParm, NewArg.get(), EqualLoc);
+      }
     } else {
       // FIXME: if we non-lazily instantiated non-dependent default args for
       // non-dependent parameter types we could remove a bunch of duplicate
@@ -1829,9 +1832,7 @@ Sema::SubstBaseSpecifiers(CXXRecordDecl *Instantiation,
       Invalid = true;
   }
 
-  if (!Invalid &&
-      AttachBaseSpecifiers(Instantiation, InstantiatedBases.data(),
-                           InstantiatedBases.size()))
+  if (!Invalid && AttachBaseSpecifiers(Instantiation, InstantiatedBases))
     Invalid = true;
 
   return Invalid;
@@ -2658,16 +2659,17 @@ ExprResult Sema::SubstInitializer(Expr *Init,
   return Instantiator.TransformInitializer(Init, CXXDirectInit);
 }
 
-bool Sema::SubstExprs(Expr **Exprs, unsigned NumExprs, bool IsCall,
+bool Sema::SubstExprs(ArrayRef<Expr *> Exprs, bool IsCall,
                       const MultiLevelTemplateArgumentList &TemplateArgs,
                       SmallVectorImpl<Expr *> &Outputs) {
-  if (NumExprs == 0)
+  if (Exprs.empty())
     return false;
 
   TemplateInstantiator Instantiator(*this, TemplateArgs,
                                     SourceLocation(),
                                     DeclarationName());
-  return Instantiator.TransformExprs(Exprs, NumExprs, IsCall, Outputs);
+  return Instantiator.TransformExprs(Exprs.data(), Exprs.size(),
+                                     IsCall, Outputs);
 }
 
 NestedNameSpecifierLoc

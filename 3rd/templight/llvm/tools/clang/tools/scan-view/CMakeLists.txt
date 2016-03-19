@@ -1,12 +1,12 @@
 option(CLANG_INSTALL_SCANVIEW "Install the scan-view tool" ON)
 
 set(BinFiles
-      Reporter.py
-      ScanView.py
-      scan-view
-      startfile.py)
+      scan-view)
 
-set(ResourceFiles
+set(ShareFiles
+      ScanView.py
+      Reporter.py
+      startfile.py
       FileRadar.scpt
       GetRadarVersion.scpt
       bugcatcher.ico)
@@ -17,23 +17,23 @@ if(CLANG_INSTALL_SCANVIEW)
                        COMMAND ${CMAKE_COMMAND} -E make_directory
                          ${CMAKE_BINARY_DIR}/bin
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${BinFile}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile}
                          ${CMAKE_BINARY_DIR}/bin/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${BinFile})
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile})
     list(APPEND Depends ${CMAKE_BINARY_DIR}/bin/${BinFile})
-    install(PROGRAMS ${BinFile} DESTINATION bin)
+    install(PROGRAMS bin/${BinFile} DESTINATION bin)
   endforeach()
 
-  foreach(ResourceFile ${ResourceFiles})
-    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/scan-view/${ResourceFile}
+  foreach(ShareFile ${ShareFiles})
+    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/scan-view/${ShareFile}
                        COMMAND ${CMAKE_COMMAND} -E make_directory
                          ${CMAKE_BINARY_DIR}/share/scan-view
                        COMMAND ${CMAKE_COMMAND} -E copy
-                         ${CMAKE_CURRENT_SOURCE_DIR}/Resources/${ResourceFile}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/share/${ShareFile}
                          ${CMAKE_BINARY_DIR}/share/scan-view/
-                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Resources/${ResourceFile})
-    list(APPEND Depends ${CMAKE_BINARY_DIR}/share/scan-view/${ResourceFile})
-    install(FILES Resources/${ResourceFile} DESTINATION share/scan-view)
+                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/share/${ShareFile})
+    list(APPEND Depends ${CMAKE_BINARY_DIR}/share/scan-view/${ShareFile})
+    install(FILES share/${ShareFile} DESTINATION share/scan-view)
   endforeach()
 
   add_custom_target(scan-view ALL DEPENDS ${Depends})

@@ -49,8 +49,8 @@ void TsanCheckFailed(const char *file, int line, const char *cond,
 #ifdef TSAN_EXTERNAL_HOOKS
 bool OnReport(const ReportDesc *rep, bool suppressed);
 #else
-SANITIZER_INTERFACE_ATTRIBUTE
-bool WEAK OnReport(const ReportDesc *rep, bool suppressed) {
+SANITIZER_WEAK_CXX_DEFAULT_IMPL
+bool OnReport(const ReportDesc *rep, bool suppressed) {
   (void)rep;
   return suppressed;
 }
@@ -186,7 +186,7 @@ void ScopedReport::AddThread(const ThreadContext *tctx, bool suppressable) {
       return;
   }
   void *mem = internal_alloc(MBlockReportThread, sizeof(ReportThread));
-  ReportThread *rt = new(mem) ReportThread();
+  ReportThread *rt = new(mem) ReportThread;
   rep_->threads.PushBack(rt);
   rt->id = tctx->tid;
   rt->pid = tctx->os_id;
@@ -200,16 +200,16 @@ void ScopedReport::AddThread(const ThreadContext *tctx, bool suppressable) {
 }
 
 #ifndef SANITIZER_GO
+static bool FindThreadByUidLockedCallback(ThreadContextBase *tctx, void *arg) {
+  int unique_id = *(int *)arg;
+  return tctx->unique_id == (u32)unique_id;
+}
+
 static ThreadContext *FindThreadByUidLocked(int unique_id) {
   ctx->thread_registry->CheckLocked();
-  for (unsigned i = 0; i < kMaxTid; i++) {
-    ThreadContext *tctx = static_cast<ThreadContext*>(
-        ctx->thread_registry->GetThreadLocked(i));
-    if (tctx && tctx->unique_id == (u32)unique_id) {
-      return tctx;
-    }
-  }
-  return 0;
+  return static_cast<ThreadContext *>(
+      ctx->thread_registry->FindThreadContextLocked(
+          FindThreadByUidLockedCallback, &unique_id));
 }
 
 static ThreadContext *FindThreadByTidLocked(int tid) {
@@ -256,7 +256,7 @@ void ScopedReport::AddMutex(const SyncVar *s) {
       return;
   }
   void *mem = internal_alloc(MBlockReportMutex, sizeof(ReportMutex));
-  ReportMutex *rm = new(mem) ReportMutex();
+  ReportMutex *rm = new(mem) ReportMutex;
   rep_->mutexes.PushBack(rm);
   rm->id = s->uid;
   rm->addr = s->addr;
@@ -289,7 +289,7 @@ void ScopedReport::AddDeadMutex(u64 id) {
       return;
   }
   void *mem = internal_alloc(MBlockReportMutex, sizeof(ReportMutex));
-  ReportMutex *rm = new(mem) ReportMutex();
+  ReportMutex *rm = new(mem) ReportMutex;
   rep_->mutexes.PushBack(rm);
   rm->id = id;
   rm->addr = 0;

@@ -2,6 +2,9 @@
 # generic implementations of the core runtime library along with optimized
 # architecture-specific code in various subdirectories.
 
+# TODO: Need to add a mechanism for logging errors when builtin source files are
+# added to a sub-directory and not this CMakeLists file.
+
 set(GENERIC_SOURCES
   absvdi2.c
   absvsi2.c
@@ -38,6 +41,7 @@ set(GENERIC_SOURCES
   divsc3.c
   divsf3.c
   divsi3.c
+  divtc3.c
   divti3.c
   divtf3.c
   divxc3.c
@@ -150,7 +154,7 @@ if(APPLE)
     atomic_thread_fence.c)
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 OR MINGW)
   set(GENERIC_SOURCES
       ${GENERIC_SOURCES}
       emutls.c)
@@ -164,6 +168,8 @@ endif ()
 
 if (NOT MSVC)
   set(x86_64_SOURCES
+      x86_64/chkstk.S
+      x86_64/chkstk2.S
       x86_64/floatdidf.c
       x86_64/floatdisf.c
       x86_64/floatdixf.c
@@ -183,6 +189,8 @@ if (NOT MSVC)
   set(i386_SOURCES
       i386/ashldi3.S
       i386/ashrdi3.S
+      i386/chkstk.S
+      i386/chkstk2.S
       i386/divdi3.S
       i386/floatdidf.S
       i386/floatdisf.S
@@ -241,6 +249,8 @@ set(arm_SOURCES
   arm/aeabi_uldivmod.S
   arm/bswapdi2.S
   arm/bswapsi2.S
+  arm/clzdi2.S
+  arm/clzsi2.S
   arm/comparesf2.S
   arm/divdf3vfp.S
   arm/divmodsi4.S
@@ -343,6 +353,9 @@ set(mipsel_SOURCES ${mips_SOURCES})
 set(mips64_SOURCES ${mips_SOURCES})
 set(mips64el_SOURCES ${mips_SOURCES})
 
+set(wasm32_SOURCES ${GENERIC_SOURCES})
+set(wasm64_SOURCES ${GENERIC_SOURCES})
+
 add_custom_target(builtins)
 
 if (APPLE)
@@ -350,6 +363,8 @@ if (APPLE)
   add_subdirectory(macho_embedded)
   darwin_add_builtin_libraries(${BUILTIN_SUPPORTED_OS})
 elseif (NOT WIN32 OR MINGW)
+  append_string_if(COMPILER_RT_HAS_STD_C99_FLAG -std=c99 maybe_stdc99)
+
   foreach (arch ${BUILTIN_SUPPORTED_ARCH})
     if (CAN_TARGET_${arch})
       # Filter out generic versions of routines that are re-implemented in
@@ -367,7 +382,7 @@ elseif (NOT WIN32 OR MINGW)
                               STATIC
                               ARCHS ${arch}
                               SOURCES ${${arch}_SOURCES}
-                              CFLAGS "-std=c99"
+                              CFLAGS ${maybe_stdc99}
                               PARENT_TARGET builtins)
     endif ()
   endforeach ()

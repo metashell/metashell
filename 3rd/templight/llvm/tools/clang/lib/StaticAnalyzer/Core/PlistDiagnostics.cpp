@@ -295,7 +295,7 @@ void PlistDiagnostics::FlushDiagnosticsImpl(
   const SourceManager* SM = nullptr;
 
   if (!Diags.empty())
-    SM = &(*(*Diags.begin())->path.begin())->getLocation().getManager();
+    SM = &Diags.front()->path.front()->getLocation().getManager();
 
 
   for (std::vector<const PathDiagnostic*>::iterator DI = Diags.begin(),
@@ -399,7 +399,7 @@ void PlistDiagnostics::FlushDiagnosticsImpl(
                     *SM);
     const Decl *DeclWithIssue = D->getDeclWithIssue();
     EmitString(o, GetIssueHash(*SM, L, D->getCheckName(), D->getBugType(),
-                               DeclWithIssue))
+                               DeclWithIssue, LangOpts))
         << '\n';
 
     // Output information about the semantic context where

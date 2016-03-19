@@ -22,6 +22,7 @@
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/GlobalsModRef.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CodeMetrics.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -221,7 +222,7 @@ static void propagateIRFlags(Value *I, ArrayRef<Value *> VL) {
     }
   }
 }
-  
+
 /// \returns \p I after propagating metadata from \p VL.
 static Instruction *propagateMetadata(Instruction *I, ArrayRef<Value *> VL) {
   Instruction *I0 = cast<Instruction>(VL[0]);
@@ -505,7 +506,7 @@ private:
     }
     return Last;
   }
-  
+
   /// -- Vectorization State --
   /// Holds all of the tree entries.
   std::vector<TreeEntry> VectorizableTree;
@@ -883,7 +884,7 @@ private:
 
     /// The current size of the scheduling region.
     int ScheduleRegionSize;
-    
+
     /// The maximum size allowed for the scheduling region.
     int ScheduleRegionSizeLimit;
 
@@ -1088,7 +1089,7 @@ void BoUpSLP::buildTree_rec(ArrayRef<Value *> VL, unsigned Depth) {
     newTreeEntry(VL, false);
     return;
   }
-  
+
   // Check that every instructions appears once in this bundle.
   for (unsigned i = 0, e = VL.size(); i < e; ++i)
     for (unsigned j = i+1; j < e; ++j)
@@ -1712,7 +1713,7 @@ int BoUpSLP::getSpillCost() {
   int Cost = 0;
 
   SmallPtrSet<Instruction*, 4> LiveValues;
-  Instruction *PrevInst = nullptr; 
+  Instruction *PrevInst = nullptr;
 
   for (unsigned N = 0; N < VectorizableTree.size(); ++N) {
     Instruction *Inst = dyn_cast<Instruction>(VectorizableTree[N].Scalars[0]);
@@ -1737,7 +1738,7 @@ int BoUpSLP::getSpillCost() {
     for (auto &J : PrevInst->operands()) {
       if (isa<Instruction>(&*J) && ScalarToTreeEntry.count(&*J))
         LiveValues.insert(cast<Instruction>(&*J));
-    }    
+    }
 
     // Now find the sequence of instructions between PrevInst and Inst.
     BasicBlock::reverse_iterator InstIt(Inst->getIterator()),
@@ -1781,30 +1782,29 @@ int BoUpSLP::getTreeCost() {
 
   unsigned BundleWidth = VectorizableTree[0].Scalars.size();
 
-  for (unsigned i = 0, e = VectorizableTree.size(); i != e; ++i) {
-    int C = getEntryCost(&VectorizableTree[i]);
+  for (TreeEntry &TE : VectorizableTree) {
+    int C = getEntryCost(&TE);
     DEBUG(dbgs() << "SLP: Adding cost " << C << " for bundle that starts with "
-          << *VectorizableTree[i].Scalars[0] << " .\n");
+          << TE.Scalars[0] << " .\n");
     Cost += C;
   }
 
   SmallSet<Value *, 16> ExtractCostCalculated;
   int ExtractCost = 0;
-  for (UserList::iterator I = ExternalUses.begin(), E = ExternalUses.end();
-       I != E; ++I) {
+  for (ExternalUser &EU : ExternalUses) {
     // We only add extract cost once for the same scalar.
-    if (!ExtractCostCalculated.insert(I->Scalar).second)
+    if (!ExtractCostCalculated.insert(EU.Scalar).second)
       continue;
 
     // Uses by ephemeral values are free (because the ephemeral value will be
     // removed prior to code generation, and so the extraction will be
     // removed as well).
-    if (EphValues.count(I->User))
+    if (EphValues.count(EU.User))
       continue;
 
-    VectorType *VecTy = VectorType::get(I->Scalar->getType(), BundleWidth);
+    VectorType *VecTy = VectorType::get(EU.Scalar->getType(), BundleWidth);
     ExtractCost += TTI->getVectorInstrCost(Instruction::ExtractElement, VecTy,
-                                           I->Lane);
+                                           EU.Lane);
   }
 
   Cost += getSpillCost();
@@ -2552,7 +2552,7 @@ Value *BoUpSLP::vectorizeTree(TreeEntry *E) {
 }
 
 Value *BoUpSLP::vectorizeTree() {
-  
+
   // All blocks must be scheduled before any instructions are inserted.
   for (auto &BSIter : BlocksSchedules) {
     scheduleBlock(BSIter.second.get());
@@ -3073,10 +3073,10 @@ void BoUpSLP::BlockScheduling::resetSchedule() {
 }
 
 void BoUpSLP::scheduleBlock(BlockScheduling *BS) {
-  
+
   if (!BS->ScheduleStart)
     return;
-  
+
   DEBUG(dbgs() << "SLP: schedule block " << BS->BB->getName() << "\n");
 
   BS->resetSchedule();
@@ -3235,6 +3235,8 @@ struct SLPVectorizer : public FunctionPass {
     AU.addRequired<DominatorTreeWrapperPass>();
     AU.addPreserved<LoopInfoWrapperPass>();
     AU.addPreserved<DominatorTreeWrapperPass>();
+    AU.addPreserved<AAResultsWrapperPass>();
+    AU.addPreserved<GlobalsAAWrapperPass>();
     AU.setPreservesCFG();
   }
 
@@ -3589,7 +3591,7 @@ bool SLPVectorizer::tryToVectorize(BinaryOperator *V, BoUpSLP &R) {
 /// \param NumEltsToRdx The number of elements that should be reduced in the
 ///        vector.
 /// \param IsPairwise Whether the reduction is a pairwise or splitting
-///        reduction. A pairwise reduction will generate a mask of 
+///        reduction. A pairwise reduction will generate a mask of
 ///        <0,2,...> or <1,3,..> while a splitting reduction will generate
 ///        <2,3, undef,undef> for a vector of 4 and NumElts = 2.
 /// \param IsLeft True will generate a mask of even elements, odd otherwise.
@@ -3772,7 +3774,7 @@ public:
     IRBuilder<> Builder(ReductionRoot);
     FastMathFlags Unsafe;
     Unsafe.setUnsafeAlgebra();
-    Builder.SetFastMathFlags(Unsafe);
+    Builder.setFastMathFlags(Unsafe);
     unsigned i = 0;
 
     for (; i < NumReducedVals - ReduxWidth + 1; i += ReduxWidth) {
@@ -3937,8 +3939,17 @@ static bool PhiTypeSorterFunc(Value *V, Value *V2) {
 ///
 /// \returns A candidate reduction value if possible, or \code nullptr \endcode
 /// if not possible.
-static Value *getReductionValue(PHINode *P, BasicBlock *ParentBB,
-                                LoopInfo *LI) {
+static Value *getReductionValue(const DominatorTree *DT, PHINode *P,
+                                BasicBlock *ParentBB, LoopInfo *LI) {
+  // There are situations where the reduction value is not dominated by the
+  // reduction phi. Vectorizing such cases has been reported to cause
+  // miscompiles. See PR25787.
+  auto DominatedReduxValue = [&](Value *R) {
+    return (
+        dyn_cast<Instruction>(R) &&
+        DT->dominates(P->getParent(), dyn_cast<Instruction>(R)->getParent()));
+  };
+
   Value *Rdx = nullptr;
 
   // Return the incoming value if it comes from the same BB as the phi node.
@@ -3948,16 +3959,16 @@ static Value *getReductionValue(PHINode *P, BasicBlock *ParentBB,
     Rdx = P->getIncomingValue(1);
   }
 
-  if (Rdx)
+  if (Rdx && DominatedReduxValue(Rdx))
     return Rdx;
 
   // Otherwise, check whether we have a loop latch to look at.
   Loop *BBL = LI->getLoopFor(ParentBB);
   if (!BBL)
-    return Rdx;
+    return nullptr;
   BasicBlock *BBLatch = BBL->getLoopLatch();
   if (!BBLatch)
-    return Rdx;
+    return nullptr;
 
   // There is a loop latch, return the incoming value if it comes from
   // that. This reduction pattern occassionaly turns up.
@@ -3967,7 +3978,10 @@ static Value *getReductionValue(PHINode *P, BasicBlock *ParentBB,
     Rdx = P->getIncomingValue(1);
   }
 
-  return Rdx;
+  if (Rdx && DominatedReduxValue(Rdx))
+    return Rdx;
+
+  return nullptr;
 }
 
 /// \brief Attempt to reduce a horizontal reduction.
@@ -4005,9 +4019,8 @@ bool SLPVectorizer::vectorizeChainsInBlock(BasicBlock *BB, BoUpSLP &R) {
 
     // Collect the incoming values from the PHIs.
     Incoming.clear();
-    for (BasicBlock::iterator instr = BB->begin(), ie = BB->end(); instr != ie;
-         ++instr) {
-      PHINode *P = dyn_cast<PHINode>(instr);
+    for (Instruction &I : *BB) {
+      PHINode *P = dyn_cast<PHINode>(&I);
       if (!P)
         break;
 
@@ -4062,7 +4075,7 @@ bool SLPVectorizer::vectorizeChainsInBlock(BasicBlock *BB, BoUpSLP &R) {
       if (P->getNumIncomingValues() != 2)
         return Changed;
 
-      Value *Rdx = getReductionValue(P, BB, LI);
+      Value *Rdx = getReductionValue(DT, P, BB, LI);
 
       // Check if this is a Binary Operator.
       BinaryOperator *BI = dyn_cast_or_null<BinaryOperator>(Rdx);

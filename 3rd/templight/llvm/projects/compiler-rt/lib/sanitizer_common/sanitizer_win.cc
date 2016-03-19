@@ -83,10 +83,11 @@ void GetThreadStackTopAndBottom(bool at_initialization, uptr *stack_top,
 }
 #endif  // #if !SANITIZER_GO
 
-void *MmapOrDie(uptr size, const char *mem_type) {
+void *MmapOrDie(uptr size, const char *mem_type, bool raw_report) {
   void *rv = VirtualAlloc(0, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   if (rv == 0)
-    ReportMmapFailureAndDie(size, mem_type, "allocate", GetLastError());
+    ReportMmapFailureAndDie(size, mem_type, "allocate",
+                            GetLastError(), raw_report);
   return rv;
 }
 
@@ -220,12 +221,14 @@ struct ModuleInfo {
   uptr end_address;
 };
 
+#ifndef SANITIZER_GO
 int CompareModulesBase(const void *pl, const void *pr) {
   const ModuleInfo *l = (ModuleInfo *)pl, *r = (ModuleInfo *)pr;
   if (l->base_address < r->base_address)
     return -1;
   return l->base_address > r->base_address;
 }
+#endif
 }  // namespace
 
 #ifndef SANITIZER_GO
@@ -366,6 +369,7 @@ static uptr GetPreferredBase(const char *modname) {
   return (uptr)pe_header->ImageBase;
 }
 
+#ifndef SANITIZER_GO
 uptr GetListOfModules(LoadedModule *modules, uptr max_modules,
                       string_predicate_t filter) {
   HANDLE cur_process = GetCurrentProcess();
@@ -434,7 +438,6 @@ uptr GetListOfModules(LoadedModule *modules, uptr max_modules,
   return count;
 };
 
-#ifndef SANITIZER_GO
 // We can't use atexit() directly at __asan_init time as the CRT is not fully
 // initialized at this point.  Place the functions into a vector and use
 // atexit() as soon as it is ready for use (i.e. after .CRT$XIC initializers).
@@ -757,6 +760,14 @@ uptr ReadLongProcessName(/*out*/char *buf, uptr buf_len) {
 
 void CheckVMASize() {
   // Do nothing.
+}
+
+void DisableReexec() {
+  // No need to re-exec on Windows.
+}
+
+void MaybeReexec() {
+  // No need to re-exec on Windows.
 }
 
 }  // namespace __sanitizer

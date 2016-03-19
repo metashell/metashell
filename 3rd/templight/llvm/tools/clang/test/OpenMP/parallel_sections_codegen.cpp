@@ -5,7 +5,6 @@
 // REQUIRES: x86-registered-target
 #ifndef HEADER
 #define HEADER
-// CHECK: [[IMPLICIT_BARRIER_LOC:@.+]] = private unnamed_addr constant %{{.+}} { i32 0, i32 66, i32 0, i32 0, i8*
 // CHECK-LABEL: foo
 void foo() {};
 // CHECK-LABEL: bar
@@ -73,23 +72,16 @@ int main() {
 // CHECK:      [[INNER_LOOP_END]]
   }
 // CHECK:      call void @__kmpc_for_static_fini(%{{.+}}* @{{.+}}, i32 [[GTID]])
-// CHECK:      call void @__kmpc_barrier(%{{.+}}* [[IMPLICIT_BARRIER_LOC]],
   return tmain<int>();
 }
 
 // CHECK-LABEL: tmain
 // CHECK:       call void {{.*}} @__kmpc_fork_call(
 // CHECK-NOT:   __kmpc_global_thread_num
-// CHECK:       [[RES:%.+]] = call i32 @__kmpc_single(
-// CHECK-NEXT:  [[BOOLRES:%.+]] = icmp ne i32 [[RES]], 0
-// CHECK-NEXT:  br i1 [[BOOLRES]], label %[[THEN:.+]], label %[[END:.+]]
-// CHECK:       [[THEN]]
-// CHECK-NEXT:  invoke void @{{.*}}foo{{.*}}()
+// CHECK:       call void @__kmpc_for_static_init_4(
+// CHECK:       invoke void @{{.*}}foo{{.*}}()
 // CHECK-NEXT:  unwind label %[[TERM_LPAD:.+]]
-// CHECK:       call void @__kmpc_end_single(
-// CHECK-NEXT:  br label %[[END]]
-// CHECK:       [[END]]
-// CHECK-NEXT:  call void @__kmpc_barrier(%{{.+}}* [[IMPLICIT_BARRIER_LOC]],
+// CHECK:       call void @__kmpc_for_static_fini(
 // CHECK-NEXT:  ret
 // CHECK:       [[TERM_LPAD]]
 // CHECK:       call void @__clang_call_terminate(i8*

@@ -361,7 +361,7 @@ LineTableInfo &SourceManager::getLineTable() {
 SourceManager::SourceManager(DiagnosticsEngine &Diag, FileManager &FileMgr,
                              bool UserFilesAreVolatile)
   : Diag(Diag), FileMgr(FileMgr), OverridenFilesKeepOriginalName(true),
-    UserFilesAreVolatile(UserFilesAreVolatile),
+    UserFilesAreVolatile(UserFilesAreVolatile), FilesAreTransient(false),
     ExternalSLocEntries(nullptr), LineTable(nullptr), NumLinearScans(0),
     NumBinaryProbes(0) {
   clearIDTables();
@@ -439,6 +439,7 @@ SourceManager::getOrCreateContentCache(const FileEntry *FileEnt,
   }
 
   Entry->IsSystemFile = isSystemFile;
+  Entry->IsTransient = FilesAreTransient;
 
   return Entry;
 }
@@ -673,11 +674,9 @@ void SourceManager::disableFileContentsOverride(const FileEntry *File) {
   OverriddenFilesInfo->OverriddenFilesWithBuffer.erase(File);
 }
 
-void SourceManager::embedFileContentsInModule(const FileEntry *File) {
-  // We model an embedded file as a file whose buffer has been overridden
-  // by its contents as they are now.
+void SourceManager::setFileIsTransient(const FileEntry *File) {
   const SrcMgr::ContentCache *CC = getOrCreateContentCache(File);
-  const_cast<SrcMgr::ContentCache *>(CC)->BufferOverridden = true;
+  const_cast<SrcMgr::ContentCache *>(CC)->IsTransient = true;
 }
 
 StringRef SourceManager::getBufferData(FileID FID, bool *Invalid) const {
@@ -1718,7 +1717,7 @@ SourceLocation SourceManager::translateLineCol(FileID FID,
                                                unsigned Col) const {
   // Lines are used as a one-based index into a zero-based array. This assert
   // checks for possible buffer underruns.
-  assert(Line != 0 && "Passed a zero-based line");
+  assert(Line && Col && "Line and column should start from 1!");
 
   if (FID.isInvalid())
     return SourceLocation();
