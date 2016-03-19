@@ -85,7 +85,7 @@ JUST_TEST_CASE(test_readme_getting_started)
         command("ft"),
         command("rbreak fib<3>"),
         command("continue"),
-        command("c"),
+        command("c 2"),
         command(""),
         command("e"),
         command("evaluate -full int_<fib<4>::value>"),
@@ -238,14 +238,17 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(
     call_graph(
       {
-        {frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), 0, 2},
-        {frame( type("fib<4>"), _, _, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  type("fib<3>"), _, _, instantiation_kind::template_instantiation), 2, 2},
+        {frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), 0, 3},
+        {frame( type("fib<4>"), _, _, instantiation_kind::template_instantiation), 1, 3},
+        {frame(  type("fib<3>"), _, _, instantiation_kind::template_instantiation), 2, 3},
         {frame(   type("fib<2>"), _, _, instantiation_kind::template_instantiation), 3, 2},
         {frame(    type("fib<1>"), _, _, instantiation_kind::memoization), 4, 0},
         {frame(    type("fib<0>"), _, _, instantiation_kind::memoization), 4, 0},
+        {frame(   type("fib<2>"), _, _, instantiation_kind::memoization), 3, 0},
         {frame(   type("fib<1>"), _, _, instantiation_kind::memoization), 3, 0},
+        {frame(  type("fib<3>"), _, _, instantiation_kind::memoization), 2, 0},
         {frame(  type("fib<2>"), _, _, instantiation_kind::memoization), 2, 0},
+        {frame( type("fib<4>"), _, _, instantiation_kind::memoization), 1, 0},
         {frame( type("fib<3>"), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
@@ -256,7 +259,7 @@ JUST_TEST_CASE(test_readme_getting_started)
   JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
   ++i;
   JUST_ASSERT_EQUAL(
-    raw_text("Breakpoint \"fib<3>\" will stop the execution on 2 locations"),
+    raw_text("Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
     *i
   );
   ++i;
@@ -428,8 +431,9 @@ JUST_TEST_CASE(test_readme_how_to_sfinae) {
     call_graph(
       {
         {frame(type("decltype(make_unique<int>(15))")), 0, 6},
-        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
+        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
         {frame(  type("unique_if<int>"), _, _, instantiation_kind::template_instantiation), 2, 0},
+        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
         {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
         {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
         {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
