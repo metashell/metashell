@@ -19,6 +19,40 @@ set -e
 
 if [ -d 3rd ]
 then
+  while getopts ':r:dh' opt
+  do
+    case "${opt}" in
+      h)
+        echo "Usage: $0 [-r <svn_directory>] [-d]"
+        echo "-r <svn_directory>"
+        echo "  examples for <svn_directory>: trunk, trunk@212345, tags/RELEASE_380/final"
+        echo "  default value is trunk"
+        echo "-d"
+        echo "  disable templight patch"
+        exit 1
+        ;;
+      r)
+        SVN_DIRECTORY="${OPTARG}"
+        ;;
+      d)
+        DISABLE_TEMPLIGHT_PATCH="disable"
+        ;;
+      \?)
+        echo "Invalid option -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "Missing option for -${OPTARG}" >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  if [ -z "${SVN_DIRECTORY}" ]
+  then
+    SVN_DIRECTORY="trunk"
+  fi
+
   cd 3rd/templight
     echo "Deleting current templight and libc++"
     rm -rf build llvm libcxx
@@ -36,13 +70,17 @@ then
       libcxx/test \
       libcxx/www
 
-    echo "Getting LLVM/Clang"
-    svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
+    echo "Getting LLVM/Clang from $SVN_DIRECTORY"
+    svn co "http://llvm.org/svn/llvm-project/llvm/${SVN_DIRECTORY}" llvm
+
     cd llvm
-      CLANG_REV_TXT=../revision.txt
+      CLANG_REV_FILE=../revision.txt
       CLANG_REV_HEADER=../../../include/metashell/clang_revision.hpp
 
-      CLANG_REV=$(svn info | grep Revision | egrep -o '[0-9]*' | tee ${CLANG_REV_TXT})
+      CLANG_REV="$(svn info | grep Revision | egrep -o '[0-9]+')"
+      CLANG_REV_TEXT="${SVN_DIRECTORY} (r${CLANG_REV})"
+
+      echo "${CLANG_REV_TEXT}" > "${CLANG_REV_FILE}"
 
       echo "#ifndef METASHELL_CLANG_REVISION_HPP" > ${CLANG_REV_HEADER}
       echo "#define METASHELL_CLANG_REVISION_HPP" >> ${CLANG_REV_HEADER}
@@ -53,20 +91,19 @@ then
       echo "#ifdef METASHELL_CLANG_REVISION">> ${CLANG_REV_HEADER}
       echo "#  error METASHELL_CLANG_REVISION already defined">> ${CLANG_REV_HEADER}
       echo "#endif" >> ${CLANG_REV_HEADER}
-      echo -n "#define METASHELL_CLANG_REVISION " >> ${CLANG_REV_HEADER}
-      echo ${CLANG_REV} >> ${CLANG_REV_HEADER}
+      echo -n "#define METASHELL_CLANG_REVISION \"${CLANG_REV_TEXT}\"" >> ${CLANG_REV_HEADER}
       echo >> ${CLANG_REV_HEADER}
       echo "#endif" >> ${CLANG_REV_HEADER}
 
       cd tools
-        svn co -r ${CLANG_REV} http://llvm.org/svn/llvm-project/cfe/trunk clang
+        svn co "http://llvm.org/svn/llvm-project/cfe/${SVN_DIRECTORY}" clang
       cd ..
       cd projects
-        svn co -r ${CLANG_REV} http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+        svn co "http://llvm.org/svn/llvm-project/compiler-rt/${SVN_DIRECTORY}" compiler-rt
       cd ..
 
       echo "Make the entire LLVM/Clang source code managed in one git repository"
-      sed -i 's/.*\(projects\|tools\).*//g' .gitignore
+      sed -i '' 's/.*\(projects\|tools\).*//g' .gitignore
 
       if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
       then
@@ -75,7 +112,7 @@ then
           cd tools
             git clone 'https://github.com/mikael-s-persson/templight.git'
             rm -rf templight/.git
-            sed -i '1s/^/add_subdirectory(templight)\n/g' CMakeLists.txt
+            echo 'add_subdirectory(templight)' | cat - CMakeLists.txt > temp && mv temp CMakeLists.txt
           cd ..
           svn patch tools/templight/templight_clang_patch.diff
         cd ../..
