@@ -7,5 +7,5 @@
 #ifdef METASHELL_CLANG_REVISION
 #error METASHELL_CLANG_REVISION already defined
 #endif
-#define METASHELL_CLANG_REVISION "tags/RELEASE_380/final (r263897)"
+#define METASHELL_CLANG_REVISION "tags/RELEASE_380/final (r263909)"
 #endif
