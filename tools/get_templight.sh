@@ -103,7 +103,8 @@ then
       cd ..
 
       echo "Make the entire LLVM/Clang source code managed in one git repository"
-      sed -i '' 's/.*\(projects\|tools\).*//g' .gitignore
+      sed -i '' 's/.*projects.*//g' .gitignore
+      sed -i '' 's/.*tools.*//g' .gitignore
 
       if [ -z "${DISABLE_TEMPLIGHT_PATCH}" ]
       then
