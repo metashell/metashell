@@ -38,6 +38,19 @@ static __thread ReportType expect_report_type;
 #define __interceptor_memset wrap_memset
 #define __interceptor_pthread_create wrap_pthread_create
 #define __interceptor_pthread_join wrap_pthread_join
+#define __interceptor_pthread_detach wrap_pthread_detach
+#define __interceptor_pthread_mutex_init wrap_pthread_mutex_init
+#define __interceptor_pthread_mutex_lock wrap_pthread_mutex_lock
+#define __interceptor_pthread_mutex_unlock wrap_pthread_mutex_unlock
+#define __interceptor_pthread_mutex_destroy wrap_pthread_mutex_destroy
+#define __interceptor_pthread_mutex_trylock wrap_pthread_mutex_trylock
+#define __interceptor_pthread_rwlock_init wrap_pthread_rwlock_init
+#define __interceptor_pthread_rwlock_destroy wrap_pthread_rwlock_destroy
+#define __interceptor_pthread_rwlock_trywrlock wrap_pthread_rwlock_trywrlock
+#define __interceptor_pthread_rwlock_wrlock wrap_pthread_rwlock_wrlock
+#define __interceptor_pthread_rwlock_unlock wrap_pthread_rwlock_unlock
+#define __interceptor_pthread_rwlock_rdlock wrap_pthread_rwlock_rdlock
+#define __interceptor_pthread_rwlock_tryrdlock wrap_pthread_rwlock_tryrdlock
 #endif
 
 extern "C" void *__interceptor_memcpy(void *, const void *, uptr);
@@ -47,6 +60,24 @@ extern "C" int __interceptor_pthread_create(pthread_t *thread,
                                             void *(*start_routine)(void *),
                                             void *arg);
 extern "C" int __interceptor_pthread_join(pthread_t thread, void **value_ptr);
+extern "C" int __interceptor_pthread_detach(pthread_t thread);
+
+extern "C" int __interceptor_pthread_mutex_init(
+    pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+extern "C" int __interceptor_pthread_mutex_lock(pthread_mutex_t *mutex);
+extern "C" int __interceptor_pthread_mutex_unlock(pthread_mutex_t *mutex);
+extern "C" int __interceptor_pthread_mutex_destroy(pthread_mutex_t *mutex);
+extern "C" int __interceptor_pthread_mutex_trylock(pthread_mutex_t *mutex);
+
+extern "C" int __interceptor_pthread_rwlock_init(
+    pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
+extern "C" int __interceptor_pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
+extern "C" int __interceptor_pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
+extern "C" int __interceptor_pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+extern "C" int __interceptor_pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+extern "C" int __interceptor_pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+extern "C" int __interceptor_pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
+
 
 static void *BeforeInitThread(void *param) {
   (void)param;
@@ -59,9 +90,9 @@ static void AtExit() {
 void TestMutexBeforeInit() {
   // Mutexes must be usable before __tsan_init();
   pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-  pthread_mutex_lock(&mtx);
-  pthread_mutex_unlock(&mtx);
-  pthread_mutex_destroy(&mtx);
+  __interceptor_pthread_mutex_lock(&mtx);
+  __interceptor_pthread_mutex_unlock(&mtx);
+  __interceptor_pthread_mutex_destroy(&mtx);
   pthread_t thr;
   __interceptor_pthread_create(&thr, 0, BeforeInitThread, 0);
   __interceptor_pthread_join(thr, 0);
@@ -116,13 +147,13 @@ void Mutex::Init() {
   CHECK(!alive_);
   alive_ = true;
   if (type_ == Normal)
-    CHECK_EQ(pthread_mutex_init((pthread_mutex_t*)mtx_, 0), 0);
+    CHECK_EQ(__interceptor_pthread_mutex_init((pthread_mutex_t*)mtx_, 0), 0);
 #ifndef __APPLE__
   else if (type_ == Spin)
     CHECK_EQ(pthread_spin_init((pthread_spinlock_t*)mtx_, 0), 0);
 #endif
   else if (type_ == RW)
-    CHECK_EQ(pthread_rwlock_init((pthread_rwlock_t*)mtx_, 0), 0);
+    CHECK_EQ(__interceptor_pthread_rwlock_init((pthread_rwlock_t*)mtx_, 0), 0);
   else
     CHECK(0);
 }
@@ -139,68 +170,68 @@ void Mutex::Destroy() {
   CHECK(alive_);
   alive_ = false;
   if (type_ == Normal)
-    CHECK_EQ(pthread_mutex_destroy((pthread_mutex_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_mutex_destroy((pthread_mutex_t*)mtx_), 0);
 #ifndef __APPLE__
   else if (type_ == Spin)
     CHECK_EQ(pthread_spin_destroy((pthread_spinlock_t*)mtx_), 0);
 #endif
   else if (type_ == RW)
-    CHECK_EQ(pthread_rwlock_destroy((pthread_rwlock_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_rwlock_destroy((pthread_rwlock_t*)mtx_), 0);
 }
 
 void Mutex::Lock() {
   CHECK(alive_);
   if (type_ == Normal)
-    CHECK_EQ(pthread_mutex_lock((pthread_mutex_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_mutex_lock((pthread_mutex_t*)mtx_), 0);
 #ifndef __APPLE__
   else if (type_ == Spin)
     CHECK_EQ(pthread_spin_lock((pthread_spinlock_t*)mtx_), 0);
 #endif
   else if (type_ == RW)
-    CHECK_EQ(pthread_rwlock_wrlock((pthread_rwlock_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_rwlock_wrlock((pthread_rwlock_t*)mtx_), 0);
 }
 
 bool Mutex::TryLock() {
   CHECK(alive_);
   if (type_ == Normal)
-    return pthread_mutex_trylock((pthread_mutex_t*)mtx_) == 0;
+    return __interceptor_pthread_mutex_trylock((pthread_mutex_t*)mtx_) == 0;
 #ifndef __APPLE__
   else if (type_ == Spin)
     return pthread_spin_trylock((pthread_spinlock_t*)mtx_) == 0;
 #endif
   else if (type_ == RW)
-    return pthread_rwlock_trywrlock((pthread_rwlock_t*)mtx_) == 0;
+    return __interceptor_pthread_rwlock_trywrlock((pthread_rwlock_t*)mtx_) == 0;
   return false;
 }
 
 void Mutex::Unlock() {
   CHECK(alive_);
   if (type_ == Normal)
-    CHECK_EQ(pthread_mutex_unlock((pthread_mutex_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_mutex_unlock((pthread_mutex_t*)mtx_), 0);
 #ifndef __APPLE__
   else if (type_ == Spin)
     CHECK_EQ(pthread_spin_unlock((pthread_spinlock_t*)mtx_), 0);
 #endif
   else if (type_ == RW)
-    CHECK_EQ(pthread_rwlock_unlock((pthread_rwlock_t*)mtx_), 0);
+    CHECK_EQ(__interceptor_pthread_rwlock_unlock((pthread_rwlock_t*)mtx_), 0);
 }
 
 void Mutex::ReadLock() {
   CHECK(alive_);
   CHECK(type_ == RW);
-  CHECK_EQ(pthread_rwlock_rdlock((pthread_rwlock_t*)mtx_), 0);
+  CHECK_EQ(__interceptor_pthread_rwlock_rdlock((pthread_rwlock_t*)mtx_), 0);
 }
 
 bool Mutex::TryReadLock() {
   CHECK(alive_);
   CHECK(type_ == RW);
-  return pthread_rwlock_tryrdlock((pthread_rwlock_t*)mtx_) ==  0;
+  return __interceptor_pthread_rwlock_tryrdlock((pthread_rwlock_t*)mtx_) ==  0;
 }
 
 void Mutex::ReadUnlock() {
   CHECK(alive_);
   CHECK(type_ == RW);
-  CHECK_EQ(pthread_rwlock_unlock((pthread_rwlock_t*)mtx_), 0);
+  CHECK_EQ(__interceptor_pthread_rwlock_unlock((pthread_rwlock_t*)mtx_), 0);
 }
 
 struct Event {
@@ -381,7 +412,8 @@ ScopedThread::ScopedThread(bool detached, bool main) {
   if (!main) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, detached);
+    pthread_attr_setdetachstate(
+        &attr, detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE);
     pthread_attr_setstacksize(&attr, 64*1024);
     __interceptor_pthread_create(&impl_->thread, &attr,
         ScopedThread::Impl::ScopedThreadCallback, impl_);
@@ -402,7 +434,7 @@ void ScopedThread::Detach() {
   CHECK(!impl_->main);
   CHECK(!impl_->detached);
   impl_->detached = true;
-  pthread_detach(impl_->thread);
+  __interceptor_pthread_detach(impl_->thread);
 }
 
 void ScopedThread::Access(void *addr, bool is_write,

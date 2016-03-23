@@ -183,22 +183,31 @@ StringRef CGDebugInfo::getFunctionName(const FunctionDecl *FD) {
   IdentifierInfo *FII = FD->getIdentifier();
   FunctionTemplateSpecializationInfo *Info =
       FD->getTemplateSpecializationInfo();
-  if (!Info && FII)
+
+  if (!Info && FII && !CGM.getCodeGenOpts().EmitCodeView)
     return FII->getName();
 
   // Otherwise construct human readable name for debug info.
   SmallString<128> NS;
   llvm::raw_svector_ostream OS(NS);
-  FD->printName(OS);
+  PrintingPolicy Policy(CGM.getLangOpts());
 
-  // Add any template specialization args.
-  if (Info) {
-    const TemplateArgumentList *TArgs = Info->TemplateArguments;
-    const TemplateArgument *Args = TArgs->data();
-    unsigned NumArgs = TArgs->size();
-    PrintingPolicy Policy(CGM.getLangOpts());
-    TemplateSpecializationType::PrintTemplateArgumentList(OS, Args, NumArgs,
-                                                          Policy);
+  if (CGM.getCodeGenOpts().EmitCodeView) {
+    // Print a fully qualified name like MSVC would.
+    Policy.MSVCFormatting = true;
+    FD->printQualifiedName(OS, Policy);
+  } else {
+    // Print the unqualified name with some template arguments. This is what
+    // DWARF-based debuggers expect.
+    FD->printName(OS);
+    // Add any template specialization args.
+    if (Info) {
+      const TemplateArgumentList *TArgs = Info->TemplateArguments;
+      const TemplateArgument *Args = TArgs->data();
+      unsigned NumArgs = TArgs->size();
+      TemplateSpecializationType::PrintTemplateArgumentList(OS, Args, NumArgs,
+                                                            Policy);
+    }
   }
 
   // Copy this name on the side and use its reference.
@@ -712,10 +721,6 @@ llvm::DIType *CGDebugInfo::CreatePointerLikeType(llvm::dwarf::Tag Tag,
                                                  const Type *Ty,
                                                  QualType PointeeTy,
                                                  llvm::DIFile *Unit) {
-  if (Tag == llvm::dwarf::DW_TAG_reference_type ||
-      Tag == llvm::dwarf::DW_TAG_rvalue_reference_type)
-    return DBuilder.createReferenceType(Tag, getOrCreateType(PointeeTy, Unit));
-
   // Bit size, align and offset of the type.
   // Size is always the size of a pointer. We can't use getTypeSize here
   // because that does not return the correct value for references.
@@ -723,8 +728,13 @@ llvm::DIType *CGDebugInfo::CreatePointerLikeType(llvm::dwarf::Tag Tag,
   uint64_t Size = CGM.getTarget().getPointerWidth(AS);
   uint64_t Align = CGM.getContext().getTypeAlign(Ty);
 
-  return DBuilder.createPointerType(getOrCreateType(PointeeTy, Unit), Size,
-                                    Align);
+  if (Tag == llvm::dwarf::DW_TAG_reference_type ||
+      Tag == llvm::dwarf::DW_TAG_rvalue_reference_type)
+    return DBuilder.createReferenceType(Tag, getOrCreateType(PointeeTy, Unit),
+                                        Size, Align);
+  else
+    return DBuilder.createPointerType(getOrCreateType(PointeeTy, Unit), Size,
+                                      Align);
 }
 
 llvm::DIType *CGDebugInfo::getOrCreateStructPtrType(StringRef Name,
@@ -1790,7 +1800,7 @@ llvm::DIType *CGDebugInfo::CreateTypeDefinition(const ObjCInterfaceType *Ty,
   }
 
   // Create entries for all of the properties.
-  for (const auto *PD : ID->properties()) {
+  auto AddProperty = [&](const ObjCPropertyDecl *PD) {
     SourceLocation Loc = PD->getLocation();
     llvm::DIFile *PUnit = getOrCreateFile(Loc);
     unsigned PLine = getLineNumber(Loc);
@@ -1804,6 +1814,21 @@ llvm::DIType *CGDebugInfo::CreateTypeDefinition(const ObjCInterfaceType *Ty,
                                          : getSelectorName(PD->getSetterName()),
         PD->getPropertyAttributes(), getOrCreateType(PD->getType(), PUnit));
     EltTys.push_back(PropertyNode);
+  };
+  {
+    llvm::SmallPtrSet<const IdentifierInfo*, 16> PropertySet;
+    for (const ObjCCategoryDecl *ClassExt : ID->known_extensions())
+      for (auto *PD : ClassExt->properties()) {
+        PropertySet.insert(PD->getIdentifier());
+        AddProperty(PD);
+      }
+    for (const auto *PD : ID->properties()) {
+      // Don't emit duplicate metadata for properties that were already in a
+      // class extension.
+      if (!PropertySet.insert(PD->getIdentifier()).second)
+        continue;
+      AddProperty(PD);
+    }
   }
 
   const ASTRecordLayout &RL = CGM.getContext().getASTObjCInterfaceLayout(ID);
@@ -1998,6 +2023,11 @@ llvm::DIType *CGDebugInfo::CreateType(const AtomicType *Ty, llvm::DIFile *U) {
   // Ignore the atomic wrapping
   // FIXME: What is the correct representation?
   return getOrCreateType(Ty->getValueType(), U);
+}
+
+llvm::DIType* CGDebugInfo::CreateType(const PipeType *Ty,
+                                     llvm::DIFile *U) {
+  return getOrCreateType(Ty->getElementType(), U);
 }
 
 llvm::DIType *CGDebugInfo::CreateEnumType(const EnumType *Ty) {
@@ -2258,6 +2288,9 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
 
   case Type::Atomic:
     return CreateType(cast<AtomicType>(Ty), Unit);
+
+  case Type::Pipe:
+    return CreateType(cast<PipeType>(Ty), Unit);
 
   case Type::TemplateSpecialization:
     return CreateType(cast<TemplateSpecializationType>(Ty), Unit);
@@ -3328,7 +3361,7 @@ void CGDebugInfo::EmitGlobalVariable(llvm::GlobalVariable *Var,
   // variable for each member of the anonymous union so that it's possible
   // to find the name of any field in the union.
   if (T->isUnionType() && DeclName.empty()) {
-    const RecordDecl *RD = cast<RecordType>(T)->getDecl();
+    const RecordDecl *RD = T->castAs<RecordType>()->getDecl();
     assert(RD->isAnonymousStructOrUnion() &&
            "unnamed non-anonymous struct or union?");
     GV = CollectAnonRecordDecls(RD, Unit, LineNo, LinkageName, Var, DContext);
@@ -3392,10 +3425,14 @@ llvm::DIScope *CGDebugInfo::getCurrentContextDescriptor(const Decl *D) {
 void CGDebugInfo::EmitUsingDirective(const UsingDirectiveDecl &UD) {
   if (CGM.getCodeGenOpts().getDebugInfo() < CodeGenOptions::LimitedDebugInfo)
     return;
-  DBuilder.createImportedModule(
-      getCurrentContextDescriptor(cast<Decl>(UD.getDeclContext())),
-      getOrCreateNameSpace(UD.getNominatedNamespace()),
-      getLineNumber(UD.getLocation()));
+  const NamespaceDecl *NSDecl = UD.getNominatedNamespace();
+  if (!NSDecl->isAnonymousNamespace() || 
+      CGM.getCodeGenOpts().DebugExplicitImport) { 
+    DBuilder.createImportedModule(
+        getCurrentContextDescriptor(cast<Decl>(UD.getDeclContext())),
+        getOrCreateNameSpace(NSDecl),
+        getLineNumber(UD.getLocation()));
+  }
 }
 
 void CGDebugInfo::EmitUsingDecl(const UsingDecl &UD) {
@@ -3414,11 +3451,13 @@ void CGDebugInfo::EmitUsingDecl(const UsingDecl &UD) {
 }
 
 void CGDebugInfo::EmitImportDecl(const ImportDecl &ID) {
-  auto Info = ExternalASTSource::ASTSourceDescriptor(*ID.getImportedModule());
-  DBuilder.createImportedDeclaration(
-      getCurrentContextDescriptor(cast<Decl>(ID.getDeclContext())),
-      getOrCreateModuleRef(Info, DebugTypeExtRefs),
-      getLineNumber(ID.getLocation()));
+  if (Module *M = ID.getImportedModule()) {
+    auto Info = ExternalASTSource::ASTSourceDescriptor(*M);
+    DBuilder.createImportedDeclaration(
+        getCurrentContextDescriptor(cast<Decl>(ID.getDeclContext())),
+        getOrCreateModuleRef(Info, DebugTypeExtRefs),
+        getLineNumber(ID.getLocation()));
+  }
 }
 
 llvm::DIImportedEntity *

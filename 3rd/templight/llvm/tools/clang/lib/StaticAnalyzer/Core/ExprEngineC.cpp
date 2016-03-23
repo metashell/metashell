@@ -189,8 +189,9 @@ void ExprEngine::VisitBlockExpr(const BlockExpr *BE, ExplodedNode *Pred,
 
   CanQualType T = getContext().getCanonicalType(BE->getType());
 
+  const BlockDecl *BD = BE->getBlockDecl();
   // Get the value of the block itself.
-  SVal V = svalBuilder.getBlockPointer(BE->getBlockDecl(), T,
+  SVal V = svalBuilder.getBlockPointer(BD, T,
                                        Pred->getLocationContext(),
                                        currBldrCtx->blockCount());
 
@@ -204,11 +205,32 @@ void ExprEngine::VisitBlockExpr(const BlockExpr *BE, ExplodedNode *Pred,
     BlockDataRegion::referenced_vars_iterator I = BDR->referenced_vars_begin(),
                                               E = BDR->referenced_vars_end();
 
+    auto CI = BD->capture_begin();
+    auto CE = BD->capture_end();
     for (; I != E; ++I) {
-      const MemRegion *capturedR = I.getCapturedRegion();
-      const MemRegion *originalR = I.getOriginalRegion();
+      const VarRegion *capturedR = I.getCapturedRegion();
+      const VarRegion *originalR = I.getOriginalRegion();
+
+      // If the capture had a copy expression, use the result of evaluating
+      // that expression, otherwise use the original value.
+      // We rely on the invariant that the block declaration's capture variables
+      // are a prefix of the BlockDataRegion's referenced vars (which may include
+      // referenced globals, etc.) to enable fast lookup of the capture for a
+      // given referenced var.
+      const Expr *copyExpr = nullptr;
+      if (CI != CE) {
+        assert(CI->getVariable() == capturedR->getDecl());
+        copyExpr = CI->getCopyExpr();
+        CI++;
+      }
+
       if (capturedR != originalR) {
-        SVal originalV = State->getSVal(loc::MemRegionVal(originalR));
+        SVal originalV;
+        if (copyExpr) {
+          originalV = State->getSVal(copyExpr, Pred->getLocationContext());
+        } else {
+          originalV = State->getSVal(loc::MemRegionVal(originalR));
+        }
         State = State->bindLoc(loc::MemRegionVal(capturedR), originalV);
       }
     }
@@ -294,7 +316,7 @@ void ExprEngine::VisitCast(const CastExpr *CastE, const Expr *Ex,
       case CK_ArrayToPointerDecay:
       case CK_BitCast:
       case CK_AddressSpaceConversion:
-      case CK_IntegralCast:
+      case CK_BooleanToSignedIntegral:
       case CK_NullToPointer:
       case CK_IntegralToPointer:
       case CK_PointerToIntegral:
@@ -323,6 +345,17 @@ void ExprEngine::VisitCast(const CastExpr *CastE, const Expr *Ex,
         // Delegate to SValBuilder to process.
         SVal V = state->getSVal(Ex, LCtx);
         V = svalBuilder.evalCast(V, T, ExTy);
+        // Negate the result if we're treating the boolean as a signed i1
+        if (CastE->getCastKind() == CK_BooleanToSignedIntegral)
+          V = evalMinus(V);
+        state = state->BindExpr(CastE, LCtx, V);
+        Bldr.generateNode(CastE, Pred, state);
+        continue;
+      }
+      case CK_IntegralCast: {
+        // Delegate to SValBuilder to process.
+        SVal V = state->getSVal(Ex, LCtx);
+        V = svalBuilder.evalIntegralCast(state, V, T, ExTy);
         state = state->BindExpr(CastE, LCtx, V);
         Bldr.generateNode(CastE, Pred, state);
         continue;
@@ -470,7 +503,10 @@ void ExprEngine::VisitDeclStmt(const DeclStmt *DS, ExplodedNode *Pred,
       ExplodedNode *UpdatedN = N;
       SVal InitVal = state->getSVal(InitEx, LC);
 
-      if (isa<CXXConstructExpr>(InitEx->IgnoreImplicit())) {
+      assert(DS->isSingleDecl());
+      if (auto *CtorExpr = findDirectConstructorForCurrentCFGElement()) {
+        assert(InitEx->IgnoreImplicit() == CtorExpr);
+        (void)CtorExpr;
         // We constructed the object directly in the variable.
         // No need to bind anything.
         B.generateNode(DS, UpdatedN, state);

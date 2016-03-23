@@ -327,10 +327,9 @@ public:
                                                 llvm::Value *Val);
   void EmitThreadLocalInitFuncs(
       CodeGenModule &CGM,
-      ArrayRef<std::pair<const VarDecl *, llvm::GlobalVariable *>>
-          CXXThreadLocals,
+      ArrayRef<const VarDecl *> CXXThreadLocals,
       ArrayRef<llvm::Function *> CXXThreadLocalInits,
-      ArrayRef<llvm::GlobalVariable *> CXXThreadLocalInitVars) override;
+      ArrayRef<const VarDecl *> CXXThreadLocalInitVars) override;
 
   bool usesThreadWrapperFunction() const override { return true; }
   LValue EmitThreadLocalVarDeclLValue(CodeGenFunction &CGF, const VarDecl *VD,
@@ -535,9 +534,8 @@ llvm::Value *ItaniumCXXABI::EmitLoadOfMemberFunctionPointer(
   const CXXRecordDecl *RD = 
     cast<CXXRecordDecl>(MPT->getClass()->getAs<RecordType>()->getDecl());
 
-  llvm::FunctionType *FTy = 
-    CGM.getTypes().GetFunctionType(
-      CGM.getTypes().arrangeCXXMethodType(RD, FPT));
+  llvm::FunctionType *FTy = CGM.getTypes().GetFunctionType(
+      CGM.getTypes().arrangeCXXMethodType(RD, FPT, /*FD=*/nullptr));
 
   llvm::Constant *ptrdiff_1 = llvm::ConstantInt::get(CGM.PtrDiffTy, 1);
 
@@ -2196,14 +2194,18 @@ ItaniumCXXABI::getOrCreateThreadLocalWrapper(const VarDecl *VD,
       !llvm::GlobalVariable::isLinkOnceLinkage(Wrapper->getLinkage()) &&
       !llvm::GlobalVariable::isWeakODRLinkage(Wrapper->getLinkage())))
     Wrapper->setVisibility(llvm::GlobalValue::HiddenVisibility);
+
+  if (isThreadWrapperReplaceable(VD, CGM)) {
+    Wrapper->setCallingConv(llvm::CallingConv::CXX_FAST_TLS);
+    Wrapper->addFnAttr(llvm::Attribute::NoUnwind);
+  }
   return Wrapper;
 }
 
 void ItaniumCXXABI::EmitThreadLocalInitFuncs(
-    CodeGenModule &CGM,
-    ArrayRef<std::pair<const VarDecl *, llvm::GlobalVariable *>>
-        CXXThreadLocals, ArrayRef<llvm::Function *> CXXThreadLocalInits,
-    ArrayRef<llvm::GlobalVariable *> CXXThreadLocalInitVars) {
+    CodeGenModule &CGM, ArrayRef<const VarDecl *> CXXThreadLocals,
+    ArrayRef<llvm::Function *> CXXThreadLocalInits,
+    ArrayRef<const VarDecl *> CXXThreadLocalInitVars) {
   llvm::Function *InitFunc = nullptr;
   if (!CXXThreadLocalInits.empty()) {
     // Generate a guarded initialization function.
@@ -2226,9 +2228,9 @@ void ItaniumCXXABI::EmitThreadLocalInitFuncs(
         .GenerateCXXGlobalInitFunc(InitFunc, CXXThreadLocalInits,
                                    Address(Guard, GuardAlign));
   }
-  for (auto &I : CXXThreadLocals) {
-    const VarDecl *VD = I.first;
-    llvm::GlobalVariable *Var = I.second;
+  for (const VarDecl *VD : CXXThreadLocals) {
+    llvm::GlobalVariable *Var =
+        cast<llvm::GlobalVariable>(CGM.GetGlobalValue(CGM.getMangledName(VD)));
 
     // Some targets require that all access to thread local variables go through
     // the thread wrapper.  This means that we cannot attempt to create a thread
@@ -2305,18 +2307,19 @@ void ItaniumCXXABI::EmitThreadLocalInitFuncs(
 LValue ItaniumCXXABI::EmitThreadLocalVarDeclLValue(CodeGenFunction &CGF,
                                                    const VarDecl *VD,
                                                    QualType LValType) {
-  QualType T = VD->getType();
-  llvm::Type *Ty = CGF.getTypes().ConvertTypeForMem(T);
-  llvm::Value *Val = CGF.CGM.GetAddrOfGlobalVar(VD, Ty);
+  llvm::Value *Val = CGF.CGM.GetAddrOfGlobalVar(VD);
   llvm::Function *Wrapper = getOrCreateThreadLocalWrapper(VD, Val);
 
-  Val = CGF.Builder.CreateCall(Wrapper);
+  llvm::CallInst *CallVal = CGF.Builder.CreateCall(Wrapper);
+  if (isThreadWrapperReplaceable(VD, CGF.CGM))
+    CallVal->setCallingConv(llvm::CallingConv::CXX_FAST_TLS);
 
   LValue LV;
   if (VD->getType()->isReferenceType())
-    LV = CGF.MakeNaturalAlignAddrLValue(Val, LValType);
+    LV = CGF.MakeNaturalAlignAddrLValue(CallVal, LValType);
   else
-    LV = CGF.MakeAddrLValue(Val, LValType, CGF.getContext().getDeclAlign(VD));
+    LV = CGF.MakeAddrLValue(CallVal, LValType,
+                            CGF.getContext().getDeclAlign(VD));
   // FIXME: need setObjCGCLValueClass?
   return LV;
 }
@@ -2712,6 +2715,9 @@ void ItaniumRTTIBuilder::BuildVTablePointer(const Type *Ty) {
   case Type::Auto:
     llvm_unreachable("Undeduced auto type shouldn't get here");
 
+  case Type::Pipe:
+    llvm_unreachable("Pipe types shouldn't get here");
+
   case Type::Builtin:
   // GCC treats vector and complex types as fundamental types.
   case Type::Vector:
@@ -2935,6 +2941,9 @@ llvm::Constant *ItaniumRTTIBuilder::BuildTypeInfo(QualType Ty, bool Force) {
 
   case Type::Auto:
     llvm_unreachable("Undeduced auto type shouldn't get here");
+
+  case Type::Pipe:
+    llvm_unreachable("Pipe type shouldn't get here");
 
   case Type::ConstantArray:
   case Type::IncompleteArray:

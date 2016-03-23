@@ -33,6 +33,7 @@ class AttributeSetImpl;
 class AttributeSetNode;
 class Constant;
 template<typename T> struct DenseMapInfo;
+class Function;
 class LLVMContext;
 class Type;
 
@@ -139,11 +140,11 @@ public:
   unsigned getStackAlignment() const;
 
   /// \brief Returns the number of dereferenceable bytes from the
-  /// dereferenceable attribute (or zero if unknown).
+  /// dereferenceable attribute.
   uint64_t getDereferenceableBytes() const;
 
   /// \brief Returns the number of dereferenceable_or_null bytes from the
-  /// dereferenceable_or_null attribute (or zero if unknown).
+  /// dereferenceable_or_null attribute.
   uint64_t getDereferenceableOrNullBytes() const;
 
   /// \brief The Attribute is converted to a string of equivalent mnemonic. This
@@ -226,6 +227,11 @@ public:
                             StringRef Kind) const;
   AttributeSet addAttribute(LLVMContext &C, unsigned Index,
                             StringRef Kind, StringRef Value) const;
+
+  /// Add an attribute to the attribute set at the given indices. Because
+  /// attribute sets are immutable, this returns a new set.
+  AttributeSet addAttribute(LLVMContext &C, ArrayRef<unsigned> Indices,
+                            Attribute A) const;
 
   /// \brief Add attributes to the attribute set at the given index. Because
   /// attribute sets are immutable, this returns a new set.
@@ -526,6 +532,13 @@ namespace AttributeFuncs {
 
 /// \brief Which attributes cannot be applied to a type.
 AttrBuilder typeIncompatible(Type *Ty);
+
+/// \returns Return true if the two functions have compatible target-independent
+/// attributes for inlining purposes.
+bool areInlineCompatible(const Function &Caller, const Function &Callee);
+
+/// \brief Merge caller's and callee's attributes.
+void mergeAttributesForInlining(Function &Caller, const Function &Callee);
 
 } // end AttributeFuncs namespace
 

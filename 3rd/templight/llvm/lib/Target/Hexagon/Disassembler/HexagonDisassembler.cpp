@@ -162,8 +162,7 @@ DecodeStatus HexagonDisassembler::getInstruction(MCInst &MI, uint64_t &Size,
   Size = 0;
 
   *CurrentBundle = &MI;
-  MI.setOpcode(Hexagon::BUNDLE);
-  MI.addOperand(MCOperand::createImm(0));
+  MI = HexagonMCInstrInfo::createBundle();
   while (Result == Success && Complete == false) {
     if (Bytes.size() < HEXAGON_INSTR_SIZE)
       return MCDisassembler::Fail;
@@ -472,12 +471,13 @@ extern const MCInstrDesc HexagonInsts[];
 }
 
 static DecodeStatus DecodeRegisterClass(MCInst &Inst, unsigned RegNo,
-                                        const uint16_t Table[], size_t Size) {
-  if (RegNo < Size) {
+                                        ArrayRef<MCPhysReg> Table) {
+  if (RegNo < Table.size()) {
     Inst.addOperand(MCOperand::createReg(Table[RegNo]));
     return MCDisassembler::Success;
-  } else
-    return MCDisassembler::Fail;
+  }
+
+  return MCDisassembler::Fail;
 }
 
 static DecodeStatus DecodeIntRegsLow8RegisterClass(MCInst &Inst, unsigned RegNo,
@@ -489,7 +489,7 @@ static DecodeStatus DecodeIntRegsLow8RegisterClass(MCInst &Inst, unsigned RegNo,
 static DecodeStatus DecodeIntRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                uint64_t Address,
                                                const void *Decoder) {
-  static const uint16_t IntRegDecoderTable[] = {
+  static const MCPhysReg IntRegDecoderTable[] = {
       Hexagon::R0,  Hexagon::R1,  Hexagon::R2,  Hexagon::R3,  Hexagon::R4,
       Hexagon::R5,  Hexagon::R6,  Hexagon::R7,  Hexagon::R8,  Hexagon::R9,
       Hexagon::R10, Hexagon::R11, Hexagon::R12, Hexagon::R13, Hexagon::R14,
@@ -498,14 +498,13 @@ static DecodeStatus DecodeIntRegsRegisterClass(MCInst &Inst, unsigned RegNo,
       Hexagon::R25, Hexagon::R26, Hexagon::R27, Hexagon::R28, Hexagon::R29,
       Hexagon::R30, Hexagon::R31};
 
-  return (DecodeRegisterClass(Inst, RegNo, IntRegDecoderTable,
-                              sizeof(IntRegDecoderTable)));
+  return DecodeRegisterClass(Inst, RegNo, IntRegDecoderTable);
 }
 
 static DecodeStatus DecodeVectorRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                   uint64_t /*Address*/,
                                                   const void *Decoder) {
-  static const uint16_t VecRegDecoderTable[] = {
+  static const MCPhysReg VecRegDecoderTable[] = {
       Hexagon::V0,  Hexagon::V1,  Hexagon::V2,  Hexagon::V3,  Hexagon::V4,
       Hexagon::V5,  Hexagon::V6,  Hexagon::V7,  Hexagon::V8,  Hexagon::V9,
       Hexagon::V10, Hexagon::V11, Hexagon::V12, Hexagon::V13, Hexagon::V14,
@@ -514,67 +513,62 @@ static DecodeStatus DecodeVectorRegsRegisterClass(MCInst &Inst, unsigned RegNo,
       Hexagon::V25, Hexagon::V26, Hexagon::V27, Hexagon::V28, Hexagon::V29,
       Hexagon::V30, Hexagon::V31};
 
-  return (DecodeRegisterClass(Inst, RegNo, VecRegDecoderTable,
-                              sizeof(VecRegDecoderTable)));
+  return DecodeRegisterClass(Inst, RegNo, VecRegDecoderTable);
 }
 
 static DecodeStatus DecodeDoubleRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                   uint64_t /*Address*/,
                                                   const void *Decoder) {
-  static const uint16_t DoubleRegDecoderTable[] = {
+  static const MCPhysReg DoubleRegDecoderTable[] = {
       Hexagon::D0,  Hexagon::D1,  Hexagon::D2,  Hexagon::D3,
       Hexagon::D4,  Hexagon::D5,  Hexagon::D6,  Hexagon::D7,
       Hexagon::D8,  Hexagon::D9,  Hexagon::D10, Hexagon::D11,
       Hexagon::D12, Hexagon::D13, Hexagon::D14, Hexagon::D15};
 
-  return (DecodeRegisterClass(Inst, RegNo >> 1, DoubleRegDecoderTable,
-                              sizeof(DoubleRegDecoderTable)));
+  return DecodeRegisterClass(Inst, RegNo >> 1, DoubleRegDecoderTable);
 }
 
 static DecodeStatus DecodeVecDblRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                   uint64_t /*Address*/,
                                                   const void *Decoder) {
-  static const uint16_t VecDblRegDecoderTable[] = {
+  static const MCPhysReg VecDblRegDecoderTable[] = {
       Hexagon::W0,  Hexagon::W1,  Hexagon::W2,  Hexagon::W3,
       Hexagon::W4,  Hexagon::W5,  Hexagon::W6,  Hexagon::W7,
       Hexagon::W8,  Hexagon::W9,  Hexagon::W10, Hexagon::W11,
       Hexagon::W12, Hexagon::W13, Hexagon::W14, Hexagon::W15};
 
-  return (DecodeRegisterClass(Inst, RegNo >> 1, VecDblRegDecoderTable,
-                              sizeof(VecDblRegDecoderTable)));
+  return (DecodeRegisterClass(Inst, RegNo >> 1, VecDblRegDecoderTable));
 }
 
 static DecodeStatus DecodePredRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                 uint64_t /*Address*/,
                                                 const void *Decoder) {
-  static const uint16_t PredRegDecoderTable[] = {Hexagon::P0, Hexagon::P1,
-                                                 Hexagon::P2, Hexagon::P3};
+  static const MCPhysReg PredRegDecoderTable[] = {Hexagon::P0, Hexagon::P1,
+                                                  Hexagon::P2, Hexagon::P3};
 
-  return (DecodeRegisterClass(Inst, RegNo, PredRegDecoderTable,
-                              sizeof(PredRegDecoderTable)));
+  return DecodeRegisterClass(Inst, RegNo, PredRegDecoderTable);
 }
 
 static DecodeStatus DecodeVecPredRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                    uint64_t /*Address*/,
                                                    const void *Decoder) {
-  static const uint16_t VecPredRegDecoderTable[] = {Hexagon::Q0, Hexagon::Q1,
-                                                    Hexagon::Q2, Hexagon::Q3};
+  static const MCPhysReg VecPredRegDecoderTable[] = {Hexagon::Q0, Hexagon::Q1,
+                                                     Hexagon::Q2, Hexagon::Q3};
 
-  return (DecodeRegisterClass(Inst, RegNo, VecPredRegDecoderTable,
-                              sizeof(VecPredRegDecoderTable)));
+  return DecodeRegisterClass(Inst, RegNo, VecPredRegDecoderTable);
 }
 
 static DecodeStatus DecodeCtrRegsRegisterClass(MCInst &Inst, unsigned RegNo,
                                                uint64_t /*Address*/,
                                                const void *Decoder) {
-  static const uint16_t CtrlRegDecoderTable[] = {
+  static const MCPhysReg CtrlRegDecoderTable[] = {
     Hexagon::SA0, Hexagon::LC0, Hexagon::SA1, Hexagon::LC1,
     Hexagon::P3_0, Hexagon::C5, Hexagon::C6, Hexagon::C7,
     Hexagon::USR, Hexagon::PC, Hexagon::UGP, Hexagon::GP,
     Hexagon::CS0, Hexagon::CS1, Hexagon::UPCL, Hexagon::UPC
   };
 
-  if (RegNo >= sizeof(CtrlRegDecoderTable) / sizeof(CtrlRegDecoderTable[0]))
+  if (RegNo >= array_lengthof(CtrlRegDecoderTable))
     return MCDisassembler::Fail;
 
   if (CtrlRegDecoderTable[RegNo] == Hexagon::NoRegister)
@@ -588,7 +582,7 @@ static DecodeStatus DecodeCtrRegsRegisterClass(MCInst &Inst, unsigned RegNo,
 static DecodeStatus DecodeCtrRegs64RegisterClass(MCInst &Inst, unsigned RegNo,
                                                  uint64_t /*Address*/,
                                                  const void *Decoder) {
-  static const uint16_t CtrlReg64DecoderTable[] = {
+  static const MCPhysReg CtrlReg64DecoderTable[] = {
       Hexagon::C1_0,   Hexagon::NoRegister,
       Hexagon::C3_2,   Hexagon::NoRegister,
       Hexagon::C7_6,   Hexagon::NoRegister,
@@ -598,7 +592,7 @@ static DecodeStatus DecodeCtrRegs64RegisterClass(MCInst &Inst, unsigned RegNo,
       Hexagon::UPC,    Hexagon::NoRegister
   };
 
-  if (RegNo >= sizeof(CtrlReg64DecoderTable) / sizeof(CtrlReg64DecoderTable[0]))
+  if (RegNo >= array_lengthof(CtrlReg64DecoderTable))
     return MCDisassembler::Fail;
 
   if (CtrlReg64DecoderTable[RegNo] == Hexagon::NoRegister)
@@ -785,7 +779,7 @@ static DecodeStatus brtargetDecoder(MCInst &MI, unsigned tmp, uint64_t Address,
 // Please note that the instructions must be ordered in the descending order
 // of their opcode.
 // HexagonII::INST_ICLASS_ST
-static unsigned int StoreConditionalOpcodeData[][2] = {
+static const unsigned int StoreConditionalOpcodeData[][2] = {
     {S4_pstorerdfnew_abs, 0xafc02084},
     {S4_pstorerdtnew_abs, 0xafc02080},
     {S4_pstorerdf_abs, 0xafc00084},
@@ -831,18 +825,16 @@ static unsigned int LoadStoreOpcodeData[][2] = {{L4_loadrd_abs, 0x49c00000},
                                                 {S2_storerfabs, 0x48600000},
                                                 {S2_storerhabs, 0x48400000},
                                                 {S2_storerbabs, 0x48000000}};
-static int NumCondS =
-    sizeof(StoreConditionalOpcodeData) / sizeof(StoreConditionalOpcodeData[0]);
-static int NumLS = sizeof(LoadStoreOpcodeData) / sizeof(LoadStoreOpcodeData[0]);
+static const size_t NumCondS = array_lengthof(StoreConditionalOpcodeData);
+static const size_t NumLS = array_lengthof(LoadStoreOpcodeData);
 
 static DecodeStatus decodeSpecial(MCInst &MI, uint32_t insn) {
 
   unsigned MachineOpcode = 0;
   unsigned LLVMOpcode = 0;
-  int i;
 
   if ((insn & HexagonII::INST_ICLASS_MASK) == HexagonII::INST_ICLASS_ST) {
-    for (i = 0; i < NumCondS; ++i) {
+    for (size_t i = 0; i < NumCondS; ++i) {
       if ((insn & StoreConditionalOpcodeData[i][1]) ==
           StoreConditionalOpcodeData[i][1]) {
         MachineOpcode = StoreConditionalOpcodeData[i][1];
@@ -852,7 +844,7 @@ static DecodeStatus decodeSpecial(MCInst &MI, uint32_t insn) {
     }
   }
   if ((insn & HexagonII::INST_ICLASS_MASK) == HexagonII::INST_ICLASS_LD_ST_2) {
-    for (i = 0; i < NumLS; ++i) {
+    for (size_t i = 0; i < NumLS; ++i) {
       if ((insn & LoadStoreOpcodeData[i][1]) == LoadStoreOpcodeData[i][1]) {
         MachineOpcode = LoadStoreOpcodeData[i][1];
         LLVMOpcode = LoadStoreOpcodeData[i][0];

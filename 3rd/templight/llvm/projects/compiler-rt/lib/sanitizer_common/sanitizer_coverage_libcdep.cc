@@ -96,7 +96,7 @@ class CoverageData {
   void DumpAll();
 
   ALWAYS_INLINE
-  void TraceBasicBlock(s32 *id);
+  void TraceBasicBlock(u32 *id);
 
   void InitializeGuardArray(s32 *guards);
   void InitializeGuards(s32 *guards, uptr n, const char *module_name,
@@ -108,6 +108,7 @@ class CoverageData {
 
   uptr *data();
   uptr size();
+  uptr *buffer() const { return pc_buffer; }
 
  private:
   void DirectOpen();
@@ -132,6 +133,8 @@ class CoverageData {
   uptr pc_array_mapped_size;
   // Descriptor of the file mapped pc array.
   fd_t pc_fd;
+
+  uptr *pc_buffer;
 
   // Vector of coverage guard arrays, protected by mu.
   InternalMmapVectorNoCtor<s32*> guard_array_vec;
@@ -209,6 +212,11 @@ void CoverageData::Enable() {
     atomic_store(&pc_array_size, kPcArrayMaxSize, memory_order_relaxed);
   }
 
+  pc_buffer = nullptr;
+  if (common_flags()->coverage_pc_buffer)
+    pc_buffer = reinterpret_cast<uptr *>(MmapNoReserveOrDie(
+        sizeof(uptr) * kPcArrayMaxSize, "CovInit::pc_buffer"));
+
   cc_array = reinterpret_cast<uptr **>(MmapNoReserveOrDie(
       sizeof(uptr *) * kCcArrayMaxSize, "CovInit::cc_array"));
   atomic_store(&cc_array_size, kCcArrayMaxSize, memory_order_relaxed);
@@ -245,6 +253,10 @@ void CoverageData::Disable() {
   if (cc_array) {
     UnmapOrDie(cc_array, sizeof(uptr *) * kCcArrayMaxSize);
     cc_array = nullptr;
+  }
+  if (pc_buffer) {
+    UnmapOrDie(pc_buffer, sizeof(uptr) * kPcArrayMaxSize);
+    pc_buffer = nullptr;
   }
   if (tr_event_array) {
     UnmapOrDie(tr_event_array,
@@ -414,6 +426,7 @@ void CoverageData::Add(uptr pc, u32 *guard) {
            atomic_load(&pc_array_size, memory_order_acquire));
   uptr counter = atomic_fetch_add(&coverage_counter, 1, memory_order_relaxed);
   pc_array[idx] = BundlePcAndCounter(pc, counter);
+  if (pc_buffer) pc_buffer[counter] = pc;
 }
 
 // Registers a pair caller=>callee.
@@ -682,11 +695,11 @@ void CoverageData::DumpCallerCalleePairs() {
 // it once and then cache in the provided 'cache' storage.
 //
 // This function will eventually be inlined by the compiler.
-void CoverageData::TraceBasicBlock(s32 *id) {
+void CoverageData::TraceBasicBlock(u32 *id) {
   // Will trap here if
   //  1. coverage is not enabled at run-time.
   //  2. The array tr_event_array is full.
-  *tr_event_pointer = static_cast<u32>(*id - 1);
+  *tr_event_pointer = *id - 1;
   tr_event_pointer++;
 }
 
@@ -920,11 +933,13 @@ uptr __sanitizer_get_total_unique_caller_callee_pairs() {
 }
 
 SANITIZER_INTERFACE_ATTRIBUTE
-void __sanitizer_cov_trace_func_enter(s32 *id) {
+void __sanitizer_cov_trace_func_enter(u32 *id) {
+  __sanitizer_cov_with_check(id);
   coverage_data.TraceBasicBlock(id);
 }
 SANITIZER_INTERFACE_ATTRIBUTE
-void __sanitizer_cov_trace_basic_block(s32 *id) {
+void __sanitizer_cov_trace_basic_block(u32 *id) {
+  __sanitizer_cov_with_check(id);
   coverage_data.TraceBasicBlock(id);
 }
 SANITIZER_INTERFACE_ATTRIBUTE
@@ -939,6 +954,12 @@ SANITIZER_INTERFACE_ATTRIBUTE
 uptr __sanitizer_get_coverage_guards(uptr **data) {
   *data = coverage_data.data();
   return coverage_data.size();
+}
+
+SANITIZER_INTERFACE_ATTRIBUTE
+uptr __sanitizer_get_coverage_pc_buffer(uptr **data) {
+  *data = coverage_data.buffer();
+  return __sanitizer_get_total_unique_coverage();
 }
 
 SANITIZER_INTERFACE_ATTRIBUTE

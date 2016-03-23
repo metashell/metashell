@@ -66,6 +66,13 @@ public:
   const Module *getModule() const;
   Module *getModule();
 
+  /// \brief Return the function this instruction belongs to.
+  ///
+  /// Note: it is undefined behavior to call this on an instruction not
+  /// currently inserted into a function.
+  const Function *getFunction() const;
+  Function *getFunction();
+
   /// removeFromParent - This method unlinks 'this' from the containing basic
   /// block, but does not delete it.
   ///
@@ -102,6 +109,7 @@ public:
   bool isBinaryOp() const { return isBinaryOp(getOpcode()); }
   bool isShift() { return isShift(getOpcode()); }
   bool isCast() const { return isCast(getOpcode()); }
+  bool isFuncletPad() const { return isFuncletPad(getOpcode()); }
 
   static const char* getOpcodeName(unsigned OpCode);
 
@@ -132,6 +140,11 @@ public:
   /// @brief Determine if the OpCode is one of the CastInst instructions.
   static inline bool isCast(unsigned OpCode) {
     return OpCode >= CastOpsBegin && OpCode < CastOpsEnd;
+  }
+
+  /// @brief Determine if the OpCode is one of the FuncletPadInst instructions.
+  static inline bool isFuncletPad(unsigned OpCode) {
+    return OpCode >= FuncletPadOpsBegin && OpCode < FuncletPadOpsEnd;
   }
 
   //===--------------------------------------------------------------------===//
@@ -379,12 +392,10 @@ public:
   /// \brief Return true if the instruction is a variety of EH-block.
   bool isEHPad() const {
     switch (getOpcode()) {
+    case Instruction::CatchSwitch:
     case Instruction::CatchPad:
-    case Instruction::CatchEndPad:
     case Instruction::CleanupPad:
-    case Instruction::CleanupEndPad:
     case Instruction::LandingPad:
-    case Instruction::TerminatePad:
       return true;
     default:
       return false;
@@ -468,6 +479,13 @@ public:
 #define  FIRST_CAST_INST(N)             CastOpsBegin = N,
 #define HANDLE_CAST_INST(N, OPC, CLASS) OPC = N,
 #define   LAST_CAST_INST(N)             CastOpsEnd = N+1
+#include "llvm/IR/Instruction.def"
+  };
+
+  enum FuncletPadOps {
+#define  FIRST_FUNCLETPAD_INST(N)             FuncletPadOpsBegin = N,
+#define HANDLE_FUNCLETPAD_INST(N, OPC, CLASS) OPC = N,
+#define   LAST_FUNCLETPAD_INST(N)             FuncletPadOpsEnd = N+1
 #include "llvm/IR/Instruction.def"
   };
 

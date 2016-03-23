@@ -165,6 +165,11 @@ cl::opt<bool>
 llvm::PrivateHeaders("private-headers",
                      cl::desc("Display format specific file headers"));
 
+cl::opt<bool>
+llvm::FirstPrivateHeader("private-header",
+                         cl::desc("Display only the first format specific file "
+                                  "header"));
+
 static cl::alias
 PrivateHeadersShort("p", cl::desc("Alias for --private-headers"),
                     cl::aliasopt(PrivateHeaders));
@@ -247,12 +252,13 @@ void llvm::error(std::error_code EC) {
   if (!EC)
     return;
 
-  outs() << ToolName << ": error reading file: " << EC.message() << ".\n";
-  outs().flush();
+  errs() << ToolName << ": error reading file: " << EC.message() << ".\n";
+  errs().flush();
   exit(1);
 }
 
-static void report_error(StringRef File, std::error_code EC) {
+LLVM_ATTRIBUTE_NORETURN void llvm::report_error(StringRef File,
+                                                std::error_code EC) {
   assert(EC);
   errs() << ToolName << ": '" << File << "': " << EC.message() << ".\n";
   exit(1);
@@ -282,10 +288,8 @@ static const Target *getTarget(const ObjectFile *Obj = nullptr) {
   std::string Error;
   const Target *TheTarget = TargetRegistry::lookupTarget(ArchName, TheTriple,
                                                          Error);
-  if (!TheTarget) {
-    errs() << ToolName << ": " << Error;
-    return nullptr;
-  }
+  if (!TheTarget)
+    report_fatal_error("can't find target: " + Error);
 
   // Update the triple name and return the found target.
   TripleName = TheTriple.getTriple();
@@ -482,6 +486,23 @@ static std::error_code getRelocationValueString(const ELFObjectFile<ELFT> *Obj,
   case ELF::EM_HEXAGON:
   case ELF::EM_MIPS:
     res = Target;
+    break;
+  case ELF::EM_WEBASSEMBLY:
+    switch (type) {
+    case ELF::R_WEBASSEMBLY_DATA: {
+      std::string fmtbuf;
+      raw_string_ostream fmt(fmtbuf);
+      fmt << Target << (addend < 0 ? "" : "+") << addend;
+      fmt.flush();
+      Result.append(fmtbuf.begin(), fmtbuf.end());
+      break;
+    }
+    case ELF::R_WEBASSEMBLY_FUNCTION:
+      res = Target;
+      break;
+    default:
+      res = "Unknown";
+    }
     break;
   default:
     res = "Unknown";
@@ -805,10 +826,6 @@ static bool getHidden(RelocationRef RelRef) {
 
 static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
   const Target *TheTarget = getTarget(Obj);
-  // getTarget() will have already issued a diagnostic if necessary, so
-  // just bail here if it failed.
-  if (!TheTarget)
-    return;
 
   // Package up features to be passed to target/subtarget
   std::string FeaturesStr;
@@ -821,42 +838,28 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
 
   std::unique_ptr<const MCRegisterInfo> MRI(
       TheTarget->createMCRegInfo(TripleName));
-  if (!MRI) {
-    errs() << "error: no register info for target " << TripleName << "\n";
-    return;
-  }
+  if (!MRI)
+    report_fatal_error("error: no register info for target " + TripleName);
 
   // Set up disassembler.
   std::unique_ptr<const MCAsmInfo> AsmInfo(
       TheTarget->createMCAsmInfo(*MRI, TripleName));
-  if (!AsmInfo) {
-    errs() << "error: no assembly info for target " << TripleName << "\n";
-    return;
-  }
-
+  if (!AsmInfo)
+    report_fatal_error("error: no assembly info for target " + TripleName);
   std::unique_ptr<const MCSubtargetInfo> STI(
       TheTarget->createMCSubtargetInfo(TripleName, MCPU, FeaturesStr));
-  if (!STI) {
-    errs() << "error: no subtarget info for target " << TripleName << "\n";
-    return;
-  }
-
+  if (!STI)
+    report_fatal_error("error: no subtarget info for target " + TripleName);
   std::unique_ptr<const MCInstrInfo> MII(TheTarget->createMCInstrInfo());
-  if (!MII) {
-    errs() << "error: no instruction info for target " << TripleName << "\n";
-    return;
-  }
-
+  if (!MII)
+    report_fatal_error("error: no instruction info for target " + TripleName);
   std::unique_ptr<const MCObjectFileInfo> MOFI(new MCObjectFileInfo);
   MCContext Ctx(AsmInfo.get(), MRI.get(), MOFI.get());
 
   std::unique_ptr<MCDisassembler> DisAsm(
     TheTarget->createMCDisassembler(*STI, Ctx));
-
-  if (!DisAsm) {
-    errs() << "error: no disassembler for target " << TripleName << "\n";
-    return;
-  }
+  if (!DisAsm)
+    report_fatal_error("error: no disassembler for target " + TripleName);
 
   std::unique_ptr<const MCInstrAnalysis> MIA(
       TheTarget->createMCInstrAnalysis(MII.get()));
@@ -864,11 +867,9 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
   int AsmPrinterVariant = AsmInfo->getAssemblerDialect();
   std::unique_ptr<MCInstPrinter> IP(TheTarget->createMCInstPrinter(
       Triple(TripleName), AsmPrinterVariant, *AsmInfo, *MII, *MRI));
-  if (!IP) {
-    errs() << "error: no instruction printer for target " << TripleName
-      << '\n';
-    return;
-  }
+  if (!IP)
+    report_fatal_error("error: no instruction printer for target " +
+                       TripleName);
   IP->setPrintImmHex(PrintImmHex);
   PrettyPrinter &PIP = selectPrettyPrinter(Triple(TripleName));
 
@@ -886,26 +887,65 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
   }
 
   // Create a mapping from virtual address to symbol name.  This is used to
-  // pretty print the target of a call.
-  std::vector<std::pair<uint64_t, StringRef>> AllSymbols;
-  if (MIA) {
-    for (const SymbolRef &Symbol : Obj->symbols()) {
-      if (Symbol.getType() != SymbolRef::ST_Function)
-        continue;
+  // pretty print the symbols while disassembling.
+  typedef std::vector<std::pair<uint64_t, StringRef>> SectionSymbolsTy;
+  std::map<SectionRef, SectionSymbolsTy> AllSymbols;
+  for (const SymbolRef &Symbol : Obj->symbols()) {
+    ErrorOr<uint64_t> AddressOrErr = Symbol.getAddress();
+    error(AddressOrErr.getError());
+    uint64_t Address = *AddressOrErr;
 
-      ErrorOr<uint64_t> AddressOrErr = Symbol.getAddress();
-      error(AddressOrErr.getError());
-      uint64_t Address = *AddressOrErr;
+    ErrorOr<StringRef> Name = Symbol.getName();
+    error(Name.getError());
+    if (Name->empty())
+      continue;
 
-      ErrorOr<StringRef> Name = Symbol.getName();
-      error(Name.getError());
-      if (Name->empty())
-        continue;
-      AllSymbols.push_back(std::make_pair(Address, *Name));
-    }
+    ErrorOr<section_iterator> SectionOrErr = Symbol.getSection();
+    error(SectionOrErr.getError());
+    section_iterator SecI = *SectionOrErr;
+    if (SecI == Obj->section_end())
+      continue;
 
-    array_pod_sort(AllSymbols.begin(), AllSymbols.end());
+    AllSymbols[*SecI].emplace_back(Address, *Name);
   }
+
+  // Create a mapping from virtual address to section.
+  std::vector<std::pair<uint64_t, SectionRef>> SectionAddresses;
+  for (SectionRef Sec : Obj->sections())
+    SectionAddresses.emplace_back(Sec.getAddress(), Sec);
+  array_pod_sort(SectionAddresses.begin(), SectionAddresses.end());
+
+  // Linked executables (.exe and .dll files) typically don't include a real
+  // symbol table but they might contain an export table.
+  if (const auto *COFFObj = dyn_cast<COFFObjectFile>(Obj)) {
+    for (const auto &ExportEntry : COFFObj->export_directories()) {
+      StringRef Name;
+      error(ExportEntry.getSymbolName(Name));
+      if (Name.empty())
+        continue;
+      uint32_t RVA;
+      error(ExportEntry.getExportRVA(RVA));
+
+      uint64_t VA = COFFObj->getImageBase() + RVA;
+      auto Sec = std::upper_bound(
+          SectionAddresses.begin(), SectionAddresses.end(), VA,
+          [](uint64_t LHS, const std::pair<uint64_t, SectionRef> &RHS) {
+            return LHS < RHS.first;
+          });
+      if (Sec != SectionAddresses.begin())
+        --Sec;
+      else
+        Sec = SectionAddresses.end();
+
+      if (Sec != SectionAddresses.end())
+        AllSymbols[Sec->second].emplace_back(VA, Name);
+    }
+  }
+
+  // Sort all the symbols, this allows us to use a simple binary search to find
+  // a symbol near an address.
+  for (std::pair<const SectionRef, SectionSymbolsTy> &SecSyms : AllSymbols)
+    array_pod_sort(SecSyms.second.begin(), SecSyms.second.end());
 
   for (const SectionRef &Section : ToolSectionFilter(*Obj)) {
     if (!DisassembleAll && (!Section.isText() || Section.isVirtual()))
@@ -916,33 +956,21 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
     if (!SectSize)
       continue;
 
-    // Make a list of all the symbols in this section.
-    std::vector<std::pair<uint64_t, StringRef>> Symbols;
+    // Get the list of all the symbols in this section.
+    SectionSymbolsTy &Symbols = AllSymbols[Section];
     std::vector<uint64_t> DataMappingSymsAddr;
     std::vector<uint64_t> TextMappingSymsAddr;
-    for (const SymbolRef &Symbol : Obj->symbols()) {
-      if (Section.containsSymbol(Symbol)) {
-        ErrorOr<uint64_t> AddressOrErr = Symbol.getAddress();
-        error(AddressOrErr.getError());
-        uint64_t Address = *AddressOrErr;
-        Address -= SectionAddr;
-        if (Address >= SectSize)
-          continue;
-
-        ErrorOr<StringRef> Name = Symbol.getName();
-        error(Name.getError());
-        Symbols.push_back(std::make_pair(Address, *Name));
-        if (Obj->isELF() && Obj->getArch() == Triple::aarch64) {
-          if (Name->startswith("$d"))
-            DataMappingSymsAddr.push_back(Address);
-          if (Name->startswith("$x"))
-            TextMappingSymsAddr.push_back(Address);
-        }
+    if (Obj->isELF() && Obj->getArch() == Triple::aarch64) {
+      for (const auto &Symb : Symbols) {
+        uint64_t Address = Symb.first;
+        StringRef Name = Symb.second;
+        if (Name.startswith("$d"))
+          DataMappingSymsAddr.push_back(Address - SectionAddr);
+        if (Name.startswith("$x"))
+          TextMappingSymsAddr.push_back(Address - SectionAddr);
       }
     }
 
-    // Sort the symbols by address, just in case they didn't come in that way.
-    array_pod_sort(Symbols.begin(), Symbols.end());
     std::sort(DataMappingSymsAddr.begin(), DataMappingSymsAddr.end());
     std::sort(TextMappingSymsAddr.begin(), TextMappingSymsAddr.end());
 
@@ -973,7 +1001,7 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
 
     // If the section has no symbol at the start, just insert a dummy one.
     if (Symbols.empty() || Symbols[0].first != 0)
-      Symbols.insert(Symbols.begin(), std::make_pair(0, name));
+      Symbols.insert(Symbols.begin(), std::make_pair(SectionAddr, name));
 
     SmallString<40> Comments;
     raw_svector_ostream CommentStream(Comments);
@@ -991,11 +1019,16 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
     // Disassemble symbol by symbol.
     for (unsigned si = 0, se = Symbols.size(); si != se; ++si) {
 
-      uint64_t Start = Symbols[si].first;
-      // The end is either the section end or the beginning of the next symbol.
-      uint64_t End = (si == se - 1) ? SectSize : Symbols[si + 1].first;
+      uint64_t Start = Symbols[si].first - SectionAddr;
+      // The end is either the section end or the beginning of the next
+      // symbol.
+      uint64_t End =
+          (si == se - 1) ? SectSize : Symbols[si + 1].first - SectionAddr;
+      // Don't try to disassemble beyond the end of section contents.
+      if (End > SectSize)
+        End = SectSize;
       // If this symbol has the same address as the next symbol, then skip it.
-      if (Start == End)
+      if (Start >= End)
         continue;
 
       outs() << '\n' << Symbols[si].second << ":\n";
@@ -1056,26 +1089,55 @@ static void DisassembleObject(const ObjectFile *Obj, bool InlineRelocs) {
                         SectionAddr + Index, outs(), "", *STI);
           outs() << CommentStream.str();
           Comments.clear();
+
+          // Try to resolve the target of a call, tail call, etc. to a specific
+          // symbol.
           if (MIA && (MIA->isCall(Inst) || MIA->isUnconditionalBranch(Inst) ||
                       MIA->isConditionalBranch(Inst))) {
             uint64_t Target;
             if (MIA->evaluateBranch(Inst, SectionAddr + Index, Size, Target)) {
-              auto TargetSym = std::upper_bound(
-                  AllSymbols.begin(), AllSymbols.end(), Target,
-                  [](uint64_t LHS, const std::pair<uint64_t, StringRef> &RHS) {
-                    return LHS < RHS.first;
-                  });
-              if (TargetSym != AllSymbols.begin())
-                --TargetSym;
-              else
-                TargetSym = AllSymbols.end();
+              // In a relocatable object, the target's section must reside in
+              // the same section as the call instruction or it is accessed
+              // through a relocation.
+              //
+              // In a non-relocatable object, the target may be in any section.
+              //
+              // N.B. We don't walk the relocations in the relocatable case yet.
+              auto *TargetSectionSymbols = &Symbols;
+              if (!Obj->isRelocatableObject()) {
+                auto SectionAddress = std::upper_bound(
+                    SectionAddresses.begin(), SectionAddresses.end(), Target,
+                    [](uint64_t LHS,
+                       const std::pair<uint64_t, SectionRef> &RHS) {
+                      return LHS < RHS.first;
+                    });
+                if (SectionAddress != SectionAddresses.begin()) {
+                  --SectionAddress;
+                  TargetSectionSymbols = &AllSymbols[SectionAddress->second];
+                } else {
+                  TargetSectionSymbols = nullptr;
+                }
+              }
 
-              if (TargetSym != AllSymbols.end()) {
-                outs() << " <" << TargetSym->second;
-                uint64_t Disp = Target - TargetSym->first;
-                if (Disp)
-                  outs() << '+' << utohexstr(Disp);
-                outs() << '>';
+              // Find the first symbol in the section whose offset is less than
+              // or equal to the target.
+              if (TargetSectionSymbols) {
+                auto TargetSym = std::upper_bound(
+                    TargetSectionSymbols->begin(), TargetSectionSymbols->end(),
+                    Target, [](uint64_t LHS,
+                               const std::pair<uint64_t, StringRef> &RHS) {
+                      return LHS < RHS.first;
+                    });
+                if (TargetSym != TargetSectionSymbols->begin()) {
+                  --TargetSym;
+                  uint64_t TargetAddress = std::get<0>(*TargetSym);
+                  StringRef TargetName = std::get<1>(*TargetSym);
+                  outs() << " <" << TargetName;
+                  uint64_t Disp = Target - TargetAddress;
+                  if (Disp)
+                    outs() << '+' << utohexstr(Disp);
+                  outs() << '>';
+                }
               }
             }
           }
@@ -1208,60 +1270,11 @@ void llvm::PrintSectionContents(const ObjectFile *Obj) {
   }
 }
 
-static void PrintCOFFSymbolTable(const COFFObjectFile *coff) {
-  for (unsigned SI = 0, SE = coff->getNumberOfSymbols(); SI != SE; ++SI) {
-    ErrorOr<COFFSymbolRef> Symbol = coff->getSymbol(SI);
-    StringRef Name;
-    error(Symbol.getError());
-    error(coff->getSymbolName(*Symbol, Name));
-
-    outs() << "[" << format("%2d", SI) << "]"
-           << "(sec " << format("%2d", int(Symbol->getSectionNumber())) << ")"
-           << "(fl 0x00)" // Flag bits, which COFF doesn't have.
-           << "(ty " << format("%3x", unsigned(Symbol->getType())) << ")"
-           << "(scl " << format("%3x", unsigned(Symbol->getStorageClass())) << ") "
-           << "(nx " << unsigned(Symbol->getNumberOfAuxSymbols()) << ") "
-           << "0x" << format("%08x", unsigned(Symbol->getValue())) << " "
-           << Name << "\n";
-
-    for (unsigned AI = 0, AE = Symbol->getNumberOfAuxSymbols(); AI < AE; ++AI, ++SI) {
-      if (Symbol->isSectionDefinition()) {
-        const coff_aux_section_definition *asd;
-        error(coff->getAuxSymbol<coff_aux_section_definition>(SI + 1, asd));
-
-        int32_t AuxNumber = asd->getNumber(Symbol->isBigObj());
-
-        outs() << "AUX "
-               << format("scnlen 0x%x nreloc %d nlnno %d checksum 0x%x "
-                         , unsigned(asd->Length)
-                         , unsigned(asd->NumberOfRelocations)
-                         , unsigned(asd->NumberOfLinenumbers)
-                         , unsigned(asd->CheckSum))
-               << format("assoc %d comdat %d\n"
-                         , unsigned(AuxNumber)
-                         , unsigned(asd->Selection));
-      } else if (Symbol->isFileRecord()) {
-        const char *FileName;
-        error(coff->getAuxSymbol<char>(SI + 1, FileName));
-
-        StringRef Name(FileName, Symbol->getNumberOfAuxSymbols() *
-                                     coff->getSymbolTableEntrySize());
-        outs() << "AUX " << Name.rtrim(StringRef("\0", 1))  << '\n';
-
-        SI = SI + Symbol->getNumberOfAuxSymbols();
-        break;
-      } else {
-        outs() << "AUX Unknown\n";
-      }
-    }
-  }
-}
-
 void llvm::PrintSymbolTable(const ObjectFile *o) {
   outs() << "SYMBOL TABLE:\n";
 
   if (const COFFObjectFile *coff = dyn_cast<const COFFObjectFile>(o)) {
-    PrintCOFFSymbolTable(coff);
+    printCOFFSymbolTable(coff);
     return;
   }
   for (const SymbolRef &Symbol : o->symbols()) {
@@ -1487,14 +1500,27 @@ static void printFaultMaps(const ObjectFile *Obj) {
   outs() << FMP;
 }
 
-static void printPrivateFileHeader(const ObjectFile *o) {
-  if (o->isELF()) {
+static void printPrivateFileHeaders(const ObjectFile *o) {
+  if (o->isELF())
     printELFFileHeader(o);
-  } else if (o->isCOFF()) {
+  else if (o->isCOFF())
     printCOFFFileHeader(o);
-  } else if (o->isMachO()) {
+  else if (o->isMachO()) {
     printMachOFileHeader(o);
-  }
+    printMachOLoadCommands(o);
+  } else
+    report_fatal_error("Invalid/Unsupported object file format");
+}
+
+static void printFirstPrivateFileHeader(const ObjectFile *o) {
+  if (o->isELF())
+    printELFFileHeader(o);
+  else if (o->isCOFF())
+    printCOFFFileHeader(o);
+  else if (o->isMachO())
+    printMachOFileHeader(o);
+  else
+    report_fatal_error("Invalid/Unsupported object file format");
 }
 
 static void DumpObject(const ObjectFile *o) {
@@ -1518,7 +1544,9 @@ static void DumpObject(const ObjectFile *o) {
   if (UnwindInfo)
     PrintUnwindInfo(o);
   if (PrivateHeaders)
-    printPrivateFileHeader(o);
+    printPrivateFileHeaders(o);
+  if (FirstPrivateHeader)
+    printFirstPrivateFileHeader(o);
   if (ExportsTrie)
     printExportsTrie(o);
   if (Rebase)
@@ -1609,6 +1637,7 @@ int main(int argc, char **argv) {
       && !SymbolTable
       && !UnwindInfo
       && !PrivateHeaders
+      && !FirstPrivateHeader
       && !ExportsTrie
       && !Rebase
       && !Bind

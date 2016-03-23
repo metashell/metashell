@@ -4,7 +4,7 @@
 #include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/Orc/LazyEmittingLayer.h"
 #include "llvm/ExecutionEngine/Orc/ObjectLinkingLayer.h"
-#include "llvm/ExecutionEngine/Orc/OrcTargetSupport.h"
+#include "llvm/ExecutionEngine/Orc/OrcArchitectureSupport.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
@@ -1308,7 +1308,7 @@ private:
 
   std::map<std::string, std::unique_ptr<FunctionAST>> FunctionDefs;
 
-  JITCompileCallbackManager<OrcX86_64> CompileCallbacks;
+  LocalJITCompileCallbackManager<OrcX86_64> CompileCallbacks;
 };
 
 static void HandleDefinition(SessionContext &S, KaleidoscopeJIT &J) {

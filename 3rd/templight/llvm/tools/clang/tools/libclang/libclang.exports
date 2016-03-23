@@ -176,6 +176,7 @@ clang_getCursorSemanticParent
 clang_getCursorSpelling
 clang_getCursorType
 clang_getCursorUSR
+clang_getCursorVisibility
 clang_getDeclObjCTypeEncoding
 clang_getDefinitionSpellingAndExtent
 clang_getDiagnostic
@@ -249,6 +250,7 @@ clang_hashCursor
 clang_indexLoc_getCXSourceLocation
 clang_indexLoc_getFileLocation
 clang_indexSourceFile
+clang_indexSourceFileFullArgv
 clang_indexTranslationUnit
 clang_index_getCXXClassDeclInfo
 clang_index_getClientContainer
@@ -284,6 +286,7 @@ clang_Location_isInSystemHeader
 clang_Location_isFromMainFile
 clang_parseTranslationUnit
 clang_parseTranslationUnit2
+clang_parseTranslationUnit2FullArgv
 clang_remap_dispose
 clang_remap_getFilenames
 clang_remap_getNumFiles

@@ -21,7 +21,7 @@ egrep $(tools/latest_release --no_dots --prefix=version-) docs/index.md
 # Get the templight binary
 
 cd 3rd/templight
-  wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974_v2/templight_osx10.10.4_x86_64.tar.bz2
+  wget https://github.com/sabel83/templight_binary/releases/download/templight_185020_v2/templight_osx10.10.4_x86_64.tar.bz2
   tar -xvjf templight_osx10.10.4_x86_64.tar.bz2
 cd ../..
 

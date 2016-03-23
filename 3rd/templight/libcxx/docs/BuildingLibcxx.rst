@@ -23,19 +23,18 @@ The basic steps needed to build libc++ are:
 #. Checkout libc++:
 
    * ``cd where-you-want-llvm-to-live``
-   * ``cd llvm/tools``
+   * ``cd llvm/projects``
    * ``svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx``
 
 #. Checkout libc++abi:
 
    * ``cd where-you-want-llvm-to-live``
    * ``cd llvm/projects``
-   * ``svn co http://llvm.org/svn/llvm-project/libc++abi libc++abi``
+   * ``svn co http://llvm.org/svn/llvm-project/libcxxabi/trunk libcxxabi``
 
 #. Configure and build libc++ with libc++abi:
 
-   CMake is the only supported configuration system. Unlike other LLVM
-   projects autotools is not supported for either libc++ or libc++abi.
+   CMake is the only supported configuration system.
 
    Clang is the preferred compiler when building and using libc++.
 

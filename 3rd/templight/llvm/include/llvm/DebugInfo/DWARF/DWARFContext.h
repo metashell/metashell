@@ -41,6 +41,8 @@ class DWARFContext : public DIContext {
 
   DWARFUnitSection<DWARFCompileUnit> CUs;
   std::vector<DWARFUnitSection<DWARFTypeUnit>> TUs;
+  std::unique_ptr<DWARFUnitIndex> CUIndex;
+  std::unique_ptr<DWARFUnitIndex> TUIndex;
   std::unique_ptr<DWARFDebugAbbrev> Abbrev;
   std::unique_ptr<DWARFDebugLoc> Loc;
   std::unique_ptr<DWARFDebugAranges> Aranges;
@@ -145,6 +147,9 @@ public:
     return DWOCUs[index].get();
   }
 
+  const DWARFUnitIndex &getCUIndex();
+  const DWARFUnitIndex &getTUIndex();
+
   /// Get a pointer to the parsed DebugAbbrev object.
   const DWARFDebugAbbrev *getDebugAbbrev();
 
@@ -213,7 +218,7 @@ public:
   virtual StringRef getTUIndexSection() = 0;
 
   static bool isSupportedVersion(unsigned version) {
-    return version == 2 || version == 3 || version == 4;
+    return version == 2 || version == 3 || version == 4 || version == 5;
   }
 private:
   /// Return the compile unit that includes an offset (relative to .debug_info).

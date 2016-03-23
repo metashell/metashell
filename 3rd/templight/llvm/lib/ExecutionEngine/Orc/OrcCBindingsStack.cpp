@@ -9,7 +9,7 @@
 
 #include "OrcCBindingsStack.h"
 
-#include "llvm/ExecutionEngine/Orc/OrcTargetSupport.h"
+#include "llvm/ExecutionEngine/Orc/OrcArchitectureSupport.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/DynamicLibrary.h"
 #include <cstdio>
@@ -23,7 +23,7 @@ OrcCBindingsStack::createCompileCallbackMgr(Triple T) {
     default: return nullptr;
 
     case Triple::x86_64: {
-      typedef orc::JITCompileCallbackManager<orc::OrcX86_64> CCMgrT;
+      typedef orc::LocalJITCompileCallbackManager<orc::OrcX86_64> CCMgrT;
       return llvm::make_unique<CCMgrT>(0);
     }
   }
@@ -36,7 +36,8 @@ OrcCBindingsStack::createIndirectStubsMgrBuilder(Triple T) {
 
     case Triple::x86_64:
       return [](){
-        return llvm::make_unique<orc::IndirectStubsManager<orc::OrcX86_64>>();
+        return llvm::make_unique<
+                 orc::LocalIndirectStubsManager<orc::OrcX86_64>>();
       };
   }
 }

@@ -334,21 +334,21 @@ static Hexagon::Fixups getFixupNoBits(MCInstrInfo const &MCII, const MCInst &MI,
   // The only relocs left should be GP relative:
   default:
     if (MCID.mayStore() || MCID.mayLoad()) {
-      for (const uint16_t *ImpUses = MCID.getImplicitUses(); *ImpUses;
-           ++ImpUses) {
-        if (*ImpUses == Hexagon::GP) {
-          switch (HexagonMCInstrInfo::getAccessSize(MCII, MI)) {
-          case HexagonII::MemAccessSize::ByteAccess:
-            return fixup_Hexagon_GPREL16_0;
-          case HexagonII::MemAccessSize::HalfWordAccess:
-            return fixup_Hexagon_GPREL16_1;
-          case HexagonII::MemAccessSize::WordAccess:
-            return fixup_Hexagon_GPREL16_2;
-          case HexagonII::MemAccessSize::DoubleWordAccess:
-            return fixup_Hexagon_GPREL16_3;
-          default:
-            llvm_unreachable("unhandled fixup");
-          }
+      for (const MCPhysReg *ImpUses = MCID.getImplicitUses();
+           ImpUses && *ImpUses; ++ImpUses) {
+        if (*ImpUses != Hexagon::GP)
+          continue;
+        switch (HexagonMCInstrInfo::getAccessSize(MCII, MI)) {
+        case HexagonII::MemAccessSize::ByteAccess:
+          return fixup_Hexagon_GPREL16_0;
+        case HexagonII::MemAccessSize::HalfWordAccess:
+          return fixup_Hexagon_GPREL16_1;
+        case HexagonII::MemAccessSize::WordAccess:
+          return fixup_Hexagon_GPREL16_2;
+        case HexagonII::MemAccessSize::DoubleWordAccess:
+          return fixup_Hexagon_GPREL16_3;
+        default:
+          llvm_unreachable("unhandled fixup");
         }
       }
     } else
@@ -405,10 +405,8 @@ unsigned HexagonMCCodeEmitter::getExprOpValue(const MCInst &MI,
     return cast<MCConstantExpr>(ME)->getValue();
   }
   if (MK == MCExpr::Binary) {
-    unsigned Res;
-    Res = getExprOpValue(MI, MO, cast<MCBinaryExpr>(ME)->getLHS(), Fixups, STI);
-    Res +=
-        getExprOpValue(MI, MO, cast<MCBinaryExpr>(ME)->getRHS(), Fixups, STI);
+    getExprOpValue(MI, MO, cast<MCBinaryExpr>(ME)->getLHS(), Fixups, STI);
+    getExprOpValue(MI, MO, cast<MCBinaryExpr>(ME)->getRHS(), Fixups, STI);
     return 0;
   }
 

@@ -53,7 +53,8 @@ public:
     ISAVersion7_0_0,
     ISAVersion7_0_1,
     ISAVersion8_0_0,
-    ISAVersion8_0_1
+    ISAVersion8_0_1,
+    ISAVersion8_0_3
   };
 
 private:
@@ -70,11 +71,13 @@ private:
   bool FastFMAF32;
   bool CaymanISA;
   bool FlatAddressSpace;
+  bool FlatForGlobal;
   bool EnableIRStructurizer;
   bool EnablePromoteAlloca;
   bool EnableIfCvt;
   bool EnableLoadStoreOpt;
   bool EnableUnsafeDSOffsetFolding;
+  bool EnableXNACK;
   unsigned WavefrontSize;
   bool CFALUBug;
   int LocalMemorySize;
@@ -88,6 +91,7 @@ private:
   int LDSBankCount;
   unsigned IsaVersion;
   bool EnableHugeScratchBuffer;
+  bool EnableSIScheduler;
 
   std::unique_ptr<AMDGPUFrameLowering> FrameLowering;
   std::unique_ptr<AMDGPUTargetLowering> TLInfo;
@@ -157,6 +161,10 @@ public:
 
   bool hasFlatAddressSpace() const {
     return FlatAddressSpace;
+  }
+
+  bool useFlatForGlobal() const {
+    return FlatForGlobal;
   }
 
   bool hasBFE() const {
@@ -274,6 +282,10 @@ public:
     return EnableHugeScratchBuffer;
   }
 
+  bool enableSIScheduler() const {
+    return EnableSIScheduler;
+  }
+
   bool dumpCode() const {
     return DumpCode;
   }
@@ -284,6 +296,10 @@ public:
     return TargetTriple.getOS() == Triple::AMDHSA;
   }
   bool isVGPRSpillingEnabled(const SIMachineFunctionInfo *MFI) const;
+
+  bool isXNACKEnabled() const {
+    return EnableXNACK;
+  }
 
   unsigned getMaxWavesPerCU() const {
     if (getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS)
@@ -303,6 +319,9 @@ public:
     return isAmdHsaOS() ? 0 : 36;
   }
 
+  unsigned getMaxNumUserSGPRs() const {
+    return 16;
+  }
 };
 
 } // End namespace llvm

@@ -222,6 +222,11 @@ uptr ThreadDescriptorSize() {
     char *end;
     int minor = internal_simple_strtoll(buf + 8, &end, 10);
     if (end != buf + 8 && (*end == '\0' || *end == '.')) {
+      int patch = 0;
+      if (*end == '.')
+        // strtoll will return 0 if no valid conversion could be performed
+        patch = internal_simple_strtoll(end + 1, nullptr, 10);
+
       /* sizeof(struct pthread) values from various glibc versions.  */
       if (SANITIZER_X32)
         val = 1728;  // Assume only one particular version for x32.
@@ -235,9 +240,9 @@ uptr ThreadDescriptorSize() {
         val = FIRST_32_SECOND_64(1136, 1712);
       else if (minor == 10)
         val = FIRST_32_SECOND_64(1168, 1776);
-      else if (minor <= 12)
+      else if (minor == 11 || (minor == 12 && patch == 1))
         val = FIRST_32_SECOND_64(1168, 2288);
-      else if (minor == 13)
+      else if (minor <= 13)
         val = FIRST_32_SECOND_64(1168, 2304);
       else
         val = FIRST_32_SECOND_64(1216, 2304);
@@ -524,16 +529,16 @@ void AndroidLogInit() {
   atomic_store(&android_log_initialized, 1, memory_order_release);
 }
 
-static bool IsSyslogAvailable() {
+static bool ShouldLogAfterPrintf() {
   return atomic_load(&android_log_initialized, memory_order_acquire);
 }
 #else
 void AndroidLogInit() {}
 
-static bool IsSyslogAvailable() { return true; }
+static bool ShouldLogAfterPrintf() { return true; }
 #endif  // SANITIZER_ANDROID
 
-static void WriteOneLineToSyslog(const char *s) {
+void WriteOneLineToSyslog(const char *s) {
 #if SANITIZER_ANDROID &&__ANDROID_API__ < 21
   __android_log_write(ANDROID_LOG_INFO, NULL, s);
 #else
@@ -541,24 +546,11 @@ static void WriteOneLineToSyslog(const char *s) {
 #endif
 }
 
-void WriteToSyslog(const char *buffer) {
-  if (!IsSyslogAvailable())
-    return;
-  char *copy = internal_strdup(buffer);
-  char *p = copy;
-  char *q;
-  // syslog, at least on Android, has an implicit message length limit.
-  // Print one line at a time.
-  do {
-    q = internal_strchr(p, '\n');
-    if (q)
-      *q = '\0';
-    WriteOneLineToSyslog(p);
-    if (q)
-      p = q + 1;
-  } while (q);
-  InternalFree(copy);
+void LogMessageOnPrintf(const char *str) {
+  if (common_flags()->log_to_syslog && ShouldLogAfterPrintf())
+    WriteToSyslog(str);
 }
+
 #endif // SANITIZER_LINUX
 
 } // namespace __sanitizer

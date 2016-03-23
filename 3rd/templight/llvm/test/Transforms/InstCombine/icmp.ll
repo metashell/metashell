@@ -819,8 +819,8 @@ define i1 @test68(i32 %x) nounwind uwtable {
 
 ; PR14708
 ; CHECK-LABEL: @test69(
-; CHECK: %1 = and i32 %c, -33
-; CHECK: %2 = icmp eq i32 %1, 65
+; CHECK: %1 = or i32 %c, 32
+; CHECK: %2 = icmp eq i32 %1, 97
 ; CHECK: ret i1 %2
 define i1 @test69(i32 %c) nounwind uwtable {
   %1 = icmp eq i32 %c, 97
@@ -1670,5 +1670,17 @@ define i1 @cmp_slt_rhs_inc(float %x, i32 %i) {
   %conv = fptosi float %x to i32
   %inc = add nsw i32 %i, 1
   %cmp = icmp slt i32 %conv, %inc
+  ret i1 %cmp
+}
+
+; CHECK-LABEL: @PR26407
+; CHECK-NEXT: %[[addx:.*]] = add i32 %x, 2147483647
+; CHECK-NEXT: %[[addy:.*]] = add i32 %y, 2147483647
+; CHECK-NEXT: %[[cmp:.*]] = icmp uge i32 %[[addx]], %[[addy]]
+; CHECK-NEXT: ret i1 %[[cmp]]
+define i1 @PR26407(i32 %x, i32 %y) {
+  %addx = add i32 %x, 2147483647
+  %addy = add i32 %y, 2147483647
+  %cmp = icmp uge i32 %addx, %addy
   ret i1 %cmp
 }

@@ -226,15 +226,16 @@ getGenericLambdaTemplateParameterList(LambdaScopeInfo *LSI, Sema &SemaRef) {
   if (LSI->GLTemplateParameterList)
     return LSI->GLTemplateParameterList;
 
-  if (LSI->AutoTemplateParams.size()) {
+  if (!LSI->AutoTemplateParams.empty()) {
     SourceRange IntroRange = LSI->IntroducerRange;
     SourceLocation LAngleLoc = IntroRange.getBegin();
     SourceLocation RAngleLoc = IntroRange.getEnd();
     LSI->GLTemplateParameterList = TemplateParameterList::Create(
         SemaRef.Context,
         /*Template kw loc*/ SourceLocation(), LAngleLoc,
-        (NamedDecl **)LSI->AutoTemplateParams.data(),
-        LSI->AutoTemplateParams.size(), RAngleLoc);
+        llvm::makeArrayRef((NamedDecl *const *)LSI->AutoTemplateParams.data(),
+                           LSI->AutoTemplateParams.size()),
+        RAngleLoc);
   }
   return LSI->GLTemplateParameterList;
 }
@@ -1141,6 +1142,12 @@ static void addFunctionPointerConversion(Sema &S,
                                          SourceRange IntroducerRange,
                                          CXXRecordDecl *Class,
                                          CXXMethodDecl *CallOperator) {
+  // This conversion is explicitly disabled if the lambda's function has
+  // pass_object_size attributes on any of its parameters.
+  if (std::any_of(CallOperator->param_begin(), CallOperator->param_end(),
+                  std::mem_fn(&ParmVarDecl::hasAttr<PassObjectSizeAttr>)))
+    return;
+
   // Add the conversion to function pointer.
   const FunctionProtoType *CallOpProto = 
       CallOperator->getType()->getAs<FunctionProtoType>();

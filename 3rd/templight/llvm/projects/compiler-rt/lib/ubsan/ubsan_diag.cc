@@ -45,9 +45,20 @@ static void MaybePrintStackTrace(uptr pc, uptr bp) {
 
 static const char *ConvertTypeToString(ErrorType Type) {
   switch (Type) {
-#define UBSAN_CHECK(Name, SummaryKind, FlagName)                               \
+#define UBSAN_CHECK(Name, SummaryKind, FSanitizeFlagName)                      \
   case ErrorType::Name:                                                        \
     return SummaryKind;
+#include "ubsan_checks.inc"
+#undef UBSAN_CHECK
+  }
+  UNREACHABLE("unknown ErrorType!");
+}
+
+static const char *ConvertTypeToFlagName(ErrorType Type) {
+  switch (Type) {
+#define UBSAN_CHECK(Name, SummaryKind, FSanitizeFlagName)                      \
+  case ErrorType::Name:                                                        \
+    return FSanitizeFlagName;
 #include "ubsan_checks.inc"
 #undef UBSAN_CHECK
   }
@@ -365,14 +376,19 @@ ScopedReport::~ScopedReport() {
   MaybePrintStackTrace(Opts.pc, Opts.bp);
   MaybeReportErrorSummary(SummaryLoc, Type);
   CommonSanitizerReportMutex.Unlock();
-  if (Opts.DieAfterReport || flags()->halt_on_error)
+  if (flags()->halt_on_error)
     Die();
 }
 
 ALIGNED(64) static char suppression_placeholder[sizeof(SuppressionContext)];
 static SuppressionContext *suppression_ctx = nullptr;
 static const char kVptrCheck[] = "vptr_check";
-static const char *kSuppressionTypes[] = { kVptrCheck };
+static const char *kSuppressionTypes[] = {
+#define UBSAN_CHECK(Name, SummaryKind, FSanitizeFlagName) FSanitizeFlagName,
+#include "ubsan_checks.inc"
+#undef UBSAN_CHECK
+    kVptrCheck,
+};
 
 void __ubsan::InitializeSuppressions() {
   CHECK_EQ(nullptr, suppression_ctx);
@@ -386,6 +402,30 @@ bool __ubsan::IsVptrCheckSuppressed(const char *TypeName) {
   CHECK(suppression_ctx);
   Suppression *s;
   return suppression_ctx->Match(TypeName, kVptrCheck, &s);
+}
+
+bool __ubsan::IsPCSuppressed(ErrorType ET, uptr PC, const char *Filename) {
+  InitAsStandaloneIfNecessary();
+  CHECK(suppression_ctx);
+  const char *SuppType = ConvertTypeToFlagName(ET);
+  // Fast path: don't symbolize PC if there is no suppressions for given UB
+  // type.
+  if (!suppression_ctx->HasSuppressionType(SuppType))
+    return false;
+  Suppression *s = nullptr;
+  // Suppress by file name known to runtime.
+  if (Filename != nullptr && suppression_ctx->Match(Filename, SuppType, &s))
+    return true;
+  // Suppress by module name.
+  if (const char *Module = Symbolizer::GetOrInit()->GetModuleNameForPc(PC)) {
+    if (suppression_ctx->Match(Module, SuppType, &s))
+      return true;
+  }
+  // Suppress by function or source file name from debug info.
+  SymbolizedStackHolder Stack(Symbolizer::GetOrInit()->SymbolizePC(PC));
+  const AddressInfo &AI = Stack.get()->info;
+  return suppression_ctx->Match(AI.function, SuppType, &s) ||
+         suppression_ctx->Match(AI.file, SuppType, &s);
 }
 
 #endif  // CAN_SANITIZE_UB

@@ -16,10 +16,11 @@ add_llvm_target(AMDGPUCodeGen
   AMDILCFGStructurizer.cpp
   AMDGPUAlwaysInlinePass.cpp
   AMDGPUAnnotateKernelFeatures.cpp
+  AMDGPUAnnotateUniformValues.cpp
   AMDGPUAsmPrinter.cpp
   AMDGPUDiagnosticInfoUnsupported.cpp
   AMDGPUFrameLowering.cpp
-  AMDGPUHSATargetObjectFile.cpp
+  AMDGPUTargetObjectFile.cpp
   AMDGPUIntrinsicInfo.cpp
   AMDGPUISelDAGToDAG.cpp
   AMDGPUMCInstLower.cpp
@@ -57,7 +58,7 @@ add_llvm_target(AMDGPUCodeGen
   SILowerControlFlow.cpp
   SILowerI1Copies.cpp
   SIMachineFunctionInfo.cpp
-  SIPrepareScratchRegs.cpp
+  SIMachineScheduler.cpp
   SIRegisterInfo.cpp
   SIShrinkInstructions.cpp
   SITypeRewriter.cpp

@@ -25,7 +25,7 @@ mkdocs build
 # Get the templight binary
 
 cd 3rd/templight
-  wget https://github.com/sabel83/templight_binary/releases/download/templight_35f974_v2/templight_ubuntu12.04_x86_64.tar.bz2
+  wget https://github.com/sabel83/templight_binary/releases/download/templight_185020_v2/templight_ubuntu12.04_x86_64.tar.bz2
   tar -xvjf templight_ubuntu12.04_x86_64.tar.bz2
 cd ../..
 

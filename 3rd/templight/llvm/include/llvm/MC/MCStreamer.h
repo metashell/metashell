@@ -19,6 +19,7 @@
 #include "llvm/MC/MCDirectives.h"
 #include "llvm/MC/MCDwarf.h"
 #include "llvm/MC/MCLinkerOptimizationHint.h"
+#include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MCWinEH.h"
 #include "llvm/Support/DataTypes.h"
 #include "llvm/Support/SMLoc.h"
@@ -33,7 +34,6 @@ class MCInst;
 class MCInstPrinter;
 class MCSection;
 class MCStreamer;
-class MCSymbol;
 class MCSymbolELF;
 class MCSymbolRefExpr;
 class MCSubtargetInfo;
@@ -131,10 +131,14 @@ public:
 
   void finish() override;
 
+  /// Reset any state between object emissions, i.e. the equivalent of
+  /// MCStreamer's reset method.
+  virtual void reset();
+
   /// Callback used to implement the ldr= pseudo.
   /// Add a new entry to the constant pool for the current section and return an
   /// MCExpr that can be used to refer to the constant pool location.
-  const MCExpr *addConstantPoolEntry(const MCExpr *);
+  const MCExpr *addConstantPoolEntry(const MCExpr *, SMLoc Loc);
 
   /// Callback used to implemnt the .ltorg directive.
   /// Emit contents of constant pool for the current section.
@@ -681,6 +685,14 @@ public:
   virtual void EmitWinEHHandlerData();
 
   virtual void EmitSyntaxDirective();
+
+  /// \brief Emit a .reloc directive.
+  /// Returns true if the relocation could not be emitted because Name is not
+  /// known.
+  virtual bool EmitRelocDirective(const MCExpr &Offset, StringRef Name,
+                                  const MCExpr *Expr, SMLoc Loc) {
+    return true;
+  }
 
   /// \brief Emit the given \p Instruction into the current section.
   virtual void EmitInstruction(const MCInst &Inst, const MCSubtargetInfo &STI);

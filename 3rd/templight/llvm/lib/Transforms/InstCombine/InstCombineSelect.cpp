@@ -930,7 +930,7 @@ Instruction *InstCombiner::visitSelectInst(SelectInst &SI) {
       if (FCI->hasOneUse() && FCmpInst::isUnordered(FCI->getPredicate())) {
         FCmpInst::Predicate InvPred = FCI->getInversePredicate();
         IRBuilder<>::FastMathFlagGuard FMFG(*Builder);
-        Builder->SetFastMathFlags(FCI->getFastMathFlags());
+        Builder->setFastMathFlags(FCI->getFastMathFlags());
         Value *NewCond = Builder->CreateFCmp(InvPred, TrueVal, FalseVal,
                                              FCI->getName() + ".inv");
 
@@ -973,7 +973,7 @@ Instruction *InstCombiner::visitSelectInst(SelectInst &SI) {
       if (FCI->hasOneUse() && FCmpInst::isUnordered(FCI->getPredicate())) {
         FCmpInst::Predicate InvPred = FCI->getInversePredicate();
         IRBuilder<>::FastMathFlagGuard FMFG(*Builder);
-        Builder->SetFastMathFlags(FCI->getFastMathFlags());
+        Builder->setFastMathFlags(FCI->getFastMathFlags());
         Value *NewCond = Builder->CreateFCmp(InvPred, FalseVal, TrueVal,
                                              FCI->getName() + ".inv");
 
@@ -1070,7 +1070,7 @@ Instruction *InstCombiner::visitSelectInst(SelectInst &SI) {
     SelectPatternResult SPR = matchSelectPattern(&SI, LHS, RHS, &CastOp);
     auto SPF = SPR.Flavor;
 
-    if (SPF) {
+    if (SelectPatternResult::isMinOrMax(SPF)) {
       // Canonicalize so that type casts are outside select patterns.
       if (LHS->getType()->getPrimitiveSizeInBits() !=
           SI.getType()->getPrimitiveSizeInBits()) {
@@ -1082,7 +1082,7 @@ Instruction *InstCombiner::visitSelectInst(SelectInst &SI) {
         } else {
           IRBuilder<>::FastMathFlagGuard FMFG(*Builder);
           auto FMF = cast<FPMathOperator>(SI.getCondition())->getFastMathFlags();
-          Builder->SetFastMathFlags(FMF);
+          Builder->setFastMathFlags(FMF);
           Cmp = Builder->CreateFCmp(Pred, LHS, RHS);
         }
 
@@ -1091,11 +1091,15 @@ Instruction *InstCombiner::visitSelectInst(SelectInst &SI) {
                                            SI.getType());
         return ReplaceInstUsesWith(SI, NewSI);
       }
+    }
 
+    if (SPF) {
       // MAX(MAX(a, b), a) -> MAX(a, b)
       // MIN(MIN(a, b), a) -> MIN(a, b)
       // MAX(MIN(a, b), a) -> a
       // MIN(MAX(a, b), a) -> a
+      // ABS(ABS(a)) -> ABS(a)
+      // NABS(NABS(a)) -> NABS(a)
       if (SelectPatternFlavor SPF2 = matchSelectPattern(LHS, LHS2, RHS2).Flavor)
         if (Instruction *R = FoldSPFofSPF(cast<Instruction>(LHS),SPF2,LHS2,RHS2,
                                           SI, SPF, RHS))

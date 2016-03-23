@@ -14,6 +14,7 @@
 
 #include "X86AsmPrinter.h"
 #include "X86RegisterInfo.h"
+#include "X86ShuffleDecodeConstantPool.h"
 #include "InstPrinter/X86ATTInstPrinter.h"
 #include "MCTargetDesc/X86BaseInfo.h"
 #include "Utils/X86ShuffleDecode.h"
@@ -452,10 +453,6 @@ ReSimplify:
            "Unexpected # of LEA operands");
     assert(OutMI.getOperand(1+X86::AddrSegmentReg).getReg() == 0 &&
            "LEA has segment specified!");
-    break;
-
-  case X86::MOV32ri64:
-    OutMI.setOpcode(X86::MOV32ri);
     break;
 
   // Commute operands to get a smaller encoding by using VEX.R instead of VEX.B
@@ -1143,11 +1140,14 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
     const X86FrameLowering* FrameLowering =
         MF->getSubtarget<X86Subtarget>().getFrameLowering();
     bool hasFP = FrameLowering->hasFP(*MF);
+    
+    // TODO: This is needed only if we require precise CFA.
+    bool HasActiveDwarfFrame = OutStreamer->getNumFrameInfos() &&
+                               !OutStreamer->getDwarfFrameInfos().back().End;
 
-    bool NeedsDwarfCFI = MMI->usePreciseUnwindInfo();
     int stackGrowth = -RI->getSlotSize();
 
-    if (NeedsDwarfCFI && !hasFP) {
+    if (HasActiveDwarfFrame && !hasFP) {
       OutStreamer->EmitCFIAdjustCfaOffset(-stackGrowth);
     }
 
@@ -1158,7 +1158,7 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
     EmitAndCountInstruction(MCInstBuilder(X86::POP32r)
                             .addReg(MI->getOperand(0).getReg()));
 
-    if (NeedsDwarfCFI && !hasFP) {
+    if (HasActiveDwarfFrame && !hasFP) {
       OutStreamer->EmitCFIAdjustCfaOffset(stackGrowth);
     }
     return;
@@ -1266,19 +1266,48 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
     return;
   }
 
-    // Lower PSHUFB and VPERMILP normally but add a comment if we can find
-    // a constant shuffle mask. We won't be able to do this at the MC layer
-    // because the mask isn't an immediate.
+  // Lower PSHUFB and VPERMILP normally but add a comment if we can find
+  // a constant shuffle mask. We won't be able to do this at the MC layer
+  // because the mask isn't an immediate.
   case X86::PSHUFBrm:
   case X86::VPSHUFBrm:
-  case X86::VPSHUFBYrm: {
+  case X86::VPSHUFBYrm:
+  case X86::VPSHUFBZ128rm:
+  case X86::VPSHUFBZ128rmk:
+  case X86::VPSHUFBZ128rmkz:
+  case X86::VPSHUFBZ256rm:
+  case X86::VPSHUFBZ256rmk:
+  case X86::VPSHUFBZ256rmkz:
+  case X86::VPSHUFBZrm:
+  case X86::VPSHUFBZrmk:
+  case X86::VPSHUFBZrmkz: {
     if (!OutStreamer->isVerboseAsm())
       break;
-    assert(MI->getNumOperands() > 5 &&
-           "We should always have at least 5 operands!");
+    unsigned SrcIdx, MaskIdx;
+    switch (MI->getOpcode()) {
+    default: llvm_unreachable("Invalid opcode");
+    case X86::PSHUFBrm:
+    case X86::VPSHUFBrm:
+    case X86::VPSHUFBYrm:
+    case X86::VPSHUFBZ128rm:
+    case X86::VPSHUFBZ256rm:
+    case X86::VPSHUFBZrm:
+      SrcIdx = 1; MaskIdx = 5; break;
+    case X86::VPSHUFBZ128rmkz:
+    case X86::VPSHUFBZ256rmkz:
+    case X86::VPSHUFBZrmkz:
+      SrcIdx = 2; MaskIdx = 6; break;
+    case X86::VPSHUFBZ128rmk:
+    case X86::VPSHUFBZ256rmk:
+    case X86::VPSHUFBZrmk:
+      SrcIdx = 3; MaskIdx = 7; break;
+    }
+
+    assert(MI->getNumOperands() >= 6 &&
+           "We should always have at least 6 operands!");
     const MachineOperand &DstOp = MI->getOperand(0);
-    const MachineOperand &SrcOp = MI->getOperand(1);
-    const MachineOperand &MaskOp = MI->getOperand(5);
+    const MachineOperand &SrcOp = MI->getOperand(SrcIdx);
+    const MachineOperand &MaskOp = MI->getOperand(MaskIdx);
 
     if (auto *C = getConstantFromPool(*MI, MaskOp)) {
       SmallVector<int, 16> Mask;
@@ -1300,9 +1329,16 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
     const MachineOperand &SrcOp = MI->getOperand(1);
     const MachineOperand &MaskOp = MI->getOperand(5);
 
+    unsigned ElSize;
+    switch (MI->getOpcode()) {
+    default: llvm_unreachable("Invalid opcode");
+    case X86::VPERMILPSrm: case X86::VPERMILPSYrm: ElSize = 32; break;
+    case X86::VPERMILPDrm: case X86::VPERMILPDYrm: ElSize = 64; break;
+    }
+
     if (auto *C = getConstantFromPool(*MI, MaskOp)) {
       SmallVector<int, 16> Mask;
-      DecodeVPERMILPMask(C, Mask);
+      DecodeVPERMILPMask(C, ElSize, Mask);
       if (!Mask.empty())
         OutStreamer->AddComment(getShuffleComment(DstOp, SrcOp, Mask));
     }
@@ -1373,7 +1409,19 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
           if (isa<UndefValue>(COp)) {
             CS << "u";
           } else if (auto *CI = dyn_cast<ConstantInt>(COp)) {
-            CS << CI->getZExtValue();
+            if (CI->getBitWidth() <= 64) {
+              CS << CI->getZExtValue();
+            } else {
+              // print multi-word constant as (w0,w1)
+              auto Val = CI->getValue();
+              CS << "(";
+              for (int i = 0, N = Val.getNumWords(); i < N; ++i) {
+                if (i > 0)
+                  CS << ",";
+                CS << Val.getRawData()[i];
+              }
+              CS << ")";
+            }
           } else if (auto *CF = dyn_cast<ConstantFP>(COp)) {
             SmallString<32> Str;
             CF->getValueAPF().toString(Str);

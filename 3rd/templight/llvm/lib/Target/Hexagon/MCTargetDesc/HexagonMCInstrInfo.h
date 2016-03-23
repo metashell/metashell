@@ -53,7 +53,8 @@ int64_t const memStoreReorderEnabledMask = 1 << memStoreReorderEnabledOffset;
 size_t const bundleInstructionsOffset = 1;
 
 void addConstant(MCInst &MI, uint64_t Value, MCContext &Context);
-void addConstExtender(MCInstrInfo const &MCII, MCInst &MCB, MCInst const &MCI);
+void addConstExtender(MCContext &Context, MCInstrInfo const &MCII, MCInst &MCB,
+                      MCInst const &MCI);
 
 // Returns a iterator range of instructions in this bundle
 iterator_range<MCInst::const_iterator> bundleInstructions(MCInst const &MCI);
@@ -69,10 +70,12 @@ bool canonicalizePacket(MCInstrInfo const &MCII, MCSubtargetInfo const &STI,
 // Clamp off upper 26 bits of extendable operand for emission
 void clampExtended(MCInstrInfo const &MCII, MCContext &Context, MCInst &MCI);
 
+MCInst createBundle();
+
 // Return the extender for instruction at Index or nullptr if none
 MCInst const *extenderForIndex(MCInst const &MCB, size_t Index);
-void extendIfNeeded(MCInstrInfo const &MCII, MCInst &MCB, MCInst const &MCI,
-                    bool MustExtend);
+void extendIfNeeded(MCContext &Context, MCInstrInfo const &MCII, MCInst &MCB,
+                    MCInst const &MCI, bool MustExtend);
 
 // Create a duplex instruction given the two subinsts
 MCInst *deriveDuplex(MCContext &Context, unsigned iClass, MCInst const &inst0,
@@ -260,7 +263,7 @@ bool isSoloAin1(MCInstrInfo const &MCII, MCInst const &MCI);
 bool isVector(MCInstrInfo const &MCII, MCInst const &MCI);
 
 // Pad the bundle with nops to satisfy endloop requirements
-void padEndloop(MCInst &MCI);
+void padEndloop(MCContext &Context, MCInst &MCI);
 
 bool prefersSlot3(MCInstrInfo const &MCII, MCInst const &MCI);
 

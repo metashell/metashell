@@ -19,7 +19,7 @@ function(add_compiler_rt_object_libraries name)
       set(libname "${name}.${os}")
       set(libnames ${libnames} ${libname})
       set(extra_cflags_${libname} ${DARWIN_${os}_CFLAGS})
-      list_union(LIB_ARCHS_${libname} DARWIN_${os}_ARCHS LIB_ARCHS)
+      list_intersect(LIB_ARCHS_${libname} DARWIN_${os}_ARCHS LIB_ARCHS)
     endforeach()
   else()
     foreach(arch ${LIB_ARCHS})
@@ -87,7 +87,7 @@ function(add_compiler_rt_runtime name type)
         set(libname "${name}_${os}_dynamic")
         set(extra_linkflags_${libname} ${DARWIN_${os}_LINKFLAGS} ${LIB_LINKFLAGS})
       endif()
-      list_union(LIB_ARCHS_${libname} DARWIN_${os}_ARCHS LIB_ARCHS)
+      list_intersect(LIB_ARCHS_${libname} DARWIN_${os}_ARCHS LIB_ARCHS)
       if(LIB_ARCHS_${libname})
         list(APPEND libnames ${libname})
         set(extra_cflags_${libname} ${DARWIN_${os}_CFLAGS} ${LIB_CFLAGS})
@@ -154,6 +154,10 @@ function(add_compiler_rt_runtime name type)
     if(APPLE)
       set_target_properties(${libname} PROPERTIES
       OSX_ARCHITECTURES "${LIB_ARCHS_${libname}}")
+    endif()
+
+    if(type STREQUAL "SHARED")
+      rt_externalize_debuginfo(${libname})
     endif()
   endforeach()
   if(LIB_PARENT_TARGET)
@@ -284,12 +288,14 @@ macro(add_custom_libcxx name prefix)
   ExternalProject_Add(${name}
     PREFIX ${prefix}
     SOURCE_DIR ${COMPILER_RT_LIBCXX_PATH}
-    CMAKE_ARGS -DCMAKE_C_COMPILER=${COMPILER_RT_TEST_COMPILER}
-               -DCMAKE_CXX_COMPILER=${COMPILER_RT_TEST_COMPILER}
+    CMAKE_ARGS -DCMAKE_MAKE_PROGRAM:STRING=${CMAKE_MAKE_PROGRAM}
+               -DCMAKE_C_COMPILER=${COMPILER_RT_TEST_COMPILER}
+               -DCMAKE_CXX_COMPILER=${COMPILER_RT_TEST_CXX_COMPILER}
                -DCMAKE_C_FLAGS=${LIBCXX_CFLAGS}
                -DCMAKE_CXX_FLAGS=${LIBCXX_CFLAGS}
                -DCMAKE_BUILD_TYPE=Release
                -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+               -DLLVM_PATH=${LLVM_MAIN_SRC_DIR}
     LOG_BUILD 1
     LOG_CONFIGURE 1
     LOG_INSTALL 1
@@ -309,3 +315,24 @@ macro(add_custom_libcxx name prefix)
     DEPENDS ${LIBCXX_DEPS}
     )
 endmacro()
+
+function(rt_externalize_debuginfo name)
+  if(NOT COMPILER_RT_EXTERNALIZE_DEBUGINFO)
+    return()
+  endif()
+
+  if(APPLE)
+    if(CMAKE_CXX_FLAGS MATCHES "-flto"
+      OR CMAKE_CXX_FLAGS_${uppercase_CMAKE_BUILD_TYPE} MATCHES "-flto")
+
+      set(lto_object ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${name}-lto.o)
+      set_property(TARGET ${name} APPEND_STRING PROPERTY
+        LINK_FLAGS " -Wl,-object_path_lto -Wl,${lto_object}")
+    endif()
+    add_custom_command(TARGET ${name} POST_BUILD
+      COMMAND xcrun dsymutil $<TARGET_FILE:${name}>
+      COMMAND xcrun strip -Sl $<TARGET_FILE:${name}>)
+  else()
+    message(FATAL_ERROR "COMPILER_RT_EXTERNALIZE_DEBUGINFO isn't implemented for non-darwin platforms!")
+  endif()
+endfunction()
