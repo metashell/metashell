@@ -44,7 +44,7 @@ def in_red(msg):
 def valid_version(ver):
     """Check if ver is a valid version number"""
     alnum = string.ascii_letters + string.digits
-    whitelist = alnum + '_.'
+    whitelist = alnum + '_.-'
     return \
         all([c in whitelist for c in ver]) and any([c in alnum for c in ver])
 
