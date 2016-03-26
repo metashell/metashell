@@ -3,12 +3,17 @@
     "name": "metashell",
     "git": "https://github.com/sabel83/metashell.git",
     "build": [
+      ["rm", "-rf", "bin", "3rd/templight/build"],
       [
         "/bin/bash",
         "-c",
         "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
-      ["./build.sh"],
+      [
+        "/bin/bash",
+        "-c",
+        "CXX=\"ccache g++\" CC=\"ccache gcc\" CCACHE_DIR=\"${PWD}/../../../ccache\" ./build.sh"
+      ],
       ["/usr/local/bin/mkdocs", "build", "--clean"]
     ],
     "bin": [
