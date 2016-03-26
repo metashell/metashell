@@ -3,6 +3,7 @@
     "name": "metashell",
     "git": "https://github.com/sabel83/metashell.git",
     "build": [
+      ["rm", "-rf", "bin", "3rd/templight/build"],
       [
         "/bin/bash",
         "-c",
