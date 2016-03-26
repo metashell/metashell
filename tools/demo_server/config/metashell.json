@@ -8,7 +8,11 @@
         "-c",
         "tools/demo_server/bin/splash_info ../../../splash.txt > lib/core/version_desc.hpp"
       ],
-      ["./build.sh"],
+      [
+        "/bin/bash",
+        "-c",
+        "CXX=\"ccache g++\" CC=\"ccache gcc\" CCACHE_DIR=\"${PWD}/../../../ccache\" ./build.sh"
+      ],
       ["/usr/local/bin/mkdocs", "build", "--clean"]
     ],
     "bin": [

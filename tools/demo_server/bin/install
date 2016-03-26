@@ -249,7 +249,7 @@ function download_shared_file {
 # Install dependencies
 
 sudo apt-get -y install \
-  shellinabox git g++ cmake libreadline-dev python-pip python-cheetah
+  shellinabox git g++ cmake libreadline-dev python-pip python-cheetah ccache
 sudo pip install mkdocs pep8 pylint gitpython daemonize
 
 # Create the installation directories
