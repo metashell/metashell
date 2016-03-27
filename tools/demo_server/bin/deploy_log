@@ -1,0 +1,147 @@
+#!/usr/bin/python
+"""Tool to (easily) get data out of the deployment logs"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import os
+import re
+import datetime
+import time
+
+
+LOG_MESSAGE_REGEX = re.compile(
+    '([0-9]{4})-([0-9]{2})-([0-9]{2}) '
+    '([0-9]{2}):([0-9]{2}):([0-9]{2})\\.([0-9]{6}): '
+    '(.*)'
+)
+
+
+class LogMessage(object):
+    """Represents one log message"""
+    def __init__(self, s):
+        self.entry = s.strip()
+
+    def _match(self):
+        """Parse the log entry with the "common" regex"""
+        match = LOG_MESSAGE_REGEX.match(self.entry)
+        if match:
+            return match
+        else:
+            raise Exception('Invalid log entry: {0}'.format(self.entry))
+
+    def valid(self):
+        """Is the log entry valid?"""
+        return bool(LOG_MESSAGE_REGEX.match(self.entry))
+
+    def when(self):
+        """When was the log entry created"""
+        match = self._match()
+        return datetime.datetime(
+            int(match.group(1)),
+            int(match.group(2)),
+            int(match.group(3)),
+            int(match.group(4)),
+            int(match.group(5)),
+            int(match.group(6)),
+            int(match.group(7))
+        )
+
+    def message(self):
+        """Returns the logged message"""
+        return self._match().group(8)
+
+    def __str__(self):
+        return self.entry
+
+
+class LogFormatter(object):
+    """Class to filter and format log messages"""
+
+    def __init__(self, only_deploy_events, display_time):
+        self.only_deploy_events = only_deploy_events
+        self.display_time = display_time
+
+    def keep_message(self, msg):
+        """Should the message be kept?"""
+        return (not self.only_deploy_events) or is_deploy_event(msg)
+
+    def format_message(self, msg):
+        """Format the current message"""
+        return str(msg) if self.display_time else msg.message()
+
+
+def is_deploy_event(msg):
+    """Check if a LogMessage is a deploy event"""
+    prefix = '=========='
+    message = msg.message()
+    return message.startswith(prefix) and message.endswith(prefix)
+
+
+def read_lines(in_file, follow):
+    """Read lines from file"""
+    while True:
+        line = in_file.readline()
+        if line:
+            yield line
+        elif follow:
+            time.sleep(1)
+        else:
+            return
+
+
+def main():
+    """The main function of the utility"""
+    parser = argparse.ArgumentParser(
+        description='Get information out of deployment logs'
+    )
+    parser.add_argument(
+        '--root',
+        required=False,
+        default='/usr/local/share/metashell',
+        help='The root directory of the demo'
+    )
+    parser.add_argument(
+        '--deploy_events',
+        required=False,
+        action='store_true',
+        help='List only the deploy events'
+    )
+    parser.add_argument(
+        '--follow', '-f',
+        required=False,
+        action='store_true',
+        help='Wait for updates when the end of file is reached'
+    )
+    parser.add_argument(
+        '--hide_time',
+        required=False,
+        action='store_true',
+        help='Hide the timestamps'
+    )
+    args = parser.parse_args()
+
+    formatter = LogFormatter(args.deploy_events, not args.hide_time)
+
+    with open(os.path.join(args.root, 'log.txt'), 'r') as log_file:
+        for msg in (LogMessage(l) for l in read_lines(log_file, args.follow)):
+            if msg.valid() and formatter.keep_message(msg):
+                print formatter.format_message(msg)
+
+
+if __name__ == '__main__':
+    main()

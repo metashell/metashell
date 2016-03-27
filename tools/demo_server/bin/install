@@ -279,6 +279,12 @@ sudo \
   -O "${INSTALL_DIR}/metashell.json"
 fix_owner "${INSTALL_DIR}/metashell.json"
 
+# Create a symlink for deploy_log
+
+sudo ln -s \
+  "${INSTALL_DIR}/bin/deploy_log_${METASHELL_BRANCH}" \
+  "/usr/bin/deploy_log"
+
 # Install the daemons
 install_daemon \
   metashell_upgrader \
