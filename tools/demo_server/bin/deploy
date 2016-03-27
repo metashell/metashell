@@ -192,13 +192,30 @@ def origin_branches(src_repository, out_dir, log):
     ]
 
 
+def git_repositories(path):
+    """Returns the list of git repositories (recursively). It does not recurse
+    into sub-repositories"""
+    result = []
+    for filename in os.listdir(path):
+        full_path = os.path.join(path, filename)
+        if os.path.isdir(full_path):
+            if os.path.isdir(os.path.join(full_path, '.git')):
+                result.append(filename)
+            else:
+                result.extend([
+                    os.path.join(filename, p)
+                    for p in git_repositories(full_path)
+                ])
+    return result
+
+
 def git_clone(src_repository, out_dir, log):
     """Clone a repository. Create a clone for each remote branch"""
     log('Cloning {0} to {1}'.format(src_repository, out_dir))
 
     remote_branch_list = origin_branches(src_repository, out_dir, log)
 
-    for filename in os.listdir(out_dir):
+    for filename in git_repositories(out_dir):
         if filename not in remote_branch_list:
             shutil.rmtree(os.path.join(out_dir, filename))
 
