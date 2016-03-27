@@ -183,32 +183,12 @@ def git_repo(src_repository, out_dir, local_name, log):
     return repo_path
 
 
-def remote_branches(src_repository, out_dir, log):
-    """Returns the list of remote branches"""
-    return [
-        l.strip()
-
-        for l in git(
-            git_repo(
-                src_repository,
-                out_dir,
-                choose_initial_dir(out_dir),
-                log
-            ),
-            ['branch', '-r'],
-            log
-        ).splitlines()
-
-        if ' -> ' not in l
-    ]
-
-
 def origin_branches(src_repository, out_dir, log):
     """Returns the list of branches in origin"""
     return [
-        remove_prefix('origin/', l)
-        for l in remote_branches(src_repository, out_dir, log)
-        if l.startswith('origin/')
+        remove_prefix('refs/heads/', l.split()[1]) for l in
+        git(out_dir, ['ls-remote', '--heads', src_repository], log)
+        .splitlines()
     ]
 
 
