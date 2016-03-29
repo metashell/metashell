@@ -3,10 +3,10 @@
 ![](img/metashell.png "Metashell")
 
 <p align="center">
-  <a href="http://abel.web.elte.hu/shell/metashell">
+  <a href="about/demo/index.html">
     <img src="img/try_online.png">
   </a>
-  <a href="getting_metashell/installers/#version-210">
+  <a href="getting_metashell/installers/index.html">
     <img src="img/download.png">
   </a>
 </p>
