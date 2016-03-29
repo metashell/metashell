@@ -6,7 +6,7 @@
   <a href="about/demo/index.html">
     <img src="img/try_online.png">
   </a>
-  <a href="getting_metashell/installers/index.html">
+  <a href="getting_metashell/installers/index.html#version-210">
     <img src="img/download.png">
   </a>
 </p>
