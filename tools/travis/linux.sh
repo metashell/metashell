@@ -48,6 +48,7 @@ BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
   --exclude "test" \
   --exclude "bin/3rd" \
   --exclude "bin/test" \
+  --exclude "bin/app/include/metashell/" \
   --exclude "windows_headers" \
   --gcov gcov-4.8 --gcov-options '\-lp'
 
