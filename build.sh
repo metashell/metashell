@@ -30,6 +30,11 @@ then
   BUILD_THREADS=1
 fi
 
+if [ -z "${BUILD_TYPE}" ]
+then
+  BUILD_TYPE="Release"
+fi
+
 PLATFORM="$(tools/detect_platform.sh)"
 
 # Config
@@ -50,7 +55,7 @@ then
     cd templight
       mkdir -p build; cd build
         cmake ../llvm \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
           -DLLVM_ENABLE_TERMINFO=OFF \
           && make templight -j${BUILD_THREADS}
       cd ..
@@ -75,7 +80,7 @@ mkdir -p bin; cd bin
   for t in core pp mdb; do
     test/system/app/${t}/metashell_${t}_system_test \
       app/metashell/metashell -- "-I$(pwd)/../3rd/boost/include" --
-  
+
     test/system/app/${t}/metashell_${t}_system_test \
       app/metashell/metashell \
       --engine clang \
