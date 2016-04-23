@@ -6,6 +6,8 @@ if [ "$CXX" == "g++" ]; then
   export CXX="g++-4.8";
 fi
 
+[ "${COVERAGE}" = "true" ] && sudo pip install cpp-coveralls
+
 # Test that the download version links are correct
 
 git fetch --tags
@@ -31,7 +33,22 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 CXXFLAGS=-Werror NO_TEMPLIGHT=1 ./build.sh
+export CXXFLAGS="-Werror"
+
+# If we check for coverage, than add an extra compiler flag
+[ "${COVERAGE}" = "true" ] && export CXXFLAGS="${CXXFLAGS} --coverage"
+[ "${COVERAGE}" = "true" ] && export BUILD_TYPE="Debug"
+
+BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
+
+# Collect and upload coverage data
+[ "${COVERAGE}" = "true" ] && coveralls \
+  -b "bin" \
+  --exclude "3rd" \
+  --exclude "test" \
+  --exclude "bin/3rd" \
+  --exclude "bin/test" \
+  --gcov gcov-4.8 --gcov-options '\-lp'
 
 sudo apt-get install clang-3.7
 cd bin

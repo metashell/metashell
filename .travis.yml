@@ -5,6 +5,11 @@ os:
 compiler:
   - gcc
   - clang
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: COVERAGE="true"
 addons:
   apt:
     sources:
