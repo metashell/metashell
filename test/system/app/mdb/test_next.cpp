@@ -38,7 +38,8 @@ JUST_TEST_CASE(test_mdb_next_without_evaluation)
   JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
 }
 
-JUST_TEST_CASE(test_mdb_next_garbage_argument) {
+JUST_TEST_CASE(test_mdb_next_garbage_argument)
+{
   const auto r = run_metashell({command(fibonacci_mp),
                                 command("#msh mdb int_<fib<2>::value>"),
                                 command("next asd")});
