@@ -9,12 +9,12 @@ ideas, or just join the conversation.
 
 ## Report a bug
 
-Bug reports can be posted in the [GitHub issues page](https://github.com/sabel83/metashell/issues)
+Bug reports can be posted in the [GitHub issues page](https://github.com/metashell/metashell/issues)
 
 ## Contributing
 
 Anyone is welcome to contribute to Metashell. If you have just a small bug fix
-you can directly open a [pull request](https://github.com/sabel83/metashell/pulls).
+you can directly open a [pull request](https://github.com/metashell/metashell/pulls).
 
 For bigger features feel free to share your ideas on the mailing list for
 discussions and to make sure no one else is working on them already.

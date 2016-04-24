@@ -1,7 +1,7 @@
 [
   {
     "name": "metashell",
-    "git": "https://github.com/sabel83/metashell.git",
+    "git": "https://github.com/metashell/metashell.git",
     "build": [
       ["rm", "-rf", "bin", "3rd/templight/build"],
       [
@@ -102,7 +102,7 @@
 
   {
     "name": "headers",
-    "git": "https://github.com/sabel83/headers.git",
+    "git": "https://github.com/metashell/headers.git",
     "include" : [
       { "src": "headers/boost/*/boost", "dst": "boost", "to_config": "boost" },
       { "src": "headers/loki/*/loki", "dst": "loki", "to_config": "loki" },

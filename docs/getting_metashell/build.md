@@ -4,7 +4,7 @@
 
 ### Using the helper scripts
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Run `install_build_dependencies.sh` to install the dependent tools and
   libraries
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
@@ -13,7 +13,7 @@
 
 ### Building manually
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent libraries:
     * Readline (or Libedit)
     * Termcap
@@ -69,7 +69,7 @@ used:
 
 ## Windows
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install [CMake](http://cmake.org/)
 * Install [Python](https://www.python.org/downloads/)
 * First you need to build Clang with
@@ -132,7 +132,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
 
 ### Using the helper scripts
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent tools:
     * CMake
     * XCode
@@ -144,7 +144,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
 
 ### Building manually
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent tools:
     * CMake
     * XCode
