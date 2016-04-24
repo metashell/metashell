@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/type.hpp>
+#include <metashell_system_test/error.hpp>
 #include <metashell_system_test/frame.hpp>
 #include <metashell_system_test/raw_text.hpp>
 #include <metashell_system_test/run_metashell.hpp>
@@ -27,6 +28,25 @@
 using namespace metashell_system_test;
 
 using pattern::_;
+
+JUST_TEST_CASE(test_mdb_next_without_evaluation)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("next")});
+
+  auto i = r.begin() + 2;
+
+  JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
+}
+
+JUST_TEST_CASE(test_mdb_next_garbage_argument) {
+  const auto r = run_metashell({command(fibonacci_mp),
+                                command("#msh mdb int_<fib<2>::value>"),
+                                command("next asd")});
+
+  auto i = r.begin() + 4;
+
+  JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
+}
 
 JUST_TEST_CASE(test_mdb_next_fib_from_root)
 {
