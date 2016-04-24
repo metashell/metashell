@@ -23,7 +23,7 @@ different branch, you need to replace `master` with the name of your branch in
 the commands.
 
 * Download the installer:
-  `wget https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/bin/install`
+  `wget https://raw.githubusercontent.com/metashell/metashell/master/tools/demo_server/bin/install`
 * Run the installer:
   `METASHELL_BRANCH=master /bin/bash install`
 * The above step will install
@@ -58,7 +58,7 @@ the options and their default values:
 ## Uninstalling the Metashell demo server
 
 Run the following command:
-`wget -O- https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/uninstall | /bin/bash`
+`wget -O- https://raw.githubusercontent.com/metashell/metashell/master/tools/demo_server/uninstall | /bin/bash`
 
 Note that if you installed the demo into a directory other than the default, you
 need to set the `INSTALL_DIR` environment variable here for the uninstaller

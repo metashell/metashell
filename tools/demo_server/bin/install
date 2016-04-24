@@ -24,7 +24,7 @@ SERVICE_GROUP=${SERVICE_GROUP-nogroup}
 DELAY_SECS_BETWEEN_PULLS=${DELAY_SECS_BETWEEN_PULLS-3600}
 SERVICE_PORT=${SERVICE_PORT-4202}
 
-METASHELL_REPO="https://raw.githubusercontent.com/sabel83/metashell/${METASHELL_BRANCH}"
+METASHELL_REPO="https://raw.githubusercontent.com/metashell/metashell/${METASHELL_BRANCH}"
 
 function fix_owner {
   sudo chown ${SERVICE_USER}:${SERVICE_GROUP} "$1"
