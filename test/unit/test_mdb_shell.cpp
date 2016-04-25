@@ -124,3 +124,13 @@ JUST_TEST_CASE(test_mdb_shell_prompt)
 
   JUST_ASSERT_EQUAL(sh.prompt(), "(mdb)");
 }
+
+JUST_TEST_CASE(test_mdb_shell_display_splash)
+{
+  mdb_test_shell sh;
+
+  in_memory_displayer d;
+  sh.display_splash(d);
+
+  JUST_ASSERT_EQUAL_CONTAINER({"For help, type \"help\"."}, d.raw_texts());
+}

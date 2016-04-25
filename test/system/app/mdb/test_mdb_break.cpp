@@ -55,3 +55,12 @@ JUST_TEST_CASE(test_mdb_break_list_with_two_breakpoints)
   ++i;
   JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"n\")"), *i);
 }
+
+JUST_TEST_CASE(test_mdb_break_garbage_argument)
+{
+  const auto r = run_metashell({command("#msh mdb"), command("break asd")});
+
+  auto i = r.begin() + 2;
+
+  JUST_ASSERT_EQUAL(error("Call break like this: \"break list\""), *i);
+}
