@@ -18,19 +18,52 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import stat
 import unittest
 import util
 
 MODULE_UNDER_TEST = util.load_from_bin('deploy')
+SOME_PORT = '1234'
+
+
+def without_directory_creation(log_messages):
+    """Removes the "Creating directory ..." messages"""
+    return [m for m in log_messages if not m.startswith('Creating directory ')]
+
+
+def find(roots):
+    """Returns the list of files in roots recursively"""
+    for root in roots:
+        for path, dirs, files in os.walk(root):
+            for filename in dirs:
+                yield os.path.join(path, filename)
+            for filename in files:
+                yield os.path.join(path, filename)
+
+
+def world_readable(path):
+    """Check if the file is world readable"""
+    perms = stat.S_IMODE(os.stat(path).st_mode)
+    return \
+        bool(perms & stat.S_IRUSR) \
+        and bool(perms & stat.S_IRGRP) \
+        and bool(perms & stat.S_IROTH)
 
 
 def deploy(env):
     """Call deploy in the enviornment"""
     MODULE_UNDER_TEST.deploy(
         env.config_dir.relative('config.json'),
+        SOME_PORT,
         env.out_dir.path,
         env.log
     )
+
+
+def symlink_to(link):
+    """Returns where link points to. Returns None when link is not a symlink"""
+    return os.path.realpath(link) if os.path.islink(link) else None
+
 
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
@@ -43,8 +76,8 @@ class TestDeploy(unittest.TestCase):
         with util.TempDir() as config_dir, util.TempDir() as out_dir:
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
-            self.assertEqual(1, len(log.messages))
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
+            self.assertEqual(1, len(without_directory_creation(log.messages)))
             self.assertTrue(log.messages[0].startswith(
                 'Error loading config file {0}: '.format(cfg_path)
             ))
@@ -54,8 +87,8 @@ class TestDeploy(unittest.TestCase):
             config_dir.write('config.json', '{')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
-            self.assertEqual(1, len(log.messages))
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
+            self.assertEqual(1, len(without_directory_creation(log.messages)))
             self.assertTrue(log.messages[0].startswith(
                 'Invalid JSON in config file {0}.\nContent: {{\n\nError: '
                 .format(cfg_path)
@@ -66,21 +99,21 @@ class TestDeploy(unittest.TestCase):
             config_dir.write('config.json', '[]')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
-            self.assertEqual([], log.messages)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
+            self.assertEqual([], without_directory_creation(log.messages))
 
     def test_empty_entry_in_config_file(self):
         with util.TempDir() as config_dir, util.TempDir() as out_dir:
             config_dir.write('config.json', '[{}]')
             cfg_path = config_dir.relative('config.json')
             log = util.LogCollector()
-            MODULE_UNDER_TEST.deploy(cfg_path, out_dir.path, log)
+            MODULE_UNDER_TEST.deploy(cfg_path, SOME_PORT, out_dir.path, log)
             self.assertEqual(
                 [
                     'Missing field "name" in config entry {}',
                     'Missing field "git" in config entry {}'
                 ],
-                log.messages
+                without_directory_creation(log.messages)
             )
 
     def test_cloning_all_repositories(self):
@@ -149,10 +182,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/bar_master')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_binary_to_deploy_does_not_exist(self):
@@ -184,10 +216,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/bar_master')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers(self):
@@ -206,10 +237,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers_to_other_path(self):
@@ -228,10 +258,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_headers_to_root_of_include(self):
@@ -250,10 +279,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_update(self):
@@ -277,10 +305,9 @@ class TestDeploy(unittest.TestCase):
 
             self.assertTrue(env.out_dir.exists(binary_path1))
             self.assertTrue(env.out_dir.exists(binary_path2))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path2),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_update_to_headers(self):
@@ -313,28 +340,9 @@ class TestDeploy(unittest.TestCase):
             self.assertTrue(
                 env.out_dir.exists(os.path.join(header_dir2, 'h/bar'))
             )
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir2),
-                os.path.realpath(symlink_path)
-            )
-
-    def test_deployed_code_is_not_redeployed(self):
-        with util.CommonEnv(1) as env:
-            env.write_config([{
-                'name': 'repo',
-                'git': env.repository(0),
-                'include': [{'src': 'h'}]
-            }])
-
-            sha = env.commit(0, {'h/bar': 'asd'})
-            header_dir = 'include/repo_{0}'.format(sha)
-            deploy(env)
-            os.remove(env.out_dir.relative(os.path.join(header_dir, 'h/bar')))
-            deploy(env)
-
-            self.assertFalse(
-                env.out_dir.exists(os.path.join(header_dir, 'h/bar'))
+                symlink_to(symlink_path)
             )
 
     def test_when_build_fails_nothing_is_deployed(self):
@@ -381,10 +389,9 @@ class TestDeploy(unittest.TestCase):
             self.assertFalse(env.out_dir.exists(binary_path1))
             self.assertTrue(env.out_dir.exists(binary_path2))
             self.assertTrue(env.out_dir.exists(binary_path3))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path3),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deletion_of_non_referenced_headers(self):
@@ -412,10 +419,9 @@ class TestDeploy(unittest.TestCase):
             self.assertFalse(env.out_dir.exists(header_path1))
             self.assertTrue(env.out_dir.exists(header_path2))
             self.assertTrue(env.out_dir.exists(header_path3))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative('include/repo_{0}'.format(sha3)),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_symlink_of_deleted_branch_is_deleted(self):
@@ -465,10 +471,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('bin/foo_feature_test')
 
             self.assertTrue(env.out_dir.exists(binary_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(binary_path),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_deploying_from_two_repositories(self):
@@ -495,10 +500,9 @@ class TestDeploy(unittest.TestCase):
                 )
 
                 self.assertTrue(env.out_dir.exists(binary_path))
-                self.assertTrue(os.path.islink(symlink_path))
                 self.assertEqual(
                     env.out_dir.relative(binary_path),
-                    os.path.realpath(symlink_path)
+                    symlink_to(symlink_path)
                 )
 
                 header_dir = 'include/repo{0}_{1}'.format(i, sha[i])
@@ -508,10 +512,9 @@ class TestDeploy(unittest.TestCase):
                 )
 
                 self.assertTrue(env.out_dir.exists(header_path))
-                self.assertTrue(os.path.islink(symlink_path))
                 self.assertEqual(
                     env.out_dir.relative(header_dir),
-                    os.path.realpath(symlink_path)
+                    symlink_to(symlink_path)
                 )
 
     def test_deploying_headers_to_a_different_config(self):
@@ -530,10 +533,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('include/other_repo_master')
 
             self.assertTrue(env.out_dir.exists(header_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(header_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_overriding_header_version(self):
@@ -593,10 +595,9 @@ class TestDeploy(unittest.TestCase):
             symlink_path = env.out_dir.relative('share/repo_master')
 
             self.assertTrue(env.out_dir.exists(share_path))
-            self.assertTrue(os.path.islink(symlink_path))
             self.assertEqual(
                 env.out_dir.relative(share_dir),
-                os.path.realpath(symlink_path)
+                symlink_to(symlink_path)
             )
 
     def test_empty_directory_is_created(self):
@@ -646,6 +647,122 @@ class TestDeploy(unittest.TestCase):
 
             self.assertTrue(env.out_dir.exists('src/repo/develop/foo.txt'))
             self.assertTrue(env.out_dir.exists('src/repo/feature/foo/foo.txt'))
+
+    def test_git_cloning_failure_for_one_lib_does_not_affect_others(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'bar': 'asd'})
+            env.write_config([
+                {
+                    'name': 'broken_repo',
+                    'git': 'broken_git',
+                    'bin': ['bar']
+                },
+                {
+                    'name': 'repo',
+                    'git': env.repository(0),
+                    'bin': ['bar']
+                }
+            ])
+            deploy(env)
+
+            binary_path = 'bin/bar_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/bar_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                symlink_to(symlink_path)
+            )
+
+    def test_world_readable(self):
+        with util.TempDir() as tmp_dir:
+            tmp_dir.write('hello.txt', 'world')
+            tmp_path = tmp_dir.relative('hello.txt')
+
+            os.chmod(tmp_path, stat.S_IWUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP)
+            self.assertFalse(world_readable(tmp_path))
+
+            os.chmod(
+                tmp_path,
+                stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+            )
+            self.assertTrue(world_readable(tmp_path))
+
+    def test_deployed_files_are_world_readable(self):
+        with util.CommonEnv(1) as env:
+            env.commit(0, {'foo/bar': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['foo/bar'],
+                'include': [{'src': 'foo'}],
+                'share': [{'src': 'foo'}],
+                'launcher': {'src': 'foo/bar', 'dst': 'launcher'}
+            }])
+
+            deploy(env)
+
+            for path in find(
+                    env.out_dir.relative(d)
+                    for d in ['bin', 'include', 'share']
+            ):
+                self.assertEqual(
+                    path if world_readable(path) else '',
+                    path
+                )
+
+    def test_symlinks_are_deployed_by_copying_their_content(self):
+        with util.TempDir() as tmp_dir:
+            tmp_dir.write('hello.txt', 'world')
+            tmp_path = tmp_dir.relative('hello.txt')
+
+            os.chmod(tmp_path, stat.S_IWUSR | stat.S_IRUSR)
+            self.assertFalse(world_readable(tmp_path))
+
+            with util.CommonEnv(1) as env:
+                repo = env.repos[0]
+
+                os.mkdir(repo.in_repo('foo'))
+                symlink_path = repo.in_repo('foo/link')
+                os.symlink(tmp_path, symlink_path)
+                self.assertEqual(tmp_path, symlink_to(symlink_path))
+
+                repo.add(symlink_path)
+                last_sha = repo.commit('Adding symlink')
+
+                env.write_config([{
+                    'name': 'repo',
+                    'git': repo.repository(),
+                    'bin': ['foo/link'],
+                    'include': [{'src': 'foo'}],
+                    'share': [{'src': 'foo'}],
+                    'launcher': {'src': 'foo/link', 'dst': 'launcher'}
+                }])
+                deploy(env)
+
+                for path_pattern in [
+                        'bin/link_{0}',
+                        'include/repo_{0}/foo/link',
+                        'share/repo_{0}/foo/link'
+                ]:
+                    path = path_pattern.format(last_sha)
+
+                    self.assertFalse(
+                        os.path.islink(env.out_dir.relative(path))
+                    )
+                    self.assertEqual('world', env.out_dir.read(path))
+
+                path = 'src/repo/master/launcher'
+                self.assertFalse(os.path.islink(env.out_dir.relative(path)))
+                self.assertEqual('world', env.out_dir.read(path))
+
+                self.assertFalse(world_readable(tmp_path))
 
 
 if __name__ == '__main__':

@@ -76,7 +76,9 @@ static unsigned getDefaultParsingOptions() {
     options |= CXTranslationUnit_SkipFunctionBodies;
   if (getenv("CINDEXTEST_COMPLETION_BRIEF_COMMENTS"))
     options |= CXTranslationUnit_IncludeBriefCommentsInCodeCompletion;
-  
+  if (getenv("CINDEXTEST_CREATE_PREAMBLE_ON_FIRST_PARSE"))
+    options |= CXTranslationUnit_CreatePreambleOnFirstParse;
+
   return options;
 }
 
@@ -1248,6 +1250,32 @@ static enum CXChildVisitResult PrintLinkage(CXCursor cursor, CXCursor p,
 }
 
 /******************************************************************************/
+/* Visibility testing.                                                        */
+/******************************************************************************/
+
+static enum CXChildVisitResult PrintVisibility(CXCursor cursor, CXCursor p,
+                                               CXClientData d) {
+  const char *visibility = 0;
+
+  if (clang_isInvalid(clang_getCursorKind(cursor)))
+    return CXChildVisit_Recurse;
+
+  switch (clang_getCursorVisibility(cursor)) {
+    case CXVisibility_Invalid: break;
+    case CXVisibility_Hidden: visibility = "Hidden"; break;
+    case CXVisibility_Protected: visibility = "Protected"; break;
+    case CXVisibility_Default: visibility = "Default"; break;
+  }
+
+  if (visibility) {
+    PrintCursor(cursor, NULL);
+    printf("visibility=%s\n", visibility);
+  }
+
+  return CXChildVisit_Recurse;
+}
+
+/******************************************************************************/
 /* Typekind testing.                                                          */
 /******************************************************************************/
 
@@ -1480,6 +1508,22 @@ static enum CXChildVisitResult PrintBitWidth(CXCursor cursor, CXCursor p,
 }
 
 /******************************************************************************/
+/* Type declaration testing                                                   */
+/******************************************************************************/
+
+static enum CXChildVisitResult PrintTypeDeclaration(CXCursor cursor, CXCursor p,
+                                             CXClientData d) {
+  CXCursor typeDeclaration = clang_getTypeDeclaration(clang_getCursorType(cursor));
+
+  if (clang_isDeclaration(typeDeclaration.kind)) {
+    PrintCursor(cursor, NULL);
+    PrintTypeAndTypeKind(clang_getCursorType(typeDeclaration), " [typedeclaration=%s] [typekind=%s]\n");
+  }
+
+  return CXChildVisit_Recurse;
+}
+
+/******************************************************************************/
 /* Loading ASTs/source.                                                       */
 /******************************************************************************/
 
@@ -1565,6 +1609,8 @@ int perform_test_load_source(int argc, const char **argv,
   int num_unsaved_files = 0;
   enum CXErrorCode Err;
   int result;
+  unsigned Repeats = 0;
+  unsigned I;
 
   Idx = clang_createIndex(/* excludeDeclsFromPCH */
                           (!strcmp(filter, "local") || 
@@ -1581,6 +1627,9 @@ int perform_test_load_source(int argc, const char **argv,
     return -1;
   }
 
+  if (getenv("CINDEXTEST_EDITING"))
+    Repeats = 5;
+
   Err = clang_parseTranslationUnit2(Idx, 0,
                                     argv + num_unsaved_files,
                                     argc - num_unsaved_files,
@@ -1592,6 +1641,22 @@ int perform_test_load_source(int argc, const char **argv,
     free_remapped_files(unsaved_files, num_unsaved_files);
     clang_disposeIndex(Idx);
     return 1;
+  }
+
+  for (I = 0; I != Repeats; ++I) {
+    if (checkForErrors(TU) != 0)
+      return -1;
+
+    if (Repeats > 1) {
+      Err = clang_reparseTranslationUnit(TU, num_unsaved_files, unsaved_files,
+                                         clang_defaultReparseOptions(TU));
+      if (Err != CXError_Success) {
+        describeLibclangFailure(Err);
+        free_remapped_files(unsaved_files, num_unsaved_files);
+        clang_disposeIndex(Idx);
+        return 1;
+      }
+    }
   }
 
   result = perform_test_load(Idx, TU, filter, NULL, Visitor, PV,
@@ -4084,9 +4149,11 @@ static void print_usage(void) {
     "       c-index-test -test-inclusion-stack-tu <AST file>\n");
   fprintf(stderr,
     "       c-index-test -test-print-linkage-source {<args>}*\n"
+    "       c-index-test -test-print-visibility {<args>}*\n"
     "       c-index-test -test-print-type {<args>}*\n"
     "       c-index-test -test-print-type-size {<args>}*\n"
     "       c-index-test -test-print-bitwidth {<args>}*\n"
+    "       c-index-test -test-print-type-declaration {<args>}*\n"
     "       c-index-test -print-usr [<CursorKind> {<args>}]*\n"
     "       c-index-test -print-usr-file <file>\n"
     "       c-index-test -write-pch <file> <compiler arguments>\n");
@@ -4171,12 +4238,18 @@ int cindextest_main(int argc, const char **argv) {
   else if (argc > 2 && strcmp(argv[1], "-test-print-linkage-source") == 0)
     return perform_test_load_source(argc - 2, argv + 2, "all", PrintLinkage,
                                     NULL);
+  else if (argc > 2 && strcmp(argv[1], "-test-print-visibility") == 0)
+    return perform_test_load_source(argc - 2, argv + 2, "all", PrintVisibility,
+                                    NULL);
   else if (argc > 2 && strcmp(argv[1], "-test-print-type") == 0)
     return perform_test_load_source(argc - 2, argv + 2, "all",
                                     PrintType, 0);
   else if (argc > 2 && strcmp(argv[1], "-test-print-type-size") == 0)
     return perform_test_load_source(argc - 2, argv + 2, "all",
                                     PrintTypeSize, 0);
+  else if (argc > 2 && strcmp(argv[1], "-test-print-type-declaration") == 0)
+    return perform_test_load_source(argc - 2, argv + 2, "all",
+                                    PrintTypeDeclaration, 0);
   else if (argc > 2 && strcmp(argv[1], "-test-print-bitwidth") == 0)
     return perform_test_load_source(argc - 2, argv + 2, "all",
                                     PrintBitWidth, 0);

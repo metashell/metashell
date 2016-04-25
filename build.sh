@@ -30,6 +30,11 @@ then
   BUILD_THREADS=1
 fi
 
+if [ -z "${BUILD_TYPE}" ]
+then
+  BUILD_TYPE="Release"
+fi
+
 PLATFORM="$(tools/detect_platform.sh)"
 
 # Config
@@ -50,7 +55,7 @@ then
     cd templight
       mkdir -p build; cd build
         cmake ../llvm \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
           -DLLVM_ENABLE_TERMINFO=OFF \
           && make templight -j${BUILD_THREADS}
       cd ..
@@ -67,25 +72,25 @@ mkdir -p bin; cd bin
 
   if [ "${PLATFORM}" = "osx" ]
   then
-    OPTIONAL_LIBCXX="-I$(pwd)/include/metashell/libcxx"
+    OPTIONAL_LIBCXX="-I$(pwd)/app/include/metashell/libcxx"
   else
     OPTIONAL_LIBCXX=""
   fi
 
   for t in core pp mdb; do
     test/system/app/${t}/metashell_${t}_system_test \
-      app/metashell -- "-I$(pwd)/../3rd/boost/include" --
-  
+      app/metashell/metashell -- "-I$(pwd)/../3rd/boost/include" --
+
     test/system/app/${t}/metashell_${t}_system_test \
-      app/metashell \
+      app/metashell/metashell \
       --engine clang \
       -- \
-      "$(pwd)/app/templight_metashell" \
+      "$(pwd)/app/metashell/templight_metashell" \
       -std=c++0x \
       -ftemplate-depth=256 \
       -Wfatal-errors \
       "${OPTIONAL_LIBCXX}" \
-      "-I$(pwd)/include/metashell/templight" \
+      "-I$(pwd)/app/include/metashell/templight" \
       "-I$(pwd)/../3rd/boost/include" \
       --
   done

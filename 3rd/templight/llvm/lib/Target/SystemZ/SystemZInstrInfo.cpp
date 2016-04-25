@@ -492,11 +492,8 @@ SystemZInstrInfo::optimizeCompareInstr(MachineInstr *Compare,
                                        const MachineRegisterInfo *MRI) const {
   assert(!SrcReg2 && "Only optimizing constant comparisons so far");
   bool IsLogical = (Compare->getDesc().TSFlags & SystemZII::IsLogical) != 0;
-  if (Value == 0 &&
-      !IsLogical &&
-      removeIPMBasedCompare(Compare, SrcReg, MRI, &RI))
-    return true;
-  return false;
+  return Value == 0 && !IsLogical &&
+         removeIPMBasedCompare(Compare, SrcReg, MRI, &RI);
 }
 
 // If Opcode is a move that has a conditional variant, return that variant,
@@ -511,10 +508,7 @@ static unsigned getConditionalMove(unsigned Opcode) {
 
 bool SystemZInstrInfo::isPredicable(MachineInstr *MI) const {
   unsigned Opcode = MI->getOpcode();
-  if (STI.hasLoadStoreOnCond() &&
-      getConditionalMove(Opcode))
-    return true;
-  return false;
+  return STI.hasLoadStoreOnCond() && getConditionalMove(Opcode);
 }
 
 bool SystemZInstrInfo::
@@ -682,7 +676,8 @@ SystemZInstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
                                         LiveVariables *LV) const {
   MachineInstr *MI = MBBI;
   MachineBasicBlock *MBB = MI->getParent();
-  MachineRegisterInfo &MRI = MBB->getParent()->getRegInfo();
+  MachineFunction *MF = MBB->getParent();
+  MachineRegisterInfo &MRI = MF->getRegInfo();
 
   unsigned Opcode = MI->getOpcode();
   unsigned NumOps = MI->getNumOperands();
@@ -709,14 +704,19 @@ SystemZInstrInfo::convertToThreeAddress(MachineFunction::iterator &MFI,
     }
     int ThreeOperandOpcode = SystemZ::getThreeOperandOpcode(Opcode);
     if (ThreeOperandOpcode >= 0) {
-      MachineInstrBuilder MIB =
-        BuildMI(*MBB, MBBI, MI->getDebugLoc(), get(ThreeOperandOpcode))
-        .addOperand(Dest);
+      // Create three address instruction without adding the implicit
+      // operands. Those will instead be copied over from the original
+      // instruction by the loop below.
+      MachineInstrBuilder MIB(*MF,
+                              MF->CreateMachineInstr(get(ThreeOperandOpcode),
+                                    MI->getDebugLoc(), /*NoImplicit=*/true));
+      MIB.addOperand(Dest);
       // Keep the kill state, but drop the tied flag.
       MIB.addReg(Src.getReg(), getKillRegState(Src.isKill()), Src.getSubReg());
       // Keep the remaining operands as-is.
       for (unsigned I = 2; I < NumOps; ++I)
         MIB.addOperand(MI->getOperand(I));
+      MBB->insert(MI, MIB);
       return finishConvertToThreeAddress(MI, MIB, LV);
     }
   }

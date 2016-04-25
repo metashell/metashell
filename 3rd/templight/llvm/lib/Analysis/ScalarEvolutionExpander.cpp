@@ -91,22 +91,14 @@ static BasicBlock::iterator findInsertPointAfter(Instruction *I,
   BasicBlock::iterator IP = ++I->getIterator();
   if (auto *II = dyn_cast<InvokeInst>(I))
     IP = II->getNormalDest()->begin();
-  if (auto *CPI = dyn_cast<CatchPadInst>(I))
-    IP = CPI->getNormalDest()->begin();
 
   while (isa<PHINode>(IP))
     ++IP;
 
   while (IP->isEHPad()) {
-    if (isa<LandingPadInst>(IP) || isa<CleanupPadInst>(IP)) {
+    if (isa<FuncletPadInst>(IP) || isa<LandingPadInst>(IP)) {
       ++IP;
-    } else if (auto *TPI = dyn_cast<TerminatePadInst>(IP)) {
-      IP = TPI->getUnwindDest()->getFirstNonPHI()->getIterator();
-    } else if (auto *CEPI = dyn_cast<CatchEndPadInst>(IP)) {
-      IP = CEPI->getUnwindDest()->getFirstNonPHI()->getIterator();
-    } else if (auto *CEPI = dyn_cast<CleanupEndPadInst>(IP)) {
-      IP = CEPI->getUnwindDest()->getFirstNonPHI()->getIterator();
-    } else if (isa<CatchPadInst>(IP)) {
+    } else if (isa<CatchSwitchInst>(IP)) {
       IP = MustDominate->getFirstInsertionPt();
     } else {
       llvm_unreachable("unexpected eh pad!");
@@ -254,19 +246,15 @@ static bool FactorOutConstant(const SCEV *&S, const SCEV *&Remainder,
     // Check for divisibility.
     if (const SCEVConstant *FC = dyn_cast<SCEVConstant>(Factor)) {
       ConstantInt *CI =
-        ConstantInt::get(SE.getContext(),
-                         C->getValue()->getValue().sdiv(
-                                                   FC->getValue()->getValue()));
+          ConstantInt::get(SE.getContext(), C->getAPInt().sdiv(FC->getAPInt()));
       // If the quotient is zero and the remainder is non-zero, reject
       // the value at this scale. It will be considered for subsequent
       // smaller scales.
       if (!CI->isZero()) {
         const SCEV *Div = SE.getConstant(CI);
         S = Div;
-        Remainder =
-          SE.getAddExpr(Remainder,
-                        SE.getConstant(C->getValue()->getValue().srem(
-                                                  FC->getValue()->getValue())));
+        Remainder = SE.getAddExpr(
+            Remainder, SE.getConstant(C->getAPInt().srem(FC->getAPInt())));
         return true;
       }
     }
@@ -279,10 +267,9 @@ static bool FactorOutConstant(const SCEV *&S, const SCEV *&Remainder,
     // of the given factor. If so, we can factor it.
     const SCEVConstant *FC = cast<SCEVConstant>(Factor);
     if (const SCEVConstant *C = dyn_cast<SCEVConstant>(M->getOperand(0)))
-      if (!C->getValue()->getValue().srem(FC->getValue()->getValue())) {
+      if (!C->getAPInt().srem(FC->getAPInt())) {
         SmallVector<const SCEV *, 4> NewMulOps(M->op_begin(), M->op_end());
-        NewMulOps[0] = SE.getConstant(
-            C->getValue()->getValue().sdiv(FC->getValue()->getValue()));
+        NewMulOps[0] = SE.getConstant(C->getAPInt().sdiv(FC->getAPInt()));
         S = SE.getMulExpr(NewMulOps);
         return true;
       }
@@ -427,8 +414,7 @@ Value *SCEVExpander::expandAddToGEP(const SCEV *const *op_begin,
       const SCEV *ElSize = SE.getSizeOfExpr(IntPtrTy, ElTy);
       if (!ElSize->isZero()) {
         SmallVector<const SCEV *, 8> NewOps;
-        for (unsigned i = 0, e = Ops.size(); i != e; ++i) {
-          const SCEV *Op = Ops[i];
+        for (const SCEV *Op : Ops) {
           const SCEV *Remainder = SE.getConstant(Ty, 0);
           if (FactorOutConstant(Op, Remainder, ElSize, SE, DL)) {
             // Op now has ElSize factored out.
@@ -439,7 +425,7 @@ Value *SCEVExpander::expandAddToGEP(const SCEV *const *op_begin,
           } else {
             // The operand was not divisible, so add it to the list of operands
             // we'll scan next iteration.
-            NewOps.push_back(Ops[i]);
+            NewOps.push_back(Op);
           }
         }
         // If we made any changes, update Ops.
@@ -565,13 +551,10 @@ Value *SCEVExpander::expandAddToGEP(const SCEV *const *op_begin,
   while (const Loop *L = SE.LI.getLoopFor(Builder.GetInsertBlock())) {
     if (!L->isLoopInvariant(V)) break;
 
-    bool AnyIndexNotLoopInvariant = false;
-    for (SmallVectorImpl<Value *>::const_iterator I = GepIndices.begin(),
-         E = GepIndices.end(); I != E; ++I)
-      if (!L->isLoopInvariant(*I)) {
-        AnyIndexNotLoopInvariant = true;
-        break;
-      }
+    bool AnyIndexNotLoopInvariant =
+        std::any_of(GepIndices.begin(), GepIndices.end(),
+                    [L](Value *Op) { return !L->isLoopInvariant(Op); });
+
     if (AnyIndexNotLoopInvariant)
       break;
 
@@ -588,9 +571,7 @@ Value *SCEVExpander::expandAddToGEP(const SCEV *const *op_begin,
   Value *Casted = V;
   if (V->getType() != PTy)
     Casted = InsertNoopCastOfTo(Casted, PTy);
-  Value *GEP = Builder.CreateGEP(OriginalElTy, Casted,
-                                 GepIndices,
-                                 "scevgep");
+  Value *GEP = Builder.CreateGEP(OriginalElTy, Casted, GepIndices, "scevgep");
   Ops.push_back(SE.getUnknown(GEP));
   rememberInstruction(GEP);
 
@@ -618,8 +599,7 @@ static const Loop *PickMostRelevantLoop(const Loop *A, const Loop *B,
 /// expression, according to PickMostRelevantLoop.
 const Loop *SCEVExpander::getRelevantLoop(const SCEV *S) {
   // Test whether we've already computed the most relevant loop for this SCEV.
-  std::pair<DenseMap<const SCEV *, const Loop *>::iterator, bool> Pair =
-    RelevantLoops.insert(std::make_pair(S, nullptr));
+  auto Pair = RelevantLoops.insert(std::make_pair(S, nullptr));
   if (!Pair.second)
     return Pair.first->second;
 
@@ -636,9 +616,8 @@ const Loop *SCEVExpander::getRelevantLoop(const SCEV *S) {
     const Loop *L = nullptr;
     if (const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(S))
       L = AR->getLoop();
-    for (SCEVNAryExpr::op_iterator I = N->op_begin(), E = N->op_end();
-         I != E; ++I)
-      L = PickMostRelevantLoop(L, getRelevantLoop(*I), SE.DT);
+    for (const SCEV *Op : N->operands())
+      L = PickMostRelevantLoop(L, getRelevantLoop(Op), SE.DT);
     return RelevantLoops[N] = L;
   }
   if (const SCEVCastExpr *C = dyn_cast<SCEVCastExpr>(S)) {
@@ -707,8 +686,7 @@ Value *SCEVExpander::visitAddExpr(const SCEVAddExpr *S) {
   // Emit instructions to add all the operands. Hoist as much as possible
   // out of loops, and form meaningful getelementptrs where possible.
   Value *Sum = nullptr;
-  for (SmallVectorImpl<std::pair<const Loop *, const SCEV *> >::iterator
-       I = OpsAndLoops.begin(), E = OpsAndLoops.end(); I != E; ) {
+  for (auto I = OpsAndLoops.begin(), E = OpsAndLoops.end(); I != E;) {
     const Loop *CurLoop = I->first;
     const SCEV *Op = I->second;
     if (!Sum) {
@@ -775,9 +753,8 @@ Value *SCEVExpander::visitMulExpr(const SCEVMulExpr *S) {
   // Emit instructions to mul all the operands. Hoist as much as possible
   // out of loops.
   Value *Prod = nullptr;
-  for (SmallVectorImpl<std::pair<const Loop *, const SCEV *> >::iterator
-       I = OpsAndLoops.begin(), E = OpsAndLoops.end(); I != E; ++I) {
-    const SCEV *Op = I->second;
+  for (const auto &I : OpsAndLoops) {
+    const SCEV *Op = I.second;
     if (!Prod) {
       // This is the first operand. Just expand it.
       Prod = expand(Op);
@@ -811,7 +788,7 @@ Value *SCEVExpander::visitUDivExpr(const SCEVUDivExpr *S) {
 
   Value *LHS = expandCodeFor(S->getLHS(), Ty);
   if (const SCEVConstant *SC = dyn_cast<SCEVConstant>(S->getRHS())) {
-    const APInt &RHS = SC->getValue()->getValue();
+    const APInt &RHS = SC->getAPInt();
     if (RHS.isPowerOf2())
       return InsertBinop(Instruction::LShr, LHS,
                          ConstantInt::get(Ty, RHS.logBase2()));
@@ -903,8 +880,7 @@ Instruction *SCEVExpander::getIVIncOperand(Instruction *IncV,
   case Instruction::BitCast:
     return dyn_cast<Instruction>(IncV->getOperand(0));
   case Instruction::GetElementPtr:
-    for (Instruction::op_iterator I = IncV->op_begin()+1, E = IncV->op_end();
-         I != E; ++I) {
+    for (auto I = IncV->op_begin() + 1, E = IncV->op_end(); I != E; ++I) {
       if (isa<Constant>(*I))
         continue;
       if (Instruction *OInst = dyn_cast<Instruction>(*I)) {
@@ -944,6 +920,9 @@ bool SCEVExpander::hoistIVInc(Instruction *IncV, Instruction *InsertPos) {
       !SE.DT.dominates(InsertPos->getParent(), IncV->getParent()))
     return false;
 
+  if (!SE.LI.movementPreservesLCSSAForm(IncV, InsertPos))
+    return false;
+
   // Check that the chain of IV operands leading back to Phi can be hoisted.
   SmallVector<Instruction*, 4> IVIncs;
   for(;;) {
@@ -956,8 +935,7 @@ bool SCEVExpander::hoistIVInc(Instruction *IncV, Instruction *InsertPos) {
     if (SE.DT.dominates(IncV, InsertPos))
       break;
   }
-  for (SmallVectorImpl<Instruction*>::reverse_iterator I = IVIncs.rbegin(),
-         E = IVIncs.rend(); I != E; ++I) {
+  for (auto I = IVIncs.rbegin(), E = IVIncs.rend(); I != E; ++I) {
     (*I)->moveBefore(InsertPos);
   }
   return true;
@@ -1111,9 +1089,9 @@ SCEVExpander::getAddRecExprPHILiterally(const SCEVAddRecExpr *Normalized,
         IVIncInsertLoop &&
         SE.DT.properlyDominates(LatchBlock, IVIncInsertLoop->getHeader());
 
-    for (BasicBlock::iterator I = L->getHeader()->begin();
-         PHINode *PN = dyn_cast<PHINode>(I); ++I) {
-      if (!SE.isSCEVable(PN->getType()))
+    for (auto &I : *L->getHeader()) {
+      auto *PN = dyn_cast<PHINode>(&I);
+      if (!PN || !SE.isSCEVable(PN->getType()))
         continue;
 
       const SCEVAddRecExpr *PhiSCEV = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(PN));
@@ -1653,8 +1631,7 @@ Value *SCEVExpander::expand(const SCEV *S) {
     }
 
   // Check to see if we already expanded this here.
-  std::map<std::pair<const SCEV *, Instruction *>, TrackingVH<Value> >::iterator
-    I = InsertedExpressions.find(std::make_pair(S, InsertPt));
+  auto I = InsertedExpressions.find(std::make_pair(S, InsertPt));
   if (I != InsertedExpressions.end())
     return I->second;
 
@@ -1714,10 +1691,13 @@ unsigned SCEVExpander::replaceCongruentIVs(Loop *L, const DominatorTree *DT,
                                            const TargetTransformInfo *TTI) {
   // Find integer phis in order of increasing width.
   SmallVector<PHINode*, 8> Phis;
-  for (BasicBlock::iterator I = L->getHeader()->begin();
-       PHINode *Phi = dyn_cast<PHINode>(I); ++I) {
-    Phis.push_back(Phi);
+  for (auto &I : *L->getHeader()) {
+    if (auto *PN = dyn_cast<PHINode>(&I))
+      Phis.push_back(PN);
+    else
+      break;
   }
+
   if (TTI)
     std::sort(Phis.begin(), Phis.end(), [](Value *LHS, Value *RHS) {
       // Put pointers at the back and make sure pointer < pointer = false.
@@ -1731,10 +1711,7 @@ unsigned SCEVExpander::replaceCongruentIVs(Loop *L, const DominatorTree *DT,
   DenseMap<const SCEV *, PHINode *> ExprToIVMap;
   // Process phis from wide to narrow. Map wide phis to their truncation
   // so narrow phis can reuse them.
-  for (SmallVectorImpl<PHINode*>::const_iterator PIter = Phis.begin(),
-         PEnd = Phis.end(); PIter != PEnd; ++PIter) {
-    PHINode *Phi = *PIter;
-
+  for (PHINode *Phi : Phis) {
     auto SimplifyPHINode = [&](PHINode *PN) -> Value * {
       if (Value *V = SimplifyInstruction(PN, DL, &SE.TLI, &SE.DT, &SE.AC))
         return V;
@@ -1910,7 +1887,7 @@ bool SCEVExpander::isHighCostExpansionHelper(
     // integer, consider the division cheap irrespective of whether it occurs in
     // the user code since it can be lowered into a right shift.
     if (auto *SC = dyn_cast<SCEVConstant>(UDivExpr->getRHS()))
-      if (SC->getValue()->getValue().isPowerOf2()) {
+      if (SC->getAPInt().isPowerOf2()) {
         const DataLayout &DL =
             L->getHeader()->getParent()->getParent()->getDataLayout();
         unsigned Width = cast<IntegerType>(UDivExpr->getType())->getBitWidth();
@@ -1945,11 +1922,9 @@ bool SCEVExpander::isHighCostExpansionHelper(
   // BackedgeTakenCount. They may already exist in program code, and if not,
   // they are not too expensive rematerialize.
   if (const SCEVNAryExpr *NAry = dyn_cast<SCEVNAryExpr>(S)) {
-    for (SCEVNAryExpr::op_iterator I = NAry->op_begin(), E = NAry->op_end();
-         I != E; ++I) {
-      if (isHighCostExpansionHelper(*I, L, At, Processed))
+    for (auto *Op : NAry->operands())
+      if (isHighCostExpansionHelper(Op, L, At, Processed))
         return true;
-    }
   }
 
   // If we haven't recognized an expensive SCEV pattern, assume it's an

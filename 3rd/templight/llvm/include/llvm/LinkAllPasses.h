@@ -85,7 +85,10 @@ namespace {
       (void) llvm::createDomOnlyViewerPass();
       (void) llvm::createDomViewerPass();
       (void) llvm::createGCOVProfilerPass();
+      (void) llvm::createPGOInstrumentationGenPass();
+      (void) llvm::createPGOInstrumentationUsePass();
       (void) llvm::createInstrProfilingPass();
+      (void) llvm::createFunctionImportPass();
       (void) llvm::createFunctionInliningPass();
       (void) llvm::createAlwaysInlinerPass();
       (void) llvm::createGlobalDCEPass();
@@ -154,11 +157,14 @@ namespace {
       (void) llvm::createPostDomTree();
       (void) llvm::createInstructionNamerPass();
       (void) llvm::createMetaRenamerPass();
-      (void) llvm::createFunctionAttrsPass();
+      (void) llvm::createPostOrderFunctionAttrsPass();
+      (void) llvm::createReversePostOrderFunctionAttrsPass();
       (void) llvm::createMergeFunctionsPass();
-      (void) llvm::createPrintModulePass(*(llvm::raw_ostream*)nullptr);
-      (void) llvm::createPrintFunctionPass(*(llvm::raw_ostream*)nullptr);
-      (void) llvm::createPrintBasicBlockPass(*(llvm::raw_ostream*)nullptr);
+      std::string buf;
+      llvm::raw_string_ostream os(buf);
+      (void) llvm::createPrintModulePass(os);
+      (void) llvm::createPrintFunctionPass(os);
+      (void) llvm::createPrintBasicBlockPass(os);
       (void) llvm::createModuleDebugInfoPrinterPass();
       (void) llvm::createPartialInliningPass();
       (void) llvm::createLintPass();
@@ -182,10 +188,10 @@ namespace {
 
       (void)new llvm::IntervalPartition();
       (void)new llvm::ScalarEvolutionWrapperPass();
-      ((llvm::Function*)nullptr)->viewCFGOnly();
+      llvm::Function::Create(nullptr, llvm::GlobalValue::ExternalLinkage)->viewCFGOnly();
       llvm::RGPassManager RGM;
-      ((llvm::RegionPass*)nullptr)->runOnRegion((llvm::Region*)nullptr, RGM);
-      llvm::AliasSetTracker X(*(llvm::AliasAnalysis*)nullptr);
+      llvm::AliasAnalysis AA;
+      llvm::AliasSetTracker X(AA);
       X.add(nullptr, 0, llvm::AAMDNodes()); // for -print-alias-sets
       (void) llvm::AreStatisticsEnabled();
       (void) llvm::sys::RunningOnValgrind();

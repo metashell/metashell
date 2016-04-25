@@ -80,6 +80,11 @@ class SDTCisSameNumEltsAs<int OpNum, int OtherOp> : SDTypeConstraint<OpNum> {
   int OtherOperandNum = OtherOp;
 }
 
+// SDTCisSameSizeAs - The two specified operands have identical size.
+class SDTCisSameSizeAs<int OpNum, int OtherOp> : SDTypeConstraint<OpNum> {
+  int OtherOperandNum = OtherOp;
+}
+
 //===----------------------------------------------------------------------===//
 // Selection DAG Type Profile definitions.
 //
@@ -205,11 +210,12 @@ def SDTIStore : SDTypeProfile<1, 3, [       // indexed store
 ]>;
 
 def SDTMaskedStore: SDTypeProfile<0, 3, [       // masked store
-  SDTCisPtrTy<0>, SDTCisVec<1>, SDTCisVec<2>
+  SDTCisPtrTy<0>, SDTCisVec<1>, SDTCisVec<2>, SDTCisSameNumEltsAs<1, 2>
 ]>;
 
 def SDTMaskedLoad: SDTypeProfile<1, 3, [       // masked load
-  SDTCisVec<0>, SDTCisPtrTy<1>, SDTCisVec<2>, SDTCisSameAs<0, 3>
+  SDTCisVec<0>, SDTCisPtrTy<1>, SDTCisVec<2>, SDTCisSameAs<0, 3>,
+  SDTCisSameNumEltsAs<0, 2>
 ]>;
 
 def SDTMaskedGather: SDTypeProfile<2, 3, [       // masked gather
@@ -390,9 +396,8 @@ def smax       : SDNode<"ISD::SMAX"      , SDTIntBinOp>;
 def umin       : SDNode<"ISD::UMIN"      , SDTIntBinOp>;
 def umax       : SDNode<"ISD::UMAX"      , SDTIntBinOp>;
 
-def sabsdiff   : SDNode<"ISD::SABSDIFF"   , SDTIntBinOp>;
-def uabsdiff   : SDNode<"ISD::UABSDIFF"   , SDTIntBinOp>;
 def sext_inreg : SDNode<"ISD::SIGN_EXTEND_INREG", SDTExtInreg>;
+def bitreverse : SDNode<"ISD::BITREVERSE" , SDTIntUnaryOp>;
 def bswap      : SDNode<"ISD::BSWAP"      , SDTIntUnaryOp>;
 def ctlz       : SDNode<"ISD::CTLZ"       , SDTIntUnaryOp>;
 def cttz       : SDNode<"ISD::CTTZ"       , SDTIntUnaryOp>;
@@ -527,6 +532,9 @@ def vector_shuffle : SDNode<"ISD::VECTOR_SHUFFLE", SDTVecShuffle, []>;
 def build_vector : SDNode<"ISD::BUILD_VECTOR", SDTypeProfile<1, -1, []>, []>;
 def scalar_to_vector : SDNode<"ISD::SCALAR_TO_VECTOR", SDTypeProfile<1, 1, []>,
                               []>;
+
+// vector_extract/vector_insert are deprecated. extractelt/insertelt
+// are preferred.
 def vector_extract : SDNode<"ISD::EXTRACT_VECTOR_ELT",
     SDTypeProfile<1, 2, [SDTCisPtrTy<2>]>, []>;
 def vector_insert : SDNode<"ISD::INSERT_VECTOR_ELT",
@@ -537,7 +545,7 @@ def concat_vectors : SDNode<"ISD::CONCAT_VECTORS",
 // This operator does not do subvector type checking.  The ARM
 // backend, at least, needs it.
 def vector_extract_subvec : SDNode<"ISD::EXTRACT_SUBVECTOR",
-    SDTypeProfile<1, 2, [SDTCisInt<2>, SDTCisVec<1>, SDTCisVec<0>]>, 
+    SDTypeProfile<1, 2, [SDTCisInt<2>, SDTCisVec<1>, SDTCisVec<0>]>,
     []>;
 
 // This operator does subvector type checking.

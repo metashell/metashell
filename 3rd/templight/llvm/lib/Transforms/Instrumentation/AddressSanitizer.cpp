@@ -280,6 +280,11 @@ class GlobalsMetadata {
 
   GlobalsMetadata() : inited_(false) {}
 
+  void reset() {
+    inited_ = false;
+    Entries.clear();
+  }
+
   void init(Module &M) {
     assert(!inited_);
     inited_ = true;
@@ -450,6 +455,7 @@ struct AddressSanitizer : public FunctionPass {
   bool maybeInsertAsanInitAtFunctionEntry(Function &F);
   void markEscapedLocalAllocas(Function &F);
   bool doInitialization(Module &M) override;
+  bool doFinalization(Module &M) override;
   static char ID;  // Pass identification, replacement for typeid
 
   DominatorTree &getDominatorTree() const { return *DT; }
@@ -624,9 +630,24 @@ struct FunctionStackPoisoner : public InstVisitor<FunctionStackPoisoner> {
   void unpoisonDynamicAllocasBeforeInst(Instruction *InstBefore,
                                         Value *SavedStack) {
     IRBuilder<> IRB(InstBefore);
+    Value *DynamicAreaPtr = IRB.CreatePtrToInt(SavedStack, IntptrTy);
+    // When we insert _asan_allocas_unpoison before @llvm.stackrestore, we
+    // need to adjust extracted SP to compute the address of the most recent
+    // alloca. We have a special @llvm.get.dynamic.area.offset intrinsic for
+    // this purpose.
+    if (!isa<ReturnInst>(InstBefore)) {
+      Function *DynamicAreaOffsetFunc = Intrinsic::getDeclaration(
+          InstBefore->getModule(), Intrinsic::get_dynamic_area_offset,
+          {IntptrTy});
+
+      Value *DynamicAreaOffset = IRB.CreateCall(DynamicAreaOffsetFunc, {});
+
+      DynamicAreaPtr = IRB.CreateAdd(IRB.CreatePtrToInt(SavedStack, IntptrTy),
+                                     DynamicAreaOffset);
+    }
+
     IRB.CreateCall(AsanAllocasUnpoisonFunc,
-                   {IRB.CreateLoad(DynamicAllocaLayout),
-                    IRB.CreatePtrToInt(SavedStack, IntptrTy)});
+                   {IRB.CreateLoad(DynamicAllocaLayout), DynamicAreaPtr});
   }
 
   // Unpoison dynamic allocas redzones.
@@ -1216,10 +1237,7 @@ bool AddressSanitizerModule::ShouldInstrumentGlobal(GlobalVariable *G) {
       bool TAAParsed;
       std::string ErrorCode = MCSectionMachO::ParseSectionSpecifier(
           Section, ParsedSegment, ParsedSection, TAA, TAAParsed, StubSize);
-      if (!ErrorCode.empty()) {
-        assert(false && "Invalid section specifier.");
-        return false;
-      }
+      assert(ErrorCode.empty() && "Invalid section specifier.");
 
       // Ignore the globals from the __OBJC section. The ObjC runtime assumes
       // those conform to /usr/lib/objc/runtime.h, so we can't add redzones to
@@ -1507,6 +1525,11 @@ bool AddressSanitizer::doInitialization(Module &M) {
   }
   Mapping = getShadowMapping(TargetTriple, LongSize, CompileKernel);
   return true;
+}
+
+bool AddressSanitizer::doFinalization(Module &M) {
+  GlobalsMD.reset();
+  return false;
 }
 
 bool AddressSanitizer::maybeInsertAsanInitAtFunctionEntry(Function &F) {

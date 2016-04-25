@@ -326,6 +326,8 @@ static void InitializeHighMemEnd() {
 }
 
 static void ProtectGap(uptr addr, uptr size) {
+  if (!flags()->protect_shadow_gap)
+    return;
   void *res = MmapNoAccess(addr, size, "shadow gap");
   if (addr == (uptr)res)
     return;
@@ -603,7 +605,7 @@ void NOINLINE __asan_handle_no_return() {
            "stack top: %p; bottom %p; size: %p (%zd)\n"
            "False positive error reports may follow\n"
            "For details see "
-           "http://code.google.com/p/address-sanitizer/issues/detail?id=189\n",
+           "https://github.com/google/sanitizers/issues/189\n",
            top, bottom, top - bottom, top - bottom);
     return;
   }

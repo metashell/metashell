@@ -1706,11 +1706,10 @@ Sema::CheckObjCForCollectionOperand(SourceLocation forLoc, Expr *collection) {
   // If we have a forward-declared type, we can't do this check.
   // Under ARC, it is an error not to have a forward-declared class.
   if (iface &&
-      RequireCompleteType(forLoc, QualType(objectType, 0),
-                          getLangOpts().ObjCAutoRefCount
-                            ? diag::err_arc_collection_forward
-                            : 0,
-                          collection)) {
+      (getLangOpts().ObjCAutoRefCount
+           ? RequireCompleteType(forLoc, QualType(objectType, 0),
+                                 diag::err_arc_collection_forward, collection)
+           : !isCompleteType(forLoc, QualType(objectType, 0)))) {
     // Otherwise, if we have any useful type information, check that
     // the type declares the appropriate method.
   } else if (iface || !objectType->qual_empty()) {
@@ -3216,7 +3215,7 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp) {
         }
         // return (some void expression); is legal in C++.
         else if (D != diag::ext_return_has_void_expr ||
-            !getLangOpts().CPlusPlus) {
+                 !getLangOpts().CPlusPlus) {
           NamedDecl *CurDecl = getCurFunctionOrMethodDecl();
 
           int FunctionKind = 0;
@@ -3803,11 +3802,10 @@ static void buildCapturedStmtCaptureList(
       continue;
     }
 
-    assert(Cap->isReferenceCapture() &&
-           "non-reference capture not yet implemented");
-
     Captures.push_back(CapturedStmt::Capture(Cap->getLocation(),
-                                             CapturedStmt::VCK_ByRef,
+                                             Cap->isReferenceCapture()
+                                                 ? CapturedStmt::VCK_ByRef
+                                                 : CapturedStmt::VCK_ByCopy,
                                              Cap->getVariable()));
     CaptureInits.push_back(Cap->getInitExpr());
   }

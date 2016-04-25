@@ -503,8 +503,7 @@ ObjCTypeParamList *Parser::parseObjCTypeParamListOrProtocolRefs(
       if (Tok.is(tok::code_completion)) {
         // FIXME: If these aren't protocol references, we'll need different
         // completions.
-        Actions.CodeCompleteObjCProtocolReferences(protocolIdents.data(),
-                                                   protocolIdents.size());
+        Actions.CodeCompleteObjCProtocolReferences(protocolIdents);
         cutOffParsing();
 
         // FIXME: Better recovery here?.
@@ -603,7 +602,7 @@ ObjCTypeParamList *Parser::parseObjCTypeParamListOrProtocolRefs(
   // whether there are any protocol references.
   lAngleLoc = SourceLocation();
   rAngleLoc = SourceLocation();
-  return list;
+  return invalid ? nullptr : list;
 }
 
 /// Parse an objc-type-parameter-list.
@@ -633,7 +632,6 @@ ObjCTypeParamList *Parser::parseObjCTypeParamList() {
 void Parser::ParseObjCInterfaceDeclList(tok::ObjCKeywordKind contextKey, 
                                         Decl *CDecl) {
   SmallVector<Decl *, 32> allMethods;
-  SmallVector<Decl *, 16> allProperties;
   SmallVector<DeclGroupPtrTy, 8> allTUVariables;
   tok::ObjCKeywordKind MethodImplKind = tok::objc_not_keyword;
 
@@ -789,12 +787,9 @@ void Parser::ParseObjCInterfaceDeclList(tok::ObjCKeywordKind contextKey,
           SetterSel = SelectorTable::constructSetterSelector(
               PP.getIdentifierTable(), PP.getSelectorTable(),
               FD.D.getIdentifier());
-        bool isOverridingProperty = false;
         Decl *Property = Actions.ActOnProperty(
             getCurScope(), AtLoc, LParenLoc, FD, OCDS, GetterSel, SetterSel,
-            &isOverridingProperty, MethodImplKind);
-        if (!isOverridingProperty)
-          allProperties.push_back(Property);
+            MethodImplKind);
 
         FD.complete(Property);
       };
@@ -916,7 +911,7 @@ void Parser::ParseObjCPropertyAttribute(ObjCDeclSpec &DS) {
 
       // getter/setter require extra treatment.
       unsigned DiagID = IsSetter ? diag::err_objc_expected_equal_for_setter :
-        diag::err_objc_expected_equal_for_getter;
+                                   diag::err_objc_expected_equal_for_getter;
 
       if (ExpectAndConsume(tok::equal, DiagID)) {
         SkipUntil(tok::r_paren, StopAtSemi);
@@ -931,7 +926,6 @@ void Parser::ParseObjCPropertyAttribute(ObjCDeclSpec &DS) {
         return cutOffParsing();
       }
 
-      
       SourceLocation SelLoc;
       IdentifierInfo *SelIdent = ParseObjCSelectorPiece(SelLoc);
 
@@ -1571,8 +1565,7 @@ ParseObjCProtocolReferences(SmallVectorImpl<Decl *> &Protocols,
 
   while (1) {
     if (Tok.is(tok::code_completion)) {
-      Actions.CodeCompleteObjCProtocolReferences(ProtocolIdents.data(), 
-                                                 ProtocolIdents.size());
+      Actions.CodeCompleteObjCProtocolReferences(ProtocolIdents);
       cutOffParsing();
       return true;
     }
@@ -1675,8 +1668,7 @@ void Parser::parseObjCTypeArgsOrProtocolQualifiers(
       if (!BaseT.isNull() && BaseT->acceptsObjCTypeParams()) {
         Actions.CodeCompleteOrdinaryName(getCurScope(), Sema::PCC_Type);
       } else {
-        Actions.CodeCompleteObjCProtocolReferences(identifierLocPairs.data(),
-                                                   identifierLocPairs.size());
+        Actions.CodeCompleteObjCProtocolReferences(identifierLocPairs);
       }
       cutOffParsing();
       return;
@@ -3292,8 +3284,7 @@ ExprResult Parser::ParseObjCStringLiteral(SourceLocation AtLoc) {
     AtStrings.push_back(Lit.get());
   }
 
-  return Actions.ParseObjCStringLiteral(&AtLocs[0], AtStrings.data(),
-                                        AtStrings.size());
+  return Actions.ParseObjCStringLiteral(AtLocs.data(), AtStrings);
 }
 
 /// ParseObjCBooleanLiteral -
@@ -3444,7 +3435,7 @@ ExprResult Parser::ParseObjCDictionaryLiteral(SourceLocation AtLoc) {
   
   // Create the ObjCDictionaryLiteral.
   return Actions.BuildObjCDictionaryLiteral(SourceRange(AtLoc, EndLoc),
-                                            Elements.data(), Elements.size());
+                                            Elements);
 }
 
 ///    objc-encode-expression:

@@ -28,7 +28,10 @@ using namespace CodeGen;
 
 void CodeGenPGO::setFuncName(StringRef Name,
                              llvm::GlobalValue::LinkageTypes Linkage) {
-  FuncName = llvm::getPGOFuncName(Name, Linkage, CGM.getCodeGenOpts().MainFileName);
+  llvm::IndexedInstrProfReader *PGOReader = CGM.getPGOReader();
+  FuncName = llvm::getPGOFuncName(
+      Name, Linkage, CGM.getCodeGenOpts().MainFileName,
+      PGOReader ? PGOReader->getVersion() : llvm::IndexedInstrProf::Version);
 
   // If we're generating a profile, create a variable for the name.
   if (CGM.getCodeGenOpts().ProfileInstrGenerate)
@@ -602,27 +605,24 @@ uint64_t PGOHash::finalize() {
   return endian::read<uint64_t, little, unaligned>(Result);
 }
 
-void CodeGenPGO::checkGlobalDecl(GlobalDecl GD) {
-  // Make sure we only emit coverage mapping for one constructor/destructor.
-  // Clang emits several functions for the constructor and the destructor of
-  // a class. Every function is instrumented, but we only want to provide
-  // coverage for one of them. Because of that we only emit the coverage mapping
-  // for the base constructor/destructor.
-  if ((isa<CXXConstructorDecl>(GD.getDecl()) &&
-       GD.getCtorType() != Ctor_Base) ||
-      (isa<CXXDestructorDecl>(GD.getDecl()) &&
-       GD.getDtorType() != Dtor_Base)) {
-    SkipCoverageMapping = true;
-  }
-}
-
-void CodeGenPGO::assignRegionCounters(const Decl *D, llvm::Function *Fn) {
+void CodeGenPGO::assignRegionCounters(GlobalDecl GD, llvm::Function *Fn) {
+  const Decl *D = GD.getDecl();
   bool InstrumentRegions = CGM.getCodeGenOpts().ProfileInstrGenerate;
   llvm::IndexedInstrProfReader *PGOReader = CGM.getPGOReader();
   if (!InstrumentRegions && !PGOReader)
     return;
   if (D->isImplicit())
     return;
+  // Constructors and destructors may be represented by several functions in IR.
+  // If so, instrument only base variant, others are implemented by delegation
+  // to the base one, it would be counted twice otherwise.
+  if (CGM.getTarget().getCXXABI().hasConstructorVariants() &&
+      ((isa<CXXConstructorDecl>(GD.getDecl()) &&
+        GD.getCtorType() != Ctor_Base) ||
+       (isa<CXXDestructorDecl>(GD.getDecl()) &&
+        GD.getDtorType() != Dtor_Base))) {
+      return;
+  }
   CGM.ClearUnusedCoverageMapping(D);
   setFuncName(Fn);
 
@@ -699,7 +699,7 @@ CodeGenPGO::emitEmptyCounterMapping(const Decl *D, StringRef Name,
 
   setFuncName(Name, Linkage);
   CGM.getCoverageMapping()->addFunctionMappingRecord(
-      FuncNameVar, FuncName, FunctionHash, CoverageMapping);
+      FuncNameVar, FuncName, FunctionHash, CoverageMapping, false);
 }
 
 void CodeGenPGO::computeRegionCounts(const Decl *D) {
@@ -721,17 +721,7 @@ CodeGenPGO::applyFunctionAttributes(llvm::IndexedInstrProfReader *PGOReader,
   if (!haveRegionCounts())
     return;
 
-  uint64_t MaxFunctionCount = PGOReader->getMaximumFunctionCount();
   uint64_t FunctionCount = getRegionCount(nullptr);
-  if (FunctionCount >= (uint64_t)(0.3 * (double)MaxFunctionCount))
-    // Turn on InlineHint attribute for hot functions.
-    // FIXME: 30% is from preliminary tuning on SPEC, it may not be optimal.
-    Fn->addFnAttr(llvm::Attribute::InlineHint);
-  else if (FunctionCount <= (uint64_t)(0.01 * (double)MaxFunctionCount))
-    // Turn on Cold attribute for cold functions.
-    // FIXME: 1% is from preliminary tuning on SPEC, it may not be optimal.
-    Fn->addFnAttr(llvm::Attribute::Cold);
-
   Fn->setEntryCount(FunctionCount);
 }
 

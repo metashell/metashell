@@ -22,6 +22,8 @@
 #include <metashell/logger.hpp>
 #include <metashell/command_processor_queue.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <map>
 #include <vector>
 #include <string>
@@ -98,9 +100,11 @@ namespace metashell
     iterator end() const;
     iterator find(const std::vector<std::string>& p_) const;
 
-    static pragma_handler_map build_default(shell& shell_,
-                                            command_processor_queue* cpq_,
-                                            logger* logger_);
+    static pragma_handler_map
+    build_default(shell& shell_,
+                  command_processor_queue* cpq_,
+                  const boost::filesystem::path& mdb_temp_dir_,
+                  logger* logger_);
 
   private:
     std::map<std::vector<std::string>, pragma_handler> _handlers;

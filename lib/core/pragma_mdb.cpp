@@ -26,14 +26,15 @@ using namespace metashell;
 
 pragma_mdb::pragma_mdb(shell& shell_,
                        command_processor_queue* cpq_,
+                       const boost::filesystem::path& mdb_temp_dir_,
                        logger* logger_)
-  : _shell(shell_), _cpq(cpq_), _logger(logger_)
+  : _shell(shell_), _cpq(cpq_), _mdb_temp_dir(mdb_temp_dir_), _logger(logger_)
 {
 }
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_shell, _cpq, _logger);
+  return new pragma_mdb(_shell, _cpq, _mdb_temp_dir, _logger);
 }
 
 std::string pragma_mdb::arguments() const { return "[-full] [<type>]"; }
@@ -58,7 +59,7 @@ void pragma_mdb::run(const data::command::iterator&,
 
   std::unique_ptr<mdb_shell> sh(
       new mdb_shell(_shell.get_config(), _shell.env(), _shell.engine(),
-                    _shell.env_path(), _logger, std::move(g)));
+                    _shell.env_path(), _mdb_temp_dir, _logger, std::move(g)));
 
   if (_shell.get_config().splash_enabled)
   {

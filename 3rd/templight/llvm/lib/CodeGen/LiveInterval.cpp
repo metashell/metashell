@@ -748,6 +748,40 @@ void LiveRange::flushSegmentSet() {
   verify();
 }
 
+bool LiveRange::isLiveAtIndexes(ArrayRef<SlotIndex> Slots) const {
+  ArrayRef<SlotIndex>::iterator SlotI = Slots.begin();
+  ArrayRef<SlotIndex>::iterator SlotE = Slots.end();
+
+  // If there are no regmask slots, we have nothing to search.
+  if (SlotI == SlotE)
+    return false;
+
+  // Start our search at the first segment that ends after the first slot.
+  const_iterator SegmentI = find(*SlotI);
+  const_iterator SegmentE = end();
+
+  // If there are no segments that end after the first slot, we're done.
+  if (SegmentI == SegmentE)
+    return false;
+
+  // Look for each slot in the live range.
+  for ( ; SlotI != SlotE; ++SlotI) {
+    // Go to the next segment that ends after the current slot.
+    // The slot may be within a hole in the range.
+    SegmentI = advanceTo(SegmentI, *SlotI);
+    if (SegmentI == SegmentE)
+      return false;
+
+    // If this segment contains the slot, we're done.
+    if (SegmentI->contains(*SlotI))
+      return true;
+    // Otherwise, look for the next slot.
+  }
+
+  // We didn't find a segment containing any of the slots.
+  return false;
+}
+
 void LiveInterval::freeSubRange(SubRange *S) {
   S->~SubRange();
   // Memory was allocated with BumpPtr allocator and is not freed here.
@@ -1328,15 +1362,15 @@ void LiveRangeUpdater::flush() {
   LR->verify();
 }
 
-unsigned ConnectedVNInfoEqClasses::Classify(const LiveInterval *LI) {
+unsigned ConnectedVNInfoEqClasses::Classify(const LiveRange &LR) {
   // Create initial equivalence classes.
   EqClass.clear();
-  EqClass.grow(LI->getNumValNums());
+  EqClass.grow(LR.getNumValNums());
 
   const VNInfo *used = nullptr, *unused = nullptr;
 
   // Determine connections.
-  for (const VNInfo *VNI : LI->valnos) {
+  for (const VNInfo *VNI : LR.valnos) {
     // Group all unused values into one class.
     if (VNI->isUnused()) {
       if (unused)
@@ -1351,14 +1385,14 @@ unsigned ConnectedVNInfoEqClasses::Classify(const LiveInterval *LI) {
       // Connect to values live out of predecessors.
       for (MachineBasicBlock::const_pred_iterator PI = MBB->pred_begin(),
            PE = MBB->pred_end(); PI != PE; ++PI)
-        if (const VNInfo *PVNI = LI->getVNInfoBefore(LIS.getMBBEndIdx(*PI)))
+        if (const VNInfo *PVNI = LR.getVNInfoBefore(LIS.getMBBEndIdx(*PI)))
           EqClass.join(VNI->id, PVNI->id);
     } else {
       // Normal value defined by an instruction. Check for two-addr redef.
       // FIXME: This could be coincidental. Should we really check for a tied
       // operand constraint?
       // Note that VNI->def may be a use slot for an early clobber def.
-      if (const VNInfo *UVNI = LI->getVNInfoBefore(VNI->def))
+      if (const VNInfo *UVNI = LR.getVNInfoBefore(VNI->def))
         EqClass.join(VNI->id, UVNI->id);
     }
   }

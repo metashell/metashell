@@ -26,6 +26,7 @@
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalValue.h"
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetInstrInfo.h"
 #include "llvm/Target/TargetOptions.h"
@@ -88,8 +89,8 @@ ARMSubtarget::ARMSubtarget(const Triple &TT, const std::string &CPU,
                            const std::string &FS,
                            const ARMBaseTargetMachine &TM, bool IsLittle)
     : ARMGenSubtargetInfo(TT, CPU, FS), ARMProcFamily(Others),
-      ARMProcClass(None), stackAlignment(4), CPUString(CPU), IsLittle(IsLittle),
-      TargetTriple(TT), Options(TM.Options), TM(TM),
+      ARMProcClass(None), ARMArch(ARMv4t), stackAlignment(4), CPUString(CPU),
+      IsLittle(IsLittle), TargetTriple(TT), Options(TM.Options), TM(TM),
       FrameLowering(initializeFrameLowering(CPU, FS)),
       // At this point initializeSubtargetDependencies has been called so
       // we can query directly.
@@ -111,6 +112,7 @@ void ARMSubtarget::initializeEnvironment() {
   HasV7Ops = false;
   HasV8Ops = false;
   HasV8_1aOps = false;
+  HasV8_2aOps = false;
   HasVFPv2 = false;
   HasVFPv3 = false;
   HasVFPv4 = false;
@@ -129,6 +131,7 @@ void ARMSubtarget::initializeEnvironment() {
   NoMovt = false;
   SupportsTailCall = false;
   HasFP16 = false;
+  HasFullFP16 = false;
   HasD16 = false;
   HasHardwareDivide = false;
   HasHardwareDivideInARM = false;
@@ -151,8 +154,15 @@ void ARMSubtarget::initializeEnvironment() {
   UseNaClTrap = false;
   GenLongCalls = false;
   UnsafeFPMath = false;
-  UseSjLjEH = (isTargetDarwin() &&
-               TargetTriple.getSubArch() != Triple::ARMSubArch_v7k);
+
+  // MCAsmInfo isn't always present (e.g. in opt) so we can't initialize this
+  // directly from it, but we can try to make sure they're consistent when both
+  // available.
+  UseSjLjEH = isTargetDarwin() && !isTargetWatchOS();
+  assert((!TM.getMCAsmInfo() ||
+          (TM.getMCAsmInfo()->getExceptionHandlingType() ==
+           ExceptionHandling::SjLj) == UseSjLjEH) &&
+         "inconsistent sjlj choice between CodeGen and MC");
 }
 
 void ARMSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {

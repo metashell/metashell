@@ -64,6 +64,6 @@ void pragma_environment_add::run(const data::command::iterator&,
         " this command (" +
         cmd +
         ") at"
-        " https://github.com/sabel83/metashell/issues. Thank you."));
+        " https://github.com/metashell/metashell/issues. Thank you."));
   }
 }

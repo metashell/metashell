@@ -4,7 +4,7 @@
 
 ### Using the helper scripts
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Run `install_build_dependencies.sh` to install the dependent tools and
   libraries
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage
@@ -13,7 +13,7 @@
 
 ### Building manually
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent libraries:
     * Readline (or Libedit)
     * Termcap
@@ -69,7 +69,7 @@ used:
 
 ## Windows
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install [CMake](http://cmake.org/)
 * Install [Python](https://www.python.org/downloads/)
 * First you need to build Clang with
@@ -97,8 +97,8 @@ used:
       Open it with Visual Studio 2013 and build it. You can do a debug or a
       release build (or both) against the release build of Templight.
     * After a successful build you can find the Metashell executables in
-      `bin/app/Release/metashell.exe` or `bin/app/Debug/metashell.exe` depending
-      on the build type.
+      `bin/app/metashell/Release/metashell.exe` or
+      `bin/app/metashell/Debug/metashell.exe` depending on the build type.
     * Note that the system tests run lots of Metashell processes which create
       lots of temporary directories and files. Some anti-virus software seems to
       consider it harmful and block some these operations causing a number of
@@ -132,7 +132,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
 
 ### Using the helper scripts
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent tools:
     * CMake
     * XCode
@@ -144,7 +144,7 @@ upgrade WinEditLine to a newer version, you need to update these files.
 
 ### Building manually
 
-* Download the source code from [github](http://github.com/sabel83/metashell).
+* Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent tools:
     * CMake
     * XCode

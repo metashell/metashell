@@ -34,7 +34,7 @@ do_rt="yes"
 do_libs="yes"
 do_libunwind="yes"
 do_test_suite="yes"
-do_openmp="no"
+do_openmp="yes"
 BuildDir="`pwd`"
 use_autoconf="no"
 ExtraConfigureFlags=""
@@ -62,13 +62,8 @@ function usage() {
     echo " -no-libs             Disable check-out & build libcxx/libcxxabi/libunwind"
     echo " -no-libunwind        Disable check-out & build libunwind"
     echo " -no-test-suite       Disable check-out & build test-suite"
-    echo " -openmp              Check out and build the OpenMP run-time (experimental)"
+    echo " -no-openmp           Disable check-out & build libomp"
 }
-
-if [ `uname -s` = "Darwin" ]; then
-  # compiler-rt doesn't yet build with CMake on Darwin.
-  use_autoconf="yes"
-fi
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -143,8 +138,8 @@ while [ $# -gt 0 ]; do
         -no-test-suite )
             do_test_suite="no"
             ;;
-        -openmp )
-            do_openmp="yes"
+        -no-openmp )
+            do_openmp="no"
             ;;
         -help | --help | -h | --h | -\? )
             usage
@@ -158,6 +153,15 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+
+if [ "$use_autoconf" = "no" ]; then
+  if [ "$do_test_suite" = "yes" ]; then
+    # See llvm.org/PR26146.
+    echo Skipping test-suite build when using CMake.
+    echo It will still be exported.
+    do_test_suite="export-only"
+  fi
+fi
 
 # Check required arguments.
 if [ -z "$Release" ]; then
@@ -201,9 +205,11 @@ if [ $do_libs = "yes" ]; then
     projects="$projects libunwind"
   fi
 fi
-if [ $do_test_suite = "yes" ]; then
-  projects="$projects test-suite"
-fi
+case $do_test_suite in
+  yes|export-only)
+    projects="$projects test-suite"
+    ;;
+esac
 if [ $do_openmp = "yes" ]; then
   projects="$projects openmp"
 fi
@@ -266,42 +272,42 @@ function export_sources() {
     check_valid_urls
 
     for proj in $projects ; do
-        if [ -d $proj.src ]; then
-          echo "# Reusing $proj $Release-$RC sources"
+        case $proj in
+        llvm)
+            projsrc=$proj.src
+            ;;
+        cfe)
+            projsrc=llvm.src/tools/clang
+            ;;
+        clang-tools-extra)
+            projsrc=llvm.src/tools/clang/tools/extra
+            ;;
+        compiler-rt|libcxx|libcxxabi|libunwind|openmp)
+            projsrc=llvm.src/projects/$proj
+            ;;
+        test-suite)
+            if [ $do_test_suite = 'yes' ]; then
+              projsrc=llvm.src/projects/$proj
+            else
+              projsrc=$proj.src
+            fi
+            ;;
+        *)
+            echo "error: unknown project $proj"
+            exit 1
+            ;;
+        esac
+
+        if [ -d $projsrc ]; then
+          echo "# Reusing $proj $Release-$RC sources in $projsrc"
           continue
         fi
-        echo "# Exporting $proj $Release-$RC sources"
-        if ! svn export -q $Base_url/$proj/$ExportBranch $proj.src ; then
+        echo "# Exporting $proj $Release-$RC sources to $projsrc"
+        if ! svn export -q $Base_url/$proj/$ExportBranch $projsrc ; then
             echo "error: failed to export $proj project"
             exit 1
         fi
     done
-
-    echo "# Creating symlinks"
-    cd $BuildDir/llvm.src/tools
-    if [ ! -h clang ]; then
-        ln -s ../../cfe.src clang
-    fi
-    cd $BuildDir/llvm.src/tools/clang/tools
-    if [ ! -h extra ]; then
-        ln -s ../../../../clang-tools-extra.src extra
-    fi
-    cd $BuildDir/llvm.src/projects
-    if [ -d $BuildDir/test-suite.src ] && [ ! -h test-suite ]; then
-        ln -s ../../test-suite.src test-suite
-    fi
-    if [ -d $BuildDir/compiler-rt.src ] && [ ! -h compiler-rt ]; then
-        ln -s ../../compiler-rt.src compiler-rt
-    fi
-    if [ -d $BuildDir/libcxx.src ] && [ ! -h libcxx ]; then
-        ln -s ../../libcxx.src libcxx
-    fi
-    if [ -d $BuildDir/libcxxabi.src ] && [ ! -h libcxxabi ]; then
-        ln -s ../../libcxxabi.src libcxxabi
-    fi
-    if [ -d $BuildDir/libunwind.src ] && [ ! -h libunwind ]; then
-        ln -s ../../libunwind.src libunwind
-    fi
 
     cd $BuildDir
 }
@@ -443,46 +449,6 @@ function package_release() {
     cd $cwd
 }
 
-# Build and package the OpenMP run-time. This is still experimental and not
-# meant for official testing in the release, but as a way for providing
-# binaries as a convenience to those who want to try it out.
-function build_OpenMP() {
-    cwd=`pwd`
-
-    rm -rf $BuildDir/Phase3/openmp
-    rm -rf $BuildDir/Phase3/openmp.install
-    mkdir -p $BuildDir/Phase3/openmp
-    cd $BuildDir/Phase3/openmp
-    clang=$BuildDir/Phase3/Release/llvmCore-$Release-$RC.install/usr/local/bin/clang
-
-    echo "#" cmake -DCMAKE_C_COMPILER=${clang} -DCMAKE_CXX_COMPILER=${clang}++ \
-            -DCMAKE_BUILD_TYPE=Release -DLIBOMP_MICRO_TESTS=on \
-            $BuildDir/openmp.src/runtime
-    cmake -DCMAKE_C_COMPILER=${clang} -DCMAKE_CXX_COMPILER=${clang}++ \
-            -DCMAKE_BUILD_TYPE=Release -DLIBOMP_MICRO_TESTS=on \
-            $BuildDir/openmp.src/runtime
-
-    echo "# Building OpenMP run-time"
-    echo "# ${MAKE} -j $NumJobs VERBOSE=1"
-    ${MAKE} -j $NumJobs VERBOSE=1
-    echo "# ${MAKE} libomp-micro-tests VERBOSE=1"
-    ${MAKE} libomp-micro-tests VERBOSE=1
-    echo "# ${MAKE} install DESTDIR=$BuildDir/Phase3/openmp.install"
-    ${MAKE} install DESTDIR=$BuildDir/Phase3/openmp.install
-
-    OpenMPPackage=OpenMP-$Release
-    if [ $RC != "final" ]; then
-        OpenMPPackage=$OpenMPPackage-$RC
-    fi
-    OpenMPPackage=$OpenMPPackage-$Triple
-
-    mv $BuildDir/Phase3/openmp.install/usr/local $BuildDir/$OpenMPPackage
-    cd $BuildDir
-    tar cvfJ $BuildDir/$OpenMPPackage.tar.xz $OpenMPPackage
-    mv $OpenMPPackage $BuildDir/Phase3/openmp.install/usr/local
-    cd $cwd
-}
-
 # Exit if any command fails
 # Note: pipefail is necessary for running build commands through
 # a pipe (i.e. it changes the output of ``false | tee /dev/null ; echo $?``)
@@ -586,17 +552,14 @@ for Flavor in $Flavors ; do
             # Substitute 'Phase2' for 'Phase3' in the Phase 2 object file in
             # case there are build paths in the debug info. On some systems,
             # sed adds a newline to the output, so pass $p3 through sed too.
-            if ! cmp -s <(sed -e 's,Phase2,Phase3,g' $p2) <(sed -e '' $p3) \
-                    16 16 ; then
+            if ! cmp -s \
+                <(env LC_CTYPE=C sed -e 's,Phase2,Phase3,g' $p2) \
+                <(env LC_CTYPE=C sed -e '' $p3) 16 16; then
                 echo "file `basename $p2` differs between phase 2 and phase 3"
             fi
         done
     fi
 done
-
-if [ $do_openmp = "yes" ]; then
-  build_OpenMP
-fi
 
 ) 2>&1 | tee $LogDir/testing.$Release-$RC.log
 

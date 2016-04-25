@@ -170,19 +170,18 @@ public:
 
   /// \brief Initializes this by copying its information from another
   /// TypeLoc of the same type.
-  void initializeFullCopy(TypeLoc Other) const {
+  void initializeFullCopy(TypeLoc Other) {
     assert(getType() == Other.getType());
-    size_t Size = getFullDataSize();
-    memcpy(getOpaqueData(), Other.getOpaqueData(), Size);
+    copy(Other);
   }
 
   /// \brief Initializes this by copying its information from another
   /// TypeLoc of the same type.  The given size must be the full data
   /// size.
-  void initializeFullCopy(TypeLoc Other, unsigned Size) const {
+  void initializeFullCopy(TypeLoc Other, unsigned Size) {
     assert(getType() == Other.getType());
     assert(getFullDataSize() == Size);
-    memcpy(getOpaqueData(), Other.getOpaqueData(), Size);
+    copy(Other);
   }
 
   /// Copies the other type loc into this one.
@@ -2034,7 +2033,26 @@ public:
   }
 };
 
+struct PipeTypeLocInfo {
+  SourceLocation KWLoc;
+};
 
+class PipeTypeLoc : public ConcreteTypeLoc<UnqualTypeLoc, PipeTypeLoc, PipeType,
+                                           PipeTypeLocInfo> {
+public:
+  TypeLoc getValueLoc() const { return this->getInnerTypeLoc(); }
+
+  SourceRange getLocalSourceRange() const { return SourceRange(getKWLoc()); }
+
+  SourceLocation getKWLoc() const { return this->getLocalData()->KWLoc; }
+  void setKWLoc(SourceLocation Loc) { this->getLocalData()->KWLoc = Loc; }
+
+  void initializeLocal(ASTContext &Context, SourceLocation Loc) {
+    setKWLoc(Loc);
+  }
+
+  QualType getInnerType() const { return this->getTypePtr()->getElementType(); }
+};
 }
 
 #endif

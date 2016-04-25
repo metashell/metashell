@@ -20,7 +20,6 @@
 #include <metashell/exception.hpp>
 #include <metashell/unsaved_file.hpp>
 #include <metashell/headers.hpp>
-#include <metashell/path_builder.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -99,20 +98,21 @@ namespace
   std::string include_formatter(const std::string& name_)
   {
     using std::string;
+    using boost::filesystem::path;
 
-    return "#include <" + string(path_builder() / "metashell" / "formatter" /
-                                 (name_ + ".hpp")) +
-           ">";
+    return "#include <" +
+           (path("metashell") / "formatter" / (name_ + ".hpp")).string() + ">";
   }
 
   void add_internal_headers(data::headers& headers_)
   {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
+    using boost::filesystem::path;
 
     using std::string;
 
-    const path_builder internal_dir(headers_.internal_dir());
+    const path internal_dir(headers_.internal_dir());
     const string hpp(".hpp");
 
     const char* formatters[] = {"vector", "list", "set", "map"};
@@ -123,11 +123,11 @@ namespace
                    seq_formatter(f));
     }
 
-    const string vector_formatter =
-        string(path_builder() / "metashell" / "formatter" / "vector.hpp");
+    const path vector_formatter =
+        path("metashell") / "formatter" / "vector.hpp";
 
     headers_.add(internal_dir / "metashell" / "formatter" / "deque.hpp",
-                 "#include <" + vector_formatter + ">\n");
+                 "#include <" + vector_formatter.string() + ">\n");
 
     headers_.add(
         internal_dir / "metashell" / "formatter.hpp",
@@ -163,8 +163,8 @@ namespace
 header_file_environment::header_file_environment(
     iface::engine& engine_,
     const data::config& config_,
-    const std::string& internal_dir_,
-    const std::string& env_filename_)
+    const boost::filesystem::path& internal_dir_,
+    const boost::filesystem::path& env_filename_)
   : _internal_dir(internal_dir_),
     _env_filename(env_filename_),
     _buffer(),
@@ -196,7 +196,7 @@ std::string header_file_environment::get() const
 {
   return _use_precompiled_headers ?
              std::string() : // The -include directive includes the header
-             "#include <" + _env_filename + ">\n";
+             "#include <" + _env_filename.string() + ">\n";
 }
 
 std::string header_file_environment::get_appended(const std::string& s_) const
@@ -206,17 +206,18 @@ std::string header_file_environment::get_appended(const std::string& s_) const
 
 void header_file_environment::save()
 {
-  const std::string fn = _headers.internal_dir() + "/" + _env_filename;
+  const boost::filesystem::path fn = _headers.internal_dir() / _env_filename;
   if (!internal_dir().empty())
   {
-    std::ofstream f(fn.c_str());
+    const std::string filename = fn.string();
+    std::ofstream f(filename.c_str());
     if (f)
     {
       f << _buffer;
     }
     else
     {
-      throw exception("Error saving environment to " + fn);
+      throw exception("Error saving environment to " + filename);
     }
   }
 
@@ -226,7 +227,7 @@ void header_file_environment::save()
   }
 }
 
-std::string header_file_environment::internal_dir() const
+boost::filesystem::path header_file_environment::internal_dir() const
 {
   return _internal_dir;
 }

@@ -38,6 +38,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ELF.h"
+#include "llvm/Support/Format.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -76,7 +77,6 @@ class HexagonAsmParser : public MCTargetAsmParser {
     return static_cast<HexagonTargetStreamer &>(TS);
   }
 
-  MCSubtargetInfo &STI;
   MCAsmParser &Parser;
   MCAssembler *Assembler;
   MCInstrInfo const &MCII;
@@ -134,13 +134,11 @@ class HexagonAsmParser : public MCTargetAsmParser {
   /// }
 
 public:
-  HexagonAsmParser(MCSubtargetInfo &_STI, MCAsmParser &_Parser,
+  HexagonAsmParser(const MCSubtargetInfo &_STI, MCAsmParser &_Parser,
                    const MCInstrInfo &MII, const MCTargetOptions &Options)
-    : MCTargetAsmParser(Options), STI(_STI), Parser(_Parser),
-      MCII (MII), InBrackets(false) {
-  MCB.setOpcode(Hexagon::BUNDLE);
-  setAvailableFeatures(
-    ComputeAvailableFeatures(_STI.getFeatureBits()));
+    : MCTargetAsmParser(Options, _STI), Parser(_Parser),
+      MCII (MII), MCB(HexagonMCInstrInfo::createBundle()), InBrackets(false) {
+    setAvailableFeatures(ComputeAvailableFeatures(getSTI().getFeatureBits()));
 
   MCAsmParserExtension::Initialize(_Parser);
 
@@ -556,13 +554,13 @@ public:
   void adds4_6ImmOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
-    Inst.addOperand(MCOperand::createImm(CE->getValue() << 6));
+    Inst.addOperand(MCOperand::createImm(CE->getValue() * 64));
   }
 
   void adds3_6ImmOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
-    Inst.addOperand(MCOperand::createImm(CE->getValue() << 6));
+    Inst.addOperand(MCOperand::createImm(CE->getValue() * 64));
   }
 
   StringRef getToken() const {
@@ -628,10 +626,11 @@ bool HexagonAsmParser::finishBundle(SMLoc IDLoc, MCStreamer &Out) {
 
   // Check the bundle for errors.
   const MCRegisterInfo *RI = getContext().getRegisterInfo();
-  HexagonMCChecker Check(MCII, STI, MCB, MCB, *RI);
+  HexagonMCChecker Check(MCII, getSTI(), MCB, MCB, *RI);
 
-  bool CheckOk = HexagonMCInstrInfo::canonicalizePacket(MCII, STI, getContext(),
-                                                        MCB, &Check);
+  bool CheckOk = HexagonMCInstrInfo::canonicalizePacket(MCII, getSTI(),
+                                                        getContext(), MCB,
+                                                        &Check);
 
   while (Check.getNextErrInfo() == true) {
     unsigned Reg = Check.getErrRegister();
@@ -716,7 +715,7 @@ bool HexagonAsmParser::finishBundle(SMLoc IDLoc, MCStreamer &Out) {
       // Empty packets are valid yet aren't emitted
       return false;
     }
-    Out.EmitInstruction(MCB, STI);
+    Out.EmitInstruction(MCB, getSTI());
   } else {
     // If compounding and duplexing didn't reduce the size below
     // 4 or less we have a packet that is too big.
@@ -871,7 +870,7 @@ bool HexagonAsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                           MatchingInlineAsm, MustExtend))
     return true;
   HexagonMCInstrInfo::extendIfNeeded(
-      MCII, MCB, *SubInst,
+      getParser().getContext(), MCII, MCB, *SubInst,
       HexagonMCInstrInfo::isExtended(MCII, *SubInst) || MustExtend);
   MCB.addOperand(MCOperand::createInst(SubInst));
   if (!InBrackets)
@@ -1513,14 +1512,14 @@ unsigned HexagonAsmParser::validateTargetOperandClass(MCParsedAsmOperand &AsmOp,
 }
 
 void HexagonAsmParser::OutOfRange(SMLoc IDLoc, long long Val, long long Max) {
-  std::stringstream errStr;
-  errStr << "value " << Val << "(0x" << std::hex << Val << std::dec
-         << ") out of range: ";
+  std::string errStr;
+  raw_string_ostream ES(errStr);
+  ES << "value " << Val << "(" << format_hex(Val, 0) << ") out of range: ";
   if (Max >= 0)
-    errStr << "0-" << Max;
+    ES << "0-" << Max;
   else
-    errStr << Max << "-" << (-Max - 1);
-  Error(IDLoc, errStr.str().c_str());
+    ES << Max << "-" << (-Max - 1);
+  Error(IDLoc, ES.str().c_str());
 }
 
 int HexagonAsmParser::processInstruction(MCInst &Inst,
@@ -1593,7 +1592,7 @@ int HexagonAsmParser::processInstruction(MCInst &Inst,
     //   not use the other opcode as it is a legacy artifact of TD files.
     int64_t Value;
     if (MO.getExpr()->evaluateAsAbsolute(Value)) {
-      // if the the operand can fit within a 7:2 field
+      // if the operand can fit within a 7:2 field
       if (Value < (1 << 8) && Value >= -(1 << 8)) {
         SMLoc myLoc = Operands[2]->getStartLoc();
         // # is left in startLoc in the case of ##

@@ -433,17 +433,11 @@ StringRef ELFDumper<ELFT>::getSymbolVersion(StringRef StrTab,
   if (entry.isVerdef()) {
     // The first Verdaux entry holds the name.
     name_offset = entry.getVerdef()->getAux()->vda_name;
-  } else {
-    name_offset = entry.getVernaux()->vna_name;
-  }
-
-  // Set IsDefault
-  if (entry.isVerdef()) {
     IsDefault = !(vs->vs_index & ELF::VERSYM_HIDDEN);
   } else {
+    name_offset = entry.getVernaux()->vna_name;
     IsDefault = false;
   }
-
   if (name_offset >= StrTab.size())
     reportError("Invalid string offset");
   return StringRef(StrTab.data() + name_offset);
@@ -714,7 +708,8 @@ static const EnumEntry<unsigned> ElfMachineType[] = {
   LLVM_READOBJ_ENUM_ENT(ELF, EM_VIDEOCORE5   ),
   LLVM_READOBJ_ENUM_ENT(ELF, EM_78KOR        ),
   LLVM_READOBJ_ENUM_ENT(ELF, EM_56800EX      ),
-  LLVM_READOBJ_ENUM_ENT(ELF, EM_AMDGPU       )
+  LLVM_READOBJ_ENUM_ENT(ELF, EM_AMDGPU       ),
+  LLVM_READOBJ_ENUM_ENT(ELF, EM_WEBASSEMBLY  ),
 };
 
 static const EnumEntry<unsigned> ElfSymbolBindings[] = {

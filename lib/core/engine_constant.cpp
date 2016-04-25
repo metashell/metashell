@@ -34,7 +34,7 @@ namespace
 
     virtual data::result eval(const iface::environment&,
                               const boost::optional<std::string>&,
-                              const boost::optional<std::string>&,
+                              const boost::optional<boost::filesystem::path>&,
                               bool) override
     {
       return _result;
@@ -56,7 +56,8 @@ namespace
       // ignore
     }
 
-    virtual void generate_precompiled_header(const std::string&) override
+    virtual void
+    generate_precompiled_header(const boost::filesystem::path&) override
     {
       // ignore
     }

@@ -22,6 +22,7 @@
 #include <metashell/iface/environment.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <set>
@@ -40,7 +41,7 @@ namespace metashell
       virtual data::result
       eval(const environment& env_,
            const boost::optional<std::string>& tmp_exp_,
-           const boost::optional<std::string>& templight_dump_path_,
+           const boost::optional<boost::filesystem::path>& templight_dump_path_,
            bool use_precompiled_headers_) = 0;
 
       virtual data::result validate_code(const std::string& s_,
@@ -53,7 +54,8 @@ namespace metashell
                                  std::set<std::string>& out_,
                                  bool use_precompiled_headers_) = 0;
 
-      virtual void generate_precompiled_header(const std::string& fn_) = 0;
+      virtual void
+      generate_precompiled_header(const boost::filesystem::path& fn_) = 0;
 
       virtual std::string macros(const iface::environment& env_) = 0;
     };

@@ -115,22 +115,22 @@ void SymExpr::symbol_iterator::expand() {
   const SymExpr *SE = itr.pop_back_val();
 
   switch (SE->getKind()) {
-    case SymExpr::RegionValueKind:
-    case SymExpr::ConjuredKind:
-    case SymExpr::DerivedKind:
-    case SymExpr::ExtentKind:
-    case SymExpr::MetadataKind:
+    case SymExpr::SymbolRegionValueKind:
+    case SymExpr::SymbolConjuredKind:
+    case SymExpr::SymbolDerivedKind:
+    case SymExpr::SymbolExtentKind:
+    case SymExpr::SymbolMetadataKind:
       return;
-    case SymExpr::CastSymbolKind:
+    case SymExpr::SymbolCastKind:
       itr.push_back(cast<SymbolCast>(SE)->getOperand());
       return;
-    case SymExpr::SymIntKind:
+    case SymExpr::SymIntExprKind:
       itr.push_back(cast<SymIntExpr>(SE)->getLHS());
       return;
-    case SymExpr::IntSymKind:
+    case SymExpr::IntSymExprKind:
       itr.push_back(cast<IntSymExpr>(SE)->getRHS());
       return;
-    case SymExpr::SymSymKind: {
+    case SymExpr::SymSymExprKind: {
       const SymSymExpr *x = cast<SymSymExpr>(SE);
       itr.push_back(x->getLHS());
       itr.push_back(x->getRHS());
@@ -391,6 +391,18 @@ void SymbolReaper::markLive(SymbolRef sym) {
 
 void SymbolReaper::markLive(const MemRegion *region) {
   RegionRoots.insert(region);
+  markElementIndicesLive(region);
+}
+
+void SymbolReaper::markElementIndicesLive(const MemRegion *region) {
+  for (auto SR = dyn_cast<SubRegion>(region); SR;
+       SR = dyn_cast<SubRegion>(SR->getSuperRegion())) {
+    if (auto ER = dyn_cast<ElementRegion>(SR)) {
+      SVal Idx = ER->getIndex();
+      for (auto SI = Idx.symbol_begin(), SE = Idx.symbol_end(); SI != SE; ++SI)
+        markLive(*SI);
+    }
+  }
 }
 
 void SymbolReaper::markInUse(SymbolRef sym) {
@@ -446,35 +458,35 @@ bool SymbolReaper::isLive(SymbolRef sym) {
   bool KnownLive;
 
   switch (sym->getKind()) {
-  case SymExpr::RegionValueKind:
+  case SymExpr::SymbolRegionValueKind:
     KnownLive = isLiveRegion(cast<SymbolRegionValue>(sym)->getRegion());
     break;
-  case SymExpr::ConjuredKind:
+  case SymExpr::SymbolConjuredKind:
     KnownLive = false;
     break;
-  case SymExpr::DerivedKind:
+  case SymExpr::SymbolDerivedKind:
     KnownLive = isLive(cast<SymbolDerived>(sym)->getParentSymbol());
     break;
-  case SymExpr::ExtentKind:
+  case SymExpr::SymbolExtentKind:
     KnownLive = isLiveRegion(cast<SymbolExtent>(sym)->getRegion());
     break;
-  case SymExpr::MetadataKind:
+  case SymExpr::SymbolMetadataKind:
     KnownLive = MetadataInUse.count(sym) &&
                 isLiveRegion(cast<SymbolMetadata>(sym)->getRegion());
     if (KnownLive)
       MetadataInUse.erase(sym);
     break;
-  case SymExpr::SymIntKind:
+  case SymExpr::SymIntExprKind:
     KnownLive = isLive(cast<SymIntExpr>(sym)->getLHS());
     break;
-  case SymExpr::IntSymKind:
+  case SymExpr::IntSymExprKind:
     KnownLive = isLive(cast<IntSymExpr>(sym)->getRHS());
     break;
-  case SymExpr::SymSymKind:
+  case SymExpr::SymSymExprKind:
     KnownLive = isLive(cast<SymSymExpr>(sym)->getLHS()) &&
                 isLive(cast<SymSymExpr>(sym)->getRHS());
     break;
-  case SymExpr::CastSymbolKind:
+  case SymExpr::SymbolCastKind:
     KnownLive = isLive(cast<SymbolCast>(sym)->getOperand());
     break;
   }

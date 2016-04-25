@@ -329,8 +329,8 @@ void Sema::LookupTemplateName(LookupResult &Found,
             Found.getLookupNameInfo(), Found.getLookupKind(), S, &SS,
             std::move(FilterCCC), CTK_ErrorRecovery, LookupCtx)) {
       Found.setLookupName(Corrected.getCorrection());
-      if (Corrected.getCorrectionDecl())
-        Found.addDecl(Corrected.getCorrectionDecl());
+      if (auto *ND = Corrected.getFoundDecl())
+        Found.addDecl(ND);
       FilterAcceptableTemplateNames(Found);
       if (!Found.empty()) {
         if (LookupCtx) {
@@ -814,14 +814,15 @@ Sema::ActOnTemplateParameterList(unsigned Depth,
                                  SourceLocation ExportLoc,
                                  SourceLocation TemplateLoc,
                                  SourceLocation LAngleLoc,
-                                 Decl **Params, unsigned NumParams,
+                                 ArrayRef<Decl *> Params,
                                  SourceLocation RAngleLoc) {
   if (ExportLoc.isValid())
     Diag(ExportLoc, diag::warn_template_export_unsupported);
 
-  return TemplateParameterList::Create(Context, TemplateLoc, LAngleLoc,
-                                       (NamedDecl**)Params, NumParams,
-                                       RAngleLoc);
+  return TemplateParameterList::Create(
+      Context, TemplateLoc, LAngleLoc,
+      llvm::makeArrayRef((NamedDecl *const *)Params.data(), Params.size()),
+      RAngleLoc);
 }
 
 static void SetNestedNameSpecifier(TagDecl *T, const CXXScopeSpec &SS) {
@@ -1938,7 +1939,7 @@ TemplateParameterList *Sema::MatchTemplateParametersToScopeSpecifier(
 
       // Fabricate an empty template parameter list for the invented header.
       return TemplateParameterList::Create(Context, SourceLocation(),
-                                           SourceLocation(), nullptr, 0,
+                                           SourceLocation(), None,
                                            SourceLocation());
     }
 
@@ -2748,7 +2749,8 @@ Sema::CheckVarTemplateId(VarTemplateDecl *Template, SourceLocation TemplateLoc,
   typedef PartialSpecMatchResult MatchResult;
   SmallVector<MatchResult, 4> Matched;
   SourceLocation PointOfInstantiation = TemplateNameLoc;
-  TemplateSpecCandidateSet FailedCandidates(PointOfInstantiation);
+  TemplateSpecCandidateSet FailedCandidates(PointOfInstantiation,
+                                            /*ForTakingAddress=*/false);
 
   // 1. Attempt to find the closest partial specialization that this
   // specializes, if any.
@@ -3279,8 +3281,8 @@ SubstDefaultTemplateArgument(Sema &SemaRef,
   for (unsigned i = 0, e = Param->getDepth(); i != e; ++i)
     TemplateArgLists.addOuterTemplateArguments(None);
 
-  Sema::ContextRAII SavedContext(SemaRef, Template->getDeclContext());
-  EnterExpressionEvaluationContext Unevaluated(SemaRef, Sema::Unevaluated);
+  EnterExpressionEvaluationContext ConstantEvaluated(SemaRef,
+                                                     Sema::ConstantEvaluated);
   return SemaRef.SubstExpr(Param->getDefaultArgument(), TemplateArgLists);
 }
 
@@ -4181,6 +4183,10 @@ bool UnnamedLocalNoLinkageFinder::VisitAtomicType(const AtomicType* T) {
   return Visit(T->getValueType());
 }
 
+bool UnnamedLocalNoLinkageFinder::VisitPipeType(const PipeType* T) {
+  return false;
+}
+
 bool UnnamedLocalNoLinkageFinder::VisitTagDecl(const TagDecl *Tag) {
   if (Tag->getDeclContext()->isFunctionOrMethod()) {
     S.Diag(SR.getBegin(),
@@ -4280,7 +4286,7 @@ isNullPointerValueTemplateArgument(Sema &S, NonTypeTemplateParmDecl *Param,
   if (Arg->isValueDependent() || Arg->isTypeDependent())
     return NPV_NotNullPointer;
 
-  if (S.RequireCompleteType(Arg->getExprLoc(), ParamType, 0))
+  if (!S.isCompleteType(Arg->getExprLoc(), ParamType))
     llvm_unreachable(
         "Incomplete parameter type in isNullPointerValueTemplateArgument!");
 
@@ -5500,6 +5506,8 @@ Sema::BuildExpressionFromIntegralTemplateArgument(const TemplateArgument &Arg,
 
   Expr *E;
   if (T->isAnyCharacterType()) {
+    // This does not need to handle u8 character literals because those are
+    // of type char, and so can also be covered by an ASCII character literal.
     CharacterLiteral::CharacterKind Kind;
     if (T->isWideCharType())
       Kind = CharacterLiteral::Wide;
@@ -6408,7 +6416,17 @@ Sema::ActOnClassTemplateSpecialization(Scope *S, unsigned TagSpec,
     if (!PrevDecl)
       ClassTemplate->AddSpecialization(Specialization, InsertPos);
 
-    CanonType = Context.getTypeDeclType(Specialization);
+    if (CurContext->isDependentContext()) {
+      // -fms-extensions permits specialization of nested classes without
+      // fully specializing the outer class(es).
+      assert(getLangOpts().MicrosoftExt &&
+             "Only possible with -fms-extensions!");
+      TemplateName CanonTemplate = Context.getCanonicalTemplateName(Name);
+      CanonType = Context.getTemplateSpecializationType(
+          CanonTemplate, Converted.data(), Converted.size());
+    } else {
+      CanonType = Context.getTypeDeclType(Specialization);
+    }
   }
 
   // C++ [temp.expl.spec]p6:
@@ -6811,7 +6829,8 @@ bool Sema::CheckFunctionTemplateSpecialization(
   // The set of function template specializations that could match this
   // explicit function template specialization.
   UnresolvedSet<8> Candidates;
-  TemplateSpecCandidateSet FailedCandidates(FD->getLocation());
+  TemplateSpecCandidateSet FailedCandidates(FD->getLocation(),
+                                            /*ForTakingAddress=*/false);
 
   llvm::SmallDenseMap<FunctionDecl *, TemplateArgumentListInfo, 8>
       ConvertedTemplateArgs;

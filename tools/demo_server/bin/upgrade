@@ -25,32 +25,41 @@ import os
 import pwd
 import grp
 import sys
+import collections
 import daemonize
+
+
+Config = collections.namedtuple(
+    'Config',
+    ['uid', 'gid', 'install_dir', 'branch', 'delay_between_pulls', 'port']
+)
 
 
 class Action(object):
     """Functor implementing the upgrader's functionality"""
 
-    def __init__(self, uid_gid, install_dir, branch, delay_between_pulls):
-        self.install_dir = install_dir
-        self.branch = branch
-        self.delay_between_pulls = delay_between_pulls
+    def __init__(self, config):
+        self.install_dir = config.install_dir
+        self.branch = config.branch
+        self.delay_between_pulls = config.delay_between_pulls
+        self.port = config.port
 
-        os.setgid(uid_gid[1])
-        os.setuid(uid_gid[0])
+        os.setgid(config.uid)
+        os.setuid(config.gid)
 
     def step(self):
         """One iteration"""
         subprocess.call([
             '{0}/bin/deploy_{1}'.format(self.install_dir, self.branch),
             '--config', '{0}/metashell.json'.format(self.install_dir),
-            '--root', self.install_dir
+            '--root', self.install_dir,
+            '--port', self.port
         ])
 
         try:
             shutil.copyfile(
-                '{0}/src/metashell/master/tools/demo_server/config/'
-                'metashell.json'.format(self.install_dir),
+                '{0}/src/metashell/{1}/tools/demo_server/config/'
+                'metashell.json'.format(self.install_dir, self.branch),
                 '{0}/metashell.json'.format(self.install_dir)
             )
         except IOError:
@@ -107,7 +116,12 @@ def main():
         required=True,
         help='The delay in secs between pulls'
     )
-    ignore(parser, ['--port', '--log'])
+    parser.add_argument(
+        '--port',
+        required=True,
+        help='The port the running demo is listening on'
+    )
+    ignore(parser, ['--log'])
     args = parser.parse_args()
 
     uid = pwd.getpwnam(args.user).pw_uid
@@ -126,7 +140,14 @@ def main():
     daemon = daemonize.Daemonize(
         app="metashell_upgrade",
         pid=args.pidfile,
-        action=Action((uid, gid), args.root, args.branch, int(args.sleep))
+        action=Action(Config(
+            uid=uid,
+            gid=gid,
+            install_dir=args.root,
+            branch=args.branch,
+            delay_between_pulls=int(args.sleep),
+            port=args.port
+        ))
     )
     daemon.start()
 

@@ -200,6 +200,14 @@ static unsigned getRelaxedOpcodeArith(unsigned Op) {
   case X86::ADD64ri8: return X86::ADD64ri32;
   case X86::ADD64mi8: return X86::ADD64mi32;
 
+   // ADC
+  case X86::ADC16ri8: return X86::ADC16ri;
+  case X86::ADC16mi8: return X86::ADC16mi;
+  case X86::ADC32ri8: return X86::ADC32ri;
+  case X86::ADC32mi8: return X86::ADC32mi;
+  case X86::ADC64ri8: return X86::ADC64ri32;
+  case X86::ADC64mi8: return X86::ADC64mi32;
+
     // SUB
   case X86::SUB16ri8: return X86::SUB16ri;
   case X86::SUB16mi8: return X86::SUB16mi;
@@ -207,6 +215,14 @@ static unsigned getRelaxedOpcodeArith(unsigned Op) {
   case X86::SUB32mi8: return X86::SUB32mi;
   case X86::SUB64ri8: return X86::SUB64ri32;
   case X86::SUB64mi8: return X86::SUB64mi32;
+
+   // SBB
+  case X86::SBB16ri8: return X86::SBB16ri;
+  case X86::SBB16mi8: return X86::SBB16mi;
+  case X86::SBB32ri8: return X86::SBB32ri;
+  case X86::SBB32mi8: return X86::SBB32mi;
+  case X86::SBB64ri8: return X86::SBB64ri32;
+  case X86::SBB64mi8: return X86::SBB64mi32;
 
     // CMP
   case X86::CMP16ri8: return X86::CMP16ri;
@@ -621,13 +637,13 @@ private:
   /// \brief Get the compact unwind number for a given register. The number
   /// corresponds to the enum lists in compact_unwind_encoding.h.
   int getCompactUnwindRegNum(unsigned Reg) const {
-    static const uint16_t CU32BitRegs[7] = {
+    static const MCPhysReg CU32BitRegs[7] = {
       X86::EBX, X86::ECX, X86::EDX, X86::EDI, X86::ESI, X86::EBP, 0
     };
-    static const uint16_t CU64BitRegs[] = {
+    static const MCPhysReg CU64BitRegs[] = {
       X86::RBX, X86::R12, X86::R13, X86::R14, X86::R15, X86::RBP, 0
     };
-    const uint16_t *CURegs = Is64Bit ? CU64BitRegs : CU32BitRegs;
+    const MCPhysReg *CURegs = Is64Bit ? CU64BitRegs : CU32BitRegs;
     for (int Idx = 1; *CURegs; ++CURegs, ++Idx)
       if (*CURegs == Reg)
         return Idx;

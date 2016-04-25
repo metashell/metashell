@@ -34,7 +34,8 @@ static const char *const std_suppressions =
 "race:std::_Sp_counted_ptr_inplace<std::thread::_Impl\n";
 
 // Can be overriden in frontend.
-extern "C" const char *WEAK __tsan_default_suppressions() {
+SANITIZER_WEAK_DEFAULT_IMPL
+const char *__tsan_default_suppressions() {
   return 0;
 }
 #endif
@@ -158,8 +159,8 @@ void PrintMatchedSuppressions() {
   Printf("ThreadSanitizer: Matched %d suppressions (pid=%d):\n", hit_count,
          (int)internal_getpid());
   for (uptr i = 0; i < matched.size(); i++) {
-    Printf("%d %s:%s\n", matched[i]->hit_count, matched[i]->type,
-           matched[i]->templ);
+    Printf("%d %s:%s\n", atomic_load_relaxed(&matched[i]->hit_count),
+           matched[i]->type, matched[i]->templ);
   }
 }
 }  // namespace __tsan

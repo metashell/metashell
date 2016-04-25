@@ -195,7 +195,7 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
   std::vector<json_string> commands = {
       command(fibonacci_mp), command("#msh mdb int_<fib<10>::value>")};
 
-  for (auto i = 0; i < 22; ++i)
+  for (auto i = 0; i < 30; ++i)
   {
     commands.push_back(command("step"));
   }
@@ -231,6 +231,9 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
       frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
+      frame(type("fib<2>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
       frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
       *i);
   i += 2;
@@ -239,6 +242,12 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<2>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<4>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
@@ -251,6 +260,12 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
       frame(type("fib<4>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
+      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<6>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
       frame(type("fib<7>"), _, _, instantiation_kind::template_instantiation),
       *i);
   i += 2;
@@ -261,6 +276,12 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
       frame(type("fib<6>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
+      frame(type("fib<7>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<8>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
       frame(type("fib<9>"), _, _, instantiation_kind::template_instantiation),
       *i);
   i += 2;
@@ -269,6 +290,9 @@ JUST_TEST_CASE(test_mdb_step_over_the_whole_metaprogram_multiple_steps)
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<8>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<9>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<10>"), _, _, instantiation_kind::memoization), *i);
@@ -288,7 +312,7 @@ JUST_TEST_CASE(test_mdb_step_over_environment_multiple_steps)
       command(fibonacci_mp + "int_<fib<5>::value> x;"
                              "int_<fib<6>::value> y;"),
       command("#msh mdb -")};
-  for (auto i = 0; i < 19; ++i)
+  for (auto i = 0; i < 22; ++i)
   {
     commands.push_back(command("step"));
   }
@@ -319,6 +343,12 @@ JUST_TEST_CASE(test_mdb_step_over_environment_multiple_steps)
       frame(type("fib<1>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
+      frame(type("fib<2>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
       frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
       *i);
   i += 2;
@@ -327,6 +357,9 @@ JUST_TEST_CASE(test_mdb_step_over_environment_multiple_steps)
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
+  i += 2;
+  JUST_ASSERT_EQUAL(
+      frame(type("fib<4>"), _, _, instantiation_kind::memoization), *i);
   i += 2;
   JUST_ASSERT_EQUAL(
       frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
@@ -528,19 +561,16 @@ JUST_TEST_CASE(test_mdb_step_over_minus_1_multi_fib_from_after_step)
                     *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<5>"), _, _,
-                          instantiation_kind::template_instantiation),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<8>"), _, _,
-                          instantiation_kind::template_instantiation),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<3>"), _, _, instantiation_kind::memoization), *i);
 
   i += 2;
-  JUST_ASSERT_EQUAL(frame(type("multi_fib<6>"), _, _,
-                          instantiation_kind::template_instantiation),
-                    *i);
+  JUST_ASSERT_EQUAL(
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_from_root)
@@ -591,8 +621,7 @@ JUST_TEST_CASE(test_mdb_step_out_fib_after_three_steps)
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
-      *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
 }
 
 JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps)
@@ -605,14 +634,14 @@ JUST_TEST_CASE(test_mdb_step_out_fib_twice_after_five_steps)
 
   i += 2;
   JUST_ASSERT_EQUAL(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), *i);
+      frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
 }
 
-JUST_TEST_CASE(test_mdb_step_out_fib_three_after_five_steps)
+JUST_TEST_CASE(test_mdb_step_out_fib_four_times_after_five_steps)
 {
   const auto r = run_metashell({command(fibonacci_mp),
                                 command("#msh mdb int_<fib<5>::value>"),
-                                command("step 5"), command("step out 3")});
+                                command("step 5"), command("step out 4")});
 
   auto i = r.begin() + 4;
 

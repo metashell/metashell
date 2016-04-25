@@ -377,7 +377,7 @@ public:
 
   /// \brief This performs the main chunk of the work of cloning the loops for
   /// the partitions.
-  void cloneLoops(Pass *P) {
+  void cloneLoops() {
     BasicBlock *OrigPH = L->getLoopPreheader();
     // At this point the predecessor of the preheader is either the memcheck
     // block or the top part of the original preheader.
@@ -761,7 +761,7 @@ private:
     }
 
     // Don't distribute the loop if we need too many SCEV run-time checks.
-    const SCEVUnionPredicate &Pred = LAI.Preds;
+    const SCEVUnionPredicate &Pred = LAI.PSE.getUnionPredicate();
     if (Pred.getComplexity() > DistributeSCEVCheckThreshold) {
       DEBUG(dbgs() << "Too many SCEV run-time checks needed.\n");
       return false;
@@ -790,13 +790,13 @@ private:
       DEBUG(LAI.getRuntimePointerChecking()->printChecks(dbgs(), Checks));
       LoopVersioning LVer(LAI, L, LI, DT, SE, false);
       LVer.setAliasChecks(std::move(Checks));
-      LVer.setSCEVChecks(LAI.Preds);
+      LVer.setSCEVChecks(LAI.PSE.getUnionPredicate());
       LVer.versionLoop(DefsUsedOutside);
     }
 
     // Create identical copies of the original loop for each partition and hook
     // them up sequentially.
-    Partitions.cloneLoops(this);
+    Partitions.cloneLoops();
 
     // Now, we remove the instruction from each loop that don't belong to that
     // partition.

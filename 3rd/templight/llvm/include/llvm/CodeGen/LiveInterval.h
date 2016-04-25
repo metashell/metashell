@@ -544,6 +544,11 @@ namespace llvm {
       return true;
     }
 
+    // Returns true if any segment in the live range contains any of the
+    // provided slot indexes.  Slots which occur in holes between
+    // segments will not cause the function to return true.
+    bool isLiveAtIndexes(ArrayRef<SlotIndex> Slots) const;
+
     bool operator<(const LiveRange& other) const {
       const SlotIndex &thisIndex = beginIndex();
       const SlotIndex &otherIndex = other.beginIndex();
@@ -848,9 +853,9 @@ namespace llvm {
   public:
     explicit ConnectedVNInfoEqClasses(LiveIntervals &lis) : LIS(lis) {}
 
-    /// Classify - Classify the values in LI into connected components.
-    /// Return the number of connected components.
-    unsigned Classify(const LiveInterval *LI);
+    /// Classify the values in \p LR into connected components.
+    /// Returns the number of connected components.
+    unsigned Classify(const LiveRange &LR);
 
     /// getEqClass - Classify creates equivalence classes numbered 0..N. Return
     /// the equivalence class assigned the VNI.

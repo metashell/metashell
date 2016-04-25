@@ -274,9 +274,6 @@ int ARMTTIImpl::getCmpSelInstrCost(unsigned Opcode, Type *ValTy, Type *CondTy) {
   if (ST->hasNEON() && ValTy->isVectorTy() && ISD == ISD::SELECT) {
     // Lowering of some vector selects is currently far from perfect.
     static const TypeConversionCostTblEntry NEONVectorSelectTbl[] = {
-      { ISD::SELECT, MVT::v16i1, MVT::v16i16, 2*16 + 1 + 3*1 + 4*1 },
-      { ISD::SELECT, MVT::v8i1, MVT::v8i32, 4*8 + 1*3 + 1*4 + 1*2 },
-      { ISD::SELECT, MVT::v16i1, MVT::v16i32, 4*16 + 1*6 + 1*8 + 1*4 },
       { ISD::SELECT, MVT::v4i1, MVT::v4i64, 4*4 + 1*2 + 1 },
       { ISD::SELECT, MVT::v8i1, MVT::v8i64, 50 },
       { ISD::SELECT, MVT::v16i1, MVT::v16i64, 100 }
@@ -481,12 +478,12 @@ int ARMTTIImpl::getInterleavedMemoryOpCost(unsigned Opcode, Type *VecTy,
   assert(isa<VectorType>(VecTy) && "Expect a vector type");
 
   // vldN/vstN doesn't support vector types of i64/f64 element.
-  bool EltIs64Bits = DL.getTypeAllocSizeInBits(VecTy->getScalarType()) == 64;
+  bool EltIs64Bits = DL.getTypeSizeInBits(VecTy->getScalarType()) == 64;
 
   if (Factor <= TLI->getMaxSupportedInterleaveFactor() && !EltIs64Bits) {
     unsigned NumElts = VecTy->getVectorNumElements();
     Type *SubVecTy = VectorType::get(VecTy->getScalarType(), NumElts / Factor);
-    unsigned SubVecSize = DL.getTypeAllocSizeInBits(SubVecTy);
+    unsigned SubVecSize = DL.getTypeSizeInBits(SubVecTy);
 
     // vldN/vstN only support legal vector types of size 64 or 128 in bits.
     if (NumElts % Factor == 0 && (SubVecSize == 64 || SubVecSize == 128))

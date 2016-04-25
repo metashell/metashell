@@ -833,7 +833,7 @@ protected:
   llvm::DenseMap<Selector, llvm::GlobalVariable*> MethodVarNames;
 
   /// DefinedCategoryNames - list of category names in form Class_Category.
-  llvm::SetVector<std::string> DefinedCategoryNames;
+  llvm::SmallSetVector<std::string, 16> DefinedCategoryNames;
 
   /// MethodVarTypes - uniqued method type signatures. We have to use
   /// a StringMap here because have no other unique reference.
@@ -1947,7 +1947,7 @@ CGObjCCommonMac::EmitMessageSend(CodeGen::CodeGenFunction &CGF,
   llvm::Instruction *CallSite;
   Fn = llvm::ConstantExpr::getBitCast(Fn, MSI.MessengerType);
   RValue rvalue = CGF.EmitCall(MSI.CallInfo, Fn, Return, ActualArgs,
-                               nullptr, &CallSite);
+                               CGCalleeInfo(), &CallSite);
 
   // Mark the call as noreturn if the method is marked noreturn and the
   // receiver cannot be null.
@@ -2640,6 +2640,8 @@ llvm::Constant *CGObjCCommonMac::BuildByrefLayout(CodeGen::CodeGenModule &CGM,
   if (const RecordType *record = T->getAs<RecordType>()) {
     BuildRCBlockVarRecordLayout(record, fieldOffset, hasUnion, true /*ByrefLayout */);
     llvm::Constant *Result = getBitmapBlockLayout(true);
+    if (isa<llvm::ConstantInt>(Result))
+      Result = llvm::ConstantExpr::getIntToPtr(Result, CGM.Int8PtrTy);
     return Result;
   }
   llvm::Constant *nullPtr = llvm::Constant::getNullValue(CGM.Int8PtrTy);
@@ -2908,15 +2910,26 @@ llvm::Constant *CGObjCCommonMac::EmitPropertyList(Twine Name,
                                        const ObjCCommonTypesHelper &ObjCTypes) {
   SmallVector<llvm::Constant *, 16> Properties;
   llvm::SmallPtrSet<const IdentifierInfo*, 16> PropertySet;
+
+  auto AddProperty = [&](const ObjCPropertyDecl *PD) {
+    llvm::Constant *Prop[] = {GetPropertyName(PD->getIdentifier()),
+                              GetPropertyTypeString(PD, Container)};
+    Properties.push_back(llvm::ConstantStruct::get(ObjCTypes.PropertyTy, Prop));
+  };
+  if (const ObjCInterfaceDecl *OID = dyn_cast<ObjCInterfaceDecl>(OCD))
+    for (const ObjCCategoryDecl *ClassExt : OID->known_extensions())
+      for (auto *PD : ClassExt->properties()) {
+        PropertySet.insert(PD->getIdentifier());
+        AddProperty(PD);
+      }
   for (const auto *PD : OCD->properties()) {
-    PropertySet.insert(PD->getIdentifier());
-    llvm::Constant *Prop[] = {
-      GetPropertyName(PD->getIdentifier()),
-      GetPropertyTypeString(PD, Container)
-    };
-    Properties.push_back(llvm::ConstantStruct::get(ObjCTypes.PropertyTy,
-                                                   Prop));
+    // Don't emit duplicate metadata for properties that were already in a
+    // class extension.
+    if (!PropertySet.insert(PD->getIdentifier()).second)
+      continue;
+    AddProperty(PD);
   }
+
   if (const ObjCInterfaceDecl *OID = dyn_cast<ObjCInterfaceDecl>(OCD)) {
     for (const auto *P : OID->all_referenced_protocols())
       PushProtocolProperties(PropertySet, Properties, Container, P, ObjCTypes);
@@ -4757,11 +4770,7 @@ llvm::Constant *IvarLayoutBuilder::buildBitmap(CGObjCCommonMac &CGObjC,
     // This isn't a stable sort, but our algorithm should handle it fine.
     llvm::array_pod_sort(IvarsInfo.begin(), IvarsInfo.end());
   } else {
-#ifndef NDEBUG
-    for (unsigned i = 1; i != IvarsInfo.size(); ++i) {
-      assert(IvarsInfo[i - 1].Offset <= IvarsInfo[i].Offset);
-    }
-#endif
+    assert(std::is_sorted(IvarsInfo.begin(), IvarsInfo.end()));
   }
   assert(IvarsInfo.back().Offset < InstanceEnd);
 
@@ -4927,7 +4936,7 @@ CGObjCCommonMac::BuildIvarLayout(const ObjCImplementationDecl *OMD,
   // ARC layout strings only include the class's ivars.  In non-fragile
   // runtimes, that means starting at InstanceStart, rounded up to word
   // alignment.  In fragile runtimes, there's no InstanceStart, so it means
-  // starting at the end of the superclass, rounded up to word alignment.
+  // starting at the offset of the first ivar, rounded up to word alignment.
   //
   // MRC weak layout strings follow the ARC style.
   CharUnits baseOffset;
@@ -4938,10 +4947,9 @@ CGObjCCommonMac::BuildIvarLayout(const ObjCImplementationDecl *OMD,
 
     if (isNonFragileABI()) {
       baseOffset = beginOffset; // InstanceStart
-    } else if (auto superClass = OI->getSuperClass()) {
-      auto startOffset =
-        CGM.getContext().getASTObjCInterfaceLayout(superClass).getSize();
-      baseOffset = startOffset;
+    } else if (!ivars.empty()) {
+      baseOffset =
+        CharUnits::fromQuantity(ComputeIvarBaseOffset(CGM, OMD, ivars[0]));
     } else {
       baseOffset = CharUnits::Zero();
     }
