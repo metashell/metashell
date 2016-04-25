@@ -32,45 +32,13 @@
 using namespace llvm::sampleprof;
 using namespace llvm;
 
-/// \brief Print the samples collected for a function on stream \p OS.
-///
-/// \param OS Stream to emit the output to.
-void FunctionSamples::print(raw_ostream &OS, unsigned Indent) const {
-  OS << TotalSamples << ", " << TotalHeadSamples << ", " << BodySamples.size()
-     << " sampled lines\n";
-  for (const auto &SI : BodySamples) {
-    LineLocation Loc = SI.first;
-    const SampleRecord &Sample = SI.second;
-    OS.indent(Indent);
-    OS << "line offset: " << Loc.LineOffset
-       << ", discriminator: " << Loc.Discriminator
-       << ", number of samples: " << Sample.getSamples();
-    if (Sample.hasCalls()) {
-      OS << ", calls:";
-      for (const auto &I : Sample.getCallTargets())
-        OS << " " << I.first() << ":" << I.second;
-    }
-    OS << "\n";
-  }
-  for (const auto &CS : CallsiteSamples) {
-    CallsiteLocation Loc = CS.first;
-    const FunctionSamples &CalleeSamples = CS.second;
-    OS.indent(Indent);
-    OS << "line offset: " << Loc.LineOffset
-       << ", discriminator: " << Loc.Discriminator
-       << ", inlined callee: " << Loc.CalleeName << ": ";
-    CalleeSamples.print(OS, Indent + 2);
-  }
-}
-
 /// \brief Dump the function profile for \p FName.
 ///
 /// \param FName Name of the function to print.
 /// \param OS Stream to emit the output to.
 void SampleProfileReader::dumpFunctionProfile(StringRef FName,
                                               raw_ostream &OS) {
-  OS << "Function: " << FName << ": ";
-  Profiles[FName].print(OS);
+  OS << "Function: " << FName << ": " << Profiles[FName];
 }
 
 /// \brief Dump all the function profiles found on stream \p OS.
@@ -183,6 +151,7 @@ static bool ParseLine(const StringRef &Input, bool &IsCallsite, uint32_t &Depth,
 /// \returns true if the file was loaded successfully, false otherwise.
 std::error_code SampleProfileReaderText::read() {
   line_iterator LineIt(*Buffer, /*SkipBlanks=*/true, '#');
+  sampleprof_error Result = sampleprof_error::success;
 
   InlineCallStack InlineStack;
 
@@ -211,8 +180,8 @@ std::error_code SampleProfileReaderText::read() {
       }
       Profiles[FName] = FunctionSamples();
       FunctionSamples &FProfile = Profiles[FName];
-      FProfile.addTotalSamples(NumSamples);
-      FProfile.addHeadSamples(NumHeadSamples);
+      MergeResult(Result, FProfile.addTotalSamples(NumSamples));
+      MergeResult(Result, FProfile.addHeadSamples(NumHeadSamples));
       InlineStack.clear();
       InlineStack.push_back(&FProfile);
     } else {
@@ -234,7 +203,7 @@ std::error_code SampleProfileReaderText::read() {
         }
         FunctionSamples &FSamples = InlineStack.back()->functionSamplesAt(
             CallsiteLocation(LineOffset, Discriminator, FName));
-        FSamples.addTotalSamples(NumSamples);
+        MergeResult(Result, FSamples.addTotalSamples(NumSamples));
         InlineStack.push_back(&FSamples);
       } else {
         while (InlineStack.size() > Depth) {
@@ -242,15 +211,33 @@ std::error_code SampleProfileReaderText::read() {
         }
         FunctionSamples &FProfile = *InlineStack.back();
         for (const auto &name_count : TargetCountMap) {
-          FProfile.addCalledTargetSamples(LineOffset, Discriminator,
-                                          name_count.first, name_count.second);
+          MergeResult(Result, FProfile.addCalledTargetSamples(
+                                  LineOffset, Discriminator, name_count.first,
+                                  name_count.second));
         }
-        FProfile.addBodySamples(LineOffset, Discriminator, NumSamples);
+        MergeResult(Result, FProfile.addBodySamples(LineOffset, Discriminator,
+                                                    NumSamples));
       }
     }
   }
 
-  return sampleprof_error::success;
+  return Result;
+}
+
+bool SampleProfileReaderText::hasFormat(const MemoryBuffer &Buffer) {
+  bool result = false;
+
+  // Check that the first non-comment line is a valid function header.
+  line_iterator LineIt(Buffer, /*SkipBlanks=*/true, '#');
+  if (!LineIt.is_at_eof()) {
+    if ((*LineIt)[0] != ' ') {
+      uint64_t NumSamples, NumHeadSamples;
+      StringRef FName;
+      result = ParseHead(*LineIt, FName, NumSamples, NumHeadSamples);
+    }
+  }
+
+  return result;
 }
 
 template <typename T> ErrorOr<T> SampleProfileReaderBinary::readNumber() {
@@ -709,15 +696,29 @@ SampleProfileReader::create(StringRef Filename, LLVMContext &C) {
   auto BufferOrError = setupMemoryBuffer(Filename);
   if (std::error_code EC = BufferOrError.getError())
     return EC;
+  return create(BufferOrError.get(), C);
+}
 
-  auto Buffer = std::move(BufferOrError.get());
+/// \brief Create a sample profile reader based on the format of the input data.
+///
+/// \param B The memory buffer to create the reader from (assumes ownership).
+///
+/// \param Reader The reader to instantiate according to \p Filename's format.
+///
+/// \param C The LLVM context to use to emit diagnostics.
+///
+/// \returns an error code indicating the status of the created reader.
+ErrorOr<std::unique_ptr<SampleProfileReader>>
+SampleProfileReader::create(std::unique_ptr<MemoryBuffer> &B, LLVMContext &C) {
   std::unique_ptr<SampleProfileReader> Reader;
-  if (SampleProfileReaderBinary::hasFormat(*Buffer))
-    Reader.reset(new SampleProfileReaderBinary(std::move(Buffer), C));
-  else if (SampleProfileReaderGCC::hasFormat(*Buffer))
-    Reader.reset(new SampleProfileReaderGCC(std::move(Buffer), C));
+  if (SampleProfileReaderBinary::hasFormat(*B))
+    Reader.reset(new SampleProfileReaderBinary(std::move(B), C));
+  else if (SampleProfileReaderGCC::hasFormat(*B))
+    Reader.reset(new SampleProfileReaderGCC(std::move(B), C));
+  else if (SampleProfileReaderText::hasFormat(*B))
+    Reader.reset(new SampleProfileReaderText(std::move(B), C));
   else
-    Reader.reset(new SampleProfileReaderText(std::move(Buffer), C));
+    return sampleprof_error::unrecognized_format;
 
   if (std::error_code EC = Reader->readHeader())
     return EC;

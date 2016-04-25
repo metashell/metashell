@@ -17,6 +17,7 @@
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCDwarf.h"
+#include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/SectionKind.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/Compiler.h"
@@ -112,7 +113,7 @@ namespace llvm {
     /// directive is used or it is an error.
     char *SecureLogFile;
     /// The stream that gets written to for the .secure_log_unique directive.
-    raw_ostream *SecureLog;
+    std::unique_ptr<raw_fd_ostream> SecureLog;
     /// Boolean toggled when .secure_log_unique / .secure_log_reset is seen to
     /// catch errors if .secure_log_unique appears twice without
     /// .secure_log_reset appearing between them.
@@ -207,8 +208,12 @@ namespace llvm {
     std::map<COFFSectionKey, MCSectionCOFF *> COFFUniquingMap;
     StringMap<bool> ELFRelSecNames;
 
+    SpecificBumpPtrAllocator<MCSubtargetInfo> MCSubtargetAllocator;
+
     /// Do automatic reset in destructor
     bool AutoReset;
+
+    bool HadError;
 
     MCSymbol *createSymbolImpl(const StringMapEntry<bool> *Name,
                                bool CanBeUnnamed);
@@ -380,6 +385,9 @@ namespace llvm {
     MCSectionCOFF *getAssociativeCOFFSection(MCSectionCOFF *Sec,
                                              const MCSymbol *KeySym);
 
+    // Create and save a copy of STI and return a reference to the copy.
+    MCSubtargetInfo &getSubtargetCopy(const MCSubtargetInfo &STI);
+
     /// @}
 
     /// \name Dwarf Management
@@ -498,9 +506,11 @@ namespace llvm {
     /// @}
 
     char *getSecureLogFile() { return SecureLogFile; }
-    raw_ostream *getSecureLog() { return SecureLog; }
+    raw_fd_ostream *getSecureLog() { return SecureLog.get(); }
     bool getSecureLogUsed() { return SecureLogUsed; }
-    void setSecureLog(raw_ostream *Value) { SecureLog = Value; }
+    void setSecureLog(std::unique_ptr<raw_fd_ostream> Value) {
+      SecureLog = std::move(Value);
+    }
     void setSecureLogUsed(bool Value) { SecureLogUsed = Value; }
 
     void *allocate(unsigned Size, unsigned Align = 8) {
@@ -508,11 +518,13 @@ namespace llvm {
     }
     void deallocate(void *Ptr) {}
 
+    bool hadError() { return HadError; }
+    void reportError(SMLoc L, const Twine &Msg);
     // Unrecoverable error has occurred. Display the best diagnostic we can
     // and bail via exit(1). For now, most MC backend errors are unrecoverable.
     // FIXME: We should really do something about that.
     LLVM_ATTRIBUTE_NORETURN void reportFatalError(SMLoc L,
-                                                  const Twine &Msg) const;
+                                                  const Twine &Msg);
   };
 
 } // end namespace llvm

@@ -154,8 +154,11 @@ pragma_handler_map::iterator pragma_handler_map::end() const
   return _handlers.end();
 }
 
-pragma_handler_map pragma_handler_map::build_default(
-    shell& shell_, command_processor_queue* cpq_, logger* logger_)
+pragma_handler_map
+pragma_handler_map::build_default(shell& shell_,
+                                  command_processor_queue* cpq_,
+                                  const boost::filesystem::path& mdb_temp_dir_,
+                                  logger* logger_)
 {
   return pragma_handler_map()
       .add("help", pragma_help(shell_.pragma_handlers()))
@@ -197,7 +200,7 @@ pragma_handler_map pragma_handler_map::build_default(
                                                 {
                                                   shell_.echo(v_);
                                                 }))
-      .add("mdb", pragma_mdb(shell_, cpq_, logger_))
+      .add("mdb", pragma_mdb(shell_, cpq_, mdb_temp_dir_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("pp", pragma_pp(shell_))
       .add(

@@ -63,7 +63,6 @@ The most important flags are::
   timeout                            	1200	Timeout in seconds (if positive). If one unit runs more than this number of seconds the process will abort.
   max_total_time                        0       If positive, indicates the maximal total time in seconds to run the fuzzer.
   help                               	0	Print help.
-  save_minimized_corpus              	0	If 1, the minimized corpus is saved into the first input directory. Example: ./fuzzer -save_minimized_corpus=1 NEW_EMPTY_DIR OLD_CORPUS
   merge                                 0       If 1, the 2-nd, 3-rd, etc corpora will be merged into the 1-st corpus. Only interesting units will be taken.
   jobs                               	0	Number of jobs to run. If jobs >= 1 we spawn this number of jobs in separate worker processes with stdout/stderr redirected to fuzz-JOB.log.
   workers                            	0	Number of simultaneous worker processes to run the jobs. If zero, "min(jobs,NumberOfCpuCores()/2)" is used.
@@ -73,6 +72,7 @@ The most important flags are::
   only_ascii                            0       If 1, generate only ASCII (isprint+isspace) inputs.
   test_single_input                     ""      Use specified file content as test input. Test will be run only once. Useful for debugging a particular case.
   artifact_prefix                       ""      Write fuzzing artifacts (crash, timeout, or slow inputs) as $(artifact_prefix)file
+  exact_artifact_path                   ""      Write the single artifact on failure (crash, timeout) as $(exact_artifact_path). This overrides -artifact_prefix and will not use checksum in the file name. Do not use the same path for several parallel processes.
 
 For the full list of flags run the fuzzer binary with ``-help=1``.
 
@@ -85,7 +85,9 @@ Toy example
 A simple function that does something interesting if it receives the input "HI!"::
 
   cat << EOF >> test_fuzzer.cc
-  extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, unsigned long size) {
+  #include <stdint.h>
+  #include <stddef.h>
+  extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     if (size > 0 && data[0] == 'H')
       if (size > 1 && data[1] == 'I')
          if (size > 2 && data[2] == '!')
@@ -121,8 +123,9 @@ Here we show how to use lib/Fuzzer on something real, yet simple: pcre2_::
   # Build the actual function that does something interesting with PCRE2.
   cat << EOF > pcre_fuzzer.cc
   #include <string.h>
+  #include <stdint.h>
   #include "pcre2posix.h"
-  extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
+  extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     if (size < 1) return 0;
     char *str = new char[size+1];
     memcpy(str, data, size);
@@ -220,6 +223,9 @@ to find Heartbleed with LibFuzzer::
   #include <openssl/ssl.h>
   #include <openssl/err.h>
   #include <assert.h>
+  #include <stdint.h>
+  #include <stddef.h>
+
   SSL_CTX *sctx;
   int Init() {
     SSL_library_init();
@@ -231,7 +237,7 @@ to find Heartbleed with LibFuzzer::
     assert (SSL_CTX_use_PrivateKey_file(sctx, "server.key", SSL_FILETYPE_PEM));
     return 0;
   }
-  extern "C" int LLVMFuzzerTestOneInput(unsigned char *Data, size_t Size) {
+  extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     static int unused = Init();
     SSL *server = SSL_new(sctx);
     BIO *sinbio = BIO_new(BIO_s_mem());
@@ -259,6 +265,9 @@ Voila::
       #0 0x48c978 in __asan_memcpy
       #1 0x4db504 in tls1_process_heartbeat openssl-1.0.1f/ssl/t1_lib.c:2586:3
       #2 0x580be3 in ssl3_read_bytes openssl-1.0.1f/ssl/s3_pkt.c:1092:4
+
+Note: a `similar fuzzer <https://boringssl.googlesource.com/boringssl/+/HEAD/FUZZING.md>`_
+is now a part of the boringssl source tree.
 
 Advanced features
 =================
@@ -470,6 +479,10 @@ Trophies
 * `Harfbuzz <https://github.com/behdad/harfbuzz/issues/139>`_
 
 * `SQLite <http://www3.sqlite.org/cgi/src/info/088009efdd56160b>`_
+
+* `Python <http://bugs.python.org/issue25388>`_
+
+* OpenSSL/BoringSSL: `[1] <https://boringssl.googlesource.com/boringssl/+/cb852981cd61733a7a1ae4fd8755b7ff950e857d>`_
 
 * `Libxml2
   <https://bugzilla.gnome.org/buglist.cgi?bug_status=__all__&content=libFuzzer&list_id=68957&order=Importance&product=libxml2&query_format=specific>`_

@@ -145,7 +145,7 @@ bool AAEval::runOnFunction(Function &F) {
   AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
 
   SetVector<Value *> Pointers;
-  SetVector<CallSite> CallSites;
+  SmallSetVector<CallSite, 16> CallSites;
   SetVector<Value *> Loads;
   SetVector<Value *> Stores;
 
@@ -167,10 +167,9 @@ bool AAEval::runOnFunction(Function &F) {
       if (!isa<Function>(Callee) && isInterestingPointer(Callee))
         Pointers.insert(Callee);
       // Consider formals.
-      for (CallSite::arg_iterator AI = CS.arg_begin(), AE = CS.arg_end();
-           AI != AE; ++AI)
-        if (isInterestingPointer(*AI))
-          Pointers.insert(*AI);
+      for (Use &DataOp : CS.data_ops())
+        if (isInterestingPointer(DataOp))
+          Pointers.insert(DataOp);
       CallSites.insert(CS);
     } else {
       // Consider all operands.
@@ -284,8 +283,7 @@ bool AAEval::runOnFunction(Function &F) {
   }
 
   // Mod/ref alias analysis: compare all pairs of calls and values
-  for (SetVector<CallSite>::iterator C = CallSites.begin(),
-         Ce = CallSites.end(); C != Ce; ++C) {
+  for (auto C = CallSites.begin(), Ce = CallSites.end(); C != Ce; ++C) {
     Instruction *I = C->getInstruction();
 
     for (SetVector<Value *>::iterator V = Pointers.begin(), Ve = Pointers.end();
@@ -316,9 +314,8 @@ bool AAEval::runOnFunction(Function &F) {
   }
 
   // Mod/ref alias analysis: compare all pairs of calls
-  for (SetVector<CallSite>::iterator C = CallSites.begin(),
-         Ce = CallSites.end(); C != Ce; ++C) {
-    for (SetVector<CallSite>::iterator D = CallSites.begin(); D != Ce; ++D) {
+  for (auto C = CallSites.begin(), Ce = CallSites.end(); C != Ce; ++C) {
+    for (auto D = CallSites.begin(); D != Ce; ++D) {
       if (D == C)
         continue;
       switch (AA.getModRefInfo(*C, *D)) {

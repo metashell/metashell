@@ -44,9 +44,6 @@ ASAN_FLAG(
     "to find more errors.")
 ASAN_FLAG(bool, replace_intrin, true,
           "If set, uses custom wrappers for memset/memcpy/memmove intinsics.")
-ASAN_FLAG(bool, mac_ignore_invalid_free, false,
-          "Ignore invalid free() calls to work around some bugs. Used on OS X "
-          "only.")
 ASAN_FLAG(bool, detect_stack_use_after_return, false,
           "Enables stack-use-after-return checking at run-time.")
 ASAN_FLAG(int, min_uar_stack_size_log, 16, // We can't do smaller anyway.
@@ -75,6 +72,7 @@ ASAN_FLAG(bool, check_malloc_usable_size, true,
           "295.*.")
 ASAN_FLAG(bool, unmap_shadow_on_exit, false,
           "If set, explicitly unmaps the (huge) shadow at exit.")
+ASAN_FLAG(bool, protect_shadow_gap, true, "If set, mprotect the shadow gap")
 ASAN_FLAG(bool, print_stats, false,
           "Print various statistics after printing an error message or if "
           "atexit=1.")
@@ -98,8 +96,8 @@ ASAN_FLAG(bool, poison_array_cookie, true,
           "Poison (or not) the array cookie after operator new[].")
 
 // Turn off alloc/dealloc mismatch checker on Mac and Windows for now.
-// https://code.google.com/p/address-sanitizer/issues/detail?id=131
-// https://code.google.com/p/address-sanitizer/issues/detail?id=309
+// https://github.com/google/sanitizers/issues/131
+// https://github.com/google/sanitizers/issues/309
 // TODO(glider,timurrrr): Fix known issues and enable this back.
 ASAN_FLAG(bool, alloc_dealloc_mismatch,
           (SANITIZER_MAC == 0) && (SANITIZER_WINDOWS == 0),
@@ -125,8 +123,8 @@ ASAN_FLAG(
     "The bigger the value the harder we try.")
 ASAN_FLAG(
     bool, detect_container_overflow, true,
-    "If true, honor the container overflow  annotations. "
-    "See https://code.google.com/p/address-sanitizer/wiki/ContainerOverflow")
+    "If true, honor the container overflow annotations. See "
+    "https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow")
 ASAN_FLAG(int, detect_odr_violation, 2,
           "If >=2, detect violation of One-Definition-Rule (ODR); "
           "If ==1, detect ODR-violation only if the two variables "

@@ -27,7 +27,7 @@
 #define _GNUC_VER 0
 #endif
 
-#define _LIBCPP_VERSION 3800
+#define _LIBCPP_VERSION 3900
 
 #ifndef _LIBCPP_ABI_VERSION
 #define _LIBCPP_ABI_VERSION 1
@@ -39,6 +39,10 @@
 #define _LIBCPP_ABI_ALTERNATE_STRING_LAYOUT
 // Fix deque iterator type in order to support incomplete types.
 #define _LIBCPP_ABI_INCOMPLETE_TYPES_IN_DEQUE
+// Fix undefined behavior in how std::list stores it's linked nodes.
+#define _LIBCPP_ABI_LIST_REMOVE_NODE_POINTER_UB
+#define _LIBCPP_ABI_FORWARD_LIST_REMOVE_NODE_POINTER_UB
+#define _LIBCPP_ABI_FIX_UNORDERED_CONTAINER_SIZE_TYPE
 #endif
 
 #define _LIBCPP_CONCAT1(_LIBCPP_X,_LIBCPP_Y) _LIBCPP_X##_LIBCPP_Y
@@ -176,6 +180,12 @@
 # endif
 #endif  // !defined(_LIBCPP_LITTLE_ENDIAN) || !defined(_LIBCPP_BIG_ENDIAN)
 
+#if __has_attribute(__no_sanitize__)
+#define _LIBCPP_NO_CFI __attribute__((__no_sanitize__("cfi")))
+#else
+#define _LIBCPP_NO_CFI
+#endif
+
 #ifdef _WIN32
 
 // only really useful for a DLL
@@ -231,6 +241,12 @@
 #    define _LIBCPP_TYPE_VIS __attribute__ ((__type_visibility__("default")))
 #  else
 #    define _LIBCPP_TYPE_VIS __attribute__ ((__visibility__("default")))
+#  endif
+#endif
+
+#ifndef _LIBCPP_PREFERRED_OVERLOAD
+#  if __has_attribute(__enable_if__)
+#    define _LIBCPP_PREFERRED_OVERLOAD __attribute__ ((__enable_if__(true, "")))
 #  endif
 #endif
 
@@ -304,6 +320,10 @@ typedef __char32_t char32_t;
 #endif
 
 #define _LIBCPP_UNUSED __attribute__((__unused__))
+
+#if !(__has_feature(cxx_default_function_template_args))
+#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
+#endif
 
 #if !(__has_feature(cxx_defaulted_functions))
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
@@ -401,14 +421,8 @@ typedef __char32_t char32_t;
 #endif // __linux__
 #endif
 
-#if (__has_feature(cxx_noexcept))
-#  define _NOEXCEPT noexcept
-#  define _NOEXCEPT_(x) noexcept(x)
-#  define _NOEXCEPT_OR_FALSE(x) noexcept(x)
-#else
-#  define _NOEXCEPT throw()
-#  define _NOEXCEPT_(x)
-#  define _NOEXCEPT_OR_FALSE(x) false
+#if !(__has_feature(cxx_noexcept))
+#define _LIBCPP_HAS_NO_NOEXCEPT
 #endif
 
 #if __has_feature(underlying_type)
@@ -433,6 +447,11 @@ namespace std {
 #define _LIBCPP_HAS_NO_ASAN
 #endif
 
+// Allow for build-time disabling of unsigned integer sanitization
+#if !defined(_LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK) && __has_attribute(no_sanitize)
+#define _LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK __attribute__((__no_sanitize__("unsigned-integer-overflow")))
+#endif 
+
 #elif defined(__GNUC__)
 
 #define _ALIGNAS(x) __attribute__((__aligned__(x)))
@@ -456,8 +475,6 @@ namespace std {
 #define _LIBCPP_NO_EXCEPTIONS
 #endif
 
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
-
 // constexpr was added to GCC in 4.6.
 #if _GNUC_VER < 406
 #define _LIBCPP_HAS_NO_CONSTEXPR
@@ -472,16 +489,15 @@ namespace std {
 #endif
 
 // GCC 5 will support variable templates
+#if !defined(__cpp_variable_templates) || __cpp_variable_templates < 201304L
 #define _LIBCPP_HAS_NO_VARIABLE_TEMPLATES
-
-#define _NOEXCEPT throw()
-#define _NOEXCEPT_(x)
-#define _NOEXCEPT_OR_FALSE(x) false
+#endif
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
 
 #define _LIBCPP_HAS_NO_ADVANCED_SFINAE
 #define _LIBCPP_HAS_NO_DECLTYPE
+#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NULLPTR
@@ -489,32 +505,32 @@ namespace std {
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#define _LIBCPP_HAS_NO_ALWAYS_INLINE_VARIADICS
 #define _LIBCPP_HAS_NO_STRONG_ENUMS
+#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
+#define _LIBCPP_HAS_NO_NOEXCEPT
 
 #else  // __GXX_EXPERIMENTAL_CXX0X__
 
-#define _LIBCPP_HAS_NO_TRAILING_RETURN
-#define _LIBCPP_HAS_NO_ALWAYS_INLINE_VARIADICS
-
 #if _GNUC_VER < 403
+#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#endif
-
-#if _GNUC_VER < 403
 #define _LIBCPP_HAS_NO_STATIC_ASSERT
 #endif
+
 
 #if _GNUC_VER < 404
 #define _LIBCPP_HAS_NO_DECLTYPE
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#define _LIBCPP_HAS_NO_TRAILING_RETURN
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
 #define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #endif  // _GNUC_VER < 404
 
 #if _GNUC_VER < 406
+#define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
+#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #endif
 
 #if _GNUC_VER < 407
@@ -547,15 +563,14 @@ using namespace _LIBCPP_NAMESPACE __attribute__((__strong__));
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
+#define _LIBCPP_HAS_NO_NOEXCEPT
 #define __alignof__ __alignof
 #define _LIBCPP_NORETURN __declspec(noreturn)
 #define _LIBCPP_UNUSED
 #define _ALIGNAS(x) __declspec(align(x))
 #define _LIBCPP_HAS_NO_VARIADICS
 
-#define _NOEXCEPT throw ()
-#define _NOEXCEPT_(x)
-#define _NOEXCEPT_OR_FALSE(x) false
+
 
 #define _LIBCPP_BEGIN_NAMESPACE_STD namespace std {
 #define _LIBCPP_END_NAMESPACE_STD  }
@@ -575,14 +590,11 @@ namespace std {
 #define _LIBCPP_NORETURN __attribute__((noreturn))
 #define _LIBCPP_UNUSED
 
-#define _NOEXCEPT throw()
-#define _NOEXCEPT_(x)
-#define _NOEXCEPT_OR_FALSE(x) false
-
+#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #define _LIBCPP_HAS_NO_ADVANCED_SFINAE
-#define _LIBCPP_HAS_NO_ALWAYS_INLINE_VARIADICS
 #define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_IS_BASE_OF
@@ -605,6 +617,14 @@ namespace std {
 #define _LIBCPP_HAS_NO_ASAN
 
 #endif // __clang__ || __GNUC__ || _MSC_VER || __IBMCPP__
+
+#ifndef _LIBCPP_HAS_NO_NOEXCEPT
+#  define _NOEXCEPT noexcept
+#  define _NOEXCEPT_(x) noexcept(x)
+#else
+#  define _NOEXCEPT throw()
+#  define _NOEXCEPT_(x)
+#endif
 
 #ifdef _LIBCPP_HAS_NO_UNICODE_CHARS
 typedef unsigned short char16_t;
@@ -706,9 +726,11 @@ template <unsigned> struct __static_assert_check {};
 #define _LIBCPP_LOCALE__L_EXTENSIONS 1
 #endif
 
-#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(_NEWLIB_VERSION) && \
-    !defined(__CloudABI__)
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+// Most unix variants have catopen.  These are the specific ones that don't.
+#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(_NEWLIB_VERSION)
 #define _LIBCPP_HAS_CATOPEN 1
+#endif
 #endif
 
 #ifdef __FreeBSD__
@@ -755,6 +777,12 @@ template <unsigned> struct __static_assert_check {};
 #define _LIBCPP_CONSTEXPR_AFTER_CXX11 constexpr
 #else
 #define _LIBCPP_CONSTEXPR_AFTER_CXX11
+#endif
+
+#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_CXX14_CONSTEXPR)
+#define _LIBCPP_CONSTEXPR_AFTER_CXX14 constexpr
+#else
+#define _LIBCPP_CONSTEXPR_AFTER_CXX14
 #endif
 
 #ifdef _LIBCPP_HAS_NO_RVALUE_REFERENCES
@@ -804,7 +832,7 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 #define _LIBCPP_HAS_NO_STDOUT
 #endif
 
-#if defined(__ANDROID__) || defined(__CloudABI__)
+#if defined(__ANDROID__) || defined(__CloudABI__) || defined(_LIBCPP_HAS_MUSL_LIBC)
 #define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE
 #endif
 
@@ -823,6 +851,23 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 #if (!defined(_LIBCPP_HAS_C_ATOMIC_IMP) && !defined(_LIBCPP_HAS_GCC_ATOMIC_IMP)) \
      || defined(_LIBCPP_HAS_NO_THREADS)
 #define _LIBCPP_HAS_NO_ATOMIC_HEADER
+#endif
+
+#ifndef _LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK
+#define _LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK
+#endif
+
+#if __cplusplus < 201103L
+#define _LIBCPP_CXX03_LANG
+#else
+#if defined(_LIBCPP_HAS_NO_VARIADIC_TEMPLATES) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+#error Libc++ requires a feature complete C++11 compiler in C++11 or greater.
+#endif
+#endif
+
+#if (defined(_LIBCPP_ENABLE_THREAD_SAFETY_ANNOTATIONS) && defined(__clang__) \
+      && __has_attribute(acquire_capability))
+#define _LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS
 #endif
 
 #endif // __cplusplus

@@ -26,13 +26,13 @@ namespace metashell
   public:
     explicit default_environment_detector(const std::string& argv0_);
 
-    virtual std::string search_clang_binary() override;
-    virtual bool file_exists(const std::string& path_) override;
+    virtual boost::filesystem::path search_clang_binary() override;
+    virtual bool file_exists(const boost::filesystem::path& path_) override;
 
     virtual bool on_windows() override;
     virtual bool on_osx() override;
 
-    virtual std::string directory_of_executable() override;
+    virtual boost::filesystem::path directory_of_executable() override;
 
   private:
     std::string _argv0;

@@ -22,6 +22,7 @@
 #include "llvm/IR/CallingConv.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Printable.h"
 #include <cassert>
 #include <functional>
 
@@ -35,24 +36,21 @@ class VirtRegMap;
 class raw_ostream;
 class LiveRegMatrix;
 
-/// A bitmask representing the parts of a register are alive.
+/// A bitmask representing the covering of a register with sub-registers.
 ///
+/// This is typically used to track liveness at sub-register granularity.
 /// Lane masks for sub-register indices are similar to register units for
 /// physical registers. The individual bits in a lane mask can't be assigned
 /// any specific meaning. They can be used to check if two sub-register
 /// indices overlap.
 ///
-/// If the target has a register such that:
+/// Iff the target has a register such that:
 ///
 ///   getSubReg(Reg, A) overlaps getSubReg(Reg, B)
 ///
 /// then:
 ///
 ///   (getSubRegIndexLaneMask(A) & getSubRegIndexLaneMask(B)) != 0
-///
-/// The converse is not necessarily true. If two lane masks have a common
-/// bit, the corresponding sub-registers may not overlap, but it can be
-/// assumed that they usually will.
 typedef unsigned LaneBitmask;
 
 class TargetRegisterClass {
@@ -369,19 +367,6 @@ public:
     return SubRegIndexLaneMasks[SubIdx];
   }
 
-  /// Returns true if the given lane mask is imprecise.
-  ///
-  /// LaneMasks as given by getSubRegIndexLaneMask() have a limited number of
-  /// bits, so for targets with more than 31 disjunct subregister indices there
-  /// may be cases where:
-  ///    getSubReg(Reg,A) does not overlap getSubReg(Reg,B)
-  /// but we still have
-  ///    (getSubRegIndexLaneMask(A) & getSubRegIndexLaneMask(B)) != 0.
-  /// This function returns true in those cases.
-  static bool isImpreciseLaneMask(LaneBitmask LaneMask) {
-    return LaneMask & 0x80000000u;
-  }
-
   /// The lane masks returned by getSubRegIndexLaneMask() above can only be
   /// used to determine if sub-registers overlap - they can't be used to
   /// determine if a set of sub-registers completely cover another
@@ -440,6 +425,11 @@ public:
   ///
   virtual const MCPhysReg*
   getCalleeSavedRegs(const MachineFunction *MF) const = 0;
+
+  virtual const MCPhysReg*
+  getCalleeSavedRegsViaCopy(const MachineFunction *MF) const {
+    return nullptr;
+  }
 
   /// Return a mask of call-preserved registers for the given calling convention
   /// on the current function. The mask should include all call-preserved
@@ -630,9 +620,13 @@ public:
 
   /// Find the largest common subclass of A and B.
   /// Return NULL if there is no common subclass.
+  /// The common subclass should contain
+  /// simple value type SVT if it is not the Any type.
   const TargetRegisterClass *
   getCommonSubClass(const TargetRegisterClass *A,
-                    const TargetRegisterClass *B) const;
+                    const TargetRegisterClass *B,
+                    const MVT::SimpleValueType SVT =
+                    MVT::SimpleValueType::Any) const;
 
   /// Returns a TargetRegisterClass used for pointer values.
   /// If a target supports multiple different pointer register classes,
@@ -672,6 +666,15 @@ public:
   virtual unsigned getRegPressureLimit(const TargetRegisterClass *RC,
                                        MachineFunction &MF) const {
     return 0;
+  }
+
+  /// Return a heuristic for the machine scheduler to compare the profitability
+  /// of increasing one register pressure set versus another.  The scheduler
+  /// will prefer increasing the register pressure of the set which returns
+  /// the largest value for this function.
+  virtual unsigned getRegPressureSetScore(const MachineFunction &MF,
+                                          unsigned PSetID) const {
+    return PSetID;
   }
 
   /// Get the weight in units of pressure for this register class.
@@ -944,7 +947,6 @@ struct VirtReg2IndexFunctor : public std::unary_function<unsigned, unsigned> {
   }
 };
 
-/// Helper class for printing registers on a raw_ostream.
 /// Prints virtual and physical registers with or without a TRI instance.
 ///
 /// The format is:
@@ -955,24 +957,10 @@ struct VirtReg2IndexFunctor : public std::unary_function<unsigned, unsigned> {
 ///   %physreg17      - a physical register when no TRI instance given.
 ///
 /// Usage: OS << PrintReg(Reg, TRI) << '\n';
-///
-class PrintReg {
-  const TargetRegisterInfo *TRI;
-  unsigned Reg;
-  unsigned SubIdx;
-public:
-  explicit PrintReg(unsigned reg, const TargetRegisterInfo *tri = nullptr,
-                    unsigned subidx = 0)
-    : TRI(tri), Reg(reg), SubIdx(subidx) {}
-  void print(raw_ostream&) const;
-};
+Printable PrintReg(unsigned Reg, const TargetRegisterInfo *TRI = nullptr,
+                   unsigned SubRegIdx = 0);
 
-static inline raw_ostream &operator<<(raw_ostream &OS, const PrintReg &PR) {
-  PR.print(OS);
-  return OS;
-}
-
-/// Helper class for printing register units on a raw_ostream.
+/// Create Printable object to print register units on a \ref raw_ostream.
 ///
 /// Register units are named after their root registers:
 ///
@@ -980,54 +968,14 @@ static inline raw_ostream &operator<<(raw_ostream &OS, const PrintReg &PR) {
 ///   FP0~ST7 - Dual roots.
 ///
 /// Usage: OS << PrintRegUnit(Unit, TRI) << '\n';
-///
-class PrintRegUnit {
-protected:
-  const TargetRegisterInfo *TRI;
-  unsigned Unit;
-public:
-  PrintRegUnit(unsigned unit, const TargetRegisterInfo *tri)
-    : TRI(tri), Unit(unit) {}
-  void print(raw_ostream&) const;
-};
+Printable PrintRegUnit(unsigned Unit, const TargetRegisterInfo *TRI);
 
-static inline raw_ostream &operator<<(raw_ostream &OS, const PrintRegUnit &PR) {
-  PR.print(OS);
-  return OS;
-}
+/// \brief Create Printable object to print virtual registers and physical
+/// registers on a \ref raw_ostream.
+Printable PrintVRegOrUnit(unsigned VRegOrUnit, const TargetRegisterInfo *TRI);
 
-/// It is often convenient to track virtual registers and
-/// physical register units in the same list.
-class PrintVRegOrUnit : protected PrintRegUnit {
-public:
-  PrintVRegOrUnit(unsigned VRegOrUnit, const TargetRegisterInfo *tri)
-    : PrintRegUnit(VRegOrUnit, tri) {}
-  void print(raw_ostream&) const;
-};
-
-static inline raw_ostream &operator<<(raw_ostream &OS,
-                                      const PrintVRegOrUnit &PR) {
-  PR.print(OS);
-  return OS;
-}
-
-/// Helper class for printing lane masks.
-///
-/// They are currently printed out as hexadecimal numbers.
-/// Usage: OS << PrintLaneMask(Mask);
-class PrintLaneMask {
-protected:
-  LaneBitmask LaneMask;
-public:
-  PrintLaneMask(LaneBitmask LaneMask)
-    : LaneMask(LaneMask) {}
-  void print(raw_ostream&) const;
-};
-
-static inline raw_ostream &operator<<(raw_ostream &OS, const PrintLaneMask &P) {
-  P.print(OS);
-  return OS;
-}
+/// Create Printable object to print LaneBitmasks on a \ref raw_ostream.
+Printable PrintLaneMask(LaneBitmask LaneMask);
 
 } // End llvm namespace
 

@@ -36,12 +36,12 @@ namespace
   }
 }
 
-clang_binary::clang_binary(const std::string& path_,
+clang_binary::clang_binary(const boost::filesystem::path& path_,
                            const std::vector<std::string>& base_args_,
                            logger* logger_)
   : _base_args(base_args_.size() + 1), _logger(logger_)
 {
-  _base_args[0] = quote_argument(path_);
+  _base_args[0] = quote_argument(path_.string());
   std::transform(base_args_.begin(), base_args_.end(), _base_args.begin() + 1,
                  quote_argument);
 }

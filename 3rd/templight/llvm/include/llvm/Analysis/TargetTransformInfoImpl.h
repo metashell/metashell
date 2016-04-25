@@ -22,6 +22,7 @@
 #include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Type.h"
+#include "llvm/Analysis/VectorUtils.h"
 
 namespace llvm {
 
@@ -147,9 +148,6 @@ public:
     case Intrinsic::objectsize:
     case Intrinsic::ptr_annotation:
     case Intrinsic::var_annotation:
-    case Intrinsic::experimental_gc_result_int:
-    case Intrinsic::experimental_gc_result_float:
-    case Intrinsic::experimental_gc_result_ptr:
     case Intrinsic::experimental_gc_result:
     case Intrinsic::experimental_gc_relocate:
       // These intrinsics don't actually represent code after lowering.
@@ -228,8 +226,6 @@ public:
 
   bool isTruncateFree(Type *Ty1, Type *Ty2) { return false; }
 
-  bool isZExtFree(Type *Ty1, Type *Ty2) { return false; }
-
   bool isProfitableToHoist(Instruction *I) { return true; }
 
   bool isTypeLegal(Type *Ty) { return false; }
@@ -305,6 +301,12 @@ public:
     return 1;
   }
 
+  unsigned getGatherScatterOpCost(unsigned Opcode, Type *DataTy, Value *Ptr,
+                                  bool VariableMask,
+                                  unsigned Alignment) {
+    return 1;
+  }
+
   unsigned getInterleavedMemoryOpCost(unsigned Opcode, Type *VecTy,
                                       unsigned Factor,
                                       ArrayRef<unsigned> Indices,
@@ -315,6 +317,10 @@ public:
 
   unsigned getIntrinsicInstrCost(Intrinsic::ID ID, Type *RetTy,
                                  ArrayRef<Type *> Tys) {
+    return 1;
+  }
+  unsigned getIntrinsicInstrCost(Intrinsic::ID ID, Type *RetTy,
+                                 ArrayRef<Value *> Args) {
     return 1;
   }
 
@@ -417,21 +423,28 @@ public:
         (Ptr == nullptr ? 0 : Ptr->getType()->getPointerAddressSpace());
     auto GTI = gep_type_begin(PointerType::get(PointeeType, AS), Operands);
     for (auto I = Operands.begin(); I != Operands.end(); ++I, ++GTI) {
+      // We assume that the cost of Scalar GEP with constant index and the
+      // cost of Vector GEP with splat constant index are the same.
+      const ConstantInt *ConstIdx = dyn_cast<ConstantInt>(*I);
+      if (!ConstIdx)
+        if (auto Splat = getSplatValue(*I))
+          ConstIdx = dyn_cast<ConstantInt>(Splat);
       if (isa<SequentialType>(*GTI)) {
         int64_t ElementSize = DL.getTypeAllocSize(GTI.getIndexedType());
-        if (const ConstantInt *ConstIdx = dyn_cast<ConstantInt>(*I)) {
+        if (ConstIdx)
           BaseOffset += ConstIdx->getSExtValue() * ElementSize;
-        } else {
+        else {
           // Needs scale register.
-          if (Scale != 0) {
+          if (Scale != 0)
             // No addressing mode takes two scale registers.
             return TTI::TCC_Basic;
-          }
           Scale = ElementSize;
         }
       } else {
         StructType *STy = cast<StructType>(*GTI);
-        uint64_t Field = cast<ConstantInt>(*I)->getZExtValue();
+        // For structures the index is always splat or scalar constant
+        assert(ConstIdx && "Unexpected GEP index");
+        uint64_t Field = ConstIdx->getZExtValue();
         BaseOffset += DL.getStructLayout(STy)->getElementOffset(Field);
       }
     }

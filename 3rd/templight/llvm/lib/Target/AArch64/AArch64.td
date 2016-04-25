@@ -35,6 +35,12 @@ def FeatureCRC : SubtargetFeature<"crc", "HasCRC", "true",
 def FeaturePerfMon : SubtargetFeature<"perfmon", "HasPerfMon", "true",
   "Enable ARMv8 PMUv3 Performance Monitors extension">;
 
+def FeatureFullFP16 : SubtargetFeature<"fullfp16", "HasFullFP16", "true",
+  "Full FP16", [FeatureFPARMv8]>;
+
+def FeatureSPE : SubtargetFeature<"spe", "HasSPE", "true",
+  "Enable Statistical Profiling extension">;
+
 /// Cyclone has register move instructions which are "free".
 def FeatureZCRegMove : SubtargetFeature<"zcm", "HasZeroCycleRegMove", "true",
                                         "Has zero-cycle register moves">;
@@ -59,6 +65,9 @@ def FeatureReserveX18 : SubtargetFeature<"reserve-x18", "ReserveX18", "true",
 def HasV8_1aOps : SubtargetFeature<"v8.1a", "HasV8_1aOps", "true",
   "Support ARM v8.1a instructions", [FeatureCRC]>;
 
+def HasV8_2aOps : SubtargetFeature<"v8.2a", "HasV8_2aOps", "true",
+  "Support ARM v8.2a instructions", [HasV8_1aOps]>;
+
 //===----------------------------------------------------------------------===//
 // Register File Description
 //===----------------------------------------------------------------------===//
@@ -81,6 +90,15 @@ def AArch64InstrInfo : InstrInfo;
 include "AArch64SchedA53.td"
 include "AArch64SchedA57.td"
 include "AArch64SchedCyclone.td"
+include "AArch64SchedM1.td"
+
+def ProcA35     : SubtargetFeature<"a35", "ARMProcFamily", "CortexA35",
+                                   "Cortex-A35 ARM processors",
+                                   [FeatureFPARMv8,
+                                   FeatureNEON,
+                                   FeatureCrypto,
+                                   FeatureCRC,
+                                   FeaturePerfMon]>;
 
 def ProcA53     : SubtargetFeature<"a53", "ARMProcFamily", "CortexA53",
                                    "Cortex-A53 ARM processors",
@@ -107,16 +125,27 @@ def ProcCyclone : SubtargetFeature<"cyclone", "ARMProcFamily", "Cyclone",
                                    FeaturePerfMon,
                                    FeatureZCRegMove, FeatureZCZeroing]>;
 
+def ProcExynosM1 : SubtargetFeature<"exynosm1", "ARMProcFamily", "ExynosM1",
+                                    "Samsung Exynos-M1 processors",
+                                    [FeatureFPARMv8,
+                                    FeatureNEON,
+                                    FeatureCrypto,
+                                    FeatureCRC,
+                                    FeaturePerfMon]>;
+
 def : ProcessorModel<"generic", NoSchedModel, [FeatureFPARMv8,
                                               FeatureNEON,
                                               FeatureCRC,
                                               FeaturePerfMon]>;
 
+// FIXME: Cortex-A35 is currently modelled as a Cortex-A53
+def : ProcessorModel<"cortex-a35", CortexA53Model, [ProcA35]>;
 def : ProcessorModel<"cortex-a53", CortexA53Model, [ProcA53]>;
 def : ProcessorModel<"cortex-a57", CortexA57Model, [ProcA57]>;
 // FIXME: Cortex-A72 is currently modelled as an Cortex-A57.
 def : ProcessorModel<"cortex-a72", CortexA57Model, [ProcA57]>;
 def : ProcessorModel<"cyclone", CycloneModel, [ProcCyclone]>;
+def : ProcessorModel<"exynos-m1", ExynosM1Model, [ProcExynosM1]>;
 
 //===----------------------------------------------------------------------===//
 // Assembly parser

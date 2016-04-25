@@ -28,13 +28,14 @@ void metashell::data::generate(const data::unsaved_file& f_)
   boost::filesystem::path p(f_.filename());
   p.remove_filename();
   create_directories(p); // Throws when fails to create the directory
-  std::ofstream f(f_.filename().c_str());
+  const std::string filename = f_.filename().string();
+  std::ofstream f(filename.c_str());
   if (f)
   {
     f << f_.content();
   }
   else
   {
-    throw exception("Error creating file " + f_.filename());
+    throw exception("Error creating file " + filename);
   }
 }

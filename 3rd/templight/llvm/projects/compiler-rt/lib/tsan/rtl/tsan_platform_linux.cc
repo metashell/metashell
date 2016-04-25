@@ -67,6 +67,11 @@ namespace __tsan {
 static uptr g_data_start;
 static uptr g_data_end;
 
+#ifdef TSAN_RUNTIME_VMA
+// Runtime detected VMA size.
+uptr vmaSize;
+#endif
+
 enum {
   MemTotal  = 0,
   MemShadow = 1,
@@ -82,29 +87,30 @@ enum {
 void FillProfileCallback(uptr p, uptr rss, bool file,
                          uptr *mem, uptr stats_size) {
   mem[MemTotal] += rss;
-  if (p >= kShadowBeg && p < kShadowEnd)
+  if (p >= ShadowBeg() && p < ShadowEnd())
     mem[MemShadow] += rss;
-  else if (p >= kMetaShadowBeg && p < kMetaShadowEnd)
+  else if (p >= MetaShadowBeg() && p < MetaShadowEnd())
     mem[MemMeta] += rss;
 #ifndef SANITIZER_GO
-  else if (p >= kHeapMemBeg && p < kHeapMemEnd)
+  else if (p >= HeapMemBeg() && p < HeapMemEnd())
     mem[MemHeap] += rss;
-  else if (p >= kLoAppMemBeg && p < kLoAppMemEnd)
+  else if (p >= LoAppMemBeg() && p < LoAppMemEnd())
     mem[file ? MemFile : MemMmap] += rss;
-  else if (p >= kHiAppMemBeg && p < kHiAppMemEnd)
+  else if (p >= HiAppMemBeg() && p < HiAppMemEnd())
     mem[file ? MemFile : MemMmap] += rss;
 #else
-  else if (p >= kAppMemBeg && p < kAppMemEnd)
+  else if (p >= AppMemBeg() && p < AppMemEnd())
     mem[file ? MemFile : MemMmap] += rss;
 #endif
-  else if (p >= kTraceMemBeg && p < kTraceMemEnd)
+  else if (p >= TraceMemBeg() && p < TraceMemEnd())
     mem[MemTrace] += rss;
   else
     mem[MemOther] += rss;
 }
 
 void WriteMemoryProfile(char *buf, uptr buf_size, uptr nthread, uptr nlive) {
-  uptr mem[MemCount] = {};
+  uptr mem[MemCount];
+  internal_memset(mem, 0, sizeof(mem[0]) * MemCount);
   __sanitizer::GetMemoryProfile(FillProfileCallback, mem, 7);
   StackDepotStats *stacks = StackDepotGetStats();
   internal_snprintf(buf, buf_size,
@@ -121,7 +127,7 @@ void WriteMemoryProfile(char *buf, uptr buf_size, uptr nthread, uptr nlive) {
 void FlushShadowMemoryCallback(
     const SuspendedThreadsList &suspended_threads_list,
     void *argument) {
-  FlushUnneededShadowMemory(kShadowBeg, kShadowEnd - kShadowBeg);
+  FlushUnneededShadowMemory(ShadowBeg(), ShadowEnd() - ShadowBeg());
 }
 #endif
 
@@ -235,6 +241,26 @@ static void InitDataSeg() {
 
 #endif  // #ifndef SANITIZER_GO
 
+void InitializePlatformEarly() {
+#ifdef TSAN_RUNTIME_VMA
+  vmaSize =
+    (MostSignificantSetBitIndex(GET_CURRENT_FRAME()) + 1);
+#if defined(__aarch64__)
+  if (vmaSize != 39 && vmaSize != 42) {
+    Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
+    Printf("FATAL: Found %d - Supported 39 and 42\n", vmaSize);
+    Die();
+  }
+#elif defined(__powerpc64__)
+  if (vmaSize != 44 && vmaSize != 46) {
+    Printf("FATAL: ThreadSanitizer: unsupported VMA range\n");
+    Printf("FATAL: Found %d - Supported 44 and 46\n", vmaSize);
+    Die();
+  }
+#endif
+#endif
+}
+
 void InitializePlatform() {
   DisableCoreDumperIfNecessary();
 
@@ -283,7 +309,7 @@ bool IsGlobalVar(uptr addr) {
 // This is required to properly "close" the fds, because we do not see internal
 // closes within glibc. The code is a pure hack.
 int ExtractResolvFDs(void *state, int *fds, int nfd) {
-#if SANITIZER_LINUX
+#if SANITIZER_LINUX && !SANITIZER_ANDROID
   int cnt = 0;
   __res_state *statp = (__res_state*)state;
   for (int i = 0; i < MAXNS && cnt < nfd; i++) {

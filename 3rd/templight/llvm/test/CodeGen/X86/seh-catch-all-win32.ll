@@ -22,16 +22,13 @@ entry:
           to label %__try.cont unwind label %lpad
 
 lpad:                                             ; preds = %entry
-  %p = catchpad [i8* bitcast (i32 ()* @"filt$main" to i8*)]
-          to label %__except unwind label %endpad
+  %cs1 = catchswitch within none [label %__except] unwind to caller
 
 __except:                                         ; preds = %lpad
+  %p = catchpad within %cs1 [i8* bitcast (i32 ()* @"filt$main" to i8*)]
   %code = load i32, i32* %__exceptioncode, align 4
-  %call = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([27 x i8], [27 x i8]* @str, i32 0, i32 0), i32 %code) #4
-  catchret %p to label %__try.cont
-
-endpad:                                        ; preds = %lpad
-  catchendpad unwind to caller
+  %call = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([27 x i8], [27 x i8]* @str, i32 0, i32 0), i32 %code) #4 [ "funclet"(token %p) ]
+  catchret from %p to label %__try.cont
 
 __try.cont:                                       ; preds = %entry, %__except
   ret i32 0
@@ -64,8 +61,7 @@ entry:
 ; CHECK: pushl %esi
 
 ; CHECK: Lmain$frame_escape_0 = [[code_offs:[-0-9]+]]
-; CHECK: Lmain$frame_escape_1 = [[reg_offs:[-0-9]+]]
-; CHECK: movl %esp, [[reg_offs]](%ebp)
+; CHECK: movl %esp, [[reg_offs:[-0-9]+]](%ebp)
 ; CHECK: movl $L__ehtable$main,
 ;       EH state 0
 ; CHECK: movl $0, -16(%ebp)
@@ -74,7 +70,7 @@ entry:
 ; CHECK: popl %edi
 ; CHECK: popl %ebx
 ; CHECK: retl
-; CHECK: LBB0_[[lpbb:[0-9]+]]: # %lpad{{$}}
+; CHECK: LBB0_[[lpbb:[0-9]+]]: # %__except{{$}}
 ;       stackrestore
 ; CHECK: movl -24(%ebp), %esp
 ;       EH state -1
@@ -84,7 +80,7 @@ entry:
 ; CHECK: calll _printf
 
 ; CHECK: .section .xdata,"dr"
-; CHECK: Lmain$parent_frame_offset = Lmain$frame_escape_1
+; CHECK: Lmain$parent_frame_offset = [[reg_offs]]
 ; CHECK: .align 4
 ; CHECK: L__ehtable$main
 ; CHECK-NEXT: .long -1

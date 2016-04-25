@@ -286,7 +286,7 @@ namespace llvm {
 
   /// Returns true if the result or effects of the given instructions \p I
   /// depend on or influence global memory.
-  /// Memory dependence arises for example if the the instruction reads from
+  /// Memory dependence arises for example if the instruction reads from
   /// memory or may produce effects or undefined behaviour. Memory dependent
   /// instructions generally cannot be reorderd with respect to other memory
   /// dependent instructions or moved into non-dominated basic blocks.
@@ -412,6 +412,11 @@ namespace llvm {
     bool Ordered;               /// When implementing this min/max pattern as
                                 /// fcmp; select, does the fcmp have to be
                                 /// ordered?
+
+    /// \brief Return true if \p SPF is a min or a max pattern.
+    static bool isMinOrMax(SelectPatternFlavor SPF) {
+      return !(SPF == SPF_UNKNOWN || SPF == SPF_ABS || SPF == SPF_NABS);
+    }
   };
   /// Pattern match integer [SU]MIN, [SU]MAX and ABS idioms, returning the kind
   /// and providing the out parameter results if we successfully match.

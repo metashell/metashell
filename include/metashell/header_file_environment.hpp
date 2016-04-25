@@ -22,6 +22,8 @@
 #include <metashell/data/headers.hpp>
 #include <metashell/data/config.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 namespace metashell
 {
   class header_file_environment : public iface::environment
@@ -29,22 +31,22 @@ namespace metashell
   public:
     header_file_environment(iface::engine& engine_,
                             const data::config& config_,
-                            const std::string& internal_dir_,
-                            const std::string& env_filename_);
+                            const boost::filesystem::path& internal_dir_,
+                            const boost::filesystem::path& env_filename_);
 
     virtual void append(const std::string& s_) override;
     virtual std::string get() const override;
     virtual std::string get_appended(const std::string& s_) const override;
 
-    virtual std::string internal_dir() const override;
+    virtual boost::filesystem::path internal_dir() const override;
 
     virtual const data::headers& get_headers() const override;
 
     virtual std::string get_all() const override;
 
   private:
-    std::string _internal_dir;
-    std::string _env_filename;
+    boost::filesystem::path _internal_dir;
+    boost::filesystem::path _env_filename;
     std::string _buffer;
     data::headers _headers;
 

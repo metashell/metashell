@@ -1,10 +1,16 @@
 language: cpp
+sudo: required
 os:
   - linux
   - osx
 compiler:
   - gcc
   - clang
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: COVERAGE="true"
 addons:
   apt:
     sources:

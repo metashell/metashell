@@ -16,14 +16,16 @@
 #define LLVM_LIB_TARGET_WEBASSEMBLY_INSTPRINTER_WEBASSEMBLYINSTPRINTER_H
 
 #include "llvm/MC/MCInstPrinter.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/CodeGen/MachineValueType.h"
 
 namespace llvm {
 
-class MCOperand;
 class MCSubtargetInfo;
 
-class WebAssemblyInstPrinter : public MCInstPrinter {
+class WebAssemblyInstPrinter final : public MCInstPrinter {
+  uint64_t ControlFlowCounter;
+  SmallVector<std::pair<uint64_t, bool>, 0> ControlFlowStack;
+
 public:
   WebAssemblyInstPrinter(const MCAsmInfo &MAI, const MCInstrInfo &MII,
                          const MCRegisterInfo &MRI);
@@ -39,6 +41,12 @@ public:
   void printInstruction(const MCInst *MI, raw_ostream &O);
   static const char *getRegisterName(unsigned RegNo);
 };
+
+namespace WebAssembly {
+
+const char *TypeToString(MVT Ty);
+
+} // end namespace WebAssembly
 
 } // end namespace llvm
 

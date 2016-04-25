@@ -5,8 +5,7 @@ This section presents how to use Metashell to do simple debugging.
 ## Trying Metashell online
 
 You can try Metashell in your browser without installing anything. You can find
-an online demo at
-[http://abel.web.elte.hu/shell/](http://abel.web.elte.hu/shell/).
+an online demo [here](../about/demo/index.html).
 
 ## Evaluating simple expressions
 
@@ -241,7 +240,7 @@ You can also create breakpoints:
 
 ```cpp
 (mdb) rbreak fib<3>
-Breakpoint "fib<3>" will stop the execution on 2 locations
+Breakpoint "fib<3>" will stop the execution on 3 locations
 ```
 
 Now let's continue the execution until the first breakpoint:
@@ -261,9 +260,12 @@ Breakpoint 1: regex("fib<3>") reached
 fib<3> (Memoization)
 ```
 
-You can repeat the last command by simply hitting enter again:
+You can repeat the last command by simply hitting enter again and again:
 
 ```cpp
+(mdb)
+Breakpoint 1: regex("fib<3>") reached
+fib<3> (Memoization)
 (mdb)
 Metaprogram finished
 mpl_::int_<13>

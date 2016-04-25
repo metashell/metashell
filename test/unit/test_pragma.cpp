@@ -82,7 +82,7 @@ JUST_TEST_CASE(test_name_of_pragma_is_missing)
 JUST_TEST_CASE(test_help_pragma_displays_message)
 {
   in_memory_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell help", d);
   JUST_ASSERT(!d.comments().empty());
 }
@@ -90,7 +90,7 @@ JUST_TEST_CASE(test_help_pragma_displays_message)
 JUST_TEST_CASE(test_error_for_non_existing_pragma)
 {
   in_memory_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell foo_bar", d);
   JUST_ASSERT(!d.errors().empty());
 }
@@ -98,7 +98,7 @@ JUST_TEST_CASE(test_error_for_non_existing_pragma)
 JUST_TEST_CASE(test_check_verbosity)
 {
   in_memory_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell verbose", d);
   JUST_ASSERT_EQUAL_CONTAINER(
       {data::text("verbose mode is off")}, d.comments());
@@ -107,7 +107,7 @@ JUST_TEST_CASE(test_check_verbosity)
 JUST_TEST_CASE(test_check_enabling_verbosity)
 {
   in_memory_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell verbose on", d);
   JUST_ASSERT_EQUAL_CONTAINER({data::text("verbose mode is on")}, d.comments());
 }
@@ -115,7 +115,7 @@ JUST_TEST_CASE(test_check_enabling_verbosity)
 JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
 {
   null_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
 
   // should not throw
   sh.line_available("#pragma metashell", d);
@@ -124,7 +124,7 @@ JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
 JUST_TEST_CASE(test_quit)
 {
   in_memory_displayer d;
-  shell sh(test_config(), "", "", create_failing_engine());
+  shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell quit", d);
   JUST_ASSERT(sh.stopped());
 }

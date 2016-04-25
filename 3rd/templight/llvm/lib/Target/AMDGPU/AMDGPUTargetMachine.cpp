@@ -14,7 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "AMDGPUTargetMachine.h"
-#include "AMDGPUHSATargetObjectFile.h"
+#include "AMDGPUTargetObjectFile.h"
 #include "AMDGPU.h"
 #include "AMDGPUTargetTransformInfo.h"
 #include "R600ISelLowering.h"
@@ -51,13 +51,14 @@ extern "C" void LLVMInitializeAMDGPUTarget() {
   initializeSIFixControlFlowLiveIntervalsPass(*PR);
   initializeSILoadStoreOptimizerPass(*PR);
   initializeAMDGPUAnnotateKernelFeaturesPass(*PR);
+  initializeAMDGPUAnnotateUniformValuesPass(*PR);
 }
 
 static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
   if (TT.getOS() == Triple::AMDHSA)
     return make_unique<AMDGPUHSATargetObjectFile>();
 
-  return make_unique<TargetLoweringObjectFileELF>();
+  return make_unique<AMDGPUTargetObjectFile>();
 }
 
 static ScheduleDAGInstrs *createR600MachineScheduler(MachineSchedContext *C) {
@@ -65,8 +66,12 @@ static ScheduleDAGInstrs *createR600MachineScheduler(MachineSchedContext *C) {
 }
 
 static MachineSchedRegistry
-SchedCustomRegistry("r600", "Run R600's custom scheduler",
-                    createR600MachineScheduler);
+R600SchedRegistry("r600", "Run R600's custom scheduler",
+                   createR600MachineScheduler);
+
+static MachineSchedRegistry
+SISchedRegistry("si", "Run SI's custom scheduler",
+                createSIMachineScheduler);
 
 static std::string computeDataLayout(const Triple &TT) {
   std::string Ret = "e-p:32:32";
@@ -142,6 +147,8 @@ public:
     const AMDGPUSubtarget &ST = *getAMDGPUTargetMachine().getSubtargetImpl();
     if (ST.getGeneration() <= AMDGPUSubtarget::NORTHERN_ISLANDS)
       return createR600MachineScheduler(C);
+    else if (ST.enableSIScheduler())
+      return createSIMachineScheduler(C);
     return nullptr;
   }
 
@@ -279,6 +286,8 @@ bool GCNPassConfig::addPreISel() {
   addPass(createSinkingPass());
   addPass(createSITypeRewriter());
   addPass(createSIAnnotateControlFlowPass());
+  addPass(createAMDGPUAnnotateUniformValues());
+
   return false;
 }
 
@@ -327,7 +336,6 @@ void GCNPassConfig::addOptimizedRegAlloc(FunctionPass *RegAllocPass) {
 }
 
 void GCNPassConfig::addPostRegAlloc() {
-  addPass(createSIPrepareScratchRegs(), false);
   addPass(createSIShrinkInstructionsPass(), false);
 }
 

@@ -21,13 +21,14 @@ METASHELL_BRANCH=${METASHELL_BRANCH-master}
 INSTALL_DIR=${INSTALL_DIR-/usr/local/share/metashell}
 SERVICE_USER=${SERVICE_USER-nobody}
 SERVICE_GROUP=${SERVICE_GROUP-nogroup}
-DELAY_SECS_BETWEEN_PULLS=${DELAY_SECS_BETWEEN_PULLS-60}
+DELAY_SECS_BETWEEN_PULLS=${DELAY_SECS_BETWEEN_PULLS-3600}
 SERVICE_PORT=${SERVICE_PORT-4202}
 
-METASHELL_REPO="https://raw.githubusercontent.com/sabel83/metashell/${METASHELL_BRANCH}"
+METASHELL_REPO="https://raw.githubusercontent.com/metashell/metashell/${METASHELL_BRANCH}"
 
 function fix_owner {
   sudo chown ${SERVICE_USER}:${SERVICE_GROUP} "$1"
+  sudo chmod +r "$1"
 }
 
 function installed_binary {
@@ -227,9 +228,28 @@ function download_script {
   fix_owner "${INSTALL_DIR}/bin/${NAME}_${METASHELL_BRANCH}"
 }
 
+function download_shared_file {
+  NAME="$1"
+
+  sudo mkdir -p "${INSTALL_DIR}/share/metashell_bootstrap"
+  fix_owner "${INSTALL_DIR}/share/metashell_bootstrap"
+  fix_owner "${INSTALL_DIR}/share"
+
+  sudo \
+    wget "${METASHELL_REPO}/tools/demo_server/share/${NAME}" \
+    -O "${INSTALL_DIR}/share/metashell_bootstrap/${NAME}"
+  fix_owner "${INSTALL_DIR}/share/metashell_bootstrap/${NAME}"
+
+  sudo \
+    ln -sf "metashell_bootstrap" \
+    "${INSTALL_DIR}/share/metashell_${METASHELL_BRANCH}"
+  fix_owner "${INSTALL_DIR}/share/metashell_${METASHELL_BRANCH}"
+}
+
 # Install dependencies
 
-sudo apt-get -y install shellinabox git g++ cmake libreadline-dev python-pip
+sudo apt-get -y install \
+  shellinabox git g++ cmake libreadline-dev python-pip python-cheetah ccache
 sudo pip install mkdocs pep8 pylint gitpython daemonize
 
 # Create the installation directories
@@ -237,16 +257,33 @@ sudo pip install mkdocs pep8 pylint gitpython daemonize
 make_dir "${INSTALL_DIR}"
 make_dir "${INSTALL_DIR}/bin"
 
+# Create the file containing the splash text
+
+if [ "${SPLASH}" ]
+then
+  echo "${SPLASH}" > "${INSTALL_DIR}/splash.txt"
+  fix_owner "${INSTALL_DIR}/splash.txt"
+fi
+
 # Bootstrap the upgrade process: get the files doing the upgrade
 
+sudo rm "${INSTALL_DIR}/share/metashell_bootstrap" 2>/dev/null
 download_script deploy
 download_script upgrade
+download_script launch_demo
+download_shared_file solarized.css
 
 sudo rm "${INSTALL_DIR}/metashell.json" 2>/dev/null
 sudo \
   wget "${METASHELL_REPO}/tools/demo_server/config/metashell.json" \
   -O "${INSTALL_DIR}/metashell.json"
 fix_owner "${INSTALL_DIR}/metashell.json"
+
+# Create a symlink for deploy_log
+
+sudo ln -s \
+  "${INSTALL_DIR}/bin/deploy_log_${METASHELL_BRANCH}" \
+  "/usr/bin/deploy_log"
 
 # Install the daemons
 install_daemon \

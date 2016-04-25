@@ -17,7 +17,6 @@
 #include "test_config.hpp"
 
 #include <metashell/shell.hpp>
-#include <metashell/path_builder.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/engine_constant.hpp>
 
@@ -39,7 +38,7 @@ namespace
 JUST_TEST_CASE(test_popping_environment_from_empty_queue)
 {
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   JUST_ASSERT_THROWS([&sh]
                      {
@@ -51,7 +50,7 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -64,7 +63,7 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
 JUST_TEST_CASE(test_more_pops_than_pushes_throws)
 {
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   sh.push_environment();
   sh.pop_environment();
@@ -79,7 +78,7 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   sh.push_environment();
   const std::string old_env = sh.env().get_all();
@@ -98,7 +97,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.display_environment_stack_size(d);
 
   JUST_ASSERT_EQUAL_CONTAINER(
@@ -109,7 +108,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.push_environment();
   sh.display_environment_stack_size(d);
 
@@ -121,7 +120,7 @@ JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
-      metashell::test_config(), "", "", metashell::create_failing_engine());
+      metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.push_environment();
   sh.push_environment();
   sh.display_environment_stack_size(d);
@@ -143,7 +142,7 @@ JUST_TEST_CASE(test_appended_since_when_something_appended)
 JUST_TEST_CASE(test_extending_environment_with_pragma)
 {
   metashell::in_memory_displayer d;
-  metashell::shell sh(metashell::test_config(), "", "",
+  metashell::shell sh(metashell::test_config(), "", "", "",
                       metashell::create_engine_returning_type("void"));
   const std::string original_env = sh.env().get_all();
 

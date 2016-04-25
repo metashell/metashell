@@ -313,6 +313,18 @@ void Value::takeName(Value *V) {
     ST->reinsertValue(this);
 }
 
+void Value::assertModuleIsMaterialized() const {
+#ifndef NDEBUG
+  const GlobalValue *GV = dyn_cast<GlobalValue>(this);
+  if (!GV)
+    return;
+  const Module *M = GV->getParent();
+  if (!M)
+    return;
+  assert(M->isMaterialized());
+#endif
+}
+
 #ifndef NDEBUG
 static bool contains(SmallPtrSetImpl<ConstantExpr *> &Cache, ConstantExpr *Expr,
                      Constant *C) {

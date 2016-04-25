@@ -112,14 +112,14 @@ uptr GetMaxVirtualAddress() {
 #endif  // SANITIZER_WORDSIZE
 }
 
-void *MmapOrDie(uptr size, const char *mem_type) {
+void *MmapOrDie(uptr size, const char *mem_type, bool raw_report) {
   size = RoundUpTo(size, GetPageSizeCached());
   uptr res = internal_mmap(nullptr, size,
                            PROT_READ | PROT_WRITE,
                            MAP_PRIVATE | MAP_ANON, -1, 0);
   int reserrno;
   if (internal_iserror(res, &reserrno))
-    ReportMmapFailureAndDie(size, mem_type, "allocate", reserrno);
+    ReportMmapFailureAndDie(size, mem_type, "allocate", reserrno, raw_report);
   IncreaseTotalMmap(size);
   return (void *)res;
 }
@@ -319,22 +319,6 @@ SignalContext SignalContext::Create(void *siginfo, void *context) {
   uptr pc, sp, bp;
   GetPcSpBp(context, &pc, &sp, &bp);
   return SignalContext(context, addr, pc, sp, bp);
-}
-
-// This function check is the built VMA matches the runtime one for
-// architectures with multiple VMA size.
-void CheckVMASize() {
-#ifdef __aarch64__
-  static const unsigned kBuiltVMA = SANITIZER_AARCH64_VMA;
-  unsigned maxRuntimeVMA =
-    (MostSignificantSetBitIndex(GET_CURRENT_FRAME()) + 1);
-  if (kBuiltVMA != maxRuntimeVMA) {
-    Printf("WARNING: %s runtime VMA is not the one built for.\n",
-      SanitizerToolName);
-    Printf("\tBuilt VMA:   %u bits\n", kBuiltVMA);
-    Printf("\tRuntime VMA: %u bits\n", maxRuntimeVMA);
-  }
-#endif
 }
 
 } // namespace __sanitizer

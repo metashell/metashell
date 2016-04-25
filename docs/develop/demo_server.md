@@ -23,7 +23,7 @@ different branch, you need to replace `master` with the name of your branch in
 the commands.
 
 * Download the installer:
-  `wget https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/bin/install`
+  `wget https://raw.githubusercontent.com/metashell/metashell/master/tools/demo_server/bin/install`
 * Run the installer:
   `METASHELL_BRANCH=master /bin/bash install`
 * The above step will install
@@ -31,9 +31,18 @@ the commands.
   was not installed already. Installing it will run it as well. If you don't
   need it, you can stop and disable it by running:
   `sudo /etc/init.d/shellinabox stop` and `sudo update-rc.d shellinabox disable`
+* Once the upgrader service has downloaded and deployed Metashell and the
+  libraries that are available in the demo, it generates a website for Metashell
+  and for launching the demo. This is generated in
+  `${INSTALL_DIR}/share/metashell_${METASHELL_BRANCH}/html`. You might want to
+  install Apache on your server and make `/var/www/html` a symlink to this
+  directory to make Apache serve the generated website:
+  * `sudo apt-get install apache2`
+  * `sudo mv /var/www/html /var/www/html.backup`
+  * `sudo ln -s ${INSTALL_DIR}/share/metashell_${METASHELL_BRANCH}/html /var/www/html`
 
 The installation script is configurable using environment variables. Here are
-the options and ther default values:
+the options and their default values:
 
 * `METASHELL_BRANCH=master` The branch to get the server's code (eg. updater
   script, wrapper for Metashell, etc) from.
@@ -42,13 +51,14 @@ the options and ther default values:
 * `SERVICE_USER=nobody` The user to run the demo Metashell processes as.
 * `SERVICE_GROUP=nogroup` The group to use for the demo.
 * `SERVICE_PORT=4202` The port ShellInABox will be listening on.
-* `DELAY_SECS_BETWEEN_PULLS=60` The delay the deployer script waits between the
-  pulls (regardless of how long a pull & build takes)
+* `DELAY_SECS_BETWEEN_PULLS=3600` The delay the deployer script waits between
+  the pulls (regardless of how long a pull & build takes)
+* `SPLASH=` Text to display in the splash message of the shell.
 
 ## Uninstalling the Metashell demo server
 
 Run the following command:
-`wget -O- https://raw.githubusercontent.com/sabel83/metashell/master/tools/demo_server/uninstall | /bin/bash`
+`wget -O- https://raw.githubusercontent.com/metashell/metashell/master/tools/demo_server/uninstall | /bin/bash`
 
 Note that if you installed the demo into a directory other than the default, you
 need to set the `INSTALL_DIR` environment variable here for the uninstaller
@@ -130,6 +140,24 @@ Shared files are deployed into
 `INSTALL_DIR/share/<name of config>_<git commit hash>`. A symlink is created
 for each branch similarly to the way it is done for binaries.
 
+### Generating the launcher page
+
+The deployer can generate a HTML page users of the demo server can use to
+launch the demo from. The generation uses the
+[Cheetah](http://www.cheetahtemplate.org/) templating engine. You need to
+provide the template file and the location of the generated file (relative to
+the deployed `share` directory). You can use the following variables in the
+template:
+
+* `$port` This resolves to the port the demo uses. (It is specified by
+  `SERVICE_PORT` during the installation of the demo)
+* `$configs` This resolves to the list of configs. Each config has the following
+  fields:
+  * `name` Name of the config (`name` field of the JSON document)
+  * `display_name` Display name of the config
+  * `url` Url of the config (`url` field of the JSON document)
+  * `versions` List of deployed versions of the library.
+
 ### The config file
 
 The `deploy` script has a config file describing which projects to download and
@@ -151,6 +179,14 @@ object with the following fields:
   of objects. Each object describes a file or directory to deploy.
 * `share`: (optional) The list of shared files to deploy. The value of it is a
   list of objects. Each object describes a file or directory to deploy.
+* `url`: (optional) The URL to the project page of the config.
+* `launcher`: (optional) Information about a launcher page generation for the
+  config. The value of it is an object with two fields: `src` specifying the
+  location of the template file (relative to the source root of the cloned
+  config), `dst` specifying the location of the generated file (relative to the
+  deployed `share` directory of the config).
+* `default_version`: (optional) The version to be selected by default on the
+  generated configuration page.
 
 Entries in the `include` and `share` list are objects with the following fields:
 
@@ -171,4 +207,3 @@ matches will override the branch of the repository, the files are coming from.
 For example if `include/*/boost` is used and there is a directory called
 `include/1.0/boost`, then it will be deployed as if it was coming from the
 branch `1.0` of the repository referred to by the `git` element of the config.
-

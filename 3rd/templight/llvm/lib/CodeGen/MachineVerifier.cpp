@@ -28,7 +28,7 @@
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SetOperations.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Analysis/LibCallSemantics.h"
+#include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/CodeGen/LiveIntervalAnalysis.h"
 #include "llvm/CodeGen/LiveStackAnalysis.h"
 #include "llvm/CodeGen/LiveVariables.h"
@@ -1736,7 +1736,7 @@ void MachineVerifier::verifyLiveInterval(const LiveInterval &LI) {
 
   // Check the LI only has one connected component.
   ConnectedVNInfoEqClasses ConEQ(*LiveInts);
-  unsigned NumComp = ConEQ.Classify(&LI);
+  unsigned NumComp = ConEQ.Classify(LI);
   if (NumComp > 1) {
     report("Multiple connected components in live interval", MF);
     report_context(LI);

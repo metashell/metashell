@@ -35,11 +35,12 @@
 #include "llvm/ADT/PointerIntPair.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Analysis/LibCallSemantics.h"
+#include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/ValueHandle.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MachineLocation.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/DataTypes.h"
@@ -59,7 +60,6 @@ class MachineFunction;
 class Module;
 class PointerType;
 class StructType;
-struct WinEHFuncInfo;
 
 struct SEHHandler {
   // Filter or finally function. Null indicates a catch-all.
@@ -80,11 +80,9 @@ struct LandingPadInfo {
   SmallVector<SEHHandler, 1> SEHHandlers;  // SEH handlers active at this lpad.
   MCSymbol *LandingPadLabel;               // Label at beginning of landing pad.
   std::vector<int> TypeIds;               // List of type ids (filters negative).
-  int WinEHState;                         // WinEH specific state number.
 
   explicit LandingPadInfo(MachineBasicBlock *MBB)
-      : LandingPadBlock(MBB), LandingPadLabel(nullptr),
-        WinEHState(-1) {}
+      : LandingPadBlock(MBB), LandingPadLabel(nullptr) {}
 };
 
 //===----------------------------------------------------------------------===//
@@ -164,6 +162,12 @@ class MachineModuleInfo : public ImmutablePass {
   bool CallsUnwindInit;
   bool HasEHFunclets;
 
+  // TODO: Ideally, what we'd like is to have a switch that allows emitting 
+  // synchronous (precise at call-sites only) CFA into .eh_frame. However,
+  // even under this switch, we'd like .debug_frame to be precise when using.
+  // -g. At this moment, there's no way to specify that some CFI directives
+  // go into .eh_frame only, while others go into .debug_frame only.
+
   /// DbgInfoAvailable - True if debugging information is available
   /// in this module.
   bool DbgInfoAvailable;
@@ -181,8 +185,6 @@ class MachineModuleInfo : public ImmutablePass {
   bool UsesMorestackAddr;
 
   EHPersonality PersonalityTypeCache;
-
-  DenseMap<const Function *, std::unique_ptr<WinEHFuncInfo>> FuncInfoMap;
 
 public:
   static char ID; // Pass identification, replacement for typeid
@@ -220,11 +222,6 @@ public:
   void setModule(const Module *M) { TheModule = M; }
   const Module *getModule() const { return TheModule; }
 
-  WinEHFuncInfo &getWinEHFuncInfo(const Function *F);
-  bool hasWinEHFuncInfo(const Function *F) const {
-    return FuncInfoMap.count(F) > 0;
-  }
-
   /// getInfo - Keep track of various per-function pieces of information for
   /// backends that would like to do so.
   ///
@@ -244,11 +241,6 @@ public:
   ///
   bool hasDebugInfo() const { return DbgInfoAvailable; }
   void setDebugInfoAvailability(bool avail) { DbgInfoAvailable = avail; }
-
-  // Returns true if we need to generate precise CFI. Currently
-  // this is equivalent to hasDebugInfo(), but if we ever implement
-  // async EH, it will require precise CFI as well.
-  bool usePreciseUnwindInfo() const { return hasDebugInfo(); }
 
   bool callsEHReturn() const { return CallsEHReturn; }
   void setCallsEHReturn(bool b) { CallsEHReturn = b; }
@@ -326,8 +318,6 @@ public:
   /// addPersonality - Provide the personality function for the exception
   /// information.
   void addPersonality(const Function *Personality);
-
-  void addWinEHState(MachineBasicBlock *LandingPad, int State);
 
   /// getPersonalities - Return array of personality functions ever seen.
   const std::vector<const Function *>& getPersonalities() const {

@@ -139,7 +139,7 @@ EmitCopyFromReg(SDNode *Node, unsigned ResNo, bool IsClone, bool IsCloned,
               UseRC = RC;
             else if (RC) {
               const TargetRegisterClass *ComRC =
-                TRI->getCommonSubClass(UseRC, RC);
+                TRI->getCommonSubClass(UseRC, RC, VT.SimpleTy);
               // If multiple uses expect disjoint register classes, we emit
               // copies in AddRegisterOperand.
               if (ComRC)
@@ -330,15 +330,11 @@ InstrEmitter::AddRegisterOperand(MachineInstrBuilder &MIB,
   // shrink VReg's register class within reason.  For example, if VReg == GR32
   // and II requires a GR32_NOSP, just constrain VReg to GR32_NOSP.
   if (II) {
-    const TargetRegisterClass *OpRC = nullptr;
+    const TargetRegisterClass *DstRC = nullptr;
     if (IIOpNum < II->getNumOperands())
-      OpRC = TII->getRegClass(*II, IIOpNum, TRI, *MF);
-
-    if (OpRC && !MRI->constrainRegClass(VReg, OpRC, MinRCSize)) {
-      assert(OpRC->isAllocatable() &&
-           "Constraining an allocatable VReg produced an unallocatable class?");
-
-      unsigned NewVReg = MRI->createVirtualRegister(OpRC);
+      DstRC = TRI->getAllocatableClass(TII->getRegClass(*II,IIOpNum,TRI,*MF));
+    if (DstRC && !MRI->constrainRegClass(VReg, DstRC, MinRCSize)) {
+      unsigned NewVReg = MRI->createVirtualRegister(DstRC);
       BuildMI(*MBB, InsertPos, Op.getNode()->getDebugLoc(),
               TII->get(TargetOpcode::COPY), NewVReg).addReg(VReg);
       VReg = NewVReg;

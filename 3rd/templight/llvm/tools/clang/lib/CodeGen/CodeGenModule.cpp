@@ -53,6 +53,7 @@
 #include "llvm/ProfileData/InstrProfReader.h"
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/MD5.h"
 
 using namespace clang;
 using namespace CodeGen;
@@ -374,8 +375,15 @@ void CodeGenModule::Release() {
     if (llvm::Function *CudaDtorFunction = CUDARuntime->makeModuleDtorFunction())
       AddGlobalDtor(CudaDtorFunction);
   }
-  if (PGOReader && PGOStats.hasDiagnostics())
-    PGOStats.reportDiagnostics(getDiags(), getCodeGenOpts().MainFileName);
+  if (OpenMPRuntime)
+    if (llvm::Function *OpenMPRegistrationFunction =
+            OpenMPRuntime->emitRegistrationFunction())
+      AddGlobalCtor(OpenMPRegistrationFunction, 0);
+  if (PGOReader) {
+    getModule().setMaximumFunctionCount(PGOReader->getMaximumFunctionCount());
+    if (PGOStats.hasDiagnostics())
+      PGOStats.reportDiagnostics(getDiags(), getCodeGenOpts().MainFileName);
+  }
   EmitCtorList(GlobalCtors, "llvm.global_ctors");
   EmitCtorList(GlobalDtors, "llvm.global_dtors");
   EmitGlobalAnnotations();
@@ -437,6 +445,11 @@ void CodeGenModule::Release() {
     // The minimum width of an enum in bytes
     uint64_t EnumWidth = Context.getLangOpts().ShortEnums ? 1 : 4;
     getModule().addModuleFlag(llvm::Module::Error, "min_enum_size", EnumWidth);
+  }
+
+  if (CodeGenOpts.SanitizeCfiCrossDso) {
+    // Indicate that we want cross-DSO control flow integrity checks.
+    getModule().addModuleFlag(llvm::Module::Override, "Cross-DSO CFI", 1);
   }
 
   if (uint32_t PLevel = Context.getLangOpts().PICLevel) {
@@ -602,7 +615,20 @@ void CodeGenModule::setTLSMode(llvm::GlobalValue *GV, const VarDecl &D) const {
 }
 
 StringRef CodeGenModule::getMangledName(GlobalDecl GD) {
-  StringRef &FoundStr = MangledDeclNames[GD.getCanonicalDecl()];
+  GlobalDecl CanonicalGD = GD.getCanonicalDecl();
+
+  // Some ABIs don't have constructor variants.  Make sure that base and
+  // complete constructors get mangled the same.
+  if (const auto *CD = dyn_cast<CXXConstructorDecl>(CanonicalGD.getDecl())) {
+    if (!getTarget().getCXXABI().hasConstructorVariants()) {
+      CXXCtorType OrigCtorType = GD.getCtorType();
+      assert(OrigCtorType == Ctor_Base || OrigCtorType == Ctor_Complete);
+      if (OrigCtorType == Ctor_Base)
+        CanonicalGD = GlobalDecl(CD, Ctor_Complete);
+    }
+  }
+
+  StringRef &FoundStr = MangledDeclNames[CanonicalGD];
   if (!FoundStr.empty())
     return FoundStr;
 
@@ -736,6 +762,21 @@ void CodeGenModule::setFunctionDLLStorageClass(GlobalDecl GD, llvm::Function *F)
     F->setDLLStorageClass(llvm::GlobalVariable::DefaultStorageClass);
 }
 
+llvm::ConstantInt *
+CodeGenModule::CreateCfiIdForTypeMetadata(llvm::Metadata *MD) {
+  llvm::MDString *MDS = dyn_cast<llvm::MDString>(MD);
+  if (!MDS) return nullptr;
+
+  llvm::MD5 md5;
+  llvm::MD5::MD5Result result;
+  md5.update(MDS->getString());
+  md5.final(result);
+  uint64_t id = 0;
+  for (int i = 0; i < 8; ++i)
+    id |= static_cast<uint64_t>(result[i]) << (i * 8);
+  return llvm::ConstantInt::get(Int64Ty, id);
+}
+
 void CodeGenModule::setFunctionDefinitionAttributes(const FunctionDecl *D,
                                                     llvm::Function *F) {
   setNonAliasAttributes(D, F);
@@ -746,7 +787,8 @@ void CodeGenModule::SetLLVMFunctionAttributes(const Decl *D,
                                               llvm::Function *F) {
   unsigned CallingConv;
   AttributeListType AttributeList;
-  ConstructAttributeList(Info, D, AttributeList, CallingConv, false);
+  ConstructAttributeList(F->getName(), Info, D, AttributeList, CallingConv,
+                         false);
   F->setAttributes(llvm::AttributeSet::get(getLLVMContext(), AttributeList));
   F->setCallingConv(static_cast<llvm::CallingConv::ID>(CallingConv));
 }
@@ -928,6 +970,49 @@ static void setLinkageAndVisibilityForGV(llvm::GlobalValue *GV,
   }
 }
 
+void CodeGenModule::CreateFunctionBitSetEntry(const FunctionDecl *FD,
+                                              llvm::Function *F) {
+  // Only if we are checking indirect calls.
+  if (!LangOpts.Sanitize.has(SanitizerKind::CFIICall))
+    return;
+
+  // Non-static class methods are handled via vtable pointer checks elsewhere.
+  if (isa<CXXMethodDecl>(FD) && !cast<CXXMethodDecl>(FD)->isStatic())
+    return;
+
+  // Additionally, if building with cross-DSO support...
+  if (CodeGenOpts.SanitizeCfiCrossDso) {
+    // Don't emit entries for function declarations. In cross-DSO mode these are
+    // handled with better precision at run time.
+    if (!FD->hasBody())
+      return;
+    // Skip available_externally functions. They won't be codegen'ed in the
+    // current module anyway.
+    if (getContext().GetGVALinkageForFunction(FD) == GVA_AvailableExternally)
+      return;
+  }
+
+  llvm::NamedMDNode *BitsetsMD =
+      getModule().getOrInsertNamedMetadata("llvm.bitsets");
+
+  llvm::Metadata *MD = CreateMetadataIdentifierForType(FD->getType());
+  llvm::Metadata *BitsetOps[] = {
+      MD, llvm::ConstantAsMetadata::get(F),
+      llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(Int64Ty, 0))};
+  BitsetsMD->addOperand(llvm::MDTuple::get(getLLVMContext(), BitsetOps));
+
+  // Emit a hash-based bit set entry for cross-DSO calls.
+  if (CodeGenOpts.SanitizeCfiCrossDso) {
+    if (auto TypeId = CreateCfiIdForTypeMetadata(MD)) {
+      llvm::Metadata *BitsetOps2[] = {
+          llvm::ConstantAsMetadata::get(TypeId),
+          llvm::ConstantAsMetadata::get(F),
+          llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(Int64Ty, 0))};
+      BitsetsMD->addOperand(llvm::MDTuple::get(getLLVMContext(), BitsetOps2));
+    }
+  }
+}
+
 void CodeGenModule::SetFunctionAttributes(GlobalDecl GD, llvm::Function *F,
                                           bool IsIncompleteFunction,
                                           bool IsThunk) {
@@ -970,19 +1055,7 @@ void CodeGenModule::SetFunctionAttributes(GlobalDecl GD, llvm::Function *F,
     F->addAttribute(llvm::AttributeSet::FunctionIndex,
                     llvm::Attribute::NoBuiltin);
 
-  // If we are checking indirect calls and this is not a non-static member
-  // function, emit a bit set entry for the function type.
-  if (LangOpts.Sanitize.has(SanitizerKind::CFIICall) &&
-      !(isa<CXXMethodDecl>(FD) && !cast<CXXMethodDecl>(FD)->isStatic())) {
-    llvm::NamedMDNode *BitsetsMD =
-        getModule().getOrInsertNamedMetadata("llvm.bitsets");
-
-    llvm::Metadata *BitsetOps[] = {
-        CreateMetadataIdentifierForType(FD->getType()),
-        llvm::ConstantAsMetadata::get(F),
-        llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(Int64Ty, 0))};
-    BitsetsMD->addOperand(llvm::MDTuple::get(getLLVMContext(), BitsetOps));
-  }
+  CreateFunctionBitSetEntry(FD, F);
 }
 
 void CodeGenModule::addUsedGlobal(llvm::GlobalValue *GV) {
@@ -1435,6 +1508,11 @@ void CodeGenModule::EmitGlobal(GlobalDecl GD) {
     }
   }
 
+  // If this is OpenMP device, check if it is legal to emit this global
+  // normally.
+  if (OpenMPRuntime && OpenMPRuntime->emitTargetGlobal(GD))
+    return;
+
   // Ignore declarations, they will be emitted on their first use.
   if (const auto *FD = dyn_cast<FunctionDecl>(Global)) {
     // Forward declarations are emitted lazily on first use.
@@ -1835,8 +1913,11 @@ llvm::Constant *CodeGenModule::GetAddrOfFunction(GlobalDecl GD,
                                                  bool DontDefer,
                                                  bool IsForDefinition) {
   // If there was no specific requested type, just convert it now.
-  if (!Ty)
-    Ty = getTypes().ConvertType(cast<ValueDecl>(GD.getDecl())->getType());
+  if (!Ty) {
+    const auto *FD = cast<FunctionDecl>(GD.getDecl());
+    auto CanonTy = Context.getCanonicalType(FD->getType());
+    Ty = getTypes().ConvertFunctionType(CanonTy, FD);
+  }
 
   StringRef MangledName = getMangledName(GD);
   return GetOrCreateLLVMFunction(MangledName, Ty, GD, ForVTable, DontDefer,
@@ -1956,7 +2037,7 @@ CodeGenModule::GetOrCreateLLVMGlobal(StringRef MangledName,
 
     if (D->getTLSKind()) {
       if (D->getTLSKind() == VarDecl::TLS_Dynamic)
-        CXXThreadLocals.push_back(std::make_pair(D, GV));
+        CXXThreadLocals.push_back(D);
       setTLSMode(GV, *D);
     }
 
@@ -2344,7 +2425,7 @@ void CodeGenModule::EmitGlobalVarDefinition(const VarDecl *D) {
 
   if (D->getTLSKind() && !GV->isThreadLocal()) {
     if (D->getTLSKind() == VarDecl::TLS_Dynamic)
-      CXXThreadLocals.push_back(std::make_pair(D, GV));
+      CXXThreadLocals.push_back(D);
     setTLSMode(GV, *D);
   }
 
@@ -2492,6 +2573,7 @@ static void replaceUsesOfNonProtoConstant(llvm::Constant *old,
 
   llvm::Type *newRetTy = newFn->getReturnType();
   SmallVector<llvm::Value*, 4> newArgs;
+  SmallVector<llvm::OperandBundleDef, 1> newBundles;
 
   for (llvm::Value::use_iterator ui = old->use_begin(), ue = old->use_end();
          ui != ue; ) {
@@ -2559,16 +2641,19 @@ static void replaceUsesOfNonProtoConstant(llvm::Constant *old,
     // over the required information.
     newArgs.append(callSite.arg_begin(), callSite.arg_begin() + argNo);
 
+    // Copy over any operand bundles.
+    callSite.getOperandBundlesAsDefs(newBundles);
+
     llvm::CallSite newCall;
     if (callSite.isCall()) {
-      newCall = llvm::CallInst::Create(newFn, newArgs, "",
+      newCall = llvm::CallInst::Create(newFn, newArgs, newBundles, "",
                                        callSite.getInstruction());
     } else {
       auto *oldInvoke = cast<llvm::InvokeInst>(callSite.getInstruction());
       newCall = llvm::InvokeInst::Create(newFn,
                                          oldInvoke->getNormalDest(),
                                          oldInvoke->getUnwindDest(),
-                                         newArgs, "",
+                                         newArgs, newBundles, "",
                                          callSite.getInstruction());
     }
     newArgs.clear(); // for the next iteration
@@ -2586,6 +2671,7 @@ static void replaceUsesOfNonProtoConstant(llvm::Constant *old,
     // Copy debug location attached to CI.
     if (callSite->getDebugLoc())
       newCall->setDebugLoc(callSite->getDebugLoc());
+
     callSite->eraseFromParent();
   }
 }
@@ -3533,6 +3619,9 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
     // File-scope asm is ignored during device-side CUDA compilation.
     if (LangOpts.CUDA && LangOpts.CUDAIsDevice)
       break;
+    // File-scope asm is ignored during device-side OpenMP compilation.
+    if (LangOpts.OpenMPIsDevice)
+      break;
     auto *AD = cast<FileScopeAsmDecl>(D);
     getModule().appendModuleInlineAsm(AD->getAsmString()->getString());
     break;
@@ -3866,14 +3955,28 @@ llvm::Metadata *CodeGenModule::CreateMetadataIdentifierForType(QualType T) {
   return InternalId;
 }
 
-llvm::MDTuple *CodeGenModule::CreateVTableBitSetEntry(
-    llvm::GlobalVariable *VTable, CharUnits Offset, const CXXRecordDecl *RD) {
+void CodeGenModule::CreateVTableBitSetEntry(llvm::NamedMDNode *BitsetsMD,
+                                            llvm::GlobalVariable *VTable,
+                                            CharUnits Offset,
+                                            const CXXRecordDecl *RD) {
+  llvm::Metadata *MD =
+      CreateMetadataIdentifierForType(QualType(RD->getTypeForDecl(), 0));
   llvm::Metadata *BitsetOps[] = {
-      CreateMetadataIdentifierForType(QualType(RD->getTypeForDecl(), 0)),
-      llvm::ConstantAsMetadata::get(VTable),
+      MD, llvm::ConstantAsMetadata::get(VTable),
       llvm::ConstantAsMetadata::get(
           llvm::ConstantInt::get(Int64Ty, Offset.getQuantity()))};
-  return llvm::MDTuple::get(getLLVMContext(), BitsetOps);
+  BitsetsMD->addOperand(llvm::MDTuple::get(getLLVMContext(), BitsetOps));
+
+  if (CodeGenOpts.SanitizeCfiCrossDso) {
+    if (auto TypeId = CreateCfiIdForTypeMetadata(MD)) {
+      llvm::Metadata *BitsetOps2[] = {
+          llvm::ConstantAsMetadata::get(TypeId),
+          llvm::ConstantAsMetadata::get(VTable),
+          llvm::ConstantAsMetadata::get(
+              llvm::ConstantInt::get(Int64Ty, Offset.getQuantity()))};
+      BitsetsMD->addOperand(llvm::MDTuple::get(getLLVMContext(), BitsetOps2));
+    }
+  }
 }
 
 // Fills in the supplied string map with the set of target features for the

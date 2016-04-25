@@ -735,6 +735,7 @@ public:
     case CK_PointerToBoolean:
     case CK_NullToPointer:
     case CK_IntegralCast:
+    case CK_BooleanToSignedIntegral:
     case CK_IntegralToPointer:
     case CK_IntegralToBoolean:
     case CK_IntegralToFloating:
@@ -1350,15 +1351,17 @@ llvm::Constant *CodeGenModule::EmitConstantValue(const APValue &Value,
     return llvm::ConstantStruct::get(STy, Complex);
   }
   case APValue::Vector: {
-    SmallVector<llvm::Constant *, 4> Inits;
     unsigned NumElts = Value.getVectorLength();
+    SmallVector<llvm::Constant *, 4> Inits(NumElts);
 
-    for (unsigned i = 0; i != NumElts; ++i) {
-      const APValue &Elt = Value.getVectorElt(i);
+    for (unsigned I = 0; I != NumElts; ++I) {
+      const APValue &Elt = Value.getVectorElt(I);
       if (Elt.isInt())
-        Inits.push_back(llvm::ConstantInt::get(VMContext, Elt.getInt()));
+        Inits[I] = llvm::ConstantInt::get(VMContext, Elt.getInt());
+      else if (Elt.isFloat())
+        Inits[I] = llvm::ConstantFP::get(VMContext, Elt.getFloat());
       else
-        Inits.push_back(llvm::ConstantFP::get(VMContext, Elt.getFloat()));
+        llvm_unreachable("unsupported vector element type");
     }
     return llvm::ConstantVector::get(Inits);
   }

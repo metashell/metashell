@@ -1408,12 +1408,12 @@ int OnExit() {
   __msan_unpoison(ptr, size)
 #define COMMON_INTERCEPTOR_ENTER(ctx, func, ...)                  \
   if (msan_init_is_running) return REAL(func)(__VA_ARGS__);       \
+  ENSURE_MSAN_INITED();                                           \
   MSanInterceptorContext msan_ctx = {IsInInterceptorScope()};     \
   ctx = (void *)&msan_ctx;                                        \
   (void)ctx;                                                      \
   InterceptorScope interceptor_scope;                             \
-  __msan_unpoison(__errno_location(), sizeof(int)); /* NOLINT */  \
-  ENSURE_MSAN_INITED();
+  __msan_unpoison(__errno_location(), sizeof(int)); /* NOLINT */
 #define COMMON_INTERCEPTOR_DIR_ACQUIRE(ctx, path) \
   do {                                            \
   } while (false)
@@ -1434,10 +1434,11 @@ int OnExit() {
   } while (false)  // FIXME
 #define COMMON_INTERCEPTOR_BLOCK_REAL(name) REAL(name)
 #define COMMON_INTERCEPTOR_ON_EXIT(ctx) OnExit()
-#define COMMON_INTERCEPTOR_LIBRARY_LOADED(filename, handle)  \
-  do {                                                       \
-    link_map *map = GET_LINK_MAP_BY_DLOPEN_HANDLE((handle)); \
-    if (map) ForEachMappedRegion(map, __msan_unpoison);      \
+#define COMMON_INTERCEPTOR_LIBRARY_LOADED(filename, handle)                    \
+  do {                                                                         \
+    link_map *map = GET_LINK_MAP_BY_DLOPEN_HANDLE((handle));                   \
+    if (filename && map)                                                       \
+      ForEachMappedRegion(map, __msan_unpoison);                               \
   } while (false)
 
 #define COMMON_INTERCEPTOR_GET_TLS_RANGE(begin, end)                           \

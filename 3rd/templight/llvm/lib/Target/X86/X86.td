@@ -52,12 +52,6 @@ def FeatureXSAVEC  : SubtargetFeature<"xsavec", "HasXSAVEC", "true",
 def FeatureXSAVES  : SubtargetFeature<"xsaves", "HasXSAVES", "true",
                                        "Support xsaves instructions">;
 
-// The MMX subtarget feature is separate from the rest of the SSE features
-// because it's important (for odd compatibility reasons) to be able to
-// turn it off explicitly while allowing SSE+ to be on.
-def FeatureMMX     : SubtargetFeature<"mmx","HasMMX", "true",
-                                      "Enable MMX instructions">;
-
 def FeatureSSE1    : SubtargetFeature<"sse", "X86SSELevel", "SSE1",
                                       "Enable SSE instructions",
                                       // SSE codegen depends on cmovs, and all
@@ -78,6 +72,11 @@ def FeatureSSE41   : SubtargetFeature<"sse4.1", "X86SSELevel", "SSE41",
 def FeatureSSE42   : SubtargetFeature<"sse4.2", "X86SSELevel", "SSE42",
                                       "Enable SSE 4.2 instructions",
                                       [FeatureSSE41]>;
+// The MMX subtarget feature is separate from the rest of the SSE features
+// because it's important (for odd compatibility reasons) to be able to
+// turn it off explicitly while allowing SSE+ to be on.
+def FeatureMMX     : SubtargetFeature<"mmx","X863DNowLevel", "MMX",
+                                      "Enable MMX instructions">;
 def Feature3DNow   : SubtargetFeature<"3dnow", "X863DNowLevel", "ThreeDNow",
                                       "Enable 3DNow! instructions",
                                       [FeatureMMX]>;
@@ -135,6 +134,8 @@ def FeatureBWI     : SubtargetFeature<"avx512bw", "HasBWI", "true",
 def FeatureVLX     : SubtargetFeature<"avx512vl", "HasVLX", "true",
                       "Enable AVX-512 Vector Length eXtensions",
                                       [FeatureAVX512]>;
+def FeaturePKU   : SubtargetFeature<"pku", "HasPKU", "true",
+                      "Enable protection keys">;
 def FeaturePCLMUL  : SubtargetFeature<"pclmul", "HasPCLMUL", "true",
                          "Enable packed carry-less multiplication instructions",
                                [FeatureSSE2]>;
@@ -183,6 +184,8 @@ def FeaturePRFCHW  : SubtargetFeature<"prfchw", "HasPRFCHW", "true",
                                       "Support PRFCHW instructions">;
 def FeatureRDSEED  : SubtargetFeature<"rdseed", "HasRDSEED", "true",
                                       "Support RDSEED instruction">;
+def FeatureLAHFSAHF : SubtargetFeature<"sahf", "HasLAHFSAHF", "true",
+                                       "Support LAHF and SAHF instructions">;
 def FeatureMPX     : SubtargetFeature<"mpx", "HasMPX", "true",
                                       "Support MPX instructions">;
 def FeatureLEAForSP : SubtargetFeature<"lea-sp", "UseLeaForSP", "true",
@@ -274,7 +277,8 @@ def : ProcessorModel<"core2", SandyBridgeModel, [
   FeatureSSSE3,
   FeatureFXSR,
   FeatureCMPXCHG16B,
-  FeatureSlowBTMem
+  FeatureSlowBTMem,
+  FeatureLAHFSAHF
 ]>;
 def : ProcessorModel<"penryn", SandyBridgeModel, [
   FeatureSlowUAMem16,
@@ -282,7 +286,8 @@ def : ProcessorModel<"penryn", SandyBridgeModel, [
   FeatureSSE41,
   FeatureFXSR,
   FeatureCMPXCHG16B,
-  FeatureSlowBTMem
+  FeatureSlowBTMem,
+  FeatureLAHFSAHF
 ]>;
 
 // Atom CPUs.
@@ -300,7 +305,8 @@ class BonnellProc<string Name> : ProcessorModel<Name, AtomModel, [
   FeatureSlowDivide64,
   FeatureCallRegIndirect,
   FeatureLEAUsesAG,
-  FeaturePadShortFunctions
+  FeaturePadShortFunctions,
+  FeatureLAHFSAHF
 ]>;
 def : BonnellProc<"bonnell">;
 def : BonnellProc<"atom">; // Pin the generic name to the baseline.
@@ -320,7 +326,8 @@ class SilvermontProc<string Name> : ProcessorModel<Name, SLMModel, [
   FeaturePRFCHW,
   FeatureSlowLEA,
   FeatureSlowIncDec,
-  FeatureSlowBTMem
+  FeatureSlowBTMem,
+  FeatureLAHFSAHF
 ]>;
 def : SilvermontProc<"silvermont">;
 def : SilvermontProc<"slm">; // Legacy alias.
@@ -332,7 +339,8 @@ class NehalemProc<string Name> : ProcessorModel<Name, SandyBridgeModel, [
   FeatureFXSR,
   FeatureCMPXCHG16B,
   FeatureSlowBTMem,
-  FeaturePOPCNT
+  FeaturePOPCNT,
+  FeatureLAHFSAHF
 ]>;
 def : NehalemProc<"nehalem">;
 def : NehalemProc<"corei7">;
@@ -347,7 +355,8 @@ class WestmereProc<string Name> : ProcessorModel<Name, SandyBridgeModel, [
   FeatureSlowBTMem,
   FeaturePOPCNT,
   FeatureAES,
-  FeaturePCLMUL
+  FeaturePCLMUL,
+  FeatureLAHFSAHF
 ]>;
 def : WestmereProc<"westmere">;
 
@@ -364,7 +373,8 @@ class SandyBridgeProc<string Name> : ProcessorModel<Name, SandyBridgeModel, [
   FeatureAES,
   FeaturePCLMUL,
   FeatureXSAVE,
-  FeatureXSAVEOPT
+  FeatureXSAVEOPT,
+  FeatureLAHFSAHF
 ]>;
 def : SandyBridgeProc<"sandybridge">;
 def : SandyBridgeProc<"corei7-avx">; // Legacy alias.
@@ -383,7 +393,8 @@ class IvyBridgeProc<string Name> : ProcessorModel<Name, SandyBridgeModel, [
   FeatureXSAVEOPT,
   FeatureRDRAND,
   FeatureF16C,
-  FeatureFSGSBase
+  FeatureFSGSBase,
+  FeatureLAHFSAHF
 ]>;
 def : IvyBridgeProc<"ivybridge">;
 def : IvyBridgeProc<"core-avx-i">; // Legacy alias.
@@ -409,7 +420,8 @@ class HaswellProc<string Name> : ProcessorModel<Name, HaswellModel, [
   FeatureFMA,
   FeatureRTM,
   FeatureHLE,
-  FeatureSlowIncDec
+  FeatureSlowIncDec,
+  FeatureLAHFSAHF
 ]>;
 def : HaswellProc<"haswell">;
 def : HaswellProc<"core-avx2">; // Legacy alias.
@@ -437,7 +449,8 @@ class BroadwellProc<string Name> : ProcessorModel<Name, HaswellModel, [
   FeatureHLE,
   FeatureADX,
   FeatureRDSEED,
-  FeatureSlowIncDec
+  FeatureSlowIncDec,
+  FeatureLAHFSAHF
 ]>;
 def : BroadwellProc<"broadwell">;
 
@@ -466,7 +479,8 @@ class KnightsLandingProc<string Name> : ProcessorModel<Name, HaswellModel, [
   FeatureRTM,
   FeatureHLE,
   FeatureSlowIncDec,
-  FeatureMPX
+  FeatureMPX,
+  FeatureLAHFSAHF
 ]>;
 def : KnightsLandingProc<"knl">;
 
@@ -479,6 +493,7 @@ class SkylakeProc<string Name> : ProcessorModel<Name, HaswellModel, [
   FeatureDQI,
   FeatureBWI,
   FeatureVLX,
+  FeaturePKU,
   FeatureCMPXCHG16B,
   FeatureSlowBTMem,
   FeaturePOPCNT,
@@ -501,7 +516,8 @@ class SkylakeProc<string Name> : ProcessorModel<Name, HaswellModel, [
   FeatureSlowIncDec,
   FeatureMPX,
   FeatureXSAVEC,
-  FeatureXSAVES
+  FeatureXSAVES,
+  FeatureLAHFSAHF
 ]>;
 def : SkylakeProc<"skylake">;
 def : SkylakeProc<"skx">; // Legacy alias.
@@ -545,10 +561,10 @@ def : Proc<"athlon64-sse3",   [FeatureSlowUAMem16, FeatureSSE3,   Feature3DNowA,
                                FeatureSlowSHLD]>;
 def : Proc<"amdfam10",        [FeatureSSE4A, Feature3DNowA, FeatureFXSR,
                                FeatureCMPXCHG16B, FeatureLZCNT, FeaturePOPCNT,
-                               FeatureSlowBTMem, FeatureSlowSHLD]>;
+                               FeatureSlowBTMem, FeatureSlowSHLD, FeatureLAHFSAHF]>;
 def : Proc<"barcelona",       [FeatureSSE4A, Feature3DNowA, FeatureFXSR,
                                FeatureCMPXCHG16B, FeatureLZCNT, FeaturePOPCNT,
-                               FeatureSlowBTMem, FeatureSlowSHLD]>;
+                               FeatureSlowBTMem, FeatureSlowSHLD, FeatureLAHFSAHF]>;
 
 // Bobcat
 def : Proc<"btver1", [
@@ -561,7 +577,8 @@ def : Proc<"btver1", [
   FeatureLZCNT,
   FeaturePOPCNT,
   FeatureXSAVE,
-  FeatureSlowSHLD
+  FeatureSlowSHLD,
+  FeatureLAHFSAHF
 ]>;
 
 // Jaguar
@@ -581,7 +598,8 @@ def : ProcessorModel<"btver2", BtVer2Model, [
   FeaturePOPCNT,
   FeatureXSAVE,
   FeatureXSAVEOPT,
-  FeatureSlowSHLD
+  FeatureSlowSHLD,
+  FeatureLAHFSAHF
 ]>;
 
 // Bulldozer
@@ -599,7 +617,8 @@ def : Proc<"bdver1", [
   FeatureLZCNT,
   FeaturePOPCNT,
   FeatureXSAVE,
-  FeatureSlowSHLD
+  FeatureSlowSHLD,
+  FeatureLAHFSAHF
 ]>;
 // Piledriver
 def : Proc<"bdver2", [
@@ -620,7 +639,8 @@ def : Proc<"bdver2", [
   FeatureBMI,
   FeatureTBM,
   FeatureFMA,
-  FeatureSlowSHLD
+  FeatureSlowSHLD,
+  FeatureLAHFSAHF
 ]>;
 
 // Steamroller
@@ -644,7 +664,8 @@ def : Proc<"bdver3", [
   FeatureFMA,
   FeatureXSAVEOPT,
   FeatureSlowSHLD,
-  FeatureFSGSBase
+  FeatureFSGSBase,
+  FeatureLAHFSAHF
 ]>;
 
 // Excavator
@@ -667,7 +688,8 @@ def : Proc<"bdver4", [
   FeatureTBM,
   FeatureFMA,
   FeatureXSAVEOPT,
-  FeatureFSGSBase
+  FeatureFSGSBase,
+  FeatureLAHFSAHF
 ]>;
 
 def : Proc<"geode",           [FeatureSlowUAMem16, Feature3DNowA]>;
@@ -716,10 +738,6 @@ include "X86CallingConv.td"
 // Assembly Parser
 //===----------------------------------------------------------------------===//
 
-def ATTAsmParser : AsmParser {
-  string AsmParserClassName = "AsmParser";
-}
-
 def ATTAsmParserVariant : AsmParserVariant {
   int Variant = 0;
 
@@ -764,7 +782,6 @@ def IntelAsmWriter : AsmWriter {
 def X86 : Target {
   // Information about the instructions...
   let InstructionSet = X86InstrInfo;
-  let AssemblyParsers = [ATTAsmParser];
   let AssemblyParserVariants = [ATTAsmParserVariant, IntelAsmParserVariant];
   let AssemblyWriters = [ATTAsmWriter, IntelAsmWriter];
 }

@@ -54,7 +54,7 @@ namespace __tsan {
 
 #ifndef SANITIZER_GO
 struct MapUnmapCallback;
-#if defined(__mips64) || defined(__aarch64__)
+#if defined(__mips64) || defined(__aarch64__) || defined(__powerpc__)
 static const uptr kAllocatorSpace = 0;
 static const uptr kAllocatorSize = SANITIZER_MMAP_RANGE_SIZE;
 static const uptr kAllocatorRegionSizeLog = 20;
@@ -66,7 +66,8 @@ typedef SizeClassAllocator32<kAllocatorSpace, kAllocatorSize, 0,
     CompactSizeClassMap, kAllocatorRegionSizeLog, ByteMap,
     MapUnmapCallback> PrimaryAllocator;
 #else
-typedef SizeClassAllocator64<kHeapMemBeg, kHeapMemEnd - kHeapMemBeg, 0,
+typedef SizeClassAllocator64<Mapping::kHeapMemBeg,
+    Mapping::kHeapMemEnd - Mapping::kHeapMemBeg, 0,
     DefaultSizeClassMap, MapUnmapCallback> PrimaryAllocator;
 #endif
 typedef SizeClassAllocatorLocalCache<PrimaryAllocator> AllocatorCache;
@@ -761,7 +762,7 @@ void ALWAYS_INLINE TraceAddEvent(ThreadState *thr, FastState fs,
 
 #ifndef SANITIZER_GO
 uptr ALWAYS_INLINE HeapEnd() {
-  return kHeapMemEnd + PrimaryAllocator::AdditionalSize();
+  return HeapMemEnd() + PrimaryAllocator::AdditionalSize();
 }
 #endif
 

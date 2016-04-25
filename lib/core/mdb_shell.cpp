@@ -18,7 +18,6 @@
 #include <metashell/mdb_shell.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/metashell.hpp>
-#include <metashell/temporary_file.hpp>
 #include <metashell/is_template_type.hpp>
 #include <metashell/forward_trace_iterator.hpp>
 #include <metashell/null_history.hpp>
@@ -169,7 +168,8 @@ namespace metashell
       const data::config& conf_,
       iface::environment& env_arg,
       iface::engine& engine_,
-      const std::string& env_path_,
+      const boost::filesystem::path& env_path_,
+      const boost::filesystem::path& mdb_temp_dir_,
       logger* logger_,
       std::unique_ptr<iface::destroyable> keep_alive_with_shell_)
     : conf(conf_),
@@ -177,6 +177,7 @@ namespace metashell
       _logger(logger_),
       _engine(engine_),
       _env_path(env_path_),
+      _mdb_temp_dir(mdb_temp_dir_),
       _keep_alive_with_shell(std::move(keep_alive_with_shell_))
   {
     assert(!conf.use_precompiled_headers);
@@ -929,16 +930,15 @@ namespace metashell
       metaprogram::mode_t mode,
       iface::displayer& displayer_)
   {
-    temporary_file templight_output_file("templight.pb");
-    const std::string output_path = templight_output_file.get_path();
+    const boost::filesystem::path output_path = _mdb_temp_dir / "templight.pb";
 
     data::type_or_error evaluation_result =
         run_metaprogram(expression, output_path, displayer_);
 
     // Opening in binary mode, because some platforms interpret some characters
     // specially in text mode, which caused parsing to fail.
-    std::ifstream protobuf_stream(
-        output_path + ".trace.pbf", std::ios_base::in | std::ios_base::binary);
+    std::ifstream protobuf_stream(output_path.string() + ".trace.pbf",
+                                  std::ios_base::in | std::ios_base::binary);
 
     if (!protobuf_stream)
     {
@@ -975,7 +975,7 @@ namespace metashell
 
   data::type_or_error
   mdb_shell::run_metaprogram(const boost::optional<std::string>& expression,
-                             const std::string& output_path_,
+                             const boost::filesystem::path& output_path_,
                              iface::displayer& displayer_)
   {
     const data::result res = _engine.eval(

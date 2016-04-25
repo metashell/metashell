@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 
 namespace metashell
@@ -26,14 +28,15 @@ namespace metashell
     class unsaved_file
     {
     public:
-      explicit unsaved_file(const std::string& filename_ = "",
-                            const std::string& content_ = "");
+      explicit unsaved_file(
+          const boost::filesystem::path& filename_ = boost::filesystem::path(),
+          const std::string& content_ = "");
 
-      const std::string& filename() const;
+      const boost::filesystem::path& filename() const;
       const std::string& content() const;
 
     private:
-      std::string _filename;
+      boost::filesystem::path _filename;
       std::string _content;
     };
   }

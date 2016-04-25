@@ -241,8 +241,8 @@ JUST_TEST_CASE(test_mdb_continue_to_end_and_back_to_start)
 {
   const auto r = run_metashell({command(fibonacci_mp),
                                 command("#msh mdb int_<fib<10>::value>"),
-                                command("rbreak fib<5>"), command("continue 3"),
-                                command("continue -3")});
+                                command("rbreak fib<5>"), command("continue 4"),
+                                command("continue -4")});
   auto i = r.begin() + 6;
 
   JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);

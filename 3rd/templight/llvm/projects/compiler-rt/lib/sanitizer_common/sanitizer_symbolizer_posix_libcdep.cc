@@ -75,7 +75,7 @@ bool SymbolizerProcess::StartSymbolizerSubprocess() {
 #if SANITIZER_MAC
     fd_t fd = kInvalidFd;
     // Use forkpty to disable buffering in the new terminal.
-    pid = forkpty(&fd, 0, 0, 0);
+    pid = internal_forkpty(&fd);
     if (pid == -1) {
       // forkpty() failed.
       Report("WARNING: failed to fork external symbolizer (errno: %d)\n",
@@ -452,10 +452,6 @@ static void ChooseSymbolizerTools(IntrusiveList<SymbolizerTool> *list,
   VReport(2, "Using dladdr symbolizer.\n");
   list->push_back(new(*allocator) DlAddrSymbolizer());
 #endif  // SANITIZER_MAC
-
-  if (list->size() == 0) {
-    Report("WARNING: no internal or external symbolizer found.\n");
-  }
 }
 
 Symbolizer *Symbolizer::PlatformInit() {
