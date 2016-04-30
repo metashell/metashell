@@ -764,6 +764,28 @@ class TestDeploy(unittest.TestCase):
 
                 self.assertFalse(world_readable(tmp_path))
 
+    def test_no_files_are_deleted_when_git_fails(self):
+        with util.CommonEnv(1) as env:
+            last_sha = env.commit(0, {'foo': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0),
+                'bin': ['foo']
+            }])
+            deploy(env)
+
+            util.delete_everything_in(env.repository(0))
+            deploy(env)
+
+            binary_path = 'bin/foo_{0}'.format(last_sha)
+            symlink_path = env.out_dir.relative('bin/foo_master')
+
+            self.assertTrue(env.out_dir.exists(binary_path))
+            self.assertEqual(
+                env.out_dir.relative(binary_path),
+                symlink_to(symlink_path)
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

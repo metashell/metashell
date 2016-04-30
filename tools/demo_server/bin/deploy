@@ -681,11 +681,13 @@ class DeployedLib(object):
                     if dep.base == self.name():
                         self.uses_link(dep.to_path, dep.deployed_filename())
             log(deploy_event('clone', 'success', self.name()))
+            return True
         except Exception, err:
             # Catching all exceptions to avoid an error in one config
             # preventing the deployment of the rest
             log('Failed to deploy {0}: {1}'.format(self.name(), err))
             log(deploy_event('clone', 'fail', self.name()))
+            return False
 
     def build(self, out_dir, log):
         """Build all branches"""
@@ -815,7 +817,9 @@ def deploy_libs(configs, port, out_dir, log):
     summary = libs_to_deploy(configs, out_dir)
 
     for lib in summary:
-        lib.clone(out_dir, log)
+        if not lib.clone(out_dir, log):
+            symlinks_to_delete = []
+            files_to_delete = []
 
     launcher_info = generate_launcher(summary, out_dir)
 
