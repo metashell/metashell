@@ -24,14 +24,14 @@ then
     cmake ..
     make
 
-    app/metashell --show_pragma_help \
+    app/metashell/metashell --show_pragma_help \
       | ../tools/replace_part \
         -i ../docs/reference/pragmas.md \
         -m '<!-- pragma_info -->' \
         -o ../docs/reference/pragmas.md \
         -r -
 
-    app/metashell --show_mdb_help \
+    app/metashell/metashell --show_mdb_help \
       | ../tools/replace_part \
         -i ../docs/reference/mdb_commands.md \
         -m '<!-- mdb_info -->' \
