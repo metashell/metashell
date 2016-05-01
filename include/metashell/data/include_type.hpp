@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_CONSTANT_HPP
-#define METASHELL_ENGINE_CONSTANT_HPP
+#ifndef METASHELL_INCLUDE_TYPE_HPP
+#define METASHELL_INCLUDE_TYPE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,22 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/engine.hpp>
-
-#include <memory>
 #include <string>
 
 namespace metashell
 {
-  std::unique_ptr<iface::engine>
-  create_failing_engine(const std::string& msg_ = "Using failing engine");
+  namespace data
+  {
+    enum class include_type
+    {
+      sys,
+      quote
+    };
 
-  std::unique_ptr<iface::engine>
-  create_engine_returning_type(const std::string& type_);
-
-  std::unique_ptr<iface::engine>
-  create_engine_with_include_path(data::include_type type_,
-                                  std::vector<boost::filesystem::path> path_);
+    std::string to_string(include_type type_);
+    std::string include_dotdotdot(include_type type_);
+  }
 }
 
 #endif

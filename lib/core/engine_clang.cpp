@@ -29,6 +29,8 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -566,6 +568,44 @@ namespace
         throw std::runtime_error("Error getting list of macros: " +
                                  output.standard_error());
       }
+    }
+
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override
+    {
+      const data::process_output o =
+          run_clang(_clang_binary, {"-v", "-xc++", "-c"}, "");
+
+      const std::string s = o.standard_output() + o.standard_error();
+
+      std::vector<std::string> lines;
+      boost::algorithm::split(lines, s, [](char c_)
+                              {
+                                return c_ == '\n';
+                              });
+
+      std::vector<boost::filesystem::path> result;
+      bool in_include = false;
+      for (const std::string& line : lines)
+      {
+        if (in_include)
+        {
+          if (boost::algorithm::starts_with(line, " "))
+          {
+            result.push_back(boost::algorithm::trim_copy(line));
+          }
+          else
+          {
+            break;
+          }
+        }
+        else if (boost::algorithm::starts_with(line, include_dotdotdot(type_)))
+        {
+          in_include = true;
+        }
+      }
+
+      return result;
     }
 
   private:

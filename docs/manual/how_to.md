@@ -251,3 +251,11 @@ expression.
 
 You can try instantiating the two other overloads of `make_unique` and see how
 the compiler instantiates the types in those cases.
+
+## display the include path of the compiler?
+
+You can do that by running `#msh sysincludes` to get the search path for
+`#include <...>` and `#msh quoteincludes` to get the search path for
+`#include "..."`.
+
+
