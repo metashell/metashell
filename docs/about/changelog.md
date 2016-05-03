@@ -23,6 +23,8 @@
     * Add command to display a comment in the shell (`#msh echo`)
     * Add command to display macro definitions (`#msh macros`)
     * Add command to display macro names (`#msh macro names`)
+    * Add commands to display include paths
+      (`#msh sysincludes` and `#msh quoteincludes`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the

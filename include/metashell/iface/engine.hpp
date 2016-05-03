@@ -19,6 +19,7 @@
 
 #include <metashell/data/result.hpp>
 #include <metashell/data/config.hpp>
+#include <metashell/data/include_type.hpp>
 #include <metashell/iface/environment.hpp>
 
 #include <boost/optional.hpp>
@@ -58,6 +59,9 @@ namespace metashell
       generate_precompiled_header(const boost::filesystem::path& fn_) = 0;
 
       virtual std::string macros(const iface::environment& env_) = 0;
+
+      virtual std::vector<boost::filesystem::path>
+      include_path(data::include_type type_) = 0;
     };
   }
 }
