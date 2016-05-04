@@ -30,14 +30,20 @@ std::string metashell::data::to_string(include_type type_)
   return ""; // to avoid warnings about the missing return on some compilers.
 }
 
-std::string metashell::data::include_dotdotdot(include_type type_)
+std::string metashell::data::include_code(include_type type_,
+                                          const boost::filesystem::path& path_)
 {
   switch (type_)
   {
   case include_type::sys:
-    return "#include <...>";
+    return "<" + path_.string() + ">";
   case include_type::quote:
-    return "#include \"...\"";
+    return "\"" + path_.string() + "\"";
   }
   return ""; // to avoid warnings about the missing return on some compilers.
+}
+
+std::string metashell::data::include_dotdotdot(include_type type_)
+{
+  return "#include " + include_code(type_, "...");
 }

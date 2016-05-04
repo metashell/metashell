@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 
 namespace metashell
@@ -30,6 +32,8 @@ namespace metashell
     };
 
     std::string to_string(include_type type_);
+    std::string include_code(include_type type_,
+                             const boost::filesystem::path& path_);
     std::string include_dotdotdot(include_type type_);
   }
 }

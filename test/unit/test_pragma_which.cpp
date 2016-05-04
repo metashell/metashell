@@ -35,15 +35,14 @@ using namespace metashell;
   {                                                                            \
     in_memory_displayer d;                                                     \
     shell sh(test_config(), "", "", "", create_failing_engine());              \
-    sh.line_available(command_, d);                                            \
+    sh.line_available((command_), d);                                          \
                                                                                \
-    JUST_ASSERT_EQUAL_CONTAINER({error_message_}, d.errors());                 \
+    JUST_ASSERT_EQUAL_CONTAINER({(error_message_)}, d.errors());               \
   }
 
 namespace
 {
-  std::pair<data::include_type, boost::filesystem::path>
-  parse_arguments(const std::string& arguments_)
+  pragma_which::parsed_arguments parse_arguments(const std::string& arguments_)
   {
     const data::command name("which");
     const data::command arguments(arguments_);
@@ -51,58 +50,70 @@ namespace
         name.begin(), name.end(), arguments.begin(), arguments.end());
   }
 
-  std::pair<data::include_type, boost::filesystem::path>
-  sys(const boost::filesystem::path& path_)
+  pragma_which::parsed_arguments sys(const boost::filesystem::path& path_,
+                                     bool all_)
   {
-    return {data::include_type::sys, path_};
+    return {data::include_type::sys, path_, all_};
   }
 
-  std::pair<data::include_type, boost::filesystem::path>
-  quote(const boost::filesystem::path& path_)
+  pragma_which::parsed_arguments quote(const boost::filesystem::path& path_,
+                                       bool all_)
   {
-    return {data::include_type::quote, path_};
+    return {data::include_type::quote, path_, all_};
   }
-}
 
-namespace just
-{
-  namespace test
+  void test_invalid_arguments(const std::string& prefix_)
   {
-    template <>
-    void display<std::pair<data::include_type, boost::filesystem::path>>(
-        std::ostream& out_,
-        const std::pair<data::include_type, boost::filesystem::path>& p_)
-    {
-      out_ << "{" << to_string(p_.first) << ", " << p_.second << "}";
-    }
+    CHECK_IF_DISPLAYS_ERROR(prefix_, "Error: No arguments provided to which.")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " hello",
+                            "Error: Argument of which is not a header to "
+                            "include. Did you mean <hello> or \"hello\"?")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " <hello", "Error: closing > is missing.")
+    CHECK_IF_DISPLAYS_ERROR(
+        prefix_ + " \"hello", "Error: closing \" is missing.")
+    CHECK_IF_DISPLAYS_ERROR(
+        prefix_ + " <hello> \"world\"",
+        "Error: More than one arguments provided to which.");
+    CHECK_IF_DISPLAYS_ERROR(
+        prefix_ + " \"hello\" <world>",
+        "Error: More than one arguments provided to which.");
+  }
+
+  template <bool All>
+  void test_valid_arguments()
+  {
+    const std::string prefix = All ? "-all " : "";
+
+    JUST_ASSERT_EQUAL(sys("hello", All), parse_arguments(prefix + "<hello>"));
+    JUST_ASSERT_EQUAL(sys("hello/world.hpp", All),
+                      parse_arguments(prefix + "<hello/world.hpp>"));
+    JUST_ASSERT_EQUAL(sys("hello\\world.hpp", All),
+                      parse_arguments(prefix + "<hello\\world.hpp>"));
+    JUST_ASSERT_EQUAL(
+        quote("hello", All), parse_arguments(prefix + "\"hello\""));
+    JUST_ASSERT_EQUAL(quote("hello/world.hpp", All),
+                      parse_arguments(prefix + "\"hello/world.hpp\""));
+    JUST_ASSERT_EQUAL(quote("hello\\world.hpp", All),
+                      parse_arguments(prefix + "\"hello\\world.hpp\""));
   }
 }
 
 JUST_TEST_CASE(test_pragma_which_invalid_arguments)
 {
-  CHECK_IF_DISPLAYS_ERROR(
-      "#msh which", "Error: No arguments provided to which.")
-  CHECK_IF_DISPLAYS_ERROR("#msh which hello",
-                          "Error: Argument of which is not a header to "
-                          "include. Did you mean <hello> or \"hello\"?")
-  CHECK_IF_DISPLAYS_ERROR("#msh which <hello", "Error: closing > is missing.")
-  CHECK_IF_DISPLAYS_ERROR("#msh which \"hello", "Error: closing \" is missing.")
-  CHECK_IF_DISPLAYS_ERROR("#msh which <hello> \"world\"",
-                          "Error: More than one arguments provided to which.");
-  CHECK_IF_DISPLAYS_ERROR("#msh which \"hello\" <world>",
-                          "Error: More than one arguments provided to which.");
+  test_invalid_arguments("#msh which");
+}
+
+JUST_TEST_CASE(test_pragma_which_all_invalid_arguments)
+{
+  test_invalid_arguments("#msh which -all");
 }
 
 JUST_TEST_CASE(test_path_parsing_of_pragma_which)
 {
-  JUST_ASSERT_EQUAL(sys("hello"), parse_arguments("<hello>"));
-  JUST_ASSERT_EQUAL(
-      sys("hello/world.hpp"), parse_arguments("<hello/world.hpp>"));
-  JUST_ASSERT_EQUAL(
-      sys("hello\\world.hpp"), parse_arguments("<hello\\world.hpp>"));
-  JUST_ASSERT_EQUAL(quote("hello"), parse_arguments("\"hello\""));
-  JUST_ASSERT_EQUAL(
-      quote("hello/world.hpp"), parse_arguments("\"hello/world.hpp\""));
-  JUST_ASSERT_EQUAL(
-      quote("hello\\world.hpp"), parse_arguments("\"hello\\world.hpp\""));
+  test_valid_arguments<false>();
+}
+
+JUST_TEST_CASE(test_path_parsing_of_pragma_which_with_all)
+{
+  test_valid_arguments<true>();
 }
