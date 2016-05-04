@@ -63,3 +63,9 @@ void null_displayer::show_call_graph(const iface::call_graph&)
 {
   // throw away
 }
+
+void null_displayer::show_filename_list(
+    const std::vector<boost::filesystem::path>&)
+{
+  // throw away
+}

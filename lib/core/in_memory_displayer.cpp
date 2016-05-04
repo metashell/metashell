@@ -64,6 +64,12 @@ void in_memory_displayer::show_call_graph(const iface::call_graph& cg_)
   _call_graphs.push_back(call_graph(cg_.begin(), cg_.end()));
 }
 
+void in_memory_displayer::show_filename_list(
+    const std::vector<boost::filesystem::path>& filenames_)
+{
+  _filename_lists.push_back(filenames_);
+}
+
 const std::vector<std::string>& in_memory_displayer::errors() const
 {
   return _errors;
@@ -111,6 +117,12 @@ in_memory_displayer::call_graphs() const
   return _call_graphs;
 }
 
+const std::vector<std::vector<boost::filesystem::path>>
+in_memory_displayer::filename_lists() const
+{
+  return _filename_lists;
+}
+
 void in_memory_displayer::clear()
 {
   _errors.clear();
@@ -122,11 +134,12 @@ void in_memory_displayer::clear()
   _file_locations.clear();
   _backtraces.clear();
   _call_graphs.clear();
+  _filename_lists.clear();
 }
 
 bool in_memory_displayer::empty() const
 {
   return _errors.empty() && _raw_texts.empty() && _types.empty() &&
          _comments.empty() && _cpp_codes.empty() && _frames.empty() &&
-         _backtraces.empty() && _call_graphs.empty();
+         _backtraces.empty() && _call_graphs.empty() && _filename_lists.empty();
 }
