@@ -106,8 +106,7 @@ void pragma_which::run(const data::command::iterator& name_begin_,
   }
   else
   {
-    displayer_.show_comment(
-        data::text((*include_dir / include_file.second).string()));
+    displayer_.show_filename_list({*include_dir / include_file.second});
   }
 }
 
