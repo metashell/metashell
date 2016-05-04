@@ -19,9 +19,6 @@
 
 #include <metashell/pragma_without_arguments.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-#include <boost/range/adaptor/transformed.hpp>
-
 #include <string>
 
 namespace metashell
@@ -47,17 +44,7 @@ namespace metashell
 
     virtual void run(iface::displayer& displayer_) const override
     {
-      using boost::algorithm::join;
-      using boost::filesystem::path;
-      using boost::adaptors::transformed;
-      using data::text;
-
-      displayer_.show_comment(text(join(
-          _shell.engine().include_path(Type) | transformed([](const path& p_)
-                                                           {
-                                                             return p_.string();
-                                                           }),
-          "\n")));
+      displayer_.show_filename_list(_shell.engine().include_path(Type));
     }
 
   private:
