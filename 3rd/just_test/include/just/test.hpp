@@ -17,6 +17,17 @@ namespace just
   namespace test
   {
     /*
+     * Customisation point: this template function can be specialised to display
+     * type that don't support streams without overloading the streaming
+     * operator.
+     */
+    template <class T>
+    void display(std::ostream& out_, const T& t_)
+    {
+      out_ << t_;
+    }
+
+    /*
      * assertion_failed
      */
     class assertion_failed
@@ -220,7 +231,10 @@ namespace just
       void operator()(A a_, B b_) const \
       { \
         std::ostringstream s; \
-        s << "Expected: " << a_ << " " #pred " " << b_; \
+        s << "Expected: "; \
+        ::just::test::display(s, a_); \
+        s << " " #pred " "; \
+        ::just::test::display(s, b_); \
         _assert_msg(s.str(), a_ pred b_); \
       } \
     private: \
@@ -251,7 +265,7 @@ namespace just
         {
           o_ << ", ";
         }
-        o_ << *i;
+        ::just::test::display(o_, *i);
       }
       o_ << "]";
     }
