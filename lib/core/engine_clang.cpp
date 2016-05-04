@@ -37,6 +37,8 @@
 
 #include <fstream>
 #include <memory>
+#include <algorithm>
+#include <iterator>
 
 using namespace metashell;
 
@@ -577,7 +579,6 @@ namespace
           run_clang(_clang_binary, {"-v", "-xc++", "-c"}, "");
 
       const std::string s = o.standard_output() + o.standard_error();
-
       std::vector<std::string> lines;
       boost::algorithm::split(lines, s, [](char c_)
                               {
@@ -585,24 +586,10 @@ namespace
                               });
 
       std::vector<boost::filesystem::path> result;
-      bool in_include = false;
-      for (const std::string& line : lines)
+      include_path_of_type(lines, type_, result);
+      if (type_ == data::include_type::quote)
       {
-        if (in_include)
-        {
-          if (boost::algorithm::starts_with(line, " "))
-          {
-            result.push_back(boost::algorithm::trim_copy(line));
-          }
-          else
-          {
-            break;
-          }
-        }
-        else if (boost::algorithm::starts_with(line, include_dotdotdot(type_)))
-        {
-          in_include = true;
-        }
+        include_path_of_type(lines, data::include_type::sys, result);
       }
 
       return result;
@@ -613,6 +600,36 @@ namespace
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_path;
     logger* _logger;
+
+    void include_path_of_type(const std::vector<std::string>& clang_output_,
+                              data::include_type type_,
+                              std::vector<boost::filesystem::path>& append_to_)
+    {
+      using boost::algorithm::starts_with;
+      using boost::algorithm::trim_copy;
+
+      const std::string prefix = include_dotdotdot(type_);
+
+      const auto includes_begin =
+          std::find_if(clang_output_.begin(), clang_output_.end(),
+                       [&prefix](const std::string& line_)
+                       {
+                         return starts_with(line_, prefix);
+                       });
+      if (includes_begin != clang_output_.end())
+      {
+        transform(includes_begin + 1,
+                  find_if(includes_begin + 1, clang_output_.end(),
+                          [](const std::string& line_)
+                          {
+                            return !starts_with(line_, " ");
+                          }),
+                  back_inserter(append_to_), [](const std::string& s_)
+                  {
+                    return trim_copy(s_);
+                  });
+      }
+    }
   };
 } // anonymous namespace
 
