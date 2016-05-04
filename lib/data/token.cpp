@@ -16,6 +16,8 @@
 
 #include <metashell/data/token.hpp>
 
+#include <cassert>
+
 using namespace metashell::data;
 
 token::token() : _type(token_type::unknown), _value() {}
@@ -30,3 +32,19 @@ token_type token::type() const { return _type; }
 token_category token::category() const { return category_of_token(_type); }
 
 const std::string& token::value() const { return _value; }
+
+std::string metashell::data::string_literal_value(const token& token_)
+{
+  assert(token_.type() == token_type::string_literal);
+
+  std::string value = token_.value();
+  if (!value.empty() && value[0] == '"')
+  {
+    value.erase(0, 1);
+  }
+  if (!value.empty() && value[value.size() - 1] == '"')
+  {
+    value.erase(value.size() - 1);
+  }
+  return value;
+}

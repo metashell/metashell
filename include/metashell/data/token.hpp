@@ -43,6 +43,8 @@ namespace metashell
       std::string _value;
     };
 
+    std::string string_literal_value(const token& token_);
+
     template <class TokenIt>
     std::string tokens_to_string(TokenIt begin_, const TokenIt& end_)
     {

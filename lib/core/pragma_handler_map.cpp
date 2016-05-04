@@ -38,6 +38,7 @@
 #include <metashell/pragma_macros.hpp>
 #include <metashell/pragma_macro_names.hpp>
 #include <metashell/pragma_includes.hpp>
+#include <metashell/pragma_which.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -257,6 +258,7 @@ pragma_handler_map::build_default(shell& shell_,
       .add("macro", "names", pragma_macro_names(shell_))
       .add("sysincludes", pragma_includes<data::include_type::sys>(shell_))
       .add("quoteincludes", pragma_includes<data::include_type::quote>(shell_))
+      .add("which", pragma_which(shell_))
       .add("quit", pragma_quit(shell_));
 }
 
