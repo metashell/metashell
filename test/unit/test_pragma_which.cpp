@@ -62,12 +62,19 @@ namespace
   {
     return {data::include_type::quote, path_};
   }
+}
 
-  std::ostream&
-  operator<<(std::ostream& out_,
-             const std::pair<data::include_type, boost::filesystem::path>& p_)
+namespace just
+{
+  namespace test
   {
-    return out_ << "{" << to_string(p_.first) << ", " << p_.second << "}";
+    template <>
+    void display<std::pair<data::include_type, boost::filesystem::path>>(
+        std::ostream& out_,
+        const std::pair<data::include_type, boost::filesystem::path>& p_)
+    {
+      out_ << "{" << to_string(p_.first) << ", " << p_.second << "}";
+    }
   }
 }
 
