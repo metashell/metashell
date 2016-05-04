@@ -258,4 +258,9 @@ You can do that by running `#msh sysincludes` to get the search path for
 `#include <...>` and `#msh quoteincludes` to get the search path for
 `#include "..."`.
 
+## find out where the header files are?
+
+To find out where the compiler loads a header file (eg. `iostream`) from, you
+can use `#msh which <iostream>`.
+
 
