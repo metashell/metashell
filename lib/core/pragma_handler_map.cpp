@@ -106,6 +106,21 @@ namespace
     return pragma_macro(
         "Set Metashell to " + name_ + " mode", move(cmds), shell_);
   }
+
+  template <class ForwardIterator, class Pred>
+  ForwardIterator
+  find_last_if(ForwardIterator begin_, ForwardIterator end_, Pred pred_)
+  {
+    ForwardIterator last = end_;
+    for (ForwardIterator i = begin_; i != end_; ++i)
+    {
+      if (pred_(*i))
+      {
+        last = i;
+      }
+    }
+    return last;
+  }
 }
 
 void pragma_handler_map::process(const data::command::iterator& begin_,
@@ -137,7 +152,14 @@ void pragma_handler_map::process(const data::command::iterator& begin_,
   if (longest_fit_handler)
   {
     longest_fit_handler->run(
-        begin_, longest_fit_begin, longest_fit_begin, e, displayer_);
+        begin_, find_last_if(begin_, longest_fit_begin,
+                             [](const data::token& token_)
+                             {
+                               return token_.category() !=
+                                      data::token_category::whitespace;
+                             }) +
+                    1,
+        longest_fit_begin, e, displayer_);
   }
   else
   {
