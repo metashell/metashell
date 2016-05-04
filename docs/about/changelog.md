@@ -25,6 +25,7 @@
     * Add command to display macro names (`#msh macro names`)
     * Add commands to display include paths
       (`#msh sysincludes` and `#msh quoteincludes`)
+    * Add command to search for include files (`#msh which`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
