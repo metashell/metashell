@@ -90,8 +90,8 @@ Displays the directories checked for #include <...>
 * __`#msh verbose [on|1|off|0]`__ <br />
 Turns verbose mode on or off. When no arguments are used, it displays if verbose mode is turned on.
 
-* __`#msh which [<include file>|"include file"]`__ <br />
-Searches the given include file on the include path.
+* __`#msh which [-all] <include file>|"include file"`__ <br />
+Searches the given include file on the include path. When -all is provided, it displays all headers found, not just the first one.
 
 
 <!-- pragma_info -->

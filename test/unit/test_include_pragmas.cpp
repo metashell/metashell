@@ -22,9 +22,34 @@
 
 #include <just/test.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+
 #include <algorithm>
 
 using namespace metashell;
+
+namespace just
+{
+  namespace test
+  {
+    template <>
+    void display<std::vector<boost::filesystem::path>>(
+        std::ostream& out_,
+        const std::vector<boost::filesystem::path>& filenames_)
+    {
+      using boost::adaptors::transformed;
+      using boost::algorithm::join;
+      using boost::filesystem::path;
+
+      out_ << join(filenames_ | transformed([](const path& path_)
+                                            {
+                                              return path_.string();
+                                            }),
+                   ":");
+    }
+  }
+}
 
 namespace
 {
@@ -37,7 +62,9 @@ namespace
         metashell::create_engine_with_include_path(Type, {"foo", "bar"}));
     sh.line_available("#msh " + to_string(Type) + "includes", d);
 
-    JUST_ASSERT_EQUAL_CONTAINER({data::text("foo\nbar")}, d.comments());
+    JUST_ASSERT_EQUAL_CONTAINER(
+        {std::vector<boost::filesystem::path>{"foo", "bar"}},
+        d.filename_lists());
   }
 }
 

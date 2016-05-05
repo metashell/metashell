@@ -43,6 +43,9 @@ namespace metashell
     virtual void show_backtrace(const data::backtrace& trace_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
 
+    virtual void show_filename_list(
+        const std::vector<boost::filesystem::path>& filenames_) override;
+
   private:
     iface::console* _console;
     bool _indent;

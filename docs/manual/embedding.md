@@ -167,6 +167,19 @@ Format:
 
 An error occured. The description of the error is `<error message>`.
 
+* __filename\_list__
+
+Format:
+```json
+{
+  "type":"filename_list",
+  "filenames":"[list of filenames]"
+}
+```
+
+Displays a list of filenames. The order of the filenames is important (eg. it is
+an include path). Each filename is a string.
+
 * __frame__
 
 Format:

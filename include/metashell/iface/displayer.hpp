@@ -26,7 +26,10 @@
 
 #include <metashell/iface/call_graph.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -48,6 +51,9 @@ namespace metashell
                                      const std::string& env_buffer_) = 0;
       virtual void show_backtrace(const data::backtrace& trace_) = 0;
       virtual void show_call_graph(const iface::call_graph& cg_) = 0;
+
+      virtual void show_filename_list(
+          const std::vector<boost::filesystem::path>& filenames_) = 0;
 
       void show_type_or_error(const data::type_or_error& te_)
       {

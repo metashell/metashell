@@ -21,8 +21,9 @@
 #include <metashell/data/include_type.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/operators.hpp>
 
-#include <map>
+#include <iosfwd>
 
 namespace metashell
 {
@@ -31,6 +32,16 @@ namespace metashell
   class pragma_which : public iface::pragma_handler
   {
   public:
+    struct parsed_arguments : boost::equality_comparable<parsed_arguments>
+    {
+      parsed_arguments(data::include_type include_type_,
+                       const boost::filesystem::path& path_,
+                       bool all_);
+      data::include_type include_type;
+      boost::filesystem::path path;
+      bool all;
+    };
+
     explicit pragma_which(shell& shell_);
 
     virtual iface::pragma_handler* clone() const override;
@@ -44,7 +55,7 @@ namespace metashell
                      const data::command::iterator& args_end_,
                      iface::displayer& displayer_) const override;
 
-    static std::pair<data::include_type, boost::filesystem::path>
+    static parsed_arguments
     parse_arguments(const data::command::iterator& name_begin_,
                     const data::command::iterator& name_end_,
                     const data::command::iterator& args_begin_,
@@ -53,6 +64,11 @@ namespace metashell
   private:
     shell& _shell;
   };
+
+  std::ostream& operator<<(std::ostream& out_,
+                           const pragma_which::parsed_arguments& args_);
+  bool operator==(const pragma_which::parsed_arguments& a_,
+                  const pragma_which::parsed_arguments& b_);
 }
 
 #endif
