@@ -42,6 +42,7 @@
     * Reduced temporary directory creation: one shell creates one temporary
       directory only and uses that (and its subdirectories)
     * New document type in the JSON interface: `filename_list`
+    * New document type in the JSON interface: `filename_set`
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

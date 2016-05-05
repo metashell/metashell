@@ -46,6 +46,9 @@ namespace metashell
     virtual void show_filename_list(
         const std::vector<boost::filesystem::path>& filenames_) override;
 
+    virtual void show_filename_set(
+        const std::set<boost::filesystem::path>& filenames_) override;
+
   private:
     iface::console* _console;
     bool _indent;
