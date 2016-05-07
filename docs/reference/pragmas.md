@@ -48,6 +48,9 @@ Evaluates code as a metaprogram. Use this if Metashell thinks about the code tha
 * __`#msh help [<command>]`__ <br />
 Displays a help message.
 
+* __`#msh included headers [<expression>]`__ <br />
+Displays the list of header files (recursively) included into the environment. When <expression> is provided, it displays the headers added to the envrionment by <expression>. Headers that are included multiple times are listed only once. Headers that are not included because of being in a conditional (#if ... #endif) part that is skipped are not listed.
+
 * __`#msh macro names`__ <br />
 Displays the names of the defined macros
 
