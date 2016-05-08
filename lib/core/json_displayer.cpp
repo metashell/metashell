@@ -220,3 +220,10 @@ void json_displayer::show_filename_list(
   write_filenames(
       _writer, "filename_list", filenames_.begin(), filenames_.end());
 }
+
+void json_displayer::show_filename_set(
+    const std::set<boost::filesystem::path>& filenames_)
+{
+  write_filenames(
+      _writer, "filename_set", filenames_.begin(), filenames_.end());
+}

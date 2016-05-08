@@ -87,6 +87,12 @@ namespace
       // some compilers
     }
 
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string&) override
+    {
+      return std::set<boost::filesystem::path>();
+    }
+
   private:
     data::result _result;
     std::vector<boost::filesystem::path> _sysincludes;

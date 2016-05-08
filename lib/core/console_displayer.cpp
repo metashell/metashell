@@ -385,3 +385,10 @@ void console_displayer::show_filename_list(
   pager pager(*_console);
   show_filenames(filenames_.begin(), filenames_.end(), pager);
 }
+
+void console_displayer::show_filename_set(
+    const std::set<boost::filesystem::path>& filenames_)
+{
+  pager pager(*_console);
+  show_filenames(filenames_.begin(), filenames_.end(), pager);
+}

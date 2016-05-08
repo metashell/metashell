@@ -62,6 +62,9 @@ namespace metashell
 
       virtual std::vector<boost::filesystem::path>
       include_path(data::include_type type_) = 0;
+
+      virtual std::set<boost::filesystem::path>
+      files_included_by(const std::string& exp_) = 0;
     };
   }
 }

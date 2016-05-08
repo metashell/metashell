@@ -180,6 +180,19 @@ Format:
 Displays a list of filenames. The order of the filenames is important (eg. it is
 an include path). Each filename is a string.
 
+* __filename\_set__
+
+Format:
+```json
+{
+  "type":"filename_set",
+  "filenames":"[list of filenames]"
+}
+```
+
+Displays a set of filenames. The order of the filenames is not important. Each
+filename is a string.
+
 * __frame__
 
 Format:

@@ -69,3 +69,8 @@ void null_displayer::show_filename_list(
 {
   // throw away
 }
+
+void null_displayer::show_filename_set(const std::set<boost::filesystem::path>&)
+{
+  // throw away
+}
