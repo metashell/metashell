@@ -53,13 +53,13 @@ namespace
   pragma_which::parsed_arguments sys(const boost::filesystem::path& path_,
                                      bool all_)
   {
-    return {data::include_type::sys, path_, all_};
+    return {data::include_argument(data::include_type::sys, path_), all_};
   }
 
   pragma_which::parsed_arguments quote(const boost::filesystem::path& path_,
                                        bool all_)
   {
-    return {data::include_type::quote, path_, all_};
+    return {data::include_argument(data::include_type::quote, path_), all_};
   }
 
   void test_invalid_arguments(const std::string& prefix_)

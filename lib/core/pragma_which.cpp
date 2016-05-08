@@ -100,17 +100,17 @@ void pragma_which::run(const data::command::iterator& name_begin_,
 
   const parsed_arguments args =
       parse_arguments(name_begin_, name_end_, args_begin_, args_end_);
-  const auto include_path = _shell.engine().include_path(args.include_type);
-  const auto files =
-      include_path |
-      transformed(std::function<path(const path&)>([&args](const path& path_)
-                                                   {
-                                                     return path_ / args.path;
-                                                   })) |
-      filtered([](const path& path_)
-               {
-                 return exists(path_);
-               });
+  const auto include_path = _shell.engine().include_path(args.header.type);
+  const auto files = include_path |
+                     transformed(std::function<path(const path&)>(
+                         [&args](const path& path_)
+                         {
+                           return path_ / args.header.path;
+                         })) |
+                     filtered([](const path& path_)
+                              {
+                                return exists(path_);
+                              });
 
   if (files.empty())
   {
@@ -153,13 +153,15 @@ pragma_which::parse_arguments(const data::command::iterator& name_begin_,
   }
   else if (args_begin_->type() == data::token_type::operator_less)
   {
-    return {data::include_type::sys,
-            parse_path_until_token<'>'>(
-                name_begin_, name_end_, args_begin_ + 1, args_end_,
-                [](const data::token& token_)
-                {
-                  return token_.type() == data::token_type::operator_greater;
-                }),
+    return {data::include_argument(
+                data::include_type::sys,
+                parse_path_until_token<'>'>(
+                    name_begin_, name_end_, args_begin_ + 1, args_end_,
+                    [](const data::token& token_)
+                    {
+                      return token_.type() ==
+                             data::token_type::operator_greater;
+                    })),
             false};
   }
   else if (args_begin_->type() == data::token_type::string_literal)
@@ -170,15 +172,17 @@ pragma_which::parse_arguments(const data::command::iterator& name_begin_,
     }
     else
     {
-      return {
-          data::include_type::quote, string_literal_value(*args_begin_), false};
+      return {data::include_argument(data::include_type::quote,
+                                     string_literal_value(*args_begin_)),
+              false};
     }
   }
   else if (include_quote_token(*args_begin_))
   {
-    return {data::include_type::quote,
-            parse_path_until_token<'"'>(name_begin_, name_end_, args_begin_ + 1,
-                                        args_end_, include_quote_token),
+    return {data::include_argument(data::include_type::quote,
+                                   parse_path_until_token<'"'>(
+                                       name_begin_, name_end_, args_begin_ + 1,
+                                       args_end_, include_quote_token)),
             false};
   }
 
@@ -190,10 +194,8 @@ pragma_which::parse_arguments(const data::command::iterator& name_begin_,
 }
 
 pragma_which::parsed_arguments::parsed_arguments(
-    data::include_type include_type_,
-    const boost::filesystem::path& path_,
-    bool all_)
-  : include_type(include_type_), path(path_), all(all_)
+    const data::include_argument& header_, bool all_)
+  : header(header_), all(all_)
 {
 }
 
@@ -204,12 +206,11 @@ std::ostream& metashell::operator<<(std::ostream& out_,
   {
     out_ << "-all ";
   }
-  return out_ << include_code(args_.include_type, args_.path);
+  return out_ << args_.header;
 }
 
 bool metashell::operator==(const pragma_which::parsed_arguments& a_,
                            const pragma_which::parsed_arguments& b_)
 {
-  return a_.include_type == b_.include_type && a_.path == b_.path &&
-         a_.all == b_.all;
+  return a_.header == b_.header && a_.all == b_.all;
 }
