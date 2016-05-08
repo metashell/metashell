@@ -22,18 +22,12 @@
 #include <boost/range/adaptors.hpp>
 
 #include <algorithm>
+#include <map>
 
 using namespace metashell;
 
 namespace
 {
-  void throw_more_than_one_arguments(const data::command::iterator& name_begin_,
-                                     const data::command::iterator& name_end_)
-  {
-    throw exception("More than one arguments provided to " +
-                    data::tokens_to_string(name_begin_, name_end_) + ".");
-  }
-
   template <class InputIt>
   InputIt first_non_whitespace(InputIt begin_, InputIt end_)
   {
@@ -45,10 +39,8 @@ namespace
   }
 
   template <char Closing, class Pred>
-  boost::filesystem::path
-  parse_path_until_token(const data::command::iterator& name_begin_,
-                         const data::command::iterator& name_end_,
-                         data::command::iterator begin_,
+  std::pair<boost::filesystem::path, data::command::iterator>
+  parse_path_until_token(data::command::iterator begin_,
                          data::command::iterator end_,
                          Pred is_closing_token_)
   {
@@ -59,14 +51,51 @@ namespace
     }
     else if (first_non_whitespace(path_end + 1, end_) != end_)
     {
-      throw_more_than_one_arguments(name_begin_, name_end_);
+      throw exception("More than one arguments provided.");
     }
-    return data::tokens_to_string(begin_, path_end);
+    return {data::tokens_to_string(begin_, path_end), path_end + 1};
   }
 
   bool include_quote_token(const data::token& token_)
   {
     return token_.type() == data::token_type::unknown && token_.value() == "\"";
+  }
+
+  std::pair<boost::optional<data::include_argument>, data::command::iterator>
+  parse_include_argument(const data::command::iterator& begin_,
+                         const data::command::iterator& end_)
+  {
+    if (begin_ != end_)
+    {
+      if (begin_->type() == data::token_type::operator_less)
+      {
+        const auto path = parse_path_until_token<'>'>(
+            begin_ + 1, end_, [](const data::token& token_)
+            {
+              return token_.type() == data::token_type::operator_greater;
+            });
+        return std::make_pair(
+            data::include_argument(data::include_type::sys, path.first),
+            path.second);
+      }
+      else if (begin_->type() == data::token_type::string_literal)
+      {
+        return std::make_pair(
+            data::include_argument(
+                data::include_type::quote, string_literal_value(*begin_)),
+            begin_ + 1);
+      }
+      else if (include_quote_token(*begin_))
+      {
+        const auto path =
+            parse_path_until_token<'"'>(begin_ + 1, end_, include_quote_token);
+        return std::make_pair(
+            data::include_argument(data::include_type::quote, path.first),
+            path.second);
+      }
+    }
+
+    return std::make_pair(boost::none, begin_);
   }
 }
 
@@ -98,8 +127,8 @@ void pragma_which::run(const data::command::iterator& name_begin_,
   using boost::adaptors::transformed;
   using boost::adaptors::filtered;
 
-  const parsed_arguments args =
-      parse_arguments(name_begin_, name_end_, args_begin_, args_end_);
+  const parsed_arguments args = parse_arguments(
+      data::tokens_to_string(name_begin_, name_end_), args_begin_, args_end_);
   const auto include_path = _shell.engine().include_path(args.header.type);
   const auto files = include_path |
                      transformed(std::function<path(const path&)>(
@@ -130,67 +159,62 @@ void pragma_which::run(const data::command::iterator& name_begin_,
 }
 
 pragma_which::parsed_arguments
-pragma_which::parse_arguments(const data::command::iterator& name_begin_,
-                              const data::command::iterator& name_end_,
+pragma_which::parse_arguments(const std::string& name_,
                               const data::command::iterator& args_begin_,
                               const data::command::iterator& args_end_)
 {
   if (args_begin_ == args_end_)
   {
-    throw exception("No arguments provided to " +
-                    data::tokens_to_string(name_begin_, name_end_) + ".");
+    throw exception("No header is provided.");
   }
-  else if (args_begin_->type() == data::token_type::operator_minus &&
-           args_begin_ + 1 != args_end_ &&
-           (args_begin_ + 1)->type() == data::token_type::identifier &&
-           (args_begin_ + 1)->value() == "all")
+
+  bool all = false;
+
+  data::command::iterator i = args_begin_;
+  while (i != args_end_ && i->type() == data::token_type::operator_minus)
   {
-    parsed_arguments args = parse_arguments(
-        name_begin_, name_end_,
-        first_non_whitespace(args_begin_ + 2, args_end_), args_end_);
-    args.all = true;
-    return args;
-  }
-  else if (args_begin_->type() == data::token_type::operator_less)
-  {
-    return {data::include_argument(
-                data::include_type::sys,
-                parse_path_until_token<'>'>(
-                    name_begin_, name_end_, args_begin_ + 1, args_end_,
-                    [](const data::token& token_)
-                    {
-                      return token_.type() ==
-                             data::token_type::operator_greater;
-                    })),
-            false};
-  }
-  else if (args_begin_->type() == data::token_type::string_literal)
-  {
-    if (args_begin_ + 1 != args_end_)
+    ++i;
+
+    if (i == args_end_)
     {
-      throw_more_than_one_arguments(name_begin_, name_end_);
+      throw exception("Invalid argument: -");
+    }
+    else if (i->type() == data::token_type::identifier && i->value() == "all")
+    {
+      i = first_non_whitespace(i + 1, args_end_);
+      all = true;
     }
     else
     {
-      return {data::include_argument(data::include_type::quote,
-                                     string_literal_value(*args_begin_)),
-              false};
+      throw exception(
+          "Invalid argument: -" +
+          data::tokens_to_string(i, first_non_whitespace(i + 1, args_end_)));
     }
   }
-  else if (include_quote_token(*args_begin_))
-  {
-    return {data::include_argument(data::include_type::quote,
-                                   parse_path_until_token<'"'>(
-                                       name_begin_, name_end_, args_begin_ + 1,
-                                       args_end_, include_quote_token)),
-            false};
-  }
 
-  const std::string arguments = data::tokens_to_string(args_begin_, args_end_);
-  throw exception("Argument of " +
-                  data::tokens_to_string(name_begin_, name_end_) +
-                  " is not a header to include. Did you mean <" + arguments +
-                  "> or \"" + arguments + "\"?");
+  if (i == args_end_)
+  {
+    throw exception("No header is provided.");
+  }
+  else
+  {
+    const auto include_arg = parse_include_argument(i, args_end_);
+    if (!include_arg.first)
+    {
+      const std::string arguments = data::tokens_to_string(i, args_end_);
+      throw exception("Argument of " + name_ +
+                      " is not a header to include. Did you mean <" +
+                      arguments + "> or \"" + arguments + "\"?");
+    }
+    else if (include_arg.second == args_end_)
+    {
+      return {*include_arg.first, all};
+    }
+    else
+    {
+      throw exception("More than one arguments provided.");
+    }
+  }
 }
 
 pragma_which::parsed_arguments::parsed_arguments(

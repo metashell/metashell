@@ -52,8 +52,7 @@ namespace metashell
                      iface::displayer& displayer_) const override;
 
     static parsed_arguments
-    parse_arguments(const data::command::iterator& name_begin_,
-                    const data::command::iterator& name_end_,
+    parse_arguments(const std::string& name_,
                     const data::command::iterator& args_begin_,
                     const data::command::iterator& args_end_);
 
