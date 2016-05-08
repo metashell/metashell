@@ -18,11 +18,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/include_type.hpp>
+#include <metashell/data/command.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
+#include <map>
 
 namespace metashell
 {
@@ -32,8 +35,11 @@ namespace metashell
     {
       include_argument(include_type type_,
                        const boost::filesystem::path& path_);
-      data::include_type type;
+      include_type type;
       boost::filesystem::path path;
+
+      static std::pair<boost::optional<include_argument>, command::iterator>
+      parse(const command::iterator& begin_, const command::iterator& end_);
     };
 
     std::ostream& operator<<(std::ostream& out_, const include_argument& args_);

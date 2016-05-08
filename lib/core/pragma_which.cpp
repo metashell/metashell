@@ -21,83 +21,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
-#include <algorithm>
-#include <map>
-
 using namespace metashell;
-
-namespace
-{
-  template <class InputIt>
-  InputIt first_non_whitespace(InputIt begin_, InputIt end_)
-  {
-    return std::find_if(begin_, end_, [](const data::token& token_)
-                        {
-                          return token_.category() !=
-                                 data::token_category::whitespace;
-                        });
-  }
-
-  template <char Closing, class Pred>
-  std::pair<boost::filesystem::path, data::command::iterator>
-  parse_path_until_token(data::command::iterator begin_,
-                         data::command::iterator end_,
-                         Pred is_closing_token_)
-  {
-    const auto path_end = std::find_if(begin_, end_, is_closing_token_);
-    if (path_end == end_)
-    {
-      throw exception(std::string("closing ") + Closing + " is missing.");
-    }
-    else if (first_non_whitespace(path_end + 1, end_) != end_)
-    {
-      throw exception("More than one arguments provided.");
-    }
-    return {data::tokens_to_string(begin_, path_end), path_end + 1};
-  }
-
-  bool include_quote_token(const data::token& token_)
-  {
-    return token_.type() == data::token_type::unknown && token_.value() == "\"";
-  }
-
-  std::pair<boost::optional<data::include_argument>, data::command::iterator>
-  parse_include_argument(const data::command::iterator& begin_,
-                         const data::command::iterator& end_)
-  {
-    if (begin_ != end_)
-    {
-      if (begin_->type() == data::token_type::operator_less)
-      {
-        const auto path = parse_path_until_token<'>'>(
-            begin_ + 1, end_, [](const data::token& token_)
-            {
-              return token_.type() == data::token_type::operator_greater;
-            });
-        return std::make_pair(
-            data::include_argument(data::include_type::sys, path.first),
-            path.second);
-      }
-      else if (begin_->type() == data::token_type::string_literal)
-      {
-        return std::make_pair(
-            data::include_argument(
-                data::include_type::quote, string_literal_value(*begin_)),
-            begin_ + 1);
-      }
-      else if (include_quote_token(*begin_))
-      {
-        const auto path =
-            parse_path_until_token<'"'>(begin_ + 1, end_, include_quote_token);
-        return std::make_pair(
-            data::include_argument(data::include_type::quote, path.first),
-            path.second);
-      }
-    }
-
-    return std::make_pair(boost::none, begin_);
-  }
-}
 
 pragma_which::pragma_which(shell& shell_) : _shell(shell_) {}
 
@@ -181,14 +105,14 @@ pragma_which::parse_arguments(const std::string& name_,
     }
     else if (i->type() == data::token_type::identifier && i->value() == "all")
     {
-      i = first_non_whitespace(i + 1, args_end_);
+      i = data::skip_all_whitespace(i + 1, args_end_);
       all = true;
     }
     else
     {
-      throw exception(
-          "Invalid argument: -" +
-          data::tokens_to_string(i, first_non_whitespace(i + 1, args_end_)));
+      throw exception("Invalid argument: -" +
+                      data::tokens_to_string(
+                          i, data::skip_all_whitespace(i + 1, args_end_)));
     }
   }
 
@@ -198,7 +122,7 @@ pragma_which::parse_arguments(const std::string& name_,
   }
   else
   {
-    const auto include_arg = parse_include_argument(i, args_end_);
+    const auto include_arg = data::include_argument::parse(i, args_end_);
     if (!include_arg.first)
     {
       const std::string arguments = data::tokens_to_string(i, args_end_);
