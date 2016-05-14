@@ -46,6 +46,8 @@
       directory only and uses that (and its subdirectories)
     * New document type in the JSON interface: `filename_list`
     * New document type in the JSON interface: `filename_set`
+    * The `-nostdinc` and `-nosdtinc++` arguments remove the path of the headers
+      shipped with Metashell from the system include path.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.
