@@ -26,7 +26,7 @@
 
 #include <metashell/iface/call_graph.hpp>
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/boost/filesystem/path.hpp>
 
 #include <string>
 #include <vector>

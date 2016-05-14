@@ -44,39 +44,38 @@ namespace
 {
   pragma_which::parsed_arguments parse_arguments(const std::string& arguments_)
   {
-    const data::command name("which");
     const data::command arguments(arguments_);
     return pragma_which::parse_arguments(
-        name.begin(), name.end(), arguments.begin(), arguments.end());
+        "which", arguments.begin(), arguments.end());
   }
 
   pragma_which::parsed_arguments sys(const boost::filesystem::path& path_,
                                      bool all_)
   {
-    return {data::include_type::sys, path_, all_};
+    return {data::include_argument(data::include_type::sys, path_), all_};
   }
 
   pragma_which::parsed_arguments quote(const boost::filesystem::path& path_,
                                        bool all_)
   {
-    return {data::include_type::quote, path_, all_};
+    return {data::include_argument(data::include_type::quote, path_), all_};
   }
 
   void test_invalid_arguments(const std::string& prefix_)
   {
-    CHECK_IF_DISPLAYS_ERROR(prefix_, "Error: No arguments provided to which.")
+    CHECK_IF_DISPLAYS_ERROR(prefix_, "Error: No header is provided.")
     CHECK_IF_DISPLAYS_ERROR(prefix_ + " hello",
                             "Error: Argument of which is not a header to "
                             "include. Did you mean <hello> or \"hello\"?")
     CHECK_IF_DISPLAYS_ERROR(prefix_ + " <hello", "Error: closing > is missing.")
     CHECK_IF_DISPLAYS_ERROR(
         prefix_ + " \"hello", "Error: closing \" is missing.")
-    CHECK_IF_DISPLAYS_ERROR(
-        prefix_ + " <hello> \"world\"",
-        "Error: More than one arguments provided to which.");
-    CHECK_IF_DISPLAYS_ERROR(
-        prefix_ + " \"hello\" <world>",
-        "Error: More than one arguments provided to which.");
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " <hello> \"world\"",
+                            "Error: More than one arguments provided.");
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " \"hello\" <world>",
+                            "Error: More than one arguments provided.");
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " -", "Error: Invalid argument: -")
+    CHECK_IF_DISPLAYS_ERROR(prefix_ + " -asd", "Error: Invalid argument: -asd")
   }
 
   template <bool All>

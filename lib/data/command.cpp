@@ -17,6 +17,8 @@
 #include <metashell/data/command.hpp>
 #include <metashell/wave_tokeniser.hpp>
 
+#include <algorithm>
+
 using namespace metashell::data;
 
 namespace
@@ -53,6 +55,16 @@ metashell::data::skip_whitespace(command::iterator begin_,
   return (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
              skip(begin_) :
              begin_;
+}
+
+command::iterator
+metashell::data::skip_all_whitespace(const command::iterator& begin_,
+                                     const command::iterator& end_)
+{
+  return std::find_if(begin_, end_, [](const token& token_)
+                      {
+                        return !whitespace_or_comment(token_.category());
+                      });
 }
 
 std::string metashell::data::tokens_to_string(command::iterator begin_,

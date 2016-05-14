@@ -18,9 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/data/include_type.hpp>
+#include <metashell/data/include_argument.hpp>
 
-#include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
 
 #include <iosfwd>
@@ -34,11 +33,8 @@ namespace metashell
   public:
     struct parsed_arguments : boost::equality_comparable<parsed_arguments>
     {
-      parsed_arguments(data::include_type include_type_,
-                       const boost::filesystem::path& path_,
-                       bool all_);
-      data::include_type include_type;
-      boost::filesystem::path path;
+      parsed_arguments(const data::include_argument& header_, bool all_);
+      data::include_argument header;
       bool all;
     };
 
@@ -56,8 +52,7 @@ namespace metashell
                      iface::displayer& displayer_) const override;
 
     static parsed_arguments
-    parse_arguments(const data::command::iterator& name_begin_,
-                    const data::command::iterator& name_end_,
+    parse_arguments(const std::string& name_,
                     const data::command::iterator& args_begin_,
                     const data::command::iterator& args_end_);
 
