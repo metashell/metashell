@@ -17,20 +17,48 @@
 #include <metashell_system_test/filename_list.hpp>
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/system_test_config.hpp>
 
 #include <boost/range/adaptors.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 
 #include <just/test.hpp>
 #include <just/temp.hpp>
 
+#include <algorithm>
+
 using namespace metashell_system_test;
 
 namespace
 {
+  boost::optional<std::string> remove_prefix(const std::string& prefix_,
+                                             const std::string& s_)
+  {
+    if (boost::algorithm::starts_with(s_, prefix_))
+    {
+      return s_.substr(prefix_.size());
+    }
+    else
+    {
+      return boost::none;
+    }
+  }
+
   bool metashell_standard_header_path(const boost::filesystem::path& path_)
   {
-    return path_.filename() == "shell" || path_.filename() == "templight";
+    if (path_.filename() == "shell" || path_.filename() == "templight")
+    {
+      return true;
+    }
+    const auto end = system_test_config::metashell_args().end();
+    return find_if(
+               find(system_test_config::metashell_args().begin(), end, "--"),
+               end, [&path_](const std::string& s_)
+               {
+                 const auto path = remove_prefix("-I", s_);
+                 return path && *path == path_;
+               }) != end;
   }
 
   filename_list remove_metashell_standard_headers(const filename_list& headers_)
