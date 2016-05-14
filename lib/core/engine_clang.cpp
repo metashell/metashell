@@ -662,7 +662,7 @@ namespace
     include_path(data::include_type type_) override
     {
       const data::process_output o =
-          run_clang(_clang_binary, {"-v", "-xc++", "-c"}, "");
+          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
       const std::string s = o.standard_output() + o.standard_error();
       std::vector<std::string> lines;
