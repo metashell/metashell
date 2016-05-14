@@ -27,6 +27,8 @@
       (`#msh sysincludes` and `#msh quoteincludes`)
     * Add command to search for include files (`#msh which`)
     * Add command to list included headers (`#msh included headers`)
+    * Add command to list available headers with given prefixes
+      (`#msh ls`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the

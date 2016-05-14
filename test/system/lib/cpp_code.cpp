@@ -22,11 +22,27 @@
 #include <rapidjson/document.h>
 
 #include <iostream>
+#include <stdexcept>
 
 using namespace metashell_system_test;
 
 cpp_code::cpp_code(pattern::string code_) : _code(code_) {}
 
+cpp_code::cpp_code(const json_string& s_) : _code(pattern::_)
+{
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]) &&
+      d["code"].IsString())
+  {
+    _code = d["code"].GetString();
+  }
+  else
+  {
+    throw std::runtime_error("Invalid cpp_code: " + s_.get());
+  }
+}
 const pattern::string& cpp_code::code() const { return _code; }
 
 std::ostream& metashell_system_test::operator<<(std::ostream& out_,
