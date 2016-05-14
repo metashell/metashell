@@ -251,3 +251,20 @@ expression.
 
 You can try instantiating the two other overloads of `make_unique` and see how
 the compiler instantiates the types in those cases.
+
+## display the include path of the compiler?
+
+You can do that by running `#msh sysincludes` to get the search path for
+`#include <...>` and `#msh quoteincludes` to get the search path for
+`#include "..."`.
+
+## find out where the header files are?
+
+To find out where the compiler loads a header file (eg. `iostream`) from, you
+can use `#msh which <iostream>`.
+
+## find out if a header file hides another one?
+
+The `#msh which -all` macro displays all header files (in order) which might be
+included. The compiler will include the first one, the rest of them are hidden
+by that first one.

@@ -95,6 +95,16 @@ namespace
       }
     }
   }
+
+  template <class InputIt>
+  void show_filenames(InputIt begin_, InputIt end_, pager& pager_)
+  {
+    for (InputIt i = begin_; i != end_; ++i)
+    {
+      pager_.show(data::colored_string(i->string(), data::color::bright_cyan));
+      pager_.new_line();
+    }
+  }
 } // anonymouse namespace
 
 console_displayer::console_displayer(iface::console& console_,
@@ -367,4 +377,18 @@ void console_displayer::show_call_graph(const iface::call_graph& cg_)
 
     depth_counter[n.depth() + 1] += n.number_of_children();
   }
+}
+
+void console_displayer::show_filename_list(
+    const std::vector<boost::filesystem::path>& filenames_)
+{
+  pager pager(*_console);
+  show_filenames(filenames_.begin(), filenames_.end(), pager);
+}
+
+void console_displayer::show_filename_set(
+    const std::set<boost::filesystem::path>& filenames_)
+{
+  pager pager(*_console);
+  show_filenames(filenames_.begin(), filenames_.end(), pager);
 }

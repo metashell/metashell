@@ -59,6 +59,29 @@ namespace
       writer_.double_(frame_.time_taken_ratio());
     }
   }
+
+  template <class InputIt>
+  void write_filenames(iface::json_writer& writer_,
+                       const std::string& type_,
+                       InputIt begin_,
+                       InputIt end_)
+  {
+    writer_.start_object();
+
+    writer_.key("type");
+    writer_.string(type_);
+
+    writer_.key("filenames");
+    writer_.start_array();
+    for (InputIt i = begin_; i != end_; ++i)
+    {
+      writer_.string(i->string());
+    }
+    writer_.end_array();
+
+    writer_.end_object();
+    writer_.end_document();
+  }
 }
 
 json_displayer::json_displayer(iface::json_writer& writer_) : _writer(writer_)
@@ -189,4 +212,18 @@ void json_displayer::show_call_graph(const iface::call_graph& cg_)
 
   _writer.end_object();
   _writer.end_document();
+}
+
+void json_displayer::show_filename_list(
+    const std::vector<boost::filesystem::path>& filenames_)
+{
+  write_filenames(
+      _writer, "filename_list", filenames_.begin(), filenames_.end());
+}
+
+void json_displayer::show_filename_set(
+    const std::set<boost::filesystem::path>& filenames_)
+{
+  write_filenames(
+      _writer, "filename_set", filenames_.begin(), filenames_.end());
 }

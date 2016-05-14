@@ -35,6 +35,12 @@ namespace metashell
                                    const std::string& env_buffer_) override;
     virtual void show_backtrace(const data::backtrace& trace_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
+
+    virtual void show_filename_list(
+        const std::vector<boost::filesystem::path>& filenames_) override;
+
+    virtual void show_filename_set(
+        const std::set<boost::filesystem::path>& filenames_) override;
   };
 }
 

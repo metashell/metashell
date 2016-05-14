@@ -23,7 +23,13 @@ namespace
   class engine_constant : public iface::engine
   {
   public:
-    explicit engine_constant(data::result result_) : _result(std::move(result_))
+    explicit engine_constant(
+        data::result result_,
+        std::vector<boost::filesystem::path> sysincludes_,
+        std::vector<boost::filesystem::path> quoteincludes_)
+      : _result(std::move(result_)),
+        _sysincludes(move(sysincludes_)),
+        _quoteincludes(move(quoteincludes_))
     {
     }
 
@@ -67,25 +73,65 @@ namespace
       return "";
     }
 
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override
+    {
+      switch (type_)
+      {
+      case data::include_type::sys:
+        return _sysincludes;
+      case data::include_type::quote:
+        return _quoteincludes;
+      }
+      return {}; // avoid control reaches end of non-void function warnings on
+      // some compilers
+    }
+
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string&) override
+    {
+      return std::set<boost::filesystem::path>();
+    }
+
   private:
     data::result _result;
+    std::vector<boost::filesystem::path> _sysincludes;
+    std::vector<boost::filesystem::path> _quoteincludes;
   };
 
-  std::unique_ptr<engine_constant> create(data::result result_)
+  std::unique_ptr<engine_constant>
+  create(data::result result_,
+         std::vector<boost::filesystem::path> sysincludes_,
+         std::vector<boost::filesystem::path> quoteincludes_)
   {
-    return std::unique_ptr<engine_constant>(
-        new engine_constant(std::move(result_)));
+    return std::unique_ptr<engine_constant>(new engine_constant(
+        std::move(result_), move(sysincludes_), move(quoteincludes_)));
   }
 }
 
 std::unique_ptr<iface::engine>
 metashell::create_failing_engine(const std::string& msg_)
 {
-  return create(data::result(false, "", msg_, ""));
+  return create(data::result(false, "", msg_, ""), {}, {});
 }
 
 std::unique_ptr<iface::engine>
 metashell::create_engine_returning_type(const std::string& type_)
 {
-  return create(data::result(true, type_, "", ""));
+  return create(data::result(true, type_, "", ""), {}, {});
+}
+
+std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
+    data::include_type type_, std::vector<boost::filesystem::path> path_)
+{
+  const data::result result(true, "int", "", "");
+  switch (type_)
+  {
+  case data::include_type::sys:
+    return create(result, move(path_), {});
+  case data::include_type::quote:
+    return create(result, {}, move(path_));
+  }
+  return nullptr; // avoid control reaches end of non-void function warnings on
+  // some compilers
 }

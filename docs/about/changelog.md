@@ -23,6 +23,10 @@
     * Add command to display a comment in the shell (`#msh echo`)
     * Add command to display macro definitions (`#msh macros`)
     * Add command to display macro names (`#msh macro names`)
+    * Add commands to display include paths
+      (`#msh sysincludes` and `#msh quoteincludes`)
+    * Add command to search for include files (`#msh which`)
+    * Add command to list included headers (`#msh included headers`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
@@ -38,6 +42,8 @@
       disabled by using `--disable_saving`.
     * Reduced temporary directory creation: one shell creates one temporary
       directory only and uses that (and its subdirectories)
+    * New document type in the JSON interface: `filename_list`
+    * New document type in the JSON interface: `filename_set`
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

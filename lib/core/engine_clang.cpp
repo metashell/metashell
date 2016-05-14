@@ -29,12 +29,17 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
-#include <fstream>
+#include <just/file.hpp>
+
 #include <memory>
+#include <algorithm>
+#include <iterator>
 
 using namespace metashell;
 
@@ -341,6 +346,70 @@ namespace
     return args;
   }
 
+  template <class InputIt>
+  std::set<boost::filesystem::path> split_file_list(InputIt begin_,
+                                                    InputIt end_)
+  {
+    std::set<boost::filesystem::path> result;
+    bool escaped = false;
+    std::string current;
+    for (InputIt i = begin_; i != end_; ++i)
+    {
+      if (escaped)
+      {
+        switch (*i)
+        {
+        case ' ':
+        case '\t':
+          current += *i;
+          break;
+        case '\r':
+        case '\n':
+          if (!current.empty())
+          {
+            result.insert(current);
+            current.clear();
+          }
+          break;
+        default:
+          current += '\\';
+          current += *i;
+        }
+        escaped = false;
+      }
+      else
+      {
+        switch (*i)
+        {
+        case ' ':
+        case '\r':
+        case '\n':
+        case '\t':
+          if (!current.empty())
+          {
+            result.insert(current);
+            current.clear();
+          }
+          break;
+        case '\\':
+          escaped = true;
+          break;
+        default:
+          current += *i;
+        }
+      }
+    }
+    if (escaped)
+    {
+      current += '\\';
+    }
+    if (!current.empty())
+    {
+      result.insert(current);
+    }
+    return result;
+  }
+
   template <bool UseInternalTemplight>
   class engine_clang : public iface::engine
   {
@@ -568,11 +637,84 @@ namespace
       }
     }
 
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override
+    {
+      const data::process_output o =
+          run_clang(_clang_binary, {"-v", "-xc++", "-c"}, "");
+
+      const std::string s = o.standard_output() + o.standard_error();
+      std::vector<std::string> lines;
+      boost::algorithm::split(lines, s, [](char c_)
+                              {
+                                return c_ == '\n';
+                              });
+
+      std::vector<boost::filesystem::path> result;
+      include_path_of_type(lines, type_, result);
+      if (type_ == data::include_type::quote)
+      {
+        include_path_of_type(lines, data::include_type::sys, result);
+      }
+
+      return result;
+    }
+
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string& exp_) override
+    {
+      const boost::filesystem::path d_file = _internal_dir / "out.d";
+      const data::process_output output =
+          run_clang(_clang_binary, {"-MD", "-MF", d_file.string(), "-E"}, exp_);
+
+      if (output.exit_code() == data::exit_code_t(0) && exists(d_file))
+      {
+        const auto deps = just::file::read(d_file.string());
+        const auto start = std::find(begin(deps), end(deps), ':');
+        if (start != end(deps))
+        {
+          return split_file_list(start + 1, end(deps));
+        }
+      }
+      throw std::runtime_error("Error getting list of included headers: " +
+                               output.standard_error());
+    }
+
   private:
     clang_binary _clang_binary;
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_path;
     logger* _logger;
+
+    void include_path_of_type(const std::vector<std::string>& clang_output_,
+                              data::include_type type_,
+                              std::vector<boost::filesystem::path>& append_to_)
+    {
+      using boost::algorithm::starts_with;
+      using boost::algorithm::trim_copy;
+
+      const std::string prefix = include_dotdotdot(type_);
+
+      const auto includes_begin =
+          std::find_if(clang_output_.begin(), clang_output_.end(),
+                       [&prefix](const std::string& line_)
+                       {
+                         return starts_with(line_, prefix);
+                       });
+      if (includes_begin != clang_output_.end())
+      {
+        transform(includes_begin + 1,
+                  find_if(includes_begin + 1, clang_output_.end(),
+                          [](const std::string& line_)
+                          {
+                            return !starts_with(line_, " ");
+                          }),
+                  back_inserter(append_to_), [](const std::string& s_)
+                  {
+                    return trim_copy(s_);
+                  });
+      }
+    }
   };
 } // anonymous namespace
 

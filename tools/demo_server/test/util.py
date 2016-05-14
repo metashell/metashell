@@ -203,3 +203,13 @@ class CommonEnv(object):
         self.config_dir.__exit__(typ, value, traceback)
         for repo in self.repos:
             repo.__exit__(typ, value, traceback)
+
+
+def delete_everything_in(path):
+    """Delete all files and directories in path"""
+    for filename in os.listdir(path):
+        full_path = os.path.join(path, filename)
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+        else:
+            os.unlink(full_path)

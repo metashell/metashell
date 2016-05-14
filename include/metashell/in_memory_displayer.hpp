@@ -40,6 +40,12 @@ namespace metashell
     virtual void show_frame(const data::frame& frame_) override;
     virtual void show_call_graph(const iface::call_graph& cg_) override;
 
+    virtual void show_filename_list(
+        const std::vector<boost::filesystem::path>& filenames_) override;
+
+    virtual void show_filename_set(
+        const std::set<boost::filesystem::path>& filenames_) override;
+
     const std::vector<std::string>& errors() const;
     const std::vector<std::string>& raw_texts() const;
     const std::vector<data::type>& types() const;
@@ -50,6 +56,10 @@ namespace metashell
     const std::vector<data::file_location>& file_locations() const;
     const std::vector<data::backtrace>& backtraces() const;
     const std::vector<call_graph>& call_graphs() const;
+
+    const std::vector<std::vector<boost::filesystem::path>>&
+    filename_lists() const;
+    const std::vector<std::set<boost::filesystem::path>>& filename_sets() const;
 
     bool empty() const;
     void clear();
@@ -64,6 +74,8 @@ namespace metashell
     std::vector<data::file_location> _file_locations;
     std::vector<data::backtrace> _backtraces;
     std::vector<call_graph> _call_graphs;
+    std::vector<std::vector<boost::filesystem::path>> _filename_lists;
+    std::vector<std::set<boost::filesystem::path>> _filename_sets;
   };
 }
 
