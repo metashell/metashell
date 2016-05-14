@@ -47,9 +47,27 @@ namespace
 
   bool metashell_standard_header_path(const boost::filesystem::path& path_)
   {
-    if (path_.filename() == "shell" || path_.filename() == "templight" ||
-        (path_.filename() == "libcxx" &&
-         path_.parent_path().filename() == "metashell"))
+    const auto ends_with = [&path_](std::vector<std::string> suffix_)
+    {
+      boost::filesystem::path p = path_;
+      for (const auto& s : suffix_ | boost::adaptors::reversed)
+      {
+        if (p.filename() != s)
+        {
+          return false;
+        }
+        else
+        {
+          p = p.parent_path();
+        }
+      }
+      return true;
+    };
+
+    if (ends_with({"shell"}) || ends_with({"templight"}) ||
+        ends_with({"metashell", "libcxx"}) || ends_with({"windows_headers"}) ||
+        ends_with({"windows_headers", "mingw32"}) ||
+        ends_with({"templight", "include"}))
     {
       return true;
     }
