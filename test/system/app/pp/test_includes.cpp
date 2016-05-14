@@ -47,7 +47,9 @@ namespace
 
   bool metashell_standard_header_path(const boost::filesystem::path& path_)
   {
-    if (path_.filename() == "shell" || path_.filename() == "templight")
+    if (path_.filename() == "shell" || path_.filename() == "templight" ||
+        (path_.filename() == "libcxx" &&
+         path_.parent_path().filename() == "metashell"))
     {
       return true;
     }
