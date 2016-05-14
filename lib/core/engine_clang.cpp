@@ -84,6 +84,25 @@ namespace
     }
   }
 
+  template <class InputIt>
+  std::string remove_double_backslashes(InputIt begin_, InputIt end_)
+  {
+    std::string result(end_ - begin_, 'X');
+    std::string::iterator j = result.begin();
+    bool wasBackslash = false;
+    for (InputIt i = begin_; i != end_; ++i)
+    {
+      if (!wasBackslash || *i != '\\')
+      {
+        *j = *i;
+        ++j;
+      }
+      wasBackslash = !wasBackslash && (*i == '\\');
+    }
+    result.erase(j, result.end());
+    return result;
+  }
+
   boost::filesystem::path
   templight_shipped_with_metashell(iface::environment_detector& env_detector_)
   {
@@ -682,7 +701,12 @@ namespace
           boost::adaptors::transformed(
               [](const std::string& s_)
               {
-                return boost::filesystem::path(s_.substr(s_.find(' ') + 1));
+                const auto i = std::find(s_.begin(), s_.end(), ' ');
+
+                return i == s_.end() ?
+                           boost::filesystem::path() :
+                           boost::filesystem::path(
+                               remove_double_backslashes(i + 1, s_.end()));
               });
 
       return std::set<boost::filesystem::path>(result.begin(), result.end());
