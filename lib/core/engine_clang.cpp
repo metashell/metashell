@@ -34,8 +34,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/adaptor/filtered.hpp>
+#include <boost/xpressive/xpressive.hpp>
 
-#include <just/file.hpp>
+#include <just/lines.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -663,21 +665,27 @@ namespace
     virtual std::set<boost::filesystem::path>
     files_included_by(const std::string& exp_) override
     {
-      const boost::filesystem::path d_file = _internal_dir / "out.d";
       const data::process_output output =
-          run_clang(_clang_binary, {"-MD", "-MF", d_file.string(), "-E"}, exp_);
+          run_clang(_clang_binary, {"-H", "-E"}, exp_);
 
-      if (output.exit_code() == data::exit_code_t(0) && exists(d_file))
-      {
-        const auto deps = just::file::read(d_file.string());
-        const auto start = std::find(begin(deps), end(deps), ':');
-        if (start != end(deps))
-        {
-          return split_file_list(start + 1, end(deps));
-        }
-      }
-      throw std::runtime_error("Error getting list of included headers: " +
-                               output.standard_error());
+      const boost::xpressive::sregex included_header =
+          boost::xpressive::bos >> +boost::xpressive::as_xpr('.') >> ' ';
+
+      const just::lines::view lines(output.standard_error());
+
+      const auto result =
+          lines |
+          boost::adaptors::filtered([&included_header](const std::string& s_)
+                                    {
+                                      return regex_search(s_, included_header);
+                                    }) |
+          boost::adaptors::transformed(
+              [](const std::string& s_)
+              {
+                return boost::filesystem::path(s_.substr(s_.find(' ') + 1));
+              });
+
+      return std::set<boost::filesystem::path>(result.begin(), result.end());
     }
 
   private:
