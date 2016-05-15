@@ -18,6 +18,7 @@
 #include <metashell_system_test/comment.hpp>
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/system_test_config.hpp>
 #include <metashell_system_test/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -31,6 +32,7 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <vector>
 
 using namespace metashell_system_test;
 
@@ -52,6 +54,57 @@ namespace
                                        return remove_prefix("#include ", l_);
                                      });
     return std::set<std::string>(result.begin(), result.end());
+  }
+
+  boost::filesystem::path resolve_symlink(boost::filesystem::path p_)
+  {
+    for (int i = 0; i != 1000 && is_symlink(p_); ++i)
+    {
+      p_ = read_symlink(p_);
+    }
+    return p_;
+  }
+
+  std::pair<std::vector<boost::filesystem::path>,
+            std::vector<boost::filesystem::path>>
+  directories_and_files_coming_from_test_arguments()
+  {
+    std::pair<std::vector<boost::filesystem::path>,
+              std::vector<boost::filesystem::path>> result;
+
+    for (const std::string& arg : system_test_config::metashell_args())
+    {
+      if (const auto path = try_to_remove_prefix("-I", arg))
+      {
+        for (boost::filesystem::directory_iterator i(*path), e; i != e; ++i)
+        {
+          const boost::filesystem::path p = resolve_symlink(i->path());
+
+          if (is_directory(p))
+          {
+            result.first.push_back(i->path().filename());
+          }
+          else if (is_regular_file(p))
+          {
+            result.second.push_back(i->path().filename());
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  std::set<std::string>
+  remove_includes_from(const std::vector<boost::filesystem::path>& paths_,
+                       std::set<std::string> set_)
+  {
+    for (const boost::filesystem::path& p : paths_)
+    {
+      set_.erase("<" + p.string() + ">");
+      set_.erase("\"" + p.string() + "\"");
+    }
+    return set_;
   }
 
   class ls_output
@@ -78,17 +131,19 @@ namespace
 
       auto i = r.begin() + 1;
 
+      const auto ignored = directories_and_files_coming_from_test_arguments();
+
       if (i != r.end() && comment({paragraph{"Directories:"}}) == *i)
       {
         ++i;
-        _directories = include_set(*i);
+        _directories = remove_includes_from(ignored.first, include_set(*i));
         ++i;
       }
 
       if (i != r.end() && comment({paragraph{"Header files:"}}) == *i)
       {
         ++i;
-        _header_files = include_set(*i);
+        _header_files = remove_includes_from(ignored.second, include_set(*i));
         ++i;
       }
     }
