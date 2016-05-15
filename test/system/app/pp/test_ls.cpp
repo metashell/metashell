@@ -32,6 +32,7 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <numeric>
 #include <vector>
 
 using namespace metashell_system_test;
@@ -171,6 +172,41 @@ namespace
       throw std::runtime_error("Failed to touch file " + path_.string());
     }
   }
+
+  template <char Before, char After>
+  std::string include_arg(std::vector<std::string> path_elements_)
+  {
+    using boost::filesystem::path;
+
+    const std::string before(1, Before);
+
+    if (path_elements_.empty())
+    {
+      return before + After;
+    }
+    else
+    {
+      return before +
+             accumulate(path_elements_.begin() + 1, path_elements_.end(),
+                        path(path_elements_.front()),
+                        [](path a_, const path& b_)
+                        {
+                          return a_ /= b_;
+                        })
+                 .string() +
+             After;
+    }
+  }
+
+  std::string quote(std::vector<std::string> path_elements_)
+  {
+    return include_arg<'"', '"'>(move(path_elements_));
+  }
+
+  std::string sys(std::vector<std::string> path_elements_)
+  {
+    return include_arg<'<', '>'>(move(path_elements_));
+  }
 }
 
 JUST_TEST_CASE(test_ls)
@@ -205,18 +241,18 @@ JUST_TEST_CASE(test_ls)
       include(), ls_output(cwd, {}, {}, "<> \"\"").directories());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      {"<foo.hpp>"}, ls_output(cwd, {a}, {}, "<>").header_files());
+      {sys({"foo.hpp"})}, ls_output(cwd, {a}, {}, "<>").header_files());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      {"\"foo.hpp\""}, ls_output(cwd, {a}, {}, "\"\"").header_files());
+      {quote({"foo.hpp"})}, ls_output(cwd, {a}, {}, "\"\"").header_files());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({"<foo.hpp>"}), ls_output(cwd, {b}, {}, "<>").directories());
+      include({sys({"foo.hpp"})}), ls_output(cwd, {b}, {}, "<>").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER({"<foo.hpp>"}, empty_sys_a_b.directories());
-  JUST_ASSERT_EQUAL_CONTAINER({"<foo.hpp>"}, empty_sys_a_b.header_files());
+  JUST_ASSERT_EQUAL_CONTAINER({sys({"foo.hpp"})}, empty_sys_a_b.directories());
+  JUST_ASSERT_EQUAL_CONTAINER({sys({"foo.hpp"})}, empty_sys_a_b.header_files());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({"<foo.hpp>", "<foo.hpp/bar.hpp>"}),
-      ls_output(cwd, {a, b}, {}, "<foo.hpp>").header_files());
+      include({sys({"foo.hpp"}), sys({"foo.hpp", "bar.hpp"})}),
+      ls_output(cwd, {a, b}, {}, sys({"foo.hpp"})).header_files());
 }
