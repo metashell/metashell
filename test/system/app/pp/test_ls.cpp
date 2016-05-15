@@ -18,6 +18,7 @@
 #include <metashell_system_test/comment.hpp>
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptors.hpp>
@@ -35,13 +36,6 @@ using namespace metashell_system_test;
 
 namespace
 {
-  std::string remove_prefix(const std::string& prefix_, const std::string& s_)
-  {
-    JUST_ASSERT_GREATER_EQUAL(s_.size(), prefix_.size());
-    JUST_ASSERT_EQUAL(prefix_, s_.substr(0, prefix_.size()));
-    return s_.substr(prefix_.size());
-  }
-
   std::set<std::string> include_set(const json_string& s_)
   {
     JUST_ASSERT(bool(cpp_code(s_).code().value()));
