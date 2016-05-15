@@ -156,7 +156,11 @@ namespace
     std::set<std::string> _header_files;
   };
 
-  std::set<std::string> include(std::set<std::string> args_) { return args_; }
+  std::set<std::string>
+  include(std::set<std::string> args_ = std::set<std::string>())
+  {
+    return args_;
+  }
 
   void touch(const boost::filesystem::path& path_)
   {
@@ -189,16 +193,16 @@ JUST_TEST_CASE(test_ls)
   const ls_output empty_sys_a_b(cwd, {a, b}, {}, "<>");
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({}), ls_output(cwd, {}, {}, "").directories());
+      include(), ls_output(cwd, {}, {}, "").directories());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({}), ls_output(cwd, {}, {}, "<>").directories());
+      include(), ls_output(cwd, {}, {}, "<>").directories());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({}), ls_output(cwd, {}, {}, "\"\"").directories());
+      include(), ls_output(cwd, {}, {}, "\"\"").directories());
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      include({}), ls_output(cwd, {}, {}, "<> \"\"").directories());
+      include(), ls_output(cwd, {}, {}, "<> \"\"").directories());
 
   JUST_ASSERT_EQUAL_CONTAINER(
       {"<foo.hpp>"}, ls_output(cwd, {a}, {}, "<>").header_files());
