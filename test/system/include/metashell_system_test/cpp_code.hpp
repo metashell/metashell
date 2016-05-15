@@ -31,6 +31,7 @@ namespace metashell_system_test
   {
   public:
     explicit cpp_code(pattern::string code_);
+    explicit cpp_code(const json_string& s_);
 
     const pattern::string& code() const;
 

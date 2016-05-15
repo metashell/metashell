@@ -31,7 +31,7 @@ namespace metashell
 {
   namespace data
   {
-    struct include_argument : boost::equality_comparable<include_argument>
+    struct include_argument : boost::totally_ordered<include_argument>
     {
       include_argument(include_type type_,
                        const boost::filesystem::path& path_);
@@ -44,6 +44,9 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& out_, const include_argument& args_);
     bool operator==(const include_argument& a_, const include_argument& b_);
+    bool operator<(const include_argument& a_, const include_argument& b_);
+
+    std::string include_code(const include_argument& arg_);
   }
 }
 

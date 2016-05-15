@@ -27,6 +27,8 @@
       (`#msh sysincludes` and `#msh quoteincludes`)
     * Add command to search for include files (`#msh which`)
     * Add command to list included headers (`#msh included headers`)
+    * Add command to list available headers with given prefixes
+      (`#msh ls`)
 
 * Changes to existing behaviour
     * File sections displayed by MDB now shows the source location of the
@@ -44,6 +46,8 @@
       directory only and uses that (and its subdirectories)
     * New document type in the JSON interface: `filename_list`
     * New document type in the JSON interface: `filename_set`
+    * The `-nostdinc` and `-nosdtinc++` arguments remove the path of the headers
+      shipped with Metashell from the system include path.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.

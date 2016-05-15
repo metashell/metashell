@@ -1,5 +1,5 @@
-#ifndef METASHELL_INCLUDE_TYPE_HPP
-#define METASHELL_INCLUDE_TYPE_HPP
+#ifndef METASHELL_SYSTEM_TEST_UTIL_HPP
+#define METASHELL_SYSTEM_TEST_UTIL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
 #include <string>
 
-namespace metashell
+namespace metashell_system_test
 {
-  namespace data
-  {
-    enum class include_type
-    {
-      sys = 0,
-      quote = 1
-    };
-
-    std::string to_string(include_type type_);
-    std::string include_code(include_type type_,
-                             const boost::filesystem::path& path_);
-    std::string include_dotdotdot(include_type type_);
-  }
+  boost::optional<std::string> try_to_remove_prefix(const std::string& prefix_,
+                                                    const std::string& s_);
+  std::string remove_prefix(const std::string& prefix_, const std::string& s_);
 }
 
 #endif

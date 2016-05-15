@@ -51,6 +51,15 @@ namespace
 #include "default_clang_search_path.hpp"
   };
 
+  bool stdinc_allowed(const std::vector<std::string>& extra_clang_args_)
+  {
+    return find_if(extra_clang_args_.begin(), extra_clang_args_.end(),
+                   [](const std::string& s_)
+                   {
+                     return s_ == "-nostdinc" || s_ == "-nostdinc++";
+                   }) == extra_clang_args_.end();
+  }
+
   std::string extract_clang_binary(const std::vector<std::string>& engine_args_,
                                    iface::environment_detector& env_detector_,
                                    const std::string& metashell_path_,
@@ -324,8 +333,13 @@ namespace
              logger* logger_,
              const boost::filesystem::path& clang_path_)
   {
-    std::vector<std::string> args{
-        "-iquote", ".", "-x", "c++-header", "-I", internal_dir_.string()};
+    std::vector<std::string> args{"-iquote", ".", "-x", "c++-header"};
+
+    if (stdinc_allowed(config_.extra_clang_args))
+    {
+      args.push_back("-I");
+      args.push_back(internal_dir_.string());
+    }
 
     if (UseInternalTemplight)
     {
@@ -347,12 +361,15 @@ namespace
         args.push_back(set_max_template_depth(256));
       }
 
-      const std::vector<boost::filesystem::path> include_path =
-          determine_include_path(clang_path_, env_detector_, logger_);
-      args.reserve(args.size() + include_path.size());
-      for (const boost::filesystem::path& p : include_path)
+      if (stdinc_allowed(config_.extra_clang_args))
       {
-        args.push_back("-I" + p.string());
+        const std::vector<boost::filesystem::path> include_path =
+            determine_include_path(clang_path_, env_detector_, logger_);
+        args.reserve(args.size() + include_path.size());
+        for (const boost::filesystem::path& p : include_path)
+        {
+          args.push_back("-I" + p.string());
+        }
       }
 
       args.insert(args.end(), config_.extra_clang_args.begin(),
@@ -662,7 +679,7 @@ namespace
     include_path(data::include_type type_) override
     {
       const data::process_output o =
-          run_clang(_clang_binary, {"-v", "-xc++", "-c"}, "");
+          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
       const std::string s = o.standard_output() + o.standard_error();
       std::vector<std::string> lines;

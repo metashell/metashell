@@ -18,6 +18,7 @@
 #include <metashell/exception.hpp>
 
 #include <iostream>
+#include <tuple>
 
 using namespace metashell::data;
 
@@ -38,11 +39,11 @@ namespace
       throw metashell::exception(std::string("closing ") + Closing +
                                  " is missing.");
     }
-    else if (skip_all_whitespace(path_end + 1, end_) != end_)
+    else
     {
-      throw metashell::exception("More than one arguments provided.");
+      return {tokens_to_string(begin_, path_end),
+              skip_all_whitespace(path_end + 1, end_)};
     }
-    return {tokens_to_string(begin_, path_end), path_end + 1};
   }
 }
 
@@ -94,4 +95,15 @@ bool metashell::data::operator==(const include_argument& a_,
                                  const include_argument& b_)
 {
   return a_.type == b_.type && a_.path == b_.path;
+}
+
+bool metashell::data::operator<(const include_argument& a_,
+                                const include_argument& b_)
+{
+  return std::tie(a_.type, a_.path) < std::tie(b_.type, b_.path);
+}
+
+std::string metashell::data::include_code(const include_argument& arg_)
+{
+  return include_code(arg_.type, arg_.path);
 }
