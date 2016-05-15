@@ -18,6 +18,7 @@
 #include <metashell/exception.hpp>
 
 #include <iostream>
+#include <tuple>
 
 using namespace metashell::data;
 
@@ -99,7 +100,7 @@ bool metashell::data::operator==(const include_argument& a_,
 bool metashell::data::operator<(const include_argument& a_,
                                 const include_argument& b_)
 {
-  return a_.type < b_.type || (a_.type == b_.type && a_.path < b_.path);
+  return std::tie(a_.type, a_.path) < std::tie(b_.type, b_.path);
 }
 
 std::string metashell::data::include_code(const include_argument& arg_)
