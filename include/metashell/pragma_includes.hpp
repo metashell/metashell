@@ -39,7 +39,7 @@ namespace metashell
     virtual std::string description() const override
     {
       return std::string("Displays the directories checked for ") +
-             include_dotdotdot(Type);
+             data::include_dotdotdot<Type>();
     }
 
     virtual void run(iface::displayer& displayer_) const override

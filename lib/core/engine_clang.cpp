@@ -689,10 +689,13 @@ namespace
                               });
 
       std::vector<boost::filesystem::path> result;
-      include_path_of_type(lines, type_, result);
-      if (type_ == data::include_type::quote)
+      switch (type_)
       {
-        include_path_of_type(lines, data::include_type::sys, result);
+      case data::include_type::quote:
+        include_path_of_type<data::include_type::quote>(lines, result);
+      // we need to add the sysincludes as well, so no break
+      case data::include_type::sys:
+        include_path_of_type<data::include_type::sys>(lines, result);
       }
 
       return result;
@@ -735,14 +738,14 @@ namespace
     boost::filesystem::path _env_path;
     logger* _logger;
 
+    template <data::include_type Type>
     void include_path_of_type(const std::vector<std::string>& clang_output_,
-                              data::include_type type_,
                               std::vector<boost::filesystem::path>& append_to_)
     {
       using boost::algorithm::starts_with;
       using boost::algorithm::trim_copy;
 
-      const std::string prefix = include_dotdotdot(type_);
+      const std::string prefix = data::include_dotdotdot<Type>();
 
       const auto includes_begin =
           std::find_if(clang_output_.begin(), clang_output_.end(),

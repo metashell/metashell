@@ -42,8 +42,3 @@ std::string metashell::data::include_code(include_type type_,
   }
   return ""; // to avoid warnings about the missing return on some compilers.
 }
-
-std::string metashell::data::include_dotdotdot(include_type type_)
-{
-  return "#include " + include_code(type_, "...");
-}

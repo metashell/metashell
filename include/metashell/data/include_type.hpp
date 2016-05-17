@@ -34,7 +34,12 @@ namespace metashell
     std::string to_string(include_type type_);
     std::string include_code(include_type type_,
                              const boost::filesystem::path& path_);
-    std::string include_dotdotdot(include_type type_);
+
+    template <include_type Type>
+    std::string include_dotdotdot()
+    {
+      return "#include " + include_code(Type, "...");
+    }
   }
 }
 
