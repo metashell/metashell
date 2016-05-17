@@ -17,6 +17,7 @@
 #include <metashell/engine_clang.hpp>
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/includes.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/for_each_line.hpp>
 #include <metashell/source_position.hpp>
@@ -678,27 +679,28 @@ namespace
     virtual std::vector<boost::filesystem::path>
     include_path(data::include_type type_) override
     {
-      const data::process_output o =
-          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
-
-      const std::string s = o.standard_output() + o.standard_error();
-      std::vector<std::string> lines;
-      boost::algorithm::split(lines, s, [](char c_)
-                              {
-                                return c_ == '\n';
-                              });
-
-      std::vector<boost::filesystem::path> result;
-      switch (type_)
+      if (!_includes)
       {
-      case data::include_type::quote:
-        include_path_of_type<data::include_type::quote>(lines, result);
-      // we need to add the sysincludes as well, so no break
-      case data::include_type::sys:
-        include_path_of_type<data::include_type::sys>(lines, result);
+        const data::process_output o =
+            run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
+
+        const std::string s = o.standard_output() + o.standard_error();
+        std::vector<std::string> lines;
+        boost::algorithm::split(lines, s, [](char c_)
+                                {
+                                  return c_ == '\n';
+                                });
+
+        _includes = data::includes{
+            include_path_of_type<data::include_type::sys>(lines),
+            include_path_of_type<data::include_type::quote>(lines)};
+
+        _includes->quote.insert(_includes->quote.end(), _includes->sys.begin(),
+                                _includes->sys.end());
       }
 
-      return result;
+      return type_ == data::include_type::sys ? _includes->sys :
+                                                _includes->quote;
     }
 
     virtual std::set<boost::filesystem::path>
@@ -736,11 +738,12 @@ namespace
     clang_binary _clang_binary;
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_path;
+    boost::optional<data::includes> _includes;
     logger* _logger;
 
     template <data::include_type Type>
-    void include_path_of_type(const std::vector<std::string>& clang_output_,
-                              std::vector<boost::filesystem::path>& append_to_)
+    std::vector<boost::filesystem::path>
+    include_path_of_type(const std::vector<std::string>& clang_output_)
     {
       using boost::algorithm::starts_with;
       using boost::algorithm::trim_copy;
@@ -753,6 +756,9 @@ namespace
                        {
                          return starts_with(line_, prefix);
                        });
+
+      std::vector<boost::filesystem::path> result;
+
       if (includes_begin != clang_output_.end())
       {
         transform(includes_begin + 1,
@@ -761,11 +767,13 @@ namespace
                           {
                             return !starts_with(line_, " ");
                           }),
-                  back_inserter(append_to_), [](const std::string& s_)
+                  back_inserter(result), [](const std::string& s_)
                   {
                     return trim_copy(s_);
                   });
       }
+
+      return result;
     }
   };
 } // anonymous namespace
