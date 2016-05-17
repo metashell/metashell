@@ -459,9 +459,9 @@ namespace
     return i_;
   }
 
-  template <data::include_type Type, class LineView>
+  template <data::include_type Type, class ForwardIt>
   std::vector<boost::filesystem::path>
-  include_path_of_type(const LineView& clang_output_)
+  include_path_of_type(ForwardIt lines_begin_, ForwardIt lines_end_)
   {
     using boost::algorithm::starts_with;
     using boost::algorithm::trim_copy;
@@ -470,14 +470,14 @@ namespace
 
     std::vector<boost::filesystem::path> result;
     const auto includes_begin =
-        next(std::find_if(clang_output_.begin(), clang_output_.end(),
+        next(std::find_if(lines_begin_, lines_end_,
                           [&prefix](const std::string& line_)
                           {
                             return starts_with(line_, prefix);
                           }),
-             clang_output_.end());
+             lines_end_);
 
-    transform(includes_begin, find_if(includes_begin, clang_output_.end(),
+    transform(includes_begin, find_if(includes_begin, lines_end_,
                                       [](const std::string& line_)
                                       {
                                         return !starts_with(line_, " ");
@@ -493,9 +493,10 @@ namespace
   template <class LineView>
   data::includes determine_clang_includes(const LineView& lines_)
   {
-    data::includes result{
-        include_path_of_type<data::include_type::sys>(lines_),
-        include_path_of_type<data::include_type::quote>(lines_)};
+    data::includes result{include_path_of_type<data::include_type::sys>(
+                              lines_.begin(), lines_.end()),
+                          include_path_of_type<data::include_type::quote>(
+                              lines_.begin(), lines_.end())};
 
     result.quote.insert(
         result.quote.end(), result.sys.begin(), result.sys.end());
