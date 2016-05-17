@@ -459,6 +459,49 @@ namespace
     return i_;
   }
 
+  template <data::include_type Type, class LineView>
+  std::vector<boost::filesystem::path>
+  include_path_of_type(const LineView& clang_output_)
+  {
+    using boost::algorithm::starts_with;
+    using boost::algorithm::trim_copy;
+
+    const std::string prefix = data::include_dotdotdot<Type>();
+
+    std::vector<boost::filesystem::path> result;
+    const auto includes_begin =
+        next(std::find_if(clang_output_.begin(), clang_output_.end(),
+                          [&prefix](const std::string& line_)
+                          {
+                            return starts_with(line_, prefix);
+                          }),
+             clang_output_.end());
+
+    transform(includes_begin, find_if(includes_begin, clang_output_.end(),
+                                      [](const std::string& line_)
+                                      {
+                                        return !starts_with(line_, " ");
+                                      }),
+              back_inserter(result), [](const std::string& s_)
+              {
+                return trim_copy(s_);
+              });
+
+    return result;
+  }
+
+  template <class LineView>
+  data::includes determine_clang_includes(const LineView& lines_)
+  {
+    data::includes result{
+        include_path_of_type<data::include_type::sys>(lines_),
+        include_path_of_type<data::include_type::quote>(lines_)};
+
+    result.quote.insert(
+        result.quote.end(), result.sys.begin(), result.sys.end());
+    return result;
+  }
+
   template <bool UseInternalTemplight>
   class engine_clang : public iface::engine
   {
@@ -735,52 +778,13 @@ namespace
     cached<data::includes> _includes;
     logger* _logger;
 
-    template <data::include_type Type, class LineView>
-    std::vector<boost::filesystem::path>
-    include_path_of_type(const LineView& clang_output_)
-    {
-      using boost::algorithm::starts_with;
-      using boost::algorithm::trim_copy;
-
-      const std::string prefix = data::include_dotdotdot<Type>();
-
-      std::vector<boost::filesystem::path> result;
-      const auto includes_begin =
-          next(std::find_if(clang_output_.begin(), clang_output_.end(),
-                            [&prefix](const std::string& line_)
-                            {
-                              return starts_with(line_, prefix);
-                            }),
-               clang_output_.end());
-
-      transform(includes_begin, find_if(includes_begin, clang_output_.end(),
-                                        [](const std::string& line_)
-                                        {
-                                          return !starts_with(line_, " ");
-                                        }),
-                back_inserter(result), [](const std::string& s_)
-                {
-                  return trim_copy(s_);
-                });
-
-      return result;
-    }
-
     data::includes determine_includes()
     {
       const data::process_output o =
           run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
       const std::string s = o.standard_output() + o.standard_error();
-      const auto lines = just::lines::view_of(s);
-
-      data::includes result{
-          include_path_of_type<data::include_type::sys>(lines),
-          include_path_of_type<data::include_type::quote>(lines)};
-
-      result.quote.insert(
-          result.quote.end(), result.sys.begin(), result.sys.end());
-      return result;
+      return determine_clang_includes(just::lines::view_of(s));
     }
   };
 } // anonymous namespace
