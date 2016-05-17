@@ -460,22 +460,28 @@ namespace
   }
 
   template <data::include_type Type, class ForwardIt>
+  ForwardIt beginning_of_includes(ForwardIt begin_, ForwardIt end_)
+  {
+    using boost::algorithm::starts_with;
+
+    const std::string prefix = data::include_dotdotdot<Type>();
+
+    return std::find_if(begin_, end_, [&prefix](const std::string& line_)
+                        {
+                          return starts_with(line_, prefix);
+                        });
+  }
+
+  template <data::include_type Type, class ForwardIt>
   std::vector<boost::filesystem::path>
   include_path_of_type(ForwardIt lines_begin_, ForwardIt lines_end_)
   {
     using boost::algorithm::starts_with;
     using boost::algorithm::trim_copy;
 
-    const std::string prefix = data::include_dotdotdot<Type>();
-
     std::vector<boost::filesystem::path> result;
     const auto includes_begin =
-        next(std::find_if(lines_begin_, lines_end_,
-                          [&prefix](const std::string& line_)
-                          {
-                            return starts_with(line_, prefix);
-                          }),
-             lines_end_);
+        next(beginning_of_includes<Type>(lines_begin_, lines_end_), lines_end_);
 
     transform(includes_begin, find_if(includes_begin, lines_end_,
                                       [](const std::string& line_)
