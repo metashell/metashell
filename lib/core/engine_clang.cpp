@@ -459,16 +459,22 @@ namespace
     return i_;
   }
 
-  template <data::include_type Type, class ForwardIt>
+  template <data::include_type... Types, class ForwardIt>
   ForwardIt beginning_of_includes(ForwardIt begin_, ForwardIt end_)
   {
     using boost::algorithm::starts_with;
 
-    const std::string prefix = data::include_dotdotdot<Type>();
+    const std::vector<std::string> prefixes{
+        data::include_dotdotdot<Types>()...};
 
-    return std::find_if(begin_, end_, [&prefix](const std::string& line_)
+    return std::find_if(begin_, end_, [&prefixes](const std::string& line_)
                         {
-                          return starts_with(line_, prefix);
+                          return std::find_if(
+                                     prefixes.begin(), prefixes.end(),
+                                     [&line_](const std::string& prefix_)
+                                     {
+                                       return starts_with(line_, prefix_);
+                                     }) != end(prefixes);
                         });
   }
 
@@ -499,10 +505,12 @@ namespace
   template <class LineView>
   data::includes determine_clang_includes(const LineView& lines_)
   {
-    data::includes result{include_path_of_type<data::include_type::sys>(
-                              lines_.begin(), lines_.end()),
-                          include_path_of_type<data::include_type::quote>(
-                              lines_.begin(), lines_.end())};
+    const auto begin = beginning_of_includes<data::include_type::sys,
+                                             data::include_type::quote>(
+        lines_.begin(), lines_.end());
+    data::includes result{
+        include_path_of_type<data::include_type::sys>(begin, lines_.end()),
+        include_path_of_type<data::include_type::quote>(begin, lines_.end())};
 
     result.quote.insert(
         result.quote.end(), result.sys.begin(), result.sys.end());
