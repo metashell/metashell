@@ -31,7 +31,6 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
@@ -450,6 +449,16 @@ namespace
     return result;
   }
 
+  template <class ForwardIt>
+  ForwardIt next(ForwardIt i_, ForwardIt end_)
+  {
+    if (i_ != end_)
+    {
+      ++i_;
+    }
+    return i_;
+  }
+
   template <bool UseInternalTemplight>
   class engine_clang : public iface::engine
   {
@@ -726,37 +735,33 @@ namespace
     cached<data::includes> _includes;
     logger* _logger;
 
-    template <data::include_type Type>
+    template <data::include_type Type, class LineView>
     std::vector<boost::filesystem::path>
-    include_path_of_type(const std::vector<std::string>& clang_output_)
+    include_path_of_type(const LineView& clang_output_)
     {
       using boost::algorithm::starts_with;
       using boost::algorithm::trim_copy;
 
       const std::string prefix = data::include_dotdotdot<Type>();
 
-      const auto includes_begin =
-          std::find_if(clang_output_.begin(), clang_output_.end(),
-                       [&prefix](const std::string& line_)
-                       {
-                         return starts_with(line_, prefix);
-                       });
-
       std::vector<boost::filesystem::path> result;
+      const auto includes_begin =
+          next(std::find_if(clang_output_.begin(), clang_output_.end(),
+                            [&prefix](const std::string& line_)
+                            {
+                              return starts_with(line_, prefix);
+                            }),
+               clang_output_.end());
 
-      if (includes_begin != clang_output_.end())
-      {
-        transform(includes_begin + 1,
-                  find_if(includes_begin + 1, clang_output_.end(),
-                          [](const std::string& line_)
-                          {
-                            return !starts_with(line_, " ");
-                          }),
-                  back_inserter(result), [](const std::string& s_)
-                  {
-                    return trim_copy(s_);
-                  });
-      }
+      transform(includes_begin, find_if(includes_begin, clang_output_.end(),
+                                        [](const std::string& line_)
+                                        {
+                                          return !starts_with(line_, " ");
+                                        }),
+                back_inserter(result), [](const std::string& s_)
+                {
+                  return trim_copy(s_);
+                });
 
       return result;
     }
@@ -767,11 +772,7 @@ namespace
           run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
       const std::string s = o.standard_output() + o.standard_error();
-      std::vector<std::string> lines;
-      boost::algorithm::split(lines, s, [](char c_)
-                              {
-                                return c_ == '\n';
-                              });
+      const auto lines = just::lines::view_of(s);
 
       data::includes result{
           include_path_of_type<data::include_type::sys>(lines),
