@@ -18,6 +18,7 @@
 #include <metashell/exception.hpp>
 #include <metashell/shell.hpp>
 #include <metashell/data/include_argument.hpp>
+#include <metashell/cached.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -64,24 +65,29 @@ namespace
     return result;
   }
 
-  class include_path_cache
+  struct include_path_cache
   {
   public:
-    explicit include_path_cache(iface::engine& engine_) : _engine(engine_) {}
+    cached<std::vector<boost::filesystem::path>> sys;
+    cached<std::vector<boost::filesystem::path>> quote;
+
+    explicit include_path_cache(iface::engine& engine_)
+      : sys([&engine_]()
+            {
+              return engine_.include_path(data::include_type::sys);
+            }),
+        quote([&engine_]()
+              {
+                return engine_.include_path(data::include_type::quote);
+              })
+    {
+    }
 
     const std::vector<boost::filesystem::path>&
     operator[](data::include_type type_)
     {
-      if (!_path[int(type_)])
-      {
-        _path[int(type_)] = _engine.include_path(type_);
-      }
-      return *_path[int(type_)];
+      return type_ == data::include_type::sys ? *sys : *quote;
     }
-
-  private:
-    iface::engine& _engine;
-    boost::optional<std::vector<boost::filesystem::path>> _path[2];
   };
 
   boost::filesystem::path resolve_symlink(boost::filesystem::path p_)

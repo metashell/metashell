@@ -25,6 +25,7 @@
 #include <metashell/metashell.hpp>
 #include <metashell/clang_binary.hpp>
 #include <metashell/has_prefix.hpp>
+#include <metashell/cached.hpp>
 
 #include <metashell/boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -487,6 +488,10 @@ namespace
             logger_),
         _internal_dir(internal_dir_),
         _env_path(internal_dir_ / env_filename_),
+        _includes([this]()
+                  {
+                    return this->determine_includes();
+                  }),
         _logger(logger_)
     {
     }
@@ -679,26 +684,6 @@ namespace
     virtual std::vector<boost::filesystem::path>
     include_path(data::include_type type_) override
     {
-      if (!_includes)
-      {
-        const data::process_output o =
-            run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
-
-        const std::string s = o.standard_output() + o.standard_error();
-        std::vector<std::string> lines;
-        boost::algorithm::split(lines, s, [](char c_)
-                                {
-                                  return c_ == '\n';
-                                });
-
-        _includes = data::includes{
-            include_path_of_type<data::include_type::sys>(lines),
-            include_path_of_type<data::include_type::quote>(lines)};
-
-        _includes->quote.insert(_includes->quote.end(), _includes->sys.begin(),
-                                _includes->sys.end());
-      }
-
       return type_ == data::include_type::sys ? _includes->sys :
                                                 _includes->quote;
     }
@@ -738,7 +723,7 @@ namespace
     clang_binary _clang_binary;
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_path;
-    boost::optional<data::includes> _includes;
+    cached<data::includes> _includes;
     logger* _logger;
 
     template <data::include_type Type>
@@ -773,6 +758,27 @@ namespace
                   });
       }
 
+      return result;
+    }
+
+    data::includes determine_includes()
+    {
+      const data::process_output o =
+          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
+
+      const std::string s = o.standard_output() + o.standard_error();
+      std::vector<std::string> lines;
+      boost::algorithm::split(lines, s, [](char c_)
+                              {
+                                return c_ == '\n';
+                              });
+
+      data::includes result{
+          include_path_of_type<data::include_type::sys>(lines),
+          include_path_of_type<data::include_type::quote>(lines)};
+
+      result.quote.insert(
+          result.quote.end(), result.sys.begin(), result.sys.end());
       return result;
     }
   };
