@@ -1,6 +1,3 @@
-#ifndef METASHELL_INCLUDE_TYPE_HPP
-#define METASHELL_INCLUDE_TYPE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,30 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/include_path_cache.hpp>
 
-#include <string>
+using namespace metashell;
 
-namespace metashell
+include_path_cache::include_path_cache(iface::engine& engine_)
+  : sys([&engine_]()
+        {
+          return engine_.include_path(data::include_type::sys);
+        }),
+    quote([&engine_]()
+          {
+            return engine_.include_path(data::include_type::quote);
+          })
 {
-  namespace data
-  {
-    enum class include_type
-    {
-      sys = 0,
-      quote = 1
-    };
-
-    std::string to_string(include_type type_);
-    std::string include_code(include_type type_,
-                             const boost::filesystem::path& path_);
-
-    template <include_type Type>
-    std::string include_dotdotdot()
-    {
-      return "#include " + include_code(Type, "...");
-    }
-  }
 }
 
-#endif
+const std::vector<boost::filesystem::path>& include_path_cache::
+operator[](data::include_type type_)
+{
+  return type_ == data::include_type::sys ? *sys : *quote;
+}

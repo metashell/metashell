@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_INCLUDES_HPP
-#define METASHELL_PRAGMA_INCLUDES_HPP
+#ifndef METASHELL_CACHED_HPP
+#define METASHELL_CACHED_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,38 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_without_arguments.hpp>
+#include <boost/optional.hpp>
 
-#include <string>
+#include <functional>
 
 namespace metashell
 {
-  class shell;
-
-  template <data::include_type Type>
-  class pragma_includes : public pragma_without_arguments
+  template <class ValueType>
+  class cached
   {
   public:
-    explicit pragma_includes(shell& shell_) : _shell(shell_) {}
+    cached() {}
 
-    virtual iface::pragma_handler* clone() const override
+    explicit cached(std::function<ValueType()> getter_)
+      : _getter(std::move(getter_))
     {
-      return new pragma_includes(_shell);
     }
 
-    virtual std::string description() const override
+    const ValueType& operator*()
     {
-      return std::string("Displays the directories checked for ") +
-             data::include_dotdotdot<Type>();
+      if (!_value)
+      {
+        _value = _getter();
+      }
+      return *_value;
     }
 
-    virtual void run(iface::displayer& displayer_) const override
-    {
-      displayer_.show_filename_list(_shell.engine().include_path(Type));
-    }
-
+    const ValueType* operator->() { return &**this; }
   private:
-    shell& _shell;
+    boost::optional<ValueType> _value;
+    std::function<ValueType()> _getter;
   };
 }
 

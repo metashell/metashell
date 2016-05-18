@@ -17,6 +17,7 @@
 #include <metashell/engine_clang.hpp>
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/includes.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/for_each_line.hpp>
 #include <metashell/source_position.hpp>
@@ -24,12 +25,12 @@
 #include <metashell/metashell.hpp>
 #include <metashell/clang_binary.hpp>
 #include <metashell/has_prefix.hpp>
+#include <metashell/cached.hpp>
 
 #include <metashell/boost/regex.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
@@ -448,6 +449,74 @@ namespace
     return result;
   }
 
+  template <class ForwardIt>
+  ForwardIt next(ForwardIt i_, ForwardIt end_)
+  {
+    if (i_ != end_)
+    {
+      ++i_;
+    }
+    return i_;
+  }
+
+  template <data::include_type... Types, class ForwardIt>
+  ForwardIt beginning_of_includes(ForwardIt begin_, ForwardIt end_)
+  {
+    using boost::algorithm::starts_with;
+
+    const std::vector<std::string> prefixes{
+        data::include_dotdotdot<Types>()...};
+
+    return std::find_if(begin_, end_, [&prefixes](const std::string& line_)
+                        {
+                          return std::find_if(
+                                     prefixes.begin(), prefixes.end(),
+                                     [&line_](const std::string& prefix_)
+                                     {
+                                       return starts_with(line_, prefix_);
+                                     }) != end(prefixes);
+                        });
+  }
+
+  template <data::include_type Type, class ForwardIt>
+  std::vector<boost::filesystem::path>
+  include_path_of_type(ForwardIt lines_begin_, ForwardIt lines_end_)
+  {
+    using boost::algorithm::starts_with;
+    using boost::algorithm::trim_copy;
+
+    std::vector<boost::filesystem::path> result;
+    const auto includes_begin =
+        next(beginning_of_includes<Type>(lines_begin_, lines_end_), lines_end_);
+
+    transform(includes_begin, find_if(includes_begin, lines_end_,
+                                      [](const std::string& line_)
+                                      {
+                                        return !starts_with(line_, " ");
+                                      }),
+              back_inserter(result), [](const std::string& s_)
+              {
+                return trim_copy(s_);
+              });
+
+    return result;
+  }
+
+  template <class LineView>
+  data::includes determine_clang_includes(const LineView& lines_)
+  {
+    const auto begin = beginning_of_includes<data::include_type::sys,
+                                             data::include_type::quote>(
+        lines_.begin(), lines_.end());
+    data::includes result{
+        include_path_of_type<data::include_type::sys>(begin, lines_.end()),
+        include_path_of_type<data::include_type::quote>(begin, lines_.end())};
+
+    result.quote.insert(
+        result.quote.end(), result.sys.begin(), result.sys.end());
+    return result;
+  }
+
   template <bool UseInternalTemplight>
   class engine_clang : public iface::engine
   {
@@ -486,6 +555,10 @@ namespace
             logger_),
         _internal_dir(internal_dir_),
         _env_path(internal_dir_ / env_filename_),
+        _includes([this]()
+                  {
+                    return this->determine_includes();
+                  }),
         _logger(logger_)
     {
     }
@@ -678,24 +751,8 @@ namespace
     virtual std::vector<boost::filesystem::path>
     include_path(data::include_type type_) override
     {
-      const data::process_output o =
-          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
-
-      const std::string s = o.standard_output() + o.standard_error();
-      std::vector<std::string> lines;
-      boost::algorithm::split(lines, s, [](char c_)
-                              {
-                                return c_ == '\n';
-                              });
-
-      std::vector<boost::filesystem::path> result;
-      include_path_of_type(lines, type_, result);
-      if (type_ == data::include_type::quote)
-      {
-        include_path_of_type(lines, data::include_type::sys, result);
-      }
-
-      return result;
+      return type_ == data::include_type::sys ? _includes->sys :
+                                                _includes->quote;
     }
 
     virtual std::set<boost::filesystem::path>
@@ -733,36 +790,16 @@ namespace
     clang_binary _clang_binary;
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_path;
+    cached<data::includes> _includes;
     logger* _logger;
 
-    void include_path_of_type(const std::vector<std::string>& clang_output_,
-                              data::include_type type_,
-                              std::vector<boost::filesystem::path>& append_to_)
+    data::includes determine_includes()
     {
-      using boost::algorithm::starts_with;
-      using boost::algorithm::trim_copy;
+      const data::process_output o =
+          run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
-      const std::string prefix = include_dotdotdot(type_);
-
-      const auto includes_begin =
-          std::find_if(clang_output_.begin(), clang_output_.end(),
-                       [&prefix](const std::string& line_)
-                       {
-                         return starts_with(line_, prefix);
-                       });
-      if (includes_begin != clang_output_.end())
-      {
-        transform(includes_begin + 1,
-                  find_if(includes_begin + 1, clang_output_.end(),
-                          [](const std::string& line_)
-                          {
-                            return !starts_with(line_, " ");
-                          }),
-                  back_inserter(append_to_), [](const std::string& s_)
-                  {
-                    return trim_copy(s_);
-                  });
-      }
+      const std::string s = o.standard_output() + o.standard_error();
+      return determine_clang_includes(just::lines::view_of(s));
     }
   };
 } // anonymous namespace
