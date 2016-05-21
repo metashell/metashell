@@ -33,3 +33,5 @@ target_link_libraries(metashell_mdb_system_test
   boost_system
 )
 
+register_system_test(metashell_mdb_system_test)
+
