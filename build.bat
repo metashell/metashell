@@ -39,85 +39,7 @@ cd bin
   if errorlevel 1 goto no_dev
 
   rem Run tests
-  test\unit\Release\metashell_unit_test.exe
-  if errorlevel 1 goto test_failed
-
-
-
-  test\system\app\core\Release\metashell_core_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    -- ^
-    -I%cd%\..\3rd\boost\include ^
-    --
-  if errorlevel 1 goto test_failed
-
-  test\system\app\core\Release\metashell_core_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    --engine clang ^
-    -- ^
-    %cd%\app\metashell\Release\templight\templight.exe ^
-    -std=c++0x ^
-    -ftemplate-depth=256 ^
-    -Wfatal-errors ^
-    -fno-ms-compatibility ^
-    -U_MSC_VER ^
-    -I%cd%\app\metashell\Release\windows_headers ^
-    -I%cd%\app\metashell\Release\windows_headers\mingw32 ^
-    -I%cd%\app\metashell\Release\templight\include ^
-    -I%cd%\..\3rd\boost\include ^
-    --
-  if errorlevel 1 goto test_failed
-
-
-
-  test\system\app\pp\Release\metashell_pp_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    -- ^
-    -I%cd%\..\3rd\boost\include ^
-    --
-  if errorlevel 1 goto test_failed
-
-  test\system\app\pp\Release\metashell_pp_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    --engine clang ^
-    -- ^
-    %cd%\app\metashell\Release\templight\templight.exe ^
-    -std=c++0x ^
-    -ftemplate-depth=256 ^
-    -Wfatal-errors ^
-    -fno-ms-compatibility ^
-    -U_MSC_VER ^
-    -I%cd%\app\metashell\Release\windows_headers ^
-    -I%cd%\app\metashell\Release\windows_headers\mingw32 ^
-    -I%cd%\app\metashell\Release\templight\include ^
-    -I%cd%\..\3rd\boost\include ^
-    --
-  if errorlevel 1 goto test_failed
-
-
-
-  test\system\app\mdb\Release\metashell_mdb_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    -- ^
-    -I%cd%\..\3rd\boost\include ^
-    --
-  if errorlevel 1 goto test_failed
-
-  test\system\app\mdb\Release\metashell_mdb_system_test.exe ^
-    app\metashell\Release\metashell.exe ^
-    --engine clang ^
-    -- ^
-    %cd%\app\metashell\Release\templight\templight.exe ^
-    -std=c++0x ^
-    -ftemplate-depth=256 ^
-    -Wfatal-errors ^
-    -fno-ms-compatibility ^
-    -U_MSC_VER ^
-    -I%cd%\app\metashell\Release\windows_headers ^
-    -I%cd%\app\metashell\Release\windows_headers\mingw32 ^
-    -I%cd%\app\metashell\Release\templight\include ^
-    -I%cd%\..\3rd\boost\include ^
-    --
+  ctest -C Release
   if errorlevel 1 goto test_failed
 
   rem Create installer
@@ -137,4 +59,5 @@ exit /B 1
 
 :test_failed
 echo "Tests failed"
+type Testing\Temporary\LastTest.log
 exit /B 1

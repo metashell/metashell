@@ -34,3 +34,5 @@ target_link_libraries(metashell_core_system_test
   boost_system
 )
 
+register_system_test(metashell_core_system_test)
+
