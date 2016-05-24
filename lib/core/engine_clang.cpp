@@ -667,7 +667,7 @@ namespace
       METASHELL_LOG(
           _logger, "Part kept for code completion: " + completion_start.first);
 
-      const data::unsaved_file src(env_.internal_dir() / "code_complete.cpp",
+      const data::unsaved_file src(_internal_dir / "code_complete.cpp",
                                    env_.get_appended(completion_start.first));
 
       generate(src);

@@ -207,7 +207,7 @@ std::string header_file_environment::get_appended(const std::string& s_) const
 void header_file_environment::save()
 {
   const boost::filesystem::path fn = _headers.internal_dir() / _env_filename;
-  if (!internal_dir().empty())
+  if (!_internal_dir.empty())
   {
     const std::string filename = fn.string();
     std::ofstream f(filename.c_str());
@@ -225,11 +225,6 @@ void header_file_environment::save()
   {
     _engine.generate_precompiled_header(fn);
   }
-}
-
-boost::filesystem::path header_file_environment::internal_dir() const
-{
-  return _internal_dir;
 }
 
 const data::headers& header_file_environment::get_headers() const

@@ -37,8 +37,6 @@ namespace metashell
       virtual std::string get() const = 0;
       virtual std::string get_appended(const std::string& s_) const = 0;
 
-      virtual boost::filesystem::path internal_dir() const = 0;
-
       virtual const data::headers& get_headers() const = 0;
 
       // Returns parts that are in precompiled header files as well
