@@ -115,16 +115,18 @@ int main(int argc_, const char* argv_[])
 
         just::temp::directory dir;
 
-        const path temp_dir = path(dir.path()) / "shell";
+        const path shell_dir = path(dir.path()) / "shell";
+        const path temp_dir = path(dir.path()) / "tmp";
         const path mdb_dir = path(dir.path()) / "mdb";
 
+        create_directories(shell_dir);
         create_directories(temp_dir);
         create_directories(mdb_dir);
 
         std::unique_ptr<metashell::shell> shell(new metashell::shell(
-            r.cfg, ccfg.processor_queue(), temp_dir, env_filename, mdb_dir,
-            eentry->second.build(
-                r.cfg, temp_dir, env_filename, det, ccfg.displayer(), &logger),
+            r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
+            eentry->second.build(r.cfg, shell_dir, temp_dir, env_filename, det,
+                                 ccfg.displayer(), &logger),
             &logger));
 
         if (r.cfg.splash_enabled)

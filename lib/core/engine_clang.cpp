@@ -523,6 +523,7 @@ namespace
   public:
     engine_clang(const data::config& config_,
                  const boost::filesystem::path& internal_dir_,
+                 const boost::filesystem::path& temp_dir_,
                  const boost::filesystem::path& env_filename_,
                  iface::environment_detector& env_detector_,
                  iface::displayer& displayer_,
@@ -530,6 +531,7 @@ namespace
       : engine_clang(
             config_,
             internal_dir_,
+            temp_dir_,
             env_filename_,
             env_detector_,
             UseInternalTemplight ?
@@ -544,6 +546,7 @@ namespace
 
     engine_clang(const data::config& config_,
                  const boost::filesystem::path& internal_dir_,
+                 const boost::filesystem::path& temp_dir_,
                  const boost::filesystem::path& env_filename_,
                  iface::environment_detector& env_detector_,
                  const boost::filesystem::path& clang_path_,
@@ -553,7 +556,7 @@ namespace
             clang_args<UseInternalTemplight>(
                 config_, internal_dir_, env_detector_, logger_, clang_path_),
             logger_),
-        _internal_dir(internal_dir_),
+        _temp_dir(temp_dir_),
         _env_path(internal_dir_ / env_filename_),
         _includes([this]()
                   {
@@ -667,7 +670,7 @@ namespace
       METASHELL_LOG(
           _logger, "Part kept for code completion: " + completion_start.first);
 
-      const data::unsaved_file src(_internal_dir / "code_complete.cpp",
+      const data::unsaved_file src(_temp_dir / "code_complete.cpp",
                                    env_.get_appended(completion_start.first));
 
       generate(src);
@@ -788,7 +791,7 @@ namespace
 
   private:
     clang_binary _clang_binary;
-    boost::filesystem::path _internal_dir;
+    boost::filesystem::path _temp_dir;
     boost::filesystem::path _env_path;
     cached<data::includes> _includes;
     logger* _logger;

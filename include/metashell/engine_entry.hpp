@@ -35,6 +35,7 @@ namespace metashell
     std::unique_ptr<iface::engine>
     build(const data::config& config_,
           const boost::filesystem::path& internal_dir_,
+          const boost::filesystem::path& temp_dir_,
           const boost::filesystem::path& env_filename_,
           iface::environment_detector& env_detector_,
           iface::displayer& displayer_,

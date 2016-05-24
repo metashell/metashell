@@ -34,6 +34,7 @@ namespace metashell
       const data::config&,
       const boost::filesystem::path&,
       const boost::filesystem::path&,
+      const boost::filesystem::path&,
       iface::environment_detector&,
       iface::displayer&,
       logger*)> engine_factory;
@@ -43,13 +44,14 @@ namespace metashell
   {
     return [](const data::config& config_,
               const boost::filesystem::path& internal_dir_,
+              const boost::filesystem::path& temp_dir_,
               const boost::filesystem::path& env_filename_,
               iface::environment_detector& env_detector_,
               iface::displayer& displayer_, logger* logger_)
     {
       return std::unique_ptr<iface::engine>(
-          new Engine(config_, internal_dir_, env_filename_, env_detector_,
-                     displayer_, logger_));
+          new Engine(config_, internal_dir_, temp_dir_, env_filename_,
+                     env_detector_, displayer_, logger_));
     };
   }
 }
