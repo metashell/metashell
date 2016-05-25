@@ -15,14 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/prompt.hpp>
+#include <metashell_system_test/error.hpp>
 #include <metashell_system_test/code_completion_result.hpp>
 
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/code_completer.hpp>
+#include <metashell_system_test/run_metashell.hpp>
 
 #include <just/test.hpp>
 
 using namespace metashell_system_test;
+
+using pattern::_;
 
 JUST_TEST_CASE(test_simple_completion)
 {
@@ -94,4 +98,21 @@ JUST_TEST_CASE(test_included_completion)
   code_completer c("#include <vector>");
 
   JUST_ASSERT_EQUAL(code_completion_result{"r"}, c("std::vecto"));
+}
+
+JUST_TEST_CASE(test_code_completion_cpp_can_not_be_included)
+{
+  const auto r = run_metashell(
+      {code_completion("doubl"), command("#include <code_complete.cpp>")});
+
+  auto i = r.begin();
+
+  JUST_ASSERT_EQUAL(prompt(_), *i);
+  ++i;
+  ++i;
+  JUST_ASSERT_EQUAL(prompt(_), *i);
+  ++i;
+
+  JUST_ASSERT(i != r.end());
+  JUST_ASSERT_EQUAL(error(_), *i);
 }

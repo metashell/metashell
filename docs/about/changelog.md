@@ -49,6 +49,9 @@
     * The `-nostdinc` and `-nosdtinc++` arguments remove the path of the headers
       shipped with Metashell from the system include path.
 
+* Fixes
+    * The temporary `code_complete.cpp` has been removed from the include path.
+
 * Documentation updates
     * New "How to..." section about debugging SFINAE.
 

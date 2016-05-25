@@ -204,7 +204,7 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
   e.get_appended_throw_from_now();
   null_displayer d;
   const data::result r = get_internal_templight_entry()
-                             .build(cfg, "", "env.hpp", det, d, nullptr)
+                             .build(cfg, "", "", "env.hpp", det, d, nullptr)
                              ->validate_code("typedef int foo;", cfg, e, false);
 
   JUST_ASSERT(!r.successful);

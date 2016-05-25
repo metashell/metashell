@@ -28,8 +28,6 @@ public:
   virtual std::string get() const override;
   virtual std::string get_appended(const std::string& s_) const override;
 
-  virtual boost::filesystem::path internal_dir() const override;
-
   virtual const metashell::data::headers& get_headers() const override;
 
   virtual std::string get_all() const override;
