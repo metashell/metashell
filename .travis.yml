@@ -1,5 +1,6 @@
 language: cpp
 sudo: required
+dist: trusty
 os:
   - linux
   - osx
@@ -15,13 +16,10 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.7
     packages:
       - libreadline-dev
       - libncurses5-dev
       - g++-4.8
       - python-yaml
-      - clang-format-3.7
-      - clang-tidy-3.7
 script:
   - tools/travis/${TRAVIS_OS_NAME}.sh
