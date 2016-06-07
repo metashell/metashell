@@ -19,8 +19,8 @@
 
 #include <rapidjson/reader.h>
 
-#include <map>
 #include <cassert>
+#include <map>
 
 using namespace metashell;
 
@@ -137,8 +137,7 @@ line_reader metashell::build_json_line_reader(
     command_processor_queue& command_processor_queue_)
 {
   return [line_reader_, &displayer_, &json_writer_,
-          &command_processor_queue_](const std::string& prompt_)
-  {
+          &command_processor_queue_](const std::string& prompt_) {
     return json_line_reader(line_reader_, displayer_, json_writer_,
                             command_processor_queue_, prompt_);
   };

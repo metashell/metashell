@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/include_type.hpp>
 #include <metashell/data/command.hpp>
+#include <metashell/data/include_type.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>

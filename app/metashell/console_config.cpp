@@ -16,15 +16,15 @@
 
 #include "console_config.hpp"
 
+#include <metashell/console_displayer.hpp>
+#include <metashell/json_displayer.hpp>
+#include <metashell/json_line_reader.hpp>
+#include <metashell/null_history.hpp>
+#include <metashell/rapid_json_writer.hpp>
+#include <metashell/readline/history.hpp>
+#include <metashell/readline/line_reader.hpp>
 #include <metashell/stdout_console.hpp>
 #include <metashell/stream_console.hpp>
-#include <metashell/json_displayer.hpp>
-#include <metashell/console_displayer.hpp>
-#include <metashell/readline/history.hpp>
-#include <metashell/null_history.hpp>
-#include <metashell/readline/line_reader.hpp>
-#include <metashell/json_line_reader.hpp>
-#include <metashell/rapid_json_writer.hpp>
 
 #include <iostream>
 

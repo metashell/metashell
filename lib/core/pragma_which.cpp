@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_which.hpp>
 #include <metashell/exception.hpp>
+#include <metashell/pragma_which.hpp>
 #include <metashell/shell.hpp>
 
 #include <boost/filesystem.hpp>
@@ -54,16 +54,11 @@ void pragma_which::run(const data::command::iterator& name_begin_,
   const parsed_arguments args = parse_arguments(
       data::tokens_to_string(name_begin_, name_end_), args_begin_, args_end_);
   const auto include_path = _shell.engine().include_path(args.header.type);
-  const auto files = include_path |
-                     transformed(std::function<path(const path&)>(
-                         [&args](const path& path_)
-                         {
-                           return path_ / args.header.path;
-                         })) |
-                     filtered([](const path& path_)
-                              {
-                                return exists(path_);
-                              });
+  const auto files =
+      include_path |
+      transformed(std::function<path(const path&)>(
+          [&args](const path& path_) { return path_ / args.header.path; })) |
+      filtered([](const path& path_) { return exists(path_); });
 
   if (files.empty())
   {

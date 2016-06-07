@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/source_position.hpp>
 #include <metashell/for_each_line.hpp>
+#include <metashell/source_position.hpp>
 
 #include <iostream>
 
@@ -52,19 +52,16 @@ source_position metashell::source_position_of(const std::string& s_)
 {
   source_position result;
   bool first_line = true;
-  for_each_line(
-      s_, [&result, &first_line](const std::string& line_)
-      {
-        if (first_line)
-        {
-          result = source_position(result.line(), column(line_.length() + 1));
-          first_line = false;
-        }
-        else
-        {
-          result =
-              source_position(result.line() + 1, column(line_.length() + 1));
-        }
-      });
+  for_each_line(s_, [&result, &first_line](const std::string& line_) {
+    if (first_line)
+    {
+      result = source_position(result.line(), column(line_.length() + 1));
+      first_line = false;
+    }
+    else
+    {
+      result = source_position(result.line() + 1, column(line_.length() + 1));
+    }
+  });
   return result;
 }

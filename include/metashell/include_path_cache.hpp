@@ -18,8 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/cached.hpp>
-#include <metashell/iface/engine.hpp>
 #include <metashell/data/include_type.hpp>
+#include <metashell/iface/engine.hpp>
 
 #include <boost/filesystem/path.hpp>
 

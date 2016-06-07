@@ -19,8 +19,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/preprocessor/cat.hpp>
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 
 using namespace metashell;
 

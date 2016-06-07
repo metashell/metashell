@@ -19,8 +19,8 @@
 
 #include <boost/optional.hpp>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 class string_reader
 {

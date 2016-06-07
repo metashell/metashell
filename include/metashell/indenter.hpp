@@ -20,8 +20,8 @@
 #include <metashell/shell.hpp>
 #include <metashell/wave_tokeniser.hpp>
 
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace metashell
 {

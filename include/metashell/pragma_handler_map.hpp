@@ -17,17 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler.hpp>
+#include <metashell/command_processor_queue.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/logger.hpp>
-#include <metashell/command_processor_queue.hpp>
+#include <metashell/pragma_handler.hpp>
 
 #include <boost/filesystem/path.hpp>
 
-#include <map>
-#include <vector>
-#include <string>
 #include <cassert>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace metashell
 {

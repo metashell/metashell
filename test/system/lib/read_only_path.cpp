@@ -19,8 +19,8 @@
 #include <stdexcept>
 
 #ifdef _WIN32
-#include <windows.h>
 #include <sddl.h>
+#include <windows.h>
 #endif
 
 using namespace metashell_system_test;

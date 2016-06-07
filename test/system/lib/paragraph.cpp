@@ -16,8 +16,8 @@
 
 #include <metashell_system_test/paragraph.hpp>
 
-#include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include <iostream>
 

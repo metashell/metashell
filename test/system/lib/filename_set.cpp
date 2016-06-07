@@ -16,9 +16,9 @@
 
 #include <metashell_system_test/filename_set.hpp>
 
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include <iostream>
 

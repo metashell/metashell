@@ -19,9 +19,7 @@
 using namespace metashell;
 
 mock_command_processor::mock_command_processor()
-  : code_complete_callback([](const std::string&, std::set<std::string>&)
-                           {
-                           })
+  : code_complete_callback([](const std::string&, std::set<std::string>&) {})
 {
 }
 

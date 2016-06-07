@@ -22,8 +22,8 @@
 
 #include <boost/optional.hpp>
 
-#include <string>
 #include <functional>
+#include <string>
 
 namespace metashell
 {

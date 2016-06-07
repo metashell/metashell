@@ -17,14 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram.hpp>
 #include <metashell/data/call_graph_node.hpp>
+#include <metashell/metaprogram.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
-#include <tuple>
 #include <stack>
+#include <tuple>
 
 namespace metashell
 {
@@ -51,7 +51,8 @@ namespace metashell
   private:
     typedef std::tuple<metaprogram::optional_edge_descriptor,
                        int // Depth
-                       > stack_element;
+                       >
+        stack_element;
 
     data::call_graph_node _current;
     bool _finished;

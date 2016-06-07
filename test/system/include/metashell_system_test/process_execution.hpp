@@ -19,9 +19,9 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <vector>
-#include <string>
 #include <iosfwd>
+#include <string>
+#include <vector>
 
 namespace metashell_system_test
 {

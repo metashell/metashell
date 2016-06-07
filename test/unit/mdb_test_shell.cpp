@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_config.hpp"
 #include "mdb_test_shell.hpp"
+#include "test_config.hpp"
 
-#include <metashell/shell.hpp>
 #include <metashell/engine_constant.hpp>
+#include <metashell/shell.hpp>
 
 #include <metashell/data/config.hpp>
 

@@ -16,14 +16,14 @@
 
 #include "test_config.hpp"
 
-#include <metashell/shell.hpp>
-#include <metashell/in_memory_displayer.hpp>
 #include <metashell/engine_constant.hpp>
+#include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
 #include <just/test.hpp>
 
-#include <string>
 #include <cassert>
+#include <string>
 
 namespace
 {
@@ -40,10 +40,7 @@ JUST_TEST_CASE(test_popping_environment_from_empty_queue)
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
-  JUST_ASSERT_THROWS([&sh]
-                     {
-                       sh.pop_environment();
-                     });
+  JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
 }
 
 JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
@@ -68,10 +65,7 @@ JUST_TEST_CASE(test_more_pops_than_pushes_throws)
   sh.push_environment();
   sh.pop_environment();
 
-  JUST_ASSERT_THROWS([&sh]
-                     {
-                       sh.pop_environment();
-                     });
+  JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
 }
 
 JUST_TEST_CASE(test_env_two_level_environment_stack)

@@ -18,9 +18,9 @@
 
 #include <just/test.hpp>
 
-#include <sstream>
 #include <iostream>
 #include <limits>
+#include <sstream>
 
 using namespace metashell;
 

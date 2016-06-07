@@ -14,19 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "test_config.hpp"
 #include "breaking_environment.hpp"
 #include "mock_environment_detector.hpp"
+#include "test_config.hpp"
 #include "util.hpp"
 
-#include <metashell/shell.hpp>
+#include <metashell/engine_clang.hpp>
+#include <metashell/engine_constant.hpp>
+#include <metashell/in_memory_displayer.hpp>
+#include <metashell/in_memory_history.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/null_history.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/in_memory_history.hpp>
-#include <metashell/engine_constant.hpp>
-#include <metashell/engine_clang.hpp>
+#include <metashell/shell.hpp>
 
 #include <just/test.hpp>
 

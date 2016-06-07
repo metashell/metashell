@@ -17,21 +17,10 @@
 #include "mock_file_writer.hpp"
 
 mock_file_writer::mock_file_writer()
-  : open_callback([](const std::string&)
-                  {
-                    return false;
-                  }),
-    close_callback([]
-                   {
-                   }),
-    is_open_callback([]
-                     {
-                       return false;
-                     }),
-    write_callback([](const std::string&)
-                   {
-                     return false;
-                   })
+  : open_callback([](const std::string&) { return false; }),
+    close_callback([] {}),
+    is_open_callback([] { return false; }),
+    write_callback([](const std::string&) { return false; })
 {
 }
 

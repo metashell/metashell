@@ -20,8 +20,8 @@
 
 #include <sstream>
 
-#include <boost/range/iterator_range_core.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/range/iterator_range_core.hpp>
 
 namespace metashell
 {

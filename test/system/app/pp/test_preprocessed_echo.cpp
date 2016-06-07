@@ -16,9 +16,9 @@
 
 #include <metashell_system_test/cpp_code.hpp>
 #include <metashell_system_test/error.hpp>
-#include <metashell_system_test/type.hpp>
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/type.hpp>
 
 #include <just/test.hpp>
 

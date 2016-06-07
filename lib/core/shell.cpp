@@ -16,17 +16,17 @@
 
 #include <metashell/metashell.hpp>
 
-#include <metashell/shell.hpp>
-#include <metashell/version.hpp>
+#include <metashell/data/command.hpp>
+#include <metashell/exception.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include <metashell/data/command.hpp>
-#include <metashell/to_string.hpp>
-#include <metashell/exception.hpp>
 #include <metashell/null_history.hpp>
+#include <metashell/shell.hpp>
+#include <metashell/to_string.hpp>
+#include <metashell/version.hpp>
 
-#include <cctype>
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 
 using namespace metashell;
@@ -112,13 +112,12 @@ namespace
 
   bool is_empty_line(const data::command& cmd_)
   {
-    return std::find_if(cmd_.begin(), cmd_.end(),
-                        [](const data::token& t_) -> bool
-                        {
-                          const data::token_category c = t_.category();
-                          return c != data::token_category::whitespace &&
-                                 c != data::token_category::comment;
-                        }) == cmd_.end();
+    return std::find_if(
+               cmd_.begin(), cmd_.end(), [](const data::token& t_) -> bool {
+                 const data::token_category c = t_.category();
+                 return c != data::token_category::whitespace &&
+                        c != data::token_category::comment;
+               }) == cmd_.end();
   }
 
   data::result eval_tmp_formatted(const iface::environment& env_,

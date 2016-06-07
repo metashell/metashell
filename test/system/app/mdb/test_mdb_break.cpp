@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell_system_test/error.hpp>
+#include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/raw_text.hpp>
 #include <metashell_system_test/run_metashell.hpp>
-#include <metashell_system_test/json_generator.hpp>
 
 #include "test_metaprograms.hpp"
 

@@ -21,9 +21,9 @@
 
 #include <boost/optional.hpp>
 
+#include <cassert>
 #include <map>
 #include <string>
-#include <cassert>
 
 namespace metashell
 {

@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <map>
-#include <string>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
 
 #include <metashell/exception.hpp>
 #include <metashell/metaprogram.hpp>

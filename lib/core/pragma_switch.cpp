@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_switch.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/shell.hpp>
 #include <metashell/metashell.hpp>
+#include <metashell/metashell_pragma.hpp>
+#include <metashell/pragma_switch.hpp>
+#include <metashell/shell.hpp>
 #include <metashell/version.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -32,7 +32,7 @@ namespace
   const std::string false_values[] = {"off", "0"};
 
   template <int N>
-  bool element_of(const std::string(&a_)[N], const std::string& item_)
+  bool element_of(const std::string (&a_)[N], const std::string& item_)
   {
     return std::find(a_, a_ + N, item_) != a_ + N;
   }

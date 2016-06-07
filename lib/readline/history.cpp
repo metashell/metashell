@@ -21,8 +21,8 @@
 #ifdef USE_EDITLINE
 #include <editline/readline.h>
 #else
-#include <readline/readline.h>
 #include <readline/history.h>
+#include <readline/readline.h>
 #endif
 
 using namespace metashell::readline;

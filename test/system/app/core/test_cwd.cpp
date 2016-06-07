@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/type.hpp>
-#include <metashell_system_test/run_metashell.hpp>
 #include <metashell_system_test/json_generator.hpp>
+#include <metashell_system_test/prompt.hpp>
 #include <metashell_system_test/read_only_path.hpp>
+#include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/type.hpp>
 
-#include <just/test.hpp>
 #include <just/temp.hpp>
+#include <just/test.hpp>
 
 #include <boost/filesystem.hpp>
 

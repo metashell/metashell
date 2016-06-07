@@ -20,8 +20,8 @@
 
 #include <just/test.hpp>
 
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 using namespace metashell;

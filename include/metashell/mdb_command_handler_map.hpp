@@ -17,13 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <vector>
+#include <map>
 #include <string>
 #include <tuple>
-#include <map>
+#include <vector>
 
-#include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
+#include <boost/optional.hpp>
 
 #include <metashell/mdb_command.hpp>
 

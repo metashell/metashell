@@ -16,33 +16,33 @@
 
 #include <metashell/engine_clang.hpp>
 
+#include <metashell/cached.hpp>
+#include <metashell/clang_binary.hpp>
 #include <metashell/data/command.hpp>
 #include <metashell/data/includes.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/for_each_line.hpp>
+#include <metashell/has_prefix.hpp>
+#include <metashell/metashell.hpp>
 #include <metashell/source_position.hpp>
 #include <metashell/unsaved_file.hpp>
-#include <metashell/metashell.hpp>
-#include <metashell/clang_binary.hpp>
-#include <metashell/has_prefix.hpp>
-#include <metashell/cached.hpp>
 
-#include <metashell/boost/regex.hpp>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
-#include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 #include <boost/xpressive/xpressive.hpp>
+#include <metashell/boost/regex.hpp>
 
 #include <just/lines.hpp>
 
-#include <memory>
 #include <algorithm>
 #include <iterator>
+#include <memory>
 
 using namespace metashell;
 
@@ -55,8 +55,7 @@ namespace
   bool stdinc_allowed(const std::vector<std::string>& extra_clang_args_)
   {
     return find_if(extra_clang_args_.begin(), extra_clang_args_.end(),
-                   [](const std::string& s_)
-                   {
+                   [](const std::string& s_) {
                      return s_ == "-nostdinc" || s_ == "-nostdinc++";
                    }) == extra_clang_args_.end();
   }
@@ -317,8 +316,7 @@ namespace
         logger_, "Include path determined: " +
                      boost::algorithm::join(
                          result | boost::adaptors::transformed(
-                                      [](const boost::filesystem::path& p_)
-                                      {
+                                      [](const boost::filesystem::path& p_) {
                                         return p_.string();
                                       }),
                          ";"));
@@ -467,15 +465,12 @@ namespace
     const std::vector<std::string> prefixes{
         data::include_dotdotdot<Types>()...};
 
-    return std::find_if(begin_, end_, [&prefixes](const std::string& line_)
-                        {
-                          return std::find_if(
-                                     prefixes.begin(), prefixes.end(),
-                                     [&line_](const std::string& prefix_)
-                                     {
-                                       return starts_with(line_, prefix_);
-                                     }) != end(prefixes);
-                        });
+    return std::find_if(begin_, end_, [&prefixes](const std::string& line_) {
+      return std::find_if(prefixes.begin(), prefixes.end(),
+                          [&line_](const std::string& prefix_) {
+                            return starts_with(line_, prefix_);
+                          }) != end(prefixes);
+    });
   }
 
   template <data::include_type Type, class ForwardIt>
@@ -490,14 +485,11 @@ namespace
         next(beginning_of_includes<Type>(lines_begin_, lines_end_), lines_end_);
 
     transform(includes_begin, find_if(includes_begin, lines_end_,
-                                      [](const std::string& line_)
-                                      {
+                                      [](const std::string& line_) {
                                         return !starts_with(line_, " ");
                                       }),
-              back_inserter(result), [](const std::string& s_)
-              {
-                return trim_copy(s_);
-              });
+              back_inserter(result),
+              [](const std::string& s_) { return trim_copy(s_); });
 
     return result;
   }
@@ -558,10 +550,7 @@ namespace
             logger_),
         _temp_dir(temp_dir_),
         _env_path(internal_dir_ / env_filename_),
-        _includes([this]()
-                  {
-                    return this->determine_includes();
-                  }),
+        _includes([this]() { return this->determine_includes(); }),
         _logger(logger_)
     {
     }
@@ -696,19 +685,17 @@ namespace
       const std::string out = o.standard_output();
       out_.clear();
       const int prefix_len = completion_start.second.length();
-      for_each_line(
-          out, [&out_, &completion_start, prefix_len](const std::string& line_)
+      for_each_line(out, [&out_, &completion_start,
+                          prefix_len](const std::string& line_) {
+        if (const boost::optional<std::string> comp = parse_completion(line_))
+        {
+          if (starts_with(*comp, completion_start.second) &&
+              *comp != completion_start.second)
           {
-            if (const boost::optional<std::string> comp =
-                    parse_completion(line_))
-            {
-              if (starts_with(*comp, completion_start.second) &&
-                  *comp != completion_start.second)
-              {
-                out_.insert(string(comp->begin() + prefix_len, comp->end()));
-              }
-            }
-          });
+            out_.insert(string(comp->begin() + prefix_len, comp->end()));
+          }
+        }
+      });
     }
 
     virtual void
@@ -771,20 +758,17 @@ namespace
 
       const auto result =
           lines |
-          boost::adaptors::filtered([&included_header](const std::string& s_)
-                                    {
-                                      return regex_search(s_, included_header);
-                                    }) |
-          boost::adaptors::transformed(
-              [](const std::string& s_)
-              {
-                const auto i = std::find(s_.begin(), s_.end(), ' ');
+          boost::adaptors::filtered([&included_header](const std::string& s_) {
+            return regex_search(s_, included_header);
+          }) |
+          boost::adaptors::transformed([](const std::string& s_) {
+            const auto i = std::find(s_.begin(), s_.end(), ' ');
 
-                return i == s_.end() ?
-                           boost::filesystem::path() :
-                           boost::filesystem::path(
-                               remove_double_backslashes(i + 1, s_.end()));
-              });
+            return i == s_.end() ?
+                       boost::filesystem::path() :
+                       boost::filesystem::path(
+                           remove_double_backslashes(i + 1, s_.end()));
+          });
 
       return std::set<boost::filesystem::path>(result.begin(), result.end());
     }

@@ -16,8 +16,8 @@
 
 #include "breaking_environment.hpp"
 
-#include <stdexcept>
 #include <cassert>
+#include <stdexcept>
 
 using namespace metashell;
 

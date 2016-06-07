@@ -16,8 +16,8 @@
 
 #include <metashell_system_test/frame.hpp>
 
-#include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include <cassert>
 #include <iostream>

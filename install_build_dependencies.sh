@@ -23,7 +23,7 @@ then
 fi
 
 PLATFORM="$(tools/detect_platform.sh)"
-CLANG_VERSION=3.7.1
+CLANG_VERSION=3.8.0
 
 echo "Platform: ${PLATFORM}"
 

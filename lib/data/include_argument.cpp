@@ -62,8 +62,7 @@ include_argument::parse(const command::iterator& begin_,
     if (begin_->type() == token_type::operator_less)
     {
       const auto path = parse_path_until_token<'>'>(
-          begin_ + 1, end_, [](const token& token_)
-          {
+          begin_ + 1, end_, [](const token& token_) {
             return token_.type() == token_type::operator_greater;
           });
       return {include_argument(include_type::sys, path.first), path.second};

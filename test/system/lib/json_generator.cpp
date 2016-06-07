@@ -16,8 +16,8 @@
 
 #include <metashell_system_test/json_generator.hpp>
 
-#include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include <map>
 

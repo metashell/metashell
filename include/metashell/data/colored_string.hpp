@@ -19,12 +19,12 @@
 
 #include <metashell/data/color.hpp>
 
+#include <ostream>
 #include <string>
 #include <vector>
-#include <ostream>
 
-#include <boost/optional.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {

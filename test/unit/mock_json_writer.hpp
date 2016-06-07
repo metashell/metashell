@@ -19,8 +19,8 @@
 
 #include <metashell/iface/json_writer.hpp>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 class mock_json_writer : public metashell::iface::json_writer
 {

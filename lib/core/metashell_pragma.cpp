@@ -18,9 +18,9 @@
 
 #include <metashell/exception.hpp>
 
-#include <sstream>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <sstream>
 
 using namespace metashell;
 

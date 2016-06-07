@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/pragma_handler.hpp>
 #include <metashell/data/command.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
 #include <memory>
 
@@ -29,8 +29,7 @@ namespace metashell
   public:
     template <class Impl>
     // requires: Impl publicly inherits from iface::pragma_handler
-    pragma_handler(Impl impl_)
-      : _body(new Impl(impl_))
+    pragma_handler(Impl impl_) : _body(new Impl(impl_))
     {
     }
 

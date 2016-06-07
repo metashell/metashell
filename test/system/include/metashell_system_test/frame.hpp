@@ -17,14 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/type.hpp>
 #include <metashell_system_test/instantiation_kind.hpp>
 #include <metashell_system_test/json_string.hpp>
+#include <metashell_system_test/type.hpp>
 
 #include <pattern/placeholder.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
 

@@ -17,11 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/pragma_handler.hpp>
 #include <metashell/iface/displayer.hpp>
+#include <metashell/iface/pragma_handler.hpp>
 
-#include <string>
 #include <functional>
+#include <string>
 
 namespace metashell
 {

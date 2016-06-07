@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
 #include <metashell/iface/destroyable.hpp>
+#include <metashell/shell.hpp>
 
 #include <memory>
 

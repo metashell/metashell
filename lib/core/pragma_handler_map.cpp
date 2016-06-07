@@ -14,33 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_map.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/shell.hpp>
 #include <metashell/exception.hpp>
+#include <metashell/metashell_pragma.hpp>
+#include <metashell/pragma_handler_map.hpp>
+#include <metashell/shell.hpp>
 
-#include <metashell/pragma_help.hpp>
-#include <metashell/pragma_switch.hpp>
-#include <metashell/pragma_macro.hpp>
-#include <metashell/pragma_quit.hpp>
-#include <metashell/pragma_environment.hpp>
-#include <metashell/pragma_environment_push.hpp>
-#include <metashell/pragma_environment_pop.hpp>
-#include <metashell/pragma_environment_stack.hpp>
-#include <metashell/pragma_environment_add.hpp>
-#include <metashell/pragma_environment_reset.hpp>
-#include <metashell/pragma_environment_reload.hpp>
-#include <metashell/pragma_environment_save.hpp>
-#include <metashell/pragma_mdb.hpp>
-#include <metashell/pragma_evaluate.hpp>
-#include <metashell/pragma_pp.hpp>
 #include <metashell/pragma_echo.hpp>
-#include <metashell/pragma_macros.hpp>
-#include <metashell/pragma_macro_names.hpp>
-#include <metashell/pragma_includes.hpp>
-#include <metashell/pragma_which.hpp>
+#include <metashell/pragma_environment.hpp>
+#include <metashell/pragma_environment_add.hpp>
+#include <metashell/pragma_environment_pop.hpp>
+#include <metashell/pragma_environment_push.hpp>
+#include <metashell/pragma_environment_reload.hpp>
+#include <metashell/pragma_environment_reset.hpp>
+#include <metashell/pragma_environment_save.hpp>
+#include <metashell/pragma_environment_stack.hpp>
+#include <metashell/pragma_evaluate.hpp>
+#include <metashell/pragma_help.hpp>
 #include <metashell/pragma_included_headers.hpp>
+#include <metashell/pragma_includes.hpp>
 #include <metashell/pragma_ls.hpp>
+#include <metashell/pragma_macro.hpp>
+#include <metashell/pragma_macro_names.hpp>
+#include <metashell/pragma_macros.hpp>
+#include <metashell/pragma_mdb.hpp>
+#include <metashell/pragma_pp.hpp>
+#include <metashell/pragma_quit.hpp>
+#include <metashell/pragma_switch.hpp>
+#include <metashell/pragma_which.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -156,8 +156,7 @@ void pragma_handler_map::process(const data::command::iterator& begin_,
   {
     longest_fit_handler->run(
         begin_, find_last_if(begin_, longest_fit_begin,
-                             [](const data::token& token_)
-                             {
+                             [](const data::token& token_) {
                                return token_.category() !=
                                       data::token_category::whitespace;
                              }) +
@@ -189,24 +188,13 @@ pragma_handler_map::build_default(shell& shell_,
   return pragma_handler_map()
       .add("help", pragma_help(shell_.pragma_handlers()))
       .add("verbose", pragma_switch("verbose mode",
-                                    [&shell_]()
-                                    {
-                                      return shell_.verbose();
-                                    },
-                                    [&shell_](bool v_)
-                                    {
-                                      shell_.verbose(v_);
-                                    }))
+                                    [&shell_]() { return shell_.verbose(); },
+                                    [&shell_](bool v_) { shell_.verbose(v_); }))
       .add("precompiled_headers",
-           pragma_switch("precompiled header usage",
-                         [&shell_]()
-                         {
-                           return shell_.using_precompiled_headers();
-                         },
-                         [&shell_](bool v_)
-                         {
-                           shell_.using_precompiled_headers(v_);
-                         }))
+           pragma_switch(
+               "precompiled header usage",
+               [&shell_]() { return shell_.using_precompiled_headers(); },
+               [&shell_](bool v_) { shell_.using_precompiled_headers(v_); }))
       .add("environment", pragma_environment(shell_.env()))
       .add("environment", "push", pragma_environment_push(shell_))
       .add("environment", "pop", pragma_environment_pop(shell_))
@@ -216,39 +204,22 @@ pragma_handler_map::build_default(shell& shell_,
       .add("environment", "reload", pragma_environment_reload(shell_))
       .add("environment", "save",
            pragma_environment_save(shell_.get_config(), shell_.env()))
-      .add(
-          "preprocessed", "echo", pragma_switch("display preprocessed commands",
-                                                [&shell_]()
-                                                {
-                                                  return shell_.echo();
-                                                },
-                                                [&shell_](bool v_)
-                                                {
-                                                  shell_.echo(v_);
-                                                }))
+      .add("preprocessed", "echo",
+           pragma_switch("display preprocessed commands",
+                         [&shell_]() { return shell_.echo(); },
+                         [&shell_](bool v_) { shell_.echo(v_); }))
       .add("mdb", pragma_mdb(shell_, cpq_, mdb_temp_dir_, logger_))
       .add("evaluate", pragma_evaluate(shell_))
       .add("pp", pragma_pp(shell_))
-      .add(
-          "show", "cpp_errors", pragma_switch("display C++ errors",
-                                              [&shell_]()
-                                              {
-                                                return shell_.show_cpp_errors();
-                                              },
-                                              [&shell_](bool v_)
-                                              {
-                                                shell_.show_cpp_errors(v_);
-                                              }))
+      .add("show", "cpp_errors",
+           pragma_switch("display C++ errors",
+                         [&shell_]() { return shell_.show_cpp_errors(); },
+                         [&shell_](bool v_) { shell_.show_cpp_errors(v_); }))
       .add("metaprogram", "evaluation",
-           pragma_switch("evaluation of metaprograms",
-                         [&shell_]()
-                         {
-                           return shell_.evaluate_metaprograms();
-                         },
-                         [&shell_](bool v_)
-                         {
-                           shell_.evaluate_metaprograms(v_);
-                         }))
+           pragma_switch(
+               "evaluation of metaprograms",
+               [&shell_]() { return shell_.evaluate_metaprograms(); },
+               [&shell_](bool v_) { shell_.evaluate_metaprograms(v_); }))
       .add("preprocessor", "mode",
            shell_mode(
                "preprocessor",

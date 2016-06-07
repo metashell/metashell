@@ -18,17 +18,17 @@
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/transformed.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 
-#include <just/test.hpp>
 #include <just/temp.hpp>
+#include <just/test.hpp>
 
-#include <fstream>
-#include <string>
 #include <algorithm>
+#include <fstream>
 #include <sstream>
+#include <string>
 
 using namespace metashell_system_test;
 
@@ -69,9 +69,8 @@ namespace
       }
       const auto r = run_metashell(commands, {"--", "-I" + _tmp.path()});
 
-      const auto i = std::find_if(
-          r.begin(), r.end(), [](const json_string& s_)
-          {
+      const auto i =
+          std::find_if(r.begin(), r.end(), [](const json_string& s_) {
             return boost::algorithm::starts_with(
                 s_.get(), "{\"type\":\"filename_set\",\"filenames\":[");
           });
@@ -82,12 +81,10 @@ namespace
     filename_set
     filenames(const std::vector<boost::filesystem::path>& filenames_)
     {
-      return filename_set(
-          filenames_ |
-          boost::adaptors::transformed([this](const boost::filesystem::path& p_)
-                                       {
-                                         return this->relative(p_);
-                                       }));
+      return filename_set(filenames_ | boost::adaptors::transformed([this](
+                                           const boost::filesystem::path& p_) {
+                            return this->relative(p_);
+                          }));
     }
 
   private:

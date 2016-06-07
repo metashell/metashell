@@ -18,12 +18,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
-#include <metashell/iface/environment_detector.hpp>
 #include <metashell/engine_entry.hpp>
+#include <metashell/iface/environment_detector.hpp>
 
 #include <iosfwd>
-#include <string>
 #include <map>
+#include <string>
 
 namespace metashell
 {

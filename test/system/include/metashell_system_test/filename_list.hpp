@@ -19,11 +19,11 @@
 
 #include <metashell_system_test/json_string.hpp>
 
-#include <boost/operators.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/operators.hpp>
 
-#include <vector>
 #include <iosfwd>
+#include <vector>
 
 namespace metashell_system_test
 {
@@ -38,8 +38,7 @@ namespace metashell_system_test
     explicit filename_list(const json_string& s_);
 
     template <class Container>
-    filename_list(const Container& c_)
-      : _paths(c_.begin(), c_.end())
+    filename_list(const Container& c_) : _paths(c_.begin(), c_.end())
     {
     }
 

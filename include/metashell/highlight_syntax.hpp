@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/token.hpp>
 #include <metashell/data/colored_string.hpp>
+#include <metashell/data/token.hpp>
 
 namespace metashell
 {

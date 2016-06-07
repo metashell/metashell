@@ -16,11 +16,11 @@
 
 #include <metashell/rapid_json_writer.hpp>
 
-#include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
-#include <ostream>
 #include <cassert>
+#include <ostream>
 
 using namespace metashell;
 

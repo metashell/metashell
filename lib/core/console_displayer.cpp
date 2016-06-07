@@ -16,20 +16,20 @@
 
 #include <metashell/console_displayer.hpp>
 #include <metashell/data/colored_string.hpp>
+#include <metashell/get_file_section.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/indenter.hpp>
-#include <metashell/get_file_section.hpp>
 
-#include <mindent/stream_display.hpp>
 #include <mindent/display.hpp>
 #include <mindent/parser.hpp>
+#include <mindent/stream_display.hpp>
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
-#include <functional>
-#include <sstream>
 #include <fstream>
+#include <functional>
 #include <iomanip>
+#include <sstream>
 
 using namespace metashell;
 
@@ -176,8 +176,7 @@ void console_displayer::show_cpp_code(const std::string& code_)
       {
         indent(_console->width(), 2,
                std::function<void(const data::token&)>(
-                   [this](const data::token& t_)
-                   {
+                   [this](const data::token& t_) {
                      this->_console->show(highlight_syntax(t_.value()));
                    }),
                code_, "<output>");
@@ -185,8 +184,7 @@ void console_displayer::show_cpp_code(const std::string& code_)
       else
       {
         indent(_console->width(), 2, std::function<void(const data::token&)>(
-                                         [this](const data::token& t_)
-                                         {
+                                         [this](const data::token& t_) {
                                            this->_console->show(t_.value());
                                          }),
                code_, "<output>");

@@ -19,9 +19,9 @@
 
 #include <metashell_system_test/json_string.hpp>
 
-#include <string>
-#include <set>
 #include <iosfwd>
+#include <set>
+#include <string>
 
 namespace metashell_system_test
 {

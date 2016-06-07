@@ -14,24 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/cpp_code.hpp>
 #include <metashell_system_test/comment.hpp>
+#include <metashell_system_test/cpp_code.hpp>
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/run_metashell.hpp>
 #include <metashell_system_test/system_test_config.hpp>
 #include <metashell_system_test/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
-#include <boost/range/adaptors.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/range/adaptors.hpp>
 
-#include <just/test.hpp>
-#include <just/temp.hpp>
 #include <just/lines.hpp>
+#include <just/temp.hpp>
+#include <just/test.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
-#include <algorithm>
 #include <numeric>
 #include <vector>
 
@@ -44,16 +44,12 @@ namespace
     JUST_ASSERT(bool(cpp_code(s_).code().value()));
 
     const std::string code = *cpp_code(s_).code().value();
-    const auto result =
-        just::lines::view(code) |
-        boost::adaptors::filtered([](const std::string& a_)
-                                  {
-                                    return !a_.empty();
-                                  }) |
-        boost::adaptors::transformed([](const std::string& l_)
-                                     {
-                                       return remove_prefix("#include ", l_);
-                                     });
+    const auto result = just::lines::view(code) |
+                        boost::adaptors::filtered(
+                            [](const std::string& a_) { return !a_.empty(); }) |
+                        boost::adaptors::transformed([](const std::string& l_) {
+                          return remove_prefix("#include ", l_);
+                        });
     return std::set<std::string>(result.begin(), result.end());
   }
 
@@ -71,7 +67,8 @@ namespace
   directories_and_files_coming_from_test_arguments()
   {
     std::pair<std::vector<boost::filesystem::path>,
-              std::vector<boost::filesystem::path>> result;
+              std::vector<boost::filesystem::path>>
+        result;
 
     for (const std::string& arg : system_test_config::metashell_args())
     {
@@ -189,10 +186,7 @@ namespace
       return before +
              accumulate(path_elements_.begin() + 1, path_elements_.end(),
                         path(path_elements_.front()),
-                        [](path a_, const path& b_)
-                        {
-                          return a_ /= b_;
-                        })
+                        [](path a_, const path& b_) { return a_ /= b_; })
                  .string() +
              After;
     }

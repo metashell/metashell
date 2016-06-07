@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_switch.hpp>
-#include <metashell/metashell_pragma.hpp>
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/metashell_pragma.hpp>
 #include <metashell/pragma_handler.hpp>
+#include <metashell/pragma_switch.hpp>
 
 #include <just/test.hpp>
 
@@ -38,11 +38,10 @@ namespace
     bool arg = !ExpectedResult;
     in_memory_displayer d;
 
-    pragma_switch p("test", always<true>, [&was_called, &arg](bool value_)
-                    {
-                      was_called = true;
-                      arg = value_;
-                    });
+    pragma_switch p("test", always<true>, [&was_called, &arg](bool value_) {
+      was_called = true;
+      arg = value_;
+    });
     run(p, arg_, d);
 
     JUST_ASSERT(was_called);
@@ -63,9 +62,7 @@ JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
 {
   in_memory_displayer d;
 
-  pragma_switch p("test", always<true>, [](bool)
-                  {
-                  });
+  pragma_switch p("test", always<true>, [](bool) {});
   run(p, "on foo", d);
 
   JUST_ASSERT(!d.errors().empty());

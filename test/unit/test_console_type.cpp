@@ -18,9 +18,9 @@
 
 #include <just/test.hpp>
 
-#include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace metashell::data;
 
@@ -39,10 +39,7 @@ JUST_TEST_CASE(test_parsing_console_type)
   JUST_ASSERT_EQUAL(console_type::plain, parse_console_type("plain"));
   JUST_ASSERT_EQUAL(console_type::readline, parse_console_type("readline"));
   JUST_ASSERT_EQUAL(console_type::json, parse_console_type("json"));
-  JUST_ASSERT_THROWS<std::exception>([]
-                                     {
-                                       parse_console_type("foo");
-                                     });
+  JUST_ASSERT_THROWS<std::exception>([] { parse_console_type("foo"); });
 }
 
 JUST_TEST_CASE(test_displaying_console_type)

@@ -21,7 +21,7 @@ if [ -x 3rd/clang/bin/clang-format ]
 then
   echo 3rd/clang/bin/clang-format
 else
-  for suffix in "-3.7" ""
+  for suffix in "-3.8" ""
   do
     if command -v "clang-format${suffix}" >/dev/null 2>&1
     then

@@ -22,11 +22,11 @@
 #include <metashell/wave_tokeniser.hpp>
 
 #include <boost/wave.hpp>
-#include <boost/wave/cpplexer/cpp_lex_token.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
+#include <boost/wave/cpplexer/cpp_lex_token.hpp>
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <iterator>
 #include <vector>
 
@@ -39,10 +39,8 @@ namespace
   {
     std::vector<char> v;
     v.reserve(s_.size());
-    std::copy_if(s_.begin(), s_.end(), std::back_inserter(v), [](char c_)
-                 {
-                   return c_ != C;
-                 });
+    std::copy_if(s_.begin(), s_.end(), std::back_inserter(v),
+                 [](char c_) { return c_ != C; });
     return std::string(v.begin(), v.end());
   }
 
@@ -365,7 +363,8 @@ namespace
   {
   public:
     typedef boost::wave::cpplexer::lex_iterator<
-        boost::wave::cpplexer::lex_token<>> token_iterator;
+        boost::wave::cpplexer::lex_token<>>
+        token_iterator;
 
     std::string src;
     std::string input_filename;

@@ -16,9 +16,9 @@
 
 #include <metashell/indenter.hpp>
 
-#include <vector>
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 using namespace metashell;
 
@@ -53,10 +53,8 @@ namespace
   template <class It>
   It first_non_whitespace(It begin_, It end_)
   {
-    return std::find_if(begin_, end_, [](char c_)
-                        {
-                          return !is_whitespace(c_);
-                        });
+    return std::find_if(
+        begin_, end_, [](char c_) { return !is_whitespace(c_); });
   }
 
   template <class It>

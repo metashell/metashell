@@ -16,32 +16,32 @@
 
 #include "console_config.hpp"
 
-#include <metashell/parse_config.hpp>
 #include <metashell/default_environment_detector.hpp>
-#include <metashell/shell.hpp>
-#include <metashell/logger.hpp>
-#include <metashell/fstream_file_writer.hpp>
 #include <metashell/engine_clang.hpp>
 #include <metashell/engine_entry.hpp>
+#include <metashell/fstream_file_writer.hpp>
+#include <metashell/logger.hpp>
+#include <metashell/parse_config.hpp>
+#include <metashell/shell.hpp>
 
+#include <metashell/readline/version.hpp>
 #include <metashell/version.hpp>
 #include <metashell/wave_tokeniser.hpp>
-#include <metashell/readline/version.hpp>
 
 #include <metashell/data/config.hpp>
 
-#include <boost/range/adaptor/map.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 #include <just/temp.hpp>
 
-#include <iostream>
-#include <stdexcept>
 #include <algorithm>
+#include <iostream>
 #include <iterator>
-#include <string>
 #include <map>
+#include <stdexcept>
+#include <string>
 
 namespace
 {

@@ -16,8 +16,8 @@
 
 #include <metashell/rapid_ostream_wrapper.hpp>
 
-#include <ostream>
 #include <cassert>
+#include <ostream>
 
 using namespace metashell;
 

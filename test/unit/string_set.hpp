@@ -24,8 +24,8 @@
 #include <boost/preprocessor/repetition/enum_params.hpp>
 #include <boost/preprocessor/repetition/repeat.hpp>
 
-#include <set>
 #include <iosfwd>
+#include <set>
 
 #ifdef METASHELL_STRING_SET_CONST_LIMIT
 #error METASHELL_STRING_SET_CONST_LIMIT already defined

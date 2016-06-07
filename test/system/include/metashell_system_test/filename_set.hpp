@@ -19,11 +19,11 @@
 
 #include <metashell_system_test/json_string.hpp>
 
-#include <boost/operators.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/operators.hpp>
 
-#include <set>
 #include <iosfwd>
+#include <set>
 
 namespace metashell_system_test
 {
@@ -36,8 +36,7 @@ namespace metashell_system_test
     explicit filename_set();
 
     template <class Container>
-    filename_set(const Container& c_)
-      : _paths(c_.begin(), c_.end())
+    filename_set(const Container& c_) : _paths(c_.begin(), c_.end())
     {
     }
 

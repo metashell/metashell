@@ -17,13 +17,13 @@
 
 #include <metashell/metaprogram.hpp>
 
-#include <tuple>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <tuple>
 
 #include <boost/range/adaptor/filtered.hpp>
-#include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/reverse.hpp>
+#include <boost/range/algorithm/sort.hpp>
 
 namespace metashell
 {
@@ -346,8 +346,7 @@ namespace metashell
     using boost::range::reverse;
     using boost::copy_range;
 
-    auto is_enabled = [this](edge_descriptor edge)
-    {
+    auto is_enabled = [this](edge_descriptor edge) {
       return get_edge_property(edge).enabled;
     };
 
@@ -357,8 +356,7 @@ namespace metashell
     if (get_mode() == mode_t::profile)
     {
       // Traverse the eges which took a long time first
-      auto time_order = [this](edge_descriptor lhs, edge_descriptor rhs)
-      {
+      auto time_order = [this](edge_descriptor lhs, edge_descriptor rhs) {
         return get_edge_property(lhs).time_taken >
                get_edge_property(rhs).time_taken;
       };
@@ -440,8 +438,7 @@ namespace metashell
     case mode_t::full:
       return data::frame(vp.type, vp.source_location);
     case mode_t::profile:
-      double ratio = [&]
-      {
+      double ratio = [&] {
         if (full_time_taken <= 0.0)
         {
           return 1.0;

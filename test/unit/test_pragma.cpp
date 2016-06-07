@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metashell_pragma.hpp>
+#include <metashell/engine_constant.hpp>
 #include <metashell/in_memory_displayer.hpp>
+#include <metashell/metashell_pragma.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/engine_constant.hpp>
 
 #include "test_config.hpp"
 
@@ -65,18 +65,13 @@ JUST_TEST_CASE(test_name_of_pragma)
 
 JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS([]
-                     {
-                       parse_pragma(data::command("#pragma metashell 13"));
-                     });
+  JUST_ASSERT_THROWS(
+      [] { parse_pragma(data::command("#pragma metashell 13")); });
 }
 
 JUST_TEST_CASE(test_name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS([]
-                     {
-                       parse_pragma(data::command("#pragma metashell"));
-                     });
+  JUST_ASSERT_THROWS([] { parse_pragma(data::command("#pragma metashell")); });
 }
 
 JUST_TEST_CASE(test_help_pragma_displays_message)

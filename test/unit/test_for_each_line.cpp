@@ -31,10 +31,7 @@ namespace
   {
     std::vector<std::string> result;
     for_each_line(boost::algorithm::join(lines_, line_separator_),
-                  [&result](const std::string& s_)
-                  {
-                    result.push_back(s_);
-                  });
+                  [&result](const std::string& s_) { result.push_back(s_); });
     JUST_ASSERT_EQUAL_CONTAINER(lines_, result);
   }
 

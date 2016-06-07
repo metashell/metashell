@@ -28,8 +28,7 @@ namespace
                   const std::vector<std::string>& prefixes_)
   {
     return std::any_of(prefixes_.begin(), prefixes_.end(),
-                       [&arg_](const std::string& prefix_)
-                       {
+                       [&arg_](const std::string& prefix_) {
                          return boost::algorithm::starts_with(arg_, prefix_);
                        });
   }
@@ -38,9 +37,8 @@ namespace
 bool metashell::has_prefix(const std::vector<std::string>& args_,
                            const std::vector<std::string>& prefixes_)
 {
-  return std::any_of(args_.begin(), args_.end(),
-                     [&prefixes_](const std::string& arg_)
-                     {
-                       return ::has_prefix(arg_, prefixes_);
-                     });
+  return std::any_of(
+      args_.begin(), args_.end(), [&prefixes_](const std::string& arg_) {
+        return ::has_prefix(arg_, prefixes_);
+      });
 }

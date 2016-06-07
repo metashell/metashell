@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_reader.hpp>
 #include <metashell/interrupt_handler_override.hpp>
+#include <metashell/line_reader.hpp>
 
 #include <cassert>
 
@@ -47,10 +47,8 @@ void metashell::input_loop(command_processor_queue& processor_queue_,
 {
   single_entry_guard g;
 
-  interrupt_handler_override ovr3([&processor_queue_]()
-                                  {
-                                    processor_queue_.cancel_operation();
-                                  });
+  interrupt_handler_override ovr3(
+      [&processor_queue_]() { processor_queue_.cancel_operation(); });
 
   while (!processor_queue_.empty())
   {

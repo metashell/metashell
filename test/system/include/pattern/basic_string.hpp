@@ -17,11 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <pattern/placeholder.hpp>
 #include <pattern/basic_regex.hpp>
+#include <pattern/placeholder.hpp>
 
-#include <boost/variant.hpp>
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include <pattern/boost_regex.hpp>
 
 #include <string>
@@ -51,8 +51,7 @@ namespace pattern
 
     // case 1.
     template <class T>
-    basic_string(T value_)
-      : _pattern(std::basic_string<CharT>(value_))
+    basic_string(T value_) : _pattern(std::basic_string<CharT>(value_))
     {
     }
 

@@ -20,12 +20,12 @@
 #include <metashell_system_test/system_test_config.hpp>
 #include <metashell_system_test/util.hpp>
 
-#include <boost/range/adaptors.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/range/adaptors.hpp>
 
-#include <just/test.hpp>
 #include <just/temp.hpp>
+#include <just/test.hpp>
 
 #include <algorithm>
 
@@ -35,8 +35,7 @@ namespace
 {
   bool metashell_standard_header_path(const boost::filesystem::path& path_)
   {
-    const auto ends_with = [&path_](std::vector<std::string> suffix_)
-    {
+    const auto ends_with = [&path_](std::vector<std::string> suffix_) {
       boost::filesystem::path p = path_;
       for (const auto& s : suffix_ | boost::adaptors::reversed)
       {
@@ -62,8 +61,7 @@ namespace
     const auto end = system_test_config::metashell_args().end();
     return find_if(
                find(system_test_config::metashell_args().begin(), end, "--"),
-               end, [&path_](const std::string& s_)
-               {
+               end, [&path_](const std::string& s_) {
                  const auto path = try_to_remove_prefix("-I", s_);
                  return path && *path == path_;
                }) != end;
@@ -71,12 +69,10 @@ namespace
 
   filename_list remove_metashell_standard_headers(const filename_list& headers_)
   {
-    return filename_list(
-        headers_ |
-        boost::adaptors::filtered([](const boost::filesystem::path& p_)
-                                  {
-                                    return !metashell_standard_header_path(p_);
-                                  }));
+    return filename_list(headers_ | boost::adaptors::filtered([](
+                                        const boost::filesystem::path& p_) {
+                           return !metashell_standard_header_path(p_);
+                         }));
   }
 
   filename_list

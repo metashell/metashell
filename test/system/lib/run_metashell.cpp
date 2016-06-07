@@ -14,21 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/run_metashell.hpp>
 #include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/system_test_config.hpp>
+#include <metashell_system_test/process_execution.hpp>
 #include <metashell_system_test/prompt.hpp>
 #include <metashell_system_test/raw_text.hpp>
-#include <metashell_system_test/process_execution.hpp>
+#include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/system_test_config.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
-#include <cassert>
-#include <sstream>
-#include <iostream>
-#include <cstdlib>
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
 
 using namespace metashell_system_test;
 
