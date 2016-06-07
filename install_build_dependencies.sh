@@ -23,6 +23,7 @@ then
 fi
 
 PLATFORM="$(tools/detect_platform.sh)"
+CLANG_VERSION=3.7.1
 
 echo "Platform: ${PLATFORM}"
 
@@ -48,19 +49,13 @@ opensuse)
 ubuntu)
   sudo apt-get -y install git g++ cmake libreadline-dev python-pip
   sudo pip install mkdocs
-  if [ "$(tools/detect_platform.sh --version)" = "14.04" ]
-  then
-    wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
-
-    FN="clang_3.7.list"
-    echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty main" > "${FN}"
-    echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty main" >> "${FN}"
-    echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main" >> "${FN}"
-    echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main" >> "${FN}"
-    sudo mv "${FN}" "/etc/apt/sources.list.d/${FN}"
-    sudo apt-get update
-    sudo apt-get -y install clang-3.7 clang-format-3.7 clang-tidy-3.7
-  fi
+  UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
+  CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
+  cd 3rd
+    wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
+    tar -xf ${CLANG_ARCHIVE}.tar.xz
+    mv ${CLANG_ARCHIVE} clang
+  cd ..
   ;;
 debian)
   sudo apt-get -y install git g++ cmake libreadline-dev

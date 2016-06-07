@@ -1,3 +1,4 @@
 /bin
 site
 *.pyc
+/3rd/clang
