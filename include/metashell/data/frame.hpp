@@ -17,12 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/type.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
+#include <metashell/data/type.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {

@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_ls.hpp>
-#include <metashell/exception.hpp>
-#include <metashell/shell.hpp>
 #include <metashell/data/include_argument.hpp>
+#include <metashell/exception.hpp>
 #include <metashell/include_path_cache.hpp>
+#include <metashell/pragma_ls.hpp>
+#include <metashell/shell.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
-#include <vector>
 #include <set>
+#include <vector>
 
 using namespace metashell;
 
@@ -90,8 +90,7 @@ namespace
       displayer_.show_cpp_code(
           boost::algorithm::join(
               paths_ | boost::adaptors::transformed(
-                           [](const data::include_argument& a_)
-                           {
+                           [](const data::include_argument& a_) {
                              return "#include " + data::include_code(a_);
                            }),
               "\n") +

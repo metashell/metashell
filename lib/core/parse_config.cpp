@@ -14,20 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/parse_config.hpp>
+#include <metashell/default_environment_detector.hpp>
+#include <metashell/engine_constant.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/mdb_shell.hpp>
 #include <metashell/metashell.hpp>
+#include <metashell/parse_config.hpp>
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/default_environment_detector.hpp>
-#include <metashell/mdb_shell.hpp>
-#include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/engine_constant.hpp>
 
 #include <metashell/data/config.hpp>
 
 #include <boost/program_options/options_description.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -36,13 +36,13 @@
 
 #include <boost/optional.hpp>
 
-#include <string>
-#include <iostream>
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <iostream>
 #include <iterator>
 #include <stdexcept>
-#include <cstdlib>
-#include <cassert>
+#include <string>
 
 using namespace metashell;
 
@@ -53,7 +53,8 @@ namespace
   {
     out_ << "Usage:\n"
          << "  metashell <options> [-- <extra Clang options>]\n"
-         << "\n" << desc_ << std::endl;
+         << "\n"
+         << desc_ << std::endl;
   }
 
   void show_markdown(const std::vector<std::string>& name_,
@@ -65,7 +66,9 @@ namespace
     const std::string args = h_.arguments();
 
     out_ << "* __`#msh " << join(name_, " ") << (args.empty() ? "" : " ")
-         << args << "`__ <br />\n" << h_.description() << "\n" << std::endl;
+         << args << "`__ <br />\n"
+         << h_.description() << "\n"
+         << std::endl;
   }
 
   void show_pragma_help()

@@ -16,8 +16,8 @@
 
 #include <metashell_system_test/backtrace.hpp>
 
-#include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 using namespace metashell_system_test;
 

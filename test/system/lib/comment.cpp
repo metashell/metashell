@@ -17,12 +17,12 @@
 #include <metashell_system_test/comment.hpp>
 #include <metashell_system_test/query_json.hpp>
 
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
 using namespace metashell_system_test;
 

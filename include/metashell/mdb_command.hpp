@@ -19,9 +19,9 @@
 
 #include <metashell/iface/displayer.hpp>
 
-#include <vector>
-#include <string>
 #include <functional>
+#include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -39,7 +39,8 @@ namespace metashell
   public:
     typedef std::vector<std::string> keys_t;
     typedef std::function<void(
-        mdb_shell&, const std::string&, iface::displayer&)> function;
+        mdb_shell&, const std::string&, iface::displayer&)>
+        function;
 
     mdb_command() = default;
     mdb_command(const keys_t& key,

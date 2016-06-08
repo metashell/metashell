@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/json_displayer.hpp>
 #include "mock_json_writer.hpp"
+#include <metashell/json_displayer.hpp>
 
 #include <just/test.hpp>
 
@@ -183,14 +183,27 @@ JUST_TEST_CASE(test_json_display_of_backtrace)
                       data::frame(data::type("fib<int_<13>>::type"),
                                   data::file_location("sl2.hpp", 154, 10))});
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string backtrace", "key frames",
-       "start_array", "start_object", "key name", "string fib_c<13>::type",
-       "key source_location", "string sl.hpp:134:10", "end_object",
-       "start_object", "key name", "string fib<int_<13>>::type",
-       "key source_location", "string sl2.hpp:154:10", "end_object",
-       "end_array", "end_object", "end_document"},
-      w.calls());
+  JUST_ASSERT_EQUAL_CONTAINER({"start_object",
+                               "key type",
+                               "string backtrace",
+                               "key frames",
+                               "start_array",
+                               "start_object",
+                               "key name",
+                               "string fib_c<13>::type",
+                               "key source_location",
+                               "string sl.hpp:134:10",
+                               "end_object",
+                               "start_object",
+                               "key name",
+                               "string fib<int_<13>>::type",
+                               "key source_location",
+                               "string sl2.hpp:154:10",
+                               "end_object",
+                               "end_array",
+                               "end_object",
+                               "end_document"},
+                              w.calls());
 }
 
 JUST_TEST_CASE(test_json_display_of_call_graph)
@@ -206,13 +219,33 @@ JUST_TEST_CASE(test_json_display_of_call_graph)
 
   d.show_call_graph(cg);
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string call_graph", "key nodes",
-       "start_array", "start_object", "key name", "string int",
-       "key source_location", "string :-1:-1", "key depth", "int 0",
-       "key children", "int 1", "end_object", "start_object", "key name",
-       "string int", "key source_location", "string :-1:-1", "key depth",
-       "int 1", "key children", "int 0", "end_object", "end_array",
-       "end_object", "end_document"},
-      w.calls());
+  JUST_ASSERT_EQUAL_CONTAINER({"start_object",
+                               "key type",
+                               "string call_graph",
+                               "key nodes",
+                               "start_array",
+                               "start_object",
+                               "key name",
+                               "string int",
+                               "key source_location",
+                               "string :-1:-1",
+                               "key depth",
+                               "int 0",
+                               "key children",
+                               "int 1",
+                               "end_object",
+                               "start_object",
+                               "key name",
+                               "string int",
+                               "key source_location",
+                               "string :-1:-1",
+                               "key depth",
+                               "int 1",
+                               "key children",
+                               "int 0",
+                               "end_object",
+                               "end_array",
+                               "end_object",
+                               "end_document"},
+                              w.calls());
 }

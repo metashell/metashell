@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler_map.hpp>
-#include <metashell/null_displayer.hpp>
 #include <metashell/iface/pragma_handler.hpp>
+#include <metashell/null_displayer.hpp>
+#include <metashell/pragma_handler_map.hpp>
 
 #include <just/test.hpp>
 
@@ -66,10 +66,7 @@ JUST_TEST_CASE(test_processing_non_existing_handler)
   const data::command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
-  JUST_ASSERT_THROWS([&m, &cmd, &d]
-                     {
-                       m.process(cmd.begin(), cmd.end(), d);
-                     });
+  JUST_ASSERT_THROWS([&m, &cmd, &d] { m.process(cmd.begin(), cmd.end(), d); });
 }
 
 JUST_TEST_CASE(test_processing_existing_handler)

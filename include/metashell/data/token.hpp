@@ -17,12 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/token_type.hpp>
 #include <metashell/data/token_category.hpp>
+#include <metashell/data/token_type.hpp>
 
-#include <string>
-#include <sstream>
 #include <cassert>
+#include <sstream>
+#include <string>
 
 namespace metashell
 {

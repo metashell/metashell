@@ -20,8 +20,8 @@
 #include <string>
 #include <tuple>
 
-#include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/data/type.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
 
 std::tuple<metashell::mdb_command, std::string>
 get_command_from_map(const metashell::mdb_command_handler_map& map,

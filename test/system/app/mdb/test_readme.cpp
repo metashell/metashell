@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/type.hpp>
-#include <metashell_system_test/raw_text.hpp>
 #include <metashell_system_test/backtrace.hpp>
 #include <metashell_system_test/call_graph.hpp>
+#include <metashell_system_test/error.hpp>
 #include <metashell_system_test/frame.hpp>
 #include <metashell_system_test/json_generator.hpp>
+#include <metashell_system_test/prompt.hpp>
+#include <metashell_system_test/raw_text.hpp>
 #include <metashell_system_test/run_metashell.hpp>
+#include <metashell_system_test/type.hpp>
 
 #include "test_metaprograms.hpp"
 

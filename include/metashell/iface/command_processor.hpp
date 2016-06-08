@@ -20,8 +20,8 @@
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/history.hpp>
 
-#include <string>
 #include <set>
+#include <string>
 
 namespace metashell
 {

@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_handler.hpp>
+#include <metashell/data/command.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 #include <metashell/metashell_pragma.hpp>
-#include <metashell/data/command.hpp>
+#include <metashell/pragma_handler.hpp>
 
 #include <cassert>
 

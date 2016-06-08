@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/in_memory_displayer.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/null_displayer.hpp>
-#include <metashell/in_memory_displayer.hpp>
 
 #include "mock_file_writer.hpp"
 
 #include <just/test.hpp>
 
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 using namespace metashell;
 
@@ -77,8 +77,7 @@ JUST_TEST_CASE(test_log_into_file_tries_to_open_the_file)
 
   bool open_called = false;
   std::string fn;
-  w.open_callback = [&open_called, &fn](const std::string& fn_)
-  {
+  w.open_callback = [&open_called, &fn](const std::string& fn_) {
     open_called = true;
     fn = fn_;
     return true;
@@ -98,10 +97,7 @@ JUST_TEST_CASE(test_failure_when_opening_log_file)
   null_displayer d;
   mock_file_writer w;
 
-  w.open_callback = [](const std::string&)
-  {
-    return false;
-  };
+  w.open_callback = [](const std::string&) { return false; };
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
@@ -115,23 +111,14 @@ JUST_TEST_CASE(test_logging_into_a_different_file)
   null_displayer d;
   mock_file_writer w;
 
-  w.open_callback = [](const std::string&)
-  {
-    return true;
-  };
-  w.is_open_callback = []
-  {
-    return true;
-  };
+  w.open_callback = [](const std::string&) { return true; };
+  w.is_open_callback = [] { return true; };
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
   bool close_called = false;
-  w.close_callback = [&close_called]
-  {
-    close_called = true;
-  };
+  w.close_callback = [&close_called] { close_called = true; };
 
   l.log_into_file("/tmp/bar.txt");
 
@@ -144,18 +131,12 @@ JUST_TEST_CASE(
   null_displayer d;
   mock_file_writer w;
 
-  w.open_callback = [](const std::string&)
-  {
-    return true;
-  };
+  w.open_callback = [](const std::string&) { return true; };
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  w.open_callback = [](const std::string&)
-  {
-    return false;
-  };
+  w.open_callback = [](const std::string&) { return false; };
 
   l.log_into_file("/tmp/bar.txt");
 
@@ -168,23 +149,14 @@ JUST_TEST_CASE(test_log_file_is_closed_when_starting_to_log_to_console)
   null_displayer d;
   mock_file_writer w;
 
-  w.open_callback = [](const std::string&)
-  {
-    return true;
-  };
-  w.is_open_callback = []
-  {
-    return true;
-  };
+  w.open_callback = [](const std::string&) { return true; };
+  w.is_open_callback = [] { return true; };
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
   bool close_called = false;
-  w.close_callback = [&close_called]
-  {
-    close_called = true;
-  };
+  w.close_callback = [&close_called] { close_called = true; };
 
   l.log_to_console();
 
@@ -196,23 +168,14 @@ JUST_TEST_CASE(test_log_file_is_closed_when_logging_is_stopped)
   null_displayer d;
   mock_file_writer w;
 
-  w.open_callback = [](const std::string&)
-  {
-    return true;
-  };
-  w.is_open_callback = []
-  {
-    return true;
-  };
+  w.open_callback = [](const std::string&) { return true; };
+  w.is_open_callback = [] { return true; };
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
   bool close_called = false;
-  w.close_callback = [&close_called]
-  {
-    close_called = true;
-  };
+  w.close_callback = [&close_called] { close_called = true; };
 
   l.stop_logging();
 
@@ -226,16 +189,9 @@ JUST_TEST_CASE(test_log_is_written_to_file)
 
   std::ostringstream file_content;
 
-  w.open_callback = [](const std::string&)
-  {
-    return true;
-  };
-  w.is_open_callback = []
-  {
-    return true;
-  };
-  w.write_callback = [&file_content](const std::string& msg_)
-  {
+  w.open_callback = [](const std::string&) { return true; };
+  w.is_open_callback = [] { return true; };
+  w.write_callback = [&file_content](const std::string& msg_) {
     file_content << msg_;
     return true;
   };

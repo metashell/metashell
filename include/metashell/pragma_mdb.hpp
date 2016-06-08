@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/shell.hpp>
 #include <metashell/command_processor_queue.hpp>
-#include <metashell/logger.hpp>
 #include <metashell/iface/pragma_handler.hpp>
+#include <metashell/logger.hpp>
+#include <metashell/shell.hpp>
 
 #include <boost/filesystem/path.hpp>
 

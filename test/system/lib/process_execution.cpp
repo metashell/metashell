@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/process_execution.hpp>
 #include <metashell_system_test/json_generator.hpp>
+#include <metashell_system_test/process_execution.hpp>
 
 #include <just/process.hpp>
 

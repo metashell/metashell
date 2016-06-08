@@ -16,9 +16,9 @@
 
 #include <metashell/data/frame.hpp>
 
+#include <cassert>
 #include <ostream>
 #include <sstream>
-#include <cassert>
 
 namespace metashell
 {

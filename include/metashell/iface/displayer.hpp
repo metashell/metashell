@@ -17,20 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/text.hpp>
 #include <metashell/data/backtrace.hpp>
-#include <metashell/data/frame.hpp>
-#include <metashell/data/type.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/frame.hpp>
+#include <metashell/data/text.hpp>
+#include <metashell/data/type.hpp>
 #include <metashell/data/type_or_error.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 
 #include <metashell/boost/filesystem/path.hpp>
 
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 namespace metashell
 {

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/command_processor_queue.hpp>
+#include <metashell/in_memory_displayer.hpp>
 #include <metashell/json_line_reader.hpp>
 #include <metashell/null_displayer.hpp>
 #include <metashell/null_json_writer.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/command_processor_queue.hpp>
 
-#include "mock_json_writer.hpp"
 #include "mock_command_processor.hpp"
+#include "mock_json_writer.hpp"
 #include "string_reader.hpp"
 
 #include <just/test.hpp>
@@ -186,8 +186,7 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_gets_code_completion)
 
   mock_command_processor* cp = new mock_command_processor;
   cp->code_complete_callback = [&called, &called_with](
-      const std::string& code_, std::set<std::string>&)
-  {
+      const std::string& code_, std::set<std::string>&) {
     called = true;
     called_with = code_;
   };
@@ -212,8 +211,7 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_result)
 
   mock_command_processor* cp = new mock_command_processor;
   cp->code_complete_callback = [](
-      const std::string&, std::set<std::string>& out_)
-  {
+      const std::string&, std::set<std::string>& out_) {
     out_.insert("hello");
     out_.insert("world");
   };
@@ -228,14 +226,17 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_result)
   r(">");
 
   JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string prompt", "key prompt", "string >",
-       "end_object", "end_document",
+      {"start_object",    "key type",    "string prompt",
+       "key prompt",      "string >",    "end_object",
+       "end_document",
 
-       "start_object", "key type", "string code_completion_result",
-       "key completions", "start_array", "string hello", "string world",
-       "end_array", "end_object", "end_document",
+       "start_object",    "key type",    "string code_completion_result",
+       "key completions", "start_array", "string hello",
+       "string world",    "end_array",   "end_object",
+       "end_document",
 
-       "start_object", "key type", "string prompt", "key prompt", "string >",
-       "end_object", "end_document"},
+       "start_object",    "key type",    "string prompt",
+       "key prompt",      "string >",    "end_object",
+       "end_document"},
       jw.calls());
 }

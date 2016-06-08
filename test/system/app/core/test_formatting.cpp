@@ -18,8 +18,8 @@
 #include <metashell_system_test/type.hpp>
 
 #include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
 #include <metashell_system_test/path_builder.hpp>
+#include <metashell_system_test/run_metashell.hpp>
 
 #include <just/test.hpp>
 

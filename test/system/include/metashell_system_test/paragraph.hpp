@@ -17,13 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/query_json.hpp>
 #include <metashell_system_test/json_string.hpp>
+#include <metashell_system_test/query_json.hpp>
 
 #include <rapidjson/document.h>
 
-#include <string>
 #include <iosfwd>
+#include <string>
 
 namespace metashell_system_test
 {

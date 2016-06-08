@@ -17,16 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/result.hpp>
 #include <metashell/data/config.hpp>
 #include <metashell/data/include_type.hpp>
+#include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
-#include <string>
 #include <set>
+#include <string>
 
 namespace metashell
 {

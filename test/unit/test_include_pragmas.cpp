@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/engine_constant.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/engine_constant.hpp>
 
 #include "test_config.hpp"
 
@@ -42,10 +42,9 @@ namespace just
       using boost::algorithm::join;
       using boost::filesystem::path;
 
-      out_ << join(filenames_ | transformed([](const path& path_)
-                                            {
-                                              return path_.string();
-                                            }),
+      out_ << join(filenames_ | transformed([](const path& path_) {
+                     return path_.string();
+                   }),
                    ":");
     }
   }

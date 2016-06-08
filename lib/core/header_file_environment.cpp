@@ -14,24 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/header_file_environment.hpp>
-#include <metashell/data/headers.hpp>
 #include <metashell/data/config.hpp>
+#include <metashell/data/headers.hpp>
 #include <metashell/exception.hpp>
-#include <metashell/unsaved_file.hpp>
+#include <metashell/header_file_environment.hpp>
 #include <metashell/headers.hpp>
+#include <metashell/unsaved_file.hpp>
 
-#include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <boost/range/adaptors.hpp>
 
 #include <fstream>
-#include <vector>
 #include <sstream>
+#include <vector>
 
 using namespace metashell;
 

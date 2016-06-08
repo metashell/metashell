@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/engine_constant.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/engine_constant.hpp>
 
 #include <metashell/data/config.hpp>
 
-#include <just/test.hpp>
 #include <just/temp.hpp>
+#include <just/test.hpp>
 
 #include "test_config.hpp"
 

@@ -22,11 +22,11 @@
 #include <metashell/source_position.hpp>
 #include <metashell/unsaved_file.hpp>
 
-#include <metashell/boost/regex.hpp>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
+#include <metashell/boost/regex.hpp>
 
 #include <fstream>
 #include <memory>
@@ -38,10 +38,9 @@ namespace
   bool has_typedef(const data::command::iterator& begin_,
                    const data::command::iterator& end_)
   {
-    return std::find_if(begin_, end_, [](const data::token& t_)
-                        {
-                          return t_.type() == data::token_type::keyword_typedef;
-                        }) != end_;
+    return std::find_if(begin_, end_, [](const data::token& t_) {
+             return t_.type() == data::token_type::keyword_typedef;
+           }) != end_;
   }
 
   data::token_type

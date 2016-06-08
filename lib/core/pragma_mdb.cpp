@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/disable_precompiled_header_guard.hpp>
+#include <metashell/mdb_shell.hpp>
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
-#include <metashell/mdb_shell.hpp>
-#include <metashell/disable_precompiled_header_guard.hpp>
 
 #include <cassert>
 

@@ -16,8 +16,8 @@
 
 #include <metashell/stream_console.hpp>
 
-#include <ostream>
 #include <limits>
+#include <ostream>
 
 using namespace metashell;
 

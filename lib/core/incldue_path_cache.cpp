@@ -19,14 +19,10 @@
 using namespace metashell;
 
 include_path_cache::include_path_cache(iface::engine& engine_)
-  : sys([&engine_]()
-        {
-          return engine_.include_path(data::include_type::sys);
-        }),
-    quote([&engine_]()
-          {
-            return engine_.include_path(data::include_type::quote);
-          })
+  : sys([&engine_]() { return engine_.include_path(data::include_type::sys); }),
+    quote([&engine_]() {
+      return engine_.include_path(data::include_type::quote);
+    })
 {
 }
 

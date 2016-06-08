@@ -61,10 +61,9 @@ command::iterator
 metashell::data::skip_all_whitespace(const command::iterator& begin_,
                                      const command::iterator& end_)
 {
-  return std::find_if(begin_, end_, [](const token& token_)
-                      {
-                        return !whitespace_or_comment(token_.category());
-                      });
+  return std::find_if(begin_, end_, [](const token& token_) {
+    return !whitespace_or_comment(token_.category());
+  });
 }
 
 std::string metashell::data::tokens_to_string(command::iterator begin_,

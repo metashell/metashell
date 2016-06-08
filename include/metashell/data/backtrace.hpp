@@ -21,8 +21,8 @@
 
 #include <boost/operators.hpp>
 
-#include <vector>
 #include <iosfwd>
+#include <vector>
 
 namespace metashell
 {

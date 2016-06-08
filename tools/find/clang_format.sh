@@ -17,13 +17,19 @@
 
 set -e
 
-for suffix in "-3.7" ""
-do
-  if command -v "clang-format${suffix}" >/dev/null 2>&1
-  then
-    echo "clang-format${suffix}"
-    exit 0
-  fi
-done
+if [ -x 3rd/clang/bin/clang-format ]
+then
+  echo 3rd/clang/bin/clang-format
+else
+  for suffix in "-3.8" ""
+  do
+    if command -v "clang-format${suffix}" >/dev/null 2>&1
+    then
+      echo "clang-format${suffix}"
+      exit 0
+    fi
+  done
 
-echo "clang-format not found" 1>&2
+  echo "clang-format not found" 1>&2
+fi
+

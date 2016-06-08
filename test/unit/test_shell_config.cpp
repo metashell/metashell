@@ -16,11 +16,11 @@
 
 #include "test_config.hpp"
 
-#include <metashell/shell.hpp>
-#include <metashell/header_file_environment.hpp>
-#include <metashell/in_memory_displayer.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/engine_constant.hpp>
+#include <metashell/header_file_environment.hpp>
+#include <metashell/in_memory_displayer.hpp>
+#include <metashell/shell.hpp>
 
 #include <metashell/data/config.hpp>
 

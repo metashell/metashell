@@ -19,23 +19,23 @@
 
 #include <string>
 
-#include <metashell/boost/regex.hpp>
 #include <boost/optional.hpp>
+#include <metashell/boost/regex.hpp>
 
 #include <metashell/breakpoint.hpp>
-#include <metashell/metaprogram.hpp>
-#include <metashell/mdb_command_handler_map.hpp>
 #include <metashell/logger.hpp>
+#include <metashell/mdb_command_handler_map.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include <metashell/data/config.hpp>
 
 #include <metashell/iface/call_graph.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/history.hpp>
 #include <metashell/iface/command_processor.hpp>
+#include <metashell/iface/destroyable.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
-#include <metashell/iface/destroyable.hpp>
+#include <metashell/iface/history.hpp>
 
 namespace metashell
 {

@@ -21,8 +21,8 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace metashell
 {

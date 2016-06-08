@@ -17,11 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include <metashell/shell.hpp>
 #include <metashell/mdb_shell.hpp>
+#include <metashell/shell.hpp>
 
 class mdb_test_shell : public metashell::mdb_shell
 {

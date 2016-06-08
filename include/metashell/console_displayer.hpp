@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/console.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/iface/console.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/pager.hpp>
 
 namespace metashell

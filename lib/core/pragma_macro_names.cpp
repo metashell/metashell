@@ -19,8 +19,8 @@
 
 #include <boost/algorithm/string/join.hpp>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace metashell;
 

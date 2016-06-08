@@ -17,25 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/pragma_handler_map.hpp>
 #include <metashell/command_processor_queue.hpp>
+#include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
+#include <metashell/pragma_handler_map.hpp>
 
-#include <metashell/iface/environment.hpp>
 #include <metashell/iface/command_processor.hpp>
 #include <metashell/iface/displayer.hpp>
-#include <metashell/iface/history.hpp>
 #include <metashell/iface/engine.hpp>
+#include <metashell/iface/environment.hpp>
+#include <metashell/iface/history.hpp>
 
-#include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
-#include <string>
-#include <set>
 #include <map>
-#include <stack>
 #include <memory>
+#include <set>
+#include <stack>
+#include <string>
 
 namespace metashell
 {

@@ -19,8 +19,8 @@
 
 #include <metashell/iface/command_processor.hpp>
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace metashell
 {

@@ -14,19 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metashell.hpp>
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/header_file_environment.hpp>
+#include <metashell/metashell.hpp>
 
 #include <just/environment.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-#include <iostream>
 #include <algorithm>
-#include <stdexcept>
 #include <fstream>
+#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 #ifdef __APPLE__
@@ -39,8 +39,8 @@
 #endif
 
 #ifdef __FreeBSD__
-#include <sys/types.h>
 #include <sys/sysctl.h>
+#include <sys/types.h>
 #endif
 
 using namespace metashell;
@@ -130,10 +130,7 @@ namespace
     {
       const std::string p = just::environment::get("PATH");
       std::vector<boost::filesystem::path> path;
-      boost::split(path, p, [](char c_)
-                   {
-                     return c_ == ';';
-                   });
+      boost::split(path, p, [](char c_) { return c_ == ';'; });
       for (const auto& s : path)
       {
         const boost::filesystem::path fn = s / _argv0;

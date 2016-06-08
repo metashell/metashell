@@ -18,17 +18,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stack>
-#include <tuple>
 #include <string>
+#include <tuple>
 #include <vector>
 
-#include <boost/optional.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/optional.hpp>
 
+#include <metashell/data/backtrace.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
-#include <metashell/data/backtrace.hpp>
 #include <metashell/data/type_or_error.hpp>
 
 namespace metashell
@@ -98,7 +98,8 @@ namespace metashell
         boost::vecS,
         boost::bidirectionalS,
         boost::property<vertex_property_tag, vertex_property>,
-        boost::property<edge_property_tag, edge_property>> graph_t;
+        boost::property<edge_property_tag, edge_property>>
+        graph_t;
 
     typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
     typedef boost::graph_traits<graph_t>::edge_descriptor edge_descriptor;

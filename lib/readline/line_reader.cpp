@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/readline/line_reader.hpp>
 #include <metashell/line_reader.hpp>
+#include <metashell/readline/line_reader.hpp>
 
 #ifdef USE_EDITLINE
 #include <editline/readline.h>
 #else
-#include <readline/readline.h>
 #include <readline/history.h>
+#include <readline/readline.h>
 #endif
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 
 using namespace metashell;
 using namespace metashell::readline;
@@ -135,8 +135,7 @@ namespace
 metashell::line_reader
 metashell::readline::line_reader(command_processor_queue& processor_queue_)
 {
-  return [&processor_queue_](const std::string& prompt_)
-  {
+  return [&processor_queue_](const std::string& prompt_) {
     return read_next_line(prompt_ + " ", processor_queue_);
   };
 }

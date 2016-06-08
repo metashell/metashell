@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/environment.hpp>
-#include <metashell/iface/engine.hpp>
-#include <metashell/data/headers.hpp>
 #include <metashell/data/config.hpp>
+#include <metashell/data/headers.hpp>
+#include <metashell/iface/engine.hpp>
+#include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
 

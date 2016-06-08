@@ -17,8 +17,8 @@
 
 #include <metashell/data/file_location.hpp>
 
-#include <tuple>
 #include <sstream>
+#include <tuple>
 
 namespace metashell
 {

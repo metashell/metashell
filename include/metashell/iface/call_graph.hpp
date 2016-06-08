@@ -19,8 +19,8 @@
 
 #include <metashell/data/call_graph_node.hpp>
 
-#include <boost/range/adaptor/type_erased.hpp>
 #include <boost/iterator/iterator_categories.hpp>
+#include <boost/range/adaptor/type_erased.hpp>
 
 #include <vector>
 
@@ -29,7 +29,8 @@ namespace metashell
   namespace iface
   {
     typedef boost::any_range<const data::call_graph_node,
-                             boost::forward_traversal_tag> call_graph;
+                             boost::forward_traversal_tag>
+        call_graph;
   }
 }
 

@@ -17,16 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/config.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment_detector.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/data/config.hpp>
 #include <metashell/logger.hpp>
 
 #include <boost/filesystem/path.hpp>
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace metashell
 {
@@ -37,7 +37,8 @@ namespace metashell
       const boost::filesystem::path&,
       iface::environment_detector&,
       iface::displayer&,
-      logger*)> engine_factory;
+      logger*)>
+      engine_factory;
 
   template <class Engine>
   engine_factory factory_for()
@@ -47,8 +48,7 @@ namespace metashell
               const boost::filesystem::path& temp_dir_,
               const boost::filesystem::path& env_filename_,
               iface::environment_detector& env_detector_,
-              iface::displayer& displayer_, logger* logger_)
-    {
+              iface::displayer& displayer_, logger* logger_) {
       return std::unique_ptr<iface::engine>(
           new Engine(config_, internal_dir_, temp_dir_, env_filename_,
                      env_detector_, displayer_, logger_));

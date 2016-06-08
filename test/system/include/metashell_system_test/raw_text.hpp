@@ -21,8 +21,8 @@
 
 #include <boost/operators.hpp>
 
-#include <string>
 #include <iosfwd>
+#include <string>
 
 namespace metashell_system_test
 {

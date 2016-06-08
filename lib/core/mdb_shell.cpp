@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/mdb_shell.hpp>
-#include <metashell/highlight_syntax.hpp>
-#include <metashell/metashell.hpp>
-#include <metashell/is_template_type.hpp>
 #include <metashell/forward_trace_iterator.hpp>
+#include <metashell/highlight_syntax.hpp>
+#include <metashell/is_template_type.hpp>
+#include <metashell/mdb_shell.hpp>
+#include <metashell/metashell.hpp>
 #include <metashell/null_history.hpp>
 
 #include <cmath>
-#include <sstream>
 #include <fstream>
+#include <sstream>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/assign.hpp>
 #include <boost/optional.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/spirit/include/qi.hpp>
 
 #include <boost/range/iterator_range.hpp>
 
@@ -45,7 +45,8 @@ namespace
 
   typedef std::tuple<metashell::data::file_location,
                      metashell::data::instantiation_kind,
-                     metashell::metaprogram::vertex_descriptor> set_element_t;
+                     metashell::metaprogram::vertex_descriptor>
+      set_element_t;
 
   bool less_than(const set_element_t& lhs, const set_element_t& rhs)
   {
@@ -706,8 +707,7 @@ namespace metashell
     next_breakpoint_id = 1;
     breakpoints.clear();
 
-    metaprogram::mode_t mode = [&]
-    {
+    metaprogram::mode_t mode = [&] {
       if (has_full)
       {
         return metaprogram::mode_t::full;

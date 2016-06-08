@@ -18,9 +18,9 @@
 
 #include <just/test.hpp>
 
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 using namespace metashell::data;
 
