@@ -102,7 +102,10 @@ namespace
     for (InputIt i = begin_; i != end_; ++i)
     {
       pager_.show(data::colored_string(i->string(), data::color::bright_cyan));
-      pager_.new_line();
+      if (!pager_.new_line())
+      {
+        break;
+      }
     }
   }
 } // anonymouse namespace
