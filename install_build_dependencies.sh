@@ -54,7 +54,9 @@ ubuntu)
   cd 3rd
     wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
     tar -xf ${CLANG_ARCHIVE}.tar.xz
+    rm -rf clang
     mv ${CLANG_ARCHIVE} clang
+    rm ${CLANG_ARCHIVE}.tar.xz
   cd ..
   ;;
 debian)
