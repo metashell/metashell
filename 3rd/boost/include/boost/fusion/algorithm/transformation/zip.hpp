@@ -17,6 +17,7 @@
 #include <boost/type_traits/add_reference.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 #include <boost/preprocessor/repetition/enum_params.hpp>
+#include <boost/preprocessor/repetition/enum_params_with_a_default.hpp>
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
@@ -101,7 +102,7 @@ namespace boost { namespace fusion
 #define FUSION_REF_PARAM(z, n, data) const T ## n&
 
     template<BOOST_PP_ENUM_PARAMS(ZIP_ITERATION, typename T)>
-    BOOST_FUSION_GPU_ENABLED
+    BOOST_CXX14_CONSTEXPR BOOST_FUSION_GPU_ENABLED
     inline typename result_of::zip<BOOST_PP_ENUM_PARAMS(ZIP_ITERATION, const T)>::type
     zip(BOOST_PP_ENUM_BINARY_PARAMS(ZIP_ITERATION, T, const& t))
     {

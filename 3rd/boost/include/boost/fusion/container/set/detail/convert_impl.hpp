@@ -29,12 +29,12 @@ namespace boost { namespace fusion
             template <typename Sequence>
             struct apply
             {
-                typedef typename detail::as_set<result_of::size<Sequence>::value> gen;
+                typedef detail::as_set<result_of::size<Sequence>::value> gen;
                 typedef typename gen::
                     template apply<typename result_of::begin<Sequence>::type>::type
                 type;
 
-                BOOST_FUSION_GPU_ENABLED
+                BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
                 static type call(Sequence& seq)
                 {
                     return gen::call(fusion::begin(seq));

@@ -13,6 +13,18 @@
 #ifndef BOOST_INTRUSIVE_FWD_HPP
 #define BOOST_INTRUSIVE_FWD_HPP
 
+#ifndef BOOST_CONFIG_HPP
+#  include <boost/config.hpp>
+#endif
+#
+#ifndef BOOST_CSTDINT_HPP
+#  include <boost/cstdint.hpp>
+#endif
+#
+#if defined(BOOST_HAS_PRAGMA_ONCE)
+#  pragma once
+#endif
+
 //! \file
 //! This header file forward declares most Intrusive classes.
 //!
@@ -21,15 +33,15 @@
 //!   - boost::intrusive::list / boost::intrusive::list_base_hook / boost::intrusive::list_member_hook
 //!   - boost::intrusive::bstree / boost::intrusive::bs_set / boost::intrusive::bs_multiset /
 //!      boost::intrusive::bs_set_base_hook / boost::intrusive::bs_set_member_hook
-//!   - boost::intrusive::rbtree / boost::intrusive::set / boost::intrusive::multiset / 
+//!   - boost::intrusive::rbtree / boost::intrusive::set / boost::intrusive::multiset /
 //!      boost::intrusive::set_base_hook / boost::intrusive::set_member_hook
 //!   - boost::intrusive::avltree / boost::intrusive::avl_set / boost::intrusive::avl_multiset /
 //!      boost::intrusive::avl_set_base_hook / boost::intrusive::avl_set_member_hook
-//!   - boost::intrusive::splaytree / boost::intrusive::splay_set / boost::intrusive::splay_multiset 
-//!   - boost::intrusive::sgtree / boost::intrusive::sg_set / boost::intrusive::sg_multiset 
+//!   - boost::intrusive::splaytree / boost::intrusive::splay_set / boost::intrusive::splay_multiset
+//!   - boost::intrusive::sgtree / boost::intrusive::sg_set / boost::intrusive::sg_multiset
 //!   - boost::intrusive::treap / boost::intrusive::treap_set / boost::intrusive::treap_multiset
 //!   - boost::intrusive::hashtable / boost::intrusive::unordered_set / boost::intrusive::unordered_multiset /
-//!      boost::intrusive::unordered_set_base_hook / boost::intrusive::unordered_set_member_hook / 
+//!      boost::intrusive::unordered_set_base_hook / boost::intrusive::unordered_set_member_hook /
 //!   - boost::intrusive::any_base_hook / boost::intrusive::any_member_hook
 //!
 //! It forward declares the following container or hook options:
@@ -46,7 +58,7 @@
 //!      boost::intrusive::trivial_value_traits
 //!
 //! Finally it forward declares the following general purpose utilities:
-//!   - boost::intrusive::pointer_plus_bits / boost::intrusive::priority_compare. 
+//!   - boost::intrusive::pointer_plus_bits / boost::intrusive::priority_compare.
 
 #if !defined(BOOST_INTRUSIVE_DOXYGEN_INVOKED)
 
@@ -56,6 +68,14 @@
 
 namespace boost {
 namespace intrusive {
+
+#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+#  ifdef BOOST_HAS_INTPTR_T
+      using ::boost::uintptr_t;
+#  else
+      typedef std::size_t uintptr_t;
+#  endif
+#endif
 
 ////////////////////////////
 //     Node algorithms
@@ -176,6 +196,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -190,6 +211,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -204,6 +226,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -243,6 +266,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -257,6 +281,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -271,6 +296,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -286,6 +312,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -300,6 +327,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -314,6 +342,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -354,6 +383,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -368,6 +398,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -382,6 +413,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -397,6 +429,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -411,6 +444,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -425,6 +459,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -439,6 +474,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -453,6 +489,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -467,6 +504,7 @@ template
    , class O3  = void
    , class O4  = void
    , class O5  = void
+   , class O6  = void
    >
 #else
 template<class T, class ...Options>
@@ -626,7 +664,7 @@ struct hash;
 template<typename ValueTraits> struct value_traits;
 
 template< typename Parent
-        , typename MemberHook 
+        , typename MemberHook
         , MemberHook Parent::* PtrToMember>
 struct member_hook;
 
@@ -699,16 +737,16 @@ struct trivial_value_traits;
 
 //Additional utilities
 
-template<typename VoidPointer, std::size_t Alignment> 
+template<typename VoidPointer, std::size_t Alignment>
 struct max_pointer_plus_bits;
 
-template<std::size_t Alignment> 
+template<std::size_t Alignment>
 struct max_pointer_plus_bits<void *, Alignment>;
 
 template<typename Pointer, std::size_t NumBits>
 struct pointer_plus_bits;
 
-template<typename T, std::size_t NumBits> 
+template<typename T, std::size_t NumBits>
 struct pointer_plus_bits<T *, NumBits>;
 
 template<typename Ptr>

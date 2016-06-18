@@ -9,19 +9,15 @@
 #define BOOST_FUSION_NVIEW_SEP_23_2009_0948PM
 
 #include <boost/fusion/support/config.hpp>
-#include <boost/mpl/size.hpp>
 #include <boost/mpl/if.hpp>
-#include <boost/mpl/vector_c.hpp>
-#include <boost/utility/result_of.hpp>
 
-#include <boost/type_traits/remove_reference.hpp>
 #include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/add_const.hpp>
 
 #include <boost/fusion/support/is_view.hpp>
-#include <boost/fusion/support/category_of.hpp>
 #include <boost/fusion/support/sequence_base.hpp>
 #include <boost/fusion/container/vector.hpp>
+#include <boost/fusion/sequence/intrinsic/size.hpp>
 #include <boost/fusion/view/transform_view.hpp>
 
 #include <boost/config.hpp>
@@ -40,7 +36,7 @@ namespace boost { namespace fusion
 
 #ifdef BOOST_NO_CXX11_RVALUE_REFERENCES
             template <typename T>
-            BOOST_FUSION_GPU_ENABLED
+            BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
             typename add_reference<T>::type 
             operator()(T& x) const
             {
@@ -48,7 +44,7 @@ namespace boost { namespace fusion
             }
 #else
             template <typename T>
-            BOOST_FUSION_GPU_ENABLED
+            BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
             typename result<addref(T)>::type
             operator()(T&& x) const
             {
@@ -68,7 +64,7 @@ namespace boost { namespace fusion
             {};
 
             template <typename T>
-            BOOST_FUSION_GPU_ENABLED
+            BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
             typename add_reference<typename add_const<T>::type>::type 
             operator()(T& x) const
             {
@@ -76,7 +72,7 @@ namespace boost { namespace fusion
             }
 
             template <typename T>
-            BOOST_FUSION_GPU_ENABLED
+            BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
             typename add_reference<typename add_const<T>::type>::type 
             operator()(T const& x) const
             {
@@ -99,7 +95,7 @@ namespace boost { namespace fusion
 
         typedef mpl::true_ is_view;
         typedef Indicies index_type;
-        typedef typename mpl::size<Indicies>::type size;
+        typedef typename result_of::size<Indicies>::type size;
 
         typedef typename mpl::if_<
             is_const<Sequence>, detail::addconstref, detail::addref
@@ -108,7 +104,8 @@ namespace boost { namespace fusion
         typedef typename result_of::as_vector<transform_view_type>::type 
             sequence_type;
 
-        BOOST_FUSION_GPU_ENABLED explicit nview(Sequence& val)
+        BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
+        explicit nview(Sequence& val)
           : seq(sequence_type(transform_view_type(val, transform_type()))) 
         {}
 

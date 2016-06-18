@@ -11,15 +11,20 @@
 #ifndef BOOST_CONTAINER_THROW_EXCEPTION_HPP
 #define BOOST_CONTAINER_THROW_EXCEPTION_HPP
 
-#include <boost/container/detail/config_begin.hpp>
-#include <boost/container/detail/workaround.hpp>
+#ifndef BOOST_CONFIG_HPP
+#  include <boost/config.hpp>
+#endif
 
-#if defined(_MSC_VER)
+#if defined(BOOST_HAS_PRAGMA_ONCE)
 #  pragma once
 #endif
 
+#include <boost/container/detail/config_begin.hpp>
+#include <boost/container/detail/workaround.hpp>
+
 #ifndef BOOST_NO_EXCEPTIONS
    #include <stdexcept> //for std exception types
+   #include <string>    //for implicit std::string conversion
    #include <new>       //for std::bad_alloc
 #else
    #include <boost/assert.hpp>
