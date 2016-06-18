@@ -1,6 +1,7 @@
 /*==============================================================================
     Copyright (c) 2005-2010 Joel de Guzman
     Copyright (c) 2010 Thomas Heller
+    Copyright (c) 2015 John Fletcher
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +14,7 @@
 #include <boost/preprocessor/repetition/repeat.hpp>
 
 #define BOOST_PHOENIX_ADAPT_FUNCTION_NULLARY(RESULT, NAME, FUNC)                \
-    namespace detail                                                            \
+    namespace detail0                                                            \
     {                                                                           \
         struct BOOST_PP_CAT(NAME, _impl_nullary)                                \
         {                                                                       \
@@ -29,18 +30,18 @@
                                                                                 \
     inline                                                                      \
     boost::phoenix::detail::expression::function_eval<                          \
-        detail:: BOOST_PP_CAT(NAME, _impl_nullary)                              \
+        detail0:: BOOST_PP_CAT(NAME, _impl_nullary)                              \
     >::type const                                                               \
     NAME()                                                                      \
     {                                                                           \
         return boost::phoenix::detail::expression::                             \
-                function_eval<detail:: BOOST_PP_CAT(NAME, _impl_nullary)>       \
-                    ::make(detail:: BOOST_PP_CAT(NAME, _impl_nullary)());       \
+                function_eval<detail0:: BOOST_PP_CAT(NAME, _impl_nullary)>       \
+                    ::make(detail0:: BOOST_PP_CAT(NAME, _impl_nullary)());       \
     }                                                                           \
 /**/
 
 #define BOOST_PHOENIX_ADAPT_FUNCTION(RESULT, NAME, FUNC, N)                     \
-    namespace detail                                                            \
+    namespace detail1                                                            \
     {                                                                           \
         struct BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)                      \
         {                                                                       \
@@ -64,16 +65,16 @@
     inline                                                                      \
     typename                                                                    \
         boost::phoenix::detail::expression::function_eval<                      \
-        detail:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)                    \
+        detail1:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)                    \
           , BOOST_PHOENIX_A(N)>::type const                                     \
     NAME(BOOST_PHOENIX_A_const_ref_a(N))                                        \
     {                                                                           \
         return boost::phoenix::detail::expression::                             \
             function_eval<                                                      \
-                detail:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)            \
+                detail1:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)            \
               , BOOST_PHOENIX_A(N)                                              \
             >::make(                                                            \
-                detail:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)()          \
+                detail1:: BOOST_PP_CAT(BOOST_PP_CAT(NAME, _impl_), N)()          \
               , BOOST_PHOENIX_a(N)                                              \
             );                                                                  \
     }                                                                           \

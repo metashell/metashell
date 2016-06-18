@@ -11,6 +11,13 @@
 
 #include <boost/config.hpp>
 
+//
+// This header is deprecated and no longer used by type_traits:
+//
+#if defined(__GNUC__) || defined(_MSC_VER)
+
+#endif
+
 namespace boost {
 namespace type_traits {
 
