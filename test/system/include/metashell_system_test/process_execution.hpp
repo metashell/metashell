@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/process_output.hpp>
+
 #include <boost/filesystem/path.hpp>
 
 #include <iosfwd>
@@ -30,23 +32,19 @@ namespace metashell_system_test
   public:
     process_execution(std::vector<std::string> cmd_,
                       std::string stdin_,
-                      std::string stdout_,
-                      std::string stderr_,
-                      int exit_code_);
+                      metashell::data::process_output result_);
 
     const std::vector<std::string>& cmd() const;
     const std::string& standard_input() const;
 
     const std::string& standard_output() const;
     const std::string& standard_error() const;
-    int exit_code() const;
+    metashell::data::exit_code_t exit_code() const;
 
   private:
     std::vector<std::string> _cmd;
     std::string _stdin;
-    std::string _stdout;
-    std::string _stderr;
-    int _exit_code;
+    metashell::data::process_output _result;
   };
 
   process_execution run(std::vector<std::string> cmd_, std::string input_);

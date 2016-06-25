@@ -17,7 +17,7 @@
 #include <metashell_system_test/json_generator.hpp>
 #include <metashell_system_test/process_execution.hpp>
 
-#include <just/process.hpp>
+#include <metashell/process/run.hpp>
 
 #include <iostream>
 
@@ -25,14 +25,8 @@ using namespace metashell_system_test;
 
 process_execution::process_execution(std::vector<std::string> cmd_,
                                      std::string stdin_,
-                                     std::string stdout_,
-                                     std::string stderr_,
-                                     int exit_code_)
-  : _cmd(move(cmd_)),
-    _stdin(move(stdin_)),
-    _stdout(move(stdout_)),
-    _stderr(move(stderr_)),
-    _exit_code(exit_code_)
+                                     metashell::data::process_output result_)
+  : _cmd(move(cmd_)), _stdin(move(stdin_)), _result(std::move(result_))
 {
 }
 
@@ -42,19 +36,24 @@ const std::string& process_execution::standard_input() const { return _stdin; }
 
 const std::string& process_execution::standard_output() const
 {
-  return _stdout;
+  return _result.standard_output();
 }
 
-const std::string& process_execution::standard_error() const { return _stderr; }
+const std::string& process_execution::standard_error() const
+{
+  return _result.standard_error();
+}
 
-int process_execution::exit_code() const { return _exit_code; }
+metashell::data::exit_code_t process_execution::exit_code() const
+{
+  return _result.exit_code();
+}
 
 process_execution metashell_system_test::run(std::vector<std::string> cmd_,
                                              std::string input_)
 {
-  const auto r = just::process::run(cmd_, input_);
-  return process_execution(move(cmd_), move(input_), r.standard_output(),
-                           r.standard_error(), r.exit_code());
+  return process_execution(
+      move(cmd_), move(input_), metashell::process::run(cmd_, input_));
 }
 
 process_execution
@@ -62,9 +61,9 @@ metashell_system_test::run(std::vector<std::string> cmd_,
                            const boost::filesystem::path& cwd_,
                            std::string input_)
 {
-  const auto r = just::process::run(cmd_, input_, cwd_.string());
-  return process_execution(move(cmd_), move(input_), r.standard_output(),
-                           r.standard_error(), r.exit_code());
+  return process_execution(
+      move(cmd_), move(input_),
+      metashell::process::run(cmd_, input_, cwd_.string()));
 }
 
 std::ostream& metashell_system_test::operator<<(std::ostream& out_,

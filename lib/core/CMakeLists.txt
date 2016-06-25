@@ -24,7 +24,6 @@ use_cpp11()
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")
 
 # Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_process/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
