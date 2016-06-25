@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
-#define METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
+#ifndef METASHELL_SYSTEM_TEST_CODE_COMPLETER_HPP
+#define METASHELL_SYSTEM_TEST_CODE_COMPLETER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,24 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <just/temp.hpp>
+#include <metashell/system_test/json_string.hpp>
 
-#include <boost/filesystem.hpp>
+#include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class read_only_path
+  namespace system_test
   {
-  public:
-    read_only_path();
+    class code_completer
+    {
+    public:
+      code_completer(const std::string& init_code_ = std::string());
 
-    boost::filesystem::path path() const;
+      json_string operator()(const std::string& code_) const;
 
-  private:
-#ifdef _WIN32
-    just::temp::directory _temp;
-#endif
-  };
+    private:
+      std::string _init_code;
+    };
+  }
 }
 
 #endif

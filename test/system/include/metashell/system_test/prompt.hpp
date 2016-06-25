@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_BACKTRACE_HPP
-#define METASHELL_SYSTEM_TEST_BACKTRACE_HPP
+#ifndef METASHELL_SYSTEM_TEST_PROMPT_HPP
+#define METASHELL_SYSTEM_TEST_PROMPT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/frame.hpp>
-#include <metashell_system_test/json_string.hpp>
+#include <metashell/system_test/json_string.hpp>
+
+#include <pattern/string.hpp>
 
 #include <boost/operators.hpp>
 
-#include <vector>
+#include <iosfwd>
+#include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class backtrace : boost::equality_comparable<backtrace, json_string>
+  namespace system_test
   {
-  public:
-    explicit backtrace(std::vector<frame> frames_);
+    class prompt : boost::equality_comparable<prompt, json_string>
+    {
+    public:
+      explicit prompt(pattern::string prompt_);
 
-    typedef std::vector<frame>::const_iterator iterator;
-    typedef iterator const_iterator;
+      const pattern::string& value() const;
 
-    iterator begin() const;
-    iterator end() const;
+    private:
+      pattern::string _prompt;
+    };
 
-  private:
-    std::vector<frame> _frames;
-  };
+    std::ostream& operator<<(std::ostream& out_, const prompt& prompt_);
 
-  std::ostream& operator<<(std::ostream& o_, const backtrace& c_);
+    json_string to_json_string(const prompt& p_);
 
-  json_string to_json_string(const backtrace& c_);
-
-  bool operator==(const backtrace& c_, const json_string& s_);
+    bool operator==(const prompt& prompt_, const json_string& s_);
+  }
 }
 
 #endif

@@ -25,34 +25,37 @@
 #include <string>
 #include <vector>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class process_execution
+  namespace system_test
   {
-  public:
-    process_execution(std::vector<std::string> cmd_,
-                      std::string stdin_,
-                      metashell::data::process_output result_);
+    class process_execution
+    {
+    public:
+      process_execution(std::vector<std::string> cmd_,
+                        std::string stdin_,
+                        data::process_output result_);
 
-    const std::vector<std::string>& cmd() const;
-    const std::string& standard_input() const;
+      const std::vector<std::string>& cmd() const;
+      const std::string& standard_input() const;
 
-    const std::string& standard_output() const;
-    const std::string& standard_error() const;
-    metashell::data::exit_code_t exit_code() const;
+      const std::string& standard_output() const;
+      const std::string& standard_error() const;
+      data::exit_code_t exit_code() const;
 
-  private:
-    std::vector<std::string> _cmd;
-    std::string _stdin;
-    metashell::data::process_output _result;
-  };
+    private:
+      std::vector<std::string> _cmd;
+      std::string _stdin;
+      data::process_output _result;
+    };
 
-  process_execution run(std::vector<std::string> cmd_, std::string input_);
-  process_execution run(std::vector<std::string> cmd_,
-                        const boost::filesystem::path& cwd_,
-                        std::string input_);
+    process_execution run(std::vector<std::string> cmd_, std::string input_);
+    process_execution run(std::vector<std::string> cmd_,
+                          const boost::filesystem::path& cwd_,
+                          std::string input_);
 
-  std::ostream& operator<<(std::ostream& out_, const process_execution& e_);
+    std::ostream& operator<<(std::ostream& out_, const process_execution& e_);
+  }
 }
 
 #endif

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_generator.hpp>
+#include <metashell/system_test/json_generator.hpp>
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
 #include <map>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {
@@ -45,17 +45,17 @@ namespace
   }
 }
 
-json_string metashell_system_test::command(const std::string& cmd_)
+json_string metashell::system_test::command(const std::string& cmd_)
 {
   return json_object({{"type", "cmd"}, {"cmd", cmd_}});
 }
 
-json_string metashell_system_test::code_completion(const std::string& code_)
+json_string metashell::system_test::code_completion(const std::string& code_)
 {
   return json_object({{"type", "code_completion"}, {"code", code_}});
 }
 
-json_string metashell_system_test::to_json(const std::string& s_)
+json_string metashell::system_test::to_json(const std::string& s_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -66,7 +66,7 @@ json_string metashell_system_test::to_json(const std::string& s_)
 }
 
 json_string
-metashell_system_test::to_json(const std::vector<std::string>& strings_)
+metashell::system_test::to_json(const std::vector<std::string>& strings_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);

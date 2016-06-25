@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_MAIN_HPP
-#define METASHELL_SYSTEM_TEST_MAIN_HPP
+#ifndef METASHELL_SYSTEM_TEST_UTIL_HPP
+#define METASHELL_SYSTEM_TEST_UTIL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace metashell_system_test
+#include <boost/optional.hpp>
+
+#include <string>
+
+namespace metashell
 {
-  int main(int argc_, char* argv_[]);
+  namespace system_test
+  {
+    boost::optional<std::string>
+    try_to_remove_prefix(const std::string& prefix_, const std::string& s_);
+    std::string remove_prefix(const std::string& prefix_,
+                              const std::string& s_);
+  }
 }
 
 #endif

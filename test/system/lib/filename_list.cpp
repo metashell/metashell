@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/filename_list.hpp>
-#include <metashell_system_test/query_json.hpp>
+#include <metashell/system_test/filename_list.hpp>
+#include <metashell/system_test/query_json.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -24,7 +24,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 filename_list::filename_list() : _paths() {}
 
@@ -76,14 +76,14 @@ filename_list::const_iterator filename_list::end() const
 
 bool filename_list::empty() const { return _paths.empty(); }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& out_,
-                                                const filename_list& filenames_)
+std::ostream& metashell::system_test::
+operator<<(std::ostream& out_, const filename_list& filenames_)
 {
   return out_ << to_json_string(filenames_);
 }
 
 json_string
-metashell_system_test::to_json_string(const filename_list& filenames_)
+metashell::system_test::to_json_string(const filename_list& filenames_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -106,8 +106,8 @@ metashell_system_test::to_json_string(const filename_list& filenames_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(const filename_list& filenames_,
-                                       const json_string& s_)
+bool metashell::system_test::operator==(const filename_list& filenames_,
+                                        const json_string& s_)
 {
   return to_json_string(filenames_) == s_;
 }

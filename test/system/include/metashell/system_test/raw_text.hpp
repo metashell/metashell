@@ -17,31 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
+#include <metashell/system_test/json_string.hpp>
 
 #include <boost/operators.hpp>
 
 #include <iosfwd>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class raw_text : boost::equality_comparable<raw_text, json_string>
+  namespace system_test
   {
-  public:
-    explicit raw_text(const std::string& text_);
+    class raw_text : boost::equality_comparable<raw_text, json_string>
+    {
+    public:
+      explicit raw_text(const std::string& text_);
 
-    const std::string& text() const;
+      const std::string& text() const;
 
-  private:
-    std::string _text;
-  };
+    private:
+      std::string _text;
+    };
 
-  std::ostream& operator<<(std::ostream& out_, const raw_text& raw_text_);
+    std::ostream& operator<<(std::ostream& out_, const raw_text& raw_text_);
 
-  json_string to_json_string(const raw_text& t_);
+    json_string to_json_string(const raw_text& t_);
 
-  bool operator==(const raw_text& text_, const json_string& s_);
+    bool operator==(const raw_text& text_, const json_string& s_);
+  }
 }
 
 #endif

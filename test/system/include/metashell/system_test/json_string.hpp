@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_UTIL_HPP
-#define METASHELL_SYSTEM_TEST_UTIL_HPP
+#ifndef METASHELL_SYSTEM_TEST_JSON_STRING_HPP
+#define METASHELL_SYSTEM_TEST_JSON_STRING_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/optional.hpp>
+#include <boost/operators.hpp>
 
+#include <iosfwd>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  boost::optional<std::string> try_to_remove_prefix(const std::string& prefix_,
-                                                    const std::string& s_);
-  std::string remove_prefix(const std::string& prefix_, const std::string& s_);
+  namespace system_test
+  {
+    class json_string : boost::equality_comparable<json_string>
+    {
+    public:
+      explicit json_string(const std::string& json_);
+
+      const std::string& get() const;
+
+    private:
+      std::string _json;
+    };
+
+    bool operator==(const json_string& a_, const json_string& b_);
+    std::ostream& operator<<(std::ostream& out_, const json_string& s_);
+  }
 }
 
 #endif

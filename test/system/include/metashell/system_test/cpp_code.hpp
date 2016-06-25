@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_PROMPT_HPP
-#define METASHELL_SYSTEM_TEST_PROMPT_HPP
+#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
+#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,8 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-
+#include <metashell/system_test/json_string.hpp>
 #include <pattern/string.hpp>
 
 #include <boost/operators.hpp>
@@ -26,24 +25,28 @@
 #include <iosfwd>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class prompt : boost::equality_comparable<prompt, json_string>
+  namespace system_test
   {
-  public:
-    explicit prompt(pattern::string prompt_);
+    class cpp_code : boost::equality_comparable<cpp_code, json_string>
+    {
+    public:
+      explicit cpp_code(pattern::string code_);
+      explicit cpp_code(const json_string& s_);
 
-    const pattern::string& value() const;
+      const pattern::string& code() const;
 
-  private:
-    pattern::string _prompt;
-  };
+    private:
+      pattern::string _code;
+    };
 
-  std::ostream& operator<<(std::ostream& out_, const prompt& prompt_);
+    std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
 
-  json_string to_json_string(const prompt& p_);
+    json_string to_json_string(const cpp_code& code_);
 
-  bool operator==(const prompt& prompt_, const json_string& s_);
+    bool operator==(const cpp_code& code_, const json_string& s_);
+  }
 }
 
 #endif

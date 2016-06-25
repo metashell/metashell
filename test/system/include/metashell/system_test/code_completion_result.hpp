@@ -17,43 +17,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
+#include <metashell/system_test/json_string.hpp>
 
 #include <iosfwd>
 #include <set>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class code_completion_result
+  namespace system_test
   {
-  public:
-    explicit code_completion_result(
-        const std::initializer_list<std::string>& results_);
+    class code_completion_result
+    {
+    public:
+      explicit code_completion_result(
+          const std::initializer_list<std::string>& results_);
 
-    typedef std::set<std::string>::const_iterator iterator;
-    typedef iterator const_iterator;
+      typedef std::set<std::string>::const_iterator iterator;
+      typedef iterator const_iterator;
 
-    iterator begin() const;
-    iterator end() const;
+      iterator begin() const;
+      iterator end() const;
 
-    bool contains(const std::string& result_) const;
+      bool contains(const std::string& result_) const;
 
-    int size() const;
+      int size() const;
 
-    code_completion_result
-    with(const std::initializer_list<std::string>& members_) const;
+      code_completion_result
+      with(const std::initializer_list<std::string>& members_) const;
 
-  private:
-    std::set<std::string> _results;
-  };
+    private:
+      std::set<std::string> _results;
+    };
 
-  std::ostream& operator<<(std::ostream& out_,
-                           const code_completion_result& r_);
+    std::ostream& operator<<(std::ostream& out_,
+                             const code_completion_result& r_);
 
-  json_string to_json_string(const code_completion_result& r_);
+    json_string to_json_string(const code_completion_result& r_);
 
-  bool operator==(const code_completion_result& r_, const json_string& s_);
+    bool operator==(const code_completion_result& r_, const json_string& s_);
+  }
 }
 
 #endif

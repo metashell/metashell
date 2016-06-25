@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/process_execution.hpp>
+#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/process_execution.hpp>
 
 #include <metashell/process/run.hpp>
 
 #include <iostream>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 process_execution::process_execution(std::vector<std::string> cmd_,
                                      std::string stdin_,
@@ -49,25 +49,25 @@ metashell::data::exit_code_t process_execution::exit_code() const
   return _result.exit_code();
 }
 
-process_execution metashell_system_test::run(std::vector<std::string> cmd_,
-                                             std::string input_)
+process_execution metashell::system_test::run(std::vector<std::string> cmd_,
+                                              std::string input_)
 {
   return process_execution(
       move(cmd_), move(input_), metashell::process::run(cmd_, input_));
 }
 
 process_execution
-metashell_system_test::run(std::vector<std::string> cmd_,
-                           const boost::filesystem::path& cwd_,
-                           std::string input_)
+metashell::system_test::run(std::vector<std::string> cmd_,
+                            const boost::filesystem::path& cwd_,
+                            std::string input_)
 {
   return process_execution(
       move(cmd_), move(input_),
       metashell::process::run(cmd_, input_, cwd_.string()));
 }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& out_,
-                                                const process_execution& e_)
+std::ostream& metashell::system_test::operator<<(std::ostream& out_,
+                                                 const process_execution& e_)
 {
   return out_ << "Command: " << to_json(e_.cmd()) << std::endl
               << std::endl

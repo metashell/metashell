@@ -20,25 +20,28 @@
 #include <iosfwd>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  enum class instantiation_kind
+  namespace system_test
   {
-    template_instantiation,
-    default_template_argument_instantiation,
-    default_function_argument_instantiation,
-    explicit_template_argument_substitution,
-    deduced_template_argument_substitution,
-    prior_template_argument_substitution,
-    default_template_argument_checking,
-    exception_spec_instantiation,
-    memoization,
-    non_template_type
-  };
+    enum class instantiation_kind
+    {
+      template_instantiation,
+      default_template_argument_instantiation,
+      default_function_argument_instantiation,
+      explicit_template_argument_substitution,
+      deduced_template_argument_substitution,
+      prior_template_argument_substitution,
+      default_template_argument_checking,
+      exception_spec_instantiation,
+      memoization,
+      non_template_type
+    };
 
-  std::string to_string(instantiation_kind kind_);
-  std::ostream& operator<<(std::ostream& o_, instantiation_kind kind_);
-  instantiation_kind parse_kind(const std::string& kind_);
+    std::string to_string(instantiation_kind kind_);
+    std::ostream& operator<<(std::ostream& o_, instantiation_kind kind_);
+    instantiation_kind parse_kind(const std::string& kind_);
+  }
 }
 
 #endif

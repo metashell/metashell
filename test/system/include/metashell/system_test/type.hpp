@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/query_json.hpp>
+#include <metashell/system_test/json_string.hpp>
+#include <metashell/system_test/query_json.hpp>
 
 #include <pattern/placeholder.hpp>
 
@@ -28,31 +28,34 @@
 #include <iosfwd>
 #include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class type : boost::equality_comparable<type, json_string>
+  namespace system_test
   {
-  public:
-    explicit type(const std::string& name_);
-    explicit type(pattern::placeholder);
+    class type : boost::equality_comparable<type, json_string>
+    {
+    public:
+      explicit type(const std::string& name_);
+      explicit type(pattern::placeholder);
 
-    bool name_specified() const;
-    const std::string& name() const;
+      bool name_specified() const;
+      const std::string& name() const;
 
-  private:
-    boost::optional<std::string> _name;
-  };
+    private:
+      boost::optional<std::string> _name;
+    };
 
-  std::ostream& operator<<(std::ostream& out_, const type& type_);
+    std::ostream& operator<<(std::ostream& out_, const type& type_);
 
-  json_string to_json_string(const type& t_);
+    json_string to_json_string(const type& t_);
 
-  bool operator==(const type& type_, const json_string& s_);
+    bool operator==(const type& type_, const json_string& s_);
 
-  template <class JsonDocument>
-  bool matches(const type& type_, const JsonDocument& doc_)
-  {
-    return !type_.name_specified() || is_string(type_.name(), doc_);
+    template <class JsonDocument>
+    bool matches(const type& type_, const JsonDocument& doc_)
+    {
+      return !type_.name_specified() || is_string(type_.name(), doc_);
+    }
   }
 }
 

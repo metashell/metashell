@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CPP_CODE_HPP
-#define METASHELL_SYSTEM_TEST_CPP_CODE_HPP
+#ifndef METASHELL_SYSTEM_TEST_CALL_GRAPH_NODE_HPP
+#define METASHELL_SYSTEM_TEST_CALL_GRAPH_NODE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,33 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <pattern/string.hpp>
+#include <metashell/system_test/frame.hpp>
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
-
-namespace metashell_system_test
+namespace metashell
 {
-  class cpp_code : boost::equality_comparable<cpp_code, json_string>
+  namespace system_test
   {
-  public:
-    explicit cpp_code(pattern::string code_);
-    explicit cpp_code(const json_string& s_);
+    class call_graph_node
+    {
+    public:
+      call_graph_node(const frame& frame_, int depth_, int number_of_children_);
 
-    const pattern::string& code() const;
+      const frame& current_frame() const;
+      int depth() const;
+      int number_of_children() const;
 
-  private:
-    pattern::string _code;
-  };
-
-  std::ostream& operator<<(std::ostream& out_, const cpp_code& code_);
-
-  json_string to_json_string(const cpp_code& code_);
-
-  bool operator==(const cpp_code& code_, const json_string& s_);
+    private:
+      frame _frame;
+      int _depth;
+      int _number_of_children;
+    };
+  }
 }
 
 #endif

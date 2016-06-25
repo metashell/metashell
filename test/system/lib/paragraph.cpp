@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/paragraph.hpp>
+#include <metashell/system_test/paragraph.hpp>
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
 #include <iostream>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 paragraph::paragraph(const std::string& content_,
                      const std::string& indentation_)
@@ -52,13 +52,13 @@ const std::string& paragraph::rest_of_lines_indentation() const
   return _rest_of_lines_indentation;
 }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& out_,
-                                                const paragraph& p_)
+std::ostream& metashell::system_test::operator<<(std::ostream& out_,
+                                                 const paragraph& p_)
 {
   return out_ << to_json_string(p_);
 }
 
-json_string metashell_system_test::to_json_string(const paragraph& p_)
+json_string metashell::system_test::to_json_string(const paragraph& p_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);

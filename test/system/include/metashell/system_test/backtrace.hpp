@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CALL_GRAPH_HPP
-#define METASHELL_SYSTEM_TEST_CALL_GRAPH_HPP
+#ifndef METASHELL_SYSTEM_TEST_BACKTRACE_HPP
+#define METASHELL_SYSTEM_TEST_BACKTRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/call_graph_node.hpp>
-#include <metashell_system_test/json_string.hpp>
+#include <metashell/system_test/frame.hpp>
+#include <metashell/system_test/json_string.hpp>
 
 #include <boost/operators.hpp>
 
 #include <vector>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class call_graph : boost::equality_comparable<call_graph, json_string>
+  namespace system_test
   {
-  public:
-    explicit call_graph(std::vector<call_graph_node> call_graph_nodes_);
+    class backtrace : boost::equality_comparable<backtrace, json_string>
+    {
+    public:
+      explicit backtrace(std::vector<frame> frames_);
 
-    typedef std::vector<call_graph_node>::const_iterator iterator;
-    typedef iterator const_iterator;
+      typedef std::vector<frame>::const_iterator iterator;
+      typedef iterator const_iterator;
 
-    iterator begin() const;
-    iterator end() const;
+      iterator begin() const;
+      iterator end() const;
 
-  private:
-    std::vector<call_graph_node> _call_graph_nodes;
-  };
+    private:
+      std::vector<frame> _frames;
+    };
 
-  std::ostream& operator<<(std::ostream& o_, const call_graph& c_);
+    std::ostream& operator<<(std::ostream& o_, const backtrace& c_);
 
-  json_string to_json_string(const call_graph& c_);
+    json_string to_json_string(const backtrace& c_);
 
-  bool operator==(const call_graph& c_, const json_string& s_);
+    bool operator==(const backtrace& c_, const json_string& s_);
+  }
 }
 
 #endif

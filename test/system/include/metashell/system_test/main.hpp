@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_ERROR_HPP
-#define METASHELL_SYSTEM_TEST_ERROR_HPP
+#ifndef METASHELL_SYSTEM_TEST_MAIN_HPP
+#define METASHELL_SYSTEM_TEST_MAIN_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,36 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-
-#include <pattern/placeholder.hpp>
-
-#include <boost/operators.hpp>
-#include <boost/optional.hpp>
-
-#include <iosfwd>
-#include <string>
-
-namespace metashell_system_test
+namespace metashell
 {
-  class error : boost::equality_comparable<error, json_string>
+  namespace system_test
   {
-  public:
-    explicit error(const std::string& msg_);
-    explicit error(pattern::placeholder);
-
-    bool message_specified() const;
-    const std::string& message() const;
-
-  private:
-    boost::optional<std::string> _msg;
-  };
-
-  std::ostream& operator<<(std::ostream& out_, const error& error_);
-
-  json_string to_json_string(const error& e_);
-
-  bool operator==(const error& error_, const json_string& s_);
+    int main(int argc_, char* argv_[]);
+  }
 }
 
 #endif

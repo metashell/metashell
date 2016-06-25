@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_JSON_STRING_HPP
-#define METASHELL_SYSTEM_TEST_JSON_STRING_HPP
+#ifndef METASHELL_SYSTEM_TEST_JSON_GENERATOR_HPP
+#define METASHELL_SYSTEM_TEST_JSON_GENERATOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
+#include <metashell/system_test/json_string.hpp>
 
-#include <iosfwd>
 #include <string>
+#include <vector>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class json_string : boost::equality_comparable<json_string>
+  namespace system_test
   {
-  public:
-    explicit json_string(const std::string& json_);
+    json_string command(const std::string& cmd_);
+    json_string code_completion(const std::string& code_);
 
-    const std::string& get() const;
-
-  private:
-    std::string _json;
-  };
-
-  bool operator==(const json_string& a_, const json_string& b_);
-  std::ostream& operator<<(std::ostream& out_, const json_string& s_);
+    json_string to_json(const std::string& s_);
+    json_string to_json(const std::vector<std::string>& strings_);
+  }
 }
 
 #endif

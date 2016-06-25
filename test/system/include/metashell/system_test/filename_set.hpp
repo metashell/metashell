@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
+#include <metashell/system_test/json_string.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
@@ -25,35 +25,39 @@
 #include <iosfwd>
 #include <set>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class filename_set : boost::equality_comparable<filename_set, json_string>
+  namespace system_test
   {
-  public:
-    typedef std::set<boost::filesystem::path>::const_iterator const_iterator;
-    typedef const_iterator iterator;
-
-    explicit filename_set();
-
-    template <class Container>
-    filename_set(const Container& c_) : _paths(c_.begin(), c_.end())
+    class filename_set : boost::equality_comparable<filename_set, json_string>
     {
-    }
+    public:
+      typedef std::set<boost::filesystem::path>::const_iterator const_iterator;
+      typedef const_iterator iterator;
 
-    filename_set(std::initializer_list<boost::filesystem::path> paths_);
+      explicit filename_set();
 
-    const_iterator begin() const;
-    const_iterator end() const;
+      template <class Container>
+      filename_set(const Container& c_) : _paths(c_.begin(), c_.end())
+      {
+      }
 
-  private:
-    std::set<boost::filesystem::path> _paths;
-  };
+      filename_set(std::initializer_list<boost::filesystem::path> paths_);
 
-  std::ostream& operator<<(std::ostream& out_, const filename_set& filenames_);
+      const_iterator begin() const;
+      const_iterator end() const;
 
-  json_string to_json_string(const filename_set& filenames_);
+    private:
+      std::set<boost::filesystem::path> _paths;
+    };
 
-  bool operator==(const filename_set& filenames_, const json_string& s_);
+    std::ostream& operator<<(std::ostream& out_,
+                             const filename_set& filenames_);
+
+    json_string to_json_string(const filename_set& filenames_);
+
+    bool operator==(const filename_set& filenames_, const json_string& s_);
+  }
 }
 
 #endif

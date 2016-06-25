@@ -17,31 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/type.hpp>
+#include <metashell/system_test/type.hpp>
 
 #include <string>
 
 template <int N>
-metashell_system_test::type fib()
+metashell::system_test::type fib()
 {
-  return metashell_system_test::type("fib<" + std::to_string(N) + ">");
+  return metashell::system_test::type("fib<" + std::to_string(N) + ">");
 }
 
 namespace v1
 {
   template <int N>
-  metashell_system_test::type fib()
+  metashell::system_test::type fib()
   {
-    return metashell_system_test::type("v1::fib<" + std::to_string(N) + ">");
+    return metashell::system_test::type("v1::fib<" + std::to_string(N) + ">");
   }
 }
 
 namespace v2
 {
   template <int N>
-  metashell_system_test::type fib()
+  metashell::system_test::type fib()
   {
-    return metashell_system_test::type("v2::fib<" + std::to_string(N) + ">");
+    return metashell::system_test::type("v2::fib<" + std::to_string(N) + ">");
   }
 }
 

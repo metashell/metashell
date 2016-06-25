@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/instantiation_kind.hpp>
+#include <metashell/system_test/instantiation_kind.hpp>
 
 #include <iostream>
 #include <stdexcept>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
-std::string metashell_system_test::to_string(instantiation_kind kind_)
+std::string metashell::system_test::to_string(instantiation_kind kind_)
 {
   switch (kind_)
   {
@@ -49,8 +49,8 @@ std::string metashell_system_test::to_string(instantiation_kind kind_)
   return "UnknownKind";
 }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& o_,
-                                                instantiation_kind kind_)
+std::ostream& metashell::system_test::operator<<(std::ostream& o_,
+                                                 instantiation_kind kind_)
 {
   return o_ << to_string(kind_);
 }

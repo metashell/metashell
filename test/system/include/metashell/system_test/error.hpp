@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_COMMENT_HPP
-#define METASHELL_SYSTEM_TEST_COMMENT_HPP
+#ifndef METASHELL_SYSTEM_TEST_ERROR_HPP
+#define METASHELL_SYSTEM_TEST_ERROR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,37 +17,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-#include <metashell_system_test/paragraph.hpp>
+#include <metashell/system_test/json_string.hpp>
 
 #include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
-#include <vector>
+#include <string>
 
-namespace metashell_system_test
+namespace metashell
 {
-  class comment : boost::equality_comparable<comment, json_string>
+  namespace system_test
   {
-  public:
-    explicit comment(std::vector<paragraph> paragraphs_);
-    explicit comment(pattern::placeholder);
+    class error : boost::equality_comparable<error, json_string>
+    {
+    public:
+      explicit error(const std::string& msg_);
+      explicit error(pattern::placeholder);
 
-    bool paragraphs_specified() const;
-    const std::vector<paragraph>& paragraphs() const;
+      bool message_specified() const;
+      const std::string& message() const;
 
-  private:
-    bool _paragraphs_specified;
-    std::vector<paragraph> _paragraphs;
-  };
+    private:
+      boost::optional<std::string> _msg;
+    };
 
-  std::ostream& operator<<(std::ostream& out_, const comment& comment_);
+    std::ostream& operator<<(std::ostream& out_, const error& error_);
 
-  json_string to_json_string(const comment& comment_);
+    json_string to_json_string(const error& e_);
 
-  bool operator==(const comment& comment_, const json_string& s_);
+    bool operator==(const error& error_, const json_string& s_);
+  }
 }
 
 #endif

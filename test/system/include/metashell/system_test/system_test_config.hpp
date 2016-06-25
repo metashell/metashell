@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_RUN_METASHELL_HPP
-#define METASHELL_SYSTEM_TEST_RUN_METASHELL_HPP
+#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
+#define METASHELL_SYSTEM_TEST_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,33 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_string.hpp>
-
 #include <boost/filesystem/path.hpp>
 
 #include <string>
 #include <vector>
 
-namespace metashell_system_test
+namespace metashell
 {
-  std::vector<json_string>
-  run_metashell(const std::vector<json_string>& commands_,
-                const std::vector<std::string>& extra_args_ = {});
-
-  class in_directory
+  namespace system_test
   {
-  public:
-    explicit in_directory(boost::filesystem::path cwd_);
+    namespace system_test_config
+    {
+      void metashell_binary(const boost::filesystem::path& path_);
+      void metashell_arg(const std::string& arg_);
 
-    std::vector<json_string>
-    run_metashell(const std::vector<json_string>& commands_,
-                  const std::vector<std::string>& extra_args_ = {}) const;
-
-  private:
-    boost::filesystem::path _cwd;
-  };
-
-  json_string run_metashell_command(const std::string& command_);
+      boost::filesystem::path metashell_binary();
+      const std::vector<std::string>& metashell_args();
+    }
+  }
 }
 
 #endif

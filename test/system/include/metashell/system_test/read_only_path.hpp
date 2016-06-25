@@ -1,8 +1,8 @@
-#ifndef METASHELL_SYSTEM_TEST_CALL_GRAPH_NODE_HPP
-#define METASHELL_SYSTEM_TEST_CALL_GRAPH_NODE_HPP
+#ifndef METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
+#define METASHELL_SYSTEM_TEST_READ_ONLY_PATH_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,24 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/frame.hpp>
+#include <just/temp.hpp>
 
-namespace metashell_system_test
+#include <boost/filesystem.hpp>
+
+namespace metashell
 {
-  class call_graph_node
+  namespace system_test
   {
-  public:
-    call_graph_node(const frame& frame_, int depth_, int number_of_children_);
+    class read_only_path
+    {
+    public:
+      read_only_path();
 
-    const frame& current_frame() const;
-    int depth() const;
-    int number_of_children() const;
+      boost::filesystem::path path() const;
 
-  private:
-    frame _frame;
-    int _depth;
-    int _number_of_children;
-  };
+    private:
+#ifdef _WIN32
+      just::temp::directory _temp;
+#endif
+    };
+  }
 }
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_CONFIG_HPP
-#define METASHELL_SYSTEM_TEST_CONFIG_HPP
+#ifndef METASHELL_SYSTEM_TEST_PATH_BUILDER_HPP
+#define METASHELL_SYSTEM_TEST_PATH_BUILDER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,20 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
-
 #include <string>
-#include <vector>
 
-namespace metashell_system_test
+namespace metashell
 {
-  namespace system_test_config
+  namespace system_test
   {
-    void metashell_binary(const boost::filesystem::path& path_);
-    void metashell_arg(const std::string& arg_);
+    class path_builder
+    {
+    public:
+      explicit path_builder(const std::string& s_ = std::string());
 
-    boost::filesystem::path metashell_binary();
-    const std::vector<std::string>& metashell_args();
+      operator std::string() const;
+
+    private:
+      std::string _path;
+    };
+
+    path_builder operator/(const path_builder& a_, const std::string& b_);
   }
 }
 
