@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/path_builder.hpp>
+#include <metashell/system_test/path_builder.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 path_builder::path_builder(const std::string& s_) : _path(s_) {}
 
-path_builder metashell_system_test::operator/(const path_builder& a_,
-                                              const std::string& b_)
+path_builder metashell::system_test::operator/(const path_builder& a_,
+                                               const std::string& b_)
 {
 #ifdef _WIN32
   const char sep = '\\';

@@ -22,6 +22,5 @@ use_cpp11()
 
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_process/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 

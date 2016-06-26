@@ -15,10 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/clang_binary.hpp>
+#include <metashell/process/run.hpp>
 
 #include <boost/algorithm/string/join.hpp>
-
-#include <just/process.hpp>
 
 #include <algorithm>
 
@@ -57,12 +56,11 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
 
   METASHELL_LOG(_logger, "Running Clang: " + boost::algorithm::join(cmd, " "));
 
-  const just::process::output o = just::process::run(cmd, stdin_);
+  const data::process_output o = process::run(cmd, stdin_);
 
-  METASHELL_LOG(_logger, "Clang's exit code: " + std::to_string(o.exit_code()));
+  METASHELL_LOG(_logger, "Clang's exit code: " + to_string(o.exit_code()));
   METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output());
   METASHELL_LOG(_logger, "Clang's stderr: " + o.standard_error());
 
-  return data::process_output(data::exit_code_t(o.exit_code()),
-                              o.standard_output(), o.standard_error());
+  return o;
 }

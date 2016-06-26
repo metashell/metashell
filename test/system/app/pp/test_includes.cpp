@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/filename_list.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
-#include <metashell_system_test/system_test_config.hpp>
-#include <metashell_system_test/util.hpp>
+#include <metashell/system_test/filename_list.hpp>
+#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/system_test_config.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -29,7 +29,7 @@
 
 #include <algorithm>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {

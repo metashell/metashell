@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/cpp_code.hpp>
-#include <metashell_system_test/query_json.hpp>
+#include <metashell/system_test/cpp_code.hpp>
+#include <metashell/system_test/query_json.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -24,7 +24,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 cpp_code::cpp_code(pattern::string code_) : _code(code_) {}
 
@@ -45,13 +45,13 @@ cpp_code::cpp_code(const json_string& s_) : _code(pattern::_)
 }
 const pattern::string& cpp_code::code() const { return _code; }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& out_,
-                                                const cpp_code& cpp_code_)
+std::ostream& metashell::system_test::operator<<(std::ostream& out_,
+                                                 const cpp_code& cpp_code_)
 {
   return out_ << to_json_string(cpp_code_);
 }
 
-json_string metashell_system_test::to_json_string(const cpp_code& t_)
+json_string metashell::system_test::to_json_string(const cpp_code& t_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -69,8 +69,8 @@ json_string metashell_system_test::to_json_string(const cpp_code& t_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(const cpp_code& cpp_code_,
-                                       const json_string& s_)
+bool metashell::system_test::operator==(const cpp_code& cpp_code_,
+                                        const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());

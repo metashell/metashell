@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/main.hpp>
-#include <metashell_system_test/system_test_config.hpp>
+#include <metashell/system_test/main.hpp>
+#include <metashell/system_test/system_test_config.hpp>
 
 #include <just/test.hpp>
 
 #include <iostream>
 #include <vector>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {
@@ -47,7 +47,7 @@ namespace
   }
 }
 
-int metashell_system_test::main(int argc_, char* argv_[])
+int metashell::system_test::main(int argc_, char* argv_[])
 {
   if (argc_ < 2)
   {

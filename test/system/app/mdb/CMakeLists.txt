@@ -22,6 +22,8 @@ use_cpp11()
 
 target_link_libraries(metashell_mdb_system_test
   metashell_system_test_lib
+  metashell_data_lib
+  metashell_process_lib
   boost_regex)
 
 # Just

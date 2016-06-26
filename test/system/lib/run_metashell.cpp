@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/process_execution.hpp>
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/raw_text.hpp>
-#include <metashell_system_test/run_metashell.hpp>
-#include <metashell_system_test/system_test_config.hpp>
+#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/process_execution.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/raw_text.hpp>
+#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/system_test_config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
@@ -30,7 +30,7 @@
 #include <iostream>
 #include <sstream>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {
@@ -188,7 +188,7 @@ namespace
   }
 }
 
-std::vector<json_string> metashell_system_test::run_metashell(
+std::vector<json_string> metashell::system_test::run_metashell(
     const std::vector<json_string>& commands_,
     const std::vector<std::string>& extra_args_)
 {
@@ -198,7 +198,7 @@ std::vector<json_string> metashell_system_test::run_metashell(
 }
 
 json_string
-metashell_system_test::run_metashell_command(const std::string& command_)
+metashell::system_test::run_metashell_command(const std::string& command_)
 {
   std::vector<json_string> jv;
   const auto execution =

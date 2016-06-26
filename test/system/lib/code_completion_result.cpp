@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/code_completion_result.hpp>
-#include <metashell_system_test/query_json.hpp>
+#include <metashell/system_test/code_completion_result.hpp>
+#include <metashell/system_test/query_json.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -24,7 +24,7 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 code_completion_result::code_completion_result(
     const std::initializer_list<std::string>& results_)
@@ -57,14 +57,14 @@ code_completion_result code_completion_result::with(
   return r;
 }
 
-std::ostream& metashell_system_test::
+std::ostream& metashell::system_test::
 operator<<(std::ostream& out_, const code_completion_result& r_)
 {
   return out_ << to_json_string(r_);
 }
 
 json_string
-metashell_system_test::to_json_string(const code_completion_result& r_)
+metashell::system_test::to_json_string(const code_completion_result& r_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -87,8 +87,8 @@ metashell_system_test::to_json_string(const code_completion_result& r_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(const code_completion_result& r_,
-                                       const json_string& s_)
+bool metashell::system_test::operator==(const code_completion_result& r_,
+                                        const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
