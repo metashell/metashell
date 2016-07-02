@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/filename_list.hpp>
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 #include <metashell/system_test/util.hpp>
 
@@ -91,9 +90,10 @@ namespace
       args.push_back(p.string());
     }
 
-    const auto r = run_metashell({command("#msh " + type_ + "includes")}, args);
-
-    return remove_metashell_standard_headers(filename_list(*(r.begin() + 1)));
+    return remove_metashell_standard_headers(
+        filename_list(metashell_instance(args)
+                          .command("#msh " + type_ + "includes")
+                          .front()));
   }
 
   filename_list

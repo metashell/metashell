@@ -22,17 +22,20 @@ use_cpp11()
 
 target_link_libraries(metashell_mdb_system_test
   metashell_system_test_lib
-  metashell_data_lib
   metashell_process_lib
+  metashell_data_lib
   boost_regex)
 
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
 
 # Boost
 target_link_libraries(metashell_mdb_system_test
   boost_filesystem
   boost_system
+  boost_thread
+  ${BOOST_ATOMIC_LIB}
 )
 
 register_system_test(metashell_mdb_system_test)

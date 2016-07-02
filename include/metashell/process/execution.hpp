@@ -1,5 +1,5 @@
-#ifndef METASHELL_PROCESS_INPUT_FILE_HPP
-#define METASHELL_PROCESS_INPUT_FILE_HPP
+#ifndef METASHELL_PROCESS_EXECUTION_HPP
+#define METASHELL_PROCESS_EXECUTION_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,27 +17,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "file.hpp"
+#include <metashell/data/exit_code_t.hpp>
+#include <metashell/data/process_output.hpp>
+
+#include <metashell/process/pipe.hpp>
+
+#include <boost/filesystem/path.hpp>
 
 #include <string>
+#include <vector>
 
 namespace metashell
 {
   namespace process
   {
-    class input_file : public file<input_file>
+    class execution
     {
     public:
-      explicit input_file(fd_t fd_);
+      execution(
+          const std::vector<std::string>& cmd_,
+          const boost::filesystem::path& cwd_ = boost::filesystem::path());
 
-      size_type read(char* buf_, size_t count_);
+      ~execution();
 
-      bool eof() const;
+      output_file& standard_input();
+      input_file& standard_output();
+      input_file& standard_error();
 
-      std::string read();
+      data::exit_code_t wait();
 
     private:
-      bool _eof;
+      pipe _standard_input;
+      pipe _standard_output;
+      pipe _standard_error;
+
+#ifdef _WIN32
+      PROCESS_INFORMATION _process_information;
+#else
+      pid_t _pid;
+#endif
     };
   }
 }

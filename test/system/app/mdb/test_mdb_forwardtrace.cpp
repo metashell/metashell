@@ -16,9 +16,9 @@
 
 #include <metashell/system_test/call_graph.hpp>
 #include <metashell/system_test/error.hpp>
-#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
-#include <metashell/system_test/run_metashell.hpp>
 
 #include "fib.hpp"
 #include "test_metaprograms.hpp"
@@ -29,48 +29,32 @@ using namespace metashell::system_test;
 
 using pattern::_;
 
-// clang-format off
+JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
 
-JUST_TEST_CASE(test_mdb_forwardtrace_without_evaluation) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("forwardtrace")
-      }
-    );
-
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
+  JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"),
+                    mi.command("forwardtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_garbage_argument) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate int"),
-        command("forwardtrace asd")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_garbage_argument)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate int");
 
-  auto i = r.begin() + 4;
-
-  JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
+  JUST_ASSERT_EQUAL(
+      error("Argument parsing failed"), mi.command("forwardtrace asd").front());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_int) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate int"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_int)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate int");
 
-  auto i = r.begin() + 4;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -79,21 +63,19 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int) {
         {frame(type("int"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate -full int"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate -full int");
 
-  auto i = r.begin() + 4;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -102,55 +84,45 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_in_full_mode) {
         {frame(type("int")), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate int"),
-        command("continue"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate int");
+  mi.command("continue");
 
-  auto i = r.begin() + 7;
-
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Metaprogram finished")),
+       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
+      mi.command("forwardtrace"));
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate -full int"),
-        command("continue"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_when_metaprogram_finished_in_full_mode)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate -full int");
+  mi.command("continue");
 
-  auto i = r.begin() + 7;
-
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i); ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Metaprogram finished")),
+       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
+      mi.command("forwardtrace"));
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
-  const auto r =
-    run_metashell(
-      {
-        command("#msh mdb"),
-        command("evaluate int"),
-        command("ft")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft)
+{
+  metashell_instance mi;
+  mi.command("#msh mdb");
+  mi.command("evaluate int");
 
-  auto i = r.begin() + 4;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -159,22 +131,20 @@ JUST_TEST_CASE(test_mdb_forwardtrace_int_with_ft) {
         {frame(type("int"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
-    *i
+    mi.command("ft").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_from_root)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
 
-  auto i = r.begin() + 5;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -196,22 +166,20 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root) {
         {frame( type("int_<5>"), _, _, instantiation_kind::template_instantiation), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate -full int_<fib<5>::value>"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate -full int_<fib<5>::value>");
 
-  auto i = r.begin() + 5;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -235,24 +203,22 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_in_full_mode) {
         {frame( type("int_<5>")), 1,0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("rbreak fib<5>"),
-        command("continue 2"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("rbreak fib<5>");
+  mi.command("continue 2");
 
-  auto i = r.begin() + 10;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -260,23 +226,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_memoization) {
         {frame( fib<5>(), _, _, instantiation_kind::memoization), 0, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -295,23 +259,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1) {
         {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate -full int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate -full int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -333,23 +295,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_in_full_mode) {
         {frame(    fib<1>()), 4, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace 0")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -357,23 +317,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_0) {
         {frame( fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace 0").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace 1")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -385,25 +343,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1) {
         {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace 1").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(
-    test_mdb_forwardtrace_ft_from_step_1_with_limit_1_in_full_mode)
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_1_with_limit_1_in_full_mode)
 {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate -full int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace 1")
-      }
-    );
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate -full int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -413,23 +367,21 @@ JUST_TEST_CASE(
         {frame( fib<4>()), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace 1").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace 2")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -446,23 +398,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_2) {
         {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace 2").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("step"),
-        command("forwardtrace 100")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
+  mi.command("step");
 
-  auto i = r.begin() + 7;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -481,22 +431,20 @@ JUST_TEST_CASE(test_mdb_forwardtrace_ft_from_step_2_with_limit_100) {
         {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace 100").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram) {
-  const auto r =
-    run_metashell(
-      {
-        command(missing_value_fibonacci_mp),
-        command("#msh mdb"),
-        command("evaluate int_<fib<5>::value>"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram)
+{
+  metashell_instance mi;
+  mi.command(missing_value_fibonacci_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate int_<fib<5>::value>");
 
-  auto i = r.begin() + 5;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -509,26 +457,22 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_errored_metaprogram) {
         {frame(   fib<0>(), _, _, instantiation_kind::memoization), 4, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3) {
-  const auto r =
-    run_metashell(
-      {
-        command(
-          fibonacci_mp +
-         "int_<fib<5>::value> x;"
-         "int_<fib<6>::value> y;"
-        ),
-        command("#msh mdb"),
-        command("evaluate -"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_mp +
+             "int_<fib<5>::value> x;"
+             "int_<fib<6>::value> y;");
+  mi.command("#msh mdb");
+  mi.command("evaluate -");
 
-  auto i = r.begin() + 5;
+  // clang-format off
 
   JUST_ASSERT_EQUAL(
     call_graph(
@@ -557,23 +501,21 @@ JUST_TEST_CASE(test_mdb_forwardtrace_when_evaluating_environment_fib_2_3) {
         {frame( type("int_<8>"), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_sfinae_v1) {
-  const auto r =
-    run_metashell(
-      {
-        command(fibonacci_sfinae_mp),
-        command("#msh mdb"),
-        command("evaluate decltype(foo<4>())"),
-        command("forwardtrace")
-      }
-    );
+JUST_TEST_CASE(test_mdb_forwardtrace_sfinae_v1)
+{
+  metashell_instance mi;
+  mi.command(fibonacci_sfinae_mp);
+  mi.command("#msh mdb");
+  mi.command("evaluate decltype(foo<4>())");
 
-  auto i = r.begin() + 5;
-
+  // clang-format off
+   
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -611,6 +553,8 @@ JUST_TEST_CASE(test_mdb_forwardtrace_sfinae_v1) {
         {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
-    *i
+    mi.command("forwardtrace").front()
   );
+
+  // clang-format on
 }

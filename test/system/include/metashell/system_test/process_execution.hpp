@@ -17,10 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/process_output.hpp>
-
-#include <boost/filesystem/path.hpp>
-
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -32,27 +28,21 @@ namespace metashell
     class process_execution
     {
     public:
-      process_execution(std::vector<std::string> cmd_,
-                        std::string stdin_,
-                        data::process_output result_);
+      explicit process_execution(std::vector<std::string> cmd_);
 
       const std::vector<std::string>& cmd() const;
+
       const std::string& standard_input() const;
+      std::string& standard_input();
 
       const std::string& standard_output() const;
-      const std::string& standard_error() const;
-      data::exit_code_t exit_code() const;
+      std::string& standard_output();
 
     private:
       std::vector<std::string> _cmd;
       std::string _stdin;
-      data::process_output _result;
+      std::string _stdout;
     };
-
-    process_execution run(std::vector<std::string> cmd_, std::string input_);
-    process_execution run(std::vector<std::string> cmd_,
-                          const boost::filesystem::path& cwd_,
-                          std::string input_);
 
     std::ostream& operator<<(std::ostream& out_, const process_execution& e_);
   }

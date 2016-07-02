@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 
 #include <just/test.hpp>
 
@@ -23,20 +23,16 @@ using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_hide_definition_error)
 {
-  const auto r = run_metashell({command("#msh show cpp_errors off"),
-                                command("void f() { return 13; }")});
-
-  auto i = r.begin() + 3;
-
-  JUST_ASSERT(i == r.end());
+  metashell_instance mi;
+  mi.command("#msh show cpp_errors off");
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(prompt(">"))}, mi.command("void f() { return 13; }"));
 }
 
 JUST_TEST_CASE(test_hide_evaluation_error)
 {
-  const auto r =
-      run_metashell({command("#msh show cpp_errors off"), command("void int")});
-
-  auto i = r.begin() + 3;
-
-  JUST_ASSERT(i == r.end());
+  metashell_instance mi;
+  mi.command("#msh show cpp_errors off");
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(prompt(">"))}, mi.command("void int"));
 }

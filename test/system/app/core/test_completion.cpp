@@ -19,8 +19,7 @@
 #include <metashell/system_test/prompt.hpp>
 
 #include <metashell/system_test/code_completer.hpp>
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <just/test.hpp>
 
@@ -102,17 +101,9 @@ JUST_TEST_CASE(test_included_completion)
 
 JUST_TEST_CASE(test_code_completion_cpp_can_not_be_included)
 {
-  const auto r = run_metashell(
-      {code_completion("doubl"), command("#include <code_complete.cpp>")});
+  metashell_instance mi;
+  mi.code_completion("doubl");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-
-  JUST_ASSERT(i != r.end());
-  JUST_ASSERT_EQUAL(error(_), *i);
+  JUST_ASSERT_EQUAL(
+      error(_), mi.command("#include <code_complete.cpp>").front());
 }

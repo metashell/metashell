@@ -29,7 +29,7 @@ namespace metashell
     class json_string : boost::equality_comparable<json_string>
     {
     public:
-      explicit json_string(const std::string& json_);
+      explicit json_string(const std::string& json_ = std::string());
 
       const std::string& get() const;
 

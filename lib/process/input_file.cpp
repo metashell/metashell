@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "input_file.hpp"
+#include <metashell/process/input_file.hpp>
+
+#include <boost/thread.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -53,16 +55,77 @@ namespace metashell
 
     bool input_file::eof() const { return _eof; }
 
-    std::string input_file::read()
+    void read_all(std::tuple<input_file&, std::string&> io1_)
     {
       std::ostringstream s;
-      static const int buffsize = 1024;
-      char buff[buffsize];
-      while (!eof())
+      std::array<char, 1024> buff;
+      while (!std::get<0>(io1_).eof())
       {
-        s.write(buff, read(buff, buffsize));
+        s.write(buff.data(), std::get<0>(io1_).read(buff));
       }
-      return s.str();
+      std::get<1>(io1_) = s.str();
+    }
+
+    void read_all(std::tuple<input_file&, std::string&> io1_,
+                  std::tuple<input_file&, std::string&> io2_)
+    {
+      boost::thread reader2([&io2_]() { read_all(io2_); });
+      read_all(io1_);
+
+      reader2.join();
+    }
+
+    input_file::iterator input_file::begin() const
+    {
+      return iterator(const_cast<input_file*>(this));
+    }
+
+    input_file::iterator input_file::end() const { return iterator(nullptr); }
+
+    input_file::iterator::iterator(input_file* input_)
+      : _input(input_), _buffer_begin(0), _buffer_end(0)
+    {
+      ++*this;
+    }
+
+    bool input_file::iterator::operator==(const iterator& it_) const
+    {
+      return is_end() == it_.is_end();
+    }
+
+    bool input_file::iterator::operator<(const iterator& it_) const
+    {
+      return !is_end() && it_.is_end();
+    }
+
+    char input_file::iterator::operator*() const
+    {
+      assert(_buffer_begin != _buffer_end);
+
+      return _buffer[_buffer_begin];
+    }
+
+    input_file::iterator& input_file::iterator::operator++()
+    {
+      if (_buffer_begin != _buffer_end)
+      {
+        ++_buffer_begin;
+      }
+      if (_buffer_begin == _buffer_end && _input)
+      {
+        _buffer_begin = 0;
+        _buffer_end = _input->read(_buffer);
+        if (_buffer_begin == _buffer_end)
+        {
+          _input = nullptr;
+        }
+      }
+      return *this;
+    }
+
+    bool input_file::iterator::is_end() const
+    {
+      return _buffer_begin == _buffer_end && !_input;
     }
   }
 }

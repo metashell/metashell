@@ -16,9 +16,9 @@
 
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/frame.hpp>
-#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
-#include <metashell/system_test/run_metashell.hpp>
 #include <metashell/system_test/type.hpp>
 
 #include "test_metaprograms.hpp"
@@ -31,57 +31,54 @@ using pattern::_;
 
 JUST_TEST_CASE(test_mdb_next_without_evaluation)
 {
-  const auto r = run_metashell({command("#msh mdb"), command("next")});
+  metashell_instance mi;
+  mi.command("#msh mdb");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(error("Metaprogram not evaluated yet"), *i);
+  JUST_ASSERT_EQUAL(
+      error("Metaprogram not evaluated yet"), mi.command("next").front());
 }
 
 JUST_TEST_CASE(test_mdb_next_garbage_argument)
 {
-  const auto r = run_metashell({command(fibonacci_mp),
-                                command("#msh mdb int_<fib<2>::value>"),
-                                command("next asd")});
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb int_<fib<2>::value>");
 
-  auto i = r.begin() + 4;
-
-  JUST_ASSERT_EQUAL(error("Argument parsing failed"), *i);
+  JUST_ASSERT_EQUAL(
+      error("Argument parsing failed"), mi.command("next asd").front());
 }
 
 JUST_TEST_CASE(test_mdb_next_fib_from_root)
 {
-  const auto r = run_metashell({command(fibonacci_mp),
-                                command("#msh mdb int_<fib<10>::value>"),
-                                command("next")});
+  metashell_instance mi;
+  mi.command(fibonacci_mp);
+  mi.command("#msh mdb int_<fib<10>::value>");
 
-  auto i = r.begin() + 4;
-
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i++);
-  JUST_ASSERT_EQUAL(type("int_<55>"), *i++);
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Metaprogram finished")),
+       to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))},
+      mi.command("next"));
 }
 
 JUST_TEST_CASE(test_mdb_next_minus_1_multi_fib_from_after_step)
 {
-  const auto r = run_metashell({command(multi_fibonacci_mp),
-                                command("#msh mdb int_<multi_fib<10>::value>"),
-                                command("step 15"), command("next"),
-                                command("next"), command("next -1")});
+  metashell_instance mi;
+  mi.command(multi_fibonacci_mp);
+  mi.command("#msh mdb int_<multi_fib<10>::value>");
 
-  auto i = r.begin() + 4;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization), *i++);
+      frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization),
+      mi.command("step 15").front());
 
-  ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<5>"), _, _, instantiation_kind::memoization), *i++);
+      frame(type("multi_fib<5>"), _, _, instantiation_kind::memoization),
+      mi.command("next").front());
 
-  ++i;
   JUST_ASSERT_EQUAL(
-      frame(type("multi_fib<6>"), _, _, instantiation_kind::memoization), *i++);
+      frame(type("multi_fib<6>"), _, _, instantiation_kind::memoization),
+      mi.command("next").front());
 
-  ++i;
   JUST_ASSERT_EQUAL(frame(type("multi_fib<6>"), _, _,
                           instantiation_kind::template_instantiation),
-                    *i);
+                    mi.command("next -1").front());
 }

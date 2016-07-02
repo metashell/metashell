@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_PROCESS_OUTPUT_HPP
-#define METASHELL_DATA_PROCESS_OUTPUT_HPP
+#ifndef METASHELL_PROCESS_OUTPUT_FILE_HPP
+#define METASHELL_PROCESS_OUTPUT_FILE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,19 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exit_code_t.hpp>
+#include <metashell/process/file.hpp>
 
 #include <string>
 
 namespace metashell
 {
-  namespace data
+  namespace process
   {
-    struct process_output
+    class output_file : public file<output_file>
     {
-      exit_code_t exit_code;
-      std::string standard_output;
-      std::string standard_error;
+    public:
+      explicit output_file(fd_t fd_);
+
+      size_type write(const char* buff_, size_t count_);
+
+      size_type write(const std::string& s_);
     };
   }
 }

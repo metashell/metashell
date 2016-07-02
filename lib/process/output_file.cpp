@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "output_file.hpp"
+#include <metashell/process/output_file.hpp>
 
 #include <cassert>
 
 #ifndef _WIN32
-#include <fcntl.h>
 #include <unistd.h>
 #endif
 
@@ -54,13 +53,6 @@ namespace metashell
     output_file::size_type output_file::write(const std::string& s_)
     {
       return write(s_.c_str(), s_.length());
-    }
-
-    void output_file::close_on_exec()
-    {
-#ifndef _WIN32
-      fcntl(fd(), F_SETFD, fcntl(fd(), F_GETFD) | FD_CLOEXEC);
-#endif
     }
   }
 }

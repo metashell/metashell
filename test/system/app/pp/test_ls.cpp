@@ -16,8 +16,7 @@
 
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/cpp_code.hpp>
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 #include <metashell/system_test/util.hpp>
 
@@ -124,10 +123,10 @@ namespace
         args.push_back(p.string());
       }
 
-      const auto r = in_directory(cwd_).run_metashell(
-          {command("#msh ls " + ls_arg_)}, args);
+      const std::vector<json_string> r =
+          metashell_instance(args, cwd_).command("#msh ls " + ls_arg_);
 
-      auto i = r.begin() + 1;
+      auto i = r.begin();
 
       const auto ignored = directories_and_files_coming_from_test_arguments();
 

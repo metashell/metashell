@@ -1,5 +1,5 @@
-#ifndef METASHELL_PROCESS_OUTPUT_FILE_HPP
-#define METASHELL_PROCESS_OUTPUT_FILE_HPP
+#ifndef METASHELL_PROCESS_FILE_UTIL_HPP
+#define METASHELL_PROCESS_FILE_UTIL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "file.hpp"
-
-#include <string>
+#include <metashell/process/file.hpp>
+#include <metashell/process/output_file.hpp>
 
 namespace metashell
 {
   namespace process
   {
-    class output_file : public file<output_file>
+#ifndef _WIN32
+    template <class UniqueType>
+    void use_as(file<UniqueType>& file_, fd_t fd_)
     {
-    public:
-      explicit output_file(fd_t fd_);
+      dup2(file_.fd(), fd_);
+    }
+#endif
 
-      size_type write(const char* buff_, size_t count_);
+#ifdef _WIN32
+    template <class UniqueType>
+    fd_t copy_handle(const file<UniqueType>& file_)
+    {
+      const HANDLE cp = GetCurrentProcess();
+      HANDLE r = NULL;
+      if (DuplicateHandle(
+              cp, file_.fd(), cp, &r, 0, TRUE, DUPLICATE_SAME_ACCESS))
+      {
+        return r;
+      }
+      else
+      {
+        return NULL;
+      }
+    }
+#endif
 
-      size_type write(const std::string& s_);
-
-      void close_on_exec();
-    };
+    void close_on_exec(output_file& file_);
   }
 }
 

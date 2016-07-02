@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "fd_t.hpp"
+#include <metashell/process/fd_t.hpp>
 
 #include <boost/noncopyable.hpp>
 
@@ -49,7 +49,7 @@ namespace metashell
         }
       }
 
-      fd_t fd() { return _fd; }
+      fd_t fd() const { return _fd; }
 
       void close()
       {
@@ -61,26 +61,6 @@ namespace metashell
 #endif
         _fd = invalid_fd();
       }
-
-#ifndef _WIN32
-      void use_as(fd_t fd_) { dup2(_fd, fd_); }
-#endif
-
-#ifdef _WIN32
-      fd_t copy_handle() const
-      {
-        const HANDLE cp = GetCurrentProcess();
-        HANDLE r = NULL;
-        if (DuplicateHandle(cp, _fd, cp, &r, 0, TRUE, DUPLICATE_SAME_ACCESS))
-        {
-          return r;
-        }
-        else
-        {
-          return NULL;
-        }
-      }
-#endif
 
     private:
       fd_t _fd;

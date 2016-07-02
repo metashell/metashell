@@ -560,10 +560,10 @@ namespace
       const data::process_output output =
           run_clang(_clang_binary, {"-E"}, exp_);
 
-      const bool success = output.exit_code() == data::exit_code_t(0);
+      const bool success = output.exit_code == data::exit_code_t(0);
 
-      return data::result{success, success ? output.standard_output() : "",
-                          success ? "" : output.standard_error(), ""};
+      return data::result{success, success ? output.standard_output : "",
+                          success ? "" : output.standard_error, ""};
     }
 
     virtual data::result
@@ -600,13 +600,13 @@ namespace
                                           *tmp_exp_ + " > __metashell_v;\n") :
                         env_.get());
 
-      const bool success = output.exit_code() == data::exit_code_t(0);
+      const bool success = output.exit_code == data::exit_code_t(0);
 
-      return data::result{
-          success, success && tmp_exp_ ?
-                       get_type_from_ast_string(output.standard_output()) :
-                       "",
-          success ? "" : output.standard_error(), ""};
+      return data::result{success,
+                          success && tmp_exp_ ?
+                              get_type_from_ast_string(output.standard_output) :
+                              "",
+                          success ? "" : output.standard_error, ""};
     }
 
     virtual data::result validate_code(const std::string& src_,
@@ -629,10 +629,10 @@ namespace
         const data::process_output output =
             run_clang(_clang_binary, clang_args, src);
 
-        const bool accept = output.exit_code() == data::exit_code_t(0) &&
-                            output.standard_error().empty();
+        const bool accept = output.exit_code == data::exit_code_t(0) &&
+                            output.standard_error.empty();
 
-        return data::result{accept, "", output.standard_error(),
+        return data::result{accept, "", output.standard_error,
                             accept && config_.verbose ? src : ""};
       }
       catch (const std::exception& e)
@@ -680,9 +680,9 @@ namespace
 
       const data::process_output o = _clang_binary.run(clang_args, "");
 
-      METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code()));
+      METASHELL_LOG(_logger, "Exit code of clang: " + to_string(o.exit_code));
 
-      const std::string out = o.standard_output();
+      const std::string out = o.standard_output;
       out_.clear();
       const int prefix_len = completion_start.second.length();
       for_each_line(out, [&out_, &completion_start,
@@ -711,7 +711,7 @@ namespace
           "-iquote", ".", "-w", "-o", filename + ".pch", filename};
 
       const data::process_output o = _clang_binary.run(args, "");
-      const std::string err = o.standard_output() + o.standard_error();
+      const std::string err = o.standard_output + o.standard_error;
       if (!err.empty()
           // clang displays this even when "-w" is used. This can be ignored
           &&
@@ -727,14 +727,14 @@ namespace
       const data::process_output output =
           run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
 
-      if (output.exit_code() == data::exit_code_t(0))
+      if (output.exit_code == data::exit_code_t(0))
       {
-        return output.standard_output();
+        return output.standard_output;
       }
       else
       {
         throw std::runtime_error("Error getting list of macros: " +
-                                 output.standard_error());
+                                 output.standard_error);
       }
     }
 
@@ -754,7 +754,7 @@ namespace
       const boost::xpressive::sregex included_header =
           boost::xpressive::bos >> +boost::xpressive::as_xpr('.') >> ' ';
 
-      const just::lines::view lines(output.standard_error());
+      const just::lines::view lines(output.standard_error);
 
       const auto result =
           lines |
@@ -785,7 +785,7 @@ namespace
       const data::process_output o =
           run_clang(_clang_binary, {"-v", "-xc++", "-E"}, "");
 
-      const std::string s = o.standard_output() + o.standard_error();
+      const std::string s = o.standard_output + o.standard_error;
       return determine_clang_includes(just::lines::view_of(s));
     }
   };

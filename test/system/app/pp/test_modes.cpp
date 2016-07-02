@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/comment.hpp>
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <just/test.hpp>
 
@@ -24,40 +23,27 @@ using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_preprocessor_mode)
 {
-  const auto r = run_metashell({command("#msh preprocessor mode"),
-                                command("#msh preprocessed echo"),
-                                command("#msh show cpp_errors"),
-                                command("#msh metaprogram evaluation")});
+  metashell_instance mi;
+  mi.command("#msh preprocessor mode");
 
-  auto i = r.begin() + 6;
-
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("display preprocessed commands is on")}), *i);
-  ++i;
-  ++i;
-  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is off")}), *i);
-  ++i;
-  ++i;
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("evaluation of metaprograms is off")}), *i);
+  JUST_ASSERT_EQUAL(comment({paragraph("display preprocessed commands is on")}),
+                    mi.command("#msh preprocessed echo").front());
+  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is off")}),
+                    mi.command("#msh show cpp_errors").front());
+  JUST_ASSERT_EQUAL(comment({paragraph("evaluation of metaprograms is off")}),
+                    mi.command("#msh metaprogram evaluation").front());
 }
 
 JUST_TEST_CASE(test_metaprogram_mode)
 {
-  const auto r = run_metashell({command("#msh metaprogram mode"),
-                                command("#msh preprocessed echo"),
-                                command("#msh show cpp_errors"),
-                                command("#msh metaprogram evaluation")});
-
-  auto i = r.begin() + 5;
+  metashell_instance mi;
+  mi.command("#msh metaprogram mode");
 
   JUST_ASSERT_EQUAL(
-      comment({paragraph("display preprocessed commands is off")}), *i);
-  ++i;
-  ++i;
-  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is on")}), *i);
-  ++i;
-  ++i;
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("evaluation of metaprograms is on")}), *i);
+      comment({paragraph("display preprocessed commands is off")}),
+      mi.command("#msh preprocessed echo").front());
+  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is on")}),
+                    mi.command("#msh show cpp_errors").front());
+  JUST_ASSERT_EQUAL(comment({paragraph("evaluation of metaprograms is on")}),
+                    mi.command("#msh metaprogram evaluation").front());
 }

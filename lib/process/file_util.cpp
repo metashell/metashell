@@ -1,6 +1,3 @@
-#ifndef METASHELL_PROCESS_PIPE_HPP
-#define METASHELL_PROCESS_PIPE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,35 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "fd_t.hpp"
-#include "input_file.hpp"
-#include "output_file.hpp"
+#include "file_util.hpp"
+
+#ifndef _WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 
 namespace metashell
 {
   namespace process
   {
-    class pipe
+    void close_on_exec(output_file& file_)
     {
-    public:
-      class fds
-      {
-      public:
-        fds();
-
-        fd_t read_fd() const;
-        fd_t write_fd() const;
-
-      private:
-        fd_t _fd[2];
-      };
-
-      input_file input;
-      output_file output;
-
-      pipe(fds fds_ = fds());
-    };
+#ifndef _WIN32
+      fcntl(file_.fd(), F_SETFD, fcntl(file_.fd(), F_GETFD) | FD_CLOEXEC);
+#endif
+    }
   }
 }
-
-#endif

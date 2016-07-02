@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/system_test/json_generator.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/read_only_path.hpp>
-#include <metashell/system_test/run_metashell.hpp>
 #include <metashell/system_test/type.hpp>
 
 #include <just/temp.hpp>
@@ -64,16 +63,10 @@ JUST_TEST_CASE(test_include_from_cwd)
 
   write_file(temp / "foobar.hpp", "typedef int foo;\n");
 
-  const auto r = in_directory(temp).run_metashell(
-      {command("#include \"foobar.hpp\""), command("foo")});
+  metashell_instance mi({}, temp);
+  mi.command("#include \"foobar.hpp\"");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
+  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
 }
 
 JUST_TEST_CASE(test_adding_cwd_to_include_path)
@@ -84,16 +77,10 @@ JUST_TEST_CASE(test_adding_cwd_to_include_path)
   create_directory(temp / "foo");
   write_file(temp / "foo" / "bar.hpp", "typedef int foo;\n");
 
-  const auto r = in_directory(temp).run_metashell(
-      {command("#include <foo/bar.hpp>"), command("foo")}, {"--", "-I."});
+  metashell_instance mi({"--", "-I."}, temp);
+  mi.command("#include <foo/bar.hpp>");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
+  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
 }
 
 JUST_TEST_CASE(test_relative_include_directory)
@@ -104,16 +91,10 @@ JUST_TEST_CASE(test_relative_include_directory)
   create_directory(temp / "foo");
   write_file(temp / "foo" / "bar.hpp", "typedef int foo;\n");
 
-  const auto r = in_directory(temp).run_metashell(
-      {command("#include <bar.hpp>"), command("foo")}, {"--", "-Ifoo"});
+  metashell_instance mi({"--", "-Ifoo"}, temp);
+  mi.command("#include <bar.hpp>");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
+  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
 }
 
 JUST_TEST_CASE(test_metashell_definition_succeeds_when_cwd_is_not_writable)
@@ -122,16 +103,8 @@ JUST_TEST_CASE(test_metashell_definition_succeeds_when_cwd_is_not_writable)
 
   JUST_ASSERT(!can_create_file_in(read_only.path()));
 
-  const auto r =
-      in_directory(read_only.path())
-          .run_metashell({command("typedef int foo;"), command("foo")});
+  metashell_instance mi({}, read_only.path());
+  mi.command("typedef int foo;");
 
-  auto i = r.begin();
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
-  ++i;
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
 }

@@ -17,54 +17,26 @@
 #include <metashell/system_test/json_generator.hpp>
 #include <metashell/system_test/process_execution.hpp>
 
-#include <metashell/process/run.hpp>
-
 #include <iostream>
 
 using namespace metashell::system_test;
 
-process_execution::process_execution(std::vector<std::string> cmd_,
-                                     std::string stdin_,
-                                     metashell::data::process_output result_)
-  : _cmd(move(cmd_)), _stdin(move(stdin_)), _result(std::move(result_))
+process_execution::process_execution(std::vector<std::string> cmd_)
+  : _cmd(move(cmd_)), _stdin(), _stdout()
 {
 }
 
 const std::vector<std::string>& process_execution::cmd() const { return _cmd; }
 
 const std::string& process_execution::standard_input() const { return _stdin; }
+std::string& process_execution::standard_input() { return _stdin; }
 
 const std::string& process_execution::standard_output() const
 {
-  return _result.standard_output();
+  return _stdout;
 }
 
-const std::string& process_execution::standard_error() const
-{
-  return _result.standard_error();
-}
-
-metashell::data::exit_code_t process_execution::exit_code() const
-{
-  return _result.exit_code();
-}
-
-process_execution metashell::system_test::run(std::vector<std::string> cmd_,
-                                              std::string input_)
-{
-  return process_execution(
-      move(cmd_), move(input_), metashell::process::run(cmd_, input_));
-}
-
-process_execution
-metashell::system_test::run(std::vector<std::string> cmd_,
-                            const boost::filesystem::path& cwd_,
-                            std::string input_)
-{
-  return process_execution(
-      move(cmd_), move(input_),
-      metashell::process::run(cmd_, input_, cwd_.string()));
-}
+std::string& process_execution::standard_output() { return _stdout; }
 
 std::ostream& metashell::system_test::operator<<(std::ostream& out_,
                                                  const process_execution& e_)
@@ -74,9 +46,5 @@ std::ostream& metashell::system_test::operator<<(std::ostream& out_,
               << "Standard input: " << to_json(e_.standard_input()) << std::endl
               << std::endl
               << "Standard output: " << to_json(e_.standard_output())
-              << std::endl
-              << std::endl
-              << "Standard error: " << to_json(e_.standard_error()) << std::endl
-              << std::endl
-              << "Exit code: " << e_.exit_code() << std::endl;
+              << std::endl;
 }

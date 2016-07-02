@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/filename_set.hpp>
-#include <metashell/system_test/json_generator.hpp>
-#include <metashell/system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -54,20 +53,15 @@ namespace
     json_string run(const std::vector<boost::filesystem::path>& includes_ = {},
                     const std::string& args_ = "") const
     {
+      metashell_instance mi({"--", "-I" + _tmp.path()});
       std::vector<json_string> commands;
       for (const boost::filesystem::path& include : includes_)
       {
-        commands.push_back(command("#include <" + include.string() + ">"));
+        mi.command("#include <" + include.string() + ">");
       }
-      if (args_.empty())
-      {
-        commands.push_back(command("#msh included headers"));
-      }
-      else
-      {
-        commands.push_back(command("#msh included headers " + args_));
-      }
-      const auto r = run_metashell(commands, {"--", "-I" + _tmp.path()});
+      const std::vector<json_string> r =
+          args_.empty() ? mi.command("#msh included headers") :
+                          mi.command("#msh included headers " + args_);
 
       const auto i =
           std::find_if(r.begin(), r.end(), [](const json_string& s_) {
