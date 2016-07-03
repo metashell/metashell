@@ -25,21 +25,11 @@ namespace metashell
 {
   namespace data
   {
-    class process_output
+    struct process_output
     {
-    public:
-      process_output(exit_code_t exit_code_,
-                     const std::string& stdout_,
-                     const std::string& stderr_);
-
-      exit_code_t exit_code() const;
-      const std::string& standard_output() const;
-      const std::string& standard_error() const;
-
-    private:
-      exit_code_t _exit_code;
-      std::string _out;
-      std::string _err;
+      exit_code_t exit_code;
+      std::string standard_output;
+      std::string standard_error;
     };
   }
 }

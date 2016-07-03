@@ -14,53 +14,55 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/raw_text.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/raw_text.hpp>
 
 #include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_mdb_break_list_with_no_breakpoints)
 {
-  const auto r = run_metashell({command("#msh mdb"), command("break list")});
+  metashell_instance mi;
+  mi.command("#msh mdb");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"), *i);
+  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"),
+                    mi.command("break list").front());
 }
 
 JUST_TEST_CASE(test_mdb_break_list_with_one_breakpoint)
 {
-  const auto r = run_metashell(
-      {command("#msh mdb int"), command("rbreak i"), command("break list")});
+  metashell_instance mi;
+  mi.command("#msh mdb int");
+  mi.command("rbreak i");
 
-  auto i = r.begin() + 5;
-
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"i\")"), *i);
+  JUST_ASSERT_EQUAL(
+      raw_text("Breakpoint 1: regex(\"i\")"), mi.command("break list").front());
 }
 
 JUST_TEST_CASE(test_mdb_break_list_with_two_breakpoints)
 {
-  const auto r = run_metashell({command("#msh mdb int"), command("rbreak i"),
-                                command("rbreak n"), command("break list")});
+  metashell_instance mi;
+  mi.command("#msh mdb int");
+  mi.command("rbreak i");
+  mi.command("rbreak n");
 
-  auto i = r.begin() + 7;
-
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"i\")"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 2: regex(\"n\")"), *i);
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Breakpoint 1: regex(\"i\")")),
+       to_json_string(raw_text("Breakpoint 2: regex(\"n\")")),
+       to_json_string(prompt("(mdb)"))},
+      mi.command("break list"));
 }
 
 JUST_TEST_CASE(test_mdb_break_garbage_argument)
 {
-  const auto r = run_metashell({command("#msh mdb"), command("break asd")});
+  metashell_instance mi;
+  mi.command("#msh mdb");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(error("Call break like this: \"break list\""), *i);
+  JUST_ASSERT_EQUAL(error("Call break like this: \"break list\""),
+                    mi.command("break asd").front());
 }

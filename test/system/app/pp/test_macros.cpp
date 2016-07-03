@@ -14,35 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/cpp_code.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/cpp_code.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <pattern/regex.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 using pattern::regex;
 
 JUST_TEST_CASE(test_getting_defined_macro)
 {
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh macros")});
+  metashell_instance mi;
+  mi.command("#define FOO bar");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code(regex("#define FOO bar")), *i);
+  JUST_ASSERT_EQUAL(
+      cpp_code(regex("#define FOO bar")), mi.command("#msh macros").front());
 }
 
 JUST_TEST_CASE(test_getting_defined_macro_name)
 {
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh macro names")});
+  metashell_instance mi;
+  mi.command("#define FOO bar");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code(regex("FOO")), *i);
-  JUST_ASSERT_NOT_EQUAL(cpp_code(regex("#define")), *i);
+  const json_string macro_names = mi.command("#msh macro names").front();
+  JUST_ASSERT_EQUAL(cpp_code(regex("FOO")), macro_names);
+  JUST_ASSERT_NOT_EQUAL(cpp_code(regex("#define")), macro_names);
 }

@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/main.hpp>
+#include <metashell/system_test/main.hpp>
 
 int main(int argc_, char* argv_[])
 {
-  return metashell_system_test::main(argc_, argv_);
+  return metashell::system_test::main(argc_, argv_);
 }

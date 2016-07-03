@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/util.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
-std::string metashell_system_test::remove_prefix(const std::string& prefix_,
-                                                 const std::string& s_)
+std::string metashell::system_test::remove_prefix(const std::string& prefix_,
+                                                  const std::string& s_)
 {
   const auto p = try_to_remove_prefix(prefix_, s_);
   JUST_ASSERT(bool(p));
@@ -31,8 +31,8 @@ std::string metashell_system_test::remove_prefix(const std::string& prefix_,
 }
 
 boost::optional<std::string>
-metashell_system_test::try_to_remove_prefix(const std::string& prefix_,
-                                            const std::string& s_)
+metashell::system_test::try_to_remove_prefix(const std::string& prefix_,
+                                             const std::string& s_)
 {
   if (boost::algorithm::starts_with(s_, prefix_))
   {

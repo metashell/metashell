@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/cpp_code.hpp>
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/cpp_code.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {
@@ -31,75 +31,56 @@ namespace
 
 JUST_TEST_CASE(test_pp_empty)
 {
-  const auto r = run_metashell({command("#msh pp")});
+  metashell_instance mi;
 
-  auto i = r.begin();
+  const std::vector<json_string> resp = mi.command("#msh pp");
 
-  JUST_ASSERT(i != r.end());
-  ++i;
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(prompt(">"))}, resp);
 }
 
 JUST_TEST_CASE(test_pp_non_macro)
 {
-  const auto r = run_metashell({command("#msh pp int")});
-
-  auto i = r.begin() + 1;
-
-  JUST_ASSERT_EQUAL(cpp_code("int"), *i);
+  JUST_ASSERT_EQUAL(
+      cpp_code("int"), metashell_instance().command("#msh pp int").front());
 }
 
 JUST_TEST_CASE(test_pp_macro)
 {
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh pp FOO")});
+  metashell_instance mi;
+  mi.command("#define FOO bar");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code("bar"), *i);
+  JUST_ASSERT_EQUAL(cpp_code("bar"), mi.command("#msh pp FOO").front());
 }
 
 JUST_TEST_CASE(test_pp_exp_with_multiple_tokens)
 {
-  const auto r =
-      run_metashell({command("#define FOO bar"), command("#msh pp FOO int")});
+  metashell_instance mi;
+  mi.command("#define FOO bar");
 
-  auto i = r.begin() + 2;
-
-  JUST_ASSERT_EQUAL(cpp_code("bar int"), *i);
+  JUST_ASSERT_EQUAL(cpp_code("bar int"), mi.command("#msh pp FOO int").front());
 }
 
 JUST_TEST_CASE(test_pp_marker)
 {
-  const auto r = run_metashell({command("#msh pp " + marker())});
-
-  auto i = r.begin() + 1;
-
   JUST_ASSERT_EQUAL(
       error("Marker (" + marker() +
             ") found more than two times in preprocessed output."),
-      *i);
+      metashell_instance().command("#msh pp " + marker()).front());
 }
 
 JUST_TEST_CASE(test_pp_with_marker_defined)
 {
-  const auto r =
-      run_metashell({command("#define " + macro_in_marker() + " foo"),
-                     command("#msh pp " + marker())});
-
-  auto i = r.begin() + 2;
+  metashell_instance mi;
+  mi.command("#define " + macro_in_marker() + " foo");
 
   JUST_ASSERT_EQUAL(error("Marker (" + marker() +
                           ") not found in preprocessed output."
                           " Does it contain a macro that has been defined?"),
-                    *i);
+                    mi.command("#msh pp " + marker()).front());
 }
 
 JUST_TEST_CASE(test_pp_preprocessor_directive)
 {
-  const auto r = run_metashell({command("#msh pp #error foo")});
-
-  auto i = r.begin() + 1;
-
-  JUST_ASSERT_EQUAL(cpp_code("#error foo"), *i);
+  JUST_ASSERT_EQUAL(cpp_code("#error foo"),
+                    metashell_instance().command("#msh pp #error foo").front());
 }

@@ -14,147 +14,66 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/backtrace.hpp>
-#include <metashell_system_test/call_graph.hpp>
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/frame.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/raw_text.hpp>
-#include <metashell_system_test/run_metashell.hpp>
-#include <metashell_system_test/type.hpp>
+#include <metashell/system_test/backtrace.hpp>
+#include <metashell/system_test/call_graph.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/frame.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/raw_text.hpp>
+#include <metashell/system_test/type.hpp>
 
 #include "test_metaprograms.hpp"
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 using pattern::_;
 
 // If one of these TCs fail, then README modification might be needed
 
-// clang-format off
-
 JUST_TEST_CASE(test_readme_getting_started)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("template <int N> \\"),
-        command("struct fib \\"),
-        command("{ \\"),
-        command("  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; \\"),
-        command("};"),
+  metashell_instance mi;
 
-        command("template <> \\"),
-        command("struct fib<0> \\"),
-        command("{ \\"),
-        command("  static constexpr int value = 1; \\"),
-        command("};"),
+  mi.command("template <int N> \\");
+  mi.command("struct fib \\");
+  mi.command("{ \\");
+  mi.command(
+      "  static constexpr int value = fib<N - 1>::value + fib<N - 2>::value; "
+      "\\");
+  mi.command("};");
 
-        command("template <> \\"),
-        command("struct fib<1> \\"),
-        command("{ \\"),
-        command("  static constexpr int value = 1; \\"),
-        command("};"),
+  mi.command("template <> \\");
+  mi.command("struct fib<0> \\");
+  mi.command("{ \\");
+  mi.command("  static constexpr int value = 1; \\");
+  mi.command("};");
 
-        command("fib<6>::value"),
+  mi.command("template <> \\");
+  mi.command("struct fib<1> \\");
+  mi.command("{ \\");
+  mi.command("  static constexpr int value = 1; \\");
+  mi.command("};");
 
-        command("#include <boost/mpl/int.hpp>"),
-        command("boost::mpl::int_<fib<6>::value>"),
+  JUST_ASSERT_EQUAL(error(_), mi.command("fib<6>::value").front());
 
-        command("#include <metashell/scalar.hpp>"),
-        command("SCALAR(fib<6>::value)"),
+  mi.command("#include <boost/mpl/int.hpp>");
 
-        command("#include <boost/mpl/vector.hpp>"),
-        command("using namespace boost::mpl;"),
-        command("vector<int, double, char>"),
+  JUST_ASSERT_EQUAL(type("mpl_::int_<13>"),
+                    mi.command("boost::mpl::int_<fib<6>::value>").front());
 
-        command("#include <boost/mpl/push_front.hpp>"),
-        command("push_front<vector<int, double, char>, void>::type"),
+  mi.command("#include <metashell/scalar.hpp>");
 
-        command("#include <metashell/formatter.hpp>"),
-        command("push_front<vector<int, double, char>, void>::type"),
+  const json_string ic13 = mi.command("SCALAR(fib<6>::value)").front();
+  JUST_ASSERT(type("std::integral_constant<int, 13>") == ic13 ||
+              type("std::__1::integral_constant<int, 13>") == ic13);
 
-        command("#msh mdb"),
-        command("evaluate int_<fib<6>::value>"),
-        command("step 3"),
-        command("step -1"),
-        command("bt"),
-        command("ft"),
-        command("rbreak fib<3>"),
-        command("continue"),
-        command("c 2"),
-        command(""),
-        command("e"),
-        command("evaluate -full int_<fib<4>::value>"),
-        command("ft")
-      }
-    );
+  // clang-format off
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("...>"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(error(_), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("mpl_::int_<13>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT(
-      type("std::integral_constant<int, 13>") == *i ||
-      type("std::__1::integral_constant<int, 13>") == *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
+  mi.command("#include <boost/mpl/vector.hpp>");
+  mi.command("using namespace boost::mpl;");
   JUST_ASSERT_EQUAL(
     type(
       "boost::mpl::vector<"
@@ -164,14 +83,10 @@ JUST_TEST_CASE(test_readme_getting_started)
         " mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na"
       ">"
     ),
-    *i
+    mi.command("vector<int, double, char>").front()
   );
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
+  mi.command("#include <boost/mpl/push_front.hpp>");
   JUST_ASSERT_EQUAL(
     type(
       "boost::mpl::v_item<"
@@ -185,56 +100,40 @@ JUST_TEST_CASE(test_readme_getting_started)
         " 1"
       ">"
     ),
-    *i
+    mi.command("push_front<vector<int, double, char>, void>::type").front()
   );
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("boost_::mpl::vector<void, int, double, char>"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
+  // clang-format on
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
+  mi.command("#include <metashell/formatter.hpp>");
+  JUST_ASSERT_EQUAL(
+      type("boost_::mpl::vector<void, int, double, char>"),
+      mi.command("push_front<vector<int, double, char>, void>::type").front());
+
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(prompt("(mdb)"))}, mi.command("#msh mdb"));
+
+  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
+                    mi.command("evaluate int_<fib<6>::value>").front());
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
-    *i
-  );
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
+      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
+      mi.command("step 3").front());
 
   JUST_ASSERT_EQUAL(
-    frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-    *i
-  );
-  ++i;
+      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
+      mi.command("step -1").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
   JUST_ASSERT_EQUAL(
-    backtrace(
-      {
-        frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-        frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
-        frame(type("int_<fib<6>::value>"))
-      }
-    ),
-    *i
-  );
-  ++i;
+      backtrace({frame(type("fib<5>"), _, _,
+                       instantiation_kind::template_instantiation),
+                 frame(type("fib<6>"), _, _,
+                       instantiation_kind::template_instantiation),
+                 frame(type("int_<fib<6>::value>"))}),
+      mi.command("bt").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
+  // clang-format off
+
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -252,54 +151,41 @@ JUST_TEST_CASE(test_readme_getting_started)
         {frame( type("fib<3>"), _, _, instantiation_kind::memoization), 1, 0}
       }
     ),
-    *i
+    mi.command("ft").front()
   );
-  ++i;
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
+  // clang-format on
+
   JUST_ASSERT_EQUAL(
-    raw_text("Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
-    *i
-  );
-  ++i;
+      raw_text("Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
+      mi.command("rbreak fib<3>").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(
-    frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
-    *i
-  );
-  ++i;
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Breakpoint 1: regex(\"fib<3>\") reached")),
+       to_json_string(frame(
+           type("fib<3>"), _, _, instantiation_kind::template_instantiation)),
+       to_json_string(prompt("(mdb)"))},
+      mi.command("continue"));
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"fib<3>\") reached"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(frame(type("fib<3>"), _, _, instantiation_kind::memoization), *i);
-  ++i;
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Breakpoint 1: regex(\"fib<3>\") reached")),
+       to_json_string(
+           frame(type("fib<3>"), _, _, instantiation_kind::memoization)),
+       to_json_string(prompt("(mdb)"))},
+      mi.command("c 2"));
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("mpl_::int_<13>"), *i);
-  ++i;
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(raw_text("Metaprogram finished")),
+       to_json_string(type("mpl_::int_<13>")), to_json_string(prompt("(mdb)"))},
+      mi.command(""));
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i);
-  ++i;
+  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), mi.command("e").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i);
-  ++i;
+  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
+                    mi.command("evaluate -full int_<fib<4>::value>").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
+  // clang-format off
+
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -316,50 +202,25 @@ JUST_TEST_CASE(test_readme_getting_started)
         {frame( type("mpl_::int_<5>")), 1, 0}
       }
     ),
-    *i
+    mi.command("ft").front()
   );
-  ++i;
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text(""), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  // clang-format on
 }
 
 JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
 {
-  const auto r =
-    run_metashell(
-      {
-        command("#include <vector>"),
-        command("template<class T> void foo(const T& t) { /* ... */ }"),
-        command("#msh mdb"),
-        command("evaluate decltype(foo(13))"),
-        command("ft"),
-        command("eval decltype(foo(std::vector<int>{}))"),
-        command("rbreak foo"),
-        command("continue 2")
-      }
-    );
+  metashell_instance mi;
 
-  auto i = r.begin();
+  mi.command("#include <vector>");
+  mi.command("template<class T> void foo(const T& t) { /* ... */ }");
+  mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
+  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
+                    mi.command("evaluate decltype(foo(13))").front());
 
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i);
-  ++i;
+  // clang-format off
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -369,64 +230,36 @@ JUST_TEST_CASE(test_readme_how_to_template_argument_deduction)
         {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
       }
     ),
-    *i
-  );
-  ++i;
+  mi.command("ft").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"), *i);
-  ++i;
+  // clang-format on
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
   JUST_ASSERT_EQUAL(
-    raw_text("Breakpoint \"foo\" will stop the execution on 2 locations"),
-    *i
-  );
-  ++i;
+      raw_text("Metaprogram started"),
+      mi.command("eval decltype(foo(std::vector<int>{}))").front());
 
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"foo\") reached"), *i);
-  ++i;
+  JUST_ASSERT_EQUAL(
+      raw_text("Breakpoint \"foo\" will stop the execution on 2 locations"),
+      mi.command("rbreak foo").front());
+
+  const std::vector<json_string> cont = mi.command("continue 2");
+
+  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"foo\") reached"), cont[0]);
   JUST_ASSERT(
-    frame(
-      type("foo<std::vector<int, std::allocator<int> > >"),
-      _,
-      _,
-      instantiation_kind::template_instantiation
-    ) == *i
-    ||
-    frame(
-      type("foo<std::__1::vector<int, std::__1::allocator<int> > >"),
-      _,
-      _,
-      instantiation_kind::template_instantiation
-    ) == *i
-  );
-  ++i;
-
-  JUST_ASSERT_EQUAL(prompt("(mdb)"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(raw_text(""), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+      frame(type("foo<std::vector<int, std::allocator<int> > >"), _, _,
+            instantiation_kind::template_instantiation) == cont[1] ||
+      frame(type("foo<std::__1::vector<int, std::__1::allocator<int> > >"), _,
+            _, instantiation_kind::template_instantiation) == cont[1]);
 }
 
-JUST_TEST_CASE(test_readme_how_to_sfinae) {
-  const auto r =
-    run_metashell(
-      {
-        command(make_unique_sfinae_mp),
-        command("#msh mdb decltype(make_unique<int>(15))"),
-        command("ft")
-      }
-    );
+JUST_TEST_CASE(test_readme_how_to_sfinae)
+{
+  metashell_instance mi;
 
-  auto i = r.begin() + 4;
+  // clang-format off
 
+  mi.command(make_unique_sfinae_mp);
+  mi.command("#msh mdb decltype(make_unique<int>(15))");
   JUST_ASSERT_EQUAL(
     call_graph(
       {
@@ -444,6 +277,7 @@ JUST_TEST_CASE(test_readme_how_to_sfinae) {
         {frame( type("_std::unique_ptr<int>"), _, _, instantiation_kind::template_instantiation), 1, 0}
       }
     ),
-    *i
-  );
+  mi.command("ft").front());
+
+  // clang-format on
 }

@@ -14,47 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/comment.hpp>
-#include <metashell_system_test/prompt.hpp>
+#include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/prompt.hpp>
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_enabling_and_disabling_precompiled_headers)
 {
-  const auto r = run_metashell({command("#msh precompiled_headers"),
-                                command("#msh precompiled_headers off"),
-                                command("#msh precompiled_headers"),
-                                command("#msh precompiled_headers on"),
-                                command("#msh precompiled_headers")});
+  const std::vector<json_string> is_on{
+      to_json_string(comment({paragraph("precompiled header usage is on")})),
+      to_json_string(prompt(">"))};
+  const std::vector<json_string> is_off{
+      to_json_string(comment({paragraph("precompiled header usage is off")})),
+      to_json_string(prompt(">"))};
 
-  const comment is_on({paragraph("precompiled header usage is on")});
-  const comment is_off({paragraph("precompiled header usage is off")});
+  metashell_instance mi;
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(is_on, *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(is_off, *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(is_off, *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(is_on, *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(is_on, *i);
-  ++i;
+  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
+  JUST_ASSERT_EQUAL_CONTAINER(
+      is_off, mi.command("#msh precompiled_headers off"));
+  JUST_ASSERT_EQUAL_CONTAINER(is_off, mi.command("#msh precompiled_headers"));
+  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers on"));
+  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
+  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers on"));
+  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
 }

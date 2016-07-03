@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/comment.hpp>
-#include <metashell_system_test/cpp_code.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
-#include <metashell_system_test/system_test_config.hpp>
-#include <metashell_system_test/util.hpp>
+#include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/cpp_code.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/system_test_config.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
@@ -35,7 +34,7 @@
 #include <numeric>
 #include <vector>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 namespace
 {
@@ -124,10 +123,10 @@ namespace
         args.push_back(p.string());
       }
 
-      const auto r = in_directory(cwd_).run_metashell(
-          {command("#msh ls " + ls_arg_)}, args);
+      const std::vector<json_string> r =
+          metashell_instance(args, cwd_).command("#msh ls " + ls_arg_);
 
-      auto i = r.begin() + 1;
+      auto i = r.begin();
 
       const auto ignored = directories_and_files_coming_from_test_arguments();
 

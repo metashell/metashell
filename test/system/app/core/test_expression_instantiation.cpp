@@ -14,17 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/type.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/type.hpp>
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/path_builder.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/path_builder.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 using pattern::_;
 
@@ -33,23 +32,13 @@ JUST_TEST_CASE(test_instantiating_good_expression)
   const std::string ie_hpp =
       path_builder() / "metashell" / "instantiate_expression.hpp";
 
-  const auto r = run_metashell(
-      {command("#include <" + ie_hpp + ">"),
-       command("template <class T> T mod2(T t_) { return t_ % 2; }"),
-       command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )")});
+  metashell_instance mi;
+  mi.command("#include <" + ie_hpp + ">");
+  mi.command("template <class T> T mod2(T t_) { return t_ % 2; }");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("metashell::expression_instantiated<true>"), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(
+      type("metashell::expression_instantiated<true>"),
+      mi.command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )").front());
 }
 
 JUST_TEST_CASE(test_instantiating_expression_that_generates_an_error)
@@ -57,23 +46,13 @@ JUST_TEST_CASE(test_instantiating_expression_that_generates_an_error)
   const std::string ie_hpp =
       path_builder() / "metashell" / "instantiate_expression.hpp";
 
-  const auto r = run_metashell(
-      {command("#include <" + ie_hpp + ">"), command("#include <string>"),
-       command("template <class T> T mod2(T t_) { return t_ % 2; }"),
-       command("METASHELL_INSTANTIATE_EXPRESSION( mod2(std::string()) )")});
+  metashell_instance mi;
+  mi.command("#include <" + ie_hpp + ">");
+  mi.command("#include <string>");
+  mi.command("template <class T> T mod2(T t_) { return t_ % 2; }");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(error(_), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(
+      error(_),
+      mi.command("METASHELL_INSTANTIATE_EXPRESSION( mod2(std::string()) )")
+          .front());
 }

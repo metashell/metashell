@@ -345,7 +345,7 @@ namespace just
 
         _assert_msg(
           s.str(),
-          equal(a_.begin(), a_.end(), b_.begin(), b_.end())
+          ::just::test::equal(a_.begin(), a_.end(), b_.begin(), b_.end())
         );
       }
     };

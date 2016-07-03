@@ -14,19 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/comment.hpp>
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_echoing)
 {
-  const auto r = run_metashell({command("#msh echo foo bar")});
-
-  auto i = r.begin() + 1;
-
-  JUST_ASSERT_EQUAL(comment({paragraph("foo bar")}), *i);
+  JUST_ASSERT_EQUAL(comment({paragraph("foo bar")}),
+                    metashell_instance().command("#msh echo foo bar").front());
 }

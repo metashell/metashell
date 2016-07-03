@@ -14,86 +14,61 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/comment.hpp>
-#include <metashell_system_test/error.hpp>
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/type.hpp>
+#include <metashell/system_test/comment.hpp>
+#include <metashell/system_test/error.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/type.hpp>
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 using pattern::_;
 
 JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
 {
-  const auto r = run_metashell(
-      {command("typedef int x;"), command("#pragma metashell evaluate x")});
+  metashell_instance mi;
+  mi.command("typedef int x;");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("You don't need the evaluate add pragma to evaluate "
-                         "this metaprogram."
-                         " The following command does this as well:"),
-               paragraph("x")}),
-      *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(type("int")),
+       to_json_string(comment(
+           {paragraph("You don't need the evaluate add pragma to evaluate "
+                      "this metaprogram."
+                      " The following command does this as well:"),
+            paragraph("x")})),
+       to_json_string(prompt(">"))},
+      mi.command("#pragma metashell evaluate x"));
 }
 
 JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
 {
-  const auto r =
-      run_metashell({command("#pragma metashell evaluate nonexisting_type")});
+  metashell_instance mi;
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(error(_), *i);
-  ++i;
-
+  const std::vector<json_string> re =
+      mi.command("#pragma metashell evaluate nonexisting_type");
+  JUST_ASSERT_EQUAL(error(_), re[0]);
   JUST_ASSERT_EQUAL(
       comment({paragraph("You don't need the evaluate add pragma to evaluate "
                          "this metaprogram."
                          " The following command does this as well:"),
                paragraph("nonexisting_type")}),
-      *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+      re[1]);
 }
 
 JUST_TEST_CASE(test_pragma_evaluate_warns)
 {
-  const auto r = run_metashell({command("#pragma metashell evaluate int")});
+  metashell_instance mi;
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("int"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("You don't need the evaluate add pragma to evaluate "
-                         "this metaprogram."
-                         " The following command does this as well:"),
-               paragraph("int")}),
-      *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(type("int")),
+       to_json_string(comment(
+           {paragraph("You don't need the evaluate add pragma to evaluate "
+                      "this metaprogram."
+                      " The following command does this as well:"),
+            paragraph("int")})),
+       to_json_string(prompt(">"))},
+      mi.command("#pragma metashell evaluate int"));
 }

@@ -14,30 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_disable_metaprogram_evaluation)
 {
-  const auto r = run_metashell(
-      {command("#msh metaprogram evaluation off"), command("int")});
-
-  auto i = r.begin() + 3;
-
-  JUST_ASSERT(i == r.end());
+  metashell_instance mi;
+  mi.command("#msh metaprogram evaluation off");
+  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(prompt(">"))}, mi.command("int"));
 }
 
 JUST_TEST_CASE(
     test_no_errors_for_invalid_metaprograms_when_evaluation_is_disabled)
 {
-  const auto r = run_metashell(
-      {command("#msh metaprogram evaluation off"), command("void int")});
-
-  auto i = r.begin() + 3;
-
-  JUST_ASSERT(i == r.end());
+  metashell_instance mi;
+  mi.command("#msh metaprogram evaluation off");
+  JUST_ASSERT_EQUAL_CONTAINER(
+      {to_json_string(prompt(">"))}, mi.command("void int"));
 }

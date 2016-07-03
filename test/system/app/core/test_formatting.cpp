@@ -14,95 +14,69 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/prompt.hpp>
-#include <metashell_system_test/type.hpp>
+#include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/type.hpp>
 
-#include <metashell_system_test/json_generator.hpp>
-#include <metashell_system_test/path_builder.hpp>
-#include <metashell_system_test/run_metashell.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/path_builder.hpp>
 
 #include <just/test.hpp>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 JUST_TEST_CASE(test_basic_formatting)
 {
-  const auto r = run_metashell({command("namespace metashell"
-                                        "{"
-                                        "template <>"
-                                        "struct format<int>"
-                                        "{"
-                                        "typedef double type;"
-                                        "};"
-                                        "}"),
-                                command("int")});
+  metashell_instance mi;
+  mi.command(
+      "namespace metashell"
+      "{"
+      "template <>"
+      "struct format<int>"
+      "{"
+      "typedef double type;"
+      "};"
+      "}");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("double"), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(type("double"), mi.command("int").front());
 }
 
 JUST_TEST_CASE(test_tag_dispatched_formatting)
 {
-  const auto r = run_metashell({command("struct foo_tag {};"
+  metashell_instance mi;
+  mi.command(
+      "struct foo_tag {};"
 
-                                        "struct foo"
-                                        "{"
-                                        "typedef foo_tag tag;"
-                                        "};"
+      "struct foo"
+      "{"
+      "typedef foo_tag tag;"
+      "};"
 
-                                        "namespace metashell"
-                                        "{"
-                                        "template <>"
-                                        "struct format_impl<foo_tag>"
-                                        "{"
-                                        "typedef format_impl type;"
+      "namespace metashell"
+      "{"
+      "template <>"
+      "struct format_impl<foo_tag>"
+      "{"
+      "typedef format_impl type;"
 
-                                        "template <class T>"
-                                        "struct apply"
-                                        "{"
-                                        "typedef char type;"
-                                        "};"
-                                        "};"
-                                        "}"),
-                                command("foo")});
+      "template <class T>"
+      "struct apply"
+      "{"
+      "typedef char type;"
+      "};"
+      "};"
+      "}");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(type("char"), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(type("char"), mi.command("foo").front());
 }
 
 JUST_TEST_CASE(test_formatting_disabled)
 {
-  const auto r = run_metashell(
-      {command("template <class... Ts> struct template_with_a_long_name {};"),
-       command("template_with_a_long_name<int, double, char>")});
+  metashell_instance mi;
+  mi.command("template <class... Ts> struct template_with_a_long_name {};");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(type("template_with_a_long_name<int, double, char>"), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(
+      type("template_with_a_long_name<int, double, char>"),
+      mi.command("template_with_a_long_name<int, double, char>").front());
 }
 
 JUST_TEST_CASE(test_nested_mpl_vector_formatting)
@@ -110,19 +84,10 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
   const std::string vector_hpp =
       path_builder() / "metashell" / "formatter" / "vector.hpp";
 
-  const auto r =
-      run_metashell({command("#include <" + vector_hpp + ">"),
-                     command("boost::mpl::vector<boost::mpl::vector<int>>")});
+  metashell_instance mi;
+  mi.command("#include <" + vector_hpp + ">");
 
-  auto i = r.begin();
-
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-  JUST_ASSERT_EQUAL(prompt(">"), *i);
-  ++i;
-
-  JUST_ASSERT_EQUAL(type("boost_::mpl::vector<boost_::mpl::vector<int> >"), *i);
-  ++i;
-
-  JUST_ASSERT(i == r.end());
+  JUST_ASSERT_EQUAL(
+      type("boost_::mpl::vector<boost_::mpl::vector<int> >"),
+      mi.command("boost::mpl::vector<boost::mpl::vector<int>>").front());
 }

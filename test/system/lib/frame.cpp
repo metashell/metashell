@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell_system_test/frame.hpp>
+#include <metashell/system_test/frame.hpp>
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -22,7 +22,7 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell_system_test;
+using namespace metashell::system_test;
 
 frame::frame(const type& name_) : _name(name_) {}
 
@@ -44,13 +44,13 @@ instantiation_kind frame::kind() const
   return *_kind;
 }
 
-std::ostream& metashell_system_test::operator<<(std::ostream& o_,
-                                                const frame& f_)
+std::ostream& metashell::system_test::operator<<(std::ostream& o_,
+                                                 const frame& f_)
 {
   return o_ << to_json_string(f_);
 }
 
-json_string metashell_system_test::to_json_string(const frame& f_)
+json_string metashell::system_test::to_json_string(const frame& f_)
 {
   rapidjson::StringBuffer buff;
   rapidjson::Writer<rapidjson::StringBuffer> w(buff);
@@ -75,8 +75,8 @@ json_string metashell_system_test::to_json_string(const frame& f_)
   return json_string(buff.GetString());
 }
 
-bool metashell_system_test::operator==(const frame& frame_,
-                                       const json_string& s_)
+bool metashell::system_test::operator==(const frame& frame_,
+                                        const json_string& s_)
 {
   rapidjson::Document d;
   d.Parse(s_.get().c_str());
