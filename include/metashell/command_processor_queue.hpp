@@ -19,6 +19,8 @@
 
 #include <metashell/iface/command_processor.hpp>
 
+#include <functional>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -27,8 +29,11 @@ namespace metashell
   class command_processor_queue
   {
   public:
+    typedef std::function<void(iface::displayer&)> cleanup_function;
+
     bool empty() const;
-    void push(std::unique_ptr<iface::command_processor> item_);
+    void push(std::unique_ptr<iface::command_processor> item_,
+              cleanup_function cleanup_ = cleanup_function());
     void pop(iface::displayer& displayer_);
     void pop_stopped_processors(iface::displayer& displayer_);
 
@@ -43,7 +48,9 @@ namespace metashell
 
   private:
     iface::history* _history; // not owning
-    std::vector<std::unique_ptr<iface::command_processor>> _items;
+    std::vector<
+        std::pair<std::unique_ptr<iface::command_processor>, cleanup_function>>
+        _items;
   };
 }
 

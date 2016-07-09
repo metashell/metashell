@@ -29,6 +29,7 @@ target_link_libraries(metashell_mdb_system_test
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 
 # Boost
 target_link_libraries(metashell_mdb_system_test

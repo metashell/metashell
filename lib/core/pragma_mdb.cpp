@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/disable_precompiled_header_guard.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
@@ -55,11 +54,26 @@ void pragma_mdb::run(const data::command::iterator&,
 
   std::string args = tokens_to_string(args_begin_, args_end_);
 
-  auto g = disable_precompiled_header_guard::create(_shell);
+  command_processor_queue::cleanup_function restore;
+  if (_shell.using_precompiled_headers())
+  {
+    _shell.using_precompiled_headers(false);
+    shell* sh = &_shell;
+    restore = [sh](iface::displayer& displayer_) {
+      try
+      {
+        sh->using_precompiled_headers(true);
+      }
+      catch (const std::exception& e_)
+      {
+        displayer_.show_error(e_.what());
+      }
+    };
+  }
 
   std::unique_ptr<mdb_shell> sh(
       new mdb_shell(_shell.get_config(), _shell.env(), _shell.engine(),
-                    _shell.env_path(), _mdb_temp_dir, _logger, std::move(g)));
+                    _shell.env_path(), _mdb_temp_dir, _logger));
 
   if (_shell.get_config().splash_enabled)
   {
@@ -71,5 +85,5 @@ void pragma_mdb::run(const data::command::iterator&,
     sh->command_evaluate(args, displayer_);
   }
 
-  _cpq->push(move(sh));
+  _cpq->push(move(sh), move(restore));
 }
