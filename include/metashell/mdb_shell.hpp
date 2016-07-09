@@ -31,7 +31,6 @@
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/command_processor.hpp>
-#include <metashell/iface/destroyable.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
@@ -50,9 +49,7 @@ namespace metashell
               iface::engine& engine_,
               const boost::filesystem::path& env_path_,
               const boost::filesystem::path& mdb_temp_dir_,
-              logger* logger_,
-              std::unique_ptr<iface::destroyable> keep_alive_with_shell_ =
-                  std::unique_ptr<iface::destroyable>());
+              logger* logger_);
 
     virtual std::string prompt() const override;
     virtual bool stopped() const override;
@@ -153,8 +150,6 @@ namespace metashell
     iface::engine& _engine;
     boost::filesystem::path _env_path;
     boost::filesystem::path _mdb_temp_dir;
-
-    std::unique_ptr<iface::destroyable> _keep_alive_with_shell;
   };
 }
 

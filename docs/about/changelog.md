@@ -51,6 +51,8 @@
 
 * Fixes
     * The temporary `code_complete.cpp` has been removed from the include path.
+    * Leaving MDB does not crash when included file becomes invalid before
+      returning to the normal shell.
 
 * Documentation updates
     * New "How to..." section about debugging SFINAE.
