@@ -35,6 +35,8 @@ namespace metashell
     virtual boost::filesystem::path directory_of_executable() override;
 
   private:
+    boost::filesystem::path path_of_executable();
+
     std::string _argv0;
   };
 }
