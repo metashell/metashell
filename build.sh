@@ -51,12 +51,21 @@ echo "Platform: ${PLATFORM}"
 # Build Templight
 if [ "${NO_TEMPLIGHT}" = "" ]
 then
+  if [ "${PLATFORM}" == "opensuse" ]
+  then
+    # The default Templight include path seems to be empty on Tumbleweed
+    C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc g++ -f shell)"
+  else
+    C_INCLUDE_DIRS=""
+  fi
+
   cd 3rd
     cd templight
       mkdir -p build; cd build
         cmake ../llvm \
           -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
           -DLLVM_ENABLE_TERMINFO=OFF \
+          "${C_INCLUDE_DIRS}" \
           && make templight -j${BUILD_THREADS}
       cd ..
     cd ..

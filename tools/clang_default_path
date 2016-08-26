@@ -7,6 +7,7 @@ Supported options:
  -g, --gcc <path>       The binary to use as gcc or clang (default: clang)
  -h, --help             Display this help message
  -t, --type sys|normal  The type of include path to query (default: sys)
+ -f, --format cpp|shell The output format (default: cpp)
 
 Depending on its argument, the script queries the default
 (system) include path.
@@ -80,8 +81,8 @@ def main():
     try:
         opts, _ = getopt.getopt(
             sys.argv[1:],
-            'ht:g:',
-            ['help', 'type=', 'gcc=']
+            'ht:g:f:',
+            ['help', 'type=', 'gcc=', 'format=']
         )
     except getopt.error:
         msg = sys.exc_info()[1]
@@ -91,6 +92,7 @@ def main():
 
     inc_type = 'sys'
     gcc = 'clang'
+    out_format = 'cpp'
 
     for opt, val in opts:
         if opt in ('-t', '--type'):
@@ -104,12 +106,19 @@ def main():
             sys.exit(0)
         elif opt in('-g', '--gcc'):
             gcc = val
+        elif opt in('-f', '--format'):
+            out_format = val
 
     try:
         (normal, system) = get_standard_gcc_includes(gcc)
         paths = system if inc_type == 'sys' else normal
-        print '\n'.join([', {0}'.format(json.dumps(s)) for s in paths])
-        print ''
+        if out_format == 'cpp':
+            print '\n'.join([', {0}'.format(json.dumps(s)) for s in paths])
+            print ''
+        elif out_format == 'shell':
+            print ':'.join(paths)
+        else:
+            print 'Unknown output format: {0}'.format(out_format)
     except:
         sys.stderr.write('Error: %s\n' % (sys.exc_info()[1]))
 
