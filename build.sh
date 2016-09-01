@@ -83,6 +83,16 @@ mkdir -p bin; cd bin
   then
     cpack
     make system_test_zip
+
+    cd ../3rd/boost
+      zip -qr ../../bin/system_test_boost.zip \
+        include/boost/config.hpp \
+        include/boost/config \
+        include/boost/detail \
+        include/boost/mpl \
+        include/boost/preprocessor \
+        include/boost/type_traits
+    cd ../../bin
   else
     echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
   fi
