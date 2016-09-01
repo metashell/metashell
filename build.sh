@@ -82,6 +82,7 @@ mkdir -p bin; cd bin
   if [ "${NO_INSTALLER}" = "" ]
   then
     cpack
+    make system_test_zip
   else
     echo "Skipping installer generation, because \$NO_INSTALLER = \"${NO_INSTALLER}\""
   fi

@@ -16,5 +16,26 @@
 
 include(MetashellSystemTest)
 
-subdirs(core pp mdb)
+set(SYSTEM_TEST_TARGETS )
+set(SYSTEM_TEST_FILES )
+foreach(T core pp mdb)
+  add_subdirectory(${T})
+
+  set(TARGET metashell_${T}_system_test)
+
+  list(APPEND SYSTEM_TEST_TARGETS ${TARGET})
+  list(APPEND SYSTEM_TEST_FILES "$<TARGET_FILE:${TARGET}>")
+endforeach(T)
+
+set(
+  SYSTEM_TEST_ARCHIVE
+  "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_system_test_${MAJOR_VERSION}.${MINOR_VERSION}.${CPACK_PACKAGE_VERSION_PATCH}${METASHELL_PACKAGE_PLATFORM}_${CMAKE_SYSTEM_PROCESSOR}.tar.gz"
+)
+
+add_custom_target(
+  system_test_zip DEPENDS ${SYSTEM_TEST_TARGETS}
+  COMMAND
+    ${CMAKE_COMMAND} -E
+    tar "cfz" "${SYSTEM_TEST_ARCHIVE}" ${SYSTEM_TEST_FILES}
+)
 
