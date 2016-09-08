@@ -60,7 +60,7 @@ ubuntu)
   cd ..
   ;;
 debian)
-  sudo apt-get -y install git g++ cmake libreadline-dev
+  sudo apt-get -y install git g++ cmake libreadline-dev zip
   ;;
 freebsd)
   pkg install -y git cmake gcc
