@@ -219,7 +219,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       OR ("${PLATFORM_VERSION}" STREQUAL "7.7")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "8.1")
+    elseif (
+      ("${PLATFORM_VERSION}" STREQUAL "8.1")
+      OR ("${PLATFORM_VERSION}" STREQUAL "8.5")
+    )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
     else()
       message(
