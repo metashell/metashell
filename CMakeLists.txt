@@ -160,8 +160,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
     set(
       CPACK_NSIS_MENU_LINKS
       "bin/metashell.exe" "Metashell"
-      "https://github.com/sabel83/metashell#metashell" "Metashell website"
-      "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
+      "http://metashell.org" "Metashell website"
+      "http://metashell.org/about/demo" "Metashell online demo"
     )
   endif()
 
