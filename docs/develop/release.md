@@ -7,7 +7,9 @@ Here are the steps of creating a release of Metashell:
 * Download and build the code following the
   [simple build steps](getting_metashell/build/index.html) on all
   [supported platforms](getting_metashell/platforms/index.html).
-    * Note that Methasell supports 32 and 64 bit on all Linux platforms.
+    * Note that 32 and 64 bit builds are provided on most Linux platforms
+      (On OpenSuSE only
+      [64 bit is supported](https://forums.opensuse.org/showthread.php/510584-Missing-32-bit-version-of-new-openSUSE-42-1-)).
     * **Ubuntu**: build for the latest version and the latest LTS (they might be
       the same)
     * **Debian**: build for the latest stable version
