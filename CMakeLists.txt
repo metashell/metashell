@@ -160,8 +160,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
     set(
       CPACK_NSIS_MENU_LINKS
       "bin/metashell.exe" "Metashell"
-      "https://github.com/sabel83/metashell#metashell" "Metashell website"
-      "http://abel.web.elte.hu/shell/metashell.html" "Metashell online demo"
+      "http://metashell.org" "Metashell website"
+      "http://metashell.org/about/demo" "Metashell online demo"
     )
   endif()
 
@@ -205,6 +205,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       OR ("${PLATFORM_VERSION}" STREQUAL "15.04")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
+    elseif ("${PLATFORM_VERSION}" STREQUAL "16.04")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-5-dev")
     else()
       message(
         WARNING
@@ -219,7 +221,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       OR ("${PLATFORM_VERSION}" STREQUAL "7.7")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6-4.7-dev")
-    elseif ("${PLATFORM_VERSION}" STREQUAL "8.1")
+    elseif (
+      ("${PLATFORM_VERSION}" STREQUAL "8.1")
+      OR ("${PLATFORM_VERSION}" STREQUAL "8.5")
+    )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
     else()
       message(

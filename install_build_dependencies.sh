@@ -47,7 +47,7 @@ opensuse)
     termcap
   ;;
 ubuntu)
-  sudo apt-get -y install git g++ cmake libreadline-dev python-pip
+  sudo apt-get -y install git g++ cmake libreadline-dev python-pip zip
   sudo pip install pep8 pylint gitpython daemonize mkdocs
   UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
@@ -60,7 +60,7 @@ ubuntu)
   cd ..
   ;;
 debian)
-  sudo apt-get -y install git g++ cmake libreadline-dev
+  sudo apt-get -y install git g++ cmake libreadline-dev zip
   ;;
 freebsd)
   pkg install -y git cmake gcc
