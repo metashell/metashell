@@ -5,7 +5,7 @@ This section presents how to use Metashell to do simple debugging.
 ## Trying Metashell online
 
 You can try Metashell in your browser without installing anything. You can find
-an online demo [here](about/demo/index.html).
+an online demo [here](../about/demo/index.html).
 
 ## Evaluating simple expressions
 

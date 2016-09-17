@@ -2,7 +2,7 @@
 
 This guide helps you set up a development environment for working on Metashell.
 If you'd like to build it quickly, you can use the
-[simple build steps](getting_metashell/build/index.html).
+[simple build steps](../getting_metashell/build/index.html).
 
 ## Linux, FreeBSD and OpenBSD
 
