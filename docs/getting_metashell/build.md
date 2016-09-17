@@ -2,7 +2,7 @@
 
 This guide helps you build Metashell quickly. If you would like to work on it
 (make changes, fix bugs, etc), you should take a look at the [detailed
-build steps](develop/build/index.html).
+build steps](../develop/build/index.html).
 
 ## Linux, FreeBSD and OpenBSD
 
