@@ -1,6 +1,6 @@
 # Changelog
 
-## Not in any release yet
+## Version 3.0.0
 
 * New features
     * Add pager for MDB commands which tend to have long output

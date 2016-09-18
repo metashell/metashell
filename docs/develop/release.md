@@ -2,6 +2,8 @@
 
 Here are the steps of creating a release of Metashell:
 
+* Change `Not in any release yet` to `Version <version>` in
+  `docs/about/changelog.md`
 * Set the release number in `CMakeLists.txt` in the source root. It is defined
   by the `MAJOR_VERSION`, `MINOR_VERSION` and `PATCH_VERSION` variables.
 * Download and build the code following the
