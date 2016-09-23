@@ -35,7 +35,8 @@ fedora)
     gcc-c++ \
     cmake \
     readline-devel \
-    rpm-build
+    rpm-build \
+    python
   ;;
 opensuse)
   sudo zypper --non-interactive install \

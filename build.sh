@@ -51,7 +51,7 @@ echo "Platform: ${PLATFORM}"
 # Build Templight
 if [ "${NO_TEMPLIGHT}" = "" ]
 then
-  if [ "${PLATFORM}" = "opensuse" ]
+  if [ "${PLATFORM}" = "opensuse" ] || [ "${PLATFORM}" == "fedora" ]
   then
     # The default Templight include path seems to be empty on Tumbleweed
     C_INCLUDE_DIRS="-DC_INCLUDE_DIRS=$(tools/clang_default_path --gcc g++ -f shell)"
