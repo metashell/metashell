@@ -25,7 +25,7 @@ build steps](../develop/build/index.html).
 * Download the source code from [github](http://github.com/metashell/metashell).
 * Install the dependent tools:
     * CMake
-    * XCode
+    * XCode (with Command Line Developer Tools installed)
     * The appropriate version of "Auxiliary tools for Xcode" which contains the
       PackageMaker compiler.
 * Run `build.sh` to build Clang with Templight and Metashell. To take advantage

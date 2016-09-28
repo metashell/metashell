@@ -37,7 +37,8 @@ want to install them, you can build Metashell yourself.
 * Using [Homebrew](http://brew.sh/): `brew install metashell`
 
 * Or from 7z file: [Yosemite](https://github.com/metashell/metashell/releases/download/v2.1.0/metashell_2.1.0_osx10.10.4_x86_64.7z).
-  Note that you need to install XCode for Metashell to work properly.
+
+  Note that you need to install XCode with Command Line Developer Tools installed for Metashell to work properly.
 
 ## Version 2.0.0
 
@@ -77,7 +78,8 @@ want to install them, you can build Metashell yourself.
 ### OS X
 
 * From dmg file: [Yosemite](https://github.com/metashell/metashell/releases/download/v2.0.0/metashell_2.0.0_osx10.10_x86_64.dmg).
-  Note that you need to install XCode for Metashell to work properly.
+
+  Note that you need to install XCode with Command Line Developer Tools installed for Metashell to work properly.
 
 ## Version 1.0.0
 
