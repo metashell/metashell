@@ -3,6 +3,38 @@
 You can get binary installers for a number of platforms. If you can't or don't
 want to install them, you can build Metashell yourself.
 
+## Version 3.0.0
+
+### Linux
+
+* Ubuntu
+    * Ubuntu 16.04:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_ubuntu16.04_x86_64.deb) |
+      [32 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_ubuntu16.04_i686.deb)
+* Debian
+    * Debian 8.5:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_debian8.5_x86_64.deb) |
+      [32 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_debian8.5_i686.deb)
+* Fedora
+    * Fedora 24:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_fedora24_x86_64.rpm) |
+      [32 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_fedora24_i686.rpm)
+* OpenSuSE
+    * OpenSuSE Leap 42.1:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_opensuse42.1_x86_64.rpm)
+
+### Windows
+
+* [Windows installer](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_AMD64.exe)
+
+### OS X
+
+* Using [Homebrew](http://brew.sh/): `brew install metashell`
+
+* Or from 7z file: [El Capitan](https://github.com/metashell/metashell/releases/download/v3.0.0/metashell_3.0.0_osx10.11.6_x86_64.7z).
+
+  Note that you need to install XCode with Command Line Developer Tools installed for Metashell to work properly.
+
 ## Version 2.1.0
 
 ### Linux
