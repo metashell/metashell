@@ -3,7 +3,7 @@
 ![](https://raw.githubusercontent.com/metashell/metashell/master/docs/img/metashell.png "Metashell")
 
 [![Try online](https://raw.githubusercontent.com/metashell/metashell/master/docs/img/try_online.png "Try online")](http://metashell.org/about/demo)
-[![Download](https://raw.githubusercontent.com/metashell/metashell/master/docs/img/download.png "Download")](http://metashell.org/getting_metashell/installers/#version-210)
+[![Download](https://raw.githubusercontent.com/metashell/metashell/master/docs/img/download.png "Download")](http://metashell.org/getting_metashell/installers/#version-300)
 
 The goal of this project is to provide an interactive template metaprogramming
 shell.
