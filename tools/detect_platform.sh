@@ -42,6 +42,9 @@ then
 elif [ "$(uname)" = "OpenBSD" ]
 then
   PLATFORM="openbsd"
+elif [ -e /etc/os-release ] && grep openSUSE /etc/os-release > /dev/null
+then
+  PLATFORM="opensuse"
 else
   PLATFORM="unknown"
 fi
