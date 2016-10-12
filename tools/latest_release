@@ -19,6 +19,7 @@
 
 import subprocess
 import argparse
+import re
 
 
 def parse_version(tag):
@@ -41,7 +42,7 @@ def run(prefix, show_dots):
         prefix,
         format_version(
             max([parse_version(s) for s in stdout.split('\n')
-                 if s.startswith('v')]),
+                 if re.match(r'^v\d+\.\d+\.\d+$', s)]),
             show_dots
         )
     ])
