@@ -82,6 +82,17 @@ else()
   elseif ("${UNAME}" STREQUAL "OpenBSD")
     set(OPEN_BSD true)
     set(PLATFORM_NAME "openbsd")
+  elseif (EXISTS "/etc/os-release")
+    file(READ "/etc/os-release" OS_RELEASE)
+
+    if (OS_RELEASE MATCHES "^NAME=\"openSUSE[^\"]*\"")
+      set(SUSE_LINUX true)
+      set(PLATFORM_CPACK_GENERATOR "RPM")
+      set(PLATFORM_NAME "opensuse")
+
+      string(REGEX MATCH "VERSION[ ]*=[^\n]*" VS "${OS_RELEASE}")
+      string(REGEX MATCH "[0-9.]+" PLATFORM_VERSION "${VS}")
+    endif()
   endif()
 endif ()
 

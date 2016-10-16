@@ -45,7 +45,8 @@ opensuse)
     gcc-c++ \
     readline-devel \
     rpm-build \
-    termcap
+    termcap \
+    zip
   ;;
 ubuntu)
   sudo apt-get -y install git g++ cmake libreadline-dev python-pip zip
