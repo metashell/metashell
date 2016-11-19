@@ -17,7 +17,7 @@
 #include <metashell/system_test/main.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <vector>
@@ -75,12 +75,14 @@ int metashell::system_test::main(int argc_, char* argv_[])
       system_test_config::metashell_arg(*i);
     }
 
-    std::vector<char*> just_test_args = {argv_[0]};
+    std::vector<char*> gtest_args = {argv_[0]};
     if (sep != end)
     {
-      just_test_args.insert(just_test_args.end(), sep + 1, end);
+      gtest_args.insert(gtest_args.end(), sep + 1, end);
     }
 
-    return ::just::test::run(just_test_args.size(), just_test_args.data());
+    int argc = gtest_args.size();
+    ::testing::InitGoogleTest(&argc, gtest_args.data());
+    return RUN_ALL_TESTS();
   }
 }

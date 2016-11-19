@@ -16,7 +16,7 @@
 
 #include <metashell/for_each_line.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -26,13 +26,13 @@ using namespace metashell;
 
 namespace
 {
-  void test_with_lines(const std::initializer_list<std::string>& lines_,
+  void test_with_lines(const std::vector<std::string>& lines_,
                        const std::string& line_separator_)
   {
     std::vector<std::string> result;
     for_each_line(boost::algorithm::join(lines_, line_separator_),
                   [&result](const std::string& s_) { result.push_back(s_); });
-    JUST_ASSERT_EQUAL_CONTAINER(lines_, result);
+    ASSERT_EQ(lines_, result);
   }
 
   void test_with_lines(const std::initializer_list<std::string>& lines_)
@@ -43,7 +43,7 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_for_each_line)
+TEST(for_each_line, inputs)
 {
   test_with_lines({});
   test_with_lines({"hello"});

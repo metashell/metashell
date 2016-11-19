@@ -19,8 +19,8 @@
 #include <metashell/system_test/read_only_path.hpp>
 #include <metashell/system_test/type.hpp>
 
+#include <gtest/gtest.h>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -56,7 +56,7 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_include_from_cwd)
+TEST(cwd, include_from_cwd)
 {
   just::temp::directory temp_dir;
   const boost::filesystem::path temp(temp_dir.path());
@@ -66,10 +66,10 @@ JUST_TEST_CASE(test_include_from_cwd)
   metashell_instance mi({}, temp);
   mi.command("#include \"foobar.hpp\"");
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
+  ASSERT_EQ(type("int"), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(test_adding_cwd_to_include_path)
+TEST(cwd, adding_cwd_to_include_path)
 {
   just::temp::directory temp_dir;
   const boost::filesystem::path temp(temp_dir.path());
@@ -80,10 +80,10 @@ JUST_TEST_CASE(test_adding_cwd_to_include_path)
   metashell_instance mi({"--", "-I."}, temp);
   mi.command("#include <foo/bar.hpp>");
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
+  ASSERT_EQ(type("int"), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(test_relative_include_directory)
+TEST(cwd, relative_include_directory)
 {
   just::temp::directory temp_dir;
   const boost::filesystem::path temp(temp_dir.path());
@@ -94,17 +94,17 @@ JUST_TEST_CASE(test_relative_include_directory)
   metashell_instance mi({"--", "-Ifoo"}, temp);
   mi.command("#include <bar.hpp>");
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
+  ASSERT_EQ(type("int"), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(test_metashell_definition_succeeds_when_cwd_is_not_writable)
+TEST(cwd, metashell_definition_succeeds_when_cwd_is_not_writable)
 {
   const read_only_path read_only;
 
-  JUST_ASSERT(!can_create_file_in(read_only.path()));
+  ASSERT_FALSE(can_create_file_in(read_only.path()));
 
   metashell_instance mi({}, read_only.path());
   mi.command("typedef int foo;");
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
+  ASSERT_EQ(type("int"), mi.command("foo").front());
 }

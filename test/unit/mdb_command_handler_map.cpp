@@ -16,13 +16,13 @@
 
 #include <metashell/mdb_command_handler_map.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include "util.hpp"
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
+TEST(mdb_command_handler_map, command_selection_1)
 {
   mdb_command_handler_map::commands_t commands = {
       {{{"asd"}}, repeatable_t::non_repeatable, nullptr, "", "", ""},
@@ -35,26 +35,26 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_1)
 
   std::tie(command, args) = get_command_from_map(map, {"asd"});
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, {"efg"});
 
-  JUST_ASSERT_EQUAL_CONTAINER({"efg"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"efg"}, command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "e");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"efg"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"efg"}, command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
+TEST(mdb_command_handler_map, command_selection_2)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
@@ -67,16 +67,16 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_2)
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "af");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"afg"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"afg"}, command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
+TEST(mdb_command_handler_map, command_selection_3)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
@@ -89,16 +89,16 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_3)
 
   std::tie(command, args) = get_command_from_map(map, "as");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asd"}, command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "a");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"a"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"a"}, command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
+TEST(mdb_command_handler_map, command_selection_4)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"asd"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
@@ -106,12 +106,12 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_4)
 
   mdb_command_handler_map map(commands);
 
-  JUST_ASSERT(!map.get_command_for_line(""));
-  JUST_ASSERT(!map.get_command_for_line("a"));
-  JUST_ASSERT(!map.get_command_for_line("as"));
+  ASSERT_FALSE(map.get_command_for_line(""));
+  ASSERT_FALSE(map.get_command_for_line("a"));
+  ASSERT_FALSE(map.get_command_for_line("as"));
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
+TEST(mdb_command_handler_map, command_selection_5)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"asd", "xyz"}, repeatable_t::non_repeatable, nullptr, "", "", ""},
@@ -124,21 +124,21 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_5)
 
   std::tie(command, args) = get_command_from_map(map, "asd");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "xyz");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), command.get_keys());
+  ASSERT_EQ(args, "");
 
   std::tie(command, args) = get_command_from_map(map, "asf");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
+TEST(mdb_command_handler_map, command_selection_6)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace"},
@@ -156,11 +156,12 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_6)
 
   std::tie(command, args) = get_command_from_map(map, "f");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"ft", "forwardtrace"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(
+      (std::vector<std::string>{"ft", "forwardtrace"}), command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
+TEST(mdb_command_handler_map, command_selection_7)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace", "fff"},
@@ -178,12 +179,12 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_7)
 
   std::tie(command, args) = get_command_from_map(map, "f");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"ft", "forwardtrace", "fff"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ((std::vector<std::string>{"ft", "forwardtrace", "fff"}),
+            command.get_keys());
+  ASSERT_EQ(args, "");
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
+TEST(mdb_command_handler_map, command_selection_8)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"ft", "forwardtrace"},
@@ -196,10 +197,10 @@ JUST_TEST_CASE(test_mdb_command_handler_map_command_selection_8)
 
   mdb_command_handler_map map(commands);
 
-  JUST_ASSERT(!map.get_command_for_line("f"));
+  ASSERT_FALSE(map.get_command_for_line("f"));
 }
 
-JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
+TEST(mdb_command_handler_map, argument_passing)
 {
   mdb_command_handler_map::commands_t commands = {
       {{"asf"}, repeatable_t::non_repeatable, nullptr, "", "", ""}};
@@ -211,21 +212,21 @@ JUST_TEST_CASE(test_mdb_command_handler_map_argument_passing)
 
   std::tie(command, args) = get_command_from_map(map, "a abc");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "abc");
+  ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
+  ASSERT_EQ(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "asf   abc");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "abc");
+  ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
+  ASSERT_EQ(args, "abc");
 
   std::tie(command, args) = get_command_from_map(map, "as   ab c");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "ab c");
+  ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
+  ASSERT_EQ(args, "ab c");
 
   std::tie(command, args) = get_command_from_map(map, "a   ");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asf"}, command.get_keys());
-  JUST_ASSERT_EQUAL(args, "");
+  ASSERT_EQ(std::vector<std::string>{"asf"}, command.get_keys());
+  ASSERT_EQ(args, "");
 }

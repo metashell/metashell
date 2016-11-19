@@ -20,87 +20,86 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/type.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_echoing_definition)
+TEST(preprocessed_echo, echoing_definition)
 {
   metashell_instance mi;
   mi.command("#msh preprocessed echo on");
 
-  JUST_ASSERT_EQUAL(cpp_code("void f() {}"), mi.command("void f() {}").front());
+  ASSERT_EQ(cpp_code("void f() {}"), mi.command("void f() {}").front());
 }
 
-JUST_TEST_CASE(test_echoing_definition_with_macro)
+TEST(preprocessed_echo, echoing_definition_with_macro)
 {
   metashell_instance mi;
   mi.command("#msh preprocessed echo on");
   mi.command("#define FOO f");
 
-  JUST_ASSERT_EQUAL(
-      cpp_code("void f() {}"), mi.command("void FOO() {}").front());
+  ASSERT_EQ(cpp_code("void f() {}"), mi.command("void FOO() {}").front());
 }
 
-JUST_TEST_CASE(test_echoing_evaluation)
+TEST(preprocessed_echo, echoing_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh preprocessed echo on");
   mi.command("#define FOO int");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(cpp_code("int")), to_json_string(type("int")),
-       to_json_string(prompt(">"))},
-      mi.command("FOO"));
+  ASSERT_EQ((std::vector<json_string>{to_json_string(cpp_code("int")),
+                                      to_json_string(type("int")),
+                                      to_json_string(prompt(">"))}),
+            mi.command("FOO"));
 }
 
-JUST_TEST_CASE(test_echoing_include)
+TEST(preprocessed_echo, echoing_include)
 {
   metashell_instance mi;
   mi.command("#msh preprocessed echo on");
 
-  JUST_ASSERT_EQUAL(cpp_code(_), mi.command("#include <string>").front());
+  ASSERT_EQ(cpp_code(_), mi.command("#include <string>").front());
 }
 
-JUST_TEST_CASE(test_echoing_invalid_cpp_code)
+TEST(preprocessed_echo, echoing_invalid_cpp_code)
 {
   metashell_instance mi;
   mi.command("#define FOO bar");
   mi.command("#msh preprocessed echo on");
 
   const std::vector<json_string> r = mi.command("void FOO() { return 13; }");
-  JUST_ASSERT_EQUAL(cpp_code("void bar() { return 13; }"), r[0]);
-  JUST_ASSERT_EQUAL(error(_), r[1]);
+  ASSERT_EQ(cpp_code("void bar() { return 13; }"), r[0]);
+  ASSERT_EQ(error(_), r[1]);
 }
 
-JUST_TEST_CASE(test_when_echoing_code_displaying_pp_errors_only_once)
+TEST(preprocessed_echo, when_echoing_code_displaying_pp_errors_only_once)
 {
   metashell_instance mi;
   mi.command("#define FOO(x) bar");
   mi.command("#msh preprocessed echo on");
 
-  JUST_ASSERT_EQUAL(error(_), mi.command("FOO(foo;").front());
+  ASSERT_EQ(error(_), mi.command("FOO(foo;").front());
 }
 
-JUST_TEST_CASE(test_echoing_invalid_cpp_code_during_evaluation)
+TEST(preprocessed_echo, echoing_invalid_cpp_code_during_evaluation)
 {
   metashell_instance mi;
   mi.command("#define FOO int");
   mi.command("#msh preprocessed echo on");
 
   const std::vector<json_string> r = mi.command("void FOO");
-  JUST_ASSERT_EQUAL(cpp_code("void int"), r[0]);
-  JUST_ASSERT_EQUAL(error(_), r[1]);
+  ASSERT_EQ(cpp_code("void int"), r[0]);
+  ASSERT_EQ(error(_), r[1]);
 }
 
-JUST_TEST_CASE(
-    test_when_echoing_code_displaying_pp_errors_only_once_during_evaluation)
+TEST(preprocessed_echo,
+     when_echoing_code_displaying_pp_errors_only_once_during_evaluation)
 {
   metashell_instance mi;
   mi.command("#define FOO(x) bar");
   mi.command("#msh preprocessed echo on");
 
-  JUST_ASSERT_EQUAL(error(_), mi.command("FOO(foo").front());
+  ASSERT_EQ(error(_), mi.command("FOO(foo").front());
 }

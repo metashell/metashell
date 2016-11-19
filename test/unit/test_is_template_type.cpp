@@ -14,47 +14,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <metashell/is_template_type.hpp>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_is_template_type_primitive_types)
+TEST(is_template_type, primitive_types)
 {
-  JUST_ASSERT(!is_template_type(data::type("int")));
-  JUST_ASSERT(!is_template_type(data::type("void")));
-  JUST_ASSERT(!is_template_type(data::type("float")));
-  JUST_ASSERT(!is_template_type(data::type("unsigned long long")));
-  JUST_ASSERT(!is_template_type(data::type("const double")));
+  ASSERT_FALSE(is_template_type(data::type("int")));
+  ASSERT_FALSE(is_template_type(data::type("void")));
+  ASSERT_FALSE(is_template_type(data::type("float")));
+  ASSERT_FALSE(is_template_type(data::type("unsigned long long")));
+  ASSERT_FALSE(is_template_type(data::type("const double")));
 }
 
-JUST_TEST_CASE(test_is_template_type_array_type_of_non_template_types)
+TEST(is_template_type, array_type_of_non_template_types)
 {
-  JUST_ASSERT(!is_template_type(data::type("int[3]")));
-  JUST_ASSERT(!is_template_type(data::type("int&[3]")));
-  JUST_ASSERT(!is_template_type(data::type("char[0]")));
-  JUST_ASSERT(!is_template_type(data::type("char *[1]")));
-  JUST_ASSERT(!is_template_type(data::type("foo[100]")));
+  ASSERT_FALSE(is_template_type(data::type("int[3]")));
+  ASSERT_FALSE(is_template_type(data::type("int&[3]")));
+  ASSERT_FALSE(is_template_type(data::type("char[0]")));
+  ASSERT_FALSE(is_template_type(data::type("char *[1]")));
+  ASSERT_FALSE(is_template_type(data::type("foo[100]")));
 }
 
-JUST_TEST_CASE(test_is_template_type_pointer_to_non_template_types)
+TEST(is_template_type, pointer_to_non_template_types)
 {
-  JUST_ASSERT(!is_template_type(data::type("int*")));
-  JUST_ASSERT(!is_template_type(data::type("char *[1]")));
-  JUST_ASSERT(!is_template_type(data::type("foo ***")));
+  ASSERT_FALSE(is_template_type(data::type("int*")));
+  ASSERT_FALSE(is_template_type(data::type("char *[1]")));
+  ASSERT_FALSE(is_template_type(data::type("foo ***")));
 }
 
-JUST_TEST_CASE(test_is_template_type_templates)
+TEST(is_template_type, templates)
 {
-  JUST_ASSERT(is_template_type(data::type("std::vector<int>")));
-  JUST_ASSERT(is_template_type(data::type("foo::bar::foobar<x>")));
-  JUST_ASSERT(is_template_type(data::type("a<b<c, d> > >")));
+  ASSERT_TRUE(is_template_type(data::type("std::vector<int>")));
+  ASSERT_TRUE(is_template_type(data::type("foo::bar::foobar<x>")));
+  ASSERT_TRUE(is_template_type(data::type("a<b<c, d> > >")));
 }
 
-JUST_TEST_CASE(test_is_template_type_char_literals)
+TEST(is_template_type, char_literals)
 {
-  JUST_ASSERT(is_template_type(data::type("foo<'<'>")));
-  JUST_ASSERT(is_template_type(data::type("foo<'>'>")));
-  JUST_ASSERT(is_template_type(data::type("foo<'<','>'>")));
+  ASSERT_TRUE(is_template_type(data::type("foo<'<'>")));
+  ASSERT_TRUE(is_template_type(data::type("foo<'>'>")));
+  ASSERT_TRUE(is_template_type(data::type("foo<'<','>'>")));
 }

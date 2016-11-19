@@ -17,22 +17,22 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_disable_metaprogram_evaluation)
+TEST(disabling_metaprogram_evaluation, tests)
 {
   metashell_instance mi;
   mi.command("#msh metaprogram evaluation off");
-  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(prompt(">"))}, mi.command("int"));
+  ASSERT_EQ(
+      std::vector<json_string>{to_json_string(prompt(">"))}, mi.command("int"));
 }
 
-JUST_TEST_CASE(
-    test_no_errors_for_invalid_metaprograms_when_evaluation_is_disabled)
+TEST(disabling_metaprogram_evaluation, test_no_errors_for_invalid_metaprograms)
 {
   metashell_instance mi;
   mi.command("#msh metaprogram evaluation off");
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(prompt(">"))}, mi.command("void int"));
+  ASSERT_EQ(std::vector<json_string>{to_json_string(prompt(">"))},
+            mi.command("void int"));
 }

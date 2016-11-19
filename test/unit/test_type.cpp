@@ -16,29 +16,29 @@
 
 #include <metashell/data/type.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include "util.hpp"
 
 using namespace metashell::data;
 
-JUST_TEST_CASE(test_integral_constant)
+TEST(test_type, test_integral_constant)
 {
   const type int_("int");
 
-  JUST_ASSERT(!type("").is_integral_constant(int_, "13"));
+  ASSERT_FALSE(type("").is_integral_constant(int_, "13"));
 
-  JUST_ASSERT(
+  ASSERT_TRUE(
       type("std::integral_constant<int, 13>").is_integral_constant(int_, "13"));
 
-  JUST_ASSERT(!type("int").is_integral_constant(int_, "13"));
+  ASSERT_FALSE(type("int").is_integral_constant(int_, "13"));
 
-  JUST_ASSERT(
+  ASSERT_TRUE(
       type("std::integral_constant<int, 21>").is_integral_constant(int_, "21"));
 
-  JUST_ASSERT(type("std::integral_constant<unsigned int, 21>")
+  ASSERT_TRUE(type("std::integral_constant<unsigned int, 21>")
                   .is_integral_constant(type("unsigned int"), "21"));
 
-  JUST_ASSERT(type("std::_1::integral_constant<int, 13>")
+  ASSERT_TRUE(type("std::_1::integral_constant<int, 13>")
                   .is_integral_constant(int_, "13"));
 }

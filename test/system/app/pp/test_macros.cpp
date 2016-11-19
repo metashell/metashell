@@ -19,27 +19,27 @@
 
 #include <pattern/regex.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::regex;
 
-JUST_TEST_CASE(test_getting_defined_macro)
+TEST(macros, getting_defined_macro)
 {
   metashell_instance mi;
   mi.command("#define FOO bar");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       cpp_code(regex("#define FOO bar")), mi.command("#msh macros").front());
 }
 
-JUST_TEST_CASE(test_getting_defined_macro_name)
+TEST(macros, getting_defined_macro_name)
 {
   metashell_instance mi;
   mi.command("#define FOO bar");
 
   const json_string macro_names = mi.command("#msh macro names").front();
-  JUST_ASSERT_EQUAL(cpp_code(regex("FOO")), macro_names);
-  JUST_ASSERT_NOT_EQUAL(cpp_code(regex("#define")), macro_names);
+  ASSERT_EQ(cpp_code(regex("FOO")), macro_names);
+  ASSERT_NE(cpp_code(regex("#define")), macro_names);
 }

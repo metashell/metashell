@@ -20,8 +20,8 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <gtest/gtest.h>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
 #include <fstream>
 
@@ -39,7 +39,7 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_quit_from_mdb_when_included_file_changes)
+TEST(quit, when_included_file_changes)
 {
   just::temp::directory tmp_dir;
   const boost::filesystem::path tmp(tmp_dir.path());
@@ -54,6 +54,6 @@ JUST_TEST_CASE(test_quit_from_mdb_when_included_file_changes)
 
   const std::vector<json_string> q = mi.command("q");
 
-  JUST_ASSERT_EQUAL(error(_), q.front());
-  JUST_ASSERT_EQUAL(prompt(">"), q.back());
+  ASSERT_EQ(error(_), q.front());
+  ASSERT_EQ(prompt(">"), q.back());
 }

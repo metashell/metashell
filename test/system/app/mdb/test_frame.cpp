@@ -23,108 +23,101 @@
 
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_mdb_frame_without_evaluation)
+TEST(mdb_frame, without_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("Metaprogram not evaluated yet"), mi.command("frame").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_before_starting)
+TEST(mdb_frame, before_starting)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(frame(type("int")), mi.command("frame 0").front());
+  ASSERT_EQ(frame(type("int")), mi.command("frame 0").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_step_1)
+TEST(mdb_frame, fib_step_1)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
   mi.command("step");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       mi.command("frame 0").front());
 
-  JUST_ASSERT_EQUAL(
-      frame(type("int_<fib<10>::value>")), mi.command("frame 1").front());
+  ASSERT_EQ(frame(type("int_<fib<10>::value>")), mi.command("frame 1").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_step_2)
+TEST(mdb_frame, fib_step_2)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
   mi.command("step 2");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
       mi.command("frame 0").front());
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
       mi.command("frame 1").front());
 
-  JUST_ASSERT_EQUAL(
-      frame(type("int_<fib<10>::value>")), mi.command("frame 2").front());
+  ASSERT_EQ(frame(type("int_<fib<10>::value>")), mi.command("frame 2").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_at_end)
+TEST(mdb_frame, fib_at_end)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram finished"), mi.command("continue").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
-      mi.command("frame 0"));
+  ASSERT_EQ(raw_text("Metaprogram finished"), mi.command("continue").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+            mi.command("frame 0"));
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_no_argument)
+TEST(mdb_frame, fib_no_argument)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(
-      error("Argument parsing failed"), mi.command("frame").front());
+  ASSERT_EQ(error("Argument parsing failed"), mi.command("frame").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_garbage_argument)
+TEST(mdb_frame, fib_garbage_argument)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(
-      error("Argument parsing failed"), mi.command("frame asd").front());
+  ASSERT_EQ(error("Argument parsing failed"), mi.command("frame asd").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_negative)
+TEST(mdb_frame, fib_out_of_range_arg_negative)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(
-      error("Frame index out of range"), mi.command("frame -1").front());
+  ASSERT_EQ(error("Frame index out of range"), mi.command("frame -1").front());
 }
 
-JUST_TEST_CASE(test_mdb_frame_fib_out_of_range_arg_too_large)
+TEST(mdb_frame, fib_out_of_range_arg_too_large)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(
-      error("Frame index out of range"), mi.command("frame 1").front());
+  ASSERT_EQ(error("Frame index out of range"), mi.command("frame 1").front());
 }

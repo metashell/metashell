@@ -19,11 +19,11 @@
 
 #include <metashell/system_test/metashell_instance.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_enabling_and_disabling_precompiled_headers)
+TEST(precompiled_headers, enabling_and_disabling)
 {
   const std::vector<json_string> is_on{
       to_json_string(comment({paragraph("precompiled header usage is on")})),
@@ -34,12 +34,11 @@ JUST_TEST_CASE(test_enabling_and_disabling_precompiled_headers)
 
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
-  JUST_ASSERT_EQUAL_CONTAINER(
-      is_off, mi.command("#msh precompiled_headers off"));
-  JUST_ASSERT_EQUAL_CONTAINER(is_off, mi.command("#msh precompiled_headers"));
-  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers on"));
-  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
-  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers on"));
-  JUST_ASSERT_EQUAL_CONTAINER(is_on, mi.command("#msh precompiled_headers"));
+  ASSERT_EQ(is_on, mi.command("#msh precompiled_headers"));
+  ASSERT_EQ(is_off, mi.command("#msh precompiled_headers off"));
+  ASSERT_EQ(is_off, mi.command("#msh precompiled_headers"));
+  ASSERT_EQ(is_on, mi.command("#msh precompiled_headers on"));
+  ASSERT_EQ(is_on, mi.command("#msh precompiled_headers"));
+  ASSERT_EQ(is_on, mi.command("#msh precompiled_headers on"));
+  ASSERT_EQ(is_on, mi.command("#msh precompiled_headers"));
 }

@@ -24,109 +24,108 @@
 #include "fib.hpp"
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_mdb_evaluate_int)
+TEST(mdb_evaluate, int_type)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
-      mi.command("continue"));
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+            mi.command("continue"));
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_fib_10)
+TEST(mdb_evaluate, fib_10)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
-                    mi.command("evaluate int_<fib<10>::value>").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))},
+  ASSERT_EQ(raw_text("Metaprogram started"),
+            mi.command("evaluate int_<fib<10>::value>").front());
+  ASSERT_EQ(
+      (std::vector<json_string>{
+          to_json_string(raw_text("Metaprogram finished")),
+          to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
       mi.command("continue"));
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_empty_environment)
+TEST(mdb_evaluate, empty_environment)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("continue");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram started"), mi.command("evaluate -").front());
-  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(raw_text("Metaprogram finished")),
-                               to_json_string(prompt("(mdb)"))},
-                              mi.command("continue"));
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate -").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(prompt("(mdb)"))}),
+            mi.command("continue"));
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_no_arguments_no_evaluation)
+TEST(mdb_evaluate, no_arguments_no_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("Nothing has been evaluated yet."), mi.command("evaluate").front());
 }
 
-JUST_TEST_CASE(
-    test_mdb_evaluate_no_arguments_with_trailing_spaces_no_evaluation)
+TEST(mdb_evaluate, no_arguments_with_trailing_spaces_no_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(error("Nothing has been evaluated yet."),
-                    mi.command("evaluate  ").front());
+  ASSERT_EQ(error("Nothing has been evaluated yet."),
+            mi.command("evaluate  ").front());
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_failure_will_reset_metaprogram_state)
+TEST(mdb_evaluate, failure_will_reset_metaprogram_state)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL(error(_), mi.command("evaluate in").front());
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(error(_), mi.command("evaluate in").front());
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_instantiation_failure_will_start_metaprogram)
+TEST(mdb_evaluate, instantiation_failure_will_start_metaprogram)
 {
   metashell_instance mi;
   mi.command(missing_value_fibonacci_mp);
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
-                    mi.command("evaluate int_<fib<5>::value>").front());
+  ASSERT_EQ(raw_text("Metaprogram started"),
+            mi.command("evaluate int_<fib<5>::value>").front());
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_run_last_metaprogram)
+TEST(mdb_evaluate, missing_argument_will_run_last_metaprogram)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram started"), mi.command("evaluate").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
-      mi.command("continue"));
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+            mi.command("continue"));
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_reset_metaprogram_state)
+TEST(mdb_evaluate, missing_argument_will_reset_metaprogram_state)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
@@ -135,40 +134,40 @@ JUST_TEST_CASE(test_mdb_evaluate_missing_argument_will_reset_metaprogram_state)
   const std::vector<json_string> first_ft = mi.command("ft");
   mi.command("step 5");
   mi.command("evaluate");
-  JUST_ASSERT_EQUAL_CONTAINER(first_ft, mi.command("ft"));
+  ASSERT_EQ(first_ft, mi.command("ft"));
 }
 
-JUST_TEST_CASE(test_mdb_reevaluate_environment)
+TEST(mdb_evaluate, reevaluate_environment)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram started"), mi.command("evaluate -").front());
-  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(raw_text("Metaprogram finished")),
-                               to_json_string(prompt("(mdb)"))},
-                              mi.command("continue"));
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram started"), mi.command("evaluate").front());
-  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(raw_text("Metaprogram finished")),
-                               to_json_string(prompt("(mdb)"))},
-                              mi.command("continue"));
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate -").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(prompt("(mdb)"))}),
+            mi.command("continue"));
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(prompt("(mdb)"))}),
+            mi.command("continue"));
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges)
+TEST(mdb_evaluate, filters_similar_edges)
 {
   metashell_instance mi;
   mi.command(fibonacci_with_enum_mp);
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
-                    mi.command("evaluate int_<fib<2>::value>").front());
+  ASSERT_EQ(raw_text("Metaprogram started"),
+            mi.command("evaluate int_<fib<2>::value>").front());
 
 // On Windows clang tries to be compatible with MSVC, and this affects the Sema
 // code to take slightly different paths. Probably because of this, Memoization
 // events are not generated for the nested enum type.
 #ifdef _WIN32
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       call_graph(
           {{frame(type("int_<fib<2>::value>")), 0, 3},
            {frame(fib<2>(), _, _, instantiation_kind::template_instantiation),
@@ -181,7 +180,7 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges)
             1, 0}}),
       mi.command("forwardtrace").front());
 #else
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       call_graph(
           {{frame(type("int_<fib<2>::value>")), 0, 4},
            {frame(fib<2>(), _, _, instantiation_kind::template_instantiation),
@@ -202,55 +201,54 @@ JUST_TEST_CASE(test_mdb_evaluate_filters_similar_edges)
 #endif
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_clears_breakpoints)
+TEST(mdb_evaluate, clears_breakpoints)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
       mi.command("rbreak int").front());
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"),
-                    mi.command("break list").front());
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram started"),
-                    mi.command("evaluate unsigned int").front());
-  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"),
-                    mi.command("break list").front());
+  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+            mi.command("break list").front());
+  ASSERT_EQ(raw_text("Metaprogram started"),
+            mi.command("evaluate unsigned int").front());
+  ASSERT_EQ(raw_text("No breakpoints currently set"),
+            mi.command("break list").front());
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_reevaluate_clears_breakpoints)
+TEST(mdb_evaluate, reevaluate_clears_breakpoints)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
       mi.command("rbreak int").front());
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"),
-                    mi.command("break list").front());
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram started"), mi.command("evaluate").front());
-  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"),
-                    mi.command("break list").front());
+  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+            mi.command("break list").front());
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+  ASSERT_EQ(raw_text("No breakpoints currently set"),
+            mi.command("break list").front());
 }
 
-JUST_TEST_CASE(test_mdb_evaluate_failure_clears_breakpoints)
+TEST(mdb_evaluate, failure_clears_breakpoints)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
       mi.command("rbreak int").front());
-  JUST_ASSERT_EQUAL(raw_text("Breakpoint 1: regex(\"int\")"),
-                    mi.command("break list").front());
-  JUST_ASSERT_EQUAL(error(_), mi.command("evaluate asd").front());
-  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"),
-                    mi.command("break list").front());
+  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+            mi.command("break list").front());
+  ASSERT_EQ(error(_), mi.command("evaluate asd").front());
+  ASSERT_EQ(raw_text("No breakpoints currently set"),
+            mi.command("break list").front());
 }

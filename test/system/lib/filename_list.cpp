@@ -21,6 +21,8 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <boost/range/algorithm/equal.hpp>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -110,4 +112,10 @@ bool metashell::system_test::operator==(const filename_list& filenames_,
                                         const json_string& s_)
 {
   return to_json_string(filenames_) == s_;
+}
+
+bool metashell::system_test::operator==(const filename_list& a_,
+                                        const filename_list& b_)
+{
+  return boost::range::equal(a_, b_);
 }

@@ -19,198 +19,198 @@
 
 #include "mock_console.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_pager_one_line)
+TEST(pager, one_line)
 {
   mock_console c(80, 100);
   pager p(c);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
+  ASSERT_TRUE(p.new_line());
 
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
-  JUST_ASSERT_EQUAL("first\n", c.content());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
+  ASSERT_EQ("first\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_non_full_page)
+TEST(pager, non_full_page)
 {
   mock_console c(80, 5);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
+  ASSERT_TRUE(p.new_line());
   p.show("second");
-  JUST_ASSERT(p.new_line());
+  ASSERT_TRUE(p.new_line());
   p.show("third");
-  JUST_ASSERT(p.new_line());
+  ASSERT_TRUE(p.new_line());
 
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\n", c.content());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
+  ASSERT_EQ("first\nsecond\nthird\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_almost_full_page)
+TEST(pager, almost_full_page)
 {
   mock_console c(80, 4);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("second");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\n", c.content());
+  ASSERT_EQ("first\nsecond\nthird\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_full_page_by_one_line)
+TEST(pager, full_page_by_one_line)
 {
   mock_console c(80, 4);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("second");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("forth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\n", c.content());
+  ASSERT_EQ("first\nsecond\nthird\nforth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_next_page_answer)
+TEST(pager, multi_page_next_page_answer)
 {
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("second");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("forth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(2, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(2, c.ask_for_continuation_count());
 
   p.show("fifth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(2, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(2, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
+  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_multiline_shows)
+TEST(pager, multi_page_multiline_shows)
 {
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first\nsecond");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("forth\nfifth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(2, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(2, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
+  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_narrow_terminal)
+TEST(pager, multi_page_narrow_terminal)
 {
   mock_console c(5, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::next_page);
 
   p.show("first" /*\n*/ "second");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("forth" /*\n*/ "fifth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(2, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(2, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("firstsecond\nthird\nforthfifth\n", c.content());
+  ASSERT_EQ("firstsecond\nthird\nforthfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_multi_page_show_all_answer)
+TEST(pager, multi_page_show_all_answer)
 {
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::show_all);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("second");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("third");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("forth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
   p.show("fifth");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\nthird\nforth\nfifth\n", c.content());
+  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
-JUST_TEST_CASE(test_pager_quit_answer)
+TEST(pager, quit_answer)
 {
   mock_console c(80, 3);
   pager p(c);
   c.set_continiation_answer(iface::console::user_answer::quit);
 
   p.show("first");
-  JUST_ASSERT(p.new_line());
-  JUST_ASSERT_EQUAL(0, c.ask_for_continuation_count());
+  ASSERT_TRUE(p.new_line());
+  ASSERT_EQ(0, c.ask_for_continuation_count());
 
   p.show("second");
-  JUST_ASSERT(!p.new_line());
-  JUST_ASSERT_EQUAL(1, c.ask_for_continuation_count());
+  ASSERT_FALSE(p.new_line());
+  ASSERT_EQ(1, c.ask_for_continuation_count());
 
-  JUST_ASSERT_EQUAL("first\nsecond\n", c.content());
+  ASSERT_EQ("first\nsecond\n", c.content());
 }

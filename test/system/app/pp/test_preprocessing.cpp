@@ -19,7 +19,7 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
@@ -29,58 +29,54 @@ namespace
   std::string marker() { return "* __METASHELL_PP_MARKER *"; }
 }
 
-JUST_TEST_CASE(test_pp_empty)
+TEST(pp, empty)
 {
-  metashell_instance mi;
-
-  const std::vector<json_string> resp = mi.command("#msh pp");
-
-  JUST_ASSERT_EQUAL_CONTAINER({to_json_string(prompt(">"))}, resp);
+  ASSERT_EQ(std::vector<json_string>{to_json_string(prompt(">"))},
+            metashell_instance().command("#msh pp"));
 }
 
-JUST_TEST_CASE(test_pp_non_macro)
+TEST(pp, non_macro)
 {
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       cpp_code("int"), metashell_instance().command("#msh pp int").front());
 }
 
-JUST_TEST_CASE(test_pp_macro)
+TEST(pp, macro)
 {
   metashell_instance mi;
   mi.command("#define FOO bar");
 
-  JUST_ASSERT_EQUAL(cpp_code("bar"), mi.command("#msh pp FOO").front());
+  ASSERT_EQ(cpp_code("bar"), mi.command("#msh pp FOO").front());
 }
 
-JUST_TEST_CASE(test_pp_exp_with_multiple_tokens)
+TEST(pp, exp_with_multiple_tokens)
 {
   metashell_instance mi;
   mi.command("#define FOO bar");
 
-  JUST_ASSERT_EQUAL(cpp_code("bar int"), mi.command("#msh pp FOO int").front());
+  ASSERT_EQ(cpp_code("bar int"), mi.command("#msh pp FOO int").front());
 }
 
-JUST_TEST_CASE(test_pp_marker)
+TEST(pp, marker)
 {
-  JUST_ASSERT_EQUAL(
-      error("Marker (" + marker() +
-            ") found more than two times in preprocessed output."),
-      metashell_instance().command("#msh pp " + marker()).front());
+  ASSERT_EQ(error("Marker (" + marker() +
+                  ") found more than two times in preprocessed output."),
+            metashell_instance().command("#msh pp " + marker()).front());
 }
 
-JUST_TEST_CASE(test_pp_with_marker_defined)
+TEST(pp, marker_defined)
 {
   metashell_instance mi;
   mi.command("#define " + macro_in_marker() + " foo");
 
-  JUST_ASSERT_EQUAL(error("Marker (" + marker() +
-                          ") not found in preprocessed output."
-                          " Does it contain a macro that has been defined?"),
-                    mi.command("#msh pp " + marker()).front());
+  ASSERT_EQ(error("Marker (" + marker() +
+                  ") not found in preprocessed output."
+                  " Does it contain a macro that has been defined?"),
+            mi.command("#msh pp " + marker()).front());
 }
 
-JUST_TEST_CASE(test_pp_preprocessor_directive)
+TEST(pp, preprocessor_directive)
 {
-  JUST_ASSERT_EQUAL(cpp_code("#error foo"),
-                    metashell_instance().command("#msh pp #error foo").front());
+  ASSERT_EQ(cpp_code("#error foo"),
+            metashell_instance().command("#msh pp #error foo").front());
 }

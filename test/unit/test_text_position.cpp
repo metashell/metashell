@@ -16,22 +16,22 @@
 
 #include <metashell/data/text_position.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::data;
 
-JUST_TEST_CASE(test_text_position)
+TEST(text_position, tests)
 {
   const text_position s;
 
-  JUST_ASSERT_EQUAL(text_position(1, 1), s);
-  JUST_ASSERT_EQUAL(text_position(1, 2), s + "x");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\n");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\r");
-  JUST_ASSERT_EQUAL(text_position(2, 1), s + "x\r\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\n\r");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\r");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\n\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\n");
-  JUST_ASSERT_EQUAL(text_position(3, 1), s + "x\r\n\r");
+  ASSERT_EQ(text_position(1, 1), s);
+  ASSERT_EQ(text_position(1, 2), s + "x");
+  ASSERT_EQ(text_position(2, 1), s + "x\n");
+  ASSERT_EQ(text_position(2, 1), s + "x\r");
+  ASSERT_EQ(text_position(2, 1), s + "x\r\n");
+  ASSERT_EQ(text_position(3, 1), s + "x\n\r");
+  ASSERT_EQ(text_position(3, 1), s + "x\r\r");
+  ASSERT_EQ(text_position(3, 1), s + "x\n\n");
+  ASSERT_EQ(text_position(3, 1), s + "x\r\n\n");
+  ASSERT_EQ(text_position(3, 1), s + "x\r\n\r");
 }

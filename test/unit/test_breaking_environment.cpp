@@ -18,9 +18,9 @@
 
 #include <metashell/data/config.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
-JUST_TEST_CASE(test_breaking_environment_does_not_throw)
+TEST(breaking_environment, does_not_throw)
 {
   breaking_environment e;
 
@@ -32,24 +32,24 @@ JUST_TEST_CASE(test_breaking_environment_does_not_throw)
   e.get_headers();
 }
 
-JUST_TEST_CASE(test_breaking_environment_append_throws)
+TEST(breaking_environment, append_throws)
 {
   breaking_environment e;
   e.append_throw_from_now();
 
-  JUST_ASSERT_THROWS([&e] { e.append("foo"); });
+  ASSERT_ANY_THROW(e.append("foo"));
   e.get();
   e.get_appended("bar");
   e.get_headers();
 }
 
-JUST_TEST_CASE(test_breaking_environment_get_appended_throws)
+TEST(breaking_environment, get_appended_throws)
 {
   breaking_environment e;
   e.get_appended_throw_from_now();
 
   e.append("foo");
   e.get();
-  JUST_ASSERT_THROWS([&e] { e.get_appended("bar"); });
+  ASSERT_ANY_THROW(e.get_appended("bar"));
   e.get_headers();
 }

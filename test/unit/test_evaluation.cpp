@@ -28,81 +28,83 @@
 #include <metashell/null_history.hpp>
 #include <metashell/shell.hpp>
 
-#include <just/test.hpp>
+#include "empty_container.hpp"
+
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_accept_empty_input)
+TEST(evaluation, accept_empty_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_space_input)
+TEST(evaluation, accept_space_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available(" ", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_tab_input)
+TEST(evaluation, accept_tab_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("\t", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_vertical_tab_input)
+TEST(evaluation, accept_vertical_tab_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("\v", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_new_line_input)
+TEST(evaluation, accept_new_line_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("\n", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_carrige_return_input)
+TEST(evaluation, accept_carrige_return_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("\r", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_two_space_input)
+TEST(evaluation, accept_two_space_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("  ", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_history_is_stored)
+TEST(evaluation, history_is_stored)
 {
   null_displayer d;
   in_memory_history h;
@@ -110,10 +112,10 @@ JUST_TEST_CASE(test_history_is_stored)
 
   sh.line_available("int", d, h);
 
-  JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"int"}, h.commands());
 }
 
-JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
+TEST(evaluation, empty_line_is_not_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
@@ -121,10 +123,10 @@ JUST_TEST_CASE(test_empty_line_is_not_stored_in_history)
 
   sh.line_available("", d, h);
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 }
 
-JUST_TEST_CASE(test_line_containing_just_whitespace_is_not_stored_in_history)
+TEST(evaluation, line_containing_just_whitespace_is_not_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
@@ -132,11 +134,11 @@ JUST_TEST_CASE(test_line_containing_just_whitespace_is_not_stored_in_history)
 
   sh.line_available(" ", d, h);
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 }
 
-JUST_TEST_CASE(
-    test_the_same_thing_following_each_other_is_not_added_to_history_twice)
+TEST(evaluation,
+     the_same_thing_following_each_other_is_not_added_to_history_twice)
 {
   null_displayer d;
   in_memory_history h;
@@ -145,30 +147,30 @@ JUST_TEST_CASE(
   sh.line_available("int", d, h);
   sh.line_available("int", d, h);
 
-  JUST_ASSERT_EQUAL_CONTAINER({"int"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"int"}, h.commands());
 }
 
-JUST_TEST_CASE(test_accept_c_comment_input)
+TEST(evaluation, accept_c_comment_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("/* some comment */", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_accept_cpp_comment_input)
+TEST(evaluation, accept_cpp_comment_input)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("// some comment", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_comment_is_stored_in_history)
+TEST(evaluation, comment_is_stored_in_history)
 {
   null_displayer d;
   in_memory_history h;
@@ -176,10 +178,10 @@ JUST_TEST_CASE(test_comment_is_stored_in_history)
 
   sh.line_available("// some comment", d, h);
 
-  JUST_ASSERT_EQUAL(1u, h.commands().size());
+  ASSERT_EQ(1u, h.commands().size());
 }
 
-JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
+TEST(evaluation, throwing_environment_update_not_breaking_shell)
 {
   data::config cfg;
   breaking_environment* e = new breaking_environment();
@@ -193,10 +195,10 @@ JUST_TEST_CASE(test_throwing_environment_update_not_breaking_shell)
 
   sh.store_in_buffer("typedef int foo;", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
+TEST(evaluation, throwing_environment_not_breaking_validate)
 {
   data::config cfg;
   mock_environment_detector det;
@@ -207,46 +209,46 @@ JUST_TEST_CASE(test_throwing_environment_not_breaking_validate)
                              .build(cfg, "", "", "env.hpp", det, d, nullptr)
                              ->validate_code("typedef int foo;", cfg, e, false);
 
-  JUST_ASSERT(!r.successful);
-  JUST_ASSERT(!r.error.empty());
+  ASSERT_FALSE(r.successful);
+  ASSERT_FALSE(r.error.empty());
 }
 
-JUST_TEST_CASE(test_variable_definition)
+TEST(evaluation, variable_definition)
 {
   using data::command;
-  JUST_ASSERT(is_environment_setup_command(command("int x;")));
+  ASSERT_TRUE(is_environment_setup_command(command("int x;")));
 }
 
-JUST_TEST_CASE(test_function_definition)
+TEST(evaluation, function_definition)
 {
   using data::command;
-  JUST_ASSERT(is_environment_setup_command(command("void f() {}")));
+  ASSERT_TRUE(is_environment_setup_command(command("void f() {}")));
 }
 
-JUST_TEST_CASE(test_is_environment_setup_with_leading_whitespace)
+TEST(evaluation, is_environment_setup_with_leading_whitespace)
 {
   using data::command;
-  JUST_ASSERT(!is_environment_setup_command(command(" int")));
+  ASSERT_FALSE(is_environment_setup_command(command(" int")));
 }
 
-JUST_TEST_CASE(test_is_environment_setup_without_leading_whitespace)
+TEST(evaluation, is_environment_setup_without_leading_whitespace)
 {
   using data::command;
-  JUST_ASSERT(!is_environment_setup_command(command("int")));
+  ASSERT_FALSE(is_environment_setup_command(command("int")));
 }
 
-JUST_TEST_CASE(test_prompt_is_different_in_multiline_input)
+TEST(evaluation, prompt_is_different_in_multiline_input)
 {
   null_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("const \\", d);
 
-  JUST_ASSERT_EQUAL("...>", sh.prompt());
+  ASSERT_EQ("...>", sh.prompt());
 }
 
-JUST_TEST_CASE(test_command_macro_usage_with_semicolon_is_environment_setup)
+TEST(evaluation, command_macro_usage_with_semicolon_is_environment_setup)
 {
   using data::command;
 
-  JUST_ASSERT(is_environment_setup_command(command("SOME_MACRO(13);")));
+  ASSERT_TRUE(is_environment_setup_command(command("SOME_MACRO(13);")));
 }

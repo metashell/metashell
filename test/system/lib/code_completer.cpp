@@ -20,8 +20,6 @@
 
 #include <metashell/system_test/metashell_instance.hpp>
 
-#include <just/test.hpp>
-
 using namespace metashell::system_test;
 
 code_completer::code_completer(const std::string& init_code_)

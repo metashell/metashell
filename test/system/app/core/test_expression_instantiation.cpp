@@ -21,13 +21,13 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/path_builder.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_instantiating_good_expression)
+TEST(expression_instantiation, good_expression)
 {
   const std::string ie_hpp =
       path_builder() / "metashell" / "instantiate_expression.hpp";
@@ -36,12 +36,11 @@ JUST_TEST_CASE(test_instantiating_good_expression)
   mi.command("#include <" + ie_hpp + ">");
   mi.command("template <class T> T mod2(T t_) { return t_ % 2; }");
 
-  JUST_ASSERT_EQUAL(
-      type("metashell::expression_instantiated<true>"),
-      mi.command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )").front());
+  ASSERT_EQ(type("metashell::expression_instantiated<true>"),
+            mi.command("METASHELL_INSTANTIATE_EXPRESSION( mod2(21) )").front());
 }
 
-JUST_TEST_CASE(test_instantiating_expression_that_generates_an_error)
+TEST(expression_instantiation, expression_that_generates_an_error)
 {
   const std::string ie_hpp =
       path_builder() / "metashell" / "instantiate_expression.hpp";
@@ -51,7 +50,7 @@ JUST_TEST_CASE(test_instantiating_expression_that_generates_an_error)
   mi.command("#include <string>");
   mi.command("template <class T> T mod2(T t_) { return t_ % 2; }");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error(_),
       mi.command("METASHELL_INSTANTIATE_EXPRESSION( mod2(std::string()) )")
           .front());

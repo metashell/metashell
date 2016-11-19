@@ -20,127 +20,125 @@
 
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_mdb_rbreak_without_evaluated_metaprogram)
+TEST(mdb_rbreak, without_evaluated_metaprogram)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("Metaprogram not evaluated yet"), mi.command("rbreak int").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments)
+TEST(mdb_rbreak, no_arguments)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(error("Argument expected"), mi.command("rbreak").front());
+  ASSERT_EQ(error("Argument expected"), mi.command("rbreak").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_no_arguments_with_trailing_whitespace)
+TEST(mdb_rbreak, no_arguments_with_trailing_whitespace)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(error("Argument expected"), mi.command("rbreak ").front());
+  ASSERT_EQ(error("Argument expected"), mi.command("rbreak ").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_invalid_regex)
+TEST(mdb_rbreak, invalid_regex)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("\"[\" is not a valid regex"), mi.command("rbreak [").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_no_match)
+TEST(mdb_rbreak, valid_regex_no_match)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Breakpoint \"xyz\" will never stop the execution"),
-      mi.command("rbreak xyz").front());
+  ASSERT_EQ(raw_text("Breakpoint \"xyz\" will never stop the execution"),
+            mi.command("rbreak xyz").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_one_match)
+TEST(mdb_rbreak, valid_regex_with_one_match)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
       mi.command("rbreak int").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_with_three_matches)
+TEST(mdb_rbreak, valid_regex_with_three_matches)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate int_<fib<5>::value>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"fib<3>\" will stop the execution on 3 locations"),
       mi.command("rbreak fib<3>").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_does_not_count_stops_in_unreachable_subgraphs)
+TEST(mdb_rbreak, does_not_count_stops_in_unreachable_subgraphs)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp + "int __x = fib<10>::value;");
   mi.command("#msh mdb");
   mi.command("evaluate int_<fib<2>::value>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"fib\" will stop the execution on 3 locations"),
       mi.command("rbreak fib").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode)
+TEST(mdb_rbreak, valid_regex_in_full_mode)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate -full int_<fib<5>::value>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint \"fib<3>\" will stop the execution on 2 locations"),
       mi.command("rbreak fib<3>").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_only_root)
+TEST(mdb_rbreak, valid_regex_in_full_mode_match_only_root)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate -full int_<fib<5>::value>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text(
           "Breakpoint \"int_<fib<5>::value>\" will never stop the execution"),
       mi.command("rbreak int_<fib<5>::value>").front());
 }
 
-JUST_TEST_CASE(test_mdb_rbreak_with_valid_regex_in_full_mode_match_also_root)
+TEST(mdb_rbreak, valid_regex_in_full_mode_match_also_root)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate -full int_<fib<5>::value>");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" "
-               "will stop the execution on 2 locations"),
-      mi.command("rbreak (int_<fib<5>::value>)|(fib<3>)").front());
+  ASSERT_EQ(raw_text("Breakpoint \"(int_<fib<5>::value>)|(fib<3>)\" "
+                     "will stop the execution on 2 locations"),
+            mi.command("rbreak (int_<fib<5>::value>)|(fib<3>)").front());
 }

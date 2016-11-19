@@ -16,95 +16,95 @@
 
 #include <metashell/get_file_section.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
 void indexed_line_assert_equal(const indexed_line& a, const indexed_line& b)
 {
-  JUST_ASSERT_EQUAL(a.line_index, b.line_index);
-  JUST_ASSERT_EQUAL(a.line, b.line);
+  ASSERT_EQ(a.line_index, b.line_index);
+  ASSERT_EQ(a.line, b.line);
 }
 
-JUST_TEST_CASE(test_get_file_section_empty)
+TEST(get_file_section, empty)
 {
   std::string buffer = "";
 
   auto section = get_file_section_from_buffer(buffer, 3, 2);
 
-  JUST_ASSERT_EQUAL(0u, section.size());
+  ASSERT_EQ(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line)
+TEST(get_file_section, one_line)
 {
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 1, 2);
 
-  JUST_ASSERT_EQUAL(1u, section.size());
+  ASSERT_EQ(1u, section.size());
   indexed_line_assert_equal({1, "the first line"}, section[0]);
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds)
+TEST(get_file_section, one_line_out_of_bounds)
 {
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
 
-  JUST_ASSERT_EQUAL(0u, section.size());
+  ASSERT_EQ(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_one_line_out_of_bounds_zero)
+TEST(get_file_section, one_line_out_of_bounds_zero)
 {
   std::string buffer = "the first line\n";
 
   auto section = get_file_section_from_buffer(buffer, 0, 2);
 
-  JUST_ASSERT_EQUAL(0u, section.size());
+  ASSERT_EQ(0u, section.size());
 }
 
-JUST_TEST_CASE(test_get_file_section_two_line_1)
+TEST(get_file_section, two_line_1)
 {
   std::string buffer = "the first line\nthe second line\n";
 
   auto section = get_file_section_from_buffer(buffer, 1, 2);
 
-  JUST_ASSERT_EQUAL(2u, section.size());
+  ASSERT_EQ(2u, section.size());
   indexed_line_assert_equal({1, "the first line"}, section[0]);
   indexed_line_assert_equal({2, "the second line"}, section[1]);
 }
 
-JUST_TEST_CASE(test_get_file_section_two_lines_2)
+TEST(get_file_section, two_lines_2)
 {
   std::string buffer = "the first line\nthe second line\n";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
 
-  JUST_ASSERT_EQUAL(2u, section.size());
+  ASSERT_EQ(2u, section.size());
   indexed_line_assert_equal({1, "the first line"}, section[0]);
   indexed_line_assert_equal({2, "the second line"}, section[1]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_1)
+TEST(get_file_section, six_lines_1)
 {
   std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 2, 2);
 
-  JUST_ASSERT_EQUAL(4u, section.size());
+  ASSERT_EQ(4u, section.size());
   indexed_line_assert_equal({1, "the first line"}, section[0]);
   indexed_line_assert_equal({2, "the second line"}, section[1]);
   indexed_line_assert_equal({3, "third"}, section[2]);
   indexed_line_assert_equal({4, "4"}, section[3]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_2)
+TEST(get_file_section, six_lines_2)
 {
   std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 3, 2);
 
-  JUST_ASSERT_EQUAL(5u, section.size());
+  ASSERT_EQ(5u, section.size());
   indexed_line_assert_equal({1, "the first line"}, section[0]);
   indexed_line_assert_equal({2, "the second line"}, section[1]);
   indexed_line_assert_equal({3, "third"}, section[2]);
@@ -112,13 +112,13 @@ JUST_TEST_CASE(test_get_file_section_six_lines_2)
   indexed_line_assert_equal({5, "fifth"}, section[4]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_3)
+TEST(get_file_section, six_lines_3)
 {
   std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 4, 2);
 
-  JUST_ASSERT_EQUAL(5u, section.size());
+  ASSERT_EQ(5u, section.size());
   indexed_line_assert_equal({2, "the second line"}, section[0]);
   indexed_line_assert_equal({3, "third"}, section[1]);
   indexed_line_assert_equal({4, "4"}, section[2]);
@@ -126,13 +126,13 @@ JUST_TEST_CASE(test_get_file_section_six_lines_3)
   indexed_line_assert_equal({6, "6"}, section[4]);
 }
 
-JUST_TEST_CASE(test_get_file_section_six_lines_4)
+TEST(get_file_section, six_lines_4)
 {
   std::string buffer = "the first line\nthe second line\nthird\n4\nfifth\n6";
 
   auto section = get_file_section_from_buffer(buffer, 5, 2);
 
-  JUST_ASSERT_EQUAL(4u, section.size());
+  ASSERT_EQ(4u, section.size());
   indexed_line_assert_equal({3, "third"}, section[0]);
   indexed_line_assert_equal({4, "4"}, section[1]);
   indexed_line_assert_equal({5, "fifth"}, section[2]);

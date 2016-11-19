@@ -17,12 +17,12 @@
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_echoing)
+TEST(echo, tests)
 {
-  JUST_ASSERT_EQUAL(comment({paragraph("foo bar")}),
-                    metashell_instance().command("#msh echo foo bar").front());
+  ASSERT_EQ(comment({paragraph("foo bar")}),
+            metashell_instance().command("#msh echo foo bar").front());
 }

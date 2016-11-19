@@ -20,11 +20,11 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/path_builder.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_basic_formatting)
+TEST(formatting, basic)
 {
   metashell_instance mi;
   mi.command(
@@ -37,10 +37,10 @@ JUST_TEST_CASE(test_basic_formatting)
       "};"
       "}");
 
-  JUST_ASSERT_EQUAL(type("double"), mi.command("int").front());
+  ASSERT_EQ(type("double"), mi.command("int").front());
 }
 
-JUST_TEST_CASE(test_tag_dispatched_formatting)
+TEST(formatting, tag_dispatched)
 {
   metashell_instance mi;
   mi.command(
@@ -66,20 +66,19 @@ JUST_TEST_CASE(test_tag_dispatched_formatting)
       "};"
       "}");
 
-  JUST_ASSERT_EQUAL(type("char"), mi.command("foo").front());
+  ASSERT_EQ(type("char"), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(test_formatting_disabled)
+TEST(formatting, disabled)
 {
   metashell_instance mi;
   mi.command("template <class... Ts> struct template_with_a_long_name {};");
 
-  JUST_ASSERT_EQUAL(
-      type("template_with_a_long_name<int, double, char>"),
-      mi.command("template_with_a_long_name<int, double, char>").front());
+  ASSERT_EQ(type("template_with_a_long_name<int, double, char>"),
+            mi.command("template_with_a_long_name<int, double, char>").front());
 }
 
-JUST_TEST_CASE(test_nested_mpl_vector_formatting)
+TEST(formatting, nested_mpl_vector)
 {
   const std::string vector_hpp =
       path_builder() / "metashell" / "formatter" / "vector.hpp";
@@ -87,7 +86,6 @@ JUST_TEST_CASE(test_nested_mpl_vector_formatting)
   metashell_instance mi;
   mi.command("#include <" + vector_hpp + ">");
 
-  JUST_ASSERT_EQUAL(
-      type("boost_::mpl::vector<boost_::mpl::vector<int> >"),
-      mi.command("boost::mpl::vector<boost::mpl::vector<int>>").front());
+  ASSERT_EQ(type("boost_::mpl::vector<boost_::mpl::vector<int> >"),
+            mi.command("boost::mpl::vector<boost::mpl::vector<int>>").front());
 }

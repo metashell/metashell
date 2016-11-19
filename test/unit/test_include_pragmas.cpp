@@ -20,7 +20,7 @@
 
 #include "test_config.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -29,31 +29,13 @@
 
 using namespace metashell;
 
-namespace just
-{
-  namespace test
-  {
-    template <>
-    void display<std::vector<boost::filesystem::path>>(
-        std::ostream& out_,
-        const std::vector<boost::filesystem::path>& filenames_)
-    {
-      using boost::adaptors::transformed;
-      using boost::algorithm::join;
-      using boost::filesystem::path;
-
-      out_ << join(filenames_ | transformed([](const path& path_) {
-                     return path_.string();
-                   }),
-                   ":");
-    }
-  }
-}
-
 namespace
 {
+  const std::vector<std::vector<boost::filesystem::path>> foo_bar{
+      {"foo", "bar"}};
+
   template <data::include_type Type>
-  void test_pragma_includes_displays_includes()
+  std::vector<std::vector<boost::filesystem::path>> pragma_includes_displays()
   {
     in_memory_displayer d;
     metashell::shell sh(
@@ -61,18 +43,16 @@ namespace
         metashell::create_engine_with_include_path(Type, {"foo", "bar"}));
     sh.line_available("#msh " + to_string(Type) + "includes", d);
 
-    JUST_ASSERT_EQUAL_CONTAINER(
-        {std::vector<boost::filesystem::path>{"foo", "bar"}},
-        d.filename_lists());
+    return d.filename_lists();
   }
 }
 
-JUST_TEST_CASE(test_pragma_sysincludes_displays_sysincludes)
+TEST(include_pragmas, pragma_sysincludes_displays_sysincludes)
 {
-  test_pragma_includes_displays_includes<data::include_type::sys>();
+  ASSERT_EQ(foo_bar, pragma_includes_displays<data::include_type::sys>());
 }
 
-JUST_TEST_CASE(test_pragma_quoteincludes_displays_quoteincludes)
+TEST(include_pargmas, pragma_quoteincludes_displays_quoteincludes)
 {
-  test_pragma_includes_displays_includes<data::include_type::quote>();
+  ASSERT_EQ(foo_bar, pragma_includes_displays<data::include_type::quote>());
 }

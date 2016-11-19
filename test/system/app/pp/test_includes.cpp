@@ -23,8 +23,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <gtest/gtest.h>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
 #include <algorithm>
 
@@ -111,8 +111,10 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_includes)
+TEST(includes, tests)
 {
+  typedef std::vector<boost::filesystem::path> pv;
+
   just::temp::directory tmp_dir;
 
   const boost::filesystem::path tmp(tmp_dir.path());
@@ -123,12 +125,12 @@ JUST_TEST_CASE(test_includes)
   create_directories(a);
   create_directories(b);
 
-  JUST_ASSERT_EMPTY_CONTAINER(sysincludes({}, {}));
-  JUST_ASSERT_EQUAL_CONTAINER({a, b}, sysincludes({a, b}, {}));
-  JUST_ASSERT_EQUAL_CONTAINER({}, sysincludes({}, {a, b}));
+  ASSERT_EQ(filename_list{}, sysincludes({}, {}));
+  ASSERT_EQ((pv{a, b}), sysincludes({a, b}, {}));
+  ASSERT_EQ(pv{}, sysincludes({}, {a, b}));
 
-  JUST_ASSERT_EQUAL_CONTAINER({"."}, quoteincludes({}, {}));
-  JUST_ASSERT_EQUAL_CONTAINER({".", a, b}, quoteincludes({a, b}, {}));
-  JUST_ASSERT_EQUAL_CONTAINER({".", a, b}, quoteincludes({}, {a, b}));
-  JUST_ASSERT_EQUAL_CONTAINER({".", a, b}, quoteincludes({b}, {a}));
+  ASSERT_EQ(pv{"."}, quoteincludes({}, {}));
+  ASSERT_EQ((pv{".", a, b}), quoteincludes({a, b}, {}));
+  ASSERT_EQ((pv{".", a, b}), quoteincludes({}, {a, b}));
+  ASSERT_EQ((pv{".", a, b}), quoteincludes({b}, {a}));
 }

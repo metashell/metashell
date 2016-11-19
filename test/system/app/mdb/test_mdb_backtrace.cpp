@@ -23,61 +23,59 @@
 #include "fib.hpp"
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_mdb_backtrace_without_evaluation)
+TEST(mdb_backtrace, without_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("Metaprogram not evaluated yet"), mi.command("backtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_unstepped_fibonacci)
+TEST(mdb_backtrace, unstepped_fibonacci)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate int_<fib<10>::value>");
 
-  JUST_ASSERT_EQUAL(backtrace({frame(type("int_<fib<10>::value>"))}),
-                    mi.command("backtrace").front());
+  ASSERT_EQ(backtrace({frame(type("int_<fib<10>::value>"))}),
+            mi.command("backtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_when_metaprogram_finished)
+TEST(mdb_backtrace, metaprogram_finished)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate int");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram finished"), mi.command("continue").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
-      mi.command("backtrace"));
+  ASSERT_EQ(raw_text("Metaprogram finished"), mi.command("continue").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+            mi.command("backtrace"));
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_when_metaprogram_finished_in_full_mode)
+TEST(mdb_backtrace, metaprogram_finished_in_full_mode)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
   mi.command("evaluate -full int");
 
-  JUST_ASSERT_EQUAL(
-      raw_text("Metaprogram finished"), mi.command("continue").front());
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int")), to_json_string(prompt("(mdb)"))},
-      mi.command("backtrace"));
+  ASSERT_EQ(raw_text("Metaprogram finished"), mi.command("continue").front());
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Metaprogram finished")),
+                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+            mi.command("backtrace"));
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci)
+TEST(mdb_backtrace, one_stepped_fibonacci)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
@@ -85,14 +83,13 @@ JUST_TEST_CASE(test_mdb_backtrace_1_stepped_fibonacci)
   mi.command("evaluate int_<fib<10>::value>");
   mi.command("step");
 
-  JUST_ASSERT_EQUAL(
-      backtrace(
-          {frame(fib<10>(), _, _, instantiation_kind::template_instantiation),
-           frame(type("int_<fib<10>::value>"))}),
-      mi.command("backtrace").front());
+  ASSERT_EQ(backtrace({frame(fib<10>(), _, _,
+                             instantiation_kind::template_instantiation),
+                       frame(type("int_<fib<10>::value>"))}),
+            mi.command("backtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci)
+TEST(mdb_backtrace, two_stepped_fibonacci)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
@@ -100,7 +97,7 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci)
   mi.command("evaluate int_<fib<10>::value>");
   mi.command("step 2");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       backtrace(
           {frame(fib<8>(), _, _, instantiation_kind::template_instantiation),
            frame(fib<10>(), _, _, instantiation_kind::template_instantiation),
@@ -108,7 +105,7 @@ JUST_TEST_CASE(test_mdb_backtrace_2_stepped_fibonacci)
       mi.command("backtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci)
+TEST(mdb_backtrace, three_stepped_fibonacci)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
@@ -116,7 +113,7 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci)
   mi.command("evaluate int_<fib<10>::value>");
   mi.command("step 3");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       backtrace(
           {frame(fib<6>(), _, _, instantiation_kind::template_instantiation),
            frame(fib<8>(), _, _, instantiation_kind::template_instantiation),
@@ -125,18 +122,18 @@ JUST_TEST_CASE(test_mdb_backtrace_3_stepped_fibonacci)
       mi.command("backtrace").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_garbage_argument)
+TEST(mdb_backtrace, garbage_argument)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb");
   mi.command("evaluate int_<fib<10>::value>");
 
-  JUST_ASSERT_EQUAL(error("This command doesn't accept arguments"),
-                    mi.command("backtrace asd").front());
+  ASSERT_EQ(error("This command doesn't accept arguments"),
+            mi.command("backtrace asd").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_bt_alias)
+TEST(mdb_backtrace, bt_alias)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
@@ -144,20 +141,18 @@ JUST_TEST_CASE(test_mdb_backtrace_bt_alias)
   mi.command("evaluate int_<fib<10>::value>");
   mi.command("step");
 
-  JUST_ASSERT_EQUAL(
-      backtrace(
-          {frame(fib<10>(), _, _, instantiation_kind::template_instantiation),
-           frame(type("int_<fib<10>::value>"))}),
-      mi.command("backtrace").front());
+  ASSERT_EQ(backtrace({frame(fib<10>(), _, _,
+                             instantiation_kind::template_instantiation),
+                       frame(type("int_<fib<10>::value>"))}),
+            mi.command("backtrace").front());
 
-  JUST_ASSERT_EQUAL(
-      backtrace(
-          {frame(fib<10>(), _, _, instantiation_kind::template_instantiation),
-           frame(type("int_<fib<10>::value>"))}),
-      mi.command("bt").front());
+  ASSERT_EQ(backtrace({frame(fib<10>(), _, _,
+                             instantiation_kind::template_instantiation),
+                       frame(type("int_<fib<10>::value>"))}),
+            mi.command("bt").front());
 }
 
-JUST_TEST_CASE(test_mdb_backtrace_on_error)
+TEST(mdb_backtrace, on_error)
 {
   metashell_instance mi;
   mi.command(missing_value_fibonacci_mp);
@@ -165,7 +160,7 @@ JUST_TEST_CASE(test_mdb_backtrace_on_error)
   mi.command("evaluate int_<fib<5>::value>");
   mi.command("continue");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       backtrace(
           {frame(fib<0>(), _, _, instantiation_kind::memoization),
            frame(fib<2>(), _, _, instantiation_kind::template_instantiation),

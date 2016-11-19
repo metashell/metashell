@@ -23,49 +23,50 @@
 
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_mdb_finish_without_evaluation)
+TEST(mdb_finish, without_evaluation)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       error("Metaprogram not evaluated yet"), mi.command("finish").front());
 }
 
-JUST_TEST_CASE(test_mdb_finish_with_argument)
+TEST(mdb_finish, with_argument)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  JUST_ASSERT_EQUAL(error("This command doesn't accept arguments"),
-                    mi.command("finish asd").front());
+  ASSERT_EQ(error("This command doesn't accept arguments"),
+            mi.command("finish asd").front());
 }
 
-JUST_TEST_CASE(test_mdb_finish_fibonacci)
+TEST(mdb_finish, fibonacci)
 {
   metashell_instance mi;
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Metaprogram finished")),
-       to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))},
+  ASSERT_EQ(
+      (std::vector<json_string>{
+          to_json_string(raw_text("Metaprogram finished")),
+          to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
       mi.command("finish"));
 }
 
-JUST_TEST_CASE(test_mdb_finish_will_print_error_message_if_errored)
+TEST(mdb_finish, will_print_error_message_if_errored)
 {
   metashell_instance mi;
   mi.command(missing_value_fibonacci_mp);
   mi.command("#msh mdb int_<fib<5>::value>");
 
   const std::vector<json_string> r_fin = mi.command("finish");
-  JUST_ASSERT_EQUAL(raw_text("Metaprogram finished"), r_fin[0]);
-  JUST_ASSERT_EQUAL(error(_), r_fin[1]);
+  ASSERT_EQ(raw_text("Metaprogram finished"), r_fin[0]);
+  ASSERT_EQ(error(_), r_fin[1]);
 }

@@ -16,26 +16,26 @@
 
 #include <metashell/data/command.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::data;
 
-JUST_TEST_CASE(test_formatting_empty_token_list)
+TEST(command, formatting_empty_token_list)
 {
   const command cmd("");
-  JUST_ASSERT_EQUAL("", tokens_to_string(cmd.begin(), cmd.end()));
+  ASSERT_EQ("", tokens_to_string(cmd.begin(), cmd.end()));
 }
 
-JUST_TEST_CASE(test_formatting_one_token)
+TEST(command, formatting_one_token)
 {
   const command cmd("int hello");
 
-  JUST_ASSERT_EQUAL("int", tokens_to_string(cmd.begin(), skip(cmd.begin())));
+  ASSERT_EQ("int", tokens_to_string(cmd.begin(), skip(cmd.begin())));
 }
 
-JUST_TEST_CASE(test_formatting_more_tokens)
+TEST(command, formatting_more_tokens)
 {
   const command cmd("int hello");
 
-  JUST_ASSERT_EQUAL("int hello", tokens_to_string(cmd.begin(), cmd.end()));
+  ASSERT_EQ("int hello", tokens_to_string(cmd.begin(), cmd.end()));
 }

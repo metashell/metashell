@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
-int main(int argc_, char* argv_[]) { return ::just::test::run(argc_, argv_); }
+int main(int argc_, char* argv_[])
+{
+  ::testing::InitGoogleTest(&argc_, argv_);
+  return RUN_ALL_TESTS();
+}

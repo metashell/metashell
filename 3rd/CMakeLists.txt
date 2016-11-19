@@ -16,7 +16,7 @@
 
 disable_warnings()
 
-subdirs(boost protobuf)
+subdirs(boost protobuf googletest)
 
 if (WIN32)
   subdirs(wineditline)

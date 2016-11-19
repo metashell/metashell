@@ -19,7 +19,7 @@
 #include "mock_console.hpp"
 #include "util.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <vector>
 
@@ -61,62 +61,62 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_nothing_is_displayed_by_default)
+TEST(console_displayer, nothing_is_displayed_by_default)
 {
   mock_console c;
   console_displayer cd(c, false, false);
 
-  JUST_ASSERT_EQUAL("", c.content().get_string());
+  ASSERT_EQ("", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_raw_text_is_printed)
+TEST(console_displayer, raw_text_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_raw_text("Hello world!");
 
-  JUST_ASSERT_EQUAL("Hello world!\n", c.content().get_string());
+  ASSERT_EQ("Hello world!\n", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_raw_text_with_new_line_is_printed)
+TEST(console_displayer, raw_text_with_new_line_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_raw_text("Hello\nworld!");
 
-  JUST_ASSERT_EQUAL("Hello\nworld!\n", c.content().get_string());
+  ASSERT_EQ("Hello\nworld!\n", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_error_with_no_colors_is_printed)
+TEST(console_displayer, error_with_no_colors_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
   cd.show_error("Something went wrong");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       data::colored_string("Something went wrong\n", boost::none), c.content());
 }
 
-JUST_TEST_CASE(test_error_with_colors_is_printed_in_red)
+TEST(console_displayer, error_with_colors_is_printed_in_red)
 {
   mock_console c;
   console_displayer cd(c, false, true);
   cd.show_error("Something went wrong");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       data::colored_string("Something went wrong", data::color::bright_red) +
           "\n",
       c.content());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
+TEST(console_displayer, mdb_forwardtrace_from_root_on_narrow_terminal)
 {
   mock_console c(25);
   console_displayer d(c, false, false);
 
   d.show_call_graph(fib5_call_graph());
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "int_<fib<5>::value>\n"
       "+ fib<5> at b.hpp:1:2 (Te\n"
       "| mplateInstantiation fro\n"
@@ -155,7 +155,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
+TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -163,7 +163,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
   d.show_call_graph(fib5_call_graph());
 
   // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "int_<fib<5>::value>\n"
       "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
       "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
@@ -179,7 +179,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
+TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
 {
   mock_console c(1);
   console_displayer d(c, false, false);
@@ -187,7 +187,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   d.show_call_graph(fib5_call_graph());
 
   // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "int_<fib<5>::value>\n"
       "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
       "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
@@ -203,7 +203,7 @@ JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_show_file_section_3_lines_1)
+TEST(console_displayer, show_file_section_3_lines_1)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -216,14 +216,14 @@ JUST_TEST_CASE(test_show_file_section_3_lines_1)
   data::file_location location("<stdin>", 2, 0);
   d.show_file_section(location, stdin_content);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "   1  first\n"
       "-> 2  second\n"
       "   3  third\n",
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_show_file_section_3_lines_2)
+TEST(console_displayer, show_file_section_3_lines_2)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -236,14 +236,14 @@ JUST_TEST_CASE(test_show_file_section_3_lines_2)
   data::file_location location("<stdin>", 3, 0);
   d.show_file_section(location, stdin_content);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "   1  first\n"
       "   2  second\n"
       "-> 3  third\n",
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_show_file_section_6_lines_1)
+TEST(console_displayer, show_file_section_6_lines_1)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -259,7 +259,7 @@ JUST_TEST_CASE(test_show_file_section_6_lines_1)
   data::file_location location("<stdin>", 3, 0);
   d.show_file_section(location, stdin_content);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "   1  first\n"
       "   2  second\n"
       "-> 3  third\n"
@@ -269,7 +269,7 @@ JUST_TEST_CASE(test_show_file_section_6_lines_1)
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_show_file_section_6_lines_2)
+TEST(console_displayer, show_file_section_6_lines_2)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -287,7 +287,7 @@ JUST_TEST_CASE(test_show_file_section_6_lines_2)
   data::file_location location("<stdin>", 5, 0);
   d.show_file_section(location, stdin_content);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "   2  second\n"
       "   3  third\n"
       "   4  fourth\n"
@@ -298,7 +298,7 @@ JUST_TEST_CASE(test_show_file_section_6_lines_2)
       c.content().get_string());
 }
 
-JUST_TEST_CASE(test_show_file_section_10_lines)
+TEST(console_displayer, show_file_section_10_lines)
 {
   mock_console c(0);
   console_displayer d(c, false, false);
@@ -318,7 +318,7 @@ JUST_TEST_CASE(test_show_file_section_10_lines)
   data::file_location location("<stdin>", 7, 0);
   d.show_file_section(location, stdin_content);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "    4  fourth\n"
       "    5  fifth\n"
       "    6  sixth\n"

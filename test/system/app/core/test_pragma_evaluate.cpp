@@ -21,36 +21,37 @@
 
 #include <metashell/system_test/metashell_instance.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_pragma_evaluate_runs_a_metaprogram)
+TEST(pragma_evaluate, runs_a_metaprogram)
 {
   metashell_instance mi;
   mi.command("typedef int x;");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(type("int")),
-       to_json_string(comment(
-           {paragraph("You don't need the evaluate add pragma to evaluate "
-                      "this metaprogram."
-                      " The following command does this as well:"),
-            paragraph("x")})),
-       to_json_string(prompt(">"))},
+  ASSERT_EQ(
+      (std::vector<json_string>{
+          to_json_string(type("int")),
+          to_json_string(comment(
+              {paragraph("You don't need the evaluate add pragma to evaluate "
+                         "this metaprogram."
+                         " The following command does this as well:"),
+               paragraph("x")})),
+          to_json_string(prompt(">"))}),
       mi.command("#pragma metashell evaluate x"));
 }
 
-JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
+TEST(pragma_evaluate, displays_error_for_invalid_code)
 {
   metashell_instance mi;
 
   const std::vector<json_string> re =
       mi.command("#pragma metashell evaluate nonexisting_type");
-  JUST_ASSERT_EQUAL(error(_), re[0]);
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(error(_), re[0]);
+  ASSERT_EQ(
       comment({paragraph("You don't need the evaluate add pragma to evaluate "
                          "this metaprogram."
                          " The following command does this as well:"),
@@ -58,17 +59,18 @@ JUST_TEST_CASE(test_pragma_evaluate_displays_error_for_invalid_code)
       re[1]);
 }
 
-JUST_TEST_CASE(test_pragma_evaluate_warns)
+TEST(pragma_evaluate, warns)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(type("int")),
-       to_json_string(comment(
-           {paragraph("You don't need the evaluate add pragma to evaluate "
-                      "this metaprogram."
-                      " The following command does this as well:"),
-            paragraph("int")})),
-       to_json_string(prompt(">"))},
+  ASSERT_EQ(
+      (std::vector<json_string>{
+          to_json_string(type("int")),
+          to_json_string(comment(
+              {paragraph("You don't need the evaluate add pragma to evaluate "
+                         "this metaprogram."
+                         " The following command does this as well:"),
+               paragraph("int")})),
+          to_json_string(prompt(">"))}),
       mi.command("#pragma metashell evaluate int"));
 }

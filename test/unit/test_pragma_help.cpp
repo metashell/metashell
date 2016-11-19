@@ -18,9 +18,10 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
 
+#include "empty_container.hpp"
 #include "test_config.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 
@@ -47,60 +48,59 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_pragma_help_with_no_arguments)
+TEST(pragma_help, no_arguments)
 {
   in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.line_available("#pragma metashell help", d);
 
-  JUST_ASSERT(!d.comments().empty());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_FALSE(d.comments().empty());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument)
+TEST(pragma_help, non_existing_pragma_argument)
 {
   in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.line_available("#pragma metashell help foo", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.comments());
-  JUST_ASSERT_EQUAL_CONTAINER({"Pragma foo not found."}, d.errors());
+  ASSERT_EQ(empty_container, d.comments());
+  ASSERT_EQ(std::vector<std::string>{"Pragma foo not found."}, d.errors());
 }
 
-JUST_TEST_CASE(test_pragma_help_with_non_existing_pragma_argument_2)
+TEST(pragma_help, non_existing_pragma_argument_2)
 {
   in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.line_available("#pragma metashell help foo bar", d);
 
-  JUST_ASSERT_EMPTY_CONTAINER(d.comments());
-  JUST_ASSERT_EQUAL_CONTAINER({"Pragma foo bar not found."}, d.errors());
+  ASSERT_EQ(empty_container, d.comments());
+  ASSERT_EQ(std::vector<std::string>{"Pragma foo bar not found."}, d.errors());
 }
 
-JUST_TEST_CASE(test_pragma_help_for_a_pragma)
+TEST(pragma_help, for_a_pragma)
 {
   in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.line_available("#pragma metashell help help", d);
 
-  JUST_ASSERT(!d.comments().empty());
-  JUST_ASSERT_EMPTY_CONTAINER(d.errors());
+  ASSERT_FALSE(d.comments().empty());
+  ASSERT_EQ(empty_container, d.errors());
 }
 
-JUST_TEST_CASE(
-    test_pragma_help_for_a_pragma_which_is_also_the_prefix_of_other_pragmas)
+TEST(pragma_help, for_a_pragma_which_is_also_the_prefix_of_other_pragmas)
 {
   in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.line_available("#msh help environment", d);
 
-  JUST_ASSERT_EQUAL(1u, d.comments().size());
+  ASSERT_EQ(1u, d.comments().size());
   const auto& ps = d.comments().front().paragraphs;
-  JUST_ASSERT(contains("#msh environment", ps));
-  JUST_ASSERT(contains("#msh environment pop", ps));
+  ASSERT_TRUE(contains("#msh environment", ps));
+  ASSERT_TRUE(contains("#msh environment pop", ps));
 }
