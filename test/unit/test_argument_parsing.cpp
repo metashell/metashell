@@ -25,6 +25,8 @@
 #include <vector>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace
 {
@@ -34,7 +36,10 @@ namespace
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
-    mock_environment_detector env_detector;
+    NiceMock<mock_environment_detector> env_detector;
+
+    ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
+    ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
     return metashell::parse_config(args.size(), args.data(),
                                    std::map<std::string, engine_entry>(),
@@ -180,7 +185,10 @@ TEST(argument_parsing, specifying_the_engine)
 TEST(argument_parsing, metashell_path_is_filled)
 {
   std::vector<const char*> args{"the_path"};
-  mock_environment_detector env_detector;
+  NiceMock<mock_environment_detector> env_detector;
+
+  ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
+  ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
   const metashell::data::config cfg =
       metashell::parse_config(args.size(), args.data(),

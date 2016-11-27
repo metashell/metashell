@@ -22,195 +22,284 @@
 #include <gtest/gtest.h>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 TEST(pager, one_line)
 {
-  mock_console c(80, 100);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(100));
+
   pager p(c);
 
-  p.show("first");
-  ASSERT_TRUE(p.new_line());
+  {
+    ::testing::InSequence s;
 
-  ASSERT_EQ(0, c.ask_for_continuation_count());
-  ASSERT_EQ("first\n", c.content());
+    EXPECT_CALL(c, show(data::colored_string("first")));
+    EXPECT_CALL(c, new_line());
+  }
+
+  p.show("first");
+
+  ASSERT_TRUE(p.new_line());
 }
 
 TEST(pager, non_full_page)
 {
-  mock_console c(80, 5);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(5));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(c, show(data::colored_string("first")));
+    EXPECT_CALL(c, new_line());
+  }
 
   p.show("first");
-  ASSERT_TRUE(p.new_line());
-  p.show("second");
-  ASSERT_TRUE(p.new_line());
-  p.show("third");
+
   ASSERT_TRUE(p.new_line());
 
-  ASSERT_EQ(0, c.ask_for_continuation_count());
-  ASSERT_EQ("first\nsecond\nthird\n", c.content());
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(c, show(data::colored_string("second")));
+    EXPECT_CALL(c, new_line());
+  }
+
+  p.show("second");
+
+  ASSERT_TRUE(p.new_line());
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(c, show(data::colored_string("third")));
+    EXPECT_CALL(c, new_line());
+  }
+
+  p.show("third");
+
+  ASSERT_TRUE(p.new_line());
 }
 
 TEST(pager, almost_full_page)
 {
-  mock_console c(80, 4);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(4));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
 
+  EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("second")));
   p.show("second");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\nthird\n", c.content());
 }
 
 TEST(pager, full_page_by_one_line)
 {
-  mock_console c(80, 4);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(4));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
 
+  EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("second")));
   p.show("second");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("forth")));
   p.show("forth");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\nthird\nforth\n", c.content());
 }
 
 TEST(pager, multi_page_next_page_answer)
 {
-  mock_console c(80, 3);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(3));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
 
+  EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("second")));
   p.show("second");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("forth")));
   p.show("forth");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(2, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("fifth")));
   p.show("fifth");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(2, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
 TEST(pager, multi_page_multiline_shows)
 {
-  mock_console c(80, 3);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(3));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
 
+  EXPECT_CALL(c, show(data::colored_string("first\nsecond")));
   p.show("first\nsecond");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("forth\nfifth")));
   p.show("forth\nfifth");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(2, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
 TEST(pager, multi_page_narrow_terminal)
 {
-  mock_console c(5, 3);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(5));
+  ON_CALL(c, height()).WillByDefault(Return(3));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::next_page);
 
+  EXPECT_CALL(c, show(data::colored_string("firstsecond")));
   p.show("first" /*\n*/ "second");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("forthfifth")));
   p.show("forth" /*\n*/ "fifth");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::next_page));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(2, c.ask_for_continuation_count());
-
-  ASSERT_EQ("firstsecond\nthird\nforthfifth\n", c.content());
 }
 
 TEST(pager, multi_page_show_all_answer)
 {
-  mock_console c(80, 3);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(3));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::show_all);
 
+  EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("second")));
   p.show("second");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::show_all));
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("third")));
   p.show("third");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("forth")));
   p.show("forth");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("fifth")));
   p.show("fifth");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\nthird\nforth\nfifth\n", c.content());
 }
 
 TEST(pager, quit_answer)
 {
-  mock_console c(80, 3);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(80));
+  ON_CALL(c, height()).WillByDefault(Return(3));
+
   pager p(c);
-  c.set_continiation_answer(iface::console::user_answer::quit);
 
+  EXPECT_CALL(c, show(data::colored_string("first")));
   p.show("first");
+  EXPECT_CALL(c, new_line());
   ASSERT_TRUE(p.new_line());
-  ASSERT_EQ(0, c.ask_for_continuation_count());
 
+  EXPECT_CALL(c, show(data::colored_string("second")));
   p.show("second");
+  EXPECT_CALL(c, new_line());
+  EXPECT_CALL(c, ask_for_continuation())
+      .WillOnce(Return(iface::console::user_answer::quit));
   ASSERT_FALSE(p.new_line());
-  ASSERT_EQ(1, c.ask_for_continuation_count());
-
-  ASSERT_EQ("first\nsecond\n", c.content());
 }

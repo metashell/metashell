@@ -33,6 +33,9 @@
 #include <gtest/gtest.h>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::_;
 
 TEST(evaluation, accept_empty_input)
 {
@@ -201,10 +204,16 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
 TEST(evaluation, throwing_environment_not_breaking_validate)
 {
   data::config cfg;
-  mock_environment_detector det;
+  NiceMock<mock_environment_detector> det;
   breaking_environment e;
   e.get_appended_throw_from_now();
   null_displayer d;
+
+  ON_CALL(det, on_windows()).WillByDefault(Return(false));
+  ON_CALL(det, on_osx()).WillByDefault(Return(false));
+  ON_CALL(det, directory_of_executable()).WillByDefault(Return(""));
+  ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
+
   const data::result r = get_internal_templight_entry()
                              .build(cfg, "", "", "env.hpp", det, d, nullptr)
                              ->validate_code("typedef int foo;", cfg, e, false);

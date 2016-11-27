@@ -33,7 +33,7 @@ fi
 GTEST_VERSION="$1"
 GTEST_ARCHIVE="release-${GTEST_VERSION}.tar.gz"
 
-DIRS="googletest/include googletest/src"
+DIRS="googletest/include googletest/src googlemock/include googlemock/src"
 
 cd 3rd
   rm -rf ${DIRS}

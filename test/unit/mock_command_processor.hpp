@@ -19,26 +19,22 @@
 
 #include <metashell/iface/command_processor.hpp>
 
-#include <functional>
+#include <gmock/gmock.h>
 
 class mock_command_processor : public metashell::iface::command_processor
 {
 public:
-  mock_command_processor();
+  MOCK_METHOD3(line_available,
+               void(const std::string&,
+                    metashell::iface::displayer&,
+                    metashell::iface::history&));
+  MOCK_METHOD0(cancel_operation, void());
 
-  virtual void line_available(const std::string& cmd_,
-                              metashell::iface::displayer& displayer_,
-                              metashell::iface::history& history_) override;
-  virtual void cancel_operation() override;
+  MOCK_CONST_METHOD0(prompt, std::string());
+  MOCK_CONST_METHOD0(stopped, bool());
 
-  virtual std::string prompt() const override;
-  virtual bool stopped() const override;
-
-  virtual void code_complete(const std::string& s_,
-                             std::set<std::string>& out_) const override;
-
-  std::function<void(const std::string&, std::set<std::string>&)>
-      code_complete_callback;
+  MOCK_CONST_METHOD2(code_complete,
+                     void(const std::string&, std::set<std::string>&));
 };
 
 #endif

@@ -49,6 +49,10 @@ target_link_libraries(metashell_unit_test boost_regex)
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
 target_link_libraries(metashell_unit_test googletest)
 
+# Gmock
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googlemock/include")
+target_link_libraries(metashell_unit_test googlemock)
+
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")

@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-disable_warnings()
+use_cpp11()
 
-subdirs(boost protobuf googletest googlemock)
+include_directories(.)
+include_directories(include)
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
 
-if (WIN32)
-  subdirs(wineditline)
-endif()
+aux_source_directory(src SOURCES)
+list(REMOVE_ITEM SOURCES src/gmock-all.cc)
 
+add_library(googlemock STATIC ${SOURCES})

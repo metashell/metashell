@@ -142,18 +142,25 @@ TEST(json_line_reader, cmd_command_without_cmd_field)
 
 TEST(json_line_reader, displays_prompt)
 {
-  mock_json_writer jw;
+  mock_json_writer w;
   null_displayer d;
   command_processor_queue cpq;
 
-  const line_reader r = build_json_line_reader(string_reader{}, d, jw, cpq);
+  const line_reader r = build_json_line_reader(string_reader{}, d, w, cpq);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   r(">");
-
-  ASSERT_EQ((std::vector<std::string>{"start_object", "key type",
-                                      "string prompt", "key prompt", "string >",
-                                      "end_object", "end_document"}),
-            jw.calls());
 }
 
 TEST(json_line_reader, code_completion_without_code)
@@ -184,15 +191,9 @@ TEST(json_line_reader, code_completion_gets_code_completion)
   null_json_writer jw;
   null_displayer d;
 
-  bool called = false;
-  std::string called_with;
-
-  mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback = [&called, &called_with](
-      const std::string& code_, std::set<std::string>&) {
-    called = true;
-    called_with = code_;
-  };
+  mock_command_processor* cp =
+      new ::testing::StrictMock<mock_command_processor>;
+  EXPECT_CALL(*cp, code_complete("foo", ::testing::_));
 
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
@@ -202,45 +203,55 @@ TEST(json_line_reader, code_completion_gets_code_completion)
       cpq);
 
   r(">");
-
-  ASSERT_TRUE(called);
-  ASSERT_EQ("foo", called_with);
 }
 
 TEST(json_line_reader, code_completion_result)
 {
-  mock_json_writer jw;
+  mock_json_writer w;
   null_displayer d;
 
   mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback = [](
-      const std::string&, std::set<std::string>& out_) {
-    out_.insert("hello");
-    out_.insert("world");
-  };
+  EXPECT_CALL(*cp, code_complete("foo", ::testing::_))
+      .WillOnce(
+          testing::SetArgReferee<1>(std::set<std::string>{"hello", "world"}));
 
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
   const line_reader r = build_json_line_reader(
-      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, jw,
+      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, w,
       cpq);
 
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("code_completion_result"));
+    EXPECT_CALL(w, key("completions"));
+    EXPECT_CALL(w, start_array());
+    EXPECT_CALL(w, string("hello"));
+    EXPECT_CALL(w, string("world"));
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
+
   r(">");
-
-  ASSERT_EQ(
-      (std::vector<std::string>{
-          "start_object",    "key type",    "string prompt",
-          "key prompt",      "string >",    "end_object",
-          "end_document",
-
-          "start_object",    "key type",    "string code_completion_result",
-          "key completions", "start_array", "string hello",
-          "string world",    "end_array",   "end_object",
-          "end_document",
-
-          "start_object",    "key type",    "string prompt",
-          "key prompt",      "string >",    "end_object",
-          "end_document"}),
-      jw.calls());
 }

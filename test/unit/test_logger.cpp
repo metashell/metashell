@@ -27,6 +27,9 @@
 #include <string>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::_;
 
 TEST(logger, logging_is_disabled_by_default)
 {
@@ -40,7 +43,8 @@ TEST(logger, logging_is_disabled_by_default)
 TEST(logger, logging_is_enabled_when_logging_to_console)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
 
@@ -50,7 +54,8 @@ TEST(logger, logging_is_enabled_when_logging_to_console)
 TEST(logger, logging_is_disabled_after_logging_is_stopped)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
   l.stop_logging();
@@ -61,7 +66,8 @@ TEST(logger, logging_is_disabled_after_logging_is_stopped)
 TEST(logger, log_is_displayed_on_console_when_logging_to_console)
 {
   in_memory_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
 
@@ -73,21 +79,14 @@ TEST(logger, log_is_displayed_on_console_when_logging_to_console)
 TEST(logger, log_into_file_tries_to_open_the_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  bool open_called = false;
-  std::string fn;
-  w.open_callback = [&open_called, &fn](const std::string& fn_) {
-    open_called = true;
-    fn = fn_;
-    return true;
-  };
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open("/tmp/foo.txt")).WillOnce(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  ASSERT_TRUE(open_called);
-  ASSERT_EQ("/tmp/foo.txt", fn);
   ASSERT_TRUE(l.logging());
   ASSERT_EQ(data::logging_mode::file, l.mode());
 }
@@ -95,9 +94,10 @@ TEST(logger, log_into_file_tries_to_open_the_file)
 TEST(logger, failure_when_opening_log_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return false; };
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open(_)).WillOnce(Return(false));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
@@ -109,20 +109,16 @@ TEST(logger, failure_when_opening_log_file)
 TEST(logger, logging_into_a_different_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
-
+  EXPECT_CALL(w, close());
   l.log_into_file("/tmp/bar.txt");
-
-  ASSERT_TRUE(close_called);
 }
 
 TEST(
@@ -130,14 +126,15 @@ TEST(
     logging_is_disabled_when_trying_to_log_into_a_different_file_but_fails_to_open_it)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  w.open_callback = [](const std::string&) { return false; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(false));
 
   l.log_into_file("/tmp/bar.txt");
 
@@ -148,58 +145,43 @@ TEST(
 TEST(logger, log_file_is_closed_when_starting_to_log_to_console)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
-
+  EXPECT_CALL(w, close());
   l.log_to_console();
-
-  ASSERT_TRUE(close_called);
 }
 
 TEST(logger, log_file_is_closed_when_logging_is_stopped)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
-
+  EXPECT_CALL(w, close());
   l.stop_logging();
-
-  ASSERT_TRUE(close_called);
 }
 
 TEST(logger, log_is_written_to_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  std::ostringstream file_content;
-
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
-  w.write_callback = [&file_content](const std::string& msg_) {
-    file_content << msg_;
-    return true;
-  };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, write("foo\n")).WillOnce(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
   l.log("foo");
-
-  ASSERT_EQ("foo\n", file_content.str());
 }
