@@ -290,7 +290,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
   NiceMock<mock_console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(0));
-  ON_CALL(c, height()).WillByDefault(Return(100));
+  ON_CALL(c, height()).WillByDefault(Return(1000));
 
   console_displayer d(c, false, false);
 
@@ -375,7 +375,7 @@ TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
   NiceMock<mock_console> c;
 
   ON_CALL(c, width()).WillByDefault(Return(1));
-  ON_CALL(c, height()).WillByDefault(Return(100));
+  ON_CALL(c, height()).WillByDefault(Return(1000));
 
   console_displayer d(c, false, false);
 
