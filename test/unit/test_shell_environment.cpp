@@ -20,7 +20,7 @@
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <cassert>
 #include <string>
@@ -33,17 +33,22 @@ namespace
     assert(new_.substr(0, old_.size()) == old_);
     return new_.substr(old_.size());
   }
+
+  std::vector<metashell::data::text> text(const std::string& text_)
+  {
+    return std::vector<metashell::data::text>{metashell::data::text(text_)};
+  }
 }
 
-JUST_TEST_CASE(test_popping_environment_from_empty_queue)
+TEST(shell_environment, popping_environment_from_empty_queue)
 {
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
-  JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
+  ASSERT_ANY_THROW(sh.pop_environment());
 }
 
-JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
+TEST(shell_environment, env_pop_reverts_changes_since_push)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
@@ -54,10 +59,10 @@ JUST_TEST_CASE(test_env_pop_reverts_changes_since_push)
   sh.store_in_buffer("typedef int x;", d);
   sh.pop_environment();
 
-  JUST_ASSERT_EQUAL(old_env, sh.env().get_all());
+  ASSERT_EQ(old_env, sh.env().get_all());
 }
 
-JUST_TEST_CASE(test_more_pops_than_pushes_throws)
+TEST(shell_environment, more_pops_than_pushes_throws)
 {
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
@@ -65,10 +70,10 @@ JUST_TEST_CASE(test_more_pops_than_pushes_throws)
   sh.push_environment();
   sh.pop_environment();
 
-  JUST_ASSERT_THROWS([&sh] { sh.pop_environment(); });
+  ASSERT_ANY_THROW(sh.pop_environment());
 }
 
-JUST_TEST_CASE(test_env_two_level_environment_stack)
+TEST(shell_environment, env_two_level_environment_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
@@ -84,21 +89,20 @@ JUST_TEST_CASE(test_env_two_level_environment_stack)
   sh.pop_environment();
   sh.pop_environment();
 
-  JUST_ASSERT_EQUAL(old_env, sh.env().get_all());
+  ASSERT_EQ(old_env, sh.env().get_all());
 }
 
-JUST_TEST_CASE(test_displaying_the_size_of_the_empty_environment_stack)
+TEST(shell_environment, displaying_the_size_of_the_empty_environment_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
   sh.display_environment_stack_size(d);
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {metashell::data::text("Environment stack is empty")}, d.comments());
+  ASSERT_EQ(text("Environment stack is empty"), d.comments());
 }
 
-JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
+TEST(shell_environment, displaying_the_size_of_one_element_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
@@ -106,11 +110,10 @@ JUST_TEST_CASE(test_displaying_the_size_of_one_element_stack)
   sh.push_environment();
   sh.display_environment_stack_size(d);
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {metashell::data::text("Environment stack has 1 entry")}, d.comments());
+  ASSERT_EQ(text("Environment stack has 1 entry"), d.comments());
 }
 
-JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
+TEST(shell_environment, displaying_the_size_of_two_element_stack)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(
@@ -119,21 +122,20 @@ JUST_TEST_CASE(test_displaying_the_size_of_two_element_stack)
   sh.push_environment();
   sh.display_environment_stack_size(d);
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {metashell::data::text("Environment stack has 2 entries")}, d.comments());
+  ASSERT_EQ(text("Environment stack has 2 entries"), d.comments());
 }
 
-JUST_TEST_CASE(test_appended_since_when_nothing_appended)
+TEST(shell_environment, appended_since_when_nothing_appended)
 {
-  JUST_ASSERT_EQUAL("", appended_since("", ""));
+  ASSERT_EQ("", appended_since("", ""));
 }
 
-JUST_TEST_CASE(test_appended_since_when_something_appended)
+TEST(shell_environment, appended_since_when_something_appended)
 {
-  JUST_ASSERT_EQUAL(" world", appended_since("hello", "hello world"));
+  ASSERT_EQ(" world", appended_since("hello", "hello world"));
 }
 
-JUST_TEST_CASE(test_extending_environment_with_pragma)
+TEST(shell_environment, extending_environment_with_pragma)
 {
   metashell::in_memory_displayer d;
   metashell::shell sh(metashell::test_config(), "", "", "",
@@ -143,6 +145,6 @@ JUST_TEST_CASE(test_extending_environment_with_pragma)
   sh.line_available("#pragma metashell environment add typedef int x;", d);
   sh.line_available("#pragma metashell environment", d);
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       "\ntypedef int x;", appended_since(original_env, sh.env().get_all()));
 }

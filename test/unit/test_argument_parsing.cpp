@@ -18,13 +18,15 @@
 
 #include "mock_environment_detector.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
 #include <vector>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace
 {
@@ -34,7 +36,10 @@ namespace
   {
     std::vector<const char*> args{"metashell"};
     args.insert(args.end(), args_.begin(), args_.end());
-    mock_environment_detector env_detector;
+    NiceMock<mock_environment_detector> env_detector;
+
+    ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
+    ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
     return metashell::parse_config(args.size(), args.data(),
                                    std::map<std::string, engine_entry>(),
@@ -51,136 +56,139 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_recognising_extra_clang_arg)
+TEST(argument_parsing, recognising_extra_clang_arg)
 {
   const data::config cfg = parse_config({"--", "foo"}).cfg;
 
-  JUST_ASSERT_EQUAL(1u, cfg.extra_clang_args.size());
-  JUST_ASSERT_EQUAL("foo", cfg.extra_clang_args.front());
+  ASSERT_EQ(1u, cfg.extra_clang_args.size());
+  ASSERT_EQ("foo", cfg.extra_clang_args.front());
 }
 
-JUST_TEST_CASE(test_extra_clang_args_are_not_parsed)
+TEST(argument_parsing, extra_clang_args_are_not_parsed)
 {
-  JUST_ASSERT(parse_config({"--", "foo"}).should_run_shell());
+  ASSERT_TRUE(parse_config({"--", "foo"}).should_run_shell());
 }
 
-JUST_TEST_CASE(test_saving_is_enabled_by_default_during_parsing)
+TEST(argument_parsing, saving_is_enabled_by_default_during_parsing)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT(cfg.saving_enabled);
+  ASSERT_TRUE(cfg.saving_enabled);
 }
 
-JUST_TEST_CASE(test_disabling_saving)
+TEST(argument_parsing, disabling_saving)
 {
   const data::config cfg = parse_config({"--disable_saving"}).cfg;
 
-  JUST_ASSERT(!cfg.saving_enabled);
+  ASSERT_FALSE(cfg.saving_enabled);
 }
 
-JUST_TEST_CASE(test_default_console_type_is_readline)
+TEST(argument_parsing, default_console_type_is_readline)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
+  ASSERT_EQ(data::console_type::readline, cfg.con_type);
 }
 
-JUST_TEST_CASE(test_setting_console_type_to_plain)
+TEST(argument_parsing, setting_console_type_to_plain)
 {
   const data::config cfg = parse_config({"--console", "plain"}).cfg;
 
-  JUST_ASSERT_EQUAL(data::console_type::plain, cfg.con_type);
+  ASSERT_EQ(data::console_type::plain, cfg.con_type);
 }
 
-JUST_TEST_CASE(test_setting_console_type_to_readline)
+TEST(argument_parsing, setting_console_type_to_readline)
 {
   const data::config cfg = parse_config({"--console", "readline"}).cfg;
 
-  JUST_ASSERT_EQUAL(data::console_type::readline, cfg.con_type);
+  ASSERT_EQ(data::console_type::readline, cfg.con_type);
 }
 
-JUST_TEST_CASE(test_setting_console_type_to_json)
+TEST(argument_parsing, setting_console_type_to_json)
 {
   const data::config cfg = parse_config({"--console", "json"}).cfg;
 
-  JUST_ASSERT_EQUAL(data::console_type::json, cfg.con_type);
+  ASSERT_EQ(data::console_type::json, cfg.con_type);
 }
 
-JUST_TEST_CASE(test_splash_is_enabled_by_default)
+TEST(argument_parsing, splash_is_enabled_by_default)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT(cfg.splash_enabled);
+  ASSERT_TRUE(cfg.splash_enabled);
 }
 
-JUST_TEST_CASE(test_disabling_splash)
+TEST(argument_parsing, disabling_splash)
 {
   const data::config cfg = parse_config({"--nosplash"}).cfg;
 
-  JUST_ASSERT(!cfg.splash_enabled);
+  ASSERT_FALSE(cfg.splash_enabled);
 }
 
-JUST_TEST_CASE(test_logging_mode_is_none_by_default)
+TEST(argument_parsing, logging_mode_is_none_by_default)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL(data::logging_mode::none, cfg.log_mode);
+  ASSERT_EQ(data::logging_mode::none, cfg.log_mode);
 }
 
-JUST_TEST_CASE(test_logging_to_console)
+TEST(argument_parsing, logging_to_console)
 {
   const data::config cfg = parse_config({"--log", "-"}).cfg;
 
-  JUST_ASSERT_EQUAL(data::logging_mode::console, cfg.log_mode);
+  ASSERT_EQ(data::logging_mode::console, cfg.log_mode);
 }
 
-JUST_TEST_CASE(test_logging_to_file)
+TEST(argument_parsing, logging_to_file)
 {
   const data::config cfg = parse_config({"--log", "/tmp/foo.txt"}).cfg;
 
-  JUST_ASSERT_EQUAL(data::logging_mode::file, cfg.log_mode);
-  JUST_ASSERT_EQUAL("/tmp/foo.txt", cfg.log_file);
+  ASSERT_EQ(data::logging_mode::file, cfg.log_mode);
+  ASSERT_EQ("/tmp/foo.txt", cfg.log_file);
 }
 
-JUST_TEST_CASE(test_it_is_an_error_to_specify_log_twice)
+TEST(argument_parsing, it_is_an_error_to_specify_log_twice)
 {
   const parse_config_result r = parse_config({"--log", "-", "--log", "-"});
 
-  JUST_ASSERT(!r.should_run_shell());
-  JUST_ASSERT(r.should_error_at_exit());
+  ASSERT_FALSE(r.should_run_shell());
+  ASSERT_TRUE(r.should_error_at_exit());
 }
 
-JUST_TEST_CASE(test_decommissioned_arguments_provide_an_error_message)
+TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 {
-  JUST_ASSERT(fails_and_displays_error({"-I/usr/include"}));
-  JUST_ASSERT(fails_and_displays_error({"--include", "/usr/include"}));
-  JUST_ASSERT(fails_and_displays_error({"-DFOO=bar"}));
-  JUST_ASSERT(fails_and_displays_error({"--define", "FOO=bar"}));
-  JUST_ASSERT(fails_and_displays_error({"--std", "c++11"}));
-  JUST_ASSERT(fails_and_displays_error({"-w"}));
-  JUST_ASSERT(fails_and_displays_error({"--no_warnings"}));
-  JUST_ASSERT(fails_and_displays_error({"-ftemplate-depth=13"}));
-  JUST_ASSERT(fails_and_displays_error({"-stdlib=libstdc++"}));
+  ASSERT_TRUE(fails_and_displays_error({"-I/usr/include"}));
+  ASSERT_TRUE(fails_and_displays_error({"--include", "/usr/include"}));
+  ASSERT_TRUE(fails_and_displays_error({"-DFOO=bar"}));
+  ASSERT_TRUE(fails_and_displays_error({"--define", "FOO=bar"}));
+  ASSERT_TRUE(fails_and_displays_error({"--std", "c++11"}));
+  ASSERT_TRUE(fails_and_displays_error({"-w"}));
+  ASSERT_TRUE(fails_and_displays_error({"--no_warnings"}));
+  ASSERT_TRUE(fails_and_displays_error({"-ftemplate-depth=13"}));
+  ASSERT_TRUE(fails_and_displays_error({"-stdlib=libstdc++"}));
 }
 
-JUST_TEST_CASE(test_not_specifying_the_engine)
+TEST(argument_parsing, not_specifying_the_engine)
 {
   const data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT_EQUAL("internal", cfg.engine);
+  ASSERT_EQ("internal", cfg.engine);
 }
 
-JUST_TEST_CASE(test_specifying_the_engine)
+TEST(argument_parsing, specifying_the_engine)
 {
   const data::config cfg = parse_config({"--engine", "foo"}).cfg;
 
-  JUST_ASSERT_EQUAL("foo", cfg.engine);
+  ASSERT_EQ("foo", cfg.engine);
 }
 
-JUST_TEST_CASE(test_metashell_path_is_filled)
+TEST(argument_parsing, metashell_path_is_filled)
 {
   std::vector<const char*> args{"the_path"};
-  mock_environment_detector env_detector;
+  NiceMock<mock_environment_detector> env_detector;
+
+  ON_CALL(env_detector, on_windows()).WillByDefault(Return(false));
+  ON_CALL(env_detector, on_osx()).WillByDefault(Return(false));
 
   const metashell::data::config cfg =
       metashell::parse_config(args.size(), args.data(),
@@ -188,19 +196,19 @@ JUST_TEST_CASE(test_metashell_path_is_filled)
                               env_detector, nullptr, nullptr)
           .cfg;
 
-  JUST_ASSERT_EQUAL("the_path", cfg.metashell_binary);
+  ASSERT_EQ("the_path", cfg.metashell_binary);
 }
 
-JUST_TEST_CASE(test_preprocessor_mode_is_off_by_default)
+TEST(argument_parsing, preprocessor_mode_is_off_by_default)
 {
   const metashell::data::config cfg = parse_config({}).cfg;
 
-  JUST_ASSERT(!cfg.preprocessor_mode);
+  ASSERT_FALSE(cfg.preprocessor_mode);
 }
 
-JUST_TEST_CASE(test_preprocessor_mode_is_set_from_command_line)
+TEST(argument_parsing, preprocessor_mode_is_set_from_command_line)
 {
   const metashell::data::config cfg = parse_config({"--preprocessor"}).cfg;
 
-  JUST_ASSERT(cfg.preprocessor_mode);
+  ASSERT_TRUE(cfg.preprocessor_mode);
 }

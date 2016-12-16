@@ -21,7 +21,7 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/path_builder.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
@@ -35,34 +35,34 @@ namespace
   {
     metashell_instance mi;
 
-    JUST_ASSERT_EQUAL_CONTAINER(
-        {to_json_string(prompt(">"))}, mi.command(definition_));
-    JUST_ASSERT_EQUAL(expected_result_, mi.command(query_).front());
+    ASSERT_EQ(std::vector<json_string>{to_json_string(prompt(">"))},
+              mi.command(definition_));
+    ASSERT_EQ(expected_result_, mi.command(query_).front());
   }
 
   std::string generate_warning() { return "#warning hello"; }
 }
 
-JUST_TEST_CASE(test_evaluating_int)
+TEST(evaluation, int)
 {
-  JUST_ASSERT_EQUAL(type("int"), metashell_instance().command("int").front());
+  ASSERT_EQ(type("int"), metashell_instance().command("int").front());
 }
 
-JUST_TEST_CASE(test_non_existing_class)
+TEST(evaluation, non_existing_class)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL(error(_), mi.command("hello").front());
+  ASSERT_EQ(error(_), mi.command("hello").front());
 }
 
-JUST_TEST_CASE(test_macro_in_config)
+TEST(evaluation, macro_in_config)
 {
   metashell_instance mi({"--", "-DFOO=int"});
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("FOO").front());
+  ASSERT_EQ(type("int"), mi.command("FOO").front());
 }
 
-JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
+TEST(evaluation, typedef_in_the_middle_of_a_line)
 {
   test_definition_and_query("bool typedef * x;", "x", type("bool *"));
   test_definition_and_query("char typedef * x;", "x", type("char *"));
@@ -81,7 +81,7 @@ JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line)
   test_definition_and_query("wchar_t typedef * x;", "x", type("wchar_t *"));
 }
 
-JUST_TEST_CASE(test_defining_constexpr_function)
+TEST(evaluation, defining_constexpr_function)
 {
   const std::string scalar_hpp = path_builder() / "metashell" / "scalar.hpp";
 
@@ -90,56 +90,56 @@ JUST_TEST_CASE(test_defining_constexpr_function)
   mi.command("constexpr int f() { return 13; }");
 
   const json_string ic = mi.command("SCALAR(f())").front();
-  JUST_ASSERT(type("std::integral_constant<int, 13>") == ic ||
+  ASSERT_TRUE(type("std::integral_constant<int, 13>") == ic ||
               type("std::__1::integral_constant<int, 13>") == ic);
 }
 
-JUST_TEST_CASE(test_typedef_in_the_middle_of_a_line_starting_with_an_identifier)
+TEST(evaluation, typedef_in_the_middle_of_a_line_starting_with_an_identifier)
 {
   metashell_instance mi;
   mi.command("struct y;");
   mi.command("y typedef * x;");
 
-  JUST_ASSERT_EQUAL(type("y *"), mi.command("x").front());
+  ASSERT_EQ(type("y *"), mi.command("x").front());
 }
 
-JUST_TEST_CASE(test_warnings)
+TEST(evaluation, warnings)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL(error(_), mi.command(generate_warning()).front());
+  ASSERT_EQ(error(_), mi.command(generate_warning()).front());
 }
 
-JUST_TEST_CASE(test_disabled_warnings)
+TEST(evaluation, disabled_warnings)
 {
   metashell_instance mi({"--", "-w"});
 
-  JUST_ASSERT_EQUAL(prompt(">"), mi.command(generate_warning()).front());
+  ASSERT_EQ(prompt(">"), mi.command(generate_warning()).front());
 }
 
-JUST_TEST_CASE(test_multiline_input)
+TEST(evaluation, multiline_input)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL(prompt("...>"), mi.command("const \\").front());
-  JUST_ASSERT_EQUAL(type("const int"), mi.command("int").front());
+  ASSERT_EQ(prompt("...>"), mi.command("const \\").front());
+  ASSERT_EQ(type("const int"), mi.command("int").front());
 }
 
-JUST_TEST_CASE(test_three_line_input)
+TEST(evaluation, three_line_input)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL(prompt("...>"), mi.command("const \\").front());
-  JUST_ASSERT_EQUAL(prompt("...>"), mi.command("int \\").front());
-  JUST_ASSERT_EQUAL(type("const int *"), mi.command("*").front());
+  ASSERT_EQ(prompt("...>"), mi.command("const \\").front());
+  ASSERT_EQ(prompt("...>"), mi.command("int \\").front());
+  ASSERT_EQ(type("const int *"), mi.command("*").front());
 }
 
-JUST_TEST_CASE(test_dealing_with_crashing_clang)
+TEST(evaluation, dealing_with_crashing_clang)
 {
   const std::string command_breaking_clang = "decltype(&foo<>::~foo)";
 
   metashell_instance mi;
   mi.command("template <class = void> struct foo { ~foo() {} };");
 
-  JUST_ASSERT_EQUAL(error(_), mi.command(command_breaking_clang).front());
+  ASSERT_EQ(error(_), mi.command(command_breaking_clang).front());
 }

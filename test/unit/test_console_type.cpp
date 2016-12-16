@@ -16,7 +16,7 @@
 
 #include <metashell/data/console_type.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
@@ -34,17 +34,17 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_parsing_console_type)
+TEST(console_type, parsing)
 {
-  JUST_ASSERT_EQUAL(console_type::plain, parse_console_type("plain"));
-  JUST_ASSERT_EQUAL(console_type::readline, parse_console_type("readline"));
-  JUST_ASSERT_EQUAL(console_type::json, parse_console_type("json"));
-  JUST_ASSERT_THROWS<std::exception>([] { parse_console_type("foo"); });
+  ASSERT_EQ(console_type::plain, parse_console_type("plain"));
+  ASSERT_EQ(console_type::readline, parse_console_type("readline"));
+  ASSERT_EQ(console_type::json, parse_console_type("json"));
+  ASSERT_THROW(parse_console_type("foo"), std::exception);
 }
 
-JUST_TEST_CASE(test_displaying_console_type)
+TEST(console_type, displaying)
 {
-  JUST_ASSERT_EQUAL("plain", display_on_stream(console_type::plain));
-  JUST_ASSERT_EQUAL("readline", display_on_stream(console_type::readline));
-  JUST_ASSERT_EQUAL("json", display_on_stream(console_type::json));
+  ASSERT_EQ("plain", display_on_stream(console_type::plain));
+  ASSERT_EQ("readline", display_on_stream(console_type::readline));
+  ASSERT_EQ("json", display_on_stream(console_type::json));
 }

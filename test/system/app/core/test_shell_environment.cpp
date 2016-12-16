@@ -23,34 +23,36 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/path_builder.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
 using pattern::_;
 
-JUST_TEST_CASE(test_extending_environment_with_pragma_warns)
+TEST(shell_environment, extending_with_pragma_warns)
 {
   metashell_instance mi;
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(comment({paragraph(
-           "You don't need the environment add pragma to add this to the"
-           " environment. The following command does this as well:")})),
-       to_json_string(cpp_code("typedef int x;")), to_json_string(prompt(">"))},
+  ASSERT_EQ(
+      (std::vector<json_string>{
+          to_json_string(comment({paragraph(
+              "You don't need the environment add pragma to add this to the"
+              " environment. The following command does this as well:")})),
+          to_json_string(cpp_code("typedef int x;")),
+          to_json_string(prompt(">"))}),
       mi.command("#pragma metashell environment add typedef int x;"));
 }
 
-JUST_TEST_CASE(test_resetting_the_environment)
+TEST(shell_environment, resetting)
 {
   metashell_instance mi;
   mi.command("typedef int foo;");
   mi.command("#pragma metashell environment reset");
 
-  JUST_ASSERT_EQUAL(error(_), mi.command("foo").front());
+  ASSERT_EQ(error(_), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
+TEST(shell_environment, resetting_does_not_remove_built_in_macros)
 {
   const std::string scalar_hpp = path_builder() / "metashell" / "scalar.hpp";
 
@@ -58,27 +60,27 @@ JUST_TEST_CASE(test_resetting_the_environment_does_not_remove_built_in_macros)
   mi.command("#pragma metashell environment reset");
   mi.command("#include <" + scalar_hpp + ">");
 
-  JUST_ASSERT_EQUAL(type(_), mi.command("SCALAR(__METASHELL_MAJOR)").front());
+  ASSERT_EQ(type(_), mi.command("SCALAR(__METASHELL_MAJOR)").front());
 }
 
-JUST_TEST_CASE(test_restoring_after_environment_reset_from_environment_stack)
+TEST(shell_environment, restoring_after_reset_from_environment_stack)
 {
   metashell_instance mi;
   mi.command("typedef int foo;");
 
-  JUST_ASSERT_EQUAL(comment({paragraph("Environment stack has 1 entry")}),
-                    mi.command("#pragma metashell environment push").front());
+  ASSERT_EQ(comment({paragraph("Environment stack has 1 entry")}),
+            mi.command("#pragma metashell environment push").front());
 
   mi.command("#pragma metashell environment reset");
 
-  JUST_ASSERT_EQUAL(comment({paragraph("Environment stack is empty")}),
-                    mi.command("#pragma metashell environment pop").front());
+  ASSERT_EQ(comment({paragraph("Environment stack is empty")}),
+            mi.command("#pragma metashell environment pop").front());
 
-  JUST_ASSERT_EQUAL(type("int"), mi.command("foo").front());
+  ASSERT_EQ(type("int"), mi.command("foo").front());
 }
 
-JUST_TEST_CASE(
-    test_environment_add_invalid_code_does_not_change_environment_and_displays_error)
+TEST(shell_environment,
+     add_invalid_code_does_not_change_environment_and_displays_error)
 {
   const cpp_code breaking("typedef nonexisting_type x;");
 
@@ -89,10 +91,9 @@ JUST_TEST_CASE(
 
   const std::vector<json_string> br = mi.command(
       "#pragma metashell environment add " + *breaking.code().value());
-  JUST_ASSERT_EQUAL(error(_), br[0]);
-  JUST_ASSERT_EQUAL(comment(_), br[1]);
-  JUST_ASSERT_EQUAL(breaking, br[2]);
+  ASSERT_EQ(error(_), br[0]);
+  ASSERT_EQ(comment(_), br[1]);
+  ASSERT_EQ(breaking, br[2]);
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      original_env, mi.command("#pragma metashell environment"));
+  ASSERT_EQ(original_env, mi.command("#pragma metashell environment"));
 }

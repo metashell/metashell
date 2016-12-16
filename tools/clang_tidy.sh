@@ -49,5 +49,6 @@ fi
       | sed 's/^.*"file"[ \t]*:[ \t]*"//' \
       | sed 's/"$//' \
       | egrep -v 3rd \
+      | egrep -v test.unit \
   )
 

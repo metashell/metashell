@@ -16,7 +16,7 @@
 
 #include <metashell/data/logging_mode.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
@@ -34,9 +34,9 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_logging_mode_displayer)
+TEST(logging_mode, displayer)
 {
-  JUST_ASSERT_EQUAL("none", display(logging_mode::none));
-  JUST_ASSERT_EQUAL("console", display(logging_mode::console));
-  JUST_ASSERT_EQUAL("file", display(logging_mode::file));
+  ASSERT_EQ("none", display(logging_mode::none));
+  ASSERT_EQ("console", display(logging_mode::console));
+  ASSERT_EQ("file", display(logging_mode::file));
 }

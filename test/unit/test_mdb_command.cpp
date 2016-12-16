@@ -16,65 +16,65 @@
 
 #include <metashell/mdb_command.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include "util.hpp"
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_mdb_command_repeatable_constructor_test)
+TEST(mdb_command, repeatable_constructor)
 {
   mdb_command x(
       {"asdf"}, repeatable_t::repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
-  JUST_ASSERT(x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
-  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
-  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
+  ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
+  ASSERT_TRUE(x.is_repeatable());
+  ASSERT_EQ(x.get_usage(), "[asd]");
+  ASSERT_EQ(x.get_short_description(), "fdsa");
+  ASSERT_EQ(x.get_long_description(), "xxyy");
 }
 
-JUST_TEST_CASE(test_mdb_command_non_repeatable_constructor_test)
+TEST(mdb_command, non_repeatable_constructor)
 {
   mdb_command x(
       {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fdsa", "xxyy");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asdf"}, x.get_keys());
-  JUST_ASSERT(!x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_short_description(), "fdsa");
-  JUST_ASSERT_EQUAL(x.get_long_description(), "xxyy");
+  ASSERT_EQ(std::vector<std::string>{"asdf"}, x.get_keys());
+  ASSERT_FALSE(x.is_repeatable());
+  ASSERT_EQ(x.get_short_description(), "fdsa");
+  ASSERT_EQ(x.get_long_description(), "xxyy");
 }
 
-JUST_TEST_CASE(test_mdb_command_multiple_keys_constructor_test)
+TEST(mdb_command, multiple_keys_constructor)
 {
   mdb_command x({"asdf", "xxx"}, repeatable_t::non_repeatable, nullptr, "[asd]",
                 "fd", "xx");
 
-  JUST_ASSERT_EQUAL_CONTAINER({"asdf", "xxx"}, x.get_keys());
-  JUST_ASSERT(!x.is_repeatable());
-  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
-  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
-  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
+  ASSERT_EQ((std::vector<std::string>{"asdf", "xxx"}), x.get_keys());
+  ASSERT_FALSE(x.is_repeatable());
+  ASSERT_EQ(x.get_usage(), "[asd]");
+  ASSERT_EQ(x.get_short_description(), "fd");
+  ASSERT_EQ(x.get_long_description(), "xx");
 }
 
-JUST_TEST_CASE(test_mdb_command_full_description_empty_long_description)
+TEST(mdb_command, full_description_empty_long_description)
 {
-  mdb_command x(
-      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fd", "");
+  mdb_command x(std::vector<std::string>{"asdf"}, repeatable_t::non_repeatable,
+                nullptr, "[asd]", "fd", "");
 
-  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
-  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
-  JUST_ASSERT_EQUAL(x.get_long_description(), "");
-  JUST_ASSERT_EQUAL(x.get_full_description(), "fd");
+  ASSERT_EQ(x.get_usage(), "[asd]");
+  ASSERT_EQ(x.get_short_description(), "fd");
+  ASSERT_EQ(x.get_long_description(), "");
+  ASSERT_EQ(x.get_full_description(), "fd");
 }
 
-JUST_TEST_CASE(test_mdb_command_full_description_non_empty_long_description)
+TEST(mdb_command, full_description_non_empty_long_description)
 {
-  mdb_command x(
-      {"asdf"}, repeatable_t::non_repeatable, nullptr, "[asd]", "fd", "xx");
+  mdb_command x(std::vector<std::string>{"asdf"}, repeatable_t::non_repeatable,
+                nullptr, "[asd]", "fd", "xx");
 
-  JUST_ASSERT_EQUAL(x.get_usage(), "[asd]");
-  JUST_ASSERT_EQUAL(x.get_short_description(), "fd");
-  JUST_ASSERT_EQUAL(x.get_long_description(), "xx");
-  JUST_ASSERT_EQUAL(x.get_full_description(), "fd\nxx");
+  ASSERT_EQ(x.get_usage(), "[asd]");
+  ASSERT_EQ(x.get_short_description(), "fd");
+  ASSERT_EQ(x.get_long_description(), "xx");
+  ASSERT_EQ(x.get_full_description(), "fd\nxx");
 }

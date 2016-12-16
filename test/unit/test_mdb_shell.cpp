@@ -18,119 +18,121 @@
 #include <metashell/in_memory_history.hpp>
 #include <metashell/null_displayer.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
+#include "empty_container.hpp"
 #include "mdb_test_shell.hpp"
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_mdb_shell_is_stopped_false_by_default)
+TEST(mdb_shell, is_stopped_false_by_default)
 {
   mdb_test_shell sh;
 
-  JUST_ASSERT(!sh.stopped());
+  ASSERT_FALSE(sh.stopped());
 }
 
-JUST_TEST_CASE(test_mdb_shell_empty_lines)
+TEST(mdb_shell, empty_lines)
 {
   in_memory_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 
   sh.line_available("", d, h);
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
-  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT(d.call_graphs().empty());
+  ASSERT_EQ(empty_container, h.commands());
+  ASSERT_EQ(empty_container, d.raw_texts());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_TRUE(d.call_graphs().empty());
 
   sh.line_available(" ", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
-  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT(d.call_graphs().empty());
+  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
+  ASSERT_EQ(empty_container, d.raw_texts());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_TRUE(d.call_graphs().empty());
 
   sh.line_available("\t", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" ", "\t"}, h.commands());
-  JUST_ASSERT_EMPTY_CONTAINER(d.raw_texts());
-  JUST_ASSERT_EMPTY_CONTAINER(d.types());
-  JUST_ASSERT(d.call_graphs().empty());
+  ASSERT_EQ((std::vector<std::string>{" ", "\t"}), h.commands());
+  ASSERT_EQ(empty_container, d.raw_texts());
+  ASSERT_EQ(empty_container, d.types());
+  ASSERT_TRUE(d.call_graphs().empty());
 }
 
-JUST_TEST_CASE(test_mdb_shell_identical_lines_in_history)
+TEST(mdb_shell, identical_lines_in_history)
 {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 
   sh.line_available("asd", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"asd"}, h.commands());
 
   sh.line_available("asd", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"asd"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"asd"}, h.commands());
 
   sh.line_available("xyz", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz"}, h.commands());
+  ASSERT_EQ((std::vector<std::string>{"asd", "xyz"}), h.commands());
 
   sh.line_available("asd", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"asd", "xyz", "asd"}, h.commands());
+  ASSERT_EQ((std::vector<std::string>{"asd", "xyz", "asd"}), h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_identical_all_space_lines_in_history)
+TEST(mdb_shell, identical_all_space_lines_in_history)
 {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 
   sh.line_available(" ", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
 
   sh.line_available(" ", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" "}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{" "}, h.commands());
 
   sh.line_available("  ", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" ", "  "}, h.commands());
+  ASSERT_EQ((std::vector<std::string>{" ", "  "}), h.commands());
 
   sh.line_available(" ", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({" ", "  ", " "}, h.commands());
+  ASSERT_EQ((std::vector<std::string>{" ", "  ", " "}), h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_skips_empty_lines)
+TEST(mdb_shell, skips_empty_lines)
 {
   null_displayer d;
   in_memory_history h;
   mdb_test_shell sh;
 
-  JUST_ASSERT_EMPTY_CONTAINER(h.commands());
+  ASSERT_EQ(empty_container, h.commands());
 
   sh.line_available("ads", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
 
   sh.line_available("", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
 
   sh.line_available("ads", d, h);
-  JUST_ASSERT_EQUAL_CONTAINER({"ads"}, h.commands());
+  ASSERT_EQ(std::vector<std::string>{"ads"}, h.commands());
 }
 
-JUST_TEST_CASE(test_mdb_shell_prompt)
+TEST(mdb_shell, prompt)
 {
   mdb_test_shell sh;
 
-  JUST_ASSERT_EQUAL(sh.prompt(), "(mdb)");
+  ASSERT_EQ(sh.prompt(), "(mdb)");
 }
 
-JUST_TEST_CASE(test_mdb_shell_display_splash)
+TEST(mdb_shell, display_splash)
 {
   mdb_test_shell sh;
 
   in_memory_displayer d;
   sh.display_splash(d);
 
-  JUST_ASSERT_EQUAL_CONTAINER({"For help, type \"help\"."}, d.raw_texts());
+  ASSERT_EQ(
+      std::vector<std::string>{"For help, type \"help\"."}, d.raw_texts());
 }

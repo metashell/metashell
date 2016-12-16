@@ -20,185 +20,168 @@
 
 #include "mock_file_writer.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
 #include <string>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::_;
 
-JUST_TEST_CASE(test_loggers_logging_is_disabled_by_default)
+TEST(logger, logging_is_disabled_by_default)
 {
   null_displayer d;
   mock_file_writer w;
   logger l(d, w);
 
-  JUST_ASSERT(!l.logging());
+  ASSERT_FALSE(l.logging());
 }
 
-JUST_TEST_CASE(test_logging_is_enabled_when_logging_to_console)
+TEST(logger, logging_is_enabled_when_logging_to_console)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
 
-  JUST_ASSERT(l.logging());
+  ASSERT_TRUE(l.logging());
 }
 
-JUST_TEST_CASE(test_logging_is_disabled_after_logging_is_stopped)
+TEST(logger, logging_is_disabled_after_logging_is_stopped)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
   l.stop_logging();
 
-  JUST_ASSERT(!l.logging());
+  ASSERT_FALSE(l.logging());
 }
 
-JUST_TEST_CASE(test_log_is_displayed_on_console_when_logging_to_console)
+TEST(logger, log_is_displayed_on_console_when_logging_to_console)
 {
   in_memory_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
   logger l(d, w);
   l.log_to_console();
 
   l.log("foo bar");
 
-  JUST_ASSERT_EQUAL_CONTAINER({data::text("Log: foo bar")}, d.comments());
+  ASSERT_EQ(std::vector<data::text>{data::text("Log: foo bar")}, d.comments());
 }
 
-JUST_TEST_CASE(test_log_into_file_tries_to_open_the_file)
+TEST(logger, log_into_file_tries_to_open_the_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  bool open_called = false;
-  std::string fn;
-  w.open_callback = [&open_called, &fn](const std::string& fn_) {
-    open_called = true;
-    fn = fn_;
-    return true;
-  };
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open("/tmp/foo.txt")).WillOnce(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  JUST_ASSERT(open_called);
-  JUST_ASSERT_EQUAL("/tmp/foo.txt", fn);
-  JUST_ASSERT(l.logging());
-  JUST_ASSERT_EQUAL(data::logging_mode::file, l.mode());
+  ASSERT_TRUE(l.logging());
+  ASSERT_EQ(data::logging_mode::file, l.mode());
 }
 
-JUST_TEST_CASE(test_failure_when_opening_log_file)
+TEST(logger, failure_when_opening_log_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return false; };
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open(_)).WillOnce(Return(false));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  JUST_ASSERT(!l.logging());
-  JUST_ASSERT_EQUAL(data::logging_mode::none, l.mode());
+  ASSERT_FALSE(l.logging());
+  ASSERT_EQ(data::logging_mode::none, l.mode());
 }
 
-JUST_TEST_CASE(test_logging_into_a_different_file)
+TEST(logger, logging_into_a_different_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
+  EXPECT_CALL(w, close());
+  l.log_into_file("/tmp/bar.txt");
+}
+
+TEST(
+    logger,
+    logging_is_disabled_when_trying_to_log_into_a_different_file_but_fails_to_open_it)
+{
+  null_displayer d;
+  NiceMock<mock_file_writer> w;
+
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+
+  logger l(d, w);
+  l.log_into_file("/tmp/foo.txt");
+
+  EXPECT_CALL(w, open(_)).WillOnce(Return(false));
 
   l.log_into_file("/tmp/bar.txt");
 
-  JUST_ASSERT(close_called);
+  ASSERT_FALSE(l.logging());
+  ASSERT_EQ(data::logging_mode::none, l.mode());
 }
 
-JUST_TEST_CASE(
-    test_logging_is_disabled_when_trying_to_log_into_a_different_file_but_fails_to_open_it)
+TEST(logger, log_file_is_closed_when_starting_to_log_to_console)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  w.open_callback = [](const std::string&) { return false; };
-
-  l.log_into_file("/tmp/bar.txt");
-
-  JUST_ASSERT(!l.logging());
-  JUST_ASSERT_EQUAL(data::logging_mode::none, l.mode());
-}
-
-JUST_TEST_CASE(test_log_file_is_closed_when_starting_to_log_to_console)
-{
-  null_displayer d;
-  mock_file_writer w;
-
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
-
-  logger l(d, w);
-  l.log_into_file("/tmp/foo.txt");
-
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
-
+  EXPECT_CALL(w, close());
   l.log_to_console();
-
-  JUST_ASSERT(close_called);
 }
 
-JUST_TEST_CASE(test_log_file_is_closed_when_logging_is_stopped)
+TEST(logger, log_file_is_closed_when_logging_is_stopped)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
 
-  bool close_called = false;
-  w.close_callback = [&close_called] { close_called = true; };
-
+  EXPECT_CALL(w, close());
   l.stop_logging();
-
-  JUST_ASSERT(close_called);
 }
 
-JUST_TEST_CASE(test_log_is_written_to_file)
+TEST(logger, log_is_written_to_file)
 {
   null_displayer d;
-  mock_file_writer w;
+  NiceMock<mock_file_writer> w;
 
-  std::ostringstream file_content;
-
-  w.open_callback = [](const std::string&) { return true; };
-  w.is_open_callback = [] { return true; };
-  w.write_callback = [&file_content](const std::string& msg_) {
-    file_content << msg_;
-    return true;
-  };
+  EXPECT_CALL(w, open(_)).WillOnce(Return(true));
+  ON_CALL(w, is_open()).WillByDefault(Return(true));
+  EXPECT_CALL(w, write("foo\n")).WillOnce(Return(true));
 
   logger l(d, w);
   l.log_into_file("/tmp/foo.txt");
   l.log("foo");
-
-  JUST_ASSERT_EQUAL("foo\n", file_content.str());
 }

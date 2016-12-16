@@ -19,23 +19,16 @@
 
 #include <metashell/iface/file_writer.hpp>
 
-#include <functional>
+#include <gmock/gmock.h>
 
 class mock_file_writer : public metashell::iface::file_writer
 {
 public:
-  mock_file_writer();
+  MOCK_METHOD1(open, bool(const std::string&));
+  MOCK_METHOD0(close, void());
+  MOCK_CONST_METHOD0(is_open, bool());
 
-  virtual bool open(const std::string& filename_) override;
-  virtual void close() override;
-  virtual bool is_open() const override;
-
-  virtual bool write(const std::string& content_) override;
-
-  std::function<bool(const std::string&)> open_callback;
-  std::function<void()> close_callback;
-  std::function<bool()> is_open_callback;
-  std::function<bool(const std::string&)> write_callback;
+  MOCK_METHOD1(write, bool(const std::string&));
 };
 
 #endif

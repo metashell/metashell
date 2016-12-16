@@ -17,22 +17,22 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_hide_definition_error)
+TEST(hiding_cpp_errors, definition_error)
 {
   metashell_instance mi;
   mi.command("#msh show cpp_errors off");
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(prompt(">"))}, mi.command("void f() { return 13; }"));
+  ASSERT_EQ(std::vector<json_string>{to_json_string(prompt(">"))},
+            mi.command("void f() { return 13; }"));
 }
 
-JUST_TEST_CASE(test_hide_evaluation_error)
+TEST(hiding_cpp_errors, evaluation_error)
 {
   metashell_instance mi;
   mi.command("#msh show cpp_errors off");
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(prompt(">"))}, mi.command("void int"));
+  ASSERT_EQ(std::vector<json_string>{to_json_string(prompt(">"))},
+            mi.command("void int"));
 }

@@ -21,48 +21,48 @@
 
 #include "test_metaprograms.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_mdb_break_list_with_no_breakpoints)
+TEST(mdb_break, list_with_no_breakpoints)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(raw_text("No breakpoints currently set"),
-                    mi.command("break list").front());
+  ASSERT_EQ(raw_text("No breakpoints currently set"),
+            mi.command("break list").front());
 }
 
-JUST_TEST_CASE(test_mdb_break_list_with_one_breakpoint)
+TEST(mdb_break, list_with_one_breakpoint)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
   mi.command("rbreak i");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       raw_text("Breakpoint 1: regex(\"i\")"), mi.command("break list").front());
 }
 
-JUST_TEST_CASE(test_mdb_break_list_with_two_breakpoints)
+TEST(mdb_break, list_with_two_breakpoints)
 {
   metashell_instance mi;
   mi.command("#msh mdb int");
   mi.command("rbreak i");
   mi.command("rbreak n");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {to_json_string(raw_text("Breakpoint 1: regex(\"i\")")),
-       to_json_string(raw_text("Breakpoint 2: regex(\"n\")")),
-       to_json_string(prompt("(mdb)"))},
-      mi.command("break list"));
+  ASSERT_EQ((std::vector<json_string>{
+                to_json_string(raw_text("Breakpoint 1: regex(\"i\")")),
+                to_json_string(raw_text("Breakpoint 2: regex(\"n\")")),
+                to_json_string(prompt("(mdb)"))}),
+            mi.command("break list"));
 }
 
-JUST_TEST_CASE(test_mdb_break_garbage_argument)
+TEST(mdb_break, garbage_argument)
 {
   metashell_instance mi;
   mi.command("#msh mdb");
 
-  JUST_ASSERT_EQUAL(error("Call break like this: \"break list\""),
-                    mi.command("break asd").front());
+  ASSERT_EQ(error("Call break like this: \"break list\""),
+            mi.command("break asd").front());
 }

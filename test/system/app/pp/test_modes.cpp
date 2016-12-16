@@ -17,33 +17,32 @@
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::system_test;
 
-JUST_TEST_CASE(test_preprocessor_mode)
+TEST(modes, preprocessor_mode)
 {
   metashell_instance mi;
   mi.command("#msh preprocessor mode");
 
-  JUST_ASSERT_EQUAL(comment({paragraph("display preprocessed commands is on")}),
-                    mi.command("#msh preprocessed echo").front());
-  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is off")}),
-                    mi.command("#msh show cpp_errors").front());
-  JUST_ASSERT_EQUAL(comment({paragraph("evaluation of metaprograms is off")}),
-                    mi.command("#msh metaprogram evaluation").front());
+  ASSERT_EQ(comment({paragraph("display preprocessed commands is on")}),
+            mi.command("#msh preprocessed echo").front());
+  ASSERT_EQ(comment({paragraph("display C++ errors is off")}),
+            mi.command("#msh show cpp_errors").front());
+  ASSERT_EQ(comment({paragraph("evaluation of metaprograms is off")}),
+            mi.command("#msh metaprogram evaluation").front());
 }
 
-JUST_TEST_CASE(test_metaprogram_mode)
+TEST(modes, metaprogram_mode)
 {
   metashell_instance mi;
   mi.command("#msh metaprogram mode");
 
-  JUST_ASSERT_EQUAL(
-      comment({paragraph("display preprocessed commands is off")}),
-      mi.command("#msh preprocessed echo").front());
-  JUST_ASSERT_EQUAL(comment({paragraph("display C++ errors is on")}),
-                    mi.command("#msh show cpp_errors").front());
-  JUST_ASSERT_EQUAL(comment({paragraph("evaluation of metaprograms is on")}),
-                    mi.command("#msh metaprogram evaluation").front());
+  ASSERT_EQ(comment({paragraph("display preprocessed commands is off")}),
+            mi.command("#msh preprocessed echo").front());
+  ASSERT_EQ(comment({paragraph("display C++ errors is on")}),
+            mi.command("#msh show cpp_errors").front());
+  ASSERT_EQ(comment({paragraph("evaluation of metaprograms is on")}),
+            mi.command("#msh metaprogram evaluation").front());
 }

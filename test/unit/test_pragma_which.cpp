@@ -22,7 +22,7 @@
 
 #include "test_config.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
@@ -37,7 +37,7 @@ using namespace metashell;
     shell sh(test_config(), "", "", "", create_failing_engine());              \
     sh.line_available((command_), d);                                          \
                                                                                \
-    JUST_ASSERT_EQUAL_CONTAINER({(error_message_)}, d.errors());               \
+    ASSERT_EQ(std::vector<std::string>{(error_message_)}, d.errors());         \
   }
 
 namespace
@@ -83,36 +83,26 @@ namespace
   {
     const std::string prefix = All ? "-all " : "";
 
-    JUST_ASSERT_EQUAL(sys("hello", All), parse_arguments(prefix + "<hello>"));
-    JUST_ASSERT_EQUAL(sys("hello/world.hpp", All),
-                      parse_arguments(prefix + "<hello/world.hpp>"));
-    JUST_ASSERT_EQUAL(sys("hello\\world.hpp", All),
-                      parse_arguments(prefix + "<hello\\world.hpp>"));
-    JUST_ASSERT_EQUAL(
-        quote("hello", All), parse_arguments(prefix + "\"hello\""));
-    JUST_ASSERT_EQUAL(quote("hello/world.hpp", All),
-                      parse_arguments(prefix + "\"hello/world.hpp\""));
-    JUST_ASSERT_EQUAL(quote("hello\\world.hpp", All),
-                      parse_arguments(prefix + "\"hello\\world.hpp\""));
+    ASSERT_EQ(sys("hello", All), parse_arguments(prefix + "<hello>"));
+    ASSERT_EQ(sys("hello/world.hpp", All),
+              parse_arguments(prefix + "<hello/world.hpp>"));
+    ASSERT_EQ(sys("hello\\world.hpp", All),
+              parse_arguments(prefix + "<hello\\world.hpp>"));
+    ASSERT_EQ(quote("hello", All), parse_arguments(prefix + "\"hello\""));
+    ASSERT_EQ(quote("hello/world.hpp", All),
+              parse_arguments(prefix + "\"hello/world.hpp\""));
+    ASSERT_EQ(quote("hello\\world.hpp", All),
+              parse_arguments(prefix + "\"hello\\world.hpp\""));
   }
 }
 
-JUST_TEST_CASE(test_pragma_which_invalid_arguments)
-{
-  test_invalid_arguments("#msh which");
-}
+TEST(pragma_which, invalid_arguments) { test_invalid_arguments("#msh which"); }
 
-JUST_TEST_CASE(test_pragma_which_all_invalid_arguments)
+TEST(pragma_which, all_invalid_arguments)
 {
   test_invalid_arguments("#msh which -all");
 }
 
-JUST_TEST_CASE(test_path_parsing_of_pragma_which)
-{
-  test_valid_arguments<false>();
-}
+TEST(pragma_which, path_parsing) { test_valid_arguments<false>(); }
 
-JUST_TEST_CASE(test_path_parsing_of_pragma_which_with_all)
-{
-  test_valid_arguments<true>();
-}
+TEST(pragma_which, path_parsing_with_all) { test_valid_arguments<true>(); }

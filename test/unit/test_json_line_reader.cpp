@@ -24,21 +24,21 @@
 #include "mock_json_writer.hpp"
 #include "string_reader.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_end_of_input_with_json_line_reader)
+TEST(json_line_reader, end_of_input)
 {
   null_json_writer jw;
   null_displayer d;
   command_processor_queue cpq;
   const line_reader r = build_json_line_reader(string_reader{}, d, jw, cpq);
 
-  JUST_ASSERT(boost::none == r(">"));
+  ASSERT_TRUE(boost::none == r(">"));
 }
 
-JUST_TEST_CASE(test_reading_empty_json)
+TEST(json_line_reader, empty_json)
 {
   null_json_writer jw;
   null_displayer d;
@@ -47,11 +47,11 @@ JUST_TEST_CASE(test_reading_empty_json)
 
   const boost::optional<std::string> l = r(">");
 
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("", *l);
 }
 
-JUST_TEST_CASE(test_getting_line_with_json_line_reader)
+TEST(json_line_reader, getting_line)
 {
   null_json_writer jw;
   null_displayer d;
@@ -61,11 +61,11 @@ JUST_TEST_CASE(test_getting_line_with_json_line_reader)
 
   const boost::optional<std::string> l = r(">");
 
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_rejected_json_is_skipped)
+TEST(json_line_reader, rejected_json_is_skipped)
 {
   null_json_writer jw;
   null_displayer d;
@@ -76,11 +76,11 @@ JUST_TEST_CASE(test_rejected_json_is_skipped)
 
   const boost::optional<std::string> l = r(">");
 
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_command_without_type)
+TEST(json_line_reader, command_without_type)
 {
   null_json_writer jw;
   in_memory_displayer d;
@@ -91,14 +91,14 @@ JUST_TEST_CASE(test_command_without_type)
   const boost::optional<std::string> l = r(">");
 
   // generates an error
-  JUST_ASSERT_EQUAL_CONTAINER({"Command without a type: {}"}, d.errors());
+  ASSERT_EQ(std::vector<std::string>{"Command without a type: {}"}, d.errors());
 
   // skipped
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(bool(l));
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_command_of_unknown_type)
+TEST(json_line_reader, command_of_unknown_type)
 {
   null_json_writer jw;
   in_memory_displayer d;
@@ -111,15 +111,15 @@ JUST_TEST_CASE(test_command_of_unknown_type)
   const boost::optional<std::string> l = r(">");
 
   // generates an error
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"Unknown command type: some unknown type"}, d.errors());
+  ASSERT_EQ(std::vector<std::string>{"Unknown command type: some unknown type"},
+            d.errors());
 
   // skipped
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_cmd_command_without_cmd_field)
+TEST(json_line_reader, cmd_command_without_cmd_field)
 {
   null_json_writer jw;
   in_memory_displayer d;
@@ -131,31 +131,39 @@ JUST_TEST_CASE(test_cmd_command_without_cmd_field)
   const boost::optional<std::string> l = r(">");
 
   // generates an error
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"The cmd field of the cmd command is missing"}, d.errors());
+  ASSERT_EQ(
+      std::vector<std::string>{"The cmd field of the cmd command is missing"},
+      d.errors());
 
   // skipped
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_json_line_reader_displays_prompt)
+TEST(json_line_reader, displays_prompt)
 {
-  mock_json_writer jw;
+  mock_json_writer w;
   null_displayer d;
   command_processor_queue cpq;
 
-  const line_reader r = build_json_line_reader(string_reader{}, d, jw, cpq);
+  const line_reader r = build_json_line_reader(string_reader{}, d, w, cpq);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   r(">");
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string prompt", "key prompt", "string >",
-       "end_object", "end_document"},
-      jw.calls());
 }
 
-JUST_TEST_CASE(test_code_completion_without_code)
+TEST(json_line_reader, code_completion_without_code)
 {
   null_json_writer jw;
   in_memory_displayer d;
@@ -168,28 +176,24 @@ JUST_TEST_CASE(test_code_completion_without_code)
   const boost::optional<std::string> l = r(">");
 
   // generates an error
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"The code field of the code_completion command is missing"}, d.errors());
+  ASSERT_EQ(
+      std::vector<std::string>{
+          "The code field of the code_completion command is missing"},
+      d.errors());
 
   // skipped
-  JUST_ASSERT(boost::none != l);
-  JUST_ASSERT_EQUAL("int", *l);
+  ASSERT_TRUE(boost::none != l);
+  ASSERT_EQ("int", *l);
 }
 
-JUST_TEST_CASE(test_json_line_reader_code_completion_gets_code_completion)
+TEST(json_line_reader, code_completion_gets_code_completion)
 {
   null_json_writer jw;
   null_displayer d;
 
-  bool called = false;
-  std::string called_with;
-
-  mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback = [&called, &called_with](
-      const std::string& code_, std::set<std::string>&) {
-    called = true;
-    called_with = code_;
-  };
+  mock_command_processor* cp =
+      new ::testing::StrictMock<mock_command_processor>;
+  EXPECT_CALL(*cp, code_complete("foo", ::testing::_));
 
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
@@ -199,44 +203,55 @@ JUST_TEST_CASE(test_json_line_reader_code_completion_gets_code_completion)
       cpq);
 
   r(">");
-
-  JUST_ASSERT(called);
-  JUST_ASSERT_EQUAL("foo", called_with);
 }
 
-JUST_TEST_CASE(test_json_line_reader_code_completion_result)
+TEST(json_line_reader, code_completion_result)
 {
-  mock_json_writer jw;
+  mock_json_writer w;
   null_displayer d;
 
   mock_command_processor* cp = new mock_command_processor;
-  cp->code_complete_callback = [](
-      const std::string&, std::set<std::string>& out_) {
-    out_.insert("hello");
-    out_.insert("world");
-  };
+  EXPECT_CALL(*cp, code_complete("foo", ::testing::_))
+      .WillOnce(
+          testing::SetArgReferee<1>(std::set<std::string>{"hello", "world"}));
 
   command_processor_queue cpq;
   cpq.push(std::unique_ptr<iface::command_processor>(cp));
 
   const line_reader r = build_json_line_reader(
-      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, jw,
+      string_reader{"{\"type\":\"code_completion\",\"code\":\"foo\"}"}, d, w,
       cpq);
 
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("code_completion_result"));
+    EXPECT_CALL(w, key("completions"));
+    EXPECT_CALL(w, start_array());
+    EXPECT_CALL(w, string("hello"));
+    EXPECT_CALL(w, string("world"));
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("prompt"));
+    EXPECT_CALL(w, key("prompt"));
+    EXPECT_CALL(w, string(">"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
+
   r(">");
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object",    "key type",    "string prompt",
-       "key prompt",      "string >",    "end_object",
-       "end_document",
-
-       "start_object",    "key type",    "string code_completion_result",
-       "key completions", "start_array", "string hello",
-       "string world",    "end_array",   "end_object",
-       "end_document",
-
-       "start_object",    "key type",    "string prompt",
-       "key prompt",      "string >",    "end_object",
-       "end_document"},
-      jw.calls());
 }

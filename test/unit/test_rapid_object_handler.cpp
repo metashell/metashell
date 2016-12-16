@@ -18,143 +18,148 @@
 #include <metashell/null_displayer.hpp>
 #include <metashell/rapid_object_handler.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_empty)
+TEST(rapid_object_handler, new_is_empty)
 {
   null_displayer d;
-  JUST_ASSERT(rapid_object_handler(d).empty());
+  ASSERT_TRUE(rapid_object_handler(d).empty());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_not_failed)
+TEST(rapid_object_handler, new_is_not_failed)
 {
   null_displayer d;
-  JUST_ASSERT(!rapid_object_handler(d).failed());
+  ASSERT_FALSE(rapid_object_handler(d).failed());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_null)
+TEST(rapid_object_handler, new_is_failed_after_null)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Null();
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected null element"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(std::vector<std::string>{"Unexpected null element"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_bool)
+TEST(rapid_object_handler, new_is_failed_after_bool)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Bool(true);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected bool element: true"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected bool element: true"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_int)
+TEST(rapid_object_handler, new_is_failed_after_int)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Int(1);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected integer element: 1"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected integer element: 1"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_uint)
+TEST(rapid_object_handler, new_is_failed_after_uint)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Uint(1);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected integer element: 1"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected integer element: 1"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_int64)
+TEST(rapid_object_handler, new_is_failed_after_int64)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Int64(1);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected integer element: 1"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected integer element: 1"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_uint64)
+TEST(rapid_object_handler, new_is_failed_after_uint64)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Uint64(1);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected integer element: 1"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected integer element: 1"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_double)
+TEST(rapid_object_handler, new_is_failed_after_double)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.Double(11.13);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected double element: 11.13"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected double element: 11.13"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_standalone_string)
+TEST(rapid_object_handler, new_is_failed_after_standalone_string)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.String("foo", sizeof("foo") - 1, true);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected string: foo"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(std::vector<std::string>{"Unexpected string: foo"}, d.errors());
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_start_array)
+TEST(rapid_object_handler, new_is_failed_after_start_array)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
   const bool b = r.StartArray();
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected array"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(std::vector<std::string>{"Unexpected array"}, d.errors());
 }
 
-JUST_TEST_CASE(test_rapid_object_handler_is_not_failed_after_start_object)
+TEST(rapid_object_handler, not_failed_after_start_object)
 {
   null_displayer d;
   rapid_object_handler r(d);
   const bool b = r.StartObject();
 
-  JUST_ASSERT(b);
-  JUST_ASSERT(!r.failed());
+  ASSERT_TRUE(b);
+  ASSERT_FALSE(r.failed());
 }
 
-JUST_TEST_CASE(test_rapid_object_handler_returns_none_for_non_existing_fields)
+TEST(rapid_object_handler, returns_none_for_non_existing_fields)
 {
   null_displayer d;
   rapid_object_handler r(d);
 
   const boost::optional<std::string> f = r.field("foo");
 
-  JUST_ASSERT(!f);
+  ASSERT_FALSE(f);
 }
 
-JUST_TEST_CASE(
-    test_rapid_object_handler_is_failed_after_parsing_non_whitelisted_key)
+TEST(rapid_object_handler, failed_after_parsing_non_whitelisted_key)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
@@ -162,9 +167,9 @@ JUST_TEST_CASE(
   r.StartObject();
   const bool b = r.Key("foo", sizeof("foo") - 1, true);
 
-  JUST_ASSERT(!b);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unknown field: foo"}, d.errors());
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(std::vector<std::string>{"Unknown field: foo"}, d.errors());
 }
 
 namespace
@@ -176,55 +181,55 @@ namespace
 
     r.StartObject();
     const bool b_key = r.Key(field_.c_str(), field_.size(), true);
-    JUST_ASSERT(b_key);
+    ASSERT_TRUE(b_key);
 
     const bool b_value = r.String("foo", sizeof("foo") - 1, true);
-    JUST_ASSERT(b_value);
+    ASSERT_TRUE(b_value);
 
-    JUST_ASSERT(!r.failed());
+    ASSERT_FALSE(r.failed());
 
     const boost::optional<std::string> f = r.field(field_);
 
-    JUST_ASSERT(f != boost::none);
-    JUST_ASSERT_EQUAL("foo", *f);
+    ASSERT_TRUE(f != boost::none);
+    ASSERT_EQ("foo", *f);
   }
 }
 
-JUST_TEST_CASE(test_rapid_object_handler_whitelisted_fields)
+TEST(rapid_object_handler, whitelisted_fields)
 {
   test_whitelisted_field("type");
   test_whitelisted_field("cmd");
   test_whitelisted_field("code");
 }
 
-JUST_TEST_CASE(test_new_rapid_object_handler_is_failed_after_nested_object)
+TEST(rapid_object_handler, new_is_failed_after_nested_object)
 {
   in_memory_displayer d;
   rapid_object_handler r(d);
 
   const bool b1 = r.StartObject();
-  JUST_ASSERT(b1);
+  ASSERT_TRUE(b1);
 
   const bool b2 = r.Key("type", sizeof("type") - 1, true);
-  JUST_ASSERT(b2);
+  ASSERT_TRUE(b2);
 
   const bool b3 = r.StartObject();
 
-  JUST_ASSERT(!b3);
-  JUST_ASSERT(r.failed());
-  JUST_ASSERT_EQUAL_CONTAINER({"Unexpected nested object"}, d.errors());
+  ASSERT_FALSE(b3);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(std::vector<std::string>{"Unexpected nested object"}, d.errors());
 }
 
-JUST_TEST_CASE(test_rapid_object_handler_end_object_after_start_object_succeeds)
+TEST(rapid_object_handler, end_object_after_start_object_succeeds)
 {
   null_displayer d;
   rapid_object_handler r(d);
 
   const bool b1 = r.StartObject();
-  JUST_ASSERT(b1);
+  ASSERT_TRUE(b1);
 
   const bool b2 = r.EndObject(0);
-  JUST_ASSERT(b2);
+  ASSERT_TRUE(b2);
 
-  JUST_ASSERT(!r.failed());
+  ASSERT_FALSE(r.failed());
 }

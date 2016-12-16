@@ -18,16 +18,20 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <just/test.hpp>
-
 using namespace metashell::system_test;
 
 std::string metashell::system_test::remove_prefix(const std::string& prefix_,
                                                   const std::string& s_)
 {
-  const auto p = try_to_remove_prefix(prefix_, s_);
-  JUST_ASSERT(bool(p));
-  return *p;
+  if (const auto p = try_to_remove_prefix(prefix_, s_))
+  {
+    return *p;
+  }
+  else
+  {
+    throw std::runtime_error("String \"" + s_ + "\" has no \"" + prefix_ +
+                             "\" prefix");
+  }
 }
 
 boost::optional<std::string>

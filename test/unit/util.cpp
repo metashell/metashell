@@ -16,15 +16,20 @@
 
 #include "util.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
+
+#include <stdexcept>
 
 std::tuple<metashell::mdb_command, std::string>
 get_command_from_map(const metashell::mdb_command_handler_map& map,
                      const std::string& line)
 {
-  auto opt_pair = map.get_command_for_line(line);
-
-  JUST_ASSERT(bool(opt_pair));
-
-  return *opt_pair;
+  if (const auto opt_pair = map.get_command_for_line(line))
+  {
+    return *opt_pair;
+  }
+  else
+  {
+    throw std::logic_error("Command for " + line + " not found.");
+  }
 }

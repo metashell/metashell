@@ -19,11 +19,13 @@
 #include "mock_console.hpp"
 #include "util.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <vector>
 
 using namespace metashell;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace
 {
@@ -61,270 +63,533 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_nothing_is_displayed_by_default)
+TEST(console_displayer, nothing_is_displayed_by_default)
 {
-  mock_console c;
+  ::testing::StrictMock<mock_console> c;
   console_displayer cd(c, false, false);
-
-  JUST_ASSERT_EQUAL("", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_raw_text_is_printed)
+TEST(console_displayer, raw_text_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
+
+  EXPECT_CALL(c, show(data::colored_string("Hello world!")));
+  EXPECT_CALL(c, new_line());
+
   cd.show_raw_text("Hello world!");
-
-  JUST_ASSERT_EQUAL("Hello world!\n", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_raw_text_with_new_line_is_printed)
+TEST(console_displayer, raw_text_with_new_line_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
+
+  EXPECT_CALL(c, show(data::colored_string("Hello\nworld!")));
+  EXPECT_CALL(c, new_line());
+
   cd.show_raw_text("Hello\nworld!");
-
-  JUST_ASSERT_EQUAL("Hello\nworld!\n", c.content().get_string());
 }
 
-JUST_TEST_CASE(test_error_with_no_colors_is_printed)
+TEST(console_displayer, error_with_no_colors_is_printed)
 {
   mock_console c;
   console_displayer cd(c, false, false);
-  cd.show_error("Something went wrong");
 
-  JUST_ASSERT_EQUAL(
-      data::colored_string("Something went wrong\n", boost::none), c.content());
+  EXPECT_CALL(c, show(data::colored_string("Something went wrong")));
+  EXPECT_CALL(c, new_line());
+
+  cd.show_error("Something went wrong");
 }
 
-JUST_TEST_CASE(test_error_with_colors_is_printed_in_red)
+TEST(console_displayer, error_with_colors_is_printed_in_red)
 {
   mock_console c;
   console_displayer cd(c, false, true);
+
+  EXPECT_CALL(c, show(data::colored_string(
+                     "Something went wrong", data::color::bright_red)));
+  EXPECT_CALL(c, new_line());
+
   cd.show_error("Something went wrong");
-
-  JUST_ASSERT_EQUAL(
-      data::colored_string("Something went wrong", data::color::bright_red) +
-          "\n",
-      c.content());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_from_root_on_narrow_terminal)
+TEST(console_displayer, mdb_forwardtrace_from_root_on_narrow_terminal)
 {
-  mock_console c(25);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(25));
+  ON_CALL(c, height()).WillByDefault(Return(100));
+
   console_displayer d(c, false, false);
 
-  d.show_call_graph(fib5_call_graph());
+  {
+    ::testing::InSequence s;
 
-  JUST_ASSERT_EQUAL(
-      "int_<fib<5>::value>\n"
-      "+ fib<5> at b.hpp:1:2 (Te\n"
-      "| mplateInstantiation fro\n"
-      "| m a.cpp:1:2)\n"
-      "| + fib<3> at b.hpp:1:2 (\n"
-      "| | TemplateInstantiation\n"
-      "| |  from a.cpp:1:2)\n"
-      "| | + fib<1> at b.hpp:1:2\n"
-      "| | |  (Memoization from \n"
-      "| | | a.cpp:1:2)\n"
-      "| | ` fib<2> at b.hpp:1:2\n"
-      "| |    (TemplateInstantia\n"
-      "| |   tion from a.cpp:1:2\n"
-      "| |   )\n"
-      "| |   + fib<0> at b.hpp:1\n"
-      "| |   | :2 (Memoization f\n"
-      "| |   | rom a.cpp:1:2)\n"
-      "| |   ` fib<1> at b.hpp:1\n"
-      "| |     :2 (Memoization f\n"
-      "| |     rom a.cpp:1:2)\n"
-      "| ` fib<4> at b.hpp:1:2 (\n"
-      "|   TemplateInstantiation\n"
-      "|    from a.cpp:1:2)\n"
-      "|   + fib<2> at b.hpp:1:2\n"
-      "|   |  (Memoization from \n"
-      "|   | a.cpp:1:2)\n"
-      "|   ` fib<3> at b.hpp:1:2\n"
-      "|      (Memoization from \n"
-      "|     a.cpp:1:2)\n"
-      "+ fib<5> at b.hpp:1:2 (Me\n"
-      "| moization from a.cpp:1:\n"
-      "| 2)\n"
-      "` int_<5> at b.hpp:1:2 (T\n"
-      "  emplateInstantiation fr\n"
-      "  om a.cpp:1:2)\n",
-      c.content().get_string());
+    EXPECT_CALL(c, show(data::colored_string("int_<fib<5>::value>")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("fib<5> at b.hpp:1:2 (Te")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("mplateInstantiation fro")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("m a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("fib<3> at b.hpp:1:2 (")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("TemplateInstantiation")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string(" from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("fib<1> at b.hpp:1:2")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(" (Memoization from ")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("fib<2> at b.hpp:1:2")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string(" (TemplateInstantia")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("tion from a.cpp:1:2")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string(")")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string("fib<0> at b.hpp:1")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string(":2 (Memoization f")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string("rom a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string("fib<1> at b.hpp:1")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string(":2 (Memoization f")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("rom a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("fib<4> at b.hpp:1:2 (")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("TemplateInstantiation")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string(" from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("fib<2> at b.hpp:1:2")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(" (Memoization from ")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("fib<3> at b.hpp:1:2")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string(" (Memoization from ")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("fib<5> at b.hpp:1:2 (Me")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("moization from a.cpp:1:")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("int_<5> at b.hpp:1:2 (T")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("emplateInstantiation fr")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("  ")));
+    EXPECT_CALL(c, show(data::colored_string("om a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+  }
+
+  d.show_call_graph(fib5_call_graph());
 }
 
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w0)
+TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w0)
 {
-  mock_console c(0);
-  console_displayer d(c, false, false);
+  NiceMock<mock_console> c;
 
-  d.show_call_graph(fib5_call_graph());
+  ON_CALL(c, width()).WillByDefault(Return(0));
+  ON_CALL(c, height()).WillByDefault(Return(1000));
+
+  console_displayer d(c, false, false);
 
   // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(
-      "int_<fib<5>::value>\n"
-      "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| | + fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| | ` fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| |   + fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| |   ` fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| ` fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "|   + fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "|   ` fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "+ fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "` int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n",
-      c.content().get_string());
-}
+  {
+    ::testing::InSequence s;
 
-JUST_TEST_CASE(test_mdb_forwardtrace_on_extremely_narrow_terminal_w1)
-{
-  mock_console c(1);
-  console_displayer d(c, false, false);
+    EXPECT_CALL(c, show(data::colored_string("int_<fib<5>::value>")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::yellow)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::yellow)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::green)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+  }
 
   d.show_call_graph(fib5_call_graph());
+}
+
+TEST(console_displayer, mdb_forwardtrace_on_extremely_narrow_terminal_w1)
+{
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(1));
+  ON_CALL(c, height()).WillByDefault(Return(1000));
+
+  console_displayer d(c, false, false);
 
   // The algorithm just gives up, and prints without extra line breaks
-  JUST_ASSERT_EQUAL(
-      "int_<fib<5>::value>\n"
-      "+ fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| + fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| | + fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| | ` fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "| |   + fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| |   ` fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "| ` fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n"
-      "|   + fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "|   ` fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "+ fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)\n"
-      "` int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)\n",
-      c.content().get_string());
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(c, show(data::colored_string("int_<fib<5>::value>")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::yellow)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<3> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<2> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<0> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::cyan)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<1> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::yellow)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "fib<4> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<2> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("| ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string("  ", data::color::yellow)));
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::blue)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<3> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("+ ", data::color::green)));
+    EXPECT_CALL(c, show(data::colored_string(
+                       "fib<5> at b.hpp:1:2 (Memoization from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+    EXPECT_CALL(c, show(data::colored_string("` ", data::color::green)));
+    EXPECT_CALL(
+        c, show(data::colored_string(
+               "int_<5> at b.hpp:1:2 (TemplateInstantiation from a.cpp:1:2)")));
+    EXPECT_CALL(c, new_line());
+  }
+
+  d.show_call_graph(fib5_call_graph());
 }
 
-JUST_TEST_CASE(test_show_file_section_3_lines_1)
+TEST(console_displayer, show_file_section_3_lines_1)
 {
-  mock_console c(0);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(0));
+
   console_displayer d(c, false, false);
 
-  std::string stdin_content =
-      "first\n"
-      "second\n"
-      "third\n";
+  {
+    ::testing::InSequence s;
 
-  data::file_location location("<stdin>", 2, 0);
-  d.show_file_section(location, stdin_content);
+    EXPECT_CALL(c, show(data::colored_string("   1  ")));
+    EXPECT_CALL(c, show(data::colored_string("first\n")));
+    EXPECT_CALL(c, show(data::colored_string("-> 2  ")));
+    EXPECT_CALL(c, show(data::colored_string("second\n")));
+    EXPECT_CALL(c, show(data::colored_string("   3  ")));
+    EXPECT_CALL(c, show(data::colored_string("third\n")));
+  }
 
-  JUST_ASSERT_EQUAL(
-      "   1  first\n"
-      "-> 2  second\n"
-      "   3  third\n",
-      c.content().get_string());
+  d.show_file_section(
+      data::file_location("<stdin>", 2, 0), "first\nsecond\nthird\n");
 }
 
-JUST_TEST_CASE(test_show_file_section_3_lines_2)
+TEST(console_displayer, show_file_section_3_lines_2)
 {
-  mock_console c(0);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(0));
+
   console_displayer d(c, false, false);
 
-  std::string stdin_content =
-      "first\n"
-      "second\n"
-      "third\n";
+  {
+    ::testing::InSequence s;
 
-  data::file_location location("<stdin>", 3, 0);
-  d.show_file_section(location, stdin_content);
+    EXPECT_CALL(c, show(data::colored_string("   1  ")));
+    EXPECT_CALL(c, show(data::colored_string("first\n")));
+    EXPECT_CALL(c, show(data::colored_string("   2  ")));
+    EXPECT_CALL(c, show(data::colored_string("second\n")));
+    EXPECT_CALL(c, show(data::colored_string("-> 3  ")));
+    EXPECT_CALL(c, show(data::colored_string("third\n")));
+  }
 
-  JUST_ASSERT_EQUAL(
-      "   1  first\n"
-      "   2  second\n"
-      "-> 3  third\n",
-      c.content().get_string());
+  d.show_file_section(
+      data::file_location("<stdin>", 3, 0), "first\nsecond\nthird\n");
 }
 
-JUST_TEST_CASE(test_show_file_section_6_lines_1)
+TEST(console_displayer, show_file_section_6_lines_1)
 {
-  mock_console c(0);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(0));
+
   console_displayer d(c, false, false);
 
-  std::string stdin_content =
-      "first\n"
-      "second\n"
-      "third\n"
-      "fourth\n"
-      "fifth\n"
-      "sixth\n";
+  {
+    ::testing::InSequence s;
 
-  data::file_location location("<stdin>", 3, 0);
-  d.show_file_section(location, stdin_content);
+    EXPECT_CALL(c, show(data::colored_string("   1  ")));
+    EXPECT_CALL(c, show(data::colored_string("first\n")));
+    EXPECT_CALL(c, show(data::colored_string("   2  ")));
+    EXPECT_CALL(c, show(data::colored_string("second\n")));
+    EXPECT_CALL(c, show(data::colored_string("-> 3  ")));
+    EXPECT_CALL(c, show(data::colored_string("third\n")));
+    EXPECT_CALL(c, show(data::colored_string("   4  ")));
+    EXPECT_CALL(c, show(data::colored_string("fourth\n")));
+    EXPECT_CALL(c, show(data::colored_string("   5  ")));
+    EXPECT_CALL(c, show(data::colored_string("fifth\n")));
+    EXPECT_CALL(c, show(data::colored_string("   6  ")));
+    EXPECT_CALL(c, show(data::colored_string("sixth\n")));
+  }
 
-  JUST_ASSERT_EQUAL(
-      "   1  first\n"
-      "   2  second\n"
-      "-> 3  third\n"
-      "   4  fourth\n"
-      "   5  fifth\n"
-      "   6  sixth\n",
-      c.content().get_string());
+  d.show_file_section(data::file_location("<stdin>", 3, 0),
+                      "first\nsecond\nthird\nfourth\nfifth\nsixth\n");
 }
 
-JUST_TEST_CASE(test_show_file_section_6_lines_2)
+TEST(console_displayer, show_file_section_6_lines_2)
 {
-  mock_console c(0);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(0));
+
   console_displayer d(c, false, false);
 
-  std::string stdin_content =
-      "first\n"
-      "second\n"
-      "third\n"
-      "fourth\n"
-      "fifth\n"
-      "sixth\n"
-      "seventh\n"
-      "eight\n";
+  {
+    ::testing::InSequence s;
 
-  data::file_location location("<stdin>", 5, 0);
-  d.show_file_section(location, stdin_content);
+    EXPECT_CALL(c, show(data::colored_string("   2  ")));
+    EXPECT_CALL(c, show(data::colored_string("second\n")));
+    EXPECT_CALL(c, show(data::colored_string("   3  ")));
+    EXPECT_CALL(c, show(data::colored_string("third\n")));
+    EXPECT_CALL(c, show(data::colored_string("   4  ")));
+    EXPECT_CALL(c, show(data::colored_string("fourth\n")));
+    EXPECT_CALL(c, show(data::colored_string("-> 5  ")));
+    EXPECT_CALL(c, show(data::colored_string("fifth\n")));
+    EXPECT_CALL(c, show(data::colored_string("   6  ")));
+    EXPECT_CALL(c, show(data::colored_string("sixth\n")));
+    EXPECT_CALL(c, show(data::colored_string("   7  ")));
+    EXPECT_CALL(c, show(data::colored_string("seventh\n")));
+    EXPECT_CALL(c, show(data::colored_string("   8  ")));
+    EXPECT_CALL(c, show(data::colored_string("eight\n")));
+  }
 
-  JUST_ASSERT_EQUAL(
-      "   2  second\n"
-      "   3  third\n"
-      "   4  fourth\n"
-      "-> 5  fifth\n"
-      "   6  sixth\n"
-      "   7  seventh\n"
-      "   8  eight\n",
-      c.content().get_string());
+  d.show_file_section(
+      data::file_location("<stdin>", 5, 0),
+      "first\nsecond\nthird\nfourth\nfifth\nsixth\nseventh\neight\n");
 }
 
-JUST_TEST_CASE(test_show_file_section_10_lines)
+TEST(console_displayer, show_file_section_10_lines)
 {
-  mock_console c(0);
+  NiceMock<mock_console> c;
+
+  ON_CALL(c, width()).WillByDefault(Return(0));
+
   console_displayer d(c, false, false);
 
-  std::string stdin_content =
-      "first\n"
-      "second\n"
-      "third\n"
-      "fourth\n"
-      "fifth\n"
-      "sixth\n"
-      "seventh\n"
-      "eighth\n"
-      "ninth\n"
-      "tenth\n";
+  {
+    ::testing::InSequence s;
 
-  data::file_location location("<stdin>", 7, 0);
-  d.show_file_section(location, stdin_content);
+    EXPECT_CALL(c, show(data::colored_string("    4  ")));
+    EXPECT_CALL(c, show(data::colored_string("fourth\n")));
+    EXPECT_CALL(c, show(data::colored_string("    5  ")));
+    EXPECT_CALL(c, show(data::colored_string("fifth\n")));
+    EXPECT_CALL(c, show(data::colored_string("    6  ")));
+    EXPECT_CALL(c, show(data::colored_string("sixth\n")));
+    EXPECT_CALL(c, show(data::colored_string("->  7  ")));
+    EXPECT_CALL(c, show(data::colored_string("seventh\n")));
+    EXPECT_CALL(c, show(data::colored_string("    8  ")));
+    EXPECT_CALL(c, show(data::colored_string("eighth\n")));
+    EXPECT_CALL(c, show(data::colored_string("    9  ")));
+    EXPECT_CALL(c, show(data::colored_string("ninth\n")));
+    EXPECT_CALL(c, show(data::colored_string("   10  ")));
+    EXPECT_CALL(c, show(data::colored_string("tenth\n")));
+  }
 
-  JUST_ASSERT_EQUAL(
-      "    4  fourth\n"
-      "    5  fifth\n"
-      "    6  sixth\n"
-      "->  7  seventh\n"
-      "    8  eighth\n"
-      "    9  ninth\n"
-      "   10  tenth\n",
-      c.content().get_string());
+  d.show_file_section(data::file_location("<stdin>", 7, 0),
+                      "first\nsecond\nthird\nfourth\nfifth\nsixth\nseventh\neig"
+                      "hth\nninth\ntenth\n");
 }

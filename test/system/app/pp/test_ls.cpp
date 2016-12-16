@@ -24,9 +24,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <gtest/gtest.h>
 #include <just/lines.hpp>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -40,16 +40,22 @@ namespace
 {
   std::set<std::string> include_set(const json_string& s_)
   {
-    JUST_ASSERT(bool(cpp_code(s_).code().value()));
-
-    const std::string code = *cpp_code(s_).code().value();
-    const auto result = just::lines::view(code) |
-                        boost::adaptors::filtered(
-                            [](const std::string& a_) { return !a_.empty(); }) |
-                        boost::adaptors::transformed([](const std::string& l_) {
-                          return remove_prefix("#include ", l_);
-                        });
-    return std::set<std::string>(result.begin(), result.end());
+    if (cpp_code(s_).code().value())
+    {
+      const std::string code = *cpp_code(s_).code().value();
+      const auto result =
+          just::lines::view(code) |
+          boost::adaptors::filtered(
+              [](const std::string& a_) { return !a_.empty(); }) |
+          boost::adaptors::transformed([](const std::string& l_) {
+            return remove_prefix("#include ", l_);
+          });
+      return std::set<std::string>(result.begin(), result.end());
+    }
+    else
+    {
+      throw std::runtime_error("No code in " + s_.get());
+    }
   }
 
   boost::filesystem::path resolve_symlink(boost::filesystem::path p_)
@@ -202,7 +208,7 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_ls)
+TEST(ls, tests)
 {
   just::temp::directory tmp_dir;
 
@@ -221,31 +227,28 @@ JUST_TEST_CASE(test_ls)
 
   const ls_output empty_sys_a_b(cwd, {a, b}, {}, "<>");
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      include(), ls_output(cwd, {}, {}, "").directories());
+  ASSERT_EQ(include(), ls_output(cwd, {}, {}, "").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      include(), ls_output(cwd, {}, {}, "<>").directories());
+  ASSERT_EQ(include(), ls_output(cwd, {}, {}, "<>").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      include(), ls_output(cwd, {}, {}, "\"\"").directories());
+  ASSERT_EQ(include(), ls_output(cwd, {}, {}, "\"\"").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      include(), ls_output(cwd, {}, {}, "<> \"\"").directories());
+  ASSERT_EQ(include(), ls_output(cwd, {}, {}, "<> \"\"").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {sys({"foo.hpp"})}, ls_output(cwd, {a}, {}, "<>").header_files());
+  ASSERT_EQ(std::set<std::string>{sys({"foo.hpp"})},
+            ls_output(cwd, {a}, {}, "<>").header_files());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {quote({"foo.hpp"})}, ls_output(cwd, {a}, {}, "\"\"").header_files());
+  ASSERT_EQ(std::set<std::string>{quote({"foo.hpp"})},
+            ls_output(cwd, {a}, {}, "\"\"").header_files());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
+  ASSERT_EQ(
       include({sys({"foo.hpp"})}), ls_output(cwd, {b}, {}, "<>").directories());
 
-  JUST_ASSERT_EQUAL_CONTAINER({sys({"foo.hpp"})}, empty_sys_a_b.directories());
-  JUST_ASSERT_EQUAL_CONTAINER({sys({"foo.hpp"})}, empty_sys_a_b.header_files());
+  ASSERT_EQ(
+      std::set<std::string>{sys({"foo.hpp"})}, empty_sys_a_b.directories());
+  ASSERT_EQ(
+      std::set<std::string>{sys({"foo.hpp"})}, empty_sys_a_b.header_files());
 
-  JUST_ASSERT_EQUAL_CONTAINER(
-      include({sys({"foo.hpp"}), sys({"foo.hpp", "bar.hpp"})}),
-      ls_output(cwd, {a, b}, {}, sys({"foo.hpp"})).header_files());
+  ASSERT_EQ(include({sys({"foo.hpp"}), sys({"foo.hpp", "bar.hpp"})}),
+            ls_output(cwd, {a, b}, {}, sys({"foo.hpp"})).header_files());
 }

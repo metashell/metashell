@@ -17,106 +17,163 @@
 #include "mock_json_writer.hpp"
 #include <metashell/json_displayer.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <vector>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_json_display_of_raw_text)
+TEST(json_displayer, raw_text)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("raw_text"));
+    EXPECT_CALL(w, key("value"));
+    EXPECT_CALL(w, string("foo"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_raw_text("foo");
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string raw_text", "key value", "string foo",
-       "end_object", "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_error)
+TEST(json_displayer, error)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("error"));
+    EXPECT_CALL(w, key("msg"));
+    EXPECT_CALL(w, string("foo"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_error("foo");
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string error", "key msg", "string foo",
-       "end_object", "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_type)
+TEST(json_displayer, type)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("type"));
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("const fib_c<3>"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_type(data::type("const fib_c<3>"));
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string type", "key name",
-       "string const fib_c<3>", "end_object", "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_empty_comment)
+TEST(json_displayer, empty_comment)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("comment"));
+    EXPECT_CALL(w, key("paragraphs"));
+    EXPECT_CALL(w, start_array());
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_comment({});
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string comment", "key paragraphs",
-       "start_array", "end_array", "end_object", "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_comment_with_one_paragraph)
+TEST(json_displayer, comment_with_one_paragraph)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("comment"));
+    EXPECT_CALL(w, key("paragraphs"));
+    EXPECT_CALL(w, start_array());
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("first_line_indentation"));
+    EXPECT_CALL(w, string("y"));
+    EXPECT_CALL(w, key("rest_of_lines_indentation"));
+    EXPECT_CALL(w, string("x"));
+    EXPECT_CALL(w, key("content"));
+    EXPECT_CALL(w, string("foo bar"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_comment(data::text{data::paragraph("foo bar", "x", "y")});
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string comment", "key paragraphs",
-       "start_array", "start_object", "key first_line_indentation", "string y",
-       "key rest_of_lines_indentation", "string x", "key content",
-       "string foo bar", "end_object", "end_array", "end_object",
-       "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_cpp_code)
+TEST(json_displayer, cpp_code)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("cpp_code"));
+    EXPECT_CALL(w, key("code"));
+    EXPECT_CALL(w, string("int main() {}"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_cpp_code("int main() {}");
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string cpp_code", "key code",
-       "string int main() {}", "end_object", "end_document"},
-      w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_frame_normal)
+TEST(json_displayer, frame_normal)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("frame"));
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("fib_c<13>::type"));
+    EXPECT_CALL(w, key("source_location"));
+    EXPECT_CALL(w, string("a.hpp:10:20"));
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_frame(data::frame(
       data::type("fib_c<13>::type"), data::file_location("a.hpp", 10, 20)));
-
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {"start_object", "key type", "string frame", "key name",
-       "string fib_c<13>::type", "key source_location", "string a.hpp:10:20",
-       "end_object", "end_document"},
-      w.calls());
 }
 
 namespace
@@ -129,22 +186,33 @@ namespace
     mock_json_writer w;
     json_displayer d(w);
 
-    data::file_location source_location("sl.hpp", 10, 20);
-    data::file_location point_of_instantiation("pof.cpp", 20, 30);
+    const data::file_location source_location("sl.hpp", 10, 20);
+    const data::file_location point_of_instantiation("pof.cpp", 20, 30);
+
+    {
+      ::testing::InSequence s;
+
+      EXPECT_CALL(w, start_object());
+      EXPECT_CALL(w, key("type"));
+      EXPECT_CALL(w, string("frame"));
+      EXPECT_CALL(w, key("name"));
+      EXPECT_CALL(w, string("fib_c<13>::type"));
+      EXPECT_CALL(w, key("source_location"));
+      EXPECT_CALL(w, string("sl.hpp:10:20"));
+      EXPECT_CALL(w, key("kind"));
+      EXPECT_CALL(w, string(kind_in_json_));
+      EXPECT_CALL(w, key("point_of_instantiation"));
+      EXPECT_CALL(w, string("pof.cpp:20:30"));
+      EXPECT_CALL(w, end_object());
+      EXPECT_CALL(w, end_document());
+    }
 
     d.show_frame(data::frame(data::type("fib_c<13>::type"), source_location,
                              point_of_instantiation, kind_));
-
-    JUST_ASSERT_EQUAL_CONTAINER(
-        {"start_object", "key type", "string frame", "key name",
-         "string fib_c<13>::type", "key source_location", "string sl.hpp:10:20",
-         "key kind", "string " + kind_in_json_, "key point_of_instantiation",
-         "string pof.cpp:20:30", "end_object", "end_document"},
-        w.calls());
   }
 }
 
-JUST_TEST_CASE(test_json_display_of_frame_full)
+TEST(json_displayer, frame_full)
 {
   test_frame_full(data::instantiation_kind::template_instantiation,
                   "TemplateInstantiation");
@@ -172,41 +240,47 @@ JUST_TEST_CASE(test_json_display_of_frame_full)
       data::instantiation_kind::non_template_type, "NonTemplateType");
 }
 
-JUST_TEST_CASE(test_json_display_of_backtrace)
+TEST(json_displayer, backtrace)
 {
   mock_json_writer w;
   json_displayer d(w);
+
+  {
+    ::testing::InSequence s;
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("backtrace"));
+    EXPECT_CALL(w, key("frames"));
+    EXPECT_CALL(w, start_array());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("fib_c<13>::type"));
+    EXPECT_CALL(w, key("source_location"));
+    EXPECT_CALL(w, string("sl.hpp:134:10"));
+    EXPECT_CALL(w, end_object());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("fib<int_<13>>::type"));
+    EXPECT_CALL(w, key("source_location"));
+    EXPECT_CALL(w, string("sl2.hpp:154:10"));
+    EXPECT_CALL(w, end_object());
+
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
 
   d.show_backtrace(
       data::backtrace{data::frame(data::type("fib_c<13>::type"),
                                   data::file_location("sl.hpp", 134, 10)),
                       data::frame(data::type("fib<int_<13>>::type"),
                                   data::file_location("sl2.hpp", 154, 10))});
-
-  JUST_ASSERT_EQUAL_CONTAINER({"start_object",
-                               "key type",
-                               "string backtrace",
-                               "key frames",
-                               "start_array",
-                               "start_object",
-                               "key name",
-                               "string fib_c<13>::type",
-                               "key source_location",
-                               "string sl.hpp:134:10",
-                               "end_object",
-                               "start_object",
-                               "key name",
-                               "string fib<int_<13>>::type",
-                               "key source_location",
-                               "string sl2.hpp:154:10",
-                               "end_object",
-                               "end_array",
-                               "end_object",
-                               "end_document"},
-                              w.calls());
 }
 
-JUST_TEST_CASE(test_json_display_of_call_graph)
+TEST(json_displayer, call_graph)
 {
   mock_json_writer w;
   json_displayer d(w);
@@ -217,35 +291,41 @@ JUST_TEST_CASE(test_json_display_of_call_graph)
       {data::frame(int_, data::file_location{}), 0, 1},
       {data::frame(int_, data::file_location{}), 1, 0}};
 
-  d.show_call_graph(cg);
+  {
+    ::testing::InSequence s;
 
-  JUST_ASSERT_EQUAL_CONTAINER({"start_object",
-                               "key type",
-                               "string call_graph",
-                               "key nodes",
-                               "start_array",
-                               "start_object",
-                               "key name",
-                               "string int",
-                               "key source_location",
-                               "string :-1:-1",
-                               "key depth",
-                               "int 0",
-                               "key children",
-                               "int 1",
-                               "end_object",
-                               "start_object",
-                               "key name",
-                               "string int",
-                               "key source_location",
-                               "string :-1:-1",
-                               "key depth",
-                               "int 1",
-                               "key children",
-                               "int 0",
-                               "end_object",
-                               "end_array",
-                               "end_object",
-                               "end_document"},
-                              w.calls());
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("type"));
+    EXPECT_CALL(w, string("call_graph"));
+    EXPECT_CALL(w, key("nodes"));
+    EXPECT_CALL(w, start_array());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("int"));
+    EXPECT_CALL(w, key("source_location"));
+    EXPECT_CALL(w, string(":-1:-1"));
+    EXPECT_CALL(w, key("depth"));
+    EXPECT_CALL(w, int_(0));
+    EXPECT_CALL(w, key("children"));
+    EXPECT_CALL(w, int_(1));
+    EXPECT_CALL(w, end_object());
+
+    EXPECT_CALL(w, start_object());
+    EXPECT_CALL(w, key("name"));
+    EXPECT_CALL(w, string("int"));
+    EXPECT_CALL(w, key("source_location"));
+    EXPECT_CALL(w, string(":-1:-1"));
+    EXPECT_CALL(w, key("depth"));
+    EXPECT_CALL(w, int_(1));
+    EXPECT_CALL(w, key("children"));
+    EXPECT_CALL(w, int_(0));
+    EXPECT_CALL(w, end_object());
+
+    EXPECT_CALL(w, end_array());
+    EXPECT_CALL(w, end_object());
+    EXPECT_CALL(w, end_document());
+  }
+
+  d.show_call_graph(cg);
 }

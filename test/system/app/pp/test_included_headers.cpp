@@ -21,8 +21,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
+#include <gtest/gtest.h>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -54,7 +54,6 @@ namespace
                     const std::string& args_ = "") const
     {
       metashell_instance mi({"--", "-I" + _tmp.path()});
-      std::vector<json_string> commands;
       for (const boost::filesystem::path& include : includes_)
       {
         mi.command("#include <" + include.string() + ">");
@@ -68,7 +67,10 @@ namespace
             return boost::algorithm::starts_with(
                 s_.get(), "{\"type\":\"filename_set\",\"filenames\":[");
           });
-      JUST_ASSERT(i != r.end());
+      if (i == r.end())
+      {
+        throw std::runtime_error("No filename_set in output.");
+      }
       return *i;
     }
 
@@ -139,65 +141,65 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_empty_environment_includes_nothing)
+TEST(included_headers, empty_environment_includes_nothing)
 {
-  JUST_ASSERT_EQUAL(filename_set{}, included_headers().run());
+  ASSERT_EQ(filename_set{}, included_headers().run());
 }
 
-JUST_TEST_CASE(test_included_header_is_listed)
+TEST(included_headers, included_header_is_listed)
 {
   included_headers h;
   h.write("test.hpp", "");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_two_included_headers)
+TEST(included_headers, two_included_headers)
 {
   included_headers h;
   h.write("test1.hpp", "");
   h.write("test2.hpp", "");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test1.hpp", "test2.hpp"}),
-                    h.run({"test1.hpp", "test2.hpp"}));
+  ASSERT_EQ(h.filenames({"test1.hpp", "test2.hpp"}),
+            h.run({"test1.hpp", "test2.hpp"}));
 }
 
-JUST_TEST_CASE(test_recursive_inclusion)
+TEST(included_headers, recursive_inclusion)
 {
   included_headers h;
   h.write("rec.hpp", "");
   h.write("test.hpp", "#include <rec.hpp>");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_content_in_header)
+TEST(included_headers, content_in_header)
 {
   included_headers h;
   h.write("test.hpp", "int c;\n\ndouble d;\n");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_repeated_recursive_inclusion)
+TEST(included_headers, repeated_recursive_inclusion)
 {
   included_headers h;
   h.write("rec.hpp", "");
   h.write("test.hpp", "#include <rec.hpp>\n#include <rec.hpp>");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_line_directives_are_ignored)
+TEST(included_headers, line_directives_are_ignored)
 {
   included_headers h;
   h.write("rec.hpp", "");
   h.write("test.hpp", "#line 1 " + string_literal(h.relative("rec.hpp")));
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_simulated_non_existing_header)
+TEST(included_headeres, simulated_non_existing_header)
 {
   included_headers h;
   h.write("rec.hpp", "");
@@ -205,10 +207,10 @@ JUST_TEST_CASE(test_simulated_non_existing_header)
                           "\n"
                           "#include <rec.hpp>");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_line_directives_and_recursive_include)
+TEST(included_headers, line_directives_and_recursive_include)
 {
   included_headers h;
   h.write("rec.hpp", "");
@@ -220,10 +222,10 @@ JUST_TEST_CASE(test_line_directives_and_recursive_include)
                           "#line 1 " +
                           string_literal(h.relative("bar.hpp")));
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_rewinding_current_header)
+TEST(included_headeres, rewinding_current_header)
 {
   included_headers h;
   h.write("rec.hpp", "");
@@ -234,10 +236,10 @@ JUST_TEST_CASE(test_rewinding_current_header)
                           "\n"
                           "#include <rec.hpp>");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_self_inclusion)
+TEST(included_headers, self_inclusion)
 {
   included_headers h;
   h.write("rec.hpp",
@@ -247,19 +249,19 @@ JUST_TEST_CASE(test_self_inclusion)
           "#endif\n");
   h.write("test.hpp", "#include <rec.hpp>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       h.filenames({"test.hpp", "rec.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_multiple_blocks_in_same_file)
+TEST(included_headers, multiple_blocks_in_same_file)
 {
   included_headers h;
   h.write("test.hpp", "int x;\n" + lines_of_comment<50>() + "int y;\n");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_simulated_jump_forward_in_current_header)
+TEST(included_headers, simulated_jump_forward_in_current_header)
 {
   included_headers h;
   h.write("rec.hpp", "");
@@ -269,10 +271,10 @@ JUST_TEST_CASE(test_simulated_jump_forward_in_current_header)
                           "#line 1 " +
                           string_literal(h.relative("foo.hpp")) + "\n");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_simulated_jump_forward_into_including_header)
+TEST(included_headers, simulated_jump_forward_into_including_header)
 {
   included_headers h;
   h.write("foo.hpp", "");
@@ -287,11 +289,11 @@ JUST_TEST_CASE(test_simulated_jump_forward_into_including_header)
           "#line 1 " +
               string_literal(h.relative("foo.hpp")) + "\n");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       h.filenames({"test.hpp", "rec.hpp", "bar.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_empty_line_after_include)
+TEST(included_headers, empty_line_after_include)
 {
   included_headers h;
   h.write("foo.hpp", "");
@@ -303,18 +305,18 @@ JUST_TEST_CASE(test_empty_line_after_include)
           "#line 1 " +
               string_literal(h.relative("foo.hpp")) + "\n");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp", "rec.hpp"}), h.run({"test.hpp"}));
 }
 
-JUST_TEST_CASE(test_space_in_path)
+TEST(included_headers, space_in_path)
 {
   included_headers h;
   h.write("foo bar/x.hpp", "");
 
-  JUST_ASSERT_EQUAL(h.filenames({"foo bar/x.hpp"}), h.run({"foo bar/x.hpp"}));
+  ASSERT_EQ(h.filenames({"foo bar/x.hpp"}), h.run({"foo bar/x.hpp"}));
 }
 
-JUST_TEST_CASE(test_additional_included_headers)
+TEST(included_headers, additional_included_headers)
 {
   included_headers h;
   h.write("a.hpp", "");
@@ -322,11 +324,11 @@ JUST_TEST_CASE(test_additional_included_headers)
   h.write("c.hpp", "#include <a.hpp>\n#include <b.hpp>\n");
   h.write("d.hpp", "#include <a.hpp>");
 
-  JUST_ASSERT_EQUAL(
+  ASSERT_EQ(
       h.filenames({"c.hpp", "b.hpp"}), h.run({"d.hpp"}, "#include <c.hpp>"));
 }
 
-JUST_TEST_CASE(test_not_included_headers_are_not_listed)
+TEST(included_headers, not_included_headers_are_not_listed)
 {
   included_headers h;
   h.write("foo.hpp", "");
@@ -336,5 +338,5 @@ JUST_TEST_CASE(test_not_included_headers_are_not_listed)
           "#include <foo.hpp>\n"
           "#endif\n");
 
-  JUST_ASSERT_EQUAL(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
+  ASSERT_EQ(h.filenames({"test.hpp"}), h.run({"test.hpp"}));
 }

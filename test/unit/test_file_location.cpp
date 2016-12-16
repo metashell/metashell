@@ -16,40 +16,36 @@
 
 #include <metashell/data/file_location.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell::data;
 
-JUST_TEST_CASE(test_empty_file_location)
+TEST(file_location, empty)
 {
   file_location f;
-  JUST_ASSERT_EQUAL(f.name, "");
-  JUST_ASSERT_EQUAL(f.row, -1);
-  JUST_ASSERT_EQUAL(f.column, -1);
+  ASSERT_EQ(f.name, "");
+  ASSERT_EQ(f.row, -1);
+  ASSERT_EQ(f.column, -1);
 }
 
-JUST_TEST_CASE(test_file_location_construction)
+TEST(file_location, construction)
 {
   file_location f("foo.cpp", 10, 20);
-  JUST_ASSERT_EQUAL(f.name, "foo.cpp");
-  JUST_ASSERT_EQUAL(f.row, 10);
-  JUST_ASSERT_EQUAL(f.column, 20);
+  ASSERT_EQ(f.name, "foo.cpp");
+  ASSERT_EQ(f.row, 10);
+  ASSERT_EQ(f.column, 20);
 }
 
-JUST_TEST_CASE(test_file_location_equality)
+TEST(file_location, equality)
 {
-  JUST_ASSERT_EQUAL(
-      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 20));
-  JUST_ASSERT_EQUAL(file_location(), file_location());
+  ASSERT_EQ(file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 20));
+  ASSERT_EQ(file_location(), file_location());
 
-  JUST_ASSERT_NOT_EQUAL(file_location(), file_location("foo.cpp", 10, 20));
+  ASSERT_NE(file_location(), file_location("foo.cpp", 10, 20));
 
-  JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 21));
+  ASSERT_NE(file_location("foo.cpp", 10, 20), file_location("foo.cpp", 10, 21));
 
-  JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20), file_location("foo.cpp", 11, 20));
+  ASSERT_NE(file_location("foo.cpp", 10, 20), file_location("foo.cpp", 11, 20));
 
-  JUST_ASSERT_NOT_EQUAL(
-      file_location("foo.cpp", 10, 20), file_location("bar.cpp", 10, 20));
+  ASSERT_NE(file_location("foo.cpp", 10, 20), file_location("bar.cpp", 10, 20));
 }

@@ -19,29 +19,23 @@
 
 #include <metashell/iface/json_writer.hpp>
 
-#include <string>
-#include <vector>
+#include <gmock/gmock.h>
 
 class mock_json_writer : public metashell::iface::json_writer
 {
 public:
-  virtual void string(const std::string& value_) override;
-  virtual void int_(int value_) override;
-  virtual void double_(double value) override;
+  MOCK_METHOD1(string, void(const std::string&));
+  MOCK_METHOD1(int_, void(int));
+  MOCK_METHOD1(double_, void(double));
 
-  virtual void start_object() override;
-  virtual void key(const std::string& key_) override;
-  virtual void end_object() override;
+  MOCK_METHOD0(start_object, void());
+  MOCK_METHOD1(key, void(const std::string&));
+  MOCK_METHOD0(end_object, void());
 
-  virtual void start_array() override;
-  virtual void end_array() override;
+  MOCK_METHOD0(start_array, void());
+  MOCK_METHOD0(end_array, void());
 
-  virtual void end_document() override;
-
-  const std::vector<std::string>& calls() const;
-
-private:
-  std::vector<std::string> _calls;
+  MOCK_METHOD0(end_document, void());
 };
 
 #endif

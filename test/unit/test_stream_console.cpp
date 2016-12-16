@@ -16,7 +16,7 @@
 
 #include <metashell/stream_console.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <limits>
@@ -24,14 +24,14 @@
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_width_of_stream_console_is_max_int)
+TEST(stream_console, width_is_max_int)
 {
   std::ostringstream s;
 
-  JUST_ASSERT_EQUAL(std::numeric_limits<int>::max(), stream_console(s).width());
+  ASSERT_EQ(std::numeric_limits<int>::max(), stream_console(s).width());
 }
 
-JUST_TEST_CASE(test_displaying_new_line_with_stream_console)
+TEST(stream_console, displaying_new_line)
 {
   std::ostringstream s1;
   stream_console(s1).new_line();
@@ -39,13 +39,13 @@ JUST_TEST_CASE(test_displaying_new_line_with_stream_console)
   std::ostringstream s2;
   s2 << std::endl;
 
-  JUST_ASSERT_EQUAL(s1.str(), s2.str());
+  ASSERT_EQ(s1.str(), s2.str());
 }
 
-JUST_TEST_CASE(test_text_is_displayed_on_stream_console_without_color)
+TEST(stream_console, text_is_displayed_without_color)
 {
   std::ostringstream s;
   stream_console(s).show(data::colored_string("hello", data::color::red));
 
-  JUST_ASSERT_EQUAL("hello", s.str());
+  ASSERT_EQ("hello", s.str());
 }

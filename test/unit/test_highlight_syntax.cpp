@@ -16,32 +16,32 @@
 
 #include <metashell/highlight_syntax.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_highlight_syntax_comment_without_linebreak)
+TEST(highlight_syntax, comment_without_linebreak)
 {
   // wave can't lex this string, because there is no new line at the end
   data::colored_string cs = highlight_syntax("int x; // some comment");
 
   // Still, we get back the original string (without syntax highlighting)
-  JUST_ASSERT_EQUAL("int x; // some comment", cs.get_string());
+  ASSERT_EQ("int x; // some comment", cs.get_string());
 
   for (auto opt_color : cs.get_colors())
   {
-    JUST_ASSERT(!bool(opt_color));
+    ASSERT_FALSE(bool(opt_color));
   }
 }
 
-JUST_TEST_CASE(test_highlight_syntax_comment_with_linebreak)
+TEST(highlight_syntax, comment_with_linebreak)
 {
   data::colored_string cs = highlight_syntax("int x; // some comment\n");
 
-  JUST_ASSERT_EQUAL("int x; // some comment\n", cs.get_string());
+  ASSERT_EQ("int x; // some comment\n", cs.get_string());
 
   // keyword "int" is definietly colored
-  JUST_ASSERT(bool(cs.get_colors()[0]));
+  ASSERT_TRUE(bool(cs.get_colors()[0]));
 }

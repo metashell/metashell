@@ -16,7 +16,7 @@
 
 #include <metashell/wave_tokeniser.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
@@ -27,8 +27,8 @@ namespace
   {
     const auto t = create_wave_tokeniser(token_);
 
-    JUST_ASSERT(t->has_further_tokens());
-    JUST_ASSERT(expected_type_ == t->current_token().type());
+    ASSERT_TRUE(t->has_further_tokens());
+    ASSERT_TRUE(expected_type_ == t->current_token().type());
   }
 
   void test_category_of_a_token(const std::string& token_,
@@ -36,119 +36,119 @@ namespace
   {
     const auto t = create_wave_tokeniser(token_);
 
-    JUST_ASSERT(t->has_further_tokens());
-    JUST_ASSERT(expected_category_ == t->current_token().category());
+    ASSERT_TRUE(t->has_further_tokens());
+    ASSERT_TRUE(expected_category_ == t->current_token().category());
   }
 }
 
-JUST_TEST_CASE(test_empty_code_is_empty_token_sequence)
+TEST(wave_tokeniser, empty_code_is_empty_token_sequence)
 {
   const auto t = create_wave_tokeniser("");
 
-  JUST_ASSERT(!t->has_further_tokens());
+  ASSERT_FALSE(t->has_further_tokens());
 }
 
-JUST_TEST_CASE(test_code_with_one_token_has_token)
+TEST(wave_tokeniser, code_with_one_token_has_token)
 {
   const auto t = create_wave_tokeniser("foo");
 
-  JUST_ASSERT(t->has_further_tokens());
+  ASSERT_TRUE(t->has_further_tokens());
 }
 
-JUST_TEST_CASE(test_code_with_one_token_has_one_token)
+TEST(wave_tokeniser, code_with_one_token_has_one_token)
 {
   const auto t = create_wave_tokeniser("foo");
 
   t->move_to_next_token();
 
-  JUST_ASSERT(!t->has_further_tokens());
+  ASSERT_FALSE(t->has_further_tokens());
 }
 
-JUST_TEST_CASE(test_value_of_token)
+TEST(wave_tokeniser, value_of_token)
 {
   const auto t = create_wave_tokeniser("foo ");
 
-  JUST_ASSERT_EQUAL("foo", t->current_token().value());
+  ASSERT_EQ("foo", t->current_token().value());
 
   t->move_to_next_token();
 
-  JUST_ASSERT_EQUAL(" ", t->current_token().value());
+  ASSERT_EQ(" ", t->current_token().value());
 }
 
-JUST_TEST_CASE(test_category_of_a_character_literal)
+TEST(wave_tokeniser, category_of_a_character_literal)
 {
   test_category_of_a_token("'a'", data::token_category::character_literal);
 }
 
-JUST_TEST_CASE(test_category_of_a_floating_literal)
+TEST(wave_tokeniser, category_of_a_floating_literal)
 {
   test_category_of_a_token("11.13", data::token_category::floating_literal);
 }
 
-JUST_TEST_CASE(test_category_of_an_integer_literal)
+TEST(wave_tokeniser, category_of_an_integer_literal)
 {
   test_category_of_a_token("13", data::token_category::integer_literal);
 }
 
-JUST_TEST_CASE(test_category_of_a_string_literal)
+TEST(wave_tokeniser, category_of_a_string_literal)
 {
   test_category_of_a_token("\"foo bar\"", data::token_category::string_literal);
 }
 
-JUST_TEST_CASE(test_category_of_a_bool_literal)
+TEST(wave_tokeniser, category_of_a_bool_literal)
 {
   test_category_of_a_token("true", data::token_category::bool_literal);
 }
 
-JUST_TEST_CASE(test_category_of_an_identifier)
+TEST(wave_tokeniser, category_of_an_identifier)
 {
   test_category_of_a_token("foo", data::token_category::identifier);
   test_category_of_a_token("std", data::token_category::identifier);
 }
 
-JUST_TEST_CASE(test_category_of_a_whitespace)
+TEST(wave_tokeniser, category_of_a_whitespace)
 {
   test_category_of_a_token(" ", data::token_category::whitespace);
   test_category_of_a_token("\n", data::token_category::whitespace);
 }
 
-JUST_TEST_CASE(test_category_of_a_comment)
+TEST(wave_tokeniser, category_of_a_comment)
 {
   test_category_of_a_token("/* c comment */", data::token_category::comment);
   test_category_of_a_token("// c++ comment\n", data::token_category::comment);
 }
 
-JUST_TEST_CASE(test_category_of_a_keyword)
+TEST(wave_tokeniser, category_of_a_keyword)
 {
   test_category_of_a_token("for", data::token_category::keyword);
 }
 
-JUST_TEST_CASE(test_category_of_an_operator)
+TEST(wave_tokeniser, category_of_an_operator)
 {
   test_category_of_a_token("+=", data::token_category::operator_token);
 }
 
-JUST_TEST_CASE(test_category_of_a_preprocessor_token)
+TEST(wave_tokeniser, category_of_a_preprocessor_token)
 {
   test_category_of_a_token("#define", data::token_category::preprocessor);
 }
 
-JUST_TEST_CASE(test_type_of_identifier_token)
+TEST(wave_tokeniser, type_of_identifier_token)
 {
   test_type_of_a_token("foo", data::token_type::identifier);
 }
 
-JUST_TEST_CASE(test_type_of_character_literal_token)
+TEST(wave_tokeniser, type_of_character_literal_token)
 {
   test_type_of_a_token("'a'", data::token_type::character_literal);
 }
 
-JUST_TEST_CASE(test_type_of_floating_literal_token)
+TEST(wave_tokeniser, type_of_floating_literal_token)
 {
   test_type_of_a_token("11.13", data::token_type::floating_literal);
 }
 
-JUST_TEST_CASE(test_type_of_integer_literal_token)
+TEST(wave_tokeniser, type_of_integer_literal_token)
 {
   test_type_of_a_token("015", data::token_type::integer_literal);
   test_type_of_a_token("0xd", data::token_type::integer_literal);
@@ -156,30 +156,30 @@ JUST_TEST_CASE(test_type_of_integer_literal_token)
   test_type_of_a_token("13LL", data::token_type::integer_literal);
 }
 
-JUST_TEST_CASE(test_type_of_string_literal_token)
+TEST(wave_tokeniser, type_of_string_literal_token)
 {
   test_type_of_a_token("\"foo bar\"", data::token_type::string_literal);
 }
 
-JUST_TEST_CASE(test_type_of_bool_literal_token)
+TEST(wave_tokeniser, type_of_bool_literal_token)
 {
   test_type_of_a_token("true", data::token_type::bool_literal);
   test_type_of_a_token("false", data::token_type::bool_literal);
 }
 
-JUST_TEST_CASE(test_type_of_comment_token)
+TEST(wave_tokeniser, type_of_comment_token)
 {
   test_type_of_a_token("/* foo bar */", data::token_type::c_comment);
   test_type_of_a_token("// foo bar\n", data::token_type::cpp_comment);
 }
 
-JUST_TEST_CASE(test_type_of_whitespace_token)
+TEST(wave_tokeniser, type_of_whitespace_token)
 {
   test_type_of_a_token(" ", data::token_type::whitespace);
   test_type_of_a_token("\f", data::token_type::whitespace);
 }
 
-JUST_TEST_CASE(test_type_of_new_line_token)
+TEST(wave_tokeniser, type_of_new_line_token)
 {
   test_type_of_a_token("\n", data::token_type::new_line);
 }
@@ -188,7 +188,7 @@ JUST_TEST_CASE(test_type_of_new_line_token)
 #error TEST_KEYWORD already defined
 #endif
 #define TEST_KEYWORD(name)                                                     \
-  JUST_TEST_CASE(test_type_of_##name##_keyword_token)                          \
+  TEST(wave_tokeniser, type_of_##name##_keyword_token)                         \
   {                                                                            \
     test_type_of_a_token(#name, data::token_type::keyword_##name);             \
   }
@@ -262,7 +262,7 @@ TEST_KEYWORD(while)
 #error TEST_OPERATOR already defined
 #endif
 #define TEST_OPERATOR(name, code)                                              \
-  JUST_TEST_CASE(test_type_of_##name##_operator_token)                         \
+  TEST(wave_tokeniser, type_of_##name##_operator_token)                        \
   {                                                                            \
     test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
@@ -271,7 +271,7 @@ TEST_KEYWORD(while)
 #error TEST_OPERATOR_ALT already defined
 #endif
 #define TEST_OPERATOR_ALT(name, code)                                          \
-  JUST_TEST_CASE(test_type_of_##name##_alt_operator_token)                     \
+  TEST(wave_tokeniser, type_of_##name##_alt_operator_token)                    \
   {                                                                            \
     test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
@@ -280,7 +280,7 @@ TEST_KEYWORD(while)
 #error TEST_OPERATOR_TRIGRAPH already defined
 #endif
 #define TEST_OPERATOR_TRIGRAPH(name, code)                                     \
-  JUST_TEST_CASE(test_type_of_##name##_trigraph_operator_token)                \
+  TEST(wave_tokeniser, type_of_##name##_trigraph_operator_token)               \
   {                                                                            \
     test_type_of_a_token(code, data::token_type::operator_##name);             \
   }
@@ -368,7 +368,7 @@ TEST_OPERATOR_TRIGRAPH(pound, "\?\?=")
 #error TEST_PP_TOKEN already defined
 #endif
 #define TEST_PP_TOKEN(name)                                                    \
-  JUST_TEST_CASE(test_type_of_p_##name##_token)                                \
+  TEST(wave_tokeniser, type_of_p_##name##_token)                               \
   {                                                                            \
     test_type_of_a_token("#" #name, data::token_type::p_##name);               \
     test_type_of_a_token("#  " #name, data::token_type::p_##name);             \
@@ -390,7 +390,7 @@ TEST_PP_TOKEN(include)
 
 #undef TEST_PP_TOKEN
 
-JUST_TEST_CASE(test_error_flag_is_set)
+TEST(wave_tokeniser, error_flag_is_set)
 {
   std::unique_ptr<iface::tokeniser> t =
       create_wave_tokeniser("/* unclosed comment");
@@ -400,10 +400,10 @@ JUST_TEST_CASE(test_error_flag_is_set)
     t->move_to_next_token();
   }
 
-  JUST_ASSERT(t->was_error());
+  ASSERT_TRUE(t->was_error());
 }
 
-JUST_TEST_CASE(test_constexpr_is_in_keyword_category)
+TEST(wave_tokeniser, constexpr_is_in_keyword_category)
 {
   test_category_of_a_token("constexpr", data::token_category::keyword);
 }

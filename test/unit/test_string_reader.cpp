@@ -16,30 +16,30 @@
 
 #include "string_reader.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
-JUST_TEST_CASE(test_empty_string_reader)
+TEST(string_reader, empty)
 {
   string_reader r{};
 
   const auto s = r(">");
 
-  JUST_ASSERT(boost::none == s);
+  ASSERT_TRUE(boost::none == s);
 }
 
-JUST_TEST_CASE(test_string_reader_with_one_element)
+TEST(string_reader, one_element)
 {
   string_reader r{"foo"};
 
   const auto s1 = r(">");
   const auto s2 = r(">");
 
-  JUST_ASSERT(boost::none != s1);
-  JUST_ASSERT_EQUAL("foo", *s1);
-  JUST_ASSERT(boost::none == s2);
+  ASSERT_TRUE(boost::none != s1);
+  ASSERT_EQ("foo", *s1);
+  ASSERT_TRUE(boost::none == s2);
 }
 
-JUST_TEST_CASE(test_string_reader_with_two_elements)
+TEST(string_reader, two_elements)
 {
   string_reader r{"foo", "bar"};
 
@@ -47,9 +47,9 @@ JUST_TEST_CASE(test_string_reader_with_two_elements)
   const auto s2 = r(">");
   const auto s3 = r(">");
 
-  JUST_ASSERT(boost::none != s1);
-  JUST_ASSERT_EQUAL("foo", *s1);
-  JUST_ASSERT(boost::none != s2);
-  JUST_ASSERT_EQUAL("bar", *s2);
-  JUST_ASSERT(boost::none == s3);
+  ASSERT_TRUE(boost::none != s1);
+  ASSERT_EQ("foo", *s1);
+  ASSERT_TRUE(boost::none != s2);
+  ASSERT_EQ("bar", *s2);
+  ASSERT_TRUE(boost::none == s3);
 }

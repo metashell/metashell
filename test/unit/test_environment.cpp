@@ -21,9 +21,10 @@
 
 #include <metashell/data/config.hpp>
 
+#include <gtest/gtest.h>
 #include <just/temp.hpp>
-#include <just/test.hpp>
 
+#include "empty_container.hpp"
 #include "test_config.hpp"
 
 #include <algorithm>
@@ -37,7 +38,7 @@ namespace
   {
     env_.append("#include <foo/bar.hpp>\n");
 
-    JUST_ASSERT_EQUAL("#include <foo/bar.hpp>\n", env_.get_all());
+    ASSERT_EQ("#include <foo/bar.hpp>\n", env_.get_all());
   }
 
   bool file_exists(const std::string& path_)
@@ -47,7 +48,7 @@ namespace
   }
 }
 
-JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
+TEST(environment, empty_header_file_environment_is_empty)
 {
   data::config cfg{};
   cfg.use_precompiled_headers = false;
@@ -55,10 +56,10 @@ JUST_TEST_CASE(test_empty_header_file_environment_is_empty)
   auto engine = create_failing_engine();
   header_file_environment env(*engine, cfg, "", "");
 
-  JUST_ASSERT_EQUAL("", env.get_all());
+  ASSERT_EQ("", env.get_all());
 }
 
-JUST_TEST_CASE(test_append_text_to_header_file_environment)
+TEST(environment, append_text_to_header_file_environment)
 {
   data::config cfg{};
   cfg.use_precompiled_headers = false;
@@ -69,7 +70,7 @@ JUST_TEST_CASE(test_append_text_to_header_file_environment)
   test_append_text_to_environment(env);
 }
 
-JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
+TEST(environment, reload_environment_rebuilds_the_environment_object)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
@@ -77,20 +78,20 @@ JUST_TEST_CASE(test_reload_environment_rebuilds_the_environment_object)
 
   sh.line_available("#msh environment reload", d);
 
-  JUST_ASSERT_NOT_EQUAL(old_env_ptr, &sh.env());
+  ASSERT_NE(old_env_ptr, &sh.env());
 }
 
-JUST_TEST_CASE(test_invalid_environment_command_displays_an_error)
+TEST(environment, invalid_environment_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
+TEST(environment, invalid_environment_pop_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
@@ -98,72 +99,70 @@ JUST_TEST_CASE(test_invalid_environment_pop_command_displays_an_error)
   sh.line_available("#msh environment push", d);
   sh.line_available("#msh environment pop foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_environment_push_command_displays_an_error)
+TEST(environment, invalid_environment_push_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment push foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_environment_reload_command_displays_an_error)
+TEST(environment, invalid_environment_reload_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment reload foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_environment_stack_command_displays_an_error)
+TEST(environment, invalid_environment_stack_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment stack foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_environment_reset_command_displays_an_error)
+TEST(environment, invalid_environment_reset_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment reset foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_invalid_quit_command_displays_an_error)
+TEST(environment, invalid_quit_command_displays_an_error)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh quit foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(
-    test_environment_save_displays_an_error_when_not_enabled_in_config)
+TEST(environment, environment_save_displays_an_error_when_not_enabled_in_config)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
 
   sh.line_available("#msh environment save", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(
-    test_environment_save_saves_the_environment_when_enabled_in_config)
+TEST(environment, environment_save_saves_the_environment_when_enabled_in_config)
 {
   just::temp::directory d;
   const std::string fn = d.path() + "/test.hpp";
@@ -175,11 +174,11 @@ JUST_TEST_CASE(
 
   sh.line_available("#msh environment save " + fn, disp);
 
-  JUST_ASSERT_EMPTY_CONTAINER(disp.errors());
-  JUST_ASSERT(file_exists(fn));
+  ASSERT_EQ(empty_container, disp.errors());
+  ASSERT_TRUE(file_exists(fn));
 }
 
-JUST_TEST_CASE(test_environment_save_displays_an_error_when_filename_is_missing)
+TEST(environment, save_displays_an_error_when_filename_is_missing)
 {
   data::config cfg{};
   cfg.saving_enabled = true;
@@ -188,10 +187,10 @@ JUST_TEST_CASE(test_environment_save_displays_an_error_when_filename_is_missing)
 
   sh.line_available("#msh environment save    ", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_environment_save_displays_an_error_when_io_error_happens)
+TEST(environment, save_displays_an_error_when_io_error_happens)
 {
   data::config cfg{};
   cfg.saving_enabled = true;
@@ -204,5 +203,5 @@ JUST_TEST_CASE(test_environment_save_displays_an_error_when_io_error_happens)
   sh.line_available("#msh environment save /", d);
 #endif
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }

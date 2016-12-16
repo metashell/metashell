@@ -22,36 +22,33 @@
 
 #include "test_config.hpp"
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_parse_pragma)
+TEST(pragma, parse)
 {
-  JUST_ASSERT(bool(parse_pragma(data::command("#pragma metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("#pragma metashell foo"))));
 }
 
-JUST_TEST_CASE(test_parse_no_pragma)
+TEST(pragma, parse_no_pragma) { ASSERT_FALSE(parse_pragma(data::command(""))); }
+
+TEST(pragma, parse_with_inital_whitespace)
 {
-  JUST_ASSERT(!parse_pragma(data::command("")));
+  ASSERT_TRUE(bool(parse_pragma(data::command(" \t #pragma metashell foo"))));
 }
 
-JUST_TEST_CASE(test_parse_pragma_with_inital_whitespace)
+TEST(pragma, whitespace_is_not_pragma)
 {
-  JUST_ASSERT(bool(parse_pragma(data::command(" \t #pragma metashell foo"))));
+  ASSERT_FALSE(parse_pragma(data::command(" ")));
 }
 
-JUST_TEST_CASE(test_whitespace_is_not_pragma)
+TEST(pragma, gcc_pragma_is_not_metashell_pragma)
 {
-  JUST_ASSERT(!parse_pragma(data::command(" ")));
+  ASSERT_FALSE(parse_pragma(data::command("#pragma gcc foo")));
 }
 
-JUST_TEST_CASE(test_gcc_pragma_is_not_metashell_pragma)
-{
-  JUST_ASSERT(!parse_pragma(data::command("#pragma gcc foo")));
-}
-
-JUST_TEST_CASE(test_name_of_pragma)
+TEST(pragma, name_of_pragma)
 {
   const data::command c_foo("#pragma metashell foo");
   const data::command c_bar("#pragma metashell bar");
@@ -59,55 +56,55 @@ JUST_TEST_CASE(test_name_of_pragma)
   const data::command::iterator op_foo = *parse_pragma(c_foo),
                                 op_bar = *parse_pragma(c_bar);
 
-  JUST_ASSERT_EQUAL("foo", op_foo->value());
-  JUST_ASSERT_EQUAL("bar", op_bar->value());
+  ASSERT_EQ("foo", op_foo->value());
+  ASSERT_EQ("bar", op_bar->value());
 }
 
-JUST_TEST_CASE(test_name_of_pragma_is_not_a_literal)
+TEST(pragma, name_of_pragma_is_not_a_literal)
 {
-  JUST_ASSERT_THROWS(
-      [] { parse_pragma(data::command("#pragma metashell 13")); });
+  ASSERT_ANY_THROW(parse_pragma(data::command("#pragma metashell 13")));
 }
 
-JUST_TEST_CASE(test_name_of_pragma_is_missing)
+TEST(pragma, name_of_pragma_is_missing)
 {
-  JUST_ASSERT_THROWS([] { parse_pragma(data::command("#pragma metashell")); });
+  ASSERT_ANY_THROW(parse_pragma(data::command("#pragma metashell")));
 }
 
-JUST_TEST_CASE(test_help_pragma_displays_message)
+TEST(pragma, help_pragma_displays_message)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell help", d);
-  JUST_ASSERT(!d.comments().empty());
+  ASSERT_FALSE(d.comments().empty());
 }
 
-JUST_TEST_CASE(test_error_for_non_existing_pragma)
+TEST(pragma, error_for_non_existing_pragma)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell foo_bar", d);
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }
 
-JUST_TEST_CASE(test_check_verbosity)
+TEST(pragma, check_verbosity)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell verbose", d);
-  JUST_ASSERT_EQUAL_CONTAINER(
-      {data::text("verbose mode is off")}, d.comments());
+  ASSERT_EQ(
+      std::vector<data::text>{data::text("verbose mode is off")}, d.comments());
 }
 
-JUST_TEST_CASE(test_check_enabling_verbosity)
+TEST(pragma, check_enabling_verbosity)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell verbose on", d);
-  JUST_ASSERT_EQUAL_CONTAINER({data::text("verbose mode is on")}, d.comments());
+  ASSERT_EQ(
+      std::vector<data::text>{data::text("verbose mode is on")}, d.comments());
 }
 
-JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
+TEST(pragma, pragma_metashell_does_not_kill_the_shell)
 {
   null_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
@@ -116,31 +113,31 @@ JUST_TEST_CASE(test_pragma_metashell_does_not_kill_the_shell)
   sh.line_available("#pragma metashell", d);
 }
 
-JUST_TEST_CASE(test_quit)
+TEST(pragma, quit)
 {
   in_memory_displayer d;
   shell sh(test_config(), "", "", "", create_failing_engine());
   sh.line_available("#pragma metashell quit", d);
-  JUST_ASSERT(sh.stopped());
+  ASSERT_TRUE(sh.stopped());
 }
 
-JUST_TEST_CASE(test_accept_pound_msh_as_pragma_metashell)
+TEST(pragma, accept_pound_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(data::command("#msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command("# msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command(" # msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("#msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("# msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command(" # msh foo"))));
 }
 
-JUST_TEST_CASE(test_accept_pound_metashell_as_pragma_metashell)
+TEST(pragma, accept_pound_metashell_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(data::command("#metashell foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command("# metashell foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command(" # metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("#metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("# metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command(" # metashell foo"))));
 }
 
-JUST_TEST_CASE(test_accept_pragma_msh_as_pragma_metashell)
+TEST(pragma, accept_pragma_msh_as_pragma_metashell)
 {
-  JUST_ASSERT(bool(parse_pragma(data::command("#pragma msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command("# pragma msh foo"))));
-  JUST_ASSERT(bool(parse_pragma(data::command(" # pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("#pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command("# pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(data::command(" # pragma msh foo"))));
 }

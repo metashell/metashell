@@ -1,5 +1,8 @@
+#ifndef METASHELL_TEST_EMPTY_CONTAINER_HPP
+#define METASHELL_TEST_EMPTY_CONTAINER_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,26 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "mock_file_writer.hpp"
+#include <iosfwd>
 
-mock_file_writer::mock_file_writer()
-  : open_callback([](const std::string&) { return false; }),
-    close_callback([] {}),
-    is_open_callback([] { return false; }),
-    write_callback([](const std::string&) { return false; })
+class empty_container_t
 {
+};
+
+extern empty_container_t empty_container;
+
+std::ostream& operator<<(std::ostream& out_, const empty_container_t&);
+
+template <class T>
+bool operator==(const empty_container_t&, const T& c_)
+{
+  return c_.empty();
 }
 
-bool mock_file_writer::open(const std::string& filename_)
+template <class T>
+bool operator==(const T& c_, const empty_container_t& e_)
 {
-  return open_callback(filename_);
+  return e_ == c_;
 }
 
-void mock_file_writer::close() { close_callback(); }
-
-bool mock_file_writer::is_open() const { return is_open_callback(); }
-
-bool mock_file_writer::write(const std::string& content_)
+template <class T>
+bool operator!=(const empty_container_t& e_, const T& c_)
 {
-  return write_callback(content_);
+  return !(e_ == c_);
 }
+
+template <class T>
+bool operator!=(const T& c_, const empty_container_t& e_)
+{
+  return !(e_ == c_);
+}
+
+#endif

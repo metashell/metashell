@@ -19,7 +19,7 @@
 #include <metashell/pragma_handler.hpp>
 #include <metashell/pragma_switch.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
@@ -44,12 +44,12 @@ namespace
     });
     run(p, arg_, d);
 
-    JUST_ASSERT(was_called);
-    JUST_ASSERT_EQUAL(ExpectedResult, arg);
+    ASSERT_TRUE(was_called);
+    ASSERT_EQ(ExpectedResult, arg);
   }
 }
 
-JUST_TEST_CASE(test_pragma_switch_calls_updating_callback)
+TEST(pragma_switch, calls_updating_callback)
 {
   test_callback_is_called<true>("on");
   test_callback_is_called<true>("1");
@@ -58,12 +58,12 @@ JUST_TEST_CASE(test_pragma_switch_calls_updating_callback)
   test_callback_is_called<false>("0");
 }
 
-JUST_TEST_CASE(test_pragma_switch_displays_error_when_extra_arguments_are_given)
+TEST(pragma_switch, displays_error_when_extra_arguments_are_given)
 {
   in_memory_displayer d;
 
   pragma_switch p("test", always<true>, [](bool) {});
   run(p, "on foo", d);
 
-  JUST_ASSERT(!d.errors().empty());
+  ASSERT_FALSE(d.errors().empty());
 }

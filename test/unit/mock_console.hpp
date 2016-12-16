@@ -19,37 +19,18 @@
 
 #include <metashell/iface/console.hpp>
 
-#include <limits>
+#include <gmock/gmock.h>
 
 class mock_console : public metashell::iface::console
 {
 public:
-  explicit mock_console(int width_ = 80,
-                        int height_ = std::numeric_limits<int>::max());
+  MOCK_METHOD1(show, void(const metashell::data::colored_string&));
+  MOCK_METHOD0(new_line, void());
 
-  virtual void show(const metashell::data::colored_string& s_) override;
-  virtual void new_line() override;
+  MOCK_METHOD0(ask_for_continuation, user_answer());
 
-  virtual user_answer ask_for_continuation() override;
-
-  virtual int width() const override;
-  virtual int height() const override;
-
-  void clear();
-  void set_continiation_answer(user_answer answer);
-  void set_width(int width_);
-  void set_height(int width_);
-
-  const metashell::data::colored_string& content() const;
-  int ask_for_continuation_count() const;
-
-private:
-  metashell::data::colored_string _content;
-  int _ask_for_continuation_count = 0;
-
-  user_answer _continuation_answer = user_answer::show_all;
-  int _width;
-  int _height;
+  MOCK_CONST_METHOD0(width, int());
+  MOCK_CONST_METHOD0(height, int());
 };
 
 #endif

@@ -16,11 +16,28 @@
 
 #include <metashell/metaprogram_builder.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
-JUST_TEST_CASE(test_metaprogram_builder_normal_mode)
+namespace
+{
+  template <class F>
+  void assert_throw(const F& f_, const std::string& err_)
+  {
+    try
+    {
+      f_();
+      ASSERT_TRUE(false);
+    }
+    catch (const std::exception& e)
+    {
+      ASSERT_EQ(err_, e.what());
+    }
+  }
+}
+
+TEST(metaprogram_builder, normal_mode)
 {
   metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
@@ -35,28 +52,27 @@ JUST_TEST_CASE(test_metaprogram_builder_normal_mode)
 
   metaprogram mp = mb.get_metaprogram();
 
-  JUST_ASSERT_EQUAL(metaprogram::mode_t::normal, mp.get_mode());
-  JUST_ASSERT_EQUAL(2u, mp.get_num_vertices());
-  JUST_ASSERT_EQUAL(1u, mp.get_num_edges());
+  ASSERT_EQ(metaprogram::mode_t::normal, mp.get_mode());
+  ASSERT_EQ(2u, mp.get_num_vertices());
+  ASSERT_EQ(1u, mp.get_num_edges());
 
-  JUST_ASSERT(mp.is_at_start());
+  ASSERT_TRUE(mp.is_at_start());
 
   mp.step();
 
   auto frame = mp.get_current_frame();
 
-  JUST_ASSERT(frame.is_full());
-  JUST_ASSERT(!frame.is_profiled());
-  JUST_ASSERT_EQUAL("type<A>", frame.type().name());
-  JUST_ASSERT_EQUAL(
-      data::instantiation_kind::template_instantiation, frame.kind());
+  ASSERT_TRUE(frame.is_full());
+  ASSERT_FALSE(frame.is_profiled());
+  ASSERT_EQ("type<A>", frame.type().name());
+  ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
 
   mp.step();
 
-  JUST_ASSERT(mp.is_finished());
+  ASSERT_TRUE(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_full_mode)
+TEST(metaprogram_builder, full_mode)
 {
   metaprogram_builder mb(metaprogram::mode_t::full, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
@@ -85,20 +101,20 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode)
 
   metaprogram mp = mb.get_metaprogram();
 
-  JUST_ASSERT_EQUAL(metaprogram::mode_t::full, mp.get_mode());
-  JUST_ASSERT_EQUAL(3u, mp.get_num_vertices());
-  JUST_ASSERT_EQUAL(3u, mp.get_num_edges());
+  ASSERT_EQ(metaprogram::mode_t::full, mp.get_mode());
+  ASSERT_EQ(3u, mp.get_num_vertices());
+  ASSERT_EQ(3u, mp.get_num_edges());
 
-  JUST_ASSERT(mp.is_at_start());
+  ASSERT_TRUE(mp.is_at_start());
 
   mp.step();
 
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(!frame.is_full());
-    JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
+    ASSERT_FALSE(frame.is_full());
+    ASSERT_FALSE(frame.is_profiled());
+    ASSERT_EQ("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -106,9 +122,9 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode)
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(!frame.is_full());
-    JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
+    ASSERT_FALSE(frame.is_full());
+    ASSERT_FALSE(frame.is_profiled());
+    ASSERT_EQ("type<B>", frame.type().name());
   }
 
   mp.step();
@@ -116,9 +132,9 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode)
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(!frame.is_full());
-    JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
+    ASSERT_FALSE(frame.is_full());
+    ASSERT_FALSE(frame.is_profiled());
+    ASSERT_EQ("type<A>", frame.type().name());
   }
 
   mp.step();
@@ -126,17 +142,17 @@ JUST_TEST_CASE(test_metaprogram_builder_full_mode)
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(!frame.is_full());
-    JUST_ASSERT(!frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
+    ASSERT_FALSE(frame.is_full());
+    ASSERT_FALSE(frame.is_profiled());
+    ASSERT_EQ("type<B>", frame.type().name());
   }
 
   mp.step();
 
-  JUST_ASSERT(mp.is_finished());
+  ASSERT_TRUE(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_profile_mode)
+TEST(metaprogram_builder, profile_mode)
 {
   metaprogram_builder mb(metaprogram::mode_t::profile, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
@@ -159,24 +175,23 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode)
   metaprogram mp = mb.get_metaprogram();
   mp.init_full_time_taken();
 
-  JUST_ASSERT_EQUAL(metaprogram::mode_t::profile, mp.get_mode());
-  JUST_ASSERT_EQUAL(3u, mp.get_num_vertices());
-  JUST_ASSERT_EQUAL(2u, mp.get_num_edges());
+  ASSERT_EQ(metaprogram::mode_t::profile, mp.get_mode());
+  ASSERT_EQ(3u, mp.get_num_vertices());
+  ASSERT_EQ(2u, mp.get_num_edges());
 
-  JUST_ASSERT(mp.is_at_start());
+  ASSERT_TRUE(mp.is_at_start());
 
   mp.step();
 
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(frame.is_full());
-    JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<B>", frame.type().name());
-    JUST_ASSERT_EQUAL(
-        data::instantiation_kind::template_instantiation, frame.kind());
-    JUST_ASSERT_EQUAL(20.0, frame.time_taken());
-    JUST_ASSERT_EQUAL(0.5, frame.time_taken_ratio());
+    ASSERT_TRUE(frame.is_full());
+    ASSERT_TRUE(frame.is_profiled());
+    ASSERT_EQ("type<B>", frame.type().name());
+    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_EQ(20.0, frame.time_taken());
+    ASSERT_EQ(0.5, frame.time_taken_ratio());
   }
 
   mp.step();
@@ -184,32 +199,30 @@ JUST_TEST_CASE(test_metaprogram_builder_profile_mode)
   {
     auto frame = mp.get_current_frame();
 
-    JUST_ASSERT(frame.is_full());
-    JUST_ASSERT(frame.is_profiled());
-    JUST_ASSERT_EQUAL("type<A>", frame.type().name());
-    JUST_ASSERT_EQUAL(
-        data::instantiation_kind::template_instantiation, frame.kind());
-    JUST_ASSERT_EQUAL(10.0, frame.time_taken());
-    JUST_ASSERT_EQUAL(0.25, frame.time_taken_ratio());
+    ASSERT_TRUE(frame.is_full());
+    ASSERT_TRUE(frame.is_profiled());
+    ASSERT_EQ("type<A>", frame.type().name());
+    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_EQ(10.0, frame.time_taken());
+    ASSERT_EQ(0.25, frame.time_taken_ratio());
   }
 
   mp.step();
 
-  JUST_ASSERT(mp.is_finished());
+  ASSERT_TRUE(mp.is_finished());
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_1)
+TEST(metaprogram_builder, too_much_end_events_1)
 {
   metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 40, 50),
                          data::type("eval_result"));
 
-  JUST_ASSERT_THROWS<std::exception>([&] { mb.handle_template_end(100.0); })
-      .check_exception(JUST_WHAT_RETURNS(
-          "Mismatched Templight TemplateBegin and TemplateEnd events"));
+  assert_throw([&] { mb.handle_template_end(100.0); },
+               "Mismatched Templight TemplateBegin and TemplateEnd events");
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2)
+TEST(metaprogram_builder, too_much_end_events_2)
 {
   metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 30, 45),
@@ -222,12 +235,11 @@ JUST_TEST_CASE(test_metaprogram_builder_too_much_end_events_2)
 
   mb.handle_template_end(110.0);
 
-  JUST_ASSERT_THROWS<std::exception>([&] { mb.handle_template_end(120.0); })
-      .check_exception(JUST_WHAT_RETURNS(
-          "Mismatched Templight TemplateBegin and TemplateEnd events"));
+  assert_throw([&] { mb.handle_template_end(120.0); },
+               "Mismatched Templight TemplateBegin and TemplateEnd events");
 }
 
-JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events)
+TEST(metaprogram_builder, too_few_end_events)
 {
   metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 30, 31),
@@ -238,7 +250,6 @@ JUST_TEST_CASE(test_metaprogram_builder_too_few_end_events)
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
-  JUST_ASSERT_THROWS<std::exception>([&] { mb.get_metaprogram(); })
-      .check_exception(
-          JUST_WHAT_RETURNS("Some Templight TemplateEnd events are missing"));
+  assert_throw([&] { mb.get_metaprogram(); },
+               "Some Templight TemplateEnd events are missing");
 }

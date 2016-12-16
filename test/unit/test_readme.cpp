@@ -16,7 +16,7 @@
 
 #include <metashell/mdb_shell.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include "util.hpp"
 
@@ -24,7 +24,7 @@ using namespace metashell;
 
 // If one of these TCs fail, then README modification might be needed
 
-JUST_TEST_CASE(test_readme_continue_abbreviated_as_c)
+TEST(readme, continue_abbreviated_as_c)
 {
   mdb_command command;
   std::string args;
@@ -34,5 +34,5 @@ JUST_TEST_CASE(test_readme_continue_abbreviated_as_c)
 
   auto keys = command.get_keys();
 
-  JUST_ASSERT(std::find(keys.begin(), keys.end(), "continue") != keys.end());
+  ASSERT_TRUE(std::find(keys.begin(), keys.end(), "continue") != keys.end());
 }

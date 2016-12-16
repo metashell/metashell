@@ -18,7 +18,7 @@
 #include <metashell/null_displayer.hpp>
 #include <metashell/pragma_handler_map.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 using namespace metashell;
 
@@ -51,25 +51,25 @@ namespace
   };
 }
 
-JUST_TEST_CASE(test_test_handler_sets_run_flag)
+TEST(pragma_handler_map, handler_sets_run_flag)
 {
   null_displayer d;
   bool flag = false;
   run(test_handler(flag), "foo", d);
 
-  JUST_ASSERT(flag);
+  ASSERT_TRUE(flag);
 }
 
-JUST_TEST_CASE(test_processing_non_existing_handler)
+TEST(pragma_handler_map, processing_non_existing_handler)
 {
   pragma_handler_map m;
   const data::command cmd(/* #pragma metashell */ "foo");
 
   null_displayer d;
-  JUST_ASSERT_THROWS([&m, &cmd, &d] { m.process(cmd.begin(), cmd.end(), d); });
+  ASSERT_ANY_THROW(m.process(cmd.begin(), cmd.end(), d));
 }
 
-JUST_TEST_CASE(test_processing_existing_handler)
+TEST(pragma_handler_map, processing_existing_handler)
 {
   bool foo_run = false;
   pragma_handler_map m;
@@ -79,10 +79,10 @@ JUST_TEST_CASE(test_processing_existing_handler)
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
 
-  JUST_ASSERT(foo_run);
+  ASSERT_TRUE(foo_run);
 }
 
-JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
+TEST(pragma_handler_map, pragma_with_two_token_name_is_called)
 {
   bool foo_bar_run = false;
   pragma_handler_map m;
@@ -92,11 +92,11 @@ JUST_TEST_CASE(test_pragma_with_two_token_name_is_called)
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
 
-  JUST_ASSERT(foo_bar_run);
+  ASSERT_TRUE(foo_bar_run);
 }
 
-JUST_TEST_CASE(
-    test_pragma_with_two_token_name_is_called_when_prefix_is_available)
+TEST(pragma_handler_map,
+     pragma_with_two_token_name_is_called_when_prefix_is_available)
 {
   bool foo_bar_run = false;
   bool foo_run = false;
@@ -108,11 +108,12 @@ JUST_TEST_CASE(
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
 
-  JUST_ASSERT(!foo_run);
-  JUST_ASSERT(foo_bar_run);
+  ASSERT_FALSE(foo_run);
+  ASSERT_TRUE(foo_bar_run);
 }
 
-JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
+TEST(pragma_handler_map,
+     pragma_prefix_is_selected_when_longer_version_is_available)
 {
   bool foo_bar_run = false;
   bool foo_run = false;
@@ -124,6 +125,6 @@ JUST_TEST_CASE(test_pragma_prefix_is_selected_when_longer_version_is_available)
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
 
-  JUST_ASSERT(foo_run);
-  JUST_ASSERT(!foo_bar_run);
+  ASSERT_TRUE(foo_run);
+  ASSERT_FALSE(foo_bar_run);
 }

@@ -26,6 +26,10 @@ target_link_libraries(metashell_core_system_test
   metashell_data_lib
   boost_regex)
 
+# Gtest
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
+target_link_libraries(metashell_core_system_test googletest)
+
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")

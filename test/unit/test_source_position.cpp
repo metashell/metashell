@@ -16,10 +16,12 @@
 
 #include <metashell/source_position.hpp>
 
-#include <just/test.hpp>
+#include <gtest/gtest.h>
 
 #include <boost/algorithm/string/join.hpp>
 
+#include <sstream>
+#include <stdexcept>
 #include <vector>
 
 using namespace metashell;
@@ -37,15 +39,20 @@ namespace
     const std::vector<source_position> source_positions{
         position_of(lines_, "\n"), position_of(lines_, "\r"),
         position_of(lines_, "\r\n")};
-    for (unsigned int i = 1; i != source_positions.size(); ++i)
+    for (const source_position& p : source_positions)
     {
-      JUST_ASSERT_EQUAL(source_positions[0], source_positions[i]);
+      if (p != source_positions[0])
+      {
+        std::ostringstream msg;
+        msg << "position of: " << p << " != " << source_positions[0];
+        throw std::runtime_error(msg.str());
+      }
     }
     return source_positions[0];
   }
 }
 
-JUST_TEST_CASE(test_source_position)
+TEST(source_position, tests)
 {
   const line_number l1(1);
   const line_number l2(2);
@@ -54,13 +61,13 @@ JUST_TEST_CASE(test_source_position)
   const column c2(2);
   const column c3(3);
 
-  JUST_ASSERT(source_position(l1, c2) == source_position(l1, c2));
-  JUST_ASSERT(source_position(l2, c1) != source_position(l1, c2));
+  ASSERT_TRUE(source_position(l1, c2) == source_position(l1, c2));
+  ASSERT_TRUE(source_position(l2, c1) != source_position(l1, c2));
 
-  JUST_ASSERT_EQUAL("1:2", to_string(source_position(l1, c2)));
+  ASSERT_EQ("1:2", to_string(source_position(l1, c2)));
 
-  JUST_ASSERT_EQUAL(source_position(l1, c1), position_of({}));
-  JUST_ASSERT_EQUAL(source_position(l1, c2), position_of({"x"}));
-  JUST_ASSERT_EQUAL(source_position(l1, c3), position_of({"ab"}));
-  JUST_ASSERT_EQUAL(source_position(l2, c2), position_of({"ab", "c"}));
+  ASSERT_EQ(source_position(l1, c1), position_of({}));
+  ASSERT_EQ(source_position(l1, c2), position_of({"x"}));
+  ASSERT_EQ(source_position(l1, c3), position_of({"ab"}));
+  ASSERT_EQ(source_position(l2, c2), position_of({"ab", "c"}));
 }
