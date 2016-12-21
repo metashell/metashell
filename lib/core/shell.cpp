@@ -19,6 +19,7 @@
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
 #include <metashell/header_file_environment.hpp>
+#include <metashell/make_unique.hpp>
 #include <metashell/metashell_pragma.hpp>
 #include <metashell/null_history.hpp>
 #include <metashell/shell.hpp>
@@ -123,7 +124,7 @@ namespace
   data::result eval_tmp_formatted(const iface::environment& env_,
                                   const std::string& tmp_exp_,
                                   bool use_precompiled_headers_,
-                                  iface::engine& engine_,
+                                  iface::type_shell& type_shell_,
                                   logger* logger_)
   {
     using std::string;
@@ -135,7 +136,7 @@ namespace
             tmp_exp_);
 
     const data::result simple =
-        engine_.eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
+        type_shell_.eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
 
     METASHELL_LOG(
         logger_,
@@ -146,8 +147,9 @@ namespace
             " with metashell::format");
 
     return simple.successful ?
-               engine_.eval(env_, "::metashell::format<" + tmp_exp_ + ">::type",
-                            boost::none, use_precompiled_headers_) :
+               type_shell_.eval(env_,
+                                "::metashell::format<" + tmp_exp_ + ">::type",
+                                boost::none, use_precompiled_headers_) :
                simple;
   }
 
@@ -380,8 +382,8 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result r =
-      _engine->validate_code(s_, _config, *_env, using_precompiled_headers());
+  const data::result r = _engine->type_shell().validate_code(
+      s_, _config, *_env, using_precompiled_headers());
 
   if (r.successful)
   {
@@ -407,7 +409,8 @@ void shell::code_complete(const std::string& s_,
 {
   try
   {
-    _engine->code_complete(*_env, s_, out_, using_precompiled_headers());
+    _engine->code_completer().code_complete(
+        *_env, s_, out_, using_precompiled_headers());
   }
   catch (...)
   {
@@ -455,8 +458,8 @@ const iface::environment& shell::env() const { return *_env; }
 
 void shell::rebuild_environment(const std::string& content_)
 {
-  _env.reset(new header_file_environment(
-      *_engine, _config, _internal_dir, _env_filename));
+  _env = make_unique<header_file_environment>(
+      _engine->type_shell(), _config, _internal_dir, _env_filename);
   if (!content_.empty())
   {
     _env->append(content_);
@@ -506,7 +509,7 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
   if (_evaluate_metaprograms)
   {
     const data::result r = eval_tmp_formatted(
-        *_env, s_, using_precompiled_headers(), *_engine, _logger);
+        *_env, s_, using_precompiled_headers(), _engine->type_shell(), _logger);
     if (_show_cpp_errors || r.successful)
     {
       display(r, displayer_, true);
@@ -542,8 +545,8 @@ bool shell::preprocess(iface::displayer& displayer_,
   const std::string marker =
       wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
 
-  data::result r =
-      _engine->precompile(_env->get_all() + "\n" + marker + exp_ + marker);
+  data::result r = _engine->preprocessor_shell().precompile(
+      _env->get_all() + "\n" + marker + exp_ + marker);
 
   if (r.successful)
   {

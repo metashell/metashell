@@ -161,7 +161,7 @@ namespace
 }
 
 header_file_environment::header_file_environment(
-    iface::engine& engine_,
+    iface::type_shell& type_shell_,
     const data::config& config_,
     const boost::filesystem::path& internal_dir_,
     const boost::filesystem::path& env_filename_)
@@ -170,7 +170,7 @@ header_file_environment::header_file_environment(
     _buffer(),
     _headers(internal_dir_),
     _use_precompiled_headers(config_.use_precompiled_headers),
-    _engine(engine_)
+    _type_shell(type_shell_)
 {
   add_internal_headers(_headers);
 
@@ -223,7 +223,7 @@ void header_file_environment::save()
 
   if (_use_precompiled_headers)
   {
-    _engine.generate_precompiled_header(fn);
+    _type_shell.generate_precompiled_header(fn);
   }
 }
 

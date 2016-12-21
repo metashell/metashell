@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_FACTORY_HPP
-#define METASHELL_ENGINE_FACTORY_HPP
+#ifndef METASHELL_IFACE_PREPROCESSOR_SHELL_HPP
+#define METASHELL_IFACE_PREPROCESSOR_SHELL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/engine.hpp>
-#include <metashell/iface/environment_detector.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/data/result.hpp>
+#include <metashell/iface/environment.hpp>
 
-#include <boost/filesystem/path.hpp>
-
-#include <functional>
-#include <memory>
+#include <string>
 
 namespace metashell
 {
-  typedef std::function<std::unique_ptr<iface::engine>(
-      const data::config&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      iface::environment_detector&,
-      iface::displayer&,
-      logger*)>
-      engine_factory;
+  namespace iface
+  {
+    class preprocessor_shell
+    {
+    public:
+      virtual ~preprocessor_shell() {}
+
+      virtual data::result precompile(const std::string& exp_) = 0;
+
+      virtual std::string macros(const iface::environment& env_) = 0;
+    };
+  }
 }
 
 #endif

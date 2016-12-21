@@ -53,7 +53,8 @@ void pragma_which::run(const data::command::iterator& name_begin_,
 
   const parsed_arguments args = parse_arguments(
       data::tokens_to_string(name_begin_, name_end_), args_begin_, args_end_);
-  const auto include_path = _shell.engine().include_path(args.header.type);
+  const auto include_path =
+      _shell.engine().header_discoverer().include_path(args.header.type);
   const auto files =
       include_path |
       transformed(std::function<path(const path&)>(

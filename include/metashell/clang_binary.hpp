@@ -22,6 +22,9 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <string>
+#include <vector>
+
 namespace metashell
 {
   class clang_binary : public iface::executable
@@ -38,6 +41,10 @@ namespace metashell
     std::vector<std::string> _base_args;
     logger* _logger;
   };
+
+  data::process_output run_clang(const iface::executable& clang_binary_,
+                                 std::vector<std::string> clang_args_,
+                                 const std::string& input_);
 }
 
 #endif

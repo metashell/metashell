@@ -1,5 +1,5 @@
-#ifndef METASHELL_PRAGMA_INCLUDES_HPP
-#define METASHELL_PRAGMA_INCLUDES_HPP
+#ifndef METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
+#define METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,39 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_without_arguments.hpp>
-
-#include <string>
+#include <metashell/iface/header_discoverer.hpp>
 
 namespace metashell
 {
-  class shell;
-
-  template <data::include_type Type>
-  class pragma_includes : public pragma_without_arguments
+  class header_discoverer_constant : public iface::header_discoverer
   {
   public:
-    explicit pragma_includes(shell& shell_) : _shell(shell_) {}
+    header_discoverer_constant(
+        std::vector<boost::filesystem::path> sysincludes_,
+        std::vector<boost::filesystem::path> quoteincludes_);
 
-    virtual iface::pragma_handler* clone() const override
-    {
-      return new pragma_includes(_shell);
-    }
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override;
 
-    virtual std::string description() const override
-    {
-      return std::string("Displays the directories checked for ") +
-             data::include_dotdotdot<Type>();
-    }
-
-    virtual void run(iface::displayer& displayer_) const override
-    {
-      displayer_.show_filename_list(
-          _shell.engine().header_discoverer().include_path(Type));
-    }
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string&) override;
 
   private:
-    shell& _shell;
+    std::vector<boost::filesystem::path> _sysincludes;
+    std::vector<boost::filesystem::path> _quoteincludes;
   };
 }
 

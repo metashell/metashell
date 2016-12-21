@@ -1,3 +1,6 @@
+#ifndef METASHELL_INCLUDES_CACHE_HPP
+#define METASHELL_INCLUDES_CACHE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,20 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/include_path_cache.hpp>
+#include <metashell/data/includes.hpp>
 
-using namespace metashell;
+#include <metashell/cached.hpp>
+#include <metashell/clang_binary.hpp>
 
-include_path_cache::include_path_cache(iface::engine& engine_)
-  : sys([&engine_]() { return engine_.include_path(data::include_type::sys); }),
-    quote([&engine_]() {
-      return engine_.include_path(data::include_type::quote);
-    })
+namespace metashell
 {
+  cached<data::includes> includes_cache(clang_binary clang_binary_);
 }
 
-const std::vector<boost::filesystem::path>& include_path_cache::
-operator[](data::include_type type_)
-{
-  return type_ == data::include_type::sys ? *sys : *quote;
-}
+#endif

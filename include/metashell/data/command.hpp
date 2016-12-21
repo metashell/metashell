@@ -32,9 +32,13 @@ namespace metashell
       explicit command(const std::string& cmd_);
 
       typedef std::vector<data::token>::const_iterator iterator;
+      typedef iterator const_iterator;
 
       iterator begin() const;
       iterator end() const;
+
+      bool empty() const;
+      int size() const;
 
     private:
       std::string _cmd;

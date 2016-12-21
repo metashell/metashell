@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_FACTORY_HPP
-#define METASHELL_ENGINE_FACTORY_HPP
+#ifndef METASHELL_HEADER_DISCOVERER_CLANG_HPP
+#define METASHELL_HEADER_DISCOVERER_CLANG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/engine.hpp>
-#include <metashell/iface/environment_detector.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/iface/header_discoverer.hpp>
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/data/includes.hpp>
 
-#include <functional>
-#include <memory>
+#include <metashell/cached.hpp>
+#include <metashell/clang_binary.hpp>
 
 namespace metashell
 {
-  typedef std::function<std::unique_ptr<iface::engine>(
-      const data::config&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      iface::environment_detector&,
-      iface::displayer&,
-      logger*)>
-      engine_factory;
+  class header_discoverer_clang : public iface::header_discoverer
+  {
+  public:
+    explicit header_discoverer_clang(clang_binary clang_binary_);
+
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override;
+
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string& exp_) override;
+
+  private:
+    clang_binary _clang_binary;
+    cached<data::includes> _includes;
+  };
 }
 
 #endif

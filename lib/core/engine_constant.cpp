@@ -14,124 +14,63 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/code_completer_constant.hpp>
+#include <metashell/engine.hpp>
 #include <metashell/engine_constant.hpp>
+#include <metashell/header_discoverer_constant.hpp>
+#include <metashell/preprocessor_shell_constant.hpp>
+#include <metashell/type_shell_constant.hpp>
 
 using namespace metashell;
 
 namespace
 {
-  class engine_constant : public iface::engine
+  header_discoverer_constant create_header_discoverer_with_include_path(
+      data::include_type type_, std::vector<boost::filesystem::path> path_)
   {
-  public:
-    explicit engine_constant(
-        data::result result_,
-        std::vector<boost::filesystem::path> sysincludes_,
-        std::vector<boost::filesystem::path> quoteincludes_)
-      : _result(std::move(result_)),
-        _sysincludes(move(sysincludes_)),
-        _quoteincludes(move(quoteincludes_))
+    const std::vector<boost::filesystem::path> empty;
+
+    switch (type_)
     {
+    case data::include_type::sys:
+      return header_discoverer_constant(move(path_), empty);
+    case data::include_type::quote:
+      return header_discoverer_constant(empty, move(path_));
     }
-
-    virtual data::result precompile(const std::string&) override
-    {
-      return _result;
-    }
-
-    virtual data::result eval(const iface::environment&,
-                              const boost::optional<std::string>&,
-                              const boost::optional<boost::filesystem::path>&,
-                              bool) override
-    {
-      return _result;
-    }
-
-    virtual data::result validate_code(const std::string&,
-                                       const data::config&,
-                                       const iface::environment&,
-                                       bool) override
-    {
-      return _result;
-    }
-
-    virtual void code_complete(const iface::environment&,
-                               const std::string&,
-                               std::set<std::string>&,
-                               bool) override
-    {
-      // ignore
-    }
-
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path&) override
-    {
-      // ignore
-    }
-
-    virtual std::string macros(const iface::environment&) override
-    {
-      return "";
-    }
-
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override
-    {
-      switch (type_)
-      {
-      case data::include_type::sys:
-        return _sysincludes;
-      case data::include_type::quote:
-        return _quoteincludes;
-      }
-      return {}; // avoid control reaches end of non-void function warnings on
-      // some compilers
-    }
-
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const std::string&) override
-    {
-      return std::set<boost::filesystem::path>();
-    }
-
-  private:
-    data::result _result;
-    std::vector<boost::filesystem::path> _sysincludes;
-    std::vector<boost::filesystem::path> _quoteincludes;
-  };
-
-  std::unique_ptr<engine_constant>
-  create(data::result result_,
-         std::vector<boost::filesystem::path> sysincludes_,
-         std::vector<boost::filesystem::path> quoteincludes_)
-  {
-    return std::unique_ptr<engine_constant>(new engine_constant(
-        std::move(result_), move(sysincludes_), move(quoteincludes_)));
+    // avoid control reaches end of non-void function warnings on
+    // some compilers
+    return header_discoverer_constant(empty, empty);
   }
 }
 
-std::unique_ptr<iface::engine>
-metashell::create_failing_engine(const std::string& msg_)
+std::unique_ptr<iface::engine> metashell::create_failing_engine()
 {
-  return create(data::result(false, "", msg_, ""), {}, {});
+  const data::result result(false, "", "Using failing engine", "");
+  const std::vector<boost::filesystem::path> empty;
+
+  return make_engine(
+      type_shell_constant(result), preprocessor_shell_constant(result),
+      code_completer_constant(), header_discoverer_constant(empty, empty));
 }
 
 std::unique_ptr<iface::engine>
 metashell::create_engine_returning_type(const std::string& type_)
 {
-  return create(data::result(true, type_, "", ""), {}, {});
+  const data::result result(true, type_, "", "");
+  const std::vector<boost::filesystem::path> empty;
+
+  return make_engine(
+      type_shell_constant(result), preprocessor_shell_constant(result),
+      code_completer_constant(), header_discoverer_constant(empty, empty));
 }
 
 std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
     data::include_type type_, std::vector<boost::filesystem::path> path_)
 {
   const data::result result(true, "int", "", "");
-  switch (type_)
-  {
-  case data::include_type::sys:
-    return create(result, move(path_), {});
-  case data::include_type::quote:
-    return create(result, {}, move(path_));
-  }
-  return nullptr; // avoid control reaches end of non-void function warnings on
-  // some compilers
+
+  return make_engine(type_shell_constant(result),
+                     preprocessor_shell_constant(result),
+                     code_completer_constant(),
+                     create_header_discoverer_with_include_path(type_, path_));
 }

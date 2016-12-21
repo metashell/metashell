@@ -64,3 +64,13 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
 
   return o;
 }
+
+data::process_output
+metashell::run_clang(const iface::executable& clang_binary_,
+                     std::vector<std::string> clang_args_,
+                     const std::string& input_)
+{
+  clang_args_.push_back("-"); // Compile from stdin
+
+  return clang_binary_.run(clang_args_, input_);
+}

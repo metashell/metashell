@@ -18,6 +18,7 @@
 #include <metashell/header_file_environment.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/shell.hpp>
+#include <metashell/type_shell_constant.hpp>
 
 #include <metashell/data/config.hpp>
 
@@ -46,6 +47,11 @@ namespace
     std::ifstream f(path_.c_str());
     return !(f.fail() || f.bad());
   }
+
+  data::result failing_data()
+  {
+    return {false, "", "Using failing engine", ""};
+  }
 }
 
 TEST(environment, empty_header_file_environment_is_empty)
@@ -53,8 +59,8 @@ TEST(environment, empty_header_file_environment_is_empty)
   data::config cfg{};
   cfg.use_precompiled_headers = false;
 
-  auto engine = create_failing_engine();
-  header_file_environment env(*engine, cfg, "", "");
+  type_shell_constant type_shell(failing_data());
+  header_file_environment env(type_shell, cfg, "", "");
 
   ASSERT_EQ("", env.get_all());
 }
@@ -64,8 +70,8 @@ TEST(environment, append_text_to_header_file_environment)
   data::config cfg{};
   cfg.use_precompiled_headers = false;
 
-  auto engine = create_failing_engine();
-  header_file_environment env(*engine, cfg, "", "");
+  type_shell_constant type_shell(failing_data());
+  header_file_environment env(type_shell, cfg, "", "");
 
   test_append_text_to_environment(env);
 }

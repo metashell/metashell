@@ -126,7 +126,7 @@ void pragma_ls::run(const data::command::iterator& name_begin_,
   std::set<data::include_argument> dirs;
   std::set<data::include_argument> headers;
 
-  include_path_cache paths(_shell.engine());
+  include_path_cache paths(_shell.engine().header_discoverer());
 
   const boost::filesystem::directory_iterator end;
 

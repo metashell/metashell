@@ -20,6 +20,8 @@
 #include <metashell/data/command.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
+#include <metashell/make_unique.hpp>
+
 #include <memory>
 
 namespace metashell
@@ -28,9 +30,10 @@ namespace metashell
   {
   public:
     template <class Impl>
-    // requires: Impl publicly inherits from iface::pragma_handler
-    pragma_handler(Impl impl_) : _body(new Impl(impl_))
+    pragma_handler(Impl impl_) : _body(make_unique<Impl>(impl_))
     {
+      static_assert(
+          std::is_base_of<iface::pragma_handler, Impl>::value, "Invalid impl");
     }
 
     pragma_handler(const pragma_handler& h_);

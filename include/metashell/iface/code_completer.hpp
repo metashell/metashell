@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_FACTORY_HPP
-#define METASHELL_ENGINE_FACTORY_HPP
+#ifndef METASHELL_IFACE_CODE_COMPLETER_HPP
+#define METASHELL_IFACE_CODE_COMPLETER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,27 +18,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/engine.hpp>
-#include <metashell/iface/environment_detector.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/data/include_type.hpp>
+#include <metashell/data/result.hpp>
+#include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
-#include <functional>
-#include <memory>
+#include <set>
+#include <string>
 
 namespace metashell
 {
-  typedef std::function<std::unique_ptr<iface::engine>(
-      const data::config&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      iface::environment_detector&,
-      iface::displayer&,
-      logger*)>
-      engine_factory;
+  namespace iface
+  {
+    class code_completer
+    {
+    public:
+      virtual ~code_completer() {}
+
+      virtual void code_complete(const environment& env_,
+                                 const std::string& src_,
+                                 std::set<std::string>& out_,
+                                 bool use_precompiled_headers_) = 0;
+    };
+  }
 }
 
 #endif

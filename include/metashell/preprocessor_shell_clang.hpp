@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_FACTORY_HPP
-#define METASHELL_ENGINE_FACTORY_HPP
+#ifndef METASHELL_PREPROESSOR_SHELL_CLANG_HPP
+#define METASHELL_PREPROESSOR_SHELL_CLANG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/iface/displayer.hpp>
-#include <metashell/iface/engine.hpp>
-#include <metashell/iface/environment_detector.hpp>
-#include <metashell/logger.hpp>
+#include <metashell/iface/preprocessor_shell.hpp>
 
-#include <boost/filesystem/path.hpp>
-
-#include <functional>
-#include <memory>
+#include <metashell/clang_binary.hpp>
 
 namespace metashell
 {
-  typedef std::function<std::unique_ptr<iface::engine>(
-      const data::config&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      const boost::filesystem::path&,
-      iface::environment_detector&,
-      iface::displayer&,
-      logger*)>
-      engine_factory;
+  class preprocessor_shell_clang : public iface::preprocessor_shell
+  {
+  public:
+    explicit preprocessor_shell_clang(clang_binary clang_binary_);
+
+    virtual data::result precompile(const std::string& exp_) override;
+    virtual std::string macros(const iface::environment& env_) override;
+
+  private:
+    clang_binary _clang_binary;
+  };
 }
 
 #endif

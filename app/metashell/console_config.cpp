@@ -19,6 +19,7 @@
 #include <metashell/console_displayer.hpp>
 #include <metashell/json_displayer.hpp>
 #include <metashell/json_line_reader.hpp>
+#include <metashell/make_unique.hpp>
 #include <metashell/null_history.hpp>
 #include <metashell/rapid_json_writer.hpp>
 #include <metashell/readline/history.hpp>
@@ -49,36 +50,101 @@ namespace
       return boost::none;
     }
   }
+
+  std::unique_ptr<iface::console> create_console(data::console_type type_)
+  {
+    switch (type_)
+    {
+    case data::console_type::plain:
+      return metashell::make_unique<stream_console>(std::cout);
+    case data::console_type::readline:
+      return make_unique<stdout_console>();
+    case data::console_type::json:
+      return nullptr;
+    }
+    return nullptr;
+  }
+
+  std::unique_ptr<iface::json_writer>
+  create_json_writer(data::console_type type_)
+  {
+    switch (type_)
+    {
+    case data::console_type::plain:
+      return nullptr;
+    case data::console_type::readline:
+      return nullptr;
+    case data::console_type::json:
+      return metashell::make_unique<rapid_json_writer>(std::cout);
+    }
+    return nullptr;
+  }
+
+  std::unique_ptr<iface::displayer>
+  create_displayer(data::console_type type_,
+                   bool indent_,
+                   bool syntax_highlight_,
+                   iface::console* console_,
+                   iface::json_writer* json_writer_)
+  {
+    switch (type_)
+    {
+    case data::console_type::plain:
+      return make_unique<console_displayer>(*console_, false, false);
+    case data::console_type::readline:
+      return make_unique<console_displayer>(
+          *console_, indent_, syntax_highlight_);
+    case data::console_type::json:
+      return make_unique<json_displayer>(*json_writer_);
+    }
+    return nullptr;
+  }
+
+  std::unique_ptr<iface::history> create_history(data::console_type type_)
+  {
+    switch (type_)
+    {
+    case data::console_type::plain:
+      return make_unique<null_history>();
+    case data::console_type::readline:
+      return make_unique<readline::history>();
+    case data::console_type::json:
+      return make_unique<null_history>();
+    }
+    return nullptr;
+  }
+
+  line_reader create_reader(data::console_type type_,
+                            iface::displayer* displayer_,
+                            iface::json_writer* json_writer_,
+                            command_processor_queue& processor_queue_)
+  {
+    switch (type_)
+    {
+    case data::console_type::plain:
+      return plain_line_reader;
+    case data::console_type::readline:
+      return metashell::readline::line_reader(processor_queue_);
+    case data::console_type::json:
+      return build_json_line_reader(
+          plain_line_reader, *displayer_, *json_writer_, processor_queue_);
+    }
+    // To avoid warnings
+    return plain_line_reader;
+  }
 }
 
 console_config::console_config(data::console_type type_,
                                bool indent_,
                                bool syntax_highlight_)
+  : _console(create_console(type_)),
+    _json_writer(create_json_writer(type_)),
+    _displayer(create_displayer(
+        type_, indent_, syntax_highlight_, _console.get(), _json_writer.get())),
+    _history(create_history(type_)),
+    _reader(create_reader(
+        type_, _displayer.get(), _json_writer.get(), _processor_queue))
 {
-  switch (type_)
-  {
-  case data::console_type::plain:
-    _console.reset(new stream_console(std::cout));
-    _displayer.reset(new console_displayer(*_console, false, false));
-    _history.reset(new null_history);
-    _reader = plain_line_reader;
-    break;
-  case data::console_type::readline:
-    _console.reset(new stdout_console());
-    _displayer.reset(
-        new console_displayer(*_console, indent_, syntax_highlight_));
-    _history.reset(new readline::history);
-    _reader = metashell::readline::line_reader(_processor_queue);
-    break;
-  case data::console_type::json:
-    _json_writer.reset(new rapid_json_writer(std::cout));
-    _displayer.reset(new json_displayer(*_json_writer));
-    _history.reset(new null_history);
-    _reader = build_json_line_reader(
-        plain_line_reader, *_displayer, *_json_writer, _processor_queue);
-    break;
-  }
-
   _processor_queue.history(*_history);
 }
 
