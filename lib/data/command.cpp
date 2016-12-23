@@ -48,6 +48,10 @@ command::iterator metashell::data::skip(command::iterator i_)
   return i_;
 }
 
+bool command::empty() const { return _tokens.empty(); }
+
+int command::size() const { return _tokens.size(); }
+
 command::iterator
 metashell::data::skip_whitespace(command::iterator begin_,
                                  const command::iterator& end_)

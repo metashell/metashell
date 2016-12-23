@@ -24,8 +24,7 @@
 
 namespace metashell
 {
-  std::unique_ptr<iface::engine>
-  create_failing_engine(const std::string& msg_ = "Using failing engine");
+  std::unique_ptr<iface::engine> create_failing_engine();
 
   std::unique_ptr<iface::engine>
   create_engine_returning_type(const std::string& type_);

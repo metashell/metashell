@@ -32,5 +32,6 @@ std::string pragma_macros::description() const
 
 void pragma_macros::run(iface::displayer& displayer_) const
 {
-  displayer_.show_cpp_code(_shell.engine().macros(_shell.env()));
+  displayer_.show_cpp_code(
+      _shell.engine().preprocessor_shell().macros(_shell.env()));
 }

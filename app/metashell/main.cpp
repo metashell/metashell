@@ -19,8 +19,10 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/engine_clang.hpp>
 #include <metashell/engine_entry.hpp>
+#include <metashell/engine_null.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/logger.hpp>
+#include <metashell/make_unique.hpp>
 #include <metashell/parse_config.hpp>
 #include <metashell/shell.hpp>
 
@@ -71,7 +73,8 @@ int main(int argc_, const char* argv_[])
 
     const std::map<std::string, metashell::engine_entry> engines{
         {"internal", metashell::get_internal_templight_entry()},
-        {"clang", metashell::get_engine_clang_entry()}};
+        {"clang", metashell::get_engine_clang_entry()},
+        {"null", metashell::get_engine_null_entry()}};
 
     metashell::default_environment_detector det(argv_[0]);
 
@@ -123,11 +126,11 @@ int main(int argc_, const char* argv_[])
         create_directories(temp_dir);
         create_directories(mdb_dir);
 
-        std::unique_ptr<metashell::shell> shell(new metashell::shell(
+        auto shell = metashell::make_unique<metashell::shell>(
             r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
             eentry->second.build(r.cfg, shell_dir, temp_dir, env_filename, det,
                                  ccfg.displayer(), &logger),
-            &logger));
+            &logger);
 
         if (r.cfg.splash_enabled)
         {

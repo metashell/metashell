@@ -41,7 +41,8 @@ namespace metashell
     public:
       explicit metashell_instance(
           const std::vector<std::string>& extra_args_ = {},
-          const boost::filesystem::path& cwd_ = boost::filesystem::path());
+          const boost::filesystem::path& cwd_ = boost::filesystem::path(),
+          bool allow_user_defined_args_ = true);
 
       ~metashell_instance();
 

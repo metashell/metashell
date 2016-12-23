@@ -19,7 +19,7 @@
 
 #include <metashell/cached.hpp>
 #include <metashell/data/include_type.hpp>
-#include <metashell/iface/engine.hpp>
+#include <metashell/iface/header_discoverer.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -33,7 +33,7 @@ namespace metashell
     cached<std::vector<boost::filesystem::path>> sys;
     cached<std::vector<boost::filesystem::path>> quote;
 
-    explicit include_path_cache(iface::engine& engine_);
+    explicit include_path_cache(iface::header_discoverer& header_discoverer_);
 
     const std::vector<boost::filesystem::path>&
     operator[](data::include_type type_);

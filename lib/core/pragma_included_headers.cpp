@@ -51,7 +51,9 @@ void pragma_included_headers::run(const data::command::iterator&,
 {
   const std::string env = _shell.env().get_all();
 
-  const auto by_current_env = _shell.engine().files_included_by(env);
+  auto& header_discoverer = _shell.engine().header_discoverer();
+
+  const auto by_current_env = header_discoverer.files_included_by(env);
 
   if (args_begin_ == args_end_)
   {
@@ -59,7 +61,7 @@ void pragma_included_headers::run(const data::command::iterator&,
   }
   else
   {
-    const auto by_ext_env = _shell.engine().files_included_by(
+    const auto by_ext_env = header_discoverer.files_included_by(
         env + "\n" + data::tokens_to_string(args_begin_, args_end_));
 
     std::set<boost::filesystem::path> new_headers;

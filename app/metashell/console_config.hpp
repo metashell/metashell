@@ -45,11 +45,10 @@ namespace metashell
   private:
     command_processor_queue _processor_queue;
     std::unique_ptr<iface::console> _console;
+    std::unique_ptr<iface::json_writer> _json_writer;
     std::unique_ptr<iface::displayer> _displayer;
     std::unique_ptr<iface::history> _history;
     line_reader _reader;
-
-    std::unique_ptr<iface::json_writer> _json_writer;
   };
 }
 

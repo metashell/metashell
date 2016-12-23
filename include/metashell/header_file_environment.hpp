@@ -19,8 +19,8 @@
 
 #include <metashell/data/config.hpp>
 #include <metashell/data/headers.hpp>
-#include <metashell/iface/engine.hpp>
 #include <metashell/iface/environment.hpp>
+#include <metashell/iface/type_shell.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -29,7 +29,7 @@ namespace metashell
   class header_file_environment : public iface::environment
   {
   public:
-    header_file_environment(iface::engine& engine_,
+    header_file_environment(iface::type_shell* type_shell,
                             const data::config& config_,
                             const boost::filesystem::path& internal_dir_,
                             const boost::filesystem::path& env_filename_);
@@ -50,7 +50,7 @@ namespace metashell
 
     bool _use_precompiled_headers;
 
-    iface::engine& _engine;
+    iface::type_shell* _type_shell;
 
     void save();
   };

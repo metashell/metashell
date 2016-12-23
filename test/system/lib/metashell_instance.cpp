@@ -26,15 +26,19 @@
 namespace
 {
   std::vector<std::string>
-  construct_cmd(const std::vector<std::string>& extra_args_)
+  construct_cmd(const std::vector<std::string>& extra_args_,
+                bool allow_user_defined_args_)
   {
     using namespace metashell::system_test;
 
     std::vector<std::string> cmd{
         absolute(system_test_config::metashell_binary()).string(),
         "--console=json", "--nosplash"};
-    cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
-               system_test_config::metashell_args().end());
+    if (allow_user_defined_args_)
+    {
+      cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
+                 system_test_config::metashell_args().end());
+    }
     if (!extra_args_.empty())
     {
       if (std::find(cmd.begin(), cmd.end(), "--") == cmd.end() ||
@@ -58,8 +62,10 @@ namespace metashell
   {
     metashell_instance::metashell_instance(
         const std::vector<std::string>& extra_args_,
-        const boost::filesystem::path& cwd_)
-      : _process_execution(construct_cmd(extra_args_)),
+        const boost::filesystem::path& cwd_,
+        bool allow_user_defined_args_)
+      : _process_execution(
+            construct_cmd(extra_args_, allow_user_defined_args_)),
         _child(_process_execution.cmd(), cwd_),
         _lines(),
         _last_line(),

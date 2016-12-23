@@ -1,5 +1,10 @@
 # Changelog
 
+## Not in any release yet
+
+* New features
+    * New engine: `null`
+
 ## Version 3.0.0
 
 * New features

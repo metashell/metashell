@@ -44,7 +44,8 @@ namespace metashell
 
     virtual void run(iface::displayer& displayer_) const override
     {
-      displayer_.show_filename_list(_shell.engine().include_path(Type));
+      displayer_.show_filename_list(
+          _shell.engine().header_discoverer().include_path(Type));
     }
 
   private:

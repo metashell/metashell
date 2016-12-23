@@ -39,21 +39,6 @@ namespace metashell
       iface::displayer&,
       logger*)>
       engine_factory;
-
-  template <class Engine>
-  engine_factory factory_for()
-  {
-    return [](const data::config& config_,
-              const boost::filesystem::path& internal_dir_,
-              const boost::filesystem::path& temp_dir_,
-              const boost::filesystem::path& env_filename_,
-              iface::environment_detector& env_detector_,
-              iface::displayer& displayer_, logger* logger_) {
-      return std::unique_ptr<iface::engine>(
-          new Engine(config_, internal_dir_, temp_dir_, env_filename_,
-                     env_detector_, displayer_, logger_));
-    };
-  }
 }
 
 #endif
