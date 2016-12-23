@@ -34,47 +34,17 @@ namespace metashell
   {
   }
 
-  data::result type_shell_clang::eval(
-      const iface::environment& env_,
-      const boost::optional<std::string>& tmp_exp_,
-      const boost::optional<boost::filesystem::path>& templight_dump_path_,
-      bool use_precompiled_headers_)
+  data::result
+  type_shell_clang::eval(const iface::environment& env_,
+                         const boost::optional<std::string>& tmp_exp_,
+                         bool use_precompiled_headers_)
   {
-    std::vector<std::string> clang_args{"-Xclang", "-ast-dump"};
-    if (use_precompiled_headers_)
-    {
-      clang_args.push_back("-include");
-      clang_args.push_back(_env_path.string());
-    }
-    if (templight_dump_path_)
-    {
-      clang_args.push_back("-Xtemplight");
-      clang_args.push_back("-profiler");
-      clang_args.push_back("-Xtemplight");
-      clang_args.push_back("-safe-mode");
-
-      // templight can't be forced to generate output file with
-      // -Xtemplight -output=<file> for some reason
-      // A workaround is to specify a standard output location with -o
-      // then append ".trace.pbf" to the specified file (on the calling side)
-      clang_args.push_back("-o");
-      clang_args.push_back(templight_dump_path_->string());
-    }
-
-    const data::process_output output =
-        run_clang(_clang_binary, clang_args,
-                  tmp_exp_ ?
-                      env_.get_appended("::metashell::impl::wrap< " +
-                                        *tmp_exp_ + " > __metashell_v;\n") :
-                      env_.get());
-
-    const bool success = output.exit_code == data::exit_code_t(0);
-
-    return data::result{success,
-                        success && tmp_exp_ ?
-                            get_type_from_ast_string(output.standard_output) :
-                            "",
-                        success ? "" : output.standard_error, ""};
+    return metashell::eval(
+        env_, tmp_exp_,
+        use_precompiled_headers_ ?
+            boost::optional<boost::filesystem::path>(_env_path) :
+            boost::none,
+        boost::none, _clang_binary);
   }
 
   data::result type_shell_clang::validate_code(const std::string& src_,

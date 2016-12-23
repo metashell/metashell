@@ -1,5 +1,5 @@
-#ifndef METASHELL_TYPE_SHELL_CONSTANT_HPP
-#define METASHELL_TYPE_SHELL_CONSTANT_HPP
+#ifndef METASHELL_TEMPLATE_TRACER_CONSTANT_HPP
+#define METASHELL_TEMPLATE_TRACER_CONSTANT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,26 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/type_shell.hpp>
+#include <metashell/iface/template_tracer.hpp>
 
 namespace metashell
 {
-  class type_shell_constant : public iface::type_shell
+  class template_tracer_constant : public iface::template_tracer
   {
   public:
-    explicit type_shell_constant(data::result result_);
+    explicit template_tracer_constant(data::result result_);
 
     virtual data::result eval(const iface::environment&,
                               const boost::optional<std::string>&,
-                              bool) override;
-
-    virtual data::result validate_code(const std::string&,
-                                       const data::config&,
-                                       const iface::environment&,
-                                       bool) override;
-
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path&) override;
+                              bool,
+                              const boost::filesystem::path&) override;
 
   private:
     data::result _result;

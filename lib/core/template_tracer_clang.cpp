@@ -14,33 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/type_shell_constant.hpp>
+#include <metashell/template_tracer_clang.hpp>
 
 namespace metashell
 {
-  type_shell_constant::type_shell_constant(data::result result_)
-    : _result(std::move(result_))
+  template_tracer_clang::template_tracer_clang(
+      const boost::filesystem::path& internal_dir_,
+      const boost::filesystem::path& env_filename_,
+      clang_binary clang_binary_)
+    : _clang_binary(clang_binary_), _env_path(internal_dir_ / env_filename_)
   {
   }
 
-  data::result type_shell_constant::eval(const iface::environment&,
-                                         const boost::optional<std::string>&,
-                                         bool)
+  data::result template_tracer_clang::eval(
+      const iface::environment& env_,
+      const boost::optional<std::string>& tmp_exp_,
+      bool use_precompiled_headers_,
+      const boost::filesystem::path& templight_dump_path_)
   {
-    return _result;
-  }
-
-  data::result type_shell_constant::validate_code(const std::string&,
-                                                  const data::config&,
-                                                  const iface::environment&,
-                                                  bool)
-  {
-    return _result;
-  }
-
-  void type_shell_constant::generate_precompiled_header(
-      const boost::filesystem::path&)
-  {
-    // ignore
+    return metashell::eval(
+        env_, tmp_exp_,
+        use_precompiled_headers_ ?
+            boost::optional<boost::filesystem::path>(_env_path) :
+            boost::none,
+        templight_dump_path_, _clang_binary);
   }
 }

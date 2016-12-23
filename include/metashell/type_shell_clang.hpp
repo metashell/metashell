@@ -34,11 +34,9 @@ namespace metashell
                      clang_binary clang_binary_,
                      logger* logger_);
 
-    virtual data::result
-    eval(const iface::environment& env_,
-         const boost::optional<std::string>& tmp_exp_,
-         const boost::optional<boost::filesystem::path>& templight_dump_path_,
-         bool use_precompiled_headers_) override;
+    virtual data::result eval(const iface::environment& env_,
+                              const boost::optional<std::string>& tmp_exp_,
+                              bool use_precompiled_headers_) override;
 
     virtual data::result validate_code(const std::string& src_,
                                        const data::config& config_,

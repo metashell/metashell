@@ -14,33 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/type_shell_constant.hpp>
+#include <metashell/template_tracer_constant.hpp>
 
 namespace metashell
 {
-  type_shell_constant::type_shell_constant(data::result result_)
+  template_tracer_constant::template_tracer_constant(data::result result_)
     : _result(std::move(result_))
   {
   }
 
-  data::result type_shell_constant::eval(const iface::environment&,
-                                         const boost::optional<std::string>&,
-                                         bool)
+  data::result
+  template_tracer_constant::eval(const iface::environment&,
+                                 const boost::optional<std::string>&,
+                                 bool,
+                                 const boost::filesystem::path&)
   {
     return _result;
-  }
-
-  data::result type_shell_constant::validate_code(const std::string&,
-                                                  const data::config&,
-                                                  const iface::environment&,
-                                                  bool)
-  {
-    return _result;
-  }
-
-  void type_shell_constant::generate_precompiled_header(
-      const boost::filesystem::path&)
-  {
-    // ignore
   }
 }

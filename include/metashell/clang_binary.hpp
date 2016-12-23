@@ -17,10 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/result.hpp>
+#include <metashell/iface/environment.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
 #include <string>
 #include <vector>
@@ -45,6 +48,13 @@ namespace metashell
   data::process_output run_clang(const iface::executable& clang_binary_,
                                  std::vector<std::string> clang_args_,
                                  const std::string& input_);
+
+  data::result
+  eval(const iface::environment& env_,
+       const boost::optional<std::string>& tmp_exp_,
+       const boost::optional<boost::filesystem::path>& env_path_,
+       const boost::optional<boost::filesystem::path>& templight_dump_path_,
+       clang_binary& clang_binary_);
 }
 
 #endif

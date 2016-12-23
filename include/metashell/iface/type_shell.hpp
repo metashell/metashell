@@ -18,14 +18,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
-#include <metashell/data/include_type.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
-#include <set>
 #include <string>
 
 namespace metashell
@@ -37,11 +35,9 @@ namespace metashell
     public:
       virtual ~type_shell() {}
 
-      virtual data::result
-      eval(const environment& env_,
-           const boost::optional<std::string>& tmp_exp_,
-           const boost::optional<boost::filesystem::path>& templight_dump_path_,
-           bool use_precompiled_headers_) = 0;
+      virtual data::result eval(const environment& env_,
+                                const boost::optional<std::string>& tmp_exp_,
+                                bool use_precompiled_headers_) = 0;
 
       virtual data::result validate_code(const std::string& s_,
                                          const data::config& config_,

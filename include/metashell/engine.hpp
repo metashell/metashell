@@ -31,7 +31,8 @@ namespace metashell
   template <class TypeShell,
             class PreprocessorShell,
             class CodeCompleter,
-            class HeaderDiscoverer>
+            class HeaderDiscoverer,
+            class TemplateTracer>
   class engine : public iface::engine
   {
   public:
@@ -50,17 +51,23 @@ namespace metashell
         !supported<HeaderDiscoverer>::value ||
             std::is_base_of<iface::header_discoverer, HeaderDiscoverer>::value,
         "Header discoverer is needed");
+    static_assert(
+        !supported<TemplateTracer>::value ||
+            std::is_base_of<iface::template_tracer, TemplateTracer>::value,
+        "Template tracer is needed");
 
     engine(std::string name_,
            TypeShell type_shell_,
            PreprocessorShell preprocessor_shell_,
            CodeCompleter code_completer_,
-           HeaderDiscoverer header_discoverer_)
+           HeaderDiscoverer header_discoverer_,
+           TemplateTracer template_tracer_)
       : _name(std::move(name_)),
         _type_shell(std::move(type_shell_)),
         _preprocessor_shell(std::move(preprocessor_shell_)),
         _code_completer(std::move(code_completer_)),
-        _header_discoverer(std::move(header_discoverer_))
+        _header_discoverer(std::move(header_discoverer_)),
+        _template_tracer(std::move(template_tracer_))
     {
     }
 
@@ -106,32 +113,50 @@ namespace metashell
       return if_supported<iface::header_discoverer>(_header_discoverer, _name);
     }
 
+    virtual iface::template_tracer& template_tracer() override
+    {
+      return if_supported<iface::template_tracer>(_template_tracer, _name);
+    }
+
+    virtual const iface::template_tracer& template_tracer() const override
+    {
+      return if_supported<iface::template_tracer>(_template_tracer, _name);
+    }
+
   private:
     std::string _name;
     TypeShell _type_shell;
     PreprocessorShell _preprocessor_shell;
     CodeCompleter _code_completer;
     HeaderDiscoverer _header_discoverer;
+    TemplateTracer _template_tracer;
   };
 
   template <class TypeShell,
             class PreprocessorShell,
             class CodeCompleter,
-            class HeaderDiscoverer>
-  std::unique_ptr<
-      engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer>>
+            class HeaderDiscoverer,
+            class TemplateTracer>
+  std::unique_ptr<engine<TypeShell,
+                         PreprocessorShell,
+                         CodeCompleter,
+                         HeaderDiscoverer,
+                         TemplateTracer>>
   make_engine(std::string name_,
               TypeShell&& type_shell_,
               PreprocessorShell&& preprocessor_shell_,
               CodeCompleter&& code_completer_,
-              HeaderDiscoverer&& header_discoverer_)
+              HeaderDiscoverer&& header_discoverer_,
+              TemplateTracer&& template_tracer_)
   {
-    return make_unique<
-        engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer>>(
+    return metashell::make_unique<
+        engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer,
+               TemplateTracer>>(
         std::move(name_), std::forward<TypeShell>(type_shell_),
         std::forward<PreprocessorShell>(preprocessor_shell_),
         std::forward<CodeCompleter>(code_completer_),
-        std::forward<HeaderDiscoverer>(header_discoverer_));
+        std::forward<HeaderDiscoverer>(header_discoverer_),
+        std::forward<TemplateTracer>(template_tracer_));
   }
 }
 

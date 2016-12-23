@@ -976,8 +976,8 @@ namespace metashell
                              const boost::filesystem::path& output_path_,
                              iface::displayer& displayer_)
   {
-    const data::result res = _engine.type_shell().eval(
-        env, expression, output_path_, conf.use_precompiled_headers);
+    const data::result res = _engine.template_tracer().eval(
+        env, expression, conf.use_precompiled_headers, output_path_);
 
     if (!res.info.empty())
     {

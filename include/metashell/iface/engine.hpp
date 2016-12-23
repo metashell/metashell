@@ -20,6 +20,7 @@
 #include <metashell/iface/code_completer.hpp>
 #include <metashell/iface/header_discoverer.hpp>
 #include <metashell/iface/preprocessor_shell.hpp>
+#include <metashell/iface/template_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
 
 namespace metashell
@@ -42,6 +43,9 @@ namespace metashell
 
       virtual iface::header_discoverer& header_discoverer() = 0;
       virtual const iface::header_discoverer& header_discoverer() const = 0;
+
+      virtual iface::template_tracer& template_tracer() = 0;
+      virtual const iface::template_tracer& template_tracer() const = 0;
     };
   }
 }

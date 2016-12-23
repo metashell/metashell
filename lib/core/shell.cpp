@@ -137,7 +137,7 @@ namespace
             tmp_exp_);
 
     const data::result simple =
-        type_shell_.eval(env_, tmp_exp_, boost::none, use_precompiled_headers_);
+        type_shell_.eval(env_, tmp_exp_, use_precompiled_headers_);
 
     METASHELL_LOG(
         logger_,
@@ -150,7 +150,7 @@ namespace
     return simple.successful ?
                type_shell_.eval(env_,
                                 "::metashell::format<" + tmp_exp_ + ">::type",
-                                boost::none, use_precompiled_headers_) :
+                                use_precompiled_headers_) :
                simple;
   }
 

@@ -73,3 +73,10 @@ TEST(null_engine, header_discoverer)
                   "null engine."),
             with_null_engine("#msh sysincludes").front());
 }
+
+TEST(null_engine, template_tracer)
+{
+  ASSERT_EQ(error("Error: Feature template_tracer is not supported by the "
+                  "null engine."),
+            with_null_engine("#msh mdb int").front());
+}
