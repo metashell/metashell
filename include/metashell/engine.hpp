@@ -17,10 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/if_supported.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/make_unique.hpp>
+#include <metashell/supported.hpp>
 
 #include <memory>
+#include <string>
 #include <type_traits>
 
 namespace metashell
@@ -32,66 +35,79 @@ namespace metashell
   class engine : public iface::engine
   {
   public:
-    static_assert(std::is_base_of<iface::type_shell, TypeShell>::value,
+    static_assert(!supported<TypeShell>::value ||
+                      std::is_base_of<iface::type_shell, TypeShell>::value,
                   "Type shell is needed");
+    static_assert(!supported<PreprocessorShell>::value ||
+                      std::is_base_of<iface::preprocessor_shell,
+                                      PreprocessorShell>::value,
+                  "Preprocessor shell is needed");
     static_assert(
-        std::is_base_of<iface::preprocessor_shell, PreprocessorShell>::value,
-        "Preprocessor shell is needed");
-    static_assert(std::is_base_of<iface::code_completer, CodeCompleter>::value,
-                  "Code completer is needed");
+        !supported<CodeCompleter>::value ||
+            std::is_base_of<iface::code_completer, CodeCompleter>::value,
+        "Code completer is needed");
     static_assert(
-        std::is_base_of<iface::header_discoverer, HeaderDiscoverer>::value,
+        !supported<HeaderDiscoverer>::value ||
+            std::is_base_of<iface::header_discoverer, HeaderDiscoverer>::value,
         "Header discoverer is needed");
 
-    engine(TypeShell type_shell_,
+    engine(std::string name_,
+           TypeShell type_shell_,
            PreprocessorShell preprocessor_shell_,
            CodeCompleter code_completer_,
            HeaderDiscoverer header_discoverer_)
-      : _type_shell(std::move(type_shell_)),
+      : _name(std::move(name_)),
+        _type_shell(std::move(type_shell_)),
         _preprocessor_shell(std::move(preprocessor_shell_)),
         _code_completer(std::move(code_completer_)),
         _header_discoverer(std::move(header_discoverer_))
     {
     }
 
-    virtual iface::type_shell& type_shell() override { return _type_shell; }
+    virtual iface::type_shell& type_shell() override
+    {
+      return if_supported<iface::type_shell>(_type_shell, _name);
+    }
 
     virtual const iface::type_shell& type_shell() const override
     {
-      return _type_shell;
+      return if_supported<iface::type_shell>(_type_shell, _name);
     }
 
     virtual iface::preprocessor_shell& preprocessor_shell() override
     {
-      return _preprocessor_shell;
+      return if_supported<iface::preprocessor_shell>(
+          _preprocessor_shell, _name);
     }
 
     virtual const iface::preprocessor_shell& preprocessor_shell() const override
     {
-      return _preprocessor_shell;
+      return if_supported<iface::preprocessor_shell>(
+          _preprocessor_shell, _name);
     }
 
     virtual iface::code_completer& code_completer() override
     {
-      return _code_completer;
+      return if_supported<iface::code_completer>(_code_completer, _name);
     }
 
     virtual const iface::code_completer& code_completer() const override
     {
-      return _code_completer;
+      return if_supported<iface::code_completer>(_code_completer, _name);
     }
 
     virtual iface::header_discoverer& header_discoverer() override
     {
-      return _header_discoverer;
+      return if_supported<iface::header_discoverer>(_header_discoverer, _name);
     }
 
     virtual const iface::header_discoverer& header_discoverer() const override
     {
-      return _header_discoverer;
+      return if_supported<iface::header_discoverer>(_header_discoverer, _name);
     }
 
   private:
+    std::string _name;
     TypeShell _type_shell;
     PreprocessorShell _preprocessor_shell;
     CodeCompleter _code_completer;
@@ -104,14 +120,15 @@ namespace metashell
             class HeaderDiscoverer>
   std::unique_ptr<
       engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer>>
-  make_engine(TypeShell&& type_shell_,
+  make_engine(std::string name_,
+              TypeShell&& type_shell_,
               PreprocessorShell&& preprocessor_shell_,
               CodeCompleter&& code_completer_,
               HeaderDiscoverer&& header_discoverer_)
   {
     return make_unique<
         engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer>>(
-        std::forward<TypeShell>(type_shell_),
+        std::move(name_), std::forward<TypeShell>(type_shell_),
         std::forward<PreprocessorShell>(preprocessor_shell_),
         std::forward<CodeCompleter>(code_completer_),
         std::forward<HeaderDiscoverer>(header_discoverer_));

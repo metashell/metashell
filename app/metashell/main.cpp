@@ -19,6 +19,7 @@
 #include <metashell/default_environment_detector.hpp>
 #include <metashell/engine_clang.hpp>
 #include <metashell/engine_entry.hpp>
+#include <metashell/engine_null.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/make_unique.hpp>
@@ -72,7 +73,8 @@ int main(int argc_, const char* argv_[])
 
     const std::map<std::string, metashell::engine_entry> engines{
         {"internal", metashell::get_internal_templight_entry()},
-        {"clang", metashell::get_engine_clang_entry()}};
+        {"clang", metashell::get_engine_clang_entry()},
+        {"null", metashell::get_engine_null_entry()}};
 
     metashell::default_environment_detector det(argv_[0]);
 

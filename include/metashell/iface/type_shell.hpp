@@ -49,6 +49,8 @@ namespace metashell
                                          bool use_precompiled_headers_) = 0;
       virtual void
       generate_precompiled_header(const boost::filesystem::path& fn_) = 0;
+
+      static std::string name_of_feature() { return "type_shell"; }
     };
   }
 }

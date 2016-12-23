@@ -60,7 +60,7 @@ TEST(environment, empty_header_file_environment_is_empty)
   cfg.use_precompiled_headers = false;
 
   type_shell_constant type_shell(failing_data());
-  header_file_environment env(type_shell, cfg, "", "");
+  header_file_environment env(&type_shell, cfg, "", "");
 
   ASSERT_EQ("", env.get_all());
 }
@@ -71,7 +71,7 @@ TEST(environment, append_text_to_header_file_environment)
   cfg.use_precompiled_headers = false;
 
   type_shell_constant type_shell(failing_data());
-  header_file_environment env(type_shell, cfg, "", "");
+  header_file_environment env(&type_shell, cfg, "", "");
 
   test_append_text_to_environment(env);
 }

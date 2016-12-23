@@ -283,6 +283,7 @@ namespace
                       logger_);
 
     return make_engine(
+        config_.engine,
         type_shell_clang(internal_dir_, env_filename_, cbin, logger_),
         preprocessor_shell_clang(cbin),
         code_completer_clang(

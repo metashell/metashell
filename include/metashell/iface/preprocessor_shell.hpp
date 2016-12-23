@@ -34,6 +34,8 @@ namespace metashell
       virtual data::result precompile(const std::string& exp_) = 0;
 
       virtual std::string macros(const iface::environment& env_) = 0;
+
+      static std::string name_of_feature() { return "preprocessor_shell"; }
     };
   }
 }

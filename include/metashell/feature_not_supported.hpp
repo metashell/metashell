@@ -1,5 +1,5 @@
-#ifndef METASHELL_IFACE_CODE_COMPLETER_HPP
-#define METASHELL_IFACE_CODE_COMPLETER_HPP
+#ifndef METASHELL_FEATURE_NOT_SUPPORTED_HPP
+#define METASHELL_FEATURE_NOT_SUPPORTED_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,34 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/data/include_type.hpp>
-#include <metashell/data/result.hpp>
-#include <metashell/iface/environment.hpp>
+#include <metashell/exception.hpp>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
-
-#include <set>
 #include <string>
 
 namespace metashell
 {
-  namespace iface
+  template <class Feature>
+  struct feature_not_supported : exception
   {
-    class code_completer
+    explicit feature_not_supported(const std::string& engine_name_)
+      : exception("Feature " + Feature::name_of_feature() +
+                  " is not supported by the " + engine_name_ + " engine.")
     {
-    public:
-      virtual ~code_completer() {}
-
-      virtual void code_complete(const environment& env_,
-                                 const std::string& src_,
-                                 std::set<std::string>& out_,
-                                 bool use_precompiled_headers_) = 0;
-
-      static std::string name_of_feature() { return "code_completer"; }
-    };
-  }
+    }
+  };
 }
 
 #endif

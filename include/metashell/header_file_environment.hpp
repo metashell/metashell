@@ -29,7 +29,7 @@ namespace metashell
   class header_file_environment : public iface::environment
   {
   public:
-    header_file_environment(iface::type_shell& type_shell,
+    header_file_environment(iface::type_shell* type_shell,
                             const data::config& config_,
                             const boost::filesystem::path& internal_dir_,
                             const boost::filesystem::path& env_filename_);
@@ -50,7 +50,7 @@ namespace metashell
 
     bool _use_precompiled_headers;
 
-    iface::type_shell& _type_shell;
+    iface::type_shell* _type_shell;
 
     void save();
   };

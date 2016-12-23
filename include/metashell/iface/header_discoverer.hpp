@@ -39,6 +39,8 @@ namespace metashell
 
       virtual std::set<boost::filesystem::path>
       files_included_by(const std::string& exp_) = 0;
+
+      static std::string name_of_feature() { return "header_discoverer"; }
     };
   }
 }

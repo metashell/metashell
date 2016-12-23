@@ -18,6 +18,7 @@
 
 #include <metashell/data/command.hpp>
 #include <metashell/exception.hpp>
+#include <metashell/feature_not_supported.hpp>
 #include <metashell/header_file_environment.hpp>
 #include <metashell/make_unique.hpp>
 #include <metashell/metashell_pragma.hpp>
@@ -196,6 +197,18 @@ namespace metashell {
   {};
 } // namespace metashell
 )";
+
+  iface::type_shell* try_to_get_shell(iface::engine& engine_)
+  {
+    try
+    {
+      return &engine_.type_shell();
+    }
+    catch (const feature_not_supported<iface::type_shell>&)
+    {
+      return nullptr;
+    }
+  }
 }
 
 shell::shell(const data::config& config_,
@@ -459,7 +472,8 @@ const iface::environment& shell::env() const { return *_env; }
 void shell::rebuild_environment(const std::string& content_)
 {
   _env = make_unique<header_file_environment>(
-      _engine->type_shell(), _config, _internal_dir, _env_filename);
+      try_to_get_shell(*_engine), _config, _internal_dir, _env_filename);
+
   if (!content_.empty())
   {
     _env->append(content_);
