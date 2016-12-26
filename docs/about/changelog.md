@@ -4,6 +4,8 @@
 
 * New features
     * New engine: `null`
+    * New engine: `gcc`. Note that only preprocessor shell is supported. (No
+      template metaprogram evaluation or debugging)
 
 ## Version 3.0.0
 

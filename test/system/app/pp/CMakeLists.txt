@@ -43,4 +43,5 @@ target_link_libraries(metashell_pp_system_test
 )
 
 register_system_test(metashell_pp_system_test)
+register_gcc_system_test(metashell_pp_system_test)
 

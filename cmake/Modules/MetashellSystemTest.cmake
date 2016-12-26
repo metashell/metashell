@@ -63,3 +63,17 @@ function(register_system_test TEST_TARGET_NAME)
   )
 endfunction()
 
+function(register_gcc_system_test TEST_TARGET_NAME)
+  if (NOT (WIN32 OR APPLE))
+    add_test(
+      NAME ${TEST_TARGET_NAME}_gcc
+      COMMAND
+        ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
+        "/usr/bin/g++"
+        -std=c++0x
+        "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+        --
+    )
+  endif()
+endfunction()
+

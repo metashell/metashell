@@ -49,10 +49,15 @@ TEST(preprocessed_echo, echoing_evaluation)
   mi.command("#msh preprocessed echo on");
   mi.command("#define FOO int");
 
-  ASSERT_EQ((std::vector<json_string>{to_json_string(cpp_code("int")),
-                                      to_json_string(type("int")),
-                                      to_json_string(prompt(">"))}),
-            mi.command("FOO"));
+  const auto result = mi.command("FOO");
+
+  ASSERT_EQ(3, result.size());
+  ASSERT_EQ(cpp_code("int"), result[0]);
+
+  // The engine might not support type_shell
+  ASSERT_TRUE(type("int") == result[1] || error(_) == result[1]);
+
+  ASSERT_EQ(prompt(">"), result[2]);
 }
 
 TEST(preprocessed_echo, echoing_include)
