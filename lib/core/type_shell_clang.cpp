@@ -47,38 +47,6 @@ namespace metashell
         boost::none, _clang_binary);
   }
 
-  data::result type_shell_clang::validate_code(const std::string& src_,
-                                               const data::config& config_,
-                                               const iface::environment& env_,
-                                               bool use_precompiled_headers_)
-  {
-    METASHELL_LOG(_logger, "Validating code " + src_);
-
-    try
-    {
-      const std::string src = env_.get_appended(src_);
-      std::vector<std::string> clang_args{"-fsyntax-only"};
-      if (use_precompiled_headers_)
-      {
-        clang_args.push_back("-include");
-        clang_args.push_back(_env_path.string());
-      }
-
-      const data::process_output output =
-          run_clang(_clang_binary, clang_args, src);
-
-      const bool accept = output.exit_code == data::exit_code_t(0) &&
-                          output.standard_error.empty();
-
-      return data::result{accept, "", output.standard_error,
-                          accept && config_.verbose ? src : ""};
-    }
-    catch (const std::exception& e)
-    {
-      return data::result(false, "", e.what(), "");
-    }
-  }
-
   void type_shell_clang::generate_precompiled_header(
       const boost::filesystem::path& fn_)
   {

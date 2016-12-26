@@ -80,3 +80,10 @@ TEST(null_engine, template_tracer)
                   "null engine."),
             with_null_engine("#msh mdb int").front());
 }
+
+TEST(null_engine, cpp_validator)
+{
+  ASSERT_EQ(error("Error: Feature cpp_validator is not supported by the "
+                  "null engine."),
+            with_null_engine("typedef int x;").front());
+}

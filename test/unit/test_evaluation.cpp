@@ -216,7 +216,7 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
 
   const data::result r = get_internal_templight_entry()
                              .build(cfg, "", "", "env.hpp", det, d, nullptr)
-                             ->type_shell()
+                             ->cpp_validator()
                              .validate_code("typedef int foo;", cfg, e, false);
 
   ASSERT_FALSE(r.successful);

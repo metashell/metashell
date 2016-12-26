@@ -17,6 +17,7 @@
 #include <metashell/engine_clang.hpp>
 
 #include <metashell/code_completer_clang.hpp>
+#include <metashell/cpp_validator_clang.hpp>
 #include <metashell/engine.hpp>
 #include <metashell/header_discoverer_clang.hpp>
 #include <metashell/preprocessor_shell_clang.hpp>
@@ -290,7 +291,8 @@ namespace
         code_completer_clang(
             internal_dir_, temp_dir_, env_filename_, cbin, logger_),
         header_discoverer_clang(cbin),
-        template_tracer_clang(internal_dir_, env_filename_, cbin));
+        template_tracer_clang(internal_dir_, env_filename_, cbin),
+        cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_));
   }
 } // anonymous namespace
 

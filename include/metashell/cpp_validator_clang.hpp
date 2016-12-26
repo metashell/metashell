@@ -1,5 +1,5 @@
-#ifndef METASHELL_TYPE_SHELL_CLANG_HPP
-#define METASHELL_TYPE_SHELL_CLANG_HPP
+#ifndef METASHELL_CPP_VALIDATOR_CLANG_HPP
+#define METASHELL_CPP_VALIDATOR_CLANG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/type_shell.hpp>
+#include <metashell/iface/cpp_validator.hpp>
 
 #include <metashell/clang_binary.hpp>
 #include <metashell/logger.hpp>
@@ -26,20 +26,18 @@
 
 namespace metashell
 {
-  class type_shell_clang : public iface::type_shell
+  class cpp_validator_clang : public iface::cpp_validator
   {
   public:
-    type_shell_clang(const boost::filesystem::path& internal_dir_,
-                     const boost::filesystem::path& env_filename_,
-                     clang_binary clang_binary_,
-                     logger* logger_);
+    cpp_validator_clang(const boost::filesystem::path& internal_dir_,
+                        const boost::filesystem::path& env_filename_,
+                        clang_binary clang_binary_,
+                        logger* logger_);
 
-    virtual data::result eval(const iface::environment& env_,
-                              const boost::optional<std::string>& tmp_exp_,
-                              bool use_precompiled_headers_) override;
-
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path& fn_) override;
+    virtual data::result validate_code(const std::string& src_,
+                                       const data::config& config_,
+                                       const iface::environment& env_,
+                                       bool use_precompiled_headers_) override;
 
   private:
     clang_binary _clang_binary;

@@ -1,5 +1,5 @@
-#ifndef METASHELL_TYPE_SHELL_CONSTANT_HPP
-#define METASHELL_TYPE_SHELL_CONSTANT_HPP
+#ifndef METASHELL_IFACE_CPP_VALIDATOR_HPP
+#define METASHELL_IFACE_CPP_VALIDATOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/type_shell.hpp>
+#include <metashell/data/config.hpp>
+#include <metashell/data/result.hpp>
+#include <metashell/iface/environment.hpp>
+
+#include <string>
 
 namespace metashell
 {
-  class type_shell_constant : public iface::type_shell
+  namespace iface
   {
-  public:
-    explicit type_shell_constant(data::result result_);
+    class cpp_validator
+    {
+    public:
+      virtual ~cpp_validator() {}
 
-    virtual data::result eval(const iface::environment&,
-                              const boost::optional<std::string>&,
-                              bool) override;
+      virtual data::result validate_code(const std::string& s_,
+                                         const data::config& config_,
+                                         const environment& env_,
+                                         bool use_precompiled_headers_) = 0;
 
-    virtual void
-    generate_precompiled_header(const boost::filesystem::path&) override;
-
-  private:
-    data::result _result;
-  };
+      static std::string name_of_feature() { return "cpp_validator"; }
+    };
+  }
 }
 
 #endif
