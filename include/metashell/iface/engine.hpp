@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/code_completer.hpp>
+#include <metashell/iface/cpp_validator.hpp>
 #include <metashell/iface/header_discoverer.hpp>
 #include <metashell/iface/preprocessor_shell.hpp>
 #include <metashell/iface/template_tracer.hpp>
@@ -46,6 +47,9 @@ namespace metashell
 
       virtual iface::template_tracer& template_tracer() = 0;
       virtual const iface::template_tracer& template_tracer() const = 0;
+
+      virtual iface::cpp_validator& cpp_validator() = 0;
+      virtual const iface::cpp_validator& cpp_validator() const = 0;
     };
   }
 }

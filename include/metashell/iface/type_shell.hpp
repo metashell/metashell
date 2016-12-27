@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
@@ -39,10 +38,6 @@ namespace metashell
                                 const boost::optional<std::string>& tmp_exp_,
                                 bool use_precompiled_headers_) = 0;
 
-      virtual data::result validate_code(const std::string& s_,
-                                         const data::config& config_,
-                                         const environment& env_,
-                                         bool use_precompiled_headers_) = 0;
       virtual void
       generate_precompiled_header(const boost::filesystem::path& fn_) = 0;
 

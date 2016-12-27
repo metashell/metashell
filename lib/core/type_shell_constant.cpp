@@ -30,14 +30,6 @@ namespace metashell
     return _result;
   }
 
-  data::result type_shell_constant::validate_code(const std::string&,
-                                                  const data::config&,
-                                                  const iface::environment&,
-                                                  bool)
-  {
-    return _result;
-  }
-
   void type_shell_constant::generate_precompiled_header(
       const boost::filesystem::path&)
   {

@@ -395,7 +395,7 @@ std::string shell::prompt() const
 
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
-  const data::result r = _engine->type_shell().validate_code(
+  const data::result r = _engine->cpp_validator().validate_code(
       s_, _config, *_env, using_precompiled_headers());
 
   if (r.successful)

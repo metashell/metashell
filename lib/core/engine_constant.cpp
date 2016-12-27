@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/code_completer_constant.hpp>
+#include <metashell/cpp_validator_constant.hpp>
 #include <metashell/engine.hpp>
 #include <metashell/engine_constant.hpp>
 #include <metashell/header_discoverer_constant.hpp>
@@ -49,11 +50,11 @@ std::unique_ptr<iface::engine> metashell::create_failing_engine()
   const data::result result(false, "", "Using failing engine", "");
   const std::vector<boost::filesystem::path> empty;
 
-  return make_engine("failing", type_shell_constant(result),
-                     preprocessor_shell_constant(result),
-                     code_completer_constant(),
-                     header_discoverer_constant(empty, empty),
-                     template_tracer_constant(result));
+  return make_engine(
+      "failing", type_shell_constant(result),
+      preprocessor_shell_constant(result), code_completer_constant(),
+      header_discoverer_constant(empty, empty),
+      template_tracer_constant(result), cpp_validator_constant(result));
 }
 
 std::unique_ptr<iface::engine>
@@ -62,11 +63,11 @@ metashell::create_engine_returning_type(const std::string& type_)
   const data::result result(true, type_, "", "");
   const std::vector<boost::filesystem::path> empty;
 
-  return make_engine("type_returning", type_shell_constant(result),
-                     preprocessor_shell_constant(result),
-                     code_completer_constant(),
-                     header_discoverer_constant(empty, empty),
-                     template_tracer_constant(result));
+  return make_engine(
+      "type_returning", type_shell_constant(result),
+      preprocessor_shell_constant(result), code_completer_constant(),
+      header_discoverer_constant(empty, empty),
+      template_tracer_constant(result), cpp_validator_constant(result));
 }
 
 std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
@@ -74,9 +75,9 @@ std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
 {
   const data::result result(true, "int", "", "");
 
-  return make_engine("engine_with_include_path", type_shell_constant(result),
-                     preprocessor_shell_constant(result),
-                     code_completer_constant(),
-                     create_header_discoverer_with_include_path(type_, path_),
-                     template_tracer_constant(result));
+  return make_engine(
+      "engine_with_include_path", type_shell_constant(result),
+      preprocessor_shell_constant(result), code_completer_constant(),
+      create_header_discoverer_with_include_path(type_, path_),
+      template_tracer_constant(result), cpp_validator_constant(result));
 }

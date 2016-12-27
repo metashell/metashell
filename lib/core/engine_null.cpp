@@ -27,7 +27,8 @@ namespace metashell
            const boost::filesystem::path&, const boost::filesystem::path&,
            iface::environment_detector&, iface::displayer&, logger*) {
           return make_engine(config_.engine, not_supported(), not_supported(),
-                             not_supported(), not_supported(), not_supported());
+                             not_supported(), not_supported(), not_supported(),
+                             not_supported());
         },
         "",
         "An engine which does not support anything. Mainly for testing "
