@@ -64,26 +64,19 @@ function(register_system_test TEST_TARGET_NAME)
 endfunction()
 
 function(register_gcc_system_test TEST_TARGET_NAME)
-  if (APPLE)
-    find_file(GXX_PATH NAMES g++-6 g++-5)
-    if (NOT GXX_PATH)
-      message(WARNING "Skipping gcc system test (g++ exectuable not found)")
-    endif()
-  elseif (NOT WIN32)
-    set(GXX_PATH "/usr/bin/g++")
-  endif()
-
-  if (GXX_PATH)
-    message(STATUS "Using ${GXX_PATH} for gcc system test")
+  if (GXX_FOUND)
+    message(STATUS "Using ${GXX_BINARY} for gcc system test")
     add_test(
       NAME ${TEST_TARGET_NAME}_gcc
       COMMAND
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
-        ${GXX_PATH}
+        "${GXX_BINARY}"
         -std=c++0x
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
         --
     )
+  else()
+    message(WARNING "Skipping gcc system test (g++ exectuable not found)")
   endif()
 endfunction()
 
