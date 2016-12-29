@@ -48,7 +48,7 @@ function(register_system_test TEST_TARGET_NAME)
       "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
       --
   )
-  
+
   add_test(
     NAME ${TEST_TARGET_NAME}_clang
     COMMAND
@@ -64,16 +64,19 @@ function(register_system_test TEST_TARGET_NAME)
 endfunction()
 
 function(register_gcc_system_test TEST_TARGET_NAME)
-  if (NOT (WIN32 OR APPLE))
+  if (GXX_FOUND)
+    message(STATUS "Using ${GXX_BINARY} for gcc system test")
     add_test(
       NAME ${TEST_TARGET_NAME}_gcc
       COMMAND
         ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine gcc --
-        "/usr/bin/g++"
+        "${GXX_BINARY}"
         -std=c++0x
         "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
         --
     )
+  else()
+    message(WARNING "Skipping gcc system test (g++ exectuable not found)")
   endif()
 endfunction()
 

@@ -16,6 +16,8 @@
 
 include(MetashellSystemTest)
 
+find_package(GCC)
+
 set(SYSTEM_TEST_TARGETS )
 set(SYSTEM_TEST_FILES )
 foreach(T core pp mdb)
