@@ -29,14 +29,23 @@ if (GCC_DEBUG)
   message(STATUS "GCC_BINARYDIR = ${GCC_BINARYDIR}")
 endif()
 
+if (APPLE)
+  # The default gcc/g++ binary on OS X is symlinked to clang
+  set(GCC_NAMES gcc-6 gcc-5 gcc-4 gcc-3)
+  set(GXX_NAMES g++-6 g++-5 g++-4 g++-3)
+else()
+  set(GCC_NAMES gcc gcc-6 gcc-5 gcc-4 gcc-3)
+  set(GXX_NAMES g++ g++-6 g++-5 g++-4 g++-3)
+endif()
+
 find_program(
   GCC_BINARY
-  NAMES gcc gcc-3 gcc-4 gcc-5 gcc-6
+  NAMES ${GCC_NAMES}
   HINTS ${GCC_BINARYDIR}
 )
 find_program(
   GXX_BINARY
-  NAMES g++ g++-3 g++-4 g++-5 g++-6
+  NAMES ${GXX_NAMES}
   HINTS ${GCC_BINARYDIR}
 )
 
