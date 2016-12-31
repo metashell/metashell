@@ -32,20 +32,4 @@ namespace metashell
     return data::result{success, success ? output.standard_output : "",
                         success ? "" : output.standard_error, ""};
   }
-
-  std::string preprocessor_shell_clang::macros(const iface::environment& env_)
-  {
-    const data::process_output output =
-        run_clang(_clang_binary, {"-dM", "-E"}, env_.get_all());
-
-    if (output.exit_code == data::exit_code_t(0))
-    {
-      return output.standard_output;
-    }
-    else
-    {
-      throw std::runtime_error("Error getting list of macros: " +
-                               output.standard_error);
-    }
-  }
 }

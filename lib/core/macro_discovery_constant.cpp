@@ -1,6 +1,3 @@
-#ifndef METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-#define METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,22 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/preprocessor_shell.hpp>
-
-#include <string>
+#include <metashell/macro_discovery_constant.hpp>
 
 namespace metashell
 {
-  class preprocessor_shell_constant : public iface::preprocessor_shell
+  std::string macro_discovery_constant::macros(const iface::environment&)
   {
-  public:
-    explicit preprocessor_shell_constant(data::result result_);
-
-    virtual data::result precompile(const std::string&) override;
-
-  private:
-    data::result _result;
-  };
+    return "";
+  }
 }
-
-#endif

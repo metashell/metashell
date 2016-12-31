@@ -19,6 +19,7 @@
 #include <metashell/cpp_validator_clang.hpp>
 #include <metashell/engine.hpp>
 #include <metashell/header_discoverer_clang.hpp>
+#include <metashell/macro_discovery_clang.hpp>
 #include <metashell/not_supported.hpp>
 #include <metashell/preprocessor_shell_clang.hpp>
 
@@ -104,7 +105,8 @@ namespace
     return make_engine(
         config_.engine, not_supported(), preprocessor_shell_clang(cbin),
         not_supported(), header_discoverer_clang(cbin), not_supported(),
-        cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_));
+        cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
+        macro_discovery_clang(cbin));
   }
 } // anonymous namespace
 
