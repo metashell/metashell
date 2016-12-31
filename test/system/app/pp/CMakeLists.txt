@@ -33,6 +33,7 @@ target_link_libraries(metashell_pp_system_test googletest)
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 
 # Boost
 target_link_libraries(metashell_pp_system_test
@@ -44,4 +45,5 @@ target_link_libraries(metashell_pp_system_test
 
 register_system_test(metashell_pp_system_test)
 register_gcc_system_test(metashell_pp_system_test)
+register_msvc_system_test(metashell_pp_system_test)
 

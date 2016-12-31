@@ -1,8 +1,8 @@
-#ifndef METASHELL_DATA_PROCESS_OUTPUT_HPP
-#define METASHELL_DATA_PROCESS_OUTPUT_HPP
+#ifndef METASHELL_ENGINE_VC_HPP
+#define METASHELL_ENGINE_VC_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exit_code_t.hpp>
-
-#include <string>
+#include <metashell/engine_entry.hpp>
 
 namespace metashell
 {
-  namespace data
-  {
-    struct process_output
-    {
-      exit_code_t exit_code;
-      std::string standard_output;
-      std::string standard_error;
-    };
-
-    process_output dos2unix(process_output o_);
-  }
+  engine_entry get_engine_vc_entry();
 }
 
 #endif

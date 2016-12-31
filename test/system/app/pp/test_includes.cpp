@@ -60,8 +60,8 @@ namespace
     const auto end = system_test_config::metashell_args().end();
     return find_if(
                find(system_test_config::metashell_args().begin(), end, "--"),
-               end, [&path_](const std::string& s_) {
-                 const auto path = try_to_remove_prefix("-I", s_);
+               end, [&path_](const std::string& arg) {
+                 const auto path = include_path_addition(arg);
                  return path && *path == path_;
                }) != end;
   }
@@ -79,21 +79,13 @@ namespace
            const std::vector<boost::filesystem::path>& quoteincludes_,
            const std::string& type_)
   {
-    std::vector<std::string> args{"--", "-nostdinc", "-nostdinc++"};
-    for (const boost::filesystem::path& p : sysincludes_)
-    {
-      args.push_back("-I" + p.string());
-    }
-    for (const boost::filesystem::path& p : quoteincludes_)
-    {
-      args.push_back("-iquote");
-      args.push_back(p.string());
-    }
-
-    return remove_metashell_standard_headers(
-        filename_list(metashell_instance(args)
-                          .command("#msh " + type_ + "includes")
-                          .front()));
+    return remove_metashell_standard_headers(filename_list(
+        metashell_instance(
+            with_quoteincludes(
+                with_sysincludes({"--"}, sysincludes_), quoteincludes_),
+            boost::filesystem::path(), true, false)
+            .command("#msh " + type_ + "includes")
+            .front()));
   }
 
   filename_list
@@ -127,10 +119,16 @@ TEST(includes, tests)
 
   ASSERT_EQ(filename_list{}, sysincludes({}, {}));
   ASSERT_EQ((pv{a, b}), sysincludes({a, b}, {}));
-  ASSERT_EQ(pv{}, sysincludes({}, {a, b}));
+  if (!using_msvc())
+  {
+    ASSERT_EQ(pv{}, sysincludes({}, {a, b}));
+  }
 
   ASSERT_EQ(pv{"."}, quoteincludes({}, {}));
   ASSERT_EQ((pv{".", a, b}), quoteincludes({a, b}, {}));
   ASSERT_EQ((pv{".", a, b}), quoteincludes({}, {a, b}));
-  ASSERT_EQ((pv{".", a, b}), quoteincludes({b}, {a}));
+  if (!using_msvc())
+  {
+    ASSERT_EQ((pv{".", a, b}), quoteincludes({b}, {a}));
+  }
 }

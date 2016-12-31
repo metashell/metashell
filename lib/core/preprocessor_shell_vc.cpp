@@ -1,8 +1,5 @@
-#ifndef METASHELL_DATA_PROCESS_OUTPUT_HPP
-#define METASHELL_DATA_PROCESS_OUTPUT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/exit_code_t.hpp>
-
-#include <string>
+#include <metashell/preprocessor_shell_vc.hpp>
 
 namespace metashell
 {
-  namespace data
+  preprocessor_shell_vc::preprocessor_shell_vc(vc_binary vc_binary_)
+    : _vc_binary(vc_binary_)
   {
-    struct process_output
-    {
-      exit_code_t exit_code;
-      std::string standard_output;
-      std::string standard_error;
-    };
+  }
 
-    process_output dos2unix(process_output o_);
+  data::result preprocessor_shell_vc::precompile(const std::string& exp_)
+  {
+    const data::process_output output = run_vc(_vc_binary, {"/E"}, exp_);
+
+    const bool success = output.exit_code == data::exit_code_t(0);
+
+    return data::result{success, success ? output.standard_output : "",
+                        success ? "" : vc_error_report_on_stderr(output), ""};
   }
 }
-
-#endif

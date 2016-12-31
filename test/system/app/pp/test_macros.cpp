@@ -30,8 +30,11 @@ TEST(macros, getting_defined_macro)
   metashell_instance mi;
   mi.command("#define FOO bar");
 
-  ASSERT_EQ(
-      cpp_code(regex("#define FOO bar")), mi.command("#msh macros").front());
+  if (!using_msvc())
+  {
+    ASSERT_EQ(
+        cpp_code(regex("#define FOO bar")), mi.command("#msh macros").front());
+  }
 }
 
 TEST(macros, getting_defined_macro_name)
@@ -39,7 +42,10 @@ TEST(macros, getting_defined_macro_name)
   metashell_instance mi;
   mi.command("#define FOO bar");
 
-  const json_string macro_names = mi.command("#msh macro names").front();
-  ASSERT_EQ(cpp_code(regex("FOO")), macro_names);
-  ASSERT_NE(cpp_code(regex("#define")), macro_names);
+  if (!using_msvc())
+  {
+    const json_string macro_names = mi.command("#msh macro names").front();
+    ASSERT_EQ(cpp_code(regex("FOO")), macro_names);
+    ASSERT_NE(cpp_code(regex("#define")), macro_names);
+  }
 }

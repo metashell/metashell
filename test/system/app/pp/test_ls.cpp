@@ -38,6 +38,10 @@ using namespace metashell::system_test;
 
 namespace
 {
+  typedef std::pair<std::vector<boost::filesystem::path>,
+                    std::vector<boost::filesystem::path>>
+      path_vector_pair;
+
   std::set<std::string> include_set(const json_string& s_)
   {
     if (cpp_code(s_).code().value())
@@ -67,31 +71,37 @@ namespace
     return p_;
   }
 
-  std::pair<std::vector<boost::filesystem::path>,
-            std::vector<boost::filesystem::path>>
-  directories_and_files_coming_from_test_arguments()
+  void add_directory(path_vector_pair& out_,
+                     const boost::filesystem::path& path_)
   {
-    std::pair<std::vector<boost::filesystem::path>,
-              std::vector<boost::filesystem::path>>
-        result;
+    if (is_directory(path_))
+    {
+      for (boost::filesystem::directory_iterator i(path_), e; i != e; ++i)
+      {
+        const boost::filesystem::path p = resolve_symlink(i->path());
+
+        if (is_directory(p))
+        {
+          out_.first.push_back(i->path().filename());
+        }
+        else if (is_regular_file(p))
+        {
+          out_.second.push_back(i->path().filename());
+        }
+      }
+    }
+  }
+
+  path_vector_pair directories_and_files_coming_from_test_arguments()
+  {
+    // Metashell's internal files and headers
+    path_vector_pair result{{"metashell"}, {"metashell_environment.hpp"}};
 
     for (const std::string& arg : system_test_config::metashell_args())
     {
-      if (const auto path = try_to_remove_prefix("-I", arg))
+      if (const auto path = include_path_addition(arg))
       {
-        for (boost::filesystem::directory_iterator i(*path), e; i != e; ++i)
-        {
-          const boost::filesystem::path p = resolve_symlink(i->path());
-
-          if (is_directory(p))
-          {
-            result.first.push_back(i->path().filename());
-          }
-          else if (is_regular_file(p))
-          {
-            result.second.push_back(i->path().filename());
-          }
-        }
+        add_directory(result, *path);
       }
     }
 
@@ -118,19 +128,12 @@ namespace
               const std::vector<boost::filesystem::path>& quoteincludes_,
               const std::string& ls_arg_)
     {
-      std::vector<std::string> args{"--", "-nostdinc", "-nostdinc++"};
-      for (const boost::filesystem::path& p : sysincludes_)
-      {
-        args.push_back("-I" + p.string());
-      }
-      for (const boost::filesystem::path& p : quoteincludes_)
-      {
-        args.push_back("-iquote");
-        args.push_back(p.string());
-      }
-
       const std::vector<json_string> r =
-          metashell_instance(args, cwd_).command("#msh ls " + ls_arg_);
+          metashell_instance(
+              with_quoteincludes(
+                  with_sysincludes({"--"}, sysincludes_), quoteincludes_),
+              cwd_, true, false)
+              .command("#msh ls " + ls_arg_);
 
       auto i = r.begin();
 

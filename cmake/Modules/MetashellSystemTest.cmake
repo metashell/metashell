@@ -80,3 +80,23 @@ function(register_gcc_system_test TEST_TARGET_NAME)
   endif()
 endfunction()
 
+function(register_msvc_system_test TEST_TARGET_NAME)
+  if (WIN32)
+    if (MSVC_FOUND)
+      message(STATUS "cl.exe used in system tests: ${MSVC_CL_BINARY}")
+
+      add_test(
+        NAME ${TEST_TARGET_NAME}_msvc
+        COMMAND
+          ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine msvc --
+          "\"${MSVC_CL_BINARY}\""
+          "\"/I${CMAKE_SOURCE_DIR}\\3rd\\boost\\include\""
+          "/EHsc"
+          --
+      )
+    else()
+      message(WARNING "Skipping Visual C++ system test (cl.exe not found)")
+    endif()
+  endif()
+endfunction()
+

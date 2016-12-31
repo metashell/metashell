@@ -19,15 +19,42 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
+#include <metashell/make_unique.hpp>
+
 #include <boost/filesystem.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace
 {
+  std::string current_engine()
+  {
+    const auto& args =
+        metashell::system_test::system_test_config::metashell_args();
+    auto engine = std::find(args.begin(), args.end(), "--engine");
+    if (engine != args.end())
+    {
+      ++engine;
+      if (engine != args.end())
+      {
+        return *engine;
+      }
+    }
+    return "internal";
+  }
+
+  template <class Container, class T>
+  bool contains(const Container& container_, const T& item_)
+  {
+    return std::find(container_.begin(), container_.end(), item_) !=
+           container_.end();
+  }
+
   std::vector<std::string>
   construct_cmd(const std::vector<std::string>& extra_args_,
-                bool allow_user_defined_args_)
+                bool allow_user_defined_args_,
+                bool allow_standard_headers_)
   {
     using namespace metashell::system_test;
 
@@ -41,8 +68,7 @@ namespace
     }
     if (!extra_args_.empty())
     {
-      if (std::find(cmd.begin(), cmd.end(), "--") == cmd.end() ||
-          extra_args_.front() != "--")
+      if (!contains(cmd, "--") || extra_args_.front() != "--")
       {
         cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
       }
@@ -51,8 +77,28 @@ namespace
         cmd.insert(cmd.end(), extra_args_.begin() + 1, extra_args_.end());
       }
     }
+    if (!allow_standard_headers_ && !using_msvc())
+    {
+      if (!contains(cmd, "--"))
+      {
+        cmd.push_back("--");
+      }
+      cmd.push_back("-nostdinc");
+      cmd.push_back("-nostdinc++");
+    }
 
     return cmd;
+  }
+
+  void append_with_prefix(std::vector<std::string>& args_,
+                          const std::string& prefix_,
+                          const std::vector<boost::filesystem::path>& paths_)
+  {
+    args_.reserve(args_.size() + paths_.size());
+    for (const boost::filesystem::path& p : paths_)
+    {
+      args_.push_back(prefix_ + p.string());
+    }
   }
 }
 
@@ -63,9 +109,14 @@ namespace metashell
     metashell_instance::metashell_instance(
         const std::vector<std::string>& extra_args_,
         const boost::filesystem::path& cwd_,
-        bool allow_user_defined_args_)
-      : _process_execution(
-            construct_cmd(extra_args_, allow_user_defined_args_)),
+        bool allow_user_defined_args_,
+        bool allow_standard_headers_)
+      : _include(
+            (allow_standard_headers_ || !using_msvc()) ?
+                nullptr :
+                make_unique<just::environment::override_guard>("INCLUDE", "")),
+        _process_execution(construct_cmd(
+            extra_args_, allow_user_defined_args_, allow_standard_headers_)),
         _child(_process_execution.cmd(), cwd_),
         _lines(),
         _last_line(),
@@ -122,7 +173,10 @@ namespace metashell
 
       if (_last_line == _lines->end())
       {
-        throw std::runtime_error("Metashell terminated");
+        std::string err;
+        read_all(std::tie(_child.standard_error(), err));
+        throw std::runtime_error("Metashell terminated. Standard error: " +
+                                 err);
       }
       else
       {
@@ -153,5 +207,35 @@ namespace metashell
     {
       return _initial_responses;
     }
+
+    std::vector<std::string>
+    with_sysincludes(std::vector<std::string> args_,
+                     const std::vector<boost::filesystem::path>& paths_)
+    {
+      append_with_prefix(args_, using_msvc() ? "/I" : "-I", paths_);
+      return args_;
+    }
+
+    std::vector<std::string>
+    with_quoteincludes(std::vector<std::string> args_,
+                       const std::vector<boost::filesystem::path>& paths_)
+    {
+      if (using_msvc())
+      {
+        append_with_prefix(args_, "/I", paths_);
+      }
+      else
+      {
+        args_.reserve(args_.size() + paths_.size() * 2);
+        for (const boost::filesystem::path& p : paths_)
+        {
+          args_.push_back("-iquote");
+          args_.push_back(p.string());
+        }
+      }
+      return args_;
+    }
+
+    bool using_msvc() { return current_engine() == "msvc"; }
   }
 }

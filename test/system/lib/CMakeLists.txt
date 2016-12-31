@@ -26,4 +26,5 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/googletest/include")
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 

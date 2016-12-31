@@ -14,11 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/util.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <map>
+
 using namespace metashell::system_test;
+
+namespace
+{
+  std::vector<std::pair<std::string, std::string>> include_definitions()
+  {
+    if (using_msvc())
+    {
+      return {{"/I", ""}, {"\"/I", "\""}, {"/I\"", "\""}};
+    }
+    else
+    {
+      return {{"-I", ""}};
+    }
+  }
+}
 
 std::string metashell::system_test::remove_prefix(const std::string& prefix_,
                                                   const std::string& s_)
@@ -38,12 +56,37 @@ boost::optional<std::string>
 metashell::system_test::try_to_remove_prefix(const std::string& prefix_,
                                              const std::string& s_)
 {
-  if (boost::algorithm::starts_with(s_, prefix_))
+  return try_to_remove_prefix_suffix(prefix_, s_, "");
+}
+
+boost::optional<std::string>
+metashell::system_test::try_to_remove_prefix_suffix(const std::string& prefix_,
+                                                    const std::string& s_,
+                                                    const std::string& suffix_)
+{
+  const auto pre_suff_size = prefix_.size() + suffix_.size();
+  if (s_.size() >= pre_suff_size &&
+      boost::algorithm::starts_with(s_, prefix_) &&
+      boost::algorithm::ends_with(s_, suffix_))
   {
-    return s_.substr(prefix_.size());
+    return s_.substr(prefix_.size(), s_.size() - pre_suff_size);
   }
   else
   {
     return boost::none;
   }
+}
+
+boost::optional<boost::filesystem::path>
+metashell::system_test::include_path_addition(const std::string& arg_)
+{
+  for (const auto& def : include_definitions())
+  {
+    if (const auto path =
+            try_to_remove_prefix_suffix(def.first, arg_, def.second))
+    {
+      return boost::filesystem::path(*path);
+    }
+  }
+  return boost::none;
 }
