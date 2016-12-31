@@ -38,7 +38,7 @@ namespace just
         return GetEnvironmentVariable(name_.c_str(), NULL, 0);
       }
 #endif
-
+      
       inline std::string prepend_to_path(
         const std::string& item_,
         const std::string& path_
@@ -77,6 +77,27 @@ namespace just
         }
       }
     }
+
+#ifdef _WIN32
+    inline bool exists(const std::string& name_)
+    {
+      if (GetEnvironmentVariable(name_.c_str(), NULL, 0) == 0)
+      {
+        return GetLastError() != ERROR_ENVVAR_NOT_FOUND;
+      }
+      else
+      {
+        return true;
+      }
+    }
+#endif
+
+#ifndef _WIN32
+    inline bool exists(const std::string& name_)
+    {
+      return getenv(name_.c_str()) != 0;
+    }
+#endif
 
 #ifdef _WIN32
     inline std::string get(const std::string& name_)
@@ -124,6 +145,23 @@ namespace just
     }
 #endif
 
+#ifdef _WIN32
+    inline void remove(const std::string& name_)
+    {
+      if (!SetEnvironmentVariable(name_.c_str(), NULL))
+      {
+        throw std::runtime_error("Error removing environment variable " + name_);
+      }
+    }
+#endif
+
+#ifndef _WIN32
+    inline void remove(const std::string& name_)
+    {
+      ::unsetenv(name_.c_str());
+    }
+#endif
+
     inline void prepend_to_path(const std::string& item_)
     {
       set("PATH", impl::prepend_to_path(item_, get("PATH")));
@@ -133,6 +171,47 @@ namespace just
     {
       set("PATH", impl::append_to_path(item_, get("PATH")));
     }
+
+    class override_guard
+    {
+    public:
+      override_guard(const std::string& name_, const std::string& value_) :
+        _name(name_),
+        _old_value(get(name_)),
+        _existed(exists(name_))
+      {
+        set(name_, value_);
+      }
+
+      ~override_guard()
+      {
+        if (_existed)
+        {
+          set(_name, _old_value);
+        }
+        else
+        {
+          remove(_name);
+        }
+      }
+
+      const std::string& old_value() const
+      {
+        return _old_value;
+      }
+
+      bool existed() const
+      {
+        return _existed;
+      }
+    private:
+      std::string _name;
+      std::string _old_value;
+      bool _existed;
+
+      override_guard(const override_guard&); // = delete
+      override_guard& operator=(const override_guard&); // delete
+    };
   }
 }
 
