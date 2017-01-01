@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-#define METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
+#ifndef METASHELL_PREPROESSOR_SHELL_VC_HPP
+#define METASHELL_PREPROESSOR_SHELL_VC_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -19,19 +19,19 @@
 
 #include <metashell/iface/preprocessor_shell.hpp>
 
-#include <string>
+#include <metashell/vc_binary.hpp>
 
 namespace metashell
 {
-  class preprocessor_shell_constant : public iface::preprocessor_shell
+  class preprocessor_shell_vc : public iface::preprocessor_shell
   {
   public:
-    explicit preprocessor_shell_constant(data::result result_);
+    explicit preprocessor_shell_vc(vc_binary vc_binary_);
 
-    virtual data::result precompile(const std::string&) override;
+    virtual data::result precompile(const std::string& exp_) override;
 
   private:
-    data::result _result;
+    vc_binary _vc_binary;
   };
 }
 

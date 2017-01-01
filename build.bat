@@ -16,6 +16,8 @@ rem
 rem You should have received a copy of the GNU General Public License
 rem along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+if not defined INCLUDE goto no_dev
+
 rem Build Templight
 if defined no_templight goto skip_templight
   cd 3rd\templight

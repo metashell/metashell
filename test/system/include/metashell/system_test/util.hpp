@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
 #include <string>
@@ -29,6 +30,14 @@ namespace metashell
     try_to_remove_prefix(const std::string& prefix_, const std::string& s_);
     std::string remove_prefix(const std::string& prefix_,
                               const std::string& s_);
+
+    boost::optional<std::string>
+    try_to_remove_prefix_suffix(const std::string& prefix_,
+                                const std::string& s_,
+                                const std::string& suffix_);
+
+    boost::optional<boost::filesystem::path>
+    include_path_addition(const std::string& arg_);
   }
 }
 

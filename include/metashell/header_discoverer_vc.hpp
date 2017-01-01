@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-#define METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
+#ifndef METASHELL_HEADER_DISCOVERER_VC_HPP
+#define METASHELL_HEADER_DISCOVERER_VC_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,21 +17,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/preprocessor_shell.hpp>
+#include <metashell/iface/header_discoverer.hpp>
 
-#include <string>
+#include <metashell/data/includes.hpp>
+
+#include <metashell/vc_binary.hpp>
 
 namespace metashell
 {
-  class preprocessor_shell_constant : public iface::preprocessor_shell
+  class header_discoverer_vc : public iface::header_discoverer
   {
   public:
-    explicit preprocessor_shell_constant(data::result result_);
+    explicit header_discoverer_vc(vc_binary vc_binary_);
 
-    virtual data::result precompile(const std::string&) override;
+    virtual std::vector<boost::filesystem::path>
+    include_path(data::include_type type_) override;
+
+    virtual std::set<boost::filesystem::path>
+    files_included_by(const std::string& exp_) override;
 
   private:
-    data::result _result;
+    vc_binary _vc_binary;
+    data::includes _includes;
   };
 }
 

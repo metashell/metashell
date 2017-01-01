@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/result.hpp>
-#include <metashell/iface/environment.hpp>
 
 #include <string>
 
@@ -32,8 +31,6 @@ namespace metashell
       virtual ~preprocessor_shell() {}
 
       virtual data::result precompile(const std::string& exp_) = 0;
-
-      virtual std::string macros(const iface::environment& env_) = 0;
 
       static std::string name_of_feature() { return "preprocessor_shell"; }
     };

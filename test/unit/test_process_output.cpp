@@ -1,6 +1,3 @@
-#ifndef METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-#define METASHELL_PREPROCESSOR_SHELL_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,22 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/preprocessor_shell.hpp>
+#include <metashell/data/process_output.hpp>
 
-#include <string>
+#include <gtest/gtest.h>
 
-namespace metashell
+using namespace metashell::data;
+
+TEST(process_output, dos2unix)
 {
-  class preprocessor_shell_constant : public iface::preprocessor_shell
-  {
-  public:
-    explicit preprocessor_shell_constant(data::result result_);
+  const std::string dos = "hello\r\ndos\rworld\n";
+  const std::string unix = "hello\ndos\rworld\n";
 
-    virtual data::result precompile(const std::string&) override;
+  const process_output result1 = dos2unix({exit_code_t(1), dos, ""});
+  const process_output result2 = dos2unix({exit_code_t(1), "", dos});
 
-  private:
-    data::result _result;
-  };
+  ASSERT_EQ(unix, result1.standard_output);
+  ASSERT_EQ("", result1.standard_error);
+
+  ASSERT_EQ("", result2.standard_output);
+  ASSERT_EQ(unix, result2.standard_error);
 }
-
-#endif

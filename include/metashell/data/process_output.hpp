@@ -31,6 +31,8 @@ namespace metashell
       std::string standard_output;
       std::string standard_error;
     };
+
+    process_output dos2unix(process_output o_);
   }
 }
 

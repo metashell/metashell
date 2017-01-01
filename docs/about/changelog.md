@@ -6,6 +6,8 @@
     * New engine: `null`
     * New engine: `gcc`. Note that only preprocessor shell is supported. (No
       template metaprogram evaluation or debugging)
+    * New engine: `msvc`. Note that only preprocessor shell is supported. (No
+      template metaprogram evaluation or debugging)
 
 ## Version 3.0.0
 

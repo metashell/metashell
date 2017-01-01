@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROESSOR_SHELL_CLANG_HPP
-#define METASHELL_PREPROESSOR_SHELL_CLANG_HPP
+#ifndef METASHELL_PREPROCESSOR_SHELL_CLANG_HPP
+#define METASHELL_PREPROCESSOR_SHELL_CLANG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -29,7 +29,6 @@ namespace metashell
     explicit preprocessor_shell_clang(clang_binary clang_binary_);
 
     virtual data::result precompile(const std::string& exp_) override;
-    virtual std::string macros(const iface::environment& env_) override;
 
   private:
     clang_binary _clang_binary;

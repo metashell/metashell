@@ -17,6 +17,7 @@
 include(MetashellSystemTest)
 
 find_package(GCC)
+find_package(MSVC)
 
 set(SYSTEM_TEST_TARGETS )
 set(SYSTEM_TEST_FILES )

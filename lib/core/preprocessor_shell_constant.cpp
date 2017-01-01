@@ -27,9 +27,4 @@ namespace metashell
   {
     return _result;
   }
-
-  std::string preprocessor_shell_constant::macros(const iface::environment&)
-  {
-    return "";
-  }
 }

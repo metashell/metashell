@@ -53,7 +53,7 @@ namespace
     json_string run(const std::vector<boost::filesystem::path>& includes_ = {},
                     const std::string& args_ = "") const
     {
-      metashell_instance mi({"--", "-I" + _tmp.path()});
+      metashell_instance mi(with_sysincludes({"--"}, {_tmp.path()}));
       for (const boost::filesystem::path& include : includes_)
       {
         mi.command("#include <" + include.string() + ">");

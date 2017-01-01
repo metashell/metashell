@@ -22,6 +22,7 @@
 
 #include <metashell/process/execution.hpp>
 
+#include <just/environment.hpp>
 #include <just/lines.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -42,7 +43,8 @@ namespace metashell
       explicit metashell_instance(
           const std::vector<std::string>& extra_args_ = {},
           const boost::filesystem::path& cwd_ = boost::filesystem::path(),
-          bool allow_user_defined_args_ = true);
+          bool allow_user_defined_args_ = true,
+          bool allow_standard_headers_ = true);
 
       ~metashell_instance();
 
@@ -59,6 +61,7 @@ namespace metashell
       const std::vector<json_string>& initial_responses() const;
 
     private:
+      std::unique_ptr<just::environment::override_guard> _include;
       process_execution _process_execution;
       process::execution _child;
       std::unique_ptr<just::lines::basic_view<process::input_file>> _lines;
@@ -66,6 +69,15 @@ namespace metashell
 
       std::vector<json_string> _initial_responses;
     };
+
+    bool using_msvc();
+
+    std::vector<std::string>
+    with_sysincludes(std::vector<std::string> args_,
+                     const std::vector<boost::filesystem::path>& paths_);
+    std::vector<std::string>
+    with_quoteincludes(std::vector<std::string> args_,
+                       const std::vector<boost::filesystem::path>& paths_);
   }
 }
 

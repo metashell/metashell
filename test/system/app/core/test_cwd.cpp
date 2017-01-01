@@ -77,7 +77,7 @@ TEST(cwd, adding_cwd_to_include_path)
   create_directory(temp / "foo");
   write_file(temp / "foo" / "bar.hpp", "typedef int foo;\n");
 
-  metashell_instance mi({"--", "-I."}, temp);
+  metashell_instance mi(with_sysincludes({"--"}, {"."}), temp);
   mi.command("#include <foo/bar.hpp>");
 
   ASSERT_EQ(type("int"), mi.command("foo").front());
@@ -91,7 +91,7 @@ TEST(cwd, relative_include_directory)
   create_directory(temp / "foo");
   write_file(temp / "foo" / "bar.hpp", "typedef int foo;\n");
 
-  metashell_instance mi({"--", "-Ifoo"}, temp);
+  metashell_instance mi(with_sysincludes({"--"}, {"foo"}), temp);
   mi.command("#include <bar.hpp>");
 
   ASSERT_EQ(type("int"), mi.command("foo").front());

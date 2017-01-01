@@ -20,6 +20,7 @@
 #include <metashell/iface/code_completer.hpp>
 #include <metashell/iface/cpp_validator.hpp>
 #include <metashell/iface/header_discoverer.hpp>
+#include <metashell/iface/macro_discovery.hpp>
 #include <metashell/iface/preprocessor_shell.hpp>
 #include <metashell/iface/template_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
@@ -50,6 +51,9 @@ namespace metashell
 
       virtual iface::cpp_validator& cpp_validator() = 0;
       virtual const iface::cpp_validator& cpp_validator() const = 0;
+
+      virtual iface::macro_discovery& macro_discovery() = 0;
+      virtual const iface::macro_discovery& macro_discovery() const = 0;
     };
   }
 }
