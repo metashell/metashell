@@ -16,15 +16,13 @@
 
 #include <metashell/data/process_output.hpp>
 
+#include <boost/algorithm/string/replace.hpp>
+
 namespace
 {
   std::string dos2unix(std::string s_)
   {
-    for (auto i = s_.find("\r\n"); i != std::string::npos;
-         i = s_.find("\r\n", i))
-    {
-      s_.erase(i, 1);
-    }
+    boost::algorithm::replace_all(s_, "\r\n", "\n");
     return s_;
   }
 }
