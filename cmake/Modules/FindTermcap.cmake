@@ -36,9 +36,9 @@ endif()
 
 # Open SuSE
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(TERMCAP_LIBRARYDIR "${TERMCAP_LIBRARYDIR};/usr/lib64/termcap")
+  set(TERMCAP_LIBRARYDIR "${TERMCAP_LIBRARYDIR};/usr/lib64/termcap;/usr/lib64")
 else()
-  set(TERMCAP_LIBRARYDIR "${TERMCAP_LIBRARYDIR};/usr/lib/termcap")
+  set(TERMCAP_LIBRARYDIR "${TERMCAP_LIBRARYDIR};/usr/lib/termcap;/usr/lib")
 endif()
 
 if (TERMCAP_DEBUG)
@@ -55,7 +55,7 @@ find_path(
 )
 find_library(
   TERMCAP_LIBRARY
-  NAMES termcap
+  NAMES termcap libtermcap.so.2
   HINTS ${TERMCAP_LIBRARYDIR}
 )
 

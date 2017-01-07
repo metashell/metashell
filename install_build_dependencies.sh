@@ -38,6 +38,9 @@ fedora)
     rpm-build \
     python
   ;;
+gentoo)
+  sudo emerge dev-vcs/git dev-util/cmake sys-libs/libtermcap-compat app-arch/zip
+  ;;
 opensuse)
   sudo zypper --non-interactive install \
     git \
