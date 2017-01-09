@@ -24,6 +24,9 @@ then
 elif [ -e /etc/SuSE-release ]
 then
   PLATFORM="opensuse"
+elif [ -e /etc/gentoo-release ]
+then
+  PLATFORM="gentoo"
 elif [ "$(uname)" = "Darwin" ]
 then
   PLATFORM="osx"
