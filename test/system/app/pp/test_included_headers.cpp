@@ -46,7 +46,7 @@ namespace
     {
       create_directories(relative(path_).parent_path());
       std::ofstream f(relative(path_).string());
-      f << content_;
+      f << content_ << "\n";
       return *this;
     }
 

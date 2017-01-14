@@ -57,7 +57,7 @@ namespace metashell
   std::vector<boost::filesystem::path>
   header_discoverer_clang::include_path(data::include_type type_)
   {
-    return type_ == data::include_type::sys ? _includes->sys : _includes->quote;
+    return get(type_, *_includes);
   }
 
   std::set<boost::filesystem::path>

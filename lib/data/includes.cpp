@@ -1,8 +1,5 @@
-#ifndef METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
-#define METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,26 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/includes.hpp>
-#include <metashell/iface/header_discoverer.hpp>
 
 namespace metashell
 {
-  class header_discoverer_constant : public iface::header_discoverer
+  namespace data
   {
-  public:
-    header_discoverer_constant(
-        std::vector<boost::filesystem::path> sysincludes_,
-        std::vector<boost::filesystem::path> quoteincludes_);
+    includes::includes(std::vector<boost::filesystem::path> sys_,
+                       std::vector<boost::filesystem::path> quote_)
+      : sys(move(sys_)), quote(move(quote_))
+    {
+    }
 
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
-
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const std::string&) override;
-
-  private:
-    data::includes _includes;
-  };
+    const std::vector<boost::filesystem::path>& get(include_type type_,
+                                                    const includes& includes_)
+    {
+      return type_ == include_type::sys ? includes_.sys : includes_.quote;
+    }
+  }
 }
-
-#endif

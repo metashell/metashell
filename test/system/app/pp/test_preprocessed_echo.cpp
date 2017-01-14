@@ -76,7 +76,10 @@ TEST(preprocessed_echo, echoing_invalid_cpp_code)
 
   const std::vector<json_string> r = mi.command("void FOO() { return 13; }");
   ASSERT_EQ(cpp_code("void bar() { return 13; }"), r[0]);
-  ASSERT_EQ(error(_), r[1]);
+  if (!using_wave())
+  {
+    ASSERT_EQ(error(_), r[1]);
+  }
 }
 
 TEST(preprocessed_echo, when_echoing_code_displaying_pp_errors_only_once)

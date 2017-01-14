@@ -241,8 +241,11 @@ TEST(ls, tests)
   ASSERT_EQ(std::set<std::string>{sys({"foo.hpp"})},
             ls_output(cwd, {a}, {}, "<>").header_files());
 
-  ASSERT_EQ(std::set<std::string>{quote({"foo.hpp"})},
-            ls_output(cwd, {a}, {}, "\"\"").header_files());
+  if (!using_wave())
+  {
+    ASSERT_EQ(std::set<std::string>{quote({"foo.hpp"})},
+              ls_output(cwd, {a}, {}, "\"\"").header_files());
+  }
 
   ASSERT_EQ(
       include({sys({"foo.hpp"})}), ls_output(cwd, {b}, {}, "<>").directories());

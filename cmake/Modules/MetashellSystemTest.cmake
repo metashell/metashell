@@ -100,3 +100,13 @@ function(register_msvc_system_test TEST_TARGET_NAME)
   endif()
 endfunction()
 
+function(register_wave_system_test TEST_TARGET_NAME)
+  add_test(
+    NAME ${TEST_TARGET_NAME}_wave
+    COMMAND
+      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine wave --
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      --
+  )
+endfunction()
+

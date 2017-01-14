@@ -1,8 +1,8 @@
-#ifndef METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
-#define METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
+#ifndef METASHELL_WAVE_TOKEN_HPP
+#define METASHELL_WAVE_TOKEN_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,27 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/includes.hpp>
-#include <metashell/iface/header_discoverer.hpp>
+#include <boost/wave/cpplexer/cpp_lex_token.hpp>
 
 namespace metashell
 {
-  class header_discoverer_constant : public iface::header_discoverer
-  {
-  public:
-    header_discoverer_constant(
-        std::vector<boost::filesystem::path> sysincludes_,
-        std::vector<boost::filesystem::path> quoteincludes_);
-
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
-
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const std::string&) override;
-
-  private:
-    data::includes _includes;
-  };
+  typedef boost::wave::cpplexer::lex_token<> wave_token;
 }
 
 #endif

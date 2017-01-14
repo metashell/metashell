@@ -125,9 +125,12 @@ TEST(includes, tests)
   }
 
   ASSERT_EQ(pv{"."}, quoteincludes({}, {}));
-  ASSERT_EQ((pv{".", a, b}), quoteincludes({a, b}, {}));
+  if (!using_wave())
+  {
+    ASSERT_EQ((pv{".", a, b}), quoteincludes({a, b}, {}));
+  }
   ASSERT_EQ((pv{".", a, b}), quoteincludes({}, {a, b}));
-  if (!using_msvc())
+  if (!(using_msvc() || using_wave()))
   {
     ASSERT_EQ((pv{".", a, b}), quoteincludes({b}, {a}));
   }

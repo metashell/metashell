@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,26 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/header_discoverer_constant.hpp>
+#include <metashell/header_discoverer_wave.hpp>
+
+#include <metashell/wave_context.hpp>
 
 namespace metashell
 {
-  header_discoverer_constant::header_discoverer_constant(
-      std::vector<boost::filesystem::path> sysincludes_,
-      std::vector<boost::filesystem::path> quoteincludes_)
-    : _includes(move(sysincludes_), move(quoteincludes_))
+  header_discoverer_wave::header_discoverer_wave(data::wave_config config_)
+    : _config(std::move(config_))
   {
   }
 
   std::vector<boost::filesystem::path>
-  header_discoverer_constant::include_path(data::include_type type_)
+  header_discoverer_wave::include_path(data::include_type type_)
   {
-    return get(type_, _includes);
+    return get(type_, _config.includes);
   }
 
   std::set<boost::filesystem::path>
-  header_discoverer_constant::files_included_by(const std::string&)
+  header_discoverer_wave::files_included_by(const std::string& exp_)
   {
-    return std::set<boost::filesystem::path>();
+    const std::string exp = exp_ + "\n";
+    std::set<boost::filesystem::path> result;
+    wave_hooks hooks(result);
+    wave_context ctx(exp.begin(), exp.end(), "<input>", hooks);
+    apply(ctx, _config);
+    preprocess(ctx);
+    return result;
   }
 }

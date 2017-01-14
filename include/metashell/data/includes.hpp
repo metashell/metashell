@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/include_type.hpp>
+
 #include <boost/filesystem/path.hpp>
 
 #include <vector>
@@ -29,7 +31,14 @@ namespace metashell
     {
       std::vector<boost::filesystem::path> sys;
       std::vector<boost::filesystem::path> quote;
+
+      includes() = default;
+      includes(std::vector<boost::filesystem::path> sys_,
+               std::vector<boost::filesystem::path> quote_);
     };
+
+    const std::vector<boost::filesystem::path>& get(include_type type_,
+                                                    const includes& includes_);
   }
 }
 
