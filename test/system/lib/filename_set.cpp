@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/filename_set.hpp>
+#include <metashell/system_test/query_json.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -25,6 +26,34 @@
 using namespace metashell::system_test;
 
 filename_set::filename_set() : _paths() {}
+
+filename_set::filename_set(const json_string& s_)
+{
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "filenames"}, d) &&
+      is_string("filename_set", d["type"]) && d["filenames"].IsArray())
+  {
+    const auto e = d["filenames"].End();
+    for (auto i = d["filenames"].Begin(); i != e; ++i)
+    {
+      if (i->IsString())
+      {
+        _paths.insert(i->GetString());
+      }
+      else
+      {
+        throw std::runtime_error("Invalid filename in filename_set:" +
+                                 s_.get());
+      }
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Invalid filename_set: " + s_.get());
+  }
+}
 
 filename_set::filename_set(
     std::initializer_list<boost::filesystem::path> paths_)
@@ -38,6 +67,11 @@ filename_set::const_iterator filename_set::begin() const
 }
 
 filename_set::const_iterator filename_set::end() const { return _paths.end(); }
+
+bool filename_set::operator==(const filename_set& fs_) const
+{
+  return _paths == fs_._paths;
+}
 
 std::ostream& metashell::system_test::operator<<(std::ostream& out_,
                                                  const filename_set& filenames_)
@@ -72,5 +106,5 @@ metashell::system_test::to_json_string(const filename_set& filenames_)
 bool metashell::system_test::operator==(const filename_set& filenames_,
                                         const json_string& s_)
 {
-  return to_json_string(filenames_) == s_;
+  return filenames_ == filename_set(s_);
 }

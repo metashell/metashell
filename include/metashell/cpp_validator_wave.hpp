@@ -1,8 +1,8 @@
-#ifndef METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
-#define METASHELL_HEADER_DISCOVERER_CONSTANT_HPP
+#ifndef METASHELL_CPP_VALIDATOR_WAVE_HPP
+#define METASHELL_CPP_VALIDATOR_WAVE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/includes.hpp>
-#include <metashell/iface/header_discoverer.hpp>
+#include <metashell/iface/cpp_validator.hpp>
+
+#include <metashell/preprocessor_shell_wave.hpp>
 
 namespace metashell
 {
-  class header_discoverer_constant : public iface::header_discoverer
+  class cpp_validator_wave : public iface::cpp_validator
   {
   public:
-    header_discoverer_constant(
-        std::vector<boost::filesystem::path> sysincludes_,
-        std::vector<boost::filesystem::path> quoteincludes_);
+    explicit cpp_validator_wave(data::wave_config config_);
 
-    virtual std::vector<boost::filesystem::path>
-    include_path(data::include_type type_) override;
-
-    virtual std::set<boost::filesystem::path>
-    files_included_by(const std::string&) override;
+    virtual data::result validate_code(const std::string& src_,
+                                       const data::config& config_,
+                                       const iface::environment& env_,
+                                       bool use_precompiled_headers_) override;
 
   private:
-    data::includes _includes;
+    preprocessor_shell_wave _preprocessor;
   };
 }
 

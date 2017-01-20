@@ -71,6 +71,7 @@ namespace metashell
     };
 
     bool using_msvc();
+    bool using_wave();
 
     std::vector<std::string>
     with_sysincludes(std::vector<std::string> args_,

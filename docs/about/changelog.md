@@ -8,6 +8,12 @@
       template metaprogram evaluation or debugging)
     * New engine: `msvc`. Note that only preprocessor shell is supported. (No
       template metaprogram evaluation or debugging)
+    * New engine: `pure_wave` adding Boost.Wave support. Note that by default
+      it has an empty sysinclude path (which means it has no access to standard
+      headers).
+    * New engine: `wave` adding Boost.Wave support with the standard headers of
+      the Templight (shipped with Metashell) on the system include path and the
+      macros of Templight defined by default.
 
 ## Version 3.0.0
 

@@ -396,7 +396,7 @@ std::string shell::prompt() const
 bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
 {
   const data::result r = _engine->cpp_validator().validate_code(
-      s_, _config, *_env, using_precompiled_headers());
+      s_ + "\n", _config, *_env, using_precompiled_headers());
 
   if (r.successful)
   {
@@ -560,7 +560,7 @@ bool shell::preprocess(iface::displayer& displayer_,
       wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
 
   data::result r = _engine->preprocessor_shell().precompile(
-      _env->get_all() + "\n" + marker + exp_ + marker);
+      _env->get_all() + "\n" + marker + exp_ + marker + "\n");
 
   if (r.successful)
   {

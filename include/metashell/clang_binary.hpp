@@ -18,7 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/result.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/environment.hpp>
+#include <metashell/iface/environment_detector.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
 
@@ -37,6 +39,13 @@ namespace metashell
                  const std::vector<std::string>& base_args_,
                  logger* logger_);
 
+    clang_binary(bool use_internal_templight_,
+                 const boost::filesystem::path& clang_path_,
+                 const std::vector<std::string>& extra_clang_args_,
+                 const boost::filesystem::path& internal_dir_,
+                 iface::environment_detector& env_detector_,
+                 logger* logger_);
+
     virtual data::process_output run(const std::vector<std::string>& args_,
                                      const std::string& stdin_) const override;
 
@@ -44,6 +53,15 @@ namespace metashell
     std::vector<std::string> _base_args;
     logger* _logger;
   };
+
+  boost::filesystem::path
+  find_clang(bool use_internal_templight_,
+             const std::vector<std::string>& extra_clang_args_,
+             const std::string& metashell_binary_,
+             const std::string& engine_,
+             iface::environment_detector& env_detector_,
+             iface::displayer& displayer_,
+             logger* logger_);
 
   data::process_output run_clang(const iface::executable& clang_binary_,
                                  std::vector<std::string> clang_args_,

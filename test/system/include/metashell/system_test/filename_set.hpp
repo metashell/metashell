@@ -29,13 +29,15 @@ namespace metashell
 {
   namespace system_test
   {
-    class filename_set : boost::equality_comparable<filename_set, json_string>
+    class filename_set : boost::equality_comparable<filename_set, json_string>,
+                         boost::equality_comparable<filename_set>
     {
     public:
       typedef std::set<boost::filesystem::path>::const_iterator const_iterator;
       typedef const_iterator iterator;
 
       explicit filename_set();
+      explicit filename_set(const json_string& s_);
 
       template <class Container>
       filename_set(const Container& c_) : _paths(c_.begin(), c_.end())
@@ -46,6 +48,8 @@ namespace metashell
 
       const_iterator begin() const;
       const_iterator end() const;
+
+      bool operator==(const filename_set& fs_) const;
 
     private:
       std::set<boost::filesystem::path> _paths;

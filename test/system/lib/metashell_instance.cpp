@@ -83,8 +83,15 @@ namespace
       {
         cmd.push_back("--");
       }
-      cmd.push_back("-nostdinc");
-      cmd.push_back("-nostdinc++");
+      if (using_wave())
+      {
+        cmd.push_back("--nostdinc++");
+      }
+      else
+      {
+        cmd.push_back("-nostdinc");
+        cmd.push_back("-nostdinc++");
+      }
     }
 
     return cmd;
@@ -212,7 +219,14 @@ namespace metashell
     with_sysincludes(std::vector<std::string> args_,
                      const std::vector<boost::filesystem::path>& paths_)
     {
-      append_with_prefix(args_, using_msvc() ? "/I" : "-I", paths_);
+      if (using_wave())
+      {
+        append_with_prefix(args_, "-S", paths_);
+      }
+      else
+      {
+        append_with_prefix(args_, using_msvc() ? "/I" : "-I", paths_);
+      }
       return args_;
     }
 
@@ -223,6 +237,10 @@ namespace metashell
       if (using_msvc())
       {
         append_with_prefix(args_, "/I", paths_);
+      }
+      else if (using_wave())
+      {
+        append_with_prefix(args_, "-I", paths_);
       }
       else
       {
@@ -237,5 +255,7 @@ namespace metashell
     }
 
     bool using_msvc() { return current_engine() == "msvc"; }
+
+    bool using_wave() { return current_engine() == "wave"; }
   }
 }

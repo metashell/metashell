@@ -22,6 +22,7 @@
 #include <metashell/engine_gcc.hpp>
 #include <metashell/engine_null.hpp>
 #include <metashell/engine_vc.hpp>
+#include <metashell/engine_wave.hpp>
 #include <metashell/fstream_file_writer.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/make_unique.hpp>
@@ -78,7 +79,9 @@ int main(int argc_, const char* argv_[])
         {"clang", metashell::get_engine_clang_entry()},
         {"null", metashell::get_engine_null_entry()},
         {"gcc", metashell::get_engine_gcc_entry()},
-        {"msvc", metashell::get_engine_vc_entry()}};
+        {"msvc", metashell::get_engine_vc_entry()},
+        {"wave", metashell::get_engine_wave_entry_with_templight_headers()},
+        {"pure_wave", metashell::get_engine_wave_entry()}};
 
     metashell::default_environment_detector det(argv_[0]);
 
