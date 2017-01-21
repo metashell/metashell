@@ -501,8 +501,8 @@ namespace metashell
     for (edge_descriptor edge : mp->get_out_edges(mp->get_root_vertex()))
     {
       edge_property& property = mp->get_edge_property(edge);
-      const data::type& target_type =
-          mp->get_vertex_property(mp->get_target(edge)).type;
+      const data::metaprogram_node& target_node =
+          mp->get_vertex_property(mp->get_target(edge)).node;
       // Filter out edges, that is not instantiated
       // by the entered type if requested
       const bool current_line_filter =
@@ -510,24 +510,14 @@ namespace metashell
           (property.point_of_instantiation.name == stdin_name &&
            property.point_of_instantiation.row == line_number + 1);
 
-      if (!current_line_filter)
+      if (current_line_filter && is_instantiation_kind_enabled(property.kind) &&
+          (property.kind != data::instantiation_kind::memoization ||
+           !boost::get<data::type>(&target_node) ||
+           !is_wrap_type(boost::get<data::type>(target_node))))
       {
-        continue;
+        property.enabled = true;
+        edge_stack.push(edge);
       }
-
-      if (!is_instantiation_kind_enabled(property.kind))
-      {
-        continue;
-      }
-
-      if (property.kind == data::instantiation_kind::memoization &&
-          is_wrap_type(target_type))
-      {
-        continue;
-      }
-
-      property.enabled = true;
-      edge_stack.push(edge);
     }
 
     discovered_t discovered(mp->get_num_vertices());
@@ -564,16 +554,20 @@ namespace metashell
   {
     for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
     {
-      data::type& type = mp->get_vertex_property(vertex).type;
-      if (is_wrap_type(type))
+      data::metaprogram_node& node = mp->get_vertex_property(vertex).node;
+      if (data::type* type = boost::get<data::type>(&node))
       {
-        type = trim_wrap_type(type);
-        if (!is_template_type(type))
+        if (is_wrap_type(*type))
         {
-          for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex))
+          *type = trim_wrap_type(*type);
+          if (!is_template_type(*type))
           {
-            mp->get_edge_property(in_edge).kind =
-                data::instantiation_kind::non_template_type;
+            for (metaprogram::edge_descriptor in_edge :
+                 mp->get_in_edges(vertex))
+            {
+              mp->get_edge_property(in_edge).kind =
+                  data::instantiation_kind::non_template_type;
+            }
           }
         }
       }
@@ -819,7 +813,7 @@ namespace metashell
       unsigned match_count = 0;
       for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
       {
-        if (bp.match(mp->get_vertex_property(vertex).type))
+        if (bp.match(mp->get_vertex_property(vertex).node))
         {
           match_count += mp->get_traversal_count(vertex);
         }
@@ -1062,7 +1056,7 @@ namespace metashell
       }
       for (const breakpoint& bp : breakpoints)
       {
-        if (bp.match(mp->get_current_frame()))
+        if (bp.match(mp->get_current_frame().node()))
         {
           return &bp;
         }

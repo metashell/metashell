@@ -29,6 +29,7 @@
 #include <metashell/data/backtrace.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/instantiation_kind.hpp>
+#include <metashell/data/metaprogram_node.hpp>
 #include <metashell/data/type_or_error.hpp>
 
 namespace metashell
@@ -81,7 +82,7 @@ namespace metashell
 
     struct vertex_property
     {
-      data::type type;
+      data::metaprogram_node node;
       data::file_location source_location;
     };
     struct edge_property

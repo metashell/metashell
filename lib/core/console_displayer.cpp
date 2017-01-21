@@ -108,6 +108,27 @@ namespace
       }
     }
   }
+
+  class format_visitor : public boost::static_visitor<>
+  {
+  public:
+    typedef std::function<data::colored_string(const std::string&)>
+        code_formatter;
+
+    format_visitor(data::colored_string& out_, code_formatter code_formatter_)
+      : _out(out_), _code_formatter(move(code_formatter_))
+    {
+    }
+
+    void operator()(const data::type& t_) const
+    {
+      _out += _code_formatter(t_.name());
+    }
+
+  private:
+    data::colored_string& _out;
+    code_formatter _code_formatter;
+  };
 } // anonymouse namespace
 
 console_displayer::console_displayer(iface::console& console_,
@@ -229,6 +250,20 @@ data::colored_string console_displayer::format_ratio(double ratio_)
   return ss.str();
 }
 
+data::colored_string
+console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
+{
+  data::colored_string result;
+
+  boost::apply_visitor(format_visitor(result,
+                                      [this](const std::string& s_) {
+                                        return this->format_code(s_);
+                                      }),
+                       n_);
+
+  return result;
+}
+
 data::colored_string console_displayer::format_frame(const data::frame& f_)
 {
   data::colored_string prefix;
@@ -244,7 +279,7 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
     postfix << " at " << f_.source_location() << " (" << f_.kind() << " from "
             << f_.point_of_instantiation() << ")";
   }
-  return prefix + format_code(f_.type().name()) + postfix.str();
+  return prefix + format_metaprogram_node(f_.node()) + postfix.str();
 }
 
 bool console_displayer::display_frame_with_pager(const data::frame& frame_,

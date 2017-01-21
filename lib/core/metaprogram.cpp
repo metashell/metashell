@@ -52,7 +52,7 @@ namespace metashell
 
     auto& vertex_property = get_vertex_property(vertex);
 
-    vertex_property.type = type;
+    vertex_property.node = type;
     vertex_property.source_location = source_location;
 
     return vertex;
@@ -433,10 +433,10 @@ namespace metashell
     {
     case mode_t::normal:
       return data::frame(
-          vp.type, vp.source_location, ep.point_of_instantiation, ep.kind);
+          vp.node, vp.source_location, ep.point_of_instantiation, ep.kind);
     default:
     case mode_t::full:
-      return data::frame(vp.type, vp.source_location);
+      return data::frame(vp.node, vp.source_location);
     case mode_t::profile:
       double ratio = [&] {
         if (full_time_taken <= 0.0)
@@ -448,7 +448,7 @@ namespace metashell
           return ep.time_taken / full_time_taken;
         }
       }();
-      return data::frame(vp.type, vp.source_location, ep.point_of_instantiation,
+      return data::frame(vp.node, vp.source_location, ep.point_of_instantiation,
                          ep.kind, ep.time_taken, ratio);
     };
   }
@@ -464,7 +464,7 @@ namespace metashell
   data::frame metaprogram::get_root_frame() const
   {
     const auto& vp = get_vertex_property(get_root_vertex());
-    return data::frame(vp.type, vp.source_location);
+    return data::frame(vp.node, vp.source_location);
   }
 
   data::backtrace metaprogram::get_backtrace() const

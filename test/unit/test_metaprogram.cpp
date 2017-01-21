@@ -59,8 +59,11 @@ TEST(metaprogram, constructor)
   ASSERT_EQ(mp.get_num_vertices(), 1u);
   ASSERT_EQ(mp.get_num_edges(), 0u);
 
-  ASSERT_EQ(mp.get_vertex_property(mp.get_root_vertex()).type,
-            data::type("some_type"));
+  ASSERT_TRUE(boost::get<data::type>(
+      &mp.get_vertex_property(mp.get_root_vertex()).node));
+  ASSERT_EQ(
+      boost::get<data::type>(mp.get_vertex_property(mp.get_root_vertex()).node),
+      data::type("some_type"));
 
   assert_state_equal(mp.get_state(), {false}, {boost::none}, {boost::none});
   ASSERT_TRUE(mp.is_at_start());
@@ -91,7 +94,10 @@ TEST(metaprogram, with_single_non_root_vertex)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
 
-  ASSERT_EQ(mp.get_vertex_property(vertex_a).type.name(), "A");
+  ASSERT_TRUE(boost::get<data::type>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(
+      boost::get<data::type>(mp.get_vertex_property(vertex_a).node).name(),
+      "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             data::file_location("a.hpp", 10, 20));
 
@@ -141,7 +147,10 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
 
-  ASSERT_EQ(mp.get_vertex_property(vertex_a).type.name(), "A");
+  ASSERT_TRUE(boost::get<data::type>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(
+      boost::get<data::type>(mp.get_vertex_property(vertex_a).node).name(),
+      "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             data::file_location("b.hpp", 40, 50));
 
@@ -198,7 +207,10 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
 
-  ASSERT_EQ(mp.get_vertex_property(vertex_a).type.name(), "A");
+  ASSERT_TRUE(boost::get<data::type>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(
+      boost::get<data::type>(mp.get_vertex_property(vertex_a).node).name(),
+      "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             data::file_location("c.hpp", 30, 35));
 
@@ -246,7 +258,10 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
 
-  ASSERT_EQ(mp.get_vertex_property(vertex_a).type.name(), "A");
+  ASSERT_TRUE(boost::get<data::type>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(
+      boost::get<data::type>(mp.get_vertex_property(vertex_a).node).name(),
+      "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             data::file_location("d.hpp", 10, 11));
 
@@ -352,7 +367,8 @@ TEST(metaprogram, step_sorting_in_profile_mode)
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
 
-    ASSERT_EQ("B", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("B", boost::get<data::type>(frame.node()).name());
     ASSERT_EQ("yy.cpp", frame.point_of_instantiation().name);
     ASSERT_EQ(30.0, frame.time_taken());
     ASSERT_EQ(0.75, frame.time_taken_ratio());
@@ -368,7 +384,8 @@ TEST(metaprogram, step_sorting_in_profile_mode)
 
     // A should come second, since that was faster
 
-    ASSERT_EQ("A", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("A", boost::get<data::type>(frame.node()).name());
     ASSERT_EQ("xx.cpp", frame.point_of_instantiation().name);
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());

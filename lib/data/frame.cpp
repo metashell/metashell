@@ -25,18 +25,19 @@ namespace metashell
   namespace data
   {
 
-    frame::frame(const data::type& type_, const file_location& source_location_)
-      : _type(type_), _source_location(source_location_)
+    frame::frame(const metaprogram_node& node_,
+                 const file_location& source_location_)
+      : _node(node_), _source_location(source_location_)
     {
     }
 
-    frame::frame(const data::type& type_,
+    frame::frame(const metaprogram_node& node_,
                  const file_location& source_location_,
                  const file_location& point_of_instantiation_,
                  instantiation_kind kind_,
                  boost::optional<double> time_taken,
                  boost::optional<double> time_taken_ratio)
-      : _type(type_),
+      : _node(node_),
         _source_location(source_location_),
         _point_of_instantiation(point_of_instantiation_),
         _kind(kind_),
@@ -45,7 +46,7 @@ namespace metashell
     {
     }
 
-    const type& frame::type() const { return _type; }
+    const metaprogram_node& frame::node() const { return _node; }
 
     const file_location& frame::source_location() const
     {
@@ -90,7 +91,7 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& o_, const frame& f_)
     {
-      o_ << "frame(\"" << f_.type() << "\"";
+      o_ << "frame(\"" << f_.node() << "\"";
       if (f_.is_full())
       {
         o_ << ", " << f_.point_of_instantiation() << ", " << f_.kind();
@@ -105,7 +106,7 @@ namespace metashell
 
     bool operator==(const frame& a_, const frame& b_)
     {
-      return a_.type() == b_.type() && a_.is_full() == b_.is_full() &&
+      return a_.node() == b_.node() && a_.is_full() == b_.is_full() &&
              (!a_.is_full() ||
               (a_.kind() == b_.kind() &&
                a_.point_of_instantiation() == b_.point_of_instantiation())) &&
