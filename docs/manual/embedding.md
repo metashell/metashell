@@ -66,11 +66,11 @@ following:
   "name":"<type instantiated>",
   "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
-  "point_of_instantiation":"<point of instantiation>"
+  "point_of_event":"<point of instantiation>"
 }
 ```
 
-The `name`, `source_location`, `kind` and `point_of_instantiation` fields are
+The `name`, `source_location`, `kind` and `point_of_event` fields are
 the same as the fields of the `frame` object.
 
 * __call\_graph__
@@ -94,13 +94,13 @@ format of the nodes is the following:
   "name":"<type instantiated>",
   "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
-  "point_of_instantiation":"<point of instantiation>",
+  "point_of_event":"<point of instantiation>",
   "depth":"<depth of the node in the tree>",
   "children":"<number of children the node has>"
 }
 ```
 
-The `name`, `source_location`, `kind` and `point_of_instantiation` fields are
+The `name`, `source_location`, `kind` and `point_of_event` fields are
 the same as the fields of the `frame` object. The values of the `<depth>` and
 `<children>` fields are integers.
 
@@ -202,7 +202,7 @@ Format:
   "name":"<type instantiated>",
   "source_location":"<source_location>",
   "kind":"<kind of instatiation>",
-  "point_of_instantiation":"<point of instantiation>",
+  "point_of_event":"<point of instantiation>",
   "time_taken":"<time taken in seconds>",
   "time_taken_ratio":"<time taken ratio>"
 }
@@ -217,7 +217,7 @@ The format is `<file_name>:<row>:<column>`. There is a special file called
 directly entered into the shell. `file_name` is possibly empty, this means that
 the source location of that particular template is unknown.
 
-The `kind`, `point_of_instantiation`, `time_taken` and `time_taken_ratio` fields
+The `kind`, `point_of_event`, `time_taken` and `time_taken_ratio` fields
 are optional depending on whether Metashell has this information. The possible
 values for kind are:
 
@@ -233,7 +233,7 @@ values for kind are:
     * `TemplateInstantiation`
     * `UnknownKind`
 
-Format of `point_of_instantiation` is  the same as of `source_location` but
+Format of `point_of_event` is  the same as of `source_location` but
 shows where this particular type was instantiated from.
 
 `time_taken` is given in seconds as a double. `time_taken_ratio` is also a

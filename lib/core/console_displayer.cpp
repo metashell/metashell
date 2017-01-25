@@ -277,7 +277,7 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
   if (f_.is_full())
   {
     postfix << " at " << f_.source_location() << " (" << f_.kind() << " from "
-            << f_.point_of_instantiation() << ")";
+            << f_.point_of_event() << ")";
   }
   return prefix + format_metaprogram_node(f_.node()) + postfix.str();
 }

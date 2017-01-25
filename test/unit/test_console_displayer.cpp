@@ -33,7 +33,7 @@ namespace
 
   call_grph fib5_call_graph()
   {
-    using metashell::data::instantiation_kind;
+    using metashell::data::event_kind;
     using metashell::data::type;
     using metashell::data::frame;
     using metashell::data::file_location;
@@ -43,23 +43,18 @@ namespace
 
     return call_grph{
         {frame(type("int_<fib<5>::value>"), f2), 0, 3},
-        {frame(fib<5>(), f2, f, instantiation_kind::template_instantiation), 1,
-         2},
-        {frame(fib<3>(), f2, f, instantiation_kind::template_instantiation), 2,
-         2},
-        {frame(fib<1>(), f2, f, instantiation_kind::memoization), 3, 0},
-        {frame(fib<2>(), f2, f, instantiation_kind::template_instantiation), 3,
-         2},
-        {frame(fib<0>(), f2, f, instantiation_kind::memoization), 4, 0},
-        {frame(fib<1>(), f2, f, instantiation_kind::memoization), 4, 0},
-        {frame(fib<4>(), f2, f, instantiation_kind::template_instantiation), 2,
-         2},
-        {frame(fib<2>(), f2, f, instantiation_kind::memoization), 3, 0},
-        {frame(fib<3>(), f2, f, instantiation_kind::memoization), 3, 0},
-        {frame(fib<5>(), f2, f, instantiation_kind::memoization), 1, 0},
-        {frame(type("int_<5>"), f2, f,
-               instantiation_kind::template_instantiation),
-         1, 0}};
+        {frame(fib<5>(), f2, f, event_kind::template_instantiation), 1, 2},
+        {frame(fib<3>(), f2, f, event_kind::template_instantiation), 2, 2},
+        {frame(fib<1>(), f2, f, event_kind::memoization), 3, 0},
+        {frame(fib<2>(), f2, f, event_kind::template_instantiation), 3, 2},
+        {frame(fib<0>(), f2, f, event_kind::memoization), 4, 0},
+        {frame(fib<1>(), f2, f, event_kind::memoization), 4, 0},
+        {frame(fib<4>(), f2, f, event_kind::template_instantiation), 2, 2},
+        {frame(fib<2>(), f2, f, event_kind::memoization), 3, 0},
+        {frame(fib<3>(), f2, f, event_kind::memoization), 3, 0},
+        {frame(fib<5>(), f2, f, event_kind::memoization), 1, 0},
+        {frame(type("int_<5>"), f2, f, event_kind::template_instantiation), 1,
+         0}};
   }
 }
 

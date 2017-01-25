@@ -64,8 +64,8 @@ namespace metashell
     bool matches(const frame& frame_, const JsonDocument& doc_)
     {
       return no_other_members_than(
-                 {"type", "name", "source_location", "kind",
-                  "point_of_instantiation", "time_taken", "time_taken_ratio"},
+                 {"type", "name", "source_location", "kind", "point_of_event",
+                  "time_taken", "time_taken_ratio"},
                  doc_) &&
              has_members({"name", "source_location"}, doc_) &&
              matches(frame_.name(), doc_["name"]) &&

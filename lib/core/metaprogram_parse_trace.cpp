@@ -30,28 +30,28 @@
 namespace metashell
 {
 
-  data::instantiation_kind instantiation_kind_from_protobuf(int kind)
+  data::event_kind instantiation_kind_from_protobuf(int kind)
   {
     switch (kind)
     {
     case 0:
-      return data::instantiation_kind::template_instantiation;
+      return data::event_kind::template_instantiation;
     case 1:
-      return data::instantiation_kind::default_template_argument_instantiation;
+      return data::event_kind::default_template_argument_instantiation;
     case 2:
-      return data::instantiation_kind::default_function_argument_instantiation;
+      return data::event_kind::default_function_argument_instantiation;
     case 3:
-      return data::instantiation_kind::explicit_template_argument_substitution;
+      return data::event_kind::explicit_template_argument_substitution;
     case 4:
-      return data::instantiation_kind::deduced_template_argument_substitution;
+      return data::event_kind::deduced_template_argument_substitution;
     case 5:
-      return data::instantiation_kind::prior_template_argument_substitution;
+      return data::event_kind::prior_template_argument_substitution;
     case 6:
-      return data::instantiation_kind::default_template_argument_checking;
+      return data::event_kind::default_template_argument_checking;
     case 7:
-      return data::instantiation_kind::exception_spec_instantiation;
+      return data::event_kind::exception_spec_instantiation;
     case 8:
-      return data::instantiation_kind::memoization;
+      return data::event_kind::memoization;
     default:
       throw exception(
           "templight xml parse failed (invalid instantiation kind)");

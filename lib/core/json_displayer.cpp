@@ -59,8 +59,8 @@ namespace
     {
       writer_.key("kind");
       writer_.string(to_string(frame_.kind()));
-      writer_.key("point_of_instantiation");
-      writer_.string(to_string(frame_.point_of_instantiation()));
+      writer_.key("point_of_event");
+      writer_.string(to_string(frame_.point_of_event()));
     }
     if (frame_.is_profiled())
     {

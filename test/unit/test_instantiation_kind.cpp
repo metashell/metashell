@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/instantiation_kind.hpp>
+#include <metashell/data/event_kind.hpp>
 
 #include <gtest/gtest.h>
 
@@ -23,31 +23,26 @@
 
 using namespace metashell;
 
-TEST(instantiation_kind, print)
+TEST(event_kind, print)
 {
-  using data::instantiation_kind;
+  using data::event_kind;
 
-  ASSERT_EQ(to_string(instantiation_kind::template_instantiation),
-            "TemplateInstantiation");
   ASSERT_EQ(
-      to_string(instantiation_kind::default_template_argument_instantiation),
-      "DefaultTemplateArgumentInstantiation");
-  ASSERT_EQ(
-      to_string(instantiation_kind::default_function_argument_instantiation),
-      "DefaultFunctionArgumentInstantiation");
-  ASSERT_EQ(
-      to_string(instantiation_kind::explicit_template_argument_substitution),
-      "ExplicitTemplateArgumentSubstitution");
-  ASSERT_EQ(
-      to_string(instantiation_kind::deduced_template_argument_substitution),
-      "DeducedTemplateArgumentSubstitution");
-  ASSERT_EQ(to_string(instantiation_kind::prior_template_argument_substitution),
+      to_string(event_kind::template_instantiation), "TemplateInstantiation");
+  ASSERT_EQ(to_string(event_kind::default_template_argument_instantiation),
+            "DefaultTemplateArgumentInstantiation");
+  ASSERT_EQ(to_string(event_kind::default_function_argument_instantiation),
+            "DefaultFunctionArgumentInstantiation");
+  ASSERT_EQ(to_string(event_kind::explicit_template_argument_substitution),
+            "ExplicitTemplateArgumentSubstitution");
+  ASSERT_EQ(to_string(event_kind::deduced_template_argument_substitution),
+            "DeducedTemplateArgumentSubstitution");
+  ASSERT_EQ(to_string(event_kind::prior_template_argument_substitution),
             "PriorTemplateArgumentSubstitution");
-  ASSERT_EQ(to_string(instantiation_kind::default_template_argument_checking),
+  ASSERT_EQ(to_string(event_kind::default_template_argument_checking),
             "DefaultTemplateArgumentChecking");
-  ASSERT_EQ(to_string(instantiation_kind::exception_spec_instantiation),
+  ASSERT_EQ(to_string(event_kind::exception_spec_instantiation),
             "ExceptionSpecInstantiation");
-  ASSERT_EQ(to_string(instantiation_kind::memoization), "Memoization");
-  ASSERT_EQ(
-      to_string(instantiation_kind::non_template_type), "NonTemplateType");
+  ASSERT_EQ(to_string(event_kind::memoization), "Memoization");
+  ASSERT_EQ(to_string(event_kind::non_template_type), "NonTemplateType");
 }

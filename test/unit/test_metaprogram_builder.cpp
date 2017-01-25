@@ -43,7 +43,7 @@ TEST(metaprogram_builder, normal_mode)
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
@@ -66,7 +66,7 @@ TEST(metaprogram_builder, normal_mode)
   ASSERT_FALSE(frame.is_profiled());
   ASSERT_TRUE(boost::get<data::type>(&frame.node()));
   ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
-  ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+  ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
 
   mp.step();
 
@@ -79,12 +79,12 @@ TEST(metaprogram_builder, full_mode)
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<B>"),
                            data::file_location("file", 20, 20),
                            data::file_location("file_sl", 15, 25), 110.0);
@@ -93,8 +93,7 @@ TEST(metaprogram_builder, full_mode)
 
   mb.handle_template_end(130.0);
 
-  mb.handle_template_begin(data::instantiation_kind::memoization,
-                           data::type("type<A>"),
+  mb.handle_template_begin(data::event_kind::memoization, data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 140.0);
 
@@ -163,14 +162,14 @@ TEST(metaprogram_builder, profile_mode)
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<B>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 120.0);
@@ -195,7 +194,7 @@ TEST(metaprogram_builder, profile_mode)
     ASSERT_TRUE(frame.is_profiled());
     ASSERT_TRUE(boost::get<data::type>(&frame.node()));
     ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
-    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(20.0, frame.time_taken());
     ASSERT_EQ(0.5, frame.time_taken_ratio());
   }
@@ -209,7 +208,7 @@ TEST(metaprogram_builder, profile_mode)
     ASSERT_TRUE(frame.is_profiled());
     ASSERT_TRUE(boost::get<data::type>(&frame.node()));
     ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
-    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());
   }
@@ -235,7 +234,7 @@ TEST(metaprogram_builder, too_much_end_events_2)
                          data::file_location("stdin.hpp", 30, 45),
                          data::type("eval_result"));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
@@ -252,7 +251,7 @@ TEST(metaprogram_builder, too_few_end_events)
                          data::file_location("stdin.hpp", 30, 31),
                          data::type("eval_result"));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);

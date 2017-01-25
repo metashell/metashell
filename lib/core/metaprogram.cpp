@@ -61,8 +61,8 @@ namespace metashell
   metaprogram::edge_descriptor
   metaprogram::add_edge(vertex_descriptor from,
                         vertex_descriptor to,
-                        data::instantiation_kind kind,
-                        const data::file_location& point_of_instantiation,
+                        data::event_kind kind,
+                        const data::file_location& point_of_event,
                         double begin_timestamp)
   {
     edge_descriptor edge;
@@ -74,7 +74,7 @@ namespace metashell
     auto& ep = get_edge_property(edge);
 
     ep.kind = kind;
-    ep.point_of_instantiation = point_of_instantiation;
+    ep.point_of_event = point_of_event;
     ep.begin_timestamp = begin_timestamp;
 
     return edge;
@@ -433,7 +433,7 @@ namespace metashell
     {
     case mode_t::normal:
       return data::frame(
-          vp.node, vp.source_location, ep.point_of_instantiation, ep.kind);
+          vp.node, vp.source_location, ep.point_of_event, ep.kind);
     default:
     case mode_t::full:
       return data::frame(vp.node, vp.source_location);
@@ -448,7 +448,7 @@ namespace metashell
           return ep.time_taken / full_time_taken;
         }
       }();
-      return data::frame(vp.node, vp.source_location, ep.point_of_instantiation,
+      return data::frame(vp.node, vp.source_location, ep.point_of_event,
                          ep.kind, ep.time_taken, ratio);
     };
   }

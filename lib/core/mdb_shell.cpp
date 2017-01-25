@@ -45,7 +45,7 @@ namespace
   const std::string wrap_suffix = ">";
 
   typedef std::tuple<metashell::data::file_location,
-                     metashell::data::instantiation_kind,
+                     metashell::data::event_kind,
                      metashell::metaprogram::vertex_descriptor>
       set_element_t;
 
@@ -54,8 +54,8 @@ namespace
     return lhs < rhs;
   }
 
-  bool less_than_ignore_instantiation_kind(const set_element_t& lhs,
-                                           const set_element_t& rhs)
+  bool less_than_ignore_event_kind(const set_element_t& lhs,
+                                   const set_element_t& rhs)
   {
     using std::get;
 
@@ -506,12 +506,11 @@ namespace metashell
       // Filter out edges, that is not instantiated
       // by the entered type if requested
       const bool current_line_filter =
-          !for_current_line ||
-          (property.point_of_instantiation.name == stdin_name &&
-           property.point_of_instantiation.row == line_number + 1);
+          !for_current_line || (property.point_of_event.name == stdin_name &&
+                                property.point_of_event.row == line_number + 1);
 
-      if (current_line_filter && is_instantiation_kind_enabled(property.kind) &&
-          (property.kind != data::instantiation_kind::memoization ||
+      if (current_line_filter && is_event_kind_enabled(property.kind) &&
+          (property.kind != data::event_kind::memoization ||
            !boost::get<data::type>(&target_node) ||
            !is_wrap_type(boost::get<data::type>(target_node))))
       {
@@ -541,7 +540,7 @@ namespace metashell
       for (edge_descriptor out_edge : mp->get_out_edges(vertex))
       {
         edge_property& property = mp->get_edge_property(out_edge);
-        if (is_instantiation_kind_enabled(property.kind))
+        if (is_event_kind_enabled(property.kind))
         {
           property.enabled = true;
           edge_stack.push(out_edge);
@@ -566,7 +565,7 @@ namespace metashell
                  mp->get_in_edges(vertex))
             {
               mp->get_edge_property(in_edge).kind =
-                  data::instantiation_kind::non_template_type;
+                  data::event_kind::non_template_type;
             }
           }
         }
@@ -582,7 +581,7 @@ namespace metashell
     using edge_property = metaprogram::edge_property;
 
     auto comparator = mp->get_mode() == metaprogram::mode_t::full ?
-                          less_than_ignore_instantiation_kind :
+                          less_than_ignore_event_kind :
                           less_than;
 
     // Clang sometimes produces equivalent instantiations events from the same
@@ -597,8 +596,8 @@ namespace metashell
         edge_property& edge_property = mp->get_edge_property(edge);
 
         set_element_t set_element =
-            std::make_tuple(edge_property.point_of_instantiation,
-                            edge_property.kind, mp->get_target(edge));
+            std::make_tuple(edge_property.point_of_event, edge_property.kind,
+                            mp->get_target(edge));
 
         if (similar_edges.count(set_element) > 0)
         {
@@ -624,14 +623,14 @@ namespace metashell
     mp->init_full_time_taken();
   }
 
-  bool mdb_shell::is_instantiation_kind_enabled(data::instantiation_kind kind)
+  bool mdb_shell::is_event_kind_enabled(data::event_kind kind)
   {
     switch (kind)
     {
-    case data::instantiation_kind::memoization:
-    case data::instantiation_kind::template_instantiation:
-    case data::instantiation_kind::deduced_template_argument_substitution:
-    case data::instantiation_kind::explicit_template_argument_substitution:
+    case data::event_kind::memoization:
+    case data::event_kind::template_instantiation:
+    case data::event_kind::deduced_template_argument_substitution:
+    case data::event_kind::explicit_template_argument_substitution:
       return true;
     default:
       return false;

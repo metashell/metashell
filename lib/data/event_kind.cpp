@@ -1,0 +1,56 @@
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <metashell/data/event_kind.hpp>
+
+namespace metashell
+{
+  namespace data
+  {
+    std::ostream& operator<<(std::ostream& os, event_kind kind)
+    {
+      return os << to_string(kind);
+    }
+
+    std::string to_string(event_kind kind)
+    {
+      switch (kind)
+      {
+      case event_kind::template_instantiation:
+        return "TemplateInstantiation";
+      case event_kind::default_template_argument_instantiation:
+        return "DefaultTemplateArgumentInstantiation";
+      case event_kind::default_function_argument_instantiation:
+        return "DefaultFunctionArgumentInstantiation";
+      case event_kind::explicit_template_argument_substitution:
+        return "ExplicitTemplateArgumentSubstitution";
+      case event_kind::deduced_template_argument_substitution:
+        return "DeducedTemplateArgumentSubstitution";
+      case event_kind::prior_template_argument_substitution:
+        return "PriorTemplateArgumentSubstitution";
+      case event_kind::default_template_argument_checking:
+        return "DefaultTemplateArgumentChecking";
+      case event_kind::exception_spec_instantiation:
+        return "ExceptionSpecInstantiation";
+      case event_kind::memoization:
+        return "Memoization";
+      case event_kind::non_template_type:
+        return "NonTemplateType";
+      }
+      return "UnknownKind";
+    }
+  }
+}

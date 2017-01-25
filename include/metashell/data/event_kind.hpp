@@ -1,5 +1,5 @@
-#ifndef METASHELL_INSTANTIATION_KIND_HPP
-#define METASHELL_INSTANTIATION_KIND_HPP
+#ifndef METASHELL_EVENT_KIND_HPP
+#define METASHELL_EVENT_KIND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -24,9 +24,9 @@ namespace metashell
 {
   namespace data
   {
-
-    enum class instantiation_kind
+    enum class event_kind
     {
+      // Template instantiation-related events
       template_instantiation,
       default_template_argument_instantiation,
       default_function_argument_instantiation,
@@ -39,9 +39,9 @@ namespace metashell
       non_template_type // Used only if an evaluation result is not a template
     };
 
-    std::ostream& operator<<(std::ostream& os, instantiation_kind kind);
+    std::ostream& operator<<(std::ostream& os, event_kind kind);
 
-    std::string to_string(instantiation_kind kind);
+    std::string to_string(event_kind kind);
   }
 }
 

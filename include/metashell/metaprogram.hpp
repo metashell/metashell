@@ -27,8 +27,8 @@
 #include <boost/optional.hpp>
 
 #include <metashell/data/backtrace.hpp>
+#include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
-#include <metashell/data/instantiation_kind.hpp>
 #include <metashell/data/metaprogram_node.hpp>
 #include <metashell/data/type_or_error.hpp>
 
@@ -87,8 +87,8 @@ namespace metashell
     };
     struct edge_property
     {
-      data::instantiation_kind kind;
-      data::file_location point_of_instantiation;
+      data::event_kind kind;
+      data::file_location point_of_event;
       double begin_timestamp = 0.0;
       double time_taken = 0.0;
       bool enabled = true;
@@ -143,8 +143,8 @@ namespace metashell
 
     edge_descriptor add_edge(vertex_descriptor from,
                              vertex_descriptor to,
-                             data::instantiation_kind kind,
-                             const data::file_location& point_of_instantiation,
+                             data::event_kind kind,
+                             const data::file_location& point_of_event,
                              double begin_timestamp);
 
     // Should be called after graph filtering is done

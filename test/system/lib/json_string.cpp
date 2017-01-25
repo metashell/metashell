@@ -29,9 +29,9 @@ const std::string& json_string::get() const { return _json; }
 bool metashell::system_test::operator==(const json_string& a_,
                                         const json_string& b_)
 {
-  // Not testing point_of_instantiation and source_location
+  // Not testing point_of_event and source_location
   auto flags = boost::match_default | boost::format_all;
-  boost::regex filter_poi(R"(,"point_of_instantiation":"[^"]*")");
+  boost::regex filter_poi(R"(,"point_of_event":"[^"]*")");
   boost::regex filter_sl(R"(,"source_location":"[^"]*")");
 
   auto filtered_a = boost::regex_replace(a_.get(), filter_poi, "", flags);

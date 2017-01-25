@@ -86,10 +86,9 @@ TEST(metaprogram, with_single_non_root_vertex)
 
   auto vertex_a =
       mp.add_vertex(data::type("A"), data::file_location("a.hpp", 10, 20));
-  auto edge_root_a =
-      mp.add_edge(mp.get_root_vertex(), vertex_a,
-                  data::instantiation_kind::template_instantiation,
-                  data::file_location("foo.cpp", 10, 20), 10.0);
+  auto edge_root_a = mp.add_edge(mp.get_root_vertex(), vertex_a,
+                                 data::event_kind::template_instantiation,
+                                 data::file_location("foo.cpp", 10, 20), 10.0);
 
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
@@ -102,8 +101,8 @@ TEST(metaprogram, with_single_non_root_vertex)
             data::file_location("a.hpp", 10, 20));
 
   ASSERT_EQ(mp.get_edge_property(edge_root_a).kind,
-            data::instantiation_kind::template_instantiation);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a).point_of_instantiation,
+            data::event_kind::template_instantiation);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a).point_of_event,
             data::file_location("foo.cpp", 10, 20));
 
   assert_state_equal(mp.get_state(), {false, false}, {boost::none, boost::none},
@@ -136,13 +135,12 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
 
   auto vertex_a =
       mp.add_vertex(data::type("A"), data::file_location("b.hpp", 40, 50));
-  auto edge_root_a_ti =
-      mp.add_edge(mp.get_root_vertex(), vertex_a,
-                  data::instantiation_kind::template_instantiation,
-                  data::file_location("bar.cpp", 20, 10), 10.0);
-  auto edge_root_a_me = mp.add_edge(
-      mp.get_root_vertex(), vertex_a, data::instantiation_kind::memoization,
-      data::file_location("foobar.cpp", 21, 11), 10.0);
+  auto edge_root_a_ti = mp.add_edge(
+      mp.get_root_vertex(), vertex_a, data::event_kind::template_instantiation,
+      data::file_location("bar.cpp", 20, 10), 10.0);
+  auto edge_root_a_me =
+      mp.add_edge(mp.get_root_vertex(), vertex_a, data::event_kind::memoization,
+                  data::file_location("foobar.cpp", 21, 11), 10.0);
 
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
@@ -155,12 +153,12 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
             data::file_location("b.hpp", 40, 50));
 
   ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).kind,
-            data::instantiation_kind::template_instantiation);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
+            data::event_kind::template_instantiation);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).point_of_event,
             data::file_location("bar.cpp", 20, 10));
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).kind,
-            data::instantiation_kind::memoization);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
+  ASSERT_EQ(
+      mp.get_edge_property(edge_root_a_me).kind, data::event_kind::memoization);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).point_of_event,
             data::file_location("foobar.cpp", 21, 11));
 
   assert_state_equal(mp.get_state(), {false, false}, {boost::none, boost::none},
@@ -199,10 +197,9 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
 
   auto vertex_a =
       mp.add_vertex(data::type("A"), data::file_location("c.hpp", 30, 35));
-  auto edge_root_a =
-      mp.add_edge(mp.get_root_vertex(), vertex_a,
-                  data::instantiation_kind::template_instantiation,
-                  data::file_location("foobar.cpp", 21, 11), 10.0);
+  auto edge_root_a = mp.add_edge(
+      mp.get_root_vertex(), vertex_a, data::event_kind::template_instantiation,
+      data::file_location("foobar.cpp", 21, 11), 10.0);
 
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
@@ -215,8 +212,8 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
             data::file_location("c.hpp", 30, 35));
 
   ASSERT_EQ(mp.get_edge_property(edge_root_a).kind,
-            data::instantiation_kind::template_instantiation);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a).point_of_instantiation,
+            data::event_kind::template_instantiation);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a).point_of_event,
             data::file_location("foobar.cpp", 21, 11));
 
   assert_state_equal(mp.get_state(), {false, false}, {boost::none, boost::none},
@@ -247,13 +244,12 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
 
   auto vertex_a =
       mp.add_vertex(data::type("A"), data::file_location("d.hpp", 10, 11));
-  auto edge_root_a_ti =
-      mp.add_edge(mp.get_root_vertex(), vertex_a,
-                  data::instantiation_kind::template_instantiation,
-                  data::file_location("xx.cpp", 1, 2), 10.0);
-  auto edge_root_a_me = mp.add_edge(mp.get_root_vertex(), vertex_a,
-                                    data::instantiation_kind::memoization,
-                                    data::file_location("yy.cpp", 1, 2), 10.0);
+  auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
+                                    data::event_kind::template_instantiation,
+                                    data::file_location("xx.cpp", 1, 2), 10.0);
+  auto edge_root_a_me =
+      mp.add_edge(mp.get_root_vertex(), vertex_a, data::event_kind::memoization,
+                  data::file_location("yy.cpp", 1, 2), 10.0);
 
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
@@ -266,12 +262,12 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
             data::file_location("d.hpp", 10, 11));
 
   ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).kind,
-            data::instantiation_kind::template_instantiation);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).point_of_instantiation,
+            data::event_kind::template_instantiation);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a_ti).point_of_event,
             data::file_location("xx.cpp", 1, 2));
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).kind,
-            data::instantiation_kind::memoization);
-  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).point_of_instantiation,
+  ASSERT_EQ(
+      mp.get_edge_property(edge_root_a_me).kind, data::event_kind::memoization);
+  ASSERT_EQ(mp.get_edge_property(edge_root_a_me).point_of_event,
             data::file_location("yy.cpp", 1, 2));
 
   assert_state_equal(mp.get_state(), {false, false}, {boost::none, boost::none},
@@ -335,13 +331,12 @@ TEST(metaprogram, step_sorting_in_profile_mode)
   auto vertex_b =
       mp.add_vertex(data::type("B"), data::file_location("b.hpp", 1, 2));
 
-  auto edge_root_a_ti =
-      mp.add_edge(mp.get_root_vertex(), vertex_a,
-                  data::instantiation_kind::template_instantiation,
-                  data::file_location("xx.cpp", 1, 2), 0.0);
-  auto edge_root_b_ti = mp.add_edge(mp.get_root_vertex(), vertex_b,
-                                    data::instantiation_kind::memoization,
-                                    data::file_location("yy.cpp", 1, 2), 10.0);
+  auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
+                                    data::event_kind::template_instantiation,
+                                    data::file_location("xx.cpp", 1, 2), 0.0);
+  auto edge_root_b_ti =
+      mp.add_edge(mp.get_root_vertex(), vertex_b, data::event_kind::memoization,
+                  data::file_location("yy.cpp", 1, 2), 10.0);
 
   mp.get_edge_property(edge_root_a_ti).time_taken = 10.0;
   mp.get_edge_property(edge_root_b_ti).time_taken = 30.0;
@@ -369,7 +364,7 @@ TEST(metaprogram, step_sorting_in_profile_mode)
 
     ASSERT_TRUE(boost::get<data::type>(&frame.node()));
     ASSERT_EQ("B", boost::get<data::type>(frame.node()).name());
-    ASSERT_EQ("yy.cpp", frame.point_of_instantiation().name);
+    ASSERT_EQ("yy.cpp", frame.point_of_event().name);
     ASSERT_EQ(30.0, frame.time_taken());
     ASSERT_EQ(0.75, frame.time_taken_ratio());
   }
@@ -386,7 +381,7 @@ TEST(metaprogram, step_sorting_in_profile_mode)
 
     ASSERT_TRUE(boost::get<data::type>(&frame.node()));
     ASSERT_EQ("A", boost::get<data::type>(frame.node()).name());
-    ASSERT_EQ("xx.cpp", frame.point_of_instantiation().name);
+    ASSERT_EQ("xx.cpp", frame.point_of_event().name);
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());
   }

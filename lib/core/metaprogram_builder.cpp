@@ -32,9 +32,9 @@ namespace metashell
   }
 
   void metaprogram_builder::handle_template_begin(
-      data::instantiation_kind kind,
+      data::event_kind kind,
       const data::type& type,
-      const data::file_location& point_of_instantiation,
+      const data::file_location& point_of_event,
       const data::file_location& source_location,
       double timestamp)
   {
@@ -43,8 +43,8 @@ namespace metashell
                                        mp.get_root_vertex() :
                                        mp.get_target(edge_stack.top());
 
-    auto edge = mp.add_edge(
-        top_vertex, vertex, kind, point_of_instantiation, timestamp);
+    auto edge =
+        mp.add_edge(top_vertex, vertex, kind, point_of_event, timestamp);
     edge_stack.push(edge);
   }
 

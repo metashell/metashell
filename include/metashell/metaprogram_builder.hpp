@@ -33,12 +33,11 @@ namespace metashell
                         const data::file_location& root_source_location,
                         const data::type_or_error& evaluation_result);
 
-    void
-    handle_template_begin(data::instantiation_kind kind,
-                          const data::type& type,
-                          const data::file_location& point_of_instantiation,
-                          const data::file_location& source_location,
-                          double timestamp);
+    void handle_template_begin(data::event_kind kind,
+                               const data::type& type,
+                               const data::file_location& point_of_event,
+                               const data::file_location& source_location,
+                               double timestamp);
 
     void handle_template_end(double timestamp);
 

@@ -20,6 +20,11 @@
       executable is behind a symlink on macOS and OpenBSD systems. This also
       broke the Homebrew version of metashell.
 
+* Changes to existing behaviour
+    * **Breaking change** The `point_of_instantiation` fields of the objects of
+      the JSON interface have been renamed to `point_of_event`. (The purpose is
+      to share the interface between template and macro debugging frames).
+
 ## Version 3.0.0
 
 * New features
