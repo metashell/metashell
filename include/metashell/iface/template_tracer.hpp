@@ -17,7 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/result.hpp>
+#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -34,11 +36,13 @@ namespace metashell
     public:
       virtual ~template_tracer() {}
 
-      virtual data::result
-      eval(const environment& env_,
-           const boost::optional<std::string>& tmp_exp_,
+      virtual data::metaprogram
+      eval(iface::environment& env_,
+           const boost::filesystem::path& temp_dir_,
+           const boost::optional<std::string>& expression_,
+           data::metaprogram::mode_t mode_,
            bool use_precompiled_headers_,
-           const boost::filesystem::path& templight_dump_path_) = 0;
+           iface::displayer& displayer_) = 0;
 
       static std::string name_of_feature() { return "template_tracer"; }
     };

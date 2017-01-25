@@ -19,12 +19,11 @@
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/is_template_type.hpp>
 #include <metashell/mdb_shell.hpp>
-#include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/null_history.hpp>
+#include <metashell/some_feature_not_supported.hpp>
 
 #include <cmath>
-#include <fstream>
 #include <sstream>
 #include <stdexcept>
 
@@ -924,74 +923,23 @@ namespace metashell
       data::metaprogram::mode_t mode,
       iface::displayer& displayer_)
   {
-    const boost::filesystem::path output_path = _mdb_temp_dir / "templight.pb";
-
-    data::type_or_error evaluation_result =
-        run_metaprogram(expression, output_path, displayer_);
-
-    // Opening in binary mode, because some platforms interpret some characters
-    // specially in text mode, which caused parsing to fail.
-    std::ifstream protobuf_stream(output_path.string() + ".trace.pbf",
-                                  std::ios_base::in | std::ios_base::binary);
-
-    if (!protobuf_stream)
+    try
     {
-      if (evaluation_result.is_error())
-      {
-        displayer_.show_error(evaluation_result.get_error());
-      }
-      else
-      {
-        // Shouldn't happen
-        displayer_.show_error("Unexpected type type_or_error result");
-      }
+      mp = _engine.template_tracer().eval(env, _mdb_temp_dir, expression, mode,
+                                          conf.use_precompiled_headers,
+                                          displayer_);
+    }
+    catch (const some_feature_not_supported&)
+    {
+      throw;
+    }
+    catch (const std::exception& error)
+    {
+      displayer_.show_error(error.what());
       mp = boost::none;
       return false;
     }
-
-    mp = create_metaprogram_from_protobuf_stream(
-        protobuf_stream, mode, expression ? *expression : "<environment>",
-        data::file_location{}, // TODO something sensible here?
-        evaluation_result);
-
-    assert(mp);
-    if (mp->is_empty() && evaluation_result.is_error())
-    {
-      // Most errors will cause templight to generate an empty trace
-      // We're only intrested in non-empty traces
-      displayer_.show_error(evaluation_result.get_error());
-      mp = boost::none;
-      return false;
-    }
-
     return true;
-  }
-
-  data::type_or_error
-  mdb_shell::run_metaprogram(const boost::optional<std::string>& expression,
-                             const boost::filesystem::path& output_path_,
-                             iface::displayer& displayer_)
-  {
-    const data::result res = _engine.template_tracer().eval(
-        env, expression, conf.use_precompiled_headers, output_path_);
-
-    if (!res.info.empty())
-    {
-      displayer_.show_raw_text(res.info);
-    }
-
-    if (!res.successful)
-    {
-      return data::type_or_error::make_error(res.error);
-    }
-    else if (expression)
-    {
-      return data::type_or_error::make_type(data::type(res.output));
-    }
-    else
-    {
-      return data::type_or_error::make_none();
-    }
   }
 
   boost::optional<int>

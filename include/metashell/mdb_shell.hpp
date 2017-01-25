@@ -91,10 +91,6 @@ namespace metashell
         const boost::optional<std::string>& expression,
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
-    data::type_or_error
-    run_metaprogram(const boost::optional<std::string>& expression,
-                    const boost::filesystem::path& output_path_,
-                    iface::displayer& displayer_);
 
     bool is_wrap_type(const data::type& type);
     data::type trim_wrap_type(const data::type& type);

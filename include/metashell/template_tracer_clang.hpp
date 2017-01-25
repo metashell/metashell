@@ -32,11 +32,13 @@ namespace metashell
                           const boost::filesystem::path& env_filename_,
                           clang_binary clang_binary_);
 
-    virtual data::result
-    eval(const iface::environment& env_,
-         const boost::optional<std::string>& tmp_exp_,
+    virtual data::metaprogram
+    eval(iface::environment& env_,
+         const boost::filesystem::path& temp_dir_,
+         const boost::optional<std::string>& expression_,
+         data::metaprogram::mode_t mode_,
          bool use_precompiled_headers_,
-         const boost::filesystem::path& templight_dump_path_) override;
+         iface::displayer& displayer_) override;
 
   private:
     clang_binary _clang_binary;

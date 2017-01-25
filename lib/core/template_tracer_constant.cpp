@@ -18,17 +18,14 @@
 
 namespace metashell
 {
-  template_tracer_constant::template_tracer_constant(data::result result_)
-    : _result(std::move(result_))
-  {
-  }
-
-  data::result
-  template_tracer_constant::eval(const iface::environment&,
+  data::metaprogram
+  template_tracer_constant::eval(iface::environment&,
+                                 const boost::filesystem::path&,
                                  const boost::optional<std::string>&,
+                                 data::metaprogram::mode_t,
                                  bool,
-                                 const boost::filesystem::path&)
+                                 iface::displayer&)
   {
-    return _result;
+    return {data::metaprogram::mode_t::normal, "", {}, {}};
   }
 }

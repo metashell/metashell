@@ -1,8 +1,5 @@
-#ifndef METASHELL_TEMPLATE_TRACER_CONSTANT_HPP
-#define METASHELL_TEMPLATE_TRACER_CONSTANT_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,20 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/template_tracer.hpp>
+#include <metashell/some_feature_not_supported.hpp>
 
 namespace metashell
 {
-  class template_tracer_constant : public iface::template_tracer
+  some_feature_not_supported::some_feature_not_supported(
+      const std::string& engine_name_, const std::string& feature_name_)
+    : exception("Feature " + feature_name_ + " is not supported by the " +
+                engine_name_ + " engine.")
   {
-  public:
-    virtual data::metaprogram eval(iface::environment&,
-                                   const boost::filesystem::path&,
-                                   const boost::optional<std::string>&,
-                                   data::metaprogram::mode_t,
-                                   bool,
-                                   iface::displayer&) override;
-  };
+  }
 }
-
-#endif
