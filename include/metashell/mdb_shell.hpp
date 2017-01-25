@@ -25,9 +25,9 @@
 #include <metashell/breakpoint.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/metaprogram.hpp>
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/metaprogram.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/command_processor.hpp>
@@ -89,7 +89,7 @@ namespace metashell
 
     bool run_metaprogram_with_templight(
         const boost::optional<std::string>& expression,
-        metaprogram::mode_t mode,
+        data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
     data::type_or_error
     run_metaprogram(const boost::optional<std::string>& expression,
@@ -113,10 +113,10 @@ namespace metashell
     static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
     // may return nullptr
-    const breakpoint* continue_metaprogram(direction_t direction);
+    const breakpoint* continue_metaprogram(data::direction_t direction);
     unsigned finish_metaprogram();
 
-    void next_metaprogram(direction_t direction, int n);
+    void next_metaprogram(data::direction_t direction, int n);
 
     void display_frame(const data::frame& frame,
                        iface::displayer& displayer_) const;
@@ -133,7 +133,7 @@ namespace metashell
     data::config conf;
     iface::environment& env;
 
-    boost::optional<metaprogram> mp;
+    boost::optional<data::metaprogram> mp;
 
     int next_breakpoint_id = 1;
     breakpoints_t breakpoints;

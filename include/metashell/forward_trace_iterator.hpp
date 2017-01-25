@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/call_graph_node.hpp>
-#include <metashell/metaprogram.hpp>
+#include <metashell/data/metaprogram.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
@@ -39,7 +39,7 @@ namespace metashell
   public:
     forward_trace_iterator();
 
-    forward_trace_iterator(const metaprogram& mp_,
+    forward_trace_iterator(const data::metaprogram& mp_,
                            const boost::optional<int>& max_depth_);
 
     forward_trace_iterator& operator++();
@@ -49,7 +49,7 @@ namespace metashell
     const data::call_graph_node& operator*() const;
 
   private:
-    typedef std::tuple<metaprogram::optional_edge_descriptor,
+    typedef std::tuple<data::metaprogram::optional_edge_descriptor,
                        int // Depth
                        >
         stack_element;
@@ -61,10 +61,11 @@ namespace metashell
 
     // The usual stack for DFS
     std::stack<stack_element> _to_visit;
-    const metaprogram* _mp = nullptr;
-    metaprogram::discovered_t _discovered;
+    const data::metaprogram* _mp = nullptr;
+    data::metaprogram::discovered_t _discovered;
 
-    void visit(const metaprogram::optional_edge_descriptor& edge_, int depth_);
+    void visit(const data::metaprogram::optional_edge_descriptor& edge_,
+               int depth_);
   };
 }
 

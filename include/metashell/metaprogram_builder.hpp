@@ -20,7 +20,7 @@
 #include <stack>
 #include <string>
 
-#include <metashell/metaprogram.hpp>
+#include <metashell/data/metaprogram.hpp>
 
 namespace metashell
 {
@@ -28,7 +28,7 @@ namespace metashell
   class metaprogram_builder
   {
   public:
-    metaprogram_builder(metaprogram::mode_t mode,
+    metaprogram_builder(data::metaprogram::mode_t mode,
                         const std::string& root_name,
                         const data::file_location& root_source_location,
                         const data::type_or_error& evaluation_result);
@@ -41,11 +41,11 @@ namespace metashell
 
     void handle_template_end(double timestamp);
 
-    const metaprogram& get_metaprogram() const;
+    const data::metaprogram& get_metaprogram() const;
 
   private:
-    typedef metaprogram::vertex_descriptor vertex_descriptor;
-    typedef metaprogram::edge_descriptor edge_descriptor;
+    typedef data::metaprogram::vertex_descriptor vertex_descriptor;
+    typedef data::metaprogram::edge_descriptor edge_descriptor;
 
     typedef std::tuple<data::type, data::file_location> element_key_t;
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
@@ -53,7 +53,7 @@ namespace metashell
     vertex_descriptor add_vertex(const data::type& type,
                                  const data::file_location& source_location);
 
-    metaprogram mp;
+    data::metaprogram mp;
 
     std::stack<edge_descriptor> edge_stack;
 

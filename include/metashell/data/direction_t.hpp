@@ -1,8 +1,8 @@
-#ifndef METASHELL_MDB_TEST_SHELL_HPP
-#define METASHELL_MDB_TEST_SHELL_HPP
+#ifndef METASHELL_DATA_DIRECTION_T_HPP
+#define METASHELL_DATA_DIRECTION_T_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,22 +17,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <memory>
-#include <vector>
-
-#include <metashell/mdb_shell.hpp>
-#include <metashell/shell.hpp>
-
-class mdb_test_shell : public metashell::mdb_shell
+namespace metashell
 {
-public:
-  mdb_test_shell(const std::string& line = "");
-  mdb_test_shell(metashell::shell& shell, const std::string& line = "");
-
-  bool has_metaprogram() const;
-  const metashell::data::metaprogram& get_metaprogram() const;
-
-  const metashell::breakpoints_t& get_breakpoints() const;
-};
+  namespace data
+  {
+    enum class direction_t
+    {
+      forward,
+      backwards
+    };
+  }
+}
 
 #endif

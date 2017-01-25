@@ -23,7 +23,7 @@ using namespace metashell;
 forward_trace_iterator::forward_trace_iterator() : _finished(true) {}
 
 forward_trace_iterator::forward_trace_iterator(
-    const metaprogram& mp_, const boost::optional<int>& max_depth_)
+    const data::metaprogram& mp_, const boost::optional<int>& max_depth_)
   : _finished(false),
     _max_depth(max_depth_),
     _mp(&mp_),
@@ -33,9 +33,9 @@ forward_trace_iterator::forward_trace_iterator(
 }
 
 void forward_trace_iterator::visit(
-    const metaprogram::optional_edge_descriptor& edge_, int depth_)
+    const data::metaprogram::optional_edge_descriptor& edge_, int depth_)
 {
-  metaprogram::vertex_descriptor vertex =
+  data::metaprogram::vertex_descriptor vertex =
       edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
 
   _current = data::call_graph_node(
@@ -46,7 +46,7 @@ void forward_trace_iterator::visit(
 
   if (!_discovered[vertex])
   {
-    if (_mp->get_mode() != metaprogram::mode_t::full)
+    if (_mp->get_mode() != data::metaprogram::mode_t::full)
     {
       _discovered[vertex] = true;
     }
@@ -54,7 +54,7 @@ void forward_trace_iterator::visit(
     if (!_max_depth || *_max_depth > depth_)
     {
       auto edges = _mp->get_filtered_out_edges(vertex);
-      for (const metaprogram::edge_descriptor& out_edge : edges)
+      for (const data::metaprogram::edge_descriptor& out_edge : edges)
       {
         _to_visit.push(std::make_tuple(out_edge, depth_ + 1));
       }
@@ -70,7 +70,7 @@ forward_trace_iterator& forward_trace_iterator::operator++()
   }
   else
   {
-    metaprogram::optional_edge_descriptor edge;
+    data::metaprogram::optional_edge_descriptor edge;
     int depth;
     std::tie(edge, depth) = _to_visit.top();
     _to_visit.pop();

@@ -19,6 +19,7 @@
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/is_template_type.hpp>
 #include <metashell/mdb_shell.hpp>
+#include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/null_history.hpp>
 
@@ -46,7 +47,7 @@ namespace
 
   typedef std::tuple<metashell::data::file_location,
                      metashell::data::event_kind,
-                     metashell::metaprogram::vertex_descriptor>
+                     metashell::data::metaprogram::vertex_descriptor>
       set_element_t;
 
   bool less_than(const set_element_t& lhs, const set_element_t& rhs)
@@ -326,8 +327,9 @@ namespace metashell
       return;
     }
 
-    direction_t direction =
-        *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
+    data::direction_t direction = *continue_count >= 0 ?
+                                      data::direction_t::forward :
+                                      data::direction_t::backwards;
 
     const breakpoint* breakpoint_ptr = nullptr;
     for (int i = 0;
@@ -399,8 +401,9 @@ namespace metashell
       return;
     }
 
-    direction_t direction =
-        step_count >= 0 ? direction_t::forward : direction_t::backwards;
+    data::direction_t direction = step_count >= 0 ?
+                                      data::direction_t::forward :
+                                      data::direction_t::backwards;
 
     int iteration_count = std::abs(step_count);
 
@@ -453,9 +456,9 @@ namespace metashell
       return;
     }
 
-    next_metaprogram(
-        next_count >= 0 ? direction_t::forward : direction_t::backwards,
-        std::abs(*next_count));
+    next_metaprogram(next_count >= 0 ? data::direction_t::forward :
+                                       data::direction_t::backwards,
+                     std::abs(*next_count));
 
     display_movement_info(next_count != 0, displayer_);
   }
@@ -478,7 +481,7 @@ namespace metashell
 
   void mdb_shell::filter_disable_everything()
   {
-    for (metaprogram::edge_descriptor edge : mp->get_edges())
+    for (data::metaprogram::edge_descriptor edge : mp->get_edges())
     {
       mp->get_edge_property(edge).enabled = false;
     }
@@ -486,10 +489,10 @@ namespace metashell
 
   void mdb_shell::filter_enable_reachable(bool for_current_line)
   {
-    using vertex_descriptor = metaprogram::vertex_descriptor;
-    using edge_descriptor = metaprogram::edge_descriptor;
-    using edge_property = metaprogram::edge_property;
-    using discovered_t = metaprogram::discovered_t;
+    using vertex_descriptor = data::metaprogram::vertex_descriptor;
+    using edge_descriptor = data::metaprogram::edge_descriptor;
+    using edge_property = data::metaprogram::edge_property;
+    using discovered_t = data::metaprogram::discovered_t;
 
     std::string env_buffer = env.get();
     int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
@@ -551,7 +554,7 @@ namespace metashell
 
   void mdb_shell::filter_unwrap_vertices()
   {
-    for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
+    for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
     {
       data::metaprogram_node& node = mp->get_vertex_property(vertex).node;
       if (data::type* type = boost::get<data::type>(&node))
@@ -561,7 +564,7 @@ namespace metashell
           *type = trim_wrap_type(*type);
           if (!is_template_type(*type))
           {
-            for (metaprogram::edge_descriptor in_edge :
+            for (data::metaprogram::edge_descriptor in_edge :
                  mp->get_in_edges(vertex))
             {
               mp->get_edge_property(in_edge).kind =
@@ -576,11 +579,11 @@ namespace metashell
   void mdb_shell::filter_similar_edges()
   {
 
-    using vertex_descriptor = metaprogram::vertex_descriptor;
-    using edge_descriptor = metaprogram::edge_descriptor;
-    using edge_property = metaprogram::edge_property;
+    using vertex_descriptor = data::metaprogram::vertex_descriptor;
+    using edge_descriptor = data::metaprogram::edge_descriptor;
+    using edge_property = data::metaprogram::edge_property;
 
-    auto comparator = mp->get_mode() == metaprogram::mode_t::full ?
+    auto comparator = mp->get_mode() == data::metaprogram::mode_t::full ?
                           less_than_ignore_event_kind :
                           less_than;
 
@@ -698,16 +701,16 @@ namespace metashell
     next_breakpoint_id = 1;
     breakpoints.clear();
 
-    metaprogram::mode_t mode = [&] {
+    data::metaprogram::mode_t mode = [&] {
       if (has_full)
       {
-        return metaprogram::mode_t::full;
+        return data::metaprogram::mode_t::full;
       }
       if (has_profile)
       {
-        return metaprogram::mode_t::profile;
+        return data::metaprogram::mode_t::profile;
       }
-      return metaprogram::mode_t::normal;
+      return data::metaprogram::mode_t::normal;
     }();
 
     last_evaluated_expression = expression;
@@ -810,7 +813,7 @@ namespace metashell
       ++next_breakpoint_id;
 
       unsigned match_count = 0;
-      for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
+      for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
       {
         if (bp.match(mp->get_vertex_property(vertex).node))
         {
@@ -918,7 +921,7 @@ namespace metashell
 
   bool mdb_shell::run_metaprogram_with_templight(
       const boost::optional<std::string>& expression,
-      metaprogram::mode_t mode,
+      data::metaprogram::mode_t mode,
       iface::displayer& displayer_)
   {
     const boost::filesystem::path output_path = _mdb_temp_dir / "templight.pb";
@@ -946,7 +949,7 @@ namespace metashell
       return false;
     }
 
-    mp = metaprogram::create_from_protobuf_stream(
+    mp = create_metaprogram_from_protobuf_stream(
         protobuf_stream, mode, expression ? *expression : "<environment>",
         data::file_location{}, // TODO something sensible here?
         evaluation_result);
@@ -1042,7 +1045,7 @@ namespace metashell
     return value;
   }
 
-  const breakpoint* mdb_shell::continue_metaprogram(direction_t direction)
+  const breakpoint* mdb_shell::continue_metaprogram(data::direction_t direction)
   {
     assert(!mp->is_at_endpoint(direction));
 
@@ -1073,7 +1076,7 @@ namespace metashell
     return steps;
   }
 
-  void mdb_shell::next_metaprogram(direction_t direction, int n)
+  void mdb_shell::next_metaprogram(data::direction_t direction, int n)
   {
     assert(n >= 0);
     for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)

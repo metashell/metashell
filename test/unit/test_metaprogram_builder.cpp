@@ -39,7 +39,7 @@ namespace
 
 TEST(metaprogram_builder, normal_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
@@ -50,9 +50,9 @@ TEST(metaprogram_builder, normal_mode)
 
   mb.handle_template_end(110.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  data::metaprogram mp = mb.get_metaprogram();
 
-  ASSERT_EQ(metaprogram::mode_t::normal, mp.get_mode());
+  ASSERT_EQ(data::metaprogram::mode_t::normal, mp.get_mode());
   ASSERT_EQ(2u, mp.get_num_vertices());
   ASSERT_EQ(1u, mp.get_num_edges());
 
@@ -75,7 +75,7 @@ TEST(metaprogram_builder, normal_mode)
 
 TEST(metaprogram_builder, full_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::full, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::full, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
@@ -99,9 +99,9 @@ TEST(metaprogram_builder, full_mode)
 
   mb.handle_template_end(150.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  data::metaprogram mp = mb.get_metaprogram();
 
-  ASSERT_EQ(metaprogram::mode_t::full, mp.get_mode());
+  ASSERT_EQ(data::metaprogram::mode_t::full, mp.get_mode());
   ASSERT_EQ(3u, mp.get_num_vertices());
   ASSERT_EQ(3u, mp.get_num_edges());
 
@@ -158,7 +158,7 @@ TEST(metaprogram_builder, full_mode)
 
 TEST(metaprogram_builder, profile_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::profile, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::profile, "root_name",
                          data::file_location("stdin.hpp", 10, 20),
                          data::type("eval_result"));
 
@@ -176,10 +176,10 @@ TEST(metaprogram_builder, profile_mode)
 
   mb.handle_template_end(140.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  data::metaprogram mp = mb.get_metaprogram();
   mp.init_full_time_taken();
 
-  ASSERT_EQ(metaprogram::mode_t::profile, mp.get_mode());
+  ASSERT_EQ(data::metaprogram::mode_t::profile, mp.get_mode());
   ASSERT_EQ(3u, mp.get_num_vertices());
   ASSERT_EQ(2u, mp.get_num_edges());
 
@@ -220,7 +220,7 @@ TEST(metaprogram_builder, profile_mode)
 
 TEST(metaprogram_builder, too_much_end_events_1)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 40, 50),
                          data::type("eval_result"));
 
@@ -230,7 +230,7 @@ TEST(metaprogram_builder, too_much_end_events_1)
 
 TEST(metaprogram_builder, too_much_end_events_2)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 30, 45),
                          data::type("eval_result"));
 
@@ -247,7 +247,7 @@ TEST(metaprogram_builder, too_much_end_events_2)
 
 TEST(metaprogram_builder, too_few_end_events)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
+  metaprogram_builder mb(data::metaprogram::mode_t::normal, "root_name",
                          data::file_location("stdin.hpp", 30, 31),
                          data::type("eval_result"));
 
