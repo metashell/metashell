@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/template_tracer_constant.hpp>
+#include <metashell/metaprogram_tracer_constant.hpp>
 
 namespace metashell
 {
   data::metaprogram
-  template_tracer_constant::eval(iface::environment&,
-                                 const boost::filesystem::path&,
-                                 const boost::optional<std::string>&,
-                                 data::metaprogram::mode_t,
-                                 bool,
-                                 iface::displayer&)
+  metaprogram_tracer_constant::eval(iface::environment&,
+                                    const boost::filesystem::path&,
+                                    const boost::optional<std::string>&,
+                                    data::metaprogram::mode_t,
+                                    bool,
+                                    iface::displayer&)
   {
     return {data::metaprogram::mode_t::normal, "", {}, {}};
   }

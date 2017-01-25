@@ -1,5 +1,5 @@
-#ifndef METASHELL_TEMPLATE_TRACER_CLANG_HPP
-#define METASHELL_TEMPLATE_TRACER_CLANG_HPP
+#ifndef METASHELL_IFACE_METAPROGRAM_TRACER_HPP
+#define METASHELL_IFACE_METAPROGRAM_TRACER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,33 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/template_tracer.hpp>
-
-#include <metashell/clang_binary.hpp>
+#include <metashell/data/metaprogram.hpp>
+#include <metashell/data/result.hpp>
+#include <metashell/iface/displayer.hpp>
+#include <metashell/iface/environment.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
+
+#include <string>
 
 namespace metashell
 {
-  class template_tracer_clang : public iface::template_tracer
+  namespace iface
   {
-  public:
-    template_tracer_clang(const boost::filesystem::path& internal_dir_,
-                          const boost::filesystem::path& env_filename_,
-                          clang_binary clang_binary_);
+    class metaprogram_tracer
+    {
+    public:
+      virtual ~metaprogram_tracer() {}
 
-    virtual data::metaprogram
-    eval(iface::environment& env_,
-         const boost::filesystem::path& temp_dir_,
-         const boost::optional<std::string>& expression_,
-         data::metaprogram::mode_t mode_,
-         bool use_precompiled_headers_,
-         iface::displayer& displayer_) override;
+      virtual data::metaprogram
+      eval(iface::environment& env_,
+           const boost::filesystem::path& temp_dir_,
+           const boost::optional<std::string>& expression_,
+           data::metaprogram::mode_t mode_,
+           bool use_precompiled_headers_,
+           iface::displayer& displayer_) = 0;
 
-  private:
-    clang_binary _clang_binary;
-    boost::filesystem::path _env_path;
-  };
+      static std::string name_of_feature() { return "metaprogram_tracer"; }
+    };
+  }
 }
 
 #endif

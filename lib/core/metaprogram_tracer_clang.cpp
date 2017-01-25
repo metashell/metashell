@@ -16,7 +16,7 @@
 
 #include <metashell/exception.hpp>
 #include <metashell/metaprogram_parse_trace.hpp>
-#include <metashell/template_tracer_clang.hpp>
+#include <metashell/metaprogram_tracer_clang.hpp>
 
 #include <fstream>
 
@@ -62,7 +62,7 @@ namespace
 
 namespace metashell
 {
-  template_tracer_clang::template_tracer_clang(
+  metaprogram_tracer_clang::metaprogram_tracer_clang(
       const boost::filesystem::path& internal_dir_,
       const boost::filesystem::path& env_filename_,
       clang_binary clang_binary_)
@@ -70,13 +70,13 @@ namespace metashell
   {
   }
 
-  data::metaprogram
-  template_tracer_clang::eval(iface::environment& env_,
-                              const boost::filesystem::path& temp_dir_,
-                              const boost::optional<std::string>& expression_,
-                              data::metaprogram::mode_t mode_,
-                              bool use_precompiled_headers_,
-                              iface::displayer& displayer_)
+  data::metaprogram metaprogram_tracer_clang::eval(
+      iface::environment& env_,
+      const boost::filesystem::path& temp_dir_,
+      const boost::optional<std::string>& expression_,
+      data::metaprogram::mode_t mode_,
+      bool use_precompiled_headers_,
+      iface::displayer& displayer_)
   {
     const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
 

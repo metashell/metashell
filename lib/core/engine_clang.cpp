@@ -21,8 +21,8 @@
 #include <metashell/engine.hpp>
 #include <metashell/header_discoverer_clang.hpp>
 #include <metashell/macro_discovery_clang.hpp>
+#include <metashell/metaprogram_tracer_clang.hpp>
 #include <metashell/preprocessor_shell_clang.hpp>
-#include <metashell/template_tracer_clang.hpp>
 #include <metashell/type_shell_clang.hpp>
 
 #include <metashell/clang_binary.hpp>
@@ -55,7 +55,7 @@ namespace
         code_completer_clang(
             internal_dir_, temp_dir_, env_filename_, cbin, logger_),
         header_discoverer_clang(cbin),
-        template_tracer_clang(internal_dir_, env_filename_, cbin),
+        metaprogram_tracer_clang(internal_dir_, env_filename_, cbin),
         cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
         macro_discovery_clang(cbin));
   }

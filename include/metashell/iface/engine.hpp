@@ -21,8 +21,8 @@
 #include <metashell/iface/cpp_validator.hpp>
 #include <metashell/iface/header_discoverer.hpp>
 #include <metashell/iface/macro_discovery.hpp>
+#include <metashell/iface/metaprogram_tracer.hpp>
 #include <metashell/iface/preprocessor_shell.hpp>
-#include <metashell/iface/template_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
 
 namespace metashell
@@ -46,8 +46,8 @@ namespace metashell
       virtual iface::header_discoverer& header_discoverer() = 0;
       virtual const iface::header_discoverer& header_discoverer() const = 0;
 
-      virtual iface::template_tracer& template_tracer() = 0;
-      virtual const iface::template_tracer& template_tracer() const = 0;
+      virtual iface::metaprogram_tracer& metaprogram_tracer() = 0;
+      virtual const iface::metaprogram_tracer& metaprogram_tracer() const = 0;
 
       virtual iface::cpp_validator& cpp_validator() = 0;
       virtual const iface::cpp_validator& cpp_validator() const = 0;

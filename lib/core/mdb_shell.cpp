@@ -925,9 +925,9 @@ namespace metashell
   {
     try
     {
-      mp = _engine.template_tracer().eval(env, _mdb_temp_dir, expression, mode,
-                                          conf.use_precompiled_headers,
-                                          displayer_);
+      mp = _engine.metaprogram_tracer().eval(env, _mdb_temp_dir, expression,
+                                             mode, conf.use_precompiled_headers,
+                                             displayer_);
     }
     catch (const some_feature_not_supported&)
     {

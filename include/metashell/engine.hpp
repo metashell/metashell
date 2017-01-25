@@ -32,7 +32,7 @@ namespace metashell
             class PreprocessorShell,
             class CodeCompleter,
             class HeaderDiscoverer,
-            class TemplateTracer,
+            class MetaprogramTracer,
             class CppValidator,
             class MacroDiscovery>
   class engine : public iface::engine
@@ -53,10 +53,10 @@ namespace metashell
         !supported<HeaderDiscoverer>::value ||
             std::is_base_of<iface::header_discoverer, HeaderDiscoverer>::value,
         "Header discoverer is needed");
-    static_assert(
-        !supported<TemplateTracer>::value ||
-            std::is_base_of<iface::template_tracer, TemplateTracer>::value,
-        "Template tracer is needed");
+    static_assert(!supported<MetaprogramTracer>::value ||
+                      std::is_base_of<iface::metaprogram_tracer,
+                                      MetaprogramTracer>::value,
+                  "Metaprogram tracer is needed");
     static_assert(
         !supported<CppValidator>::value ||
             std::is_base_of<iface::cpp_validator, CppValidator>::value,
@@ -71,7 +71,7 @@ namespace metashell
            PreprocessorShell preprocessor_shell_,
            CodeCompleter code_completer_,
            HeaderDiscoverer header_discoverer_,
-           TemplateTracer template_tracer_,
+           MetaprogramTracer metaprogram_tracer_,
            CppValidator cpp_validator_,
            MacroDiscovery macro_discovery_)
       : _name(std::move(name_)),
@@ -79,7 +79,7 @@ namespace metashell
         _preprocessor_shell(std::move(preprocessor_shell_)),
         _code_completer(std::move(code_completer_)),
         _header_discoverer(std::move(header_discoverer_)),
-        _template_tracer(std::move(template_tracer_)),
+        _metaprogram_tracer(std::move(metaprogram_tracer_)),
         _cpp_validator(std::move(cpp_validator_)),
         _macro_discovery(std::move(macro_discovery_))
     {
@@ -127,14 +127,16 @@ namespace metashell
       return if_supported<iface::header_discoverer>(_header_discoverer, _name);
     }
 
-    virtual iface::template_tracer& template_tracer() override
+    virtual iface::metaprogram_tracer& metaprogram_tracer() override
     {
-      return if_supported<iface::template_tracer>(_template_tracer, _name);
+      return if_supported<iface::metaprogram_tracer>(
+          _metaprogram_tracer, _name);
     }
 
-    virtual const iface::template_tracer& template_tracer() const override
+    virtual const iface::metaprogram_tracer& metaprogram_tracer() const override
     {
-      return if_supported<iface::template_tracer>(_template_tracer, _name);
+      return if_supported<iface::metaprogram_tracer>(
+          _metaprogram_tracer, _name);
     }
 
     virtual iface::cpp_validator& cpp_validator() override
@@ -163,7 +165,7 @@ namespace metashell
     PreprocessorShell _preprocessor_shell;
     CodeCompleter _code_completer;
     HeaderDiscoverer _header_discoverer;
-    TemplateTracer _template_tracer;
+    MetaprogramTracer _metaprogram_tracer;
     CppValidator _cpp_validator;
     MacroDiscovery _macro_discovery;
   };
@@ -172,14 +174,14 @@ namespace metashell
             class PreprocessorShell,
             class CodeCompleter,
             class HeaderDiscoverer,
-            class TemplateTracer,
+            class MetaprogramTracer,
             class CppValidator,
             class MacroDiscovery>
   std::unique_ptr<engine<TypeShell,
                          PreprocessorShell,
                          CodeCompleter,
                          HeaderDiscoverer,
-                         TemplateTracer,
+                         MetaprogramTracer,
                          CppValidator,
                          MacroDiscovery>>
   make_engine(std::string name_,
@@ -187,18 +189,18 @@ namespace metashell
               PreprocessorShell&& preprocessor_shell_,
               CodeCompleter&& code_completer_,
               HeaderDiscoverer&& header_discoverer_,
-              TemplateTracer&& template_tracer_,
+              MetaprogramTracer&& metaprogram_tracer_,
               CppValidator&& cpp_validator_,
               MacroDiscovery&& macro_discovery_)
   {
     return metashell::make_unique<
         engine<TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer,
-               TemplateTracer, CppValidator, MacroDiscovery>>(
+               MetaprogramTracer, CppValidator, MacroDiscovery>>(
         std::move(name_), std::forward<TypeShell>(type_shell_),
         std::forward<PreprocessorShell>(preprocessor_shell_),
         std::forward<CodeCompleter>(code_completer_),
         std::forward<HeaderDiscoverer>(header_discoverer_),
-        std::forward<TemplateTracer>(template_tracer_),
+        std::forward<MetaprogramTracer>(metaprogram_tracer_),
         std::forward<CppValidator>(cpp_validator_),
         std::forward<MacroDiscovery>(macro_discovery_));
   }
