@@ -39,7 +39,7 @@ namespace
   void indent(int width_,
               int indent_step_,
               DisplayF f_,
-              const std::string& s_,
+              const data::cpp_code& s_,
               const std::string& input_filename_)
   {
     std::unique_ptr<iface::tokeniser> tokeniser =
@@ -112,7 +112,7 @@ namespace
   class format_visitor : public boost::static_visitor<>
   {
   public:
-    typedef std::function<data::colored_string(const std::string&)>
+    typedef std::function<data::colored_string(const data::cpp_code&)>
         code_formatter;
 
     format_visitor(data::colored_string& out_, code_formatter code_formatter_)
@@ -120,9 +120,10 @@ namespace
     {
     }
 
-    void operator()(const data::type& t_) const
+    void operator()(const data::type& t_) const { _out += _code_formatter(t_); }
+    void operator()(const data::cpp_code& c_) const
     {
-      _out += _code_formatter(t_.name());
+      _out += _code_formatter(c_);
     }
 
   private:
@@ -162,7 +163,7 @@ void console_displayer::show_error(const std::string& msg_)
 
 void console_displayer::show_type(const data::type& type_)
 {
-  show_cpp_code(type_.name());
+  show_cpp_code(type_);
 }
 
 void console_displayer::show_comment(const data::text& msg_)
@@ -187,12 +188,12 @@ void console_displayer::show_comment(const data::text& msg_)
 
   ind.raw(" */");
 
-  show_cpp_code(ind.str());
+  show_cpp_code(data::cpp_code(ind.str()));
 }
 
-void console_displayer::show_cpp_code(const std::string& code_)
+void console_displayer::show_cpp_code(const data::cpp_code& code_)
 {
-  if (code_ != "")
+  if (!code_.empty())
   {
     if (_indent)
     {
@@ -207,10 +208,11 @@ void console_displayer::show_cpp_code(const std::string& code_)
       }
       else
       {
-        indent(_console->width(), 2, std::function<void(const data::token&)>(
-                                         [this](const data::token& t_) {
-                                           this->_console->show(t_.value());
-                                         }),
+        indent(_console->width(), 2,
+               std::function<void(const data::token&)>(
+                   [this](const data::token& t_) {
+                     this->_console->show(t_.value().value());
+                   }),
                code_, "<output>");
       }
     }
@@ -222,7 +224,7 @@ void console_displayer::show_cpp_code(const std::string& code_)
   }
 }
 
-data::colored_string console_displayer::format_code(const std::string& code_)
+data::colored_string console_displayer::format_code(const data::cpp_code& code_)
 {
   if (_syntax_highlight)
   {
@@ -230,7 +232,7 @@ data::colored_string console_displayer::format_code(const std::string& code_)
   }
   else
   {
-    return code_;
+    return code_.value();
   }
 }
 
@@ -256,7 +258,7 @@ console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
   data::colored_string result;
 
   boost::apply_visitor(format_visitor(result,
-                                      [this](const std::string& s_) {
+                                      [this](const data::cpp_code& s_) {
                                         return this->format_code(s_);
                                       }),
                        n_);
@@ -367,7 +369,7 @@ void console_displayer::show_file_section(const data::file_location& location_,
     ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
-    _console->show(format_code(indexed_line.line + "\n"));
+    _console->show(format_code(data::cpp_code(indexed_line.line + "\n")));
   }
 }
 

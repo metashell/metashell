@@ -41,6 +41,11 @@ namespace
       return boost::regex_search(s_, _regex);
     }
 
+    bool match(const metashell::data::cpp_code& code_) const
+    {
+      return match(code_.value());
+    }
+
     bool match(const metashell::data::type& type_) const
     {
       return match(type_.name());

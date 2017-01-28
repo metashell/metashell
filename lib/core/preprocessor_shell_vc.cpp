@@ -23,7 +23,7 @@ namespace metashell
   {
   }
 
-  data::result preprocessor_shell_vc::precompile(const std::string& exp_)
+  data::result preprocessor_shell_vc::precompile(const data::cpp_code& exp_)
   {
     const data::process_output output = run_vc(_vc_binary, {"/E"}, exp_);
 

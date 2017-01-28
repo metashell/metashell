@@ -22,7 +22,7 @@ using namespace metashell::data;
 
 token::token() : _type(token_type::unknown), _value() {}
 
-token::token(std::string value_, token_type type_)
+token::token(cpp_code value_, token_type type_)
   : _type(type_), _value(std::move(value_))
 {
 }
@@ -31,13 +31,13 @@ token_type token::type() const { return _type; }
 
 token_category token::category() const { return category_of_token(_type); }
 
-const std::string& token::value() const { return _value; }
+const cpp_code& token::value() const { return _value; }
 
 std::string metashell::data::string_literal_value(const token& token_)
 {
   assert(token_.type() == token_type::string_literal);
 
-  std::string value = token_.value();
+  std::string value = token_.value().value();
   if (!value.empty() && value[0] == '"')
   {
     value.erase(0, 1);

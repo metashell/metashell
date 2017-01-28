@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
@@ -32,7 +33,7 @@ namespace metashell
     public:
       virtual ~cpp_validator() {}
 
-      virtual data::result validate_code(const std::string& s_,
+      virtual data::result validate_code(const data::cpp_code& s_,
                                          const data::config& config_,
                                          const environment& env_,
                                          bool use_precompiled_headers_) = 0;

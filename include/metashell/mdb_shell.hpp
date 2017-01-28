@@ -88,7 +88,7 @@ namespace metashell
     require_running_or_errored_metaprogram(iface::displayer& displayer_) const;
 
     bool run_metaprogram_with_templight(
-        const boost::optional<std::string>& expression,
+        const boost::optional<data::cpp_code>& expression,
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
 
@@ -139,7 +139,7 @@ namespace metashell
 
     // It is empty if evaluate was called with "-".
     // mp is empty when there were no evaluations at all
-    boost::optional<std::string> last_evaluated_expression;
+    boost::optional<data::cpp_code> last_evaluated_expression;
 
     bool is_stopped = false;
     logger* _logger;

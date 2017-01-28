@@ -27,6 +27,7 @@
 #include <boost/optional.hpp>
 
 #include <metashell/data/backtrace.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/direction_t.hpp>
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
@@ -49,7 +50,7 @@ namespace metashell
 
       // Creates empty metaprogram: single <root> vertex
       metaprogram(mode_t mode,
-                  const std::string& root_name,
+                  const cpp_code& root_name,
                   const file_location& root_source_location,
                   const type_or_error& evaluation_result);
 

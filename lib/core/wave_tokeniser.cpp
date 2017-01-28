@@ -367,14 +367,14 @@ namespace
         boost::wave::cpplexer::lex_token<>>
         token_iterator;
 
-    std::string src;
+    data::cpp_code src;
     std::string input_filename;
     // Wave's operator!= doesn't seem to accept const object as argument
     mutable token_iterator it;
     mutable bool error_flag; // has_further_tokens might set it
     data::token current_tok;
 
-    wave_tokeniser(std::string src_, std::string input_filename_)
+    wave_tokeniser(data::cpp_code src_, std::string input_filename_)
       : src(std::move(src_)),
         input_filename(std::move(input_filename_)),
         it(),
@@ -444,20 +444,20 @@ namespace
 
     void update_current_token()
     {
-      using std::string;
-
       if (has_further_tokens())
       {
         const auto v = it->get_value();
         current_tok =
-            data::token(string(v.begin(), v.end()), type_of_token(*it));
+            data::token(data::cpp_code(std::string(v.begin(), v.end())),
+                        type_of_token(*it));
       }
     }
   };
 }
 
 std::unique_ptr<iface::tokeniser>
-metashell::create_wave_tokeniser(std::string src_, std::string input_filename_)
+metashell::create_wave_tokeniser(data::cpp_code src_,
+                                 std::string input_filename_)
 {
   return metashell::make_unique<wave_tokeniser>(
       std::move(src_), std::move(input_filename_));

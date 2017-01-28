@@ -38,7 +38,7 @@ void in_memory_displayer::show_comment(const data::text& msg_)
   _comments.push_back(msg_);
 }
 
-void in_memory_displayer::show_cpp_code(const std::string& code_)
+void in_memory_displayer::show_cpp_code(const data::cpp_code& code_)
 {
   _cpp_codes.push_back(code_);
 }
@@ -96,7 +96,7 @@ const std::vector<data::text>& in_memory_displayer::comments() const
   return _comments;
 }
 
-const std::vector<std::string>& in_memory_displayer::cpp_codes() const
+const std::vector<data::cpp_code>& in_memory_displayer::cpp_codes() const
 {
   return _cpp_codes;
 }

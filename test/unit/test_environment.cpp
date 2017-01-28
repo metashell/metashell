@@ -37,7 +37,7 @@ namespace
 {
   void test_append_text_to_environment(iface::environment& env_)
   {
-    env_.append("#include <foo/bar.hpp>\n");
+    env_.append(data::cpp_code("#include <foo/bar.hpp>\n"));
 
     ASSERT_EQ("#include <foo/bar.hpp>\n", env_.get_all());
   }

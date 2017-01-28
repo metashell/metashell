@@ -26,7 +26,7 @@ namespace metashell
   public:
     explicit cpp_validator_constant(data::result result_);
 
-    virtual data::result validate_code(const std::string&,
+    virtual data::result validate_code(const data::cpp_code&,
                                        const data::config&,
                                        const iface::environment&,
                                        bool) override;

@@ -95,7 +95,7 @@ namespace
       }
       else
       {
-        displayer_.show_cpp_code(r_.output);
+        displayer_.show_cpp_code(data::cpp_code(r_.output));
       }
     }
   }
@@ -123,7 +123,7 @@ namespace
   }
 
   data::result eval_tmp_formatted(const iface::environment& env_,
-                                  const std::string& tmp_exp_,
+                                  const data::cpp_code& tmp_exp_,
                                   bool use_precompiled_headers_,
                                   iface::type_shell& type_shell_,
                                   logger* logger_)
@@ -134,7 +134,7 @@ namespace
     METASHELL_LOG(
         logger_,
         "Checking if metaprogram can be evaluated without metashell::format: " +
-            tmp_exp_);
+            tmp_exp_.value());
 
     const data::result simple =
         type_shell_.eval(env_, tmp_exp_, use_precompiled_headers_);
@@ -343,7 +343,7 @@ void shell::line_available(const std::string& s_,
       const std::string s = _line_prefix + s_;
       _line_prefix.clear();
 
-      const data::command cmd(s);
+      const data::command cmd{data::cpp_code(s)};
 
       if (has_non_whitespace(s))
       {
@@ -359,15 +359,15 @@ void shell::line_available(const std::string& s_,
           {
             _pragma_handlers.process(*p, cmd.end(), displayer_);
           }
-          else if (!_echo || preprocess(displayer_, s, true))
+          else if (!_echo || preprocess(displayer_, data::cpp_code(s), true))
           {
             if (is_environment_setup_command(cmd))
             {
-              store_in_buffer(s, displayer_);
+              store_in_buffer(data::cpp_code(s), displayer_);
             }
             else
             {
-              run_metaprogram(s, displayer_);
+              run_metaprogram(data::cpp_code(s), displayer_);
             }
           }
         }
@@ -393,7 +393,8 @@ std::string shell::prompt() const
   return _line_prefix.empty() ? ">" : "...>";
 }
 
-bool shell::store_in_buffer(const std::string& s_, iface::displayer& displayer_)
+bool shell::store_in_buffer(const data::cpp_code& s_,
+                            iface::displayer& displayer_)
 {
   const data::result r = _engine->cpp_validator().validate_code(
       s_ + "\n", _config, *_env, using_precompiled_headers());
@@ -434,7 +435,7 @@ void shell::code_complete(const std::string& s_,
 void shell::init(command_processor_queue* cpq_,
                  const boost::filesystem::path& mdb_temp_dir_)
 {
-  _env->append(default_env);
+  _env->append(data::cpp_code(default_env));
 
   // TODO: move it to initialisation later
   _pragma_handlers =
@@ -469,7 +470,7 @@ iface::environment& shell::env() { return *_env; }
 
 const iface::environment& shell::env() const { return *_env; }
 
-void shell::rebuild_environment(const std::string& content_)
+void shell::rebuild_environment(const data::cpp_code& content_)
 {
   _env = make_unique<header_file_environment>(
       try_to_get_shell(*_engine), _config, _internal_dir, _env_filename);
@@ -482,7 +483,7 @@ void shell::rebuild_environment(const std::string& content_)
 
 void shell::rebuild_environment()
 {
-  rebuild_environment(_env ? _env->get_all() : std::string());
+  rebuild_environment(_env ? _env->get_all() : data::cpp_code());
 }
 
 void shell::push_environment() { _environment_stack.push(_env->get_all()); }
@@ -518,7 +519,8 @@ void shell::display_environment_stack_size(iface::displayer& displayer_)
   }
 }
 
-void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
+void shell::run_metaprogram(const data::cpp_code& s_,
+                            iface::displayer& displayer_)
 {
   if (_evaluate_metaprograms)
   {
@@ -533,8 +535,8 @@ void shell::run_metaprogram(const std::string& s_, iface::displayer& displayer_)
 
 void shell::reset_environment()
 {
-  rebuild_environment("");
-  _env->append(default_env);
+  rebuild_environment(data::cpp_code());
+  _env->append(data::cpp_code(default_env));
 }
 
 const data::config& shell::get_config() const { return _config; }
@@ -553,7 +555,7 @@ boost::filesystem::path shell::env_path() const
 }
 
 bool shell::preprocess(iface::displayer& displayer_,
-                       const std::string& exp_,
+                       const data::cpp_code& exp_,
                        bool process_directives_) const
 {
   const std::string marker =

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/type_or_error.hpp>
@@ -29,14 +30,14 @@ namespace metashell
   data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
       data::metaprogram::mode_t mode,
-      const std::string& root_name,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
       data::metaprogram::mode_t mode,
-      const std::string& root_name,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result);
 }

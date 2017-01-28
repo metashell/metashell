@@ -28,7 +28,7 @@ namespace metashell
   public:
     explicit preprocessor_shell_vc(vc_binary vc_binary_);
 
-    virtual data::result precompile(const std::string& exp_) override;
+    virtual data::result precompile(const data::cpp_code& exp_) override;
 
   private:
     vc_binary _vc_binary;

@@ -27,7 +27,12 @@ namespace
   public:
     explicit to_json_visitor(iface::json_writer& writer_) : _writer(writer_) {}
 
-    void operator()(const data::type& t_) const { _writer.string(t_.name()); }
+    void operator()(const data::type& t_) const { operator()(t_.name()); }
+
+    void operator()(const data::cpp_code& c_) const
+    {
+      _writer.string(c_.value());
+    }
 
   private:
     iface::json_writer& _writer;
@@ -113,7 +118,7 @@ void json_displayer::show_error(const std::string& msg_)
 
 void json_displayer::show_type(const data::type& type_)
 {
-  show_object(_writer, {{"type", "type"}, {"name", type_.name()}});
+  show_object(_writer, {{"type", "type"}, {"name", type_.name().value()}});
   _writer.end_document();
 }
 
@@ -147,9 +152,9 @@ void json_displayer::show_comment(const data::text& msg_)
   _writer.end_document();
 }
 
-void json_displayer::show_cpp_code(const std::string& code_)
+void json_displayer::show_cpp_code(const data::cpp_code& code_)
 {
-  show_object(_writer, {{"type", "cpp_code"}, {"code", code_}});
+  show_object(_writer, {{"type", "cpp_code"}, {"code", code_.value()}});
   _writer.end_document();
 }
 

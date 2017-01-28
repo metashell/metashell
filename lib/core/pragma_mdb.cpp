@@ -52,7 +52,7 @@ void pragma_mdb::run(const data::command::iterator&,
 {
   assert(_cpq != nullptr);
 
-  std::string args = tokens_to_string(args_begin_, args_end_);
+  std::string args = tokens_to_string(args_begin_, args_end_).value();
 
   command_processor_queue::cleanup_function restore;
   if (_shell.using_precompiled_headers())

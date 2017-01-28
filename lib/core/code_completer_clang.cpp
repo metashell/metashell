@@ -74,7 +74,7 @@ namespace
   {
     namespace data = metashell::data;
 
-    const data::command cmd(s_);
+    const data::command cmd{data::cpp_code(s_)};
 
     if (cmd.empty())
     {
@@ -85,21 +85,23 @@ namespace
       using boost::adaptors::sliced;
       using boost::adaptors::transformed;
 
-      const std::string prefix = boost::algorithm::join(
-          cmd | sliced(0, cmd.size() - 1) |
-              transformed([](const data::token& t_) { return t_.value(); }),
-          "");
+      const std::string prefix =
+          boost::algorithm::join(cmd | sliced(0, cmd.size() - 1) |
+                                     transformed([](const data::token& t_) {
+                                       return t_.value().value();
+                                     }),
+                                 "");
 
       const data::token& last = *(cmd.end() - 1);
 
       if (last.category() == data::token_category::identifier ||
           last.category() == data::token_category::keyword)
       {
-        return {prefix, last.value()};
+        return {prefix, last.value().value()};
       }
       else
       {
-        return {prefix + last.value(), ""};
+        return {prefix + last.value().value(), ""};
       }
     }
   }
@@ -138,8 +140,9 @@ namespace metashell
     METASHELL_LOG(
         _logger, "Part kept for code completion: " + completion_start.first);
 
-    const data::unsaved_file src(_temp_dir / "code_complete.cpp",
-                                 env_.get_appended(completion_start.first));
+    const data::unsaved_file src(
+        _temp_dir / "code_complete.cpp",
+        env_.get_appended(data::cpp_code(completion_start.first)).value());
 
     generate(src);
 

@@ -83,7 +83,7 @@ void pragma_switch::run(const data::command::iterator&,
 
   if (i != args_end_)
   {
-    const std::string v = i->value();
+    const std::string v = i->value().value();
     if (valid_argument(v))
     {
       ++i;
@@ -94,7 +94,7 @@ void pragma_switch::run(const data::command::iterator&,
       else
       {
         displayer_.show_error("Invalid arguments after " + v + ": " +
-                              tokens_to_string(i, args_end_));
+                              tokens_to_string(i, args_end_).value());
       }
     }
     else

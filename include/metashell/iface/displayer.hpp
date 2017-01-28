@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/backtrace.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/frame.hpp>
 #include <metashell/data/text.hpp>
@@ -45,7 +46,7 @@ namespace metashell
       virtual void show_error(const std::string& msg_) = 0;
       virtual void show_type(const data::type& type_) = 0;
       virtual void show_comment(const data::text& msg_) = 0;
-      virtual void show_cpp_code(const std::string& code_) = 0;
+      virtual void show_cpp_code(const data::cpp_code& code_) = 0;
 
       virtual void show_frame(const data::frame& frame_) = 0;
       virtual void show_file_section(const data::file_location& location_,

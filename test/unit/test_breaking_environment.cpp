@@ -26,9 +26,9 @@ TEST(breaking_environment, does_not_throw)
 
   // should not throw
 
-  e.append("foo");
+  e.append(metashell::data::cpp_code("foo"));
   e.get();
-  e.get_appended("bar");
+  e.get_appended(metashell::data::cpp_code("bar"));
   e.get_headers();
 }
 
@@ -37,9 +37,9 @@ TEST(breaking_environment, append_throws)
   breaking_environment e;
   e.append_throw_from_now();
 
-  ASSERT_ANY_THROW(e.append("foo"));
+  ASSERT_ANY_THROW(e.append(metashell::data::cpp_code("foo")));
   e.get();
-  e.get_appended("bar");
+  e.get_appended(metashell::data::cpp_code("bar"));
   e.get_headers();
 }
 
@@ -48,8 +48,8 @@ TEST(breaking_environment, get_appended_throws)
   breaking_environment e;
   e.get_appended_throw_from_now();
 
-  e.append("foo");
+  e.append(metashell::data::cpp_code("foo"));
   e.get();
-  ASSERT_ANY_THROW(e.get_appended("bar"));
+  ASSERT_ANY_THROW(e.get_appended(metashell::data::cpp_code("bar")));
   e.get_headers();
 }

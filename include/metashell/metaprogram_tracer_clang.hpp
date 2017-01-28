@@ -35,7 +35,7 @@ namespace metashell
     virtual data::metaprogram
     eval(iface::environment& env_,
          const boost::filesystem::path& temp_dir_,
-         const boost::optional<std::string>& expression_,
+         const boost::optional<data::cpp_code>& expression_,
          data::metaprogram::mode_t mode_,
          bool use_precompiled_headers_,
          iface::displayer& displayer_) override;

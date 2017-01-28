@@ -22,20 +22,20 @@ using namespace metashell::data;
 
 TEST(command, formatting_empty_token_list)
 {
-  const command cmd("");
+  const command cmd{cpp_code()};
   ASSERT_EQ("", tokens_to_string(cmd.begin(), cmd.end()));
 }
 
 TEST(command, formatting_one_token)
 {
-  const command cmd("int hello");
+  const command cmd{cpp_code("int hello")};
 
   ASSERT_EQ("int", tokens_to_string(cmd.begin(), skip(cmd.begin())));
 }
 
 TEST(command, formatting_more_tokens)
 {
-  const command cmd("int hello");
+  const command cmd{cpp_code("int hello")};
 
   ASSERT_EQ("int hello", tokens_to_string(cmd.begin(), cmd.end()));
 }

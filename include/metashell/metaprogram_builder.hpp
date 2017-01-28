@@ -20,6 +20,7 @@
 #include <stack>
 #include <string>
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram.hpp>
 
 namespace metashell
@@ -29,7 +30,7 @@ namespace metashell
   {
   public:
     metaprogram_builder(data::metaprogram::mode_t mode,
-                        const std::string& root_name,
+                        const data::cpp_code& root_name,
                         const data::file_location& root_source_location,
                         const data::type_or_error& evaluation_result);
 

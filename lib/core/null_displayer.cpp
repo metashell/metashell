@@ -38,7 +38,7 @@ void null_displayer::show_comment(const data::text&)
   // throw away
 }
 
-void null_displayer::show_cpp_code(const std::string&)
+void null_displayer::show_cpp_code(const data::cpp_code&)
 {
   // throw away
 }

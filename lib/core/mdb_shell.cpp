@@ -36,6 +36,9 @@
 
 #include <boost/range/iterator_range.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
+
 namespace
 {
   // Note: this how clang calls the file when the input comes from stdin
@@ -466,8 +469,8 @@ namespace metashell
   {
     // TODO this check could be made more strict,
     // since we know whats inside wrap<...> (mp->get_evaluation_result)
-    return boost::starts_with(type.name(), wrap_prefix) &&
-           boost::ends_with(type.name(), wrap_suffix);
+    return boost::starts_with(type, wrap_prefix) &&
+           boost::ends_with(type, wrap_suffix);
   }
 
   data::type mdb_shell::trim_wrap_type(const data::type& type)
@@ -493,7 +496,7 @@ namespace metashell
     using edge_property = data::metaprogram::edge_property;
     using discovered_t = data::metaprogram::discovered_t;
 
-    std::string env_buffer = env.get();
+    data::cpp_code env_buffer = env.get();
     int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
 
     // We will traverse the interesting edges later
@@ -682,7 +685,7 @@ namespace metashell
       return;
     }
 
-    boost::optional<std::string> expression = arg;
+    boost::optional<data::cpp_code> expression = data::cpp_code(arg);
     if (expression->empty())
     {
       if (!mp)
@@ -919,7 +922,7 @@ namespace metashell
   }
 
   bool mdb_shell::run_metaprogram_with_templight(
-      const boost::optional<std::string>& expression,
+      const boost::optional<data::cpp_code>& expression,
       data::metaprogram::mode_t mode,
       iface::displayer& displayer_)
   {

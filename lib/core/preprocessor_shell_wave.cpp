@@ -38,7 +38,7 @@ namespace metashell
   {
   }
 
-  data::result preprocessor_shell_wave::precompile(const std::string& exp_)
+  data::result preprocessor_shell_wave::precompile(const data::cpp_code& exp_)
   {
     try
     {

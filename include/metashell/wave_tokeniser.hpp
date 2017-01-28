@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/iface/tokeniser.hpp>
 
 #include <memory>
@@ -25,7 +26,7 @@
 namespace metashell
 {
   std::unique_ptr<iface::tokeniser>
-  create_wave_tokeniser(std::string src_,
+  create_wave_tokeniser(data::cpp_code src_,
                         std::string input_filename_ = std::string());
 
   std::string wave_version();

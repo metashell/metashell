@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/result.hpp>
 
 #include <string>
@@ -30,7 +31,7 @@ namespace metashell
     public:
       virtual ~preprocessor_shell() {}
 
-      virtual data::result precompile(const std::string& exp_) = 0;
+      virtual data::result precompile(const data::cpp_code& exp_) = 0;
 
       static std::string name_of_feature() { return "preprocessor_shell"; }
     };

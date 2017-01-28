@@ -30,7 +30,7 @@ namespace metashell
   namespace data
   {
     metaprogram::metaprogram(mode_t mode,
-                             const std::string& root_name,
+                             const cpp_code& root_name,
                              const file_location& root_source_location,
                              const type_or_error& evaluation_result)
       : mode(mode), evaluation_result(evaluation_result)

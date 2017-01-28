@@ -150,7 +150,7 @@ TEST(json_displayer, cpp_code)
     EXPECT_CALL(w, end_document());
   }
 
-  d.show_cpp_code("int main() {}");
+  d.show_cpp_code(data::cpp_code("int main() {}"));
 }
 
 TEST(json_displayer, frame_normal)

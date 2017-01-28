@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
@@ -35,7 +36,7 @@ namespace metashell
       virtual ~type_shell() {}
 
       virtual data::result eval(const environment& env_,
-                                const boost::optional<std::string>& tmp_exp_,
+                                const boost::optional<data::cpp_code>& tmp_exp_,
                                 bool use_precompiled_headers_) = 0;
 
       virtual void

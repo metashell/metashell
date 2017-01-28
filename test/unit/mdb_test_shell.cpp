@@ -46,7 +46,7 @@ mdb_test_shell::mdb_test_shell(const std::string& line)
                          mdb_temp_dir(),
                          nullptr)
 {
-  env.append(line);
+  env.append(metashell::data::cpp_code(line));
 }
 
 mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
@@ -57,7 +57,7 @@ mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
                          mdb_temp_dir(),
                          nullptr)
 {
-  env.append(line);
+  env.append(metashell::data::cpp_code(line));
 }
 
 bool mdb_test_shell::has_metaprogram() const { return static_cast<bool>(mp); }

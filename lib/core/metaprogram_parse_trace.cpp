@@ -66,7 +66,7 @@ namespace metashell
   data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
       data::metaprogram::mode_t mode,
-      const std::string& root_name,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result)
   {
@@ -115,7 +115,7 @@ namespace metashell
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
       data::metaprogram::mode_t mode,
-      const std::string& root_name,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
       const data::type_or_error& evaluation_result)
   {

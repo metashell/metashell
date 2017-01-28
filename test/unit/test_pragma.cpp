@@ -26,32 +26,40 @@
 
 using namespace metashell;
 
-TEST(pragma, parse)
+namespace
 {
-  ASSERT_TRUE(bool(parse_pragma(data::command("#pragma metashell foo"))));
+  data::command command(const std::string& s_)
+  {
+    return data::command(data::cpp_code(s_));
+  }
 }
 
-TEST(pragma, parse_no_pragma) { ASSERT_FALSE(parse_pragma(data::command(""))); }
+TEST(pragma, parse)
+{
+  ASSERT_TRUE(bool(parse_pragma(command("#pragma metashell foo"))));
+}
+
+TEST(pragma, parse_no_pragma) { ASSERT_FALSE(parse_pragma(command(""))); }
 
 TEST(pragma, parse_with_inital_whitespace)
 {
-  ASSERT_TRUE(bool(parse_pragma(data::command(" \t #pragma metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command(" \t #pragma metashell foo"))));
 }
 
 TEST(pragma, whitespace_is_not_pragma)
 {
-  ASSERT_FALSE(parse_pragma(data::command(" ")));
+  ASSERT_FALSE(parse_pragma(command(" ")));
 }
 
 TEST(pragma, gcc_pragma_is_not_metashell_pragma)
 {
-  ASSERT_FALSE(parse_pragma(data::command("#pragma gcc foo")));
+  ASSERT_FALSE(parse_pragma(command("#pragma gcc foo")));
 }
 
 TEST(pragma, name_of_pragma)
 {
-  const data::command c_foo("#pragma metashell foo");
-  const data::command c_bar("#pragma metashell bar");
+  const data::command c_foo = command("#pragma metashell foo");
+  const data::command c_bar = command("#pragma metashell bar");
 
   const data::command::iterator op_foo = *parse_pragma(c_foo),
                                 op_bar = *parse_pragma(c_bar);
@@ -62,12 +70,12 @@ TEST(pragma, name_of_pragma)
 
 TEST(pragma, name_of_pragma_is_not_a_literal)
 {
-  ASSERT_ANY_THROW(parse_pragma(data::command("#pragma metashell 13")));
+  ASSERT_ANY_THROW(parse_pragma(command("#pragma metashell 13")));
 }
 
 TEST(pragma, name_of_pragma_is_missing)
 {
-  ASSERT_ANY_THROW(parse_pragma(data::command("#pragma metashell")));
+  ASSERT_ANY_THROW(parse_pragma(command("#pragma metashell")));
 }
 
 TEST(pragma, help_pragma_displays_message)
@@ -123,21 +131,21 @@ TEST(pragma, quit)
 
 TEST(pragma, accept_pound_msh_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(data::command("#msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command("# msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command(" # msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("#msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("# msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command(" # msh foo"))));
 }
 
 TEST(pragma, accept_pound_metashell_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(data::command("#metashell foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command("# metashell foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command(" # metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("#metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("# metashell foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command(" # metashell foo"))));
 }
 
 TEST(pragma, accept_pragma_msh_as_pragma_metashell)
 {
-  ASSERT_TRUE(bool(parse_pragma(data::command("#pragma msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command("# pragma msh foo"))));
-  ASSERT_TRUE(bool(parse_pragma(data::command(" # pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("#pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command("# pragma msh foo"))));
+  ASSERT_TRUE(bool(parse_pragma(command(" # pragma msh foo"))));
 }

@@ -41,7 +41,7 @@ namespace
     }
     else
     {
-      return {tokens_to_string(begin_, path_end),
+      return {tokens_to_string(begin_, path_end).value(),
               skip_all_whitespace(path_end + 1, end_)};
     }
   }

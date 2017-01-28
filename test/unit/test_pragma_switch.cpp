@@ -42,7 +42,7 @@ namespace
       was_called = true;
       arg = value_;
     });
-    run(p, arg_, d);
+    run(p, data::cpp_code(arg_), d);
 
     ASSERT_TRUE(was_called);
     ASSERT_EQ(ExpectedResult, arg);
@@ -63,7 +63,7 @@ TEST(pragma_switch, displays_error_when_extra_arguments_are_given)
   in_memory_displayer d;
 
   pragma_switch p("test", always<true>, [](bool) {});
-  run(p, "on foo", d);
+  run(p, data::cpp_code("on foo"), d);
 
   ASSERT_FALSE(d.errors().empty());
 }

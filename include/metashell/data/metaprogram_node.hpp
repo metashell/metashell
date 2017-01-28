@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/type.hpp>
 
 #include <boost/variant.hpp>
@@ -25,7 +26,7 @@ namespace metashell
 {
   namespace data
   {
-    typedef boost::variant<type> metaprogram_node;
+    typedef boost::variant<type, cpp_code> metaprogram_node;
   }
 }
 

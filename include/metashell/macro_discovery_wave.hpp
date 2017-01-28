@@ -28,7 +28,7 @@ namespace metashell
   public:
     explicit macro_discovery_wave(data::wave_config config_);
 
-    virtual std::string macros(const iface::environment& env_) override;
+    virtual data::cpp_code macros(const iface::environment& env_) override;
 
   private:
     data::wave_config _config;

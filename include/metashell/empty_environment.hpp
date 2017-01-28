@@ -26,13 +26,14 @@ namespace metashell
   public:
     explicit empty_environment(const boost::filesystem::path& internal_dir_);
 
-    virtual void append(const std::string& s_) override;
-    virtual std::string get() const override;
-    virtual std::string get_appended(const std::string& s_) const override;
+    virtual void append(const data::cpp_code& s_) override;
+    virtual data::cpp_code get() const override;
+    virtual data::cpp_code
+    get_appended(const data::cpp_code& s_) const override;
 
     virtual const data::headers& get_headers() const override;
 
-    virtual std::string get_all() const override;
+    virtual data::cpp_code get_all() const override;
 
   private:
     data::headers _headers;

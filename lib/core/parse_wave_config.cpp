@@ -107,7 +107,7 @@ namespace
         "__has_include_next(_)=0", "__has_feature(_)=0"};
 
     metashell::empty_environment env(internal_dir_);
-    const std::string defines =
+    const metashell::data::cpp_code defines =
         metashell::macro_discovery_clang(cbin_).macros(env);
 
     macro_definition_collector def_collector(result);

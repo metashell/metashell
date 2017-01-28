@@ -24,7 +24,7 @@ namespace
 {
   metashell::data::type_or_error
   run_metaprogram(metashell::clang_binary& clang_binary_,
-                  const boost::optional<std::string>& expression_,
+                  const boost::optional<metashell::data::cpp_code>& expression_,
                   const boost::filesystem::path& output_path_,
                   const boost::filesystem::path& env_path_,
                   bool use_precompiled_headers_,
@@ -73,7 +73,7 @@ namespace metashell
   data::metaprogram metaprogram_tracer_clang::eval(
       iface::environment& env_,
       const boost::filesystem::path& temp_dir_,
-      const boost::optional<std::string>& expression_,
+      const boost::optional<data::cpp_code>& expression_,
       data::metaprogram::mode_t mode_,
       bool use_precompiled_headers_,
       iface::displayer& displayer_)
@@ -92,7 +92,8 @@ namespace metashell
     if (protobuf_stream)
     {
       const data::metaprogram result = create_metaprogram_from_protobuf_stream(
-          protobuf_stream, mode_, expression_ ? *expression_ : "<environment>",
+          protobuf_stream, mode_,
+          expression_ ? *expression_ : data::cpp_code("<environment>"),
           data::file_location{}, // TODO something sensible here?
           evaluation_result);
       if (result.is_empty() && evaluation_result.is_error())

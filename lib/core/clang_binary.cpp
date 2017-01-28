@@ -318,16 +318,16 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
 data::process_output
 metashell::run_clang(const iface::executable& clang_binary_,
                      std::vector<std::string> clang_args_,
-                     const std::string& input_)
+                     const data::cpp_code& input_)
 {
   clang_args_.push_back("-"); // Compile from stdin
 
-  return clang_binary_.run(clang_args_, input_);
+  return clang_binary_.run(clang_args_, input_.value());
 }
 
 data::result metashell::eval(
     const iface::environment& env_,
-    const boost::optional<std::string>& tmp_exp_,
+    const boost::optional<data::cpp_code>& tmp_exp_,
     const boost::optional<boost::filesystem::path>& env_path_,
     const boost::optional<boost::filesystem::path>& templight_dump_path_,
     clang_binary& clang_binary_)

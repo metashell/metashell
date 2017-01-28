@@ -77,8 +77,10 @@ namespace metashell
 
     virtual void cancel_operation() override;
 
-    bool store_in_buffer(const std::string& s_, iface::displayer& displayer_);
-    void run_metaprogram(const std::string& s_, iface::displayer& displayer_);
+    bool store_in_buffer(const data::cpp_code& s_,
+                         iface::displayer& displayer_);
+    void run_metaprogram(const data::cpp_code& s_,
+                         iface::displayer& displayer_);
 
     virtual void code_complete(const std::string& s_,
                                std::set<std::string>& out_) const override;
@@ -110,7 +112,7 @@ namespace metashell
     boost::filesystem::path env_path() const;
 
     bool preprocess(iface::displayer& displayer_,
-                    const std::string& exp_,
+                    const data::cpp_code& exp_,
                     bool process_directives_) const;
 
     void echo(bool enabled_);
@@ -131,7 +133,7 @@ namespace metashell
     std::string _prev_line;
     pragma_handler_map _pragma_handlers;
     bool _stopped;
-    std::stack<std::string> _environment_stack;
+    std::stack<data::cpp_code> _environment_stack;
     logger* _logger;
     std::unique_ptr<iface::engine> _engine;
     bool _echo = false;
@@ -140,7 +142,7 @@ namespace metashell
 
     void init(command_processor_queue* cpq_,
               const boost::filesystem::path& mdb_temp_dir_);
-    void rebuild_environment(const std::string& content_);
+    void rebuild_environment(const data::cpp_code& content_);
   };
 }
 

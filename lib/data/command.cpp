@@ -29,7 +29,7 @@ namespace
   }
 }
 
-command::command(const std::string& cmd_) : _cmd(cmd_), _tokens()
+command::command(const cpp_code& cmd_) : _cmd(cmd_), _tokens()
 {
   for (auto t = create_wave_tokeniser(cmd_, "<command>");
        t->has_further_tokens(); t->move_to_next_token())
@@ -70,13 +70,13 @@ metashell::data::skip_all_whitespace(const command::iterator& begin_,
   });
 }
 
-std::string metashell::data::tokens_to_string(command::iterator begin_,
-                                              const command::iterator& end_)
+cpp_code metashell::data::tokens_to_string(command::iterator begin_,
+                                           const command::iterator& end_)
 {
   std::ostringstream s;
   for (; begin_ != end_; ++begin_)
   {
     s << begin_->value();
   }
-  return s.str();
+  return metashell::data::cpp_code(s.str());
 }

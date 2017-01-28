@@ -30,7 +30,9 @@ namespace metashell
 
     type::type(const std::string& name_) : _name(name_) {}
 
-    const std::string& type::name() const { return _name; }
+    type::type(const cpp_code& name_) : _name(name_) {}
+
+    const cpp_code& type::name() const { return _name; }
 
     bool type::is_integral_constant(const type& type_,
                                     const std::string& value_) const
@@ -41,8 +43,14 @@ namespace metashell
       std::ostringstream s;
       s << "std::(.*::|)integral_constant<" << type_ << ", " << value_ << ">";
 
-      return regex_match(name(), regex(s.str()));
+      return regex_match(name().value(), regex(s.str()));
     }
+
+    type::operator cpp_code() const { return cpp_code(_name); }
+
+    type::const_iterator type::begin() const { return _name.begin(); }
+
+    type::const_iterator type::end() const { return _name.end(); }
 
     std::ostream& operator<<(std::ostream& o_, const type& t_)
     {

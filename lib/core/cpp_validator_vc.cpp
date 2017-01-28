@@ -32,16 +32,16 @@ namespace metashell
   {
   }
 
-  data::result cpp_validator_vc::validate_code(const std::string& src_,
+  data::result cpp_validator_vc::validate_code(const data::cpp_code& src_,
                                                const data::config& config_,
                                                const iface::environment& env_,
                                                bool)
   {
-    METASHELL_LOG(_logger, "Validating code " + src_);
+    METASHELL_LOG(_logger, "Validating code " + src_.value());
 
     try
     {
-      const std::string src = env_.get_appended(src_);
+      const data::cpp_code src = env_.get_appended(src_);
       const data::process_output output = run_vc(_vc_binary, {"/c"}, src);
       const std::string error = vc_error_report_on_stdout(output);
 
@@ -49,7 +49,7 @@ namespace metashell
           output.exit_code == data::exit_code_t(0) && error.empty();
 
       return data::result{
-          accept, "", error, accept && config_.verbose ? src : ""};
+          accept, "", error, accept && config_.verbose ? src.value() : ""};
     }
     catch (const std::exception& e)
     {

@@ -196,7 +196,7 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
            create_failing_engine());
   e->append_throw_from_now();
 
-  sh.store_in_buffer("typedef int foo;", d);
+  sh.store_in_buffer(data::cpp_code("typedef int foo;"), d);
 
   ASSERT_FALSE(d.errors().empty());
 }
@@ -214,10 +214,11 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
   ON_CALL(det, directory_of_executable()).WillByDefault(Return(""));
   ON_CALL(det, file_exists(_)).WillByDefault(Return(true));
 
-  const data::result r = get_internal_templight_entry()
-                             .build(cfg, "", "", "env.hpp", det, d, nullptr)
-                             ->cpp_validator()
-                             .validate_code("typedef int foo;", cfg, e, false);
+  const data::result r =
+      get_internal_templight_entry()
+          .build(cfg, "", "", "env.hpp", det, d, nullptr)
+          ->cpp_validator()
+          .validate_code(data::cpp_code("typedef int foo;"), cfg, e, false);
 
   ASSERT_FALSE(r.successful);
   ASSERT_FALSE(r.error.empty());
@@ -226,25 +227,26 @@ TEST(evaluation, throwing_environment_not_breaking_validate)
 TEST(evaluation, variable_definition)
 {
   using data::command;
-  ASSERT_TRUE(is_environment_setup_command(command("int x;")));
+  ASSERT_TRUE(is_environment_setup_command(command(data::cpp_code("int x;"))));
 }
 
 TEST(evaluation, function_definition)
 {
   using data::command;
-  ASSERT_TRUE(is_environment_setup_command(command("void f() {}")));
+  ASSERT_TRUE(
+      is_environment_setup_command(command(data::cpp_code("void f() {}"))));
 }
 
 TEST(evaluation, is_environment_setup_with_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(is_environment_setup_command(command(" int")));
+  ASSERT_FALSE(is_environment_setup_command(command(data::cpp_code(" int"))));
 }
 
 TEST(evaluation, is_environment_setup_without_leading_whitespace)
 {
   using data::command;
-  ASSERT_FALSE(is_environment_setup_command(command("int")));
+  ASSERT_FALSE(is_environment_setup_command(command(data::cpp_code("int"))));
 }
 
 TEST(evaluation, prompt_is_different_in_multiline_input)
@@ -260,5 +262,6 @@ TEST(evaluation, command_macro_usage_with_semicolon_is_environment_setup)
 {
   using data::command;
 
-  ASSERT_TRUE(is_environment_setup_command(command("SOME_MACRO(13);")));
+  ASSERT_TRUE(
+      is_environment_setup_command(command(data::cpp_code("SOME_MACRO(13);"))));
 }

@@ -55,8 +55,8 @@ TEST(shell_environment, env_pop_reverts_changes_since_push)
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   sh.push_environment();
-  const std::string old_env = sh.env().get_all();
-  sh.store_in_buffer("typedef int x;", d);
+  const metashell::data::cpp_code old_env = sh.env().get_all();
+  sh.store_in_buffer(metashell::data::cpp_code("typedef int x;"), d);
   sh.pop_environment();
 
   ASSERT_EQ(old_env, sh.env().get_all());
@@ -80,11 +80,11 @@ TEST(shell_environment, env_two_level_environment_stack)
       metashell::test_config(), "", "", "", metashell::create_failing_engine());
 
   sh.push_environment();
-  const std::string old_env = sh.env().get_all();
+  const metashell::data::cpp_code old_env = sh.env().get_all();
 
-  sh.store_in_buffer("typedef int x;", d);
+  sh.store_in_buffer(metashell::data::cpp_code("typedef int x;"), d);
   sh.push_environment();
-  sh.store_in_buffer("typedef int y;", d);
+  sh.store_in_buffer(metashell::data::cpp_code("typedef int y;"), d);
 
   sh.pop_environment();
   sh.pop_environment();
@@ -140,11 +140,11 @@ TEST(shell_environment, extending_environment_with_pragma)
   metashell::in_memory_displayer d;
   metashell::shell sh(metashell::test_config(), "", "", "",
                       metashell::create_engine_returning_type("void"));
-  const std::string original_env = sh.env().get_all();
+  const metashell::data::cpp_code original_env = sh.env().get_all();
 
   sh.line_available("#pragma metashell environment add typedef int x;", d);
   sh.line_available("#pragma metashell environment", d);
 
-  ASSERT_EQ(
-      "\ntypedef int x;", appended_since(original_env, sh.env().get_all()));
+  ASSERT_EQ("\ntypedef int x;",
+            appended_since(original_env.value(), sh.env().get_all().value()));
 }

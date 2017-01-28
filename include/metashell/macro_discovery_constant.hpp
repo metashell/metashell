@@ -24,7 +24,7 @@ namespace metashell
   class macro_discovery_constant : public iface::macro_discovery
   {
   public:
-    virtual std::string macros(const iface::environment&) override;
+    virtual data::cpp_code macros(const iface::environment&) override;
   };
 }
 

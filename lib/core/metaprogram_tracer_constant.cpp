@@ -21,11 +21,11 @@ namespace metashell
   data::metaprogram
   metaprogram_tracer_constant::eval(iface::environment&,
                                     const boost::filesystem::path&,
-                                    const boost::optional<std::string>&,
+                                    const boost::optional<data::cpp_code>&,
                                     data::metaprogram::mode_t,
                                     bool,
                                     iface::displayer&)
   {
-    return {data::metaprogram::mode_t::normal, "", {}, {}};
+    return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}, {}};
   }
 }

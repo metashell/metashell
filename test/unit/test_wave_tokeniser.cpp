@@ -25,7 +25,7 @@ namespace
   void test_type_of_a_token(const std::string& token_,
                             data::token_type expected_type_)
   {
-    const auto t = create_wave_tokeniser(token_);
+    const auto t = create_wave_tokeniser(data::cpp_code(token_));
 
     ASSERT_TRUE(t->has_further_tokens());
     ASSERT_TRUE(expected_type_ == t->current_token().type());
@@ -34,7 +34,7 @@ namespace
   void test_category_of_a_token(const std::string& token_,
                                 data::token_category expected_category_)
   {
-    const auto t = create_wave_tokeniser(token_);
+    const auto t = create_wave_tokeniser(data::cpp_code(token_));
 
     ASSERT_TRUE(t->has_further_tokens());
     ASSERT_TRUE(expected_category_ == t->current_token().category());
@@ -43,21 +43,21 @@ namespace
 
 TEST(wave_tokeniser, empty_code_is_empty_token_sequence)
 {
-  const auto t = create_wave_tokeniser("");
+  const auto t = create_wave_tokeniser(data::cpp_code());
 
   ASSERT_FALSE(t->has_further_tokens());
 }
 
 TEST(wave_tokeniser, code_with_one_token_has_token)
 {
-  const auto t = create_wave_tokeniser("foo");
+  const auto t = create_wave_tokeniser(data::cpp_code("foo"));
 
   ASSERT_TRUE(t->has_further_tokens());
 }
 
 TEST(wave_tokeniser, code_with_one_token_has_one_token)
 {
-  const auto t = create_wave_tokeniser("foo");
+  const auto t = create_wave_tokeniser(data::cpp_code("foo"));
 
   t->move_to_next_token();
 
@@ -66,7 +66,7 @@ TEST(wave_tokeniser, code_with_one_token_has_one_token)
 
 TEST(wave_tokeniser, value_of_token)
 {
-  const auto t = create_wave_tokeniser("foo ");
+  const auto t = create_wave_tokeniser(data::cpp_code("foo "));
 
   ASSERT_EQ("foo", t->current_token().value());
 
@@ -393,7 +393,7 @@ TEST_PP_TOKEN(include)
 TEST(wave_tokeniser, error_flag_is_set)
 {
   std::unique_ptr<iface::tokeniser> t =
-      create_wave_tokeniser("/* unclosed comment");
+      create_wave_tokeniser(data::cpp_code("/* unclosed comment"));
 
   while (t->has_further_tokens())
   {

@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
+
 #include <boost/operators.hpp>
 
 #include <iosfwd>
@@ -29,16 +31,25 @@ namespace metashell
     class type : boost::totally_ordered<type>
     {
     public:
+      typedef std::string::const_iterator iterator;
+      typedef std::string::const_iterator const_iterator;
+
       type();
       explicit type(const std::string& name_);
+      explicit type(const cpp_code& name_);
 
-      const std::string& name() const;
+      const cpp_code& name() const;
 
       bool is_integral_constant(const type& type_,
                                 const std::string& value_) const;
 
+      operator cpp_code() const;
+
+      const_iterator begin() const;
+      const_iterator end() const;
+
     private:
-      std::string _name;
+      cpp_code _name;
     };
 
     std::ostream& operator<<(std::ostream& o_, const type& t_);

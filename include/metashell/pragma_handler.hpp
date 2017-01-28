@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/iface/pragma_handler.hpp>
 
 #include <metashell/make_unique.hpp>
@@ -55,7 +56,7 @@ namespace metashell
   };
 
   void run(const iface::pragma_handler& handler_,
-           const std::string& args_,
+           const data::cpp_code& args_,
            iface::displayer& displayer_);
 }
 

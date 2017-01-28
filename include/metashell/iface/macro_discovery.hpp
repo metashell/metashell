@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/iface/environment.hpp>
 
 #include <string>
@@ -30,7 +31,7 @@ namespace metashell
     public:
       virtual ~macro_discovery() {}
 
-      virtual std::string macros(const iface::environment& env_) = 0;
+      virtual data::cpp_code macros(const iface::environment& env_) = 0;
 
       static std::string name_of_feature() { return "macro_discovery"; }
     };
