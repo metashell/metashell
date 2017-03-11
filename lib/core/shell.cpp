@@ -50,11 +50,6 @@ namespace
     return !cfg_.preprocessor_mode;
   }
 
-  std::string wrap(const std::string& s_, const std::string& wrapper_)
-  {
-    return wrapper_ + s_ + wrapper_;
-  }
-
   void make_failure(data::result& r_, const std::string& msg_)
   {
     r_.successful = false;
@@ -558,40 +553,19 @@ bool shell::preprocess(iface::displayer& displayer_,
                        const data::cpp_code& exp_,
                        bool process_directives_) const
 {
-  const std::string marker =
-      wrap("* __METASHELL_PP_MARKER *", process_directives_ ? "\n" : "");
-
   data::result r = _engine->preprocessor_shell().precompile(
-      _env->get_all() + "\n" + marker + exp_ + marker + "\n");
+      _env->get_all() + "\n" + add_markers(exp_, process_directives_) + "\n");
 
   if (r.successful)
   {
-    const auto p1 = r.output.find(marker);
-    if (p1 == std::string::npos)
+    try
     {
-      make_failure(r, "Marker (" + marker +
-                          ") not found in preprocessed output."
-                          " Does it contain a macro that has been defined?");
+      r.output =
+          remove_markers(data::cpp_code(r.output), process_directives_).value();
     }
-    else
+    catch (const std::exception& e_)
     {
-      const auto m_len = marker.size();
-      const auto p2 = r.output.find(marker, p1 + m_len);
-      if (p2 == std::string::npos)
-      {
-        make_failure(r, "Marker (" + marker +
-                            ") found only once in preprocessed output.");
-      }
-      else if (r.output.find(marker, p2 + m_len) == std::string::npos)
-      {
-        r.output = r.output.substr(p1 + m_len, p2 - p1 - m_len);
-      }
-      else
-      {
-        make_failure(
-            r, "Marker (" + marker +
-                   ") found more than two times in preprocessed output.");
-      }
+      make_failure(r, e_.what());
     }
   }
 

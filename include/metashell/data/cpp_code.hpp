@@ -81,6 +81,9 @@ namespace metashell
 
     cpp_code operator+(cpp_code code_, const std::string& s_);
     cpp_code operator+(std::string s_, const cpp_code& code_);
+
+    cpp_code add_markers(const cpp_code& code_, bool process_directives_);
+    cpp_code remove_markers(const cpp_code& code_, bool process_directives_);
   }
 }
 

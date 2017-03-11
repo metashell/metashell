@@ -17,6 +17,23 @@
 #include <metashell/data/cpp_code.hpp>
 
 #include <ostream>
+#include <stdexcept>
+
+namespace
+{
+  template <class Str, class Wrapper>
+  auto wrap(const Str& s_, const Wrapper& wrapper_)
+      -> decltype(wrapper_ + s_ + wrapper_)
+  {
+    return wrapper_ + s_ + wrapper_;
+  }
+
+  std::string marker(bool process_directives_)
+  {
+    return wrap("* __METASHELL_PP_MARKER *",
+                std::string(process_directives_ ? "\n" : ""));
+  }
+}
 
 namespace metashell
 {
@@ -84,6 +101,46 @@ namespace metashell
     cpp_code operator+(std::string s_, const cpp_code& code_)
     {
       return cpp_code(s_) += code_;
+    }
+
+    cpp_code add_markers(const cpp_code& code_, bool process_directives_)
+    {
+      return wrap(code_, marker(process_directives_));
+    }
+
+    cpp_code remove_markers(const cpp_code& code_, bool process_directives_)
+    {
+      const std::string code = code_.value();
+      const std::string mrk = marker(process_directives_);
+
+      const auto p1 = code.find(mrk);
+      if (p1 == std::string::npos)
+      {
+        throw std::runtime_error(
+            "Marker (" + mrk +
+            ") not found in preprocessed output."
+            " Does it contain a macro that has been defined?");
+      }
+      else
+      {
+        const auto m_len = mrk.size();
+        const auto p2 = code.find(mrk, p1 + m_len);
+        if (p2 == std::string::npos)
+        {
+          throw std::runtime_error("Marker (" + mrk +
+                                   ") found only once in preprocessed output.");
+        }
+        else if (code.find(mrk, p2 + m_len) == std::string::npos)
+        {
+          return cpp_code(code.substr(p1 + m_len, p2 - p1 - m_len));
+        }
+        else
+        {
+          throw std::runtime_error(
+              "Marker (" + mrk +
+              ") found more than two times in preprocessed output.");
+        }
+      }
     }
   }
 } // namespace metashell:data
