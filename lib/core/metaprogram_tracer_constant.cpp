@@ -23,7 +23,6 @@ namespace metashell
                                     const boost::filesystem::path&,
                                     const boost::optional<data::cpp_code>&,
                                     data::metaprogram::mode_t,
-                                    bool,
                                     iface::displayer&)
   {
     return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}, {}};

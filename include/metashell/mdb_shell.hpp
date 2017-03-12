@@ -26,7 +26,6 @@
 #include <metashell/logger.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 
-#include <metashell/data/config.hpp>
 #include <metashell/data/metaprogram.hpp>
 
 #include <metashell/iface/call_graph.hpp>
@@ -44,8 +43,7 @@ namespace metashell
   public:
     const static mdb_command_handler_map command_handler;
 
-    mdb_shell(const data::config& conf,
-              iface::environment& env,
+    mdb_shell(iface::environment& env,
               iface::engine& engine_,
               const boost::filesystem::path& env_path_,
               const boost::filesystem::path& mdb_temp_dir_,
@@ -126,7 +124,6 @@ namespace metashell
     void display_metaprogram_finished(iface::displayer& displayer_) const;
     void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
-    data::config conf;
     iface::environment& env;
 
     boost::optional<data::metaprogram> mp;

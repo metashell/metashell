@@ -28,21 +28,17 @@ namespace metashell
   class metaprogram_tracer_clang : public iface::metaprogram_tracer
   {
   public:
-    metaprogram_tracer_clang(const boost::filesystem::path& internal_dir_,
-                             const boost::filesystem::path& env_filename_,
-                             clang_binary clang_binary_);
+    explicit metaprogram_tracer_clang(clang_binary clang_binary_);
 
     virtual data::metaprogram
     eval(iface::environment& env_,
          const boost::filesystem::path& temp_dir_,
          const boost::optional<data::cpp_code>& expression_,
          data::metaprogram::mode_t mode_,
-         bool use_precompiled_headers_,
          iface::displayer& displayer_) override;
 
   private:
     clang_binary _clang_binary;
-    boost::filesystem::path _env_path;
   };
 }
 

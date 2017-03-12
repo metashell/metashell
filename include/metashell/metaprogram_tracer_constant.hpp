@@ -28,7 +28,6 @@ namespace metashell
                                    const boost::filesystem::path&,
                                    const boost::optional<data::cpp_code>&,
                                    data::metaprogram::mode_t,
-                                   bool,
                                    iface::displayer&) override;
   };
 }

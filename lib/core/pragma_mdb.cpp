@@ -71,9 +71,9 @@ void pragma_mdb::run(const data::command::iterator&,
     };
   }
 
-  std::unique_ptr<mdb_shell> sh(
-      new mdb_shell(_shell.get_config(), _shell.env(), _shell.engine(),
-                    _shell.env_path(), _mdb_temp_dir, _logger));
+  std::unique_ptr<mdb_shell> sh(new mdb_shell(_shell.env(), _shell.engine(),
+                                              _shell.env_path(), _mdb_temp_dir,
+                                              _logger));
 
   if (_shell.get_config().splash_enabled)
   {

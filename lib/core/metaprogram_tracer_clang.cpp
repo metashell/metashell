@@ -26,19 +26,13 @@ namespace
   run_metaprogram(metashell::clang_binary& clang_binary_,
                   const boost::optional<metashell::data::cpp_code>& expression_,
                   const boost::filesystem::path& output_path_,
-                  const boost::filesystem::path& env_path_,
-                  bool use_precompiled_headers_,
                   metashell::iface::environment& env_,
                   metashell::iface::displayer& displayer_)
   {
     using metashell::data::type_or_error;
 
     const metashell::data::result res = metashell::eval(
-        env_, expression_,
-        use_precompiled_headers_ ?
-            boost::optional<boost::filesystem::path>(env_path_) :
-            boost::none,
-        output_path_, clang_binary_);
+        env_, expression_, boost::none, output_path_, clang_binary_);
 
     if (!res.info.empty())
     {
@@ -62,11 +56,8 @@ namespace
 
 namespace metashell
 {
-  metaprogram_tracer_clang::metaprogram_tracer_clang(
-      const boost::filesystem::path& internal_dir_,
-      const boost::filesystem::path& env_filename_,
-      clang_binary clang_binary_)
-    : _clang_binary(clang_binary_), _env_path(internal_dir_ / env_filename_)
+  metaprogram_tracer_clang::metaprogram_tracer_clang(clang_binary clang_binary_)
+    : _clang_binary(clang_binary_)
   {
   }
 
@@ -75,14 +66,12 @@ namespace metashell
       const boost::filesystem::path& temp_dir_,
       const boost::optional<data::cpp_code>& expression_,
       data::metaprogram::mode_t mode_,
-      bool use_precompiled_headers_,
       iface::displayer& displayer_)
   {
     const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
 
-    const data::type_or_error evaluation_result =
-        run_metaprogram(_clang_binary, expression_, output_path, _env_path,
-                        use_precompiled_headers_, env_, displayer_);
+    const data::type_or_error evaluation_result = run_metaprogram(
+        _clang_binary, expression_, output_path, env_, displayer_);
 
     // Opening in binary mode, because some platforms interpret some characters
     // specially in text mode, which caused parsing to fail.

@@ -169,20 +169,17 @@ namespace metashell
       });
   // clang-format on
 
-  mdb_shell::mdb_shell(const data::config& conf_,
-                       iface::environment& env_arg,
+  mdb_shell::mdb_shell(iface::environment& env_arg,
                        iface::engine& engine_,
                        const boost::filesystem::path& env_path_,
                        const boost::filesystem::path& mdb_temp_dir_,
                        logger* logger_)
-    : conf(conf_),
-      env(env_arg),
+    : env(env_arg),
       _logger(logger_),
       _engine(engine_),
       _env_path(env_path_),
       _mdb_temp_dir(mdb_temp_dir_)
   {
-    assert(!conf.use_precompiled_headers);
   }
 
   std::string mdb_shell::prompt() const { return "(mdb)"; }
@@ -928,9 +925,8 @@ namespace metashell
   {
     try
     {
-      mp = _engine.metaprogram_tracer().eval(env, _mdb_temp_dir, expression,
-                                             mode, conf.use_precompiled_headers,
-                                             displayer_);
+      mp = _engine.metaprogram_tracer().eval(
+          env, _mdb_temp_dir, expression, mode, displayer_);
     }
     catch (const some_feature_not_supported&)
     {

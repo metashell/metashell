@@ -54,8 +54,7 @@ namespace
         preprocessor_shell_clang(cbin),
         code_completer_clang(
             internal_dir_, temp_dir_, env_filename_, cbin, logger_),
-        header_discoverer_clang(cbin),
-        metaprogram_tracer_clang(internal_dir_, env_filename_, cbin),
+        header_discoverer_clang(cbin), metaprogram_tracer_clang(cbin),
         cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
         macro_discovery_clang(cbin));
   }

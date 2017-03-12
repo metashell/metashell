@@ -41,7 +41,6 @@ namespace metashell
            const boost::filesystem::path& temp_dir_,
            const boost::optional<data::cpp_code>& expression_,
            data::metaprogram::mode_t mode_,
-           bool use_precompiled_headers_,
            iface::displayer& displayer_) = 0;
 
       static std::string name_of_feature() { return "metaprogram_tracer"; }
