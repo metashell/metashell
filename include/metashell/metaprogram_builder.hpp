@@ -32,7 +32,7 @@ namespace metashell
     metaprogram_builder(data::metaprogram::mode_t mode,
                         const data::cpp_code& root_name,
                         const data::file_location& root_source_location,
-                        const data::type_or_error& evaluation_result);
+                        const data::type_or_code_or_error& evaluation_result);
 
     void handle_template_begin(data::event_kind kind,
                                const data::type& type,

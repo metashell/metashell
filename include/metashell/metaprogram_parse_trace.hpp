@@ -20,7 +20,7 @@
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/metaprogram.hpp>
-#include <metashell/data/type_or_error.hpp>
+#include <metashell/data/type_or_code_or_error.hpp>
 
 #include <iosfwd>
 #include <string>
@@ -32,14 +32,14 @@ namespace metashell
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result);
+      const data::type_or_code_or_error& evaluation_result);
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result);
+      const data::type_or_code_or_error& evaluation_result);
 }
 
 #endif

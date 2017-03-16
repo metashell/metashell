@@ -32,7 +32,7 @@
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/type_or_error.hpp>
+#include <metashell/data/type_or_code_or_error.hpp>
 
 namespace metashell
 {
@@ -52,7 +52,7 @@ namespace metashell
       metaprogram(mode_t mode,
                   const cpp_code& root_name,
                   const file_location& root_source_location,
-                  const type_or_error& evaluation_result);
+                  const type_or_code_or_error& evaluation_result);
 
       struct vertex_property_tag
       {
@@ -136,7 +136,7 @@ namespace metashell
 
       bool is_empty() const;
 
-      const type_or_error& get_evaluation_result() const;
+      const type_or_code_or_error& get_evaluation_result() const;
 
       void reset_state();
 
@@ -211,7 +211,7 @@ namespace metashell
       // This should be generally 0
       vertex_descriptor root_vertex;
 
-      type_or_error evaluation_result;
+      type_or_code_or_error evaluation_result;
 
       // Time taken to run the full metaprogram (used to show % in profiling
       // data)

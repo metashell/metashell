@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/mdb_shell.hpp>
+#include <metashell/preprocessor_tracer_constant.hpp>
 
-#include <gtest/gtest.h>
-
-#include "util.hpp"
-
-using namespace metashell;
-
-// If one of these TCs fail, then README modification might be needed
-
-TEST(readme, continue_abbreviated_as_c)
+namespace metashell
 {
-  mdb_command command;
-  std::string args;
-
-  std::tie(command, args) =
-      get_command_from_map(mdb_shell::build_command_handler(false), "c");
-
-  auto keys = command.get_keys();
-
-  ASSERT_TRUE(std::find(keys.begin(), keys.end(), "continue") != keys.end());
+  data::metaprogram
+  preprocessor_tracer_constant::eval(iface::environment&,
+                                     const boost::optional<data::cpp_code>&)
+  {
+    return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}, {}};
+  }
 }

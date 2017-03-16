@@ -21,7 +21,7 @@ find_package(MSVC)
 
 set(SYSTEM_TEST_TARGETS )
 set(SYSTEM_TEST_FILES )
-foreach(T core pp mdb)
+foreach(T core pp mdb pdb)
   add_subdirectory(${T})
 
   set(TARGET metashell_${T}_system_test)

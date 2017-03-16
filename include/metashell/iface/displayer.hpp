@@ -23,7 +23,7 @@
 #include <metashell/data/frame.hpp>
 #include <metashell/data/text.hpp>
 #include <metashell/data/type.hpp>
-#include <metashell/data/type_or_error.hpp>
+#include <metashell/data/type_or_code_or_error.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 
@@ -60,11 +60,15 @@ namespace metashell
       virtual void show_filename_set(
           const std::set<boost::filesystem::path>& filenames_) = 0;
 
-      void show_type_or_error(const data::type_or_error& te_)
+      void show_type_or_code_or_error(const data::type_or_code_or_error& te_)
       {
         if (te_.is_type())
         {
           show_type(te_.get_type());
+        }
+        else if (te_.is_code())
+        {
+          show_cpp_code(te_.get_code());
         }
         else if (te_.is_error())
         {

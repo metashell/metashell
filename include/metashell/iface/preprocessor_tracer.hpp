@@ -1,5 +1,8 @@
+#ifndef METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
+#define METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +17,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/mdb_shell.hpp>
+#include <metashell/data/metaprogram.hpp>
+#include <metashell/iface/environment.hpp>
 
-#include <gtest/gtest.h>
+#include <boost/optional.hpp>
 
-#include "util.hpp"
+#include <string>
 
-using namespace metashell;
-
-// If one of these TCs fail, then README modification might be needed
-
-TEST(readme, continue_abbreviated_as_c)
+namespace metashell
 {
-  mdb_command command;
-  std::string args;
+  namespace iface
+  {
+    class preprocessor_tracer
+    {
+    public:
+      virtual ~preprocessor_tracer() {}
 
-  std::tie(command, args) =
-      get_command_from_map(mdb_shell::build_command_handler(false), "c");
+      virtual data::metaprogram
+      eval(iface::environment& env_,
+           const boost::optional<data::cpp_code>& expression_) = 0;
 
-  auto keys = command.get_keys();
-
-  ASSERT_TRUE(std::find(keys.begin(), keys.end(), "continue") != keys.end());
+      static std::string name_of_feature() { return "preprocessor_tracer"; }
+    };
+  }
 }
+
+#endif

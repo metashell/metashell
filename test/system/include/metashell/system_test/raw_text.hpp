@@ -18,8 +18,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/json_string.hpp>
+#include <pattern/placeholder.hpp>
 
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <string>
@@ -32,11 +34,14 @@ namespace metashell
     {
     public:
       explicit raw_text(const std::string& text_);
+      explicit raw_text(pattern::placeholder);
+      explicit raw_text(const json_string& s_);
 
+      bool text_specified() const;
       const std::string& text() const;
 
     private:
-      std::string _text;
+      boost::optional<std::string> _text;
     };
 
     std::ostream& operator<<(std::ostream& out_, const raw_text& raw_text_);

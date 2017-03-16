@@ -43,14 +43,19 @@ mdb_test_shell::mdb_test_shell(const std::string& line)
                          get_shell().engine(),
                          get_shell().env_path(),
                          mdb_temp_dir(),
+                         false,
                          nullptr)
 {
   env.append(metashell::data::cpp_code(line));
 }
 
 mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
-  : metashell::mdb_shell(
-        shell.env(), shell.engine(), shell.env_path(), mdb_temp_dir(), nullptr)
+  : metashell::mdb_shell(shell.env(),
+                         shell.engine(),
+                         shell.env_path(),
+                         mdb_temp_dir(),
+                         false,
+                         nullptr)
 {
   env.append(metashell::data::cpp_code(line));
 }

@@ -78,26 +78,49 @@ namespace
 
 namespace metashell
 {
-  // clang-format off
-  const mdb_command_handler_map mdb_shell::command_handler =
-    mdb_command_handler_map(
-      {
+  mdb_shell::mdb_shell(iface::environment& env_arg,
+                       iface::engine& engine_,
+                       const boost::filesystem::path& env_path_,
+                       const boost::filesystem::path& mdb_temp_dir_,
+                       bool preprocessor_,
+                       logger* logger_)
+    : command_handler(build_command_handler(preprocessor_)),
+      env(env_arg),
+      _logger(logger_),
+      _engine(engine_),
+      _env_path(env_path_),
+      _mdb_temp_dir(mdb_temp_dir_),
+      _preprocessor(preprocessor_)
+  {
+  }
+
+  mdb_command_handler_map mdb_shell::build_command_handler(bool preprocessor_)
+  {
+    const std::string expr = preprocessor_ ? "<expression>" : "<type>";
+    // clang-format off
+    return
+      mdb_command_handler_map({
         {{"evaluate"}, repeatable_t::non_repeatable,
           callback(&mdb_shell::command_evaluate),
-          "[-full|-profile] [<type>|-]",
+          std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
+            " [" + expr + "|-]",
           "Evaluate and start debugging a new metaprogram.",
-          "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
-          "Memoization events.\n\n"
+          std::string(preprocessor_ ? "" :
+            "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
+            "Memoization events.\n\n"
+          ) +
           "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
           "profile mode.\n\n"
-          "Instead of `<type>`, evaluate can be called with `-`, in which case the\n"
+          "Instead of `" + expr + "`, evaluate can be called with `-`, in which case the\n"
           "whole environment is being debugged not just a single type expression.\n\n"
-          "If called without `<type>` or `-`, then the last evaluated metaprogram will\n"
+          "If called without `" + expr + "` or `-`, then the last evaluated metaprogram will\n"
           "be reevaluated.\n\n"
-          "Previous breakpoints are cleared.\n\n"
-          "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
-          "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-          "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+          "Previous breakpoints are cleared." +
+          std::string(preprocessor_ ? "" :
+            "\n\nUnlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
+            "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
+            "explicitly enter `metashell::format< <type> >::type` for the same effect."
+          )},
         {{"step"}, repeatable_t::repeatable,
           callback(&mdb_shell::command_step),
           "[over|out] [n]",
@@ -167,22 +190,13 @@ namespace metashell
           "Quit metadebugger.",
           ""}
       });
-  // clang-format on
-
-  mdb_shell::mdb_shell(iface::environment& env_arg,
-                       iface::engine& engine_,
-                       const boost::filesystem::path& env_path_,
-                       const boost::filesystem::path& mdb_temp_dir_,
-                       logger* logger_)
-    : env(env_arg),
-      _logger(logger_),
-      _engine(engine_),
-      _env_path(env_path_),
-      _mdb_temp_dir(mdb_temp_dir_)
-  {
+    // clang-format on
   }
 
-  std::string mdb_shell::prompt() const { return "(mdb)"; }
+  std::string mdb_shell::prompt() const
+  {
+    return _preprocessor ? "(pdb)" : "(mdb)";
+  }
 
   bool mdb_shell::stopped() const { return is_stopped; }
 
@@ -655,7 +669,7 @@ namespace metashell
     // Intentionally left really ugly for more motivation to refactor
     while (true)
     {
-      if (boost::starts_with(arg, full_flag) &&
+      if (!_preprocessor && boost::starts_with(arg, full_flag) &&
           (arg.size() == full_flag.size() ||
            std::isspace(arg[full_flag.size()])))
       {
@@ -925,8 +939,10 @@ namespace metashell
   {
     try
     {
-      mp = _engine.metaprogram_tracer().eval(
-          env, _mdb_temp_dir, expression, mode, displayer_);
+      mp = _preprocessor ?
+               _engine.preprocessor_tracer().eval(env, expression) :
+               _engine.metaprogram_tracer().eval(
+                   env, _mdb_temp_dir, expression, mode, displayer_);
     }
     catch (const some_feature_not_supported&)
     {
@@ -1095,7 +1111,7 @@ namespace metashell
   mdb_shell::display_metaprogram_finished(iface::displayer& displayer_) const
   {
     displayer_.show_raw_text("Metaprogram finished");
-    displayer_.show_type_or_error(mp->get_evaluation_result());
+    displayer_.show_type_or_code_or_error(mp->get_evaluation_result());
   }
 
   void mdb_shell::display_movement_info(bool moved,

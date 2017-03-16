@@ -32,7 +32,7 @@ namespace metashell
     metaprogram::metaprogram(mode_t mode,
                              const cpp_code& root_name,
                              const file_location& root_source_location,
-                             const type_or_error& evaluation_result)
+                             const type_or_code_or_error& evaluation_result)
       : mode(mode), evaluation_result(evaluation_result)
     {
       root_vertex = add_vertex(type(root_name), root_source_location);
@@ -117,7 +117,7 @@ namespace metashell
       return get_num_vertices() == 1; // 1 is the <root> vertex
     }
 
-    const type_or_error& metaprogram::get_evaluation_result() const
+    const type_or_code_or_error& metaprogram::get_evaluation_result() const
     {
       return evaluation_result;
     }

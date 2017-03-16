@@ -26,7 +26,7 @@ namespace metashell
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result)
     : mp(mode, root_name, root_source_location, evaluation_result)
   {
   }

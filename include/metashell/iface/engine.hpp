@@ -23,6 +23,7 @@
 #include <metashell/iface/macro_discovery.hpp>
 #include <metashell/iface/metaprogram_tracer.hpp>
 #include <metashell/iface/preprocessor_shell.hpp>
+#include <metashell/iface/preprocessor_tracer.hpp>
 #include <metashell/iface/type_shell.hpp>
 
 namespace metashell
@@ -54,6 +55,9 @@ namespace metashell
 
       virtual iface::macro_discovery& macro_discovery() = 0;
       virtual const iface::macro_discovery& macro_discovery() const = 0;
+
+      virtual iface::preprocessor_tracer& preprocessor_tracer() = 0;
+      virtual const iface::preprocessor_tracer& preprocessor_tracer() const = 0;
     };
   }
 }

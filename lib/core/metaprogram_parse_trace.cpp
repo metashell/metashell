@@ -68,7 +68,7 @@ namespace metashell
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result)
   {
 
     metaprogram_builder builder(
@@ -117,7 +117,7 @@ namespace metashell
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result)
   {
     std::istringstream ss(string);
     return create_metaprogram_from_protobuf_stream(

@@ -14,6 +14,7 @@
     * New engine: `wave` adding Boost.Wave support with the standard headers of
       the Templight (shipped with Metashell) on the system include path and the
       macros of Templight defined by default.
+    * pdb, the macro debugger
 
 * Fixes
     * The `templight_metashell` executable is found even if the `metashell`

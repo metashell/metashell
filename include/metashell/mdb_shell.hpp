@@ -41,12 +41,13 @@ namespace metashell
   class mdb_shell : public iface::command_processor
   {
   public:
-    const static mdb_command_handler_map command_handler;
+    const mdb_command_handler_map command_handler;
 
     mdb_shell(iface::environment& env,
               iface::engine& engine_,
               const boost::filesystem::path& env_path_,
               const boost::filesystem::path& mdb_temp_dir_,
+              bool _preprocessor,
               logger* logger_);
 
     virtual std::string prompt() const override;
@@ -76,6 +77,8 @@ namespace metashell
 
     virtual void code_complete(const std::string& s_,
                                std::set<std::string>& out_) const override;
+
+    static mdb_command_handler_map build_command_handler(bool preprocessor_);
 
   protected:
     bool require_empty_args(const std::string& args,
@@ -143,6 +146,8 @@ namespace metashell
     iface::engine& _engine;
     boost::filesystem::path _env_path;
     boost::filesystem::path _mdb_temp_dir;
+
+    bool _preprocessor;
   };
 }
 

@@ -22,14 +22,14 @@
 
 namespace
 {
-  metashell::data::type_or_error
+  metashell::data::type_or_code_or_error
   run_metaprogram(metashell::clang_binary& clang_binary_,
                   const boost::optional<metashell::data::cpp_code>& expression_,
                   const boost::filesystem::path& output_path_,
                   metashell::iface::environment& env_,
                   metashell::iface::displayer& displayer_)
   {
-    using metashell::data::type_or_error;
+    using metashell::data::type_or_code_or_error;
 
     const metashell::data::result res = metashell::eval(
         env_, expression_, boost::none, output_path_, clang_binary_);
@@ -41,15 +41,16 @@ namespace
 
     if (!res.successful)
     {
-      return type_or_error::make_error(res.error);
+      return type_or_code_or_error::make_error(res.error);
     }
     else if (expression_)
     {
-      return type_or_error::make_type(metashell::data::type(res.output));
+      return type_or_code_or_error::make_type(
+          metashell::data::type(res.output));
     }
     else
     {
-      return type_or_error::make_none();
+      return type_or_code_or_error::make_none();
     }
   }
 }
@@ -70,7 +71,7 @@ namespace metashell
   {
     const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
 
-    const data::type_or_error evaluation_result = run_metaprogram(
+    const data::type_or_code_or_error evaluation_result = run_metaprogram(
         _clang_binary, expression_, output_path, env_, displayer_);
 
     // Opening in binary mode, because some platforms interpret some characters
@@ -100,7 +101,7 @@ namespace metashell
     else
     {
       // Shouldn't happen
-      throw exception("Unexpected type type_or_error result");
+      throw exception("Unexpected type type_or_code_or_error result");
     }
   }
 }
