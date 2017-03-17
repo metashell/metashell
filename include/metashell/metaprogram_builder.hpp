@@ -49,10 +49,11 @@ namespace metashell
     typedef data::metaprogram::vertex_descriptor vertex_descriptor;
     typedef data::metaprogram::edge_descriptor edge_descriptor;
 
-    typedef std::tuple<data::type, data::file_location> element_key_t;
+    typedef std::tuple<data::metaprogram_node, data::file_location>
+        element_key_t;
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
 
-    vertex_descriptor add_vertex(const data::type& type,
+    vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
 
     data::metaprogram mp;

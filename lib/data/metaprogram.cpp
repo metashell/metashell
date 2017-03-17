@@ -40,7 +40,7 @@ namespace metashell
     }
 
     metaprogram::vertex_descriptor
-    metaprogram::add_vertex(const type& type,
+    metaprogram::add_vertex(const metaprogram_node& node,
                             const file_location& source_location)
     {
       vertex_descriptor vertex = boost::add_vertex(graph);
@@ -53,7 +53,7 @@ namespace metashell
 
       auto& vertex_property = get_vertex_property(vertex);
 
-      vertex_property.node = type;
+      vertex_property.node = node;
       vertex_property.source_location = source_location;
 
       return vertex;

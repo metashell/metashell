@@ -122,7 +122,7 @@ namespace metashell
 
       typedef std::stack<step_rollback_t> state_history_t;
 
-      vertex_descriptor add_vertex(const type& type,
+      vertex_descriptor add_vertex(const metaprogram_node& node,
                                    const file_location& source_location);
 
       edge_descriptor add_edge(vertex_descriptor from,

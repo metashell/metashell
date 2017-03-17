@@ -74,18 +74,18 @@ namespace metashell
   }
 
   metaprogram_builder::vertex_descriptor
-  metaprogram_builder::add_vertex(const data::type& type,
+  metaprogram_builder::add_vertex(const data::metaprogram_node& node,
                                   const data::file_location& source_location)
   {
     element_vertex_map_t::iterator pos;
     bool inserted;
 
     std::tie(pos, inserted) = element_vertex_map.insert(std::make_pair(
-        std::make_tuple(type, source_location), vertex_descriptor()));
+        std::make_tuple(node, source_location), vertex_descriptor()));
 
     if (inserted)
     {
-      pos->second = mp.add_vertex(type, source_location);
+      pos->second = mp.add_vertex(node, source_location);
     }
     return pos->second;
   }
