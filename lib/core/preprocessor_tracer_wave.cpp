@@ -62,7 +62,10 @@ namespace metashell
   {
     const data::cpp_code input = determine_input(env_.get_all(), exp_);
 
-    data::type_or_code_or_error expanded_exp;
+    metaprogram_builder builder(data::metaprogram::mode_t::full,
+                                exp_ ? *exp_ : data::cpp_code("<environment>"),
+                                data::file_location());
+
     try
     {
       wave_context ctx(input.begin(), input.end(), "<input>");
@@ -71,20 +74,19 @@ namespace metashell
       std::ostringstream s;
       display(s, ctx, _config.ignore_macro_redefinition);
       const data::cpp_code output_code(s.str());
-      expanded_exp = exp_ ? remove_markers(output_code, true) : output_code;
+      builder.handle_evaluation_end(exp_ ? remove_markers(output_code, true) :
+                                           output_code);
     }
     catch (const boost::wave::cpp_exception& error_)
     {
-      expanded_exp = data::type_or_code_or_error::make_error(to_string(error_));
+      builder.handle_evaluation_end(
+          data::type_or_code_or_error::make_error(to_string(error_)));
     }
     catch (const std::exception& error_)
     {
-      expanded_exp = data::type_or_code_or_error::make_error(error_.what());
+      builder.handle_evaluation_end(
+          data::type_or_code_or_error::make_error(error_.what()));
     }
-
-    metaprogram_builder builder(data::metaprogram::mode_t::full,
-                                exp_ ? *exp_ : data::cpp_code("<environment>"),
-                                data::file_location(), expanded_exp);
 
     return builder.get_metaprogram();
   }

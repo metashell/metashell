@@ -39,9 +39,9 @@ namespace
 
 TEST(metaprogram_builder, normal_mode)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::normal, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 10, 20), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
   mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
@@ -49,6 +49,8 @@ TEST(metaprogram_builder, normal_mode)
                            data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
+
+  mb.handle_evaluation_end(data::type("eval_result"));
 
   data::metaprogram mp = mb.get_metaprogram();
 
@@ -75,9 +77,9 @@ TEST(metaprogram_builder, normal_mode)
 
 TEST(metaprogram_builder, full_mode)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::full, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 10, 20), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::full,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
   mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
@@ -98,6 +100,8 @@ TEST(metaprogram_builder, full_mode)
                            data::file_location("file_sl", 15, 25), 140.0);
 
   mb.handle_template_end(150.0);
+
+  mb.handle_evaluation_end(data::type("eval_result"));
 
   data::metaprogram mp = mb.get_metaprogram();
 
@@ -158,9 +162,9 @@ TEST(metaprogram_builder, full_mode)
 
 TEST(metaprogram_builder, profile_mode)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::profile, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 10, 20), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::profile,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
   mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
@@ -175,6 +179,8 @@ TEST(metaprogram_builder, profile_mode)
                            data::file_location("file_sl", 15, 25), 120.0);
 
   mb.handle_template_end(140.0);
+
+  mb.handle_evaluation_end(data::type("eval_result"));
 
   data::metaprogram mp = mb.get_metaprogram();
   mp.init_full_time_taken();
@@ -220,9 +226,9 @@ TEST(metaprogram_builder, profile_mode)
 
 TEST(metaprogram_builder, too_much_end_events_1)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::normal, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 40, 50), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 40, 50));
 
   assert_throw([&] { mb.handle_template_end(100.0); },
                "Mismatched Templight TemplateBegin and TemplateEnd events");
@@ -230,9 +236,9 @@ TEST(metaprogram_builder, too_much_end_events_1)
 
 TEST(metaprogram_builder, too_much_end_events_2)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::normal, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 30, 45), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 30, 45));
 
   mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
@@ -247,9 +253,9 @@ TEST(metaprogram_builder, too_much_end_events_2)
 
 TEST(metaprogram_builder, too_few_end_events)
 {
-  metaprogram_builder mb(
-      data::metaprogram::mode_t::normal, data::cpp_code("root_name"),
-      data::file_location("stdin.hpp", 30, 31), data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 30, 31));
 
   mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),

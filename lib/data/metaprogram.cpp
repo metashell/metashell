@@ -122,6 +122,11 @@ namespace metashell
       return evaluation_result;
     }
 
+    void metaprogram::set_evaluation_result(type_or_code_or_error result_)
+    {
+      evaluation_result = result_;
+    }
+
     void metaprogram::reset_state()
     {
       unsigned vertex_count = get_num_vertices();

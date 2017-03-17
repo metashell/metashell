@@ -31,8 +31,7 @@ namespace metashell
   public:
     metaprogram_builder(data::metaprogram::mode_t mode,
                         const data::cpp_code& root_name,
-                        const data::file_location& root_source_location,
-                        const data::type_or_code_or_error& evaluation_result);
+                        const data::file_location& root_source_location);
 
     void handle_template_begin(data::event_kind kind,
                                const data::type& type,
@@ -41,6 +40,8 @@ namespace metashell
                                double timestamp);
 
     void handle_template_end(double timestamp);
+
+    void handle_evaluation_end(data::type_or_code_or_error result_);
 
     const data::metaprogram& get_metaprogram() const;
 

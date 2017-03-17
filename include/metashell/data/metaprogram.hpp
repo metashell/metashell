@@ -137,6 +137,7 @@ namespace metashell
       bool is_empty() const;
 
       const type_or_code_or_error& get_evaluation_result() const;
+      void set_evaluation_result(type_or_code_or_error result_);
 
       void reset_state();
 

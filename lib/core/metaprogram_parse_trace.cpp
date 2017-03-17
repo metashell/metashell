@@ -71,8 +71,7 @@ namespace metashell
       const data::type_or_code_or_error& evaluation_result)
   {
 
-    metaprogram_builder builder(
-        mode, root_name, root_source_location, evaluation_result);
+    metaprogram_builder builder(mode, root_name, root_source_location);
 
     templight::ProtobufReader reader;
     reader.startOnBuffer(stream);
@@ -109,6 +108,7 @@ namespace metashell
       }
       reader.next();
     }
+    builder.handle_evaluation_end(evaluation_result);
     return builder.get_metaprogram();
   }
 

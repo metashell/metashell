@@ -25,9 +25,12 @@ namespace metashell
   metaprogram_builder::metaprogram_builder(
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
-      const data::type_or_code_or_error& evaluation_result)
-    : mp(mode, root_name, root_source_location, evaluation_result)
+      const data::file_location& root_source_location)
+    : mp(mode,
+         root_name,
+         root_source_location,
+         data::type_or_code_or_error(
+             "Internal Metashell error: metaprogram not finished yet"))
   {
   }
 
@@ -85,5 +88,11 @@ namespace metashell
       pos->second = mp.add_vertex(type, source_location);
     }
     return pos->second;
+  }
+
+  void metaprogram_builder::handle_evaluation_end(
+      data::type_or_code_or_error result_)
+  {
+    mp.set_evaluation_result(result_);
   }
 }
