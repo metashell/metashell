@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_INSTANTIATION_KIND_HPP
-#define METASHELL_SYSTEM_TEST_INSTANTIATION_KIND_HPP
+#ifndef METASHELL_SYSTEM_TEST_EVENT_KIND_HPP
+#define METASHELL_SYSTEM_TEST_EVENT_KIND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -24,7 +24,7 @@ namespace metashell
 {
   namespace system_test
   {
-    enum class instantiation_kind
+    enum class event_kind
     {
       template_instantiation,
       default_template_argument_instantiation,
@@ -38,9 +38,9 @@ namespace metashell
       non_template_type
     };
 
-    std::string to_string(instantiation_kind kind_);
-    std::ostream& operator<<(std::ostream& o_, instantiation_kind kind_);
-    instantiation_kind parse_kind(const std::string& kind_);
+    std::string to_string(event_kind kind_);
+    std::ostream& operator<<(std::ostream& o_, event_kind kind_);
+    event_kind parse_kind(const std::string& kind_);
   }
 }
 

@@ -29,7 +29,7 @@ frame::frame(const type& name_) : _name(name_) {}
 frame::frame(const type& name_,
              pattern::placeholder,
              pattern::placeholder,
-             instantiation_kind kind_)
+             event_kind kind_)
   : _name(name_), _kind(kind_)
 {
 }
@@ -38,7 +38,7 @@ const type& frame::name() const { return _name; }
 
 bool frame::has_kind() const { return _kind != boost::none; }
 
-instantiation_kind frame::kind() const
+event_kind frame::kind() const
 {
   assert(has_kind());
   return *_kind;

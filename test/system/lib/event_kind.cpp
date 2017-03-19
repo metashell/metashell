@@ -14,88 +14,88 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/system_test/instantiation_kind.hpp>
+#include <metashell/system_test/event_kind.hpp>
 
 #include <iostream>
 #include <stdexcept>
 
 using namespace metashell::system_test;
 
-std::string metashell::system_test::to_string(instantiation_kind kind_)
+std::string metashell::system_test::to_string(event_kind kind_)
 {
   switch (kind_)
   {
-  case instantiation_kind::template_instantiation:
+  case event_kind::template_instantiation:
     return "TemplateInstantiation";
-  case instantiation_kind::default_template_argument_instantiation:
+  case event_kind::default_template_argument_instantiation:
     return "DefaultTemplateArgumentInstantiation";
-  case instantiation_kind::default_function_argument_instantiation:
+  case event_kind::default_function_argument_instantiation:
     return "DefaultFunctionArgumentInstantiation";
-  case instantiation_kind::explicit_template_argument_substitution:
+  case event_kind::explicit_template_argument_substitution:
     return "ExplicitTemplateArgumentSubstitution";
-  case instantiation_kind::deduced_template_argument_substitution:
+  case event_kind::deduced_template_argument_substitution:
     return "DeducedTemplateArgumentSubstitution";
-  case instantiation_kind::prior_template_argument_substitution:
+  case event_kind::prior_template_argument_substitution:
     return "PriorTemplateArgumentSubstitution";
-  case instantiation_kind::default_template_argument_checking:
+  case event_kind::default_template_argument_checking:
     return "DefaultTemplateArgumentChecking";
-  case instantiation_kind::exception_spec_instantiation:
+  case event_kind::exception_spec_instantiation:
     return "ExceptionSpecInstantiation";
-  case instantiation_kind::memoization:
+  case event_kind::memoization:
     return "Memoization";
-  case instantiation_kind::non_template_type:
+  case event_kind::non_template_type:
     return "NonTemplateType";
   }
   return "UnknownKind";
 }
 
 std::ostream& metashell::system_test::operator<<(std::ostream& o_,
-                                                 instantiation_kind kind_)
+                                                 event_kind kind_)
 {
   return o_ << to_string(kind_);
 }
 
-instantiation_kind parse_kind(const std::string& kind_)
+event_kind parse_kind(const std::string& kind_)
 {
   if (kind_ == "TemplateInstantiation")
   {
-    return instantiation_kind::template_instantiation;
+    return event_kind::template_instantiation;
   }
   else if (kind_ == "DefaultTemplateArgumentInstantiation")
   {
-    return instantiation_kind::default_template_argument_instantiation;
+    return event_kind::default_template_argument_instantiation;
   }
   else if (kind_ == "DefaultFunctionArgumentInstantiation")
   {
-    return instantiation_kind::default_function_argument_instantiation;
+    return event_kind::default_function_argument_instantiation;
   }
   else if (kind_ == "ExplicitTemplateArgumentSubstitution")
   {
-    return instantiation_kind::explicit_template_argument_substitution;
+    return event_kind::explicit_template_argument_substitution;
   }
   else if (kind_ == "DeducedTemplateArgumentSubstitution")
   {
-    return instantiation_kind::deduced_template_argument_substitution;
+    return event_kind::deduced_template_argument_substitution;
   }
   else if (kind_ == "PriorTemplateArgumentSubstitution")
   {
-    return instantiation_kind::prior_template_argument_substitution;
+    return event_kind::prior_template_argument_substitution;
   }
   else if (kind_ == "DefaultTemplateArgumentChecking")
   {
-    return instantiation_kind::default_template_argument_checking;
+    return event_kind::default_template_argument_checking;
   }
   else if (kind_ == "ExceptionSpecInstantiation")
   {
-    return instantiation_kind::exception_spec_instantiation;
+    return event_kind::exception_spec_instantiation;
   }
   else if (kind_ == "Memoization")
   {
-    return instantiation_kind::memoization;
+    return event_kind::memoization;
   }
   else if (kind_ == "NonTemplateType")
   {
-    return instantiation_kind::non_template_type;
+    return event_kind::non_template_type;
   }
   else
   {

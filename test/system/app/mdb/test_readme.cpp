@@ -116,38 +116,36 @@ TEST(readme, getting_started)
   ASSERT_EQ(raw_text("Metaprogram started"),
             mi.command("evaluate int_<fib<6>::value>").front());
 
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step 3").front());
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::template_instantiation),
+            mi.command("step 3").front());
+
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            mi.command("step -1").front());
 
   ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step -1").front());
-
-  ASSERT_EQ(backtrace({frame(type("fib<5>"), _, _,
-                             instantiation_kind::template_instantiation),
-                       frame(type("fib<6>"), _, _,
-                             instantiation_kind::template_instantiation),
-                       frame(type("int_<fib<6>::value>"))}),
-            mi.command("bt").front());
+      backtrace(
+          {frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+           frame(type("fib<6>"), _, _, event_kind::template_instantiation),
+           frame(type("int_<fib<6>::value>"))}),
+      mi.command("bt").front());
 
   // clang-format off
 
   ASSERT_EQ(
     call_graph(
       {
-        {frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation), 0, 3},
-        {frame( type("fib<4>"), _, _, instantiation_kind::template_instantiation), 1, 3},
-        {frame(  type("fib<3>"), _, _, instantiation_kind::template_instantiation), 2, 3},
-        {frame(   type("fib<2>"), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    type("fib<1>"), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    type("fib<0>"), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   type("fib<2>"), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   type("fib<1>"), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  type("fib<3>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  type("fib<2>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("fib<4>"), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( type("fib<3>"), _, _, instantiation_kind::memoization), 1, 0}
+        {frame(type("fib<5>"), _, _, event_kind::template_instantiation), 0, 3},
+        {frame( type("fib<4>"), _, _, event_kind::template_instantiation), 1, 3},
+        {frame(  type("fib<3>"), _, _, event_kind::template_instantiation), 2, 3},
+        {frame(   type("fib<2>"), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    type("fib<1>"), _, _, event_kind::memoization), 4, 0},
+        {frame(    type("fib<0>"), _, _, event_kind::memoization), 4, 0},
+        {frame(   type("fib<2>"), _, _, event_kind::memoization), 3, 0},
+        {frame(   type("fib<1>"), _, _, event_kind::memoization), 3, 0},
+        {frame(  type("fib<3>"), _, _, event_kind::memoization), 2, 0},
+        {frame(  type("fib<2>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("fib<4>"), _, _, event_kind::memoization), 1, 0},
+        {frame( type("fib<3>"), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("ft").front()
@@ -162,16 +160,15 @@ TEST(readme, getting_started)
   ASSERT_EQ(
       (std::vector<json_string>{
           to_json_string(raw_text("Breakpoint 1: regex(\"fib<3>\") reached")),
-          to_json_string(frame(type("fib<3>"), _, _,
-                               instantiation_kind::template_instantiation)),
+          to_json_string(
+              frame(type("fib<3>"), _, _, event_kind::template_instantiation)),
           to_json_string(prompt("(mdb)"))}),
       mi.command("continue"));
 
   ASSERT_EQ(
       (std::vector<json_string>{
           to_json_string(raw_text("Breakpoint 1: regex(\"fib<3>\") reached")),
-          to_json_string(
-              frame(type("fib<3>"), _, _, instantiation_kind::memoization)),
+          to_json_string(frame(type("fib<3>"), _, _, event_kind::memoization)),
           to_json_string(prompt("(mdb)"))}),
       mi.command("c 2"));
 
@@ -227,9 +224,9 @@ TEST(readme, how_to_template_argument_deduction)
     call_graph(
       {
         {frame(type("decltype(foo(13))")), 0, 3},
-        {frame(type("foo"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
-        {frame( type("foo<int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
+        {frame(type("foo"), _, _, event_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("foo<int>"), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( type("void"), _, _, event_kind::non_template_type), 1, 0}
       }
     ),
   mi.command("ft").front());
@@ -248,9 +245,9 @@ TEST(readme, how_to_template_argument_deduction)
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"foo\") reached"), cont[0]);
   ASSERT_TRUE(
       frame(type("foo<std::vector<int, std::allocator<int> > >"), _, _,
-            instantiation_kind::template_instantiation) == cont[1] ||
+            event_kind::template_instantiation) == cont[1] ||
       frame(type("foo<std::__1::vector<int, std::__1::allocator<int> > >"), _,
-            _, instantiation_kind::template_instantiation) == cont[1]);
+            _, event_kind::template_instantiation) == cont[1]);
 }
 
 TEST(readme, how_to_sfinae)
@@ -265,17 +262,17 @@ TEST(readme, how_to_sfinae)
     call_graph(
       {
         {frame(type("decltype(make_unique<int>(15))")), 0, 6},
-        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
-        {frame(  type("unique_if<int>"), _, _, instantiation_kind::template_instantiation), 2, 0},
-        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 1},
-        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("make_unique"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 2},
-        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  type("unique_if<int>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("make_unique"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
-        {frame( type("make_unique<int, int>"), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("_std::unique_ptr<int>"), _, _, instantiation_kind::template_instantiation), 1, 0}
+        {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 2},
+        {frame(  type("unique_if<int>"), _, _, event_kind::template_instantiation), 2, 0},
+        {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 1},
+        {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 2},
+        {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
+        {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, event_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("make_unique<int, int>"), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( type("_std::unique_ptr<int>"), _, _, event_kind::template_instantiation), 1, 0}
       }
     ),
   mi.command("ft").front());

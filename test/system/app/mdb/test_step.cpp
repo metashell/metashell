@@ -52,9 +52,8 @@ TEST(mdb_step, fibonacci)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
 }
 
 TEST(mdb_step, two_fibonacci)
@@ -63,9 +62,8 @@ TEST(mdb_step, two_fibonacci)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step 2").front());
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::template_instantiation),
+            mi.command("step 2").front());
 }
 
 TEST(mdb_step, fibonacci_twice)
@@ -74,13 +72,11 @@ TEST(mdb_step, fibonacci_twice)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::template_instantiation),
+            step(mi));
 }
 
 TEST(mdb_step, fibonacci_twice_with_empty_second_line)
@@ -89,13 +85,11 @@ TEST(mdb_step, fibonacci_twice_with_empty_second_line)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("").front());
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::template_instantiation),
+            mi.command("").front());
 }
 
 TEST(mdb_step, fibonacci_twice_with_space_second_line)
@@ -104,9 +98,8 @@ TEST(mdb_step, fibonacci_twice_with_space_second_line)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
   // space doesn't repeat
   ASSERT_EQ(prompt("(mdb)"), mi.command(" ").front());
@@ -128,13 +121,11 @@ TEST(mdb_step, zero_fibonacci_after_step)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step 0").front());
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            mi.command("step 0").front());
 }
 
 TEST(mdb_step, zero_fibonacci_at_end)
@@ -171,8 +162,7 @@ TEST(mdb_step, int_non_template_type)
   metashell_instance mi;
   mi.command("#msh mdb int");
 
-  ASSERT_EQ(frame(type("int"), _, _, instantiation_kind::non_template_type),
-            step(mi));
+  ASSERT_EQ(frame(type("int"), _, _, event_kind::non_template_type), step(mi));
 
   ASSERT_EQ((std::vector<json_string>{
                 to_json_string(raw_text("Metaprogram finished")),
@@ -186,74 +176,45 @@ TEST(mdb_step, over_the_whole_metaprogram_multiple_steps)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<0>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<1>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<1>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<7>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<7>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<9>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<7>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<8>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<9>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("int_<55>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<0>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<1>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<1>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<7>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<7>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<9>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<7>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<8>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<9>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("int_<55>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
   ASSERT_EQ(
       (std::vector<json_string>{
@@ -271,55 +232,34 @@ TEST(mdb_step, over_environment_multiple_steps)
              "int_<fib<6>::value> y;");
   mi.command("#msh mdb -");
 
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<1>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<0>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<1>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<2>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("int_<5>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("int_<5>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("fib<4>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::memoization), step(mi));
-  ASSERT_EQ(
-      frame(type("int_<8>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
-  ASSERT_EQ(
-      frame(type("int_<8>"), _, _, instantiation_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<1>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<0>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<1>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<2>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("int_<5>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("int_<5>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("fib<4>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::memoization), step(mi));
+  ASSERT_EQ(frame(type("int_<8>"), _, _, event_kind::template_instantiation),
+            step(mi));
+  ASSERT_EQ(frame(type("int_<8>"), _, _, event_kind::memoization), step(mi));
 
   ASSERT_EQ(raw_text("Metaprogram finished"), step(mi));
 }
@@ -388,9 +328,8 @@ TEST(mdb_step, minus_1_after_step_2)
   mi.command("#msh mdb int_<fib<10>::value>");
   mi.command("step 2");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step -1").front());
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            mi.command("step -1").front());
 }
 
 TEST(mdb_step, minus_1_after_step_2_in_full_mode)
@@ -422,11 +361,10 @@ TEST(mdb_step, over_fib_from_after_step)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step").front());
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            mi.command("step").front());
 
-  ASSERT_EQ(frame(type("fib<10>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::memoization),
             mi.command("step over").front());
 }
 
@@ -436,16 +374,14 @@ TEST(mdb_step, over_minus_1_fib_from_after_step)
   mi.command(fibonacci_mp);
   mi.command("#msh mdb int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step").front());
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            mi.command("step").front());
 
-  ASSERT_EQ(frame(type("fib<10>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::memoization),
             mi.command("step over").front());
 
-  ASSERT_EQ(
-      frame(type("fib<10>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step over -1").front());
+  ASSERT_EQ(frame(type("fib<10>"), _, _, event_kind::template_instantiation),
+            mi.command("step over -1").front());
 }
 
 TEST(mdb_step, over_minus_1_multi_fib_from_after_step)
@@ -454,17 +390,17 @@ TEST(mdb_step, over_minus_1_multi_fib_from_after_step)
   mi.command(multi_fibonacci_mp);
   mi.command("#msh mdb int_<multi_fib<10>::value>");
 
-  ASSERT_EQ(frame(type("multi_fib<4>"), _, _,
-                  instantiation_kind::template_instantiation),
-            mi.command("step 4").front());
+  ASSERT_EQ(
+      frame(type("multi_fib<4>"), _, _, event_kind::template_instantiation),
+      mi.command("step 4").front());
 
-  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
             mi.command("step over").front());
 
-  ASSERT_EQ(frame(type("multi_fib<3>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<3>"), _, _, event_kind::memoization),
             mi.command("step over").front());
 
-  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
             mi.command("step over -1").front());
 }
 
@@ -502,7 +438,7 @@ TEST(mdb_step, out_fib_after_two_steps)
   mi.command("#msh mdb int_<fib<5>::value>");
   mi.command("step 2");
 
-  ASSERT_EQ(frame(type("fib<5>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization),
             mi.command("step out").front());
 }
 
@@ -513,7 +449,7 @@ TEST(mdb_step, out_fib_after_three_steps)
   mi.command("#msh mdb int_<fib<5>::value>");
   mi.command("step 3");
 
-  ASSERT_EQ(frame(type("fib<3>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization),
             mi.command("step out").front());
 }
 
@@ -524,7 +460,7 @@ TEST(mdb_step, out_fib_twice_after_five_steps)
   mi.command("#msh mdb int_<fib<5>::value>");
   mi.command("step 5");
 
-  ASSERT_EQ(frame(type("fib<3>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::memoization),
             mi.command("step out 2").front());
 }
 
@@ -573,9 +509,8 @@ TEST(mdb_step, out_minus_1_after_step_4_in_fib)
   mi.command("#msh mdb int_<fib<5>::value>");
   mi.command("step 4");
 
-  ASSERT_EQ(
-      frame(type("fib<3>"), _, _, instantiation_kind::template_instantiation),
-      mi.command("step out -1").front());
+  ASSERT_EQ(frame(type("fib<3>"), _, _, event_kind::template_instantiation),
+            mi.command("step out -1").front());
 }
 
 TEST(mdb_step, over_template_spec_no_deduced_event)
@@ -585,19 +520,16 @@ TEST(mdb_step, over_template_spec_no_deduced_event)
   mi.command("#msh mdb int_<foo<3, 1>::value>");
 
   ASSERT_EQ(frame(type("foo<N, 1>"), _, _,
-                  instantiation_kind::deduced_template_argument_substitution),
+                  event_kind::deduced_template_argument_substitution),
             step(mi));
 
-  ASSERT_EQ(frame(type("foo<3, 1>"), _, _,
-                  instantiation_kind::template_instantiation),
+  ASSERT_EQ(frame(type("foo<3, 1>"), _, _, event_kind::template_instantiation),
             step(mi));
 
-  ASSERT_EQ(frame(type("foo<3, 1>"), _, _, instantiation_kind::memoization),
-            step(mi));
+  ASSERT_EQ(frame(type("foo<3, 1>"), _, _, event_kind::memoization), step(mi));
 
-  ASSERT_EQ(
-      frame(type("int_<45>"), _, _, instantiation_kind::template_instantiation),
-      step(mi));
+  ASSERT_EQ(frame(type("int_<45>"), _, _, event_kind::template_instantiation),
+            step(mi));
 
   ASSERT_EQ(
       (std::vector<json_string>{

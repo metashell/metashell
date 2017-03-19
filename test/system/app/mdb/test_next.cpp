@@ -65,16 +65,16 @@ TEST(mdb_next, minus_1_multi_fib_from_after_step)
   mi.command(multi_fibonacci_mp);
   mi.command("#msh mdb int_<multi_fib<10>::value>");
 
-  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
             mi.command("step 15").front());
 
-  ASSERT_EQ(frame(type("multi_fib<5>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<5>"), _, _, event_kind::memoization),
             mi.command("next").front());
 
-  ASSERT_EQ(frame(type("multi_fib<6>"), _, _, instantiation_kind::memoization),
+  ASSERT_EQ(frame(type("multi_fib<6>"), _, _, event_kind::memoization),
             mi.command("next").front());
 
-  ASSERT_EQ(frame(type("multi_fib<6>"), _, _,
-                  instantiation_kind::template_instantiation),
-            mi.command("next -1").front());
+  ASSERT_EQ(
+      frame(type("multi_fib<6>"), _, _, event_kind::template_instantiation),
+      mi.command("next -1").front());
 }

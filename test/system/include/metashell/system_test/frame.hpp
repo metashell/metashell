@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/system_test/instantiation_kind.hpp>
+#include <metashell/system_test/event_kind.hpp>
 #include <metashell/system_test/json_string.hpp>
 #include <metashell/system_test/type.hpp>
 
@@ -40,18 +40,18 @@ namespace metashell
       frame(const type& name_,
             pattern::placeholder,
             pattern::placeholder,
-            instantiation_kind kind_);
+            event_kind kind_);
 
       const type& name() const;
 
       bool has_kind() const;
 
       // precondition: has_kind()
-      instantiation_kind kind() const;
+      event_kind kind() const;
 
     private:
       type _name;
-      boost::optional<instantiation_kind> _kind;
+      boost::optional<event_kind> _kind;
     };
 
     std::ostream& operator<<(std::ostream& o_, const frame& f_);

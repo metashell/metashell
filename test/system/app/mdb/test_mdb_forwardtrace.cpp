@@ -60,7 +60,7 @@ TEST(mdb_forwardtrace, int_type)
     call_graph(
       {
         {frame(type("int")), 0, 1},
-        {frame(type("int"), _, _, instantiation_kind::non_template_type), 1, 0}
+        {frame(type("int"), _, _, event_kind::non_template_type), 1, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -128,7 +128,7 @@ TEST(mdb_forwardtrace, int_with_ft)
     call_graph(
       {
         {frame(type("int")), 0, 1},
-        {frame(type("int"), _, _, instantiation_kind::non_template_type), 1, 0}
+        {frame(type("int"), _, _, event_kind::non_template_type), 1, 0}
       }
     ),
     mi.command("ft").front()
@@ -150,20 +150,20 @@ TEST(mdb_forwardtrace, from_root)
     call_graph(
       {
         {frame(type("int_<fib<5>::value>")), 0, 3},
-        {frame( fib<5>(), _, _, instantiation_kind::template_instantiation), 1, 4},
-        {frame(  fib<3>(), _, _, instantiation_kind::template_instantiation), 2, 3},
-        {frame(   fib<1>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<2>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<3>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<4>(), _, _, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<3>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<4>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<5>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<5>"), _, _, instantiation_kind::template_instantiation), 1, 0}
+        {frame( fib<5>(), _, _, event_kind::template_instantiation), 1, 4},
+        {frame(  fib<3>(), _, _, event_kind::template_instantiation), 2, 3},
+        {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    fib<0>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<4>(), _, _, event_kind::template_instantiation), 2, 2},
+        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<3>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<5>(), _, _, event_kind::memoization), 1, 0},
+        {frame( type("int_<5>"), _, _, event_kind::template_instantiation), 1, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -223,7 +223,7 @@ TEST(mdb_forwardtrace, from_memoization)
   ASSERT_EQ(
     call_graph(
       {
-        {frame( fib<5>(), _, _, instantiation_kind::memoization), 0, 0}
+        {frame( fib<5>(), _, _, event_kind::memoization), 0, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -245,18 +245,18 @@ TEST(mdb_forwardtrace, ft_from_step_1)
   ASSERT_EQ(
     call_graph(
       {
-        {frame(fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 4},
-        {frame( fib<3>(), _, _, instantiation_kind::template_instantiation), 1, 3},
-        {frame(  fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<0>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<1>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<3>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<3>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
+        {frame(fib<5>(), _, _, event_kind::template_instantiation), 0, 4},
+        {frame( fib<3>(), _, _, event_kind::template_instantiation), 1, 3},
+        {frame(  fib<1>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<2>(), _, _, event_kind::template_instantiation), 2, 2},
+        {frame(   fib<0>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<3>(), _, _, event_kind::memoization), 1, 0},
+        {frame( fib<4>(), _, _, event_kind::template_instantiation), 1, 2},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<4>(), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -314,7 +314,7 @@ TEST(mdb_forwardtrace, ft_from_step_1_with_limit_0)
   ASSERT_EQ(
     call_graph(
       {
-        {frame( fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 0}
+        {frame( fib<5>(), _, _, event_kind::template_instantiation), 0, 0}
       }
     ),
     mi.command("forwardtrace 0").front()
@@ -336,11 +336,11 @@ TEST(mdb_forwardtrace, ft_from_step_1_with_limit_1)
   ASSERT_EQ(
     call_graph(
       {
-        {frame(fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 4},
-        {frame( fib<3>(), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( fib<3>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
+        {frame(fib<5>(), _, _, event_kind::template_instantiation), 0, 4},
+        {frame( fib<3>(), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( fib<3>(), _, _, event_kind::memoization), 1, 0},
+        {frame( fib<4>(), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( fib<4>(), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("forwardtrace 1").front()
@@ -386,16 +386,16 @@ TEST(mdb_forwardtrace, ft_from_step_2_with_limit_2)
   ASSERT_EQ(
     call_graph(
       {
-        {frame(fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 4},
-        {frame( fib<3>(), _, _, instantiation_kind::template_instantiation), 1, 3},
-        {frame(  fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::template_instantiation), 2, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<3>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<3>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
+        {frame(fib<5>(), _, _, event_kind::template_instantiation), 0, 4},
+        {frame( fib<3>(), _, _, event_kind::template_instantiation), 1, 3},
+        {frame(  fib<1>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<2>(), _, _, event_kind::template_instantiation), 2, 0},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<3>(), _, _, event_kind::memoization), 1, 0},
+        {frame( fib<4>(), _, _, event_kind::template_instantiation), 1, 2},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<4>(), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("forwardtrace 2").front()
@@ -417,18 +417,18 @@ TEST(mdb_forwardtrace, ft_from_step_2_with_limit_100)
   ASSERT_EQ(
     call_graph(
       {
-        {frame(fib<5>(), _, _, instantiation_kind::template_instantiation), 0, 4},
-        {frame( fib<3>(), _, _, instantiation_kind::template_instantiation), 1, 3},
-        {frame(  fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<0>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<1>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<3>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<2>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<3>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<4>(), _, _, instantiation_kind::memoization), 1, 0}
+        {frame(fib<5>(), _, _, event_kind::template_instantiation), 0, 4},
+        {frame( fib<3>(), _, _, event_kind::template_instantiation), 1, 3},
+        {frame(  fib<1>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<2>(), _, _, event_kind::template_instantiation), 2, 2},
+        {frame(   fib<0>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<3>(), _, _, event_kind::memoization), 1, 0},
+        {frame( fib<4>(), _, _, event_kind::template_instantiation), 1, 2},
+        {frame(  fib<2>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<4>(), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("forwardtrace 100").front()
@@ -450,11 +450,11 @@ TEST(mdb_forwardtrace, from_root_on_errored_metaprogram)
     call_graph(
       {
         {frame(type("int_<fib<5>::value>")), 0, 1},
-        {frame(fib<5>(), _, _, instantiation_kind::template_instantiation), 1, 1},
-        {frame( fib<3>(), _, _, instantiation_kind::template_instantiation), 2, 2},
-        {frame(  fib<1>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<2>(), _, _, instantiation_kind::template_instantiation), 3, 1},
-        {frame(   fib<0>(), _, _, instantiation_kind::memoization), 4, 0}
+        {frame(fib<5>(), _, _, event_kind::template_instantiation), 1, 1},
+        {frame( fib<3>(), _, _, event_kind::template_instantiation), 2, 2},
+        {frame(  fib<1>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<2>(), _, _, event_kind::template_instantiation), 3, 1},
+        {frame(   fib<0>(), _, _, event_kind::memoization), 4, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -478,27 +478,27 @@ TEST(mdb_forwardtrace, evaluating_environment_fib_2_3)
     call_graph(
       {
         {frame(type("<environment>")), 0, 8},
-        {frame( fib<5>(), _, _, instantiation_kind::template_instantiation), 1, 4},
-        {frame(  fib<3>(), _, _, instantiation_kind::template_instantiation), 2, 3},
-        {frame(   fib<1>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<2>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    fib<0>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<3>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<4>(), _, _, instantiation_kind::template_instantiation), 2, 2},
-        {frame(   fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   fib<3>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  fib<4>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<5>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<5>"), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("int_<5>"), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( fib<6>(), _, _, instantiation_kind::template_instantiation), 1, 2},
-        {frame(  fib<4>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  fib<5>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( fib<6>(), _, _, instantiation_kind::memoization), 1, 0},
-        {frame( type("int_<8>"), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("int_<8>"), _, _, instantiation_kind::memoization), 1, 0}
+        {frame( fib<5>(), _, _, event_kind::template_instantiation), 1, 4},
+        {frame(  fib<3>(), _, _, event_kind::template_instantiation), 2, 3},
+        {frame(   fib<1>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    fib<0>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<3>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<4>(), _, _, event_kind::template_instantiation), 2, 2},
+        {frame(   fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   fib<3>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<5>(), _, _, event_kind::memoization), 1, 0},
+        {frame( type("int_<5>"), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( type("int_<5>"), _, _, event_kind::memoization), 1, 0},
+        {frame( fib<6>(), _, _, event_kind::template_instantiation), 1, 2},
+        {frame(  fib<4>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  fib<5>(), _, _, event_kind::memoization), 2, 0},
+        {frame( fib<6>(), _, _, event_kind::memoization), 1, 0},
+        {frame( type("int_<8>"), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( type("int_<8>"), _, _, event_kind::memoization), 1, 0}
       }
     ),
     mi.command("forwardtrace").front()
@@ -520,37 +520,37 @@ TEST(mdb_forwardtrace, sfinae_v1)
     call_graph(
       {
         {frame(type("decltype(foo<4>())")), 0, 5},
-        {frame( type("foo"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 4},
-        {frame(  v2::fib<4>(), _, _, instantiation_kind::template_instantiation), 2, 4},
-        {frame(   v2::fib<2>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    v2::fib<0>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    v2::fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   v2::fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   v2::fib<3>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    v2::fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    v2::fib<2>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   v2::fib<3>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  v2::fib<4>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  type("enable_if<false, char>"), _, _, instantiation_kind::template_instantiation), 2, 0},
-        {frame(  type("enable_if<false, char>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("foo"), _, _, instantiation_kind::explicit_template_argument_substitution), 1, 6},
-        {frame(  v1::fib<4>(), _, _, instantiation_kind::template_instantiation), 2, 4},
-        {frame(   v1::fib<2>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    v1::fib<0>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    v1::fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   v1::fib<2>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(   v1::fib<3>(), _, _, instantiation_kind::template_instantiation), 3, 2},
-        {frame(    v1::fib<1>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(    v1::fib<2>(), _, _, instantiation_kind::memoization), 4, 0},
-        {frame(   v1::fib<3>(), _, _, instantiation_kind::memoization), 3, 0},
-        {frame(  v1::fib<4>(), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  type("enable_if<true, type-parameter-0-0>"), _, _, instantiation_kind::deduced_template_argument_substitution), 2, 0},
-        {frame(  type("enable_if<true, void>"), _, _, instantiation_kind::template_instantiation), 2, 0},
-        {frame(  type("enable_if<true, void>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame(  type("enable_if<true, void>"), _, _, instantiation_kind::memoization), 2, 0},
-        {frame( type("foo"), _, _, instantiation_kind::deduced_template_argument_substitution), 1, 0},
-        {frame( type("foo<4>"), _, _, instantiation_kind::template_instantiation), 1, 0},
-        {frame( type("void"), _, _, instantiation_kind::non_template_type), 1, 0}
+        {frame( type("foo"), _, _, event_kind::explicit_template_argument_substitution), 1, 4},
+        {frame(  v2::fib<4>(), _, _, event_kind::template_instantiation), 2, 4},
+        {frame(   v2::fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    v2::fib<0>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    v2::fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   v2::fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   v2::fib<3>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    v2::fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    v2::fib<2>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   v2::fib<3>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  v2::fib<4>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  type("enable_if<false, char>"), _, _, event_kind::template_instantiation), 2, 0},
+        {frame(  type("enable_if<false, char>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("foo"), _, _, event_kind::explicit_template_argument_substitution), 1, 6},
+        {frame(  v1::fib<4>(), _, _, event_kind::template_instantiation), 2, 4},
+        {frame(   v1::fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    v1::fib<0>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    v1::fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   v1::fib<2>(), _, _, event_kind::memoization), 3, 0},
+        {frame(   v1::fib<3>(), _, _, event_kind::template_instantiation), 3, 2},
+        {frame(    v1::fib<1>(), _, _, event_kind::memoization), 4, 0},
+        {frame(    v1::fib<2>(), _, _, event_kind::memoization), 4, 0},
+        {frame(   v1::fib<3>(), _, _, event_kind::memoization), 3, 0},
+        {frame(  v1::fib<4>(), _, _, event_kind::memoization), 2, 0},
+        {frame(  type("enable_if<true, type-parameter-0-0>"), _, _, event_kind::deduced_template_argument_substitution), 2, 0},
+        {frame(  type("enable_if<true, void>"), _, _, event_kind::template_instantiation), 2, 0},
+        {frame(  type("enable_if<true, void>"), _, _, event_kind::memoization), 2, 0},
+        {frame(  type("enable_if<true, void>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("foo"), _, _, event_kind::deduced_template_argument_substitution), 1, 0},
+        {frame( type("foo<4>"), _, _, event_kind::template_instantiation), 1, 0},
+        {frame( type("void"), _, _, event_kind::non_template_type), 1, 0}
       }
     ),
     mi.command("forwardtrace").front()
