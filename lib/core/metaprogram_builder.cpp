@@ -19,6 +19,8 @@
 
 #include <metashell/exception.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
 namespace metashell
 {
 
@@ -32,6 +34,77 @@ namespace metashell
          data::type_or_code_or_error(
              "Internal Metashell error: metaprogram not finished yet"))
   {
+  }
+
+  void metaprogram_builder::handle_macro_expansion_begin(
+      const data::cpp_code& name,
+      const boost::optional<std::vector<data::cpp_code>>& args,
+      const data::file_location& point_of_event,
+      const data::file_location& source_location,
+      double timestamp)
+  {
+    data::cpp_code call = name;
+    if (args)
+    {
+      call += "(" + boost::algorithm::join(*args, ",") + ")";
+    }
+
+    vertex_descriptor vertex = add_vertex(call, source_location);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    auto edge =
+        mp.add_edge(top_vertex, vertex, data::event_kind::macro_expansion,
+                    point_of_event, timestamp);
+    edge_stack.push(edge);
+  }
+
+  void metaprogram_builder::handle_rescanning(const data::cpp_code& code,
+                                              double timestamp)
+  {
+    if (edge_stack.empty())
+    {
+      throw exception("Mismatched macro expansion begin and rescanning events");
+    }
+    auto& ep = mp.get_edge_property(edge_stack.top());
+
+    vertex_descriptor vertex = add_vertex(code, ep.point_of_event);
+    vertex_descriptor top_vertex = mp.get_target(edge_stack.top());
+
+    auto edge = mp.add_edge(top_vertex, vertex, data::event_kind::rescanning,
+                            ep.point_of_event, timestamp);
+    edge_stack.push(edge);
+  }
+
+  void metaprogram_builder::handle_expanded_code(
+      const data::cpp_code& code,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(code, point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::expanded_code,
+                point_of_event, timestamp);
+  }
+
+  void metaprogram_builder::handle_macro_expansion_end(double timestamp)
+  {
+    // one rescanning and one macro expansion
+    for (int i = 0; i != 2; ++i)
+    {
+      if (edge_stack.empty())
+      {
+        throw exception("Mismatched macro expansion begin and end events");
+      }
+      auto& ep = mp.get_edge_property(edge_stack.top());
+      ep.time_taken = timestamp - ep.begin_timestamp;
+
+      edge_stack.pop();
+    }
   }
 
   void metaprogram_builder::handle_template_begin(

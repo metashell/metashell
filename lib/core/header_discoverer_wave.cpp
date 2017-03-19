@@ -37,7 +37,7 @@ namespace metashell
     const data::cpp_code exp = exp_ + "\n";
     std::set<boost::filesystem::path> result;
     wave_hooks hooks(result);
-    wave_context ctx(exp.begin(), exp.end(), "<input>", hooks);
+    wave_context ctx(exp.begin(), exp.end(), "<stdin>", hooks);
     apply(ctx, _config);
     preprocess(ctx);
     return result;

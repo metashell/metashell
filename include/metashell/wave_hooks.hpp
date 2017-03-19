@@ -19,11 +19,18 @@
 
 #include <metashell/wave_token.hpp>
 
+#include <metashell/data/cpp_code.hpp>
+#include <metashell/data/file_location.hpp>
+
 #include <boost/wave.hpp>
 
 #include <boost/filesystem/path.hpp>
 
+#include <algorithm>
+#include <functional>
+#include <iterator>
 #include <set>
+#include <sstream>
 
 namespace metashell
 {
@@ -31,6 +38,19 @@ namespace metashell
       : public boost::wave::context_policies::eat_whitespace<wave_token>
   {
   public:
+    int lines_of_env = 0;
+    int lines_to_ignore_after_env = 0;
+
+    std::function<void(const data::cpp_code&,
+                       const boost::optional<std::vector<data::cpp_code>>&,
+                       const data::file_location&,
+                       const data::file_location&)>
+        on_macro_expansion_begin;
+
+    std::function<void(data::cpp_code)> on_rescanning;
+
+    std::function<void(data::cpp_code)> on_macro_expansion_end;
+
     wave_hooks() : _included_files(nullptr) {}
 
     explicit wave_hooks(std::set<boost::filesystem::path>& included_files_)
@@ -50,8 +70,115 @@ namespace metashell
       }
     }
 
+    template <typename ContextT,
+              typename TokenT,
+              typename ContainerT,
+              typename IteratorT>
+    bool
+    expanding_function_like_macro(const ContextT&,
+                                  const TokenT& macrodef_,
+                                  const std::vector<TokenT>&,
+                                  const ContainerT&,
+                                  const TokenT& macrocall_,
+                                  const std::vector<ContainerT>& arguments_,
+                                  const IteratorT&,
+                                  const IteratorT&)
+    {
+      if (on_macro_expansion_begin)
+      {
+        std::vector<data::cpp_code> args;
+        args.reserve(arguments_.size());
+        std::transform(arguments_.begin(), arguments_.end(),
+                       std::back_inserter(args), &tokens_to_code<ContainerT>);
+
+        on_macro_expansion_begin(token_to_code(macrodef_), args,
+                                 to_file_location(macrocall_),
+                                 to_file_location(macrodef_));
+      }
+      return false;
+    }
+
+    template <typename ContextT, typename TokenT, typename ContainerT>
+    bool expanding_object_like_macro(const ContextT&,
+                                     const TokenT& macrodef_,
+                                     const ContainerT&,
+                                     const TokenT& macrocall_)
+    {
+      if (on_macro_expansion_begin)
+      {
+        on_macro_expansion_begin(token_to_code(macrodef_), boost::none,
+                                 to_file_location(macrocall_),
+                                 to_file_location(macrodef_));
+      }
+      return false;
+    }
+
+    template <typename ContextT, typename ContainerT>
+    void expanded_macro(const ContextT&, const ContainerT& result_)
+    {
+      if (on_rescanning)
+      {
+        on_rescanning(tokens_to_code(result_));
+      }
+    }
+
+    template <typename ContextT, typename ContainerT>
+    void rescanned_macro(const ContextT&, const ContainerT& result_)
+    {
+      if (on_macro_expansion_end)
+      {
+        on_macro_expansion_end(tokens_to_code(result_));
+      }
+    }
+
   private:
     std::set<boost::filesystem::path>* _included_files;
+
+    template <class String>
+    static std::string to_std_string(const String& s_)
+    {
+      std::ostringstream result;
+      result << s_;
+      return result.str();
+    }
+
+    template <class Token>
+    static std::string token_to_string(const Token& token_)
+    {
+      return to_std_string(token_.get_value());
+    }
+
+    template <class Token>
+    static data::cpp_code token_to_code(const Token& token_)
+    {
+      return data::cpp_code(token_to_string(token_));
+    }
+
+    template <class ContainerT>
+    static data::cpp_code tokens_to_code(const ContainerT& tokens_)
+    {
+      std::ostringstream result;
+      for (const auto& t : tokens_)
+      {
+        result << t.get_value();
+      }
+      return data::cpp_code(result.str());
+    }
+
+    template <class Token>
+    data::file_location to_file_location(const Token& token_)
+    {
+      const auto pos = token_.get_position();
+      const std::string fn = to_std_string(pos.get_file());
+      int line = pos.get_line();
+      if (line > lines_of_env)
+      {
+        line -= lines_to_ignore_after_env;
+      }
+      return data::file_location(
+          boost::filesystem::path(fn).filename() == "<stdin>" ? "<stdin>" : fn,
+          line, pos.get_column());
+    }
   };
 }
 

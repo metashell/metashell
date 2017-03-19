@@ -647,6 +647,10 @@ namespace metashell
     case data::event_kind::template_instantiation:
     case data::event_kind::deduced_template_argument_substitution:
     case data::event_kind::explicit_template_argument_substitution:
+
+    case data::event_kind::macro_expansion:
+    case data::event_kind::rescanning:
+    case data::event_kind::expanded_code:
       return true;
     default:
       return false;
@@ -940,7 +944,7 @@ namespace metashell
     try
     {
       mp = _preprocessor ?
-               _engine.preprocessor_tracer().eval(env, expression) :
+               _engine.preprocessor_tracer().eval(env, expression, mode) :
                _engine.metaprogram_tracer().eval(
                    env, _mdb_temp_dir, expression, mode, displayer_);
     }

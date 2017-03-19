@@ -24,8 +24,9 @@ namespace metashell
   class preprocessor_tracer_constant : public iface::preprocessor_tracer
   {
   public:
-    virtual data::metaprogram
-    eval(iface::environment&, const boost::optional<data::cpp_code>&) override;
+    virtual data::metaprogram eval(iface::environment&,
+                                   const boost::optional<data::cpp_code>&,
+                                   data::metaprogram::mode_t) override;
   };
 }
 

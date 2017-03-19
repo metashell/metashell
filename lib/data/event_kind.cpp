@@ -29,6 +29,12 @@ namespace metashell
     {
       switch (kind)
       {
+      case event_kind::macro_expansion:
+        return "MacroExpansion";
+      case event_kind::rescanning:
+        return "Rescanning";
+      case event_kind::expanded_code:
+        return "ExpandedCode";
       case event_kind::template_instantiation:
         return "TemplateInstantiation";
       case event_kind::default_template_argument_instantiation:

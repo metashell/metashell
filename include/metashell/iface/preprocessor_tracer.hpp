@@ -35,7 +35,8 @@ namespace metashell
 
       virtual data::metaprogram
       eval(iface::environment& env_,
-           const boost::optional<data::cpp_code>& expression_) = 0;
+           const boost::optional<data::cpp_code>& expression_,
+           data::metaprogram::mode_t mode_) = 0;
 
       static std::string name_of_feature() { return "preprocessor_tracer"; }
     };

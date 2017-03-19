@@ -61,9 +61,12 @@ namespace metashell
       }
       catch (const boost::wave::preprocess_exception& e_)
       {
-        if (!ignore_macro_redefinition_ ||
-            e_.get_errorcode() != boost::wave::preprocess_exception::
-                                      error_code::macro_redefinition)
+        typedef boost::wave::preprocess_exception::error_code error_code;
+
+        const auto ec = e_.get_errorcode();
+        if (ec != error_code::last_line_not_terminated &&
+            (!ignore_macro_redefinition_ ||
+             ec != error_code::macro_redefinition))
         {
           throw;
         }

@@ -26,6 +26,12 @@ namespace metashell
   {
     enum class event_kind
     {
+      // Preprocessor-related events
+      macro_expansion,
+      rescanning,
+      expanded_code,
+
+      // Template instantiation-related events
       template_instantiation,
       default_template_argument_instantiation,
       default_function_argument_instantiation,

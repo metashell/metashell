@@ -19,9 +19,12 @@
 
 #include <stack>
 #include <string>
+#include <vector>
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram.hpp>
+
+#include <boost/optional.hpp>
 
 namespace metashell
 {
@@ -40,6 +43,21 @@ namespace metashell
                                double timestamp);
 
     void handle_template_end(double timestamp);
+
+    void handle_macro_expansion_begin(
+        const data::cpp_code& name,
+        const boost::optional<std::vector<data::cpp_code>>& args,
+        const data::file_location& point_of_event,
+        const data::file_location& source_location,
+        double timestamp);
+
+    void handle_rescanning(const data::cpp_code& code, double timestamp);
+
+    void handle_expanded_code(const data::cpp_code& code,
+                              const data::file_location& point_of_event,
+                              double timestamp);
+
+    void handle_macro_expansion_end(double timestamp);
 
     void handle_evaluation_end(data::type_or_code_or_error result_);
 

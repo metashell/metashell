@@ -25,6 +25,13 @@ std::string metashell::system_test::to_string(event_kind kind_)
 {
   switch (kind_)
   {
+  case event_kind::macro_expansion:
+    return "MacroExpansion";
+  case event_kind::rescanning:
+    return "Rescanning";
+  case event_kind::expanded_code:
+    return "ExpandedCode";
+
   case event_kind::template_instantiation:
     return "TemplateInstantiation";
   case event_kind::default_template_argument_instantiation:
@@ -57,7 +64,19 @@ std::ostream& metashell::system_test::operator<<(std::ostream& o_,
 
 event_kind parse_kind(const std::string& kind_)
 {
-  if (kind_ == "TemplateInstantiation")
+  if (kind_ == "MacroExpansion")
+  {
+    return event_kind::macro_expansion;
+  }
+  else if (kind_ == "Rescanning")
+  {
+    return event_kind::rescanning;
+  }
+  else if (kind_ == "ExpandedCode")
+  {
+    return event_kind::expanded_code;
+  }
+  else if (kind_ == "TemplateInstantiation")
   {
     return event_kind::template_instantiation;
   }
