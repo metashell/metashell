@@ -706,7 +706,7 @@ Metashell can be used as an interactive shell for testing macros. The easiest
 way to get started with it is to run the following command in Metashell:
 
 ```cpp
-> #msh perprocessor mode
+> #msh preprocessor mode
 ```
 
 This updates the shell's settings to turn it into an ideal environment for
