@@ -145,6 +145,6 @@ TEST(shell_environment, extending_environment_with_pragma)
   sh.line_available("#pragma metashell environment add typedef int x;", d);
   sh.line_available("#pragma metashell environment", d);
 
-  ASSERT_EQ("\ntypedef int x;",
+  ASSERT_EQ("typedef int x;\n",
             appended_since(original_env.value(), sh.env().get_all().value()));
 }

@@ -25,6 +25,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 #include <boost/range/adaptors.hpp>
@@ -180,13 +181,15 @@ header_file_environment::header_file_environment(
 
 void header_file_environment::append(const data::cpp_code& s_)
 {
-  if (_buffer.empty())
+  assert(_buffer.empty() || boost::ends_with(_buffer, "\n"));
+
+  if (!s_.empty())
   {
-    _buffer = s_;
-  }
-  else
-  {
-    _buffer += "\n" + s_;
+    _buffer += s_;
+    if (!boost::ends_with(_buffer, "\n"))
+    {
+      _buffer += "\n";
+    }
   }
 
   save();

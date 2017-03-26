@@ -15,14 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/call_graph.hpp>
+#include <metashell/system_test/cpp_code.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 
 #include <gtest/gtest.h>
 
+#include <just/temp.hpp>
+
 #include <boost/algorithm/string/join.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
+#include <fstream>
 #include <stdexcept>
 
 using namespace metashell::system_test;
@@ -91,6 +96,38 @@ TEST(pdb, recursive_macro_call)
             {frame(type("macro world"), _, _, event_kind::rescanning), 4, 1},
               {frame(type("macro world"), _, _, event_kind::expanded_code), 5, 0},
           {frame(type("hello world macro world"), _, _, event_kind::expanded_code), 3, 0}
+    }),
+    mi.command("ft").front()
+  );
+
+  // clang-format on
+}
+
+TEST(pdb, expand_macro_included_from_file)
+{
+  just::temp::directory tmp_dir;
+  {
+    std::ofstream f(
+        (boost::filesystem::path(tmp_dir.path()) / "test.hpp").string());
+    f << "#define FOO bar\n";
+  }
+
+  metashell_instance mi(with_sysincludes({"--"}, {tmp_dir.path()}));
+
+  mi.command("#msh preprocessor mode");
+  mi.command("#include <test.hpp>");
+  ASSERT_EQ(cpp_code("bar"), mi.command("FOO").front());
+
+  mi.command("#msh pdb FOO");
+
+  // clang-format off
+
+  ASSERT_EQ(
+    call_graph({
+      {frame(type("FOO")), 0, 1},
+      {frame(type("FOO"), _, _, event_kind::macro_expansion), 1, 1},
+        {frame(type("bar"), _, _, event_kind::rescanning), 2, 1},
+          {frame(type("bar"), _, _, event_kind::expanded_code), 3, 0}
     }),
     mi.command("ft").front()
   );
