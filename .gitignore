@@ -2,3 +2,16 @@
 site
 *.pyc
 /3rd/clang
+Makefile
+*.cmake
+CMakeCache.txt
+CMakeFiles
+*.a
+app/metashell/metashell
+compile_commands.json
+empty.hpp
+test/system/app/core/metashell_core_system_test
+test/system/app/mdb/metashell_mdb_system_test
+test/system/app/pp/metashell_pp_system_test
+test/unit/metashell_unit_test
+
