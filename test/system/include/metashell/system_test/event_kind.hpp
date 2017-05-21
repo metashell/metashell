@@ -30,6 +30,7 @@ namespace metashell
       macro_expansion,
       rescanning,
       expanded_code,
+      generated_token,
 
       // Template instantiation-related events
       template_instantiation,

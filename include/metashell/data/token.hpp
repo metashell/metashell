@@ -21,7 +21,10 @@
 #include <metashell/data/token_category.hpp>
 #include <metashell/data/token_type.hpp>
 
+#include <boost/operators.hpp>
+
 #include <cassert>
+#include <iosfwd>
 #include <sstream>
 #include <string>
 
@@ -29,7 +32,7 @@ namespace metashell
 {
   namespace data
   {
-    class token
+    class token : boost::totally_ordered<token>
     {
     public:
       token();
@@ -43,6 +46,13 @@ namespace metashell
       token_type _type;
       cpp_code _value;
     };
+
+    std::string format_token(const token& t_);
+
+    std::ostream& operator<<(std::ostream& out_, const token& t_);
+
+    bool operator==(const token& a_, const token& b_);
+    bool operator<(const token& a_, const token& b_);
 
     std::string string_literal_value(const token& token_);
 

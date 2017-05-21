@@ -29,6 +29,7 @@
 #include <boost/wave/grammars/cpp_intlit_grammar.hpp>
 #include <boost/wave/grammars/cpp_predef_macros_grammar.hpp>
 
+#include <cassert>
 #include <ctime>
 #include <functional>
 
@@ -69,6 +70,8 @@ namespace metashell
     namespace p = std::placeholders;
 
     const data::cpp_code input = determine_input(_env, _exp);
+    _num_tokens_from_macro_call = 0;
+    _macro_loc_stack.clear();
 
     try
     {
@@ -88,8 +91,11 @@ namespace metashell
                     p::_1, p::_2, p::_3, p::_4);
       hooks.on_rescanning =
           std::bind(&preprocessor_trace_builder::on_rescanning, this, p::_1);
-      hooks.on_macro_expansion_end = std::bind(
-          &preprocessor_trace_builder::on_macro_expansion_end, this, p::_1);
+      hooks.on_macro_expansion_end =
+          std::bind(&preprocessor_trace_builder::on_macro_expansion_end, this,
+                    p::_1, p::_2);
+      hooks.on_token_generated = std::bind(
+          &preprocessor_trace_builder::on_token_generated, this, p::_1, p::_2);
 
       apply(ctx, config_);
 
@@ -119,7 +125,11 @@ namespace metashell
       const data::file_location& point_of_event_,
       const data::file_location& source_location_)
   {
-    _current_macro_loc = point_of_event_;
+    if (_macro_loc_stack.empty())
+    {
+      _last_macro_call_loc = point_of_event_;
+    }
+    _macro_loc_stack.push_back(point_of_event_);
     _builder.handle_macro_expansion_begin(
         name_, args_, point_of_event_, source_location_, std::time(nullptr));
   }
@@ -130,9 +140,28 @@ namespace metashell
   }
 
   void
-  preprocessor_trace_builder::on_macro_expansion_end(const data::cpp_code& c_)
+  preprocessor_trace_builder::on_macro_expansion_end(const data::cpp_code& c_,
+                                                     int num_tokens_)
   {
-    _builder.handle_expanded_code(c_, _current_macro_loc, std::time(nullptr));
+    assert(!_macro_loc_stack.empty());
+
+    _builder.handle_expanded_code(
+        c_, _macro_loc_stack.back(), std::time(nullptr));
     _builder.handle_macro_expansion_end(std::time(nullptr));
+    _num_tokens_from_macro_call = num_tokens_;
+    _macro_loc_stack.pop_back();
+  }
+
+  void preprocessor_trace_builder::on_token_generated(
+      const data::token& t_, const data::file_location& source_location_)
+  {
+    _builder.handle_token_generation(t_, _num_tokens_from_macro_call > 0 ?
+                                             _last_macro_call_loc :
+                                             source_location_,
+                                     source_location_, std::time(nullptr));
+    if (_num_tokens_from_macro_call > 0)
+    {
+      --_num_tokens_from_macro_call;
+    }
   }
 }

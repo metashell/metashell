@@ -34,6 +34,17 @@ namespace
       _writer.string(c_.value());
     }
 
+    void operator()(const data::token& t_) const
+    {
+      _writer.string(format_token(t_));
+    }
+
+    template <class T>
+    void operator()(const unique<T>& value_) const
+    {
+      operator()(value_.value());
+    }
+
   private:
     iface::json_writer& _writer;
   };

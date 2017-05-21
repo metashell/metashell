@@ -35,6 +35,8 @@ namespace metashell
         return "Rescanning";
       case event_kind::expanded_code:
         return "ExpandedCode";
+      case event_kind::generated_token:
+        return "GeneratedToken";
       case event_kind::template_instantiation:
         return "TemplateInstantiation";
       case event_kind::default_template_argument_instantiation:

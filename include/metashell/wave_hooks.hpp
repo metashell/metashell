@@ -21,6 +21,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/token.hpp>
 
 #include <boost/wave.hpp>
 
@@ -49,7 +50,9 @@ namespace metashell
 
     std::function<void(data::cpp_code)> on_rescanning;
 
-    std::function<void(data::cpp_code)> on_macro_expansion_end;
+    std::function<void(data::cpp_code, int)> on_macro_expansion_end;
+
+    std::function<void(data::token, data::file_location)> on_token_generated;
 
     wave_hooks() : _included_files(nullptr) {}
 
@@ -127,8 +130,19 @@ namespace metashell
     {
       if (on_macro_expansion_end)
       {
-        on_macro_expansion_end(tokens_to_code(result_));
+        on_macro_expansion_end(tokens_to_code(result_), result_.size());
       }
+    }
+
+    template <typename ContextT, typename TokenT>
+    const TokenT& generated_token(const ContextT&, const TokenT& t_)
+    {
+      if (!IS_CATEGORY(t_, boost::wave::token_category::EOFTokenType) &&
+          on_token_generated)
+      {
+        on_token_generated(token_from_wave_token(t_), to_file_location(t_));
+      }
+      return t_;
     }
 
   private:

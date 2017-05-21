@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_METAPROGRAM_NODE_HPP
-#define METASHELL_DATA_METAPROGRAM_NODE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,21 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/raw_text.hpp>
 
-#include <metashell/unique.hpp>
+#include <gtest/gtest.h>
 
-#include <boost/variant.hpp>
+using namespace metashell::system_test;
 
-namespace metashell
+TEST(breakpoint, rbreak_stop_times)
 {
-  namespace data
-  {
-    typedef boost::variant<type, unique<token>, unique<cpp_code>>
-        metaprogram_node;
-  }
-}
+  metashell_instance mi;
+  mi.command("#define FOO(x) x");
+  mi.command("#msh pdb FOO(31)");
 
-#endif
+  ASSERT_EQ(
+      raw_text("Breakpoint \"31\" will stop the execution on 4 locations"),
+      mi.command("rbreak 31").front());
+}

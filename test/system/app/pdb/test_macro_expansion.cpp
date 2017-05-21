@@ -43,10 +43,12 @@ TEST(pdb, object_like_macro)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("FOO")), 0, 1},
+      {frame(type("FOO")), 0, 3},
       {frame(type("FOO"), _, _, event_kind::macro_expansion), 1, 1},
         {frame(type("bar"), _, _, event_kind::rescanning), 2, 1},
-          {frame(type("bar"), _, _, event_kind::expanded_code), 3, 0}
+          {frame(type("bar"), _, _, event_kind::expanded_code), 3, 0},
+      {frame(type("bar"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
     }),
     mi.command("ft").front()
   );
@@ -64,10 +66,46 @@ TEST(pdb, function_like_macro)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("FOO(hello)")), 0, 1},
+      {frame(type("FOO(hello)")), 0, 5},
       {frame(type("FOO(hello)"), _, _, event_kind::macro_expansion), 1, 1},
         {frame(type("hello world"), _, _, event_kind::rescanning), 2, 1},
-          {frame(type("hello world"), _, _, event_kind::expanded_code), 3, 0}
+          {frame(type("hello world"), _, _, event_kind::expanded_code), 3, 0},
+      {frame(type("hello"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type(" "), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("world"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
+    }),
+    mi.command("ft").front()
+  );
+
+  // clang-format on
+}
+
+TEST(pdb, calling_same_macro_twice)
+{
+  metashell_instance mi;
+  mi.command("#define A x");
+  mi.command("#define B A A");
+  mi.command("#msh pdb B");
+
+  // clang-format off
+
+  ASSERT_EQ(
+    call_graph({
+      {frame(type("B")), 0, 5},
+      {frame(type("B"), _, _, event_kind::macro_expansion), 1, 1},
+        {frame(type("A A"), _, _, event_kind::rescanning), 2, 3},
+          {frame(type("A"), _, _, event_kind::macro_expansion), 3, 1},
+            {frame(type("x"), _, _, event_kind::rescanning), 4, 1},
+              {frame(type("x"), _, _, event_kind::expanded_code), 5, 0},
+          {frame(type("A"), _, _, event_kind::macro_expansion), 3, 1},
+            {frame(type("x"), _, _, event_kind::rescanning), 4, 1},
+              {frame(type("x"), _, _, event_kind::expanded_code), 5, 0},
+          {frame(type("x x"), _, _, event_kind::expanded_code), 3, 0},
+      {frame(type("x"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type(" "), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("x"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
     }),
     mi.command("ft").front()
   );
@@ -86,7 +124,7 @@ TEST(pdb, recursive_macro_call)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("BAR(hello,macro)")), 0, 1},
+      {frame(type("BAR(hello,macro)")), 0, 9},
       {frame(type("BAR(hello,macro)"), _, _, event_kind::macro_expansion), 1, 1},
         {frame(type("FOO(hello) FOO(macro)"), _, _, event_kind::rescanning), 2, 3},
           {frame(type("FOO(hello)"), _, _, event_kind::macro_expansion), 3, 1},
@@ -95,7 +133,15 @@ TEST(pdb, recursive_macro_call)
           {frame(type("FOO(macro)"), _, _, event_kind::macro_expansion), 3, 1},
             {frame(type("macro world"), _, _, event_kind::rescanning), 4, 1},
               {frame(type("macro world"), _, _, event_kind::expanded_code), 5, 0},
-          {frame(type("hello world macro world"), _, _, event_kind::expanded_code), 3, 0}
+          {frame(type("hello world macro world"), _, _, event_kind::expanded_code), 3, 0},
+      {frame(type("hello"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type(" "), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("world"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type(" "), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("macro"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type(" "), _, _, event_kind::generated_token), 1, 0}, // ez hianyzik
+      {frame(type("world"), _, _, event_kind::generated_token), 1, 0}, // meg ez
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
     }),
     mi.command("ft").front()
   );
@@ -124,10 +170,12 @@ TEST(pdb, expand_macro_included_from_file)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("FOO")), 0, 1},
+      {frame(type("FOO")), 0, 3},
       {frame(type("FOO"), _, _, event_kind::macro_expansion), 1, 1},
         {frame(type("bar"), _, _, event_kind::rescanning), 2, 1},
-          {frame(type("bar"), _, _, event_kind::expanded_code), 3, 0}
+          {frame(type("bar"), _, _, event_kind::expanded_code), 3, 0},
+      {frame(type("bar"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
     }),
     mi.command("ft").front()
   );

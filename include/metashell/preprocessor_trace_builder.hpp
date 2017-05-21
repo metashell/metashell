@@ -43,9 +43,10 @@ namespace metashell
     data::cpp_code _env;
     boost::optional<data::cpp_code> _exp;
 
-    // macro_expansion_begin sets it and remains the same in all recursive
-    // events
-    data::file_location _current_macro_loc;
+    std::vector<data::file_location> _macro_loc_stack;
+    data::file_location _last_macro_call_loc;
+
+    int _num_tokens_from_macro_call;
 
     metaprogram_builder _builder;
 
@@ -57,7 +58,10 @@ namespace metashell
 
     void on_rescanning(const data::cpp_code& c_);
 
-    void on_macro_expansion_end(const data::cpp_code& c_);
+    void on_macro_expansion_end(const data::cpp_code& c_, int num_tokens_);
+
+    void on_token_generated(const data::token& t_,
+                            const data::file_location& source_location_);
   };
 }
 

@@ -23,6 +23,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram.hpp>
+#include <metashell/data/token.hpp>
 
 #include <boost/optional.hpp>
 
@@ -58,6 +59,11 @@ namespace metashell
                               double timestamp);
 
     void handle_macro_expansion_end(double timestamp);
+
+    void handle_token_generation(const data::token& token,
+                                 const data::file_location& point_of_event,
+                                 const data::file_location& source_location,
+                                 double timestamp);
 
     void handle_evaluation_end(data::type_or_code_or_error result_);
 

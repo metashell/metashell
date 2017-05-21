@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_METAPROGRAM_NODE_HPP
-#define METASHELL_DATA_METAPROGRAM_NODE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,21 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
+#include <metashell/system_test/call_graph.hpp>
+#include <metashell/system_test/metashell_instance.hpp>
 
-#include <metashell/unique.hpp>
+#include <gtest/gtest.h>
 
-#include <boost/variant.hpp>
+using namespace metashell::system_test;
+using pattern::_;
 
-namespace metashell
+TEST(pdb, generating_unprocessed_output)
 {
-  namespace data
-  {
-    typedef boost::variant<type, unique<token>, unique<cpp_code>>
-        metaprogram_node;
-  }
-}
+  metashell_instance mi;
+  mi.command("#msh pdb hello");
 
-#endif
+  // clang-format off
+
+  ASSERT_EQ(
+    call_graph({
+      {frame(type("hello")), 0, 2},
+      {frame(type("hello"), _, _, event_kind::generated_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::generated_token), 1, 0}
+    }),
+    mi.command("ft").front()
+  );
+
+  // clang-format on
+}

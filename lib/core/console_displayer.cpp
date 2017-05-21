@@ -26,6 +26,7 @@
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
+#include <cassert>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -115,8 +116,15 @@ namespace
     typedef std::function<data::colored_string(const data::cpp_code&)>
         code_formatter;
 
-    format_visitor(data::colored_string& out_, code_formatter code_formatter_)
-      : _out(out_), _code_formatter(move(code_formatter_))
+    typedef std::function<data::colored_string(const data::token&)>
+        token_formatter;
+
+    format_visitor(data::colored_string& out_,
+                   code_formatter code_formatter_,
+                   token_formatter token_formatter_)
+      : _out(out_),
+        _code_formatter(move(code_formatter_)),
+        _token_formatter(move(token_formatter_))
     {
     }
 
@@ -125,10 +133,21 @@ namespace
     {
       _out += _code_formatter(c_);
     }
+    void operator()(const data::token& t_) const
+    {
+      _out += _token_formatter(t_);
+    }
+
+    template <class T>
+    void operator()(const unique<T>& u_) const
+    {
+      operator()(u_.value());
+    }
 
   private:
     data::colored_string& _out;
     code_formatter _code_formatter;
+    token_formatter _token_formatter;
   };
 } // anonymouse namespace
 
@@ -224,6 +243,11 @@ void console_displayer::show_cpp_code(const data::cpp_code& code_)
   }
 }
 
+data::colored_string console_displayer::format_token(const data::token& token_)
+{
+  return format_code(data::cpp_code(data::format_token(token_)));
+}
+
 data::colored_string console_displayer::format_code(const data::cpp_code& code_)
 {
   if (_syntax_highlight)
@@ -257,11 +281,12 @@ console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
 {
   data::colored_string result;
 
-  boost::apply_visitor(format_visitor(result,
-                                      [this](const data::cpp_code& s_) {
-                                        return this->format_code(s_);
-                                      }),
-                       n_);
+  boost::apply_visitor(
+      format_visitor(
+          result,
+          [this](const data::cpp_code& s_) { return this->format_code(s_); },
+          [this](const data::token& t_) { return this->format_token(t_); }),
+      n_);
 
   return result;
 }

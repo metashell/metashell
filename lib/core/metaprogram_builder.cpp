@@ -49,7 +49,7 @@ namespace metashell
       call += "(" + boost::algorithm::join(*args, ",") + ")";
     }
 
-    vertex_descriptor vertex = add_vertex(call, source_location);
+    vertex_descriptor vertex = add_vertex(unique_value(call), source_location);
     vertex_descriptor top_vertex = edge_stack.empty() ?
                                        mp.get_root_vertex() :
                                        mp.get_target(edge_stack.top());
@@ -69,7 +69,8 @@ namespace metashell
     }
     auto& ep = mp.get_edge_property(edge_stack.top());
 
-    vertex_descriptor vertex = add_vertex(code, ep.point_of_event);
+    vertex_descriptor vertex =
+        add_vertex(unique_value(code), ep.point_of_event);
     vertex_descriptor top_vertex = mp.get_target(edge_stack.top());
 
     auto edge = mp.add_edge(top_vertex, vertex, data::event_kind::rescanning,
@@ -82,7 +83,7 @@ namespace metashell
       const data::file_location& point_of_event,
       double timestamp)
   {
-    vertex_descriptor vertex = add_vertex(code, point_of_event);
+    vertex_descriptor vertex = add_vertex(unique_value(code), point_of_event);
     vertex_descriptor top_vertex = edge_stack.empty() ?
                                        mp.get_root_vertex() :
                                        mp.get_target(edge_stack.top());
@@ -167,5 +168,20 @@ namespace metashell
       data::type_or_code_or_error result_)
   {
     mp.set_evaluation_result(result_);
+  }
+
+  void metaprogram_builder::handle_token_generation(
+      const data::token& token,
+      const data::file_location& point_of_event,
+      const data::file_location& source_location,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(unique_value(token), source_location);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::generated_token,
+                point_of_event, timestamp);
   }
 }

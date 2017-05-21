@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/token.hpp>
 #include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/pager.hpp>
@@ -58,6 +59,7 @@ namespace metashell
     data::colored_string format_time(double time_in_seconds_);
     data::colored_string format_ratio(double ratio_);
     data::colored_string format_frame(const data::frame& f_);
+    data::colored_string format_token(const data::token& t_);
     data::colored_string
     format_metaprogram_node(const data::metaprogram_node& n_);
 
