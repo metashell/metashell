@@ -31,6 +31,8 @@ namespace metashell
       rescanning,
       expanded_code,
       generated_token,
+      quote_include,
+      sys_include,
 
       // Template instantiation-related events
       template_instantiation,

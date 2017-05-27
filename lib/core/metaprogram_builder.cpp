@@ -108,6 +108,37 @@ namespace metashell
     }
   }
 
+  void metaprogram_builder::handle_include_begin(
+      const data::include_argument& arg,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex =
+        add_vertex(unique_value(arg.path), data::file_location(arg.path, 1, 1));
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    auto edge =
+        mp.add_edge(top_vertex, vertex, arg.type == data::include_type::sys ?
+                                            data::event_kind::sys_include :
+                                            data::event_kind::quote_include,
+                    point_of_event, timestamp);
+    edge_stack.push(edge);
+  }
+
+  void metaprogram_builder::handle_include_end(double timestamp)
+  {
+    if (edge_stack.empty())
+    {
+      throw exception("Mismatched IncludeBegin and IncludeEnd events");
+    }
+    auto& ep = mp.get_edge_property(edge_stack.top());
+    ep.time_taken = timestamp - ep.begin_timestamp;
+
+    edge_stack.pop();
+  }
+
   void metaprogram_builder::handle_template_begin(
       data::event_kind kind,
       const data::type& type,

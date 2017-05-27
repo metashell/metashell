@@ -21,6 +21,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/include_argument.hpp>
 #include <metashell/data/token.hpp>
 
 #include <boost/wave.hpp>
@@ -54,6 +55,10 @@ namespace metashell
 
     std::function<void(data::token, data::file_location)> on_token_generated;
 
+    std::function<void(data::include_argument, data::file_location)>
+        on_include_begin;
+    std::function<void()> on_include_end;
+
     wave_hooks() : _included_files(nullptr) {}
 
     explicit wave_hooks(std::set<boost::filesystem::path>& included_files_)
@@ -65,11 +70,28 @@ namespace metashell
     void opened_include_file(const ContextT&,
                              const std::string&,
                              const std::string& absname_,
-                             bool)
+                             bool is_system_include_)
     {
       if (_included_files)
       {
         _included_files->insert(absname_);
+      }
+      if (on_include_begin)
+      {
+        on_include_begin(data::include_argument(is_system_include_ ?
+                                                    data::include_type::sys :
+                                                    data::include_type::quote,
+                                                absname_),
+                         _last_directive_location);
+      }
+    }
+
+    template <typename ContextT>
+    void returning_from_include_file(const ContextT&)
+    {
+      if (on_include_end)
+      {
+        on_include_end();
       }
     }
 
@@ -145,8 +167,16 @@ namespace metashell
       return t_;
     }
 
+    template <typename ContextT, typename TokenT>
+    bool found_directive(const ContextT&, const TokenT& directive_)
+    {
+      _last_directive_location = to_file_location(directive_);
+      return false;
+    }
+
   private:
     std::set<boost::filesystem::path>* _included_files;
+    data::file_location _last_directive_location;
 
     template <class String>
     static std::string to_std_string(const String& s_)

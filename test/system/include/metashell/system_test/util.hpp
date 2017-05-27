@@ -38,6 +38,8 @@ namespace metashell
 
     boost::optional<boost::filesystem::path>
     include_path_addition(const std::string& arg_);
+
+    std::string c_string_literal(const std::string& s_);
   }
 }
 

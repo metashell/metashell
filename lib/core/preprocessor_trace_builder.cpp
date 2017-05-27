@@ -96,6 +96,10 @@ namespace metashell
                     p::_1, p::_2);
       hooks.on_token_generated = std::bind(
           &preprocessor_trace_builder::on_token_generated, this, p::_1, p::_2);
+      hooks.on_include_begin = std::bind(
+          &preprocessor_trace_builder::on_include_begin, this, p::_1, p::_2);
+      hooks.on_include_end =
+          std::bind(&preprocessor_trace_builder::on_include_end, this);
 
       apply(ctx, config_);
 
@@ -163,5 +167,17 @@ namespace metashell
     {
       --_num_tokens_from_macro_call;
     }
+  }
+
+  void preprocessor_trace_builder::on_include_begin(
+      const data::include_argument& arg_,
+      const data::file_location& point_of_event_)
+  {
+    _builder.handle_include_begin(arg_, point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_include_end()
+  {
+    _builder.handle_include_end(std::time(nullptr));
   }
 }

@@ -61,6 +61,11 @@ namespace
     {
       return match(token_.value());
     }
+
+    bool match(const boost::filesystem::path& path_) const
+    {
+      return match(path_.string());
+    }
   };
 }
 

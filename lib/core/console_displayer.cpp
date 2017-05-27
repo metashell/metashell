@@ -26,6 +26,8 @@
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 #include <cassert>
 #include <fstream>
 #include <functional>
@@ -119,12 +121,17 @@ namespace
     typedef std::function<data::colored_string(const data::token&)>
         token_formatter;
 
+    typedef std::function<data::colored_string(const boost::filesystem::path&)>
+        path_formatter;
+
     format_visitor(data::colored_string& out_,
                    code_formatter code_formatter_,
-                   token_formatter token_formatter_)
+                   token_formatter token_formatter_,
+                   path_formatter path_formatter_)
       : _out(out_),
         _code_formatter(move(code_formatter_)),
-        _token_formatter(move(token_formatter_))
+        _token_formatter(move(token_formatter_)),
+        _path_formatter(move(path_formatter_))
     {
     }
 
@@ -137,6 +144,10 @@ namespace
     {
       _out += _token_formatter(t_);
     }
+    void operator()(const boost::filesystem::path& p_) const
+    {
+      _out += _path_formatter(p_);
+    }
 
     template <class T>
     void operator()(const unique<T>& u_) const
@@ -148,6 +159,7 @@ namespace
     data::colored_string& _out;
     code_formatter _code_formatter;
     token_formatter _token_formatter;
+    path_formatter _path_formatter;
   };
 } // anonymouse namespace
 
@@ -285,7 +297,10 @@ console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
       format_visitor(
           result,
           [this](const data::cpp_code& s_) { return this->format_code(s_); },
-          [this](const data::token& t_) { return this->format_token(t_); }),
+          [this](const data::token& t_) { return this->format_token(t_); },
+          [this](const boost::filesystem::path& p_) {
+            return data::colored_string(p_.string());
+          }),
       n_);
 
   return result;

@@ -39,6 +39,11 @@ namespace
       _writer.string(format_token(t_));
     }
 
+    void operator()(const boost::filesystem::path& p_) const
+    {
+      _writer.string(p_.string());
+    }
+
     template <class T>
     void operator()(const unique<T>& value_) const
     {

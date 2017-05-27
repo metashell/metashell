@@ -20,6 +20,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <map>
+#include <vector>
 
 using namespace metashell::system_test;
 
@@ -35,6 +36,14 @@ namespace
     {
       return {{"-I", ""}};
     }
+  }
+
+  template <class OutputIterator>
+  OutputIterator write_to(OutputIterator dest_, char c_)
+  {
+    *dest_ = c_;
+    ++dest_;
+    return dest_;
   }
 }
 
@@ -89,4 +98,24 @@ metashell::system_test::include_path_addition(const std::string& arg_)
     }
   }
   return boost::none;
+}
+
+std::string metashell::system_test::c_string_literal(const std::string& s_)
+{
+  std::vector<char> s(s_.size() * 2 + 2);
+  auto end = write_to(s.begin(), '\"');
+  for (char c : s_)
+  {
+    switch (c)
+    {
+    case '\\':
+    case '\"':
+    case '\'':
+      end = write_to(end, '\\');
+    // [[fallthrough]];
+    default:
+      end = write_to(end, c);
+    }
+  }
+  return std::string(s.begin(), write_to(end, '\"'));
 }

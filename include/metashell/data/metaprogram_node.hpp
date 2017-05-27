@@ -23,13 +23,17 @@
 
 #include <metashell/unique.hpp>
 
+#include <boost/filesystem/path.hpp>
 #include <boost/variant.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    typedef boost::variant<type, unique<token>, unique<cpp_code>>
+    typedef boost::variant<type,
+                           unique<token>,
+                           unique<cpp_code>,
+                           unique<boost::filesystem::path>>
         metaprogram_node;
   }
 }

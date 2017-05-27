@@ -21,6 +21,7 @@
 #include <ostream>
 #include <string>
 
+#include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
 
 namespace metashell
@@ -31,9 +32,9 @@ namespace metashell
     struct file_location : boost::totally_ordered<file_location>
     {
       file_location();
-      file_location(const std::string& name, int row, int column);
+      file_location(const boost::filesystem::path& name, int row, int column);
 
-      std::string name;
+      boost::filesystem::path name;
       int row;
       int column;
     };

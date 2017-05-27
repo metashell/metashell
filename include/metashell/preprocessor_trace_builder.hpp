@@ -19,6 +19,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/include_argument.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/wave_config.hpp>
 
@@ -62,6 +63,11 @@ namespace metashell
 
     void on_token_generated(const data::token& t_,
                             const data::file_location& source_location_);
+
+    void on_include_begin(const data::include_argument& arg_,
+                          const data::file_location& point_of_event_);
+
+    void on_include_end();
   };
 }
 

@@ -22,6 +22,8 @@
 #include <vector>
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/file_location.hpp>
+#include <metashell/data/include_argument.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/token.hpp>
 
@@ -64,6 +66,12 @@ namespace metashell
                                  const data::file_location& point_of_event,
                                  const data::file_location& source_location,
                                  double timestamp);
+
+    void handle_include_begin(const data::include_argument& arg,
+                              const data::file_location& point_of_event,
+                              double timestamp);
+
+    void handle_include_end(double timestamp);
 
     void handle_evaluation_end(data::type_or_code_or_error result_);
 

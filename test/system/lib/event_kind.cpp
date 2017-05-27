@@ -33,6 +33,10 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "ExpandedCode";
   case event_kind::generated_token:
     return "GeneratedToken";
+  case event_kind::quote_include:
+    return "QuoteInclude";
+  case event_kind::sys_include:
+    return "SysInclude";
 
   case event_kind::template_instantiation:
     return "TemplateInstantiation";
@@ -81,6 +85,14 @@ event_kind parse_kind(const std::string& kind_)
   else if (kind_ == "GeneratedToken")
   {
     return event_kind::generated_token;
+  }
+  else if (kind_ == "QuoteInclude")
+  {
+    return event_kind::quote_include;
+  }
+  else if (kind_ == "SysInclude")
+  {
+    return event_kind::sys_include;
   }
   else if (kind_ == "TemplateInstantiation")
   {
