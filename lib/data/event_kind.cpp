@@ -33,6 +33,8 @@ namespace metashell
         return "MacroExpansion";
       case event_kind::macro_definition:
         return "MacroDefinition";
+      case event_kind::macro_deletion:
+        return "MacroDeletion";
       case event_kind::rescanning:
         return "Rescanning";
       case event_kind::expanded_code:

@@ -42,6 +42,26 @@ namespace
 
     // clang-format on
   }
+
+  bool macro_deletion_works(const std::string& name_,
+                            const std::string& args_and_body_)
+  {
+    metashell_instance mi;
+
+    mi.command("#define " + name_ + args_and_body_);
+    mi.command("#msh pdb #undef " + name_);
+
+    // clang-format off
+
+    return
+      call_graph({
+        {frame(type("#undef " + name_)), 0, 1},
+        {frame(type(name_), _, _, event_kind::macro_deletion), 1, 0}
+      })
+      == mi.command("ft").front();
+
+    // clang-format on
+  }
 }
 
 TEST(pdb, test_macro_definition)
@@ -51,4 +71,13 @@ TEST(pdb, test_macro_definition)
   ASSERT_TRUE(macro_definition_works("FOO(x) bar"));
   ASSERT_TRUE(macro_definition_works("FOO(x, y) bar"));
   ASSERT_TRUE(macro_definition_works("FOO(x, y, ...) bar"));
+}
+
+TEST(pdb, test_macro_deletion)
+{
+  ASSERT_TRUE(macro_deletion_works("FOO", " bar"));
+  ASSERT_TRUE(macro_deletion_works("FOO", "() bar"));
+  ASSERT_TRUE(macro_deletion_works("FOO", "(x) bar"));
+  ASSERT_TRUE(macro_deletion_works("FOO", "(x, y) bar"));
+  ASSERT_TRUE(macro_deletion_works("FOO", "(x, y, ...) bar"));
 }

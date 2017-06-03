@@ -64,6 +64,7 @@ namespace metashell
                        data::cpp_code,
                        data::file_location)>
         on_define;
+    std::function<void(data::cpp_code, data::file_location)> on_undefine;
 
     wave_hooks() : _included_files(nullptr) {}
 
@@ -204,6 +205,15 @@ namespace metashell
 
         on_define(token_to_code(macro_name_), args, tokens_to_code(definition_),
                   to_file_location(macro_name_));
+      }
+    }
+
+    template <typename ContextT, typename TokenT>
+    void undefined_macro(const ContextT&, const TokenT& macro_name_)
+    {
+      if (on_undefine)
+      {
+        on_undefine(token_to_code(macro_name_), to_file_location(macro_name_));
       }
     }
 

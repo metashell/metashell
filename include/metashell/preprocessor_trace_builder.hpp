@@ -73,6 +73,9 @@ namespace metashell
                    const boost::optional<std::vector<data::cpp_code>>& args_,
                    const data::cpp_code& body_,
                    const data::file_location& point_of_event_);
+
+    void on_undefine(const data::cpp_code& name_,
+                     const data::file_location& point_of_event_);
   };
 }
 

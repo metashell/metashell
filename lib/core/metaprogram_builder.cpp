@@ -160,6 +160,20 @@ namespace metashell
                 point_of_event, timestamp);
   }
 
+  void metaprogram_builder::handle_undefine(
+      const data::cpp_code& name,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(unique_value(name), point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::macro_deletion,
+                point_of_event, timestamp);
+  }
+
   void metaprogram_builder::handle_template_begin(
       data::event_kind kind,
       const data::type& type,

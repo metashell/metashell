@@ -650,6 +650,7 @@ namespace metashell
 
     case data::event_kind::macro_expansion:
     case data::event_kind::macro_definition:
+    case data::event_kind::macro_deletion:
     case data::event_kind::rescanning:
     case data::event_kind::expanded_code:
     case data::event_kind::generated_token:

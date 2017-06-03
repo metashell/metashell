@@ -29,6 +29,7 @@ namespace metashell
       // Preprocessor-related events
       macro_expansion,
       macro_definition,
+      macro_deletion,
       rescanning,
       expanded_code,
       generated_token,

@@ -79,6 +79,10 @@ namespace metashell
                        const data::file_location& point_of_event,
                        double timestamp);
 
+    void handle_undefine(const data::cpp_code& name,
+                         const data::file_location& point_of_event,
+                         double timestamp);
+
     void handle_evaluation_end(data::type_or_code_or_error result_);
 
     const data::metaprogram& get_metaprogram() const;

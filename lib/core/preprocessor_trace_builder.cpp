@@ -102,6 +102,8 @@ namespace metashell
           std::bind(&preprocessor_trace_builder::on_include_end, this);
       hooks.on_define = std::bind(&preprocessor_trace_builder::on_define, this,
                                   p::_1, p::_2, p::_3, p::_4);
+      hooks.on_undefine = std::bind(
+          &preprocessor_trace_builder::on_undefine, this, p::_1, p::_2);
 
       apply(ctx, config_);
 
@@ -191,5 +193,11 @@ namespace metashell
   {
     _builder.handle_define(
         name_, args_, body_, point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_undefine(
+      const data::cpp_code& name_, const data::file_location& point_of_event_)
+  {
+    _builder.handle_undefine(name_, point_of_event_, std::time(nullptr));
   }
 }
