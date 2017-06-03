@@ -73,6 +73,12 @@ namespace metashell
 
     void handle_include_end(double timestamp);
 
+    void handle_define(const data::cpp_code& name,
+                       const boost::optional<std::vector<data::cpp_code>>& args,
+                       const data::cpp_code& body,
+                       const data::file_location& point_of_event,
+                       double timestamp);
+
     void handle_evaluation_end(data::type_or_code_or_error result_);
 
     const data::metaprogram& get_metaprogram() const;

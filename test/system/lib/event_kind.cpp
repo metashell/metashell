@@ -27,6 +27,8 @@ std::string metashell::system_test::to_string(event_kind kind_)
   {
   case event_kind::macro_expansion:
     return "MacroExpansion";
+  case event_kind::macro_definition:
+    return "MacroDefinition";
   case event_kind::rescanning:
     return "Rescanning";
   case event_kind::expanded_code:
@@ -73,6 +75,10 @@ event_kind parse_kind(const std::string& kind_)
   if (kind_ == "MacroExpansion")
   {
     return event_kind::macro_expansion;
+  }
+  else if (kind_ == "MacroDefinition")
+  {
+    return event_kind::macro_definition;
   }
   else if (kind_ == "Rescanning")
   {

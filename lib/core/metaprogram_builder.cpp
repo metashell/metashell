@@ -139,6 +139,27 @@ namespace metashell
     edge_stack.pop();
   }
 
+  void metaprogram_builder::handle_define(
+      const data::cpp_code& name,
+      const boost::optional<std::vector<data::cpp_code>>& args,
+      const data::cpp_code& body,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(
+        unique_value(name +
+                     (args ? "(" + boost::algorithm::join(*args, ", ") + ")" :
+                             data::cpp_code()) +
+                     " " + body),
+        point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::macro_definition,
+                point_of_event, timestamp);
+  }
+
   void metaprogram_builder::handle_template_begin(
       data::event_kind kind,
       const data::type& type,

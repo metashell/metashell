@@ -59,6 +59,12 @@ namespace metashell
         on_include_begin;
     std::function<void()> on_include_end;
 
+    std::function<void(data::cpp_code,
+                       boost::optional<std::vector<data::cpp_code>>,
+                       data::cpp_code,
+                       data::file_location)>
+        on_define;
+
     wave_hooks() : _included_files(nullptr) {}
 
     explicit wave_hooks(std::set<boost::filesystem::path>& included_files_)
@@ -172,6 +178,33 @@ namespace metashell
     {
       _last_directive_location = to_file_location(directive_);
       return false;
+    }
+
+    template <typename ContextT,
+              typename TokenT,
+              typename ParametersT,
+              typename DefinitionT>
+    void defined_macro(const ContextT&,
+                       const TokenT& macro_name_,
+                       bool is_functionlike_,
+                       const ParametersT& parameters_,
+                       const DefinitionT& definition_,
+                       bool)
+    {
+      if (on_define)
+      {
+        boost::optional<std::vector<data::cpp_code>> args;
+        if (is_functionlike_)
+        {
+          args = std::vector<data::cpp_code>();
+          args->reserve(parameters_.size());
+          std::transform(parameters_.begin(), parameters_.end(),
+                         std::back_inserter(*args), &token_to_code<TokenT>);
+        }
+
+        on_define(token_to_code(macro_name_), args, tokens_to_code(definition_),
+                  to_file_location(macro_name_));
+      }
     }
 
   private:

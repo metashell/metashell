@@ -100,6 +100,8 @@ namespace metashell
           &preprocessor_trace_builder::on_include_begin, this, p::_1, p::_2);
       hooks.on_include_end =
           std::bind(&preprocessor_trace_builder::on_include_end, this);
+      hooks.on_define = std::bind(&preprocessor_trace_builder::on_define, this,
+                                  p::_1, p::_2, p::_3, p::_4);
 
       apply(ctx, config_);
 
@@ -179,5 +181,15 @@ namespace metashell
   void preprocessor_trace_builder::on_include_end()
   {
     _builder.handle_include_end(std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_define(
+      const data::cpp_code& name_,
+      const boost::optional<std::vector<data::cpp_code>>& args_,
+      const data::cpp_code& body_,
+      const data::file_location& point_of_event_)
+  {
+    _builder.handle_define(
+        name_, args_, body_, point_of_event_, std::time(nullptr));
   }
 }

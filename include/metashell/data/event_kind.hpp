@@ -28,6 +28,7 @@ namespace metashell
     {
       // Preprocessor-related events
       macro_expansion,
+      macro_definition,
       rescanning,
       expanded_code,
       generated_token,
