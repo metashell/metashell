@@ -60,18 +60,20 @@ namespace
 
     // clang-format off
 
+    const file_location l1(_, 1, _);
+
     return
       call_graph({
         {frame(type("#include " + include_arg<Kind>())), 0, 1},
         {frame(type(test_hpp), _, _, Kind), 1, 8},
-          {frame(type("#line"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("1"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
-          {frame(type(c_string_literal(test_hpp)), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("hello"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0}
+          {frame(type("#line"), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type(" "), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type("1"), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type(" "), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type(c_string_literal(test_hpp)), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type("\\n"), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type("hello"), l1, l1, event_kind::generated_token), 2, 0},
+          {frame(type("\\n"), l1, l1, event_kind::generated_token), 2, 0}
       });
 
     // clang-format on

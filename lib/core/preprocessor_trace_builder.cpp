@@ -75,7 +75,9 @@ namespace metashell
 
     try
     {
-      wave_context ctx(input.begin(), input.end(), "<stdin>");
+      const char env_path[] = "<stdin>";
+
+      wave_context ctx(input.begin(), input.end(), env_path);
 
       auto& hooks = ctx.get_hooks();
 
@@ -85,6 +87,7 @@ namespace metashell
       // function adds a suffix as well, I can't think of a way of automatically
       // determining this value.
       hooks.lines_to_ignore_after_env = 3;
+      hooks.env_path = env_path;
 
       hooks.on_macro_expansion_begin =
           std::bind(&preprocessor_trace_builder::on_macro_expansion_begin, this,

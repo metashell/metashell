@@ -42,6 +42,7 @@ namespace metashell
   public:
     int lines_of_env = 0;
     int lines_to_ignore_after_env = 0;
+    boost::filesystem::path env_path;
 
     std::function<void(const data::cpp_code&,
                        const boost::optional<std::vector<data::cpp_code>>&,
@@ -258,7 +259,7 @@ namespace metashell
       const auto pos = token_.get_position();
       const std::string fn = to_std_string(pos.get_file());
       int line = pos.get_line();
-      if (line > lines_of_env)
+      if (fn == env_path && line > lines_of_env)
       {
         line -= lines_to_ignore_after_env;
       }
