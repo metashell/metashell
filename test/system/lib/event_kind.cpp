@@ -72,7 +72,7 @@ std::ostream& metashell::system_test::operator<<(std::ostream& o_,
   return o_ << to_string(kind_);
 }
 
-event_kind parse_kind(const std::string& kind_)
+event_kind metashell::system_test::parse_kind(const std::string& kind_)
 {
   if (kind_ == "MacroExpansion")
   {

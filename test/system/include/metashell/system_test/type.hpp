@@ -32,7 +32,8 @@ namespace metashell
 {
   namespace system_test
   {
-    class type : boost::equality_comparable<type, json_string>
+    class type : boost::equality_comparable<type, json_string>,
+                 boost::equality_comparable<type>
     {
     public:
       explicit type(const std::string& name_);
@@ -40,6 +41,8 @@ namespace metashell
 
       bool name_specified() const;
       const std::string& name() const;
+
+      bool operator==(const type& t_) const;
 
     private:
       boost::optional<std::string> _name;

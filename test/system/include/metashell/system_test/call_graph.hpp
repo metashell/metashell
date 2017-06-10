@@ -28,10 +28,12 @@ namespace metashell
 {
   namespace system_test
   {
-    class call_graph : boost::equality_comparable<call_graph, json_string>
+    class call_graph : boost::equality_comparable<call_graph, json_string>,
+                       boost::equality_comparable<call_graph>
     {
     public:
       explicit call_graph(std::vector<call_graph_node> call_graph_nodes_);
+      explicit call_graph(const json_string& s_);
 
       typedef std::vector<call_graph_node>::const_iterator iterator;
       typedef iterator const_iterator;
@@ -48,6 +50,7 @@ namespace metashell
     json_string to_json_string(const call_graph& c_);
 
     bool operator==(const call_graph& c_, const json_string& s_);
+    bool operator==(const call_graph& c_, const call_graph& s_);
   }
 }
 

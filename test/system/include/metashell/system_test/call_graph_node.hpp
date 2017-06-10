@@ -19,14 +19,33 @@
 
 #include <metashell/system_test/frame.hpp>
 
+#include <boost/operators.hpp>
+
 namespace metashell
 {
   namespace system_test
   {
-    class call_graph_node
+    class call_graph_node : boost::equality_comparable<call_graph_node>
     {
     public:
       call_graph_node(const frame& frame_, int depth_, int number_of_children_);
+
+      template <class JsonDocument>
+      explicit call_graph_node(const JsonDocument& d_)
+        : _frame(d_, false), _depth(0), _number_of_children(0)
+      {
+        if (d_.IsObject())
+        {
+          if (d_.HasMember("depth"))
+          {
+            _depth = d_["depth"].GetInt();
+          }
+          if (d_.HasMember("children"))
+          {
+            _number_of_children = d_["children"].GetInt();
+          }
+        }
+      }
 
       const frame& current_frame() const;
       int depth() const;
@@ -37,6 +56,8 @@ namespace metashell
       int _depth;
       int _number_of_children;
     };
+
+    bool operator==(const call_graph_node& a_, const call_graph_node& b_);
   }
 }
 

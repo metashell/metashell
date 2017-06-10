@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iosfwd>
+#include <stdexcept>
 #include <string>
 
 namespace metashell
@@ -52,6 +53,20 @@ namespace metashell
     std::string to_string(event_kind kind_);
     std::ostream& operator<<(std::ostream& o_, event_kind kind_);
     event_kind parse_kind(const std::string& kind_);
+
+    template <class JsonDocument>
+    event_kind parse_kind(const JsonDocument& kind_)
+    {
+      if (kind_.IsString())
+      {
+        return parse_kind(
+            std::string(kind_.GetString(), kind_.GetStringLength()));
+      }
+      else
+      {
+        throw std::runtime_error("Kind should be a string");
+      }
+    }
   }
 }
 
