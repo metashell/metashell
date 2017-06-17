@@ -108,6 +108,19 @@ namespace metashell
       hooks.on_undefine = std::bind(
           &preprocessor_trace_builder::on_undefine, this, p::_1, p::_2);
 
+      hooks.on_conditional = std::bind(
+          &preprocessor_trace_builder::on_conditional, this, p::_1, p::_2);
+
+      hooks.on_evaluated_conditional_expression = std::bind(
+          &preprocessor_trace_builder::on_evaluated_conditional_expression,
+          this, p::_1);
+
+      hooks.on_else =
+          std::bind(&preprocessor_trace_builder::on_else, this, p::_1);
+
+      hooks.on_endif =
+          std::bind(&preprocessor_trace_builder::on_endif, this, p::_1);
+
       apply(ctx, config_);
 
       std::ostringstream s;
@@ -202,5 +215,31 @@ namespace metashell
       const data::cpp_code& name_, const data::file_location& point_of_event_)
   {
     _builder.handle_undefine(name_, point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_conditional(
+      const data::cpp_code& expression_,
+      const data::file_location& point_of_event_)
+  {
+    _builder.handle_preprocessing_condition_begin(
+        expression_, point_of_event_, std::time(nullptr));
+  }
+
+  void
+  preprocessor_trace_builder::on_evaluated_conditional_expression(bool result_)
+  {
+    _builder.handle_preprocessing_condition_end(result_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_else(
+      const data::file_location& point_of_event_)
+  {
+    _builder.handle_preprocessing_else(point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_endif(
+      const data::file_location& point_of_event_)
+  {
+    _builder.handle_preprocessing_endif(point_of_event_, std::time(nullptr));
   }
 }

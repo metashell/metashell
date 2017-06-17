@@ -24,6 +24,7 @@
 #include <metashell/data/include_argument.hpp>
 #include <metashell/data/token.hpp>
 
+#include <boost/optional.hpp>
 #include <boost/wave.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -33,6 +34,7 @@
 #include <iterator>
 #include <set>
 #include <sstream>
+#include <vector>
 
 namespace metashell
 {
@@ -66,6 +68,13 @@ namespace metashell
                        data::file_location)>
         on_define;
     std::function<void(data::cpp_code, data::file_location)> on_undefine;
+
+    std::function<void(data::cpp_code, data::file_location)> on_conditional;
+
+    std::function<void(bool)> on_evaluated_conditional_expression;
+
+    std::function<void(data::file_location)> on_else;
+    std::function<void(data::file_location)> on_endif;
 
     wave_hooks() : _included_files(nullptr) {}
 
@@ -124,9 +133,13 @@ namespace metashell
         std::transform(arguments_.begin(), arguments_.end(),
                        std::back_inserter(args), &tokens_to_code<ContainerT>);
 
-        on_macro_expansion_begin(token_to_code(macrodef_), args,
-                                 to_file_location(macrocall_),
-                                 to_file_location(macrodef_));
+        const auto name = token_to_code(macrodef_);
+        const auto point_of_event = to_file_location(macrocall_);
+        const auto source_location = to_file_location(macrodef_);
+        trigger_event([this, name, args, point_of_event, source_location] {
+          this->on_macro_expansion_begin(
+              name, args, point_of_event, source_location);
+        });
       }
       return false;
     }
@@ -139,9 +152,13 @@ namespace metashell
     {
       if (on_macro_expansion_begin)
       {
-        on_macro_expansion_begin(token_to_code(macrodef_), boost::none,
-                                 to_file_location(macrocall_),
-                                 to_file_location(macrodef_));
+        const auto name = token_to_code(macrodef_);
+        const auto point_of_event = to_file_location(macrocall_);
+        const auto source_location = to_file_location(macrodef_);
+        trigger_event([this, name, point_of_event, source_location] {
+          this->on_macro_expansion_begin(
+              name, boost::none, point_of_event, source_location);
+        });
       }
       return false;
     }
@@ -151,7 +168,8 @@ namespace metashell
     {
       if (on_rescanning)
       {
-        on_rescanning(tokens_to_code(result_));
+        const auto result = tokens_to_code(result_);
+        trigger_event([this, result] { this->on_rescanning(result); });
       }
     }
 
@@ -160,7 +178,11 @@ namespace metashell
     {
       if (on_macro_expansion_end)
       {
-        on_macro_expansion_end(tokens_to_code(result_), result_.size());
+        const auto result = tokens_to_code(result_);
+        const auto num_tokens = result_.size();
+        trigger_event([this, result, num_tokens] {
+          this->on_macro_expansion_end(result, num_tokens);
+        });
       }
     }
 
@@ -179,6 +201,26 @@ namespace metashell
     bool found_directive(const ContextT&, const TokenT& directive_)
     {
       _last_directive_location = to_file_location(directive_);
+      const auto directive = token_to_code(directive_);
+      if (directive == "#if" || directive == "#elif" || directive == "#ifdef" ||
+          directive == "#ifndef")
+      {
+        _event_queue = std::vector<std::function<void()>>();
+      }
+      else if (directive == "#else")
+      {
+        if (on_else)
+        {
+          on_else(_last_directive_location);
+        }
+      }
+      else if (directive == "#endif")
+      {
+        if (on_endif)
+        {
+          on_endif(_last_directive_location);
+        }
+      }
       return false;
     }
 
@@ -218,9 +260,31 @@ namespace metashell
       }
     }
 
+    template <typename ContextT, typename TokenT, typename ContainerT>
+    bool evaluated_conditional_expression(const ContextT&,
+                                          const TokenT& directive_,
+                                          const ContainerT& expression_,
+                                          bool expression_value_)
+    {
+      if (on_conditional)
+      {
+        on_conditional(
+            token_to_code(directive_) + " " + tokens_to_code(expression_),
+            to_file_location(directive_));
+      }
+      flush_event_queue();
+
+      if (on_evaluated_conditional_expression)
+      {
+        on_evaluated_conditional_expression(expression_value_);
+      }
+      return false;
+    }
+
   private:
     std::set<boost::filesystem::path>* _included_files;
     data::file_location _last_directive_location;
+    boost::optional<std::vector<std::function<void()>>> _event_queue;
 
     template <class String>
     static std::string to_std_string(const String& s_)
@@ -266,6 +330,30 @@ namespace metashell
       return data::file_location(
           boost::filesystem::path(fn).filename() == "<stdin>" ? "<stdin>" : fn,
           line, pos.get_column());
+    }
+
+    void trigger_event(std::function<void()> event_)
+    {
+      if (_event_queue)
+      {
+        _event_queue->push_back(event_);
+      }
+      else
+      {
+        event_();
+      }
+    }
+
+    void flush_event_queue()
+    {
+      if (_event_queue)
+      {
+        for (const auto& event : *_event_queue)
+        {
+          event();
+        }
+        _event_queue = boost::none;
+      }
     }
   };
 }

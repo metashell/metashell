@@ -45,6 +45,14 @@ namespace metashell
         return "QuoteInclude";
       case event_kind::sys_include:
         return "SysInclude";
+      case event_kind::preprocessing_condition:
+        return "PreprocessingCondition";
+      case event_kind::preprocessing_condition_result:
+        return "PreprocessingConditionResult";
+      case event_kind::preprocessing_else:
+        return "PreprocessingElse";
+      case event_kind::preprocessing_endif:
+        return "PreprocessingEndif";
       case event_kind::template_instantiation:
         return "TemplateInstantiation";
       case event_kind::default_template_argument_instantiation:

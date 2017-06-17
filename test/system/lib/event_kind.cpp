@@ -41,6 +41,14 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "QuoteInclude";
   case event_kind::sys_include:
     return "SysInclude";
+  case event_kind::preprocessing_condition:
+    return "PreprocessingCondition";
+  case event_kind::preprocessing_condition_result:
+    return "PreprocessingConditionResult";
+  case event_kind::preprocessing_else:
+    return "PreprocessingElse";
+  case event_kind::preprocessing_endif:
+    return "PreprocessingEndif";
 
   case event_kind::template_instantiation:
     return "TemplateInstantiation";
@@ -105,6 +113,22 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   else if (kind_ == "SysInclude")
   {
     return event_kind::sys_include;
+  }
+  else if (kind_ == "PreprocessingCondition")
+  {
+    return event_kind::preprocessing_condition;
+  }
+  else if (kind_ == "PreprocessingConditionResult")
+  {
+    return event_kind::preprocessing_condition_result;
+  }
+  else if (kind_ == "PreprocessingElse")
+  {
+    return event_kind::preprocessing_else;
+  }
+  else if (kind_ == "PreprocessingEndif")
+  {
+    return event_kind::preprocessing_endif;
   }
   else if (kind_ == "TemplateInstantiation")
   {

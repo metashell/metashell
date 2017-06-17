@@ -76,6 +76,15 @@ namespace metashell
 
     void on_undefine(const data::cpp_code& name_,
                      const data::file_location& point_of_event_);
+
+    void on_conditional(const data::cpp_code& expression_,
+                        const data::file_location& point_of_event_);
+
+    void on_evaluated_conditional_expression(bool result_);
+
+    void on_else(const data::file_location& point_of_event_);
+
+    void on_endif(const data::file_location& point_of_event_);
   };
 }
 

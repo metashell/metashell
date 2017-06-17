@@ -656,6 +656,10 @@ namespace metashell
     case data::event_kind::generated_token:
     case data::event_kind::quote_include:
     case data::event_kind::sys_include:
+    case data::event_kind::preprocessing_condition:
+    case data::event_kind::preprocessing_condition_result:
+    case data::event_kind::preprocessing_else:
+    case data::event_kind::preprocessing_endif:
       return true;
     default:
       return false;

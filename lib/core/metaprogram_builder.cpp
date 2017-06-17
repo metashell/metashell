@@ -174,6 +174,75 @@ namespace metashell
                 point_of_event, timestamp);
   }
 
+  void metaprogram_builder::handle_preprocessing_condition_begin(
+      const data::cpp_code& expression,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex =
+        add_vertex(unique_value(expression), point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    auto edge = mp.add_edge(top_vertex, vertex,
+                            data::event_kind::preprocessing_condition,
+                            point_of_event, timestamp);
+    edge_stack.push(edge);
+  }
+
+  void metaprogram_builder::handle_preprocessing_condition_end(bool result,
+                                                               double timestamp)
+  {
+    if (edge_stack.empty())
+    {
+      throw exception(
+          "Mismatched PreprocessingConditionBegin and "
+          "PreprocessingConditionEnd events");
+    }
+    auto& ep = mp.get_edge_property(edge_stack.top());
+    ep.time_taken = timestamp - ep.begin_timestamp;
+
+    vertex_descriptor vertex =
+        add_vertex(unique_value(data::cpp_code(result ? "true" : "false")),
+                   ep.point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex,
+                data::event_kind::preprocessing_condition_result,
+                ep.point_of_event, timestamp);
+
+    edge_stack.pop();
+  }
+
+  void metaprogram_builder::handle_preprocessing_else(
+      const data::file_location& point_of_event, double timestamp)
+  {
+    vertex_descriptor vertex =
+        add_vertex(unique_value(data::cpp_code("#else")), point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::preprocessing_else,
+                point_of_event, timestamp);
+  }
+
+  void metaprogram_builder::handle_preprocessing_endif(
+      const data::file_location& point_of_event, double timestamp)
+  {
+    vertex_descriptor vertex =
+        add_vertex(unique_value(data::cpp_code("#endif")), point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::preprocessing_endif,
+                point_of_event, timestamp);
+  }
+
   void metaprogram_builder::handle_template_begin(
       data::event_kind kind,
       const data::type& type,

@@ -36,6 +36,10 @@ namespace metashell
       generated_token,
       quote_include,
       sys_include,
+      preprocessing_condition,
+      preprocessing_condition_result,
+      preprocessing_else,
+      preprocessing_endif,
 
       // Template instantiation-related events
       template_instantiation,
