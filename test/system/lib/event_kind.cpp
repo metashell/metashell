@@ -37,6 +37,8 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "ExpandedCode";
   case event_kind::generated_token:
     return "GeneratedToken";
+  case event_kind::skipped_token:
+    return "SkippedToken";
   case event_kind::quote_include:
     return "QuoteInclude";
   case event_kind::sys_include:
@@ -105,6 +107,10 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   else if (kind_ == "GeneratedToken")
   {
     return event_kind::generated_token;
+  }
+  else if (kind_ == "SkippedToken")
+  {
+    return event_kind::skipped_token;
   }
   else if (kind_ == "QuoteInclude")
   {

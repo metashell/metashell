@@ -64,6 +64,9 @@ namespace metashell
     void on_token_generated(const data::token& t_,
                             const data::file_location& source_location_);
 
+    void on_token_skipped(const data::token& t_,
+                          const data::file_location& source_location_);
+
     void on_include_begin(const data::include_argument& arg_,
                           const data::file_location& point_of_event_);
 

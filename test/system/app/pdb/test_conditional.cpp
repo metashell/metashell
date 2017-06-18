@@ -76,34 +76,57 @@ TEST(pdb, conditionals_in_trace)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 4},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 17},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#if A"), _, _, event_kind::preprocessing_condition), 2, 2},
             {frame(type("A"), _, _, event_kind::macro_expansion), 3, 1},
               {frame(type("1"), _, _, event_kind::rescanning), 4, 1},
                 {frame(type("1"), _, _, event_kind::expanded_code), 5, 0},
             {frame(type("true"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("a"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0}
+          {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("B"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("b"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#else"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("c"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include(tmp_dir.path(), "1", "1")
   );
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 11},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 23},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#if A"), _, _, event_kind::preprocessing_condition), 2, 2},
             {frame(type("A"), _, _, event_kind::macro_expansion), 3, 1},
               {frame(type("0"), _, _, event_kind::rescanning), 4, 1},
                 {frame(type("0"), _, _, event_kind::expanded_code), 5, 0},
             {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("a"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#elif B"), _, _, event_kind::preprocessing_condition), 2, 2},
             {frame(type("B"), _, _, event_kind::macro_expansion), 3, 1},
               {frame(type("1"), _, _, event_kind::rescanning), 4, 1},
                 {frame(type("1"), _, _, event_kind::expanded_code), 5, 0},
             {frame(type("true"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#line"), _, _, event_kind::generated_token), 2, 0},
           {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
           {frame(type("4"), _, _, event_kind::generated_token), 2, 0},
@@ -112,25 +135,43 @@ TEST(pdb, conditionals_in_trace)
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("b"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("#else"), _, _, event_kind::preprocessing_else), 2, 0}
+          {frame(type("#else"), _, _, event_kind::preprocessing_else), 2, 0},
+          {frame(type("#else"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("c"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include(tmp_dir.path(), "0", "1")
   );
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 11},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 23},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#if A"), _, _, event_kind::preprocessing_condition), 2, 2},
             {frame(type("A"), _, _, event_kind::macro_expansion), 3, 1},
               {frame(type("0"), _, _, event_kind::rescanning), 4, 1},
                 {frame(type("0"), _, _, event_kind::expanded_code), 5, 0},
             {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("a"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type(" "), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#elif B"), _, _, event_kind::preprocessing_condition), 2, 2},
             {frame(type("B"), _, _, event_kind::macro_expansion), 3, 1},
               {frame(type("0"), _, _, event_kind::rescanning), 4, 1},
                 {frame(type("0"), _, _, event_kind::expanded_code), 5, 0},
             {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("b"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#else"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("#line"), _, _, event_kind::generated_token), 2, 0},
           {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
           {frame(type("6"), _, _, event_kind::generated_token), 2, 0},
@@ -139,7 +180,9 @@ TEST(pdb, conditionals_in_trace)
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("c"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0}
+          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include(tmp_dir.path(), "0", "0")
   );
@@ -153,24 +196,36 @@ TEST(pdb, ifdef_in_trace)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 1},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 6},
           {frame(type("#ifdef X"), _, _, event_kind::preprocessing_condition), 2, 1},
-            {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0}
+            {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("x"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include("#ifdef X\nx\n#endif\n")
   );
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 5},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 8},
           {frame(type("#ifdef __DATE__"), _, _, event_kind::preprocessing_condition), 2, 1},
             {frame(type("true"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("x"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0}
+          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include("#ifdef __DATE__\nx\n#endif\n")
   );
@@ -184,24 +239,36 @@ TEST(pdb, ifndef_in_trace)
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 1},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 6},
           {frame(type("#ifndef __DATE__"), _, _, event_kind::preprocessing_condition), 2, 1},
-            {frame(type("true"), _, _, event_kind::preprocessing_condition_result), 3, 0}
+            {frame(type("true"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("x"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include("#ifndef __DATE__\nx\n#endif\n")
   );
 
   ASSERT_EQ(
     call_graph({
-      {frame(type("#include \"test.hpp\"")), 0, 1},
-        {frame(_, _, _, event_kind::quote_include), 1, 5},
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(_, _, _, event_kind::quote_include), 1, 8},
           {frame(type("#ifndef X"), _, _, event_kind::preprocessing_condition), 2, 1},
             {frame(type("false"), _, _, event_kind::preprocessing_condition_result), 3, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("x"), _, _, event_kind::generated_token), 2, 0},
           {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
-          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0}
+          {frame(type("#endif"), _, _, event_kind::preprocessing_endif), 2, 0},
+          {frame(type("#endif"), _, _, event_kind::skipped_token), 2, 0},
+          {frame(type("\\n"), _, _, event_kind::skipped_token), 2, 0}
     }),
     ft_of_include("#ifndef X\nx\n#endif\n")
   );

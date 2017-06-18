@@ -64,7 +64,9 @@ namespace
 
     return
       call_graph({
-        {frame(type("#include " + include_arg<Kind>())), 0, 1},
+        {frame(type("#include " + include_arg<Kind>())), 0, 3},
+        {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
         {frame(type(test_hpp), _, _, Kind), 1, 8},
           {frame(type("#line"), l1, l1, event_kind::generated_token), 2, 0},
           {frame(type(" "), l1, l1, event_kind::generated_token), 2, 0},

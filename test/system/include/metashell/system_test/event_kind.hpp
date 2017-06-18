@@ -34,6 +34,7 @@ namespace metashell
       rescanning,
       expanded_code,
       generated_token,
+      skipped_token,
       quote_include,
       sys_include,
       preprocessing_condition,

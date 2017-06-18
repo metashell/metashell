@@ -58,6 +58,8 @@ namespace metashell
 
     std::function<void(data::token, data::file_location)> on_token_generated;
 
+    std::function<void(data::token, data::file_location)> on_token_skipped;
+
     std::function<void(data::include_argument, data::file_location)>
         on_include_begin;
     std::function<void()> on_include_end;
@@ -279,6 +281,16 @@ namespace metashell
         on_evaluated_conditional_expression(expression_value_);
       }
       return false;
+    }
+
+    template <typename ContextT, typename TokenT>
+    void skipped_token(const ContextT&, const TokenT& token_)
+    {
+      if (on_token_skipped)
+      {
+        on_token_skipped(
+            token_from_wave_token(token_), to_file_location(token_));
+      }
     }
 
   private:

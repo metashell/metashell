@@ -67,6 +67,10 @@ namespace metashell
                                  const data::file_location& source_location,
                                  double timestamp);
 
+    void handle_token_skipping(const data::token& token,
+                               const data::file_location& point_of_event,
+                               double timestamp);
+
     void handle_include_begin(const data::include_argument& arg,
                               const data::file_location& point_of_event,
                               double timestamp);

@@ -41,6 +41,8 @@ namespace metashell
         return "ExpandedCode";
       case event_kind::generated_token:
         return "GeneratedToken";
+      case event_kind::skipped_token:
+        return "SkippedToken";
       case event_kind::quote_include:
         return "QuoteInclude";
       case event_kind::sys_include:

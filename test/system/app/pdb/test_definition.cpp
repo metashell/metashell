@@ -35,8 +35,9 @@ namespace
 
     return
       call_graph({
-        {frame(type("#define " + macro_)), 0, 1},
-        {frame(type(macro_), _, _, event_kind::macro_definition), 1, 0}
+        {frame(type("#define " + macro_)), 0, 2},
+        {frame(type(macro_), _, _, event_kind::macro_definition), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0}
       })
       == mi.command("ft").front();
 
@@ -55,8 +56,9 @@ namespace
 
     return
       call_graph({
-        {frame(type("#undef " + name_)), 0, 1},
-        {frame(type(name_), _, _, event_kind::macro_deletion), 1, 0}
+        {frame(type("#undef " + name_)), 0, 2},
+        {frame(type(name_), _, _, event_kind::macro_deletion), 1, 0},
+        {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0}
       })
       == mi.command("ft").front();
 
