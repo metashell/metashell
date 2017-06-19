@@ -43,8 +43,7 @@ def get_config(name, configs):
     cfgs = [c for c in configs if c['name'] == name]
     if len(cfgs) == 1:
         return cfgs[0]
-    else:
-        return None
+    return None
 
 
 # pylint: disable=missing-docstring

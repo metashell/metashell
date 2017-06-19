@@ -43,7 +43,7 @@ def run(mkdocs_yml):
         load_yml(mkdocs_yml),
         os.path.dirname(os.path.abspath(mkdocs_yml)) + '/docs'
     )
-    if len(errors) > 0:
+    if errors:
         for err in errors:
             print err
         sys.exit(1)

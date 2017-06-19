@@ -27,10 +27,12 @@ fi
 # PYTHONPATH
 for f in $(tools/list/python_files.sh tools)
 do
+  echo "pylint on '${f}'"
   pylint \
     --disable=bare-except \
     --disable=locally-disabled \
     --disable=locally-enabled \
     --disable=similarities \
+    --disable=useless-super-delegation \
     "${f}"
 done
