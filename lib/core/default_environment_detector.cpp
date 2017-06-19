@@ -98,53 +98,59 @@ namespace
     return buff.data();
   }
 #endif
+
+  boost::filesystem::path path_of_executable(const std::string& argv0_)
+  {
+#ifdef _WIN32
+    char path[MAX_PATH];
+    GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
+    return path;
+#elif defined __FreeBSD__
+    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+    std::vector<char> buff(1);
+    size_t cb = buff.size();
+    while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
+    {
+      buff.resize(buff.size() * 2);
+      cb = buff.size();
+    }
+    return std::string(buff.begin(), buff.begin() + cb);
+#elif defined __OpenBSD__ || defined __APPLE__
+    if (argv0_.empty() || argv0_[0] == '/')
+    {
+      return argv0_;
+    }
+    else if (argv0_.find('/') != std::string::npos)
+    {
+      // This code assumes that the application never changes the working
+      // directory
+      return current_working_directory() / argv0_;
+    }
+    else
+    {
+      const std::string p = just::environment::get("PATH");
+      std::vector<boost::filesystem::path> path;
+      boost::split(path, p, [](char c_) { return c_ == ';'; });
+      for (const auto& s : path)
+      {
+        const boost::filesystem::path fn = s / argv0_;
+        if (file_exists(fn))
+        {
+          return fn;
+        }
+      }
+      return "";
+    }
+#else
+    return read_link("/proc/self/exe");
+#endif
+  }
 } // anonymous namespace
 
 boost::filesystem::path default_environment_detector::path_of_executable()
 {
-#ifdef _WIN32
-  char path[MAX_PATH];
-  GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
-  return path;
-#elif defined __FreeBSD__
-  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
-  std::vector<char> buff(1);
-  size_t cb = buff.size();
-  while (sysctl(mib, 4, buff.data(), &cb, NULL, 0) != 0)
-  {
-    buff.resize(buff.size() * 2);
-    cb = buff.size();
-  }
-  return std::string(buff.begin(), buff.begin() + cb);
-#elif defined __OpenBSD__ || defined __APPLE__
-  if (_argv0.empty() || _argv0[0] == '/')
-  {
-    return _argv0;
-  }
-  else if (_argv0.find('/') != std::string::npos)
-  {
-    // This code assumes that the application never changes the working
-    // directory
-    return current_working_directory() / _argv0;
-  }
-  else
-  {
-    const std::string p = just::environment::get("PATH");
-    std::vector<boost::filesystem::path> path;
-    boost::split(path, p, [](char c_) { return c_ == ';'; });
-    for (const auto& s : path)
-    {
-      const boost::filesystem::path fn = s / _argv0;
-      if (file_exists(fn))
-      {
-        return fn;
-      }
-    }
-    return "";
-  }
-#else
-  return read_link("/proc/self/exe");
-#endif
+  // resolve symlinks with boost::filesystem::canonical
+  return canonical(path_of_executable(_argv0));
 }
 
 default_environment_detector::default_environment_detector(
