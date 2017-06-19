@@ -150,7 +150,7 @@ namespace
 boost::filesystem::path default_environment_detector::path_of_executable()
 {
   // resolve symlinks with boost::filesystem::canonical
-  return canonical(path_of_executable(_argv0));
+  return canonical(::path_of_executable(_argv0));
 }
 
 default_environment_detector::default_environment_detector(
