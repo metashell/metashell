@@ -102,10 +102,14 @@ namespace
   boost::filesystem::path path_of_executable(const std::string& argv0_)
   {
 #ifdef _WIN32
+    (void)argv0_;
+
     char path[MAX_PATH];
     GetModuleFileName(GetModuleHandle(NULL), path, sizeof(path));
     return path;
 #elif defined __FreeBSD__
+    (void)argv0_;
+
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
     std::vector<char> buff(1);
     size_t cb = buff.size();
@@ -142,6 +146,7 @@ namespace
       return "";
     }
 #else
+    (void)argv0_;
     return read_link("/proc/self/exe");
 #endif
   }
