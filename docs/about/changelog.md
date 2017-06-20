@@ -15,6 +15,11 @@
       the Templight (shipped with Metashell) on the system include path and the
       macros of Templight defined by default.
 
+* Fixes
+    * The `templight_metashell` executable is found even if the `metashell`
+      executable is behind a symlink on macOS and OpenBSD systems. This also
+      broke the Homebrew version of metashell.
+
 ## Version 3.0.0
 
 * New features

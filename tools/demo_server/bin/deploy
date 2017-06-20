@@ -43,8 +43,8 @@ def deploy_event(step_name, action, name):
     act = '{0} {1}'.format(step_name, action)
     if name is None:
         return '{0} {1} {0}'.format(prefix, act)
-    else:
-        return '{0} {1}: {2} {0}'.format(prefix, name, act)
+
+    return '{0} {1}: {2} {0}'.format(prefix, name, act)
 
 
 def set_permissions(path):
@@ -157,7 +157,7 @@ def root_of_a_git_repository(path):
 def choose_initial_dir(out_dir):
     """Choose an initial directory for cloning the repository into"""
     dirs = os.listdir(out_dir)
-    while len(dirs) > 0:
+    while dirs:
         current = dirs[0]
 
         if root_of_a_git_repository(current):
@@ -392,11 +392,11 @@ class Branch(object):
         """Collect deployment information"""
         if self.was_build_error:
             return []
-        else:
-            deployer = Deployer(config_name, self, out_dir, self.log)
-            return flatten(
-                deployer.deployment_info(f, t) for (t, f) in deploy_info
-            )
+
+        deployer = Deployer(config_name, self, out_dir, self.log)
+        return flatten(
+            deployer.deployment_info(f, t) for (t, f) in deploy_info
+        )
 
     def generate_launcher(self, out_dir, launcher, config_name, search_list):
         """Generate the launcher page"""
@@ -492,8 +492,7 @@ def determine_to_path_suffix(entry_config, from_path_suffix):
     if 'dst' in entry_config:
         return \
             None if entry_config['dst'] in ['', '.'] else entry_config['dst']
-    else:
-        return from_path_suffix
+    return from_path_suffix
 
 
 class Deployer(object):
@@ -563,22 +562,22 @@ class Deployer(object):
         """Collects the files to deploy"""
         if to_path in ['include', 'share']:
             return self._complex_deploy_info(entry_config, to_path)
-        else:
-            abs_to_path = os.path.join(
-                self.relative(to_path),
-                os.path.basename(entry_config)
-            )
-            return [
-                FileDeployment(
-                    self.name,
-                    abs_to_path + '_' + self.branch.last_commit,
-                    (
-                        self.in_src_dir(entry_config),
-                        abs_to_path + '_' + self.branch.last_commit
-                    ),
-                    abs_to_path + '_' + escape_branch_name(self.branch.name)
-                ).with_base(self.name).with_to_path(to_path)
-            ]
+
+        abs_to_path = os.path.join(
+            self.relative(to_path),
+            os.path.basename(entry_config)
+        )
+        return [
+            FileDeployment(
+                self.name,
+                abs_to_path + '_' + self.branch.last_commit,
+                (
+                    self.in_src_dir(entry_config),
+                    abs_to_path + '_' + self.branch.last_commit
+                ),
+                abs_to_path + '_' + escape_branch_name(self.branch.name)
+            ).with_base(self.name).with_to_path(to_path)
+        ]
 
 
 def collect_symlinks(out_dir):
@@ -655,8 +654,7 @@ class DeployedLib(object):
         """Returns the display name of the library"""
         if self.name() == '':
             return ''
-        else:
-            return self.name()[0].upper() + self.name()[1:]
+        return self.name()[0].upper() + self.name()[1:]
 
     def launcher_info(self):
         """Builds the tuple describing the launcher information"""
