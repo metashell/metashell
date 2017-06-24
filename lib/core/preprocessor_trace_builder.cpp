@@ -123,6 +123,9 @@ namespace metashell
       hooks.on_endif =
           std::bind(&preprocessor_trace_builder::on_endif, this, p::_1);
 
+      hooks.on_error =
+          std::bind(&preprocessor_trace_builder::on_error, this, p::_1, p::_2);
+
       apply(ctx, config_);
 
       std::ostringstream s;
@@ -249,5 +252,12 @@ namespace metashell
       const data::file_location& point_of_event_)
   {
     _builder.handle_preprocessing_endif(point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_error(
+      const std::string& message_, const data::file_location& point_of_event_)
+  {
+    _builder.handle_error_directive(
+        message_, point_of_event_, std::time(nullptr));
   }
 }

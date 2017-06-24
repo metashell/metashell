@@ -51,6 +51,8 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "PreprocessingElse";
   case event_kind::preprocessing_endif:
     return "PreprocessingEndif";
+  case event_kind::error_directive:
+    return "ErrorDirective";
 
   case event_kind::template_instantiation:
     return "TemplateInstantiation";
@@ -135,6 +137,10 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   else if (kind_ == "PreprocessingEndif")
   {
     return event_kind::preprocessing_endif;
+  }
+  else if (kind_ == "ErrorDirective")
+  {
+    return event_kind::error_directive;
   }
   else if (kind_ == "TemplateInstantiation")
   {

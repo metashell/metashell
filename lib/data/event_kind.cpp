@@ -55,6 +55,8 @@ namespace metashell
         return "PreprocessingElse";
       case event_kind::preprocessing_endif:
         return "PreprocessingEndif";
+      case event_kind::error_directive:
+        return "ErrorDirective";
       case event_kind::template_instantiation:
         return "TemplateInstantiation";
       case event_kind::default_template_argument_instantiation:

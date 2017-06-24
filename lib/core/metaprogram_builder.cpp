@@ -243,6 +243,21 @@ namespace metashell
                 point_of_event, timestamp);
   }
 
+  void metaprogram_builder::handle_error_directive(
+      const std::string& message,
+      const data::file_location& point_of_event,
+      double timestamp)
+  {
+    vertex_descriptor vertex = add_vertex(
+        unique_value(data::cpp_code("#error " + message)), point_of_event);
+    vertex_descriptor top_vertex = edge_stack.empty() ?
+                                       mp.get_root_vertex() :
+                                       mp.get_target(edge_stack.top());
+
+    mp.add_edge(top_vertex, vertex, data::event_kind::error_directive,
+                point_of_event, timestamp);
+  }
+
   void metaprogram_builder::handle_template_begin(
       data::event_kind kind,
       const data::type& type,

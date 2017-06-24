@@ -100,6 +100,10 @@ namespace metashell
     void handle_preprocessing_endif(const data::file_location& point_of_event,
                                     double timestamp);
 
+    void handle_error_directive(const std::string& message,
+                                const data::file_location& point_of_event,
+                                double timestamp);
+
     void handle_evaluation_end(data::type_or_code_or_error result_);
 
     const data::metaprogram& get_metaprogram() const;

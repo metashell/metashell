@@ -19,6 +19,7 @@
 
 #include <metashell/wave_token.hpp>
 
+#include <metashell/data/counter.hpp>
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/include_argument.hpp>
@@ -30,6 +31,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <iterator>
 #include <set>
@@ -78,6 +80,8 @@ namespace metashell
     std::function<void(data::file_location)> on_else;
     std::function<void(data::file_location)> on_endif;
 
+    std::function<void(std::string, data::file_location)> on_error;
+
     wave_hooks() : _included_files(nullptr) {}
 
     explicit wave_hooks(std::set<boost::filesystem::path>& included_files_)
@@ -103,6 +107,7 @@ namespace metashell
                                                 absname_),
                          _last_directive_location);
       }
+      ++_include_depth;
     }
 
     template <typename ContextT>
@@ -112,6 +117,8 @@ namespace metashell
       {
         on_include_end();
       }
+      assert(!_include_depth.empty());
+      --_include_depth;
     }
 
     template <typename ContextT,
@@ -293,10 +300,30 @@ namespace metashell
       }
     }
 
+    template <typename ContextT, typename ContainerT>
+    bool found_error_directive(const ContextT&, const ContainerT& message_)
+    {
+      if (on_error)
+      {
+        on_error(tokens_to_string(message_), _last_directive_location);
+      }
+
+      for (; !_include_depth.empty(); --_include_depth)
+      {
+        if (on_include_end)
+        {
+          on_include_end();
+        }
+      }
+
+      return false;
+    }
+
   private:
     std::set<boost::filesystem::path>* _included_files;
     data::file_location _last_directive_location;
     boost::optional<std::vector<std::function<void()>>> _event_queue;
+    data::counter _include_depth;
 
     template <class String>
     static std::string to_std_string(const String& s_)
@@ -319,14 +346,20 @@ namespace metashell
     }
 
     template <class ContainerT>
-    static data::cpp_code tokens_to_code(const ContainerT& tokens_)
+    static std::string tokens_to_string(const ContainerT& tokens_)
     {
       std::ostringstream result;
       for (const auto& t : tokens_)
       {
         result << t.get_value();
       }
-      return data::cpp_code(result.str());
+      return result.str();
+    }
+
+    template <class ContainerT>
+    static data::cpp_code tokens_to_code(const ContainerT& tokens_)
+    {
+      return data::cpp_code(tokens_to_string(tokens_));
     }
 
     template <class Token>

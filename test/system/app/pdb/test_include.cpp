@@ -96,3 +96,36 @@ TEST(pdb, tokens_from_include)
   ASSERT_EQ(expected_call_graph<event_kind::quote_include>(tmp_dir.path()),
             ft_of_include<event_kind::quote_include>(tmp_dir.path()));
 }
+
+TEST(pdb, error_directive_in_include)
+{
+  just::temp::directory tmp_dir;
+  const auto test_hpp = test_hpp_path(tmp_dir.path());
+  {
+    std::ofstream f(test_hpp);
+    f << "hello\n#error test error\n";
+  }
+
+  // clang-format off
+
+  ASSERT_EQ(
+    call_graph({
+      {frame(type("#include \"test.hpp\"")), 0, 3},
+      {frame(type("#include"), _, _, event_kind::skipped_token), 1, 0},
+      {frame(type("\\n"), _, _, event_kind::skipped_token), 1, 0},
+      {frame(type(test_hpp), _, _, event_kind::quote_include), 1, 9},
+        {frame(type("#line"), _, _, event_kind::generated_token), 2, 0},
+        {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
+        {frame(type("1"), _, _, event_kind::generated_token), 2, 0},
+        {frame(type(" "), _, _, event_kind::generated_token), 2, 0},
+        {frame(type(c_string_literal(test_hpp)), _, _, event_kind::generated_token), 2, 0},
+        {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
+        {frame(type("hello"), _, _, event_kind::generated_token), 2, 0},
+        {frame(type("\\n"), _, _, event_kind::generated_token), 2, 0},
+        {frame(type("#error test error"), _, _, event_kind::error_directive), 2, 0}
+    }),
+    ft_of_include<event_kind::quote_include>(tmp_dir.path())
+  );
+
+  // clang-format on
+}

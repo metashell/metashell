@@ -88,6 +88,9 @@ namespace metashell
     void on_else(const data::file_location& point_of_event_);
 
     void on_endif(const data::file_location& point_of_event_);
+
+    void on_error(const std::string& message_,
+                  const data::file_location& point_of_event_);
   };
 }
 
