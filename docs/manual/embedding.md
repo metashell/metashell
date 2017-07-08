@@ -208,10 +208,12 @@ Format:
 }
 ```
 
-Display a template class instantiation. This is treated as a stack frame of a
-template metaprogram execution (this is where the name comes from). The
-`type instantiated` is the pretty-printed version of the template instance.
-The `<source_location>` is the source location of the instantiated template.
+Display a template class instantiation or preprocessing event. This is treated
+as a stack frame of a template or preprocessor metaprogram execution (this is
+where the name comes from). The `type instantiated` is the pretty-printed
+version of the template instance, included file, macro, etc.
+The `<source_location>` is the source location of the instantiated template,
+expanded macro, etc.
 The format is `<file_name>:<row>:<column>`. There is a special file called
 `<stdin>` which can appear in this field. This is a placeholder for the the code
 directly entered into the shell. `file_name` is possibly empty, this means that
@@ -221,6 +223,7 @@ The `kind`, `point_of_event`, `time_taken` and `time_taken_ratio` fields
 are optional depending on whether Metashell has this information. The possible
 values for kind are:
 
+* Related to template instantiation:
     * `DefaultFunctionArgumentInstantiation`
     * `DefaultTemplateArgumentChecking`
     * `DefaultTemplateArgumentInstantiation`
@@ -231,6 +234,23 @@ values for kind are:
     * `NonTemplateType`
     * `PriorTemplateArgumentSubstitution`
     * `TemplateInstantiation`
+* Related to preprocessing:
+    * `ErrorDirective`
+    * `ExpandedCode`
+    * `GeneratedToken`
+    * `LineDirective`
+    * `MacroDefinition`
+    * `MacroDeletion`
+    * `MacroExpansion`
+    * `PreprocessingCondition`
+    * `PreprocessingConditionResult`
+    * `PreprocessingElse`
+    * `PreprocessingEndif`
+    * `QuoteInclude`
+    * `Rescanning`
+    * `SkippedToken`
+    * `SysInclude`
+* Others:
     * `UnknownKind`
 
 Format of `point_of_event` is  the same as of `source_location` but
