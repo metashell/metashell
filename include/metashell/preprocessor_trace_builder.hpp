@@ -91,6 +91,10 @@ namespace metashell
 
     void on_error(const std::string& message_,
                   const data::file_location& point_of_event_);
+
+    void on_line(const data::cpp_code& arg_,
+                 const data::file_location& point_of_event_,
+                 const data::file_location& source_location_);
   };
 }
 

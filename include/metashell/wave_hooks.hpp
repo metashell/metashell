@@ -82,6 +82,10 @@ namespace metashell
 
     std::function<void(std::string, data::file_location)> on_error;
 
+    std::function<void(
+        data::cpp_code, data::file_location, data::file_location)>
+        on_line;
+
     wave_hooks() : _included_files(nullptr) {}
 
     explicit wave_hooks(std::set<boost::filesystem::path>& included_files_)
@@ -317,6 +321,20 @@ namespace metashell
       }
 
       return false;
+    }
+
+    template <typename ContextT, typename ContainerT>
+    void found_line_directive(const ContextT&,
+                              const ContainerT& arguments_,
+                              unsigned int line_,
+                              const std::string& filename_)
+    {
+      if (on_line && arguments_.begin() != arguments_.end())
+      {
+        on_line(tokens_to_code(arguments_),
+                to_file_location(*arguments_.begin()),
+                data::file_location(filename_, line_, 1));
+      }
     }
 
   private:

@@ -126,6 +126,9 @@ namespace metashell
       hooks.on_error =
           std::bind(&preprocessor_trace_builder::on_error, this, p::_1, p::_2);
 
+      hooks.on_line = std::bind(
+          &preprocessor_trace_builder::on_line, this, p::_1, p::_2, p::_3);
+
       apply(ctx, config_);
 
       std::ostringstream s;
@@ -259,5 +262,14 @@ namespace metashell
   {
     _builder.handle_error_directive(
         message_, point_of_event_, std::time(nullptr));
+  }
+
+  void preprocessor_trace_builder::on_line(
+      const data::cpp_code& arg_,
+      const data::file_location& point_of_event_,
+      const data::file_location& source_location_)
+  {
+    _builder.handle_line_directive(
+        arg_, point_of_event_, source_location_, std::time(nullptr));
   }
 }

@@ -104,6 +104,11 @@ namespace metashell
                                 const data::file_location& point_of_event,
                                 double timestamp);
 
+    void handle_line_directive(const data::cpp_code& arg,
+                               const data::file_location& point_of_event,
+                               const data::file_location& source_location,
+                               double timestamp);
+
     void handle_evaluation_end(data::type_or_code_or_error result_);
 
     const data::metaprogram& get_metaprogram() const;

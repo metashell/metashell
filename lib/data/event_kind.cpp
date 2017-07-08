@@ -57,6 +57,8 @@ namespace metashell
         return "PreprocessingEndif";
       case event_kind::error_directive:
         return "ErrorDirective";
+      case event_kind::line_directive:
+        return "LineDirective";
       case event_kind::template_instantiation:
         return "TemplateInstantiation";
       case event_kind::default_template_argument_instantiation:

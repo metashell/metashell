@@ -41,6 +41,7 @@ namespace metashell
       preprocessing_else,
       preprocessing_endif,
       error_directive,
+      line_directive,
 
       // Template instantiation-related events
       template_instantiation,

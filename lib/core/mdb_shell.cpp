@@ -662,6 +662,7 @@ namespace metashell
     case data::event_kind::preprocessing_else:
     case data::event_kind::preprocessing_endif:
     case data::event_kind::error_directive:
+    case data::event_kind::line_directive:
       return true;
     default:
       return false;
