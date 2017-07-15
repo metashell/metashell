@@ -102,7 +102,7 @@ namespace metashell
             }
             else
             {
-              std::runtime_error("name field should be string");
+              throw std::runtime_error("name field should be string");
             }
           }
           if (d_.HasMember("kind"))
