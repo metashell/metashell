@@ -37,9 +37,25 @@ namespace
     return Kind == event_kind::sys_include ? "<test.hpp>" : "\"test.hpp\"";
   }
 
+  // This is a workaround for Boost.Wave: it returns path on Windows as
+  // C:/.... instead of C:\.....
+  // TODO: once other preprocessors (returning the path as C:\...) are also
+  // supported, a more flexible solution is need here.
+  std::string workaround_for_wave_on_windows(std::string path_)
+  {
+#ifdef _WIN32
+    if (path_.size() > 2 && path_[1] == ':' && path_[2] == '\\')
+    {
+      path_.replace(2, 1, "/");
+    }
+#endif
+    return path_;
+  }
+
   std::string test_hpp_path(const boost::filesystem::path& tmp_dir_path_)
   {
-    return (tmp_dir_path_ / "test.hpp").string();
+    return workaround_for_wave_on_windows(
+        (tmp_dir_path_ / "test.hpp").string());
   }
 
   template <event_kind Kind>
