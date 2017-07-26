@@ -89,7 +89,7 @@ namespace metashell
       if (result.is_empty() && evaluation_result.is_error())
       {
         // Most errors will cause templight to generate an empty trace
-        // We're only intrested in non-empty traces
+        // We're only interested in non-empty traces
         throw exception(evaluation_result.get_error());
       }
       return result;
