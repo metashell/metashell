@@ -36,7 +36,7 @@ namespace metashell
 
   data::result
   type_shell_clang::eval(const iface::environment& env_,
-                         const boost::optional<std::string>& tmp_exp_,
+                         const boost::optional<data::cpp_code>& tmp_exp_,
                          bool use_precompiled_headers_)
   {
     return metashell::eval(

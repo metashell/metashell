@@ -23,6 +23,7 @@
 #include <metashell/not_supported.hpp>
 #include <metashell/parse_wave_config.hpp>
 #include <metashell/preprocessor_shell_wave.hpp>
+#include <metashell/preprocessor_tracer_wave.hpp>
 
 using namespace metashell;
 
@@ -44,7 +45,8 @@ namespace
     return make_engine(config_.engine, not_supported(),
                        preprocessor_shell_wave(cfg), not_supported(),
                        header_discoverer_wave(cfg), not_supported(),
-                       cpp_validator_wave(cfg), macro_discovery_wave(cfg));
+                       cpp_validator_wave(cfg), macro_discovery_wave(cfg),
+                       preprocessor_tracer_wave(cfg));
   }
 
   template <bool UseTemplightHeaders>

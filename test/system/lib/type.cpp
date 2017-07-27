@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/type.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -36,6 +37,8 @@ const std::string& type::name() const
   assert(name_specified());
   return *_name;
 }
+
+bool type::operator==(const type& t_) const { return matches(_name, t_._name); }
 
 std::ostream& metashell::system_test::operator<<(std::ostream& out_,
                                                  const type& type_)

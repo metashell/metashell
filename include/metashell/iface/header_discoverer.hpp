@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/include_type.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -38,7 +39,7 @@ namespace metashell
       include_path(data::include_type type_) = 0;
 
       virtual std::set<boost::filesystem::path>
-      files_included_by(const std::string& exp_) = 0;
+      files_included_by(const data::cpp_code& exp_) = 0;
 
       static std::string name_of_feature() { return "header_discoverer"; }
     };

@@ -208,8 +208,9 @@ pragma_handler_map::build_default(shell& shell_,
            pragma_switch("display preprocessed commands",
                          [&shell_]() { return shell_.echo(); },
                          [&shell_](bool v_) { shell_.echo(v_); }))
-      .add("mdb", pragma_mdb(shell_, cpq_, mdb_temp_dir_, logger_))
+      .add("mdb", pragma_mdb(shell_, cpq_, mdb_temp_dir_, false, logger_))
       .add("evaluate", pragma_evaluate(shell_))
+      .add("pdb", pragma_mdb(shell_, cpq_, mdb_temp_dir_, true, logger_))
       .add("pp", pragma_pp(shell_))
       .add("show", "cpp_errors",
            pragma_switch("display C++ errors",

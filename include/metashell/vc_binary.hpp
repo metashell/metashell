@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/executable.hpp>
 #include <metashell/logger.hpp>
@@ -50,7 +51,7 @@ namespace metashell
 
   data::process_output run_vc(const vc_binary& vc_binary_,
                               std::vector<std::string> vc_args_,
-                              const std::string& input_);
+                              const data::cpp_code& input_);
 
   std::string vc_error_report_on_stdout(const data::process_output& vc_output_);
   std::string vc_error_report_on_stderr(const data::process_output& vc_output_);

@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/filesystem/path.hpp>
+
 namespace metashell
 {
 
@@ -37,9 +39,8 @@ namespace metashell
   file_section
   get_file_section(std::istream& stream, int middle_line, int offset);
 
-  file_section get_file_section_from_file(const std::string& file_name,
-                                          int middle_line,
-                                          int offset);
+  file_section get_file_section_from_file(
+      const boost::filesystem::path& file_name, int middle_line, int offset);
 
   file_section get_file_section_from_buffer(const std::string& buffer,
                                             int middle_line,

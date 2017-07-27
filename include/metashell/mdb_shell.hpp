@@ -25,9 +25,8 @@
 #include <metashell/breakpoint.hpp>
 #include <metashell/logger.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/metaprogram.hpp>
 
-#include <metashell/data/config.hpp>
+#include <metashell/data/metaprogram.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/command_processor.hpp>
@@ -42,13 +41,13 @@ namespace metashell
   class mdb_shell : public iface::command_processor
   {
   public:
-    const static mdb_command_handler_map command_handler;
+    const mdb_command_handler_map command_handler;
 
-    mdb_shell(const data::config& conf,
-              iface::environment& env,
+    mdb_shell(iface::environment& env,
               iface::engine& engine_,
               const boost::filesystem::path& env_path_,
               const boost::filesystem::path& mdb_temp_dir_,
+              bool _preprocessor,
               logger* logger_);
 
     virtual std::string prompt() const override;
@@ -79,6 +78,8 @@ namespace metashell
     virtual void code_complete(const std::string& s_,
                                std::set<std::string>& out_) const override;
 
+    static mdb_command_handler_map build_command_handler(bool preprocessor_);
+
   protected:
     bool require_empty_args(const std::string& args,
                             iface::displayer& displayer_) const;
@@ -88,13 +89,9 @@ namespace metashell
     require_running_or_errored_metaprogram(iface::displayer& displayer_) const;
 
     bool run_metaprogram_with_templight(
-        const boost::optional<std::string>& expression,
-        metaprogram::mode_t mode,
+        const boost::optional<data::cpp_code>& expression,
+        data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
-    data::type_or_error
-    run_metaprogram(const boost::optional<std::string>& expression,
-                    const boost::filesystem::path& output_path_,
-                    iface::displayer& displayer_);
 
     bool is_wrap_type(const data::type& type);
     data::type trim_wrap_type(const data::type& type);
@@ -105,7 +102,7 @@ namespace metashell
     void filter_similar_edges();
     void filter_metaprogram(bool for_current_line);
 
-    static bool is_instantiation_kind_enabled(data::instantiation_kind kind);
+    static bool is_event_kind_enabled(data::event_kind kind);
 
     static boost::optional<int>
     parse_defaultable_integer(const std::string& arg, int default_value);
@@ -113,10 +110,10 @@ namespace metashell
     static boost::optional<int> parse_mandatory_integer(const std::string& arg);
 
     // may return nullptr
-    const breakpoint* continue_metaprogram(direction_t direction);
+    const breakpoint* continue_metaprogram(data::direction_t direction);
     unsigned finish_metaprogram();
 
-    void next_metaprogram(direction_t direction, int n);
+    void next_metaprogram(data::direction_t direction, int n);
 
     void display_frame(const data::frame& frame,
                        iface::displayer& displayer_) const;
@@ -130,10 +127,9 @@ namespace metashell
     void display_metaprogram_finished(iface::displayer& displayer_) const;
     void display_movement_info(bool moved, iface::displayer& displayer_) const;
 
-    data::config conf;
     iface::environment& env;
 
-    boost::optional<metaprogram> mp;
+    boost::optional<data::metaprogram> mp;
 
     int next_breakpoint_id = 1;
     breakpoints_t breakpoints;
@@ -143,13 +139,15 @@ namespace metashell
 
     // It is empty if evaluate was called with "-".
     // mp is empty when there were no evaluations at all
-    boost::optional<std::string> last_evaluated_expression;
+    boost::optional<data::cpp_code> last_evaluated_expression;
 
     bool is_stopped = false;
     logger* _logger;
     iface::engine& _engine;
     boost::filesystem::path _env_path;
     boost::filesystem::path _mdb_temp_dir;
+
+    bool _preprocessor;
   };
 }
 

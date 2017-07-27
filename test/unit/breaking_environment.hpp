@@ -24,13 +24,14 @@ class breaking_environment : public metashell::iface::environment
 public:
   breaking_environment();
 
-  virtual void append(const std::string& s_) override;
-  virtual std::string get() const override;
-  virtual std::string get_appended(const std::string& s_) const override;
+  virtual void append(const metashell::data::cpp_code& s_) override;
+  virtual metashell::data::cpp_code get() const override;
+  virtual metashell::data::cpp_code
+  get_appended(const metashell::data::cpp_code& s_) const override;
 
   virtual const metashell::data::headers& get_headers() const override;
 
-  virtual std::string get_all() const override;
+  virtual metashell::data::cpp_code get_all() const override;
 
   void append_throw_from_now();
   void get_appended_throw_from_now();

@@ -18,8 +18,8 @@
 
 namespace metashell
 {
-  std::string macro_discovery_constant::macros(const iface::environment&)
+  data::cpp_code macro_discovery_constant::macros(const iface::environment&)
   {
-    return "";
+    return data::cpp_code();
   }
 }

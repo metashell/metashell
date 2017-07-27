@@ -42,7 +42,7 @@ void pragma_evaluate::run(const data::command::iterator&,
                           const data::command::iterator& args_end_,
                           iface::displayer& displayer_) const
 {
-  const std::string cmd = tokens_to_string(args_begin_, args_end_);
+  const data::cpp_code cmd = tokens_to_string(args_begin_, args_end_);
 
   _shell.run_metaprogram(cmd, displayer_);
 
@@ -52,7 +52,7 @@ void pragma_evaluate::run(const data::command::iterator&,
         data::text{data::paragraph("You don't need the evaluate add pragma to "
                                    "evaluate this metaprogram."
                                    " The following command does this as well:"),
-                   data::paragraph(cmd)});
+                   data::paragraph(cmd.value())});
   }
   else
   {
@@ -61,7 +61,7 @@ void pragma_evaluate::run(const data::command::iterator&,
         " the environment and would not execute it as a metaprogram without"
         " the \"evaluate\" pragma. Please file a bug report containing"
         " this command (" +
-        cmd +
+        cmd.value() +
         ") at"
         " https://github.com/metashell/metashell/issues. Thank you."));
   }

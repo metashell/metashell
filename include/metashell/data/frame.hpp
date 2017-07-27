@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
-#include <metashell/data/instantiation_kind.hpp>
-#include <metashell/data/type.hpp>
+#include <metashell/data/metaprogram_node.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
@@ -33,34 +33,35 @@ namespace metashell
     public:
       frame() = default;
 
-      frame(const data::type& type_, const file_location& source_location_);
+      frame(const metaprogram_node& node_,
+            const file_location& source_location_);
 
-      frame(const data::type& type_,
+      frame(const metaprogram_node& node_,
             const file_location& source_location_,
-            const file_location& point_of_instantiation_,
-            instantiation_kind kind_,
+            const file_location& point_of_event_,
+            event_kind kind_,
             boost::optional<double> time_taken = boost::none,
             boost::optional<double> time_taken_ratio = boost::none);
 
-      const data::type& type() const;
+      const data::metaprogram_node& node() const;
       const file_location& source_location() const;
 
       bool is_full() const;
       bool is_profiled() const;
 
       // precondition: is_full()
-      instantiation_kind kind() const;
-      const file_location& point_of_instantiation() const;
+      event_kind kind() const;
+      const file_location& point_of_event() const;
 
       // precondition: is_profiled()
       double time_taken() const;
       double time_taken_ratio() const;
 
     private:
-      data::type _type;
+      metaprogram_node _node;
       file_location _source_location;
-      boost::optional<file_location> _point_of_instantiation;
-      boost::optional<data::instantiation_kind> _kind;
+      boost::optional<file_location> _point_of_event;
+      boost::optional<data::event_kind> _kind;
       boost::optional<double> _time_taken;
       boost::optional<double> _time_taken_ratio;
     };

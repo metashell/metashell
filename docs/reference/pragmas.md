@@ -61,13 +61,16 @@ Displays the names of the defined macros
 Displays the macro definitions
 
 * __`#msh mdb [-full] [<type>]`__ <br />
-Starts the metadebugger. For more information see evaluate in the Metadebugger command reference.
+Starts the metadebugger. For more information see evaluate in the metadebugger command reference.
 
 * __`#msh metaprogram evaluation [on|1|off|0]`__ <br />
 Turns evaluation of metaprograms on or off. When no arguments are used, it displays if evaluation of metaprograms is turned on.
 
 * __`#msh metaprogram mode`__ <br />
 Set Metashell to metaprogram mode
+
+* __`#msh pdb [<expression>]`__ <br />
+Starts the preprocessor debugger. For more information see evaluate in the preprocessor debugger command reference.
 
 * __`#msh pp <exp>`__ <br />
 Displays the preprocessed expression.

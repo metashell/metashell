@@ -97,8 +97,8 @@ namespace
   metashell::data::includes
   determine_includes(const metashell::iface::executable& clang_binary_)
   {
-    const metashell::data::process_output o =
-        metashell::run_clang(clang_binary_, {"-v", "-xc++", "-E"}, "");
+    const metashell::data::process_output o = metashell::run_clang(
+        clang_binary_, {"-v", "-xc++", "-E"}, metashell::data::cpp_code());
 
     const std::string s = o.standard_output + o.standard_error;
     return determine_clang_includes(just::lines::view_of(s));

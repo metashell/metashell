@@ -30,7 +30,7 @@ TEST(readme, continue_abbreviated_as_c)
   std::string args;
 
   std::tie(command, args) =
-      get_command_from_map(mdb_shell::command_handler, "c");
+      get_command_from_map(mdb_shell::build_command_handler(false), "c");
 
   auto keys = command.get_keys();
 

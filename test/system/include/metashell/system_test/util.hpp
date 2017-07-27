@@ -38,6 +38,14 @@ namespace metashell
 
     boost::optional<boost::filesystem::path>
     include_path_addition(const std::string& arg_);
+
+    std::string c_string_literal(const std::string& s_);
+
+    template <class T1, class T2>
+    bool matches(const boost::optional<T1>& a_, const boost::optional<T2>& b_)
+    {
+      return !a_ || !b_ || *a_ == *b_;
+    }
   }
 }
 

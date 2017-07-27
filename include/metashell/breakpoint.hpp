@@ -25,6 +25,7 @@
 #include <boost/optional.hpp>
 
 #include <metashell/data/frame.hpp>
+#include <metashell/data/metaprogram_node.hpp>
 
 namespace metashell
 {
@@ -34,9 +35,7 @@ namespace metashell
   public:
     explicit breakpoint(int id, const boost::regex& name_regex);
 
-    // TODO: type overload should be removed, once this gets more complicated
-    bool match(const data::type& type) const;
-    bool match(const data::frame& frame) const;
+    bool match(const data::metaprogram_node& node) const;
 
     int get_id() const;
 

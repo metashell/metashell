@@ -15,6 +15,7 @@ pages:
 - ['manual/how_to.md', 'User manual', 'How to...']
 - ['reference/pragmas.md', 'Reference', 'The pragmas']
 - ['reference/mdb_commands.md', 'Reference', 'MDB commands']
+- ['reference/pdb_commands.md', 'Reference', 'PDB commands']
 - ['reference/headers.md', 'Reference', 'The built-in headers']
 - ['develop/build.md', 'Developer guide', 'Building Metashell']
 - ['develop/release.md', 'Developer guide', 'Creating a Metashell release']

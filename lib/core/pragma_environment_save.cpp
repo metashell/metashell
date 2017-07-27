@@ -52,7 +52,7 @@ void pragma_environment_save::run(const data::command::iterator&,
   if (_config.saving_enabled)
   {
     const std::string fn =
-        boost::algorithm::trim_copy(tokens_to_string(args_begin_, args_end_));
+        boost::trim_copy(tokens_to_string(args_begin_, args_end_)).value();
 
     if (fn.empty())
     {

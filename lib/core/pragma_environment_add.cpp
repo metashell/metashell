@@ -44,7 +44,7 @@ void pragma_environment_add::run(const data::command::iterator&,
                                  const data::command::iterator& args_end_,
                                  iface::displayer& displayer_) const
 {
-  const std::string cmd = tokens_to_string(args_begin_, args_end_);
+  const data::cpp_code cmd = tokens_to_string(args_begin_, args_end_);
 
   _shell.store_in_buffer(cmd, displayer_);
 
@@ -62,7 +62,7 @@ void pragma_environment_add::run(const data::command::iterator&,
         " metaprogram and would not add it to the environment without using"
         " the \"environment add\" pragma. Please file a bug report containing"
         " this command (" +
-        cmd +
+        cmd.value() +
         ") at"
         " https://github.com/metashell/metashell/issues. Thank you."));
   }

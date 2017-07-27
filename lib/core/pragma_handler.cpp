@@ -60,7 +60,7 @@ std::string pragma_handler::description() const
 }
 
 void metashell::run(const iface::pragma_handler& handler_,
-                    const std::string& args_,
+                    const data::cpp_code& args_,
                     iface::displayer& displayer_)
 {
   const data::command cmd(args_);

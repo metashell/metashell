@@ -33,8 +33,9 @@ void pragma_without_arguments::run(const data::command::iterator& name_begin_,
   }
   else
   {
-    displayer_.show_error("Invalid arguments for #msh " +
-                          data::tokens_to_string(name_begin_, name_end_) +
-                          ": " + tokens_to_string(args_begin_, args_end_));
+    displayer_.show_error(
+        "Invalid arguments for #msh " +
+        data::tokens_to_string(name_begin_, name_end_).value() + ": " +
+        tokens_to_string(args_begin_, args_end_).value());
   }
 }

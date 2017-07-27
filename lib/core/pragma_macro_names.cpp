@@ -33,7 +33,7 @@ namespace
     was_define
   };
 
-  std::string extract_macro_names(const std::string& definitions_)
+  data::cpp_code extract_macro_names(const data::cpp_code& definitions_)
   {
     std::vector<std::string> names;
     state st = state::start_line;
@@ -58,7 +58,7 @@ namespace
         case state::was_define:
           if (token.type() == data::token_type::identifier)
           {
-            names.push_back(token.value());
+            names.push_back(token.value().value());
           }
           st = state::ignore;
           break;
@@ -66,7 +66,7 @@ namespace
       }
     }
 
-    return boost::algorithm::join(names, "\n");
+    return data::cpp_code(boost::algorithm::join(names, "\n"));
   }
 }
 

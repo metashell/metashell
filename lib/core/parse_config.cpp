@@ -87,13 +87,13 @@ namespace
     }
   }
 
-  void show_mdb_help()
+  void show_mdb_help(bool preprocessor_)
   {
     using boost::algorithm::join;
     using boost::algorithm::replace_all_copy;
 
     mdb_command_handler_map::commands_t commands =
-        mdb_shell::command_handler.get_commands();
+        mdb_shell::build_command_handler(preprocessor_).get_commands();
 
     for (const mdb_command& cmd : commands)
     {
@@ -299,6 +299,10 @@ metashell::parse_config(int argc_,
       "Display help for mdb commands in MarkDown format and exit"
     )
     (
+      "show_pdb_help",
+      "Display help for pdb commands in MarkDown format and exit"
+    )
+    (
       "disable_saving",
       "Disable saving the environment using the #msh environment save"
     )
@@ -390,7 +394,12 @@ metashell::parse_config(int argc_,
     }
     else if (vm.count("show_mdb_help"))
     {
-      show_mdb_help();
+      show_mdb_help(false);
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("show_pdb_help"))
+    {
+      show_mdb_help(true);
       return parse_config_result::exit(false);
     }
     else if (vm.count("help_engine"))

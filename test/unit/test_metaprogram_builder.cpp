@@ -39,20 +39,22 @@ namespace
 
 TEST(metaprogram_builder, normal_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
-                         data::file_location("stdin.hpp", 10, 20),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  mb.handle_evaluation_end(data::type("eval_result"));
 
-  ASSERT_EQ(metaprogram::mode_t::normal, mp.get_mode());
+  data::metaprogram mp = mb.get_metaprogram();
+
+  ASSERT_EQ(data::metaprogram::mode_t::normal, mp.get_mode());
   ASSERT_EQ(2u, mp.get_num_vertices());
   ASSERT_EQ(1u, mp.get_num_edges());
 
@@ -64,8 +66,9 @@ TEST(metaprogram_builder, normal_mode)
 
   ASSERT_TRUE(frame.is_full());
   ASSERT_FALSE(frame.is_profiled());
-  ASSERT_EQ("type<A>", frame.type().name());
-  ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+  ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+  ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
+  ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
 
   mp.step();
 
@@ -74,16 +77,16 @@ TEST(metaprogram_builder, normal_mode)
 
 TEST(metaprogram_builder, full_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::full, "root_name",
-                         data::file_location("stdin.hpp", 10, 20),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::full,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<B>"),
                            data::file_location("file", 20, 20),
                            data::file_location("file_sl", 15, 25), 110.0);
@@ -92,16 +95,17 @@ TEST(metaprogram_builder, full_mode)
 
   mb.handle_template_end(130.0);
 
-  mb.handle_template_begin(data::instantiation_kind::memoization,
-                           data::type("type<A>"),
+  mb.handle_template_begin(data::event_kind::memoization, data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 140.0);
 
   mb.handle_template_end(150.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  mb.handle_evaluation_end(data::type("eval_result"));
 
-  ASSERT_EQ(metaprogram::mode_t::full, mp.get_mode());
+  data::metaprogram mp = mb.get_metaprogram();
+
+  ASSERT_EQ(data::metaprogram::mode_t::full, mp.get_mode());
   ASSERT_EQ(3u, mp.get_num_vertices());
   ASSERT_EQ(3u, mp.get_num_edges());
 
@@ -114,7 +118,8 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_EQ("type<A>", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
   }
 
   mp.step();
@@ -124,7 +129,8 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_EQ("type<B>", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
   }
 
   mp.step();
@@ -134,7 +140,8 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_EQ("type<A>", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
   }
 
   mp.step();
@@ -144,7 +151,8 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_EQ("type<B>", frame.type().name());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
   }
 
   mp.step();
@@ -154,28 +162,30 @@ TEST(metaprogram_builder, full_mode)
 
 TEST(metaprogram_builder, profile_mode)
 {
-  metaprogram_builder mb(metaprogram::mode_t::profile, "root_name",
-                         data::file_location("stdin.hpp", 10, 20),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::profile,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
 
   mb.handle_template_end(110.0);
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<B>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 120.0);
 
   mb.handle_template_end(140.0);
 
-  metaprogram mp = mb.get_metaprogram();
+  mb.handle_evaluation_end(data::type("eval_result"));
+
+  data::metaprogram mp = mb.get_metaprogram();
   mp.init_full_time_taken();
 
-  ASSERT_EQ(metaprogram::mode_t::profile, mp.get_mode());
+  ASSERT_EQ(data::metaprogram::mode_t::profile, mp.get_mode());
   ASSERT_EQ(3u, mp.get_num_vertices());
   ASSERT_EQ(2u, mp.get_num_edges());
 
@@ -188,8 +198,9 @@ TEST(metaprogram_builder, profile_mode)
 
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
-    ASSERT_EQ("type<B>", frame.type().name());
-    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
+    ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(20.0, frame.time_taken());
     ASSERT_EQ(0.5, frame.time_taken_ratio());
   }
@@ -201,8 +212,9 @@ TEST(metaprogram_builder, profile_mode)
 
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
-    ASSERT_EQ("type<A>", frame.type().name());
-    ASSERT_EQ(data::instantiation_kind::template_instantiation, frame.kind());
+    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
+    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
+    ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());
   }
@@ -214,9 +226,9 @@ TEST(metaprogram_builder, profile_mode)
 
 TEST(metaprogram_builder, too_much_end_events_1)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
-                         data::file_location("stdin.hpp", 40, 50),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 40, 50));
 
   assert_throw([&] { mb.handle_template_end(100.0); },
                "Mismatched Templight TemplateBegin and TemplateEnd events");
@@ -224,11 +236,11 @@ TEST(metaprogram_builder, too_much_end_events_1)
 
 TEST(metaprogram_builder, too_much_end_events_2)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
-                         data::file_location("stdin.hpp", 30, 45),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 30, 45));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);
@@ -241,11 +253,11 @@ TEST(metaprogram_builder, too_much_end_events_2)
 
 TEST(metaprogram_builder, too_few_end_events)
 {
-  metaprogram_builder mb(metaprogram::mode_t::normal, "root_name",
-                         data::file_location("stdin.hpp", 30, 31),
-                         data::type("eval_result"));
+  metaprogram_builder mb(data::metaprogram::mode_t::normal,
+                         data::cpp_code("root_name"),
+                         data::file_location("stdin.hpp", 30, 31));
 
-  mb.handle_template_begin(data::instantiation_kind::template_instantiation,
+  mb.handle_template_begin(data::event_kind::template_instantiation,
                            data::type("type<A>"),
                            data::file_location("file", 10, 20),
                            data::file_location("file_sl", 15, 25), 100.0);

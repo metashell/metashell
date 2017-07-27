@@ -14,11 +14,17 @@
     * New engine: `wave` adding Boost.Wave support with the standard headers of
       the Templight (shipped with Metashell) on the system include path and the
       macros of Templight defined by default.
+    * pdb, the macro debugger
 
 * Fixes
     * The `templight_metashell` executable is found even if the `metashell`
       executable is behind a symlink on macOS and OpenBSD systems. This also
       broke the Homebrew version of metashell.
+
+* Changes to existing behaviour
+    * **Breaking change** The `point_of_instantiation` fields of the objects of
+      the JSON interface have been renamed to `point_of_event`. (The purpose is
+      to share the interface between template and macro debugging frames).
 
 ## Version 3.0.0
 

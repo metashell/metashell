@@ -23,7 +23,7 @@ namespace metashell
   {
   }
 
-  data::result cpp_validator_constant::validate_code(const std::string&,
+  data::result cpp_validator_constant::validate_code(const data::cpp_code&,
                                                      const data::config&,
                                                      const iface::environment&,
                                                      bool)

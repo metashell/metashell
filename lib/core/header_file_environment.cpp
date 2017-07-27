@@ -25,6 +25,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 #include <boost/range/adaptors.hpp>
@@ -178,28 +179,32 @@ header_file_environment::header_file_environment(
   generate(_headers);
 }
 
-void header_file_environment::append(const std::string& s_)
+void header_file_environment::append(const data::cpp_code& s_)
 {
-  if (_buffer.empty())
+  assert(_buffer.empty() || boost::ends_with(_buffer, "\n"));
+
+  if (!s_.empty())
   {
-    _buffer = s_;
-  }
-  else
-  {
-    _buffer += '\n' + s_;
+    _buffer += s_;
+    if (!boost::ends_with(_buffer, "\n"))
+    {
+      _buffer += "\n";
+    }
   }
 
   save();
 }
 
-std::string header_file_environment::get() const
+data::cpp_code header_file_environment::get() const
 {
-  return _use_precompiled_headers ?
-             std::string() : // The -include directive includes the header
-             "#include <" + _env_filename.string() + ">\n";
+  return data::cpp_code(
+      _use_precompiled_headers ?
+          std::string() : // The -include directive includes the header
+          "#include <" + _env_filename.string() + ">\n");
 }
 
-std::string header_file_environment::get_appended(const std::string& s_) const
+data::cpp_code
+header_file_environment::get_appended(const data::cpp_code& s_) const
 {
   return get() + s_;
 }
@@ -232,4 +237,4 @@ const data::headers& header_file_environment::get_headers() const
   return _headers;
 }
 
-std::string header_file_environment::get_all() const { return _buffer; }
+data::cpp_code header_file_environment::get_all() const { return _buffer; }

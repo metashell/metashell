@@ -49,7 +49,7 @@ void pragma_included_headers::run(const data::command::iterator&,
                                   const data::command::iterator& args_end_,
                                   iface::displayer& displayer_) const
 {
-  const std::string env = _shell.env().get_all();
+  const data::cpp_code env = _shell.env().get_all();
 
   auto& header_discoverer = _shell.engine().header_discoverer();
 

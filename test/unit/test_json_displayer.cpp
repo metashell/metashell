@@ -150,7 +150,7 @@ TEST(json_displayer, cpp_code)
     EXPECT_CALL(w, end_document());
   }
 
-  d.show_cpp_code("int main() {}");
+  d.show_cpp_code(data::cpp_code("int main() {}"));
 }
 
 TEST(json_displayer, frame_normal)
@@ -178,8 +178,7 @@ TEST(json_displayer, frame_normal)
 
 namespace
 {
-  void test_frame_full(data::instantiation_kind kind_,
-                       const std::string& kind_in_json_)
+  void test_frame_full(data::event_kind kind_, const std::string& kind_in_json_)
   {
     using metashell::data::file_location;
 
@@ -187,7 +186,7 @@ namespace
     json_displayer d(w);
 
     const data::file_location source_location("sl.hpp", 10, 20);
-    const data::file_location point_of_instantiation("pof.cpp", 20, 30);
+    const data::file_location point_of_event("pof.cpp", 20, 30);
 
     {
       ::testing::InSequence s;
@@ -201,43 +200,37 @@ namespace
       EXPECT_CALL(w, string("sl.hpp:10:20"));
       EXPECT_CALL(w, key("kind"));
       EXPECT_CALL(w, string(kind_in_json_));
-      EXPECT_CALL(w, key("point_of_instantiation"));
+      EXPECT_CALL(w, key("point_of_event"));
       EXPECT_CALL(w, string("pof.cpp:20:30"));
       EXPECT_CALL(w, end_object());
       EXPECT_CALL(w, end_document());
     }
 
-    d.show_frame(data::frame(data::type("fib_c<13>::type"), source_location,
-                             point_of_instantiation, kind_));
+    d.show_frame(data::frame(
+        data::type("fib_c<13>::type"), source_location, point_of_event, kind_));
   }
 }
 
 TEST(json_displayer, frame_full)
 {
-  test_frame_full(data::instantiation_kind::template_instantiation,
-                  "TemplateInstantiation");
   test_frame_full(
-      data::instantiation_kind::default_template_argument_instantiation,
-      "DefaultTemplateArgumentInstantiation");
-  test_frame_full(
-      data::instantiation_kind::default_function_argument_instantiation,
-      "DefaultFunctionArgumentInstantiation");
-  test_frame_full(
-      data::instantiation_kind::explicit_template_argument_substitution,
-      "ExplicitTemplateArgumentSubstitution");
-  test_frame_full(
-      data::instantiation_kind::deduced_template_argument_substitution,
-      "DeducedTemplateArgumentSubstitution");
-  test_frame_full(
-      data::instantiation_kind::prior_template_argument_substitution,
-      "PriorTemplateArgumentSubstitution");
-  test_frame_full(data::instantiation_kind::default_template_argument_checking,
+      data::event_kind::template_instantiation, "TemplateInstantiation");
+  test_frame_full(data::event_kind::default_template_argument_instantiation,
+                  "DefaultTemplateArgumentInstantiation");
+  test_frame_full(data::event_kind::default_function_argument_instantiation,
+                  "DefaultFunctionArgumentInstantiation");
+  test_frame_full(data::event_kind::explicit_template_argument_substitution,
+                  "ExplicitTemplateArgumentSubstitution");
+  test_frame_full(data::event_kind::deduced_template_argument_substitution,
+                  "DeducedTemplateArgumentSubstitution");
+  test_frame_full(data::event_kind::prior_template_argument_substitution,
+                  "PriorTemplateArgumentSubstitution");
+  test_frame_full(data::event_kind::default_template_argument_checking,
                   "DefaultTemplateArgumentChecking");
-  test_frame_full(data::instantiation_kind::exception_spec_instantiation,
+  test_frame_full(data::event_kind::exception_spec_instantiation,
                   "ExceptionSpecInstantiation");
-  test_frame_full(data::instantiation_kind::memoization, "Memoization");
-  test_frame_full(
-      data::instantiation_kind::non_template_type, "NonTemplateType");
+  test_frame_full(data::event_kind::memoization, "Memoization");
+  test_frame_full(data::event_kind::non_template_type, "NonTemplateType");
 }
 
 TEST(json_displayer, backtrace)

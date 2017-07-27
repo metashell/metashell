@@ -50,21 +50,28 @@ breaking_environment::breaking_environment()
 {
 }
 
-void breaking_environment::append(const std::string&)
+void breaking_environment::append(const metashell::data::cpp_code&)
 {
   throw_(_append_throw);
 
   bool_override_guard g(_in_append);
 }
 
-std::string breaking_environment::get() const { return std::string(); }
+metashell::data::cpp_code breaking_environment::get() const
+{
+  return metashell::data::cpp_code();
+}
 
-std::string breaking_environment::get_all() const { return std::string(); }
+metashell::data::cpp_code breaking_environment::get_all() const
+{
+  return metashell::data::cpp_code();
+}
 
-std::string breaking_environment::get_appended(const std::string&) const
+metashell::data::cpp_code
+breaking_environment::get_appended(const metashell::data::cpp_code&) const
 {
   throw_(!_in_append && _get_appended_throw);
-  return std::string();
+  return metashell::data::cpp_code();
 }
 
 void breaking_environment::append_throw_from_now()

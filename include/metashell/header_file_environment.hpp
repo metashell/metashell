@@ -34,18 +34,19 @@ namespace metashell
                             const boost::filesystem::path& internal_dir_,
                             const boost::filesystem::path& env_filename_);
 
-    virtual void append(const std::string& s_) override;
-    virtual std::string get() const override;
-    virtual std::string get_appended(const std::string& s_) const override;
+    virtual void append(const data::cpp_code& s_) override;
+    virtual data::cpp_code get() const override;
+    virtual data::cpp_code
+    get_appended(const data::cpp_code& s_) const override;
 
     virtual const data::headers& get_headers() const override;
 
-    virtual std::string get_all() const override;
+    virtual data::cpp_code get_all() const override;
 
   private:
     boost::filesystem::path _internal_dir;
     boost::filesystem::path _env_filename;
-    std::string _buffer;
+    data::cpp_code _buffer;
     data::headers _headers;
 
     bool _use_precompiled_headers;

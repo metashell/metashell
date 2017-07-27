@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/frame.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -26,22 +27,52 @@ using namespace metashell::system_test;
 
 frame::frame(const type& name_) : _name(name_) {}
 
-frame::frame(const type& name_,
-             pattern::placeholder,
-             pattern::placeholder,
-             instantiation_kind kind_)
-  : _name(name_), _kind(kind_)
+frame::frame(const json_string& s_)
+  : _name(boost::none),
+    _source_location(boost::none),
+    _point_of_event(boost::none),
+    _kind(boost::none)
 {
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+  init(d, true);
 }
 
-const type& frame::name() const { return _name; }
+bool frame::has_name() const { return _name != boost::none; }
+
+const type& frame::name() const { return *_name; }
+
+bool frame::has_source_location() const
+{
+  return _source_location != boost::none;
+}
+
+const file_location& frame::source_location() const
+{
+  return *_source_location;
+}
+
+bool frame::has_point_of_event() const
+{
+  return _point_of_event != boost::none;
+}
+
+const file_location& frame::point_of_event() const { return *_point_of_event; }
 
 bool frame::has_kind() const { return _kind != boost::none; }
 
-instantiation_kind frame::kind() const
+event_kind frame::kind() const
 {
   assert(has_kind());
   return *_kind;
+}
+
+bool frame::operator==(const frame& f_) const
+{
+  return matches(_name, f_._name) &&
+         matches(_source_location, f_._source_location) &&
+         matches(_point_of_event, f_._point_of_event) &&
+         matches(_kind, f_._kind);
 }
 
 std::ostream& metashell::system_test::operator<<(std::ostream& o_,

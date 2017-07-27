@@ -28,7 +28,7 @@ namespace metashell
   public:
     explicit cpp_validator_wave(data::wave_config config_);
 
-    virtual data::result validate_code(const std::string& src_,
+    virtual data::result validate_code(const data::cpp_code& src_,
                                        const data::config& config_,
                                        const iface::environment& env_,
                                        bool use_precompiled_headers_) override;

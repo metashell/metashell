@@ -31,7 +31,7 @@ namespace metashell
     virtual void show_error(const std::string& msg_) override;
     virtual void show_type(const data::type& type_) override;
     virtual void show_comment(const data::text& msg_) override;
-    virtual void show_cpp_code(const std::string& code_) override;
+    virtual void show_cpp_code(const data::cpp_code& code_) override;
 
     virtual void show_frame(const data::frame& frame_) override;
     virtual void show_file_section(const data::file_location& location_,

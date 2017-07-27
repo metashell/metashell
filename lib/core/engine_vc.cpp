@@ -101,7 +101,7 @@ namespace
         config_.engine, not_supported(), preprocessor_shell_vc(cbin),
         not_supported(), header_discoverer_vc(cbin), not_supported(),
         cpp_validator_vc(internal_dir_, env_filename_, cbin, logger_),
-        not_supported());
+        not_supported(), not_supported());
   }
 } // anonymous namespace
 

@@ -30,3 +30,8 @@ fi
 "$1" --show_mdb_help \
   | tools/replace_part -i docs/reference/mdb_commands.md -m '<!-- mdb_info -->' -o - -r - \
   | diff docs/reference/mdb_commands.md -
+
+"$1" --show_pdb_help \
+  | tools/replace_part -i docs/reference/pdb_commands.md -m '<!-- pdb_info -->' -o - -r - \
+  | diff docs/reference/pdb_commands.md -
+

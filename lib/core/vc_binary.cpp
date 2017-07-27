@@ -41,7 +41,8 @@ namespace
 #endif
   }
 
-  void save(const boost::filesystem::path& filename_, const std::string& s_)
+  void save(const boost::filesystem::path& filename_,
+            const metashell::data::cpp_code& s_)
   {
     const std::string fn = filename_.string();
     std::ofstream f(fn.c_str());
@@ -168,7 +169,7 @@ namespace metashell
 
   data::process_output run_vc(const vc_binary& vc_binary_,
                               std::vector<std::string> vc_args_,
-                              const std::string& input_)
+                              const data::cpp_code& input_)
   {
     const boost::filesystem::path temp_path =
         vc_binary_.temp_dir() / "msvc.cpp";

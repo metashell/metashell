@@ -97,7 +97,7 @@ namespace metashell
   }
 
   std::set<boost::filesystem::path>
-  header_discoverer_vc::files_included_by(const std::string& exp_)
+  header_discoverer_vc::files_included_by(const data::cpp_code& exp_)
   {
     using boost::xpressive::bos;
     using boost::xpressive::as_xpr;

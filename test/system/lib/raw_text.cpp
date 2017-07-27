@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/query_json.hpp>
 #include <metashell/system_test/raw_text.hpp>
 
+#include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
@@ -25,7 +27,27 @@ using namespace metashell::system_test;
 
 raw_text::raw_text(const std::string& text_) : _text(text_) {}
 
-const std::string& raw_text::text() const { return _text; }
+raw_text::raw_text(pattern::placeholder) : _text(boost::none) {}
+
+raw_text::raw_text(const json_string& s_) : _text(boost::none)
+{
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "value"}, d) && is_string("raw_text", d["type"]) &&
+      d["value"].IsString())
+  {
+    _text = d["value"].GetString();
+  }
+  else
+  {
+    throw std::runtime_error("Invalid raw_text: " + s_.get());
+  }
+}
+
+bool raw_text::text_specified() const { return bool(_text); }
+
+const std::string& raw_text::text() const { return *_text; }
 
 std::ostream& metashell::system_test::operator<<(std::ostream& out_,
                                                  const raw_text& raw_text_)
@@ -44,7 +66,14 @@ json_string metashell::system_test::to_json_string(const raw_text& t_)
   w.String("raw_text");
 
   w.Key("value");
-  w.String(t_.text().c_str());
+  if (t_.text_specified())
+  {
+    w.String(t_.text().c_str());
+  }
+  else
+  {
+    w.Null();
+  }
 
   w.EndObject();
 
@@ -54,5 +83,10 @@ json_string metashell::system_test::to_json_string(const raw_text& t_)
 bool metashell::system_test::operator==(const raw_text& text_,
                                         const json_string& s_)
 {
-  return to_json_string(text_) == s_;
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  return members_are({"type", "value"}, d) &&
+         is_string("raw_text", d["type"]) &&
+         (!text_.text_specified() || is_string(text_.text(), d["value"]));
 }

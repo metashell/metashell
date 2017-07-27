@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_TYPE_OR_ERROR_HPP
-#define METASHELL_DATA_TYPE_OR_ERROR_HPP
+#ifndef METASHELL_DATA_TYPE_OR_CODE_OR_ERROR_HPP
+#define METASHELL_DATA_TYPE_OR_CODE_OR_ERROR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2015, Andras Kucsma (andras.kucsma@gmail.com)
@@ -28,35 +28,40 @@ namespace metashell
   namespace data
   {
 
-    class type_or_error
+    class type_or_code_or_error
     {
     public:
       typedef type type_type;
+      typedef cpp_code code_type;
       typedef std::string error_type;
 
-      type_or_error();
-      type_or_error(const type_type& t);
-      type_or_error(const error_type& e);
+      type_or_code_or_error();
+      type_or_code_or_error(const type_type& t);
+      type_or_code_or_error(const code_type& t);
+      type_or_code_or_error(const error_type& e);
 
-      static type_or_error make_none();
-      static type_or_error make_type(const type_type& t);
-      static type_or_error make_error(const error_type& e);
+      static type_or_code_or_error make_none();
+      static type_or_code_or_error make_type(const type_type& t);
+      static type_or_code_or_error make_error(const error_type& e);
 
       bool is_none() const;
       bool is_type() const;
+      bool is_code() const;
       bool is_error() const;
 
       const type_type& get_type() const;
+      const code_type& get_code() const;
       const error_type& get_error() const;
 
-      bool operator==(const type_or_error& other) const;
+      bool operator==(const type_or_code_or_error& other) const;
 
     private:
-      typedef boost::variant<boost::blank, type_type, error_type> data_type;
+      typedef boost::variant<boost::blank, type_type, code_type, error_type>
+          data_type;
       data_type data;
     };
 
-    std::ostream& operator<<(std::ostream& os, const type_or_error& te);
+    std::ostream& operator<<(std::ostream& os, const type_or_code_or_error& te);
   }
 }
 

@@ -55,7 +55,7 @@ TEST(pragma_handler_map, handler_sets_run_flag)
 {
   null_displayer d;
   bool flag = false;
-  run(test_handler(flag), "foo", d);
+  run(test_handler(flag), data::cpp_code("foo"), d);
 
   ASSERT_TRUE(flag);
 }
@@ -63,7 +63,7 @@ TEST(pragma_handler_map, handler_sets_run_flag)
 TEST(pragma_handler_map, processing_non_existing_handler)
 {
   pragma_handler_map m;
-  const data::command cmd(/* #pragma metashell */ "foo");
+  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo")};
 
   null_displayer d;
   ASSERT_ANY_THROW(m.process(cmd.begin(), cmd.end(), d));
@@ -74,7 +74,7 @@ TEST(pragma_handler_map, processing_existing_handler)
   bool foo_run = false;
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
-  const data::command cmd(/* #pragma metashell */ "foo");
+  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo")};
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -87,7 +87,7 @@ TEST(pragma_handler_map, pragma_with_two_token_name_is_called)
   bool foo_bar_run = false;
   pragma_handler_map m;
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd(/* #pragma metashell */ "foo bar");
+  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo bar")};
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -103,7 +103,7 @@ TEST(pragma_handler_map,
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd(/* #pragma metashell */ "foo bar");
+  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo bar")};
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);
@@ -120,7 +120,7 @@ TEST(pragma_handler_map,
   pragma_handler_map m;
   m.add("foo", test_handler(foo_run));
   m.add("foo", "bar", test_handler(foo_bar_run));
-  const data::command cmd(/* #pragma metashell */ "foo x");
+  const data::command cmd{data::cpp_code(/* #pragma metashell */ "foo x")};
 
   null_displayer d;
   m.process(cmd.begin(), cmd.end(), d);

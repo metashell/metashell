@@ -1,8 +1,5 @@
-#ifndef METASHELL_IFACE_TEMPLATE_TRACER_HPP
-#define METASHELL_IFACE_TEMPLATE_TRACER_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,32 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/result.hpp>
-#include <metashell/iface/environment.hpp>
-
-#include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
-
-#include <string>
+#include <metashell/preprocessor_tracer_constant.hpp>
 
 namespace metashell
 {
-  namespace iface
+  data::metaprogram
+  preprocessor_tracer_constant::eval(iface::environment&,
+                                     const boost::optional<data::cpp_code>&,
+                                     data::metaprogram::mode_t mode_)
   {
-    class template_tracer
-    {
-    public:
-      virtual ~template_tracer() {}
-
-      virtual data::result
-      eval(const environment& env_,
-           const boost::optional<std::string>& tmp_exp_,
-           bool use_precompiled_headers_,
-           const boost::filesystem::path& templight_dump_path_) = 0;
-
-      static std::string name_of_feature() { return "template_tracer"; }
-    };
+    return {mode_, data::cpp_code{}, {}, {}};
   }
 }
-
-#endif

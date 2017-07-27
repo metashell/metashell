@@ -61,7 +61,7 @@ namespace metashell
   }
 
   std::set<boost::filesystem::path>
-  header_discoverer_clang::files_included_by(const std::string& exp_)
+  header_discoverer_clang::files_included_by(const data::cpp_code& exp_)
   {
     const data::process_output output =
         run_clang(_clang_binary, {"-H", "-E"}, exp_);

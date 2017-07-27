@@ -28,7 +28,7 @@ namespace metashell
   public:
     explicit preprocessor_shell_constant(data::result result_);
 
-    virtual data::result precompile(const std::string&) override;
+    virtual data::result precompile(const data::cpp_code&) override;
 
   private:
     data::result _result;

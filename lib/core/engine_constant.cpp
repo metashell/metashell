@@ -20,8 +20,9 @@
 #include <metashell/engine_constant.hpp>
 #include <metashell/header_discoverer_constant.hpp>
 #include <metashell/macro_discovery_constant.hpp>
+#include <metashell/metaprogram_tracer_constant.hpp>
 #include <metashell/preprocessor_shell_constant.hpp>
-#include <metashell/template_tracer_constant.hpp>
+#include <metashell/preprocessor_tracer_constant.hpp>
 #include <metashell/type_shell_constant.hpp>
 
 using namespace metashell;
@@ -54,9 +55,9 @@ std::unique_ptr<iface::engine> metashell::create_failing_engine()
   return make_engine(
       "failing", type_shell_constant(result),
       preprocessor_shell_constant(result), code_completer_constant(),
-      header_discoverer_constant(empty, empty),
-      template_tracer_constant(result), cpp_validator_constant(result),
-      macro_discovery_constant());
+      header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
+      cpp_validator_constant(result), macro_discovery_constant(),
+      preprocessor_tracer_constant());
 }
 
 std::unique_ptr<iface::engine>
@@ -68,9 +69,9 @@ metashell::create_engine_returning_type(const std::string& type_)
   return make_engine(
       "type_returning", type_shell_constant(result),
       preprocessor_shell_constant(result), code_completer_constant(),
-      header_discoverer_constant(empty, empty),
-      template_tracer_constant(result), cpp_validator_constant(result),
-      macro_discovery_constant());
+      header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
+      cpp_validator_constant(result), macro_discovery_constant(),
+      preprocessor_tracer_constant());
 }
 
 std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
@@ -82,6 +83,6 @@ std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
       "engine_with_include_path", type_shell_constant(result),
       preprocessor_shell_constant(result), code_completer_constant(),
       create_header_discoverer_with_include_path(type_, path_),
-      template_tracer_constant(result), cpp_validator_constant(result),
-      macro_discovery_constant());
+      metaprogram_tracer_constant(), cpp_validator_constant(result),
+      macro_discovery_constant(), preprocessor_tracer_constant());
 }

@@ -24,16 +24,16 @@ namespace metashell
   {
   }
 
-  void empty_environment::append(const std::string&)
+  void empty_environment::append(const data::cpp_code&)
   {
     // ignore
   }
 
-  std::string empty_environment::get() const { return ""; }
+  data::cpp_code empty_environment::get() const { return data::cpp_code(); }
 
-  std::string empty_environment::get_appended(const std::string&) const
+  data::cpp_code empty_environment::get_appended(const data::cpp_code&) const
   {
-    return "";
+    return data::cpp_code();
   }
 
   const data::headers& empty_environment::get_headers() const
@@ -41,5 +41,5 @@ namespace metashell
     return _headers;
   }
 
-  std::string empty_environment::get_all() const { return ""; }
+  data::cpp_code empty_environment::get_all() const { return data::cpp_code(); }
 }

@@ -24,10 +24,10 @@ namespace metashell
   {
   }
 
-  std::string macro_discovery_wave::macros(const iface::environment& env_)
+  data::cpp_code macro_discovery_wave::macros(const iface::environment& env_)
   {
-    const std::string code = env_.get_all() + "\n";
-    wave_context ctx(code.begin(), code.end(), "<input>");
+    const data::cpp_code code = env_.get_all() + "\n";
+    wave_context ctx(code.begin(), code.end(), "<stdin>");
     apply(ctx, _config);
     preprocess(ctx);
 
@@ -62,6 +62,6 @@ namespace metashell
       result << "\n";
     }
 
-    return result.str();
+    return data::cpp_code(result.str());
   }
 }

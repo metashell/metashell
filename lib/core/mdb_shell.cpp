@@ -21,9 +21,9 @@
 #include <metashell/mdb_shell.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/null_history.hpp>
+#include <metashell/some_feature_not_supported.hpp>
 
 #include <cmath>
-#include <fstream>
 #include <sstream>
 #include <stdexcept>
 
@@ -36,6 +36,9 @@
 
 #include <boost/range/iterator_range.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
+
 namespace
 {
   // Note: this how clang calls the file when the input comes from stdin
@@ -45,8 +48,8 @@ namespace
   const std::string wrap_suffix = ">";
 
   typedef std::tuple<metashell::data::file_location,
-                     metashell::data::instantiation_kind,
-                     metashell::metaprogram::vertex_descriptor>
+                     metashell::data::event_kind,
+                     metashell::data::metaprogram::vertex_descriptor>
       set_element_t;
 
   bool less_than(const set_element_t& lhs, const set_element_t& rhs)
@@ -54,8 +57,8 @@ namespace
     return lhs < rhs;
   }
 
-  bool less_than_ignore_instantiation_kind(const set_element_t& lhs,
-                                           const set_element_t& rhs)
+  bool less_than_ignore_event_kind(const set_element_t& lhs,
+                                   const set_element_t& rhs)
   {
     using std::get;
 
@@ -75,26 +78,49 @@ namespace
 
 namespace metashell
 {
-  // clang-format off
-  const mdb_command_handler_map mdb_shell::command_handler =
-    mdb_command_handler_map(
-      {
+  mdb_shell::mdb_shell(iface::environment& env_arg,
+                       iface::engine& engine_,
+                       const boost::filesystem::path& env_path_,
+                       const boost::filesystem::path& mdb_temp_dir_,
+                       bool preprocessor_,
+                       logger* logger_)
+    : command_handler(build_command_handler(preprocessor_)),
+      env(env_arg),
+      _logger(logger_),
+      _engine(engine_),
+      _env_path(env_path_),
+      _mdb_temp_dir(mdb_temp_dir_),
+      _preprocessor(preprocessor_)
+  {
+  }
+
+  mdb_command_handler_map mdb_shell::build_command_handler(bool preprocessor_)
+  {
+    const std::string expr = preprocessor_ ? "<expression>" : "<type>";
+    // clang-format off
+    return
+      mdb_command_handler_map({
         {{"evaluate"}, repeatable_t::non_repeatable,
           callback(&mdb_shell::command_evaluate),
-          "[-full|-profile] [<type>|-]",
+          std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
+            " [" + expr + "|-]",
           "Evaluate and start debugging a new metaprogram.",
-          "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
-          "Memoization events.\n\n"
+          std::string(preprocessor_ ? "" :
+            "Evaluating a metaprogram using the `-full` qualifier will expand all\n"
+            "Memoization events.\n\n"
+          ) +
           "Evaluating a metaprogram using the `-profile` qualifier will enable\n"
           "profile mode.\n\n"
-          "Instead of `<type>`, evaluate can be called with `-`, in which case the\n"
+          "Instead of `" + expr + "`, evaluate can be called with `-`, in which case the\n"
           "whole environment is being debugged not just a single type expression.\n\n"
-          "If called without `<type>` or `-`, then the last evaluated metaprogram will\n"
+          "If called without `" + expr + "` or `-`, then the last evaluated metaprogram will\n"
           "be reevaluated.\n\n"
-          "Previous breakpoints are cleared.\n\n"
-          "Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
-          "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
-          "explicitly enter `metashell::format< <type> >::type` for the same effect."},
+          "Previous breakpoints are cleared." +
+          std::string(preprocessor_ ? "" :
+            "\n\nUnlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
+            "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
+            "explicitly enter `metashell::format< <type> >::type` for the same effect."
+          )},
         {{"step"}, repeatable_t::repeatable,
           callback(&mdb_shell::command_step),
           "[over|out] [n]",
@@ -164,25 +190,13 @@ namespace metashell
           "Quit metadebugger.",
           ""}
       });
-  // clang-format on
-
-  mdb_shell::mdb_shell(const data::config& conf_,
-                       iface::environment& env_arg,
-                       iface::engine& engine_,
-                       const boost::filesystem::path& env_path_,
-                       const boost::filesystem::path& mdb_temp_dir_,
-                       logger* logger_)
-    : conf(conf_),
-      env(env_arg),
-      _logger(logger_),
-      _engine(engine_),
-      _env_path(env_path_),
-      _mdb_temp_dir(mdb_temp_dir_)
-  {
-    assert(!conf.use_precompiled_headers);
+    // clang-format on
   }
 
-  std::string mdb_shell::prompt() const { return "(mdb)"; }
+  std::string mdb_shell::prompt() const
+  {
+    return _preprocessor ? "(pdb)" : "(mdb)";
+  }
 
   bool mdb_shell::stopped() const { return is_stopped; }
 
@@ -326,8 +340,9 @@ namespace metashell
       return;
     }
 
-    direction_t direction =
-        *continue_count >= 0 ? direction_t::forward : direction_t::backwards;
+    data::direction_t direction = *continue_count >= 0 ?
+                                      data::direction_t::forward :
+                                      data::direction_t::backwards;
 
     const breakpoint* breakpoint_ptr = nullptr;
     for (int i = 0;
@@ -399,8 +414,9 @@ namespace metashell
       return;
     }
 
-    direction_t direction =
-        step_count >= 0 ? direction_t::forward : direction_t::backwards;
+    data::direction_t direction = step_count >= 0 ?
+                                      data::direction_t::forward :
+                                      data::direction_t::backwards;
 
     int iteration_count = std::abs(step_count);
 
@@ -453,9 +469,9 @@ namespace metashell
       return;
     }
 
-    next_metaprogram(
-        next_count >= 0 ? direction_t::forward : direction_t::backwards,
-        std::abs(*next_count));
+    next_metaprogram(next_count >= 0 ? data::direction_t::forward :
+                                       data::direction_t::backwards,
+                     std::abs(*next_count));
 
     display_movement_info(next_count != 0, displayer_);
   }
@@ -464,8 +480,8 @@ namespace metashell
   {
     // TODO this check could be made more strict,
     // since we know whats inside wrap<...> (mp->get_evaluation_result)
-    return boost::starts_with(type.name(), wrap_prefix) &&
-           boost::ends_with(type.name(), wrap_suffix);
+    return boost::starts_with(type, wrap_prefix) &&
+           boost::ends_with(type, wrap_suffix);
   }
 
   data::type mdb_shell::trim_wrap_type(const data::type& type)
@@ -478,7 +494,7 @@ namespace metashell
 
   void mdb_shell::filter_disable_everything()
   {
-    for (metaprogram::edge_descriptor edge : mp->get_edges())
+    for (data::metaprogram::edge_descriptor edge : mp->get_edges())
     {
       mp->get_edge_property(edge).enabled = false;
     }
@@ -486,12 +502,12 @@ namespace metashell
 
   void mdb_shell::filter_enable_reachable(bool for_current_line)
   {
-    using vertex_descriptor = metaprogram::vertex_descriptor;
-    using edge_descriptor = metaprogram::edge_descriptor;
-    using edge_property = metaprogram::edge_property;
-    using discovered_t = metaprogram::discovered_t;
+    using vertex_descriptor = data::metaprogram::vertex_descriptor;
+    using edge_descriptor = data::metaprogram::edge_descriptor;
+    using edge_property = data::metaprogram::edge_property;
+    using discovered_t = data::metaprogram::discovered_t;
 
-    std::string env_buffer = env.get();
+    data::cpp_code env_buffer = env.get();
     int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
 
     // We will traverse the interesting edges later
@@ -501,33 +517,22 @@ namespace metashell
     for (edge_descriptor edge : mp->get_out_edges(mp->get_root_vertex()))
     {
       edge_property& property = mp->get_edge_property(edge);
-      const data::type& target_type =
-          mp->get_vertex_property(mp->get_target(edge)).type;
+      const data::metaprogram_node& target_node =
+          mp->get_vertex_property(mp->get_target(edge)).node;
       // Filter out edges, that is not instantiated
       // by the entered type if requested
       const bool current_line_filter =
-          !for_current_line ||
-          (property.point_of_instantiation.name == stdin_name &&
-           property.point_of_instantiation.row == line_number + 1);
+          !for_current_line || (property.point_of_event.name == stdin_name &&
+                                property.point_of_event.row == line_number + 1);
 
-      if (!current_line_filter)
+      if (current_line_filter && is_event_kind_enabled(property.kind) &&
+          (property.kind != data::event_kind::memoization ||
+           !boost::get<data::type>(&target_node) ||
+           !is_wrap_type(boost::get<data::type>(target_node))))
       {
-        continue;
+        property.enabled = true;
+        edge_stack.push(edge);
       }
-
-      if (!is_instantiation_kind_enabled(property.kind))
-      {
-        continue;
-      }
-
-      if (property.kind == data::instantiation_kind::memoization &&
-          is_wrap_type(target_type))
-      {
-        continue;
-      }
-
-      property.enabled = true;
-      edge_stack.push(edge);
     }
 
     discovered_t discovered(mp->get_num_vertices());
@@ -551,7 +556,7 @@ namespace metashell
       for (edge_descriptor out_edge : mp->get_out_edges(vertex))
       {
         edge_property& property = mp->get_edge_property(out_edge);
-        if (is_instantiation_kind_enabled(property.kind))
+        if (is_event_kind_enabled(property.kind))
         {
           property.enabled = true;
           edge_stack.push(out_edge);
@@ -562,18 +567,22 @@ namespace metashell
 
   void mdb_shell::filter_unwrap_vertices()
   {
-    for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
+    for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
     {
-      data::type& type = mp->get_vertex_property(vertex).type;
-      if (is_wrap_type(type))
+      data::metaprogram_node& node = mp->get_vertex_property(vertex).node;
+      if (data::type* type = boost::get<data::type>(&node))
       {
-        type = trim_wrap_type(type);
-        if (!is_template_type(type))
+        if (is_wrap_type(*type))
         {
-          for (metaprogram::edge_descriptor in_edge : mp->get_in_edges(vertex))
+          *type = trim_wrap_type(*type);
+          if (!is_template_type(*type))
           {
-            mp->get_edge_property(in_edge).kind =
-                data::instantiation_kind::non_template_type;
+            for (data::metaprogram::edge_descriptor in_edge :
+                 mp->get_in_edges(vertex))
+            {
+              mp->get_edge_property(in_edge).kind =
+                  data::event_kind::non_template_type;
+            }
           }
         }
       }
@@ -583,12 +592,12 @@ namespace metashell
   void mdb_shell::filter_similar_edges()
   {
 
-    using vertex_descriptor = metaprogram::vertex_descriptor;
-    using edge_descriptor = metaprogram::edge_descriptor;
-    using edge_property = metaprogram::edge_property;
+    using vertex_descriptor = data::metaprogram::vertex_descriptor;
+    using edge_descriptor = data::metaprogram::edge_descriptor;
+    using edge_property = data::metaprogram::edge_property;
 
-    auto comparator = mp->get_mode() == metaprogram::mode_t::full ?
-                          less_than_ignore_instantiation_kind :
+    auto comparator = mp->get_mode() == data::metaprogram::mode_t::full ?
+                          less_than_ignore_event_kind :
                           less_than;
 
     // Clang sometimes produces equivalent instantiations events from the same
@@ -603,8 +612,8 @@ namespace metashell
         edge_property& edge_property = mp->get_edge_property(edge);
 
         set_element_t set_element =
-            std::make_tuple(edge_property.point_of_instantiation,
-                            edge_property.kind, mp->get_target(edge));
+            std::make_tuple(edge_property.point_of_event, edge_property.kind,
+                            mp->get_target(edge));
 
         if (similar_edges.count(set_element) > 0)
         {
@@ -630,14 +639,30 @@ namespace metashell
     mp->init_full_time_taken();
   }
 
-  bool mdb_shell::is_instantiation_kind_enabled(data::instantiation_kind kind)
+  bool mdb_shell::is_event_kind_enabled(data::event_kind kind)
   {
     switch (kind)
     {
-    case data::instantiation_kind::memoization:
-    case data::instantiation_kind::template_instantiation:
-    case data::instantiation_kind::deduced_template_argument_substitution:
-    case data::instantiation_kind::explicit_template_argument_substitution:
+    case data::event_kind::memoization:
+    case data::event_kind::template_instantiation:
+    case data::event_kind::deduced_template_argument_substitution:
+    case data::event_kind::explicit_template_argument_substitution:
+
+    case data::event_kind::macro_expansion:
+    case data::event_kind::macro_definition:
+    case data::event_kind::macro_deletion:
+    case data::event_kind::rescanning:
+    case data::event_kind::expanded_code:
+    case data::event_kind::generated_token:
+    case data::event_kind::skipped_token:
+    case data::event_kind::quote_include:
+    case data::event_kind::sys_include:
+    case data::event_kind::preprocessing_condition:
+    case data::event_kind::preprocessing_condition_result:
+    case data::event_kind::preprocessing_else:
+    case data::event_kind::preprocessing_endif:
+    case data::event_kind::error_directive:
+    case data::event_kind::line_directive:
       return true;
     default:
       return false;
@@ -660,7 +685,7 @@ namespace metashell
     // Intentionally left really ugly for more motivation to refactor
     while (true)
     {
-      if (boost::starts_with(arg, full_flag) &&
+      if (!_preprocessor && boost::starts_with(arg, full_flag) &&
           (arg.size() == full_flag.size() ||
            std::isspace(arg[full_flag.size()])))
       {
@@ -687,7 +712,7 @@ namespace metashell
       return;
     }
 
-    boost::optional<std::string> expression = arg;
+    boost::optional<data::cpp_code> expression = data::cpp_code(arg);
     if (expression->empty())
     {
       if (!mp)
@@ -705,16 +730,16 @@ namespace metashell
     next_breakpoint_id = 1;
     breakpoints.clear();
 
-    metaprogram::mode_t mode = [&] {
+    data::metaprogram::mode_t mode = [&] {
       if (has_full)
       {
-        return metaprogram::mode_t::full;
+        return data::metaprogram::mode_t::full;
       }
       if (has_profile)
       {
-        return metaprogram::mode_t::profile;
+        return data::metaprogram::mode_t::profile;
       }
-      return metaprogram::mode_t::normal;
+      return data::metaprogram::mode_t::normal;
     }();
 
     last_evaluated_expression = expression;
@@ -817,9 +842,9 @@ namespace metashell
       ++next_breakpoint_id;
 
       unsigned match_count = 0;
-      for (metaprogram::vertex_descriptor vertex : mp->get_vertices())
+      for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
       {
-        if (bp.match(mp->get_vertex_property(vertex).type))
+        if (bp.match(mp->get_vertex_property(vertex).node))
         {
           match_count += mp->get_traversal_count(vertex);
         }
@@ -924,78 +949,28 @@ namespace metashell
   }
 
   bool mdb_shell::run_metaprogram_with_templight(
-      const boost::optional<std::string>& expression,
-      metaprogram::mode_t mode,
+      const boost::optional<data::cpp_code>& expression,
+      data::metaprogram::mode_t mode,
       iface::displayer& displayer_)
   {
-    const boost::filesystem::path output_path = _mdb_temp_dir / "templight.pb";
-
-    data::type_or_error evaluation_result =
-        run_metaprogram(expression, output_path, displayer_);
-
-    // Opening in binary mode, because some platforms interpret some characters
-    // specially in text mode, which caused parsing to fail.
-    std::ifstream protobuf_stream(output_path.string() + ".trace.pbf",
-                                  std::ios_base::in | std::ios_base::binary);
-
-    if (!protobuf_stream)
+    try
     {
-      if (evaluation_result.is_error())
-      {
-        displayer_.show_error(evaluation_result.get_error());
-      }
-      else
-      {
-        // Shouldn't happen
-        displayer_.show_error("Unexpected type type_or_error result");
-      }
+      mp = _preprocessor ?
+               _engine.preprocessor_tracer().eval(env, expression, mode) :
+               _engine.metaprogram_tracer().eval(
+                   env, _mdb_temp_dir, expression, mode, displayer_);
+    }
+    catch (const some_feature_not_supported&)
+    {
+      throw;
+    }
+    catch (const std::exception& error)
+    {
+      displayer_.show_error(error.what());
       mp = boost::none;
       return false;
     }
-
-    mp = metaprogram::create_from_protobuf_stream(
-        protobuf_stream, mode, expression ? *expression : "<environment>",
-        data::file_location{}, // TODO something sensible here?
-        evaluation_result);
-
-    assert(mp);
-    if (mp->is_empty() && evaluation_result.is_error())
-    {
-      // Most errors will cause templight to generate an empty trace
-      // We're only intrested in non-empty traces
-      displayer_.show_error(evaluation_result.get_error());
-      mp = boost::none;
-      return false;
-    }
-
     return true;
-  }
-
-  data::type_or_error
-  mdb_shell::run_metaprogram(const boost::optional<std::string>& expression,
-                             const boost::filesystem::path& output_path_,
-                             iface::displayer& displayer_)
-  {
-    const data::result res = _engine.template_tracer().eval(
-        env, expression, conf.use_precompiled_headers, output_path_);
-
-    if (!res.info.empty())
-    {
-      displayer_.show_raw_text(res.info);
-    }
-
-    if (!res.successful)
-    {
-      return data::type_or_error::make_error(res.error);
-    }
-    else if (expression)
-    {
-      return data::type_or_error::make_type(data::type(res.output));
-    }
-    else
-    {
-      return data::type_or_error::make_none();
-    }
   }
 
   boost::optional<int>
@@ -1049,7 +1024,7 @@ namespace metashell
     return value;
   }
 
-  const breakpoint* mdb_shell::continue_metaprogram(direction_t direction)
+  const breakpoint* mdb_shell::continue_metaprogram(data::direction_t direction)
   {
     assert(!mp->is_at_endpoint(direction));
 
@@ -1062,7 +1037,7 @@ namespace metashell
       }
       for (const breakpoint& bp : breakpoints)
       {
-        if (bp.match(mp->get_current_frame()))
+        if (bp.match(mp->get_current_frame().node()))
         {
           return &bp;
         }
@@ -1080,7 +1055,7 @@ namespace metashell
     return steps;
   }
 
-  void mdb_shell::next_metaprogram(direction_t direction, int n)
+  void mdb_shell::next_metaprogram(data::direction_t direction, int n)
   {
     assert(n >= 0);
     for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
@@ -1152,7 +1127,7 @@ namespace metashell
   mdb_shell::display_metaprogram_finished(iface::displayer& displayer_) const
   {
     displayer_.show_raw_text("Metaprogram finished");
-    displayer_.show_type_or_error(mp->get_evaluation_result());
+    displayer_.show_type_or_code_or_error(mp->get_evaluation_result());
   }
 
   void mdb_shell::display_movement_info(bool moved,

@@ -23,7 +23,7 @@ namespace metashell
   {
   }
 
-  data::result preprocessor_shell_constant::precompile(const std::string&)
+  data::result preprocessor_shell_constant::precompile(const data::cpp_code&)
   {
     return _result;
   }

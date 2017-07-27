@@ -26,6 +26,9 @@
 #include <mindent/syntax_node.hpp>
 #include <mindent/syntax_node_list.hpp>
 
+#include <boost/filesystem/path.hpp>
+
+#include <cassert>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -39,7 +42,7 @@ namespace
   void indent(int width_,
               int indent_step_,
               DisplayF f_,
-              const std::string& s_,
+              const data::cpp_code& s_,
               const std::string& input_filename_)
   {
     std::unique_ptr<iface::tokeniser> tokeniser =
@@ -108,6 +111,56 @@ namespace
       }
     }
   }
+
+  class format_visitor : public boost::static_visitor<>
+  {
+  public:
+    typedef std::function<data::colored_string(const data::cpp_code&)>
+        code_formatter;
+
+    typedef std::function<data::colored_string(const data::token&)>
+        token_formatter;
+
+    typedef std::function<data::colored_string(const boost::filesystem::path&)>
+        path_formatter;
+
+    format_visitor(data::colored_string& out_,
+                   code_formatter code_formatter_,
+                   token_formatter token_formatter_,
+                   path_formatter path_formatter_)
+      : _out(out_),
+        _code_formatter(move(code_formatter_)),
+        _token_formatter(move(token_formatter_)),
+        _path_formatter(move(path_formatter_))
+    {
+    }
+
+    void operator()(const data::type& t_) const { _out += _code_formatter(t_); }
+    void operator()(const data::cpp_code& c_) const
+    {
+      _out += _code_formatter(c_);
+    }
+    void operator()(const data::token& t_) const
+    {
+      _out += _token_formatter(t_);
+    }
+    void operator()(const boost::filesystem::path& p_) const
+    {
+      _out += _path_formatter(p_);
+    }
+
+    template <class T>
+    void operator()(const unique<T>& u_) const
+    {
+      operator()(u_.value());
+    }
+
+  private:
+    data::colored_string& _out;
+    code_formatter _code_formatter;
+    token_formatter _token_formatter;
+    path_formatter _path_formatter;
+  };
 } // anonymouse namespace
 
 console_displayer::console_displayer(iface::console& console_,
@@ -141,7 +194,7 @@ void console_displayer::show_error(const std::string& msg_)
 
 void console_displayer::show_type(const data::type& type_)
 {
-  show_cpp_code(type_.name());
+  show_cpp_code(type_);
 }
 
 void console_displayer::show_comment(const data::text& msg_)
@@ -166,12 +219,12 @@ void console_displayer::show_comment(const data::text& msg_)
 
   ind.raw(" */");
 
-  show_cpp_code(ind.str());
+  show_cpp_code(data::cpp_code(ind.str()));
 }
 
-void console_displayer::show_cpp_code(const std::string& code_)
+void console_displayer::show_cpp_code(const data::cpp_code& code_)
 {
-  if (code_ != "")
+  if (!code_.empty())
   {
     if (_indent)
     {
@@ -186,10 +239,11 @@ void console_displayer::show_cpp_code(const std::string& code_)
       }
       else
       {
-        indent(_console->width(), 2, std::function<void(const data::token&)>(
-                                         [this](const data::token& t_) {
-                                           this->_console->show(t_.value());
-                                         }),
+        indent(_console->width(), 2,
+               std::function<void(const data::token&)>(
+                   [this](const data::token& t_) {
+                     this->_console->show(t_.value().value());
+                   }),
                code_, "<output>");
       }
     }
@@ -201,7 +255,12 @@ void console_displayer::show_cpp_code(const std::string& code_)
   }
 }
 
-data::colored_string console_displayer::format_code(const std::string& code_)
+data::colored_string console_displayer::format_token(const data::token& token_)
+{
+  return format_code(data::cpp_code(data::format_token(token_)));
+}
+
+data::colored_string console_displayer::format_code(const data::cpp_code& code_)
 {
   if (_syntax_highlight)
   {
@@ -209,7 +268,7 @@ data::colored_string console_displayer::format_code(const std::string& code_)
   }
   else
   {
-    return code_;
+    return code_.value();
   }
 }
 
@@ -229,6 +288,24 @@ data::colored_string console_displayer::format_ratio(double ratio_)
   return ss.str();
 }
 
+data::colored_string
+console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
+{
+  data::colored_string result;
+
+  boost::apply_visitor(
+      format_visitor(
+          result,
+          [this](const data::cpp_code& s_) { return this->format_code(s_); },
+          [this](const data::token& t_) { return this->format_token(t_); },
+          [this](const boost::filesystem::path& p_) {
+            return data::colored_string(p_.string());
+          }),
+      n_);
+
+  return result;
+}
+
 data::colored_string console_displayer::format_frame(const data::frame& f_)
 {
   data::colored_string prefix;
@@ -242,9 +319,9 @@ data::colored_string console_displayer::format_frame(const data::frame& f_)
   if (f_.is_full())
   {
     postfix << " at " << f_.source_location() << " (" << f_.kind() << " from "
-            << f_.point_of_instantiation() << ")";
+            << f_.point_of_event() << ")";
   }
-  return prefix + format_code(f_.type().name()) + postfix.str();
+  return prefix + format_metaprogram_node(f_.node()) + postfix.str();
 }
 
 bool console_displayer::display_frame_with_pager(const data::frame& frame_,
@@ -332,7 +409,7 @@ void console_displayer::show_file_section(const data::file_location& location_,
     ss << indexed_line.line_index << "  ";
 
     _console->show(ss.str());
-    _console->show(format_code(indexed_line.line + "\n"));
+    _console->show(format_code(data::cpp_code(indexed_line.line + "\n")));
   }
 }
 

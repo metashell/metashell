@@ -1,5 +1,5 @@
-#ifndef METASHELL_SYSTEM_TEST_INSTANTIATION_KIND_HPP
-#define METASHELL_SYSTEM_TEST_INSTANTIATION_KIND_HPP
+#ifndef METASHELL_EVENT_KIND_HPP
+#define METASHELL_EVENT_KIND_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -17,15 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
+#include <ostream>
 #include <string>
 
 namespace metashell
 {
-  namespace system_test
+  namespace data
   {
-    enum class instantiation_kind
+    enum class event_kind
     {
+      // Preprocessor-related events
+      macro_expansion,
+      macro_definition,
+      macro_deletion,
+      rescanning,
+      expanded_code,
+      generated_token,
+      skipped_token,
+      quote_include,
+      sys_include,
+      preprocessing_condition,
+      preprocessing_condition_result,
+      preprocessing_else,
+      preprocessing_endif,
+      error_directive,
+      line_directive,
+
+      // Template instantiation-related events
       template_instantiation,
       default_template_argument_instantiation,
       default_function_argument_instantiation,
@@ -35,12 +53,12 @@ namespace metashell
       default_template_argument_checking,
       exception_spec_instantiation,
       memoization,
-      non_template_type
+      non_template_type // Used only if an evaluation result is not a template
     };
 
-    std::string to_string(instantiation_kind kind_);
-    std::ostream& operator<<(std::ostream& o_, instantiation_kind kind_);
-    instantiation_kind parse_kind(const std::string& kind_);
+    std::ostream& operator<<(std::ostream& os, event_kind kind);
+
+    std::string to_string(event_kind kind);
   }
 }
 

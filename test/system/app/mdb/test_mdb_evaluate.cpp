@@ -170,33 +170,26 @@ TEST(mdb_evaluate, filters_similar_edges)
   ASSERT_EQ(
       call_graph(
           {{frame(type("int_<fib<2>::value>")), 0, 3},
-           {frame(fib<2>(), _, _, instantiation_kind::template_instantiation),
-            1, 2},
-           {frame(fib<0>(), _, _, instantiation_kind::memoization), 2, 0},
-           {frame(fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
-           {frame(fib<2>(), _, _, instantiation_kind::memoization), 1, 0},
-           {frame(type("int_<1>"), _, _,
-                  instantiation_kind::template_instantiation),
-            1, 0}}),
+           {frame(fib<2>(), _, _, event_kind::template_instantiation), 1, 2},
+           {frame(fib<0>(), _, _, event_kind::memoization), 2, 0},
+           {frame(fib<1>(), _, _, event_kind::memoization), 2, 0},
+           {frame(fib<2>(), _, _, event_kind::memoization), 1, 0},
+           {frame(type("int_<1>"), _, _, event_kind::template_instantiation), 1,
+            0}}),
       mi.command("forwardtrace").front());
 #else
   ASSERT_EQ(
       call_graph(
           {{frame(type("int_<fib<2>::value>")), 0, 4},
-           {frame(fib<2>(), _, _, instantiation_kind::template_instantiation),
-            1, 4},
-           {frame(fib<0>(), _, _, instantiation_kind::memoization), 2, 0},
-           {frame(fib<1>(), _, _, instantiation_kind::memoization), 2, 0},
-           {frame(type("fib<1>::ENUM"), _, _, instantiation_kind::memoization),
-            2, 0},
-           {frame(type("fib<0>::ENUM"), _, _, instantiation_kind::memoization),
-            2, 0},
-           {frame(fib<2>(), _, _, instantiation_kind::memoization), 1, 0},
-           {frame(type("fib<2>::ENUM"), _, _, instantiation_kind::memoization),
-            1, 0},
-           {frame(type("int_<1>"), _, _,
-                  instantiation_kind::template_instantiation),
-            1, 0}}),
+           {frame(fib<2>(), _, _, event_kind::template_instantiation), 1, 4},
+           {frame(fib<0>(), _, _, event_kind::memoization), 2, 0},
+           {frame(fib<1>(), _, _, event_kind::memoization), 2, 0},
+           {frame(type("fib<1>::ENUM"), _, _, event_kind::memoization), 2, 0},
+           {frame(type("fib<0>::ENUM"), _, _, event_kind::memoization), 2, 0},
+           {frame(fib<2>(), _, _, event_kind::memoization), 1, 0},
+           {frame(type("fib<2>::ENUM"), _, _, event_kind::memoization), 1, 0},
+           {frame(type("int_<1>"), _, _, event_kind::template_instantiation), 1,
+            0}}),
       mi.command("forwardtrace").front());
 #endif
 }

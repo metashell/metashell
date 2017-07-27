@@ -44,7 +44,7 @@ namespace
 {
   pragma_which::parsed_arguments parse_arguments(const std::string& arguments_)
   {
-    const data::command arguments(arguments_);
+    const data::command arguments{data::cpp_code(arguments_)};
     return pragma_which::parse_arguments(
         "which", arguments.begin(), arguments.end());
   }

@@ -23,7 +23,7 @@ namespace metashell
   {
   }
 
-  data::result preprocessor_shell_clang::precompile(const std::string& exp_)
+  data::result preprocessor_shell_clang::precompile(const data::cpp_code& exp_)
   {
     const data::process_output output = run_clang(_clang_binary, {"-E"}, exp_);
 

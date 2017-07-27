@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/token.hpp>
 #include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/pager.hpp>
@@ -35,7 +36,7 @@ namespace metashell
     virtual void show_error(const std::string& msg_) override;
     virtual void show_type(const data::type& type_) override;
     virtual void show_comment(const data::text& msg_) override;
-    virtual void show_cpp_code(const std::string& code_) override;
+    virtual void show_cpp_code(const data::cpp_code& code_) override;
 
     virtual void show_frame(const data::frame& frame_) override;
     virtual void show_file_section(const data::file_location& location_,
@@ -54,10 +55,13 @@ namespace metashell
     bool _indent;
     bool _syntax_highlight;
 
-    data::colored_string format_code(const std::string& c_);
+    data::colored_string format_code(const data::cpp_code& c_);
     data::colored_string format_time(double time_in_seconds_);
     data::colored_string format_ratio(double ratio_);
     data::colored_string format_frame(const data::frame& f_);
+    data::colored_string format_token(const data::token& t_);
+    data::colored_string
+    format_metaprogram_node(const data::metaprogram_node& n_);
 
     bool display_frame_with_pager(const data::frame& frame_, pager& pager_);
 

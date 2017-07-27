@@ -18,11 +18,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/backtrace.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/frame.hpp>
 #include <metashell/data/text.hpp>
 #include <metashell/data/type.hpp>
-#include <metashell/data/type_or_error.hpp>
+#include <metashell/data/type_or_code_or_error.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 
@@ -45,7 +46,7 @@ namespace metashell
       virtual void show_error(const std::string& msg_) = 0;
       virtual void show_type(const data::type& type_) = 0;
       virtual void show_comment(const data::text& msg_) = 0;
-      virtual void show_cpp_code(const std::string& code_) = 0;
+      virtual void show_cpp_code(const data::cpp_code& code_) = 0;
 
       virtual void show_frame(const data::frame& frame_) = 0;
       virtual void show_file_section(const data::file_location& location_,
@@ -59,11 +60,15 @@ namespace metashell
       virtual void show_filename_set(
           const std::set<boost::filesystem::path>& filenames_) = 0;
 
-      void show_type_or_error(const data::type_or_error& te_)
+      void show_type_or_code_or_error(const data::type_or_code_or_error& te_)
       {
         if (te_.is_type())
         {
           show_type(te_.get_type());
+        }
+        else if (te_.is_code())
+        {
+          show_cpp_code(te_.get_code());
         }
         else if (te_.is_error())
         {

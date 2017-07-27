@@ -34,5 +34,5 @@ void pragma_echo::run(const data::command::iterator&,
                       iface::displayer& displayer_) const
 {
   displayer_.show_comment(
-      data::text(data::tokens_to_string(args_begin_, args_end_)));
+      data::text(data::tokens_to_string(args_begin_, args_end_).value()));
 }

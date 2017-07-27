@@ -19,11 +19,36 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <boost/range/algorithm/equal.hpp>
+
+#include <stdexcept>
+
 using namespace metashell::system_test;
 
 call_graph::call_graph(std::vector<call_graph_node> call_graph_nodes_)
   : _call_graph_nodes(call_graph_nodes_)
 {
+}
+
+call_graph::call_graph(const json_string& s_)
+{
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+  if (d.IsObject() && d.HasMember("type") &&
+      is_string("call_graph", d["type"]) && d.HasMember("nodes") &&
+      d["nodes"].IsArray() && no_other_members_than({"type", "nodes"}, d))
+  {
+    const auto& nodes = d["nodes"];
+    _call_graph_nodes.reserve(nodes.Size());
+    for (auto i = nodes.Begin(); i != nodes.End(); ++i)
+    {
+      _call_graph_nodes.push_back(call_graph_node(*i));
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Invalid call_graph: " + s_.get());
+  }
 }
 
 call_graph::iterator call_graph::begin() const
@@ -84,5 +109,11 @@ json_string metashell::system_test::to_json_string(const call_graph& c_)
 bool metashell::system_test::operator==(const call_graph& c_,
                                         const json_string& s_)
 {
-  return to_json_string(c_) == s_;
+  return c_ == call_graph(s_);
+}
+
+bool metashell::system_test::operator==(const call_graph& c_,
+                                        const call_graph& s_)
+{
+  return boost::equal(c_, s_);
 }

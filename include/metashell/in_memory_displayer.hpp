@@ -32,7 +32,7 @@ namespace metashell
     virtual void show_error(const std::string& msg_) override;
     virtual void show_type(const data::type& type_) override;
     virtual void show_comment(const data::text& msg_) override;
-    virtual void show_cpp_code(const std::string& code_) override;
+    virtual void show_cpp_code(const data::cpp_code& code_) override;
 
     virtual void show_backtrace(const data::backtrace& trace_) override;
     virtual void show_file_section(const data::file_location& location_,
@@ -50,7 +50,7 @@ namespace metashell
     const std::vector<std::string>& raw_texts() const;
     const std::vector<data::type>& types() const;
     const std::vector<data::text>& comments() const;
-    const std::vector<std::string>& cpp_codes() const;
+    const std::vector<data::cpp_code>& cpp_codes() const;
 
     const std::vector<data::frame>& frames() const;
     const std::vector<data::file_location>& file_locations() const;
@@ -69,7 +69,7 @@ namespace metashell
     std::vector<std::string> _raw_texts;
     std::vector<data::type> _types;
     std::vector<data::text> _comments;
-    std::vector<std::string> _cpp_codes;
+    std::vector<data::cpp_code> _cpp_codes;
     std::vector<data::frame> _frames;
     std::vector<data::file_location> _file_locations;
     std::vector<data::backtrace> _backtraces;

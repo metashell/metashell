@@ -32,7 +32,7 @@ namespace metashell
   }
 
   std::set<boost::filesystem::path>
-  header_discoverer_constant::files_included_by(const std::string&)
+  header_discoverer_constant::files_included_by(const data::cpp_code&)
   {
     return std::set<boost::filesystem::path>();
   }

@@ -32,12 +32,12 @@ namespace metashell
   }
 
   std::set<boost::filesystem::path>
-  header_discoverer_wave::files_included_by(const std::string& exp_)
+  header_discoverer_wave::files_included_by(const data::cpp_code& exp_)
   {
-    const std::string exp = exp_ + "\n";
+    const data::cpp_code exp = exp_ + "\n";
     std::set<boost::filesystem::path> result;
     wave_hooks hooks(result);
-    wave_context ctx(exp.begin(), exp.end(), "<input>", hooks);
+    wave_context ctx(exp.begin(), exp.end(), "<stdin>", hooks);
     apply(ctx, _config);
     preprocess(ctx);
     return result;

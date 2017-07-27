@@ -17,18 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
+#include <metashell/some_feature_not_supported.hpp>
 
 #include <string>
 
 namespace metashell
 {
   template <class Feature>
-  struct feature_not_supported : exception
+  struct feature_not_supported : some_feature_not_supported
   {
     explicit feature_not_supported(const std::string& engine_name_)
-      : exception("Feature " + Feature::name_of_feature() +
-                  " is not supported by the " + engine_name_ + " engine.")
+      : some_feature_not_supported(engine_name_, Feature::name_of_feature())
     {
     }
   };

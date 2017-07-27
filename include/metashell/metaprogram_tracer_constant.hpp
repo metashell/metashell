@@ -1,3 +1,6 @@
+#ifndef METASHELL_METAPROGRAM_TRACER_CONSTANT_HPP
+#define METASHELL_METAPROGRAM_TRACER_CONSTANT_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,29 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/template_tracer_clang.hpp>
+#include <metashell/iface/metaprogram_tracer.hpp>
 
 namespace metashell
 {
-  template_tracer_clang::template_tracer_clang(
-      const boost::filesystem::path& internal_dir_,
-      const boost::filesystem::path& env_filename_,
-      clang_binary clang_binary_)
-    : _clang_binary(clang_binary_), _env_path(internal_dir_ / env_filename_)
+  class metaprogram_tracer_constant : public iface::metaprogram_tracer
   {
-  }
-
-  data::result template_tracer_clang::eval(
-      const iface::environment& env_,
-      const boost::optional<std::string>& tmp_exp_,
-      bool use_precompiled_headers_,
-      const boost::filesystem::path& templight_dump_path_)
-  {
-    return metashell::eval(
-        env_, tmp_exp_,
-        use_precompiled_headers_ ?
-            boost::optional<boost::filesystem::path>(_env_path) :
-            boost::none,
-        templight_dump_path_, _clang_binary);
-  }
+  public:
+    virtual data::metaprogram eval(iface::environment&,
+                                   const boost::filesystem::path&,
+                                   const boost::optional<data::cpp_code>&,
+                                   data::metaprogram::mode_t,
+                                   iface::displayer&) override;
+  };
 }
+
+#endif

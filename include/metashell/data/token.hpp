@@ -17,10 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/token_category.hpp>
 #include <metashell/data/token_type.hpp>
 
+#include <boost/operators.hpp>
+
 #include <cassert>
+#include <iosfwd>
 #include <sstream>
 #include <string>
 
@@ -28,25 +32,32 @@ namespace metashell
 {
   namespace data
   {
-    class token
+    class token : boost::totally_ordered<token>
     {
     public:
       token();
-      token(std::string value_, token_type type_);
+      token(cpp_code value_, token_type type_);
 
       token_category category() const;
-      const std::string& value() const;
+      const cpp_code& value() const;
       token_type type() const;
 
     private:
       token_type _type;
-      std::string _value;
+      cpp_code _value;
     };
+
+    std::string format_token(const token& t_);
+
+    std::ostream& operator<<(std::ostream& out_, const token& t_);
+
+    bool operator==(const token& a_, const token& b_);
+    bool operator<(const token& a_, const token& b_);
 
     std::string string_literal_value(const token& token_);
 
     template <class TokenIt>
-    std::string tokens_to_string(TokenIt begin_, const TokenIt& end_)
+    cpp_code tokens_to_string(TokenIt begin_, const TokenIt& end_)
     {
       std::ostringstream s;
       while (begin_ != end_)
@@ -54,7 +65,7 @@ namespace metashell
         s << begin_->value();
         ++begin_;
       }
-      return s.str();
+      return cpp_code(s.str());
     }
   }
 }
@@ -110,30 +121,33 @@ namespace mindent
 
     static token_type empty_token()
     {
-      return token_type("", metashell::data::token_type::unknown);
+      return token_type(
+          metashell::data::cpp_code(), metashell::data::token_type::unknown);
     }
 
     static token_type space_token(int len_)
     {
-      using std::string;
-
       assert(len_ > 0);
-      return token_type(
-          string(len_, ' '), metashell::data::token_type::whitespace);
+      return token_type(metashell::data::cpp_code(std::string(len_, ' ')),
+                        metashell::data::token_type::whitespace);
     }
 
     static token_type new_line_token()
     {
-      return token_type("\n", metashell::data::token_type::new_line);
+      return token_type(metashell::data::cpp_code("\n"),
+                        metashell::data::token_type::new_line);
     }
 
     static token_type change_value(const string_type& value_,
                                    const token_type& t_)
     {
-      return token_type(value_, t_.type());
+      return token_type(metashell::data::cpp_code(value_), t_.type());
     }
 
-    static string_type value(const token_type& t_) { return t_.value(); }
+    static string_type value(const token_type& t_)
+    {
+      return t_.value().value();
+    }
   };
 }
 

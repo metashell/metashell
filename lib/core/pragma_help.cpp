@@ -110,7 +110,7 @@ void pragma_help::run(const data::command::iterator&,
         // skip token
         break;
       default:
-        args.push_back(i->value());
+        args.push_back(i->value().value());
       }
     }
 

@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <string>
+
 namespace metashell
 {
   namespace data
@@ -168,6 +170,8 @@ namespace metashell
       p_warning, // #warning
       p_include // #include
     };
+
+    std::string to_string(token_type t_);
   }
 }
 

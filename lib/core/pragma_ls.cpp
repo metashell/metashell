@@ -48,7 +48,8 @@ namespace
       }
       else
       {
-        const std::string arguments = data::tokens_to_string(begin_, end_);
+        const std::string arguments =
+            data::tokens_to_string(begin_, end_).value();
         throw exception("Argument of " + name_ +
                         " is not a header to include. Did you mean <" +
                         arguments + "> or \"" + arguments + "\"?");
@@ -88,13 +89,13 @@ namespace
       displayer_.show_comment(data::text{type_ + ":"});
 
       displayer_.show_cpp_code(
-          boost::algorithm::join(
-              paths_ | boost::adaptors::transformed(
-                           [](const data::include_argument& a_) {
-                             return "#include " + data::include_code(a_);
-                           }),
-              "\n") +
-          (extra_new_line_ ? "\n" : ""));
+          data::cpp_code(boost::algorithm::join(
+                             paths_ | boost::adaptors::transformed([](
+                                          const data::include_argument& a_) {
+                               return "#include " + data::include_code(a_);
+                             }),
+                             "\n") +
+                         (extra_new_line_ ? "\n" : "")));
     }
   }
 }
@@ -131,7 +132,7 @@ void pragma_ls::run(const data::command::iterator& name_begin_,
   const boost::filesystem::directory_iterator end;
 
   for (const data::include_argument& arg :
-       parse_arguments(data::tokens_to_string(name_begin_, name_end_),
+       parse_arguments(data::tokens_to_string(name_begin_, name_end_).value(),
                        args_begin_, args_end_))
   {
     for (const boost::filesystem::path& p : paths[arg.type])

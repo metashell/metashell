@@ -25,7 +25,8 @@ using namespace metashell;
 TEST(highlight_syntax, comment_without_linebreak)
 {
   // wave can't lex this string, because there is no new line at the end
-  data::colored_string cs = highlight_syntax("int x; // some comment");
+  data::colored_string cs =
+      highlight_syntax(data::cpp_code("int x; // some comment"));
 
   // Still, we get back the original string (without syntax highlighting)
   ASSERT_EQ("int x; // some comment", cs.get_string());
@@ -38,7 +39,8 @@ TEST(highlight_syntax, comment_without_linebreak)
 
 TEST(highlight_syntax, comment_with_linebreak)
 {
-  data::colored_string cs = highlight_syntax("int x; // some comment\n");
+  data::colored_string cs =
+      highlight_syntax(data::cpp_code("int x; // some comment\n"));
 
   ASSERT_EQ("int x; // some comment\n", cs.get_string());
 

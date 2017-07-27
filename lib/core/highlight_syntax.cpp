@@ -40,7 +40,7 @@ namespace metashell
     }
   }
 
-  data::colored_string highlight_syntax(const std::string& str)
+  data::colored_string highlight_syntax(const data::cpp_code& str)
   {
     data::colored_string result;
 
@@ -49,14 +49,15 @@ namespace metashell
     for (; tokeniser->has_further_tokens(); tokeniser->move_to_next_token())
     {
       data::token token = tokeniser->current_token();
-      result += data::colored_string(token.value(), color_of_token(token));
+      result +=
+          data::colored_string(token.value().value(), color_of_token(token));
     }
 
     // If we couldn't lex it for some reason, it's better not to do any
     // syntax highlighting than to lose some parts of the source code
     if (tokeniser->was_error())
     {
-      return str;
+      return str.value();
     }
 
     return result;

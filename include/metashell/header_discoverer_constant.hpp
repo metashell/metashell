@@ -33,7 +33,7 @@ namespace metashell
     include_path(data::include_type type_) override;
 
     virtual std::set<boost::filesystem::path>
-    files_included_by(const std::string&) override;
+    files_included_by(const data::cpp_code&) override;
 
   private:
     data::includes _includes;

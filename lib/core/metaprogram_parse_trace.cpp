@@ -21,53 +21,57 @@
 #include <sstream>
 #include <string>
 
+#include <metashell/data/metaprogram.hpp>
+
 #include <metashell/exception.hpp>
-#include <metashell/metaprogram.hpp>
 #include <metashell/metaprogram_builder.hpp>
 
 #include <templight/ProtobufReader.h>
 
-namespace metashell
+namespace
 {
-
-  data::instantiation_kind instantiation_kind_from_protobuf(int kind)
+  metashell::data::event_kind instantiation_kind_from_protobuf(int kind)
   {
+    using metashell::data::event_kind;
+
     switch (kind)
     {
     case 0:
-      return data::instantiation_kind::template_instantiation;
+      return event_kind::template_instantiation;
     case 1:
-      return data::instantiation_kind::default_template_argument_instantiation;
+      return event_kind::default_template_argument_instantiation;
     case 2:
-      return data::instantiation_kind::default_function_argument_instantiation;
+      return event_kind::default_function_argument_instantiation;
     case 3:
-      return data::instantiation_kind::explicit_template_argument_substitution;
+      return event_kind::explicit_template_argument_substitution;
     case 4:
-      return data::instantiation_kind::deduced_template_argument_substitution;
+      return event_kind::deduced_template_argument_substitution;
     case 5:
-      return data::instantiation_kind::prior_template_argument_substitution;
+      return event_kind::prior_template_argument_substitution;
     case 6:
-      return data::instantiation_kind::default_template_argument_checking;
+      return event_kind::default_template_argument_checking;
     case 7:
-      return data::instantiation_kind::exception_spec_instantiation;
+      return event_kind::exception_spec_instantiation;
     case 8:
-      return data::instantiation_kind::memoization;
+      return event_kind::memoization;
     default:
-      throw exception(
+      throw metashell::exception(
           "templight xml parse failed (invalid instantiation kind)");
     }
   }
+}
 
-  metaprogram metaprogram::create_from_protobuf_stream(
+namespace metashell
+{
+  data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
-      mode_t mode,
-      const std::string& root_name,
+      data::metaprogram::mode_t mode,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result)
   {
 
-    metaprogram_builder builder(
-        mode, root_name, root_source_location, evaluation_result);
+    metaprogram_builder builder(mode, root_name, root_source_location);
 
     templight::ProtobufReader reader;
     reader.startOnBuffer(stream);
@@ -104,18 +108,19 @@ namespace metashell
       }
       reader.next();
     }
+    builder.handle_evaluation_end(evaluation_result);
     return builder.get_metaprogram();
   }
 
-  metaprogram metaprogram::create_from_protobuf_string(
+  data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
-      mode_t mode,
-      const std::string& root_name,
+      data::metaprogram::mode_t mode,
+      const data::cpp_code& root_name,
       const data::file_location& root_source_location,
-      const data::type_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result)
   {
     std::istringstream ss(string);
-    return create_from_protobuf_stream(
+    return create_metaprogram_from_protobuf_stream(
         ss, mode, root_name, root_source_location, evaluation_result);
   }
 }

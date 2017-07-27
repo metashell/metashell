@@ -53,11 +53,10 @@ namespace metashell
     return result;
   }
 
-  file_section get_file_section_from_file(const std::string& file_name,
-                                          int middle_line,
-                                          int offset)
+  file_section get_file_section_from_file(
+      const boost::filesystem::path& file_name, int middle_line, int offset)
   {
-    std::ifstream in(file_name);
+    std::ifstream in(file_name.string());
     if (!in)
     {
       return {};

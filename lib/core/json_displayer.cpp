@@ -22,6 +22,38 @@ using namespace metashell;
 
 namespace
 {
+  class to_json_visitor : public boost::static_visitor<>
+  {
+  public:
+    explicit to_json_visitor(iface::json_writer& writer_) : _writer(writer_) {}
+
+    void operator()(const data::type& t_) const { operator()(t_.name()); }
+
+    void operator()(const data::cpp_code& c_) const
+    {
+      _writer.string(c_.value());
+    }
+
+    void operator()(const data::token& t_) const
+    {
+      _writer.string(format_token(t_));
+    }
+
+    void operator()(const boost::filesystem::path& p_) const
+    {
+      _writer.string(p_.string());
+    }
+
+    template <class T>
+    void operator()(const unique<T>& value_) const
+    {
+      operator()(value_.value());
+    }
+
+  private:
+    iface::json_writer& _writer;
+  };
+
   void
   show_object(iface::json_writer& writer_,
               std::initializer_list<std::pair<std::string, std::string>> l_)
@@ -40,7 +72,7 @@ namespace
   void show_frame_fields(iface::json_writer& writer_, const data::frame& frame_)
   {
     writer_.key("name");
-    writer_.string(frame_.type().name());
+    boost::apply_visitor(to_json_visitor(writer_), frame_.node());
     writer_.key("source_location");
     writer_.string(to_string(frame_.source_location()));
 
@@ -48,8 +80,8 @@ namespace
     {
       writer_.key("kind");
       writer_.string(to_string(frame_.kind()));
-      writer_.key("point_of_instantiation");
-      writer_.string(to_string(frame_.point_of_instantiation()));
+      writer_.key("point_of_event");
+      writer_.string(to_string(frame_.point_of_event()));
     }
     if (frame_.is_profiled())
     {
@@ -102,7 +134,7 @@ void json_displayer::show_error(const std::string& msg_)
 
 void json_displayer::show_type(const data::type& type_)
 {
-  show_object(_writer, {{"type", "type"}, {"name", type_.name()}});
+  show_object(_writer, {{"type", "type"}, {"name", type_.name().value()}});
   _writer.end_document();
 }
 
@@ -136,9 +168,9 @@ void json_displayer::show_comment(const data::text& msg_)
   _writer.end_document();
 }
 
-void json_displayer::show_cpp_code(const std::string& code_)
+void json_displayer::show_cpp_code(const data::cpp_code& code_)
 {
-  show_object(_writer, {{"type", "cpp_code"}, {"code", code_}});
+  show_object(_writer, {{"type", "cpp_code"}, {"code", code_.value()}});
   _writer.end_document();
 }
 

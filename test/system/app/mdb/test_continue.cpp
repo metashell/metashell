@@ -84,8 +84,7 @@ TEST(mdb_continue, fibonacci_1_breakpoint)
 
   const std::vector<json_string> r_cont = mi.command("continue");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<0>\") reached"), r_cont[0]);
-  ASSERT_EQ(
-      frame(type("fib<0>"), _, _, instantiation_kind::memoization), r_cont[1]);
+  ASSERT_EQ(frame(type("fib<0>"), _, _, event_kind::memoization), r_cont[1]);
 }
 
 TEST(mdb_continue, 2_fibonacci_1_breakpoint)
@@ -97,8 +96,7 @@ TEST(mdb_continue, 2_fibonacci_1_breakpoint)
 
   const std::vector<json_string> r_cont = mi.command("continue 2");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), r_cont[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), r_cont[1]);
 }
 
 TEST(mdb_continue, twice_fibonacci_1_breakpoint)
@@ -110,14 +108,12 @@ TEST(mdb_continue, twice_fibonacci_1_breakpoint)
 
   const std::vector<json_string> r_cont1 = mi.command("continue");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont1[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      r_cont1[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            r_cont1[1]);
 
   const std::vector<json_string> r_cont2 = mi.command("continue");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont2[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::memoization), r_cont2[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::memoization), r_cont2[1]);
 }
 
 TEST(mdb_continue, fibonacci_2_breakpoints)
@@ -130,15 +126,13 @@ TEST(mdb_continue, fibonacci_2_breakpoints)
 
   const std::vector<json_string> r_cont1 = mi.command("continue");
   ASSERT_EQ(raw_text("Breakpoint 2: regex(\"fib<6>\") reached"), r_cont1[0]);
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
-      r_cont1[1]);
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::template_instantiation),
+            r_cont1[1]);
 
   const std::vector<json_string> r_cont2 = mi.command("continue");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont2[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      r_cont2[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            r_cont2[1]);
 }
 
 TEST(mdb_continue, 2_fibonacci_2_breakpoints)
@@ -151,9 +145,8 @@ TEST(mdb_continue, 2_fibonacci_2_breakpoints)
 
   const std::vector<json_string> r_cont = mi.command("continue 2");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      r_cont[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            r_cont[1]);
 }
 
 TEST(mdb_continue, 10_fibonacci_2_breakpoints)
@@ -212,15 +205,13 @@ TEST(mdb_continue, minus_1_with_preceding_breakpoint)
 
   const std::vector<json_string> r_cont1 = mi.command("continue 2");
   ASSERT_EQ(raw_text("Breakpoint 2: regex(\"fib<5>\") reached"), r_cont1[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      r_cont1[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            r_cont1[1]);
 
   const std::vector<json_string> r_cont2 = mi.command("continue -1");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<6>\") reached"), r_cont2[0]);
-  ASSERT_EQ(
-      frame(type("fib<6>"), _, _, instantiation_kind::template_instantiation),
-      r_cont2[1]);
+  ASSERT_EQ(frame(type("fib<6>"), _, _, event_kind::template_instantiation),
+            r_cont2[1]);
 }
 
 TEST(mdb_continue, minus_1_without_preceding_breakpoint)
@@ -232,9 +223,8 @@ TEST(mdb_continue, minus_1_without_preceding_breakpoint)
 
   const std::vector<json_string> r_cont = mi.command("continue 1");
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"fib<5>\") reached"), r_cont[0]);
-  ASSERT_EQ(
-      frame(type("fib<5>"), _, _, instantiation_kind::template_instantiation),
-      r_cont[1]);
+  ASSERT_EQ(frame(type("fib<5>"), _, _, event_kind::template_instantiation),
+            r_cont[1]);
 
   ASSERT_EQ(raw_text("Metaprogram reached the beginning"),
             mi.command("continue -1").front());

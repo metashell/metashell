@@ -51,8 +51,9 @@ void pragma_which::run(const data::command::iterator& name_begin_,
   using boost::adaptors::transformed;
   using boost::adaptors::filtered;
 
-  const parsed_arguments args = parse_arguments(
-      data::tokens_to_string(name_begin_, name_end_), args_begin_, args_end_);
+  const parsed_arguments args =
+      parse_arguments(data::tokens_to_string(name_begin_, name_end_).value(),
+                      args_begin_, args_end_);
   const auto include_path =
       _shell.engine().header_discoverer().include_path(args.header.type);
   const auto files =
@@ -64,7 +65,7 @@ void pragma_which::run(const data::command::iterator& name_begin_,
   if (files.empty())
   {
     throw exception("Include file " +
-                    data::tokens_to_string(args_begin_, args_end_) +
+                    data::tokens_to_string(args_begin_, args_end_).value() +
                     " not found.");
   }
   else if (args.all)
@@ -106,9 +107,10 @@ pragma_which::parse_arguments(const std::string& name_,
     }
     else
     {
-      throw exception("Invalid argument: -" +
-                      data::tokens_to_string(
-                          i, data::skip_all_whitespace(i + 1, args_end_)));
+      throw exception(
+          "Invalid argument: -" +
+          data::tokens_to_string(i, data::skip_all_whitespace(i + 1, args_end_))
+              .value());
     }
   }
 
@@ -121,7 +123,8 @@ pragma_which::parse_arguments(const std::string& name_,
     const auto include_arg = data::include_argument::parse(i, args_end_);
     if (!include_arg.first)
     {
-      const std::string arguments = data::tokens_to_string(i, args_end_);
+      const std::string arguments =
+          data::tokens_to_string(i, args_end_).value();
       throw exception("Argument of " + name_ +
                       " is not a header to include. Did you mean <" +
                       arguments + "> or \"" + arguments + "\"?");

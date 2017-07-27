@@ -35,16 +35,16 @@ namespace metashell
   }
 
   data::result
-  cpp_validator_clang::validate_code(const std::string& src_,
+  cpp_validator_clang::validate_code(const data::cpp_code& src_,
                                      const data::config& config_,
                                      const iface::environment& env_,
                                      bool use_precompiled_headers_)
   {
-    METASHELL_LOG(_logger, "Validating code " + src_);
+    METASHELL_LOG(_logger, "Validating code " + src_.value());
 
     try
     {
-      const std::string src = env_.get_appended(src_);
+      const data::cpp_code src = env_.get_appended(src_);
       std::vector<std::string> clang_args{"-fsyntax-only"};
       if (use_precompiled_headers_)
       {
@@ -59,7 +59,7 @@ namespace metashell
                           output.standard_error.empty();
 
       return data::result{accept, "", output.standard_error,
-                          accept && config_.verbose ? src : ""};
+                          accept && config_.verbose ? src.value() : ""};
     }
     catch (const std::exception& e)
     {

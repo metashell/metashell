@@ -26,22 +26,32 @@ using namespace metashell;
 pragma_mdb::pragma_mdb(shell& shell_,
                        command_processor_queue* cpq_,
                        const boost::filesystem::path& mdb_temp_dir_,
+                       bool preprocessor_,
                        logger* logger_)
-  : _shell(shell_), _cpq(cpq_), _mdb_temp_dir(mdb_temp_dir_), _logger(logger_)
+  : _preprocessor(preprocessor_),
+    _shell(shell_),
+    _cpq(cpq_),
+    _mdb_temp_dir(mdb_temp_dir_),
+    _logger(logger_)
 {
 }
 
 iface::pragma_handler* pragma_mdb::clone() const
 {
-  return new pragma_mdb(_shell, _cpq, _mdb_temp_dir, _logger);
+  return new pragma_mdb(_shell, _cpq, _mdb_temp_dir, _preprocessor, _logger);
 }
 
-std::string pragma_mdb::arguments() const { return "[-full] [<type>]"; }
+std::string pragma_mdb::arguments() const
+{
+  return _preprocessor ? "[<expression>]" : "[-full] [<type>]";
+}
 
 std::string pragma_mdb::description() const
 {
-  return "Starts the metadebugger. For more information see evaluate in the "
-         "Metadebugger command reference.";
+  const std::string name =
+      _preprocessor ? "preprocessor debugger" : "metadebugger";
+  return "Starts the " + name + ". For more information see evaluate in the " +
+         name + " command reference.";
 }
 
 void pragma_mdb::run(const data::command::iterator&,
@@ -52,7 +62,7 @@ void pragma_mdb::run(const data::command::iterator&,
 {
   assert(_cpq != nullptr);
 
-  std::string args = tokens_to_string(args_begin_, args_end_);
+  std::string args = tokens_to_string(args_begin_, args_end_).value();
 
   command_processor_queue::cleanup_function restore;
   if (_shell.using_precompiled_headers())
@@ -71,9 +81,9 @@ void pragma_mdb::run(const data::command::iterator&,
     };
   }
 
-  std::unique_ptr<mdb_shell> sh(
-      new mdb_shell(_shell.get_config(), _shell.env(), _shell.engine(),
-                    _shell.env_path(), _mdb_temp_dir, _logger));
+  std::unique_ptr<mdb_shell> sh(new mdb_shell(_shell.env(), _shell.engine(),
+                                              _shell.env_path(), _mdb_temp_dir,
+                                              _preprocessor, _logger));
 
   if (_shell.get_config().splash_enabled)
   {
