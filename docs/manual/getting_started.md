@@ -131,7 +131,7 @@ Let's debug the fibonacci metaprogram seen earlier. Start the metadebugger by
 entering:
 
 ```cpp
-> #msh mdb int_<fib<6>::value>
+> #msh mdb boost::mpl::int_<fib<6>::value>
 For help, type "help".
 Metaprogram started
 ```
