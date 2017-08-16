@@ -4,7 +4,7 @@ set -ex
 
 ./install_build_dependencies.sh
 
-[ "${COVERAGE}" = "true" ] && sudo pip install cpp-coveralls
+[ "${COVERAGE}" = "true" ] && sudo pip install cpp-coveralls==0.3.12
 
 UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
 
