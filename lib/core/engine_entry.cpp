@@ -16,15 +16,20 @@
 
 #include <metashell/engine_entry.hpp>
 
+#include <algorithm>
+
 using namespace metashell;
 
 engine_entry::engine_entry(engine_factory factory_,
                            std::string args_,
-                           std::string description_)
+                           std::string description_,
+                           std::vector<data::feature> features_)
   : _factory(move(factory_)),
     _args(move(args_)),
-    _description(move(description_))
+    _description(move(description_)),
+    _features(move(features_))
 {
+  std::sort(_features.begin(), _features.end());
 }
 
 std::unique_ptr<iface::engine>
@@ -43,3 +48,8 @@ engine_entry::build(const data::config& config_,
 const std::string& engine_entry::args() const { return _args; }
 
 const std::string& engine_entry::description() const { return _description; }
+
+const std::vector<data::feature>& engine_entry::features() const
+{
+  return _features;
+}

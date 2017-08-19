@@ -56,34 +56,34 @@ TEST(null_engine, startup)
 TEST(null_engine, type_shell)
 {
   ASSERT_EQ(
-      error("Error: Feature type_shell is not supported by the null engine."),
+      error("Error: Feature type shell is not supported by the null engine."),
       with_null_engine("int").front());
 }
 
 TEST(null_engine, preprocessor_shell)
 {
-  ASSERT_EQ(error("Error: Feature preprocessor_shell is not supported by the "
+  ASSERT_EQ(error("Error: Feature preprocessor shell is not supported by the "
                   "null engine."),
             with_null_engine("#msh preprocessor mode", "int").front());
 }
 
 TEST(null_engine, header_discoverer)
 {
-  ASSERT_EQ(error("Error: Feature header_discoverer is not supported by the "
+  ASSERT_EQ(error("Error: Feature header discoverer is not supported by the "
                   "null engine."),
             with_null_engine("#msh sysincludes").front());
 }
 
 TEST(null_engine, metaprogram_tracer)
 {
-  ASSERT_EQ(error("Error: Feature metaprogram_tracer is not supported by the "
+  ASSERT_EQ(error("Error: Feature metaprogram tracer is not supported by the "
                   "null engine."),
             with_null_engine("#msh mdb int").front());
 }
 
 TEST(null_engine, cpp_validator)
 {
-  ASSERT_EQ(error("Error: Feature cpp_validator is not supported by the "
+  ASSERT_EQ(error("Error: Feature cpp validator is not supported by the "
                   "null engine."),
             with_null_engine("typedef int x;").front());
 }

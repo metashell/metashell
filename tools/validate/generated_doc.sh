@@ -23,15 +23,18 @@ then
   exit 1
 fi
 
-"$1" --show_pragma_help \
-  | tools/replace_part -i docs/reference/pragmas.md -m '<!-- pragma_info -->' -o - -r - \
-  | diff docs/reference/pragmas.md -
+if [ "$#" -ne 1 ]
+then
+  echo "Usage: $0 <path to metashell binary>"
+  exit 1
+fi
 
-"$1" --show_mdb_help \
-  | tools/replace_part -i docs/reference/mdb_commands.md -m '<!-- mdb_info -->' -o - -r - \
-  | diff docs/reference/mdb_commands.md -
+METASHELL="$1"
 
-"$1" --show_pdb_help \
-  | tools/replace_part -i docs/reference/pdb_commands.md -m '<!-- pdb_info -->' -o - -r - \
-  | diff docs/reference/pdb_commands.md -
+function process_one {
+  echo "Checking \"$4\" in $3"
+  "$1" "$2" | tools/replace_part -i "$3" -m "$4" -o - -r - | diff "$3" -
+}
+
+. tools/template/generated_doc.sh
 

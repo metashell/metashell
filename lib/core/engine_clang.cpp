@@ -32,6 +32,17 @@ using namespace metashell;
 
 namespace
 {
+  std::vector<data::feature> supported_features()
+  {
+    return {data::feature::type_shell(),
+            data::feature::preprocessor_shell(),
+            data::feature::code_completer(),
+            data::feature::header_discoverer(),
+            data::feature::metaprogram_tracer(),
+            data::feature::cpp_validator(),
+            data::feature::macro_discovery()};
+  }
+
   template <bool UseInternalTemplight>
   std::unique_ptr<iface::engine>
   create_clang_engine(const data::config& config_,
@@ -57,7 +68,7 @@ namespace
             internal_dir_, temp_dir_, env_filename_, cbin, logger_),
         header_discoverer_clang(cbin), metaprogram_tracer_clang(cbin),
         cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
-        macro_discovery_clang(cbin), not_supported());
+        macro_discovery_clang(cbin), not_supported(), supported_features());
   }
 } // anonymous namespace
 
@@ -66,16 +77,21 @@ engine_entry metashell::get_engine_clang_entry()
   return engine_entry(
       &create_clang_engine<false>,
       "<Clang binary> -std=<standard to use> [<Clang args>]",
-      "Uses the Clang compiler or Templight. <Clang args> are passed to the"
+      "Uses the [Clang compiler](http://clang.llvm.org) or "
+      "[Templight](https://github.com/mikael-s-persson/templight). `<Clang "
+      "args>` are passed to the"
       " compiler as command line-arguments. Note that Metashell requires C++11"
       " or above. If your Clang uses such a standard by default, you can omit"
-      " the -std argument.");
+      " the `-std` argument.",
+      supported_features());
 }
 
 engine_entry metashell::get_internal_templight_entry()
 {
   return engine_entry(
       &create_clang_engine<true>, "[<Clang args>]",
-      "Uses the Templight shipped with Metashell. <Clang args> are passed to"
-      " the compiler as command line-arguments.");
+      "Uses the [Templight](https://github.com/mikael-s-persson/templight) "
+      "shipped with Metashell. `<Clang args>` are passed to"
+      " the compiler as command line-arguments.",
+      supported_features());
 }

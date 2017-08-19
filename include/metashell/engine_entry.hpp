@@ -17,11 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/feature.hpp>
 #include <metashell/engine_factory.hpp>
 
 #include <boost/filesystem/path.hpp>
 
 #include <string>
+#include <vector>
 
 namespace metashell
 {
@@ -30,7 +32,8 @@ namespace metashell
   public:
     engine_entry(engine_factory factory_,
                  std::string args_,
-                 std::string description_);
+                 std::string description_,
+                 std::vector<data::feature> features_);
 
     std::unique_ptr<iface::engine>
     build(const data::config& config_,
@@ -44,10 +47,13 @@ namespace metashell
     const std::string& args() const;
     const std::string& description() const;
 
+    const std::vector<data::feature>& features() const;
+
   private:
     engine_factory _factory;
     std::string _args;
     std::string _description;
+    std::vector<data::feature> _features;
   };
 }
 

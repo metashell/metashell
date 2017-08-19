@@ -29,6 +29,14 @@ using namespace metashell;
 
 namespace
 {
+  std::vector<data::feature> supported_features()
+  {
+    return {data::feature::preprocessor_shell(),
+            data::feature::header_discoverer(), data::feature::cpp_validator(),
+            data::feature::macro_discovery(),
+            data::feature::preprocessor_tracer()};
+  }
+
   template <bool UseTemplightHeaders>
   std::unique_ptr<iface::engine>
   create_wave_engine(const data::config& config_,
@@ -46,7 +54,7 @@ namespace
                        preprocessor_shell_wave(cfg), not_supported(),
                        header_discoverer_wave(cfg), not_supported(),
                        cpp_validator_wave(cfg), macro_discovery_wave(cfg),
-                       preprocessor_tracer_wave(cfg));
+                       preprocessor_tracer_wave(cfg), supported_features());
   }
 
   template <bool UseTemplightHeaders>
@@ -54,12 +62,14 @@ namespace
   {
     return engine_entry(
         &create_wave_engine<UseTemplightHeaders>, "<Wave options>",
-        "Uses Boost.Wave, which is a preprocessor. Only the preprocessor shell"
+        "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
+        "preprocessor. Only the preprocessor shell"
         " is supported." +
             (UseTemplightHeaders ?
                  " It uses the headers of Templight deployed with Metashell." :
                  std::string()) +
-            "\n" + wave_args(UseTemplightHeaders));
+            "<br /><br />" + wave_args(UseTemplightHeaders),
+        supported_features());
   }
 } // anonymous namespace
 

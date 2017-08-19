@@ -29,6 +29,13 @@ using namespace metashell;
 
 namespace
 {
+  std::vector<data::feature> supported_features()
+  {
+    return {data::feature::preprocessor_shell(),
+            data::feature::header_discoverer(), data::feature::cpp_validator(),
+            data::feature::macro_discovery()};
+  }
+
   bool stdinc_allowed(const std::vector<std::string>& extra_clang_args_)
   {
     return find_if(extra_clang_args_.begin(), extra_clang_args_.end(),
@@ -106,7 +113,7 @@ namespace
         config_.engine, not_supported(), preprocessor_shell_clang(cbin),
         not_supported(), header_discoverer_clang(cbin), not_supported(),
         cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
-        macro_discovery_clang(cbin), not_supported());
+        macro_discovery_clang(cbin), not_supported(), supported_features());
   }
 } // anonymous namespace
 
@@ -114,9 +121,12 @@ engine_entry metashell::get_engine_gcc_entry()
 {
   return engine_entry(
       &create_gcc_engine, "<gcc binary> -std=<standard to use> [<gcc args>]",
-      "Uses the gcc compiler. <gcc args> are passed to the"
+      "Uses the [gcc compiler](https://gcc.gnu.org). `<gcc args>` are passed "
+      "to the"
       " compiler as command line-arguments. Note that Metashell requires C++11"
       " or above. If your gcc uses such a standard by default, you can omit"
-      " the -std argument. Also note that currently only the preprocessor shell"
-      " is supported.");
+      " the `-std` argument. Also note that currently only the preprocessor "
+      "shell"
+      " is supported.",
+      supported_features());
 }

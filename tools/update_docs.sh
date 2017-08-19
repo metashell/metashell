@@ -17,33 +17,27 @@
 
 set -e
 
-if [ -d 3rd ]
+METASHELL="app/metashell/metashell"
+
+function process_one {
+  SRC_ROOT=".."
+
+  "$1" "$2" \
+    | "$SRC_ROOT/tools/replace_part" \
+      -i "$SRC_ROOT/$3" \
+      -m "$4" \
+      -o "$SRC_ROOT/$3" \
+      -r -
+}
+
+if [ -d cmake ]
 then
   mkdir -p bin
   cd bin
     cmake ..
     make
 
-    app/metashell/metashell --show_pragma_help \
-      | ../tools/replace_part \
-        -i ../docs/reference/pragmas.md \
-        -m '<!-- pragma_info -->' \
-        -o ../docs/reference/pragmas.md \
-        -r -
-
-    app/metashell/metashell --show_mdb_help \
-      | ../tools/replace_part \
-        -i ../docs/reference/mdb_commands.md \
-        -m '<!-- mdb_info -->' \
-        -o ../docs/reference/mdb_commands.md \
-        -r -
-
-    app/metashell/metashell --show_pdb_help \
-      | ../tools/replace_part \
-        -i ../docs/reference/pdb_commands.md \
-        -m '<!-- pdb_info -->' \
-        -o ../docs/reference/pdb_commands.md \
-        -r -
+    . ../tools/template/generated_doc.sh
 else
   echo "Please run this script from the root directory of the Metashell source code"
 fi
