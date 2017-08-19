@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/feature.hpp>
 #include <metashell/data/result.hpp>
 
 #include <string>
@@ -33,7 +34,10 @@ namespace metashell
 
       virtual data::result precompile(const data::cpp_code& exp_) = 0;
 
-      static std::string name_of_feature() { return "preprocessor_shell"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::preprocessor_shell();
+      }
     };
   }
 }

@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/feature.hpp>
+
 #include <metashell/exception.hpp>
 
 #include <string>
@@ -26,7 +28,7 @@ namespace metashell
   struct some_feature_not_supported : exception
   {
     some_feature_not_supported(const std::string& engine_name_,
-                               const std::string& feature_name_);
+                               const data::feature& feature_);
   };
 }
 

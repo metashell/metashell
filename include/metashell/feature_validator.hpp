@@ -1,8 +1,8 @@
-#ifndef METASHELL_IFACE_CPP_VALIDATOR_HPP
-#define METASHELL_IFACE_CPP_VALIDATOR_HPP
+#ifndef METASHELL_FEATURE_VALIDATOR_HPP
+#define METASHELL_FEATURE_VALIDATOR_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,34 +17,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/config.hpp>
-#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/feature.hpp>
-#include <metashell/data/result.hpp>
-#include <metashell/iface/environment.hpp>
+
+#include <metashell/not_supported.hpp>
 
 #include <string>
+#include <type_traits>
+#include <vector>
 
 namespace metashell
 {
-  namespace iface
+  class feature_validator
   {
-    class cpp_validator
+  public:
+    feature_validator(std::string engine_name_,
+                      std::vector<data::feature> supported_features_);
+
+    template <class FeatureUsed>
+    feature_validator& check(data::feature feature_, const FeatureUsed&)
     {
-    public:
-      virtual ~cpp_validator() {}
+      check(feature_, !std::is_same<FeatureUsed, not_supported>::value);
 
-      virtual data::result validate_code(const data::cpp_code& s_,
-                                         const data::config& config_,
-                                         const environment& env_,
-                                         bool use_precompiled_headers_) = 0;
+      return *this;
+    }
 
-      static data::feature name_of_feature()
-      {
-        return data::feature::cpp_validator();
-      }
-    };
-  }
+    void all_checked();
+
+  private:
+    std::string _engine_name;
+    std::vector<data::feature> _supported_features;
+    bool _all_checked;
+
+    void check(data::feature feature_, bool really_supported_);
+  };
 }
 
 #endif

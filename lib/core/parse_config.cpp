@@ -33,8 +33,14 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include <boost/range/adaptor/map.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/tuple/tuple.hpp>
+
+#include <boost/xpressive/xpressive.hpp>
+
+#include <boost/range/combine.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -48,6 +54,23 @@ using namespace metashell;
 
 namespace
 {
+  std::string remove_markdown(std::string s_)
+  {
+    using boost::xpressive::sregex;
+    using boost::xpressive::regex_replace;
+    using boost::xpressive::as_xpr;
+    using boost::xpressive::s1;
+    using boost::xpressive::s2;
+
+    boost::replace_all(s_, "`", "");
+    boost::replace_all(s_, "<br />", "\n");
+    boost::replace_all(s_, "&nbsp;", " ");
+
+    return regex_replace(s_, sregex('[' >> (s1 = *~as_xpr(']')) >> "](" >>
+                                    (s2 = *~as_xpr(')')) >> ')'),
+                         "$1 (see $2)");
+  }
+
   void show_help(std::ostream& out_,
                  const boost::program_options::options_description& desc_)
   {
@@ -87,6 +110,165 @@ namespace
     }
   }
 
+  std::string supported_features(const engine_entry& engine_)
+  {
+    return boost::algorithm::join(
+        engine_.features() | boost::adaptors::transformed([](data::feature f_) {
+          return to_string(f_);
+        }),
+        ", ");
+  }
+
+  std::string make_id(const std::string& value_)
+  {
+    return boost::algorithm::replace_all_copy(value_, " ", "_");
+  }
+
+  std::string self_id(const std::string& value_)
+  {
+    return "<strong id=\"" + make_id(value_) + "\">" + value_ + "</strong>";
+  }
+
+  std::string self_reference(const std::string& value_)
+  {
+    return "<a href=\"#" + make_id(value_) + "\">" + value_ + "</a>";
+  }
+
+  void show_engine_help(const std::map<std::string, engine_entry>& engines_,
+                        const boost::filesystem::path& app_name_)
+  {
+    for (const auto& engine : engines_)
+    {
+      std::cout << "* " << self_id(engine.first) << "<br />\n"
+                << "Usage: `" << app_name_.filename().string() << " --engine "
+                << engine.first;
+      const auto args = engine.second.args();
+      if (!args.empty())
+      {
+        std::cout << " -- " << engine.second.args();
+      }
+      std::cout << "`<br />\n<br />\n"
+                << engine.second.description()
+                << "<br /><br />Supported features: "
+                << supported_features(engine.second) << "<br />\n<br />\n";
+    }
+  }
+
+  template <class Size>
+  void adopt_widths(const std::vector<std::string>& row_,
+                    std::vector<Size>& widths_)
+  {
+    assert(widths_.empty() || widths_.size() == row_.size());
+    widths_.resize(row_.size(), 0);
+
+    for (auto p : boost::combine(widths_, row_))
+    {
+      Size& width = boost::get<0>(p);
+      const std::string& cell = boost::get<1>(p);
+
+      width = std::max(width, cell.size());
+    }
+  }
+
+  template <class Size>
+  void md_format_row(const std::vector<std::string>& row_,
+                     const std::vector<Size>& widths_,
+                     std::ostream& out_)
+  {
+    assert(row_.size() == widths_.size());
+
+    for (auto p : boost::combine(widths_, row_))
+    {
+      const Size& width = boost::get<0>(p);
+      const std::string& cell = boost::get<1>(p);
+
+      assert(cell.size() <= width);
+
+      out_ << '|' << cell << std::string(width - cell.size(), ' ');
+    }
+    out_ << "|\n";
+  }
+
+  template <class Size>
+  void md_format_header_separator(const std::vector<Size>& widths_,
+                                  std::ostream& out_)
+  {
+    bool first_column = true;
+    for (int width : widths_)
+    {
+      if (first_column)
+      {
+        assert(width >= 1);
+        out_ << "|:" << std::string(width - 1, '-');
+        first_column = false;
+      }
+      else
+      {
+        assert(width >= 2);
+        out_ << "|:" << std::string(width - 2, '-') << ":";
+      }
+    }
+    out_ << "|\n";
+  }
+
+  void md_format_table(const std::vector<std::string>& header_,
+                       const std::vector<std::vector<std::string>>& table_,
+                       std::ostream& out_)
+  {
+    std::vector<std::vector<std::string>::size_type> widths;
+    adopt_widths(header_, widths);
+    for (const auto& row : table_)
+    {
+      adopt_widths(row, widths);
+    }
+
+    md_format_row(header_, widths, out_);
+    md_format_header_separator(widths, out_);
+    for (const auto& row : table_)
+    {
+      md_format_row(row, widths, out_);
+    }
+  }
+
+  void show_engine_features(const std::map<std::string, engine_entry>& engines_)
+  {
+    const auto features = data::feature::all();
+
+    std::vector<std::string> header{"Feature"};
+    for (const auto& engine : engines_)
+    {
+      header.push_back(self_reference(engine.first));
+    }
+
+    std::vector<std::vector<std::string>> table;
+    for (data::feature f : features)
+    {
+      table.push_back({self_reference(to_string(f))});
+
+      for (const auto& engine : engines_)
+      {
+        const auto& engine_features = engine.second.features();
+
+        table.back().push_back(
+            std::find(engine_features.begin(), engine_features.end(), f) ==
+                    engine_features.end() ?
+                "<img src=\"../../img/no.png\" width=\"20px\" />" :
+                "<img src=\"../../img/yes.png\" width=\"20px\" />");
+      }
+    }
+
+    md_format_table(header, table, std::cout);
+  }
+
+  void show_feature_help()
+  {
+    for (data::feature f : data::feature::all())
+    {
+      std::cout << "* " << self_id(to_string(f)) << "<br />\n"
+                << f.description() << "<br />\n<br />\n";
+    }
+  }
+
   void show_mdb_help(bool preprocessor_)
   {
     using boost::algorithm::join;
@@ -123,10 +305,18 @@ namespace
     {
       *out_ << "Usage: " << std::endl
             << std::endl
-            << "  " << app_name_ << " --engine " << e->first << " -- "
-            << e->second.args() << std::endl
+            << "  " << app_name_ << " --engine " << e->first;
+      const auto args = e->second.args();
+      if (!args.empty())
+      {
+        *out_ << " -- " << e->second.args();
+      }
+      *out_ << std::endl
             << std::endl
-            << e->second.description() << std::endl
+            << remove_markdown(e->second.description()) << std::endl
+            << std::endl
+            << "Supported features: " << supported_features(e->second)
+            << std::endl
             << std::endl;
     }
   }
@@ -303,6 +493,19 @@ metashell::parse_config(int argc_,
       "Display help for pdb commands in MarkDown format and exit"
     )
     (
+      "show_engine_help",
+      "Display help for all engines in MarkDown format and exit"
+    )
+    (
+      "show_engine_features",
+      "Display a table showing which engine supports which features"
+      " in MarkDown format and exit"
+    )
+    (
+      "show_feature_help",
+      "Display help for all features in MarkDown format and exit"
+    )
+    (
       "disable_saving",
       "Disable saving the environment using the #msh environment save"
     )
@@ -400,6 +603,21 @@ metashell::parse_config(int argc_,
     else if (vm.count("show_pdb_help"))
     {
       show_mdb_help(true);
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("show_engine_help"))
+    {
+      show_engine_help(engines_, argv_[0]);
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("show_engine_features"))
+    {
+      show_engine_features(engines_);
+      return parse_config_result::exit(false);
+    }
+    else if (vm.count("show_feature_help"))
+    {
+      show_feature_help();
       return parse_config_result::exit(false);
     }
     else if (vm.count("help_engine"))

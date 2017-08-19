@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/feature.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
 
@@ -42,7 +43,10 @@ namespace metashell
       virtual void
       generate_precompiled_header(const boost::filesystem::path& fn_) = 0;
 
-      static std::string name_of_feature() { return "type_shell"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::type_shell();
+      }
     };
   }
 }

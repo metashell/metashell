@@ -20,6 +20,8 @@
 
 namespace metashell
 {
+  std::vector<data::feature> supported_features() { return {}; }
+
   engine_entry get_engine_null_entry()
   {
     return engine_entry(
@@ -28,10 +30,12 @@ namespace metashell
            iface::environment_detector&, iface::displayer&, logger*) {
           return make_engine(config_.engine, not_supported(), not_supported(),
                              not_supported(), not_supported(), not_supported(),
-                             not_supported(), not_supported(), not_supported());
+                             not_supported(), not_supported(), not_supported(),
+                             supported_features());
         },
         "",
         "An engine which does not support anything. Mainly for testing "
-        "purposes.");
+        "purposes.",
+        supported_features());
   }
 }

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/feature.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/displayer.hpp>
@@ -43,7 +44,10 @@ namespace metashell
            data::metaprogram::mode_t mode_,
            iface::displayer& displayer_) = 0;
 
-      static std::string name_of_feature() { return "metaprogram_tracer"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::metaprogram_tracer();
+      }
     };
   }
 }

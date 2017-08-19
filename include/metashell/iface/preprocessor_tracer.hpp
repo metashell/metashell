@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/feature.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/iface/environment.hpp>
 
@@ -38,7 +39,10 @@ namespace metashell
            const boost::optional<data::cpp_code>& expression_,
            data::metaprogram::mode_t mode_) = 0;
 
-      static std::string name_of_feature() { return "preprocessor_tracer"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::preprocessor_tracer();
+      }
     };
   }
 }

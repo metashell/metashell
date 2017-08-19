@@ -31,6 +31,12 @@ using namespace metashell;
 
 namespace
 {
+  std::vector<data::feature> supported_features()
+  {
+    return {data::feature::preprocessor_shell(),
+            data::feature::header_discoverer(), data::feature::cpp_validator()};
+  }
+
   std::string extract_vc_binary(const std::vector<std::string>& engine_args_,
                                 iface::environment_detector& env_detector_,
                                 const std::string& metashell_path_,
@@ -101,7 +107,7 @@ namespace
         config_.engine, not_supported(), preprocessor_shell_vc(cbin),
         not_supported(), header_discoverer_vc(cbin), not_supported(),
         cpp_validator_vc(internal_dir_, env_filename_, cbin, logger_),
-        not_supported(), not_supported());
+        not_supported(), not_supported(), supported_features());
   }
 } // anonymous namespace
 
@@ -109,8 +115,11 @@ engine_entry metashell::get_engine_vc_entry()
 {
   return engine_entry(
       &create_vc_engine, "<path to cl.exe> [<cl.exe args>]",
-      "Uses the Visual C++ compiler. <cl.exe args> are passed to the"
+      "Uses the [Visual C++ "
+      "compiler](https://www.visualstudio.com/vs/cplusplus). `<cl.exe args>` "
+      "are passed to the"
       " compiler as command line-arguments. Note that currently only the"
       " preprocessor shell is supported. You need to run Metashell from"
-      " the Visual Studio Developer Prompt to use this engine.");
+      " the Visual Studio Developer Prompt to use this engine.",
+      supported_features());
 }

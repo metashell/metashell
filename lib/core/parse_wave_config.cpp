@@ -244,7 +244,7 @@ namespace
     const std::string nostdinc_help =
         use_templight_headers_ ?
             "don't add standard headers to the include path" :
-            "ignored (accepted to be compatible with the wave engine)";
+            "ignored (accepted to be compatible with the `wave` engine)";
 
     boost::program_options::options_description desc("Wave options");
     // clang-format off
@@ -254,11 +254,11 @@ namespace
       ("sysinclude,S", value(&sys_includes_),
         "specify an additional system include directory")
       ("define,D", value(&macros_),
-        "specify a macro to define (as macro[=[value]])")
+        "specify a macro to define (as `macro[=[value]]`)")
       ("long_long", "enable long long support in C++ mode")
       ("variadics", "enable certain C99 extensions in C++ mode")
-      ("c99", "enable C99 mode (implies --variadics)")
-      ("c++11", "enable C++11 mode (implies --variadics and --long_long)")
+      ("c99", "enable C99 mode (implies `--variadics`)")
+      ("c++11", "enable C++11 mode (implies `--variadics` and `--long_long`)")
       ("nostdinc++", nostdinc_help.c_str())
       ;
     // clang-format on
@@ -338,7 +338,18 @@ namespace metashell
     boost::program_options::options_description desc = wave_options(
         use_templight_headers_, quote_includes, sys_includes, macros);
     std::ostringstream s;
-    s << desc;
+    s << "Wave options:<br />";
+    const auto width = desc.get_option_column_width();
+    for (const auto& option : desc.options())
+    {
+      if (option)
+      {
+        const auto arg = option->format_name();
+        s << "&nbsp;&nbsp;`" << arg << "`"
+          << std::string(width - arg.size() - 2, ' ') << option->description()
+          << "<br />";
+      }
+    }
     return s.str();
   }
 }

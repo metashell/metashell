@@ -17,6 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/feature.hpp>
+
+#include <metashell/feature_validator.hpp>
 #include <metashell/if_supported.hpp>
 #include <metashell/iface/engine.hpp>
 #include <metashell/make_unique.hpp>
@@ -25,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 namespace metashell
 {
@@ -215,8 +219,26 @@ namespace metashell
               MetaprogramTracer&& metaprogram_tracer_,
               CppValidator&& cpp_validator_,
               MacroDiscovery&& macro_discovery_,
-              PreprocessorTracer&& preprocessor_tracer_)
+              PreprocessorTracer&& preprocessor_tracer_,
+              const std::vector<data::feature>& supported_features_)
   {
+    // clang-format off
+
+    feature_validator(name_, supported_features_)
+      .check(data::feature::type_shell(), type_shell_)
+      .check(data::feature::preprocessor_shell(), preprocessor_shell_)
+      .check(data::feature::code_completer(), code_completer_)
+      .check(data::feature::header_discoverer(), header_discoverer_)
+      .check(data::feature::metaprogram_tracer(), metaprogram_tracer_)
+      .check(data::feature::cpp_validator(), cpp_validator_)
+      .check(data::feature::macro_discovery(), macro_discovery_)
+      .check(data::feature::preprocessor_tracer(), preprocessor_tracer_)
+
+      .all_checked()
+    ;
+
+    // clang-format on
+
     return metashell::make_unique<engine<
         TypeShell, PreprocessorShell, CodeCompleter, HeaderDiscoverer,
         MetaprogramTracer, CppValidator, MacroDiscovery, PreprocessorTracer>>(

@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/feature.hpp>
 #include <metashell/data/include_type.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -41,7 +42,10 @@ namespace metashell
       virtual std::set<boost::filesystem::path>
       files_included_by(const data::cpp_code& exp_) = 0;
 
-      static std::string name_of_feature() { return "header_discoverer"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::header_discoverer();
+      }
     };
   }
 }

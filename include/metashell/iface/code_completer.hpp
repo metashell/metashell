@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/config.hpp>
+#include <metashell/data/feature.hpp>
 #include <metashell/data/include_type.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/environment.hpp>
@@ -42,7 +43,10 @@ namespace metashell
                                  std::set<std::string>& out_,
                                  bool use_precompiled_headers_) = 0;
 
-      static std::string name_of_feature() { return "code_completer"; }
+      static data::feature name_of_feature()
+      {
+        return data::feature::code_completer();
+      }
     };
   }
 }
