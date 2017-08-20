@@ -110,15 +110,6 @@ namespace
     }
   }
 
-  std::string supported_features(const engine_entry& engine_)
-  {
-    return boost::algorithm::join(
-        engine_.features() | boost::adaptors::transformed([](data::feature f_) {
-          return to_string(f_);
-        }),
-        ", ");
-  }
-
   std::string make_id(const std::string& value_)
   {
     return boost::algorithm::replace_all_copy(value_, " ", "_");
@@ -132,6 +123,26 @@ namespace
   std::string self_reference(const std::string& value_)
   {
     return "<a href=\"#" + make_id(value_) + "\">" + value_ + "</a>";
+  }
+
+  template <bool Markdown>
+  std::string make_italics(const std::string& s_)
+  {
+    return Markdown ? "_" + s_ + "_" : s_;
+  }
+
+  template <bool Markdown>
+  std::string supported_features(const engine_entry& engine_)
+  {
+    return engine_.features().empty() ?
+               make_italics<Markdown>("no features are supported") :
+               boost::algorithm::join(
+                   engine_.features() |
+                       boost::adaptors::transformed([](data::feature f_) {
+                         const auto f = to_string(f_);
+                         return Markdown ? self_reference(f) : f;
+                       }),
+                   ", ");
   }
 
   void show_engine_help(const std::map<std::string, engine_entry>& engines_,
@@ -150,7 +161,8 @@ namespace
       std::cout << "`<br />\n<br />\n"
                 << engine.second.description()
                 << "<br /><br />Supported features: "
-                << supported_features(engine.second) << "<br />\n<br />\n";
+                << supported_features<true>(engine.second)
+                << "<br />\n<br />\n";
     }
   }
 
@@ -315,7 +327,7 @@ namespace
             << std::endl
             << remove_markdown(e->second.description()) << std::endl
             << std::endl
-            << "Supported features: " << supported_features(e->second)
+            << "Supported features: " << supported_features<false>(e->second)
             << std::endl
             << std::endl;
     }
