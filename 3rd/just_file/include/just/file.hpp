@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <fstream>
 #include <cstdio>
+#include <cstring>
+#include <cerrno>
 
 namespace just
 {
@@ -26,25 +28,43 @@ namespace just
 
     namespace impl
     {
-      inline void write(
-        const std::string& filename_,
-        const char* content_,
-        std::streamsize len_
-      )
+      inline void throw_errno(const std::string& action_)
       {
-        std::ofstream f(filename_.c_str());
-        if (f)
+        throw error(action_ + ": " + std::strerror(errno));
+      }
+
+      class output_file
+      {
+      public:
+        explicit output_file(const std::string& filename_) :
+          _filename(filename_),
+          _f(std::fopen(filename_.c_str(), "wb"))
         {
-          if (!f.write(content_, len_))
+          if (!_f)
           {
-            throw error("Failed to write to file " + filename_);
+            throw_errno("Error creating file " + filename_);
           }
         }
-        else
+
+        ~output_file()
         {
-          throw error("Failed to create file " + filename_);
+          fclose(_f);
         }
-      }
+
+        void write(const char* content_, std::size_t len_)
+        {
+          if (len_ > 0 && fwrite(content_, len_, 1, _f) < 1)
+          {
+            throw_errno("Error writing to " + _filename);
+          }
+        }
+      private:
+        std::string _filename;
+        std::FILE* _f;
+
+        output_file(const output_file&); // = delete
+        output_file& operator=(const output_file&); // = delete
+      };
 
       class input_file
       {
@@ -52,7 +72,12 @@ namespace just
         explicit input_file(const std::string& filename_) :
           _filename(filename_),
           _f(std::fopen(filename_.c_str(), "rb"))
-        {}
+        {
+          if (!_f)
+          {
+            throw_errno("Error opening " + filename_ + " for reading");
+          }
+        }
 
         ~input_file()
         {
@@ -63,12 +88,9 @@ namespace just
         {
           if (fseek(_f, 0, SEEK_END))
           {
-            throw error("Failed to seek to the end of input file " + _filename);
+            throw_errno("Failed to seek to the end of input file " + _filename);
           }
-          else
-          {
-            return ftell(_f);
-          }
+          return ftell(_f);
         }
 
         void read_from_file_start(std::vector<char>& buffer_)
@@ -78,7 +100,7 @@ namespace just
             rewind(_f);
             if (fread(buffer_.data(), buffer_.size(), 1, _f) != 1)
             {
-              throw error("Failed to read file " + _filename);
+              throw_errno("Failed to read file " + _filename);
             }
           }
         }
@@ -93,7 +115,7 @@ namespace just
 
     inline void write(const std::string& filename_, const std::string& content_)
     {
-      impl::write(filename_, content_.c_str(), content_.size());
+      impl::output_file(filename_).write(content_.c_str(), content_.size());
     }
 
     inline void write(
@@ -101,41 +123,22 @@ namespace just
       const std::vector<char>& content_
     )
     {
-      impl::write(filename_, content_.data(), content_.size());
+      impl::output_file(filename_).write(content_.data(), content_.size());
     }
 
     inline void read(const std::string& filename_, std::vector<char>& out_)
     {
-      std::ifstream f(filename_.c_str());
-      if (f)
-      {
-        impl::input_file f(filename_);
-        out_.resize(f.size());
-        f.read_from_file_start(out_);
-      }
-      else
-      {
-        throw error("Failed to open file for reading: " + filename_);
-      }
+      impl::input_file f(filename_);
+      out_.resize(f.size());
+      f.read_from_file_start(out_);
     }
 
     inline std::vector<char> read(const std::string& filename_)
     {
-      // Not using read(filename_, out) to be able to initialise the output
-      // vector with the size of the file (and avoid creating an empty vector
-      // first).
-      std::ifstream f(filename_.c_str());
-      if (f)
-      {
-        impl::input_file f(filename_);
-        std::vector<char> result(f.size());
-        f.read_from_file_start(result);
-        return result;
-      }
-      else
-      {
-        throw error("Failed to open file for reading: " + filename_);
-      }
+      impl::input_file f(filename_);
+      std::vector<char> result(f.size());
+      f.read_from_file_start(result);
+      return result;
     }
 
     template <class Container>
