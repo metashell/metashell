@@ -1,6 +1,5 @@
-#!/bin/bash
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,26 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+aux_source_directory(. SOURCES)
+add_executable(replace_part ${SOURCES})
 
-if [ ! -d cmake ]
-then
-  echo "Please run this script from the root directory of the Metashell source code"
-  exit 1
-fi
+enable_warnings()
+use_cpp11()
 
-if [ "$#" -ne 1 ]
-then
-  echo "Usage: $0 <path to metashell binary>"
-  exit 1
-fi
+# Boost
+target_link_libraries(replace_part
+  boost_system
+  boost_filesystem
+  boost_program_options
+)
 
-METASHELL="$1"
+# Just
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
 
-function process_one {
-  echo "Checking \"$4\" in $3"
-  "$1" "$2" | bin/app/replace_part/replace_part -i "$3" -m "$4" -o - -r - | diff "$3" -
-}
-
-. tools/template/generated_doc.sh
 

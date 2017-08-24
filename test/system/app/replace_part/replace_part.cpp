@@ -1,8 +1,5 @@
-#ifndef METASHELL_PROCESS_OUTPUT_FILE_HPP
-#define METASHELL_PROCESS_OUTPUT_FILE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/file.hpp>
+#include "replace_part.hpp"
 
-#include <string>
+#include <boost/optional.hpp>
 
-namespace metashell
+#include <cassert>
+
+namespace replace_part
 {
-  namespace process
+  namespace
   {
-    class output_file : public file<output_file>
-    {
-    public:
-      explicit output_file(fd_t fd_);
+    boost::optional<boost::filesystem::path> replace_part_path = boost::none;
+  }
 
-      // Adding move operations for implementing ownership transfer
-      output_file(output_file&& f_);
-      output_file& operator=(output_file&& f_);
+  void path(const boost::filesystem::path& path_)
+  {
+    assert(!replace_part_path);
+    replace_part_path = path_;
+  }
 
-      size_type write(const char* buff_, size_t count_);
+  metashell::process::execution run(const std::vector<std::string>& args_)
+  {
+    assert(replace_part_path);
+    std::vector<std::string> args{replace_part_path->string()};
+    args.insert(args.end(), args_.begin(), args_.end());
 
-      size_type write(const std::string& s_);
-    };
+    return metashell::process::execution(args);
   }
 }
-
-#endif

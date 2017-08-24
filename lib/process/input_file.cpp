@@ -27,6 +27,24 @@ namespace metashell
   {
     input_file::input_file(fd_t fd_) : file<input_file>(fd_), _eof(false) {}
 
+    input_file::input_file(input_file&& f_)
+      : file<input_file>(std::move(f_)), _eof(f_._eof)
+    {
+      f_._eof = true;
+    }
+
+    input_file& input_file::operator=(input_file&& f_)
+    {
+      if (this != &f_)
+      {
+        file<input_file>::operator=(std::move(f_));
+
+        _eof = f_._eof;
+        f_._eof = true;
+      }
+      return *this;
+    }
+
 #ifdef _WIN32
     input_file::size_type input_file::read(char* buf_, size_t count_)
     {

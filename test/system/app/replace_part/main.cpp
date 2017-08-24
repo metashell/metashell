@@ -1,8 +1,5 @@
-#ifndef METASHELL_PROCESS_OUTPUT_FILE_HPP
-#define METASHELL_PROCESS_OUTPUT_FILE_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/file.hpp>
+#include "replace_part.hpp"
 
-#include <string>
+#include <gtest/gtest.h>
 
-namespace metashell
+#include <iostream>
+#include <vector>
+
+int main(int argc_, char* argv_[])
 {
-  namespace process
+  if (argc_ < 2)
   {
-    class output_file : public file<output_file>
-    {
-    public:
-      explicit output_file(fd_t fd_);
-
-      // Adding move operations for implementing ownership transfer
-      output_file(output_file&& f_);
-      output_file& operator=(output_file&& f_);
-
-      size_type write(const char* buff_, size_t count_);
-
-      size_type write(const std::string& s_);
-    };
+    std::cerr << "Usage: " << argv_[0] << " <path to replace_part>"
+              << std::endl;
+    return 1;
   }
-}
 
-#endif
+  replace_part::path(argv_[1]);
+
+  std::vector<char*> gtest_args = {argv_[0]};
+  gtest_args.insert(gtest_args.end(), argv_ + 2, argv_ + argc_);
+  int argc = gtest_args.size();
+  ::testing::InitGoogleTest(&argc, gtest_args.data());
+  return RUN_ALL_TESTS();
+}

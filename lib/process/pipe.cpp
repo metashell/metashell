@@ -53,5 +53,17 @@ namespace metashell
     fd_t pipe::fds::write_fd() const { return _fd[1]; }
 
     pipe::pipe(fds fds_) : input(fds_.read_fd()), output(fds_.write_fd()) {}
+
+    pipe::pipe(pipe&& p_)
+      : input(std::move(p_.input)), output(std::move(p_.output))
+    {
+    }
+
+    pipe& pipe::operator=(pipe&& p_)
+    {
+      input = std::move(p_.input);
+      output = std::move(p_.output);
+      return *this;
+    }
   }
 }

@@ -38,6 +38,13 @@ namespace metashell
           const std::vector<std::string>& cmd_,
           const boost::filesystem::path& cwd_ = boost::filesystem::path());
 
+      execution(const execution&) = delete;
+      execution& operator=(const execution&) = delete;
+
+      // Adding move operations for implementing ownership transfer
+      execution(execution&& e_);
+      execution& operator=(execution&& e_);
+
       ~execution();
 
       output_file& standard_input();

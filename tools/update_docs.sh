@@ -23,7 +23,7 @@ function process_one {
   SRC_ROOT=".."
 
   "$1" "$2" \
-    | "$SRC_ROOT/tools/replace_part" \
+    | "app/replace_part/replace_part" \
       -i "$SRC_ROOT/$3" \
       -m "$4" \
       -o "$SRC_ROOT/$3" \

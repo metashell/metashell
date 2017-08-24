@@ -56,6 +56,10 @@ namespace metashell
 
       explicit input_file(fd_t fd_);
 
+      // Adding move operations for implementing ownership transfer
+      input_file(input_file&& f_);
+      input_file& operator=(input_file&& f_);
+
       template <std::size_t Count>
       size_type read(std::array<char, Count>& out_)
       {

@@ -19,9 +19,12 @@
 
 #include <metashell/process/fd_t.hpp>
 
-#include <boost/noncopyable.hpp>
-
 #include <cassert>
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 namespace metashell
 {
@@ -31,7 +34,7 @@ namespace metashell
     // classes using it having a common base class (they inherit from
     // different template instances)
     template <class UniqueType>
-    class file : boost::noncopyable
+    class file
     {
     public:
 #ifdef _WIN32
@@ -41,25 +44,38 @@ namespace metashell
 #endif
       explicit file(fd_t fd_) : _fd(fd_) {}
 
-      ~file()
+      file(const file&) = delete;
+      file& operator=(const file&) = delete;
+
+      // Adding move operations for implementing ownership transfer
+      file(file&& f_) : _fd(f_._fd) { f_._fd = invalid_fd(); }
+
+      file& operator=(file&& f_)
       {
-        if (_fd != invalid_fd())
+        if (this != &f_)
         {
           close();
+          _fd = f_._fd;
+          f_._fd = invalid_fd();
         }
+        return *this;
       }
+
+      ~file() { close(); }
 
       fd_t fd() const { return _fd; }
 
       void close()
       {
-        assert(_fd != invalid_fd());
+        if (_fd != invalid_fd())
+        {
 #ifdef _WIN32
-        CloseHandle(_fd);
+          CloseHandle(_fd);
 #else
-        ::close(_fd);
+          ::close(_fd);
 #endif
-        _fd = invalid_fd();
+          _fd = invalid_fd();
+        }
       }
 
     private:
