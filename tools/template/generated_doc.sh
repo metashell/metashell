@@ -17,10 +17,10 @@
 # This file is supposed to be used by other scripts providing the process_one
 # command.
 
-process_one "$METASHELL" --show_pragma_help docs/reference/pragmas.md '<!-- pragma_info -->'
-process_one "$METASHELL" --show_mdb_help docs/reference/mdb_commands.md '<!-- mdb_info -->'
-process_one "$METASHELL" --show_pdb_help docs/reference/pdb_commands.md '<!-- pdb_info -->'
-process_one "$METASHELL" --show_feature_help docs/reference/engines.md '<!-- feature_info -->'
-process_one "$METASHELL" --show_engine_help docs/reference/engines.md '<!-- engine_info -->'
-process_one "$METASHELL" --show_engine_features docs/reference/engines.md '<!-- feature_matrix -->'
+process_one "$REFERENCE_GEN" --show_pragma_help docs/reference/pragmas.md '<!-- pragma_info -->'
+process_one "$REFERENCE_GEN" --show_mdb_help docs/reference/mdb_commands.md '<!-- mdb_info -->'
+process_one "$REFERENCE_GEN" --show_pdb_help docs/reference/pdb_commands.md '<!-- pdb_info -->'
+process_one "$REFERENCE_GEN" --show_feature_help docs/reference/engines.md '<!-- feature_info -->'
+process_one "$REFERENCE_GEN" --show_engine_help docs/reference/engines.md '<!-- engine_info -->'
+process_one "$REFERENCE_GEN" --show_engine_features docs/reference/engines.md '<!-- feature_matrix -->'
 

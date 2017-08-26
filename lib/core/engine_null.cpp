@@ -33,9 +33,8 @@ namespace metashell
                              not_supported(), not_supported(), not_supported(),
                              supported_features());
         },
-        "",
-        "An engine which does not support anything. Mainly for testing "
-        "purposes.",
+        "", data::markdown_string("An engine which does not support anything. "
+                                  "Mainly for testing purposes."),
         supported_features());
   }
 }

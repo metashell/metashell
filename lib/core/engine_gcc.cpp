@@ -121,12 +121,11 @@ engine_entry metashell::get_engine_gcc_entry()
 {
   return engine_entry(
       &create_gcc_engine, "<gcc binary> -std=<standard to use> [<gcc args>]",
-      "Uses the [gcc compiler](https://gcc.gnu.org). `<gcc args>` are passed "
-      "to the"
-      " compiler as command line-arguments. Note that Metashell requires C++11"
-      " or above. If your gcc uses such a standard by default, you can omit"
-      " the `-std` argument. Also note that currently only the preprocessor "
-      "shell"
-      " is supported.",
+      data::markdown_string(
+          "Uses the [gcc compiler](https://gcc.gnu.org). `<gcc args>` are "
+          "passed to the compiler as command line-arguments. Note that "
+          "Metashell requires C++11 or above. If your gcc uses such a standard "
+          "by default, you can omit the `-std` argument. Also note that "
+          "currently only the preprocessor shell is supported."),
       supported_features());
 }

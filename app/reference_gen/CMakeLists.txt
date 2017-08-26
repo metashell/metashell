@@ -1,5 +1,5 @@
 # Metashell - Interactive C++ template metaprogramming shell
-# Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+# Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,5 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subdirs(metashell replace_part reference_gen)
+aux_source_directory(. SOURCES)
+add_executable(reference_gen ${SOURCES})
+
+enable_warnings()
+use_cpp11()
+
+# Metashell
+target_link_libraries(reference_gen
+  metashell_core_lib
+  metashell_data_lib
+  metashell_process_lib
+)
+
+# Wave
+target_link_libraries(reference_gen
+  boost_system
+  boost_thread
+  ${BOOST_ATOMIC_LIB}
+  boost_filesystem
+  boost_wave
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${RT_LIBRARY}
+  ${PROTOBUF_LIBRARY}
+  protobuf
+)
+
+# Program_options
+target_link_libraries(reference_gen boost_program_options)
+
+# Regex
+target_link_libraries(reference_gen boost_regex)
 

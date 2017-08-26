@@ -14,16 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/default_environment_detector.hpp>
-#include <metashell/engine_constant.hpp>
-#include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/mdb_shell.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/data/markdown_string.hpp>
+#include <metashell/engine_entry.hpp>
 #include <metashell/parse_config.hpp>
-#include <metashell/pragma_handler_map.hpp>
-#include <metashell/shell.hpp>
-
-#include <metashell/data/config.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -33,20 +26,12 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include <boost/range/adaptor/map.hpp>
-#include <boost/range/adaptor/transformed.hpp>
 
 #include <boost/optional.hpp>
-#include <boost/tuple/tuple.hpp>
-
-#include <boost/xpressive/xpressive.hpp>
-
-#include <boost/range/combine.hpp>
 
 #include <algorithm>
 #include <cassert>
-#include <cstdlib>
 #include <iostream>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 
@@ -54,23 +39,6 @@ using namespace metashell;
 
 namespace
 {
-  std::string remove_markdown(std::string s_)
-  {
-    using boost::xpressive::sregex;
-    using boost::xpressive::regex_replace;
-    using boost::xpressive::as_xpr;
-    using boost::xpressive::s1;
-    using boost::xpressive::s2;
-
-    boost::replace_all(s_, "`", "");
-    boost::replace_all(s_, "<br />", "\n");
-    boost::replace_all(s_, "&nbsp;", " ");
-
-    return regex_replace(s_, sregex('[' >> (s1 = *~as_xpr(']')) >> "](" >>
-                                    (s2 = *~as_xpr(')')) >> ')'),
-                         "$1 (see $2)");
-  }
-
   void show_help(std::ostream& out_,
                  const boost::program_options::options_description& desc_)
   {
@@ -78,229 +46,6 @@ namespace
          << "  metashell <options> [-- <extra Clang options>]\n"
          << "\n"
          << desc_ << std::endl;
-  }
-
-  void show_markdown(const std::vector<std::string>& name_,
-                     const pragma_handler& h_,
-                     std::ostream& out_)
-  {
-    using boost::algorithm::join;
-
-    const std::string args = h_.arguments();
-
-    out_ << "* __`#msh " << join(name_, " ") << (args.empty() ? "" : " ")
-         << args << "`__ <br />\n"
-         << h_.description() << "\n"
-         << std::endl;
-  }
-
-  void show_pragma_help()
-  {
-    const data::config cfg{};
-    command_processor_queue cpq;
-    const std::string internal_dir;
-    const boost::filesystem::path mdb_temp_dir;
-    shell sh(cfg, cpq, internal_dir, "", mdb_temp_dir, create_failing_engine());
-    const pragma_handler_map m =
-        pragma_handler_map::build_default(sh, &cpq, mdb_temp_dir, nullptr);
-
-    for (const auto& p : m)
-    {
-      show_markdown(p.first, p.second, std::cout);
-    }
-  }
-
-  std::string make_id(const std::string& value_)
-  {
-    return boost::algorithm::replace_all_copy(value_, " ", "_");
-  }
-
-  std::string self_id(const std::string& value_)
-  {
-    return "<strong id=\"" + make_id(value_) + "\">" + value_ + "</strong>";
-  }
-
-  std::string self_reference(const std::string& value_)
-  {
-    return "<a href=\"#" + make_id(value_) + "\">" + value_ + "</a>";
-  }
-
-  template <bool Markdown>
-  std::string make_italics(const std::string& s_)
-  {
-    return Markdown ? "_" + s_ + "_" : s_;
-  }
-
-  template <bool Markdown>
-  std::string supported_features(const engine_entry& engine_)
-  {
-    return engine_.features().empty() ?
-               make_italics<Markdown>("no features are supported") :
-               boost::algorithm::join(
-                   engine_.features() |
-                       boost::adaptors::transformed([](data::feature f_) {
-                         const auto f = to_string(f_);
-                         return Markdown ? self_reference(f) : f;
-                       }),
-                   ", ");
-  }
-
-  void show_engine_help(const std::map<std::string, engine_entry>& engines_,
-                        const boost::filesystem::path& app_name_)
-  {
-    for (const auto& engine : engines_)
-    {
-      std::cout << "* " << self_id(engine.first) << "<br />\n"
-                << "Usage: `" << app_name_.filename().string() << " --engine "
-                << engine.first;
-      const auto args = engine.second.args();
-      if (!args.empty())
-      {
-        std::cout << " -- " << engine.second.args();
-      }
-      std::cout << "`<br />\n<br />\n"
-                << engine.second.description()
-                << "<br /><br />Supported features: "
-                << supported_features<true>(engine.second)
-                << "<br />\n<br />\n";
-    }
-  }
-
-  template <class Size>
-  void adopt_widths(const std::vector<std::string>& row_,
-                    std::vector<Size>& widths_)
-  {
-    assert(widths_.empty() || widths_.size() == row_.size());
-    widths_.resize(row_.size(), 0);
-
-    for (auto p : boost::combine(widths_, row_))
-    {
-      Size& width = boost::get<0>(p);
-      const std::string& cell = boost::get<1>(p);
-
-      width = std::max(width, cell.size());
-    }
-  }
-
-  template <class Size>
-  void md_format_row(const std::vector<std::string>& row_,
-                     const std::vector<Size>& widths_,
-                     std::ostream& out_)
-  {
-    assert(row_.size() == widths_.size());
-
-    for (auto p : boost::combine(widths_, row_))
-    {
-      const Size& width = boost::get<0>(p);
-      const std::string& cell = boost::get<1>(p);
-
-      assert(cell.size() <= width);
-
-      out_ << '|' << cell << std::string(width - cell.size(), ' ');
-    }
-    out_ << "|\n";
-  }
-
-  template <class Size>
-  void md_format_header_separator(const std::vector<Size>& widths_,
-                                  std::ostream& out_)
-  {
-    bool first_column = true;
-    for (int width : widths_)
-    {
-      if (first_column)
-      {
-        assert(width >= 1);
-        out_ << "|:" << std::string(width - 1, '-');
-        first_column = false;
-      }
-      else
-      {
-        assert(width >= 2);
-        out_ << "|:" << std::string(width - 2, '-') << ":";
-      }
-    }
-    out_ << "|\n";
-  }
-
-  void md_format_table(const std::vector<std::string>& header_,
-                       const std::vector<std::vector<std::string>>& table_,
-                       std::ostream& out_)
-  {
-    std::vector<std::vector<std::string>::size_type> widths;
-    adopt_widths(header_, widths);
-    for (const auto& row : table_)
-    {
-      adopt_widths(row, widths);
-    }
-
-    md_format_row(header_, widths, out_);
-    md_format_header_separator(widths, out_);
-    for (const auto& row : table_)
-    {
-      md_format_row(row, widths, out_);
-    }
-  }
-
-  void show_engine_features(const std::map<std::string, engine_entry>& engines_)
-  {
-    const auto features = data::feature::all();
-
-    std::vector<std::string> header{"Feature"};
-    for (const auto& engine : engines_)
-    {
-      header.push_back(self_reference(engine.first));
-    }
-
-    std::vector<std::vector<std::string>> table;
-    for (data::feature f : features)
-    {
-      table.push_back({self_reference(to_string(f))});
-
-      for (const auto& engine : engines_)
-      {
-        const auto& engine_features = engine.second.features();
-
-        table.back().push_back(
-            std::find(engine_features.begin(), engine_features.end(), f) ==
-                    engine_features.end() ?
-                "<img src=\"../../img/no.png\" width=\"20px\" />" :
-                "<img src=\"../../img/yes.png\" width=\"20px\" />");
-      }
-    }
-
-    md_format_table(header, table, std::cout);
-  }
-
-  void show_feature_help()
-  {
-    for (data::feature f : data::feature::all())
-    {
-      std::cout << "* " << self_id(to_string(f)) << "<br />\n"
-                << f.description() << "<br />\n<br />\n";
-    }
-  }
-
-  void show_mdb_help(bool preprocessor_)
-  {
-    using boost::algorithm::join;
-    using boost::algorithm::replace_all_copy;
-
-    mdb_command_handler_map::commands_t commands =
-        mdb_shell::build_command_handler(preprocessor_).get_commands();
-
-    for (const mdb_command& cmd : commands)
-    {
-      std::cout << "* __`" << join(cmd.get_keys(), "|") << " "
-                << cmd.get_usage() << "`__ <br />\n"
-                << cmd.get_short_description();
-      if (!cmd.get_long_description().empty())
-      {
-        std::cout << " <br />" << '\n'
-                  << replace_all_copy(cmd.get_long_description(), "\n", "\n  ");
-      }
-      std::cout << '\n' << std::endl;
-    }
   }
 
   void show_engine_help(const std::map<std::string, engine_entry>& engines_,
@@ -325,23 +70,11 @@ namespace
       }
       *out_ << std::endl
             << std::endl
-            << remove_markdown(e->second.description()) << std::endl
+            << unformat(e->second.description()) << std::endl
             << std::endl
-            << "Supported features: " << supported_features<false>(e->second)
-            << std::endl
+            << "Supported features: " << list_features(e->second) << std::endl
             << std::endl;
     }
-  }
-
-  std::string replace_all(std::string s_,
-                          const std::string& pattern_,
-                          const std::string& replacement_)
-  {
-    for (size_t p; (p = s_.find(pattern_)) != std::string::npos;)
-    {
-      s_.replace(p, pattern_.length(), replacement_);
-    }
-    return s_;
   }
 
   class decommissioned_argument
@@ -418,8 +151,8 @@ namespace
       {
         const std::string name =
             _short_form ? "-" + *_short_form : "--" + *_long_form;
-        throw std::runtime_error(
-            replace_all(replace_all(_msg, "{NAME}", name), "{VALUE}", _ignore));
+        throw std::runtime_error(boost::replace_all_copy(
+            boost::replace_all_copy(_msg, "{NAME}", name), "{VALUE}", _ignore));
       }
     }
 
@@ -491,31 +224,6 @@ metashell::parse_config(int argc_,
       "no_precompiled_headers",
       "Disable precompiled header usage."
       " (It needs clang++ to be available and writes to the local disc.)"
-    )
-    (
-      "show_pragma_help",
-      "Display help for pragmas in MarkDown format and exit."
-    )
-    (
-      "show_mdb_help",
-      "Display help for mdb commands in MarkDown format and exit"
-    )
-    (
-      "show_pdb_help",
-      "Display help for pdb commands in MarkDown format and exit"
-    )
-    (
-      "show_engine_help",
-      "Display help for all engines in MarkDown format and exit"
-    )
-    (
-      "show_engine_features",
-      "Display a table showing which engine supports which features"
-      " in MarkDown format and exit"
-    )
-    (
-      "show_feature_help",
-      "Display help for all features in MarkDown format and exit"
     )
     (
       "disable_saving",
@@ -600,36 +308,6 @@ metashell::parse_config(int argc_,
       {
         show_help(*out_, desc);
       }
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_pragma_help"))
-    {
-      show_pragma_help();
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_mdb_help"))
-    {
-      show_mdb_help(false);
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_pdb_help"))
-    {
-      show_mdb_help(true);
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_engine_help"))
-    {
-      show_engine_help(engines_, argv_[0]);
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_engine_features"))
-    {
-      show_engine_features(engines_);
-      return parse_config_result::exit(false);
-    }
-    else if (vm.count("show_feature_help"))
-    {
-      show_feature_help();
       return parse_config_result::exit(false);
     }
     else if (vm.count("help_engine"))

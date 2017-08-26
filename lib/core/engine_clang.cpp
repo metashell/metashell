@@ -77,12 +77,12 @@ engine_entry metashell::get_engine_clang_entry()
   return engine_entry(
       &create_clang_engine<false>,
       "<Clang binary> -std=<standard to use> [<Clang args>]",
-      "Uses the [Clang compiler](http://clang.llvm.org) or "
-      "[Templight](https://github.com/mikael-s-persson/templight). `<Clang "
-      "args>` are passed to the"
-      " compiler as command line-arguments. Note that Metashell requires C++11"
-      " or above. If your Clang uses such a standard by default, you can omit"
-      " the `-std` argument.",
+      data::markdown_string(
+          "Uses the [Clang compiler](http://clang.llvm.org) or "
+          "[Templight](https://github.com/mikael-s-persson/templight). `<Clang "
+          "args>` are passed to the compiler as command line-arguments. Note "
+          "that Metashell requires C++11 or above. If your Clang uses such a "
+          "standard by default, you can omit the `-std` argument."),
       supported_features());
 }
 
@@ -90,8 +90,9 @@ engine_entry metashell::get_internal_templight_entry()
 {
   return engine_entry(
       &create_clang_engine<true>, "[<Clang args>]",
-      "Uses the [Templight](https://github.com/mikael-s-persson/templight) "
-      "shipped with Metashell. `<Clang args>` are passed to"
-      " the compiler as command line-arguments.",
+      data::markdown_string(
+          "Uses the [Templight](https://github.com/mikael-s-persson/templight) "
+          "shipped with Metashell. `<Clang args>` are passed to"
+          " the compiler as command line-arguments."),
       supported_features());
 }

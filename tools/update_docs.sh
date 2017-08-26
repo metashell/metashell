@@ -17,7 +17,7 @@
 
 set -e
 
-METASHELL="app/metashell/metashell"
+REFERENCE_GEN="app/reference_gen/reference_gen"
 
 function process_one {
   SRC_ROOT=".."

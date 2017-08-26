@@ -25,6 +25,10 @@
     * **Breaking change** The `point_of_instantiation` fields of the objects of
       the JSON interface have been renamed to `point_of_event`. (The purpose is
       to share the interface between template and macro debugging frames).
+    * The command-line options displaying Markdown documentation
+      (`--show_pragma_help` and `--show_mdb_help`) have been removed. They have
+      been moved to another utility, which is used internally and are not part
+      of the interface any longer.
 
 ## Version 3.0.0
 

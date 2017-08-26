@@ -25,11 +25,11 @@ fi
 
 if [ "$#" -ne 1 ]
 then
-  echo "Usage: $0 <path to metashell binary>"
+  echo "Usage: $0 <path to reference_gen binary>"
   exit 1
 fi
 
-METASHELL="$1"
+REFERENCE_GEN="$1"
 
 function process_one {
   echo "Checking \"$4\" in $3"
