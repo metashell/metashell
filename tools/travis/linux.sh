@@ -57,10 +57,6 @@ cd bin
   [ ! -s clang_tidy_output.txt ]
 cd ..
 
-# Test that the documentation about the built-in pragmas and mdb commands is up to date
-
-tools/validate/generated_doc.sh bin/app/metashell/metashell
-
 # Test the demo server's code
 
 tools/demo_server/test/test_git_clone
