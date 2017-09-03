@@ -26,4 +26,4 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
+BUILD_THREADS=2 NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh

@@ -24,6 +24,10 @@
 
 #include <boost/filesystem.hpp>
 
+#include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/algorithm/max_element.hpp>
+
+#include <functional>
 #include <iostream>
 #include <stdexcept>
 
@@ -73,11 +77,28 @@ int main(int argc_, const char* argv_[])
     {
       if (vm.count("test"))
       {
-        std::cerr << "Automatically generated documentation is out of date. "
-                     "Please run the following command:"
-                  << std::endl
-                  << canonical(boost::filesystem::path(argv_[0])) << " -d "
-                  << canonical(docs_dir) << std::endl;
+        const std::vector<std::string> lines{
+            "Automatically generated documentation is out of date.",
+            "Please run the following command:",
+            "\"" + canonical(boost::filesystem::path(argv_[0])).string() +
+                "\" -d \"" + canonical(docs_dir).string() + "\""};
+
+        const auto max_len = *boost::range::max_element(
+            lines |
+            boost::adaptors::transformed(
+                std::function<std::string::size_type(const std::string&)>(
+                    [](const std::string& s_) { return s_.size(); })));
+        const std::string stars(max_len + 4, '*');
+
+        std::cerr << stars << std::endl;
+        std::cerr << stars << std::endl;
+        for (const auto& line : lines)
+        {
+          std::cerr << "* " << line << std::string(max_len - line.size(), ' ')
+                    << " *" << std::endl;
+        }
+        std::cerr << stars << std::endl;
+        std::cerr << stars << std::endl;
         return 2;
       }
       else

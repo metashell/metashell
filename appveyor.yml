@@ -24,5 +24,6 @@ before_build:
 
 build_script:
   - set NO_TEMPLIGHT=1
+  - set METASHELL_NO_DOC_GENERATION=1
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\""
   - build.bat

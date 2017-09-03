@@ -50,8 +50,28 @@ target_link_libraries(reference_gen boost_regex)
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
 
+
+set(DOC_DIR "${CMAKE_SOURCE_DIR}/docs")
+
+if(METASHELL_NO_DOC_GENERATION)
+  add_custom_command(
+    TARGET reference_gen
+    POST_BUILD
+    COMMENT "Generating documentation"
+    COMMAND ${CMAKE_COMMAND} -E echo
+      "Skipping documentation generation because METASHELL_NO_DOC_GENERATION is set"
+  )
+else()
+  add_custom_command(
+    TARGET reference_gen
+    POST_BUILD
+    COMMENT "Generating documentation"
+    COMMAND reference_gen -d "${DOC_DIR}"
+  )
+endif()
+
 add_test(
   NAME test_generated_doc
-  COMMAND reference_gen -t -d "${CMAKE_SOURCE_DIR}/docs"
+  COMMAND reference_gen -t -d "${DOC_DIR}"
 )
 
