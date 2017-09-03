@@ -15,23 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 aux_source_directory(. SOURCES)
-add_executable(replace_part ${SOURCES})
+add_library(replace_part_lib STATIC ${SOURCES})
 
 enable_warnings()
 use_cpp11()
 
-target_link_libraries(replace_part
-  replace_part_lib
-)
-
-# Boost
-target_link_libraries(replace_part
-  boost_system
-  boost_filesystem
-  boost_program_options
-)
-
 # Just
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
-
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
 

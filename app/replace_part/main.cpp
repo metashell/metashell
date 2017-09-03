@@ -16,48 +16,17 @@
 
 #include "arguments.hpp"
 
-#include <boost/filesystem/path.hpp>
+#include <metashell/replace_part/replace_part.hpp>
 
 #include <just/file.hpp>
-#include <just/lines.hpp>
 
 #include <iostream>
 #include <iterator>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
 namespace
 {
-  void do_replacement(const boost::filesystem::path& input_,
-                      std::ostream& out_,
-                      const std::string& marker_,
-                      const std::string& replace_with_)
-  {
-    bool in_text_to_replace = false;
-
-    for (const std::string& line :
-         just::lines::basic_file_view<true>(input_.string()))
-    {
-      const bool marked_line = line.find(marker_) != std::string::npos;
-
-      if (!in_text_to_replace || marked_line)
-      {
-        out_ << line;
-      }
-
-      if (marked_line)
-      {
-        if (!in_text_to_replace)
-        {
-          out_ << replace_with_ << '\n';
-        }
-
-        in_text_to_replace = !in_text_to_replace;
-      }
-    }
-  }
-
   std::string load(const boost::filesystem::path& path_)
   {
     if (path_ == "-")
@@ -79,9 +48,9 @@ int main(int argc_, const char* argv_[])
   {
     if (const boost::optional<arguments> args = parse_arguments(argc_, argv_))
     {
-      std::ostringstream out;
-      do_replacement(args->input, out, args->marker, load(args->replace_with));
-      just::file::write(args->output.string(), out.str());
+      just::file::write(args->output.string(),
+                        replace_part::replace(args->input, args->marker,
+                                              load(args->replace_with)));
     }
     return 0;
   }
