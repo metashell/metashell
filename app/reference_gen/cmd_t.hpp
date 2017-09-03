@@ -1,5 +1,5 @@
-#ifndef REPLACE_PART_ARGUMENTS_HPP
-#define REPLACE_PART_ARGUMENTS_HPP
+#ifndef REFERENCE_GEN_CMD_T_HPP
+#define REFERENCE_GEN_CMD_T_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -18,18 +18,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
 
+#include <functional>
 #include <string>
 
-struct arguments
+class cmd_t
 {
-  boost::filesystem::path input;
-  boost::filesystem::path output;
-  std::string marker;
-  boost::filesystem::path replace_with;
-};
+public:
+  typedef std::function<void(std::ostream&)> callback;
 
-boost::optional<arguments> parse_arguments(int argc_, const char* argv_[]);
+  cmd_t(boost::filesystem::path path_, std::string marker_, callback func_);
+
+  const boost::filesystem::path& path() const;
+
+  std::string generate(const std::string& original_content_) const;
+
+private:
+  boost::filesystem::path _path;
+  std::string _marker;
+  callback _func;
+};
 
 #endif

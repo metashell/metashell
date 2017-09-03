@@ -1,3 +1,6 @@
+#ifndef REFERENCE_GEN_COMMANDS_HPP
+#define REFERENCE_GEN_COMMANDS_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,27 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "replace_part.hpp"
+#include "cmd_t.hpp"
 
-#include <gtest/gtest.h>
+#include <boost/filesystem/path.hpp>
 
-#include <iostream>
 #include <vector>
 
-int main(int argc_, char* argv_[])
-{
-  if (argc_ < 2)
-  {
-    std::cerr << "Usage: " << argv_[0] << " <path to replace_part>"
-              << std::endl;
-    return 1;
-  }
+std::vector<cmd_t> get_commands(const boost::filesystem::path& docs_dir_);
 
-  replace_part::path(argv_[1]);
-
-  std::vector<char*> gtest_args = {argv_[0]};
-  gtest_args.insert(gtest_args.end(), argv_ + 2, argv_ + argc_);
-  int argc = gtest_args.size();
-  ::testing::InitGoogleTest(&argc, gtest_args.data());
-  return RUN_ALL_TESTS();
-}
+#endif

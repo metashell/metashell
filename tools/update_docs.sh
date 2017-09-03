@@ -17,19 +17,6 @@
 
 set -e
 
-REFERENCE_GEN="app/reference_gen/reference_gen"
-
-function process_one {
-  SRC_ROOT=".."
-
-  "$1" "$2" \
-    | "app/replace_part/replace_part" \
-      -i "$SRC_ROOT/$3" \
-      -m "$4" \
-      -o "$SRC_ROOT/$3" \
-      -r -
-}
-
 if [ -d cmake ]
 then
   mkdir -p bin
@@ -37,7 +24,7 @@ then
     cmake ..
     make
 
-    . ../tools/template/generated_doc.sh
+    app/reference_gen/reference_gen -d ../docs
 else
   echo "Please run this script from the root directory of the Metashell source code"
 fi

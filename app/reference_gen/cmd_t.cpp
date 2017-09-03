@@ -1,6 +1,3 @@
-#ifndef REPLACE_PART_HPP
-#define REPLACE_PART_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,18 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem/path.hpp>
+#include "cmd_t.hpp"
 
-#include <metashell/process/execution.hpp>
+#include <metashell/replace_part/replace_part.hpp>
 
-#include <string>
-#include <vector>
+#include <sstream>
 
-namespace replace_part
+cmd_t::cmd_t(boost::filesystem::path path_, std::string marker_, callback func_)
+  : _path(std::move(path_)),
+    _marker(std::move(marker_)),
+    _func(std::move(func_))
 {
-  void path(const boost::filesystem::path& path_);
-
-  metashell::process::execution run(const std::vector<std::string>& args_);
 }
 
-#endif
+const boost::filesystem::path& cmd_t::path() const { return _path; }
+
+std::string cmd_t::generate(const std::string& original_content_) const
+{
+  std::ostringstream replace_with;
+  _func(replace_with);
+  return replace_part::replace(original_content_, _marker, replace_with.str());
+}
