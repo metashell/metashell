@@ -76,7 +76,12 @@ else
 fi
 
 mkdir -p bin; cd bin
-  cmake ..
+  if [ -z "${METASHELL_NO_DOC_GENERATION}" ]
+  then
+    cmake ..
+  else
+    cmake .. -DMETASHELL_NO_DOC_GENERATION=1
+  fi
   make -j${BUILD_THREADS}
   make test || cat Testing/Temporary/LastTest.log
 

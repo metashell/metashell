@@ -44,6 +44,10 @@ namespace metashell
       output_file output;
 
       pipe(fds fds_ = fds());
+
+      // Adding move operations for implementing ownership transfer
+      pipe(pipe&& p_);
+      pipe& operator=(pipe&& p_);
     };
   }
 }

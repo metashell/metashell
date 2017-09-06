@@ -1,8 +1,8 @@
-#ifndef METASHELL_PROCESS_OUTPUT_FILE_HPP
-#define METASHELL_PROCESS_OUTPUT_FILE_HPP
+#ifndef REFERENCE_GEN_CMD_T_HPP
+#define REFERENCE_GEN_CMD_T_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,28 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/process/file.hpp>
+#include <boost/filesystem/path.hpp>
 
+#include <functional>
 #include <string>
 
-namespace metashell
+class cmd_t
 {
-  namespace process
-  {
-    class output_file : public file<output_file>
-    {
-    public:
-      explicit output_file(fd_t fd_);
+public:
+  typedef std::function<void(std::ostream&)> callback;
 
-      // Adding move operations for implementing ownership transfer
-      output_file(output_file&& f_);
-      output_file& operator=(output_file&& f_);
+  cmd_t(boost::filesystem::path path_, std::string marker_, callback func_);
 
-      size_type write(const char* buff_, size_t count_);
+  const boost::filesystem::path& path() const;
 
-      size_type write(const std::string& s_);
-    };
-  }
-}
+  std::string generate(const std::string& original_content_) const;
+
+private:
+  boost::filesystem::path _path;
+  std::string _marker;
+  callback _func;
+};
 
 #endif

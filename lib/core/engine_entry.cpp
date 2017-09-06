@@ -16,17 +16,26 @@
 
 #include <metashell/engine_entry.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
+#include <boost/range/adaptor/transformed.hpp>
+
 #include <algorithm>
 
 using namespace metashell;
 
+namespace
+{
+  std::string no_features() { return "no features are supported"; }
+}
+
 engine_entry::engine_entry(engine_factory factory_,
                            std::string args_,
-                           std::string description_,
+                           data::markdown_string description_,
                            std::vector<data::feature> features_)
   : _factory(move(factory_)),
     _args(move(args_)),
-    _description(move(description_)),
+    _description(std::move(description_)),
     _features(move(features_))
 {
   std::sort(_features.begin(), _features.end());
@@ -47,9 +56,36 @@ engine_entry::build(const data::config& config_,
 
 const std::string& engine_entry::args() const { return _args; }
 
-const std::string& engine_entry::description() const { return _description; }
+const data::markdown_string& engine_entry::description() const
+{
+  return _description;
+}
 
 const std::vector<data::feature>& engine_entry::features() const
 {
   return _features;
+}
+
+std::string metashell::list_features(const engine_entry& engine_)
+{
+  return engine_.features().empty() ?
+             no_features() :
+             boost::algorithm::join(
+                 engine_.features() |
+                     boost::adaptors::transformed(
+                         [](data::feature f_) { return to_string(f_); }),
+                 ", ");
+}
+
+data::markdown_string
+metashell::list_features_in_markdown(const engine_entry& engine_)
+{
+  return engine_.features().empty() ?
+             italics(data::markdown_string(no_features())) :
+             boost::algorithm::join(
+                 engine_.features() |
+                     boost::adaptors::transformed([](data::feature f_) {
+                       return data::self_reference(to_string(f_));
+                     }),
+                 ", ");
 }

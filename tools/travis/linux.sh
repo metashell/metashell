@@ -38,7 +38,7 @@ export CXXFLAGS="-Werror"
 [ "${COVERAGE}" = "true" ] && export CXXFLAGS="${CXXFLAGS} --coverage"
 [ "${COVERAGE}" = "true" ] && export BUILD_TYPE="Debug"
 
-BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
+BUILD_THREADS=2 NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh
 
 # Collect and upload coverage data
 [ "${COVERAGE}" = "true" ] && coveralls \
@@ -56,10 +56,6 @@ cd bin
   ../tools/clang_tidy.sh | tee clang_tidy_output.txt
   [ ! -s clang_tidy_output.txt ]
 cd ..
-
-# Test that the documentation about the built-in pragmas and mdb commands is up to date
-
-tools/validate/generated_doc.sh bin/app/metashell/metashell
 
 # Test the demo server's code
 

@@ -115,11 +115,12 @@ engine_entry metashell::get_engine_vc_entry()
 {
   return engine_entry(
       &create_vc_engine, "<path to cl.exe> [<cl.exe args>]",
-      "Uses the [Visual C++ "
-      "compiler](https://www.visualstudio.com/vs/cplusplus). `<cl.exe args>` "
-      "are passed to the"
-      " compiler as command line-arguments. Note that currently only the"
-      " preprocessor shell is supported. You need to run Metashell from"
-      " the Visual Studio Developer Prompt to use this engine.",
+      data::markdown_string(
+          "Uses the [Visual C++ "
+          "compiler](https://www.visualstudio.com/vs/cplusplus). `<cl.exe "
+          "args>` are passed to the compiler as command line-arguments. Note "
+          "that currently only the preprocessor shell is supported. You need "
+          "to run Metashell from the Visual Studio Developer Prompt to use "
+          "this engine."),
       supported_features());
 }

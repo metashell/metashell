@@ -62,13 +62,13 @@ namespace
   {
     return engine_entry(
         &create_wave_engine<UseTemplightHeaders>, "<Wave options>",
-        "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
-        "preprocessor. Only the preprocessor shell"
-        " is supported." +
+        data::markdown_string(
+            "Uses [Boost.Wave](http://boost.org/libs/wave), which is a "
+            "preprocessor. Only the preprocessor shell is supported." +
             (UseTemplightHeaders ?
                  " It uses the headers of Templight deployed with Metashell." :
                  std::string()) +
-            "<br /><br />" + wave_args(UseTemplightHeaders),
+            "<br /><br />" + wave_args(UseTemplightHeaders)),
         supported_features());
   }
 } // anonymous namespace

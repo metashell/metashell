@@ -32,6 +32,16 @@
 namespace
 {
   const char* c_str(const std::string& s_) { return s_.c_str(); }
+
+#ifdef _WIN32
+  void clear(PROCESS_INFORMATION& pi_)
+  {
+    pi_.hProcess = 0;
+    pi_.hThread = 0;
+    pi_.dwProcessId = 0;
+    pi_.dwThreadId = 0;
+  }
+#endif
 }
 
 namespace metashell
@@ -66,10 +76,7 @@ namespace metashell
       si.hStdOutput = copy_handle(_standard_output.output);
       si.hStdError = copy_handle(_standard_error.output);
 
-      _process_information.hProcess = 0;
-      _process_information.hThread = 0;
-      _process_information.dwProcessId = 0;
-      _process_information.dwThreadId = 0;
+      clear(_process_information);
 
       if (CreateProcess(NULL, &cmd[0], NULL, NULL, TRUE, 0, NULL,
                         cwd_.empty() ? NULL : cwd_.string().c_str(), &si,
@@ -160,6 +167,41 @@ namespace metashell
       }
     }
 #endif
+
+    execution::execution(execution&& e_)
+      : _standard_input(std::move(e_._standard_input)),
+        _standard_output(std::move(e_._standard_output)),
+        _standard_error(std::move(e_._standard_error)),
+#ifdef _WIN32
+        _process_information(e_._process_information)
+#else
+        _pid(e_._pid)
+#endif
+    {
+#ifdef _WIN32
+      clear(e_._process_information);
+#else
+      e_._pid = 0;
+#endif
+    }
+
+    execution& execution::operator=(execution&& e_)
+    {
+      if (this != &e_)
+      {
+        _standard_input = std::move(e_._standard_input);
+        _standard_output = std::move(e_._standard_output);
+        _standard_error = std::move(e_._standard_error);
+#ifdef _WIN32
+        _process_information = e_._process_information;
+        clear(e_._process_information);
+#else
+        _pid = e_._pid;
+        e_._pid = 0;
+#endif
+      }
+      return *this;
+    }
 
     execution::~execution()
     {

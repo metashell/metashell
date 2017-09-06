@@ -36,7 +36,8 @@ if defined no_templight goto skip_templight
 rem Build Metashell
 md bin
 cd bin
-  cmake ..
+  if defined METASHELL_NO_DOC_GENERATION cmake .. -DMETASHELL_NO_DOC_GENERATION=1
+  if not defined METASHELL_NO_DOC_GENERATION cmake ..
   msbuild metashell.sln /p:Configuration=Release
   if errorlevel 1 goto no_dev
 

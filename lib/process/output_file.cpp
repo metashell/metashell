@@ -28,6 +28,17 @@ namespace metashell
   {
     output_file::output_file(fd_t fd_) : file<output_file>(fd_) {}
 
+    output_file::output_file(output_file&& f_)
+      : file<output_file>(std::move(f_))
+    {
+    }
+
+    output_file& output_file::operator=(output_file&& f_)
+    {
+      file<output_file>::operator=(std::move(f_));
+      return *this;
+    }
+
 #ifdef _WIN32
     output_file::size_type output_file::write(const char* buff_, size_t count_)
     {

@@ -26,8 +26,4 @@ cd ../..
 
 # Test the code
 
-BUILD_THREADS=2 NO_TEMPLIGHT=1 ./build.sh
-
-# Test that the documentation about the built-in pragmas and mdb commands is up to date
-
-tools/validate/generated_doc.sh bin/app/metashell/metashell
+BUILD_THREADS=2 NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh
