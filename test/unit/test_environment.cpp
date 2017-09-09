@@ -56,7 +56,7 @@ namespace
 
 TEST(environment, empty_header_file_environment_is_empty)
 {
-  data::config cfg{};
+  data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
   type_shell_constant type_shell(failing_data());
@@ -67,7 +67,7 @@ TEST(environment, empty_header_file_environment_is_empty)
 
 TEST(environment, append_text_to_header_file_environment)
 {
-  data::config cfg{};
+  data::shell_config cfg{};
   cfg.use_precompiled_headers = false;
 
   type_shell_constant type_shell(failing_data());
@@ -173,7 +173,8 @@ TEST(environment, environment_save_saves_the_environment_when_enabled_in_config)
   just::temp::directory d;
   const std::string fn = d.path() + "/test.hpp";
 
-  data::config cfg{};
+  data::config cfg;
+  cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
   in_memory_displayer disp;
   shell sh(cfg, "", "", "", create_failing_engine());
@@ -186,7 +187,8 @@ TEST(environment, environment_save_saves_the_environment_when_enabled_in_config)
 
 TEST(environment, save_displays_an_error_when_filename_is_missing)
 {
-  data::config cfg{};
+  data::config cfg;
+  cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
   in_memory_displayer d;
   shell sh(cfg, "", "", "", create_failing_engine());
@@ -198,7 +200,8 @@ TEST(environment, save_displays_an_error_when_filename_is_missing)
 
 TEST(environment, save_displays_an_error_when_io_error_happens)
 {
-  data::config cfg{};
+  data::config cfg;
+  cfg.push_back(data::shell_config());
   cfg.saving_enabled = true;
   in_memory_displayer d;
   shell sh(cfg, "", "", "", create_failing_engine());

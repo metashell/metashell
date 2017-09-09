@@ -187,6 +187,8 @@ TEST(evaluation, comment_is_stored_in_history)
 TEST(evaluation, throwing_environment_update_not_breaking_shell)
 {
   data::config cfg;
+  cfg.push_back(data::shell_config());
+
   breaking_environment* e = new breaking_environment();
   in_memory_displayer d;
   null_history h;
@@ -204,6 +206,8 @@ TEST(evaluation, throwing_environment_update_not_breaking_shell)
 TEST(evaluation, throwing_environment_not_breaking_validate)
 {
   data::config cfg;
+  cfg.push_back(data::shell_config());
+
   NiceMock<mock_environment_detector> det;
   breaking_environment e;
   e.get_appended_throw_from_now();

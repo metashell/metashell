@@ -35,17 +35,17 @@ using namespace metashell;
 
 namespace
 {
-  bool determine_echo(const data::config& cfg_)
+  bool determine_echo(const data::shell_config& cfg_)
   {
     return cfg_.preprocessor_mode;
   }
 
-  bool determine_show_cpp_errors(const data::config& cfg_)
+  bool determine_show_cpp_errors(const data::shell_config& cfg_)
   {
     return !cfg_.preprocessor_mode;
   }
 
-  bool determine_evaluate_metaprograms(const data::config& cfg_)
+  bool determine_evaluate_metaprograms(const data::shell_config& cfg_)
   {
     return !cfg_.preprocessor_mode;
   }
@@ -219,9 +219,10 @@ shell::shell(const data::config& config_,
     _stopped(false),
     _logger(logger_),
     _engine(std::move(engine_)),
-    _echo(determine_echo(config_)),
-    _show_cpp_errors(determine_show_cpp_errors(config_)),
-    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+    _echo(determine_echo(config_.active_shell_config())),
+    _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
+    _evaluate_metaprograms(
+        determine_evaluate_metaprograms(config_.active_shell_config()))
 {
   rebuild_environment();
   init(nullptr, mdb_temp_dir_);
@@ -241,9 +242,10 @@ shell::shell(const data::config& config_,
     _stopped(false),
     _logger(logger_),
     _engine(std::move(engine_)),
-    _echo(determine_echo(config_)),
-    _show_cpp_errors(determine_show_cpp_errors(config_)),
-    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+    _echo(determine_echo(config_.active_shell_config())),
+    _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
+    _evaluate_metaprograms(
+        determine_evaluate_metaprograms(config_.active_shell_config()))
 {
   rebuild_environment();
   init(&cpq_, mdb_temp_dir_);
@@ -264,9 +266,10 @@ shell::shell(const data::config& config_,
     _stopped(false),
     _logger(logger_),
     _engine(std::move(engine_)),
-    _echo(determine_echo(config_)),
-    _show_cpp_errors(determine_show_cpp_errors(config_)),
-    _evaluate_metaprograms(determine_evaluate_metaprograms(config_))
+    _echo(determine_echo(config_.active_shell_config())),
+    _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
+    _evaluate_metaprograms(
+        determine_evaluate_metaprograms(config_.active_shell_config()))
 {
   init(&cpq_, mdb_temp_dir_);
 }
@@ -311,11 +314,12 @@ void shell::display_splash(
         paragraph(d.second, "             ", extend("  " + d.first, 13)));
   }
   splash_text.paragraphs.push_back(empty_line);
-  splash_text.paragraphs.push_back(paragraph(
-      _config.use_precompiled_headers ? "Using precompiled headers" :
-                                        "Not using precompiled headers"));
   splash_text.paragraphs.push_back(
-      paragraph(max_template_depth_info(_config.max_template_depth)));
+      paragraph(_config.active_shell_config().use_precompiled_headers ?
+                    "Using precompiled headers" :
+                    "Not using precompiled headers"));
+  splash_text.paragraphs.push_back(paragraph(max_template_depth_info(
+      _config.active_shell_config().max_template_depth)));
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Getting help: #msh help"));
 
@@ -452,12 +456,12 @@ void shell::stop() { _stopped = true; }
 
 bool shell::using_precompiled_headers() const
 {
-  return _config.use_precompiled_headers;
+  return _config.active_shell_config().use_precompiled_headers;
 }
 
 void shell::using_precompiled_headers(bool enabled_)
 {
-  _config.use_precompiled_headers = enabled_;
+  _config.active_shell_config().use_precompiled_headers = enabled_;
   rebuild_environment();
 }
 
@@ -467,8 +471,9 @@ const iface::environment& shell::env() const { return *_env; }
 
 void shell::rebuild_environment(const data::cpp_code& content_)
 {
-  _env = make_unique<header_file_environment>(
-      try_to_get_shell(*_engine), _config, _internal_dir, _env_filename);
+  _env = make_unique<header_file_environment>(try_to_get_shell(*_engine),
+                                              _config.active_shell_config(),
+                                              _internal_dir, _env_filename);
 
   if (!content_.empty())
   {

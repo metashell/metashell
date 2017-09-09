@@ -55,13 +55,16 @@ namespace
   {
     const clang_binary cbin(
         UseInternalTemplight,
-        find_clang(UseInternalTemplight, config_.extra_clang_args,
-                   config_.metashell_binary, config_.engine, env_detector_,
+        find_clang(UseInternalTemplight,
+                   config_.active_shell_config().extra_clang_args,
+                   config_.metashell_binary,
+                   config_.active_shell_config().engine, env_detector_,
                    displayer_, logger_),
-        config_.extra_clang_args, internal_dir_, env_detector_, logger_);
+        config_.active_shell_config().extra_clang_args, internal_dir_,
+        env_detector_, logger_);
 
     return make_engine(
-        config_.engine,
+        config_.active_shell_config().engine,
         type_shell_clang(internal_dir_, env_filename_, cbin, logger_),
         preprocessor_shell_clang(cbin),
         code_completer_clang(

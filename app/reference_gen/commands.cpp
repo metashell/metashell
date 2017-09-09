@@ -46,7 +46,9 @@ namespace
 
   void show_pragma_help(std::ostream& out_)
   {
-    const metashell::data::config cfg{};
+    metashell::data::config cfg{};
+    cfg.push_back(metashell::data::shell_config());
+
     metashell::command_processor_queue cpq;
     const std::string internal_dir;
     const boost::filesystem::path mdb_temp_dir;

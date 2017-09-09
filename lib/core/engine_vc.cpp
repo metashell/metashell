@@ -67,15 +67,16 @@ namespace
     }
   }
 
-  std::vector<std::string> vc_args(const data::config& config_,
-                                   const boost::filesystem::path& internal_dir_)
+  std::vector<std::string>
+  vc_args(const std::vector<std::string>& extra_clang_args_,
+          const boost::filesystem::path& internal_dir_)
   {
     std::vector<std::string> args{"/I" + internal_dir_.string()};
 
-    if (config_.extra_clang_args.size() > 1)
+    if (extra_clang_args_.size() > 1)
     {
-      args.insert(args.end(), config_.extra_clang_args.begin() + 1,
-                  config_.extra_clang_args.end());
+      args.insert(
+          args.end(), extra_clang_args_.begin() + 1, extra_clang_args_.end());
     }
 
     return args;
@@ -97,15 +98,18 @@ namespace
           " from the Visual Studio Developer Prompt.");
     }
 
-    const boost::filesystem::path vc_path =
-        extract_vc_binary(config_.extra_clang_args, env_detector_,
-                          config_.metashell_binary, config_.engine);
+    const boost::filesystem::path vc_path = extract_vc_binary(
+        config_.active_shell_config().extra_clang_args, env_detector_,
+        config_.metashell_binary, config_.active_shell_config().engine);
     vc_binary cbin(
-        vc_path, vc_args(config_, internal_dir_), temp_dir_, logger_);
+        vc_path,
+        vc_args(config_.active_shell_config().extra_clang_args, internal_dir_),
+        temp_dir_, logger_);
 
     return make_engine(
-        config_.engine, not_supported(), preprocessor_shell_vc(cbin),
-        not_supported(), header_discoverer_vc(cbin), not_supported(),
+        config_.active_shell_config().engine, not_supported(),
+        preprocessor_shell_vc(cbin), not_supported(),
+        header_discoverer_vc(cbin), not_supported(),
         cpp_validator_vc(internal_dir_, env_filename_, cbin, logger_),
         not_supported(), not_supported(), supported_features());
   }

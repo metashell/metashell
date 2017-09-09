@@ -163,7 +163,7 @@ namespace
 
 header_file_environment::header_file_environment(
     iface::type_shell* type_shell_,
-    const data::config& config_,
+    const data::shell_config& config_,
     const boost::filesystem::path& internal_dir_,
     const boost::filesystem::path& env_filename_)
   : _internal_dir(internal_dir_),

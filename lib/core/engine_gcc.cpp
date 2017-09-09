@@ -75,21 +75,21 @@ namespace
   }
 
   std::vector<std::string>
-  gcc_args(const data::config& config_,
+  gcc_args(const std::vector<std::string>& extra_clang_args_,
            const boost::filesystem::path& internal_dir_)
   {
     std::vector<std::string> args{"-iquote", ".", "-x", "c++-header"};
 
-    if (stdinc_allowed(config_.extra_clang_args))
+    if (stdinc_allowed(extra_clang_args_))
     {
       args.push_back("-I");
       args.push_back(internal_dir_.string());
     }
 
-    if (config_.extra_clang_args.size() > 1)
+    if (extra_clang_args_.size() > 1)
     {
-      args.insert(args.end(), config_.extra_clang_args.begin() + 1,
-                  config_.extra_clang_args.end());
+      args.insert(
+          args.end(), extra_clang_args_.begin() + 1, extra_clang_args_.end());
     }
 
     return args;
@@ -104,14 +104,18 @@ namespace
                     iface::displayer&,
                     logger* logger_)
   {
-    const boost::filesystem::path clang_path =
-        extract_gcc_binary(config_.extra_clang_args, env_detector_,
-                           config_.metashell_binary, config_.engine);
-    clang_binary cbin(clang_path, gcc_args(config_, internal_dir_), logger_);
+    const boost::filesystem::path clang_path = extract_gcc_binary(
+        config_.active_shell_config().extra_clang_args, env_detector_,
+        config_.metashell_binary, config_.active_shell_config().engine);
+    clang_binary cbin(
+        clang_path,
+        gcc_args(config_.active_shell_config().extra_clang_args, internal_dir_),
+        logger_);
 
     return make_engine(
-        config_.engine, not_supported(), preprocessor_shell_clang(cbin),
-        not_supported(), header_discoverer_clang(cbin), not_supported(),
+        config_.active_shell_config().engine, not_supported(),
+        preprocessor_shell_clang(cbin), not_supported(),
+        header_discoverer_clang(cbin), not_supported(),
         cpp_validator_clang(internal_dir_, env_filename_, cbin, logger_),
         macro_discovery_clang(cbin), not_supported(), supported_features());
   }

@@ -58,10 +58,11 @@ namespace
 
 TEST(argument_parsing, recognising_extra_clang_arg)
 {
-  const data::config cfg = parse_config({"--", "foo"}).cfg;
+  const std::vector<std::string> extra_clang_args =
+      parse_config({"--", "foo"}).cfg.active_shell_config().extra_clang_args;
 
-  ASSERT_EQ(1u, cfg.extra_clang_args.size());
-  ASSERT_EQ("foo", cfg.extra_clang_args.front());
+  ASSERT_EQ(1u, extra_clang_args.size());
+  ASSERT_EQ("foo", extra_clang_args.front());
 }
 
 TEST(argument_parsing, extra_clang_args_are_not_parsed)
@@ -170,16 +171,13 @@ TEST(argument_parsing, decommissioned_arguments_provide_an_error_message)
 
 TEST(argument_parsing, not_specifying_the_engine)
 {
-  const data::config cfg = parse_config({}).cfg;
-
-  ASSERT_EQ("internal", cfg.engine);
+  ASSERT_EQ("internal", parse_config({}).cfg.active_shell_config().engine);
 }
 
 TEST(argument_parsing, specifying_the_engine)
 {
-  const data::config cfg = parse_config({"--engine", "foo"}).cfg;
-
-  ASSERT_EQ("foo", cfg.engine);
+  ASSERT_EQ("foo",
+            parse_config({"--engine", "foo"}).cfg.active_shell_config().engine);
 }
 
 TEST(argument_parsing, metashell_path_is_filled)
@@ -201,14 +199,12 @@ TEST(argument_parsing, metashell_path_is_filled)
 
 TEST(argument_parsing, preprocessor_mode_is_off_by_default)
 {
-  const metashell::data::config cfg = parse_config({}).cfg;
-
-  ASSERT_FALSE(cfg.preprocessor_mode);
+  ASSERT_FALSE(parse_config({}).cfg.active_shell_config().preprocessor_mode);
 }
 
 TEST(argument_parsing, preprocessor_mode_is_set_from_command_line)
 {
-  const metashell::data::config cfg = parse_config({"--preprocessor"}).cfg;
-
-  ASSERT_TRUE(cfg.preprocessor_mode);
+  ASSERT_TRUE(parse_config({"--preprocessor"})
+                  .cfg.active_shell_config()
+                  .preprocessor_mode);
 }

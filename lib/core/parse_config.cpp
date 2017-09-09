@@ -170,6 +170,28 @@ namespace
         "compiler"
         " argument after --";
   };
+
+  data::shell_config
+  parse_default_shell_config(const boost::program_options::variables_map& vm_,
+                             const char** extra_args_begin_,
+                             const char** extra_args_end_,
+                             const std::string& engine_)
+  {
+    data::shell_config result;
+    result.name = data::shell_config_name("default");
+
+    result.extra_clang_args.insert(
+        result.extra_clang_args.end(), extra_args_begin_, extra_args_end_);
+
+    if (vm_.count("engine"))
+    {
+      result.engine = engine_;
+    }
+    result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
+    result.preprocessor_mode = vm_.count("preprocessor");
+
+    return result;
+  }
 }
 
 parse_config_result
@@ -194,24 +216,25 @@ metashell::parse_config(int argc_,
     cfg.metashell_binary = argv_[0];
   }
 
+  const char** args_end = argv_ + argc_;
+
   const char** const minus_minus =
-      std::find(argv_, argv_ + argc_, std::string("--"));
-  if (minus_minus != argv_ + argc_)
-  {
-    cfg.extra_clang_args.insert(
-        cfg.extra_clang_args.end(), minus_minus + 1, argv_ + argc_);
-  }
+      std::find(argv_, args_end, std::string("--"));
+
+  const char** extra_args_begin =
+      minus_minus == args_end ? args_end : minus_minus + 1;
+
   const int argc = minus_minus - argv_;
 
   std::string con_type("readline");
-  cfg.use_precompiled_headers = true;
 
   std::string help_engine;
+  std::string engine;
 
   const std::string engine_info =
       "The engine (C++ compiler) to use. Available engines: " +
       boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
-      ". Default: " + cfg.engine;
+      ". Default: " + data::shell_config().engine;
 
   options_description desc("Options");
   // clang-format off
@@ -238,7 +261,7 @@ metashell::parse_config(int argc_,
       "log", value(&cfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
-    ("engine", value(&cfg.engine), engine_info.c_str())
+    ("engine", value(&engine), engine_info.c_str())
     ("help_engine", value(&help_engine), "Display help about the engine")
     ("preprocessor", "Starts the shell in preprocessor mode");
   // clang-format on
@@ -288,10 +311,8 @@ metashell::parse_config(int argc_,
     cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     cfg.indent = vm.count("indent") != 0;
     cfg.con_type = metashell::data::parse_console_type(con_type);
-    cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     cfg.saving_enabled = !vm.count("disable_saving");
     cfg.splash_enabled = vm.count("nosplash") == 0;
-    cfg.preprocessor_mode = vm.count("preprocessor");
     if (vm.count("log") == 0)
     {
       cfg.log_mode = data::logging_mode::none;
@@ -301,6 +322,9 @@ metashell::parse_config(int argc_,
       cfg.log_mode = (cfg.log_file == "-") ? data::logging_mode::console :
                                              data::logging_mode::file;
     }
+
+    cfg.push_back(
+        parse_default_shell_config(vm, extra_args_begin, args_end, engine));
 
     if (vm.count("help"))
     {

@@ -97,11 +97,12 @@ int main(int argc_, const char* argv_[])
 
     METASHELL_LOG(&logger, "Start logging");
 
-    const auto eentry = engines.find(r.cfg.engine);
+    const auto eentry = engines.find(r.cfg.active_shell_config().engine);
     if (eentry == engines.end())
     {
       throw std::runtime_error(
-          "Engine " + r.cfg.engine + " not found. Available engines: " +
+          "Engine " + r.cfg.active_shell_config().engine +
+          " not found. Available engines: " +
           boost::algorithm::join(engines | boost::adaptors::map_keys, ", "));
     }
     else
