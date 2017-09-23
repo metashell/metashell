@@ -96,7 +96,6 @@ TEST(null_engine, configs)
 
   ASSERT_EQ(comment({paragraph("{\"name\":\"default\",\"engine\":\"null\","
                                "\"extra_clang_args\":[],\"use_precompiled_"
-                               "headers\":true,\"templight_trace_capacity\":0,"
-                               "\"preprocessor_mode\":false}")}),
+                               "headers\":true,\"preprocessor_mode\":false}")}),
             with_null_engine("#msh config show default").front());
 }

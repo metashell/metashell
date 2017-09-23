@@ -35,7 +35,6 @@ namespace metashell
 
       std::vector<std::string> extra_clang_args;
       bool use_precompiled_headers = false;
-      unsigned templight_trace_capacity;
       std::string engine = "internal";
       bool preprocessor_mode = false;
     };

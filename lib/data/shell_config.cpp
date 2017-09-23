@@ -44,9 +44,6 @@ namespace metashell
       out_.key("use_precompiled_headers");
       out_.bool_(cfg_.use_precompiled_headers);
 
-      out_.key("templight_trace_capacity");
-      out_.int_(cfg_.templight_trace_capacity);
-
       out_.key("preprocessor_mode");
       out_.bool_(cfg_.preprocessor_mode);
 
