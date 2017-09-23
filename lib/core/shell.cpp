@@ -63,13 +63,6 @@ namespace
     return len < width_ ? s_ + std::string(width_ - len, ' ') : s_;
   }
 
-  std::string max_template_depth_info(int depth_)
-  {
-    std::ostringstream s;
-    s << "Maximum template depth: " << depth_;
-    return s.str();
-  }
-
   void display(const data::result& r_,
                iface::displayer& displayer_,
                bool show_as_type_)
@@ -318,8 +311,6 @@ void shell::display_splash(
       paragraph(_config.active_shell_config().use_precompiled_headers ?
                     "Using precompiled headers" :
                     "Not using precompiled headers"));
-  splash_text.paragraphs.push_back(paragraph(max_template_depth_info(
-      _config.active_shell_config().max_template_depth)));
   splash_text.paragraphs.push_back(empty_line);
   splash_text.paragraphs.push_back(paragraph("Getting help: #msh help"));
 

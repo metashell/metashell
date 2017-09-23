@@ -94,10 +94,9 @@ TEST(null_engine, configs)
   ASSERT_EQ(comment({paragraph(" * default")}),
             with_null_engine("#msh config").front());
 
-  ASSERT_EQ(
-      comment({paragraph("{\"name\":\"default\",\"engine\":\"null\",\"extra_"
-                         "clang_args\":[],\"use_precompiled_headers\":true,"
-                         "\"max_template_depth\":0,\"templight_trace_"
-                         "capacity\":0,\"preprocessor_mode\":false}")}),
-      with_null_engine("#msh config show default").front());
+  ASSERT_EQ(comment({paragraph("{\"name\":\"default\",\"engine\":\"null\","
+                               "\"extra_clang_args\":[],\"use_precompiled_"
+                               "headers\":true,\"templight_trace_capacity\":0,"
+                               "\"preprocessor_mode\":false}")}),
+            with_null_engine("#msh config show default").front());
 }
