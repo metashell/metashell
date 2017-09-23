@@ -180,8 +180,8 @@ namespace
     data::shell_config result;
     result.name = data::shell_config_name("default");
 
-    result.extra_clang_args.insert(
-        result.extra_clang_args.end(), extra_args_begin_, extra_args_end_);
+    result.engine_args.insert(
+        result.engine_args.end(), extra_args_begin_, extra_args_end_);
 
     if (vm_.count("engine"))
     {

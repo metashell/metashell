@@ -68,15 +68,14 @@ namespace
   }
 
   std::vector<std::string>
-  vc_args(const std::vector<std::string>& extra_clang_args_,
+  vc_args(const std::vector<std::string>& extra_vc_args_,
           const boost::filesystem::path& internal_dir_)
   {
     std::vector<std::string> args{"/I" + internal_dir_.string()};
 
-    if (extra_clang_args_.size() > 1)
+    if (extra_vc_args_.size() > 1)
     {
-      args.insert(
-          args.end(), extra_clang_args_.begin() + 1, extra_clang_args_.end());
+      args.insert(args.end(), extra_vc_args_.begin() + 1, extra_vc_args_.end());
     }
 
     return args;
@@ -99,12 +98,11 @@ namespace
     }
 
     const boost::filesystem::path vc_path = extract_vc_binary(
-        config_.active_shell_config().extra_clang_args, env_detector_,
+        config_.active_shell_config().engine_args, env_detector_,
         config_.metashell_binary, config_.active_shell_config().engine);
-    vc_binary cbin(
-        vc_path,
-        vc_args(config_.active_shell_config().extra_clang_args, internal_dir_),
-        temp_dir_, logger_);
+    vc_binary cbin(vc_path, vc_args(config_.active_shell_config().engine_args,
+                                    internal_dir_),
+                   temp_dir_, logger_);
 
     return make_engine(
         config_.active_shell_config().engine, not_supported(),

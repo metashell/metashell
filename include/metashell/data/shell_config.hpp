@@ -33,7 +33,7 @@ namespace metashell
     public:
       shell_config_name name;
 
-      std::vector<std::string> extra_clang_args;
+      std::vector<std::string> engine_args;
       bool use_precompiled_headers = false;
       std::string engine = "internal";
       bool preprocessor_mode = false;

@@ -36,12 +36,12 @@ namespace
             data::feature::macro_discovery()};
   }
 
-  bool stdinc_allowed(const std::vector<std::string>& extra_clang_args_)
+  bool stdinc_allowed(const std::vector<std::string>& extra_gcc_args_)
   {
-    return find_if(extra_clang_args_.begin(), extra_clang_args_.end(),
+    return find_if(extra_gcc_args_.begin(), extra_gcc_args_.end(),
                    [](const std::string& s_) {
                      return s_ == "-nostdinc" || s_ == "-nostdinc++";
-                   }) == extra_clang_args_.end();
+                   }) == extra_gcc_args_.end();
   }
 
   std::string extract_gcc_binary(const std::vector<std::string>& engine_args_,
@@ -75,21 +75,21 @@ namespace
   }
 
   std::vector<std::string>
-  gcc_args(const std::vector<std::string>& extra_clang_args_,
+  gcc_args(const std::vector<std::string>& extra_gcc_args_,
            const boost::filesystem::path& internal_dir_)
   {
     std::vector<std::string> args{"-iquote", ".", "-x", "c++-header"};
 
-    if (stdinc_allowed(extra_clang_args_))
+    if (stdinc_allowed(extra_gcc_args_))
     {
       args.push_back("-I");
       args.push_back(internal_dir_.string());
     }
 
-    if (extra_clang_args_.size() > 1)
+    if (extra_gcc_args_.size() > 1)
     {
       args.insert(
-          args.end(), extra_clang_args_.begin() + 1, extra_clang_args_.end());
+          args.end(), extra_gcc_args_.begin() + 1, extra_gcc_args_.end());
     }
 
     return args;
@@ -105,11 +105,11 @@ namespace
                     logger* logger_)
   {
     const boost::filesystem::path clang_path = extract_gcc_binary(
-        config_.active_shell_config().extra_clang_args, env_detector_,
+        config_.active_shell_config().engine_args, env_detector_,
         config_.metashell_binary, config_.active_shell_config().engine);
     clang_binary cbin(
         clang_path,
-        gcc_args(config_.active_shell_config().extra_clang_args, internal_dir_),
+        gcc_args(config_.active_shell_config().engine_args, internal_dir_),
         logger_);
 
     return make_engine(

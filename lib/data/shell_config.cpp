@@ -33,9 +33,9 @@ namespace metashell
       out_.key("engine");
       out_.string(cfg_.engine);
 
-      out_.key("extra_clang_args");
+      out_.key("engine_args");
       out_.start_array();
-      for (const std::string& arg : cfg_.extra_clang_args)
+      for (const std::string& arg : cfg_.engine_args)
       {
         out_.string(arg);
       }

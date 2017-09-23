@@ -48,7 +48,7 @@ namespace
                      logger* logger_)
   {
     const data::wave_config cfg = parse_wave_config(
-        UseTemplightHeaders, config_.active_shell_config().extra_clang_args,
+        UseTemplightHeaders, config_.active_shell_config().engine_args,
         config_.metashell_binary, internal_dir_, env_detector_, displayer_,
         logger_);
     return make_engine(config_.active_shell_config().engine, not_supported(),
