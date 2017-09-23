@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_SHELL_CONFIG_HPP
-#define METASHELL_DATA_SHELL_CONFIG_HPP
+#ifndef METASHELL_PRAGMA_CONFIG_HPP
+#define METASHELL_PRAGMA_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,32 +17,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/shell_config_name.hpp>
-
-#include <metashell/iface/json_writer.hpp>
+#include <metashell/pragma_without_arguments.hpp>
 
 #include <string>
-#include <vector>
 
 namespace metashell
 {
-  namespace data
+  class shell;
+
+  class pragma_config : public pragma_without_arguments
   {
-    class shell_config
-    {
-    public:
-      shell_config_name name;
+  public:
+    explicit pragma_config(shell& shell_);
 
-      std::vector<std::string> extra_clang_args;
-      bool use_precompiled_headers = false;
-      int max_template_depth;
-      unsigned templight_trace_capacity;
-      std::string engine = "internal";
-      bool preprocessor_mode = false;
-    };
+    virtual iface::pragma_handler* clone() const override;
 
-    void display(iface::json_writer& out_, const shell_config& cfg_);
-  }
+    virtual std::string description() const override;
+
+    virtual void run(iface::displayer& displayer_) const override;
+
+  private:
+    shell& _shell;
+  };
 }
 
 #endif

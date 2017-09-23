@@ -33,6 +33,11 @@ void null_json_writer::double_(double)
   // throw away
 }
 
+void null_json_writer::bool_(bool)
+{
+  // throw away
+}
+
 void null_json_writer::start_object()
 {
   // throw away

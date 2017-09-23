@@ -19,6 +19,8 @@
 #include <metashell/pragma_handler_map.hpp>
 #include <metashell/shell.hpp>
 
+#include <metashell/pragma_config.hpp>
+#include <metashell/pragma_config_show.hpp>
 #include <metashell/pragma_echo.hpp>
 #include <metashell/pragma_environment.hpp>
 #include <metashell/pragma_environment_add.hpp>
@@ -235,6 +237,8 @@ pragma_handler_map::build_default(shell& shell_,
       .add("which", pragma_which(shell_))
       .add("included", "headers", pragma_included_headers(shell_))
       .add("ls", pragma_ls(shell_))
+      .add("config", pragma_config(shell_))
+      .add("config", "show", pragma_config_show(shell_))
       .add("quit", pragma_quit(shell_));
 }
 

@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/prompt.hpp>
 
@@ -86,4 +87,17 @@ TEST(null_engine, cpp_validator)
   ASSERT_EQ(error("Error: Feature cpp validator is not supported by the "
                   "null engine."),
             with_null_engine("typedef int x;").front());
+}
+
+TEST(null_engine, configs)
+{
+  ASSERT_EQ(comment({paragraph(" * default")}),
+            with_null_engine("#msh config").front());
+
+  ASSERT_EQ(
+      comment({paragraph("{\"name\":\"default\",\"engine\":\"null\",\"extra_"
+                         "clang_args\":[],\"use_precompiled_headers\":true,"
+                         "\"max_template_depth\":0,\"templight_trace_"
+                         "capacity\":0,\"preprocessor_mode\":false}")}),
+      with_null_engine("#msh config show default").front());
 }

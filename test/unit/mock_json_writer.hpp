@@ -27,6 +27,7 @@ public:
   MOCK_METHOD1(string, void(const std::string&));
   MOCK_METHOD1(int_, void(int));
   MOCK_METHOD1(double_, void(double));
+  MOCK_METHOD1(bool_, void(bool));
 
   MOCK_METHOD0(start_object, void());
   MOCK_METHOD1(key, void(const std::string&));

@@ -1,8 +1,8 @@
-#ifndef METASHELL_RAPID_JSON_WRITER_HPP
-#define METASHELL_RAPID_JSON_WRITER_HPP
+#ifndef METASHELL_COMMENT_JSON_WRITER_HPP
+#define METASHELL_COMMENT_JSON_WRITER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,19 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/displayer.hpp>
 #include <metashell/iface/json_writer.hpp>
-#include <metashell/rapid_ostream_wrapper.hpp>
 
-#include <rapidjson/writer.h>
+#include <metashell/rapid_json_writer.hpp>
 
-#include <iosfwd>
+#include <sstream>
 
 namespace metashell
 {
-  class rapid_json_writer : public iface::json_writer
+  class comment_json_writer : public iface::json_writer
   {
   public:
-    explicit rapid_json_writer(std::ostream& out_);
+    explicit comment_json_writer(iface::displayer& displayer_);
+
+    virtual ~comment_json_writer() override;
 
     virtual void string(const std::string& value_) override;
     virtual void int_(int value_) override;
@@ -46,8 +48,10 @@ namespace metashell
     virtual void end_document() override;
 
   private:
-    rapid_ostream_wrapper _os;
-    rapidjson::Writer<rapid_ostream_wrapper> _writer;
+    iface::displayer& _displayer;
+
+    std::ostringstream _buff;
+    rapid_json_writer _writer;
   };
 }
 
