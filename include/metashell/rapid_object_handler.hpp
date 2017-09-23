@@ -18,80 +18,36 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/displayer.hpp>
+#include <metashell/rapid_handler.hpp>
 
 #include <boost/optional.hpp>
 
-#include <cassert>
 #include <map>
-#include <string>
 
 namespace metashell
 {
-  class rapid_object_handler
+  class rapid_object_handler : public rapid_handler<rapid_object_handler, false>
   {
   public:
     explicit rapid_object_handler(iface::displayer& displayer_);
 
-    bool Null();
-    bool Bool(bool);
-    bool Int(int);
-    bool Uint(unsigned);
-    bool Int64(int64_t);
-    bool Uint64(uint64_t);
-    bool Double(double);
-
-    template <class SizeType>
-    bool String(const char* str_, SizeType length_, bool copy_)
-    {
-      assert(copy_);
-      return string(std::string(str_, length_));
-    }
-
     bool StartObject();
 
-    template <class SizeType>
-    bool Key(const char* str_, SizeType length_, bool copy_)
-    {
-      assert(copy_);
-      return key(std::string(str_, length_));
-    }
-
-    template <class SizeType>
-    bool EndObject(SizeType)
-    {
-      return end_object();
-    }
-
-    bool StartArray();
-
-    template <class SizeType>
-    bool EndArray(SizeType)
-    {
-      return end_array();
-    }
-
-    bool failed() const;
-
     boost::optional<std::string> field(const std::string& name_) const;
-
-    bool empty() const;
-
-  private:
-    bool _empty;
-    bool _failed;
-    std::map<std::string, std::string> _fields;
-
-    bool _in_object;
-    std::string _next_key;
-
-    iface::displayer& _displayer;
 
     void fail(const std::string& msg_);
 
     bool string(const std::string& str_);
     bool key(const std::string& str_);
     bool end_object();
-    bool end_array();
+
+  private:
+    std::map<std::string, std::string> _fields;
+
+    bool _in_object;
+    std::string _next_key;
+
+    iface::displayer& _displayer;
   };
 }
 

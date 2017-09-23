@@ -16,22 +16,10 @@
 
 #include <metashell/rapid_object_handler.hpp>
 
-#include <sstream>
-
 using namespace metashell;
 
 namespace
 {
-  std::string to_string(bool b_) { return b_ ? "true" : "false"; }
-
-  template <class T>
-  std::string unexpected_integer_element(T value_)
-  {
-    std::ostringstream s;
-    s << "Unexpected integer element: " << value_;
-    return s.str();
-  }
-
   bool whitelisted(const std::string& field_)
   {
     return field_ == "type" || field_ == "cmd" || field_ == "code";
@@ -39,66 +27,13 @@ namespace
 }
 
 rapid_object_handler::rapid_object_handler(iface::displayer& displayer_)
-  : _empty(true), _failed(false), _in_object(false), _displayer(displayer_)
+  : _in_object(false), _displayer(displayer_)
 {
-}
-
-bool rapid_object_handler::Null()
-{
-  _empty = false;
-  fail("Unexpected null element");
-  return false;
-}
-
-bool rapid_object_handler::Bool(bool b_)
-{
-  _empty = false;
-  fail("Unexpected bool element: " + ::to_string(b_));
-  return false;
-}
-
-bool rapid_object_handler::Int(int i_)
-{
-  _empty = false;
-  fail(unexpected_integer_element(i_));
-  return false;
-}
-
-bool rapid_object_handler::Uint(unsigned i_)
-{
-  _empty = false;
-  fail(unexpected_integer_element(i_));
-  return false;
-}
-
-bool rapid_object_handler::Int64(int64_t i_)
-{
-  _empty = false;
-  fail(unexpected_integer_element(i_));
-  return false;
-}
-
-bool rapid_object_handler::Uint64(uint64_t i_)
-{
-  _empty = false;
-  fail(unexpected_integer_element(i_));
-  return false;
-}
-
-bool rapid_object_handler::Double(double d_)
-{
-  _empty = false;
-
-  std::ostringstream s;
-  s << "Unexpected double element: " << d_;
-  fail(s.str());
-
-  return false;
 }
 
 bool rapid_object_handler::string(const std::string& str_)
 {
-  _empty = false;
+  not_empty();
   if (_in_object)
   {
     _fields.insert({_next_key, str_});
@@ -113,7 +48,7 @@ bool rapid_object_handler::string(const std::string& str_)
 
 bool rapid_object_handler::StartObject()
 {
-  _empty = false;
+  not_empty();
   if (_in_object)
   {
     fail("Unexpected nested object");
@@ -128,7 +63,7 @@ bool rapid_object_handler::StartObject()
 
 bool rapid_object_handler::key(const std::string& str_)
 {
-  _empty = false;
+  not_empty();
   if (whitelisted(str_))
   {
     _next_key = str_;
@@ -143,25 +78,9 @@ bool rapid_object_handler::key(const std::string& str_)
 
 bool rapid_object_handler::end_object()
 {
-  _empty = false;
+  not_empty();
   return true;
 }
-
-bool rapid_object_handler::StartArray()
-{
-  _empty = false;
-  fail("Unexpected array");
-  return false;
-}
-
-bool rapid_object_handler::end_array()
-{
-  _empty = false;
-  fail("Unexpected array");
-  return false;
-}
-
-bool rapid_object_handler::failed() const { return _failed; }
 
 boost::optional<std::string>
 rapid_object_handler::field(const std::string& name_) const
@@ -177,13 +96,11 @@ rapid_object_handler::field(const std::string& name_) const
   }
 }
 
-bool rapid_object_handler::empty() const { return _empty; }
-
 void rapid_object_handler::fail(const std::string& msg_)
 {
-  if (!_failed)
+  if (!failed())
   {
     _displayer.show_error(msg_);
-    _failed = true;
+    rapid_handler<rapid_object_handler, false>::fail(msg_);
   }
 }
