@@ -1,5 +1,5 @@
-#ifndef METASHELL_SHELL_CONFIG_NAME_HPP
-#define METASHELL_SHELL_CONFIG_NAME_HPP
+#ifndef METASHELL_SYSTEM_TEST_METASHELL_TERMINATED_HPP
+#define METASHELL_SYSTEM_TEST_METASHELL_TERMINATED_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,35 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
+#include <stdexcept>
 #include <string>
 
 namespace metashell
 {
-  namespace data
+  namespace system_test
   {
-    class shell_config_name : boost::equality_comparable<shell_config_name>
+    class metashell_terminated : public std::runtime_error
     {
     public:
-      shell_config_name() = default;
-      explicit shell_config_name(std::string s_);
+      explicit metashell_terminated(std::string stderr_);
 
-      const std::string& value() const;
-
-      bool empty() const;
+      const std::string& standard_error() const;
 
     private:
-      std::string _value;
+      std::string _stderr;
     };
-
-    bool operator==(const shell_config_name& a_, const shell_config_name& b_);
-    std::string to_string(const shell_config_name& name_);
-    std::ostream& operator<<(std::ostream& o_, const shell_config_name& name_);
-
-    std::string operator+(const std::string& a_, const shell_config_name& b_);
-    std::string operator+(const shell_config_name& a_, const std::string& b_);
   }
 }
 

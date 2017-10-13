@@ -77,37 +77,37 @@ int main(int argc_, const char* argv_[])
     const parse_config_result r =
         parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
 
-    metashell::console_config ccfg(
-        r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
-
-    metashell::fstream_file_writer file_writer;
-    metashell::logger logger(ccfg.displayer(), file_writer);
-    switch (r.cfg.log_mode)
+    if (r.should_run_shell())
     {
-    case metashell::data::logging_mode::none:
-      // do nothing
-      break;
-    case metashell::data::logging_mode::console:
-      logger.log_to_console();
-      break;
-    case metashell::data::logging_mode::file:
-      logger.log_into_file(r.cfg.log_file);
-      break;
-    }
+      metashell::console_config ccfg(
+          r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
 
-    METASHELL_LOG(&logger, "Start logging");
+      metashell::fstream_file_writer file_writer;
+      metashell::logger logger(ccfg.displayer(), file_writer);
+      switch (r.cfg.log_mode)
+      {
+      case metashell::data::logging_mode::none:
+        // do nothing
+        break;
+      case metashell::data::logging_mode::console:
+        logger.log_to_console();
+        break;
+      case metashell::data::logging_mode::file:
+        logger.log_into_file(r.cfg.log_file);
+        break;
+      }
 
-    const auto eentry = engines.find(r.cfg.active_shell_config().engine);
-    if (eentry == engines.end())
-    {
-      throw std::runtime_error(
-          "Engine " + r.cfg.active_shell_config().engine +
-          " not found. Available engines: " +
-          boost::algorithm::join(engines | boost::adaptors::map_keys, ", "));
-    }
-    else
-    {
-      if (r.should_run_shell())
+      METASHELL_LOG(&logger, "Start logging");
+
+      const auto eentry = engines.find(r.cfg.active_shell_config().engine);
+      if (eentry == engines.end())
+      {
+        throw std::runtime_error(
+            "Engine " + r.cfg.active_shell_config().engine +
+            " not found. Available engines: " +
+            boost::algorithm::join(engines | boost::adaptors::map_keys, ", "));
+      }
+      else
       {
         using boost::filesystem::path;
 
@@ -143,12 +143,8 @@ int main(int argc_, const char* argv_[])
 
         METASHELL_LOG(&logger, "Input loop finished");
       }
-      else
-      {
-        METASHELL_LOG(&logger, "Not running shell");
-      }
-      return r.should_error_at_exit() ? 1 : 0;
     }
+    return r.should_error_at_exit() ? 1 : 0;
   }
   catch (std::exception& e_)
   {

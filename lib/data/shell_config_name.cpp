@@ -28,6 +28,8 @@ namespace metashell
 
     const std::string& shell_config_name::value() const { return _value; }
 
+    bool shell_config_name::empty() const { return _value.empty(); }
+
     bool operator==(const shell_config_name& a_, const shell_config_name& b_)
     {
       return a_.value() == b_.value();

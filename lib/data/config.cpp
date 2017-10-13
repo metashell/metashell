@@ -97,5 +97,10 @@ namespace metashell
         throw std::runtime_error("No config has been selected");
       }
     }
+
+    bool config::exists(const shell_config_name& name_) const
+    {
+      return bool(find(name_, _shell_configs));
+    }
   }
 }

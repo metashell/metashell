@@ -97,7 +97,7 @@ namespace metashell
     bool string(const std::string& str_)
     {
       impl().not_empty();
-      impl().fail("Unexpected string element: " + str_);
+      impl().fail("Unexpected string element: \"" + str_ + "\"");
       return false;
     }
 

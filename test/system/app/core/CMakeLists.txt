@@ -35,6 +35,7 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_test/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
 
 # Boost
 target_link_libraries(metashell_core_system_test

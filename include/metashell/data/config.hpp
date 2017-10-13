@@ -51,6 +51,8 @@ namespace metashell
 
       void push_back(shell_config config_);
 
+      bool exists(const shell_config_name& name_) const;
+
     private:
       std::vector<shell_config> _shell_configs;
 
