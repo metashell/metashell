@@ -41,7 +41,7 @@ namespace metashell
       virtual bool stopped() const = 0;
 
       virtual void code_complete(const std::string& s_,
-                                 std::set<std::string>& out_) const = 0;
+                                 std::set<std::string>& out_) = 0;
     };
   }
 }

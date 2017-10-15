@@ -203,7 +203,8 @@ shell::shell(const data::config& config_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
              const boost::filesystem::path& mdb_temp_dir_,
-             std::unique_ptr<iface::engine> engine_,
+             std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                 engine_builder_,
              logger* logger_)
   : _internal_dir(internal_dir_),
     _env_filename(env_filename_),
@@ -211,7 +212,7 @@ shell::shell(const data::config& config_,
     _config(config_),
     _stopped(false),
     _logger(logger_),
-    _engine(std::move(engine_)),
+    _engine_builder(std::move(engine_builder_)),
     _echo(determine_echo(config_.active_shell_config())),
     _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
     _evaluate_metaprograms(
@@ -226,7 +227,8 @@ shell::shell(const data::config& config_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
              const boost::filesystem::path& mdb_temp_dir_,
-             std::unique_ptr<iface::engine> engine_,
+             std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                 engine_builder_,
              logger* logger_)
   : _internal_dir(internal_dir_),
     _env_filename(env_filename_),
@@ -234,7 +236,7 @@ shell::shell(const data::config& config_,
     _config(config_),
     _stopped(false),
     _logger(logger_),
-    _engine(std::move(engine_)),
+    _engine_builder(std::move(engine_builder_)),
     _echo(determine_echo(config_.active_shell_config())),
     _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
     _evaluate_metaprograms(
@@ -250,7 +252,8 @@ shell::shell(const data::config& config_,
              const boost::filesystem::path& internal_dir_,
              const boost::filesystem::path& env_filename_,
              const boost::filesystem::path& mdb_temp_dir_,
-             std::unique_ptr<iface::engine> engine_,
+             std::function<std::unique_ptr<iface::engine>(const data::config&)>
+                 engine_builder_,
              logger* logger_)
   : _internal_dir(internal_dir_),
     _env_filename(env_filename_),
@@ -258,7 +261,7 @@ shell::shell(const data::config& config_,
     _config(config_),
     _stopped(false),
     _logger(logger_),
-    _engine(std::move(engine_)),
+    _engine_builder(std::move(engine_builder_)),
     _echo(determine_echo(config_.active_shell_config())),
     _show_cpp_errors(determine_show_cpp_errors(config_.active_shell_config())),
     _evaluate_metaprograms(
@@ -386,7 +389,7 @@ std::string shell::prompt() const
 bool shell::store_in_buffer(const data::cpp_code& s_,
                             iface::displayer& displayer_)
 {
-  const data::result r = _engine->cpp_validator().validate_code(
+  const data::result r = engine().cpp_validator().validate_code(
       s_ + "\n", _config, *_env, using_precompiled_headers());
 
   if (r.successful)
@@ -408,12 +411,11 @@ bool shell::store_in_buffer(const data::cpp_code& s_,
   return r.successful;
 }
 
-void shell::code_complete(const std::string& s_,
-                          std::set<std::string>& out_) const
+void shell::code_complete(const std::string& s_, std::set<std::string>& out_)
 {
   try
   {
-    _engine->code_completer().code_complete(
+    engine().code_completer().code_complete(
         *_env, s_, out_, using_precompiled_headers());
   }
   catch (...)
@@ -462,7 +464,7 @@ const iface::environment& shell::env() const { return *_env; }
 
 void shell::rebuild_environment(const data::cpp_code& content_)
 {
-  _env = make_unique<header_file_environment>(try_to_get_shell(*_engine),
+  _env = make_unique<header_file_environment>(try_to_get_shell(engine()),
                                               _config.active_shell_config(),
                                               _internal_dir, _env_filename);
 
@@ -516,7 +518,7 @@ void shell::run_metaprogram(const data::cpp_code& s_,
   if (_evaluate_metaprograms)
   {
     const data::result r = eval_tmp_formatted(
-        *_env, s_, using_precompiled_headers(), _engine->type_shell(), _logger);
+        *_env, s_, using_precompiled_headers(), engine().type_shell(), _logger);
     if (_show_cpp_errors || r.successful)
     {
       display(r, displayer_, true);
@@ -538,7 +540,21 @@ void shell::line_available(const std::string& s_, iface::displayer& displayer_)
   line_available(s_, displayer_, h);
 }
 
-iface::engine& shell::engine() { return *_engine; }
+iface::engine& shell::engine()
+{
+  const auto& name = _config.active_shell_config().engine;
+  const auto i = _engines.find(name);
+  if (i == _engines.end())
+  {
+    return *_engines.insert(std::make_pair(name, _engine_builder(_config)))
+                .first->second;
+  }
+  else
+  {
+    assert(i->second);
+    return *i->second;
+  }
+}
 
 boost::filesystem::path shell::env_path() const
 {
@@ -547,9 +563,9 @@ boost::filesystem::path shell::env_path() const
 
 bool shell::preprocess(iface::displayer& displayer_,
                        const data::cpp_code& exp_,
-                       bool process_directives_) const
+                       bool process_directives_)
 {
-  data::result r = _engine->preprocessor_shell().precompile(
+  data::result r = engine().preprocessor_shell().precompile(
       _env->get_all() + "\n" + add_markers(exp_, process_directives_) + "\n");
 
   if (r.successful)

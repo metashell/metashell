@@ -1158,8 +1158,7 @@ namespace metashell
     // TODO
   }
 
-  void mdb_shell::code_complete(const std::string&,
-                                std::set<std::string>&) const
+  void mdb_shell::code_complete(const std::string&, std::set<std::string>&)
   {
     // TODO
   }

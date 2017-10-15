@@ -59,43 +59,51 @@ namespace
   }
 }
 
-std::unique_ptr<iface::engine> metashell::create_failing_engine()
+std::function<std::unique_ptr<iface::engine>(const data::config&)>
+metashell::create_failing_engine()
 {
-  const data::result result(false, "", "Using failing engine", "");
-  const std::vector<boost::filesystem::path> empty;
+  return [](const data::config&) {
+    const data::result result(false, "", "Using failing engine", "");
+    const std::vector<boost::filesystem::path> empty;
 
-  return make_engine(
-      "failing", type_shell_constant(result),
-      preprocessor_shell_constant(result), code_completer_constant(),
-      header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
-      cpp_validator_constant(result), macro_discovery_constant(),
-      preprocessor_tracer_constant(), supported_features());
+    return make_engine(
+        "failing", type_shell_constant(result),
+        preprocessor_shell_constant(result), code_completer_constant(),
+        header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
+        cpp_validator_constant(result), macro_discovery_constant(),
+        preprocessor_tracer_constant(), supported_features());
+  };
 }
 
-std::unique_ptr<iface::engine>
+std::function<std::unique_ptr<iface::engine>(const data::config&)>
 metashell::create_engine_returning_type(const std::string& type_)
 {
-  const data::result result(true, type_, "", "");
-  const std::vector<boost::filesystem::path> empty;
+  return [type_](const data::config&) {
+    const data::result result(true, type_, "", "");
+    const std::vector<boost::filesystem::path> empty;
 
-  return make_engine(
-      "type_returning", type_shell_constant(result),
-      preprocessor_shell_constant(result), code_completer_constant(),
-      header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
-      cpp_validator_constant(result), macro_discovery_constant(),
-      preprocessor_tracer_constant(), supported_features());
+    return make_engine(
+        "type_returning", type_shell_constant(result),
+        preprocessor_shell_constant(result), code_completer_constant(),
+        header_discoverer_constant(empty, empty), metaprogram_tracer_constant(),
+        cpp_validator_constant(result), macro_discovery_constant(),
+        preprocessor_tracer_constant(), supported_features());
+  };
 }
 
-std::unique_ptr<iface::engine> metashell::create_engine_with_include_path(
+std::function<std::unique_ptr<iface::engine>(const data::config&)>
+metashell::create_engine_with_include_path(
     data::include_type type_, std::vector<boost::filesystem::path> path_)
 {
-  const data::result result(true, "int", "", "");
+  return [type_, path_](const data::config&) {
+    const data::result result(true, "int", "", "");
 
-  return make_engine("engine_with_include_path", type_shell_constant(result),
-                     preprocessor_shell_constant(result),
-                     code_completer_constant(),
-                     create_header_discoverer_with_include_path(type_, path_),
-                     metaprogram_tracer_constant(),
-                     cpp_validator_constant(result), macro_discovery_constant(),
-                     preprocessor_tracer_constant(), supported_features());
+    return make_engine(
+        "engine_with_include_path", type_shell_constant(result),
+        preprocessor_shell_constant(result), code_completer_constant(),
+        create_header_discoverer_with_include_path(type_, path_),
+        metaprogram_tracer_constant(), cpp_validator_constant(result),
+        macro_discovery_constant(), preprocessor_tracer_constant(),
+        supported_features());
+  };
 }
