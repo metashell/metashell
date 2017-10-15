@@ -102,3 +102,10 @@ TEST(indenter, left_aligning_text_with_trailing_whitespace)
   ind.left_align("foo ", "-", ".");
   ASSERT_EQ(".foo\n", ind.str());
 }
+
+TEST(indenter, left_aligning_multi_line_text_starting_with_whitespace)
+{
+  indenter ind(10);
+  ind.left_align(" foo\n bar", "-", ".");
+  ASSERT_EQ(". foo\n- bar\n", ind.str());
+}
