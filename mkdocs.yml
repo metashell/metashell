@@ -4,29 +4,34 @@ site_dir: tools/demo_server/share/html
 repo_url: https://github.com/metashell/metashell
 use_directory_urls: false
 pages:
-- ['index.md', Home]
-- ['getting_metashell/platforms.md', 'Getting Metashell', 'Supported platforms']
-- ['getting_metashell/compilers.md', 'Getting Metashell', 'Supported compilers']
-- ['getting_metashell/installers.md', 'Getting Metashell', 'Binary installers']
-- ['getting_metashell/build.md', 'Getting Metashell', 'Building Metashell']
-- ['manual/getting_started.md', 'User manual', 'Getting started']
-- ['manual/environment.md', 'User manual', 'The environment in Metashell']
-- ['manual/compilers.md', 'User manual', 'Using different compilers']
-- ['manual/troubleshooting.md', 'User manual', 'Troubleshooting']
-- ['manual/embedding.md', 'User manual', 'Embedding Metashell']
-- ['manual/how_to.md', 'User manual', 'How to...']
-- ['reference/pragmas.md', 'Reference', 'The pragmas']
-- ['reference/mdb_commands.md', 'Reference', 'MDB commands']
-- ['reference/pdb_commands.md', 'Reference', 'PDB commands']
-- ['reference/headers.md', 'Reference', 'The built-in headers']
-- ['reference/engines.md', 'Reference', 'Engines']
-- ['develop/build.md', 'Developer guide', 'Building Metashell']
-- ['develop/release.md', 'Developer guide', 'Creating a Metashell release']
-- ['develop/testing.md', 'Developer guide', 'Testing Metashell']
-- ['develop/demo_server.md', 'Developer guide', 'Demo server']
-- ['develop/rationales.md', 'Developer guide', 'Rationales']
-- ['about/demo.md', 'About', 'Demo']
-- ['about/community.md', 'About', 'Community']
-- ['about/changelog.md', 'About', 'Changelog']
+    - Home: 'index.md'
+    - Getting Metashell:
+        - 'Supported platforms': 'getting_metashell/platforms.md'
+        - 'Supported compilers': 'getting_metashell/compilers.md'
+        - 'Binary installers': 'getting_metashell/installers.md'
+        - 'Building Metashell': 'getting_metashell/build.md'
+    - User manual:
+        - 'Getting started': 'manual/getting_started.md'
+        - 'The environment in Metashell': 'manual/environment.md'
+        - 'Using different compilers': 'manual/compilers.md'
+        - 'Troubleshooting': 'manual/troubleshooting.md'
+        - 'Embedding Metashell': 'manual/embedding.md'
+        - 'How to...' : 'manual/how_to.md'
+    - Reference:
+        - 'The pragmas': 'reference/pragmas.md'
+        - 'MDB commands': 'reference/mdb_commands.md'
+        - 'PDB commands': 'reference/pdb_commands.md'
+        - 'The built-in headers': 'reference/headers.md'
+        - 'Engines': 'reference/engines.md'
+    - Developer guide:
+        - 'Building Metashell': 'develop/build.md'
+        - 'Creating a Metashell release': 'develop/release.md'
+        - 'Testing Metashell': 'develop/testing.md'
+        - 'Demo server': 'develop/demo_server.md'
+        - 'Rationales': 'develop/rationales.md'
+    - About:
+        - 'Demo': 'about/demo.md'
+        - 'Community': 'about/community.md'
+        - 'Changelog': 'about/changelog.md'
 theme: readthedocs
 
