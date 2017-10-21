@@ -24,10 +24,25 @@ def find_md_files(path):
     ], [])
 
 
+def pages_of(yml):
+    """Get the list of pages"""
+    stack = [yml]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, basestring):
+            yield item
+        elif isinstance(item, dict):
+            stack.extend(item.values())
+        else:
+            stack.extend(item)
+
+
 def validate(yml, docs_path):
     """Validate the mkdocs.yml content (yml) against the md files"""
-    pages = [p[0] for p in yml['pages']]
-    missing = [f for f in find_md_files(docs_path) if f not in pages]
+    missing = [
+        f for f in find_md_files(docs_path)
+        if f not in pages_of(yml['pages'])
+    ]
     return ['{0} is not added to mkdocs.yml'.format(f) for f in missing]
 
 
