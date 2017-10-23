@@ -28,6 +28,15 @@ CLANG_VERSION=3.8.0
 echo "Platform: ${PLATFORM}"
 
 case "${PLATFORM}" in
+arch)
+  # If `gcc-multilib` is already installed, don't try to install plain `gcc`
+  pacman -Qqs gcc-multilib > /dev/null
+  if [ $? ]; then
+    sudo pacman --needed -S cmake git python readline
+  else
+    sudo pacman --needed -S cmake git python readline gcc
+  fi
+  ;;
 fedora)
   sudo yum -y install \
     git \
