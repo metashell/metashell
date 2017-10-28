@@ -20,6 +20,7 @@
 #include <metashell/shell.hpp>
 
 #include <metashell/pragma_config.hpp>
+#include <metashell/pragma_config_load.hpp>
 #include <metashell/pragma_config_show.hpp>
 #include <metashell/pragma_echo.hpp>
 #include <metashell/pragma_environment.hpp>
@@ -239,6 +240,7 @@ pragma_handler_map::build_default(shell& shell_,
       .add("ls", pragma_ls(shell_))
       .add("config", pragma_config(shell_))
       .add("config", "show", pragma_config_show(shell_))
+      .add("config", "load", pragma_config_load(shell_))
       .add("quit", pragma_quit(shell_));
 }
 

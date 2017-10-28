@@ -534,6 +534,8 @@ void shell::reset_environment()
 
 const data::config& shell::get_config() const { return _config; }
 
+data::config& shell::get_config() { return _config; }
+
 void shell::line_available(const std::string& s_, iface::displayer& displayer_)
 {
   null_history h;

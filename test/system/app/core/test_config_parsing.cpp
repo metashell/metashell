@@ -19,6 +19,7 @@
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/metashell_terminated.hpp>
 #include <metashell/system_test/paragraph.hpp>
+#include <metashell/system_test/prompt.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -32,6 +33,7 @@
 #include <vector>
 
 using namespace metashell::system_test;
+using pattern::_;
 
 namespace
 {
@@ -231,4 +233,26 @@ TEST(config_parsing, parsed_config)
             t.cmd_with_configs(
                  {"[" + test_config("test1") + "]"}, {"#msh config show test2"})
                 .front());
+}
+
+TEST(config_parsing, switching_config)
+{
+  const std::vector<std::string> configs{
+      "[{\"name\":\"wave\",\"engine\":\"wave\"}]"};
+  config_parse_test t;
+
+  ASSERT_EQ(
+      prompt(">"), t.cmd_with_configs(configs, {"typedef int x;"}).front());
+  ASSERT_EQ(comment(_), t.cmd_with_configs(configs, {"typedef int x;",
+                                                     "#msh config load wave"})
+                            .front());
+  ASSERT_EQ(error(_), t.cmd_with_configs(configs, {"#msh config load wave",
+                                                   "typedef foo bar;",
+                                                   "#msh config load default"})
+                          .front());
+  ASSERT_EQ(
+      comment({paragraph("   default\n * wave")}),
+      t.cmd_with_configs(configs, {"#msh config load wave", "typedef foo bar;",
+                                   "#msh config load default", "#msh config"})
+          .front());
 }

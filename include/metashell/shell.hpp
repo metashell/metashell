@@ -109,6 +109,7 @@ namespace metashell
     void rebuild_environment();
 
     const data::config& get_config() const;
+    data::config& get_config();
 
     iface::engine& engine();
 
