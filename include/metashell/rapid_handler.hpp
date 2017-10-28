@@ -20,8 +20,8 @@
 #include <metashell/json_parsing_error.hpp>
 
 #include <cassert>
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace metashell
 {
