@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <string>
+#include <cstdint>
 
 namespace metashell
 {
@@ -60,14 +61,14 @@ namespace metashell
       return false;
     }
 
-    bool Int64(int64_t i_)
+    bool Int64(std::int64_t i_)
     {
       impl().not_empty();
       impl().fail(unexpected_integer_element(i_));
       return false;
     }
 
-    bool Uint64(uint64_t i_)
+    bool Uint64(std::uint64_t i_)
     {
       impl().not_empty();
       impl().fail(unexpected_integer_element(i_));

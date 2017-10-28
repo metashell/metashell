@@ -44,7 +44,8 @@ namespace
     {
       try
       {
-        metashell_instance(write_configs(configs_), {}, false);
+        metashell_instance(
+            write_configs(configs_), boost::filesystem::path(), false);
       }
       catch (const metashell_terminated& e_)
       {
