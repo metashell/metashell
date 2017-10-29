@@ -20,6 +20,7 @@
 #include <metashell/system_test/metashell_terminated.hpp>
 #include <metashell/system_test/paragraph.hpp>
 #include <metashell/system_test/prompt.hpp>
+#include <metashell/system_test/util.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -130,6 +131,7 @@ namespace
 
 TEST(config_parsing, errors)
 {
+  const std::string nl = new_line() + new_line();
   config_parse_test t;
 
   typedef std::pair<std::string, std::string> sp;
@@ -139,11 +141,11 @@ TEST(config_parsing, errors)
                sp("string", "\"hello\"")})
   {
     ASSERT_EQ("JSON parsing failed: Unexpected " + p.first + " element: " +
-                  p.second + "\n\n",
+                  p.second + nl,
               t.error_with_configs({p.second}));
   }
 
-  ASSERT_EQ("JSON parsing failed: Invalid key: hello\n\n",
+  ASSERT_EQ("JSON parsing failed: Invalid key: hello" + nl,
             t.error_with_configs({"{\"hello\":13}"}));
 
   typedef std::tuple<value_type, std::string, std::string> tup;
@@ -164,40 +166,44 @@ TEST(config_parsing, errors)
       {
         ASSERT_EQ("JSON parsing failed: " + std::get<2>(smp) +
                       " is not a valid value for " + p.first +
-                      ", which should be a " + to_string(p.second) + "\n\n",
+                      ", which should be a " + to_string(p.second) + nl,
                   t.error_with_configs(
                       {"{\"" + p.first + "\":" + std::get<1>(smp) + "}"}));
       }
     }
   }
 
-  ASSERT_EQ("JSON parsing failed: Unexpected integer element: 13\n\n",
+  ASSERT_EQ("JSON parsing failed: Unexpected integer element: 13" + nl,
             t.error_with_configs({"{\"engine_args\":[13]}"}));
 
-  ASSERT_EQ("JSON parsing failed: Unexpected double element: 13.1\n\n",
+  ASSERT_EQ("JSON parsing failed: Unexpected double element: 13.1" + nl,
             t.error_with_configs({"{\"engine_args\":[13.1]}"}));
 
   ASSERT_EQ(
       "JSON parsing failed: false is not a valid value for engine_args, which "
-      "should be a list of strings\n\n",
+      "should be a list of strings" +
+          nl,
       t.error_with_configs({"{\"engine_args\":[false]}"}));
 
   ASSERT_EQ(
       "JSON parsing failed: A list containing a list is not a valid value for "
-      "engine_args, which should be a list of strings\n\n",
+      "engine_args, which should be a list of strings" +
+          nl,
       t.error_with_configs({"{\"engine_args\":[[]]}"}));
 
-  ASSERT_EQ("JSON parsing failed: The name of a config is missing\n\n",
+  ASSERT_EQ("JSON parsing failed: The name of a config is missing" + nl,
             t.error_with_configs({"{}"}));
 
   ASSERT_EQ(
       "JSON parsing failed: More than one config provided with the name "
-      "foo\n\n",
+      "foo" +
+          nl,
       t.error_with_configs({"[{\"name\":\"foo\"},{\"name\":\"foo\"}]"}));
 
   ASSERT_EQ(
       "JSON parsing failed: More than one config provided with the name "
-      "foo\n\n",
+      "foo" +
+          nl,
       t.error_with_configs({"{\"name\":\"foo\"}", "{\"name\":\"foo\"}"}));
 }
 
