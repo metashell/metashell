@@ -20,4 +20,9 @@
 
 using namespace metashell::data;
 
-config metashell::test_config() { return config{}; }
+config metashell::test_config()
+{
+  config result;
+  result.push_back(shell_config());
+  return result;
+}

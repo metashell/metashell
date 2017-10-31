@@ -1,8 +1,8 @@
-#ifndef METASHELL_MOCK_COMMAND_PROCESSOR_HPP
-#define METASHELL_MOCK_COMMAND_PROCESSOR_HPP
+#ifndef METASHELL_PRAGMA_CONFIG_HPP
+#define METASHELL_PRAGMA_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
+#include <metashell/pragma_without_arguments.hpp>
 
-#include <gmock/gmock.h>
+#include <string>
 
-class mock_command_processor : public metashell::iface::command_processor
+namespace metashell
 {
-public:
-  MOCK_METHOD3(line_available,
-               void(const std::string&,
-                    metashell::iface::displayer&,
-                    metashell::iface::history&));
-  MOCK_METHOD0(cancel_operation, void());
+  class shell;
 
-  MOCK_CONST_METHOD0(prompt, std::string());
-  MOCK_CONST_METHOD0(stopped, bool());
+  class pragma_config : public pragma_without_arguments
+  {
+  public:
+    explicit pragma_config(shell& shell_);
 
-  MOCK_METHOD2(code_complete, void(const std::string&, std::set<std::string>&));
-};
+    virtual iface::pragma_handler* clone() const override;
+
+    virtual std::string description() const override;
+
+    virtual void run(iface::displayer& displayer_) const override;
+
+  private:
+    shell& _shell;
+  };
+}
 
 #endif

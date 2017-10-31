@@ -38,6 +38,8 @@ void rapid_json_writer::int_(int value_) { _writer.Int(value_); }
 
 void rapid_json_writer::double_(double value_) { _writer.Double(value_); }
 
+void rapid_json_writer::bool_(bool value_) { _writer.Bool(value_); }
+
 void rapid_json_writer::start_object() { _writer.StartObject(); }
 
 void rapid_json_writer::key(const std::string& key_)

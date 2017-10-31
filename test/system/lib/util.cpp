@@ -119,3 +119,12 @@ std::string metashell::system_test::c_string_literal(const std::string& s_)
   }
   return std::string(s.begin(), write_to(end, '\"'));
 }
+
+std::string metashell::system_test::new_line()
+{
+#ifdef _WIN32
+  return "\r\n";
+#else
+  return "\n";
+#endif
+}

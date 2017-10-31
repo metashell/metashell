@@ -48,9 +48,10 @@ namespace
                      logger* logger_)
   {
     const data::wave_config cfg = parse_wave_config(
-        UseTemplightHeaders, config_.extra_clang_args, config_.metashell_binary,
-        internal_dir_, env_detector_, displayer_, logger_);
-    return make_engine(config_.engine, not_supported(),
+        UseTemplightHeaders, config_.active_shell_config().engine_args,
+        config_.metashell_binary, internal_dir_, env_detector_, displayer_,
+        logger_);
+    return make_engine(config_.active_shell_config().engine, not_supported(),
                        preprocessor_shell_wave(cfg), not_supported(),
                        header_discoverer_wave(cfg), not_supported(),
                        cpp_validator_wave(cfg), macro_discovery_wave(cfg),

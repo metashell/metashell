@@ -17,6 +17,9 @@
 #include <metashell/data/markdown_string.hpp>
 #include <metashell/engine_entry.hpp>
 #include <metashell/parse_config.hpp>
+#include <metashell/rapid_shell_config_parser.hpp>
+
+#include <rapidjson/reader.h>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -29,6 +32,10 @@
 
 #include <boost/optional.hpp>
 
+#include <boost/filesystem/path.hpp>
+
+#include <just/file.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -39,13 +46,24 @@ using namespace metashell;
 
 namespace
 {
-  void show_help(std::ostream& out_,
+  void show_error(std::ostream* out_, const std::exception& err_)
+  {
+    if (out_)
+    {
+      *out_ << err_.what() << "\n\n";
+    }
+  }
+
+  void show_help(std::ostream* out_,
                  const boost::program_options::options_description& desc_)
   {
-    out_ << "Usage:\n"
-         << "  metashell <options> [-- <extra Clang options>]\n"
-         << "\n"
-         << desc_ << std::endl;
+    if (out_)
+    {
+      *out_ << "Usage:\n"
+            << "  metashell <options> [-- <extra Clang options>]\n"
+            << "\n"
+            << desc_ << std::endl;
+    }
   }
 
   void show_engine_help(const std::map<std::string, engine_entry>& engines_,
@@ -170,6 +188,28 @@ namespace
         "compiler"
         " argument after --";
   };
+
+  data::shell_config
+  parse_default_shell_config(const boost::program_options::variables_map& vm_,
+                             const char** extra_args_begin_,
+                             const char** extra_args_end_,
+                             const std::string& engine_)
+  {
+    data::shell_config result;
+    result.name = data::shell_config_name("default");
+
+    result.engine_args.insert(
+        result.engine_args.end(), extra_args_begin_, extra_args_end_);
+
+    if (vm_.count("engine"))
+    {
+      result.engine = engine_;
+    }
+    result.use_precompiled_headers = !vm_.count("no_precompiled_headers");
+    result.preprocessor_mode = vm_.count("preprocessor");
+
+    return result;
+  }
 }
 
 parse_config_result
@@ -194,24 +234,27 @@ metashell::parse_config(int argc_,
     cfg.metashell_binary = argv_[0];
   }
 
+  const char** args_end = argv_ + argc_;
+
   const char** const minus_minus =
-      std::find(argv_, argv_ + argc_, std::string("--"));
-  if (minus_minus != argv_ + argc_)
-  {
-    cfg.extra_clang_args.insert(
-        cfg.extra_clang_args.end(), minus_minus + 1, argv_ + argc_);
-  }
+      std::find(argv_, args_end, std::string("--"));
+
+  const char** extra_args_begin =
+      minus_minus == args_end ? args_end : minus_minus + 1;
+
   const int argc = minus_minus - argv_;
 
   std::string con_type("readline");
-  cfg.use_precompiled_headers = true;
 
   std::string help_engine;
+  std::string engine;
 
   const std::string engine_info =
       "The engine (C++ compiler) to use. Available engines: " +
       boost::algorithm::join(engines_ | boost::adaptors::map_keys, ", ") +
-      ". Default: " + cfg.engine;
+      ". Default: " + data::shell_config().engine;
+
+  std::vector<boost::filesystem::path> configs_to_load;
 
   options_description desc("Options");
   // clang-format off
@@ -238,9 +281,10 @@ metashell::parse_config(int argc_,
       "log", value(&cfg.log_file),
       "Log into a file. When it is set to -, it logs into the console."
     )
-    ("engine", value(&cfg.engine), engine_info.c_str())
+    ("engine", value(&engine), engine_info.c_str())
     ("help_engine", value(&help_engine), "Display help about the engine")
-    ("preprocessor", "Starts the shell in preprocessor mode");
+    ("preprocessor", "Starts the shell in preprocessor mode")
+    ("load_configs", value(&configs_to_load), "Load configs from a file.");
   // clang-format on
 
   using dec_arg = decommissioned_argument;
@@ -288,10 +332,8 @@ metashell::parse_config(int argc_,
     cfg.syntax_highlight = !(vm.count("no_highlight") || vm.count("H"));
     cfg.indent = vm.count("indent") != 0;
     cfg.con_type = metashell::data::parse_console_type(con_type);
-    cfg.use_precompiled_headers = !vm.count("no_precompiled_headers");
     cfg.saving_enabled = !vm.count("disable_saving");
     cfg.splash_enabled = vm.count("nosplash") == 0;
-    cfg.preprocessor_mode = vm.count("preprocessor");
     if (vm.count("log") == 0)
     {
       cfg.log_mode = data::logging_mode::none;
@@ -302,12 +344,33 @@ metashell::parse_config(int argc_,
                                              data::logging_mode::file;
     }
 
+    cfg.push_back(
+        parse_default_shell_config(vm, extra_args_begin, args_end, engine));
+
+    for (const boost::filesystem::path& config_path : configs_to_load)
+    {
+      const std::string json =
+          just::file::read<std::string>(config_path.string());
+      rapidjson::StringStream string_stream(json.c_str());
+      rapidjson::Reader reader;
+      rapid_shell_config_parser handler;
+      handler.parsed_config_callback = [&cfg](data::shell_config cfg_) {
+        if (cfg.exists(cfg_.name))
+        {
+          throw json_parsing_error(
+              "More than one config provided with the name " + cfg_.name);
+        }
+        else
+        {
+          cfg.push_back(std::move(cfg_));
+        }
+      };
+      reader.Parse(string_stream, handler);
+    }
+
     if (vm.count("help"))
     {
-      if (out_)
-      {
-        show_help(*out_, desc);
-      }
+      show_help(out_, desc);
       return parse_config_result::exit(false);
     }
     else if (vm.count("help_engine"))
@@ -320,13 +383,15 @@ metashell::parse_config(int argc_,
       return parse_config_result::start_shell(cfg);
     }
   }
+  catch (const json_parsing_error& e_)
+  {
+    show_error(err_, e_);
+    return parse_config_result::exit(true);
+  }
   catch (const std::exception& e_)
   {
-    if (err_)
-    {
-      *err_ << e_.what() << "\n\n";
-      show_help(*err_, desc);
-    }
+    show_error(err_, e_);
+    show_help(err_, desc);
     return parse_config_result::exit(true);
   }
 }

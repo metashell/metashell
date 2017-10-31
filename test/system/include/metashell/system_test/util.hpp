@@ -46,6 +46,8 @@ namespace metashell
     {
       return !a_ || !b_ || *a_ == *b_;
     }
+
+    std::string new_line();
   }
 }
 

@@ -1,8 +1,8 @@
-#ifndef METASHELL_RAPID_OBJECT_HANDLER_HPP
-#define METASHELL_RAPID_OBJECT_HANDLER_HPP
+#ifndef METASHELL_RAPID_SHELL_CONFIG_PARSER_HPP
+#define METASHELL_RAPID_SHELL_CONFIG_PARSER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,37 +17,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/displayer.hpp>
+#include <metashell/data/shell_config.hpp>
 #include <metashell/rapid_handler.hpp>
 
 #include <boost/optional.hpp>
 
-#include <map>
+#include <functional>
 
 namespace metashell
 {
-  class rapid_object_handler : public rapid_handler<rapid_object_handler, false>
+  class rapid_shell_config_parser
+      : public rapid_handler<rapid_shell_config_parser, true>
   {
   public:
-    explicit rapid_object_handler(iface::displayer& displayer_);
+    std::function<void(data::shell_config)> parsed_config_callback =
+        [](data::shell_config) { /* throw away */ };
+
+    bool StartArray();
+    bool end_array();
 
     bool StartObject();
-
-    boost::optional<std::string> field(const std::string& name_) const;
-
-    void fail(const std::string& msg_);
-
-    bool string(const std::string& str_);
-    bool key(const std::string& str_);
     bool end_object();
 
+    bool key(const std::string& str_);
+
+    bool Bool(bool b_);
+    bool string(const std::string& str_);
+
   private:
-    std::map<std::string, std::string> _fields;
-
-    bool _in_object;
-    std::string _next_key;
-
-    iface::displayer& _displayer;
+    bool _in_list = false;
+    boost::optional<data::shell_config> _config = boost::none;
+    boost::optional<std::string> _key = boost::none;
+    bool _in_engine_args = false;
   };
 }
 

@@ -86,8 +86,8 @@ namespace
 
       out_.push_back(std::string(i, pos_after_last_non_whitespace(i, bp)));
 
-      // i moves forward in each iteration
-      auto new_i = first_non_whitespace(bp, end_);
+      const auto new_i =
+          (bp == end_ || *bp != '\n') ? first_non_whitespace(bp, end_) : bp + 1;
       assert(i < new_i);
       i = new_i;
     }

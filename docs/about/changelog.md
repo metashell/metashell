@@ -15,6 +15,7 @@
       the Templight (shipped with Metashell) on the system include path and the
       macros of Templight defined by default.
     * pdb, the macro debugger
+    * Support for using different configs in Metashell.
 
 * Fixes
     * The `templight_metashell` executable is found even if the `metashell`

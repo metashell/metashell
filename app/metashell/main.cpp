@@ -77,77 +77,82 @@ int main(int argc_, const char* argv_[])
     const parse_config_result r =
         parse_config(argc_, argv_, engines, det, &std::cout, &std::cerr);
 
-    metashell::console_config ccfg(
-        r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
-
-    metashell::fstream_file_writer file_writer;
-    metashell::logger logger(ccfg.displayer(), file_writer);
-    switch (r.cfg.log_mode)
+    if (r.should_run_shell())
     {
-    case metashell::data::logging_mode::none:
-      // do nothing
-      break;
-    case metashell::data::logging_mode::console:
-      logger.log_to_console();
-      break;
-    case metashell::data::logging_mode::file:
-      logger.log_into_file(r.cfg.log_file);
-      break;
-    }
+      metashell::console_config ccfg(
+          r.cfg.con_type, r.cfg.indent, r.cfg.syntax_highlight);
 
-    METASHELL_LOG(&logger, "Start logging");
-
-    const auto eentry = engines.find(r.cfg.engine);
-    if (eentry == engines.end())
-    {
-      throw std::runtime_error(
-          "Engine " + r.cfg.engine + " not found. Available engines: " +
-          boost::algorithm::join(engines | boost::adaptors::map_keys, ", "));
-    }
-    else
-    {
-      if (r.should_run_shell())
+      metashell::fstream_file_writer file_writer;
+      metashell::logger logger(ccfg.displayer(), file_writer);
+      switch (r.cfg.log_mode)
       {
-        using boost::filesystem::path;
-
-        METASHELL_LOG(&logger, "Running shell");
-
-        just::temp::directory dir;
-
-        const path shell_dir = path(dir.path()) / "shell";
-        const path temp_dir = path(dir.path()) / "tmp";
-        const path mdb_dir = path(dir.path()) / "mdb";
-
-        create_directories(shell_dir);
-        create_directories(temp_dir);
-        create_directories(mdb_dir);
-
-        auto shell = metashell::make_unique<metashell::shell>(
-            r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
-            eentry->second.build(r.cfg, shell_dir, temp_dir, env_filename, det,
-                                 ccfg.displayer(), &logger),
-            &logger);
-
-        if (r.cfg.splash_enabled)
-        {
-          shell->display_splash(ccfg.displayer(), get_dependency_versions());
-        }
-
-        ccfg.processor_queue().push(move(shell));
-
-        METASHELL_LOG(&logger, "Starting input loop");
-
-        metashell::input_loop(
-            ccfg.processor_queue(), ccfg.displayer(), ccfg.reader());
-
-        METASHELL_LOG(&logger, "Input loop finished");
+      case metashell::data::logging_mode::none:
+        // do nothing
+        break;
+      case metashell::data::logging_mode::console:
+        logger.log_to_console();
+        break;
+      case metashell::data::logging_mode::file:
+        logger.log_into_file(r.cfg.log_file);
+        break;
       }
-      else
+
+      METASHELL_LOG(&logger, "Start logging");
+
+      using boost::filesystem::path;
+
+      METASHELL_LOG(&logger, "Running shell");
+
+      just::temp::directory dir;
+
+      const path shell_dir = path(dir.path()) / "shell";
+      const path temp_dir = path(dir.path()) / "tmp";
+      const path mdb_dir = path(dir.path()) / "mdb";
+
+      create_directories(shell_dir);
+      create_directories(temp_dir);
+      create_directories(mdb_dir);
+
+      auto shell = metashell::make_unique<metashell::shell>(
+          r.cfg, ccfg.processor_queue(), shell_dir, env_filename, mdb_dir,
+          // The shell should be destroyed when this scope is left, capturing
+          // locals by reference should be safe.
+          [&engines, &shell_dir, &temp_dir, &env_filename, &det, &ccfg,
+           &logger](const metashell::data::config& config_) {
+            const auto eentry =
+                engines.find(config_.active_shell_config().engine);
+            if (eentry == engines.end())
+            {
+              throw std::runtime_error(
+                  "Engine " + config_.active_shell_config().engine +
+                  " not found. Available engines: " +
+                  boost::algorithm::join(
+                      engines | boost::adaptors::map_keys, ", "));
+            }
+            else
+            {
+              return eentry->second.build(config_, shell_dir, temp_dir,
+                                          env_filename, det, ccfg.displayer(),
+                                          &logger);
+            }
+          },
+          &logger);
+
+      if (r.cfg.splash_enabled)
       {
-        METASHELL_LOG(&logger, "Not running shell");
+        shell->display_splash(ccfg.displayer(), get_dependency_versions());
       }
-      return r.should_error_at_exit() ? 1 : 0;
+
+      ccfg.processor_queue().push(move(shell));
+
+      METASHELL_LOG(&logger, "Starting input loop");
+
+      metashell::input_loop(
+          ccfg.processor_queue(), ccfg.displayer(), ccfg.reader());
+
+      METASHELL_LOG(&logger, "Input loop finished");
     }
+    return r.should_error_at_exit() ? 1 : 0;
   }
   catch (std::exception& e_)
   {

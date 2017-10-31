@@ -19,6 +19,7 @@
 
 #include <metashell/data/console_type.hpp>
 #include <metashell/data/logging_mode.hpp>
+#include <metashell/data/shell_config.hpp>
 
 #include <string>
 #include <vector>
@@ -35,17 +36,31 @@ namespace metashell
       bool verbose = false;
       bool syntax_highlight = true;
       bool indent = true;
-      std::vector<std::string> extra_clang_args;
-      bool use_precompiled_headers = false;
-      int max_template_depth;
-      unsigned templight_trace_capacity;
       bool saving_enabled = true;
       console_type con_type = console_type::plain;
       bool splash_enabled = true;
       logging_mode log_mode = logging_mode::none;
       std::string log_file;
-      std::string engine = "internal";
-      bool preprocessor_mode = false;
+
+      const std::vector<shell_config>& shell_configs() const;
+
+      shell_config& active_shell_config();
+      const shell_config& active_shell_config() const;
+
+      void activate(const shell_config_name& name_);
+
+      void push_back(shell_config config_);
+
+      bool exists(const shell_config_name& name_) const;
+
+    private:
+      std::vector<shell_config> _shell_configs;
+
+      // using index instead of iterator to avoid it getting invalidated
+      // during insertion.
+      std::vector<shell_config>::size_type _active_config = 0;
+
+      void validate_active_config() const;
     };
   }
 }

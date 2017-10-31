@@ -76,7 +76,7 @@ namespace metashell
     void command_quit(const std::string& arg, iface::displayer& displayer_);
 
     virtual void code_complete(const std::string& s_,
-                               std::set<std::string>& out_) const override;
+                               std::set<std::string>& out_) override;
 
     static mdb_command_handler_map build_command_handler(bool preprocessor_);
 

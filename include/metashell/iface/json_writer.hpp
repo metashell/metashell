@@ -31,6 +31,7 @@ namespace metashell
       virtual void string(const std::string& value_) = 0;
       virtual void int_(int value_) = 0;
       virtual void double_(double value_) = 0;
+      virtual void bool_(bool value_) = 0;
 
       virtual void start_object() = 0;
       virtual void key(const std::string& key_) = 0;

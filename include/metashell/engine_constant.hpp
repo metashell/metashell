@@ -19,17 +19,19 @@
 
 #include <metashell/iface/engine.hpp>
 
+#include <functional>
 #include <memory>
 #include <string>
 
 namespace metashell
 {
-  std::unique_ptr<iface::engine> create_failing_engine();
+  std::function<std::unique_ptr<iface::engine>(const data::config&)>
+  create_failing_engine();
 
-  std::unique_ptr<iface::engine>
+  std::function<std::unique_ptr<iface::engine>(const data::config&)>
   create_engine_returning_type(const std::string& type_);
 
-  std::unique_ptr<iface::engine>
+  std::function<std::unique_ptr<iface::engine>(const data::config&)>
   create_engine_with_include_path(data::include_type type_,
                                   std::vector<boost::filesystem::path> path_);
 }

@@ -16,6 +16,7 @@
 
 #include <metashell/system_test/json_generator.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/metashell_terminated.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
@@ -24,7 +25,6 @@
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
-#include <stdexcept>
 
 namespace
 {
@@ -182,8 +182,7 @@ namespace metashell
       {
         std::string err;
         read_all(std::tie(_child.standard_error(), err));
-        throw std::runtime_error("Metashell terminated. Standard error: " +
-                                 err);
+        throw metashell_terminated(err);
       }
       else
       {

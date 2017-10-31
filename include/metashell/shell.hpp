@@ -46,7 +46,8 @@ namespace metashell
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
           const boost::filesystem::path& mdb_temp_dir_,
-          std::unique_ptr<iface::engine> engine_,
+          std::function<std::unique_ptr<iface::engine>(const data::config&)>
+              engine_builder_,
           logger* logger_ = nullptr);
 
     shell(const data::config& config_,
@@ -54,7 +55,8 @@ namespace metashell
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
           const boost::filesystem::path& mdb_temp_dir_,
-          std::unique_ptr<iface::engine> engine_,
+          std::function<std::unique_ptr<iface::engine>(const data::config&)>
+              engine_builder_,
           logger* logger_ = nullptr);
 
     shell(const data::config& config_,
@@ -63,7 +65,8 @@ namespace metashell
           const boost::filesystem::path& internal_dir_,
           const boost::filesystem::path& env_filename_,
           const boost::filesystem::path& mdb_temp_dir_,
-          std::unique_ptr<iface::engine> engine_,
+          std::function<std::unique_ptr<iface::engine>(const data::config&)>
+              engine_builder_,
           logger* logger_ = nullptr);
 
     void display_splash(
@@ -83,7 +86,7 @@ namespace metashell
                          iface::displayer& displayer_);
 
     virtual void code_complete(const std::string& s_,
-                               std::set<std::string>& out_) const override;
+                               std::set<std::string>& out_) override;
 
     const pragma_handler_map& pragma_handlers() const;
 
@@ -106,6 +109,7 @@ namespace metashell
     void rebuild_environment();
 
     const data::config& get_config() const;
+    data::config& get_config();
 
     iface::engine& engine();
 
@@ -113,7 +117,7 @@ namespace metashell
 
     bool preprocess(iface::displayer& displayer_,
                     const data::cpp_code& exp_,
-                    bool process_directives_) const;
+                    bool process_directives_);
 
     void echo(bool enabled_);
     bool echo() const;
@@ -135,7 +139,9 @@ namespace metashell
     bool _stopped;
     std::stack<data::cpp_code> _environment_stack;
     logger* _logger;
-    std::unique_ptr<iface::engine> _engine;
+    std::function<std::unique_ptr<iface::engine>(const data::config&)>
+        _engine_builder;
+    std::map<std::string, std::unique_ptr<iface::engine>> _engines;
     bool _echo = false;
     bool _show_cpp_errors = true;
     bool _evaluate_metaprograms = true;

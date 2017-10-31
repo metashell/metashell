@@ -1,8 +1,8 @@
-#ifndef METASHELL_MOCK_COMMAND_PROCESSOR_HPP
-#define METASHELL_MOCK_COMMAND_PROCESSOR_HPP
+#ifndef METASHELL_DATA_SHELL_CONFIG_HPP
+#define METASHELL_DATA_SHELL_CONFIG_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/iface/command_processor.hpp>
+#include <metashell/data/shell_config_name.hpp>
 
-#include <gmock/gmock.h>
+#include <metashell/iface/json_writer.hpp>
 
-class mock_command_processor : public metashell::iface::command_processor
+#include <string>
+#include <vector>
+
+namespace metashell
 {
-public:
-  MOCK_METHOD3(line_available,
-               void(const std::string&,
-                    metashell::iface::displayer&,
-                    metashell::iface::history&));
-  MOCK_METHOD0(cancel_operation, void());
+  namespace data
+  {
+    class shell_config
+    {
+    public:
+      shell_config_name name;
 
-  MOCK_CONST_METHOD0(prompt, std::string());
-  MOCK_CONST_METHOD0(stopped, bool());
+      std::vector<std::string> engine_args;
+      bool use_precompiled_headers = false;
+      std::string engine = "internal";
+      bool preprocessor_mode = false;
+    };
 
-  MOCK_METHOD2(code_complete, void(const std::string&, std::set<std::string>&));
-};
+    void display(iface::json_writer& out_, const shell_config& cfg_);
+  }
+}
 
 #endif

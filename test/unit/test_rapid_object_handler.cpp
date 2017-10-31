@@ -117,6 +117,30 @@ TEST(rapid_object_handler, new_is_failed_after_double)
       std::vector<std::string>{"Unexpected double element: 11.13"}, d.errors());
 }
 
+TEST(rapid_object_handler, new_is_failed_after_zero_double)
+{
+  in_memory_displayer d;
+  rapid_object_handler r(d);
+  const bool b = r.Double(0);
+
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected double element: 0"}, d.errors());
+}
+
+TEST(rapid_object_handler, new_is_failed_after_one_double)
+{
+  in_memory_displayer d;
+  rapid_object_handler r(d);
+  const bool b = r.Double(1);
+
+  ASSERT_FALSE(b);
+  ASSERT_TRUE(r.failed());
+  ASSERT_EQ(
+      std::vector<std::string>{"Unexpected double element: 1"}, d.errors());
+}
+
 TEST(rapid_object_handler, new_is_failed_after_standalone_string)
 {
   in_memory_displayer d;
