@@ -224,7 +224,7 @@ def git_clone(src_repository, out_dir, log):
         remote_branch = 'origin/{0}'.format(branch)
         repo = git_repo(src_repository, out_dir, branch, log)
         git(repo, ['checkout', '-f', remote_branch], log)
-        git(repo, ['submodule', 'update'], log)
+        git(repo, ['submodule', 'update', '-f'], log)
         result.append(
             Branch(
                 branch,

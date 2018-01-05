@@ -96,6 +96,7 @@ class GitRepository(object):
     def __init__(self):
         self.temp_dir = TempDir()
         self.repo = None
+        self.submodule_paths = {}
 
     def in_repo(self, path):
         """Turns a path relative to the repository to an absolute path"""
@@ -139,6 +140,19 @@ class GitRepository(object):
     def delete_branch(self, name):
         """Delete a branch"""
         self.repo.delete_head(name, force=True)
+
+    def add_submodule(self, name, path, sub_repository):
+        """Add a Git submodule"""
+        self.repo.create_submodule(name, path, url=sub_repository.repository())
+        self.submodule_paths[name] = path
+
+    def pull_submodule(self, name):
+        """Git pull a submodule"""
+        submod = self.repo.submodule(name)
+        path = self.submodule_paths[name]
+        url = submod.url
+        submod.remove()
+        self.repo.create_submodule(name, path, url)
 
     def __enter__(self):
         self.temp_dir.__enter__()

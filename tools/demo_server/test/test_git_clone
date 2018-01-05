@@ -171,6 +171,35 @@ class TestGitClone(unittest.TestCase):
             git_clone(repo.repository(), out_dir.path, no_logs)
             self.assertTrue(out_dir.exists('feature/test/foo.txt'))
 
+    def test_updating_submodule_with_local_changes(self):
+        with \
+                util.GitRepository() as repo, \
+                util.GitRepository() as subrepo, \
+                util.TempDir() as out_dir:
+
+            def update_subrepo(content):
+                util.commit(subrepo, {'foo.txt': content})
+                repo.pull_submodule('test_module')
+                repo.commit('updating submodule')
+
+            util.commit(subrepo, {'foo.txt': 'content1'})
+
+            repo.add_submodule('test_module', 'tmd', subrepo)
+            util.commit(repo, {'bar.txt': 'asd'})
+
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertTrue(out_dir.exists('master/bar.txt'))
+            self.assertEqual('content1', out_dir.read('master/tmd/foo.txt'))
+
+            update_subrepo('content2')
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertEqual('content2', out_dir.read('master/tmd/foo.txt'))
+
+            update_subrepo('content3')
+            out_dir.write('master/tmd/foo.txt', 'some local change')
+            git_clone(repo.repository(), out_dir.path, no_logs)
+            self.assertEqual('content3', out_dir.read('master/tmd/foo.txt'))
+
 
 if __name__ == '__main__':
     unittest.main()
