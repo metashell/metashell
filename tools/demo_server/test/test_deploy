@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import stat
 import unittest
 import util
@@ -786,6 +787,32 @@ class TestDeploy(unittest.TestCase):
                 symlink_to(symlink_path)
             )
 
+    def test_changing_url_of_repository(self):
+        with util.CommonEnv(1) as env, util.TempDir() as tmp:
+            env.commit(0, {'foo.txt': 'asd'})
+            env.write_config([{
+                'name': 'repo',
+                'git': env.repository(0)
+            }])
+            deploy(env)
+            self.assertEqual(
+                'asd',
+                env.out_dir.read('src/repo/master/foo.txt')
+            )
+
+            env.commit(0, {'foo.txt': 'fgh'})
+            new_repo = tmp.relative('repo')
+            shutil.copytree(env.repository(0), new_repo)
+            env.destroy_repository(0)
+            env.write_config([{
+                'name': 'repo',
+                'git': new_repo
+            }])
+            deploy(env)
+            self.assertEqual(
+                'fgh',
+                env.out_dir.read('src/repo/master/foo.txt')
+            )
 
 if __name__ == '__main__':
     unittest.main()

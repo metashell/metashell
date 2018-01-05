@@ -177,6 +177,7 @@ def git_repo(src_repository, out_dir, local_name, log):
     """Create and clone if does not exist"""
     repo_path = os.path.join(out_dir, local_name)
     if os.path.isdir(repo_path):
+        git(repo_path, ['remote', 'set-url', 'origin', src_repository], log)
         git(repo_path, ['fetch', 'origin', '--prune'], log)
     else:
         git(out_dir, ['clone', '--recursive', src_repository, local_name], log)
