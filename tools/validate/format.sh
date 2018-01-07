@@ -25,9 +25,11 @@ fi
 
 CLANG_FORMAT="$(tools/find/clang_format.sh)"
 
+"${CLANG_FORMAT}" -version
+
 for f in $(tools/list/cpp_files.sh)
 do
-  ("${CLANG_FORMAT}" "${f}" | diff "${f}" -) || ( \
+  ("${CLANG_FORMAT}" "${f}" | diff --context "${f}" -) || ( \
     echo "Invalid code formatting in ${f}. Please run tools/reformat.sh to fix it." \
     ; exit 1 \
   )

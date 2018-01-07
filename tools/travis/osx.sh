@@ -3,11 +3,16 @@
 set -ex
 
 brew update >/dev/null
+
+# Oclint installs something under /usr/local/include/c++ which
+# conflicts with files installed by gcc
+brew cask uninstall oclint
+
 brew install p7zip
 
 if [ "$CXX" = "g++" ]; then
-  brew install homebrew/versions/gcc5
-  export CXX="g++-5"
+  brew install gcc@6
+  export CXX="g++-6"
 fi
 
 # Test that the download version links are correct
