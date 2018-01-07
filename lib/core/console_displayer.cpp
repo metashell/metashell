@@ -298,7 +298,7 @@ console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
           result,
           [this](const data::cpp_code& s_) { return this->format_code(s_); },
           [this](const data::token& t_) { return this->format_token(t_); },
-          [this](const boost::filesystem::path& p_) {
+          [](const boost::filesystem::path& p_) {
             return data::colored_string(p_.string());
           }),
       n_);
