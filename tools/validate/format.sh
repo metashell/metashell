@@ -25,6 +25,8 @@ fi
 
 CLANG_FORMAT="$(tools/find/clang_format.sh)"
 
+"${CLANG_FORMAT}" -version
+
 for f in $(tools/list/cpp_files.sh)
 do
   ("${CLANG_FORMAT}" "${f}" | diff --context "${f}" -) || ( \
