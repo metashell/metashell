@@ -23,6 +23,7 @@ import inspect
 import json
 import os
 import shutil
+import sys
 import tempfile
 import git
 
@@ -96,6 +97,7 @@ class GitRepository(object):
     def __init__(self):
         self.temp_dir = TempDir()
         self.repo = None
+        self.submodule_paths = {}
 
     def in_repo(self, path):
         """Turns a path relative to the repository to an absolute path"""
@@ -140,6 +142,19 @@ class GitRepository(object):
         """Delete a branch"""
         self.repo.delete_head(name, force=True)
 
+    def add_submodule(self, name, path, sub_repository):
+        """Add a Git submodule"""
+        self.repo.create_submodule(name, path, url=sub_repository.repository())
+        self.submodule_paths[name] = path
+
+    def pull_submodule(self, name):
+        """Git pull a submodule"""
+        submod = self.repo.submodule(name)
+        path = self.submodule_paths[name]
+        url = submod.url
+        submod.remove()
+        self.repo.create_submodule(name, path, url)
+
     def __enter__(self):
         self.temp_dir.__enter__()
         git.Repo.init(self.temp_dir.path)
@@ -163,6 +178,12 @@ class LogCollector(object):
         """Clear log messages"""
         self.messages = []
 
+    def dump(self, target=sys.stderr):
+        """Dump log messages"""
+        target.write('\n\n')
+        target.write('\n'.join(self.messages))
+        target.write('\n\n')
+
     def __call__(self, msg):
         prefix = '=========='
         if not (msg.startswith(prefix) and msg.endswith(prefix)):
@@ -177,6 +198,7 @@ class CommonEnv(object):
         self.repos = [GitRepository() for _ in range(git_repo_num)]
         self.config_dir = TempDir()
         self.out_dir = TempDir()
+        self.in_with = False
 
     def write_config(self, content):
         """Dump content as JSON into the config file"""
@@ -190,11 +212,20 @@ class CommonEnv(object):
         """Return the "git clone" argument for cloning the repository"""
         return self.repos[repo_index].repository()
 
+    def destroy_repository(self, repo_index):
+        """Remove and clean-up the repository"""
+        if self.in_with:
+            self.repos[repo_index].__exit__(None, None, None)
+        self.repos[repo_index] = None
+
     def __enter__(self):
         for repo in self.repos:
-            repo.__enter__()
+            if repo:
+                repo.__enter__()
         self.config_dir.__enter__()
         self.out_dir.__enter__()
+
+        self.in_with = True
 
         return self
 
@@ -202,7 +233,10 @@ class CommonEnv(object):
         self.out_dir.__exit__(typ, value, traceback)
         self.config_dir.__exit__(typ, value, traceback)
         for repo in self.repos:
-            repo.__exit__(typ, value, traceback)
+            if repo:
+                repo.__exit__(typ, value, traceback)
+
+        self.in_with = False
 
 
 def delete_everything_in(path):
