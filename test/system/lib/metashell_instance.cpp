@@ -58,9 +58,7 @@ namespace
   {
     using namespace metashell::system_test;
 
-    std::vector<std::string> cmd{
-        absolute(system_test_config::metashell_binary()).string(),
-        "--console=json", "--nosplash"};
+    std::vector<std::string> cmd{"--console=json", "--nosplash"};
     if (allow_user_defined_args_)
     {
       cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
@@ -124,7 +122,9 @@ namespace metashell
                 make_unique<just::environment::override_guard>("INCLUDE", "")),
         _process_execution(construct_cmd(
             extra_args_, allow_user_defined_args_, allow_standard_headers_)),
-        _child(_process_execution.cmd(), cwd_),
+        _child(absolute(system_test_config::metashell_binary()),
+               _process_execution.cmd(),
+               cwd_),
         _lines(),
         _last_line(),
         _initial_responses(responses_until_prompt())

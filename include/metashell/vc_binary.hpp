@@ -32,9 +32,9 @@ namespace metashell
   class vc_binary : public iface::executable
   {
   public:
-    vc_binary(const boost::filesystem::path& path_,
-              const std::vector<std::string>& base_args_,
-              const boost::filesystem::path& temp_dir_,
+    vc_binary(boost::filesystem::path cl_path_,
+              std::vector<std::string> base_args_,
+              boost::filesystem::path temp_dir_,
               logger* logger_);
 
     virtual data::process_output run(const std::vector<std::string>& args_,
@@ -44,6 +44,7 @@ namespace metashell
     const std::vector<std::string>& base_args() const;
 
   private:
+    boost::filesystem::path _cl_path;
     std::vector<std::string> _base_args;
     boost::filesystem::path _temp_dir;
     logger* _logger;

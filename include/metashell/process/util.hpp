@@ -1,8 +1,8 @@
-#ifndef METASHELL_PROCESS_RUN_HPP
-#define METASHELL_PROCESS_RUN_HPP
+#ifndef METASHELL_PROCESS_UTIL_HPP
+#define METASHELL_PROCESS_UTIL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2016, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,22 +17,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/process_output.hpp>
-
-#include <boost/filesystem/path.hpp>
-
+#include <algorithm>
 #include <string>
-#include <vector>
 
 namespace metashell
 {
   namespace process
   {
-    data::process_output
-    run(const boost::filesystem::path& binary_,
-        const std::vector<std::string>& args_,
-        const std::string& input_,
-        const boost::filesystem::path& cwd_ = boost::filesystem::path());
+    std::string quote_argument(std::string arg_);
+
+    template <class InputIt, class OutputIt>
+    void quote_arguments(InputIt begin_, InputIt end_, OutputIt obegin_)
+    {
+      std::transform(begin_, end_, obegin_, quote_argument);
+    }
+
+    template <class ForwardIt>
+    void quote_arguments(ForwardIt begin_, ForwardIt end_)
+    {
+      for (; begin_ != end_; ++begin_)
+      {
+        *begin_ = quote_argument(std::move(*begin_));
+      }
+    }
+
+    template <class Container>
+    void quote_arguments(Container& c_)
+    {
+      quote_arguments(c_.begin(), c_.end());
+    }
   }
 }
 

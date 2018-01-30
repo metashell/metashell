@@ -35,7 +35,8 @@ namespace metashell
     {
     public:
       execution(
-          const std::vector<std::string>& cmd_,
+          const boost::filesystem::path& binary_,
+          const std::vector<std::string>& args_,
           const boost::filesystem::path& cwd_ = boost::filesystem::path());
 
       execution(const execution&) = delete;

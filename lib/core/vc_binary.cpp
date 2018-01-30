@@ -17,6 +17,7 @@
 #include <metashell/exception.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/process/run.hpp>
+#include <metashell/process/util.hpp>
 #include <metashell/vc_binary.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -32,15 +33,6 @@
 
 namespace
 {
-  std::string quote_argument(const std::string& arg_)
-  {
-#ifdef _WIN32
-    return "\"" + arg_ + "\"";
-#else
-    return arg_;
-#endif
-  }
-
   void save(const boost::filesystem::path& filename_,
             const metashell::data::cpp_code& s_)
   {
@@ -125,15 +117,16 @@ namespace
 
 namespace metashell
 {
-  vc_binary::vc_binary(const boost::filesystem::path& path_,
-                       const std::vector<std::string>& base_args_,
-                       const boost::filesystem::path& temp_dir_,
+  vc_binary::vc_binary(boost::filesystem::path cl_path_,
+                       std::vector<std::string> base_args_,
+                       boost::filesystem::path temp_dir_,
                        logger* logger_)
-    : _base_args(base_args_.size() + 1), _temp_dir(temp_dir_), _logger(logger_)
+    : _cl_path(std::move(cl_path_)),
+      _base_args(std::move(base_args_)),
+      _temp_dir(std::move(temp_dir_)),
+      _logger(logger_)
   {
-    _base_args[0] = quote_argument(path_.string());
-    std::transform(base_args_.begin(), base_args_.end(), _base_args.begin() + 1,
-                   quote_argument);
+    process::quote_arguments(_base_args);
   }
 
   data::process_output vc_binary::run(const std::vector<std::string>& args_,
@@ -141,14 +134,15 @@ namespace metashell
   {
     std::vector<std::string> cmd(_base_args.size() + args_.size());
 
-    std::transform(args_.begin(), args_.end(),
-                   std::copy(_base_args.begin(), _base_args.end(), cmd.begin()),
-                   quote_argument);
+    process::quote_arguments(
+        args_.begin(), args_.end(),
+        std::copy(_base_args.begin(), _base_args.end(), cmd.begin()));
 
-    METASHELL_LOG(
-        _logger, "Running cl.exe: " + boost::algorithm::join(cmd, " "));
+    METASHELL_LOG(_logger, "Running cl.exe: " + _cl_path.string() + " " +
+                               boost::algorithm::join(cmd, " "));
 
-    const data::process_output o = dos2unix(process::run(cmd, stdin_));
+    const data::process_output o =
+        dos2unix(process::run(_cl_path, cmd, stdin_));
 
     METASHELL_LOG(_logger, "cl.exe's exit code: " + to_string(o.exit_code));
     METASHELL_LOG(_logger, "cl.exe's stdout: " + o.standard_output);
