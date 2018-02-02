@@ -50,6 +50,8 @@ namespace metashell
     virtual data::process_output run(const std::vector<std::string>& args_,
                                      const std::string& stdin_) const override;
 
+    data::result precompile(const data::cpp_code& exp_) const;
+
   private:
     boost::filesystem::path _clang_path;
     std::vector<std::string> _base_args;

@@ -308,6 +308,16 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
   return o;
 }
 
+data::result clang_binary::precompile(const data::cpp_code& exp_) const
+{
+  const data::process_output output = run_clang(*this, {"-E"}, exp_);
+
+  const bool success = output.exit_code == data::exit_code_t(0);
+
+  return data::result{success, success ? output.standard_output : "",
+                      success ? "" : output.standard_error, ""};
+}
+
 data::process_output
 metashell::run_clang(const iface::executable& clang_binary_,
                      std::vector<std::string> clang_args_,

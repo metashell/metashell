@@ -25,11 +25,6 @@ namespace metashell
 
   data::result preprocessor_shell_clang::precompile(const data::cpp_code& exp_)
   {
-    const data::process_output output = run_clang(_clang_binary, {"-E"}, exp_);
-
-    const bool success = output.exit_code == data::exit_code_t(0);
-
-    return data::result{success, success ? output.standard_output : "",
-                        success ? "" : output.standard_error, ""};
+    return _clang_binary.precompile(exp_);
   }
 }
