@@ -18,6 +18,7 @@
 #include <metashell/has_prefix.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/process/run.hpp>
+#include <metashell/process/util.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/sliced.hpp>
@@ -32,15 +33,6 @@ namespace
   const std::string default_clang_search_path[] = {""
 #include "default_clang_search_path.hpp"
   };
-
-  std::string quote_argument(const std::string& arg_)
-  {
-#ifdef _WIN32
-    return "\"" + arg_ + "\"";
-#else
-    return arg_;
-#endif
-  }
 
   std::string extract_clang_binary(const std::vector<std::string>& engine_args_,
                                    iface::environment_detector& env_detector_,
@@ -268,23 +260,23 @@ namespace
   }
 }
 
-clang_binary::clang_binary(const boost::filesystem::path& path_,
-                           const std::vector<std::string>& base_args_,
+clang_binary::clang_binary(boost::filesystem::path clang_path_,
+                           std::vector<std::string> base_args_,
                            logger* logger_)
-  : _base_args(base_args_.size() + 1), _logger(logger_)
+  : _clang_path(std::move(clang_path_)),
+    _base_args(std::move(base_args_)),
+    _logger(logger_)
 {
-  _base_args[0] = quote_argument(path_.string());
-  std::transform(base_args_.begin(), base_args_.end(), _base_args.begin() + 1,
-                 quote_argument);
+  process::quote_arguments(_base_args);
 }
 
 clang_binary::clang_binary(bool use_internal_templight_,
-                           const boost::filesystem::path& clang_path_,
+                           boost::filesystem::path clang_path_,
                            const std::vector<std::string>& extra_clang_args_,
                            const boost::filesystem::path& internal_dir_,
                            iface::environment_detector& env_detector_,
                            logger* logger_)
-  : clang_binary(clang_path_,
+  : clang_binary(std::move(clang_path_),
                  clang_args(use_internal_templight_,
                             extra_clang_args_,
                             internal_dir_,
@@ -300,13 +292,14 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
 {
   std::vector<std::string> cmd(_base_args.size() + args_.size());
 
-  std::transform(args_.begin(), args_.end(),
-                 std::copy(_base_args.begin(), _base_args.end(), cmd.begin()),
-                 quote_argument);
+  process::quote_arguments(
+      args_.begin(), args_.end(),
+      std::copy(_base_args.begin(), _base_args.end(), cmd.begin()));
 
-  METASHELL_LOG(_logger, "Running Clang: " + boost::algorithm::join(cmd, " "));
+  METASHELL_LOG(_logger, "Running Clang: " + _clang_path.string() + " " +
+                             boost::algorithm::join(cmd, " "));
 
-  const data::process_output o = process::run(cmd, stdin_);
+  const data::process_output o = process::run(_clang_path, cmd, stdin_);
 
   METASHELL_LOG(_logger, "Clang's exit code: " + to_string(o.exit_code));
   METASHELL_LOG(_logger, "Clang's stdout: " + o.standard_output);

@@ -36,12 +36,12 @@ namespace metashell
   class clang_binary : public iface::executable
   {
   public:
-    clang_binary(const boost::filesystem::path& path_,
-                 const std::vector<std::string>& base_args_,
+    clang_binary(boost::filesystem::path clang_path_,
+                 std::vector<std::string> base_args_,
                  logger* logger_);
 
     clang_binary(bool use_internal_templight_,
-                 const boost::filesystem::path& clang_path_,
+                 boost::filesystem::path clang_path_,
                  const std::vector<std::string>& extra_clang_args_,
                  const boost::filesystem::path& internal_dir_,
                  iface::environment_detector& env_detector_,
@@ -51,6 +51,7 @@ namespace metashell
                                      const std::string& stdin_) const override;
 
   private:
+    boost::filesystem::path _clang_path;
     std::vector<std::string> _base_args;
     logger* _logger;
   };
