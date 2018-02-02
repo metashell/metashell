@@ -25,6 +25,6 @@ namespace metashell
 
   data::result preprocessor_shell_clang::precompile(const data::cpp_code& exp_)
   {
-    return _clang_binary.precompile(exp_);
+    return _clang_binary.precompile({}, exp_);
   }
 }
