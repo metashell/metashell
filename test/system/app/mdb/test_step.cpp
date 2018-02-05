@@ -519,11 +519,11 @@ TEST(mdb_step, over_template_spec_no_deduced_event)
   mi.command(template_specialization_mp);
   mi.command("#msh mdb int_<foo<3, 1>::value>");
 
-  ASSERT_EQ(frame(type("foo<N, 1>"), _, _,
-                  event_kind::deduced_template_argument_substitution),
+  ASSERT_EQ(frame(type("foo<3, 1>"), _, _, event_kind::template_instantiation),
             step(mi));
 
-  ASSERT_EQ(frame(type("foo<3, 1>"), _, _, event_kind::template_instantiation),
+  ASSERT_EQ(frame(type("foo<N, 1>"), _, _,
+                  event_kind::deduced_template_argument_substitution),
             step(mi));
 
   ASSERT_EQ(frame(type("foo<3, 1>"), _, _, event_kind::memoization), step(mi));
