@@ -647,6 +647,8 @@ namespace metashell
     case data::event_kind::template_instantiation:
     case data::event_kind::deduced_template_argument_substitution:
     case data::event_kind::explicit_template_argument_substitution:
+    case data::event_kind::declaring_special_member:
+    case data::event_kind::defining_synthesized_function:
 
     case data::event_kind::macro_expansion:
     case data::event_kind::macro_definition:

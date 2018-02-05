@@ -72,6 +72,10 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "DefaultTemplateArgumentChecking";
   case event_kind::exception_spec_instantiation:
     return "ExceptionSpecInstantiation";
+  case event_kind::declaring_special_member:
+    return "DeclaringSpecialMember";
+  case event_kind::defining_synthesized_function:
+    return "DefiningSynthesizedFunction";
   case event_kind::memoization:
     return "Memoization";
   case event_kind::non_template_type:
@@ -179,6 +183,14 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   else if (kind_ == "ExceptionSpecInstantiation")
   {
     return event_kind::exception_spec_instantiation;
+  }
+  else if (kind_ == "DeclaringSpecialMember")
+  {
+    return event_kind::declaring_special_member;
+  }
+  else if (kind_ == "DefiningSynthesizedFunction")
+  {
+    return event_kind::defining_synthesized_function;
   }
   else if (kind_ == "Memoization")
   {

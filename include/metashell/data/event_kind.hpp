@@ -52,6 +52,8 @@ namespace metashell
       prior_template_argument_substitution,
       default_template_argument_checking,
       exception_spec_instantiation,
+      declaring_special_member,
+      defining_synthesized_function,
       memoization,
       non_template_type // Used only if an evaluation result is not a template
     };
