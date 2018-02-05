@@ -58,7 +58,7 @@ then
     rm -rf build llvm libcxx
 
     echo "Getting libc++"
-    svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+    svn co "http://llvm.org/svn/llvm-project/libcxx/${SVN_DIRECTORY}" libcxx
     echo "Removing the unused parts of the libcxx source code"
     rm -rf \
       libcxx/.svn \
