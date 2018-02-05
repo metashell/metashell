@@ -1,7 +1,7 @@
-; RUN: llc %s -o - -enable-shrink-wrap=true | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
-; RUN: llc %s -o - -enable-shrink-wrap=false | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
+; RUN: llc %s -o - -enable-shrink-wrap=true -no-x86-call-frame-opt | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
+; RUN: llc %s -o - -enable-shrink-wrap=false -no-x86-call-frame-opt | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
 target datalayout = "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"
-target triple = "i386-apple-macosx"
+target triple = "i386-apple-macosx10.5"
 
 @a = common global i32 0, align 4
 @d = internal unnamed_addr global i1 false
@@ -55,8 +55,7 @@ target triple = "i386-apple-macosx"
 ;
 ; CHECK-NEXT: L_e$non_lazy_ptr, [[E:%[a-z]+]]
 ; CHECK-NEXT: movb [[D]], ([[E]])
-; CHECK-NEXT: L_f$non_lazy_ptr, [[F:%[a-z]+]]
-; CHECK-NEXT: movsbl ([[F]]), [[CONV:%[a-z]+]]
+; CHECK-NEXT: movsbl ([[E]]), [[CONV:%[a-z]+]]
 ; CHECK-NEXT: movl $6, [[CONV:%[a-z]+]]
 ; The eflags is used in the next instruction.
 ; If that instruction disappear, we are not exercising the bug
@@ -64,7 +63,7 @@ target triple = "i386-apple-macosx"
 ; CHECK-NEXT: cmovnel {{%[a-z]+}}, [[CONV]]
 ;
 ; Skip all the crust of vaarg lowering.
-; CHECK: calll L_varfunc$stub
+; CHECK: calll _varfunc
 ; Set the return value to 0.
 ; CHECK-NEXT: xorl %eax, %eax
 ; CHECK-NEXT: addl $20, %esp
@@ -96,7 +95,7 @@ for.end:                                          ; preds = %for.cond.preheader
   %.b3 = load i1, i1* @d, align 1
   %tmp2 = select i1 %.b3, i8 0, i8 6
   store i8 %tmp2, i8* @e, align 1
-  %tmp3 = load i8, i8* @f, align 1
+  %tmp3 = load i8, i8* @e, align 1
   %conv = sext i8 %tmp3 to i32
   %add = add nsw i32 %conv, 1
   %rem = srem i32 %tmp1, %add

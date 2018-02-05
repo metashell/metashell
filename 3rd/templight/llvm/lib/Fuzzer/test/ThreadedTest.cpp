@@ -1,7 +1,10 @@
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+
 // Threaded test for a fuzzer. The fuzzer should not crash.
 #include <assert.h>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <thread>
 

@@ -241,7 +241,7 @@ define float @fmul2(float %f1) {
 ; X/C1 * C2 => X * (C2/C1) is disabled if X/C1 has multiple uses
 @fmul2_external = external global float
 define float @fmul2_disable(float %f1) {
-  %div = fdiv fast float 1.000000e+00, %f1 
+  %div = fdiv fast float 1.000000e+00, %f1
   store float %div, float* @fmul2_external
   %mul = fmul fast float %div, 2.000000e+00
   ret float %mul
@@ -830,4 +830,27 @@ define fp128 @min4(fp128 %a, fp128 %b) {
 ; CHECK-NEXT:  fcmp fast olt fp128 %a, %b 
 ; CHECK-NEXT:  select {{.*}} fp128 %a, fp128 %b 
 ; CHECK-NEXT:  ret
+}
+
+define float @test55(i1 %which, float %a) {
+; CHECK-LABEL: @test55(
+; CHECK-NEXT:  entry:
+; CHECK-NEXT:    br i1 [[WHICH:%.*]], label [[FINAL:%.*]], label [[DELAY:%.*]]
+; CHECK:       delay:
+; CHECK-NEXT:    [[PHITMP:%.*]] = fadd fast float [[A:%.*]], 1.000000e+00
+; CHECK-NEXT:    br label [[FINAL]]
+; CHECK:       final:
+; CHECK-NEXT:    [[A:%.*]] = phi float [ 3.000000e+00, [[ENTRY:%.*]] ], [ [[PHITMP]], [[DELAY]] ]
+; CHECK-NEXT:    ret float [[A]]
+;
+entry:
+  br i1 %which, label %final, label %delay
+
+delay:
+  br label %final
+
+final:
+  %A = phi float [ 2.0, %entry ], [ %a, %delay ]
+  %value = fadd fast float %A, 1.0
+  ret float %value
 }

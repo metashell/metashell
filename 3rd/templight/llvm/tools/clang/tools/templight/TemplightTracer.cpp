@@ -15,7 +15,6 @@
 
 #include <clang/Basic/FileManager.h>
 #include <clang/Basic/SourceManager.h>
-#include <clang/Sema/ActiveTemplateInst.h>
 #include <clang/Sema/Sema.h>
 
 #include <llvm/Support/raw_ostream.h>
@@ -37,7 +36,7 @@ namespace {
 struct RawTemplightTraceEntry {
   bool IsTemplateBegin;
   std::size_t ParentBeginIdx;
-  ActiveTemplateInstantiation::InstantiationKind InstantiationKind;
+  Sema::CodeSynthesisContext::SynthesisKind SynthesisKind;
   Decl *Entity;
   SourceLocation PointOfInstantiation;
   double TimeStamp;
@@ -46,14 +45,14 @@ struct RawTemplightTraceEntry {
   static const std::size_t invalid_parent = ~std::size_t(0);
   
   RawTemplightTraceEntry() : IsTemplateBegin(true), ParentBeginIdx(invalid_parent),
-    InstantiationKind(ActiveTemplateInstantiation::TemplateInstantiation),
+    SynthesisKind(Sema::CodeSynthesisContext::TemplateInstantiation),
     Entity(0), TimeStamp(0.0), MemoryUsage(0) { };
 };
 
 PrintableTemplightEntryBegin rawToPrintableBegin(const Sema &TheSema, const RawTemplightTraceEntry& Entry) {
   PrintableTemplightEntryBegin Ret;
   
-  Ret.InstantiationKind = Entry.InstantiationKind;
+  Ret.SynthesisKind = Entry.SynthesisKind;
   
   NamedDecl *NamedTemplate = dyn_cast_or_null<NamedDecl>(Entry.Entity);
   if (NamedTemplate) {
@@ -109,7 +108,7 @@ public:
   bool shouldIgnoreRawEntry(const RawTemplightTraceEntry &Entry) {
     
     // Avoid some duplication of memoization entries:
-    if ( ( Entry.InstantiationKind == ActiveTemplateInstantiation::Memoization ) &&
+    if ( ( Entry.SynthesisKind == Sema::CodeSynthesisContext::Memoization ) &&
           LastClosedMemoization && ( LastClosedMemoization == Entry.Entity ) ) {
       return true;
     }
@@ -120,7 +119,7 @@ public:
          ( ( TraceEntries.empty() ) || 
            ( CurrentParentBegin == RawTemplightTraceEntry::invalid_parent ) || 
            ( CurrentParentBegin >= TraceEntries.size() ) ||
-           !( ( TraceEntries[CurrentParentBegin].InstantiationKind == Entry.InstantiationKind ) &&
+           !( ( TraceEntries[CurrentParentBegin].SynthesisKind == Entry.SynthesisKind ) &&
               ( TraceEntries[CurrentParentBegin].Entity == Entry.Entity ) ) ) ) {
       return true; // ignore end entries that don't match the current begin entry.
     }
@@ -170,11 +169,11 @@ public:
     if ( Entry.IsTemplateBegin )
       LastClosedMemoization = nullptr;
     if ( !Entry.IsTemplateBegin && 
-         ( Entry.InstantiationKind == ActiveTemplateInstantiation::Memoization ) )
+         ( Entry.SynthesisKind == Sema::CodeSynthesisContext::Memoization ) )
       LastClosedMemoization = Entry.Entity;
     
     if ( !Entry.IsTemplateBegin &&
-         ( Entry.InstantiationKind == TraceEntries.front().InstantiationKind ) &&
+         ( Entry.SynthesisKind == TraceEntries.front().SynthesisKind ) &&
          ( Entry.Entity == TraceEntries.front().Entity ) ) {  // did we reach the end of the top-level begin entry?
       if ( !inSafeMode ) { // if not in safe-mode, print out the cached entries.
         printCachedRawEntries();
@@ -217,54 +216,58 @@ public:
 };
 
 
-void TemplightTracer::atTemplateBeginImpl(const Sema &TheSema, 
-                          const ActiveTemplateInstantiation& Inst) {
+void TemplightTracer::atTemplateBegin(const Sema &TheSema,
+                          const Sema::CodeSynthesisContext& Inst) {
   if ( !Printer )
     return;
   
   RawTemplightTraceEntry Entry;
   
   Entry.IsTemplateBegin = true;
-  Entry.InstantiationKind = Inst.Kind;
+  Entry.SynthesisKind = Inst.Kind;
   Entry.Entity = Inst.Entity;
   Entry.PointOfInstantiation = Inst.PointOfInstantiation;
   
   // NOTE: Use this function because it produces time since start of process.
-  llvm::sys::TimeValue now(0,0), user(0,0), sys(0,0);
+  llvm::sys::TimePoint<> now;
+  std::chrono::nanoseconds user, sys;
   llvm::sys::Process::GetTimeUsage(now, user, sys);
-  if(user.seconds() != 0 || user.nanoseconds() != 0)
-    now = user;
+  if(user != std::chrono::nanoseconds::zero())
+    now = llvm::sys::TimePoint<>(user);
   
-  Entry.TimeStamp = now.seconds() + now.nanoseconds() / 1000000000.0;
+  using Seconds = std::chrono::duration<double, std::ratio<1>>;
+  Entry.TimeStamp = Seconds(now.time_since_epoch()).count();
   Entry.MemoryUsage = (MemoryFlag ? llvm::sys::Process::GetMallocUsage() : 0);
   
   Printer->printRawEntry(Entry, SafeModeFlag);
 }
 
-void TemplightTracer::atTemplateEndImpl(const Sema &TheSema, 
-                          const ActiveTemplateInstantiation& Inst) {
+void TemplightTracer::atTemplateEnd(const Sema &TheSema,
+                          const Sema::CodeSynthesisContext& Inst) {
   if ( !Printer )
     return;
   
   RawTemplightTraceEntry Entry;
   
   Entry.IsTemplateBegin = false;
-  Entry.InstantiationKind = Inst.Kind;
+  Entry.SynthesisKind = Inst.Kind;
   Entry.Entity = Inst.Entity;
   
   // NOTE: Use this function because it produces time since start of process.
-  llvm::sys::TimeValue now(0,0), user(0,0), sys(0,0);
+  llvm::sys::TimePoint<> now;
+  std::chrono::nanoseconds user, sys;
   llvm::sys::Process::GetTimeUsage(now, user, sys);
-  if(user.seconds() != 0 || user.nanoseconds() != 0)
-    now = user;
+  if(user != std::chrono::nanoseconds::zero())
+    now = llvm::sys::TimePoint<>(user);
   
-  Entry.TimeStamp = now.seconds() + now.nanoseconds() / 1000000000.0;
+  using Seconds = std::chrono::duration<double, std::ratio<1>>;
+  Entry.TimeStamp = Seconds(now.time_since_epoch()).count();
   Entry.MemoryUsage = (MemoryFlag ? llvm::sys::Process::GetMallocUsage() : 0);
   
   Printer->printRawEntry(Entry, SafeModeFlag);
 }
 
-TemplightTracer::TemplightTracer(const Sema &TheSema, 
+TemplightTracer::TemplightTracer(const Sema &TheSema,
                                  std::string Output, 
                                  bool Memory, bool Safemode, 
                                  bool IgnoreSystem) :
@@ -288,12 +291,12 @@ TemplightTracer::~TemplightTracer() {
   // must be defined here due to TracePrinter being incomplete in header.
 }
 
-void TemplightTracer::initializeImpl(const Sema &) {
+void TemplightTracer::initialize(const Sema &) {
   if ( Printer )
     Printer->startTrace();
 }
 
-void TemplightTracer::finalizeImpl(const Sema &) {
+void TemplightTracer::finalize(const Sema &) {
   if ( Printer )
     Printer->endTrace();
 }

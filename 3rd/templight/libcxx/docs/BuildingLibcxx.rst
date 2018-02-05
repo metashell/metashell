@@ -1,3 +1,4 @@
+.. _BuildingLibcxx:
 
 ===============
 Building libc++
@@ -5,6 +6,8 @@ Building libc++
 
 .. contents::
   :local:
+
+.. _build instructions:
 
 Getting Started
 ===============
@@ -46,7 +49,7 @@ The basic steps needed to build libc++ are:
    For more information about configuring libc++ see :ref:`CMake Options`.
 
    * ``make cxx`` --- will build libc++ and libc++abi.
-   * ``make check-libcxx check-libcxxabi`` --- will run the test suites.
+   * ``make check-cxx check-cxxabi`` --- will run the test suites.
 
    Shared libraries for libc++ and libc++ abi should now be present in llvm/build/lib.
    See :ref:`using an alternate libc++ installation <alternate libcxx>`
@@ -57,7 +60,7 @@ The basic steps needed to build libc++ are:
    careful not to replace it. Remember Use the CMake option ``CMAKE_INSTALL_PREFIX`` to
    select a safe place to install libc++.
 
-   * ``make install-libcxx install-libcxxabi`` --- Will install the libraries and the headers
+   * ``make install-cxx install-cxxabi`` --- Will install the libraries and the headers
 
    .. warning::
      * Replacing your systems libc++ installation could render the system non-functional.
@@ -89,6 +92,57 @@ build would look like this:
   $ make check-libcxx # optional
 
 
+Experimental Support for Windows
+--------------------------------
+
+The Windows support requires building with clang-cl as cl does not support one
+required extension: `#include_next`.  Furthermore, VS 2015 or newer (19.00) is
+required.  In the case of clang-cl, we need to specify the "MS Compatibility
+Version" as it defaults to 2014 (18.00).
+
+CMake + Visual Studio
+~~~~~~~~~~~~~~~~~~~~~
+
+Building with Visual Studio currently does not permit running tests. However,
+it is the simplest way to build.
+
+.. code-block:: batch
+
+  > cmake -G "Visual Studio 14 2015"              ^
+          -T "LLVM-vs2014"                        ^
+          -DLIBCXX_ENABLE_SHARED=YES              ^
+          -DLIBCXX_ENABLE_STATIC=NO               ^
+          -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=NO ^
+          \path\to\libcxx
+  > cmake --build .
+
+CMake + ninja
+~~~~~~~~~~~~~
+
+Building with ninja is required for development to enable tests.
+Unfortunately, doing so requires additional configuration as we cannot
+just specify a toolset.
+
+.. code-block:: batch
+
+  > cmake -G Ninja                                                                    ^
+          -DCMAKE_MAKE_PROGRAM=/path/to/ninja                                         ^
+          -DCMAKE_SYSTEM_NAME=Windows                                                 ^
+          -DCMAKE_C_COMPILER=clang-cl                                                 ^
+          -DCMAKE_C_FLAGS="-fms-compatibility-version=19.00 --target=i686--windows"   ^
+          -DCMAKE_CXX_COMPILER=clang-c                                                ^
+          -DCMAKE_CXX_FLAGS="-fms-compatibility-version=19.00 --target=i686--windows" ^
+          -DLLVM_PATH=/path/to/llvm/tree                                              ^
+          -DLIBCXX_ENABLE_SHARED=YES                                                  ^
+          -DLIBCXX_ENABLE_STATIC=NO                                                   ^
+          -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=NO                                     ^
+          \path\to\libcxx
+  > /path/to/ninja cxx
+  > /path/to/ninja check-cxx
+
+Note that the paths specified with backward slashes must use the `\\` as the
+directory separator as clang-cl may otherwise parse the path as an argument.
+
 .. _`libc++abi`: http://libcxxabi.llvm.org/
 
 
@@ -119,6 +173,18 @@ CMake docs or execute ``cmake --help-variable VARIABLE_NAME``.
 libc++ specific options
 -----------------------
 
+.. option:: LIBCXX_INSTALL_LIBRARY:BOOL
+
+  **Default**: ``ON``
+
+  Toggle the installation of the library portion of libc++.
+
+.. option:: LIBCXX_INSTALL_HEADERS:BOOL
+
+  **Default**: ``ON``
+
+  Toggle the installation of the libc++ headers.
+
 .. option:: LIBCXX_ENABLE_ASSERTIONS:BOOL
 
   **Default**: ``ON``
@@ -129,19 +195,58 @@ libc++ specific options
 
   **Default**: ``OFF``
 
-  Build libc++ as a 32 bit library. Also see :option:`LLVM_BUILD_32_BITS`.
+  Build libc++ as a 32 bit library. Also see `LLVM_BUILD_32_BITS`.
 
 .. option:: LIBCXX_ENABLE_SHARED:BOOL
 
   **Default**: ``ON``
 
-  Build libc++ as a shared library. If ``OFF`` is specified then libc++ is
-  built as a static library.
+  Build libc++ as a shared library. Either `LIBCXX_ENABLE_SHARED` or
+  `LIBCXX_ENABLE_STATIC` has to be enabled.
+
+.. option:: LIBCXX_ENABLE_STATIC:BOOL
+
+  **Default**: ``ON``
+
+  Build libc++ as a static library. Either `LIBCXX_ENABLE_SHARED` or
+  `LIBCXX_ENABLE_STATIC` has to be enabled.
 
 .. option:: LIBCXX_LIBDIR_SUFFIX:STRING
 
   Extra suffix to append to the directory where libraries are to be installed.
-  This option overrides :option:`LLVM_LIBDIR_SUFFIX`.
+  This option overrides `LLVM_LIBDIR_SUFFIX`.
+
+.. option:: LIBCXX_INSTALL_PREFIX:STRING
+
+  **Default**: ``""``
+
+  Define libc++ destination prefix.
+
+.. _libc++experimental options:
+
+libc++experimental Specific Options
+------------------------------------
+
+.. option:: LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY:BOOL
+
+  **Default**: ``ON``
+
+  Build and test libc++experimental.a.
+
+.. option:: LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY:BOOL
+
+  **Default**: ``LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY AND LIBCXX_INSTALL_LIBRARY``
+
+  Install libc++experimental.a alongside libc++.
+
+
+.. option:: LIBCXX_ENABLE_FILESYSTEM:BOOL
+
+  **Default**: ``LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY``
+
+  Build filesystem as part of libc++experimental.a. This allows filesystem
+  to be disabled without turning off the entire experimental library.
+
 
 .. _ABI Library Specific Options:
 
@@ -185,7 +290,7 @@ ABI Library Specific Options
   libc++abi is the C++ ABI library used.
 
 
-libc++ Feature options
+libc++ Feature Options
 ----------------------
 
 .. option:: LIBCXX_ENABLE_EXCEPTIONS:BOOL
@@ -200,9 +305,32 @@ libc++ Feature options
 
   Build libc++ with run time type information.
 
+.. option:: LIBCXX_INCLUDE_BENCHMARKS:BOOL
 
-libc++ Feature options
-----------------------
+  **Default**: ``ON``
+
+  Build the libc++ benchmark tests and the Google Benchmark library needed
+  to support them.
+
+.. option:: LIBCXX_BENCHMARK_NATIVE_STDLIB:STRING
+
+  **Default**:: ``""``
+
+  **Values**:: ``libc++``, ``libstdc++``
+
+  Build the libc++ benchmark tests and Google Benchmark library against the
+  specified standard library on the platform. On linux this can be used to
+  compare libc++ to libstdc++ by building the benchmark tests against both
+  standard libraries.
+
+.. option:: LIBCXX_BENCHMARK_NATIVE_GCC_TOOLCHAIN:STRING
+
+  Use the specified GCC toolchain and standard library when building the native
+  stdlib benchmark tests.
+
+
+libc++ ABI Feature Options
+--------------------------
 
 The following options allow building libc++ for a different ABI version.
 
@@ -303,3 +431,72 @@ own copy of libsupc++ and this can lead to subtle problems.
   $ make install
 
 You can now run clang with -stdlib=libc++.
+
+
+.. _libcxxrt_ref:
+
+Using libcxxrt on Linux
+------------------------
+
+You will need to keep the source tree of `libcxxrt`_ available
+on your build machine and your copy of the libcxxrt shared library must
+be placed where your linker will find it.
+
+We can now run CMake like:
+
+.. code-block:: bash
+
+  $ CC=clang CXX=clang++ cmake -G "Unix Makefiles" \
+          -DLIBCXX_CXX_ABI=libcxxrt \
+          -DLIBCXX_CXX_ABI_INCLUDE_PATHS=path/to/libcxxrt-sources/src \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                <libc++-source-directory>
+  $ make cxx
+  $ make install
+
+Unfortunately you can't simply run clang with "-stdlib=libc++" at this point, as
+clang is set up to link for libc++ linked to libsupc++.  To get around this
+you'll have to set up your linker yourself (or patch clang).  For example,
+
+.. code-block:: bash
+
+  $ clang++ -stdlib=libc++ helloworld.cpp \
+            -nodefaultlibs -lc++ -lcxxrt -lm -lc -lgcc_s -lgcc
+
+Alternately, you could just add libcxxrt to your libraries list, which in most
+situations will give the same result:
+
+.. code-block:: bash
+
+  $ clang++ -stdlib=libc++ helloworld.cpp -lcxxrt
+
+.. _`libcxxrt`: https://github.com/pathscale/libcxxrt/
+
+
+Using a local ABI library installation
+---------------------------------------
+
+.. warning::
+  This is not recommended in almost all cases.
+
+These instructions should only be used when you can't install your ABI library.
+
+Normally you must link libc++ against a ABI shared library that the
+linker can find.  If you want to build and test libc++ against an ABI
+library not in the linker's path you needq to set
+``-DLIBCXX_CXX_ABI_LIBRARY_PATH=/path/to/abi/lib`` when configuring CMake.
+
+An example build using libc++abi would look like:
+
+.. code-block:: bash
+
+  $ CC=clang CXX=clang++ cmake \
+              -DLIBCXX_CXX_ABI=libc++abi  \
+              -DLIBCXX_CXX_ABI_INCLUDE_PATHS="/path/to/libcxxabi/include" \
+              -DLIBCXX_CXX_ABI_LIBRARY_PATH="/path/to/libcxxabi-build/lib" \
+               path/to/libcxx
+  $ make
+
+When testing libc++ LIT will automatically link against the proper ABI
+library.

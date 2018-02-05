@@ -1,11 +1,12 @@
-; RUN: llc %s -o - -enable-shrink-wrap=true -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -mtriple=thumb-macho \
+; RUN: llc %s -o - -enable-shrink-wrap=true -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -tail-dup-placement=0 -mtriple=thumb-macho \
 ; RUN:      | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE --check-prefix=ENABLE-V4T
-; RUN: llc %s -o - -enable-shrink-wrap=true -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -mtriple=thumbv5-macho \
+; RUN: llc %s -o - -enable-shrink-wrap=true -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -tail-dup-placement=0 -mtriple=thumbv5-macho \
 ; RUN:      | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE --check-prefix=ENABLE-V5T
-; RUN: llc %s -o - -enable-shrink-wrap=false -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -mtriple=thumb-macho \
+; RUN: llc %s -o - -enable-shrink-wrap=false -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -tail-dup-placement=0 -mtriple=thumb-macho \
 ; RUN:      | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE --check-prefix=DISABLE-V4T
-; RUN: llc %s -o - -enable-shrink-wrap=false -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -mtriple=thumbv5-macho \
+; RUN: llc %s -o - -enable-shrink-wrap=false -ifcvt-fn-start=1 -ifcvt-fn-stop=0 -tail-dup-placement=0 -mtriple=thumbv5-macho \
 ; RUN:      | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE --check-prefix=DISABLE-V5T
+
 ;
 ; Note: Lots of tests use inline asm instead of regular calls.
 ; This allows to have a better control on what the allocation will do.
@@ -15,6 +16,8 @@
 ; edges.
 ; Also disable the late if-converter as it makes harder to reason on
 ; the diffs.
+; Disable tail-duplication during placement, as v4t vs v5t get different
+; results due to branches not being analyzable under v5
 
 ; Initial motivating example: Simple diamond with a call just on one side.
 ; CHECK-LABEL: foo:
@@ -139,7 +142,6 @@ declare i32 @doSomething(i32, i32*)
 ; CHECK: movs [[TMP:r[0-9]+]], #1
 ; CHECK: adds [[SUM]], [[TMP]], [[SUM]]
 ; CHECK-NEXT: subs [[IV]], [[IV]], #1
-; CHECK-NEXT: cmp [[IV]], #0
 ; CHECK-NEXT: bne [[LOOP]]
 ;
 ; Next BB.
@@ -209,7 +211,6 @@ declare i32 @something(...)
 ; CHECK: movs [[TMP:r[0-9]+]], #1
 ; CHECK: adds [[SUM]], [[TMP]], [[SUM]]
 ; CHECK-NEXT: subs [[IV]], [[IV]], #1
-; CHECK-NEXT: cmp [[IV]], #0
 ; CHECK-NEXT: bne [[LOOP_LABEL]]
 ; Next BB.
 ; CHECK: @ %for.exit
@@ -265,7 +266,6 @@ for.end:                                          ; preds = %for.body
 ; CHECK: movs [[TMP:r[0-9]+]], #1
 ; CHECK: adds [[SUM]], [[TMP]], [[SUM]]
 ; CHECK-NEXT: subs [[IV]], [[IV]], #1
-; CHECK-NEXT: cmp [[IV]], #0
 ; CHECK-NEXT: bne [[LOOP]]
 ;
 ; Next BB.
@@ -349,7 +349,6 @@ declare void @somethingElse(...)
 ; CHECK: movs [[TMP:r[0-9]+]], #1
 ; CHECK: adds [[SUM]], [[TMP]], [[SUM]]
 ; CHECK-NEXT: subs [[IV]], [[IV]], #1
-; CHECK-NEXT: cmp [[IV]], #0
 ; CHECK-NEXT: bne [[LOOP]]
 ;
 ; Next BB.
@@ -435,7 +434,6 @@ entry:
 ; CHECK: [[LOOP:LBB[0-9_]+]]: @ %for.body
 ; CHECK: movs r4, #1
 ; CHECK: subs [[IV]], [[IV]], #1
-; CHECK-NEXT: cmp [[IV]], #0
 ; CHECK-NEXT: bne [[LOOP]]
 ;
 ; Next BB.
@@ -507,14 +505,9 @@ if.end:                                           ; preds = %for.body, %if.else
 ; CHECK-NEXT: str r1, {{\[}}[[TMP_SP]]]
 ; CHECK-NEXT: str r1, {{\[}}[[TMP_SP]], #4]
 ; CHECK-NEXT: str r1, {{\[}}[[TMP_SP]], #8]
-; Thumb has quite a strange way for moving stuff
-; in around. Oh well, match the current sequence.
-; CHECK: push {r1}
-; CHECK-NEXT: pop {r0}
-; CHECK: push {r1}
-; CHECK-NEXT: pop {r2}
-; CHECK: push {r1}
-; CHECK-NEXT: pop {r3}
+; CHECK:      movs r0, r1
+; CHECK-NEXT: movs r2, r1
+; CHECK-NEXT: movs r3, r1
 ; CHECK-NEXT: bl
 ; CHECK-NEXT: lsls r0, r0, #3
 ;
@@ -571,8 +564,7 @@ declare i32 @someVariadicFunc(i32, ...)
 ; CHECK-LABEL: noreturn:
 ; DISABLE: push
 ;
-; CHECK: movs [[TMP:r[0-9]+]], #255
-; CHECK-NEXT: tst  r0, [[TMP]]
+; CHECK: cmp r0, #0
 ; CHECK-NEXT: bne      [[ABORT:LBB[0-9_]+]]
 ;
 ; CHECK: movs r0, #42
@@ -656,11 +648,14 @@ define i1 @beq_to_bx(i32* %y, i32 %head) {
 
 ; CHECK: tst r3, r4
 ; ENABLE-NEXT: pop {r4}
-; ENABLE-NEXT: pop {r3}
-; ENABLE-NEXT: mov lr, r3
+; ENABLE-NEXT: mov r12, r{{.*}}
+; ENABLE-NEXT: pop {r0}
+; ENABLE-NEXT: mov lr, r0
+; ENABLE-NEXT: mov r0, r12
 ; CHECK-NEXT: beq [[EXIT_LABEL]]
 
 ; CHECK: str r1, [r2]
+; CHECK: str r3, [r2]
 ; CHECK-NEXT: movs r0, #0
 ; CHECK-NEXT: [[EXIT_LABEL]]: @ %cleanup
 ; ENABLE-NEXT: bx lr
@@ -681,6 +676,7 @@ if.end:
 
 if.end4:
   store i32 %head, i32* %y, align 4
+  store volatile i32 %z, i32* %y, align 4
   br label %cleanup
 
 cleanup:

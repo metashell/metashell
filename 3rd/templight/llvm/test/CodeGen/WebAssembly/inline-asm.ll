@@ -1,10 +1,10 @@
-; RUN: llc < %s -asm-verbose=false -no-integrated-as | FileCheck %s
+; RUN: llc < %s -asm-verbose=false -disable-wasm-fallthrough-return-opt -disable-wasm-explicit-locals -no-integrated-as | FileCheck %s
 
 ; Test basic inline assembly. Pass -no-integrated-as since these aren't
 ; actually valid assembly syntax.
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-target triple = "wasm32-unknown-unknown"
+target triple = "wasm32-unknown-unknown-wasm"
 
 ; CHECK-LABEL: foo:
 ; CHECK-NEXT: .param i32{{$}}
@@ -33,7 +33,6 @@ entry:
 
 ; CHECK-LABEL: imm:
 ; CHECK-NEXT: .result i32{{$}}
-; CHECK-NEXT: .local i32{{$}}
 ; CHECK-NEXT: #APP{{$}}
 ; CHECK-NEXT: # $0 = ccc(42){{$}}
 ; CHECK-NEXT: #NO_APP{{$}}
@@ -59,7 +58,7 @@ entry:
 
 ; CHECK-LABEL: X_i16:
 ; CHECK: foo $1{{$}}
-; CHECK: i32.store16 $discard=, 0($0), $1{{$}}
+; CHECK: i32.store16 0($0), $1{{$}}
 define void @X_i16(i16 * %t) {
   call void asm sideeffect "foo $0", "=*X,~{dirflag},~{fpsr},~{flags},~{memory}"(i16* %t)
   ret void
@@ -67,7 +66,7 @@ define void @X_i16(i16 * %t) {
 
 ; CHECK-LABEL: X_ptr:
 ; CHECK: foo $1{{$}}
-; CHECK: i32.store $discard=, 0($0), $1{{$}}
+; CHECK: i32.store 0($0), $1{{$}}
 define void @X_ptr(i16 ** %t) {
   call void asm sideeffect "foo $0", "=*X,~{dirflag},~{fpsr},~{flags},~{memory}"(i16** %t)
   ret void

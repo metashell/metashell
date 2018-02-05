@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm-c/Analysis.h"
 #include "MCJITTestAPICommon.h"
+#include "llvm-c/Analysis.h"
 #include "llvm-c/Core.h"
 #include "llvm-c/ExecutionEngine.h"
 #include "llvm-c/Target.h"
@@ -285,7 +285,6 @@ protected:
   
   void buildAndRunPasses() {
     LLVMPassManagerRef pass = LLVMCreatePassManager();
-    LLVMAddTargetData(LLVMGetExecutionEngineTargetData(Engine), pass);
     LLVMAddConstantPropagationPass(pass);
     LLVMAddInstructionCombiningPass(pass);
     LLVMRunPassManager(pass, Module);
@@ -303,8 +302,6 @@ protected:
       LLVMCreateFunctionPassManagerForModule(Module);
     LLVMPassManagerRef modulePasses =
       LLVMCreatePassManager();
-    
-    LLVMAddTargetData(LLVMGetExecutionEngineTargetData(Engine), modulePasses);
     
     LLVMPassManagerBuilderPopulateFunctionPassManager(passBuilder,
                                                       functionPasses);

@@ -12,8 +12,8 @@ entry:
 ; LINUX:	movq	$0, -8(%rsp)
 
   %this = alloca %Object addrspace(1)*
-  store %Object addrspace(1)* null, %Object addrspace(1)** %this
-  store %Object addrspace(1)* %param0, %Object addrspace(1)** %this
+  store volatile %Object addrspace(1)* null, %Object addrspace(1)** %this
+  store volatile %Object addrspace(1)* %param0, %Object addrspace(1)** %this
   br label %0
 
 ; <label>:0                                       ; preds = %entry
@@ -21,7 +21,7 @@ entry:
 
 ; WIN_X64:	xorl	%r8d, %r8d
 ; WIN_X64:	popq	%rax
-; WIN_X64:	rex64 jmp	C2              # TAILCALL
+; WIN_X64:	jmp	  C2                  # TAILCALL
 ; LINUX:	xorl	%edx, %edx
 ; LINUX:	jmp	C2                      # TAILCALL
 

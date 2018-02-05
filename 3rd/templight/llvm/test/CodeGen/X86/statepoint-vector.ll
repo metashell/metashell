@@ -1,4 +1,4 @@
-; RUN: llc -mcpu=core-avx -debug-only=stackmaps < %s | FileCheck %s
+; RUN: llc -verify-machineinstrs -stack-symbol-ordering=0 -mcpu=nehalem -debug-only=stackmaps < %s | FileCheck %s
 ; REQUIRES: asserts
 
 target triple = "x86_64-pc-linux-gnu"
@@ -22,7 +22,7 @@ define <2 x i8 addrspace(1)*> @test2(<2 x i8 addrspace(1)*> %obj, i64 %offset) g
 entry:
 ; CHECK-LABEL: @test2
 ; CHECK: subq	$40, %rsp
-; CHECK: movd	%rdi, %xmm1
+; CHECK: movq	%rdi, %xmm1
 ; CHECK: pshufd	$68, %xmm1, %xmm1       # xmm1 = xmm1[0,1,0,1]
 ; CHECK: paddq	%xmm0, %xmm1
 ; CHECK: movdqa	%xmm0, 16(%rsp)
@@ -49,8 +49,8 @@ entry:
 ; CHECK: subq	$40, %rsp
 ; CHECK: testb	$1, %dil
 ; CHECK: movaps	(%rsi), %xmm0
-; CHECK: movaps	%xmm0, 16(%rsp)
-; CHECK: movaps	%xmm0, (%rsp)
+; CHECK-DAG: movaps	%xmm0, (%rsp)
+; CHECK-DAG: movaps	%xmm0, 16(%rsp)
 ; CHECK: callq	do_safepoint
 ; CHECK: movaps	(%rsp), %xmm0
 ; CHECK: addq	$40, %rsp
@@ -106,53 +106,69 @@ entry:
 
 ; CHECK: __LLVM_StackMaps:
 
-; CHECK: .Ltmp1-test
+; CHECK: .Ltmp0-test
 ; Check for the two spill slots
-; Stack Maps: 		Loc 3: Indirect 7+0	[encoding: .byte 3, .byte 16, .short 7, .int 0]
-; Stack Maps: 		Loc 4: Indirect 7+0	[encoding: .byte 3, .byte 16, .short 7, .int 0]
+; Stack Maps: 		Loc 3: Indirect 7+0	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 0]
+; Stack Maps: 		Loc 4: Indirect 7+0	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 0]
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 
-; CHECK: .Ltmp3-test2
+; CHECK: .Ltmp1-test2
 ; Check for the two spill slots
-; Stack Maps: 		Loc 3: Indirect 7+16	[encoding: .byte 3, .byte 16, .short 7, .int 16]
-; Stack Maps: 		Loc 4: Indirect 7+0	[encoding: .byte 3, .byte 16, .short 7, .int 0]
+; Stack Maps: 		Loc 3: Indirect 7+16	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 16]
+; Stack Maps: 		Loc 4: Indirect 7+0	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 0]
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	16
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 
-; CHECK: .Ltmp5-test3
+; CHECK: .Ltmp2-test3
 ; Check for the four spill slots
-; Stack Maps: 		Loc 3: Indirect 7+16	[encoding: .byte 3, .byte 16, .short 7, .int 16]
-; Stack Maps: 		Loc 4: Indirect 7+16	[encoding: .byte 3, .byte 16, .short 7, .int 16]
-; Stack Maps: 		Loc 5: Indirect 7+16	[encoding: .byte 3, .byte 16, .short 7, .int 16]
-; Stack Maps: 		Loc 6: Indirect 7+0		[encoding: .byte 3, .byte 16, .short 7, .int 0]
+; Stack Maps: 		Loc 3: Indirect 7+16	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 16]
+; Stack Maps: 		Loc 4: Indirect 7+16	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 16]
+; Stack Maps: 		Loc 5: Indirect 7+16	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 16]
+; Stack Maps: 		Loc 6: Indirect 7+0	[encoding: .byte 3, .byte 0, .short 16, .short 7, .short 0, .int 0]
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	16
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	 0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	16
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	 0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	16
 ; CHECK: .byte	3
-; CHECK: .byte	16
+; CHECK: .byte	 0
+; CHECK: .short 16
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 
 declare void @do_safepoint()

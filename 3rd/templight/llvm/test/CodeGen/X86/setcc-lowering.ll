@@ -13,16 +13,26 @@ define <8 x i16> @pr25080(<8 x i32> %a) {
 ; AVX-NEXT:    vextractf128 $1, %ymm0, %xmm1
 ; AVX-NEXT:    vpxor %xmm2, %xmm2, %xmm2
 ; AVX-NEXT:    vpcmpeqd %xmm2, %xmm1, %xmm1
-; AVX-NEXT:    vmovdqa {{.*#+}} xmm3 = [0,1,4,5,8,9,12,13,8,9,12,13,12,13,14,15]
-; AVX-NEXT:    vpshufb %xmm3, %xmm1, %xmm1
 ; AVX-NEXT:    vpcmpeqd %xmm2, %xmm0, %xmm0
-; AVX-NEXT:    vpshufb %xmm3, %xmm0, %xmm0
-; AVX-NEXT:    vpunpcklqdq {{.*#+}} xmm0 = xmm0[0],xmm1[0]
+; AVX-NEXT:    vpacksswb %xmm1, %xmm0, %xmm0
 ; AVX-NEXT:    vpor {{.*}}(%rip), %xmm0, %xmm0
 ; AVX-NEXT:    vpsllw $15, %xmm0, %xmm0
 ; AVX-NEXT:    vpsraw $15, %xmm0, %xmm0
 ; AVX-NEXT:    vzeroupper
 ; AVX-NEXT:    retq
+;
+; KNL-32-LABEL: pr25080:
+; KNL-32:       # BB#0: # %entry
+; KNL-32-NEXT:    vpbroadcastd {{\.LCPI.*}}, %ymm1
+; KNL-32-NEXT:    vpand %ymm1, %ymm0, %ymm0
+; KNL-32-NEXT:    vpxor %ymm1, %ymm1, %ymm1
+; KNL-32-NEXT:    vpcmpeqd %zmm1, %zmm0, %k0
+; KNL-32-NEXT:    movb $15, %al
+; KNL-32-NEXT:    kmovw %eax, %k1
+; KNL-32-NEXT:    korw %k1, %k0, %k1
+; KNL-32-NEXT:    vpternlogq $255, %zmm0, %zmm0, %zmm0 {%k1} {z}
+; KNL-32-NEXT:    vpmovqw %zmm0, %xmm0
+; KNL-32-NEXT:    retl
 entry:
   %0 = trunc <8 x i32> %a to <8 x i23>
   %1 = icmp eq <8 x i23> %0, zeroinitializer
@@ -31,18 +41,43 @@ entry:
   ret <8 x i16> %3
 }
 
-define void @pr26232(i64 %a) {
+define void @pr26232(i64 %a, <16 x i1> %b) {
+; AVX-LABEL: pr26232:
+; AVX:       # BB#0: # %for_loop599.preheader
+; AVX-NEXT:    vpxor %xmm1, %xmm1, %xmm1
+; AVX-NEXT:    vmovdqa {{.*#+}} xmm2 = [128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128]
+; AVX-NEXT:    .p2align 4, 0x90
+; AVX-NEXT:  .LBB1_1: # %for_loop599
+; AVX-NEXT:    # =>This Inner Loop Header: Depth=1
+; AVX-NEXT:    xorl %eax, %eax
+; AVX-NEXT:    cmpq $65536, %rdi # imm = 0x10000
+; AVX-NEXT:    setl %al
+; AVX-NEXT:    vmovd %eax, %xmm3
+; AVX-NEXT:    vpshufb %xmm1, %xmm3, %xmm3
+; AVX-NEXT:    vpand %xmm0, %xmm3, %xmm3
+; AVX-NEXT:    vpsllw $7, %xmm3, %xmm3
+; AVX-NEXT:    vpand %xmm2, %xmm3, %xmm3
+; AVX-NEXT:    vpcmpgtb %xmm3, %xmm1, %xmm3
+; AVX-NEXT:    vpmovmskb %xmm3, %eax
+; AVX-NEXT:    testw %ax, %ax
+; AVX-NEXT:    jne .LBB1_1
+; AVX-NEXT:  # BB#2: # %for_exit600
+; AVX-NEXT:    retq
+;
 ; KNL-32-LABEL: pr26232:
-; KNL-32:       # BB#0: # %for_test11.preheader
+; KNL-32:       # BB#0: # %for_loop599.preheader
 ; KNL-32-NEXT:    pushl %esi
-; KNL-32-NEXT:  .Ltmp0:
+; KNL-32-NEXT:  .Lcfi0:
 ; KNL-32-NEXT:    .cfi_def_cfa_offset 8
-; KNL-32-NEXT:  .Ltmp1:
+; KNL-32-NEXT:  .Lcfi1:
 ; KNL-32-NEXT:    .cfi_offset %esi, -8
+; KNL-32-NEXT:    vpmovsxbd %xmm0, %zmm0
+; KNL-32-NEXT:    vpslld $31, %zmm0, %zmm0
+; KNL-32-NEXT:    vptestmd %zmm0, %zmm0, %k0
 ; KNL-32-NEXT:    movl {{[0-9]+}}(%esp), %eax
 ; KNL-32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
 ; KNL-32-NEXT:    movw $-1, %dx
-; KNL-32-NEXT:    .align 16, 0x90
+; KNL-32-NEXT:    .p2align 4, 0x90
 ; KNL-32-NEXT:  .LBB1_1: # %for_loop599
 ; KNL-32-NEXT:    # =>This Inner Loop Header: Depth=1
 ; KNL-32-NEXT:    cmpl $65536, %ecx # imm = 0x10000
@@ -50,6 +85,9 @@ define void @pr26232(i64 %a) {
 ; KNL-32-NEXT:    sbbl $0, %esi
 ; KNL-32-NEXT:    movl $0, %esi
 ; KNL-32-NEXT:    cmovlw %dx, %si
+; KNL-32-NEXT:    kmovw %esi, %k1
+; KNL-32-NEXT:    kandw %k0, %k1, %k1
+; KNL-32-NEXT:    kmovw %k1, %esi
 ; KNL-32-NEXT:    testw %si, %si
 ; KNL-32-NEXT:    jne .LBB1_1
 ; KNL-32-NEXT:  # BB#2: # %for_exit600
@@ -65,7 +103,7 @@ for_loop599:                                      ; preds = %for_loop599, %for_t
   %less_i_load605_ = icmp slt i64 %a, 65536
   %less_i_load605__broadcast_init = insertelement <16 x i1> undef, i1 %less_i_load605_, i32 0
   %less_i_load605__broadcast = shufflevector <16 x i1> %less_i_load605__broadcast_init, <16 x i1> undef, <16 x i32> zeroinitializer
-  %"oldMask&test607" = and <16 x i1> %less_i_load605__broadcast, undef
+  %"oldMask&test607" = and <16 x i1> %less_i_load605__broadcast, %b
   %intmask.i894 = bitcast <16 x i1> %"oldMask&test607" to i16
   %res.i895 = icmp eq i16 %intmask.i894, 0
   br i1 %res.i895, label %for_exit600, label %for_loop599

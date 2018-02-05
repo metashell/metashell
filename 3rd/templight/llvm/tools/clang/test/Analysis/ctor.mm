@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -analyze -analyzer-checker=core,debug.ExprInspection -fobjc-arc -analyzer-config c++-inlining=constructors -Wno-null-dereference -std=c++11 -verify %s
+// RUN: %clang_analyze_cc1 -analyzer-checker=core,debug.ExprInspection -fobjc-arc -analyzer-config c++-inlining=constructors -Wno-null-dereference -std=c++11 -verify %s
 
 #include "Inputs/system-header-simulator-cxx.h"
 
@@ -702,5 +702,22 @@ namespace PR19579 {
         0;
       })
     };
+  }
+}
+
+namespace NoCrashOnEmptyBaseOptimization {
+  struct NonEmptyBase {
+    int X;
+    explicit NonEmptyBase(int X) : X(X) {}
+  };
+
+  struct EmptyBase {};
+
+  struct S : NonEmptyBase, EmptyBase {
+    S() : NonEmptyBase(0), EmptyBase() {}
+  };
+
+  void testSCtorNoCrash() {
+    S s;
   }
 }

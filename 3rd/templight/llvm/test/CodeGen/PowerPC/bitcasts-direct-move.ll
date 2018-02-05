@@ -1,6 +1,7 @@
-; RUN: llc -mcpu=pwr8 -mtriple=powerpc64-unknown-unknown < %s | FileCheck %s
-; RUN: llc -mcpu=pwr7 -mtriple=powerpc64le-unknown-unknown < %s | FileCheck %s \
+; RUN: llc -verify-machineinstrs -mcpu=pwr8 -mtriple=powerpc64-unknown-unknown < %s | FileCheck %s
+; RUN: llc -verify-machineinstrs -mcpu=pwr7 -mtriple=powerpc64le-unknown-unknown < %s | FileCheck %s \
 ; RUN:  --check-prefix=CHECK-P7
+; RUN: llc -verify-machineinstrs -mcpu=pwr9 -mtriple=powerpc64-unknown-unknown < %s | FileCheck %s
 
 define signext i32 @f32toi32(float %a) {
 entry:
@@ -19,7 +20,7 @@ entry:
   ret i64 %0
 ; CHECK-P7: stxsdx 1,
 ; CHECK-P7: ld 3,
-; CHECK: mfvsrd 3, 1
+; CHECK: mffprd 3, 1
 }
 
 define float @i32tof32(i32 signext %a) {
@@ -59,7 +60,7 @@ entry:
   ret i64 %0
 ; CHECK-P7: stxsdx 1,
 ; CHECK-P7: ld 3,
-; CHECK: mfvsrd 3, 1
+; CHECK: mffprd 3, 1
 }
 
 define float @i32utof32(i32 zeroext %a) {
