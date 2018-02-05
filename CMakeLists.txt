@@ -135,6 +135,7 @@ include_directories(SYSTEM "3rd/boost/include")
 include_directories(SYSTEM "3rd/rapidjson/include")
 include_directories(SYSTEM "3rd/protobuf/include")
 include_directories(SYSTEM "3rd/termcap/include")
+include_directories(SYSTEM "3rd/yaml-cpp/include")
 
 # Unit testing
 enable_testing()
