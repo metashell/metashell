@@ -28,11 +28,12 @@ namespace metashell
 {
   namespace data
   {
-
     struct file_location : boost::totally_ordered<file_location>
     {
       file_location();
       file_location(const boost::filesystem::path& name, int row, int column);
+
+      static file_location parse(const std::string& s_);
 
       boost::filesystem::path name;
       int row;

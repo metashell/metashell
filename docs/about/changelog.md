@@ -3,6 +3,9 @@
 ## Not in any release yet
 
 * New features
+    * The `clang` engine of release 3.0.0 has been renamed to `templight`. Note
+      that there is a new engine called `clang` (see
+      _Changes to existing behaviour_).
     * New engine: `null`
     * New engine: `gcc`. Note that only preprocessor shell is supported. (No
       template metaprogram evaluation or debugging)
@@ -30,6 +33,10 @@
       (`--show_pragma_help` and `--show_mdb_help`) have been removed. They have
       been moved to another utility, which is used internally and are not part
       of the interface any longer.
+    * The `clang` engine uses the YAML template instantiation dump for template
+      debugging instead of the Templight dump. This makes it possible to work
+      with a Clang binary (patched with Templight) and does not require a
+      Templight binary. Note that profiling is not supported.
 
 ## Version 3.0.0
 

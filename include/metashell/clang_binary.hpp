@@ -29,6 +29,7 @@
 #include <boost/optional.hpp>
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace metashell
@@ -78,6 +79,12 @@ namespace metashell
        const boost::optional<boost::filesystem::path>& env_path_,
        const boost::optional<boost::filesystem::path>& templight_dump_path_,
        clang_binary& clang_binary_);
+
+  std::tuple<data::result, std::string> eval_with_templight_dump_on_stdout(
+      const iface::environment& env_,
+      const boost::optional<data::cpp_code>& tmp_exp_,
+      const boost::optional<boost::filesystem::path>& env_path_,
+      clang_binary& clang_binary_);
 }
 
 #endif

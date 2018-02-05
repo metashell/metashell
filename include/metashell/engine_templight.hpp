@@ -1,8 +1,8 @@
-#ifndef METASHELL_ENGINE_CLANG_HPP
-#define METASHELL_ENGINE_CLANG_HPP
+#ifndef METASHELL_ENGINE_TEMPLIGHT_HPP
+#define METASHELL_ENGINE_TEMPLIGHT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2015, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@
 
 namespace metashell
 {
-  engine_entry get_engine_clang_entry();
+  engine_entry get_engine_templight_entry();
+  engine_entry get_internal_templight_entry();
 }
 
 #endif

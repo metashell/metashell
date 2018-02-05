@@ -402,6 +402,35 @@ metashell::run_clang(const iface::executable& clang_binary_,
   return clang_binary_.run(clang_args_, input_.value());
 }
 
+std::tuple<data::result, std::string>
+metashell::eval_with_templight_dump_on_stdout(
+    const iface::environment& env_,
+    const boost::optional<data::cpp_code>& tmp_exp_,
+    const boost::optional<boost::filesystem::path>& env_path_,
+    clang_binary& clang_binary_)
+{
+  data::result precompile_result =
+      preprocess(env_, tmp_exp_, env_path_, clang_binary_);
+
+  if (precompile_result.successful)
+  {
+    const data::cpp_code precompiled_code(std::move(precompile_result.output));
+
+    const data::process_output templight_output = compile(
+        precompiled_code, {"-Xclang", "-templight-dump"}, clang_binary_);
+
+    return std::make_tuple(
+        templight_output.exit_code == data::exit_code_t(0) ?
+            compile(tmp_exp_, precompiled_code, boost::none, clang_binary_) :
+            data::result{false, "", templight_output.standard_error, ""},
+        templight_output.standard_output);
+  }
+  else
+  {
+    return std::make_tuple(precompile_result, "");
+  }
+}
+
 data::result metashell::eval(
     const iface::environment& env_,
     const boost::optional<data::cpp_code>& tmp_exp_,

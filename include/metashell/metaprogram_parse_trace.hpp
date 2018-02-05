@@ -40,6 +40,13 @@ namespace metashell
       const data::cpp_code& root_name,
       const data::file_location& root_source_location,
       const data::type_or_code_or_error& evaluation_result);
+
+  data::metaprogram create_metaprogram_from_yaml_trace(
+      const std::string& trace,
+      data::metaprogram::mode_t mode,
+      const data::cpp_code& root_name,
+      const data::file_location& root_source_location,
+      const data::type_or_code_or_error& evaluation_result);
 }
 
 #endif

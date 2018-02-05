@@ -19,8 +19,8 @@
 #include "test_config.hpp"
 #include "util.hpp"
 
-#include <metashell/engine_clang.hpp>
 #include <metashell/engine_constant.hpp>
+#include <metashell/engine_templight.hpp>
 #include <metashell/in_memory_displayer.hpp>
 #include <metashell/in_memory_history.hpp>
 #include <metashell/metashell.hpp>
