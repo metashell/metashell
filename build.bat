@@ -24,7 +24,7 @@ if defined no_templight goto skip_templight
     md build
     cd build
       cmake ..\llvm
-      msbuild LLVM.sln /p:Configuration=Release "/t:Clang executables\templight"
+      msbuild LLVM.sln /p:Configuration=Release /p:Platform="Win32" "/t:Clang executables\templight"
       if errorlevel 1 goto no_dev
     cd ..
   cd ..\..
@@ -38,7 +38,7 @@ md bin
 cd bin
   if defined METASHELL_NO_DOC_GENERATION cmake .. -DMETASHELL_NO_DOC_GENERATION=1
   if not defined METASHELL_NO_DOC_GENERATION cmake ..
-  msbuild metashell.sln /p:Configuration=Release
+  msbuild metashell.sln /p:Configuration=Release /p:Platform="Win32"
   if errorlevel 1 goto no_dev
 
   rem Run tests
