@@ -79,7 +79,8 @@ namespace
     {
       return filename_set(filenames_ | boost::adaptors::transformed([this](
                                            const boost::filesystem::path& p_) {
-                            return this->relative(p_);
+                            return boost::filesystem::canonical(
+                                this->relative(p_));
                           }));
     }
 

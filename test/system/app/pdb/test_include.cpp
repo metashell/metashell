@@ -22,7 +22,7 @@
 
 #include <just/temp.hpp>
 
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fstream>
 
@@ -55,7 +55,7 @@ namespace
   std::string test_hpp_path(const boost::filesystem::path& tmp_dir_path_)
   {
     return workaround_for_wave_on_windows(
-        (tmp_dir_path_ / "test.hpp").string());
+        (boost::filesystem::canonical(tmp_dir_path_) / "test.hpp").string());
   }
 
   template <event_kind Kind>
