@@ -103,8 +103,14 @@ namespace
   clang_macros(const metashell::clang_binary& cbin_,
                const boost::filesystem::path& internal_dir_)
   {
+    // Need to have __has_feature(cxx_decltype) to return true in order
+    // to be able to parse libcxx headers. They define decltype as a macro
+    // otherwise, and call it with template expression that contains
+    // multiple preprocessor parameters.
     std::vector<std::string> result{
-        "__has_include_next(_)=0", "__has_feature(_)=0"};
+        "__has_include_next(_)=0",
+        "__metashell_has_feature_impl__cxx_decltype=1",
+        "__has_feature(x)=__metashell_has_feature_impl__ ## x"};
 
     metashell::empty_environment env(internal_dir_);
     const metashell::data::cpp_code defines =
