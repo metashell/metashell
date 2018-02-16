@@ -38,6 +38,8 @@ struct gcc_dcas_x86
     typedef typename make_storage_type< 8u, Signed >::type storage_type;
     typedef typename make_storage_type< 8u, Signed >::aligned aligned_storage_type;
 
+    static BOOST_CONSTEXPR_OR_CONST bool is_always_lock_free = true;
+
     static BOOST_FORCEINLINE void store(storage_type volatile& storage, storage_type v, memory_order) BOOST_NOEXCEPT
     {
         if ((((uint32_t)&storage) & 0x00000007) == 0)
@@ -71,6 +73,7 @@ struct gcc_dcas_x86
         {
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
 #if defined(__PIC__)
+            uint32_t v_lo = (uint32_t)v;
             uint32_t scratch;
             __asm__ __volatile__
             (
@@ -82,8 +85,8 @@ struct gcc_dcas_x86
                 "1: lock; cmpxchg8b %[dest]\n\t"
                 "jne 1b\n\t"
                 "movl %[scratch], %%ebx\n\t"
-                : [scratch] "=m" (scratch), [dest] "=o" (storage)
-                : [value_lo] "a" ((uint32_t)v), "c" ((uint32_t)(v >> 32))
+                : [scratch] "=m" (scratch), [dest] "=o" (storage), [value_lo] "+a" (v_lo)
+                : "c" ((uint32_t)(v >> 32))
                 : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "edx", "memory"
             );
 #else // defined(__PIC__)
@@ -101,6 +104,7 @@ struct gcc_dcas_x86
 #endif // defined(__PIC__)
 #else // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
 #if defined(__PIC__)
+            uint32_t v_lo = (uint32_t)v;
             uint32_t scratch;
             __asm__ __volatile__
             (
@@ -113,11 +117,11 @@ struct gcc_dcas_x86
                 "jne 1b\n\t"
                 "movl %[scratch], %%ebx\n\t"
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_CONSTRAINT_ALTERNATIVES)
-                : [scratch] "=m,m" (scratch)
-                : [value_lo] "a,a" ((uint32_t)v), "c,c" ((uint32_t)(v >> 32)), [dest] "D,S" (&storage)
+                : [scratch] "=m,m" (scratch), [value_lo] "+a,a" (v_lo)
+                : "c,c" ((uint32_t)(v >> 32)), [dest] "D,S" (&storage)
 #else
-                : [scratch] "=m" (scratch)
-                : [value_lo] "a" ((uint32_t)v), "c" ((uint32_t)(v >> 32)), [dest] "D" (&storage)
+                : [scratch] "=m" (scratch), [value_lo] "+a" (v_lo)
+                : "c" ((uint32_t)(v >> 32)), [dest] "D" (&storage)
 #endif
                 : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "edx", "memory"
             );
@@ -200,11 +204,14 @@ struct gcc_dcas_x86
         storage_type volatile& storage, storage_type& expected, storage_type desired, memory_order, memory_order) BOOST_NOEXCEPT
     {
 #if defined(__clang__)
+
         // Clang cannot allocate eax:edx register pairs but it has sync intrinsics
         storage_type old_expected = expected;
         expected = __sync_val_compare_and_swap(&storage, old_expected, desired);
         return expected == old_expected;
+
 #elif defined(__PIC__)
+
         // Make sure ebx is saved and restored properly in case
         // of position independent code. To make this work
         // setup register constraints such that ebx can not be
@@ -218,25 +225,50 @@ struct gcc_dcas_x86
 
         uint32_t scratch;
         bool success;
+#if defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
         __asm__ __volatile__
         (
             "movl %%ebx, %[scratch]\n\t"
             "movl %[desired_lo], %%ebx\n\t"
-            "lock; cmpxchg8b %[dest]\n\t"
+            "lock; cmpxchg8b (%[dest])\n\t"
+            "movl %[scratch], %%ebx\n\t"
+            : "+A" (expected), [scratch] "=m" (scratch), [success] "=@ccz" (success)
+            : [desired_lo] "Sm" ((uint32_t)desired), "c" ((uint32_t)(desired >> 32)), [dest] "D" (&storage)
+            : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
+        );
+#else // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+        __asm__ __volatile__
+        (
+            "movl %%ebx, %[scratch]\n\t"
+            "movl %[desired_lo], %%ebx\n\t"
+            "lock; cmpxchg8b (%[dest])\n\t"
             "movl %[scratch], %%ebx\n\t"
             "sete %[success]\n\t"
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_CONSTRAINT_ALTERNATIVES)
-            : "+A,A,A,A,A,A" (expected), [dest] "+m,m,m,m,m,m" (storage), [scratch] "=m,m,m,m,m,m" (scratch), [success] "=q,m,q,m,q,m" (success)
-            : [desired_lo] "S,S,D,D,m,m" ((uint32_t)desired), "c,c,c,c,c,c" ((uint32_t)(desired >> 32))
+            : "+A,A,A,A,A,A" (expected), [scratch] "=m,m,m,m,m,m" (scratch), [success] "=q,m,q,m,q,m" (success)
+            : [desired_lo] "S,S,D,D,m,m" ((uint32_t)desired), "c,c,c,c,c,c" ((uint32_t)(desired >> 32)), [dest] "D,D,S,S,D,D" (&storage)
 #else
-            : "+A" (expected), [dest] "+m" (storage), [scratch] "=m" (scratch), [success] "=q" (success)
-            : [desired_lo] "S" ((uint32_t)desired), "c" ((uint32_t)(desired >> 32))
+            : "+A" (expected), [scratch] "=m" (scratch), [success] "=q" (success)
+            : [desired_lo] "S" ((uint32_t)desired), "c" ((uint32_t)(desired >> 32)), [dest] "D" (&storage)
 #endif
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
         );
+#endif // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+
         return success;
-#else
+
+#else // defined(__PIC__)
+
         bool success;
+#if defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+        __asm__ __volatile__
+        (
+            "lock; cmpxchg8b %[dest]\n\t"
+            : "+A" (expected), [dest] "+m" (storage), [success] "=@ccz" (success)
+            : "b" ((uint32_t)desired), "c" ((uint32_t)(desired >> 32))
+            : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
+        );
+#else // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
         __asm__ __volatile__
         (
             "lock; cmpxchg8b %[dest]\n\t"
@@ -250,8 +282,11 @@ struct gcc_dcas_x86
 #endif
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
         );
+#endif // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+
         return success;
-#endif
+
+#endif // defined(__PIC__)
     }
 
     static BOOST_FORCEINLINE bool compare_exchange_weak(
@@ -350,11 +385,6 @@ struct gcc_dcas_x86
 #endif // defined(__PIC__)
 #endif
     }
-
-    static BOOST_FORCEINLINE bool is_lock_free(storage_type const volatile&) BOOST_NOEXCEPT
-    {
-        return true;
-    }
 };
 
 #endif // defined(BOOST_ATOMIC_DETAIL_X86_HAS_CMPXCHG8B)
@@ -367,9 +397,12 @@ struct gcc_dcas_x86_64
     typedef typename make_storage_type< 16u, Signed >::type storage_type;
     typedef typename make_storage_type< 16u, Signed >::aligned aligned_storage_type;
 
+    static BOOST_CONSTEXPR_OR_CONST bool is_always_lock_free = true;
+
     static BOOST_FORCEINLINE void store(storage_type volatile& storage, storage_type v, memory_order) BOOST_NOEXCEPT
     {
         uint64_t const* p_value = (uint64_t const*)&v;
+        const uint64_t v_lo = p_value[0], v_hi = p_value[1];
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
         __asm__ __volatile__
         (
@@ -379,7 +412,7 @@ struct gcc_dcas_x86_64
             "1: lock; cmpxchg16b %[dest]\n\t"
             "jne 1b\n\t"
             : [dest] "=o" (storage)
-            : "b" (p_value[0]), "c" (p_value[1])
+            : "b" (v_lo), "c" (v_hi)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "rax", "rdx", "memory"
         );
 #else // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -391,7 +424,7 @@ struct gcc_dcas_x86_64
             "1: lock; cmpxchg16b 0(%[dest])\n\t"
             "jne 1b\n\t"
             :
-            : "b" (p_value[0]), "c" (p_value[1]), [dest] "r" (&storage)
+            : "b" (v_lo), "c" (v_hi), [dest] "r" (&storage)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "rax", "rdx", "memory"
         );
 #endif // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -459,13 +492,17 @@ struct gcc_dcas_x86_64
         storage_type volatile& storage, storage_type& expected, storage_type desired, memory_order, memory_order) BOOST_NOEXCEPT
     {
 #if defined(__clang__)
+
         // Clang cannot allocate rax:rdx register pairs but it has sync intrinsics
         storage_type old_expected = expected;
         expected = __sync_val_compare_and_swap(&storage, old_expected, desired);
         return expected == old_expected;
+
 #elif defined(BOOST_ATOMIC_DETAIL_NO_ASM_RAX_RDX_PAIRS)
+
         // GCC 4.4 can't allocate rax:rdx register pair either but it also doesn't support 128-bit __sync_val_compare_and_swap
         uint64_t const* p_desired = (uint64_t const*)&desired;
+        const uint64_t desired_lo = p_desired[0], desired_hi = p_desired[1];
         bool success;
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
         __asm__ __volatile__
@@ -477,7 +514,7 @@ struct gcc_dcas_x86_64
             "movq %%rax, %[expected]\n\t"
             "movq %%rdx, 8+%[expected]\n\t"
             : [dest] "+m" (storage), [expected] "+o" (expected), [success] "=q" (success)
-            : "b" (p_desired[0]), "c" (p_desired[1])
+            : "b" (desired_lo), "c" (desired_hi)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory", "rax", "rdx"
         );
 #else // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -490,30 +527,45 @@ struct gcc_dcas_x86_64
             "movq %%rax, 0(%[expected])\n\t"
             "movq %%rdx, 8(%[expected])\n\t"
             : [dest] "+m" (storage), [success] "=q" (success)
-            : "b" (p_desired[0]), "c" (p_desired[1]), [expected] "r" (&expected)
+            : "b" (desired_lo), "c" (desired_hi), [expected] "r" (&expected)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory", "rax", "rdx"
         );
 #endif // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
 
         return success;
+
 #else // defined(BOOST_ATOMIC_DETAIL_NO_ASM_RAX_RDX_PAIRS)
+
         uint64_t const* p_desired = (uint64_t const*)&desired;
+        const uint64_t desired_lo = p_desired[0], desired_hi = p_desired[1];
         bool success;
+#if defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+        __asm__ __volatile__
+        (
+            "lock; cmpxchg16b %[dest]\n\t"
+            : "+A" (expected), [dest] "+m" (storage), [success] "=@ccz" (success)
+            : "b" (desired_lo), "c" (desired_hi)
+            : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
+        );
+#else // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
         __asm__ __volatile__
         (
             "lock; cmpxchg16b %[dest]\n\t"
             "sete %[success]\n\t"
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_CONSTRAINT_ALTERNATIVES)
             : "+A,A" (expected), [dest] "+m,m" (storage), [success] "=q,m" (success)
-            : "b,b" (p_desired[0]), "c,c" (p_desired[1])
+            : "b,b" (desired_lo), "c,c" (desired_hi)
 #else
             : "+A" (expected), [dest] "+m" (storage), [success] "=q" (success)
-            : "b" (p_desired[0]), "c" (p_desired[1])
+            : "b" (desired_lo), "c" (desired_hi)
 #endif
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
         );
+#endif // defined(BOOST_ATOMIC_DETAIL_ASM_HAS_FLAG_OUTPUTS)
+
         return success;
-#endif
+
+#endif // defined(BOOST_ATOMIC_DETAIL_NO_ASM_RAX_RDX_PAIRS)
     }
 
     static BOOST_FORCEINLINE bool compare_exchange_weak(
@@ -538,6 +590,7 @@ struct gcc_dcas_x86_64
         // GCC 4.4 can't allocate rax:rdx register pair either but it also doesn't support 128-bit __sync_val_compare_and_swap
         storage_type old_value;
         uint64_t const* p_value = (uint64_t const*)&v;
+        const uint64_t v_lo = p_value[0], v_hi = p_value[1];
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
         __asm__ __volatile__
         (
@@ -549,7 +602,7 @@ struct gcc_dcas_x86_64
             "movq %%rax, %[old_value]\n\t"
             "movq %%rdx, 8+%[old_value]\n\t"
             : [dest] "+o" (storage), [old_value] "=o" (old_value)
-            : "b" (p_value[0]), "c" (p_value[1])
+            : "b" (v_lo), "c" (v_hi)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory", "rax", "rdx"
         );
 #else // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -563,7 +616,7 @@ struct gcc_dcas_x86_64
             "movq %%rax, 0(%[old_value])\n\t"
             "movq %%rdx, 8(%[old_value])\n\t"
             :
-            : "b" (p_value[0]), "c" (p_value[1]), [dest] "r" (&storage), [old_value] "r" (&old_value)
+            : "b" (v_lo), "c" (v_hi), [dest] "r" (&storage), [old_value] "r" (&old_value)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory", "rax", "rdx"
         );
 #endif // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -571,6 +624,7 @@ struct gcc_dcas_x86_64
         return old_value;
 #else // defined(BOOST_ATOMIC_DETAIL_NO_ASM_RAX_RDX_PAIRS)
         uint64_t const* p_value = (uint64_t const*)&v;
+        const uint64_t v_lo = p_value[0], v_hi = p_value[1];
 #if !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
         __asm__ __volatile__
         (
@@ -580,7 +634,7 @@ struct gcc_dcas_x86_64
             "1: lock; cmpxchg16b %[dest]\n\t"
             "jne 1b\n\t"
             : "=&A" (v), [dest] "+o" (storage)
-            : "b" (p_value[0]), "c" (p_value[1])
+            : "b" (v_lo), "c" (v_hi)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
         );
 #else // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
@@ -592,18 +646,13 @@ struct gcc_dcas_x86_64
             "1: lock; cmpxchg16b 0(%[dest])\n\t"
             "jne 1b\n\t"
             : "=&A" (v)
-            : "b" (p_value[0]), "c" (p_value[1]), [dest] "r" (&storage)
+            : "b" (v_lo), "c" (v_hi), [dest] "r" (&storage)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC_COMMA "memory"
         );
 #endif // !defined(BOOST_ATOMIC_DETAIL_NO_ASM_IMPLIED_ZERO_DISPLACEMENTS)
 
         return v;
 #endif
-    }
-
-    static BOOST_FORCEINLINE bool is_lock_free(storage_type const volatile&) BOOST_NOEXCEPT
-    {
-        return true;
     }
 };
 

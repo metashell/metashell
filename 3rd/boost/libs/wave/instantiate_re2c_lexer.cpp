@@ -35,17 +35,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  This instantiates the correct 'new_lexer' function, which generates the 
-//  C++ lexer used in this sample. You will have to instantiate the 
+//  This instantiates the correct 'new_lexer' function, which generates the
+//  C++ lexer used in this sample. You will have to instantiate the
 //  new_lexer_gen<> template with the same iterator type, as you have used for
 //  instantiating the boost::wave::context<> object.
 //
 //  This is moved into a separate compilation unit to decouple the compilation
-//  of the C++ lexer from the compilation of the other modules, which helps to 
+//  of the C++ lexer from the compilation of the other modules, which helps to
 //  reduce compilation time.
 //
-//  The template parameter(s) supplied should be identical to the first 
-//  parameter supplied while instantiating the boost::wave::context<> template 
+//  The template parameter(s) supplied should be identical to the first
+//  parameter supplied while instantiating the boost::wave::context<> template
 //  (see the file cpp.cpp).
 //
 ///////////////////////////////////////////////////////////////////////////////

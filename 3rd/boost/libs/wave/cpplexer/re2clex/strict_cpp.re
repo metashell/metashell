@@ -2,21 +2,21 @@
     Boost.Wave: A Standard compliant C++ preprocessor library
 
     Copyright (c) 2001 Daniel C. Nuffer
-    Copyright (c) 2001-2011 Hartmut Kaiser. 
-    Distributed under the Boost Software License, Version 1.0. (See accompanying 
+    Copyright (c) 2001-2011 Hartmut Kaiser.
+    Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
     This is a strict lexer conforming to the Standard as close as possible.
     It does not allow the '$' to be part of identifiers. If you need the '$'
     character in identifiers please include the lexer definition provided
     in the cpp.re file.
-    
-    TODO: 
+
+    TODO:
         handle errors better.
 =============================================================================*/
 
 /*!re2c
-re2c:indent:string = "    "; 
+re2c:indent:string = "    ";
 any                = [\t\v\f\r\n\040-\377];
 anyctrl            = [\001-\037];
 OctalDigit         = [0-7];
@@ -161,25 +161,25 @@ NonDigit           = [a-zA-Z_] | UniversalChar;
     ":"             { BOOST_WAVE_RET(T_COLON); }
     "..."           { BOOST_WAVE_RET(T_ELLIPSIS); }
     "?"             { BOOST_WAVE_RET(T_QUESTION_MARK); }
-    "::"            
-        { 
+    "::"
+        {
             if (s->act_in_c99_mode) {
                 --YYCURSOR;
                 BOOST_WAVE_RET(T_COLON);
             }
             else {
-                BOOST_WAVE_RET(T_COLON_COLON); 
+                BOOST_WAVE_RET(T_COLON_COLON);
             }
         }
     "."             { BOOST_WAVE_RET(T_DOT); }
-    ".*" 
-        { 
+    ".*"
+        {
             if (s->act_in_c99_mode) {
                 --YYCURSOR;
                 BOOST_WAVE_RET(T_DOT);
             }
             else {
-                BOOST_WAVE_RET(T_DOTSTAR); 
+                BOOST_WAVE_RET(T_DOTSTAR);
             }
         }
     "+"             { BOOST_WAVE_RET(T_PLUS); }
@@ -236,13 +236,13 @@ NonDigit           = [a-zA-Z_] | UniversalChar;
     "--"            { BOOST_WAVE_RET(T_MINUSMINUS); }
     ","             { BOOST_WAVE_RET(T_COMMA); }
     "->*"
-        { 
+        {
             if (s->act_in_c99_mode) {
                 --YYCURSOR;
                 BOOST_WAVE_RET(T_ARROW);
             }
             else {
-                BOOST_WAVE_RET(T_ARROWSTAR); 
+                BOOST_WAVE_RET(T_ARROWSTAR);
             }
         }
     "->"            { BOOST_WAVE_RET(T_ARROW); }
@@ -250,53 +250,53 @@ NonDigit           = [a-zA-Z_] | UniversalChar;
 
     "L"? (['] (EscapeSequence | UniversalChar | any\[\n\r\\'])+ ['])
         { BOOST_WAVE_RET(T_CHARLIT); }
-    
+
     "L"? (["] (EscapeSequence | UniversalChar | any\[\n\r\\"])* ["])
         { BOOST_WAVE_RET(T_STRINGLIT); }
-    
-    "L"? "R" ["] 
-        { 
-            if (s->act_in_cpp0x_mode) 
-                goto extrawstringlit; 
+
+    "L"? "R" ["]
+        {
+            if (s->act_in_cpp0x_mode)
+                goto extrawstringlit;
             --YYCURSOR;
             BOOST_WAVE_RET(T_IDENTIFIER);
         }
 
     [uU] [']
-        { 
-            if (s->act_in_cpp0x_mode) 
-                goto extcharlit; 
+        {
+            if (s->act_in_cpp0x_mode)
+                goto extcharlit;
             --YYCURSOR;
             BOOST_WAVE_RET(T_IDENTIFIER);
         }
-    
+
     ([uU] | "u8") ["]
-        { 
-            if (s->act_in_cpp0x_mode) 
-                goto extstringlit; 
+        {
+            if (s->act_in_cpp0x_mode)
+                goto extstringlit;
             --YYCURSOR;
             BOOST_WAVE_RET(T_IDENTIFIER);
         }
-    
+
     ([uU] | "u8") "R" ["]
-        { 
-            if (s->act_in_cpp0x_mode) 
-                goto extrawstringlit; 
+        {
+            if (s->act_in_cpp0x_mode)
+                goto extrawstringlit;
             --YYCURSOR;
             BOOST_WAVE_RET(T_IDENTIFIER);
         }
-    
+
     ([a-zA-Z_] | UniversalChar) ([a-zA-Z_0-9] | UniversalChar)*
         { BOOST_WAVE_RET(T_IDENTIFIER); }
 
-    Pound PPSpace ( "include" | "include_next") PPSpace "<" (any\[\n\r>])+ ">" 
+    Pound PPSpace ( "include" | "include_next") PPSpace "<" (any\[\n\r>])+ ">"
         { BOOST_WAVE_RET(T_PP_HHEADER); }
 
-    Pound PPSpace ( "include" | "include_next") PPSpace "\"" (any\[\n\r"])+ "\"" 
-        { BOOST_WAVE_RET(T_PP_QHEADER); } 
+    Pound PPSpace ( "include" | "include_next") PPSpace "\"" (any\[\n\r"])+ "\""
+        { BOOST_WAVE_RET(T_PP_QHEADER); }
 
     Pound PPSpace ( "include" | "include_next") PPSpace
-        { BOOST_WAVE_RET(T_PP_INCLUDE); } 
+        { BOOST_WAVE_RET(T_PP_INCLUDE); }
 
     Pound PPSpace "if"        { BOOST_WAVE_RET(T_PP_IF); }
     Pound PPSpace "ifdef"     { BOOST_WAVE_RET(T_PP_IFDEF); }
@@ -327,7 +327,7 @@ NonDigit           = [a-zA-Z_] | UniversalChar;
 
     "\000"
     {
-        if (s->eof && cursor != s->eof) 
+        if (s->eof && cursor != s->eof)
         {
             BOOST_WAVE_UPDATE_CURSOR();     // adjust the input cursor
             (*s->error_proc)(s, lexing_exception::generic_lexing_error,
@@ -350,7 +350,7 @@ NonDigit           = [a-zA-Z_] | UniversalChar;
 ccomment:
 /*!re2c
     "*/"            { BOOST_WAVE_RET(T_CCOMMENT); }
-    
+
     Newline
     {
         /*if(cursor == s->eof) BOOST_WAVE_RET(T_EOF);*/
@@ -364,7 +364,7 @@ ccomment:
 
     "\000"
     {
-        if(cursor == s->eof) 
+        if(cursor == s->eof)
         {
             BOOST_WAVE_UPDATE_CURSOR();   // adjust the input cursor
             (*s->error_proc)(s, lexing_exception::generic_lexing_warning,
@@ -403,14 +403,14 @@ cppcomment:
 
     "\000"
     {
-        if (s->eof && cursor != s->eof) 
+        if (s->eof && cursor != s->eof)
         {
             --YYCURSOR;                     // next call returns T_EOF
             BOOST_WAVE_UPDATE_CURSOR();     // adjust the input cursor
             (*s->error_proc)(s, lexing_exception::generic_lexing_error,
                 "invalid character '\\000' in input stream");
         }
-        
+
         --YYCURSOR;                         // next call returns T_EOF
         if (!s->single_line_only)
         {
@@ -448,7 +448,7 @@ pp_number:
         ((FractionalConstant ExponentPart?) | (Digit+ ExponentPart)) FloatingSuffix?
             { BOOST_WAVE_RET(T_FLOATLIT); }
 
-        Integer { goto integer_suffix; } 
+        Integer { goto integer_suffix; }
     */
     }
 }
@@ -483,7 +483,7 @@ extcharlit:
         ((EscapeSequence | UniversalChar | any\[\n\r\\']) ['])
             { BOOST_WAVE_RET(T_CHARLIT); }
 
-        any 
+        any
             { BOOST_WAVE_RET(TOKEN_FROM_ID(*s->tok, UnknownTokenType)); }
     */
 }
@@ -495,7 +495,7 @@ extstringlit:
         ((EscapeSequence | UniversalChar | any\[\n\r\\"])* ["])
             { BOOST_WAVE_RET(T_STRINGLIT); }
 
-        any 
+        any
             { BOOST_WAVE_RET(TOKEN_FROM_ID(*s->tok, UnknownTokenType)); }
     */
 }

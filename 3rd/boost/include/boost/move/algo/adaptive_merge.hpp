@@ -56,7 +56,7 @@ void adaptive_merge( RandIt first, RandIt middle, RandIt last, Compare comp
    typedef typename iterator_traits<RandIt>::value_type value_type;
 
    ::boost::movelib::detail_adaptive::adaptive_xbuf<value_type> xbuf(uninitialized, uninitialized_len);
-	::boost::movelib::detail_adaptive::adaptive_merge_impl(first, size_type(middle - first), size_type(last - middle), comp, xbuf);
+   ::boost::movelib::detail_adaptive::adaptive_merge_impl(first, size_type(middle - first), size_type(last - middle), comp, xbuf);
 }
 
 }  //namespace movelib {
