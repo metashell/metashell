@@ -52,7 +52,7 @@ namespace boost
             for (async_states_t::iterator i = async_states_.begin(), e = async_states_.end();
                     i != e; ++i)
             {
-                (*i)->make_ready();
+                (*i)->notify_deferred();
             }
         }
 
@@ -126,9 +126,9 @@ namespace boost
                     const boost::once_flag uninitialized = BOOST_ONCE_INIT;
                     if (memcmp(&current_thread_tls_init_flag, &uninitialized, sizeof(boost::once_flag)))
                     {
-                      void* data = pthread_getspecific(current_thread_tls_key);
-                      if (data)
-                          tls_destructor(data);
+                        void* data = pthread_getspecific(current_thread_tls_key);
+                        if (data)
+                            tls_destructor(data);
                         pthread_key_delete(current_thread_tls_key);
                     }
                 }
@@ -430,7 +430,7 @@ namespace boost
     {
       namespace no_interruption_point
       {
-        namespace hiden
+        namespace hidden
         {
           void BOOST_THREAD_DECL sleep_for(const timespec& ts)
           {
@@ -457,9 +457,9 @@ namespace boost
                 }
           }
 
-          void BOOST_THREAD_DECL sleep_until(const timespec& ts)
+          void BOOST_THREAD_DECL sleep_until_realtime(const timespec& ts)
           {
-                timespec now = boost::detail::timespec_now();
+                timespec now = boost::detail::timespec_now_realtime();
                 if (boost::detail::timespec_gt(ts, now))
                 {
                   for (int foo=0; foo < 5; ++foo)
@@ -479,7 +479,7 @@ namespace boost
                     condition_variable cond;
                     cond.do_wait_until(lock, ts);
     #   endif
-                    timespec now2 = boost::detail::timespec_now();
+                    timespec now2 = boost::detail::timespec_now_realtime();
                     if (boost::detail::timespec_ge(now2, ts))
                     {
                       return;
@@ -487,10 +487,9 @@ namespace boost
                   }
                 }
           }
-
         }
       }
-      namespace hiden
+      namespace hidden
       {
         void BOOST_THREAD_DECL sleep_for(const timespec& ts)
         {
@@ -503,11 +502,11 @@ namespace boost
             }
             else
             {
-              boost::this_thread::no_interruption_point::hiden::sleep_for(ts);
+              boost::this_thread::no_interruption_point::hidden::sleep_for(ts);
             }
         }
 
-        void BOOST_THREAD_DECL sleep_until(const timespec& ts)
+        void BOOST_THREAD_DECL sleep_until_realtime(const timespec& ts)
         {
             boost::detail::thread_data_base* const thread_info=boost::detail::get_current_thread_data();
 
@@ -518,10 +517,10 @@ namespace boost
             }
             else
             {
-              boost::this_thread::no_interruption_point::hiden::sleep_until(ts);
+              boost::this_thread::no_interruption_point::hidden::sleep_until_realtime(ts);
             }
         }
-      } // hiden
+      } // hidden
     } // this_thread
 
     namespace this_thread
@@ -542,7 +541,7 @@ namespace boost
             timespec ts;
             ts.tv_sec= 0;
             ts.tv_nsec= 0;
-            hiden::sleep_for(ts);
+            hidden::sleep_for(ts);
 #   endif
         }
     }

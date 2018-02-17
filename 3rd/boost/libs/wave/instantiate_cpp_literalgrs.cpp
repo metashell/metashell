@@ -30,9 +30,9 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-//  
-//  Explicit instantiation of the intlit_grammar_gen and chlit_grammar_gen 
-//  templates with the correct token type. This instantiates the corresponding 
+//
+//  Explicit instantiation of the intlit_grammar_gen and chlit_grammar_gen
+//  templates with the correct token type. This instantiates the corresponding
 //  parse function, which in turn instantiates the corresponding parser object.
 //
 ///////////////////////////////////////////////////////////////////////////////

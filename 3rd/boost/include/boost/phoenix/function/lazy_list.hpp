@@ -202,10 +202,10 @@ namespace boost {
        }
 
       template <class L>
-      bool is_a_unique_type_for_nil(const L& l) {
+      bool is_a_unique_type_for_nil(const L& /*l*/) {
          return false;
       }
-  
+
       template <>
       bool is_a_unique_type_for_nil<a_unique_type_for_nil>
       (const a_unique_type_for_nil& /* n */) {
@@ -1277,7 +1277,6 @@ bool operator<( a_unique_type_for_nil, const list<T>& b ) {
         template <typename T, typename L>
         typename result<Cons(T,L)>::type
         operator()( const T& x, const L& l ) const {
-           typedef typename result<Cons(T,L)>::type LL;
            typedef typename result_of::ListType<L>::LType LType;
            typedef ConsHelp1<T,LType,
            boost::is_base_and_derived<ListLike,LType>::value> help;

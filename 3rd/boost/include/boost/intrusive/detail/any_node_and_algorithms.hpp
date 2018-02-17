@@ -23,8 +23,9 @@
 
 #include <boost/intrusive/detail/workaround.hpp>
 #include <boost/intrusive/pointer_rebind.hpp>
-#include <cstddef>
 #include <boost/intrusive/detail/mpl.hpp>
+#include <boost/intrusive/detail/algo_type.hpp>
+#include <cstddef>
 
 namespace boost {
 namespace intrusive {
@@ -278,6 +279,17 @@ class any_algorithms
       any_algorithms<VoidPointer>::template function_not_available_for_any_hooks<node_ptr>();
    }
 };
+
+///@cond
+
+template<class NodeTraits>
+struct get_algo<AnyAlgorithm, NodeTraits>
+{
+   typedef typename pointer_rebind<typename NodeTraits::node_ptr, void>::type void_pointer;
+   typedef any_algorithms<void_pointer> type;
+};
+
+///@endcond
 
 } //namespace intrusive
 } //namespace boost

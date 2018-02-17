@@ -92,12 +92,12 @@ class polymorphic_allocator
 
    #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES) || defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
    //! <b>Requires</b>: Uses-allocator construction of T with allocator
-   //!   `this->resource()` and constructor arguments `std::forward<Args>(args)...`
+   //!   `*this` and constructor arguments `std::forward<Args>(args)...`
    //!   is well-formed. [Note: uses-allocator construction is always well formed for
    //!   types that do not use allocators. - end note]
    //!
    //! <b>Effects</b>: Construct a T object at p by uses-allocator construction with allocator
-   //!   `this->resource()` and constructor arguments `std::forward<Args>(args)...`.
+   //!   `*this` and constructor arguments `std::forward<Args>(args)...`.
    //!
    //! <b>Throws</b>: Nothing unless the constructor for T throws.
    template < typename U, class ...Args>
@@ -105,7 +105,7 @@ class polymorphic_allocator
    {
       new_allocator<U> na;
       container_detail::dispatch_uses_allocator
-         (na, this->resource(), p, ::boost::forward<Args>(args)...);
+         (na, *this, p, ::boost::forward<Args>(args)...);
    }
 
    #else // #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES) || defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
@@ -118,7 +118,7 @@ class polymorphic_allocator
    {\
       new_allocator<U> na;\
       container_detail::dispatch_uses_allocator\
-         (na, this->resource(), p BOOST_MOVE_I##N BOOST_MOVE_FWDQ##N);\
+         (na, *this, p BOOST_MOVE_I##N BOOST_MOVE_FWDQ##N);\
    }\
    //
    BOOST_MOVE_ITERATE_0TO9(BOOST_CONTAINER_PMR_POLYMORPHIC_ALLOCATOR_CONSTRUCT_CODE)

@@ -35,6 +35,8 @@ struct emulated_operations
 {
     typedef T storage_type;
 
+    static BOOST_CONSTEXPR_OR_CONST bool is_always_lock_free = false;
+
     static BOOST_FORCEINLINE void store(storage_type volatile& storage, storage_type v, memory_order) BOOST_NOEXCEPT
     {
         lockpool::scoped_lock lock(&storage);
@@ -140,11 +142,6 @@ struct emulated_operations
     {
         store(storage, (storage_type)0, order);
     }
-
-    static BOOST_FORCEINLINE bool is_lock_free(storage_type const volatile&) BOOST_NOEXCEPT
-    {
-        return false;
-    }
 };
 
 template< std::size_t Size, bool Signed >
@@ -152,6 +149,9 @@ struct operations :
     public emulated_operations< typename make_storage_type< Size, Signed >::type >
 {
     typedef typename make_storage_type< Size, Signed >::aligned aligned_storage_type;
+
+    static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = Size;
+    static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
 };
 
 } // namespace detail

@@ -28,10 +28,10 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-//  
-//  Explicit instantiation of the defined_grammar_gen template 
-//  with the correct token type. This instantiates the corresponding parse 
-//  function, which in turn instantiates the defined_grammar 
+//
+//  Explicit instantiation of the defined_grammar_gen template
+//  with the correct token type. This instantiates the corresponding parse
+//  function, which in turn instantiates the defined_grammar
 //  object (see wave/grammars/cpp_defined_grammar.hpp)
 //
 ///////////////////////////////////////////////////////////////////////////////

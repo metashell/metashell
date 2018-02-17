@@ -29,10 +29,10 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-//  
-//  Explicit instantiation of the expression_grammar_gen template with the 
-//  correct lexer iterator type. This instantiates the corresponding parse 
-//  function, which in turn instantiates the expression_grammar object (see 
+//
+//  Explicit instantiation of the expression_grammar_gen template with the
+//  correct lexer iterator type. This instantiates the corresponding parse
+//  function, which in turn instantiates the expression_grammar object (see
 //  wave/grammars/cpp_expression_grammar.hpp)
 //
 ///////////////////////////////////////////////////////////////////////////////

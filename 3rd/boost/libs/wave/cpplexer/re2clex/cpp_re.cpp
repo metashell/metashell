@@ -216,13 +216,8 @@ uchar *fill(Scanner *s, uchar *cursor)
             uchar *buf = (uchar*) malloc(((s->lim - s->bot) + BOOST_WAVE_BSIZE)*sizeof(uchar));
             if (buf == 0)
             {
-                using namespace std;      // some systems have printf in std
-                if (0 != s->error_proc) {
-                    (*s->error_proc)(s, lexing_exception::unexpected_error,
-                        "Out of memory!");
-                }
-                else
-                    printf("Out of memory!\n");
+                (*s->error_proc)(s, lexing_exception::unexpected_error,
+                    "Out of memory!");
 
                 /* get the scanner to stop */
                 *cursor = 0;

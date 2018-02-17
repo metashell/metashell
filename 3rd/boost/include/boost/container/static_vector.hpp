@@ -113,6 +113,8 @@ class static_vector
    template<class U, std::size_t OtherCapacity>
    friend class static_vector;
 
+   public:
+   typedef container_detail::static_storage_allocator<Value, Capacity> allocator_type;
    #endif   //#ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
 
 public:
@@ -138,6 +140,9 @@ public:
     typedef typename base_t::reverse_iterator reverse_iterator;
     //! @brief The const reverse iterator.
     typedef typename base_t::const_reverse_iterator const_reverse_iterator;
+
+    //! @brief The capacity/max size of the container
+    static const size_type static_capacity = Capacity;
 
     //! @brief Constructs an empty static_vector.
     //!
@@ -249,6 +254,19 @@ public:
         : base_t(other)
     {}
 
+    BOOST_CONTAINER_FORCEINLINE static_vector(static_vector const& other, const allocator_type &)
+       : base_t(other)
+    {}
+
+    BOOST_CONTAINER_FORCEINLINE static_vector(BOOST_RV_REF(static_vector) other,  const allocator_type &)
+       BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<value_type>::value)
+       : base_t(BOOST_MOVE_BASE(base_t, other))
+    {}
+
+    BOOST_CONTAINER_FORCEINLINE explicit static_vector(const allocator_type &)
+       : base_t()
+    {}
+
     //! @pre <tt>other.size() <= capacity()</tt>.
     //!
     //! @brief Constructs a copy of other static_vector.
@@ -276,6 +294,7 @@ public:
     //! @par Complexity
     //!   Linear O(N).
     BOOST_CONTAINER_FORCEINLINE static_vector(BOOST_RV_REF(static_vector) other)
+      BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<value_type>::value)
         : base_t(BOOST_MOVE_BASE(base_t, other))
     {}
 
@@ -673,6 +692,8 @@ public:
     //! @brief Inserts a Value constructed with
     //!   \c std::forward<Args>(args)... in the end of the container.
     //!
+    //! @return A reference to the created object.
+    //!
     //! @param args     The arguments of the constructor of the new element which will be created at the end of the container.
     //!
     //! @par Throws
@@ -681,7 +702,7 @@ public:
     //! @par Complexity
     //!   Constant O(1).
     template<class ...Args>
-    void emplace_back(Args &&...args);
+    reference emplace_back(Args &&...args);
 
     //! @pre
     //!  @li \c p must be a valid iterator of \c *this in range <tt>[begin(), end()]</tt>
