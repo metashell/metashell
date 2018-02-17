@@ -78,7 +78,7 @@ namespace
   gcc_args(const std::vector<std::string>& extra_gcc_args_,
            const boost::filesystem::path& internal_dir_)
   {
-    std::vector<std::string> args{"-iquote", ".", "-x", "c++-header"};
+    std::vector<std::string> args{"-iquote", ".", "-x", "c++"};
 
     if (stdinc_allowed(extra_gcc_args_))
     {

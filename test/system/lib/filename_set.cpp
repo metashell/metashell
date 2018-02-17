@@ -21,6 +21,8 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <boost/filesystem.hpp>
+
 #include <iostream>
 
 using namespace metashell::system_test;
@@ -40,7 +42,7 @@ filename_set::filename_set(const json_string& s_)
     {
       if (i->IsString())
       {
-        _paths.insert(i->GetString());
+        _paths.insert(boost::filesystem::canonical(i->GetString()));
       }
       else
       {
