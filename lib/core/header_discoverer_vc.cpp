@@ -101,12 +101,13 @@ namespace metashell
   {
     using boost::xpressive::bos;
     using boost::xpressive::as_xpr;
+    using boost::xpressive::set;
 
     const data::process_output output =
-        run_vc(_vc_binary, {"/showIncludes"}, exp_);
+        run_vc(_vc_binary, {"/c", "/showIncludes"}, exp_);
 
     const boost::xpressive::sregex included_header =
-        bos >> "Note: including file:" >> *as_xpr(' ');
+        bos >> +~(set = ':') >> ": " >> +~(set = ':') >> ":" >> *as_xpr(' ');
 
     std::set<boost::filesystem::path> result;
 

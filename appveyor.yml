@@ -1,4 +1,4 @@
-os: Visual Studio 2015
+os: Visual Studio 2017
 
 platform:
   - Win32
@@ -17,13 +17,13 @@ install:
 before_build:
   - md bin
   - cd bin
-  - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 12
-  - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 12 Win64
+  - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 15
+  - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 15 Win64
   - cmake -G "%CMAKE_GENERATOR_NAME%" ..
   - cd ..
 
 build_script:
   - set NO_TEMPLIGHT=1
   - set METASHELL_NO_DOC_GENERATION=1
-  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\""
+  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x86"
   - build.bat
