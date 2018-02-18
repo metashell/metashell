@@ -22,7 +22,6 @@
 namespace metashell
 {
   engine_entry get_engine_clang_entry();
-  engine_entry get_internal_templight_entry();
 }
 
 #endif

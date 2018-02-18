@@ -16,7 +16,7 @@
 
 disable_warnings()
 
-subdirs(boost protobuf googletest googlemock)
+subdirs(boost protobuf googletest googlemock yaml-cpp)
 
 if (WIN32)
   subdirs(wineditline)

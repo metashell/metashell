@@ -18,45 +18,27 @@
 #include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/metaprogram_tracer_clang.hpp>
 
-#include <fstream>
-
-namespace
-{
-  metashell::data::type_or_code_or_error
-  run_metaprogram(metashell::clang_binary& clang_binary_,
-                  const boost::optional<metashell::data::cpp_code>& expression_,
-                  const boost::filesystem::path& output_path_,
-                  metashell::iface::environment& env_,
-                  metashell::iface::displayer& displayer_)
-  {
-    using metashell::data::type_or_code_or_error;
-
-    const metashell::data::result res = metashell::eval(
-        env_, expression_, boost::none, output_path_, clang_binary_);
-
-    if (!res.info.empty())
-    {
-      displayer_.show_raw_text(res.info);
-    }
-
-    if (!res.successful)
-    {
-      return type_or_code_or_error::make_error(res.error);
-    }
-    else if (expression_)
-    {
-      return type_or_code_or_error::make_type(
-          metashell::data::type(res.output));
-    }
-    else
-    {
-      return type_or_code_or_error::make_none();
-    }
-  }
-}
-
 namespace metashell
 {
+  namespace
+  {
+    data::type_or_code_or_error type_or_code_or_error_from_result(
+        const data::result& res_,
+        const boost::optional<data::cpp_code>& expression_)
+    {
+      if (res_.successful)
+      {
+        return expression_ ? data::type_or_code_or_error::make_type(
+                                 data::type(res_.output)) :
+                             data::type_or_code_or_error::make_none();
+      }
+      else
+      {
+        return data::type_or_code_or_error::make_error(res_.error);
+      }
+    }
+  }
+
   metaprogram_tracer_clang::metaprogram_tracer_clang(clang_binary clang_binary_)
     : _clang_binary(clang_binary_)
   {
@@ -64,44 +46,34 @@ namespace metashell
 
   data::metaprogram metaprogram_tracer_clang::eval(
       iface::environment& env_,
-      const boost::filesystem::path& temp_dir_,
+      const boost::filesystem::path&,
       const boost::optional<data::cpp_code>& expression_,
       data::metaprogram::mode_t mode_,
       iface::displayer& displayer_)
   {
-    const boost::filesystem::path output_path = temp_dir_ / "templight.pb";
+    const auto out = eval_with_templight_dump_on_stdout(
+        env_, expression_, boost::none, _clang_binary);
 
-    const data::type_or_code_or_error evaluation_result = run_metaprogram(
-        _clang_binary, expression_, output_path, env_, displayer_);
+    const data::result& res = std::get<0>(out);
+    const std::string& trace = std::get<1>(out);
 
-    // Opening in binary mode, because some platforms interpret some characters
-    // specially in text mode, which caused parsing to fail.
-    std::ifstream protobuf_stream(output_path.string() + ".trace.pbf",
-                                  std::ios_base::in | std::ios_base::binary);
-
-    if (protobuf_stream)
+    if (!res.info.empty())
     {
-      const data::metaprogram result = create_metaprogram_from_protobuf_stream(
-          protobuf_stream, mode_,
-          expression_ ? *expression_ : data::cpp_code("<environment>"),
-          data::file_location{}, // TODO something sensible here?
-          evaluation_result);
-      if (result.is_empty() && evaluation_result.is_error())
-      {
-        // Most errors will cause templight to generate an empty trace
-        // We're only interested in non-empty traces
-        throw exception(evaluation_result.get_error());
-      }
-      return result;
+      displayer_.show_raw_text(res.info);
     }
-    else if (evaluation_result.is_error())
+
+    if (trace.empty())
     {
-      throw exception(evaluation_result.get_error());
+      throw exception(res.successful ? "Failed to get template trace" :
+                                       res.error);
     }
     else
     {
-      // Shouldn't happen
-      throw exception("Unexpected type type_or_code_or_error result");
+      return create_metaprogram_from_yaml_trace(
+          trace, mode_,
+          expression_ ? *expression_ : data::cpp_code("<environment>"),
+          data::file_location{}, // TODO something sensible here?
+          type_or_code_or_error_from_result(res, expression_));
     }
   }
 }

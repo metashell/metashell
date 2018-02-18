@@ -42,9 +42,22 @@ function(register_system_test TEST_TARGET_NAME)
   endif()
 
   add_test(
-    NAME ${TEST_TARGET_NAME}_templight
+    NAME ${TEST_TARGET_NAME}_internal_templight
     COMMAND
       ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --
+      "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
+      --
+  )
+
+  add_test(
+    NAME ${TEST_TARGET_NAME}_templight
+    COMMAND
+      ${TEST_TARGET_NAME} "$<TARGET_FILE:metashell>" --engine templight --
+      "$<TARGET_FILE_DIR:metashell>/${TEMPLIGHT_PATH}"
+      -std=c++0x
+      -ftemplate-depth=256
+      -Wfatal-errors
+      ${CLANG_FLAGS}
       "-I${CMAKE_SOURCE_DIR}/3rd/boost/include"
       --
   )

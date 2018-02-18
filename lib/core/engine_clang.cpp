@@ -43,7 +43,6 @@ namespace
             data::feature::macro_discovery()};
   }
 
-  template <bool UseInternalTemplight>
   std::unique_ptr<iface::engine>
   create_clang_engine(const data::config& config_,
                       const boost::filesystem::path& internal_dir_,
@@ -54,11 +53,10 @@ namespace
                       logger* logger_)
   {
     const clang_binary cbin(
-        UseInternalTemplight,
-        find_clang(
-            UseInternalTemplight, config_.active_shell_config().engine_args,
-            config_.metashell_binary, config_.active_shell_config().engine,
-            env_detector_, displayer_, logger_),
+        false, find_clang(false, config_.active_shell_config().engine_args,
+                          config_.metashell_binary,
+                          config_.active_shell_config().engine, env_detector_,
+                          displayer_, logger_),
         config_.active_shell_config().engine_args, internal_dir_, env_detector_,
         logger_);
 
@@ -77,24 +75,14 @@ namespace
 engine_entry metashell::get_engine_clang_entry()
 {
   return engine_entry(
-      &create_clang_engine<false>,
+      &create_clang_engine,
       "<Clang binary> -std=<standard to use> [<Clang args>]",
       data::markdown_string(
-          "Uses the [Clang compiler](http://clang.llvm.org) or "
-          "[Templight](https://github.com/mikael-s-persson/templight). `<Clang "
-          "args>` are passed to the compiler as command line-arguments. Note "
-          "that Metashell requires C++11 or above. If your Clang uses such a "
-          "standard by default, you can omit the `-std` argument."),
-      supported_features());
-}
-
-engine_entry metashell::get_internal_templight_entry()
-{
-  return engine_entry(
-      &create_clang_engine<true>, "[<Clang args>]",
-      data::markdown_string(
-          "Uses the [Templight](https://github.com/mikael-s-persson/templight) "
-          "shipped with Metashell. `<Clang args>` are passed to"
-          " the compiler as command line-arguments."),
+          "Uses the [Clang compiler](http://clang.llvm.org). `<Clang args>` "
+          "are passed to the compiler as command line-arguments. Note that "
+          "Metashell requires C++11 or above. If your Clang uses such a "
+          "standard by default, you can omit the `-std` argument. Metaprogram "
+          "debugging (MDB) is supported only when Clang has been patched with "
+          "[templight](https://github.com/mikael-s-persson/templight)"),
       supported_features());
 }

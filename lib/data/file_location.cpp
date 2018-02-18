@@ -1,4 +1,3 @@
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
 //
@@ -17,14 +16,55 @@
 
 #include <metashell/data/file_location.hpp>
 
+#include <boost/optional.hpp>
+
+#include <cassert>
+#include <cctype>
 #include <sstream>
 #include <tuple>
+
+namespace
+{
+  struct number_at_end
+  {
+    int result;
+    std::size_t colon_at;
+  };
+
+  bool is_number(const std::string& s_, std::size_t from_, std::size_t to_)
+  {
+    assert(to_ != std::string::npos);
+
+    return from_ != std::string::npos && from_ < (to_ - 1) &&
+           std::all_of(s_.begin() + from_ + 1, s_.begin() + to_,
+                       [](char c_) { return std::isdigit(c_); });
+  }
+
+  boost::optional<number_at_end> parse_last_number(const std::string& s_,
+                                                   std::size_t from_)
+  {
+    assert(from_ != std::string::npos);
+
+    if (from_ == 0)
+    {
+      return boost::none;
+    }
+    else
+    {
+      const auto colon = s_.rfind(':', from_ - 1);
+      return is_number(s_, colon, from_) ?
+                 boost::make_optional(number_at_end{
+                     std::stoi(s_.substr(colon + 1, from_ - colon - 1)),
+                     colon}) :
+                 boost::none;
+    }
+  }
+}
 
 namespace metashell
 {
   namespace data
   {
-
     file_location::file_location() : name(), row(-1), column(-1) {}
 
     file_location::file_location(const boost::filesystem::path& name,
@@ -32,6 +72,26 @@ namespace metashell
                                  int column)
       : name(name), row(row), column(column)
     {
+    }
+
+    file_location file_location::parse(const std::string& s_)
+    {
+      if (const auto n1 = parse_last_number(s_, s_.size()))
+      {
+        if (const auto n2 = parse_last_number(s_, n1->colon_at))
+        {
+          return file_location(
+              s_.substr(0, n2->colon_at), n2->result, n1->result);
+        }
+        else
+        {
+          return file_location(s_.substr(0, n1->colon_at), n1->result, 1);
+        }
+      }
+      else
+      {
+        return file_location(s_, 1, 1);
+      }
     }
 
     std::ostream& operator<<(std::ostream& os, const file_location& location)

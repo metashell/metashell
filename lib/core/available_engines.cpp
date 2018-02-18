@@ -20,6 +20,7 @@
 #include <metashell/engine_entry.hpp>
 #include <metashell/engine_gcc.hpp>
 #include <metashell/engine_null.hpp>
+#include <metashell/engine_templight.hpp>
 #include <metashell/engine_vc.hpp>
 #include <metashell/engine_wave.hpp>
 
@@ -29,6 +30,7 @@ namespace metashell
   {
     return {{"internal", metashell::get_internal_templight_entry()},
             {"clang", metashell::get_engine_clang_entry()},
+            {"templight", metashell::get_engine_templight_entry()},
             {"null", metashell::get_engine_null_entry()},
             {"gcc", metashell::get_engine_gcc_entry()},
             {"msvc", metashell::get_engine_vc_entry()},

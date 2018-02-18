@@ -28,6 +28,8 @@
 
 #include <templight/ProtobufReader.h>
 
+#include <yaml-cpp/yaml.h>
+
 namespace
 {
   metashell::data::event_kind instantiation_kind_from_protobuf(int kind)
@@ -62,6 +64,61 @@ namespace
       throw metashell::exception(
           "templight xml parse failed (invalid instantiation kind " +
           std::to_string(kind) + ")");
+    }
+  }
+
+  boost::optional<metashell::data::event_kind>
+  instantiation_kind_from_yaml_dump(const std::string& s_)
+  {
+    using metashell::data::event_kind;
+
+    if (s_ == "TemplateInstantiation")
+    {
+      return event_kind::template_instantiation;
+    }
+    else if (s_ == "DefaultTemplateArgumentInstantiation")
+    {
+      return event_kind::default_template_argument_instantiation;
+    }
+    else if (s_ == "DefaultFunctionArgumentInstantiation")
+    {
+      return event_kind::default_function_argument_instantiation;
+    }
+    else if (s_ == "ExplicitTemplateArgumentSubstitution")
+    {
+      return event_kind::explicit_template_argument_substitution;
+    }
+    else if (s_ == "DeducedTemplateArgumentSubstitution")
+    {
+      return event_kind::deduced_template_argument_substitution;
+    }
+    else if (s_ == "PriorTemplateArgumentSubstitution")
+    {
+      return event_kind::prior_template_argument_substitution;
+    }
+    else if (s_ == "DefaultTemplateArgumentChecking")
+    {
+      return event_kind::default_template_argument_checking;
+    }
+    else if (s_ == "ExceptionSpecInstantiation")
+    {
+      return event_kind::exception_spec_instantiation;
+    }
+    else if (s_ == "DeclaringSpecialMember")
+    {
+      return event_kind::declaring_special_member;
+    }
+    else if (s_ == "DefiningSynthesizedFunction")
+    {
+      return event_kind::defining_synthesized_function;
+    }
+    else if (s_ == "Memoization")
+    {
+      return event_kind::memoization;
+    }
+    else
+    {
+      return boost::none;
     }
   }
 }
@@ -126,5 +183,38 @@ namespace metashell
     std::istringstream ss(string);
     return create_metaprogram_from_protobuf_stream(
         ss, mode, root_name, root_source_location, evaluation_result);
+  }
+
+  data::metaprogram create_metaprogram_from_yaml_trace(
+      const std::string& trace,
+      data::metaprogram::mode_t mode,
+      const data::cpp_code& root_name,
+      const data::file_location& root_source_location,
+      const data::type_or_code_or_error& evaluation_result)
+  {
+    metaprogram_builder builder(mode, root_name, root_source_location);
+
+    for (const YAML::Node& node : YAML::LoadAll(trace))
+    {
+      if (const auto kind =
+              instantiation_kind_from_yaml_dump(node["kind"].as<std::string>()))
+      {
+        const std::string event = node["event"].as<std::string>();
+        if (event == "Begin")
+        {
+          builder.handle_template_begin(
+              *kind, data::type(node["name"].as<std::string>()),
+              data::file_location::parse(node["poi"].as<std::string>()),
+              data::file_location::parse(node["orig"].as<std::string>()), 0);
+        }
+        else if (event == "End")
+        {
+          builder.handle_template_end(0);
+        }
+      }
+    }
+
+    builder.handle_evaluation_end(evaluation_result);
+    return builder.get_metaprogram();
   }
 }

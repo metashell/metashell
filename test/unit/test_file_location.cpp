@@ -49,3 +49,22 @@ TEST(file_location, equality)
 
   ASSERT_NE(file_location("foo.cpp", 10, 20), file_location("bar.cpp", 10, 20));
 }
+
+TEST(file_location, parsing)
+{
+  // Linux allows : in filenames
+  const std::string filenames[] = {"", "hello", "C:\\hello", "C:hello",
+                                   "hello:world",
+                                   ":"
+                                   "::",
+                                   ":::"};
+
+  for (const std::string& filename : filenames)
+  {
+    ASSERT_EQ(file_location(filename, 1, 1), file_location::parse(filename));
+    ASSERT_EQ(
+        file_location(filename, 3, 1), file_location::parse(filename + ":3"));
+    ASSERT_EQ(
+        file_location(filename, 3, 4), file_location::parse(filename + ":3:4"));
+  }
+}

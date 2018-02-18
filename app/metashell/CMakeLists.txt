@@ -67,6 +67,9 @@ target_link_libraries(metashell boost_program_options)
 # Regex
 target_link_libraries(metashell boost_regex)
 
+# yaml-cpp
+target_link_libraries(metashell yaml_cpp_lib)
+
 install(TARGETS metashell DESTINATION bin COMPONENT metashell)
 
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)

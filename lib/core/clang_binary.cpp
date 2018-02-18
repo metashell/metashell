@@ -258,6 +258,77 @@ namespace
 
     return args;
   }
+
+  data::result
+  preprocess(const iface::environment& env_,
+             const boost::optional<data::cpp_code>& tmp_exp_,
+             const boost::optional<boost::filesystem::path>& env_path_,
+             clang_binary& clang_binary_)
+  {
+    return clang_binary_.precompile(
+        env_path_ ? std::vector<std::string>{"-include", env_path_->string()} :
+                    std::vector<std::string>{},
+        tmp_exp_ ?
+            env_.get_appended("::metashell::impl::wrap< " + *tmp_exp_ +
+                              " > __metashell_v;\n") :
+            env_.get());
+  }
+
+  std::vector<std::string> dump_ast() { return {"-Xclang", "-ast-dump"}; }
+
+  std::vector<std::string> dump_templight_to_file(
+      std::vector<std::string> clang_args_,
+      const boost::optional<boost::filesystem::path>& templight_dump_path_)
+  {
+    if (templight_dump_path_)
+    {
+      clang_args_.push_back("-Xtemplight");
+      clang_args_.push_back("-profiler");
+      clang_args_.push_back("-Xtemplight");
+      clang_args_.push_back("-safe-mode");
+
+      // templight can't be forced to generate output file with
+      // -Xtemplight -output=<file> for some reason
+      // A workaround is to specify a standard output location with -o
+      // then append ".trace.pbf" to the specified file (on the calling side)
+      clang_args_.push_back("-o");
+      clang_args_.push_back(templight_dump_path_->string());
+    }
+
+    return clang_args_;
+  }
+
+  data::process_output compile(const data::cpp_code& preprocessed_code_,
+                               std::vector<std::string> clang_args_,
+                               clang_binary& clang_binary_)
+  {
+    clang_args_.reserve(clang_args_.size() + 3);
+    clang_args_.push_back("-c");
+    clang_args_.push_back("-x");
+    clang_args_.push_back("c++-cpp-output");
+
+    return run_clang(clang_binary_, clang_args_, preprocessed_code_);
+  }
+
+  data::result
+  compile(const boost::optional<data::cpp_code>& tmp_exp_,
+          data::cpp_code precompiled_exp_,
+          const boost::optional<boost::filesystem::path>& templight_dump_path_,
+          clang_binary& clang_binary_)
+  {
+    const data::process_output output =
+        compile(std::move(precompiled_exp_),
+                dump_templight_to_file(dump_ast(), templight_dump_path_),
+                clang_binary_);
+
+    const bool success = output.exit_code == data::exit_code_t(0);
+
+    return data::result{success,
+                        success && tmp_exp_ ?
+                            get_type_from_ast_string(output.standard_output) :
+                            "",
+                        success ? "" : output.standard_error, ""};
+  }
 }
 
 clang_binary::clang_binary(boost::filesystem::path clang_path_,
@@ -308,6 +379,19 @@ data::process_output clang_binary::run(const std::vector<std::string>& args_,
   return o;
 }
 
+data::result clang_binary::precompile(std::vector<std::string> args_,
+                                      const data::cpp_code& exp_) const
+{
+  args_.push_back("-E");
+
+  const data::process_output output = run_clang(*this, args_, exp_);
+
+  const bool success = output.exit_code == data::exit_code_t(0);
+
+  return data::result{success, success ? output.standard_output : "",
+                      success ? "" : output.standard_error, ""};
+}
+
 data::process_output
 metashell::run_clang(const iface::executable& clang_binary_,
                      std::vector<std::string> clang_args_,
@@ -318,6 +402,35 @@ metashell::run_clang(const iface::executable& clang_binary_,
   return clang_binary_.run(clang_args_, input_.value());
 }
 
+std::tuple<data::result, std::string>
+metashell::eval_with_templight_dump_on_stdout(
+    const iface::environment& env_,
+    const boost::optional<data::cpp_code>& tmp_exp_,
+    const boost::optional<boost::filesystem::path>& env_path_,
+    clang_binary& clang_binary_)
+{
+  data::result precompile_result =
+      preprocess(env_, tmp_exp_, env_path_, clang_binary_);
+
+  if (precompile_result.successful)
+  {
+    const data::cpp_code precompiled_code(std::move(precompile_result.output));
+
+    const data::process_output templight_output = compile(
+        precompiled_code, {"-Xclang", "-templight-dump"}, clang_binary_);
+
+    return std::make_tuple(
+        templight_output.exit_code == data::exit_code_t(0) ?
+            compile(tmp_exp_, precompiled_code, boost::none, clang_binary_) :
+            data::result{false, "", templight_output.standard_error, ""},
+        templight_output.standard_output);
+  }
+  else
+  {
+    return std::make_tuple(precompile_result, "");
+  }
+}
+
 data::result metashell::eval(
     const iface::environment& env_,
     const boost::optional<data::cpp_code>& tmp_exp_,
@@ -325,41 +438,13 @@ data::result metashell::eval(
     const boost::optional<boost::filesystem::path>& templight_dump_path_,
     clang_binary& clang_binary_)
 {
-  std::vector<std::string> clang_args{"-Xclang", "-ast-dump"};
-  if (env_path_)
-  {
-    clang_args.push_back("-include");
-    clang_args.push_back(env_path_->string());
-  }
-  if (templight_dump_path_)
-  {
-    clang_args.push_back("-Xtemplight");
-    clang_args.push_back("-profiler");
-    clang_args.push_back("-Xtemplight");
-    clang_args.push_back("-safe-mode");
+  const data::result precompile_result =
+      preprocess(env_, tmp_exp_, env_path_, clang_binary_);
 
-    // templight can't be forced to generate output file with
-    // -Xtemplight -output=<file> for some reason
-    // A workaround is to specify a standard output location with -o
-    // then append ".trace.pbf" to the specified file (on the calling side)
-    clang_args.push_back("-o");
-    clang_args.push_back(templight_dump_path_->string());
-  }
-
-  const data::process_output output =
-      run_clang(clang_binary_, clang_args,
-                tmp_exp_ ?
-                    env_.get_appended("::metashell::impl::wrap< " + *tmp_exp_ +
-                                      " > __metashell_v;\n") :
-                    env_.get());
-
-  const bool success = output.exit_code == data::exit_code_t(0);
-
-  return data::result{success,
-                      success && tmp_exp_ ?
-                          get_type_from_ast_string(output.standard_output) :
-                          "",
-                      success ? "" : output.standard_error, ""};
+  return precompile_result.successful ?
+             compile(tmp_exp_, data::cpp_code(precompile_result.output),
+                     templight_dump_path_, clang_binary_) :
+             precompile_result;
 }
 
 boost::filesystem::path
