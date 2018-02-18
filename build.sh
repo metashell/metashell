@@ -83,7 +83,7 @@ mkdir -p bin; cd bin
     cmake .. -DMETASHELL_NO_DOC_GENERATION=1
   fi
   make -j${BUILD_THREADS}
-  make test || cat Testing/Temporary/LastTest.log
+  make test || (cat Testing/Temporary/LastTest.log && false)
 
   if [ "${NO_INSTALLER}" = "" ]
   then
