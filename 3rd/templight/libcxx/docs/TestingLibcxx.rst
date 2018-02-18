@@ -102,6 +102,14 @@ configuration. Passing the option on the command line will override the default.
 
   Specify the compiler used to build the tests.
 
+.. option:: cxx_stdlib_under_test=<stdlib name>
+
+  **Values**: libc++, libstdc++
+
+  Specify the C++ standard library being tested. Unless otherwise specified
+  libc++ is used. This option is intended to allow running the libc++ test
+  suite against other standard library implementations.
+
 .. option:: std=<standard version>
 
   **Values**: c++98, c++03, c++11, c++14, c++1z
@@ -111,20 +119,29 @@ configuration. Passing the option on the command line will override the default.
 .. option:: libcxx_site_config=<path/to/lit.site.cfg>
 
   Specify the site configuration to use when running the tests.  This option
-  overrides the enviroment variable LIBCXX_SITE_CONFIG.
+  overrides the environment variable LIBCXX_SITE_CONFIG.
 
-.. option:: libcxx_headers=<path/to/headers>
+.. option:: cxx_headers=<path/to/headers>
 
-  Specify the libc++ headers that are tested. By default the headers in the
-  source tree are used.
+  Specify the c++ standard library headers that are tested. By default the
+  headers in the source tree are used.
 
-.. option:: libcxx_library=<path/to/libc++.so>
+.. option:: cxx_library_root=<path/to/lib/>
 
-  Specify the libc++ library that is tested. By default the library in the
-  build directory is used. This option cannot be used when use_system_lib is
-  provided.
+  Specify the directory of the libc++ library to be tested. By default the
+  library folder of the build directory is used. This option cannot be used
+  when use_system_cxx_lib is provided.
 
-.. option:: use_system_lib=<bool>
+
+.. option:: cxx_runtime_root=<path/to/lib/>
+
+  Specify the directory of the libc++ library to use at runtime. This directory
+  is not added to the linkers search path. This can be used to compile tests
+  against one version of libc++ and run them using another. The default value
+  for this option is `cxx_library_root`. This option cannot be used
+  when use_system_cxx_lib is provided.
+
+.. option:: use_system_cxx_lib=<bool>
 
   **Default**: False
 
@@ -182,10 +199,68 @@ Environment Variables
 .. envvar:: LIBCXX_SITE_CONFIG=<path/to/lit.site.cfg>
 
   Specify the site configuration to use when running the tests.
-  Also see :option:`libcxx_site_config`.
+  Also see `libcxx_site_config`.
 
 .. envvar:: LIBCXX_COLOR_DIAGNOSTICS
 
   If ``LIBCXX_COLOR_DIAGNOSTICS`` is defined then the test suite will attempt
   to use color diagnostic outputs from the compiler.
-  Also see :option:`color_diagnostics`.
+  Also see `color_diagnostics`.
+
+Benchmarks
+==========
+
+Libc++ contains benchmark tests separately from the test of the test suite.
+The benchmarks are written using the `Google Benchmark`_ library, a copy of which
+is stored in the libc++ repository.
+
+For more information about using the Google Benchmark library see the
+`official documentation <https://github.com/google/benchmark>`_.
+
+.. _`Google Benchmark`: https://github.com/google/benchmark
+
+Building Benchmarks
+-------------------
+
+The benchmark tests are not built by default. The benchmarks can be built using
+the ``cxx-benchmarks`` target.
+
+An example build would look like:
+
+.. code-block:: bash
+
+  $ cd build
+  $ cmake [options] <path to libcxx sources>
+  $ make cxx-benchmarks
+
+This will build all of the benchmarks under ``<libcxx-src>/benchmarks`` to be
+built against the just-built libc++. The compiled tests are output into
+``build/benchmarks``.
+
+The benchmarks can also be built against the platforms native standard library
+using the ``-DLIBCXX_BUILD_BENCHMARKS_NATIVE_STDLIB=ON`` CMake option. This
+is useful for comparing the performance of libc++ to other standard libraries.
+The compiled benchmarks are named ``<test>.libcxx.out`` if they test libc++ and
+``<test>.native.out`` otherwise.
+
+Also See:
+
+  * :ref:`Building Libc++ <build instructions>`
+  * :ref:`CMake Options`
+
+Running Benchmarks
+------------------
+
+The benchmarks must be run manually by the user. Currently there is no way
+to run them as part of the build.
+
+For example:
+
+.. code-block:: bash
+
+  $ cd build/benchmarks
+  $ make cxx-benchmarks
+  $ ./algorithms.libcxx.out # Runs all the benchmarks
+  $ ./algorithms.libcxx.out --benchmark_filter=BM_Sort.* # Only runs the sort benchmarks
+
+For more information about running benchmarks see `Google Benchmark`_.

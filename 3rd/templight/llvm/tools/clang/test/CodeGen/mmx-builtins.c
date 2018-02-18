@@ -1,8 +1,6 @@
-// RUN: %clang_cc1 %s -triple=x86_64-apple-darwin -target-feature +ssse3 -emit-llvm -o - -Werror | FileCheck %s
-// RUN: %clang_cc1 %s -triple=x86_64-apple-darwin -target-feature +ssse3 -fno-signed-char -emit-llvm -o - -Werror | FileCheck %s
+// RUN: %clang_cc1 -ffreestanding %s -triple=x86_64-apple-darwin -target-feature +ssse3 -emit-llvm -o - -Wall -Werror | FileCheck %s
+// RUN: %clang_cc1 -ffreestanding %s -triple=x86_64-apple-darwin -target-feature +ssse3 -fno-signed-char -emit-llvm -o - -Wall -Werror | FileCheck %s
 
-// Don't include mm_malloc.h, it's system specific.
-#define __MM_MALLOC_H
 
 #include <x86intrin.h>
 
@@ -44,8 +42,8 @@ __m64 test_mm_add_pi32(__m64 a, __m64 b) {
 
 __m64 test_mm_add_si64(__m64 a, __m64 b) {
   // CHECK-LABEL: test_mm_add_si64
-  // CHECK: call x86_mmx @llvm.x86.mmx.padd.q
-  return __builtin_ia32_paddq(a, b);
+  // CHECK: call x86_mmx @llvm.x86.mmx.padd.q(x86_mmx %{{.*}}, x86_mmx %{{.*}})
+  return _mm_add_si64(a, b);
 }
 
 __m64 test_mm_adds_pi8(__m64 a, __m64 b) {
@@ -217,6 +215,12 @@ __m64 test_mm_cvttps_pi32(__m128 a) {
   return _mm_cvttps_pi32(a);
 }
 
+int test_mm_extract_pi16(__m64 a) {
+  // CHECK-LABEL: test_mm_extract_pi16
+  // CHECK: call i32 @llvm.x86.mmx.pextr.w
+  return _mm_extract_pi16(a, 2);
+}
+
 __m64 test_m_from_int(int a) {
   // CHECK-LABEL: test_m_from_int
   // CHECK: insertelement <2 x i32>
@@ -263,6 +267,12 @@ __m64 test_mm_hsubs_pi16(__m64 a, __m64 b) {
   // CHECK-LABEL: test_mm_hsubs_pi16
   // CHECK: call x86_mmx @llvm.x86.ssse3.phsub.sw
   return _mm_hsubs_pi16(a, b);
+}
+
+__m64 test_mm_insert_pi16(__m64 a, int d) {
+  // CHECK-LABEL: test_mm_insert_pi16
+  // CHECK: call x86_mmx @llvm.x86.mmx.pinsr.w
+  return _mm_insert_pi16(a, d, 2);
 }
 
 __m64 test_mm_madd_pi16(__m64 a, __m64 b) {
@@ -315,7 +325,7 @@ int test_mm_movemask_pi8(__m64 a) {
 
 __m64 test_mm_mul_su32(__m64 a, __m64 b) {
   // CHECK-LABEL: test_mm_mul_su32
-  // CHECK: call x86_mmx @llvm.x86.mmx.pmulu.dq
+  // CHECK: call x86_mmx @llvm.x86.mmx.pmulu.dq(x86_mmx %{{.*}}, x86_mmx %{{.*}})
   return _mm_mul_su32(a, b);
 }
 
@@ -371,6 +381,93 @@ __m64 test_mm_sad_pu8(__m64 a, __m64 b) {
   // CHECK-LABEL: test_mm_sad_pu8
   // CHECK: call x86_mmx @llvm.x86.mmx.psad.bw
   return _mm_sad_pu8(a, b);
+}
+
+__m64 test_mm_set_pi8(char a, char b, char c, char d, char e, char f, char g, char h) {
+  // CHECK-LABEL: test_mm_set_pi8
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  return _mm_set_pi8(a, b, c, d, e, f, g, h);
+}
+
+__m64 test_mm_set_pi16(short a, short b, short c, short d) {
+  // CHECK-LABEL: test_mm_set_pi16
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  return _mm_set_pi16(a, b, c, d);
+}
+
+__m64 test_mm_set_pi32(int a, int b) {
+  // CHECK-LABEL: test_mm_set_pi32
+  // CHECK: insertelement <2 x i32>
+  // CHECK: insertelement <2 x i32>
+  return _mm_set_pi32(a, b);
+}
+
+__m64 test_mm_setr_pi8(char a, char b, char c, char d, char e, char f, char g, char h) {
+  // CHECK-LABEL: test_mm_setr_pi8
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  return _mm_setr_pi8(a, b, c, d, e, f, g, h);
+}
+
+__m64 test_mm_setr_pi16(short a, short b, short c, short d) {
+  // CHECK-LABEL: test_mm_setr_pi16
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  return _mm_setr_pi16(a, b, c, d);
+}
+
+__m64 test_mm_setr_pi32(int a, int b) {
+  // CHECK-LABEL: test_mm_setr_pi32
+  // CHECK: insertelement <2 x i32>
+  // CHECK: insertelement <2 x i32>
+  return _mm_setr_pi32(a, b);
+}
+
+__m64 test_mm_set1_pi8(char a) {
+  // CHECK-LABEL: test_mm_set1_pi8
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  // CHECK: insertelement <8 x i8>
+  return _mm_set1_pi8(a);
+}
+
+__m64 test_mm_set1_pi16(short a) {
+  // CHECK-LABEL: test_mm_set1_pi16
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  // CHECK: insertelement <4 x i16>
+  return _mm_set1_pi16(a);
+}
+
+__m64 test_mm_set1_pi32(int a) {
+  // CHECK-LABEL: test_mm_set1_pi32
+  // CHECK: insertelement <2 x i32>
+  // CHECK: insertelement <2 x i32>
+  return _mm_set1_pi32(a);
 }
 
 __m64 test_mm_shuffle_pi8(__m64 a, __m64 b) {
@@ -525,8 +622,8 @@ __m64 test_mm_sub_pi32(__m64 a, __m64 b) {
 
 __m64 test_mm_sub_si64(__m64 a, __m64 b) {
   // CHECK-LABEL: test_mm_sub_si64
-  // CHECK: call x86_mmx @llvm.x86.mmx.psub.q
-  return __builtin_ia32_psubq(a, b);
+  // CHECK: call x86_mmx @llvm.x86.mmx.psub.q(x86_mmx %{{.*}}, x86_mmx %{{.*}})
+  return _mm_sub_si64(a, b);
 }
 
 __m64 test_mm_subs_pi8(__m64 a, __m64 b) {

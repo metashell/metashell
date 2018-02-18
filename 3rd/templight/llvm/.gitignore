@@ -21,6 +21,9 @@
 #OS X specific files.
 .DS_store
 
+# Nested build directory
+/build
+
 #==============================================================================#
 # Explicit files to ignore (only matches one).
 #==============================================================================#
@@ -42,22 +45,19 @@ autoconf/autom4te.cache
 #==============================================================================#
 # Directories to ignore (do not add trailing '/'s, they skip symlinks).
 #==============================================================================#
-
-
-
-
+runtimes/*
+!runtimes/*.*
 # Clang, which is tracked independently.
-
 # LLDB, which is tracked independently.
-
 # lld, which is tracked independently.
-
 # llgo, which is tracked independently.
-
 # Polly, which is tracked independently.
-
+# avrlit, which is tracked independently.
 # Sphinx build tree, if building in-source dir.
 docs/_build
+# VS2017 and VSCode config files.
+.vscode
+.vs
 
 #==============================================================================#
 # Files created in tree by the Go bindings.

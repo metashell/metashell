@@ -1,11 +1,11 @@
 ; RUN: llc < %s -asm-verbose=false -verify-machineinstrs | FileCheck %s
-; RUN: llc < %s -asm-verbose=false -fast-isel -verify-machineinstrs | FileCheck %s
+; RUN: llc < %s -asm-verbose=false -fast-isel -fast-isel-abort=1 -verify-machineinstrs | FileCheck %s
 
 ; Test that LLVM unreachable instruction and trap intrinsic are lowered to
 ; wasm unreachable
 
 target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-target triple = "wasm32-unknown-unknown"
+target triple = "wasm32-unknown-unknown-wasm"
 
 declare void @llvm.trap()
 declare void @llvm.debugtrap()

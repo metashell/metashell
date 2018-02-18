@@ -96,7 +96,8 @@ TEST(mdb_evaluate, failure_will_reset_metaprogram_state)
 
   ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(error(_), mi.command("evaluate in").front());
+  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate in").front());
+  ASSERT_EQ(error(_), mi.command("step")[1]);
   ASSERT_EQ(
       raw_text("Metaprogram started"), mi.command("evaluate int").front());
 }
@@ -241,7 +242,9 @@ TEST(mdb_evaluate, failure_clears_breakpoints)
       mi.command("rbreak int").front());
   ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
             mi.command("break list").front());
-  ASSERT_EQ(error(_), mi.command("evaluate asd").front());
+  ASSERT_EQ(
+      raw_text("Metaprogram started"), mi.command("evaluate asd").front());
+  ASSERT_EQ(error(_), mi.command("step")[1]);
   ASSERT_EQ(raw_text("No breakpoints currently set"),
             mi.command("break list").front());
 }

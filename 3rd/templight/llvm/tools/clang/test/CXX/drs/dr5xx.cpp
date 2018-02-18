@@ -1,13 +1,19 @@
 // RUN: %clang_cc1 -std=c++98 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 // RUN: %clang_cc1 -std=c++11 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 // RUN: %clang_cc1 -std=c++14 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
-// RUN: %clang_cc1 -std=c++1z %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
+// RUN: %clang_cc1 -std=c++17 %s -verify -fexceptions -fcxx-exceptions -pedantic-errors
 
 // FIXME: This is included to avoid a diagnostic with no source location
 // pointing at the implicit operator new. We can't match such a diagnostic
 // with -verify.
 __extension__ typedef __SIZE_TYPE__ size_t;
 void *operator new(size_t); // expected-error 0-1{{missing exception spec}} expected-note{{candidate}}
+#if __cplusplus > 201402L
+namespace std {
+  enum class align_val_t : size_t {};
+}
+void *operator new(size_t, std::align_val_t); // expected-note{{candidate}}
+#endif
 
 namespace dr500 { // dr500: dup 372
   class D;
@@ -814,7 +820,7 @@ namespace dr577 { // dr577: yes
   }
 }
 
-namespace dr580 { // dr580: no
+namespace dr580 { // dr580: partial
   class C;
   struct A { static C c; };
   struct B { static C c; };
@@ -822,7 +828,7 @@ namespace dr580 { // dr580: no
     C(); // expected-note {{here}}
     ~C(); // expected-note {{here}}
 
-    typedef int I; // expected-note {{here}}
+    typedef int I; // expected-note 2{{here}}
     template<int> struct X;
     template<int> friend struct Y;
     template<int> void f();
@@ -832,7 +838,20 @@ namespace dr580 { // dr580: no
 
   template<C::I> struct C::X {};
   template<C::I> struct Y {};
-  template<C::I> struct Z {}; // FIXME: should reject, accepted because C befriends A!
+  template<C::I> struct Z {}; // expected-error {{private}}
+
+  struct C2 {
+    class X {
+      struct A;
+      typedef int I;
+      friend struct A;
+    };
+    class Y {
+      template<X::I> struct A {}; // FIXME: We incorrectly accept this
+                                  // because we think C2::Y::A<...> might
+                                  // instantiate to C2::X::A
+    };
+  };
 
   template<C::I> void C::f() {}
   template<C::I> void g() {}
@@ -844,14 +863,13 @@ namespace dr580 { // dr580: no
 
 // dr582: na
 
-namespace dr583 { // dr583: no
+namespace dr583 { // dr583: 4
   // see n3624
   int *p;
-  // FIXME: These are all ill-formed.
-  bool b1 = p < 0;
-  bool b2 = p > 0;
-  bool b3 = p <= 0;
-  bool b4 = p >= 0;
+  bool b1 = p < 0; // expected-error {{ordered comparison between pointer and zero}}
+  bool b2 = p > 0; // expected-error {{ordered comparison between pointer and zero}}
+  bool b3 = p <= 0; // expected-error {{ordered comparison between pointer and zero}}
+  bool b4 = p >= 0; // expected-error {{ordered comparison between pointer and zero}}
 }
 
 // dr584: na
@@ -859,13 +877,25 @@ namespace dr583 { // dr583: no
 namespace dr585 { // dr585: yes
   template<typename> struct T;
   struct A {
-    friend T; // expected-error {{requires a type specifier}} expected-error {{can only be classes or functions}}
+    friend T;
+#if __cplusplus <= 201402L
+    // expected-error@-2 {{requires a type specifier}} expected-error@-2 {{can only be classes or functions}}
+#else
+    // expected-error@-4 {{use of class template 'T' requires template arguments; argument deduction not allowed in friend declaration}}
+    // expected-note@-7 {{here}}
+#endif
     // FIXME: It's not clear whether the standard allows this or what it means,
     // but the DR585 writeup suggests it as an alternative.
     template<typename U> friend T<U>; // expected-error {{must use an elaborated type}}
   };
   template<template<typename> class T> struct B {
-    friend T; // expected-error {{requires a type specifier}} expected-error {{can only be classes or functions}}
+    friend T;
+#if __cplusplus <= 201402L
+    // expected-error@-2 {{requires a type specifier}} expected-error@-2 {{can only be classes or functions}}
+#else
+    // expected-error@-4 {{use of template template parameter 'T' requires template arguments; argument deduction not allowed in friend declaration}}
+    // expected-note@-6 {{here}}
+#endif
     template<typename U> friend T<U>; // expected-error {{must use an elaborated type}}
   };
 }
@@ -924,7 +954,7 @@ namespace dr591 { // dr591: no
 
   template<typename T> struct A<T>::B::C : A<T> {
     // FIXME: Should find member of non-dependent base class A<T>.
-    M m; // expected-error {{incomplete type 'M' (aka 'void'}}
+    M m; // expected-error {{incomplete type 'dr591::A::B::M' (aka 'void'}}
   };
 }
 
@@ -935,6 +965,9 @@ namespace dr591 { // dr591: no
 namespace dr595 { // dr595: dup 1330
   template<class T> struct X {
     void f() throw(T) {}
+#if __cplusplus > 201402L
+    // expected-error@-2 {{ISO C++17 does not allow}} expected-note@-2 {{use 'noexcept}}
+#endif
   };
   struct S {
     X<S> xs;

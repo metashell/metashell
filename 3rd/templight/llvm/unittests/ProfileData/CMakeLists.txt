@@ -1,5 +1,6 @@
 set(LLVM_LINK_COMPONENTS
   Core
+  Coverage
   ProfileData
   Support
   )
@@ -9,3 +10,5 @@ add_llvm_unittest(ProfileDataTests
   InstrProfTest.cpp
   SampleProfTest.cpp
   )
+
+target_link_libraries(ProfileDataTests LLVMTestingSupport)

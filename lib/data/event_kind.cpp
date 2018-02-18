@@ -75,6 +75,10 @@ namespace metashell
         return "DefaultTemplateArgumentChecking";
       case event_kind::exception_spec_instantiation:
         return "ExceptionSpecInstantiation";
+      case event_kind::declaring_special_member:
+        return "DeclaringSpecialMember";
+      case event_kind::defining_synthesized_function:
+        return "DefiningSynthesizedFunction";
       case event_kind::memoization:
         return "Memoization";
       case event_kind::non_template_type:

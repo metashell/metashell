@@ -16,13 +16,11 @@
 #include "CXSourceLocation.h"
 #include "CXString.h"
 
-#include "clang/Frontend/ASTUnit.h"
-#include "clang/Frontend/FrontendDiagnostic.h"
-#include "clang/Frontend/DiagnosticRenderer.h"
 #include "clang/Basic/DiagnosticOptions.h"
+#include "clang/Frontend/ASTUnit.h"
+#include "clang/Frontend/DiagnosticRenderer.h"
+#include "clang/Frontend/FrontendDiagnostic.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/Twine.h"
-#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
 using namespace clang;
@@ -112,40 +110,34 @@ public:
       CurrentSet = &CD.getChildDiagnostics();
   }
 
-  void emitDiagnosticMessage(SourceLocation Loc, PresumedLoc PLoc,
-                             DiagnosticsEngine::Level Level,
-                             StringRef Message,
+  void emitDiagnosticMessage(FullSourceLoc Loc, PresumedLoc PLoc,
+                             DiagnosticsEngine::Level Level, StringRef Message,
                              ArrayRef<CharSourceRange> Ranges,
-                             const SourceManager *SM,
                              DiagOrStoredDiag D) override {
     if (!D.isNull())
       return;
     
     CXSourceLocation L;
-    if (SM)
-      L = translateSourceLocation(*SM, LangOpts, Loc);
+    if (Loc.hasManager())
+      L = translateSourceLocation(Loc.getManager(), LangOpts, Loc);
     else
       L = clang_getNullLocation();
     CurrentSet->appendDiagnostic(
         llvm::make_unique<CXDiagnosticCustomNoteImpl>(Message, L));
   }
 
-  void emitDiagnosticLoc(SourceLocation Loc, PresumedLoc PLoc,
+  void emitDiagnosticLoc(FullSourceLoc Loc, PresumedLoc PLoc,
                          DiagnosticsEngine::Level Level,
-                         ArrayRef<CharSourceRange> Ranges,
-                         const SourceManager &SM) override {}
+                         ArrayRef<CharSourceRange> Ranges) override {}
 
-  void emitCodeContext(SourceLocation Loc,
-                       DiagnosticsEngine::Level Level,
-                       SmallVectorImpl<CharSourceRange>& Ranges,
-                       ArrayRef<FixItHint> Hints,
-                       const SourceManager &SM) override {}
+  void emitCodeContext(FullSourceLoc Loc, DiagnosticsEngine::Level Level,
+                       SmallVectorImpl<CharSourceRange> &Ranges,
+                       ArrayRef<FixItHint> Hints) override {}
 
-  void emitNote(SourceLocation Loc, StringRef Message,
-                const SourceManager *SM) override {
+  void emitNote(FullSourceLoc Loc, StringRef Message) override {
     CXSourceLocation L;
-    if (SM)
-      L = translateSourceLocation(*SM, LangOpts, Loc);
+    if (Loc.hasManager())
+      L = translateSourceLocation(Loc.getManager(), LangOpts, Loc);
     else
       L = clang_getNullLocation();
     CurrentSet->appendDiagnostic(
@@ -207,8 +199,6 @@ CXDiagnosticSetImpl *cxdiag::lazyCreateDiags(CXTranslationUnit TU,
 //-----------------------------------------------------------------------------
 // C Interface Routines
 //-----------------------------------------------------------------------------
-extern "C" {
-
 unsigned clang_getNumDiagnostics(CXTranslationUnit Unit) {
   if (cxtu::isNotUsableTU(Unit)) {
     LOG_BAD_TU(Unit);
@@ -479,5 +469,3 @@ unsigned clang_getNumDiagnosticsInSet(CXDiagnosticSet Diags) {
     return D->getNumDiagnostics();
   return 0;
 }
-
-} // end extern "C"

@@ -1,23 +1,41 @@
+include(CMakeParseArguments)
+
 # On OS X SDKs can be installed anywhere on the base system and xcode-select can
 # set the default Xcode to use. This function finds the SDKs that are present in
 # the current Xcode.
 function(find_darwin_sdk_dir var sdk_name)
-  # Let's first try the internal SDK, otherwise use the public SDK.
-  execute_process(
-    COMMAND xcodebuild -version -sdk ${sdk_name}.internal Path
-    OUTPUT_VARIABLE var_internal
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_FILE /dev/null
-  )
-  if("" STREQUAL "${var_internal}")
+  set(DARWIN_${sdk_name}_CACHED_SYSROOT "" CACHE STRING "Darwin SDK path for SDK ${sdk_name}.")
+  set(DARWIN_PREFER_PUBLIC_SDK OFF CACHE BOOL "Prefer Darwin public SDK, even when an internal SDK is present.")
+
+  if(DARWIN_${sdk_name}_CACHED_SYSROOT)
+    set(${var} ${DARWIN_${sdk_name}_CACHED_SYSROOT} PARENT_SCOPE)
+    return()
+  endif()
+  if(NOT DARWIN_PREFER_PUBLIC_SDK)
+    # Let's first try the internal SDK, otherwise use the public SDK.
     execute_process(
-      COMMAND xcodebuild -version -sdk ${sdk_name} Path
+      COMMAND xcodebuild -version -sdk ${sdk_name}.internal Path
+      RESULT_VARIABLE result_process
       OUTPUT_VARIABLE var_internal
       OUTPUT_STRIP_TRAILING_WHITESPACE
       ERROR_FILE /dev/null
     )
   endif()
-  set(${var} ${var_internal} PARENT_SCOPE)
+  if((NOT result_process EQUAL 0) OR "" STREQUAL "${var_internal}")
+    execute_process(
+      COMMAND xcodebuild -version -sdk ${sdk_name} Path
+      RESULT_VARIABLE result_process
+      OUTPUT_VARIABLE var_internal
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_FILE /dev/null
+    )
+  else()
+    set(${var}_INTERNAL ${var_internal} PARENT_SCOPE)
+  endif()
+  if(result_process EQUAL 0)
+    set(${var} ${var_internal} PARENT_SCOPE)
+  endif()
+  set(DARWIN_${sdk_name}_CACHED_SYSROOT ${var_internal} CACHE STRING "Darwin SDK path for SDK ${sdk_name}." FORCE)
 endfunction()
 
 # There isn't a clear mapping of what architectures are supported with a given
@@ -52,30 +70,38 @@ function(darwin_test_archs os valid_archs)
   endif()
 
   set(archs ${ARGN})
-  message(STATUS "Finding valid architectures for ${os}...")
-  set(SIMPLE_CPP ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/src.cpp)
-  file(WRITE ${SIMPLE_CPP} "#include <iostream>\nint main() { std::cout << std::endl; return 0; }\n")
-
-  set(os_linker_flags)
-  foreach(flag ${DARWIN_${os}_LINKFLAGS})
-    set(os_linker_flags "${os_linker_flags} ${flag}")
-  endforeach()
+  if(NOT TEST_COMPILE_ONLY)
+    message(STATUS "Finding valid architectures for ${os}...")
+    set(SIMPLE_C ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/src.c)
+    file(WRITE ${SIMPLE_C} "#include <stdio.h>\nint main() { printf(__FILE__); return 0; }\n")
+  
+    set(os_linker_flags)
+    foreach(flag ${DARWIN_${os}_LINK_FLAGS})
+      set(os_linker_flags "${os_linker_flags} ${flag}")
+    endforeach()
+  endif()
 
   # The simple program will build for x86_64h on the simulator because it is 
   # compatible with x86_64 libraries (mostly), but since x86_64h isn't actually
   # a valid or useful architecture for the iOS simulator we should drop it.
-  if(${os} STREQUAL "iossim")
+  if(${os} MATCHES "^(iossim|tvossim|watchossim)$")
     list(REMOVE_ITEM archs "x86_64h")
   endif()
 
   set(working_archs)
   foreach(arch ${archs})
-    
+   
     set(arch_linker_flags "-arch ${arch} ${os_linker_flags}")
-    try_compile(CAN_TARGET_${os}_${arch} ${CMAKE_BINARY_DIR} ${SIMPLE_CPP}
-                COMPILE_DEFINITIONS "-v -arch ${arch}" ${DARWIN_${os}_CFLAGS}
-                CMAKE_FLAGS "-DCMAKE_EXE_LINKER_FLAGS=${arch_linker_flags}"
-                OUTPUT_VARIABLE TEST_OUTPUT)
+    if(TEST_COMPILE_ONLY)
+      try_compile_only(CAN_TARGET_${os}_${arch} -v -arch ${arch} ${DARWIN_${os}_CFLAGS})
+    else()
+      set(SAVED_CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${arch_linker_flags}")
+      try_compile(CAN_TARGET_${os}_${arch} ${CMAKE_BINARY_DIR} ${SIMPLE_C}
+                  COMPILE_DEFINITIONS "-v -arch ${arch}" ${DARWIN_${os}_CFLAGS}
+                  OUTPUT_VARIABLE TEST_OUTPUT)
+      set(CMAKE_EXE_LINKER_FLAGS ${SAVED_CMAKE_EXE_LINKER_FLAGS})
+    endif()
     if(${CAN_TARGET_${os}_${arch}})
       list(APPEND working_archs ${arch})
     else()
@@ -246,30 +272,6 @@ function(darwin_filter_builtin_sources output_var exclude_or_include excluded_li
   set(${output_var} ${intermediate} PARENT_SCOPE)
 endfunction()
 
-function(darwin_add_eprintf_library)
-  cmake_parse_arguments(LIB
-    ""
-    ""
-    "CFLAGS"
-    ${ARGN})
-
-  add_library(clang_rt.eprintf STATIC eprintf.c)
-  set_target_compile_flags(clang_rt.eprintf
-    -isysroot ${DARWIN_osx_SYSROOT}
-    ${DARWIN_osx_BUILTIN_MIN_VER_FLAG}
-    -arch i386
-    ${LIB_CFLAGS})
-  set_target_properties(clang_rt.eprintf PROPERTIES
-      OUTPUT_NAME clang_rt.eprintf${COMPILER_RT_OS_SUFFIX})
-  set_target_properties(clang_rt.eprintf PROPERTIES
-    OSX_ARCHITECTURES i386)
-  add_dependencies(builtins clang_rt.eprintf)
-  set_target_properties(clang_rt.eprintf PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY ${COMPILER_RT_LIBRARY_OUTPUT_DIR})
-  install(TARGETS clang_rt.eprintf
-      ARCHIVE DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR})
-endfunction()
-
 # Generates builtin libraries for all operating systems specified in ARGN. Each
 # OS library is constructed by lipo-ing together single-architecture libraries.
 macro(darwin_add_builtin_libraries)
@@ -339,8 +341,6 @@ macro(darwin_add_builtin_libraries)
                       INSTALL_DIR ${COMPILER_RT_LIBRARY_INSTALL_DIR})
     endif()
   endforeach()
-
-  darwin_add_eprintf_library(CFLAGS ${CFLAGS})
 
   # We put the x86 sim slices into the archives for their base OS
   foreach (os ${ARGN})

@@ -25,9 +25,19 @@ void clobbers() {
   asm ("nop" : : : "0", "%0", "#0");
   asm ("nop" : : : "foo"); // expected-error {{unknown register name 'foo' in asm}}
   asm ("nop" : : : "52");
-  asm ("nop" : : : "104"); // expected-error {{unknown register name '104' in asm}}
+  asm ("nop" : : : "204"); // expected-error {{unknown register name '204' in asm}}
   asm ("nop" : : : "-1"); // expected-error {{unknown register name '-1' in asm}}
   asm ("nop" : : : "+1"); // expected-error {{unknown register name '+1' in asm}}
+  register void *clobber_conflict asm ("%rcx");
+  register void *no_clobber_conflict asm ("%rax");
+  int a,b,c;
+  asm ("nop" : "=r" (no_clobber_conflict) : "r" (clobber_conflict) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=r" (clobber_conflict) : "r" (no_clobber_conflict) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=r" (clobber_conflict) : "r" (clobber_conflict) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=c" (a) : "r" (no_clobber_conflict) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=r" (no_clobber_conflict) : "c" (c) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=r" (clobber_conflict) : "c" (c) : "%rcx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}}
+  asm ("nop" : "=a" (a) : "b" (b) : "%rcx", "%rbx"); // expected-error {{asm-specifier for input or output variable conflicts with asm clobber list}} 
 }
 
 // rdar://6094010
@@ -148,6 +158,41 @@ double test15() {
   __asm("0.0":"=,g"(ret)); // no-error
   __asm("0.0":"=g"(ret)); // no-error
   return ret;
+}
+
+void iOutputConstraint(int x){
+  __asm ("nop" : "=ir" (x) : :); // no-error
+  __asm ("nop" : "=ri" (x) : :); // no-error
+  __asm ("nop" : "=ig" (x) : :); // no-error
+  __asm ("nop" : "=im" (x) : :); // no-error
+  __asm ("nop" : "=imr" (x) : :); // no-error
+  __asm ("nop" : "=i" (x) : :); // expected-error{{invalid output constraint '=i' in asm}}
+  __asm ("nop" : "+i" (x) : :); // expected-error{{invalid output constraint '+i' in asm}}
+  __asm ("nop" : "=ii" (x) : :); // expected-error{{invalid output constraint '=ii' in asm}}
+  __asm ("nop" : "=nr" (x) : :); // no-error
+  __asm ("nop" : "=rn" (x) : :); // no-error
+  __asm ("nop" : "=ng" (x) : :); // no-error
+  __asm ("nop" : "=nm" (x) : :); // no-error
+  __asm ("nop" : "=nmr" (x) : :); // no-error
+  __asm ("nop" : "=n" (x) : :); // expected-error{{invalid output constraint '=n' in asm}}
+  __asm ("nop" : "+n" (x) : :); // expected-error{{invalid output constraint '+n' in asm}}
+  __asm ("nop" : "=nn" (x) : :); // expected-error{{invalid output constraint '=nn' in asm}}
+  __asm ("nop" : "=Fr" (x) : :); // no-error
+  __asm ("nop" : "=rF" (x) : :); // no-error
+  __asm ("nop" : "=Fg" (x) : :); // no-error
+  __asm ("nop" : "=Fm" (x) : :); // no-error
+  __asm ("nop" : "=Fmr" (x) : :); // no-error
+  __asm ("nop" : "=F" (x) : :); // expected-error{{invalid output constraint '=F' in asm}}
+  __asm ("nop" : "+F" (x) : :); // expected-error{{invalid output constraint '+F' in asm}}
+  __asm ("nop" : "=FF" (x) : :); // expected-error{{invalid output constraint '=FF' in asm}}
+  __asm ("nop" : "=Er" (x) : :); // no-error
+  __asm ("nop" : "=rE" (x) : :); // no-error
+  __asm ("nop" : "=Eg" (x) : :); // no-error
+  __asm ("nop" : "=Em" (x) : :); // no-error
+  __asm ("nop" : "=Emr" (x) : :); // no-error
+  __asm ("nop" : "=E" (x) : :); // expected-error{{invalid output constraint '=E' in asm}}
+  __asm ("nop" : "+E" (x) : :); // expected-error{{invalid output constraint '+E' in asm}}
+  __asm ("nop" : "=EE" (x) : :); // expected-error{{invalid output constraint '=EE' in asm}}
 }
 
 // PR19837

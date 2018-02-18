@@ -8,9 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Basic/VirtualFileSystem.h"
+#include "llvm/ADT/Triple.h"
 #include "llvm/Support/Errc.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/Path.h"
 #include "llvm/Support/SourceMgr.h"
 #include "gtest/gtest.h"
 #include <map>
@@ -29,7 +30,7 @@ struct DummyFile : public vfs::File {
             bool IsVolatile) override {
     llvm_unreachable("unimplemented");
   }
-  virtual std::error_code close() override { return std::error_code(); }
+  std::error_code close() override { return std::error_code(); }
 };
 
 class DummyFileSystem : public vfs::FileSystem {
@@ -114,20 +115,23 @@ public:
   }
 
   void addRegularFile(StringRef Path, sys::fs::perms Perms = sys::fs::all_all) {
-    vfs::Status S(Path, UniqueID(FSID, FileID++), sys::TimeValue::now(), 0, 0,
-                  1024, sys::fs::file_type::regular_file, Perms);
+    vfs::Status S(Path, UniqueID(FSID, FileID++),
+                  std::chrono::system_clock::now(), 0, 0, 1024,
+                  sys::fs::file_type::regular_file, Perms);
     addEntry(Path, S);
   }
 
   void addDirectory(StringRef Path, sys::fs::perms Perms = sys::fs::all_all) {
-    vfs::Status S(Path, UniqueID(FSID, FileID++), sys::TimeValue::now(), 0, 0,
-                  0, sys::fs::file_type::directory_file, Perms);
+    vfs::Status S(Path, UniqueID(FSID, FileID++),
+                  std::chrono::system_clock::now(), 0, 0, 0,
+                  sys::fs::file_type::directory_file, Perms);
     addEntry(Path, S);
   }
 
   void addSymlink(StringRef Path) {
-    vfs::Status S(Path, UniqueID(FSID, FileID++), sys::TimeValue::now(), 0, 0,
-                  0, sys::fs::file_type::symlink_file, sys::fs::all_all);
+    vfs::Status S(Path, UniqueID(FSID, FileID++),
+                  std::chrono::system_clock::now(), 0, 0, 0,
+                  sys::fs::file_type::symlink_file, sys::fs::all_all);
     addEntry(Path, S);
   }
 };
@@ -296,8 +300,26 @@ struct ScopedDir {
     EXPECT_FALSE(EC);
   }
   ~ScopedDir() {
-    if (Path != "")
+    if (Path != "") {
       EXPECT_FALSE(llvm::sys::fs::remove(Path.str()));
+    }
+  }
+  operator StringRef() { return Path.str(); }
+};
+
+struct ScopedLink {
+  SmallString<128> Path;
+  ScopedLink(const Twine &To, const Twine &From) {
+    Path = From.str();
+    std::error_code EC = sys::fs::create_link(To, From);
+    if (EC)
+      Path = "";
+    EXPECT_FALSE(EC);
+  }
+  ~ScopedLink() {
+    if (Path != "") {
+      EXPECT_FALSE(llvm::sys::fs::remove(Path.str()));
+    }
   }
   operator StringRef() { return Path.str(); }
 };
@@ -330,6 +352,42 @@ TEST(VirtualFileSystemTest, BasicRealFSIteration) {
   EXPECT_EQ(vfs::directory_iterator(), I);
 }
 
+#ifdef LLVM_ON_UNIX
+TEST(VirtualFileSystemTest, BrokenSymlinkRealFSIteration) {
+  ScopedDir TestDirectory("virtual-file-system-test", /*Unique*/ true);
+  IntrusiveRefCntPtr<vfs::FileSystem> FS = vfs::getRealFileSystem();
+
+  ScopedLink _a("no_such_file", TestDirectory + "/a");
+  ScopedDir _b(TestDirectory + "/b");
+  ScopedLink _c("no_such_file", TestDirectory + "/c");
+
+  std::error_code EC;
+  for (vfs::directory_iterator I = FS->dir_begin(Twine(TestDirectory), EC), E;
+       I != E; I.increment(EC)) {
+    // Skip broken symlinks.
+    auto EC2 = std::make_error_code(std::errc::no_such_file_or_directory);
+    if (EC == EC2) {
+      EC.clear();
+      continue;
+    }
+    // For bot debugging.
+    if (EC) {
+      outs() << "Error code found:\n"
+             << "EC value: " << EC.value() << "\n"
+             << "EC category: " << EC.category().name()
+             << "EC message: " << EC.message() << "\n";
+
+      outs() << "Error code tested for:\n"
+             << "EC value: " << EC2.value() << "\n"
+             << "EC category: " << EC2.category().name()
+             << "EC message: " << EC2.message() << "\n";
+    }
+    ASSERT_FALSE(EC);
+    EXPECT_TRUE(I->getName() == _b);
+  }
+}
+#endif
+
 TEST(VirtualFileSystemTest, BasicRealFSRecursiveIteration) {
   ScopedDir TestDirectory("virtual-file-system-test", /*Unique*/true);
   IntrusiveRefCntPtr<vfs::FileSystem> FS = vfs::getRealFileSystem();
@@ -347,7 +405,6 @@ TEST(VirtualFileSystemTest, BasicRealFSRecursiveIteration) {
   I = vfs::recursive_directory_iterator(*FS, Twine(TestDirectory), EC);
   ASSERT_FALSE(EC);
   ASSERT_NE(vfs::recursive_directory_iterator(), I);
-
 
   std::vector<std::string> Contents;
   for (auto E = vfs::recursive_directory_iterator(); !EC && I != E;
@@ -370,17 +427,74 @@ TEST(VirtualFileSystemTest, BasicRealFSRecursiveIteration) {
   EXPECT_EQ(1, Counts[3]); // d
 }
 
-template <typename DirIter>
-static void checkContents(DirIter I, ArrayRef<StringRef> Expected) {
-  std::error_code EC;
-  auto ExpectedIter = Expected.begin(), ExpectedEnd = Expected.end();
-  for (DirIter E;
-       !EC && I != E && ExpectedIter != ExpectedEnd;
-       I.increment(EC), ++ExpectedIter)
-    EXPECT_EQ(*ExpectedIter, I->getName());
+#ifdef LLVM_ON_UNIX
+TEST(VirtualFileSystemTest, BrokenSymlinkRealFSRecursiveIteration) {
+  ScopedDir TestDirectory("virtual-file-system-test", /*Unique*/ true);
+  IntrusiveRefCntPtr<vfs::FileSystem> FS = vfs::getRealFileSystem();
 
-  EXPECT_EQ(ExpectedEnd, ExpectedIter);
-  EXPECT_EQ(DirIter(), I);
+  ScopedLink _a("no_such_file", TestDirectory + "/a");
+  ScopedDir _b(TestDirectory + "/b");
+  ScopedLink _ba("no_such_file", TestDirectory + "/b/a");
+  ScopedDir _bb(TestDirectory + "/b/b");
+  ScopedLink _bc("no_such_file", TestDirectory + "/b/c");
+  ScopedLink _c("no_such_file", TestDirectory + "/c");
+  ScopedDir _d(TestDirectory + "/d");
+  ScopedDir _dd(TestDirectory + "/d/d");
+  ScopedDir _ddd(TestDirectory + "/d/d/d");
+  ScopedLink _e("no_such_file", TestDirectory + "/e");
+  std::vector<StringRef> Expected = {_b, _bb, _d, _dd, _ddd};
+
+  std::vector<std::string> Contents;
+  std::error_code EC;
+  for (vfs::recursive_directory_iterator I(*FS, Twine(TestDirectory), EC), E;
+       I != E; I.increment(EC)) {
+    // Skip broken symlinks.
+    auto EC2 = std::make_error_code(std::errc::no_such_file_or_directory);
+    if (EC == EC2) {
+      EC.clear();
+      continue;
+    }
+    // For bot debugging.
+    if (EC) {
+      outs() << "Error code found:\n"
+             << "EC value: " << EC.value() << "\n"
+             << "EC category: " << EC.category().name()
+             << "EC message: " << EC.message() << "\n";
+
+      outs() << "Error code tested for:\n"
+             << "EC value: " << EC2.value() << "\n"
+             << "EC category: " << EC2.category().name()
+             << "EC message: " << EC2.message() << "\n";
+    }
+    ASSERT_FALSE(EC);
+    Contents.push_back(I->getName());
+  }
+
+  // Check sorted contents.
+  std::sort(Contents.begin(), Contents.end());
+  EXPECT_EQ(Expected.size(), Contents.size());
+  EXPECT_TRUE(std::equal(Contents.begin(), Contents.end(), Expected.begin()));
+}
+#endif
+
+template <typename DirIter>
+static void checkContents(DirIter I, ArrayRef<StringRef> ExpectedOut) {
+  std::error_code EC;
+  SmallVector<StringRef, 4> Expected(ExpectedOut.begin(), ExpectedOut.end());
+  SmallVector<std::string, 4> InputToCheck;
+
+  // Do not rely on iteration order to check for contents, sort both
+  // content vectors before comparison.
+  for (DirIter E; !EC && I != E; I.increment(EC))
+    InputToCheck.push_back(I->getName());
+
+  std::sort(InputToCheck.begin(), InputToCheck.end());
+  std::sort(Expected.begin(), Expected.end());
+  EXPECT_EQ(InputToCheck.size(), Expected.size());
+
+  unsigned LastElt = std::min(InputToCheck.size(), Expected.size());
+  for (unsigned Idx = 0; Idx != LastElt; ++Idx)
+    EXPECT_EQ(StringRef(InputToCheck[Idx]), Expected[Idx]);
 }
 
 TEST(VirtualFileSystemTest, OverlayIteration) {
@@ -663,7 +777,7 @@ public:
   getFromYAMLRawString(StringRef Content,
                        IntrusiveRefCntPtr<vfs::FileSystem> ExternalFS) {
     std::unique_ptr<MemoryBuffer> Buffer = MemoryBuffer::getMemBuffer(Content);
-    return getVFSFromYAML(std::move(Buffer), CountingDiagHandler, this,
+    return getVFSFromYAML(std::move(Buffer), CountingDiagHandler, "", this,
                           ExternalFS);
   }
 
@@ -673,6 +787,12 @@ public:
     std::string VersionPlusContent("{\n  'version':0,\n");
     VersionPlusContent += Content.slice(Content.find('{') + 1, StringRef::npos);
     return getFromYAMLRawString(VersionPlusContent, ExternalFS);
+  }
+
+  // This is intended as a "XFAIL" for windows hosts.
+  bool supportsSameDirMultipleYAMLEntries() {
+    Triple Host(Triple::normalize(sys::getProcessTriple()));
+    return !Host.isOSWindows();
   }
 };
 
@@ -1059,4 +1179,94 @@ TEST_F(VFSFromYAMLTest, DirectoryIteration) {
 
   checkContents(O->dir_begin("//root/foo/bar", EC),
                 {"//root/foo/bar/a", "//root/foo/bar/b"});
+}
+
+TEST_F(VFSFromYAMLTest, DirectoryIterationSameDirMultipleEntries) {
+  // https://llvm.org/bugs/show_bug.cgi?id=27725
+  if (!supportsSameDirMultipleYAMLEntries())
+    return;
+
+  IntrusiveRefCntPtr<DummyFileSystem> Lower(new DummyFileSystem());
+  Lower->addDirectory("//root/zab");
+  Lower->addDirectory("//root/baz");
+  Lower->addRegularFile("//root/zab/a");
+  Lower->addRegularFile("//root/zab/b");
+  IntrusiveRefCntPtr<vfs::FileSystem> FS = getFromYAMLString(
+      "{ 'use-external-names': false,\n"
+      "  'roots': [\n"
+      "{\n"
+      "  'type': 'directory',\n"
+      "  'name': '//root/baz/',\n"
+      "  'contents': [ {\n"
+      "                  'type': 'file',\n"
+      "                  'name': 'x',\n"
+      "                  'external-contents': '//root/zab/a'\n"
+      "                }\n"
+      "              ]\n"
+      "},\n"
+      "{\n"
+      "  'type': 'directory',\n"
+      "  'name': '//root/baz/',\n"
+      "  'contents': [ {\n"
+      "                  'type': 'file',\n"
+      "                  'name': 'y',\n"
+      "                  'external-contents': '//root/zab/b'\n"
+      "                }\n"
+      "              ]\n"
+      "}\n"
+      "]\n"
+      "}",
+      Lower);
+  ASSERT_TRUE(FS.get() != nullptr);
+
+  IntrusiveRefCntPtr<vfs::OverlayFileSystem> O(
+      new vfs::OverlayFileSystem(Lower));
+  O->pushOverlay(FS);
+
+  std::error_code EC;
+
+  checkContents(O->dir_begin("//root/baz/", EC),
+                {"//root/baz/x", "//root/baz/y"});
+}
+
+TEST_F(VFSFromYAMLTest, RecursiveDirectoryIterationLevel) {
+
+  IntrusiveRefCntPtr<DummyFileSystem> Lower(new DummyFileSystem());
+  Lower->addDirectory("//root/a");
+  Lower->addDirectory("//root/a/b");
+  Lower->addDirectory("//root/a/b/c");
+  Lower->addRegularFile("//root/a/b/c/file");
+  IntrusiveRefCntPtr<vfs::FileSystem> FS = getFromYAMLString(
+      "{ 'use-external-names': false,\n"
+      "  'roots': [\n"
+      "{\n"
+      "  'type': 'directory',\n"
+      "  'name': '//root/a/b/c/',\n"
+      "  'contents': [ {\n"
+      "                  'type': 'file',\n"
+      "                  'name': 'file',\n"
+      "                  'external-contents': '//root/a/b/c/file'\n"
+      "                }\n"
+      "              ]\n"
+      "},\n"
+      "]\n"
+      "}",
+      Lower);
+  ASSERT_TRUE(FS.get() != nullptr);
+
+  IntrusiveRefCntPtr<vfs::OverlayFileSystem> O(
+      new vfs::OverlayFileSystem(Lower));
+  O->pushOverlay(FS);
+
+  std::error_code EC;
+
+  // Test recursive_directory_iterator level()
+  vfs::recursive_directory_iterator I = vfs::recursive_directory_iterator(
+                                        *O, "//root", EC), E;
+  ASSERT_FALSE(EC);
+  for (int l = 0; I != E; I.increment(EC), ++l) {
+    ASSERT_FALSE(EC);
+    EXPECT_EQ(I.level(), l);
+  }
+  EXPECT_EQ(I, E);
 }

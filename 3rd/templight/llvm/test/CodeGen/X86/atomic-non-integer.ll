@@ -26,7 +26,7 @@ define void @store_float(float* %fptr, float %v) {
 
 define void @store_double(double* %fptr, double %v) {
 ; CHECK-LABEL: @store_double
-; CHECK: movd	%xmm0, %rax
+; CHECK: movq	%xmm0, %rax
 ; CHECK: movq	%rax, (%rdi)
   store atomic double %v, double* %fptr unordered, align 8
   ret void
@@ -43,7 +43,7 @@ define half @load_half(half* %fptr) {
 ; CHECK-LABEL: @load_half
 ; CHECK: movw	(%rdi), %ax
 ; CHECK: movzwl	%ax, %edi
-; CHECK: jmp	__gnu_h2f_ieee
+; CHECK: callq	__gnu_h2f_ieee
   %v = load atomic half, half* %fptr unordered, align 2
   ret half %v
 }
@@ -59,7 +59,7 @@ define float @load_float(float* %fptr) {
 define double @load_double(double* %fptr) {
 ; CHECK-LABEL: @load_double
 ; CHECK: movq	(%rdi), %rax
-; CHECK: movd	%rax, %xmm0
+; CHECK: movq	%rax, %xmm0
   %v = load atomic double, double* %fptr unordered, align 8
   ret double %v
 }
@@ -85,7 +85,7 @@ define void @store_float_seq_cst(float* %fptr, float %v) {
 
 define void @store_double_seq_cst(double* %fptr, double %v) {
 ; CHECK-LABEL: @store_double_seq_cst
-; CHECK: movd	%xmm0, %rax
+; CHECK: movq	%xmm0, %rax
 ; CHECK: xchgq	%rax, (%rdi)
   store atomic double %v, double* %fptr seq_cst, align 8
   ret void
@@ -102,7 +102,7 @@ define float @load_float_seq_cst(float* %fptr) {
 define double @load_double_seq_cst(double* %fptr) {
 ; CHECK-LABEL: @load_double_seq_cst
 ; CHECK: movq	(%rdi), %rax
-; CHECK: movd	%rax, %xmm0
+; CHECK: movq	%rax, %xmm0
   %v = load atomic double, double* %fptr seq_cst, align 8
   ret double %v
 }

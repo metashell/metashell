@@ -1,4 +1,4 @@
-; RUN: llc < %s -march=arm64 | FileCheck %s
+; RUN: llc < %s -mtriple=arm64-eabi | FileCheck %s
 
 define void @t1(i8* nocapture %c) nounwind optsize {
 entry:
@@ -12,8 +12,8 @@ entry:
 define void @t2() nounwind ssp {
 entry:
 ; CHECK-LABEL: t2:
-; CHECK: strh wzr, [sp, #32]
 ; CHECK: stp xzr, xzr, [sp, #16]
+; CHECK: strh wzr, [sp, #32]
 ; CHECK: str xzr, [sp, #8]
   %buf = alloca [26 x i8], align 1
   %0 = getelementptr inbounds [26 x i8], [26 x i8]* %buf, i32 0, i32 0

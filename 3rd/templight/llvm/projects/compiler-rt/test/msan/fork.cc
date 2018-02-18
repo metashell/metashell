@@ -3,18 +3,16 @@
 // and verify that origin reads do not deadlock in the child process.
 
 // RUN: %clangxx_msan -std=c++11 -fsanitize-memory-track-origins=2 -g -O3 %s -o %t
-// RUN: MSAN_OPTIONS=store_context_size=1000,origin_history_size=0,origin_history_per_stack_limit=0 %run %t |& FileCheck %s
-//
-// Big-endian mips64 currently hangs on this test. Mark it unsupported to allow
-// llvm-lit to finish. This also marks mips unsupported in most cases but msan
-// is already unsupported for 32-bit mips.
-// UNSUPPORTED: mips64-supported-target
+// RUN: MSAN_OPTIONS=store_context_size=1000,origin_history_size=0,origin_history_per_stack_limit=0 %run %t 2>&1 | FileCheck %s
 
 // Fun fact: if test output is redirected to a file (as opposed to
 // being piped directly to FileCheck), we may lose some "done"s due to
 // a kernel bug:
 // https://lkml.org/lkml/2014/2/17/324
 
+// Flaky on PPC64.
+// UNSUPPORTED: powerpc64-target-arch
+// UNSUPPORTED: powerpc64le-target-arch
 
 #include <pthread.h>
 #include <unistd.h>
@@ -94,7 +92,7 @@ int main() {
       exit(0);
     }
   }
-  
+
   for (int i = 0; i < kChildren; ++i) {
     pid_t p;
     while ((p = wait(NULL)) == -1) {  }

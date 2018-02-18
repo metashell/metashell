@@ -13,7 +13,6 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclLookups.h"
 #include "clang/AST/DeclTemplate.h"
-#include "clang/Sema/ActiveTemplateInst.h"
 #include "clang/Sema/Sema.h"
 #include "clang/Lex/Lexer.h"
 
@@ -36,7 +35,7 @@ namespace clang {
 namespace {
   
 
-const char* const InstantiationKindStrings[] = { 
+const char* const SynthesisKindStrings[] = { 
   "template instantiation",
   "default template-argument instantiation",
   "default function-argument instantiation",
@@ -49,7 +48,7 @@ const char* const InstantiationKindStrings[] = {
 
 struct TemplateDebuggerEntry {
   bool IsTemplateBegin;
-  ActiveTemplateInstantiation Inst;
+  Sema::CodeSynthesisContext Inst;
   std::string Name;
   std::string FileName;
   int Line;
@@ -61,8 +60,8 @@ struct TemplateDebuggerEntry {
     MemoryUsage(0) { };
   
   TemplateDebuggerEntry(bool aIsBegin, std::size_t aMemUsage,
-                        const Sema &TheSema, 
-                        const ActiveTemplateInstantiation& aInst) :
+                        const Sema &TheSema,
+                        const Sema::CodeSynthesisContext& aInst) :
                         IsTemplateBegin(aIsBegin), Inst(aInst), Name(), 
                         FileName(), Line(0), Column(0), MemoryUsage(aMemUsage) { 
     NamedDecl *NamedTemplate = dyn_cast_or_null<NamedDecl>(Inst.Entity);
@@ -440,7 +439,7 @@ public:
   }
   
   
-  bool TraverseActiveTempInstantiation(const ActiveTemplateInstantiation& Inst) {
+  bool TraverseActiveTempInstantiation(const Sema::CodeSynthesisContext& Inst) {
     TemplateDecl *TemplatePtr = dyn_cast_or_null<TemplateDecl>(Inst.Entity);
     if( TemplatePtr && TemplatePtr->getTemplateParameters() &&
         ( TemplatePtr->getTemplateParameters()->size() != 0 ) && 
@@ -533,7 +532,7 @@ public:
   void printEntryImpl(const TemplateDebuggerEntry& Entry) { 
     llvm::outs() 
       << ( (Entry.IsTemplateBegin) ? "Entering " : "Leaving  " )
-      << InstantiationKindStrings[Entry.Inst.Kind]  << " of " << Entry.Name << '\n'
+      << SynthesisKindStrings[Entry.Inst.Kind]  << " of " << Entry.Name << '\n'
       << "  at " << Entry.FileName << '|' << Entry.Line << '|' << Entry.Column 
       << " (Memory usage: " << Entry.MemoryUsage << ")\n";
     if ( verboseMode ) {
@@ -619,7 +618,7 @@ public:
     }
     
     // Avoid some duplication of memoization entries:
-    if ( Entry.Inst.Kind == ActiveTemplateInstantiation::Memoization ) {
+    if ( Entry.Inst.Kind == Sema::CodeSynthesisContext::Memoization ) {
       if ( !LastBeginEntry.IsTemplateBegin
            && ( LastBeginEntry.Inst.Kind == Entry.Inst.Kind )
            && ( LastBeginEntry.Inst.Entity == Entry.Inst.Entity ) ) {
@@ -675,6 +674,7 @@ public:
     std::string user_in;
     while(true) {
       llvm::outs() << "(tdb) ";
+      llvm::outs().flush();
       getLineFromStdIn(user_in);
       if ( user_in == "" )
         user_in = LastUserCommand;
@@ -946,7 +946,7 @@ public:
         for(std::vector<TemplateDebuggerEntry>::reverse_iterator it = EntriesStack.rbegin();
             it != EntriesStack.rend(); ++it) {
           llvm::outs()
-            << InstantiationKindStrings[it->Inst.Kind] << " of " << it->Name 
+            << SynthesisKindStrings[it->Inst.Kind] << " of " << it->Name 
             << " at " << it->FileName << '|' 
             << it->Line << '|' << it->Column << '\n';
         }
@@ -972,7 +972,7 @@ public:
     printEntryImpl(Entry);
     
     if ( !Entry.IsTemplateBegin && 
-         ( Entry.Inst.Kind == ActiveTemplateInstantiation::Memoization ) )
+         ( Entry.Inst.Kind == Sema::CodeSynthesisContext::Memoization ) )
       LastBeginEntry.IsTemplateBegin = false;
     
     if ( !Entry.IsTemplateBegin && 
@@ -1026,16 +1026,16 @@ public:
 
 
 
-void TemplightDebugger::initializeImpl(const Sema &) {
+void TemplightDebugger::initialize(const Sema &) {
   Interactor->startTrace();
 }
 
-void TemplightDebugger::finalizeImpl(const Sema &) {
+void TemplightDebugger::finalize(const Sema &) {
   Interactor->endTrace();
 }
 
-void TemplightDebugger::atTemplateBeginImpl(const Sema &TheSema, 
-                          const ActiveTemplateInstantiation& Inst) {
+void TemplightDebugger::atTemplateBegin(const Sema &TheSema,
+                          const Sema::CodeSynthesisContext& Inst) {
   if ( IgnoreSystemFlag && !Inst.PointOfInstantiation.isInvalid() && 
        TheSema.getSourceManager()
          .isInSystemHeader(Inst.PointOfInstantiation) )
@@ -1047,8 +1047,8 @@ void TemplightDebugger::atTemplateBeginImpl(const Sema &TheSema,
   Interactor->printRawEntry(Entry);
 }
 
-void TemplightDebugger::atTemplateEndImpl(const Sema &TheSema, 
-                          const ActiveTemplateInstantiation& Inst) {
+void TemplightDebugger::atTemplateEnd(const Sema &TheSema,
+                          const Sema::CodeSynthesisContext& Inst) {
   if ( IgnoreSystemFlag && !Inst.PointOfInstantiation.isInvalid() && 
        TheSema.getSourceManager()
          .isInSystemHeader(Inst.PointOfInstantiation) )
@@ -1061,7 +1061,7 @@ void TemplightDebugger::atTemplateEndImpl(const Sema &TheSema,
 }
 
 
-TemplightDebugger::TemplightDebugger(const Sema &TheSema, 
+TemplightDebugger::TemplightDebugger(const Sema &TheSema,
                                      bool Memory, bool IgnoreSystem) :
                                      MemoryFlag(Memory),
                                      IgnoreSystemFlag(IgnoreSystem) {

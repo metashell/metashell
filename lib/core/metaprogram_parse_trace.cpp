@@ -53,10 +53,15 @@ namespace
     case 7:
       return event_kind::exception_spec_instantiation;
     case 8:
+      return event_kind::declaring_special_member;
+    case 9:
+      return event_kind::defining_synthesized_function;
+    case 10:
       return event_kind::memoization;
     default:
       throw metashell::exception(
-          "templight xml parse failed (invalid instantiation kind)");
+          "templight xml parse failed (invalid instantiation kind " +
+          std::to_string(kind) + ")");
     }
   }
 }
@@ -70,7 +75,6 @@ namespace metashell
       const data::file_location& root_source_location,
       const data::type_or_code_or_error& evaluation_result)
   {
-
     metaprogram_builder builder(mode, root_name, root_source_location);
 
     templight::ProtobufReader reader;

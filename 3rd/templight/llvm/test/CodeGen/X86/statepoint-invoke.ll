@@ -1,4 +1,4 @@
-; RUN: llc < %s 2>&1 | FileCheck %s
+; RUN: llc -verify-machineinstrs < %s 2>&1 | FileCheck %s
 
 target triple = "x86_64-pc-linux-gnu"
 
@@ -41,7 +41,7 @@ exceptional_return:
 ; CHECK: .long  .Ltmp{{[0-9]+}}-.Ltmp{{[0-9]+}}
 ; CHECK: .long  .Ltmp{{[0-9]+}}-.Lfunc_begin{{[0-9]+}}
 ; CHECK: .byte  0
-; CHECK: .align 4
+; CHECK: .p2align 4
 
 define i64 addrspace(1)* @test_result(i64 addrspace(1)* %obj,
                                       i64 addrspace(1)* %obj1)
@@ -71,7 +71,7 @@ exceptional_return:
 ; CHECK: .long .Ltmp{{[0-9]+}}-.Ltmp{{[0-9]+}}
 ; CHECK: .long .Ltmp{{[0-9]+}}-.Lfunc_begin{{[0-9]+}}
 ; CHECK: .byte 0
-; CHECK: .align 4
+; CHECK: .p2align 4
 
 define i64 addrspace(1)* @test_same_val(i1 %cond, i64 addrspace(1)* %val1, i64 addrspace(1)* %val2, i64 addrspace(1)* %val3)
   gc "statepoint-example" personality i32 ()* @"personality_function" {
@@ -95,8 +95,8 @@ left.relocs:
 
 right:
   ; CHECK-LABEL: %right
-  ; CHECK: movq
   ; CHECK: movq %rdx, (%rsp)
+  ; CHECK: movq
   ; CHECK: callq some_call
   %sp2 = invoke token (i64, i32, void (i64 addrspace(1)*)*, i32, i32, ...) @llvm.experimental.gc.statepoint.p0f_isVoidp1i64f(i64 0, i32 0, void (i64 addrspace(1)*)* @some_call, i32 1, i32 0, i64 addrspace(1)* %val1, i32 0, i32 5, i32 0, i32 -1, i32 0, i32 0, i32 0, i64 addrspace(1)* %val2, i64 addrspace(1)* %val3)
            to label %right.relocs unwind label %exceptional_return.right

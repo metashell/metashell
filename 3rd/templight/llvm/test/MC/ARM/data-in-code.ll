@@ -9,7 +9,7 @@
 ;; Ensure that if a jump table is generated that it has Mapping Symbols
 ;; marking the data-in-code region.
 
-define void @foo(i32* %ptr) nounwind ssp {
+define void @foo(i32* %ptr, i32 %b) nounwind ssp {
   %tmp = load i32, i32* %ptr, align 4
   switch i32 %tmp, label %exit [
     i32 0, label %bb0
@@ -18,7 +18,7 @@ define void @foo(i32* %ptr) nounwind ssp {
     i32 3, label %bb3
   ]
 bb0:
-  store i32 0, i32* %ptr, align 4
+  store i32 %b, i32* %ptr, align 4
   br label %exit
 bb1:
   store i32 1, i32* %ptr, align 4
@@ -59,23 +59,6 @@ exit:
 ;; ARM-NEXT:     Type: None
 ;; ARM-NEXT:     Other:
 ;; ARM-NEXT:     Section: [[MIXED_SECT]]
-
-;; ARM:        Symbol {
-;; ARM:          Name: $d
-;; ARM-NEXT:     Value: 0x0
-;; ARM-NEXT:     Size: 0
-;; ARM-NEXT:     Binding: Local (0x0)
-;; ARM-NEXT:     Type: None (0x0)
-;; ARM-NEXT:     Other: 0
-;; ARM-NEXT:     Section: .ARM.exidx
-;; ARM-NEXT:   }
-
-;; ARM:        Symbol {
-;; ARM:          Name: $d
-;; ARM-NEXT:     Value: 0
-;; ARM-NEXT:     Size: 0
-;; ARM-NEXT:     Binding: Local
-;; ARM-NEXT:     Type: None
 
 ;; ARM-NOT:     ${{[atd]}}
 

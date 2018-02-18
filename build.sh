@@ -66,8 +66,8 @@ then
           -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
           -DLLVM_ENABLE_TERMINFO=OFF \
           "${C_INCLUDE_DIRS}" \
-          ../llvm \
-          && make templight -j${BUILD_THREADS}
+          ../llvm
+          make templight -j${BUILD_THREADS}
       cd ..
     cd ..
   cd ..

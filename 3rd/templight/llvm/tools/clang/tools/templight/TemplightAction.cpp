@@ -13,7 +13,7 @@
 
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Sema/Sema.h>
-#include <clang/Sema/TemplateInstCallbacks.h>
+#include <clang/Sema/TemplateInstCallback.h>
 
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -30,20 +30,19 @@ std::unique_ptr<clang::ASTConsumer> TemplightAction::CreateASTConsumer(
 bool TemplightAction::BeginInvocation(CompilerInstance &CI) {
   return WrapperFrontendAction::BeginInvocation(CI);
 }
-bool TemplightAction::BeginSourceFileAction(CompilerInstance &CI,
-                                            StringRef Filename) {
-  return WrapperFrontendAction::BeginSourceFileAction(CI, Filename);
+bool TemplightAction::BeginSourceFileAction(CompilerInstance &CI) {
+  return WrapperFrontendAction::BeginSourceFileAction(CI);
 }
 
 std::string TemplightAction::CreateOutputFilename(
     CompilerInstance *CI,
-    const std::string& OptOutputName, 
+    const std::string& OptOutputName,
     bool OptInstProfiler, bool OptOutputToStdOut, bool OptMemoryProfile) {
   std::string result;
-  
+
   if ( !OptInstProfiler )
     return result; // no need for an output-filename.
-  
+
   if ( OptOutputToStdOut ) {
     return "-";
   } else if ( CI && OptOutputName.empty() ) {
@@ -51,8 +50,8 @@ std::string TemplightAction::CreateOutputFilename(
   } else {
     result = OptOutputName;
   }
-  
-  // Should never get executed. 
+
+  // Should never get executed.
   if ( CI && result.empty() ) {
     // then, derive output name from the input name:
     if ( CI->hasSourceManager() ) {
@@ -62,12 +61,12 @@ std::string TemplightAction::CreateOutputFilename(
       result = "a";
     }
   }
-  
+
   if( result.rfind(".trace.") == std::string::npos ) {
     result += (OptMemoryProfile ? ".memory.trace." : ".trace.");
     result += "pbf";
   }
-  
+
   return result;
 }
 
@@ -80,42 +79,40 @@ void TemplightAction::EnsureHasSema(CompilerInstance& CI) {
     if (hasCodeCompletionSupport() &&
         !CI.getFrontendOpts().CodeCompletionAt.FileName.empty())
       CI.createCodeCompletionConsumer();
-    
+
     // Use a code completion consumer?
     CodeCompleteConsumer *CompletionConsumer = nullptr;
     if (CI.hasCodeCompletionConsumer())
       CompletionConsumer = &CI.getCodeCompletionConsumer();
-    
+
     CI.createSema(getTranslationUnitKind(), CompletionConsumer);
     //<<--------------------------------------------------------------
   }
 }
 
 void TemplightAction::ExecuteAction() {
-  
+
   CompilerInstance &CI = WrapperFrontendAction::getCompilerInstance();
   if (!CI.hasPreprocessor())
     return;
-  
+
   if ( InstProfiler ) {
     EnsureHasSema(CI);
 
-    TemplightTracer* p_t = new TemplightTracer(CI.getSema(), OutputFilename,
-      MemoryProfile, OutputInSafeMode, IgnoreSystemInst);
+    std::unique_ptr<TemplightTracer> p_t(new TemplightTracer(CI.getSema(), OutputFilename,
+      MemoryProfile, OutputInSafeMode, IgnoreSystemInst));
     p_t->readBlacklists(BlackListFilename);
-    TemplateInstantiationCallbacks::appendNewCallbacks(
-      CI.getSema().TemplateInstCallbacksChain, p_t);
+    CI.getSema().TemplateInstCallbacks.push_back(std::move(p_t));
   }
   if ( InteractiveDebug ) {
     EnsureHasSema(CI);
 
-    TemplightDebugger* p_t = new TemplightDebugger(CI.getSema(), 
-      MemoryProfile, IgnoreSystemInst);
+    std::unique_ptr<TemplightDebugger> p_t(new TemplightDebugger(CI.getSema(),
+      MemoryProfile, IgnoreSystemInst));
     p_t->readBlacklists(BlackListFilename);
-    TemplateInstantiationCallbacks::appendNewCallbacks(
-      CI.getSema().TemplateInstCallbacksChain, p_t);
+    CI.getSema().TemplateInstCallbacks.push_back(std::move(p_t));
   }
-  
+
   WrapperFrontendAction::ExecuteAction();
 }
 void TemplightAction::EndSourceFileAction() {
@@ -141,10 +138,9 @@ bool TemplightAction::hasCodeCompletionSupport() const {
   return WrapperFrontendAction::hasCodeCompletionSupport();
 }
 
-TemplightAction::TemplightAction(FrontendAction *WrappedAction) : 
-  WrapperFrontendAction(WrappedAction) { 
-  
-}
+TemplightAction::TemplightAction(std::unique_ptr<FrontendAction> WrappedAction) :
+    WrapperFrontendAction(std::move(WrappedAction)) {
 
 }
 
+}

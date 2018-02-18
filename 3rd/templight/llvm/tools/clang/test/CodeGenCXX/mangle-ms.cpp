@@ -4,6 +4,11 @@
 int a;
 // CHECK-DAG: @"\01?a@@3HA"
 
+extern "C++" {
+static int __attribute__((used)) ignore_transparent_context;
+// CHECK-DAG: @ignore_transparent_context
+}
+
 namespace N {
   int b;
 // CHECK-DAG: @"\01?b@N@@3HA"
@@ -393,6 +398,13 @@ template void fn_tmpl<extern_c_func>();
 
 extern "C" void __attribute__((overloadable)) overloaded_fn() {}
 // CHECK-DAG: @"\01?overloaded_fn@@$$J0YAXXZ"
+
+extern "C" void overloaded_fn2() {}
+// CHECK-DAG: @overloaded_fn2
+//
+extern "C" void __attribute__((overloadable)) overloaded_fn3();
+extern "C" void overloaded_fn3() {}
+// CHECK-DAG: @overloaded_fn3
 
 namespace UnnamedType {
 struct S {

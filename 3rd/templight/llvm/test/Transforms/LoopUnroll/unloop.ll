@@ -1,4 +1,5 @@
 ; RUN: opt < %s -S -loop-unroll -verify-loop-info | FileCheck %s
+; RUN: opt < %s -S -passes='require<opt-remark-emit>,loop(unroll),verify<loops>' | FileCheck %s
 ;
 ; Unit tests for LoopInfo::markAsRemoved.
 

@@ -161,14 +161,14 @@ define void @test_select(half* %p, half* %q, i1 zeroext %c) #0 {
   ret void
 }
 
-; Test only two variants of fcmp.  These get translated to f32 vcmpe
+; Test only two variants of fcmp.  These get translated to f32 vcmp
 ; instructions anyway.
 ; CHECK-ALL-LABEL: test_fcmp_une:
 ; CHECK-FP16: vcvtb.f32.f16
 ; CHECK-FP16: vcvtb.f32.f16
 ; CHECK-LIBCALL: bl __aeabi_h2f
 ; CHECK-LIBCALL: bl __aeabi_h2f
-; CHECK-VFP: vcmpe.f32
+; CHECK-VFP: vcmp.f32
 ; CHECK-NOVFP: bl __aeabi_fcmpeq
 ; CHECK-FP16: vmrs APSR_nzcv, fpscr
 ; CHECK-ALL: movw{{ne|eq}}
@@ -184,7 +184,7 @@ define i1 @test_fcmp_une(half* %p, half* %q) #0 {
 ; CHECK-FP16: vcvtb.f32.f16
 ; CHECK-LIBCALL: bl __aeabi_h2f
 ; CHECK-LIBCALL: bl __aeabi_h2f
-; CHECK-VFP: vcmpe.f32
+; CHECK-VFP: vcmp.f32
 ; CHECK-NOVFP: bl __aeabi_fcmpeq
 ; CHECK-FP16: vmrs APSR_nzcv, fpscr
 ; CHECK-LIBCALL: movw{{ne|eq}}
@@ -597,7 +597,7 @@ define void @test_fma(half* %p, half* %q, half* %r) #0 {
 ; CHECK-FP16: vcvtb.f16.f32
 ; CHECK-LIBCALL-LABEL: test_fabs:
 ; CHECK-LIBCALL: bl __aeabi_h2f
-; CHECK-LIBCALL: bfc
+; CHECK-LIBCALL: bic
 ; CHECK-LIBCALL: bl __aeabi_f2h
 define void @test_fabs(half* %p) {
   %a = load half, half* %p, align 2
@@ -642,6 +642,42 @@ define void @test_maxnum(half* %p, half* %q) #0 {
   ret void
 }
 
+; CHECK-ALL-LABEL: test_minnan:
+; CHECK-FP16: vmov.f32 s0, #1.000000e+00
+; CHECK-FP16: vcvtb.f32.f16
+; CHECK-LIBCALL: bl __aeabi_h2f
+; CHECK-LIBCALL-VFP: vmov.f32 s{{[0-9]+}}, #1.000000e+00
+; CHECK-NOVFP: mov r{{[0-9]+}}, #1065353216
+; CHECK-VFP: vmin.f32
+; CHECK-NOVFP: bl __aeabi_fcmpge
+; CHECK-FP16: vcvtb.f16.f32
+; CHECK-LIBCALL: bl __aeabi_f2h
+define void @test_minnan(half* %p) #0 {
+  %a = load half, half* %p, align 2
+  %c = fcmp ult half %a, 1.0
+  %r = select i1 %c, half %a, half 1.0
+  store half %r, half* %p
+  ret void
+}
+
+; CHECK-ALL-LABEL: test_maxnan:
+; CHECK-FP16: vmov.f32 s0, #1.000000e+00
+; CHECK-FP16: vcvtb.f32.f16
+; CHECK-LIBCALL: bl __aeabi_h2f
+; CHECK-LIBCALL-VFP: vmov.f32 s0, #1.000000e+00
+; CHECK-NOVFP: mov r{{[0-9]+}}, #1065353216
+; CHECK-VFP: vmax.f32
+; CHECK-NOVFP: bl __aeabi_fcmple
+; CHECK-FP16: vcvtb.f16.f32
+; CHECK-LIBCALL: bl __aeabi_f2h
+define void @test_maxnan(half* %p) #0 {
+  %a = load half, half* %p, align 2
+  %c = fcmp ugt half %a, 1.0
+  %r = select i1 %c, half %a, half 1.0
+  store half %r, half* %p
+  ret void
+}
+
 ; CHECK-FP16-LABEL: test_copysign:
 ; CHECK-FP16: vcvtb.f32.f16
 ; CHECK-FP16: vcvtb.f32.f16
@@ -651,8 +687,8 @@ define void @test_maxnum(half* %p, half* %q) #0 {
 ; CHECK-LIBCALL: bl __aeabi_h2f
 ; CHECK-LIBCALL: bl __aeabi_h2f
 ; CHECK-VFP-LIBCALL: vbsl
-; CHECK-NOVFP: bfc
 ; CHECK-NOVFP: and
+; CHECK-NOVFP: bic
 ; CHECK-NOVFP: orr
 ; CHECK-LIBCALL: bl __aeabi_f2h
 define void @test_copysign(half* %p, half* %q) #0 {
@@ -782,25 +818,24 @@ define void @test_fmuladd(half* %p, half* %q, half* %r) #0 {
 ; CHECK-ALL-LABEL: test_insertelement:
 ; CHECK-ALL: sub sp, sp, #8
 ; CHECK-ALL: ldrh
-; CHECK-ALL: strh
 ; CHECK-ALL: ldrh
-; CHECK-ALL: strh
 ; CHECK-ALL: ldrh
-; CHECK-ALL: strh
 ; CHECK-ALL: ldrh
-; CHECK-ALL: strh
-; CHECK-ALL: mov
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: mov
 ; CHECK-ALL-DAG: ldrh
-; CHECK-ALL-DAG: add
-; CHECK-ALL: strh
-; CHECK-ALL: ldrh
-; CHECK-ALL: strh
-; CHECK-ALL: ldrh
-; CHECK-ALL: strh
-; CHECK-ALL: ldrh
-; CHECK-ALL: strh
-; CHECK-ALL: ldrh
-; CHECK-ALL: strh
+; CHECK-ALL-DAG: orr
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: ldrh
+; CHECK-ALL-DAG: ldrh
+; CHECK-ALL-DAG: ldrh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
+; CHECK-ALL-DAG: strh
 ; CHECK-ALL: add sp, sp, #8
 define void @test_insertelement(half* %p, <4 x half>* %q, i32 %i) #0 {
   %a = load half, half* %p, align 2
@@ -811,21 +846,15 @@ define void @test_insertelement(half* %p, <4 x half>* %q, i32 %i) #0 {
 }
 
 ; CHECK-ALL-LABEL: test_extractelement:
+; CHECK-VFP: push {{{.*}}, lr}
 ; CHECK-VFP: sub sp, sp, #8
-; CHECK-VFP: ldrh
-; CHECK-VFP: ldrh
-; CHECK-VFP: orr
-; CHECK-VFP: str
-; CHECK-VFP: ldrh
-; CHECK-VFP: ldrh
-; CHECK-VFP: orr
-; CHECK-VFP: str
+; CHECK-VFP: ldrd
 ; CHECK-VFP: mov
-; CHECK-VFP: add
+; CHECK-VFP: orr
 ; CHECK-VFP: ldrh
 ; CHECK-VFP: strh
 ; CHECK-VFP: add sp, sp, #8
-; CHECK-VFP: bx lr
+; CHECK-VFP: pop {{{.*}}, pc}
 ; CHECK-NOVFP: ldrh
 ; CHECK-NOVFP: strh
 ; CHECK-NOVFP: ldrh
@@ -887,6 +916,46 @@ define %struct.dummy @test_struct_return(%struct.dummy* %p) {
 define half @test_struct_arg(%struct.dummy %p) {
   %a = extractvalue %struct.dummy %p, 1
   ret half %a
+}
+
+; CHECK-LABEL: test_uitofp_i32_fadd:
+; CHECK-VFP-DAG: vcvt.f32.u32
+; CHECK-NOVFP-DAG: bl __aeabi_ui2f
+
+; CHECK-FP16-DAG: vcvtb.f16.f32
+; CHECK-FP16-DAG: vcvtb.f32.f16
+; CHECK-LIBCALL-DAG: bl __aeabi_h2f
+; CHECK-LIBCALL-DAG: bl __aeabi_h2f
+
+; CHECK-VFP-DAG: vadd.f32
+; CHECK-NOVFP-DAG: bl __aeabi_fadd
+
+; CHECK-FP16-DAG: vcvtb.f16.f32
+; CHECK-LIBCALL-DAG: bl __aeabi_f2h
+define half @test_uitofp_i32_fadd(i32 %a, half %b) #0 {
+  %c = uitofp i32 %a to half
+  %r = fadd half %b, %c
+  ret half %r
+}
+
+; CHECK-LABEL: test_sitofp_i32_fadd:
+; CHECK-VFP-DAG: vcvt.f32.s32
+; CHECK-NOVFP-DAG: bl __aeabi_i2f
+
+; CHECK-FP16-DAG: vcvtb.f16.f32
+; CHECK-FP16-DAG: vcvtb.f32.f16
+; CHECK-LIBCALL-DAG: bl __aeabi_h2f
+; CHECK-LIBCALL-DAG: bl __aeabi_h2f
+
+; CHECK-VFP-DAG: vadd.f32
+; CHECK-NOVFP-DAG: bl __aeabi_fadd
+
+; CHECK-FP16-DAG: vcvtb.f16.f32
+; CHECK-LIBCALL-DAG: bl __aeabi_f2h
+define half @test_sitofp_i32_fadd(i32 %a, half %b) #0 {
+  %c = sitofp i32 %a to half
+  %r = fadd half %b, %c
+  ret half %r
 }
 
 attributes #0 = { nounwind }

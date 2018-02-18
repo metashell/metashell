@@ -525,7 +525,12 @@ namespace metashell
           !for_current_line || (property.point_of_event.name == stdin_name &&
                                 property.point_of_event.row == line_number + 1);
 
+      const bool is_remove_ptr =
+          boost::get<data::type>(&target_node) &&
+          boost::get<data::type>(target_node) == "metashell::impl::remove_ptr";
+
       if (current_line_filter && is_event_kind_enabled(property.kind) &&
+          !is_remove_ptr &&
           (property.kind != data::event_kind::memoization ||
            !boost::get<data::type>(&target_node) ||
            !is_wrap_type(boost::get<data::type>(target_node))))
@@ -647,6 +652,8 @@ namespace metashell
     case data::event_kind::template_instantiation:
     case data::event_kind::deduced_template_argument_substitution:
     case data::event_kind::explicit_template_argument_substitution:
+    case data::event_kind::declaring_special_member:
+    case data::event_kind::defining_synthesized_function:
 
     case data::event_kind::macro_expansion:
     case data::event_kind::macro_definition:

@@ -1,4 +1,4 @@
-; RUN: llc < %s | FileCheck %s
+; RUN: llc -verify-machineinstrs < %s | FileCheck %s
 ; Check that we can lower a use of an alloca both as a deopt value (where the
 ; exact meaning is up to the consumer of the stackmap) and as an explicit spill
 ; slot used for GC.  
@@ -48,7 +48,7 @@ declare token @llvm.experimental.gc.statepoint.p0f_i1f(i64, i32, i1 ()*, i32, i3
 ; CHECK-LABEL: .section .llvm_stackmaps
 ; CHECK-NEXT:  __LLVM_StackMaps:
 ; Header
-; CHECK-NEXT:   .byte 1
+; CHECK-NEXT:   .byte 3
 ; CHECK-NEXT:   .byte 0
 ; CHECK-NEXT:   .short 0
 ; Num Functions
@@ -61,8 +61,10 @@ declare token @llvm.experimental.gc.statepoint.p0f_i1f(i64, i32, i1 ()*, i32, i3
 ; Functions and stack size
 ; CHECK-NEXT:   .quad test
 ; CHECK-NEXT:   .quad 8
+; CHECK-NEXT:   .quad 1
 ; CHECK-NEXT:   .quad test2
 ; CHECK-NEXT:   .quad 8
+; CHECK-NEXT:   .quad 1
 
 ; Large Constants
 ; Statepoint ID only
@@ -70,61 +72,76 @@ declare token @llvm.experimental.gc.statepoint.p0f_i1f(i64, i32, i1 ()*, i32, i3
 
 ; Callsites
 ; The GC one
-; CHECK: .long	.Ltmp1-test
+; CHECK: .long	.Ltmp0-test
 ; CHECK: .short	0
 ; CHECK: .short	4
 ; SmallConstant (0)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	0
 ; SmallConstant (0)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	0
 ; SmallConstant (0)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	0
 ; Direct Spill Slot [RSP+0]
 ; CHECK: .byte	2
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 ; No Padding or LiveOuts
 ; CHECK: .short	0
 ; CHECK: .short	0
-; CHECK: .align	8
+; CHECK: .p2align	3
 
 ; The Deopt one
-; CHECK: .long	.Ltmp3-test2
+; CHECK: .long	.Ltmp1-test2
 ; CHECK: .short	0
 ; CHECK: .short	4
 ; SmallConstant (0)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	0
 ; SmallConstant (0)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	0
 ; SmallConstant (1)
 ; CHECK: .byte	4
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
+; CHECK: .short	0
 ; CHECK: .short	0
 ; CHECK: .long	1
 ; Direct Spill Slot [RSP+0]
 ; CHECK: .byte	2
-; CHECK: .byte	8
+; CHECK: .byte	0
+; CHECK: .short 8
 ; CHECK: .short	7
+; CHECK: .short	0
 ; CHECK: .long	0
 
 ; No Padding or LiveOuts
 ; CHECK: .short	0
 ; CHECK: .short	0
-; CHECK: .align	8
-
+; CHECK: .p2align	3
