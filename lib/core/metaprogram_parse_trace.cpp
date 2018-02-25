@@ -30,6 +30,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <cassert>
+
 namespace
 {
   metashell::data::event_kind instantiation_kind_from_protobuf(int kind)
@@ -125,6 +127,85 @@ namespace
 
 namespace metashell
 {
+  namespace
+  {
+    template <data::event_kind Kind>
+    void handle_template_begin(metaprogram_builder& builder,
+                               const data::type& type,
+                               const data::file_location& point_of_event,
+                               const data::file_location& source_location,
+                               double timestamp)
+    {
+      builder.handle_event(data::event_details<Kind>{
+          type, point_of_event, source_location, timestamp});
+    }
+
+    void handle_template_begin(metaprogram_builder& builder,
+                               data::event_kind kind,
+                               const data::type& type,
+                               const data::file_location& point_of_event,
+                               const data::file_location& source_location,
+                               double timestamp)
+    {
+      switch (kind)
+      {
+      case data::event_kind::template_instantiation:
+        handle_template_begin<data::event_kind::template_instantiation>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::default_template_argument_instantiation:
+        handle_template_begin<
+            data::event_kind::default_template_argument_instantiation>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::default_function_argument_instantiation:
+        handle_template_begin<
+            data::event_kind::default_function_argument_instantiation>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::explicit_template_argument_substitution:
+        handle_template_begin<
+            data::event_kind::explicit_template_argument_substitution>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::deduced_template_argument_substitution:
+        handle_template_begin<
+            data::event_kind::deduced_template_argument_substitution>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::prior_template_argument_substitution:
+        handle_template_begin<
+            data::event_kind::prior_template_argument_substitution>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::default_template_argument_checking:
+        handle_template_begin<
+            data::event_kind::default_template_argument_checking>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::exception_spec_instantiation:
+        handle_template_begin<data::event_kind::exception_spec_instantiation>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::declaring_special_member:
+        handle_template_begin<data::event_kind::declaring_special_member>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::defining_synthesized_function:
+        handle_template_begin<data::event_kind::defining_synthesized_function>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      case data::event_kind::memoization:
+        handle_template_begin<data::event_kind::memoization>(
+            builder, type, point_of_event, source_location, timestamp);
+        break;
+      default:
+        assert(!"Invalid event_kind");
+        break;
+      }
+    }
+  }
+
   data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
       data::metaprogram::mode_t mode,
@@ -144,7 +225,8 @@ namespace metashell
       case templight::ProtobufReader::BeginEntry:
       {
         auto begin_entry = reader.LastBeginEntry;
-        builder.handle_template_begin(
+        handle_template_begin(
+            builder,
             instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
             data::type(begin_entry.Name),
             data::file_location(
@@ -157,8 +239,9 @@ namespace metashell
       }
       case templight::ProtobufReader::EndEntry:
       {
-        auto end_entry = reader.LastEndEntry;
-        builder.handle_template_end(end_entry.TimeStamp);
+        builder.handle_event(
+            data::event_details<data::event_kind::template_end>{
+                reader.LastEndEntry.TimeStamp});
         break;
       }
       case templight::ProtobufReader::EndOfFile:
@@ -169,7 +252,8 @@ namespace metashell
       }
       reader.next();
     }
-    builder.handle_evaluation_end(evaluation_result);
+    builder.handle_event(data::event_details<data::event_kind::evaluation_end>{
+        evaluation_result});
     return builder.get_metaprogram();
   }
 
@@ -202,19 +286,21 @@ namespace metashell
         const std::string event = node["event"].as<std::string>();
         if (event == "Begin")
         {
-          builder.handle_template_begin(
-              *kind, data::type(node["name"].as<std::string>()),
+          handle_template_begin(
+              builder, *kind, data::type(node["name"].as<std::string>()),
               data::file_location::parse(node["poi"].as<std::string>()),
               data::file_location::parse(node["orig"].as<std::string>()), 0);
         }
         else if (event == "End")
         {
-          builder.handle_template_end(0);
+          builder.handle_event(
+              data::event_details<data::event_kind::template_end>{0});
         }
       }
     }
 
-    builder.handle_evaluation_end(evaluation_result);
+    builder.handle_event(data::event_details<data::event_kind::evaluation_end>{
+        evaluation_result});
     return builder.get_metaprogram();
   }
 }

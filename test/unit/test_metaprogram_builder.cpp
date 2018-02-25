@@ -43,14 +43,14 @@ TEST(metaprogram_builder, normal_mode)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 100.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 100.0});
 
-  mb.handle_template_end(110.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{110.0});
 
-  mb.handle_evaluation_end(data::type("eval_result"));
+  mb.handle_event(data::event_details<data::event_kind::evaluation_end>{
+      data::type("eval_result")});
 
   data::metaprogram mp = mb.get_metaprogram();
 
@@ -81,27 +81,26 @@ TEST(metaprogram_builder, full_mode)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 100.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 100.0});
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<B>"),
-                           data::file_location("file", 20, 20),
-                           data::file_location("file_sl", 15, 25), 110.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<B>"), data::file_location("file", 20, 20),
+      data::file_location("file_sl", 15, 25), 110.0});
 
-  mb.handle_template_end(120.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{120.0});
 
-  mb.handle_template_end(130.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{130.0});
 
-  mb.handle_template_begin(data::event_kind::memoization, data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 140.0);
+  mb.handle_event(data::event_details<data::event_kind::memoization>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 140.0});
 
-  mb.handle_template_end(150.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{150.0});
 
-  mb.handle_evaluation_end(data::type("eval_result"));
+  mb.handle_event(data::event_details<data::event_kind::evaluation_end>{
+      data::type("eval_result")});
 
   data::metaprogram mp = mb.get_metaprogram();
 
@@ -166,21 +165,20 @@ TEST(metaprogram_builder, profile_mode)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 10, 20));
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 100.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 100.0});
 
-  mb.handle_template_end(110.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{110.0});
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<B>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 120.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<B>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 120.0});
 
-  mb.handle_template_end(140.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{140.0});
 
-  mb.handle_evaluation_end(data::type("eval_result"));
+  mb.handle_event(data::event_details<data::event_kind::evaluation_end>{
+      data::type("eval_result")});
 
   data::metaprogram mp = mb.get_metaprogram();
   mp.init_full_time_taken();
@@ -230,8 +228,12 @@ TEST(metaprogram_builder, too_much_end_events_1)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 40, 50));
 
-  assert_throw([&] { mb.handle_template_end(100.0); },
-               "Mismatched Templight TemplateBegin and TemplateEnd events");
+  assert_throw(
+      [&] {
+        mb.handle_event(
+            data::event_details<data::event_kind::template_end>{100.0});
+      },
+      "Mismatched Templight TemplateBegin and TemplateEnd events");
 }
 
 TEST(metaprogram_builder, too_much_end_events_2)
@@ -240,15 +242,18 @@ TEST(metaprogram_builder, too_much_end_events_2)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 30, 45));
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 100.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 100.0});
 
-  mb.handle_template_end(110.0);
+  mb.handle_event(data::event_details<data::event_kind::template_end>{110.0});
 
-  assert_throw([&] { mb.handle_template_end(120.0); },
-               "Mismatched Templight TemplateBegin and TemplateEnd events");
+  assert_throw(
+      [&] {
+        mb.handle_event(
+            data::event_details<data::event_kind::template_end>{120.0});
+      },
+      "Mismatched Templight TemplateBegin and TemplateEnd events");
 }
 
 TEST(metaprogram_builder, too_few_end_events)
@@ -257,10 +262,9 @@ TEST(metaprogram_builder, too_few_end_events)
                          data::cpp_code("root_name"),
                          data::file_location("stdin.hpp", 30, 31));
 
-  mb.handle_template_begin(data::event_kind::template_instantiation,
-                           data::type("type<A>"),
-                           data::file_location("file", 10, 20),
-                           data::file_location("file_sl", 15, 25), 100.0);
+  mb.handle_event(data::event_details<data::event_kind::template_instantiation>{
+      data::type("type<A>"), data::file_location("file", 10, 20),
+      data::file_location("file_sl", 15, 25), 100.0});
 
   assert_throw([&] { mb.get_metaprogram(); },
                "Some Templight TemplateEnd events are missing");

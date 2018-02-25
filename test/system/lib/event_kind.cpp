@@ -27,6 +27,8 @@ std::string metashell::system_test::to_string(event_kind kind_)
   {
   case event_kind::macro_expansion:
     return "MacroExpansion";
+  case event_kind::macro_expansion_end:
+    return "MacroExpansionEnd";
   case event_kind::macro_definition:
     return "MacroDefinition";
   case event_kind::macro_deletion:
@@ -44,6 +46,8 @@ std::string metashell::system_test::to_string(event_kind kind_)
   case event_kind::sys_include:
     return "SysInclude";
   case event_kind::preprocessing_condition:
+    return "IncludeEnd";
+  case event_kind::include_end:
     return "PreprocessingCondition";
   case event_kind::preprocessing_condition_result:
     return "PreprocessingConditionResult";
@@ -78,8 +82,13 @@ std::string metashell::system_test::to_string(event_kind kind_)
     return "DefiningSynthesizedFunction";
   case event_kind::memoization:
     return "Memoization";
+  case event_kind::template_end:
+    return "TemplateEnd";
   case event_kind::non_template_type:
     return "NonTemplateType";
+
+  case event_kind::evaluation_end:
+    return "EvaluationEnd";
   }
   return "UnknownKind";
 }
@@ -95,6 +104,10 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   if (kind_ == "MacroExpansion")
   {
     return event_kind::macro_expansion;
+  }
+  else if (kind_ == "MacroExpansionEnd")
+  {
+    return event_kind::macro_expansion_end;
   }
   else if (kind_ == "MacroDefinition")
   {
@@ -127,6 +140,10 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   else if (kind_ == "SysInclude")
   {
     return event_kind::sys_include;
+  }
+  else if (kind_ == "IncludeEnd")
+  {
+    return event_kind::include_end;
   }
   else if (kind_ == "PreprocessingCondition")
   {
@@ -196,9 +213,17 @@ event_kind metashell::system_test::parse_kind(const std::string& kind_)
   {
     return event_kind::memoization;
   }
+  else if (kind_ == "TemplateEnd")
+  {
+    return event_kind::template_end;
+  }
   else if (kind_ == "NonTemplateType")
   {
     return event_kind::non_template_type;
+  }
+  else if (kind_ == "EvaluationEnd")
+  {
+    return event_kind::evaluation_end;
   }
   else
   {

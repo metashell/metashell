@@ -43,8 +43,16 @@ namespace metashell
   case event_kind::name:                                                       \
     return str;
 
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
+#endif
+#define MISC_EVENT_KIND(name, str)                                             \
+  case event_kind::name:                                                       \
+    return str;
+
 #include <metashell/data/impl/event_kind_list.hpp>
 
+#undef MISC_EVENT_KIND
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
       }

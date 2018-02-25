@@ -27,7 +27,8 @@ namespace metashell
     enum class event_category
     {
       preprocessor,
-      template_
+      template_,
+      misc
     };
 
     std::ostream& operator<<(std::ostream& o_, event_category category_);

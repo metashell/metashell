@@ -29,6 +29,7 @@ namespace metashell
     {
       // Preprocessor-related events
       macro_expansion,
+      macro_expansion_end,
       macro_definition,
       macro_deletion,
       rescanning,
@@ -37,6 +38,7 @@ namespace metashell
       skipped_token,
       quote_include,
       sys_include,
+      include_end,
       preprocessing_condition,
       preprocessing_condition_result,
       preprocessing_else,
@@ -56,7 +58,11 @@ namespace metashell
       declaring_special_member,
       defining_synthesized_function,
       memoization,
-      non_template_type
+      template_end,
+      non_template_type,
+
+      // Misc events
+      evaluation_end
     };
 
     std::string to_string(event_kind kind_);

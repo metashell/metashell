@@ -48,6 +48,8 @@ namespace
       return env_;
     }
   }
+
+  double now() { return double(std::time(nullptr)); }
 }
 
 namespace metashell
@@ -134,18 +136,21 @@ namespace metashell
       std::ostringstream s;
       display(s, ctx, config_.ignore_macro_redefinition);
       const data::cpp_code output_code(s.str());
-      _builder.handle_evaluation_end(_exp ? remove_markers(output_code, true) :
-                                            output_code);
+      _builder.handle_event(
+          data::event_details<data::event_kind::evaluation_end>{
+              _exp ? remove_markers(output_code, true) : output_code});
     }
     catch (const boost::wave::cpp_exception& error_)
     {
-      _builder.handle_evaluation_end(
-          data::type_or_code_or_error::make_error(to_string(error_)));
+      _builder.handle_event(
+          data::event_details<data::event_kind::evaluation_end>{
+              data::type_or_code_or_error::make_error(to_string(error_))});
     }
     catch (const std::exception& error_)
     {
-      _builder.handle_evaluation_end(
-          data::type_or_code_or_error::make_error(error_.what()));
+      _builder.handle_event(
+          data::event_details<data::event_kind::evaluation_end>{
+              data::type_or_code_or_error::make_error(error_.what())});
     }
 
     return _builder.get_metaprogram();
@@ -162,13 +167,15 @@ namespace metashell
       _last_macro_call_loc = point_of_event_;
     }
     _macro_loc_stack.push_back(point_of_event_);
-    _builder.handle_macro_expansion_begin(
-        name_, args_, point_of_event_, source_location_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::macro_expansion>{
+            name_, args_, point_of_event_, source_location_, now()});
   }
 
   void preprocessor_trace_builder::on_rescanning(const data::cpp_code& c_)
   {
-    _builder.handle_rescanning(c_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::rescanning>{c_, now()});
   }
 
   void
@@ -177,9 +184,10 @@ namespace metashell
   {
     assert(!_macro_loc_stack.empty());
 
-    _builder.handle_expanded_code(
-        c_, _macro_loc_stack.back(), std::time(nullptr));
-    _builder.handle_macro_expansion_end(std::time(nullptr));
+    _builder.handle_event(data::event_details<data::event_kind::expanded_code>{
+        c_, _macro_loc_stack.back(), now()});
+    _builder.handle_event(
+        data::event_details<data::event_kind::macro_expansion_end>{now()});
     _num_tokens_from_macro_call = num_tokens_;
     _macro_loc_stack.pop_back();
   }
@@ -187,10 +195,11 @@ namespace metashell
   void preprocessor_trace_builder::on_token_generated(
       const data::token& t_, const data::file_location& source_location_)
   {
-    _builder.handle_token_generation(t_, _num_tokens_from_macro_call > 0 ?
-                                             _last_macro_call_loc :
-                                             source_location_,
-                                     source_location_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::generated_token>{
+            t_, _num_tokens_from_macro_call > 0 ? _last_macro_call_loc :
+                                                  source_location_,
+            source_location_, now()});
     if (_num_tokens_from_macro_call > 0)
     {
       --_num_tokens_from_macro_call;
@@ -200,19 +209,32 @@ namespace metashell
   void preprocessor_trace_builder::on_token_skipped(
       const data::token& t_, const data::file_location& source_location_)
   {
-    _builder.handle_token_skipping(t_, source_location_, std::time(nullptr));
+    _builder.handle_event(data::event_details<data::event_kind::skipped_token>{
+        t_, source_location_, now()});
   }
 
   void preprocessor_trace_builder::on_include_begin(
       const data::include_argument& arg_,
       const data::file_location& point_of_event_)
   {
-    _builder.handle_include_begin(arg_, point_of_event_, std::time(nullptr));
+    switch (arg_.type)
+    {
+    case data::include_type::sys:
+      _builder.handle_event(data::event_details<data::event_kind::sys_include>{
+          arg_.path, point_of_event_, now()});
+      break;
+    case data::include_type::quote:
+      _builder.handle_event(
+          data::event_details<data::event_kind::quote_include>{
+              arg_.path, point_of_event_, now()});
+      break;
+    }
   }
 
   void preprocessor_trace_builder::on_include_end()
   {
-    _builder.handle_include_end(std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::include_end>{now()});
   }
 
   void preprocessor_trace_builder::on_define(
@@ -221,47 +243,57 @@ namespace metashell
       const data::cpp_code& body_,
       const data::file_location& point_of_event_)
   {
-    _builder.handle_define(
-        name_, args_, body_, point_of_event_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::macro_definition>{
+            name_, args_, body_, point_of_event_, now()});
   }
 
   void preprocessor_trace_builder::on_undefine(
       const data::cpp_code& name_, const data::file_location& point_of_event_)
   {
-    _builder.handle_undefine(name_, point_of_event_, std::time(nullptr));
+    _builder.handle_event(data::event_details<data::event_kind::macro_deletion>{
+        name_, point_of_event_, now()});
   }
 
   void preprocessor_trace_builder::on_conditional(
       const data::cpp_code& expression_,
       const data::file_location& point_of_event_)
   {
-    _builder.handle_preprocessing_condition_begin(
-        expression_, point_of_event_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::preprocessing_condition>{
+            expression_, point_of_event_, now()});
   }
 
   void
   preprocessor_trace_builder::on_evaluated_conditional_expression(bool result_)
   {
-    _builder.handle_preprocessing_condition_end(result_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::preprocessing_condition_result>{
+            result_, now()});
   }
 
   void preprocessor_trace_builder::on_else(
       const data::file_location& point_of_event_)
   {
-    _builder.handle_preprocessing_else(point_of_event_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::preprocessing_else>{
+            point_of_event_, now()});
   }
 
   void preprocessor_trace_builder::on_endif(
       const data::file_location& point_of_event_)
   {
-    _builder.handle_preprocessing_endif(point_of_event_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::preprocessing_endif>{
+            point_of_event_, now()});
   }
 
   void preprocessor_trace_builder::on_error(
       const std::string& message_, const data::file_location& point_of_event_)
   {
-    _builder.handle_error_directive(
-        message_, point_of_event_, std::time(nullptr));
+    _builder.handle_event(
+        data::event_details<data::event_kind::error_directive>{
+            message_, point_of_event_, now()});
   }
 
   void preprocessor_trace_builder::on_line(
@@ -269,7 +301,7 @@ namespace metashell
       const data::file_location& point_of_event_,
       const data::file_location& source_location_)
   {
-    _builder.handle_line_directive(
-        arg_, point_of_event_, source_location_, std::time(nullptr));
+    _builder.handle_event(data::event_details<data::event_kind::line_directive>{
+        arg_, point_of_event_, source_location_, now()});
   }
 }

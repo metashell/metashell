@@ -22,9 +22,14 @@
 #error TEMPLATE_EVENT_KIND is not defined
 #endif
 
+#ifndef MISC_EVENT_KIND
+#error MISC_EVENT_KIND is not defined
+#endif
+
 // clang-format off
 
 PREPROCESSOR_EVENT_KIND(macro_expansion, "MacroExpansion")
+PREPROCESSOR_EVENT_KIND(macro_expansion_end, "MacroExpansionEnd")
 PREPROCESSOR_EVENT_KIND(macro_definition, "MacroDefinition")
 PREPROCESSOR_EVENT_KIND(macro_deletion, "MacroDeletion")
 PREPROCESSOR_EVENT_KIND(rescanning, "Rescanning")
@@ -33,6 +38,7 @@ PREPROCESSOR_EVENT_KIND(generated_token, "GeneratedToken")
 PREPROCESSOR_EVENT_KIND(skipped_token, "SkippedToken")
 PREPROCESSOR_EVENT_KIND(quote_include, "QuoteInclude")
 PREPROCESSOR_EVENT_KIND(sys_include, "SysInclude")
+PREPROCESSOR_EVENT_KIND(include_end, "IncludeEnd")
 PREPROCESSOR_EVENT_KIND(preprocessing_condition, "PreprocessingCondition")
 PREPROCESSOR_EVENT_KIND(preprocessing_condition_result, "PreprocessingConditionResult")
 PREPROCESSOR_EVENT_KIND(preprocessing_else, "PreprocessingElse")
@@ -51,6 +57,9 @@ TEMPLATE_EVENT_KIND(exception_spec_instantiation, "ExceptionSpecInstantiation")
 TEMPLATE_EVENT_KIND(declaring_special_member, "DeclaringSpecialMember")
 TEMPLATE_EVENT_KIND(defining_synthesized_function, "DefiningSynthesizedFunction")
 TEMPLATE_EVENT_KIND(memoization, "Memoization")
+TEMPLATE_EVENT_KIND(template_end, "TemplateEnd")
 TEMPLATE_EVENT_KIND(non_template_type, "NonTemplateType") // Used only if an evaluation result is not a template
+
+MISC_EVENT_KIND(evaluation_end, "EvaluationEnd")
 
 // clang-format on

@@ -17,21 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stack>
-#include <string>
-#include <vector>
-
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/event_details.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/include_argument.hpp>
 #include <metashell/data/metaprogram.hpp>
-#include <metashell/data/token.hpp>
 
-#include <boost/optional.hpp>
+#include <stack>
+#include <type_traits>
 
 namespace metashell
 {
-
   class metaprogram_builder
   {
   public:
@@ -39,77 +35,72 @@ namespace metashell
                         const data::cpp_code& root_name,
                         const data::file_location& root_source_location);
 
-    void handle_template_begin(data::event_kind kind,
-                               const data::type& type,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp);
+    template <data::event_kind Kind>
+    typename std::enable_if<category(Kind) ==
+                            data::event_category::template_>::type
+    handle_event(const data::event_details<Kind>& details)
+    {
+      handle_template_begin(Kind, details.full_name, details.point_of_event,
+                            details.source_location, details.timestamp);
+    }
 
-    void handle_template_end(double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::template_end>& details);
 
-    void handle_macro_expansion_begin(
-        const data::cpp_code& name,
-        const boost::optional<std::vector<data::cpp_code>>& args,
-        const data::file_location& point_of_event,
-        const data::file_location& source_location,
-        double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::macro_expansion>& details);
 
-    void handle_rescanning(const data::cpp_code& code, double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::rescanning>& details);
 
-    void handle_expanded_code(const data::cpp_code& code,
-                              const data::file_location& point_of_event,
-                              double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::expanded_code>& details);
 
-    void handle_macro_expansion_end(double timestamp);
+    void handle_event(const data::event_details<
+                      data::event_kind::macro_expansion_end>& details);
 
-    void handle_token_generation(const data::token& token,
-                                 const data::file_location& point_of_event,
-                                 const data::file_location& source_location,
-                                 double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::generated_token>& details);
 
-    void handle_token_skipping(const data::token& token,
-                               const data::file_location& point_of_event,
-                               double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::skipped_token>& details);
 
-    void handle_include_begin(const data::include_argument& arg,
-                              const data::file_location& point_of_event,
-                              double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::quote_include>& details);
 
-    void handle_include_end(double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::sys_include>& details);
 
-    void handle_define(const data::cpp_code& name,
-                       const boost::optional<std::vector<data::cpp_code>>& args,
-                       const data::cpp_code& body,
-                       const data::file_location& point_of_event,
-                       double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::include_end>& details);
 
-    void handle_undefine(const data::cpp_code& name,
-                         const data::file_location& point_of_event,
-                         double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::macro_definition>& details);
 
-    void handle_preprocessing_condition_begin(
-        const data::cpp_code& expression,
-        const data::file_location& point_of_event,
-        double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::macro_deletion>& details);
 
-    void handle_preprocessing_condition_end(bool result, double timestamp);
+    void handle_event(const data::event_details<
+                      data::event_kind::preprocessing_condition>& details);
 
-    void handle_preprocessing_else(const data::file_location& point_of_event,
-                                   double timestamp);
+    void
+    handle_event(const data::event_details<
+                 data::event_kind::preprocessing_condition_result>& details);
 
-    void handle_preprocessing_endif(const data::file_location& point_of_event,
-                                    double timestamp);
+    void handle_event(const data::event_details<
+                      data::event_kind::preprocessing_else>& details);
 
-    void handle_error_directive(const std::string& message,
-                                const data::file_location& point_of_event,
-                                double timestamp);
+    void handle_event(const data::event_details<
+                      data::event_kind::preprocessing_endif>& details);
 
-    void handle_line_directive(const data::cpp_code& arg,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp);
+    void handle_event(
+        const data::event_details<data::event_kind::error_directive>& details);
 
-    void handle_evaluation_end(data::type_or_code_or_error result_);
+    void handle_event(
+        const data::event_details<data::event_kind::line_directive>& details);
+
+    void handle_event(
+        const data::event_details<data::event_kind::evaluation_end>& details);
 
     const data::metaprogram& get_metaprogram() const;
 
@@ -123,6 +114,12 @@ namespace metashell
 
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
+
+    void handle_template_begin(data::event_kind kind,
+                               const data::type& type,
+                               const data::file_location& point_of_event,
+                               const data::file_location& source_location,
+                               double timestamp);
 
     data::metaprogram mp;
 

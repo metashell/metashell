@@ -30,6 +30,10 @@
 #error TEMPLATE_EVENT_KIND defined
 #endif
 
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
+#endif
+
 namespace metashell
 {
   namespace data
@@ -38,7 +42,9 @@ namespace metashell
     {
 #define PREPROCESSOR_EVENT_KIND(name, str) name,
 #define TEMPLATE_EVENT_KIND(name, str) name,
+#define MISC_EVENT_KIND(name, str) name,
 #include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
     };
@@ -49,16 +55,28 @@ namespace metashell
       {
 #define PREPROCESSOR_EVENT_KIND(name, str) case event_kind::name:
 #define TEMPLATE_EVENT_KIND(name, str)
+#define MISC_EVENT_KIND(name, str)
 #include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
         return event_category::preprocessor;
 #define PREPROCESSOR_EVENT_KIND(name, str)
 #define TEMPLATE_EVENT_KIND(name, str) case event_kind::name:
+#define MISC_EVENT_KIND(name, str)
 #include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
         return event_category::template_;
+#define PREPROCESSOR_EVENT_KIND(name, str)
+#define TEMPLATE_EVENT_KIND(name, str)
+#define MISC_EVENT_KIND(name, str) case event_kind::name:
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::misc;
       }
     }
 
@@ -74,6 +92,10 @@ namespace metashell
 
 #ifdef TEMPLATE_EVENT_KIND
 #error TEMPLATE_EVENT_KIND defined
+#endif
+
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
 #endif
 
 #endif

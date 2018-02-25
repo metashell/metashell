@@ -35,6 +35,8 @@ namespace metashell
         return "preprocessor";
       case event_category::template_:
         return "template";
+      case event_category::misc:
+        return "misc";
       }
       return "unknown category";
     }
