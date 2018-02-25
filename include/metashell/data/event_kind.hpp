@@ -20,42 +20,25 @@
 #include <ostream>
 #include <string>
 
+#ifdef PREPROCESSOR_EVENT_KIND
+#error PREPROCESSOR_EVENT_KIND defined
+#endif
+
+#ifdef TEMPLATE_EVENT_KIND
+#error TEMPLATE_EVENT_KIND defined
+#endif
+
 namespace metashell
 {
   namespace data
   {
     enum class event_kind
     {
-      // Preprocessor-related events
-      macro_expansion,
-      macro_definition,
-      macro_deletion,
-      rescanning,
-      expanded_code,
-      generated_token,
-      skipped_token,
-      quote_include,
-      sys_include,
-      preprocessing_condition,
-      preprocessing_condition_result,
-      preprocessing_else,
-      preprocessing_endif,
-      error_directive,
-      line_directive,
-
-      // Template instantiation-related events
-      template_instantiation,
-      default_template_argument_instantiation,
-      default_function_argument_instantiation,
-      explicit_template_argument_substitution,
-      deduced_template_argument_substitution,
-      prior_template_argument_substitution,
-      default_template_argument_checking,
-      exception_spec_instantiation,
-      declaring_special_member,
-      defining_synthesized_function,
-      memoization,
-      non_template_type // Used only if an evaluation result is not a template
+#define PREPROCESSOR_EVENT_KIND(name, str) name,
+#define TEMPLATE_EVENT_KIND(name, str) name,
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
     };
 
     std::ostream& operator<<(std::ostream& os, event_kind kind);
@@ -63,5 +46,13 @@ namespace metashell
     std::string to_string(event_kind kind);
   }
 }
+
+#ifdef PREPROCESSOR_EVENT_KIND
+#error PREPROCESSOR_EVENT_KIND defined
+#endif
+
+#ifdef TEMPLATE_EVENT_KIND
+#error TEMPLATE_EVENT_KIND defined
+#endif
 
 #endif
