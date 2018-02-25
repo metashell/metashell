@@ -18,7 +18,7 @@ aux_source_directory(. SOURCES)
 add_library(metashell_readline_lib STATIC ${SOURCES})
 
 enable_warnings()
-use_cpp11()
+use_cpp14()
 
 # Readline
 if (WIN32)

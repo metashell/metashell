@@ -18,7 +18,7 @@ aux_source_directory(. SOURCES)
 add_library(metashell_data_lib STATIC ${SOURCES})
 
 enable_warnings()
-use_cpp11()
+use_cpp14()
 
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
