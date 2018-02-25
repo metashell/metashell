@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_category.hpp>
+
 #include <ostream>
 #include <string>
 
@@ -40,6 +42,25 @@ namespace metashell
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
     };
+
+    constexpr event_category category(event_kind kind)
+    {
+      switch (kind)
+      {
+#define PREPROCESSOR_EVENT_KIND(name, str) case event_kind::name:
+#define TEMPLATE_EVENT_KIND(name, str)
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::preprocessor;
+#define PREPROCESSOR_EVENT_KIND(name, str)
+#define TEMPLATE_EVENT_KIND(name, str) case event_kind::name:
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::template_;
+      }
+    }
 
     std::ostream& operator<<(std::ostream& os, event_kind kind);
 
