@@ -61,6 +61,9 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_temp/include")
 # yaml-cpp
 target_link_libraries(metashell_unit_test yaml_cpp_lib)
 
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+
 add_test(metashell_unit_tests metashell_unit_test)
 
 # Code coverage

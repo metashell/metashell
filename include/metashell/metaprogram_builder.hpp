@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
-#include <metashell/data/event_details.hpp>
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/include_argument.hpp>
 #include <metashell/data/metaprogram.hpp>
@@ -35,72 +35,7 @@ namespace metashell
                         const data::cpp_code& root_name,
                         const data::file_location& root_source_location);
 
-    template <data::event_kind Kind>
-    typename std::enable_if<category(Kind) ==
-                            data::event_category::template_>::type
-    handle_event(const data::event_details<Kind>& details)
-    {
-      handle_template_begin(Kind, details.full_name, details.point_of_event,
-                            details.source_location, details.timestamp);
-    }
-
-    void handle_event(
-        const data::event_details<data::event_kind::template_end>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::macro_expansion>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::rescanning>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::expanded_code>& details);
-
-    void handle_event(const data::event_details<
-                      data::event_kind::macro_expansion_end>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::generated_token>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::skipped_token>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::quote_include>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::sys_include>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::include_end>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::macro_definition>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::macro_deletion>& details);
-
-    void handle_event(const data::event_details<
-                      data::event_kind::preprocessing_condition>& details);
-
-    void
-    handle_event(const data::event_details<
-                 data::event_kind::preprocessing_condition_result>& details);
-
-    void handle_event(const data::event_details<
-                      data::event_kind::preprocessing_else>& details);
-
-    void handle_event(const data::event_details<
-                      data::event_kind::preprocessing_endif>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::error_directive>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::line_directive>& details);
-
-    void handle_event(
-        const data::event_details<data::event_kind::evaluation_end>& details);
+    void handle_event(const data::event_data& details);
 
     const data::metaprogram& get_metaprogram() const;
 
@@ -111,6 +46,73 @@ namespace metashell
     typedef std::tuple<data::metaprogram_node, data::file_location>
         element_key_t;
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
+
+    template <data::event_kind Kind>
+    typename std::enable_if<category(Kind) ==
+                            data::event_category::template_>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      handle_template_begin(Kind, details.full_name, details.point_of_event,
+                            details.source_location, details.timestamp);
+    }
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::template_end>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::macro_expansion>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::rescanning>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::expanded_code>& details);
+
+    void handle_event_impl(const data::event_details<
+                           data::event_kind::macro_expansion_end>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::generated_token>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::skipped_token>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::quote_include>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::sys_include>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::include_end>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::macro_definition>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::macro_deletion>& details);
+
+    void handle_event_impl(const data::event_details<
+                           data::event_kind::preprocessing_condition>& details);
+
+    void handle_event_impl(
+        const data::event_details<
+            data::event_kind::preprocessing_condition_result>& details);
+
+    void handle_event_impl(const data::event_details<
+                           data::event_kind::preprocessing_else>& details);
+
+    void handle_event_impl(const data::event_details<
+                           data::event_kind::preprocessing_endif>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::error_directive>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::line_directive>& details);
+
+    void handle_event_impl(
+        const data::event_details<data::event_kind::evaluation_end>& details);
 
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);

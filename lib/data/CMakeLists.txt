@@ -23,3 +23,6 @@ use_cpp14()
 # Just
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
 
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+

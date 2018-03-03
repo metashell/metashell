@@ -129,75 +129,65 @@ namespace metashell
 {
   namespace
   {
-    template <data::event_kind Kind>
-    void handle_template_begin(metaprogram_builder& builder,
-                               const data::type& type,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp)
-    {
-      builder.handle_event(data::event_details<Kind>{
-          type, point_of_event, source_location, timestamp});
-    }
-
-    void handle_template_begin(metaprogram_builder& builder,
-                               data::event_kind kind,
-                               const data::type& type,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp)
+    data::event_data template_begin(data::event_kind kind,
+                                    const data::type& type,
+                                    const data::file_location& point_of_event,
+                                    const data::file_location& source_location,
+                                    double timestamp)
     {
       switch (kind)
       {
       case data::event_kind::template_instantiation:
-        handle_template_begin<data::event_kind::template_instantiation>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<data::event_kind::template_instantiation>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::default_template_argument_instantiation:
-        handle_template_begin<
-            data::event_kind::default_template_argument_instantiation>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::default_template_argument_instantiation>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::default_function_argument_instantiation:
-        handle_template_begin<
-            data::event_kind::default_function_argument_instantiation>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::default_function_argument_instantiation>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::explicit_template_argument_substitution:
-        handle_template_begin<
-            data::event_kind::explicit_template_argument_substitution>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::explicit_template_argument_substitution>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::deduced_template_argument_substitution:
-        handle_template_begin<
-            data::event_kind::deduced_template_argument_substitution>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::deduced_template_argument_substitution>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::prior_template_argument_substitution:
-        handle_template_begin<
-            data::event_kind::prior_template_argument_substitution>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::prior_template_argument_substitution>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::default_template_argument_checking:
-        handle_template_begin<
-            data::event_kind::default_template_argument_checking>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::default_template_argument_checking>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::exception_spec_instantiation:
-        handle_template_begin<data::event_kind::exception_spec_instantiation>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::exception_spec_instantiation>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::declaring_special_member:
-        handle_template_begin<data::event_kind::declaring_special_member>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<data::event_kind::declaring_special_member>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::defining_synthesized_function:
-        handle_template_begin<data::event_kind::defining_synthesized_function>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<
+            data::event_kind::defining_synthesized_function>{
+            type, point_of_event, source_location, timestamp};
         break;
       case data::event_kind::memoization:
-        handle_template_begin<data::event_kind::memoization>(
-            builder, type, point_of_event, source_location, timestamp);
+        return data::event_details<data::event_kind::memoization>{
+            type, point_of_event, source_location, timestamp};
         break;
       default:
         assert(!"Invalid event_kind");
@@ -225,8 +215,7 @@ namespace metashell
       case templight::ProtobufReader::BeginEntry:
       {
         auto begin_entry = reader.LastBeginEntry;
-        handle_template_begin(
-            builder,
+        builder.handle_event(template_begin(
             instantiation_kind_from_protobuf(begin_entry.InstantiationKind),
             data::type(begin_entry.Name),
             data::file_location(
@@ -234,7 +223,7 @@ namespace metashell
             data::file_location(begin_entry.TempOri_FileName,
                                 begin_entry.TempOri_Line,
                                 begin_entry.TempOri_Column),
-            begin_entry.TimeStamp);
+            begin_entry.TimeStamp));
         break;
       }
       case templight::ProtobufReader::EndEntry:
@@ -286,10 +275,10 @@ namespace metashell
         const std::string event = node["event"].as<std::string>();
         if (event == "Begin")
         {
-          handle_template_begin(
-              builder, *kind, data::type(node["name"].as<std::string>()),
+          builder.handle_event(template_begin(
+              *kind, data::type(node["name"].as<std::string>()),
               data::file_location::parse(node["poi"].as<std::string>()),
-              data::file_location::parse(node["orig"].as<std::string>()), 0);
+              data::file_location::parse(node["orig"].as<std::string>()), 0));
         }
         else if (event == "End")
         {

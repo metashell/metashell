@@ -36,7 +36,13 @@ namespace metashell
   {
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event(const data::event_data& details)
+  {
+    mpark::visit(
+        [this](const auto& det) { this->handle_event_impl(det); }, details);
+  }
+
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::macro_expansion>& details)
   {
     data::cpp_code call = details.name;
@@ -57,7 +63,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::rescanning>& details)
   {
     if (edge_stack.empty())
@@ -75,7 +81,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::expanded_code>& details)
   {
     vertex_descriptor vertex =
@@ -88,7 +94,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::macro_expansion_end>& details)
   {
     // one rescanning and one macro expansion
@@ -105,7 +111,7 @@ namespace metashell
     }
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::quote_include>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -119,7 +125,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::sys_include>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -133,7 +139,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::include_end>& details)
   {
     if (edge_stack.empty())
@@ -146,7 +152,7 @@ namespace metashell
     edge_stack.pop();
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::macro_definition>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -165,7 +171,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::macro_deletion>& details)
   {
     vertex_descriptor vertex =
@@ -178,7 +184,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::preprocessing_condition>&
           details)
   {
@@ -194,7 +200,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<
           data::event_kind::preprocessing_condition_result>& details)
   {
@@ -221,7 +227,7 @@ namespace metashell
     edge_stack.pop();
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::preprocessing_else>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -234,7 +240,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::preprocessing_endif>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -247,7 +253,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::error_directive>& details)
   {
     vertex_descriptor vertex =
@@ -261,7 +267,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::line_directive>& details)
   {
     vertex_descriptor vertex = add_vertex(
@@ -291,7 +297,7 @@ namespace metashell
     edge_stack.push(edge);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::template_end>& details)
   {
     if (edge_stack.empty())
@@ -331,13 +337,13 @@ namespace metashell
     return pos->second;
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::evaluation_end>& details)
   {
     mp.set_evaluation_result(details.result);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::skipped_token>& details)
   {
     vertex_descriptor vertex =
@@ -350,7 +356,7 @@ namespace metashell
                 details.point_of_event, details.timestamp);
   }
 
-  void metaprogram_builder::handle_event(
+  void metaprogram_builder::handle_event_impl(
       const data::event_details<data::event_kind::generated_token>& details)
   {
     vertex_descriptor vertex =

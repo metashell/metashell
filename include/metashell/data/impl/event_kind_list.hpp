@@ -26,6 +26,11 @@
 #error MISC_EVENT_KIND is not defined
 #endif
 
+#ifdef EVENT_KIND_SEP
+#error EVENT_KIND_SEP already defined
+#endif
+#define EVENT_KIND_SEP ,
+
 // clang-format off
 
 PREPROCESSOR_EVENT_KIND(macro_expansion, "MacroExpansion")
@@ -60,6 +65,10 @@ TEMPLATE_EVENT_KIND(memoization, "Memoization")
 TEMPLATE_EVENT_KIND(template_end, "TemplateEnd")
 TEMPLATE_EVENT_KIND(non_template_type, "NonTemplateType") // Used only if an evaluation result is not a template
 
+#undef EVENT_KIND_SEP
+#define EVENT_KIND_SEP
 MISC_EVENT_KIND(evaluation_end, "EvaluationEnd")
 
 // clang-format on
+
+#undef EVENT_KIND_SEP
