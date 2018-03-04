@@ -18,6 +18,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/event_details.hpp>
+#include <metashell/data/event_kind.hpp>
+#include <metashell/data/file_location.hpp>
+#include <metashell/data/type.hpp>
 
 #include <variant.hpp>
 
@@ -49,6 +52,12 @@ namespace metashell
 #undef PREPROCESSOR_EVENT_KIND
         >
         event_data;
+
+    event_data template_begin(event_kind kind,
+                              const type& type,
+                              const file_location& point_of_event,
+                              const file_location& source_location,
+                              double timestamp);
   }
 }
 
