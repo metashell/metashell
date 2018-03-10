@@ -39,39 +39,46 @@ namespace metashell
 
   void preprocess(wave_context& ctx_);
 
+  template <class TokenIterator>
+  bool display_step(std::ostream& out_,
+                    TokenIterator& begin_,
+                    const TokenIterator& end_,
+                    bool ignore_macro_redefinition_)
+  {
+    try
+    {
+      if (begin_ == end_)
+      {
+        return false;
+      }
+      else
+      {
+        out_ << begin_->get_value();
+        ++begin_;
+      }
+    }
+    catch (const boost::wave::preprocess_exception& e_)
+    {
+      typedef boost::wave::preprocess_exception::error_code error_code;
+
+      const auto ec = e_.get_errorcode();
+      if (ec != error_code::last_line_not_terminated &&
+          (!ignore_macro_redefinition_ || ec != error_code::macro_redefinition))
+      {
+        throw;
+      }
+    }
+    return true;
+  }
+
   template <class Tokens>
   void
   display(std::ostream& out_, Tokens& tokens_, bool ignore_macro_redefinition_)
   {
     const auto e = tokens_.end();
     auto i = tokens_.begin();
-    for (bool iterate = true; iterate;)
-    {
-      try
-      {
-        if (i == e)
-        {
-          iterate = false;
-        }
-        else
-        {
-          out_ << i->get_value();
-          ++i;
-        }
-      }
-      catch (const boost::wave::preprocess_exception& e_)
-      {
-        typedef boost::wave::preprocess_exception::error_code error_code;
-
-        const auto ec = e_.get_errorcode();
-        if (ec != error_code::last_line_not_terminated &&
-            (!ignore_macro_redefinition_ ||
-             ec != error_code::macro_redefinition))
-        {
-          throw;
-        }
-      }
-    }
+    while (display_step(out_, i, e, ignore_macro_redefinition_))
+      ;
   }
 
   std::string to_string(const boost::wave::cpp_exception& error_);

@@ -31,10 +31,6 @@ namespace metashell
   class metaprogram_builder
   {
   public:
-    metaprogram_builder(data::metaprogram::mode_t mode,
-                        const data::cpp_code& root_name,
-                        const data::file_location& root_source_location);
-
     template <class Container>
     metaprogram_builder(Container& trace,
                         data::metaprogram::mode_t mode,
@@ -48,8 +44,6 @@ namespace metashell
       }
     }
 
-    void handle_event(const data::event_data& details);
-
     const data::metaprogram& get_metaprogram() const;
 
   private:
@@ -59,6 +53,12 @@ namespace metashell
     typedef std::tuple<data::metaprogram_node, data::file_location>
         element_key_t;
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
+
+    metaprogram_builder(data::metaprogram::mode_t mode,
+                        const data::cpp_code& root_name,
+                        const data::file_location& root_source_location);
+
+    void handle_event(const data::event_data& details);
 
     template <data::event_kind Kind>
     typename std::enable_if<category(Kind) ==

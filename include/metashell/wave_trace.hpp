@@ -1,5 +1,5 @@
-#ifndef METASHELL_PREPROCESSOR_TRACE_BUILDER_HPP
-#define METASHELL_PREPROCESSOR_TRACE_BUILDER_HPP
+#ifndef METASHELL_WAVE_TRACE_HPP
+#define METASHELL_WAVE_TRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
@@ -18,38 +18,47 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/event_data.hpp>
+#include <metashell/data/event_data_sequence.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/include_argument.hpp>
-#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/wave_config.hpp>
 
-#include <metashell/metaprogram_builder.hpp>
+#include <metashell/wave_context.hpp>
 
 #include <boost/optional.hpp>
 
+#include <deque>
+#include <sstream>
 #include <vector>
 
 namespace metashell
 {
-  class preprocessor_trace_builder
+  class wave_trace : public data::event_data_sequence<wave_trace>
   {
   public:
-    preprocessor_trace_builder(data::cpp_code env_,
-                               boost::optional<data::cpp_code> exp_,
-                               data::metaprogram::mode_t mode_);
+    wave_trace(const data::cpp_code& env_,
+               const boost::optional<data::cpp_code>& exp_,
+               const data::wave_config& config_);
 
-    data::metaprogram build(const data::wave_config& config_);
+    boost::optional<data::event_data> next();
 
   private:
     data::cpp_code _env;
-    boost::optional<data::cpp_code> _exp;
+    bool _full_trace;
+    bool _ignore_macro_redefinition;
 
     std::vector<data::file_location> _macro_loc_stack;
     data::file_location _last_macro_call_loc;
 
+    data::cpp_code _input;
     int _num_tokens_from_macro_call;
 
-    metaprogram_builder _builder;
+    wave_context _ctx;
+    boost::optional<wave_context::iterator_type> _pos;
+
+    std::ostringstream _output;
+    std::deque<data::event_data> _events;
 
     void on_macro_expansion_begin(
         const data::cpp_code& name_,

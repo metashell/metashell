@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/preprocessor_trace_builder.hpp>
+#include <metashell/metaprogram_builder.hpp>
 #include <metashell/preprocessor_tracer_wave.hpp>
+#include <metashell/wave_trace.hpp>
 
 namespace metashell
 {
@@ -29,6 +30,11 @@ namespace metashell
                                  const boost::optional<data::cpp_code>& exp_,
                                  data::metaprogram::mode_t mode_)
   {
-    return preprocessor_trace_builder(env_.get(), exp_, mode_).build(_config);
+    wave_trace trace(env_.get(), exp_, _config);
+
+    return metaprogram_builder(trace, mode_,
+                               exp_ ? *exp_ : data::cpp_code("<environment>"),
+                               data::file_location())
+        .get_metaprogram();
   }
 }
