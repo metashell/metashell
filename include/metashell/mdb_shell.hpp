@@ -93,9 +93,6 @@ namespace metashell
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
 
-    bool is_wrap_type(const data::type& type);
-    data::type trim_wrap_type(const data::type& type);
-
     void filter_disable_everything();
     void filter_enable_reachable(bool for_current_line);
     void filter_unwrap_vertices();

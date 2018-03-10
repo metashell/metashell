@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/command.hpp>
 #include <metashell/data/type.hpp>
 
 #include <metashell/boost/regex.hpp>
 
+#include <boost/algorithm/string.hpp>
+
+#include <algorithm>
 #include <ostream>
 #include <sstream>
 
@@ -65,6 +69,35 @@ namespace metashell
     bool operator<(const type& a_, const type& b_)
     {
       return a_.name() < b_.name();
+    }
+
+    boost::optional<type> trim_wrap_type(const type& type_)
+    {
+      const std::string wrap_prefix = "metashell::impl::wrap<";
+      const std::string wrap_suffix = ">";
+
+      // TODO this check could be made more strict,
+      // since we know whats inside wrap<...> (mp->get_evaluation_result)
+      if (boost::starts_with(type_, wrap_prefix) &&
+          boost::ends_with(type_, wrap_suffix))
+      {
+        return type(boost::trim_copy(type_.name().substr(
+            wrap_prefix.size(),
+            type_.name().size() - wrap_prefix.size() - wrap_suffix.size())));
+      }
+      else
+      {
+        return boost::none;
+      }
+    }
+
+    bool is_template_type(const type& type_)
+    {
+      const command cmd(type_);
+      return std::find_if(cmd.begin(), cmd.end(), [](const token& t_) {
+               return t_.type() == token_type::operator_greater ||
+                      t_.type() == token_type::operator_less;
+             }) != cmd.end();
     }
   }
 } // namespace metashell:data

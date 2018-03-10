@@ -17,7 +17,6 @@
 
 #include <metashell/forward_trace_iterator.hpp>
 #include <metashell/highlight_syntax.hpp>
-#include <metashell/is_template_type.hpp>
 #include <metashell/mdb_shell.hpp>
 #include <metashell/metashell.hpp>
 #include <metashell/null_history.hpp>
@@ -43,9 +42,6 @@ namespace
 {
   // Note: this how clang calls the file when the input comes from stdin
   const std::string stdin_name = "<stdin>";
-
-  const std::string wrap_prefix = "metashell::impl::wrap<";
-  const std::string wrap_suffix = ">";
 
   typedef std::tuple<metashell::data::file_location,
                      metashell::data::event_kind,
@@ -476,22 +472,6 @@ namespace metashell
     display_movement_info(next_count != 0, displayer_);
   }
 
-  bool mdb_shell::is_wrap_type(const data::type& type)
-  {
-    // TODO this check could be made more strict,
-    // since we know whats inside wrap<...> (mp->get_evaluation_result)
-    return boost::starts_with(type, wrap_prefix) &&
-           boost::ends_with(type, wrap_suffix);
-  }
-
-  data::type mdb_shell::trim_wrap_type(const data::type& type)
-  {
-    assert(is_wrap_type(type));
-    return data::type(boost::trim_copy(type.name().substr(
-        wrap_prefix.size(),
-        type.name().size() - wrap_prefix.size() - wrap_suffix.size())));
-  }
-
   void mdb_shell::filter_disable_everything()
   {
     for (data::metaprogram::edge_descriptor edge : mp->get_edges())
@@ -533,7 +513,7 @@ namespace metashell
           !is_remove_ptr &&
           (property.kind != data::event_kind::memoization ||
            !boost::get<data::type>(&target_node) ||
-           !is_wrap_type(boost::get<data::type>(target_node))))
+           !trim_wrap_type(boost::get<data::type>(target_node))))
       {
         property.enabled = true;
         edge_stack.push(edge);
@@ -577,10 +557,10 @@ namespace metashell
       data::metaprogram_node& node = mp->get_vertex_property(vertex).node;
       if (data::type* type = boost::get<data::type>(&node))
       {
-        if (is_wrap_type(*type))
+        if (const auto t = trim_wrap_type(*type))
         {
-          *type = trim_wrap_type(*type);
-          if (!is_template_type(*type))
+          *type = *t;
+          if (!is_template_type(*t))
           {
             for (data::metaprogram::edge_descriptor in_edge :
                  mp->get_in_edges(vertex))
