@@ -227,7 +227,7 @@ TEST(metaprogram_builder, too_much_end_events_1)
             .get_metaprogram();
 
       },
-      "Mismatched Templight TemplateBegin and TemplateEnd events");
+      "Mismatched begin and TemplateEnd events");
 }
 
 TEST(metaprogram_builder, too_much_end_events_2)
@@ -248,7 +248,7 @@ TEST(metaprogram_builder, too_much_end_events_2)
             .get_metaprogram();
 
       },
-      "Mismatched Templight TemplateBegin and TemplateEnd events");
+      "Mismatched begin and TemplateEnd events");
 }
 
 TEST(metaprogram_builder, too_few_end_events)

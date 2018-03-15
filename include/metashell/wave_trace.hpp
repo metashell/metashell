@@ -49,7 +49,7 @@ namespace metashell
     bool _ignore_macro_redefinition;
 
     std::vector<data::file_location> _macro_loc_stack;
-    data::file_location _last_macro_call_loc;
+    data::file_location _point_of_event;
 
     data::cpp_code _input;
     int _num_tokens_from_macro_call;
@@ -104,6 +104,8 @@ namespace metashell
     void on_line(const data::cpp_code& arg_,
                  const data::file_location& point_of_event_,
                  const data::file_location& source_location_);
+
+    void record_point_of_event(const data::file_location& point_of_event_);
   };
 }
 

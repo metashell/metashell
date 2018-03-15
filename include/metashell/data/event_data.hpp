@@ -32,7 +32,7 @@ namespace metashell
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined
 #endif
-#define PREPROCESSOR_EVENT_KIND(name, str)                                     \
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)                             \
   event_details<event_kind::name> EVENT_KIND_SEP
 
 #ifdef TEMPLATE_EVENT_KIND

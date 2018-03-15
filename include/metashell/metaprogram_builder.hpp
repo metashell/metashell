@@ -60,81 +60,67 @@ namespace metashell
 
     void handle_event(const data::event_data& details);
 
-    template <data::event_kind Kind>
-    typename std::enable_if<category(Kind) ==
-                            data::event_category::template_>::type
-    handle_event_impl(const data::event_details<Kind>& details)
-    {
-      handle_template_begin(Kind, details.full_name, details.point_of_event,
-                            details.source_location, details.timestamp);
-    }
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::template_end>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::macro_expansion>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::rescanning>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::expanded_code>& details);
-
-    void handle_event_impl(const data::event_details<
-                           data::event_kind::macro_expansion_end>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::generated_token>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::skipped_token>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::quote_include>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::sys_include>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::include_end>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::macro_definition>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::macro_deletion>& details);
-
-    void handle_event_impl(const data::event_details<
-                           data::event_kind::preprocessing_condition>& details);
-
-    void handle_event_impl(
-        const data::event_details<
-            data::event_kind::preprocessing_condition_result>& details);
-
-    void handle_event_impl(const data::event_details<
-                           data::event_kind::preprocessing_else>& details);
-
-    void handle_event_impl(const data::event_details<
-                           data::event_kind::preprocessing_endif>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::error_directive>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::line_directive>& details);
-
-    void handle_event_impl(
-        const data::event_details<data::event_kind::evaluation_end>& details);
-
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
 
-    void handle_template_begin(data::event_kind kind,
-                               const data::type& type,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp);
+    template <data::event_kind Kind>
+    typename std::enable_if<category(Kind) == data::event_category::template_,
+                            vertex_descriptor>::type
+    add_vertex(const data::event_details<Kind>& event)
+    {
+      return add_vertex(name(event), source_location(event));
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<category(Kind) != data::event_category::template_,
+                            vertex_descriptor>::type
+    add_vertex(const data::event_details<Kind>& event)
+    {
+      return add_vertex(unique_value(name(event)), source_location(event));
+    }
+
+    void pop_edge(data::event_kind end_kind, double timestamp);
+
+    template <data::event_kind Kind>
+    edge_descriptor add_edge(const data::event_details<Kind>& details)
+    {
+      return mp.add_edge(edge_stack.empty() ? mp.get_root_vertex() :
+                                              mp.get_target(edge_stack.top()),
+                         add_vertex(details), Kind, point_of_event(details),
+                         details.timestamp);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::open>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      edge_stack.push(add_edge(details));
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::flat>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      add_edge(details);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::close>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      pop_edge(kind_of(details), details.timestamp);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::end>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      mp.set_evaluation_result(details.result);
+    }
 
     data::metaprogram mp;
 

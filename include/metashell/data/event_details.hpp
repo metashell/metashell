@@ -28,6 +28,7 @@
 #include <boost/optional.hpp>
 
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace metashell
@@ -46,6 +47,33 @@ namespace metashell
       double timestamp;
     };
 
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                                Kind != event_kind::template_end,
+                            type>::type
+    name(const event_details<Kind>& details_)
+    {
+      return details_.full_name;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                                Kind != event_kind::template_end,
+                            file_location>::type
+    source_location(const event_details<Kind>& details_)
+    {
+      return details_.source_location;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                                Kind != event_kind::template_end,
+                            file_location>::type
+    point_of_event(const event_details<Kind>& details_)
+    {
+      return details_.point_of_event;
+    }
+
     template <>
     struct event_details<event_kind::template_end>
     {
@@ -61,6 +89,14 @@ namespace metashell
       file_location source_location;
       double timestamp;
     };
+
+    cpp_code name(const event_details<event_kind::macro_expansion>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::macro_expansion>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::macro_expansion>& details_);
 
     template <>
     struct event_details<event_kind::macro_expansion_end>
@@ -78,6 +114,14 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code name(const event_details<event_kind::macro_definition>& details_);
+
+    file_location source_location(
+        const event_details<event_kind::macro_definition>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::macro_definition>& details_);
+
     template <>
     struct event_details<event_kind::macro_deletion>
     {
@@ -86,10 +130,33 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code name(const event_details<event_kind::macro_deletion>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::macro_deletion>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::macro_deletion>& details_);
+
     template <>
     struct event_details<event_kind::rescanning>
     {
       cpp_code code;
+      file_location source_location;
+      double timestamp;
+    };
+
+    cpp_code name(const event_details<event_kind::rescanning>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::rescanning>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::rescanning>& details_);
+
+    template <>
+    struct event_details<event_kind::rescanning_end>
+    {
       double timestamp;
     };
 
@@ -101,6 +168,14 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code name(const event_details<event_kind::expanded_code>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::expanded_code>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::expanded_code>& details_);
+
     template <>
     struct event_details<event_kind::generated_token>
     {
@@ -110,6 +185,14 @@ namespace metashell
       double timestamp;
     };
 
+    token name(const event_details<event_kind::generated_token>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::generated_token>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::generated_token>& details_);
+
     template <>
     struct event_details<event_kind::skipped_token>
     {
@@ -117,6 +200,14 @@ namespace metashell
       file_location point_of_event;
       double timestamp;
     };
+
+    token name(const event_details<event_kind::skipped_token>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::skipped_token>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::skipped_token>& details_);
 
     template <>
     struct event_details<event_kind::quote_include>
@@ -126,6 +217,15 @@ namespace metashell
       double timestamp;
     };
 
+    boost::filesystem::path
+    name(const event_details<event_kind::quote_include>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::quote_include>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::quote_include>& details_);
+
     template <>
     struct event_details<event_kind::sys_include>
     {
@@ -133,6 +233,15 @@ namespace metashell
       file_location point_of_event;
       double timestamp;
     };
+
+    boost::filesystem::path
+    name(const event_details<event_kind::sys_include>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::sys_include>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::sys_include>& details_);
 
     template <>
     struct event_details<event_kind::include_end>
@@ -148,10 +257,38 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code
+    name(const event_details<event_kind::preprocessing_condition>& details_);
+
+    file_location source_location(
+        const event_details<event_kind::preprocessing_condition>& details_);
+
+    file_location point_of_event(
+        const event_details<event_kind::preprocessing_condition>& details_);
+
     template <>
     struct event_details<event_kind::preprocessing_condition_result>
     {
       bool result;
+      file_location source_location;
+      double timestamp;
+    };
+
+    cpp_code
+    name(const event_details<event_kind::preprocessing_condition_result>&
+             details_);
+
+    file_location source_location(
+        const event_details<event_kind::preprocessing_condition_result>&
+            details_);
+
+    file_location point_of_event(
+        const event_details<event_kind::preprocessing_condition_result>&
+            details_);
+
+    template <>
+    struct event_details<event_kind::preprocessing_condition_end>
+    {
       double timestamp;
     };
 
@@ -162,12 +299,30 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code
+    name(const event_details<event_kind::preprocessing_else>& details_);
+
+    file_location source_location(
+        const event_details<event_kind::preprocessing_else>& details_);
+
+    file_location point_of_event(
+        const event_details<event_kind::preprocessing_else>& details_);
+
     template <>
     struct event_details<event_kind::preprocessing_endif>
     {
       file_location point_of_event;
       double timestamp;
     };
+
+    cpp_code
+    name(const event_details<event_kind::preprocessing_endif>& details_);
+
+    file_location source_location(
+        const event_details<event_kind::preprocessing_endif>& details_);
+
+    file_location point_of_event(
+        const event_details<event_kind::preprocessing_endif>& details_);
 
     template <>
     struct event_details<event_kind::error_directive>
@@ -177,6 +332,14 @@ namespace metashell
       double timestamp;
     };
 
+    cpp_code name(const event_details<event_kind::error_directive>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::error_directive>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::error_directive>& details_);
+
     template <>
     struct event_details<event_kind::line_directive>
     {
@@ -185,6 +348,14 @@ namespace metashell
       file_location source_location;
       double timestamp;
     };
+
+    cpp_code name(const event_details<event_kind::line_directive>& details_);
+
+    file_location
+    source_location(const event_details<event_kind::line_directive>& details_);
+
+    file_location
+    point_of_event(const event_details<event_kind::line_directive>& details_);
 
     template <>
     struct event_details<event_kind::evaluation_end>

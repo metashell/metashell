@@ -32,21 +32,21 @@ namespace metashell
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined
 #endif
-#define PREPROCESSOR_EVENT_KIND(name, str)                                     \
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)                             \
   case event_kind::name:                                                       \
     return str;
 
 #ifdef TEMPLATE_EVENT_KIND
 #error TEMPLATE_EVENT_KIND defined
 #endif
-#define TEMPLATE_EVENT_KIND(name, str)                                         \
+#define TEMPLATE_EVENT_KIND(name, str, rdepth)                                 \
   case event_kind::name:                                                       \
     return str;
 
 #ifdef MISC_EVENT_KIND
 #error MISC_EVENT_KIND defined
 #endif
-#define MISC_EVENT_KIND(name, str)                                             \
+#define MISC_EVENT_KIND(name, str, rdepth)                                     \
   case event_kind::name:                                                       \
     return str;
 

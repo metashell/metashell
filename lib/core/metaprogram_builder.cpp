@@ -19,11 +19,8 @@
 
 #include <metashell/exception.hpp>
 
-#include <boost/algorithm/string/join.hpp>
-
 namespace metashell
 {
-
   metaprogram_builder::metaprogram_builder(
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
@@ -40,275 +37,6 @@ namespace metashell
   {
     mpark::visit(
         [this](const auto& det) { this->handle_event_impl(det); }, details);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::macro_expansion>& details)
-  {
-    data::cpp_code call = details.name;
-    if (details.args)
-    {
-      call += "(" + boost::algorithm::join(*details.args, ",") + ")";
-    }
-
-    vertex_descriptor vertex =
-        add_vertex(unique_value(call), details.source_location);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    auto edge =
-        mp.add_edge(top_vertex, vertex, data::event_kind::macro_expansion,
-                    details.point_of_event, details.timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::rescanning>& details)
-  {
-    if (edge_stack.empty())
-    {
-      throw exception("Mismatched macro expansion begin and rescanning events");
-    }
-    auto& ep = mp.get_edge_property(edge_stack.top());
-
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.code), ep.point_of_event);
-    vertex_descriptor top_vertex = mp.get_target(edge_stack.top());
-
-    auto edge = mp.add_edge(top_vertex, vertex, data::event_kind::rescanning,
-                            ep.point_of_event, details.timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::expanded_code>& details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.code), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::expanded_code,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::macro_expansion_end>& details)
-  {
-    // one rescanning and one macro expansion
-    for (int i = 0; i != 2; ++i)
-    {
-      if (edge_stack.empty())
-      {
-        throw exception("Mismatched macro expansion begin and end events");
-      }
-      auto& ep = mp.get_edge_property(edge_stack.top());
-      ep.time_taken = details.timestamp - ep.begin_timestamp;
-
-      edge_stack.pop();
-    }
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::quote_include>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value(details.path), data::file_location(details.path, 1, 1));
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    auto edge = mp.add_edge(top_vertex, vertex, data::event_kind::quote_include,
-                            details.point_of_event, details.timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::sys_include>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value(details.path), data::file_location(details.path, 1, 1));
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    auto edge = mp.add_edge(top_vertex, vertex, data::event_kind::sys_include,
-                            details.point_of_event, details.timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::include_end>& details)
-  {
-    if (edge_stack.empty())
-    {
-      throw exception("Mismatched IncludeBegin and IncludeEnd events");
-    }
-    auto& ep = mp.get_edge_property(edge_stack.top());
-    ep.time_taken = details.timestamp - ep.begin_timestamp;
-
-    edge_stack.pop();
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::macro_definition>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value(
-            details.name +
-            (details.args ?
-                 "(" + boost::algorithm::join(*details.args, ", ") + ")" :
-                 data::cpp_code()) +
-            " " + details.body),
-        details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::macro_definition,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::macro_deletion>& details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.name), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::macro_deletion,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::preprocessing_condition>&
-          details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.expression), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    auto edge = mp.add_edge(top_vertex, vertex,
-                            data::event_kind::preprocessing_condition,
-                            details.point_of_event, details.timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<
-          data::event_kind::preprocessing_condition_result>& details)
-  {
-    if (edge_stack.empty())
-    {
-      throw exception(
-          "Mismatched PreprocessingConditionBegin and "
-          "PreprocessingConditionEnd events");
-    }
-    auto& ep = mp.get_edge_property(edge_stack.top());
-    ep.time_taken = details.timestamp - ep.begin_timestamp;
-
-    vertex_descriptor vertex = add_vertex(
-        unique_value(data::cpp_code(details.result ? "true" : "false")),
-        ep.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex,
-                data::event_kind::preprocessing_condition_result,
-                ep.point_of_event, details.timestamp);
-
-    edge_stack.pop();
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::preprocessing_else>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value(data::cpp_code("#else")), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::preprocessing_else,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::preprocessing_endif>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value(data::cpp_code("#endif")), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::preprocessing_endif,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::error_directive>& details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(data::cpp_code("#error " + details.message)),
-                   details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::error_directive,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::line_directive>& details)
-  {
-    vertex_descriptor vertex = add_vertex(
-        unique_value("#line " + details.arg), details.source_location);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::line_directive,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_template_begin(
-      data::event_kind kind,
-      const data::type& type,
-      const data::file_location& point_of_event,
-      const data::file_location& source_location,
-      double timestamp)
-  {
-    vertex_descriptor vertex = add_vertex(type, source_location);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    auto edge =
-        mp.add_edge(top_vertex, vertex, kind, point_of_event, timestamp);
-    edge_stack.push(edge);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::template_end>& details)
-  {
-    if (edge_stack.empty())
-    {
-      throw exception(
-          "Mismatched Templight TemplateBegin and TemplateEnd events");
-    }
-    auto& ep = mp.get_edge_property(edge_stack.top());
-    ep.time_taken = details.timestamp - ep.begin_timestamp;
-
-    edge_stack.pop();
   }
 
   const data::metaprogram& metaprogram_builder::get_metaprogram() const
@@ -337,35 +65,17 @@ namespace metashell
     return pos->second;
   }
 
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::evaluation_end>& details)
+  void metaprogram_builder::pop_edge(data::event_kind end_kind,
+                                     double timestamp)
   {
-    mp.set_evaluation_result(details.result);
-  }
+    if (edge_stack.empty())
+    {
+      throw exception("Mismatched begin and " + to_string(end_kind) +
+                      " events");
+    }
+    auto& ep = mp.get_edge_property(edge_stack.top());
+    ep.time_taken = timestamp - ep.begin_timestamp;
 
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::skipped_token>& details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.value), details.point_of_event);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::skipped_token,
-                details.point_of_event, details.timestamp);
-  }
-
-  void metaprogram_builder::handle_event_impl(
-      const data::event_details<data::event_kind::generated_token>& details)
-  {
-    vertex_descriptor vertex =
-        add_vertex(unique_value(details.value), details.source_location);
-    vertex_descriptor top_vertex = edge_stack.empty() ?
-                                       mp.get_root_vertex() :
-                                       mp.get_target(edge_stack.top());
-
-    mp.add_edge(top_vertex, vertex, data::event_kind::generated_token,
-                details.point_of_event, details.timestamp);
+    edge_stack.pop();
   }
 }
