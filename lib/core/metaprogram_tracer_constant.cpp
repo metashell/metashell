@@ -25,6 +25,6 @@ namespace metashell
                                     data::metaprogram::mode_t,
                                     iface::displayer&)
   {
-    return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}, {}};
+    return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}};
   }
 }

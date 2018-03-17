@@ -34,9 +34,8 @@ namespace metashell
     template <class Container>
     metaprogram_builder(Container& trace,
                         data::metaprogram::mode_t mode,
-                        const data::cpp_code& root_name,
-                        const data::file_location& root_source_location)
-      : metaprogram_builder(mode, root_name, root_source_location)
+                        const data::cpp_code& root_name)
+      : metaprogram_builder(mode, root_name)
     {
       for (const data::event_data& event : trace)
       {
@@ -55,8 +54,7 @@ namespace metashell
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
 
     metaprogram_builder(data::metaprogram::mode_t mode,
-                        const data::cpp_code& root_name,
-                        const data::file_location& root_source_location);
+                        const data::cpp_code& root_name);
 
     void handle_event(const data::event_data& details);
 

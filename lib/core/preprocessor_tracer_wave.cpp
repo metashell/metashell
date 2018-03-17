@@ -32,9 +32,8 @@ namespace metashell
   {
     wave_trace trace(env_.get(), exp_, _config);
 
-    return metaprogram_builder(trace, mode_,
-                               exp_ ? *exp_ : data::cpp_code("<environment>"),
-                               data::file_location())
+    return metaprogram_builder(
+               trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"))
         .get_metaprogram();
   }
 }

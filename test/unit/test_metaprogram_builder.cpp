@@ -49,8 +49,7 @@ TEST(metaprogram_builder, normal_mode)
 
   data::metaprogram mp =
       metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                          data::cpp_code("root_name"),
-                          data::file_location("stdin.hpp", 10, 20))
+                          data::cpp_code("root_name"))
           .get_metaprogram();
 
   ASSERT_EQ(data::metaprogram::mode_t::normal, mp.get_mode());
@@ -93,9 +92,8 @@ TEST(metaprogram_builder, full_mode)
           data::type("eval_result")}};
 
   data::metaprogram mp =
-      metaprogram_builder(events, data::metaprogram::mode_t::full,
-                          data::cpp_code("root_name"),
-                          data::file_location("stdin.hpp", 10, 20))
+      metaprogram_builder(
+          events, data::metaprogram::mode_t::full, data::cpp_code("root_name"))
           .get_metaprogram();
 
   ASSERT_EQ(data::metaprogram::mode_t::full, mp.get_mode());
@@ -169,8 +167,7 @@ TEST(metaprogram_builder, profile_mode)
 
   data::metaprogram mp =
       metaprogram_builder(events, data::metaprogram::mode_t::profile,
-                          data::cpp_code("root_name"),
-                          data::file_location("stdin.hpp", 10, 20))
+                          data::cpp_code("root_name"))
           .get_metaprogram();
 
   mp.init_full_time_taken();
@@ -222,8 +219,7 @@ TEST(metaprogram_builder, too_much_end_events_1)
   assert_throw(
       [&events] {
         metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"),
-                            data::file_location("stdin.hpp", 40, 50))
+                            data::cpp_code("root_name"))
             .get_metaprogram();
 
       },
@@ -243,8 +239,7 @@ TEST(metaprogram_builder, too_much_end_events_2)
   assert_throw(
       [&events] {
         metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"),
-                            data::file_location("stdin.hpp", 30, 45))
+                            data::cpp_code("root_name"))
             .get_metaprogram();
 
       },
@@ -263,8 +258,7 @@ TEST(metaprogram_builder, too_few_end_events)
   assert_throw(
       [&events] {
         metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"),
-                            data::file_location("stdin.hpp", 30, 31))
+                            data::cpp_code("root_name"))
             .get_metaprogram();
       },
       "Some Templight TemplateEnd events are missing");

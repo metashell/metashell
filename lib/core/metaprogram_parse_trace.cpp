@@ -28,37 +28,32 @@ namespace metashell
       std::istream& stream,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
       const data::type_or_code_or_error& evaluation_result)
   {
     protobuf_trace trace(stream, evaluation_result);
 
-    return metaprogram_builder(trace, mode, root_name, root_source_location)
-        .get_metaprogram();
+    return metaprogram_builder(trace, mode, root_name).get_metaprogram();
   }
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
       const data::type_or_code_or_error& evaluation_result)
   {
     std::istringstream ss(string);
     return create_metaprogram_from_protobuf_stream(
-        ss, mode, root_name, root_source_location, evaluation_result);
+        ss, mode, root_name, evaluation_result);
   }
 
   data::metaprogram create_metaprogram_from_yaml_trace(
       const std::string& trace,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
       const data::type_or_code_or_error& evaluation_result)
   {
     yaml_trace ytrace(trace, evaluation_result);
 
-    return metaprogram_builder(ytrace, mode, root_name, root_source_location)
-        .get_metaprogram();
+    return metaprogram_builder(ytrace, mode, root_name).get_metaprogram();
   }
 }

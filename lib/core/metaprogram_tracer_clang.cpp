@@ -72,7 +72,6 @@ namespace metashell
       return create_metaprogram_from_yaml_trace(
           trace, mode_,
           expression_ ? *expression_ : data::cpp_code("<environment>"),
-          data::file_location{}, // TODO something sensible here?
           type_or_code_or_error_from_result(res, expression_));
     }
   }

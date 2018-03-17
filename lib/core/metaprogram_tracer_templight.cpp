@@ -85,7 +85,6 @@ namespace metashell
       const data::metaprogram result = create_metaprogram_from_protobuf_stream(
           protobuf_stream, mode_,
           expression_ ? *expression_ : data::cpp_code("<environment>"),
-          data::file_location{}, // TODO something sensible here?
           evaluation_result);
       if (result.is_empty() && evaluation_result.is_error())
       {
