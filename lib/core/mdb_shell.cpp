@@ -480,15 +480,13 @@ namespace metashell
     }
   }
 
-  void mdb_shell::filter_enable_reachable(bool for_current_line)
+  void mdb_shell::filter_enable_reachable(
+      const boost::optional<data::file_location>& from_line)
   {
     using vertex_descriptor = data::metaprogram::vertex_descriptor;
     using edge_descriptor = data::metaprogram::edge_descriptor;
     using edge_property = data::metaprogram::edge_property;
     using discovered_t = data::metaprogram::discovered_t;
-
-    data::cpp_code env_buffer = env.get();
-    int line_number = std::count(env_buffer.begin(), env_buffer.end(), '\n');
 
     // We will traverse the interesting edges later
     std::stack<edge_descriptor> edge_stack;
@@ -502,8 +500,8 @@ namespace metashell
       // Filter out edges, that is not instantiated
       // by the entered type if requested
       const bool current_line_filter =
-          !for_current_line || (property.point_of_event.name == stdin_name &&
-                                property.point_of_event.row == line_number + 1);
+          !from_line || (property.point_of_event.name == from_line->name &&
+                         property.point_of_event.row == from_line->row);
 
       const bool is_remove_ptr =
           boost::get<data::type>(&target_node) &&
@@ -612,12 +610,13 @@ namespace metashell
     }
   }
 
-  void mdb_shell::filter_metaprogram(bool for_current_line)
+  void mdb_shell::filter_metaprogram(
+      const boost::optional<data::file_location>& from_line)
   {
     assert(mp);
 
     filter_disable_everything();
-    filter_enable_reachable(for_current_line);
+    filter_enable_reachable(from_line);
     filter_unwrap_vertices();
     filter_similar_edges();
 
@@ -737,7 +736,14 @@ namespace metashell
 
     displayer_.show_raw_text("Metaprogram started");
 
-    filter_metaprogram(bool(expression));
+    const data::cpp_code env_buffer = env.get();
+    filter_metaprogram(
+        expression ?
+            boost::make_optional(data::file_location{
+                stdin_name,
+                int(std::count(env_buffer.begin(), env_buffer.end(), '\n')) + 1,
+                1}) :
+            boost::none);
   }
 
   void mdb_shell::command_forwardtrace(const std::string& arg,
