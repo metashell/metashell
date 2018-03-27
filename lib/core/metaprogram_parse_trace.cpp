@@ -20,6 +20,8 @@
 #include <metashell/protobuf_trace.hpp>
 #include <metashell/yaml_trace.hpp>
 
+#include <metashell/filter_events.hpp>
+
 #include <sstream>
 
 namespace metashell
@@ -28,9 +30,11 @@ namespace metashell
       std::istream& stream,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::type_or_code_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line)
   {
-    protobuf_trace trace(stream, evaluation_result);
+    auto trace = filter_events(
+        protobuf_trace(stream, evaluation_result), std::move(from_line));
 
     return metaprogram_builder(trace, mode, root_name).get_metaprogram();
   }
@@ -39,20 +43,23 @@ namespace metashell
       const std::string& string,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::type_or_code_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line)
   {
     std::istringstream ss(string);
     return create_metaprogram_from_protobuf_stream(
-        ss, mode, root_name, evaluation_result);
+        ss, mode, root_name, evaluation_result, std::move(from_line));
   }
 
   data::metaprogram create_metaprogram_from_yaml_trace(
       const std::string& trace,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::type_or_code_or_error& evaluation_result)
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line)
   {
-    yaml_trace ytrace(trace, evaluation_result);
+    auto ytrace = filter_events(
+        yaml_trace(trace, evaluation_result), std::move(from_line));
 
     return metaprogram_builder(ytrace, mode, root_name).get_metaprogram();
   }

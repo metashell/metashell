@@ -93,15 +93,9 @@ namespace metashell
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
 
-    void filter_disable_everything();
-    void filter_enable_reachable(
-        const boost::optional<data::file_location>& from_line);
     void filter_unwrap_vertices();
     void filter_similar_edges();
-    void
-    filter_metaprogram(const boost::optional<data::file_location>& from_line);
-
-    static bool is_event_kind_enabled(data::event_kind kind);
+    void filter_metaprogram();
 
     static boost::optional<int>
     parse_defaultable_integer(const std::string& arg, int default_value);

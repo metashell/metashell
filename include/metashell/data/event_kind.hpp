@@ -23,6 +23,8 @@
 #include <ostream>
 #include <string>
 
+#include <cassert>
+
 #ifdef PREPROCESSOR_EVENT_KIND
 #error PREPROCESSOR_EVENT_KIND defined
 #endif
@@ -95,11 +97,14 @@ namespace metashell
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
       }
+      return relative_depth::end;
     }
 
     std::ostream& operator<<(std::ostream& os, event_kind kind);
 
     std::string to_string(event_kind kind);
+
+    bool enabled(event_kind kind);
   }
 }
 

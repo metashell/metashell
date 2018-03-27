@@ -18,11 +18,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
+
 #include <ostream>
 #include <string>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 namespace metashell
 {
@@ -45,6 +48,11 @@ namespace metashell
     std::ostream& operator<<(std::ostream& os, const file_location& location);
 
     std::string to_string(const file_location& location);
+
+    boost::optional<file_location>
+    determine_from_line(const cpp_code& env,
+                        const boost::optional<cpp_code>& expression,
+                        const std::string& stdin_name);
   }
 }
 

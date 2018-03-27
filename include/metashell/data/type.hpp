@@ -59,6 +59,7 @@ namespace metashell
 
     boost::optional<type> trim_wrap_type(const type& type_);
     bool is_template_type(const type& type_);
+    bool is_remove_ptr(const type& type_);
   }
 }
 

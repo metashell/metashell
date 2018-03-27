@@ -119,5 +119,15 @@ namespace metashell
       ss << location;
       return ss.str();
     }
+
+    boost::optional<file_location>
+    determine_from_line(const cpp_code& env,
+                        const boost::optional<cpp_code>& expression,
+                        const std::string& stdin_name)
+    {
+      return expression ? boost::make_optional(
+                              file_location{stdin_name, lines_in(env) + 1, 1}) :
+                          boost::none;
+    }
   }
 }

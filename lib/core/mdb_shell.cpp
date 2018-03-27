@@ -22,6 +22,8 @@
 #include <metashell/null_history.hpp>
 #include <metashell/some_feature_not_supported.hpp>
 
+#include <metashell/data/stdin_name.hpp>
+
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
@@ -40,9 +42,6 @@
 
 namespace
 {
-  // Note: this how clang calls the file when the input comes from stdin
-  const std::string stdin_name = "<stdin>";
-
   typedef std::tuple<metashell::data::file_location,
                      metashell::data::event_kind,
                      metashell::data::metaprogram::vertex_descriptor>
@@ -472,82 +471,6 @@ namespace metashell
     display_movement_info(next_count != 0, displayer_);
   }
 
-  void mdb_shell::filter_disable_everything()
-  {
-    for (data::metaprogram::edge_descriptor edge : mp->get_edges())
-    {
-      mp->get_edge_property(edge).enabled = false;
-    }
-  }
-
-  void mdb_shell::filter_enable_reachable(
-      const boost::optional<data::file_location>& from_line)
-  {
-    using vertex_descriptor = data::metaprogram::vertex_descriptor;
-    using edge_descriptor = data::metaprogram::edge_descriptor;
-    using edge_property = data::metaprogram::edge_property;
-    using discovered_t = data::metaprogram::discovered_t;
-
-    // We will traverse the interesting edges later
-    std::stack<edge_descriptor> edge_stack;
-
-    // Enable the interesting root edges
-    for (edge_descriptor edge : mp->get_out_edges(mp->get_root_vertex()))
-    {
-      edge_property& property = mp->get_edge_property(edge);
-      const data::metaprogram_node& target_node =
-          mp->get_vertex_property(mp->get_target(edge)).node;
-      // Filter out edges, that is not instantiated
-      // by the entered type if requested
-      const bool current_line_filter =
-          !from_line || (property.point_of_event.name == from_line->name &&
-                         property.point_of_event.row == from_line->row);
-
-      const bool is_remove_ptr =
-          boost::get<data::type>(&target_node) &&
-          boost::get<data::type>(target_node) == "metashell::impl::remove_ptr";
-
-      if (current_line_filter && is_event_kind_enabled(property.kind) &&
-          !is_remove_ptr &&
-          (property.kind != data::event_kind::memoization ||
-           !boost::get<data::type>(&target_node) ||
-           !trim_wrap_type(boost::get<data::type>(target_node))))
-      {
-        property.enabled = true;
-        edge_stack.push(edge);
-      }
-    }
-
-    discovered_t discovered(mp->get_num_vertices());
-    // Traverse the graph to enable all edges which are reachable from the
-    // edges enabled above
-    while (!edge_stack.empty())
-    {
-      edge_descriptor edge = edge_stack.top();
-      edge_stack.pop();
-
-      assert(mp->get_edge_property(edge).enabled);
-
-      vertex_descriptor vertex = mp->get_target(edge);
-
-      if (discovered[vertex])
-      {
-        continue;
-      }
-      discovered[vertex] = true;
-
-      for (edge_descriptor out_edge : mp->get_out_edges(vertex))
-      {
-        edge_property& property = mp->get_edge_property(out_edge);
-        if (is_event_kind_enabled(property.kind))
-        {
-          property.enabled = true;
-          edge_stack.push(out_edge);
-        }
-      }
-    }
-  }
-
   void mdb_shell::filter_unwrap_vertices()
   {
     for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
@@ -610,49 +533,14 @@ namespace metashell
     }
   }
 
-  void mdb_shell::filter_metaprogram(
-      const boost::optional<data::file_location>& from_line)
+  void mdb_shell::filter_metaprogram()
   {
     assert(mp);
 
-    filter_disable_everything();
-    filter_enable_reachable(from_line);
     filter_unwrap_vertices();
     filter_similar_edges();
 
     mp->init_full_time_taken();
-  }
-
-  bool mdb_shell::is_event_kind_enabled(data::event_kind kind)
-  {
-    switch (kind)
-    {
-    case data::event_kind::memoization:
-    case data::event_kind::template_instantiation:
-    case data::event_kind::deduced_template_argument_substitution:
-    case data::event_kind::explicit_template_argument_substitution:
-    case data::event_kind::declaring_special_member:
-    case data::event_kind::defining_synthesized_function:
-
-    case data::event_kind::macro_expansion:
-    case data::event_kind::macro_definition:
-    case data::event_kind::macro_deletion:
-    case data::event_kind::rescanning:
-    case data::event_kind::expanded_code:
-    case data::event_kind::generated_token:
-    case data::event_kind::skipped_token:
-    case data::event_kind::quote_include:
-    case data::event_kind::sys_include:
-    case data::event_kind::preprocessing_condition:
-    case data::event_kind::preprocessing_condition_result:
-    case data::event_kind::preprocessing_else:
-    case data::event_kind::preprocessing_endif:
-    case data::event_kind::error_directive:
-    case data::event_kind::line_directive:
-      return true;
-    default:
-      return false;
-    }
   }
 
   void mdb_shell::command_evaluate(const std::string& arg_copy,
@@ -729,21 +617,11 @@ namespace metashell
     }();
 
     last_evaluated_expression = expression;
-    if (!run_metaprogram_with_templight(expression, mode, displayer_))
+    if (run_metaprogram_with_templight(expression, mode, displayer_))
     {
-      return;
+      displayer_.show_raw_text("Metaprogram started");
+      filter_metaprogram();
     }
-
-    displayer_.show_raw_text("Metaprogram started");
-
-    const data::cpp_code env_buffer = env.get();
-    filter_metaprogram(
-        expression ?
-            boost::make_optional(data::file_location{
-                stdin_name,
-                int(std::count(env_buffer.begin(), env_buffer.end(), '\n')) + 1,
-                1}) :
-            boost::none);
   }
 
   void mdb_shell::command_forwardtrace(const std::string& arg,

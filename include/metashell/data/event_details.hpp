@@ -50,6 +50,24 @@ namespace metashell
     template <event_kind Kind>
     typename std::enable_if<category(Kind) == event_category::template_ &&
                                 Kind != event_kind::template_end,
+                            bool>::type
+    is_remove_ptr(const event_details<Kind>& details_)
+    {
+      return is_remove_ptr(details_.full_name);
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) != event_category::template_ ||
+                                Kind == event_kind::template_end,
+                            bool>::type
+    is_remove_ptr(const event_details<Kind>&)
+    {
+      return false;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                                Kind != event_kind::template_end,
                             type>::type
     name(const event_details<Kind>& details_)
     {

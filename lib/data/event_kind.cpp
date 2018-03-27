@@ -58,5 +58,37 @@ namespace metashell
       }
       return "UnknownKind";
     }
+
+    bool enabled(event_kind kind)
+    {
+      switch (kind)
+      {
+      case event_kind::memoization:
+      case event_kind::template_instantiation:
+      case event_kind::deduced_template_argument_substitution:
+      case event_kind::explicit_template_argument_substitution:
+      case event_kind::declaring_special_member:
+      case event_kind::defining_synthesized_function:
+
+      case event_kind::macro_expansion:
+      case event_kind::macro_definition:
+      case event_kind::macro_deletion:
+      case event_kind::rescanning:
+      case event_kind::expanded_code:
+      case event_kind::generated_token:
+      case event_kind::skipped_token:
+      case event_kind::quote_include:
+      case event_kind::sys_include:
+      case event_kind::preprocessing_condition:
+      case event_kind::preprocessing_condition_result:
+      case event_kind::preprocessing_else:
+      case event_kind::preprocessing_endif:
+      case event_kind::error_directive:
+      case event_kind::line_directive:
+        return true;
+      default:
+        return false;
+      }
+    }
   }
 }

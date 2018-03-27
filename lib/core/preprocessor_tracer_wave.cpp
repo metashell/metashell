@@ -18,6 +18,10 @@
 #include <metashell/preprocessor_tracer_wave.hpp>
 #include <metashell/wave_trace.hpp>
 
+#include <metashell/filter_events.hpp>
+
+#include <metashell/data/stdin_name.hpp>
+
 namespace metashell
 {
   preprocessor_tracer_wave::preprocessor_tracer_wave(data::wave_config config_)
@@ -30,7 +34,10 @@ namespace metashell
                                  const boost::optional<data::cpp_code>& exp_,
                                  data::metaprogram::mode_t mode_)
   {
-    wave_trace trace(env_.get(), exp_, _config);
+    auto trace =
+        filter_events(wave_trace(env_.get(), exp_, _config),
+                      data::determine_from_line(
+                          env_.get(), exp_, data::stdin_name_in_clang()));
 
     return metaprogram_builder(
                trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"))

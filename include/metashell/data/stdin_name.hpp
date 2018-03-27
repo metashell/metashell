@@ -1,5 +1,8 @@
+#ifndef METASHELL_DATA_STDIN_NAME_HPP
+#define METASHELL_DATA_STDIN_NAME_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,16 +17,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/wave_trace.hpp>
+#include <string>
 
 namespace metashell
 {
-  wave_trace::wave_trace(const data::cpp_code& env_,
-                         const boost::optional<data::cpp_code>& exp_,
-                         const data::wave_config& config_)
-    : _impl(new wave_trace_impl(env_, exp_, config_))
+  namespace data
   {
+    std::string stdin_name_in_clang();
   }
-
-  boost::optional<data::event_data> wave_trace::next() { return _impl->next(); }
 }
+
+#endif

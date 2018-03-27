@@ -22,6 +22,8 @@
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/type.hpp>
 
+#include <boost/optional.hpp>
+
 #include <variant.hpp>
 
 namespace metashell
@@ -53,11 +55,21 @@ namespace metashell
         >
         event_data;
 
+    event_kind kind_of(const event_data& data);
+
+    relative_depth relative_depth_of(const event_data& data);
+
     event_data template_begin(event_kind kind,
                               const type& type,
                               const file_location& point_of_event,
                               const file_location& source_location,
                               double timestamp);
+
+    bool is_remove_ptr(const event_data& data);
+
+    boost::optional<file_location> point_of_event(const event_data& data);
+
+    bool from_line(const event_data& event, const file_location& line);
   }
 }
 

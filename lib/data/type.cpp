@@ -99,5 +99,10 @@ namespace metashell
                       t_.type() == token_type::operator_less;
              }) != cmd.end();
     }
+
+    bool is_remove_ptr(const type& type_)
+    {
+      return type_ == "metashell::impl::remove_ptr";
+    }
   }
 } // namespace metashell:data

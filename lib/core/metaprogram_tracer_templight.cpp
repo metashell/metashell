@@ -18,6 +18,8 @@
 #include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/metaprogram_tracer_templight.hpp>
 
+#include <metashell/data/stdin_name.hpp>
+
 #include <fstream>
 
 namespace
@@ -85,7 +87,8 @@ namespace metashell
       const data::metaprogram result = create_metaprogram_from_protobuf_stream(
           protobuf_stream, mode_,
           expression_ ? *expression_ : data::cpp_code("<environment>"),
-          evaluation_result);
+          evaluation_result, determine_from_line(env_.get(), expression_,
+                                                 data::stdin_name_in_clang()));
       if (result.is_empty() && evaluation_result.is_error())
       {
         // Most errors will cause templight to generate an empty trace

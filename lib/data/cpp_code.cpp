@@ -16,6 +16,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 
+#include <algorithm>
 #include <ostream>
 #include <stdexcept>
 
@@ -141,6 +142,11 @@ namespace metashell
               ") found more than two times in preprocessed output.");
         }
       }
+    }
+
+    int lines_in(const cpp_code& code_)
+    {
+      return int(std::count(code_.begin(), code_.end(), '\n'));
     }
   }
 } // namespace metashell:data

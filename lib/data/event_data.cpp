@@ -20,6 +20,18 @@ namespace metashell
 {
   namespace data
   {
+    namespace impl
+    {
+      namespace
+      {
+        template <class T>
+        boost::none_t point_of_event(const T&)
+        {
+          return boost::none;
+        }
+      }
+    }
+
     event_data template_begin(event_kind kind,
                               const type& type,
                               const file_location& point_of_event,
@@ -80,6 +92,38 @@ namespace metashell
         assert(!"Invalid event_kind");
         break;
       }
+    }
+
+    event_kind kind_of(const event_data& data)
+    {
+      return visit([](const auto& details) { return kind_of(details); }, data);
+    }
+
+    relative_depth relative_depth_of(const event_data& data)
+    {
+      return relative_depth_of(kind_of(data));
+    }
+
+    bool is_remove_ptr(const event_data& data)
+    {
+      return visit(
+          [](const auto& details) { return is_remove_ptr(details); }, data);
+    }
+
+    boost::optional<file_location> point_of_event(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& details) -> boost::optional<file_location> {
+            using metashell::data::impl::point_of_event;
+            return point_of_event(details);
+          },
+          data);
+    }
+
+    bool from_line(const event_data& event, const file_location& line)
+    {
+      const boost::optional<file_location> poe = point_of_event(event);
+      return poe && poe->name == line.name && poe->row == line.row;
     }
   }
 }
