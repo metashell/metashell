@@ -24,6 +24,12 @@ namespace metashell
 {
   namespace data
   {
+    boost::optional<type>
+    type_of(const event_details<event_kind::template_end>&)
+    {
+      return boost::none;
+    }
+
     cpp_code name(const event_details<event_kind::macro_expansion>& details_)
     {
       using boost::algorithm::join;
@@ -293,6 +299,12 @@ namespace metashell
     point_of_event(const event_details<event_kind::line_directive>& details_)
     {
       return details_.point_of_event;
+    }
+
+    boost::optional<double>
+    timestamp(const event_details<event_kind::evaluation_end>&)
+    {
+      return boost::none;
     }
   }
 }

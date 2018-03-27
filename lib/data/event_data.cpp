@@ -29,6 +29,12 @@ namespace metashell
         {
           return boost::none;
         }
+
+        template <class T>
+        boost::none_t source_location(const T&)
+        {
+          return boost::none;
+        }
       }
     }
 
@@ -117,6 +123,35 @@ namespace metashell
             using metashell::data::impl::point_of_event;
             return point_of_event(details);
           },
+          data);
+    }
+
+    boost::optional<file_location> source_location(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& details) -> boost::optional<file_location> {
+            using metashell::data::impl::source_location;
+            return source_location(details);
+          },
+          data);
+    }
+
+    boost::optional<double> timestamp(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& details) { return timestamp(details); }, data);
+    }
+
+    boost::optional<data::type> type_of(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& details) { return type_of(details); }, data);
+    }
+
+    void set_type(event_data& data, type t)
+    {
+      mpark::visit(
+          [&t](auto& details) { return set_type(details, std::move(t)); },
           data);
     }
 

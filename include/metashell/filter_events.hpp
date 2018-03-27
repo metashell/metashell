@@ -19,6 +19,7 @@
 
 #include <metashell/filter_enable_reachable.hpp>
 #include <metashell/filter_replay_instantiations.hpp>
+#include <metashell/filter_unwrap_vertices.hpp>
 
 namespace metashell
 {
@@ -26,8 +27,8 @@ namespace metashell
   auto filter_events(Events&& events_,
                      boost::optional<data::file_location> from_)
   {
-    return filter_enable_reachable(
-        filter_replay_instantiations(std::move(events_), from_), from_);
+    return filter_unwrap_vertices(filter_enable_reachable(
+        filter_replay_instantiations(std::move(events_), from_), from_));
   }
 }
 

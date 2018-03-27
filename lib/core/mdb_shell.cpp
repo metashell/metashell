@@ -471,30 +471,6 @@ namespace metashell
     display_movement_info(next_count != 0, displayer_);
   }
 
-  void mdb_shell::filter_unwrap_vertices()
-  {
-    for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
-    {
-      data::metaprogram_node& node = mp->get_vertex_property(vertex).node;
-      if (data::type* type = boost::get<data::type>(&node))
-      {
-        if (const auto t = trim_wrap_type(*type))
-        {
-          *type = *t;
-          if (!is_template_type(*t))
-          {
-            for (data::metaprogram::edge_descriptor in_edge :
-                 mp->get_in_edges(vertex))
-            {
-              mp->get_edge_property(in_edge).kind =
-                  data::event_kind::non_template_type;
-            }
-          }
-        }
-      }
-    }
-  }
-
   void mdb_shell::filter_similar_edges()
   {
 
@@ -537,7 +513,6 @@ namespace metashell
   {
     assert(mp);
 
-    filter_unwrap_vertices();
     filter_similar_edges();
 
     mp->init_full_time_taken();

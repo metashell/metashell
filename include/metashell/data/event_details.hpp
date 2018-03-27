@@ -48,6 +48,28 @@ namespace metashell
     };
 
     template <event_kind Kind>
+    boost::optional<double> timestamp(const event_details<Kind>& details_)
+    {
+      return details_.timestamp;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) != event_category::template_ ||
+                                Kind == event_kind::template_end,
+                            boost::optional<type>>::type
+    type_of(const event_details<Kind>&)
+    {
+      return boost::none;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) != event_category::template_ ||
+                            Kind == event_kind::template_end>::type
+    set_type(event_details<Kind>&, const type&)
+    {
+    }
+
+    template <event_kind Kind>
     typename std::enable_if<category(Kind) == event_category::template_ &&
                                 Kind != event_kind::template_end,
                             bool>::type
@@ -63,6 +85,23 @@ namespace metashell
     is_remove_ptr(const event_details<Kind>&)
     {
       return false;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                                Kind != event_kind::template_end,
+                            boost::optional<type>>::type
+    type_of(const event_details<Kind>& details_)
+    {
+      return details_.full_name;
+    }
+
+    template <event_kind Kind>
+    typename std::enable_if<category(Kind) == event_category::template_ &&
+                            Kind != event_kind::template_end>::type
+    set_type(event_details<Kind>& details_, type type_)
+    {
+      details_.full_name = std::move(type_);
     }
 
     template <event_kind Kind>
@@ -380,6 +419,9 @@ namespace metashell
     {
       type_or_code_or_error result;
     };
+
+    boost::optional<double>
+    timestamp(const event_details<event_kind::evaluation_end>& details_);
 
     template <event_kind Kind>
     constexpr event_kind kind_of(const event_details<Kind>&)

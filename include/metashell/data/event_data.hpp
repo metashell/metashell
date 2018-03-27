@@ -69,6 +69,14 @@ namespace metashell
 
     boost::optional<file_location> point_of_event(const event_data& data);
 
+    boost::optional<file_location> source_location(const event_data& data);
+
+    boost::optional<double> timestamp(const event_data& data);
+
+    boost::optional<data::type> type_of(const event_data& data);
+
+    void set_type(event_data& data, type t);
+
     bool from_line(const event_data& event, const file_location& line);
   }
 }
