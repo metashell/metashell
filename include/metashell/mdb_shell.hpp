@@ -93,9 +93,6 @@ namespace metashell
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
 
-    void filter_similar_edges();
-    void filter_metaprogram();
-
     static boost::optional<int>
     parse_defaultable_integer(const std::string& arg, int default_value);
 

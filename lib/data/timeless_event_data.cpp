@@ -14,24 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/event_details.hpp>
+#include <metashell/data/kind_of_mp.hpp>
+#include <metashell/data/timeless_event_data.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    boost::optional<double>
-    timestamp(const event_details<event_kind::evaluation_end>&)
+    event_kind kind_of(const timeless_event_data& data)
     {
-      return boost::none;
+      return visit([](const auto& details) { return kind_of(details); }, data);
     }
 
-    std::ostream&
-    operator<<(std::ostream& out_,
-               const event_details<event_kind::evaluation_end>& details_)
+    bool operator==(const timeless_event_data& a, const timeless_event_data& b)
     {
-      return out_ << "event_details<" << to_string(event_kind::evaluation_end)
-                  << ">{" << details_.what << "}";
+      return kind_of(a) == kind_of(b) &&
+             mpark::visit(
+                 [&b](const auto& da) -> bool {
+                   return da == mpark::get<timeless_event_details<
+                                    kind_of_mp<decltype(da)>::value>>(b);
+                 },
+                 a);
     }
   }
 }

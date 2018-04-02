@@ -41,11 +41,12 @@ TEST(metaprogram_builder, normal_mode)
 {
   const std::vector<data::event_data> events{
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 100.0},
-      data::event_details<data::event_kind::template_end>{110.0},
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          100.0},
+      data::event_details<data::event_kind::template_end>{{}, 110.0},
       data::event_details<data::event_kind::evaluation_end>{
-          data::type("eval_result")}};
+          {data::type("eval_result")}}};
 
   data::metaprogram mp =
       metaprogram_builder(events, data::metaprogram::mode_t::normal,
@@ -77,19 +78,22 @@ TEST(metaprogram_builder, full_mode)
 {
   const std::vector<data::event_data> events{
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 100.0},
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          100.0},
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<B>"), data::file_location("file", 20, 20),
-          data::file_location("file_sl", 15, 25), 110.0},
-      data::event_details<data::event_kind::template_end>{120.0},
-      data::event_details<data::event_kind::template_end>{130.0},
+          {data::type("type<B>"), data::file_location("file", 20, 20),
+           data::file_location("file_sl", 15, 25)},
+          110.0},
+      data::event_details<data::event_kind::template_end>{{}, 120.0},
+      data::event_details<data::event_kind::template_end>{{}, 130.0},
       data::event_details<data::event_kind::memoization>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 140.0},
-      data::event_details<data::event_kind::template_end>{150.0},
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          140.0},
+      data::event_details<data::event_kind::template_end>{{}, 150.0},
       data::event_details<data::event_kind::evaluation_end>{
-          data::type("eval_result")}};
+          {data::type("eval_result")}}};
 
   data::metaprogram mp =
       metaprogram_builder(
@@ -155,15 +159,17 @@ TEST(metaprogram_builder, profile_mode)
 {
   const std::vector<data::event_data> events{
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 100.0},
-      data::event_details<data::event_kind::template_end>{110.0},
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          100.0},
+      data::event_details<data::event_kind::template_end>{{}, 110.0},
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<B>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 120.0},
-      data::event_details<data::event_kind::template_end>{140.0},
+          {data::type("type<B>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          120.0},
+      data::event_details<data::event_kind::template_end>{{}, 140.0},
       data::event_details<data::event_kind::evaluation_end>{
-          data::type("eval_result")}};
+          {data::type("eval_result")}}};
 
   data::metaprogram mp =
       metaprogram_builder(events, data::metaprogram::mode_t::profile,
@@ -214,7 +220,7 @@ TEST(metaprogram_builder, profile_mode)
 TEST(metaprogram_builder, too_much_end_events_1)
 {
   const std::vector<data::event_data> events{
-      data::event_details<data::event_kind::template_end>{100.0}};
+      data::event_details<data::event_kind::template_end>{{}, 100.0}};
 
   assert_throw(
       [&events] {
@@ -230,11 +236,12 @@ TEST(metaprogram_builder, too_much_end_events_2)
 {
   const std::vector<data::event_data> events{
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 100.0},
-      data::event_details<data::event_kind::template_end>{110.0},
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          100.0},
+      data::event_details<data::event_kind::template_end>{{}, 110.0},
 
-      data::event_details<data::event_kind::template_end>{120.0}};
+      data::event_details<data::event_kind::template_end>{{}, 120.0}};
 
   assert_throw(
       [&events] {
@@ -250,8 +257,9 @@ TEST(metaprogram_builder, too_few_end_events)
 {
   const std::vector<data::event_data> events{
       data::event_details<data::event_kind::template_instantiation>{
-          data::type("type<A>"), data::file_location("file", 10, 20),
-          data::file_location("file_sl", 15, 25), 100.0}
+          {data::type("type<A>"), data::file_location("file", 10, 20),
+           data::file_location("file_sl", 15, 25)},
+          100.0}
 
   };
 

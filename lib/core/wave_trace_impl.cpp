@@ -131,8 +131,8 @@ namespace metashell
           data::cpp_code output_code(_output.str());
           _events.emplace_back(
               data::event_details<data::event_kind::evaluation_end>{
-                  _full_trace ? remove_markers(output_code, true) :
-                                std::move(output_code)});
+                  {_full_trace ? remove_markers(output_code, true) :
+                                 std::move(output_code)}});
           _pos = boost::none;
         }
       }
@@ -140,14 +140,14 @@ namespace metashell
       {
         _events.emplace_back(
             data::event_details<data::event_kind::evaluation_end>{
-                data::type_or_code_or_error::make_error(to_string(error_))});
+                {data::type_or_code_or_error::make_error(to_string(error_))}});
         _pos = boost::none;
       }
       catch (const std::exception& error_)
       {
         _events.emplace_back(
             data::event_details<data::event_kind::evaluation_end>{
-                data::type_or_code_or_error::make_error(error_.what())});
+                {data::type_or_code_or_error::make_error(error_.what())}});
         _pos = boost::none;
       }
     }
@@ -179,13 +179,13 @@ namespace metashell
     record_point_of_event(point_of_event_);
     _macro_loc_stack.push_back(point_of_event_);
     _events.emplace_back(data::event_details<data::event_kind::macro_expansion>{
-        name_, args_, point_of_event_, source_location_, now()});
+        {name_, args_, point_of_event_, source_location_}, now()});
   }
 
   void wave_trace_impl::on_rescanning(const data::cpp_code& c_)
   {
     _events.emplace_back(data::event_details<data::event_kind::rescanning>{
-        c_, _point_of_event, now()});
+        {c_, _point_of_event}, now()});
   }
 
   void wave_trace_impl::on_macro_expansion_end(const data::cpp_code& c_,
@@ -194,11 +194,11 @@ namespace metashell
     assert(!_macro_loc_stack.empty());
 
     _events.emplace_back(data::event_details<data::event_kind::expanded_code>{
-        c_, _macro_loc_stack.back(), now()});
+        {c_, _macro_loc_stack.back()}, now()});
     _events.emplace_back(
-        data::event_details<data::event_kind::rescanning_end>{now()});
+        data::event_details<data::event_kind::rescanning_end>{{}, now()});
     _events.emplace_back(
-        data::event_details<data::event_kind::macro_expansion_end>{now()});
+        data::event_details<data::event_kind::macro_expansion_end>{{}, now()});
     _num_tokens_from_macro_call = num_tokens_;
     _macro_loc_stack.pop_back();
   }
@@ -207,9 +207,10 @@ namespace metashell
       const data::token& t_, const data::file_location& source_location_)
   {
     _events.emplace_back(data::event_details<data::event_kind::generated_token>{
-        t_,
-        _num_tokens_from_macro_call > 0 ? _point_of_event : source_location_,
-        source_location_, now()});
+        {t_,
+         _num_tokens_from_macro_call > 0 ? _point_of_event : source_location_,
+         source_location_},
+        now()});
     if (_num_tokens_from_macro_call > 0)
     {
       --_num_tokens_from_macro_call;
@@ -222,7 +223,7 @@ namespace metashell
   {
     record_point_of_event(source_location_);
     _events.emplace_back(data::event_details<data::event_kind::skipped_token>{
-        t_, source_location_, now()});
+        {t_, source_location_}, now()});
   }
 
   void
@@ -234,11 +235,11 @@ namespace metashell
     {
     case data::include_type::sys:
       _events.emplace_back(data::event_details<data::event_kind::sys_include>{
-          arg_.path, point_of_event_, now()});
+          {arg_.path, point_of_event_}, now()});
       break;
     case data::include_type::quote:
       _events.emplace_back(data::event_details<data::event_kind::quote_include>{
-          arg_.path, point_of_event_, now()});
+          {arg_.path, point_of_event_}, now()});
       break;
     }
   }
@@ -246,7 +247,7 @@ namespace metashell
   void wave_trace_impl::on_include_end()
   {
     _events.emplace_back(
-        data::event_details<data::event_kind::include_end>{now()});
+        data::event_details<data::event_kind::include_end>{{}, now()});
   }
 
   void wave_trace_impl::on_define(
@@ -258,7 +259,7 @@ namespace metashell
     record_point_of_event(point_of_event_);
     _events.emplace_back(
         data::event_details<data::event_kind::macro_definition>{
-            name_, args_, body_, point_of_event_, now()});
+            {name_, args_, body_, point_of_event_}, now()});
   }
 
   void wave_trace_impl::on_undefine(const data::cpp_code& name_,
@@ -266,7 +267,7 @@ namespace metashell
   {
     record_point_of_event(point_of_event_);
     _events.emplace_back(data::event_details<data::event_kind::macro_deletion>{
-        name_, point_of_event_, now()});
+        {name_, point_of_event_}, now()});
   }
 
   void
@@ -276,17 +277,17 @@ namespace metashell
     record_point_of_event(point_of_event_);
     _events.emplace_back(
         data::event_details<data::event_kind::preprocessing_condition>{
-            expression_, point_of_event_, now()});
+            {expression_, point_of_event_}, now()});
   }
 
   void wave_trace_impl::on_evaluated_conditional_expression(bool result_)
   {
     _events.emplace_back(
         data::event_details<data::event_kind::preprocessing_condition_result>{
-            result_, _point_of_event, now()});
+            {result_, _point_of_event}, now()});
     _events.emplace_back(
         data::event_details<data::event_kind::preprocessing_condition_end>{
-            now()});
+            {}, now()});
   }
 
   void wave_trace_impl::on_else(const data::file_location& point_of_event_)
@@ -294,7 +295,7 @@ namespace metashell
     record_point_of_event(point_of_event_);
     _events.emplace_back(
         data::event_details<data::event_kind::preprocessing_else>{
-            point_of_event_, now()});
+            {point_of_event_}, now()});
   }
 
   void wave_trace_impl::on_endif(const data::file_location& point_of_event_)
@@ -302,7 +303,7 @@ namespace metashell
     record_point_of_event(point_of_event_);
     _events.emplace_back(
         data::event_details<data::event_kind::preprocessing_endif>{
-            point_of_event_, now()});
+            {point_of_event_}, now()});
   }
 
   void wave_trace_impl::on_error(const std::string& message_,
@@ -310,7 +311,7 @@ namespace metashell
   {
     record_point_of_event(point_of_event_);
     _events.emplace_back(data::event_details<data::event_kind::error_directive>{
-        message_, point_of_event_, now()});
+        {message_, point_of_event_}, now()});
   }
 
   void wave_trace_impl::on_line(const data::cpp_code& arg_,
@@ -319,6 +320,6 @@ namespace metashell
   {
     record_point_of_event(point_of_event_);
     _events.emplace_back(data::event_details<data::event_kind::line_directive>{
-        arg_, point_of_event_, source_location_, now()});
+        {arg_, point_of_event_, source_location_}, now()});
   }
 }

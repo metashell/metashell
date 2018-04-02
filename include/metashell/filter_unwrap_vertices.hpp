@@ -52,7 +52,7 @@ namespace metashell
             {
               // All of the below optionals are expected to hold a value
               event = data::event_details<data::event_kind::non_template_type>{
-                  *t, *point_of_event(*event), *source_location(*event),
+                  {*t, *point_of_event(*event), *source_location(*event)},
                   *timestamp(*event)};
             }
           }

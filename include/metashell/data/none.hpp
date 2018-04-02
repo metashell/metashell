@@ -1,3 +1,6 @@
+#ifndef METASHELL_DATA_NONE_HPP
+#define METASHELL_DATA_NONE_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,24 +17,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/event_details.hpp>
+#include <boost/operators.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    boost::optional<double>
-    timestamp(const event_details<event_kind::evaluation_end>&)
+    class none_t : boost::totally_ordered<none_t>
     {
-      return boost::none;
-    }
+    public:
+      constexpr none_t() {}
+    };
 
-    std::ostream&
-    operator<<(std::ostream& out_,
-               const event_details<event_kind::evaluation_end>& details_)
-    {
-      return out_ << "event_details<" << to_string(event_kind::evaluation_end)
-                  << ">{" << details_.what << "}";
-    }
+    constexpr none_t none;
+
+    constexpr bool operator==(none_t, none_t) { return true; }
+    constexpr bool operator<(none_t, none_t) { return false; }
   }
 }
+
+#endif

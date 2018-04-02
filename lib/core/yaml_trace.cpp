@@ -83,7 +83,7 @@ namespace metashell
     : _nodes(YAML::LoadAll(trace_)),
       _next(_nodes.begin()),
       _evaluation_result(data::event_details<data::event_kind::evaluation_end>{
-          evaluation_result_})
+          {evaluation_result_}})
   {
   }
 
@@ -108,7 +108,7 @@ namespace metashell
         }
         else if (event == "End")
         {
-          result = data::event_details<data::event_kind::template_end>{0};
+          result = data::event_details<data::event_kind::template_end>{{}, 0};
         }
       }
 

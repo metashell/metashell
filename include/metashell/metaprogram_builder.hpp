@@ -32,7 +32,7 @@ namespace metashell
   {
   public:
     template <class Container>
-    metaprogram_builder(Container& trace,
+    metaprogram_builder(Container&& trace,
                         data::metaprogram::mode_t mode,
                         const data::cpp_code& root_name)
       : metaprogram_builder(mode, root_name)
@@ -61,18 +61,22 @@ namespace metashell
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
 
-    template <data::event_kind Kind>
-    typename std::enable_if<category(Kind) == data::event_category::template_,
-                            vertex_descriptor>::type
-    add_vertex(const data::event_details<Kind>& event)
+    vertex_descriptor add_vertex(const data::timeless_event_details<
+                                 data::event_kind::memoization>& event)
+    {
+      return add_vertex(name(event), source_location(event));
+    }
+
+    vertex_descriptor
+    add_vertex(const data::timeless_event_details<
+               data::event_kind::template_instantiation>& event)
     {
       return add_vertex(name(event), source_location(event));
     }
 
     template <data::event_kind Kind>
-    typename std::enable_if<category(Kind) != data::event_category::template_,
-                            vertex_descriptor>::type
-    add_vertex(const data::event_details<Kind>& event)
+    vertex_descriptor
+    add_vertex(const data::timeless_event_details<Kind>& event)
     {
       return add_vertex(unique_value(name(event)), source_location(event));
     }
@@ -84,8 +88,8 @@ namespace metashell
     {
       return mp.add_edge(edge_stack.empty() ? mp.get_root_vertex() :
                                               mp.get_target(edge_stack.top()),
-                         add_vertex(details), Kind, point_of_event(details),
-                         details.timestamp);
+                         add_vertex(details.what), Kind,
+                         point_of_event(details.what), details.timestamp);
     }
 
     template <data::event_kind Kind>
@@ -109,7 +113,7 @@ namespace metashell
                             data::relative_depth::close>::type
     handle_event_impl(const data::event_details<Kind>& details)
     {
-      pop_edge(kind_of(details), details.timestamp);
+      pop_edge(kind_of(details.what), details.timestamp);
     }
 
     template <data::event_kind Kind>
@@ -117,7 +121,7 @@ namespace metashell
                             data::relative_depth::end>::type
     handle_event_impl(const data::event_details<Kind>& details)
     {
-      mp.set_evaluation_result(details.result);
+      mp.set_evaluation_result(details.what.result);
     }
 
     data::metaprogram mp;

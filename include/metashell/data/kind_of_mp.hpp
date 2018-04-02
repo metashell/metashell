@@ -1,3 +1,6 @@
+#ifndef METASHELL_DATA_KIND_OF_MP_HPP
+#define METASHELL_DATA_KIND_OF_MP_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,24 +17,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/event_details.hpp>
+#include <metashell/data/event_kind.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    boost::optional<double>
-    timestamp(const event_details<event_kind::evaluation_end>&)
-    {
-      return boost::none;
-    }
+    template <class T>
+    struct kind_of_mp;
 
-    std::ostream&
-    operator<<(std::ostream& out_,
-               const event_details<event_kind::evaluation_end>& details_)
+    template <class T>
+    struct kind_of_mp<const T> : kind_of_mp<T>
     {
-      return out_ << "event_details<" << to_string(event_kind::evaluation_end)
-                  << ">{" << details_.what << "}";
-    }
+    };
+
+    template <class T>
+    struct kind_of_mp<T&> : kind_of_mp<T>
+    {
+    };
+
+    template <event_kind Kind>
+    struct timeless_event_details;
+
+    template <event_kind Kind>
+    struct kind_of_mp<timeless_event_details<Kind>>
+    {
+      typedef kind_of_mp type;
+      static constexpr event_kind value = Kind;
+    };
   }
 }
+
+#endif

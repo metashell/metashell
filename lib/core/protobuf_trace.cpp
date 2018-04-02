@@ -64,7 +64,7 @@ namespace metashell
                                  data::type_or_code_or_error evaluation_result)
     : _src(src),
       _evaluation_result(data::event_details<data::event_kind::evaluation_end>{
-          evaluation_result})
+          {evaluation_result}})
   {
     _reader.startOnBuffer(_src);
   }
@@ -95,7 +95,7 @@ namespace metashell
         _reader.next();
         return data::event_data(
             data::event_details<data::event_kind::template_end>{
-                end_entry.TimeStamp});
+                {}, end_entry.TimeStamp});
       }
       case templight::ProtobufReader::EndOfFile:
         if (_evaluation_result)

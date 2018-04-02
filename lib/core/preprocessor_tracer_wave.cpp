@@ -37,7 +37,8 @@ namespace metashell
     auto trace =
         filter_events(wave_trace(env_.get(), exp_, _config),
                       data::determine_from_line(
-                          env_.get(), exp_, data::stdin_name_in_clang()));
+                          env_.get(), exp_, data::stdin_name_in_clang()),
+                      mode_ != data::metaprogram::mode_t::full);
 
     return metaprogram_builder(
                trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"))

@@ -33,8 +33,9 @@ namespace metashell
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line)
   {
-    auto trace = filter_events(
-        protobuf_trace(stream, evaluation_result), std::move(from_line));
+    auto trace = filter_events(protobuf_trace(stream, evaluation_result),
+                               std::move(from_line),
+                               mode != data::metaprogram::mode_t::full);
 
     return metaprogram_builder(trace, mode, root_name).get_metaprogram();
   }
@@ -58,8 +59,9 @@ namespace metashell
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line)
   {
-    auto ytrace = filter_events(
-        yaml_trace(trace, evaluation_result), std::move(from_line));
+    auto ytrace = filter_events(yaml_trace(trace, evaluation_result),
+                                std::move(from_line),
+                                mode != data::metaprogram::mode_t::full);
 
     return metaprogram_builder(ytrace, mode, root_name).get_metaprogram();
   }

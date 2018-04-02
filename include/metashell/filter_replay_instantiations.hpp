@@ -103,7 +103,7 @@ namespace metashell
                             boost::optional<data::event_data>>::type
     replay_event(data::event_details<Kind> event_)
     {
-      const auto i = _recorded.find(event_.full_name);
+      const auto i = _recorded.find(event_.what.full_name);
       if (i != _recorded.end())
       {
         if (i->second.empty())
@@ -118,8 +118,9 @@ namespace metashell
           // template_end event closing the simulated template_instantiation
           return data::event_data(
               data::event_details<data::event_kind::template_instantiation>{
-                  event_.full_name, event_.point_of_event,
-                  event_.source_location, event_.timestamp});
+                  data::timeless_event_details<
+                      data::event_kind::template_instantiation>(event_.what),
+                  event_.timestamp});
         }
       }
       return data::event_data(event_);
@@ -130,7 +131,7 @@ namespace metashell
     {
       if (!_recording_to.empty())
       {
-        switch (relative_depth_of(event_))
+        switch (relative_depth_of(Kind))
         {
         case data::relative_depth::open:
           ++_recording_to.back().second;
@@ -154,7 +155,7 @@ namespace metashell
       {
         _recorded[_recording_to.back().first].emplace_back(event_);
       }
-      _recording_to.push_back(std::make_pair(event_.full_name, 0));
+      _recording_to.push_back(std::make_pair(event_.what.full_name, 0));
     }
 
     void record_event(

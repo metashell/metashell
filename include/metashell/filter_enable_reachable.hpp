@@ -54,7 +54,7 @@ namespace metashell
                 (kind != data::event_kind::memoization ||
                  !trim_wrap_type(mpark::get<data::event_details<
                                      data::event_kind::memoization>>(*event)
-                                     .full_name)))));
+                                     .what.full_name)))));
           if (_depth_enabled.back())
           {
             return event;

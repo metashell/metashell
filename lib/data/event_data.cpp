@@ -25,6 +25,12 @@ namespace metashell
       namespace
       {
         template <class T>
+        none_t name(const T&)
+        {
+          return none;
+        }
+
+        template <class T>
         boost::none_t point_of_event(const T&)
         {
           return boost::none;
@@ -48,51 +54,51 @@ namespace metashell
       {
       case event_kind::template_instantiation:
         return event_details<event_kind::template_instantiation>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::default_template_argument_instantiation:
         return event_details<
             event_kind::default_template_argument_instantiation>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::default_function_argument_instantiation:
         return event_details<
             event_kind::default_function_argument_instantiation>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::explicit_template_argument_substitution:
         return event_details<
             event_kind::explicit_template_argument_substitution>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::deduced_template_argument_substitution:
         return event_details<
             event_kind::deduced_template_argument_substitution>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::prior_template_argument_substitution:
         return event_details<event_kind::prior_template_argument_substitution>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::default_template_argument_checking:
         return event_details<event_kind::default_template_argument_checking>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::exception_spec_instantiation:
         return event_details<event_kind::exception_spec_instantiation>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::declaring_special_member:
         return event_details<event_kind::declaring_special_member>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::defining_synthesized_function:
         return event_details<event_kind::defining_synthesized_function>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       case event_kind::memoization:
         return event_details<event_kind::memoization>{
-            type, point_of_event, source_location, timestamp};
+            {type, point_of_event, source_location}, timestamp};
         break;
       default:
         assert(!"Invalid event_kind");
@@ -102,7 +108,8 @@ namespace metashell
 
     event_kind kind_of(const event_data& data)
     {
-      return visit([](const auto& details) { return kind_of(details); }, data);
+      return visit(
+          [](const auto& details) { return kind_of(details.what); }, data);
     }
 
     relative_depth relative_depth_of(const event_data& data)
@@ -113,7 +120,18 @@ namespace metashell
     bool is_remove_ptr(const event_data& data)
     {
       return visit(
-          [](const auto& details) { return is_remove_ptr(details); }, data);
+          [](const auto& details) { return is_remove_ptr(details.what); },
+          data);
+    }
+
+    event_name name(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& details) -> event_name {
+            using metashell::data::impl::name;
+            return name(details.what);
+          },
+          data);
     }
 
     boost::optional<file_location> point_of_event(const event_data& data)
@@ -121,7 +139,7 @@ namespace metashell
       return mpark::visit(
           [](const auto& details) -> boost::optional<file_location> {
             using metashell::data::impl::point_of_event;
-            return point_of_event(details);
+            return point_of_event(details.what);
           },
           data);
     }
@@ -131,7 +149,7 @@ namespace metashell
       return mpark::visit(
           [](const auto& details) -> boost::optional<file_location> {
             using metashell::data::impl::source_location;
-            return source_location(details);
+            return source_location(details.what);
           },
           data);
     }
@@ -145,13 +163,22 @@ namespace metashell
     boost::optional<data::type> type_of(const event_data& data)
     {
       return mpark::visit(
-          [](const auto& details) { return type_of(details); }, data);
+          [](const auto& details) { return type_of(details.what); }, data);
     }
 
     void set_type(event_data& data, type t)
     {
       mpark::visit(
-          [&t](auto& details) { return set_type(details, std::move(t)); },
+          [&t](auto& details) { return set_type(details.what, std::move(t)); },
+          data);
+    }
+
+    timeless_event_data what(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& detail) -> data::timeless_event_data {
+            return detail.what;
+          },
           data);
     }
 
@@ -159,6 +186,12 @@ namespace metashell
     {
       const boost::optional<file_location> poe = point_of_event(event);
       return poe && poe->name == line.name && poe->row == line.row;
+    }
+
+    std::ostream& operator<<(std::ostream& out, const event_data& data)
+    {
+      mpark::visit([&out](const auto& detail) { out << detail; }, data);
+      return out;
     }
   }
 }

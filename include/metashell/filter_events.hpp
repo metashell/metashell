@@ -18,6 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/filter_enable_reachable.hpp>
+#include <metashell/filter_merge_repeated_events.hpp>
+#include <metashell/filter_repeated_memoization.hpp>
 #include <metashell/filter_replay_instantiations.hpp>
 #include <metashell/filter_unwrap_vertices.hpp>
 
@@ -25,10 +27,15 @@ namespace metashell
 {
   template <class Events>
   auto filter_events(Events&& events_,
-                     boost::optional<data::file_location> from_)
+                     boost::optional<data::file_location> from_,
+                     bool keep_memoization_after_instantiation_)
   {
-    return filter_unwrap_vertices(filter_enable_reachable(
-        filter_replay_instantiations(std::move(events_), from_), from_));
+    return filter_repeated_memoization(
+        keep_memoization_after_instantiation_,
+        filter_unwrap_vertices(filter_enable_reachable(
+            filter_replay_instantiations(
+                filter_merge_repeated_events(std::move(events_)), from_),
+            from_)));
   }
 }
 

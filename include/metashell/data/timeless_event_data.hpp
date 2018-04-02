@@ -1,5 +1,5 @@
-#ifndef METASHELL_EVENT_DATA_HPP
-#define METASHELL_EVENT_DATA_HPP
+#ifndef METASHELL_DATA_TIMELESS_EVENT_DATA_HPP
+#define METASHELL_DATA_TIMELESS_EVENT_DATA_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,18 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/event_details.hpp>
 #include <metashell/data/event_kind.hpp>
-#include <metashell/data/event_name.hpp>
-#include <metashell/data/file_location.hpp>
-#include <metashell/data/timeless_event_data.hpp>
-#include <metashell/data/type.hpp>
-
-#include <boost/optional.hpp>
+#include <metashell/data/timeless_event_details.hpp>
 
 #include <variant.hpp>
-
-#include <iosfwd>
 
 namespace metashell
 {
@@ -39,7 +31,7 @@ namespace metashell
 #error PREPROCESSOR_EVENT_KIND defined
 #endif
 #define PREPROCESSOR_EVENT_KIND(name, str, rdepth)                             \
-  event_details<event_kind::name> EVENT_KIND_SEP
+  timeless_event_details<event_kind::name> EVENT_KIND_SEP
 
 #ifdef TEMPLATE_EVENT_KIND
 #error TEMPLATE_EVENT_KIND defined
@@ -57,37 +49,17 @@ namespace metashell
 #undef TEMPLATE_EVENT_KIND
 #undef PREPROCESSOR_EVENT_KIND
         >
-        event_data;
+        timeless_event_data;
 
-    event_kind kind_of(const event_data& data);
+    event_kind kind_of(const timeless_event_data& data);
 
-    relative_depth relative_depth_of(const event_data& data);
+    bool operator==(const timeless_event_data& a, const timeless_event_data& b);
 
-    event_data template_begin(event_kind kind,
-                              const type& type,
-                              const file_location& point_of_event,
-                              const file_location& source_location,
-                              double timestamp);
-
-    bool is_remove_ptr(const event_data& data);
-
-    event_name name(const event_data& data);
-
-    boost::optional<file_location> point_of_event(const event_data& data);
-
-    boost::optional<file_location> source_location(const event_data& data);
-
-    boost::optional<double> timestamp(const event_data& data);
-
-    boost::optional<data::type> type_of(const event_data& data);
-
-    void set_type(event_data& data, type t);
-
-    timeless_event_data what(const event_data& data);
-
-    bool from_line(const event_data& event, const file_location& line);
-
-    std::ostream& operator<<(std::ostream& out, const event_data& data);
+    inline bool operator!=(const timeless_event_data& a,
+                           const timeless_event_data& b)
+    {
+      return !(a == b);
+    }
   }
 }
 

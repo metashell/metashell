@@ -22,14 +22,11 @@
 #include <metashell/null_history.hpp>
 #include <metashell/some_feature_not_supported.hpp>
 
-#include <metashell/data/stdin_name.hpp>
-
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
 #include <boost/optional.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
@@ -42,25 +39,6 @@
 
 namespace
 {
-  typedef std::tuple<metashell::data::file_location,
-                     metashell::data::event_kind,
-                     metashell::data::metaprogram::vertex_descriptor>
-      set_element_t;
-
-  bool less_than(const set_element_t& lhs, const set_element_t& rhs)
-  {
-    return lhs < rhs;
-  }
-
-  bool less_than_ignore_event_kind(const set_element_t& lhs,
-                                   const set_element_t& rhs)
-  {
-    using std::get;
-
-    return std::tie(get<0>(lhs), get<2>(lhs)) <
-           std::tie(get<0>(rhs), get<2>(rhs));
-  }
-
   std::function<void(
       metashell::mdb_shell&, const std::string&, metashell::iface::displayer&)>
   callback(void (metashell::mdb_shell::*f)(const std::string&,
@@ -471,53 +449,6 @@ namespace metashell
     display_movement_info(next_count != 0, displayer_);
   }
 
-  void mdb_shell::filter_similar_edges()
-  {
-
-    using vertex_descriptor = data::metaprogram::vertex_descriptor;
-    using edge_descriptor = data::metaprogram::edge_descriptor;
-    using edge_property = data::metaprogram::edge_property;
-
-    auto comparator = mp->get_mode() == data::metaprogram::mode_t::full ?
-                          less_than_ignore_event_kind :
-                          less_than;
-
-    // Clang sometimes produces equivalent instantiations events from the same
-    // point. Filter out all but one of each
-    for (vertex_descriptor vertex : mp->get_vertices())
-    {
-
-      std::set<set_element_t, decltype(comparator)> similar_edges(comparator);
-
-      for (edge_descriptor edge : mp->get_out_edges(vertex))
-      {
-        edge_property& edge_property = mp->get_edge_property(edge);
-
-        set_element_t set_element =
-            std::make_tuple(edge_property.point_of_event, edge_property.kind,
-                            mp->get_target(edge));
-
-        if (similar_edges.count(set_element) > 0)
-        {
-          edge_property.enabled = false;
-        }
-        else
-        {
-          similar_edges.insert(set_element);
-        }
-      }
-    }
-  }
-
-  void mdb_shell::filter_metaprogram()
-  {
-    assert(mp);
-
-    filter_similar_edges();
-
-    mp->init_full_time_taken();
-  }
-
   void mdb_shell::command_evaluate(const std::string& arg_copy,
                                    iface::displayer& displayer_)
   {
@@ -595,7 +526,8 @@ namespace metashell
     if (run_metaprogram_with_templight(expression, mode, displayer_))
     {
       displayer_.show_raw_text("Metaprogram started");
-      filter_metaprogram();
+      assert(mp);
+      mp->init_full_time_taken();
     }
   }
 
