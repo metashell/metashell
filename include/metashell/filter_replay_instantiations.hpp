@@ -20,14 +20,11 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/event_data_sequence.hpp>
 #include <metashell/data/file_location.hpp>
-#include <metashell/data/type.hpp>
+
+#include <metashell/event_cache.hpp>
+#include <metashell/filter_with_queue.hpp>
 
 #include <boost/optional.hpp>
-
-#include <deque>
-#include <map>
-#include <type_traits>
-#include <vector>
 
 namespace metashell
 {
@@ -44,13 +41,7 @@ namespace metashell
 
     boost::optional<data::event_data> next()
     {
-      boost::optional<data::event_data> event =
-          _queue.empty() ? _events.next() : std::move(_queue.front());
-
-      if (!_queue.empty())
-      {
-        _queue.pop_front();
-      }
+      boost::optional<data::event_data> event = _events.next();
 
       if (_from && event)
       {
@@ -58,125 +49,31 @@ namespace metashell
         {
           _replaying = true;
         }
-        mpark::visit(
-            [this, &event](auto det) {
-              if (this->_replaying)
-              {
-                event = this->replay_event(det);
-              }
-              else
-              {
-                this->record_event(det);
-              }
-            },
-            *event);
+        if (_replaying)
+        {
+          data::list<data::event_data> r = _cache.replay(*event);
+          event = std::move(r.head);
+          _events.queue(r.tail);
+          _cache.erase_related(*event);
+        }
+        else
+        {
+          _cache.record(*event);
+        }
       }
 
       return event;
     }
 
   private:
-    Events _events;
+    filter_with_queue<Events> _events;
     boost::optional<data::file_location> _from;
-    std::deque<data::event_data> _queue;
     bool _replaying;
-    std::map<data::type, std::vector<data::event_data>> _recorded;
-    std::vector<std::pair<data::type, int>> _recording_to;
+    event_cache _cache;
 
     bool from_here(const data::event_data& event_) const
     {
       return !_from || from_line(event_, *_from);
-    }
-
-    template <data::event_kind Kind>
-    typename std::enable_if<Kind != data::event_kind::template_instantiation &&
-                                Kind != data::event_kind::memoization,
-                            boost::optional<data::event_data>>::type
-    replay_event(data::event_details<Kind> event_)
-    {
-      return data::event_data(event_);
-    }
-
-    template <data::event_kind Kind>
-    typename std::enable_if<Kind == data::event_kind::template_instantiation ||
-                                Kind == data::event_kind::memoization,
-                            boost::optional<data::event_data>>::type
-    replay_event(data::event_details<Kind> event_)
-    {
-      const auto i = _recorded.find(event_.what.full_name);
-      if (i != _recorded.end())
-      {
-        if (i->second.empty())
-        {
-          _recorded.erase(i);
-        }
-        else
-        {
-          _queue.insert(_queue.begin(), i->second.begin(), i->second.end());
-          _recorded.erase(i);
-          // The template_end event closing the memoization will become the
-          // template_end event closing the simulated template_instantiation
-          return data::event_data(
-              data::event_details<data::event_kind::template_instantiation>{
-                  data::timeless_event_details<
-                      data::event_kind::template_instantiation>(event_.what),
-                  event_.timestamp});
-        }
-      }
-      return data::event_data(event_);
-    }
-
-    template <data::event_kind Kind>
-    void record_event(const data::event_details<Kind>& event_)
-    {
-      if (!_recording_to.empty())
-      {
-        switch (relative_depth_of(Kind))
-        {
-        case data::relative_depth::open:
-          ++_recording_to.back().second;
-          break;
-        case data::relative_depth::flat:
-          break;
-        case data::relative_depth::close:
-        case data::relative_depth::end:
-          --_recording_to.back().second;
-          break;
-        }
-
-        _recorded[_recording_to.back().first].emplace_back(event_);
-      }
-    }
-
-    void record_event(const data::event_details<
-                      data::event_kind::template_instantiation>& event_)
-    {
-      if (!_recording_to.empty())
-      {
-        _recorded[_recording_to.back().first].emplace_back(event_);
-      }
-      _recording_to.push_back(std::make_pair(event_.what.full_name, 0));
-    }
-
-    void record_event(
-        const data::event_details<data::event_kind::template_end>& event_)
-    {
-      if (!_recording_to.empty())
-      {
-        if (_recording_to.back().second == 0)
-        {
-          _recording_to.pop_back();
-          if (!_recording_to.empty())
-          {
-            _recorded[_recording_to.back().first].emplace_back(event_);
-          }
-        }
-        else
-        {
-          _recorded[_recording_to.back().first].emplace_back(event_);
-          --_recording_to.back().second;
-        }
-      }
     }
   };
 

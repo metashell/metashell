@@ -20,6 +20,8 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/event_data_sequence.hpp>
 
+#include <metashell/filter_with_queue.hpp>
+
 #include <boost/optional.hpp>
 
 #include <vector>
@@ -38,7 +40,7 @@ namespace metashell
 
     boost::optional<data::event_data> next()
     {
-      while (boost::optional<data::event_data> event = next_event())
+      while (boost::optional<data::event_data> event = _events.next())
       {
         switch (relative_depth_of(*event))
         {
@@ -51,7 +53,7 @@ namespace metashell
         case data::relative_depth::close:
         case data::relative_depth::end:
           _last_open.pop_back();
-          if (boost::optional<data::event_data> ahead = next_event())
+          if (boost::optional<data::event_data> ahead = _events.next())
           {
             if (what(*ahead) == what(*_last_open.back()))
             {
@@ -59,7 +61,7 @@ namespace metashell
             }
             else
             {
-              _queued = std::move(ahead);
+              _events.queue(std::move(*ahead));
               return event;
             }
           }
@@ -74,24 +76,9 @@ namespace metashell
     }
 
   private:
-    Events _events;
+    filter_with_queue<Events> _events;
 
     std::vector<boost::optional<data::event_data>> _last_open{boost::none};
-    boost::optional<data::event_data> _queued;
-
-    boost::optional<data::event_data> next_event()
-    {
-      if (_queued)
-      {
-        boost::optional<data::event_data> result = std::move(_queued);
-        _queued = boost::none;
-        return result;
-      }
-      else
-      {
-        return _events.next();
-      }
-    }
   };
 
   template <class Events>
