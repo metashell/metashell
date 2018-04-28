@@ -17,99 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stack>
-#include <string>
-#include <vector>
-
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/file_location.hpp>
 #include <metashell/data/include_argument.hpp>
 #include <metashell/data/metaprogram.hpp>
-#include <metashell/data/token.hpp>
 
-#include <boost/optional.hpp>
+#include <stack>
+#include <type_traits>
 
 namespace metashell
 {
-
   class metaprogram_builder
   {
   public:
-    metaprogram_builder(data::metaprogram::mode_t mode,
-                        const data::cpp_code& root_name,
-                        const data::file_location& root_source_location);
-
-    void handle_template_begin(data::event_kind kind,
-                               const data::type& type,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp);
-
-    void handle_template_end(double timestamp);
-
-    void handle_macro_expansion_begin(
-        const data::cpp_code& name,
-        const boost::optional<std::vector<data::cpp_code>>& args,
-        const data::file_location& point_of_event,
-        const data::file_location& source_location,
-        double timestamp);
-
-    void handle_rescanning(const data::cpp_code& code, double timestamp);
-
-    void handle_expanded_code(const data::cpp_code& code,
-                              const data::file_location& point_of_event,
-                              double timestamp);
-
-    void handle_macro_expansion_end(double timestamp);
-
-    void handle_token_generation(const data::token& token,
-                                 const data::file_location& point_of_event,
-                                 const data::file_location& source_location,
-                                 double timestamp);
-
-    void handle_token_skipping(const data::token& token,
-                               const data::file_location& point_of_event,
-                               double timestamp);
-
-    void handle_include_begin(const data::include_argument& arg,
-                              const data::file_location& point_of_event,
-                              double timestamp);
-
-    void handle_include_end(double timestamp);
-
-    void handle_define(const data::cpp_code& name,
-                       const boost::optional<std::vector<data::cpp_code>>& args,
-                       const data::cpp_code& body,
-                       const data::file_location& point_of_event,
-                       double timestamp);
-
-    void handle_undefine(const data::cpp_code& name,
-                         const data::file_location& point_of_event,
-                         double timestamp);
-
-    void handle_preprocessing_condition_begin(
-        const data::cpp_code& expression,
-        const data::file_location& point_of_event,
-        double timestamp);
-
-    void handle_preprocessing_condition_end(bool result, double timestamp);
-
-    void handle_preprocessing_else(const data::file_location& point_of_event,
-                                   double timestamp);
-
-    void handle_preprocessing_endif(const data::file_location& point_of_event,
-                                    double timestamp);
-
-    void handle_error_directive(const std::string& message,
-                                const data::file_location& point_of_event,
-                                double timestamp);
-
-    void handle_line_directive(const data::cpp_code& arg,
-                               const data::file_location& point_of_event,
-                               const data::file_location& source_location,
-                               double timestamp);
-
-    void handle_evaluation_end(data::type_or_code_or_error result_);
+    template <class Container>
+    metaprogram_builder(Container&& trace,
+                        data::metaprogram::mode_t mode,
+                        const data::cpp_code& root_name)
+      : metaprogram_builder(mode, root_name)
+    {
+      for (const data::event_data& event : trace)
+      {
+        handle_event(event);
+      }
+    }
 
     const data::metaprogram& get_metaprogram() const;
 
@@ -121,8 +53,76 @@ namespace metashell
         element_key_t;
     typedef std::map<element_key_t, vertex_descriptor> element_vertex_map_t;
 
+    metaprogram_builder(data::metaprogram::mode_t mode,
+                        const data::cpp_code& root_name);
+
+    void handle_event(const data::event_data& details);
+
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
+
+    vertex_descriptor add_vertex(const data::timeless_event_details<
+                                 data::event_kind::memoization>& event)
+    {
+      return add_vertex(name(event), source_location(event));
+    }
+
+    vertex_descriptor
+    add_vertex(const data::timeless_event_details<
+               data::event_kind::template_instantiation>& event)
+    {
+      return add_vertex(name(event), source_location(event));
+    }
+
+    template <data::event_kind Kind>
+    vertex_descriptor
+    add_vertex(const data::timeless_event_details<Kind>& event)
+    {
+      return add_vertex(unique_value(name(event)), source_location(event));
+    }
+
+    void pop_edge(data::event_kind end_kind, double timestamp);
+
+    template <data::event_kind Kind>
+    edge_descriptor add_edge(const data::event_details<Kind>& details)
+    {
+      return mp.add_edge(edge_stack.empty() ? mp.get_root_vertex() :
+                                              mp.get_target(edge_stack.top()),
+                         add_vertex(details.what), Kind,
+                         point_of_event(details.what), details.timestamp);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::open>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      edge_stack.push(add_edge(details));
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::flat>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      add_edge(details);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::close>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      pop_edge(kind_of(details.what), details.timestamp);
+    }
+
+    template <data::event_kind Kind>
+    typename std::enable_if<data::relative_depth_of(Kind) ==
+                            data::relative_depth::end>::type
+    handle_event_impl(const data::event_details<Kind>& details)
+    {
+      mp.set_evaluation_result(details.what.result);
+    }
 
     data::metaprogram mp;
 

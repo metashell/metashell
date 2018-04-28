@@ -19,7 +19,8 @@ addons:
     packages:
       - libreadline-dev
       - libncurses5-dev
-      - g++-4.8
+      - gcc-5
+      - g++-5
       - python-yaml
 script:
   - tools/travis/${TRAVIS_OS_NAME}.sh

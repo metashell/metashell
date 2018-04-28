@@ -29,62 +29,66 @@ namespace metashell
     {
       switch (kind)
       {
-      case event_kind::macro_expansion:
-        return "MacroExpansion";
-      case event_kind::macro_definition:
-        return "MacroDefinition";
-      case event_kind::macro_deletion:
-        return "MacroDeletion";
-      case event_kind::rescanning:
-        return "Rescanning";
-      case event_kind::expanded_code:
-        return "ExpandedCode";
-      case event_kind::generated_token:
-        return "GeneratedToken";
-      case event_kind::skipped_token:
-        return "SkippedToken";
-      case event_kind::quote_include:
-        return "QuoteInclude";
-      case event_kind::sys_include:
-        return "SysInclude";
-      case event_kind::preprocessing_condition:
-        return "PreprocessingCondition";
-      case event_kind::preprocessing_condition_result:
-        return "PreprocessingConditionResult";
-      case event_kind::preprocessing_else:
-        return "PreprocessingElse";
-      case event_kind::preprocessing_endif:
-        return "PreprocessingEndif";
-      case event_kind::error_directive:
-        return "ErrorDirective";
-      case event_kind::line_directive:
-        return "LineDirective";
-      case event_kind::template_instantiation:
-        return "TemplateInstantiation";
-      case event_kind::default_template_argument_instantiation:
-        return "DefaultTemplateArgumentInstantiation";
-      case event_kind::default_function_argument_instantiation:
-        return "DefaultFunctionArgumentInstantiation";
-      case event_kind::explicit_template_argument_substitution:
-        return "ExplicitTemplateArgumentSubstitution";
-      case event_kind::deduced_template_argument_substitution:
-        return "DeducedTemplateArgumentSubstitution";
-      case event_kind::prior_template_argument_substitution:
-        return "PriorTemplateArgumentSubstitution";
-      case event_kind::default_template_argument_checking:
-        return "DefaultTemplateArgumentChecking";
-      case event_kind::exception_spec_instantiation:
-        return "ExceptionSpecInstantiation";
-      case event_kind::declaring_special_member:
-        return "DeclaringSpecialMember";
-      case event_kind::defining_synthesized_function:
-        return "DefiningSynthesizedFunction";
-      case event_kind::memoization:
-        return "Memoization";
-      case event_kind::non_template_type:
-        return "NonTemplateType";
+#ifdef PREPROCESSOR_EVENT_KIND
+#error PREPROCESSOR_EVENT_KIND defined
+#endif
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)                             \
+  case event_kind::name:                                                       \
+    return str;
+
+#ifdef TEMPLATE_EVENT_KIND
+#error TEMPLATE_EVENT_KIND defined
+#endif
+#define TEMPLATE_EVENT_KIND(name, str, rdepth)                                 \
+  case event_kind::name:                                                       \
+    return str;
+
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
+#endif
+#define MISC_EVENT_KIND(name, str, rdepth)                                     \
+  case event_kind::name:                                                       \
+    return str;
+
+#include <metashell/data/impl/event_kind_list.hpp>
+
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
       }
       return "UnknownKind";
+    }
+
+    bool enabled(event_kind kind)
+    {
+      switch (kind)
+      {
+      case event_kind::memoization:
+      case event_kind::template_instantiation:
+      case event_kind::deduced_template_argument_substitution:
+      case event_kind::explicit_template_argument_substitution:
+      case event_kind::declaring_special_member:
+      case event_kind::defining_synthesized_function:
+
+      case event_kind::macro_expansion:
+      case event_kind::macro_definition:
+      case event_kind::macro_deletion:
+      case event_kind::rescanning:
+      case event_kind::expanded_code:
+      case event_kind::generated_token:
+      case event_kind::skipped_token:
+      case event_kind::quote_include:
+      case event_kind::sys_include:
+      case event_kind::preprocessing_condition:
+      case event_kind::preprocessing_condition_result:
+      case event_kind::preprocessing_else:
+      case event_kind::preprocessing_endif:
+      case event_kind::error_directive:
+      case event_kind::line_directive:
+        return true;
+      default:
+        return false;
+      }
     }
   }
 }

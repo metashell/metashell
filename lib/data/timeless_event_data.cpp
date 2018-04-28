@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,20 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/is_template_type.hpp>
-
-#include <metashell/data/command.hpp>
-
-#include <algorithm>
+#include <metashell/data/kind_of_mp.hpp>
+#include <metashell/data/timeless_event_data.hpp>
 
 namespace metashell
 {
-  bool is_template_type(const data::type& type)
+  namespace data
   {
-    const data::command cmd(type);
-    return std::find_if(cmd.begin(), cmd.end(), [](const data::token& t_) {
-             return t_.type() == data::token_type::operator_greater ||
-                    t_.type() == data::token_type::operator_less;
-           }) != cmd.end();
+    event_kind kind_of(const timeless_event_data& data)
+    {
+      return visit([](const auto& details) { return kind_of(details); }, data);
+    }
+
+    bool operator==(const timeless_event_data& a, const timeless_event_data& b)
+    {
+      return kind_of(a) == kind_of(b) &&
+             mpark::visit(
+                 [&b](const auto& da) -> bool {
+                   return da == mpark::get<timeless_event_details<
+                                    kind_of_mp<decltype(da)>::value>>(b);
+                 },
+                 a);
+    }
   }
 }

@@ -17,8 +17,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_category.hpp>
+#include <metashell/data/relative_depth.hpp>
+
 #include <ostream>
 #include <string>
+
+#include <cassert>
+
+#ifdef PREPROCESSOR_EVENT_KIND
+#error PREPROCESSOR_EVENT_KIND defined
+#endif
+
+#ifdef TEMPLATE_EVENT_KIND
+#error TEMPLATE_EVENT_KIND defined
+#endif
+
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
+#endif
 
 namespace metashell
 {
@@ -26,42 +43,81 @@ namespace metashell
   {
     enum class event_kind
     {
-      // Preprocessor-related events
-      macro_expansion,
-      macro_definition,
-      macro_deletion,
-      rescanning,
-      expanded_code,
-      generated_token,
-      skipped_token,
-      quote_include,
-      sys_include,
-      preprocessing_condition,
-      preprocessing_condition_result,
-      preprocessing_else,
-      preprocessing_endif,
-      error_directive,
-      line_directive,
-
-      // Template instantiation-related events
-      template_instantiation,
-      default_template_argument_instantiation,
-      default_function_argument_instantiation,
-      explicit_template_argument_substitution,
-      deduced_template_argument_substitution,
-      prior_template_argument_substitution,
-      default_template_argument_checking,
-      exception_spec_instantiation,
-      declaring_special_member,
-      defining_synthesized_function,
-      memoization,
-      non_template_type // Used only if an evaluation result is not a template
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth) name,
+#define TEMPLATE_EVENT_KIND(name, str, rdepth) name,
+#define MISC_EVENT_KIND(name, str, rdepth) name,
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
     };
+
+    constexpr event_category category(event_kind kind)
+    {
+      switch (kind)
+      {
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth) case event_kind::name:
+#define TEMPLATE_EVENT_KIND(name, str, rdepth)
+#define MISC_EVENT_KIND(name, str, rdepth)
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::preprocessor;
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)
+#define TEMPLATE_EVENT_KIND(name, str, rdepth) case event_kind::name:
+#define MISC_EVENT_KIND(name, str, rdepth)
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::template_;
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)
+#define TEMPLATE_EVENT_KIND(name, str, rdepth)
+#define MISC_EVENT_KIND(name, str, rdepth) case event_kind::name:
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+        return event_category::misc;
+      }
+    }
+
+    constexpr relative_depth relative_depth_of(event_kind kind)
+    {
+      switch (kind)
+      {
+#define PREPROCESSOR_EVENT_KIND(name, str, rdepth)                             \
+  case event_kind::name:                                                       \
+    return relative_depth::rdepth;
+#define TEMPLATE_EVENT_KIND PREPROCESSOR_EVENT_KIND
+#define MISC_EVENT_KIND PREPROCESSOR_EVENT_KIND
+#include <metashell/data/impl/event_kind_list.hpp>
+#undef MISC_EVENT_KIND
+#undef TEMPLATE_EVENT_KIND
+#undef PREPROCESSOR_EVENT_KIND
+      }
+      return relative_depth::end;
+    }
 
     std::ostream& operator<<(std::ostream& os, event_kind kind);
 
     std::string to_string(event_kind kind);
+
+    bool enabled(event_kind kind);
   }
 }
+
+#ifdef PREPROCESSOR_EVENT_KIND
+#error PREPROCESSOR_EVENT_KIND defined
+#endif
+
+#ifdef TEMPLATE_EVENT_KIND
+#error TEMPLATE_EVENT_KIND defined
+#endif
+
+#ifdef MISC_EVENT_KIND
+#error MISC_EVENT_KIND defined
+#endif
 
 #endif

@@ -18,6 +18,8 @@
 #include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/metaprogram_tracer_clang.hpp>
 
+#include <metashell/data/stdin_name.hpp>
+
 namespace metashell
 {
   namespace
@@ -69,11 +71,25 @@ namespace metashell
     }
     else
     {
-      return create_metaprogram_from_yaml_trace(
+      const data::type_or_code_or_error evaluation_result =
+          type_or_code_or_error_from_result(res, expression_);
+
+      data::metaprogram result = create_metaprogram_from_yaml_trace(
           trace, mode_,
           expression_ ? *expression_ : data::cpp_code("<environment>"),
-          data::file_location{}, // TODO something sensible here?
-          type_or_code_or_error_from_result(res, expression_));
+          evaluation_result, determine_from_line(env_.get(), expression_,
+                                                 data::stdin_name_in_clang()));
+
+      if (result.is_empty() && evaluation_result.is_error())
+      {
+        // Most errors will cause templight to generate an empty trace
+        // We're only interested in non-empty traces
+        throw exception(evaluation_result.get_error());
+      }
+      else
+      {
+        return result;
+      }
     }
   }
 }

@@ -50,7 +50,6 @@ void assert_state_equal(
 TEST(metaprogram, constructor)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_evaluation_result(),
@@ -78,7 +77,6 @@ TEST(metaprogram, constructor)
 TEST(metaprogram, with_single_non_root_vertex)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::normal);
@@ -125,7 +123,6 @@ TEST(metaprogram, with_single_non_root_vertex)
 TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::normal);
@@ -186,7 +183,6 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
 TEST(metaprogram, step_back_with_single_non_root_vertex)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   auto vertex_a = mp.add_vertex(type("A"), file_location("c.hpp", 30, 35));
@@ -231,7 +227,6 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
 TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   auto vertex_a = mp.add_vertex(type("A"), file_location("d.hpp", 10, 11));
@@ -312,7 +307,6 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
 TEST(metaprogram, step_sorting_in_profile_mode)
 {
   metaprogram mp(metaprogram::mode_t::profile, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   auto vertex_a = mp.add_vertex(type("A"), file_location("a.hpp", 0, 0));
@@ -381,7 +375,6 @@ TEST(metaprogram, step_sorting_in_profile_mode)
 TEST(metaprogram, constructor_normal_mode)
 {
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::normal);
@@ -390,7 +383,6 @@ TEST(metaprogram, constructor_normal_mode)
 TEST(metaprogram, constructor_full_mode)
 {
   metaprogram mp(metaprogram::mode_t::full, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::full);
@@ -399,7 +391,6 @@ TEST(metaprogram, constructor_full_mode)
 TEST(metaprogram, constructor_profile_mode)
 {
   metaprogram mp(metaprogram::mode_t::profile, cpp_code("some_type"),
-                 file_location{},
                  type_or_code_or_error(type("the_result_type")));
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::profile);

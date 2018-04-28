@@ -23,6 +23,6 @@ namespace metashell
                                      const boost::optional<data::cpp_code>&,
                                      data::metaprogram::mode_t mode_)
   {
-    return {mode_, data::cpp_code{}, {}, {}};
+    return {mode_, data::cpp_code{}, {}};
   }
 }

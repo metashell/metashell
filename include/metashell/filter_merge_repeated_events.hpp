@@ -1,0 +1,105 @@
+#ifndef METASHELL_MERGE_REPEATED_EVENTS_HPP
+#define METASHELL_MERGE_REPEATED_EVENTS_HPP
+
+// Metashell - Interactive C++ template metaprogramming shell
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <metashell/data/event_data.hpp>
+#include <metashell/data/event_data_sequence.hpp>
+
+#include <boost/optional.hpp>
+
+#include <vector>
+
+namespace metashell
+{
+  template <class Events>
+  class filter_merge_repeated_events_t
+      : public data::event_data_sequence<filter_merge_repeated_events_t<Events>>
+  {
+  public:
+    explicit filter_merge_repeated_events_t(Events&& events_)
+      : _events(std::move(events_))
+    {
+    }
+
+    boost::optional<data::event_data> next()
+    {
+      while (boost::optional<data::event_data> event = next_event())
+      {
+        switch (relative_depth_of(*event))
+        {
+        case data::relative_depth::open:
+          _last_open.back() = event;
+          _last_open.emplace_back(boost::none);
+          return event;
+        case data::relative_depth::flat:
+          return event;
+        case data::relative_depth::close:
+        case data::relative_depth::end:
+          _last_open.pop_back();
+          if (boost::optional<data::event_data> ahead = next_event())
+          {
+            if (what(*ahead) == what(*_last_open.back()))
+            {
+              _last_open.emplace_back(boost::none);
+            }
+            else
+            {
+              _queued = std::move(ahead);
+              return event;
+            }
+          }
+          else
+          {
+            return event;
+          }
+          break;
+        }
+      }
+      return boost::none;
+    }
+
+  private:
+    Events _events;
+
+    std::vector<boost::optional<data::event_data>> _last_open{boost::none};
+    boost::optional<data::event_data> _queued;
+
+    boost::optional<data::event_data> next_event()
+    {
+      if (_queued)
+      {
+        boost::optional<data::event_data> result = std::move(_queued);
+        _queued = boost::none;
+        return result;
+      }
+      else
+      {
+        return _events.next();
+      }
+    }
+  };
+
+  template <class Events>
+  filter_merge_repeated_events_t<Events>
+  filter_merge_repeated_events(Events&& events_)
+  {
+    return filter_merge_repeated_events_t<Events>(std::move(events_));
+  }
+}
+
+#endif

@@ -20,6 +20,7 @@
 #include <metashell/data/cpp_code.hpp>
 
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <string>
@@ -55,6 +56,10 @@ namespace metashell
     std::ostream& operator<<(std::ostream& o_, const type& t_);
     bool operator==(const type& a_, const type& b_);
     bool operator<(const type& a_, const type& b_);
+
+    boost::optional<type> trim_wrap_type(const type& type_);
+    bool is_template_type(const type& type_);
+    bool is_remove_ptr(const type& type_);
   }
 }
 

@@ -18,9 +18,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/cpp_code.hpp>
-#include <metashell/data/file_location.hpp>
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
+
+#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <string>
@@ -31,22 +32,22 @@ namespace metashell
       std::istream& stream,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
-      const data::type_or_code_or_error& evaluation_result);
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line);
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
-      const data::type_or_code_or_error& evaluation_result);
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line);
 
   data::metaprogram create_metaprogram_from_yaml_trace(
       const std::string& trace,
       data::metaprogram::mode_t mode,
       const data::cpp_code& root_name,
-      const data::file_location& root_source_location,
-      const data::type_or_code_or_error& evaluation_result);
+      const data::type_or_code_or_error& evaluation_result,
+      boost::optional<data::file_location> from_line);
 }
 
 #endif

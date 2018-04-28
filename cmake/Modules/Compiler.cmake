@@ -52,3 +52,13 @@ function(use_cpp11)
   endif()
 endfunction()
 
+function(use_cpp14)
+  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" PARENT_SCOPE)
+    message(STATUS "Turning on C++14 for GCC")
+  elseif("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" PARENT_SCOPE)
+    message(STATUS "Turning on C++14 for Clang")
+  endif()
+endfunction()
+

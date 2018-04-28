@@ -1,8 +1,8 @@
-#ifndef METASHELL_IS_TEMPLATE_TYPE_HPP
-#define METASHELL_IS_TEMPLATE_TYPE_HPP
+#ifndef METASHELL_PROTOBUF_TRACE_HPP
+#define METASHELL_PROTOBUF_TRACE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,12 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/type.hpp>
+#include <metashell/data/event_data.hpp>
+#include <metashell/data/event_data_sequence.hpp>
+#include <metashell/data/type_or_code_or_error.hpp>
+
+#include <templight/ProtobufReader.h>
+
+#include <boost/optional.hpp>
+
+#include <iosfwd>
 
 namespace metashell
 {
+  class protobuf_trace : public data::event_data_sequence<protobuf_trace>
+  {
+  public:
+    protobuf_trace(std::istream& src,
+                   data::type_or_code_or_error evaluation_result);
 
-  bool is_template_type(const data::type& type);
+    boost::optional<data::event_data> next();
+
+  private:
+    std::istream& _src;
+    templight::ProtobufReader _reader;
+    boost::optional<data::event_data> _evaluation_result;
+  };
 }
 
 #endif

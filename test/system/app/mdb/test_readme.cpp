@@ -267,10 +267,10 @@ TEST(readme, how_to_sfinae)
         {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
         {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 1},
         {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
-        {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 2},
+        {frame( type("make_unique"), _, _, event_kind::explicit_template_argument_substitution), 1, 1},
         {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("make_unique"), _, _, event_kind::deduced_template_argument_substitution), 1, 1},
         {frame(  type("unique_if<int>"), _, _, event_kind::memoization), 2, 0},
-        {frame( type("make_unique"), _, _, event_kind::deduced_template_argument_substitution), 1, 0},
         {frame( type("make_unique<int, int>"), _, _, event_kind::template_instantiation), 1, 0},
         {frame( type("_std::unique_ptr<int>"), _, _, event_kind::template_instantiation), 1, 0}
       }

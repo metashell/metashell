@@ -93,17 +93,6 @@ namespace metashell
         data::metaprogram::mode_t mode,
         iface::displayer& displayer_);
 
-    bool is_wrap_type(const data::type& type);
-    data::type trim_wrap_type(const data::type& type);
-
-    void filter_disable_everything();
-    void filter_enable_reachable(bool for_current_line);
-    void filter_unwrap_vertices();
-    void filter_similar_edges();
-    void filter_metaprogram(bool for_current_line);
-
-    static bool is_event_kind_enabled(data::event_kind kind);
-
     static boost::optional<int>
     parse_defaultable_integer(const std::string& arg, int default_value);
 

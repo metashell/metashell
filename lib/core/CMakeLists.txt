@@ -18,7 +18,7 @@ aux_source_directory(. SOURCES)
 add_library(metashell_core_lib STATIC ${SOURCES})
 
 enable_warnings()
-use_cpp11()
+use_cpp14()
 
 # mIndent
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mindent/include")
@@ -28,3 +28,6 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_console/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_environment/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_lines/include")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
+
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")

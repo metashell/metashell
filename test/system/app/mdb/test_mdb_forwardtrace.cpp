@@ -533,7 +533,7 @@ TEST(mdb_forwardtrace, sfinae_v1)
         {frame(  v2::fib<4>(), _, _, event_kind::memoization), 2, 0},
         {frame(  type("enable_if<false, char>"), _, _, event_kind::template_instantiation), 2, 0},
         {frame(  type("enable_if<false, char>"), _, _, event_kind::memoization), 2, 0},
-        {frame( type("foo"), _, _, event_kind::explicit_template_argument_substitution), 1, 5},
+        {frame( type("foo"), _, _, event_kind::explicit_template_argument_substitution), 1, 4},
         {frame(  v1::fib<4>(), _, _, event_kind::template_instantiation), 2, 4},
         {frame(   v1::fib<2>(), _, _, event_kind::template_instantiation), 3, 2},
         {frame(    v1::fib<0>(), _, _, event_kind::memoization), 4, 0},
@@ -547,8 +547,9 @@ TEST(mdb_forwardtrace, sfinae_v1)
         {frame(  type("enable_if<true, void>"), _, _, event_kind::template_instantiation), 2, 1},
         {frame(    type("enable_if<true, T>"), _, _, event_kind::deduced_template_argument_substitution), 3, 0},
         {frame(  type("enable_if<true, void>"), _, _, event_kind::memoization), 2, 0},
+        {frame( type("foo"), _, _, event_kind::deduced_template_argument_substitution), 1, 2},
+        {frame(  v1::fib<4>(), _, _, event_kind::memoization), 2, 0},
         {frame(  type("enable_if<true, void>"), _, _, event_kind::memoization), 2, 0},
-        {frame( type("foo"), _, _, event_kind::deduced_template_argument_substitution), 1, 0},
         {frame( type("foo<4>"), _, _, event_kind::template_instantiation), 1, 0},
         {frame( type("void"), _, _, event_kind::non_template_type), 1, 0}
       }

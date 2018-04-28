@@ -51,7 +51,6 @@ namespace metashell
       // Creates empty metaprogram: single <root> vertex
       metaprogram(mode_t mode,
                   const cpp_code& root_name,
-                  const file_location& root_source_location,
                   const type_or_code_or_error& evaluation_result);
 
       struct vertex_property_tag

@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include <metashell/is_template_type.hpp>
+#include <metashell/data/type.hpp>
 
 using namespace metashell;
 
