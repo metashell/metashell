@@ -34,7 +34,7 @@ namespace metashell
                              const type_or_code_or_error& evaluation_result)
       : mode(mode), evaluation_result(evaluation_result)
     {
-      root_vertex = add_vertex(type(root_name), file_location{});
+      root_vertex = add_vertex(unique_value(type(root_name)), file_location{});
       reset_state();
     }
 

@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+using namespace metashell;
 using namespace metashell::data;
 
 template <class T>
@@ -58,9 +59,11 @@ TEST(metaprogram, constructor)
   ASSERT_EQ(mp.get_num_vertices(), 1u);
   ASSERT_EQ(mp.get_num_edges(), 0u);
 
-  ASSERT_TRUE(
-      boost::get<type>(&mp.get_vertex_property(mp.get_root_vertex()).node));
-  ASSERT_EQ(boost::get<type>(mp.get_vertex_property(mp.get_root_vertex()).node),
+  ASSERT_TRUE(boost::get<unique<type>>(
+      &mp.get_vertex_property(mp.get_root_vertex()).node));
+  ASSERT_EQ(boost::get<unique<type>>(
+                mp.get_vertex_property(mp.get_root_vertex()).node)
+                .value(),
             type("some_type"));
 
   assert_state_equal(mp.get_state(), {false}, {boost::none}, {boost::none});
@@ -81,7 +84,8 @@ TEST(metaprogram, with_single_non_root_vertex)
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::normal);
 
-  auto vertex_a = mp.add_vertex(type("A"), file_location("a.hpp", 10, 20));
+  auto vertex_a =
+      mp.add_vertex(unique_value(type("A")), file_location("a.hpp", 10, 20));
   auto edge_root_a = mp.add_edge(mp.get_root_vertex(), vertex_a,
                                  event_kind::template_instantiation,
                                  file_location("foo.cpp", 10, 20), 10.0);
@@ -89,9 +93,11 @@ TEST(metaprogram, with_single_non_root_vertex)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
 
-  ASSERT_TRUE(boost::get<type>(&mp.get_vertex_property(vertex_a).node));
-  ASSERT_EQ(
-      boost::get<type>(mp.get_vertex_property(vertex_a).node).name(), "A");
+  ASSERT_TRUE(boost::get<unique<type>>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(boost::get<unique<type>>(mp.get_vertex_property(vertex_a).node)
+                .value()
+                .name(),
+            "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             file_location("a.hpp", 10, 20));
 
@@ -127,7 +133,8 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
 
   ASSERT_EQ(mp.get_mode(), metaprogram::mode_t::normal);
 
-  auto vertex_a = mp.add_vertex(type("A"), file_location("b.hpp", 40, 50));
+  auto vertex_a =
+      mp.add_vertex(unique_value(type("A")), file_location("b.hpp", 40, 50));
   auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
                                     event_kind::template_instantiation,
                                     file_location("bar.cpp", 20, 10), 10.0);
@@ -138,9 +145,11 @@ TEST(metaprogram, with_single_non_root_vertex_parallel_edge)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
 
-  ASSERT_TRUE(boost::get<type>(&mp.get_vertex_property(vertex_a).node));
-  ASSERT_EQ(
-      boost::get<type>(mp.get_vertex_property(vertex_a).node).name(), "A");
+  ASSERT_TRUE(boost::get<unique<type>>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(boost::get<unique<type>>(mp.get_vertex_property(vertex_a).node)
+                .value()
+                .name(),
+            "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             file_location("b.hpp", 40, 50));
 
@@ -185,7 +194,8 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
                  type_or_code_or_error(type("the_result_type")));
 
-  auto vertex_a = mp.add_vertex(type("A"), file_location("c.hpp", 30, 35));
+  auto vertex_a =
+      mp.add_vertex(unique_value(type("A")), file_location("c.hpp", 30, 35));
   auto edge_root_a = mp.add_edge(mp.get_root_vertex(), vertex_a,
                                  event_kind::template_instantiation,
                                  file_location("foobar.cpp", 21, 11), 10.0);
@@ -193,9 +203,11 @@ TEST(metaprogram, step_back_with_single_non_root_vertex)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 1u);
 
-  ASSERT_TRUE(boost::get<type>(&mp.get_vertex_property(vertex_a).node));
-  ASSERT_EQ(
-      boost::get<type>(mp.get_vertex_property(vertex_a).node).name(), "A");
+  ASSERT_TRUE(boost::get<unique<type>>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(boost::get<unique<type>>(mp.get_vertex_property(vertex_a).node)
+                .value()
+                .name(),
+            "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             file_location("c.hpp", 30, 35));
 
@@ -229,7 +241,8 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
   metaprogram mp(metaprogram::mode_t::normal, cpp_code("some_type"),
                  type_or_code_or_error(type("the_result_type")));
 
-  auto vertex_a = mp.add_vertex(type("A"), file_location("d.hpp", 10, 11));
+  auto vertex_a =
+      mp.add_vertex(unique_value(type("A")), file_location("d.hpp", 10, 11));
   auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
                                     event_kind::template_instantiation,
                                     file_location("xx.cpp", 1, 2), 10.0);
@@ -240,9 +253,11 @@ TEST(metaprogram, step_back_with_single_non_root_vertex_parallel_edge)
   ASSERT_EQ(mp.get_num_vertices(), 2u);
   ASSERT_EQ(mp.get_num_edges(), 2u);
 
-  ASSERT_TRUE(boost::get<type>(&mp.get_vertex_property(vertex_a).node));
-  ASSERT_EQ(
-      boost::get<type>(mp.get_vertex_property(vertex_a).node).name(), "A");
+  ASSERT_TRUE(boost::get<unique<type>>(&mp.get_vertex_property(vertex_a).node));
+  ASSERT_EQ(boost::get<unique<type>>(mp.get_vertex_property(vertex_a).node)
+                .value()
+                .name(),
+            "A");
   ASSERT_EQ(mp.get_vertex_property(vertex_a).source_location,
             file_location("d.hpp", 10, 11));
 
@@ -309,8 +324,10 @@ TEST(metaprogram, step_sorting_in_profile_mode)
   metaprogram mp(metaprogram::mode_t::profile, cpp_code("some_type"),
                  type_or_code_or_error(type("the_result_type")));
 
-  auto vertex_a = mp.add_vertex(type("A"), file_location("a.hpp", 0, 0));
-  auto vertex_b = mp.add_vertex(type("B"), file_location("b.hpp", 1, 2));
+  auto vertex_a =
+      mp.add_vertex(unique_value(type("A")), file_location("a.hpp", 0, 0));
+  auto vertex_b =
+      mp.add_vertex(unique_value(type("B")), file_location("b.hpp", 1, 2));
 
   auto edge_root_a_ti = mp.add_edge(mp.get_root_vertex(), vertex_a,
                                     event_kind::template_instantiation,
@@ -343,8 +360,8 @@ TEST(metaprogram, step_sorting_in_profile_mode)
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
 
-    ASSERT_TRUE(boost::get<type>(&frame.node()));
-    ASSERT_EQ("B", boost::get<type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<type>>(&frame.node()));
+    ASSERT_EQ("B", boost::get<unique<type>>(frame.node()).value().name());
     ASSERT_EQ("yy.cpp", frame.point_of_event().name);
     ASSERT_EQ(30.0, frame.time_taken());
     ASSERT_EQ(0.75, frame.time_taken_ratio());
@@ -360,8 +377,8 @@ TEST(metaprogram, step_sorting_in_profile_mode)
 
     // A should come second, since that was faster
 
-    ASSERT_TRUE(boost::get<type>(&frame.node()));
-    ASSERT_EQ("A", boost::get<type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<type>>(&frame.node()));
+    ASSERT_EQ("A", boost::get<unique<type>>(frame.node()).value().name());
     ASSERT_EQ("xx.cpp", frame.point_of_event().name);
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());

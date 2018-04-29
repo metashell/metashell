@@ -30,8 +30,7 @@ namespace metashell
 {
   namespace data
   {
-    typedef boost::variant<type,
-                           unique<type>,
+    typedef boost::variant<unique<type>,
                            unique<token>,
                            unique<cpp_code>,
                            unique<boost::filesystem::path>>

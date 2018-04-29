@@ -61,19 +61,6 @@ namespace metashell
     vertex_descriptor add_vertex(const data::metaprogram_node& node,
                                  const data::file_location& source_location);
 
-    vertex_descriptor add_vertex(const data::timeless_event_details<
-                                 data::event_kind::memoization>& event)
-    {
-      return add_vertex(name(event), source_location(event));
-    }
-
-    vertex_descriptor
-    add_vertex(const data::timeless_event_details<
-               data::event_kind::template_instantiation>& event)
-    {
-      return add_vertex(name(event), source_location(event));
-    }
-
     template <data::event_kind Kind>
     vertex_descriptor
     add_vertex(const data::timeless_event_details<Kind>& event)

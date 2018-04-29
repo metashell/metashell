@@ -28,6 +28,8 @@ namespace metashell
   class unique : boost::totally_ordered<unique<T>>
   {
   public:
+    unique() : _value(), _id(_counter) { ++_counter; }
+
     explicit unique(T value_) : _value(std::move(value_)), _id(_counter)
     {
       ++_counter;

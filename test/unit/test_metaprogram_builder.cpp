@@ -65,8 +65,9 @@ TEST(metaprogram_builder, normal_mode)
 
   ASSERT_TRUE(frame.is_full());
   ASSERT_FALSE(frame.is_profiled());
-  ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-  ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
+  ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+  ASSERT_EQ(
+      "type<A>", boost::get<unique<data::type>>(frame.node()).value().name());
   ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
 
   mp.step();
@@ -101,7 +102,7 @@ TEST(metaprogram_builder, full_mode)
           .get_metaprogram();
 
   ASSERT_EQ(data::metaprogram::mode_t::full, mp.get_mode());
-  ASSERT_EQ(3u, mp.get_num_vertices());
+  ASSERT_EQ(4u, mp.get_num_vertices());
   ASSERT_EQ(3u, mp.get_num_edges());
 
   ASSERT_TRUE(mp.is_at_start());
@@ -113,8 +114,9 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+    ASSERT_EQ(
+        "type<A>", boost::get<unique<data::type>>(frame.node()).value().name());
   }
 
   mp.step();
@@ -124,8 +126,9 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+    ASSERT_EQ(
+        "type<B>", boost::get<unique<data::type>>(frame.node()).value().name());
   }
 
   mp.step();
@@ -135,19 +138,9 @@ TEST(metaprogram_builder, full_mode)
 
     ASSERT_FALSE(frame.is_full());
     ASSERT_FALSE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
-  }
-
-  mp.step();
-
-  {
-    auto frame = mp.get_current_frame();
-
-    ASSERT_FALSE(frame.is_full());
-    ASSERT_FALSE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+    ASSERT_EQ(
+        "type<A>", boost::get<unique<data::type>>(frame.node()).value().name());
   }
 
   mp.step();
@@ -191,8 +184,9 @@ TEST(metaprogram_builder, profile_mode)
 
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<B>", boost::get<data::type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+    ASSERT_EQ(
+        "type<B>", boost::get<unique<data::type>>(frame.node()).value().name());
     ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(20.0, frame.time_taken());
     ASSERT_EQ(0.5, frame.time_taken_ratio());
@@ -205,8 +199,9 @@ TEST(metaprogram_builder, profile_mode)
 
     ASSERT_TRUE(frame.is_full());
     ASSERT_TRUE(frame.is_profiled());
-    ASSERT_TRUE(boost::get<data::type>(&frame.node()));
-    ASSERT_EQ("type<A>", boost::get<data::type>(frame.node()).name());
+    ASSERT_TRUE(boost::get<unique<data::type>>(&frame.node()));
+    ASSERT_EQ(
+        "type<A>", boost::get<unique<data::type>>(frame.node()).value().name());
     ASSERT_EQ(data::event_kind::template_instantiation, frame.kind());
     ASSERT_EQ(10.0, frame.time_taken());
     ASSERT_EQ(0.25, frame.time_taken_ratio());
