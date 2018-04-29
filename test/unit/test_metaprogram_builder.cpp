@@ -48,10 +48,8 @@ TEST(metaprogram_builder, normal_mode)
       data::event_details<data::event_kind::evaluation_end>{
           {data::type("eval_result")}}};
 
-  data::metaprogram mp =
-      metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                          data::cpp_code("root_name"))
-          .get_metaprogram();
+  data::metaprogram mp(
+      events, data::metaprogram::mode_t::normal, data::cpp_code("root_name"));
 
   ASSERT_EQ(data::metaprogram::mode_t::normal, mp.get_mode());
   ASSERT_EQ(2u, mp.get_num_vertices());
@@ -96,10 +94,8 @@ TEST(metaprogram_builder, full_mode)
       data::event_details<data::event_kind::evaluation_end>{
           {data::type("eval_result")}}};
 
-  data::metaprogram mp =
-      metaprogram_builder(
-          events, data::metaprogram::mode_t::full, data::cpp_code("root_name"))
-          .get_metaprogram();
+  data::metaprogram mp(
+      events, data::metaprogram::mode_t::full, data::cpp_code("root_name"));
 
   ASSERT_EQ(data::metaprogram::mode_t::full, mp.get_mode());
   ASSERT_EQ(4u, mp.get_num_vertices());
@@ -164,10 +160,8 @@ TEST(metaprogram_builder, profile_mode)
       data::event_details<data::event_kind::evaluation_end>{
           {data::type("eval_result")}}};
 
-  data::metaprogram mp =
-      metaprogram_builder(events, data::metaprogram::mode_t::profile,
-                          data::cpp_code("root_name"))
-          .get_metaprogram();
+  data::metaprogram mp(
+      events, data::metaprogram::mode_t::profile, data::cpp_code("root_name"));
 
   mp.init_full_time_taken();
 
@@ -219,10 +213,8 @@ TEST(metaprogram_builder, too_much_end_events_1)
 
   assert_throw(
       [&events] {
-        metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"))
-            .get_metaprogram();
-
+        data::metaprogram(events, data::metaprogram::mode_t::normal,
+                          data::cpp_code("root_name"));
       },
       "Mismatched begin and TemplateEnd events");
 }
@@ -240,9 +232,8 @@ TEST(metaprogram_builder, too_much_end_events_2)
 
   assert_throw(
       [&events] {
-        metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"))
-            .get_metaprogram();
+        data::metaprogram(events, data::metaprogram::mode_t::normal,
+                          data::cpp_code("root_name"));
 
       },
       "Mismatched begin and TemplateEnd events");
@@ -260,9 +251,8 @@ TEST(metaprogram_builder, too_few_end_events)
 
   assert_throw(
       [&events] {
-        metaprogram_builder(events, data::metaprogram::mode_t::normal,
-                            data::cpp_code("root_name"))
-            .get_metaprogram();
+        data::metaprogram(events, data::metaprogram::mode_t::normal,
+                          data::cpp_code("root_name"));
       },
       "Some Templight TemplateEnd events are missing");
 }

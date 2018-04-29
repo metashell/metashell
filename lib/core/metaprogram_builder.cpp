@@ -17,32 +17,12 @@
 
 #include <metashell/metaprogram_builder.hpp>
 
-#include <metashell/exception.hpp>
-
 namespace metashell
 {
-  metaprogram_builder::metaprogram_builder(data::metaprogram::mode_t mode,
-                                           const data::cpp_code& root_name)
-    : mp(mode,
-         root_name,
-         data::type_or_code_or_error(
-             "Internal Metashell error: metaprogram not finished yet"))
-  {
-  }
-
   void metaprogram_builder::handle_event(const data::event_data& details)
   {
     mpark::visit(
         [this](const auto& det) { this->handle_event_impl(det); }, details);
-  }
-
-  const data::metaprogram& metaprogram_builder::get_metaprogram() const
-  {
-    if (!edge_stack.empty())
-    {
-      throw exception("Some Templight TemplateEnd events are missing");
-    }
-    return mp;
   }
 
   metaprogram_builder::vertex_descriptor
@@ -57,7 +37,7 @@ namespace metashell
 
     if (inserted)
     {
-      pos->second = mp.add_vertex(node, source_location);
+      pos->second = mp->add_vertex(node, source_location);
     }
     return pos->second;
   }
@@ -70,7 +50,7 @@ namespace metashell
       throw exception("Mismatched begin and " + to_string(end_kind) +
                       " events");
     }
-    auto& ep = mp.get_edge_property(edge_stack.top());
+    auto& ep = mp->get_edge_property(edge_stack.top());
     ep.time_taken = timestamp - ep.begin_timestamp;
 
     edge_stack.pop();

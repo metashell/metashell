@@ -70,6 +70,9 @@ target_link_libraries(metashell boost_regex)
 # yaml-cpp
 target_link_libraries(metashell yaml_cpp_lib)
 
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+
 install(TARGETS metashell DESTINATION bin COMPONENT metashell)
 
 set_property(TARGET metashell PROPERTY INSTALL_RPATH_USE_LINK_PATH true)

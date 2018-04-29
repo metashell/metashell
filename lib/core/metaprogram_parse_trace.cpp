@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram_builder.hpp>
 #include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/protobuf_trace.hpp>
 #include <metashell/yaml_trace.hpp>
 
 #include <metashell/filter_events.hpp>
+
+#include <metashell/data/metaprogram.hpp>
 
 #include <sstream>
 
@@ -37,7 +38,7 @@ namespace metashell
                                std::move(from_line),
                                mode != data::metaprogram::mode_t::full);
 
-    return metaprogram_builder(trace, mode, root_name).get_metaprogram();
+    return data::metaprogram(trace, mode, root_name);
   }
 
   data::metaprogram create_metaprogram_from_protobuf_string(
@@ -63,6 +64,6 @@ namespace metashell
                                 std::move(from_line),
                                 mode != data::metaprogram::mode_t::full);
 
-    return metaprogram_builder(ytrace, mode, root_name).get_metaprogram();
+    return data::metaprogram(ytrace, mode, root_name);
   }
 }

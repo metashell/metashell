@@ -36,6 +36,8 @@
 
 namespace metashell
 {
+  class metaprogram_builder;
+
   namespace data
   {
     class metaprogram
@@ -52,6 +54,17 @@ namespace metashell
       metaprogram(mode_t mode,
                   const cpp_code& root_name,
                   const type_or_code_or_error& evaluation_result);
+
+      template <class Container>
+      metaprogram(Container&& trace, mode_t mode, cpp_code root_name)
+        : metaprogram(
+              mode,
+              root_name,
+              data::type_or_code_or_error(
+                  "Internal Metashell error: metaprogram not finished yet"))
+      {
+        metaprogram_builder(std::move(trace), *this);
+      }
 
       struct vertex_property_tag
       {
@@ -233,5 +246,7 @@ namespace metashell
     std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode);
   }
 }
+
+#include <metashell/metaprogram_builder.hpp>
 
 #endif
