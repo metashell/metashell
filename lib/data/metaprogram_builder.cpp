@@ -35,7 +35,7 @@ namespace metashell
         _result("Internal Metashell error: metaprogram not finished yet")
     {
       {
-        frame f{unique_value(std::move(root_name_))};
+        frame f{std::move(root_name_)};
         _events->push_back(f);
         _final_bt->push_front(std::move(f));
       }

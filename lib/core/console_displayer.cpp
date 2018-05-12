@@ -149,12 +149,6 @@ namespace
       _out += _path_formatter(p_);
     }
 
-    template <class T>
-    void operator()(const unique<T>& u_) const
-    {
-      operator()(u_.value());
-    }
-
   private:
     data::colored_string& _out;
     code_formatter _code_formatter;

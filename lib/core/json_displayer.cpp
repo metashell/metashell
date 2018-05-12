@@ -45,12 +45,6 @@ namespace
       _writer.string(p_.string());
     }
 
-    template <class T>
-    void operator()(const unique<T>& value_) const
-    {
-      operator()(value_.value());
-    }
-
   private:
     iface::json_writer& _writer;
   };

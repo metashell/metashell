@@ -39,9 +39,9 @@ TEST(metaprogram, constructor)
   ASSERT_EQ(mp.get_evaluation_result(),
             type_or_code_or_error(type("the_result_type")));
 
-  ASSERT_TRUE(boost::get<unique<cpp_code>>(&mp.get_root_frame().node()));
-  ASSERT_EQ(boost::get<unique<cpp_code>>(mp.get_root_frame().node()).value(),
-            type("some_type"));
+  ASSERT_TRUE(boost::get<cpp_code>(&mp.get_root_frame().node()));
+  ASSERT_EQ(
+      boost::get<cpp_code>(mp.get_root_frame().node()), cpp_code("some_type"));
 
   ASSERT_TRUE(mp.is_at_start());
   ASSERT_FALSE(mp.is_finished());

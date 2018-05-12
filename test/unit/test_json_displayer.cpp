@@ -172,8 +172,7 @@ TEST(json_displayer, frame_normal)
     EXPECT_CALL(w, end_document());
   }
 
-  d.show_frame(data::frame(true, boost::none,
-                           unique_value(data::type("fib_c<13>::type")),
+  d.show_frame(data::frame(true, boost::none, data::type("fib_c<13>::type"),
                            data::file_location("a.hpp", 10, 20)));
 }
 
@@ -207,8 +206,7 @@ namespace
       EXPECT_CALL(w, end_document());
     }
 
-    d.show_frame(data::frame(true, boost::none,
-                             unique_value(data::type("fib_c<13>::type")),
+    d.show_frame(data::frame(true, boost::none, data::type("fib_c<13>::type"),
                              source_location, point_of_event, kind_));
   }
 }
@@ -269,11 +267,9 @@ TEST(json_displayer, backtrace)
   }
 
   d.show_backtrace(data::backtrace{
-      data::frame(true, boost::none,
-                  unique_value(data::type("fib_c<13>::type")),
+      data::frame(true, boost::none, data::type("fib_c<13>::type"),
                   data::file_location("sl.hpp", 134, 10)),
-      data::frame(true, boost::none,
-                  unique_value(data::type("fib<int_<13>>::type")),
+      data::frame(true, boost::none, data::type("fib<int_<13>>::type"),
                   data::file_location("sl2.hpp", 154, 10))});
 }
 
@@ -285,12 +281,8 @@ TEST(json_displayer, call_graph)
   const data::type int_("int");
 
   const std::vector<data::call_graph_node> cg{
-      {data::frame(
-           true, boost::none, unique_value(int_), data::file_location{}),
-       0, 1},
-      {data::frame(
-           true, boost::none, unique_value(int_), data::file_location{}),
-       1, 0}};
+      {data::frame(true, boost::none, int_, data::file_location{}), 0, 1},
+      {data::frame(true, boost::none, int_, data::file_location{}), 1, 0}};
 
   {
     ::testing::InSequence s;

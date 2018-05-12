@@ -31,12 +31,6 @@ namespace
       _last_result = match(t_);
     }
 
-    template <class T>
-    void operator()(const metashell::unique<T>& t_)
-    {
-      operator()(t_.value());
-    }
-
     bool last_result() const { return _last_result; }
   private:
     boost::regex _regex;

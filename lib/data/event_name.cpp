@@ -23,15 +23,12 @@ namespace metashell
     namespace
     {
       template <class T>
-      unique<T> to_metaprogram_node_impl(const T& t_)
+      T to_metaprogram_node_impl(T t_)
       {
-        return unique_value(t_);
+        return std::move(t_);
       }
 
-      unique<type> to_metaprogram_node_impl(none_t)
-      {
-        return unique_value(type(""));
-      }
+      type to_metaprogram_node_impl(none_t) { return type(""); }
     }
 
     metaprogram_node to_metaprogram_node(const event_name& name_)
