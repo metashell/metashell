@@ -1,6 +1,3 @@
-#ifndef METASHELL_EVENT_NAME_HPP
-#define METASHELL_EVENT_NAME_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,26 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/none.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
-
-#include <boost/filesystem/path.hpp>
-
-#include <variant.hpp>
+#include <metashell/data/event_name.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::
-        variant<none_t, type, cpp_code, token, boost::filesystem::path>
-            event_name;
+    namespace
+    {
+      template <class T>
+      unique<T> to_metaprogram_node_impl(const T& t_)
+      {
+        return unique_value(t_);
+      }
 
-    metaprogram_node to_metaprogram_node(const event_name& name_);
+      unique<type> to_metaprogram_node_impl(none_t)
+      {
+        return unique_value(type(""));
+      }
+    }
+
+    metaprogram_node to_metaprogram_node(const event_name& name_)
+    {
+      return mpark::visit(
+          [](const auto& v) {
+            return metaprogram_node(to_metaprogram_node_impl(v));
+          },
+          name_);
+    }
   }
 }
-
-#endif

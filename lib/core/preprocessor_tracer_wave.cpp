@@ -32,13 +32,13 @@ namespace metashell
   data::metaprogram
   preprocessor_tracer_wave::eval(iface::environment& env_,
                                  const boost::optional<data::cpp_code>& exp_,
-                                 data::metaprogram::mode_t mode_)
+                                 data::metaprogram_mode mode_)
   {
     auto trace =
         filter_events(wave_trace(env_.get(), exp_, _config),
                       data::determine_from_line(
                           env_.get(), exp_, data::stdin_name_in_clang()),
-                      mode_ != data::metaprogram::mode_t::full);
+                      mode_ != data::metaprogram_mode::full);
 
     return data::metaprogram(
         trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"));

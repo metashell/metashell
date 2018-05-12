@@ -16,6 +16,8 @@
 
 #include <metashell/data/event_data.hpp>
 
+#include <sstream>
+
 namespace metashell
 {
   namespace data
@@ -38,6 +40,12 @@ namespace metashell
 
         template <class T>
         boost::none_t source_location(const T&)
+        {
+          return boost::none;
+        }
+
+        template <class T>
+        boost::none_t result_of(const T&)
         {
           return boost::none;
         }
@@ -182,6 +190,16 @@ namespace metashell
           data);
     }
 
+    boost::optional<type_or_code_or_error> result_of(const event_data& data)
+    {
+      return mpark::visit(
+          [](const auto& detail) -> boost::optional<type_or_code_or_error> {
+            using metashell::data::impl::result_of;
+            return result_of(detail.what);
+          },
+          data);
+    }
+
     bool from_line(const event_data& event, const file_location& line)
     {
       const boost::optional<file_location> poe = point_of_event(event);
@@ -192,6 +210,13 @@ namespace metashell
     {
       mpark::visit([&out](const auto& detail) { out << detail; }, data);
       return out;
+    }
+
+    std::string to_string(const event_data& data)
+    {
+      std::ostringstream s;
+      s << data;
+      return s.str();
     }
   }
 }

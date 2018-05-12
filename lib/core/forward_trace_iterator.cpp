@@ -23,64 +23,84 @@ using namespace metashell;
 forward_trace_iterator::forward_trace_iterator() : _finished(true) {}
 
 forward_trace_iterator::forward_trace_iterator(
-    const data::metaprogram& mp_, const boost::optional<int>& max_depth_)
-  : _finished(false),
-    _max_depth(max_depth_),
-    _mp(&mp_),
-    _discovered(mp_.get_state().discovered)
+    data::metaprogram::iterator begin_,
+    data::metaprogram::iterator end_,
+    const boost::optional<int>& max_depth_)
+  : _at(begin_), _end(end_), _finished(_at == _end), _max_depth(max_depth_)
 {
-  visit(_mp->get_current_edge(), 0);
-}
-
-void forward_trace_iterator::visit(
-    const data::metaprogram::optional_edge_descriptor& edge_, int depth_)
-{
-  data::metaprogram::vertex_descriptor vertex =
-      edge_ ? _mp->get_target(*edge_) : _mp->get_root_vertex();
-
-  _current = data::call_graph_node(
-      edge_ ? _mp->to_frame(*edge_) : _mp->get_root_frame(), depth_,
-      (_discovered[vertex] || (_max_depth && *_max_depth <= depth_)) ?
-          0 :
-          _mp->get_enabled_out_degree(vertex));
-
-  if (!_discovered[vertex])
-  {
-    if (_mp->get_mode() != data::metaprogram::mode_t::full)
-    {
-      _discovered[vertex] = true;
-    }
-
-    if (!_max_depth || *_max_depth > depth_)
-    {
-      auto edges = _mp->get_filtered_out_edges(vertex);
-      for (const data::metaprogram::edge_descriptor& out_edge : edges)
-      {
-        _to_visit.push(std::make_tuple(out_edge, depth_ + 1));
-      }
-    }
-  }
+  cache_current();
 }
 
 forward_trace_iterator& forward_trace_iterator::operator++()
 {
-  if (_to_visit.empty())
+  assert(!_finished);
+  do
+  {
+    step_from(*_at);
+    ++_at;
+  } while (_at != _end && step_to(*_at));
+
+  if (_at == _end || _depth <= 0)
   {
     _finished = true;
   }
   else
   {
-    data::metaprogram::optional_edge_descriptor edge;
-    int depth;
-    std::tie(edge, depth) = _to_visit.top();
-    _to_visit.pop();
-    visit(edge, depth);
+    cache_current();
   }
   return *this;
 }
 
+void forward_trace_iterator::step_from(const data::debugger_event& event_)
+{
+  mpark::visit([this](const auto& f) { this->step_from(f); }, event_);
+}
+
+void forward_trace_iterator::step_from(const data::frame& frame_)
+{
+  if (!frame_.flat())
+  {
+    ++_depth;
+  }
+}
+
+void forward_trace_iterator::step_from(const data::pop_frame&) {}
+
+bool forward_trace_iterator::step_to(const data::debugger_event& event_)
+{
+  return mpark::visit(
+      [this](const auto& f) -> bool { return this->step_to(f); }, event_);
+}
+
+bool forward_trace_iterator::step_to(const data::frame&)
+{
+  return _max_depth && _depth > *_max_depth;
+}
+
+bool forward_trace_iterator::step_to(const data::pop_frame&)
+{
+  --_depth;
+  if (_depth == -1)
+  {
+    _at = _end;
+  }
+  return _depth > 0;
+}
+
+void forward_trace_iterator::cache_current()
+{
+  const auto p = mpark::get_if<data::frame>(&*_at);
+  assert(p);
+  _current = data::call_graph_node(
+      *p, _depth,
+      (_max_depth && _depth == _max_depth) ? 0 : p->number_of_children());
+}
+
 const data::call_graph_node& forward_trace_iterator::operator*() const
 {
+  assert(!_finished);
+  assert(mpark::get_if<data::frame>(&*_at) != nullptr);
+
   return _current;
 }
 

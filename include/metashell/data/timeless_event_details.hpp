@@ -545,6 +545,9 @@ namespace metashell
       // clang-format on
     };
 
+    type_or_code_or_error result_of(
+        const timeless_event_details<event_kind::evaluation_end>& details_);
+
     template <event_kind Kind>
     bool operator==(const timeless_event_details<Kind>& a_,
                     const timeless_event_details<Kind>& b_)

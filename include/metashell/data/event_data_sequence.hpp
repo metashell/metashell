@@ -35,6 +35,12 @@ namespace metashell
       class iterator : boost::input_iteratable<iterator, const event_data*>
       {
       public:
+        typedef std::input_iterator_tag iterator_category;
+        typedef const event_data* value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef value_type* pointer;
+        typedef value_type& reference;
+
         iterator() : _container(nullptr), _current(boost::none) {}
 
         explicit iterator(Derived& container_)

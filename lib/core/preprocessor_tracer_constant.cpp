@@ -16,13 +16,15 @@
 
 #include <metashell/preprocessor_tracer_constant.hpp>
 
+#include <vector>
+
 namespace metashell
 {
   data::metaprogram
   preprocessor_tracer_constant::eval(iface::environment&,
                                      const boost::optional<data::cpp_code>&,
-                                     data::metaprogram::mode_t mode_)
+                                     data::metaprogram_mode mode_)
   {
-    return {mode_, data::cpp_code{}, {}};
+    return {std::vector<data::event_data>{}, mode_, data::cpp_code{}};
   }
 }

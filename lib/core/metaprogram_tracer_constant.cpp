@@ -16,15 +16,18 @@
 
 #include <metashell/metaprogram_tracer_constant.hpp>
 
+#include <vector>
+
 namespace metashell
 {
   data::metaprogram
   metaprogram_tracer_constant::eval(iface::environment&,
                                     const boost::filesystem::path&,
                                     const boost::optional<data::cpp_code>&,
-                                    data::metaprogram::mode_t,
+                                    data::metaprogram_mode,
                                     iface::displayer&)
   {
-    return {data::metaprogram::mode_t::normal, data::cpp_code{}, {}};
+    return {std::vector<data::event_data>{}, data::metaprogram_mode::normal,
+            data::cpp_code{}};
   }
 }

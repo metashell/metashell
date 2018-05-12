@@ -16,6 +16,7 @@
 
 #include <metashell/json_displayer.hpp>
 
+#include <cassert>
 #include <map>
 
 using namespace metashell;
@@ -83,12 +84,15 @@ namespace
       writer_.key("point_of_event");
       writer_.string(to_string(frame_.point_of_event()));
     }
-    if (frame_.is_profiled())
+    if (const auto t = frame_.time_taken())
     {
+      const auto r = frame_.time_taken_ratio();
+      assert(bool(r));
+
       writer_.key("time_taken");
-      writer_.double_(frame_.time_taken());
+      writer_.double_(*t);
       writer_.key("time_taken_ratio");
-      writer_.double_(frame_.time_taken_ratio());
+      writer_.double_(*r);
     }
   }
 

@@ -17,8 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/metaprogram_node.hpp>
 
 #include <boost/operators.hpp>
@@ -33,38 +35,56 @@ namespace metashell
     public:
       frame() = default;
 
-      frame(const metaprogram_node& node_,
+      explicit frame(metaprogram_node node_);
+
+      frame(bool flat_,
+            boost::optional<double> running_at_,
+            const metaprogram_node& node_,
             const file_location& source_location_);
 
-      frame(const metaprogram_node& node_,
+      frame(bool flat_,
+            boost::optional<double> running_at_,
+            const metaprogram_node& node_,
             const file_location& source_location_,
             const file_location& point_of_event_,
-            event_kind kind_,
-            boost::optional<double> time_taken = boost::none,
-            boost::optional<double> time_taken_ratio = boost::none);
+            event_kind kind_);
+
+      frame(const event_data& event_, metaprogram_mode mode_);
 
       const data::metaprogram_node& node() const;
       const file_location& source_location() const;
 
       bool is_full() const;
-      bool is_profiled() const;
 
       // precondition: is_full()
       event_kind kind() const;
       const file_location& point_of_event() const;
 
-      // precondition: is_profiled()
-      double time_taken() const;
-      double time_taken_ratio() const;
+      boost::optional<double> time_taken() const;
+      boost::optional<double> time_taken_ratio() const;
+
+      void running_at(double t);
+      void full_time_taken(double t);
+
+      bool flat() const;
+
+      void add_child();
+
+      int number_of_children() const;
 
     private:
       metaprogram_node _node;
       file_location _source_location;
       boost::optional<file_location> _point_of_event;
       boost::optional<data::event_kind> _kind;
-      boost::optional<double> _time_taken;
+      boost::optional<double> _started_at;
+      boost::optional<double> _finished_at;
       boost::optional<double> _time_taken_ratio;
+      bool _flat;
+      int _number_of_children = 0;
     };
+
+    std::string to_string(const frame& f_);
 
     std::ostream& operator<<(std::ostream& o_, const frame& f_);
     bool operator==(const frame& a_, const frame& b_);

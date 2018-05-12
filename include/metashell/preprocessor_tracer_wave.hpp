@@ -30,7 +30,7 @@ namespace metashell
 
     virtual data::metaprogram eval(iface::environment&,
                                    const boost::optional<data::cpp_code>&,
-                                   data::metaprogram::mode_t) override;
+                                   data::metaprogram_mode) override;
 
   private:
     data::wave_config _config;

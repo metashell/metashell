@@ -19,6 +19,7 @@
 
 #include <metashell/data/feature.hpp>
 #include <metashell/data/metaprogram.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/iface/environment.hpp>
 
 #include <boost/optional.hpp>
@@ -37,7 +38,7 @@ namespace metashell
       virtual data::metaprogram
       eval(iface::environment& env_,
            const boost::optional<data::cpp_code>& expression_,
-           data::metaprogram::mode_t mode_) = 0;
+           data::metaprogram_mode mode_) = 0;
 
       static data::feature name_of_feature()
       {
