@@ -149,12 +149,6 @@ namespace
       _out += _path_formatter(p_);
     }
 
-    template <class T>
-    void operator()(const unique<T>& u_) const
-    {
-      operator()(u_.value());
-    }
-
   private:
     data::colored_string& _out;
     code_formatter _code_formatter;
@@ -309,10 +303,11 @@ console_displayer::format_metaprogram_node(const data::metaprogram_node& n_)
 data::colored_string console_displayer::format_frame(const data::frame& f_)
 {
   data::colored_string prefix;
-  if (f_.is_profiled())
+  if (const auto t = f_.time_taken())
   {
-    prefix = "[" + format_time(f_.time_taken()) + ", " +
-             format_ratio(f_.time_taken_ratio()) + "] ";
+    const auto r = f_.time_taken_ratio();
+    assert(bool(r));
+    prefix = "[" + format_time(*t) + ", " + format_ratio(*r) + "] ";
   }
 
   std::ostringstream postfix;

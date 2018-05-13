@@ -309,5 +309,11 @@ namespace metashell
     {
       return details_.point_of_event;
     }
+
+    type_or_code_or_error result_of(
+        const timeless_event_details<event_kind::evaluation_end>& details_)
+    {
+      return details_.result;
+    }
   }
 }

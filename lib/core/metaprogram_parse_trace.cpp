@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram_builder.hpp>
 #include <metashell/metaprogram_parse_trace.hpp>
 #include <metashell/protobuf_trace.hpp>
 #include <metashell/yaml_trace.hpp>
 
 #include <metashell/filter_events.hpp>
+
+#include <metashell/data/metaprogram.hpp>
 
 #include <sstream>
 
@@ -28,21 +29,21 @@ namespace metashell
 {
   data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line)
   {
     auto trace = filter_events(protobuf_trace(stream, evaluation_result),
                                std::move(from_line),
-                               mode != data::metaprogram::mode_t::full);
+                               mode != data::metaprogram_mode::full);
 
-    return metaprogram_builder(trace, mode, root_name).get_metaprogram();
+    return data::metaprogram(trace, mode, root_name);
   }
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line)
@@ -54,15 +55,15 @@ namespace metashell
 
   data::metaprogram create_metaprogram_from_yaml_trace(
       const std::string& trace,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line)
   {
     auto ytrace = filter_events(yaml_trace(trace, evaluation_result),
                                 std::move(from_line),
-                                mode != data::metaprogram::mode_t::full);
+                                mode != data::metaprogram_mode::full);
 
-    return metaprogram_builder(ytrace, mode, root_name).get_metaprogram();
+    return data::metaprogram(ytrace, mode, root_name);
   }
 }

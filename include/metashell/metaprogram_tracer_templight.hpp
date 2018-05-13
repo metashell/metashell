@@ -34,7 +34,7 @@ namespace metashell
     eval(iface::environment& env_,
          const boost::filesystem::path& temp_dir_,
          const boost::optional<data::cpp_code>& expression_,
-         data::metaprogram::mode_t mode_,
+         data::metaprogram_mode mode_,
          iface::displayer& displayer_) override;
 
   private:

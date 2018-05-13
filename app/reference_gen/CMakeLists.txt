@@ -53,6 +53,9 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/just_file/include")
 # yaml-cpp
 target_link_libraries(reference_gen yaml_cpp_lib)
 
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+
 
 set(DOC_DIR "${CMAKE_SOURCE_DIR}/docs")
 

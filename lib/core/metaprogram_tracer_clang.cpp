@@ -50,7 +50,7 @@ namespace metashell
       iface::environment& env_,
       const boost::filesystem::path&,
       const boost::optional<data::cpp_code>& expression_,
-      data::metaprogram::mode_t mode_,
+      data::metaprogram_mode mode_,
       iface::displayer& displayer_)
   {
     const auto out = eval_with_templight_dump_on_stdout(

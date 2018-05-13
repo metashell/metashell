@@ -33,3 +33,6 @@ else()
   endif()
 endif()
 
+# Mpark.Variant
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/3rd/mpark_variant/include")
+

@@ -42,19 +42,34 @@ namespace
     file_location f2("b.hpp", 1, 2);
 
     return call_grph{
-        {frame(type("int_<fib<5>::value>"), f2), 0, 3},
-        {frame(fib<5>(), f2, f, event_kind::template_instantiation), 1, 2},
-        {frame(fib<3>(), f2, f, event_kind::template_instantiation), 2, 2},
-        {frame(fib<1>(), f2, f, event_kind::memoization), 3, 0},
-        {frame(fib<2>(), f2, f, event_kind::template_instantiation), 3, 2},
-        {frame(fib<0>(), f2, f, event_kind::memoization), 4, 0},
-        {frame(fib<1>(), f2, f, event_kind::memoization), 4, 0},
-        {frame(fib<4>(), f2, f, event_kind::template_instantiation), 2, 2},
-        {frame(fib<2>(), f2, f, event_kind::memoization), 3, 0},
-        {frame(fib<3>(), f2, f, event_kind::memoization), 3, 0},
-        {frame(fib<5>(), f2, f, event_kind::memoization), 1, 0},
-        {frame(type("int_<5>"), f2, f, event_kind::template_instantiation), 1,
-         0}};
+        {frame(false, boost::none, type("int_<fib<5>::value>"), f2), 0, 3},
+        {frame(false, boost::none, fib<5>(), f2, f,
+               event_kind::template_instantiation),
+         1, 2},
+        {frame(false, boost::none, fib<3>(), f2, f,
+               event_kind::template_instantiation),
+         2, 2},
+        {frame(true, boost::none, fib<1>(), f2, f, event_kind::memoization), 3,
+         0},
+        {frame(false, boost::none, fib<2>(), f2, f,
+               event_kind::template_instantiation),
+         3, 2},
+        {frame(true, boost::none, fib<0>(), f2, f, event_kind::memoization), 4,
+         0},
+        {frame(true, boost::none, fib<1>(), f2, f, event_kind::memoization), 4,
+         0},
+        {frame(false, boost::none, fib<4>(), f2, f,
+               event_kind::template_instantiation),
+         2, 2},
+        {frame(true, boost::none, fib<2>(), f2, f, event_kind::memoization), 3,
+         0},
+        {frame(true, boost::none, fib<3>(), f2, f, event_kind::memoization), 3,
+         0},
+        {frame(true, boost::none, fib<5>(), f2, f, event_kind::memoization), 1,
+         0},
+        {frame(true, boost::none, type("int_<5>"), f2, f,
+               event_kind::template_instantiation),
+         1, 0}};
   }
 }
 

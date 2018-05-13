@@ -18,22 +18,34 @@
 
 #include <boost/range/algorithm/equal.hpp>
 
+#include <algorithm>
+
 using namespace metashell::data;
 
-backtrace::backtrace(const std::initializer_list<frame>& frames_)
-  : _frames(frames_)
+backtrace::backtrace(std::initializer_list<frame> frames_)
+  : _frames(std::move(frames_))
 {
+  std::reverse(_frames.begin(), _frames.end());
 }
 
-void backtrace::push_back(const frame& f_) { _frames.push_back(f_); }
+void backtrace::push_front(const frame& f_) { _frames.push_back(f_); }
+
+void backtrace::pop_front() { _frames.pop_back(); }
+
+bool backtrace::empty() const { return _frames.empty(); }
 
 backtrace::size_type backtrace::size() const { return _frames.size(); }
 
-const frame& backtrace::operator[](size_type i) const { return _frames[i]; }
+const frame& backtrace::operator[](size_type i) const
+{
+  return _frames[_frames.size() - 1 - i];
+}
 
-backtrace::iterator backtrace::begin() const { return _frames.begin(); }
+const frame& backtrace::back() const { return _frames.front(); }
 
-backtrace::iterator backtrace::end() const { return _frames.end(); }
+backtrace::iterator backtrace::begin() const { return _frames.rbegin(); }
+
+backtrace::iterator backtrace::end() const { return _frames.rend(); }
 
 std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
 {

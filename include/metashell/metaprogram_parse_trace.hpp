@@ -19,6 +19,7 @@
 
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/metaprogram.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/optional.hpp>
@@ -30,21 +31,21 @@ namespace metashell
 {
   data::metaprogram create_metaprogram_from_protobuf_stream(
       std::istream& stream,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line);
 
   data::metaprogram create_metaprogram_from_protobuf_string(
       const std::string& string,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line);
 
   data::metaprogram create_metaprogram_from_yaml_trace(
       const std::string& trace,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       const data::cpp_code& root_name,
       const data::type_or_code_or_error& evaluation_result,
       boost::optional<data::file_location> from_line);

@@ -1,5 +1,5 @@
-#ifndef METASHELL_EVENT_NAME_HPP
-#define METASHELL_EVENT_NAME_HPP
+#ifndef METASHELL_DATA_POP_FRAME_HPP
+#define METASHELL_DATA_POP_FRAME_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/none.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
-
-#include <boost/filesystem/path.hpp>
-
-#include <variant.hpp>
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::
-        variant<none_t, type, cpp_code, token, boost::filesystem::path>
-            event_name;
+    struct pop_frame
+    {
+      std::size_t target = 0;
+    };
 
-    metaprogram_node to_metaprogram_node(const event_name& name_);
+    std::string to_string(const pop_frame& f_);
+    std::ostream& operator<<(std::ostream& out_, const pop_frame& f_);
   }
 }
 

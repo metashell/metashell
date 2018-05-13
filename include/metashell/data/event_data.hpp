@@ -29,6 +29,7 @@
 #include <variant.hpp>
 
 #include <iosfwd>
+#include <string>
 
 namespace metashell
 {
@@ -79,15 +80,19 @@ namespace metashell
 
     boost::optional<double> timestamp(const event_data& data);
 
-    boost::optional<data::type> type_of(const event_data& data);
+    boost::optional<type> type_of(const event_data& data);
 
     void set_type(event_data& data, type t);
 
     timeless_event_data what(const event_data& data);
 
+    boost::optional<type_or_code_or_error> result_of(const event_data& data);
+
     bool from_line(const event_data& event, const file_location& line);
 
     std::ostream& operator<<(std::ostream& out, const event_data& data);
+
+    std::string to_string(const event_data& data);
   }
 }
 

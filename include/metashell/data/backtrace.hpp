@@ -32,17 +32,21 @@ namespace metashell
     {
     public:
       typedef std::vector<frame>::size_type size_type;
-      typedef std::vector<frame>::const_iterator iterator;
+      typedef std::vector<frame>::const_reverse_iterator iterator;
       typedef iterator const_iterator;
 
       backtrace() = default;
 
-      backtrace(const std::initializer_list<frame>& frames_);
+      backtrace(std::initializer_list<frame> frames_);
 
-      void push_back(const frame& f_);
+      void push_front(const frame& f_);
+      void pop_front();
 
       size_type size() const;
+      bool empty() const;
+
       const frame& operator[](size_type i) const;
+      const frame& back() const;
 
       iterator begin() const;
       iterator end() const;

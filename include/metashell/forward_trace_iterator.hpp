@@ -18,20 +18,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/call_graph_node.hpp>
+#include <metashell/data/frame.hpp>
 #include <metashell/data/metaprogram.hpp>
+#include <metashell/data/pop_frame.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
 
-#include <stack>
-#include <tuple>
-
 namespace metashell
 {
-  // -----
-  // Customized DFS
-  //   The algorithm only checks vertices which are reachable from root_vertex
-  // ----
   class forward_trace_iterator
       : public boost::forward_iterator_helper<forward_trace_iterator,
                                               const data::call_graph_node>
@@ -39,7 +34,8 @@ namespace metashell
   public:
     forward_trace_iterator();
 
-    forward_trace_iterator(const data::metaprogram& mp_,
+    forward_trace_iterator(data::metaprogram::iterator begin_,
+                           data::metaprogram::iterator end_,
                            const boost::optional<int>& max_depth_);
 
     forward_trace_iterator& operator++();
@@ -49,23 +45,23 @@ namespace metashell
     const data::call_graph_node& operator*() const;
 
   private:
-    typedef std::tuple<data::metaprogram::optional_edge_descriptor,
-                       int // Depth
-                       >
-        stack_element;
-
+    data::metaprogram::iterator _at;
+    data::metaprogram::iterator _end;
     data::call_graph_node _current;
     bool _finished;
 
     boost::optional<int> _max_depth;
+    int _depth = 0;
 
-    // The usual stack for DFS
-    std::stack<stack_element> _to_visit;
-    const data::metaprogram* _mp = nullptr;
-    data::metaprogram::discovered_t _discovered;
+    void cache_current();
 
-    void visit(const data::metaprogram::optional_edge_descriptor& edge_,
-               int depth_);
+    void step_from(const data::debugger_event&);
+    void step_from(const data::frame&);
+    void step_from(const data::pop_frame&);
+
+    bool step_to(const data::debugger_event&);
+    bool step_to(const data::frame& frame_);
+    bool step_to(const data::pop_frame& frame_);
   };
 }
 

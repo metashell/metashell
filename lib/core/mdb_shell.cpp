@@ -410,9 +410,9 @@ namespace metashell
       for (int i = 0; i < iteration_count && !mp->is_at_endpoint(direction);
            ++i)
       {
-        unsigned bt_depth = mp->get_backtrace_length();
+        const auto bt_depth = mp->get_backtrace().size();
         while (!mp->is_at_endpoint(direction) &&
-               mp->get_backtrace_length() + 1 > bt_depth)
+               mp->get_backtrace().size() + 1 > bt_depth)
         {
           mp->step(direction);
         }
@@ -510,16 +510,16 @@ namespace metashell
     next_breakpoint_id = 1;
     breakpoints.clear();
 
-    data::metaprogram::mode_t mode = [&] {
+    data::metaprogram_mode mode = [&] {
       if (has_full)
       {
-        return data::metaprogram::mode_t::full;
+        return data::metaprogram_mode::full;
       }
       if (has_profile)
       {
-        return data::metaprogram::mode_t::profile;
+        return data::metaprogram_mode::profile;
       }
-      return data::metaprogram::mode_t::normal;
+      return data::metaprogram_mode::normal;
     }();
 
     last_evaluated_expression = expression;
@@ -527,7 +527,6 @@ namespace metashell
     {
       displayer_.show_raw_text("Metaprogram started");
       assert(mp);
-      mp->init_full_time_taken();
     }
   }
 
@@ -562,7 +561,6 @@ namespace metashell
       display_argument_parsing_failed(displayer_);
       return;
     }
-
     display_current_forwardtrace(max_depth, displayer_);
   }
 
@@ -619,14 +617,12 @@ namespace metashell
       breakpoint bp{next_breakpoint_id, boost::regex(arg)};
       ++next_breakpoint_id;
 
-      unsigned match_count = 0;
-      for (data::metaprogram::vertex_descriptor vertex : mp->get_vertices())
-      {
-        if (bp.match(mp->get_vertex_property(vertex).node))
-        {
-          match_count += mp->get_traversal_count(vertex);
-        }
-      }
+      const auto match_count = std::count_if(
+          mp->begin(false), mp->end(), [&bp](const data::debugger_event& e) {
+            const auto p = mpark::get_if<data::frame>(&e);
+            return p && bp.match(p->node());
+          });
+
       if (match_count == 0)
       {
         displayer_.show_raw_text("Breakpoint \"" + arg +
@@ -728,7 +724,7 @@ namespace metashell
 
   bool mdb_shell::run_metaprogram_with_templight(
       const boost::optional<data::cpp_code>& expression,
-      data::metaprogram::mode_t mode,
+      data::metaprogram_mode mode,
       iface::displayer& displayer_)
   {
     try
@@ -838,12 +834,12 @@ namespace metashell
     assert(n >= 0);
     for (int i = 0; i < n && !mp->is_at_endpoint(direction); ++i)
     {
-      unsigned bt_depth = mp->get_backtrace_length();
+      const auto bt_depth = mp->get_backtrace().size();
       do
       {
         mp->step(direction);
       } while (!mp->is_at_endpoint(direction) &&
-               mp->get_backtrace_length() > bt_depth);
+               mp->get_backtrace().size() > bt_depth);
     }
   }
 
@@ -881,10 +877,11 @@ namespace metashell
                                           iface::displayer& displayer_) const
   {
     displayer_.show_call_graph(boost::make_iterator_range(
-        forward_trace_iterator(*mp, max_depth), forward_trace_iterator()));
+        forward_trace_iterator(mp->current_position(), mp->end(), max_depth),
+        forward_trace_iterator()));
   }
 
-  void mdb_shell::display_backtrace(iface::displayer& displayer_) const
+  void mdb_shell::display_backtrace(iface::displayer& displayer_)
   {
     displayer_.show_backtrace(mp->get_backtrace());
   }

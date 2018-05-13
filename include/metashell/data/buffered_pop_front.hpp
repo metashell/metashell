@@ -1,5 +1,5 @@
-#ifndef METASHELL_EVENT_NAME_HPP
-#define METASHELL_EVENT_NAME_HPP
+#ifndef METASHELL_DATA_BUFFERED_POP_FRONT_HPP
+#define METASHELL_DATA_BUFFERED_POP_FRONT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/none.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
-
-#include <boost/filesystem/path.hpp>
-
-#include <variant.hpp>
-
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::
-        variant<none_t, type, cpp_code, token, boost::filesystem::path>
-            event_name;
+    template <class T>
+    class buffered_pop_front
+    {
+    public:
+      explicit buffered_pop_front(T& container_)
+        : _container(&container_), _count(0)
+      {
+      }
 
-    metaprogram_node to_metaprogram_node(const event_name& name_);
+      void buffer_pop_front() { ++_count; }
+
+      void flush()
+      {
+        for (int i = 0; i < _count; ++i)
+        {
+          _container->pop_front();
+        }
+        _count = 0;
+      }
+
+    private:
+      T* _container;
+      int _count;
+    };
   }
 }
 

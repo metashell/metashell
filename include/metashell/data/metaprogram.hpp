@@ -17,20 +17,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <stack>
-#include <string>
-#include <tuple>
 #include <vector>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <boost/optional.hpp>
 
 #include <metashell/data/backtrace.hpp>
 #include <metashell/data/cpp_code.hpp>
+#include <metashell/data/debugger_event.hpp>
 #include <metashell/data/direction_t.hpp>
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/frame.hpp>
+#include <metashell/data/metaprogram_builder.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/metaprogram_node.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
@@ -41,196 +41,61 @@ namespace metashell
     class metaprogram
     {
     public:
-      enum class mode_t
+      typedef std::vector<debugger_event>::const_iterator iterator;
+      typedef iterator const_iterator;
+
+      template <class Container>
+      metaprogram(Container&& trace, metaprogram_mode mode, cpp_code root_name)
+        : mode(mode)
       {
-        normal,
-        full,
-        profile
-      };
-
-      // Creates empty metaprogram: single <root> vertex
-      metaprogram(mode_t mode,
-                  const cpp_code& root_name,
-                  const type_or_code_or_error& evaluation_result);
-
-      struct vertex_property_tag
-      {
-        typedef boost::vertex_property_tag kind;
-      };
-      struct edge_property_tag
-      {
-        typedef boost::edge_property_tag kind;
-      };
-
-      struct vertex_property
-      {
-        metaprogram_node node;
-        file_location source_location;
-      };
-      struct edge_property
-      {
-        event_kind kind;
-        file_location point_of_event;
-        double begin_timestamp = 0.0;
-        double time_taken = 0.0;
-        bool enabled = true;
-      };
-
-      typedef boost::adjacency_list<
-          boost::vecS,
-          boost::vecS,
-          boost::bidirectionalS,
-          boost::property<vertex_property_tag, vertex_property>,
-          boost::property<edge_property_tag, edge_property>>
-          graph_t;
-
-      typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
-      typedef boost::graph_traits<graph_t>::edge_descriptor edge_descriptor;
-
-      typedef boost::graph_traits<graph_t>::vertex_iterator vertex_iterator;
-      typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
-      typedef boost::graph_traits<graph_t>::in_edge_iterator in_edge_iterator;
-      typedef boost::graph_traits<graph_t>::out_edge_iterator out_edge_iterator;
-
-      typedef boost::graph_traits<graph_t>::vertices_size_type
-          vertices_size_type;
-      typedef boost::graph_traits<graph_t>::edges_size_type edges_size_type;
-      typedef boost::graph_traits<graph_t>::degree_size_type degree_size_type;
-
-      typedef boost::optional<vertex_descriptor> optional_vertex_descriptor;
-      typedef boost::optional<edge_descriptor> optional_edge_descriptor;
-
-      typedef std::vector<bool> discovered_t;
-      typedef std::vector<optional_edge_descriptor> parent_edge_t;
-      typedef std::stack<optional_edge_descriptor> edge_stack_t;
-
-      struct state_t
-      {
-        discovered_t discovered;
-        parent_edge_t parent_edge;
-        edge_stack_t edge_stack;
-      };
-
-      struct step_rollback_t
-      {
-        optional_edge_descriptor popped_edge;
-        optional_vertex_descriptor discovered_vertex;
-        unsigned edge_stack_push_count = 0;
-        boost::optional<optional_edge_descriptor> set_parent_edge;
-      };
-
-      typedef std::stack<step_rollback_t> state_history_t;
-
-      vertex_descriptor add_vertex(const metaprogram_node& node,
-                                   const file_location& source_location);
-
-      edge_descriptor add_edge(vertex_descriptor from,
-                               vertex_descriptor to,
-                               event_kind kind,
-                               const file_location& point_of_event,
-                               double begin_timestamp);
-
-      // Should be called after graph filtering is done
-      void init_full_time_taken();
+        metaprogram_builder builder(
+            events, final_bt, mode, std::move(root_name));
+        std::copy(trace.begin(), trace.end(), std::back_inserter(builder));
+        evaluation_result = builder.result();
+      }
 
       bool is_empty() const;
 
       const type_or_code_or_error& get_evaluation_result() const;
-      void set_evaluation_result(type_or_code_or_error result_);
 
       void reset_state();
 
-      mode_t get_mode() const;
+      metaprogram_mode get_mode() const;
 
       bool is_at_endpoint(direction_t direction) const;
       bool is_finished() const;
       bool is_at_start() const;
 
-      vertex_descriptor get_root_vertex() const;
-
-      template <class P>
-      void disable_edges_if(P pred);
-
       void step(direction_t direction);
       void step();
       void step_back();
 
-      vertex_descriptor get_current_vertex() const;
-      optional_edge_descriptor get_current_edge() const;
       frame get_current_frame() const;
       frame get_root_frame() const;
-      backtrace get_backtrace() const;
-      unsigned get_backtrace_length() const;
+      const backtrace& get_backtrace();
 
-      unsigned get_traversal_count(vertex_descriptor vertex) const;
+      std::size_t size() const;
 
-      const state_t& get_state() const;
-
-      vertices_size_type get_num_vertices() const;
-      edges_size_type get_num_edges() const;
-      degree_size_type get_enabled_in_degree(vertex_descriptor vertex) const;
-      degree_size_type get_enabled_out_degree(vertex_descriptor vertex) const;
-
-      vertex_descriptor get_source(const edge_descriptor& edge) const;
-      vertex_descriptor get_target(const edge_descriptor& edge) const;
-
-      boost::iterator_range<in_edge_iterator>
-      get_in_edges(vertex_descriptor vertex) const;
-      boost::iterator_range<out_edge_iterator>
-      get_out_edges(vertex_descriptor vertex) const;
-
-      std::vector<edge_descriptor>
-      get_filtered_out_edges(vertex_descriptor vertex) const;
-
-      boost::iterator_range<vertex_iterator> get_vertices() const;
-      boost::iterator_range<edge_iterator> get_edges() const;
-
-      const vertex_property&
-      get_vertex_property(vertex_descriptor vertex) const;
-      const edge_property& get_edge_property(edge_descriptor edge) const;
-
-      vertex_property& get_vertex_property(vertex_descriptor vertex);
-      edge_property& get_edge_property(edge_descriptor edge);
-
-      frame to_frame(const edge_descriptor& e_) const;
+      iterator begin(bool include_original_expression = true) const;
+      iterator current_position() const;
+      iterator end() const;
 
     private:
-      typedef std::vector<boost::optional<unsigned>> traversal_counts_t;
+      std::vector<debugger_event> events;
+      // using indices to avoid invalidation during copy/move
+      std::size_t next_event = 0;
+      boost::optional<backtrace> current_bt;
+      backtrace final_bt;
 
-      unsigned get_full_traversal_count(vertex_descriptor vertex) const;
-      unsigned get_full_traversal_count_helper(
-          vertex_descriptor vertex, traversal_counts_t& traversal_counts) const;
-
-      graph_t graph;
-
-      state_t state;
-      state_history_t state_history;
-
-      mode_t mode;
-
-      // This should be generally 0
-      vertex_descriptor root_vertex;
+      metaprogram_mode mode;
 
       type_or_code_or_error evaluation_result;
 
-      // Time taken to run the full metaprogram (used to show % in profiling
-      // data)
-      double full_time_taken = 0.0;
+      void rebuild_backtrace();
+      void update_backtrace(const debugger_event& event);
+      void update_backtrace(const frame& event);
+      void update_backtrace(const pop_frame& event);
     };
-
-    template <class P>
-    void metaprogram::disable_edges_if(P pred)
-    {
-      for (edge_descriptor edge : get_edges())
-      {
-        if (pred(edge))
-        {
-          get_edge_property(edge).enabled = false;
-        }
-      }
-    }
-
-    std::ostream& operator<<(std::ostream& os, metaprogram::mode_t mode);
   }
 }
 

@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram_builder.hpp>
 #include <metashell/preprocessor_tracer_wave.hpp>
 #include <metashell/wave_trace.hpp>
 
 #include <metashell/filter_events.hpp>
 
+#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/stdin_name.hpp>
 
 namespace metashell
@@ -32,16 +32,15 @@ namespace metashell
   data::metaprogram
   preprocessor_tracer_wave::eval(iface::environment& env_,
                                  const boost::optional<data::cpp_code>& exp_,
-                                 data::metaprogram::mode_t mode_)
+                                 data::metaprogram_mode mode_)
   {
     auto trace =
         filter_events(wave_trace(env_.get(), exp_, _config),
                       data::determine_from_line(
                           env_.get(), exp_, data::stdin_name_in_clang()),
-                      mode_ != data::metaprogram::mode_t::full);
+                      mode_ != data::metaprogram_mode::full);
 
-    return metaprogram_builder(
-               trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"))
-        .get_metaprogram();
+    return data::metaprogram(
+        trace, mode_, exp_ ? *exp_ : data::cpp_code("<environment>"));
   }
 }

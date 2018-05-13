@@ -1,5 +1,5 @@
-#ifndef METASHELL_FILTER_REPLAY_INSTANTIATIONS_HPP
-#define METASHELL_FILTER_REPLAY_INSTANTIATIONS_HPP
+#ifndef METASHELL_FILTER_EXPAND_MEMOIZATIONS_HPP
+#define METASHELL_FILTER_EXPAND_MEMOIZATIONS_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -29,13 +29,12 @@
 namespace metashell
 {
   template <class Events>
-  class filter_replay_instantiations_t
-      : public data::event_data_sequence<filter_replay_instantiations_t<Events>>
+  class filter_expand_memoizations_t
+      : public data::event_data_sequence<filter_expand_memoizations_t<Events>>
   {
   public:
-    explicit filter_replay_instantiations_t(
-        Events&& events_, boost::optional<data::file_location> from_)
-      : _events(std::move(events_)), _from(std::move(from_)), _replaying(false)
+    explicit filter_expand_memoizations_t(Events&& events_, bool enabled_)
+      : _events(std::move(events_)), _enabled(enabled_), _skip(0)
     {
     }
 
@@ -43,23 +42,21 @@ namespace metashell
     {
       boost::optional<data::event_data> event = _events.next();
 
-      if (_from && event)
+      if (_enabled && event)
       {
-        if (!_replaying && from_here(*event))
+        auto tail = _cache.replay(*event).tail;
+
+        if (_skip > 0)
         {
-          _replaying = true;
-        }
-        if (_replaying)
-        {
-          data::list<data::event_data> r = _cache.replay(*event);
-          event = std::move(r.head);
-          _events.queue(r.tail);
-          _cache.erase_related(*event);
+          --_skip;
         }
         else
         {
           _cache.record(*event);
         }
+
+        _skip += tail.size();
+        _events.queue(tail);
       }
 
       return event;
@@ -67,23 +64,16 @@ namespace metashell
 
   private:
     filter_with_queue<Events> _events;
-    boost::optional<data::file_location> _from;
-    bool _replaying;
+    bool _enabled;
+    int _skip;
     event_cache _cache;
-
-    bool from_here(const data::event_data& event_) const
-    {
-      return !_from || from_line(event_, *_from);
-    }
   };
 
   template <class Events>
-  filter_replay_instantiations_t<Events>
-  filter_replay_instantiations(Events&& events_,
-                               boost::optional<data::file_location> from_)
+  filter_expand_memoizations_t<Events>
+  filter_expand_memoizations(Events&& events_, bool enabled_)
   {
-    return filter_replay_instantiations_t<Events>(
-        std::move(events_), std::move(from_));
+    return filter_expand_memoizations_t<Events>(std::move(events_), enabled_);
   }
 }
 

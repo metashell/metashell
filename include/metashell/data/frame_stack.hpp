@@ -1,5 +1,5 @@
-#ifndef METASHELL_EVENT_NAME_HPP
-#define METASHELL_EVENT_NAME_HPP
+#ifndef METASHELL_FRAME_STACK_HPP
+#define METASHELL_FRAME_STACK_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,25 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/cpp_code.hpp>
-#include <metashell/data/metaprogram_node.hpp>
-#include <metashell/data/none.hpp>
-#include <metashell/data/token.hpp>
-#include <metashell/data/type.hpp>
+#include <metashell/data/debugger_event.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
+#include <metashell/data/vector_item_reference.hpp>
 
-#include <boost/filesystem/path.hpp>
-
-#include <variant.hpp>
+#include <vector>
 
 namespace metashell
 {
   namespace data
   {
-    typedef mpark::
-        variant<none_t, type, cpp_code, token, boost::filesystem::path>
-            event_name;
+    class frame_stack
+    {
+    public:
+      typedef vector_item_reference<debugger_event> value_type;
 
-    metaprogram_node to_metaprogram_node(const event_name& name_);
+      bool empty() const;
+
+      void push_back(value_type item_);
+      frame& back() const;
+      pop_frame pop_back();
+
+      void running_at(double timestamp_);
+
+    private:
+      std::vector<value_type> _stack;
+    };
+
+    void running_at(frame_stack& stack_,
+                    const boost::optional<double>& timestamp_,
+                    metaprogram_mode mode_);
   }
 }
 

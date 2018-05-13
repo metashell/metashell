@@ -90,7 +90,7 @@ namespace metashell
 
     bool run_metaprogram_with_templight(
         const boost::optional<data::cpp_code>& expression,
-        data::metaprogram::mode_t mode,
+        data::metaprogram_mode mode,
         iface::displayer& displayer_);
 
     static boost::optional<int>
@@ -109,7 +109,7 @@ namespace metashell
     void display_current_frame(iface::displayer& displayer_) const;
     void display_current_forwardtrace(boost::optional<int> max_depth,
                                       iface::displayer& displayer_) const;
-    void display_backtrace(iface::displayer& displayer_) const;
+    void display_backtrace(iface::displayer& displayer_);
     void display_argument_parsing_failed(iface::displayer& displayer_) const;
     void display_metaprogram_reached_the_beginning(
         iface::displayer& displayer_) const;
