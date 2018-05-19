@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/in_memory_event_data_sequence.hpp>
-#include <metashell/data/metaprogram.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include <metashell/event_data_sequence.hpp>
 

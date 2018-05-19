@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/feature.hpp>
-#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/result.hpp>
 #include <metashell/iface/displayer.hpp>

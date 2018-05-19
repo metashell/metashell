@@ -19,6 +19,7 @@
 
 #include <metashell/data/backtrace.hpp>
 #include <metashell/data/buffered_pop_front.hpp>
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/debugger_event.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/frame_stack.hpp>
@@ -27,34 +28,31 @@
 
 namespace metashell
 {
-  namespace data
+  class metaprogram_builder
   {
-    class metaprogram_builder
-    {
-    public:
-      typedef event_data value_type;
+  public:
+    typedef data::event_data value_type;
 
-      metaprogram_builder(std::vector<debugger_event>& events_,
-                          backtrace& final_bt_,
-                          metaprogram_mode mode_,
-                          cpp_code root_name_);
+    metaprogram_builder(std::vector<data::debugger_event>& events_,
+                        data::backtrace& final_bt_,
+                        data::metaprogram_mode mode_,
+                        data::cpp_code root_name_);
 
-      void push_back(event_data event_);
+    void push_back(data::event_data event_);
 
-      const type_or_code_or_error& result() const;
+    const data::type_or_code_or_error& result() const;
 
-    private:
-      std::vector<debugger_event>* _events;
-      backtrace* _final_bt;
-      frame_stack _frame_stack;
-      buffered_pop_front<backtrace> _final_bt_pop;
-      metaprogram_mode _mode;
-      type_or_code_or_error _result;
+  private:
+    std::vector<data::debugger_event>* _events;
+    data::backtrace* _final_bt;
+    data::frame_stack _frame_stack;
+    data::buffered_pop_front<data::backtrace> _final_bt_pop;
+    data::metaprogram_mode _mode;
+    data::type_or_code_or_error _result;
 
-      void pop_event();
-      void push_event(event_data event_);
-    };
-  }
+    void pop_event();
+    void push_event(data::event_data event_);
+  };
 }
 
 #endif

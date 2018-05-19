@@ -18,7 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/feature.hpp>
-#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/iface/environment.hpp>
 #include <metashell/iface/event_data_sequence.hpp>

@@ -729,7 +729,7 @@ namespace metashell
   {
     try
     {
-      mp = data::metaprogram(
+      mp = metaprogram(
           _preprocessor ?
               _engine.preprocessor_tracer().eval(env, expression, mode) :
               _engine.metaprogram_tracer().eval(

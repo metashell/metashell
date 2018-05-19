@@ -23,8 +23,8 @@ using namespace metashell;
 forward_trace_iterator::forward_trace_iterator() : _finished(true) {}
 
 forward_trace_iterator::forward_trace_iterator(
-    data::metaprogram::iterator begin_,
-    data::metaprogram::iterator end_,
+    metaprogram::iterator begin_,
+    metaprogram::iterator end_,
     const boost::optional<int>& max_depth_)
   : _at(begin_), _end(end_), _finished(_at == _end), _max_depth(max_depth_)
 {

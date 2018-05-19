@@ -19,8 +19,8 @@
 
 #include <metashell/data/call_graph_node.hpp>
 #include <metashell/data/frame.hpp>
-#include <metashell/data/metaprogram.hpp>
 #include <metashell/data/pop_frame.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
@@ -34,8 +34,8 @@ namespace metashell
   public:
     forward_trace_iterator();
 
-    forward_trace_iterator(data::metaprogram::iterator begin_,
-                           data::metaprogram::iterator end_,
+    forward_trace_iterator(metaprogram::iterator begin_,
+                           metaprogram::iterator end_,
                            const boost::optional<int>& max_depth_);
 
     forward_trace_iterator& operator++();
@@ -45,8 +45,8 @@ namespace metashell
     const data::call_graph_node& operator*() const;
 
   private:
-    data::metaprogram::iterator _at;
-    data::metaprogram::iterator _end;
+    metaprogram::iterator _at;
+    metaprogram::iterator _end;
     data::call_graph_node _current;
     bool _finished;
 

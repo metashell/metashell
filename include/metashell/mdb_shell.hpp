@@ -26,7 +26,7 @@
 #include <metashell/logger.hpp>
 #include <metashell/mdb_command_handler_map.hpp>
 
-#include <metashell/data/metaprogram.hpp>
+#include <metashell/metaprogram.hpp>
 
 #include <metashell/iface/call_graph.hpp>
 #include <metashell/iface/command_processor.hpp>
@@ -118,7 +118,7 @@ namespace metashell
 
     iface::environment& env;
 
-    boost::optional<data::metaprogram> mp;
+    boost::optional<metaprogram> mp;
 
     int next_breakpoint_id = 1;
     breakpoints_t breakpoints;
