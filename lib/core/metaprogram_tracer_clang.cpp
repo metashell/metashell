@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/exception.hpp>
-#include <metashell/metaprogram_parse_trace.hpp>
+#include <metashell/filter_events.hpp>
 #include <metashell/metaprogram_tracer_clang.hpp>
+#include <metashell/yaml_trace.hpp>
 
 #include <metashell/data/stdin_name.hpp>
 
@@ -46,7 +47,7 @@ namespace metashell
   {
   }
 
-  data::metaprogram metaprogram_tracer_clang::eval(
+  std::unique_ptr<iface::event_data_sequence> metaprogram_tracer_clang::eval(
       iface::environment& env_,
       const boost::filesystem::path&,
       const boost::optional<data::cpp_code>& expression_,
@@ -71,25 +72,13 @@ namespace metashell
     }
     else
     {
-      const data::type_or_code_or_error evaluation_result =
-          type_or_code_or_error_from_result(res, expression_);
-
-      data::metaprogram result = create_metaprogram_from_yaml_trace(
-          trace, mode_,
-          expression_ ? *expression_ : data::cpp_code("<environment>"),
-          evaluation_result, determine_from_line(env_.get(), expression_,
-                                                 data::stdin_name_in_clang()));
-
-      if (result.is_empty() && evaluation_result.is_error())
-      {
-        // Most errors will cause templight to generate an empty trace
-        // We're only interested in non-empty traces
-        throw exception(evaluation_result.get_error());
-      }
-      else
-      {
-        return result;
-      }
+      return filter_events(
+          yaml_trace(
+              trace, type_or_code_or_error_from_result(res, expression_),
+              expression_ ? *expression_ : data::cpp_code("<environment>"),
+              mode_),
+          determine_from_line(
+              env_.get(), expression_, data::stdin_name_in_clang()));
     }
   }
 }

@@ -1,5 +1,5 @@
-#ifndef METASHELL_YAML_TRACE_HPP
-#define METASHELL_YAML_TRACE_HPP
+#ifndef METASHELL_DATA_IN_MEMORY_EVENT_DATA_SEQUENCE_HPP
+#define METASHELL_DATA_IN_MEMORY_EVENT_DATA_SEQUENCE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -20,39 +20,35 @@
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
-#include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/optional.hpp>
 
-#include <yaml-cpp/node/node.h>
-#include <yaml-cpp/yaml.h>
-
-#include <string>
 #include <vector>
 
 namespace metashell
 {
-  class yaml_trace
+  namespace data
   {
-  public:
-    yaml_trace(const std::string& trace_,
-               data::type_or_code_or_error evaluation_result_,
-               data::cpp_code root_name_,
-               data::metaprogram_mode mode_);
+    class in_memory_event_data_sequence
+    {
+    public:
+      in_memory_event_data_sequence(cpp_code root_name_,
+                                    metaprogram_mode mode_,
+                                    std::vector<event_data> events_);
 
-    boost::optional<data::event_data> next();
+      boost::optional<event_data> next();
 
-    const data::cpp_code& root_name() const;
+      const cpp_code& root_name() const;
 
-    data::metaprogram_mode mode() const;
+      metaprogram_mode mode() const;
 
-  private:
-    std::vector<YAML::Node> _nodes;
-    std::vector<YAML::Node>::const_iterator _next;
-    boost::optional<data::event_data> _evaluation_result;
-    data::cpp_code _root_name;
-    data::metaprogram_mode _mode;
-  };
+    private:
+      std::vector<event_data> _events;
+      std::vector<event_data>::size_type _next;
+      cpp_code _root_name;
+      metaprogram_mode _mode;
+    };
+  }
 }
 
 #endif

@@ -17,8 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/event_data.hpp>
-#include <metashell/data/event_data_sequence.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 
 #include <metashell/exception.hpp>
 
@@ -31,14 +32,10 @@ namespace metashell
 {
   template <class Events>
   class filter_repeated_memoization_t
-      : public data::event_data_sequence<filter_repeated_memoization_t<Events>>
   {
   public:
-    filter_repeated_memoization_t(bool keep_memoization_after_instantiation_,
-                                  Events&& events_)
-      : _events(std::move(events_)),
-        _keep_memoization_after_instantiation(
-            keep_memoization_after_instantiation_)
+    explicit filter_repeated_memoization_t(Events&& events_)
+      : _events(std::move(events_))
     {
     }
 
@@ -64,7 +61,7 @@ namespace metashell
         switch (kind_of(*event))
         {
         case data::event_kind::template_instantiation:
-          if (!_keep_memoization_after_instantiation)
+          if (_events.mode() == data::metaprogram_mode::full)
           {
             _instantiations[inst].insert(
                 mpark::get<data::event_details<
@@ -109,9 +106,12 @@ namespace metashell
       return boost::none;
     }
 
+    data::cpp_code root_name() const { return _events.root_name(); }
+
+    data::metaprogram_mode mode() const { return _events.mode(); }
+
   private:
     Events _events;
-    bool _keep_memoization_after_instantiation;
     std::vector<std::set<
         data::timeless_event_details<data::event_kind::template_instantiation>>>
         _instantiations{{}};
@@ -119,11 +119,9 @@ namespace metashell
 
   template <class Events>
   filter_repeated_memoization_t<Events>
-  filter_repeated_memoization(bool keep_memoization_after_instantiation_,
-                              Events&& events_)
+  filter_repeated_memoization(Events&& events_)
   {
-    return filter_repeated_memoization_t<Events>(
-        keep_memoization_after_instantiation_, std::move(events_));
+    return filter_repeated_memoization_t<Events>(std::move(events_));
   }
 }
 

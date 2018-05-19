@@ -34,6 +34,8 @@
 #include <metashell/data/metaprogram_node.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
+#include <memory>
+
 namespace metashell
 {
   namespace data
@@ -45,13 +47,14 @@ namespace metashell
       typedef iterator const_iterator;
 
       template <class Container>
-      metaprogram(Container&& trace, metaprogram_mode mode, cpp_code root_name)
-        : mode(mode)
+      explicit metaprogram(std::unique_ptr<Container> trace)
+        : mode(trace->mode()),
+          builder(events, final_bt, mode, trace->root_name())
       {
-        metaprogram_builder builder(
-            events, final_bt, mode, std::move(root_name));
-        std::copy(trace.begin(), trace.end(), std::back_inserter(builder));
-        evaluation_result = builder.result();
+        while (boost::optional<data::event_data> event = trace->next())
+        {
+          builder.push_back(std::move(*event));
+        }
       }
 
       bool is_empty() const;
@@ -89,7 +92,7 @@ namespace metashell
 
       metaprogram_mode mode;
 
-      type_or_code_or_error evaluation_result;
+      metaprogram_builder builder;
 
       void rebuild_backtrace();
       void update_backtrace(const debugger_event& event);

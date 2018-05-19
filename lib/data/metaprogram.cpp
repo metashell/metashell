@@ -28,7 +28,7 @@ namespace metashell
 
     const type_or_code_or_error& metaprogram::get_evaluation_result() const
     {
-      return evaluation_result;
+      return builder.result();
     }
 
     void metaprogram::reset_state()

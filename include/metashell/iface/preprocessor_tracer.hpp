@@ -21,9 +21,11 @@
 #include <metashell/data/metaprogram.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/iface/environment.hpp>
+#include <metashell/iface/event_data_sequence.hpp>
 
 #include <boost/optional.hpp>
 
+#include <memory>
 #include <string>
 
 namespace metashell
@@ -35,7 +37,7 @@ namespace metashell
     public:
       virtual ~preprocessor_tracer() {}
 
-      virtual data::metaprogram
+      virtual std::unique_ptr<iface::event_data_sequence>
       eval(iface::environment& env_,
            const boost::optional<data::cpp_code>& expression_,
            data::metaprogram_mode mode_) = 0;

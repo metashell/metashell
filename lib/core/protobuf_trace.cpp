@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/exception.hpp>
 #include <metashell/protobuf_trace.hpp>
 
+#include <fstream>
 #include <string>
-
-#include <metashell/exception.hpp>
 
 namespace metashell
 {
@@ -60,13 +60,34 @@ namespace metashell
     }
   }
 
-  protobuf_trace::protobuf_trace(std::istream& src,
-                                 data::type_or_code_or_error evaluation_result)
-    : _src(src),
-      _evaluation_result(data::event_details<data::event_kind::evaluation_end>{
-          {evaluation_result}})
+  protobuf_trace::protobuf_trace(const boost::filesystem::path& src,
+                                 data::type_or_code_or_error evaluation_result,
+                                 data::cpp_code root_name_,
+                                 data::metaprogram_mode mode_)
+      // Opening in binary mode, because some platforms interpret some
+      // characters
+      // specially in text mode, which caused parsing to fail.
+      : _src(new std::ifstream(src.string(),
+                               std::ios_base::in | std::ios_base::binary)),
+        _evaluation_result(
+            data::event_details<data::event_kind::evaluation_end>{
+                {evaluation_result}}),
+        _root_name(std::move(root_name_)),
+        _mode(mode_)
   {
-    _reader.startOnBuffer(_src);
+    if (!*_src)
+    {
+      if (evaluation_result.is_error())
+      {
+        throw exception(evaluation_result.get_error());
+      }
+      else
+      {
+        // Shouldn't happen
+        throw exception("Unexpected type type_or_code_or_error result");
+      }
+    }
+    _reader.startOnBuffer(*_src);
   }
 
   boost::optional<data::event_data> protobuf_trace::next()
@@ -116,4 +137,8 @@ namespace metashell
       }
     }
   }
+
+  const data::cpp_code& protobuf_trace::root_name() const { return _root_name; }
+
+  data::metaprogram_mode protobuf_trace::mode() const { return _mode; }
 }

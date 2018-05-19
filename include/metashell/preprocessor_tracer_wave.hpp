@@ -28,9 +28,10 @@ namespace metashell
   public:
     explicit preprocessor_tracer_wave(data::wave_config config_);
 
-    virtual data::metaprogram eval(iface::environment&,
-                                   const boost::optional<data::cpp_code>&,
-                                   data::metaprogram_mode) override;
+    virtual std::unique_ptr<iface::event_data_sequence>
+    eval(iface::environment&,
+         const boost::optional<data::cpp_code>&,
+         data::metaprogram_mode) override;
 
   private:
     data::wave_config _config;

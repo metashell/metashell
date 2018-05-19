@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/in_memory_event_data_sequence.hpp>
 #include <metashell/data/metaprogram.hpp>
+
+#include <metashell/event_data_sequence.hpp>
 
 #include <gtest/gtest.h>
 
@@ -25,16 +28,19 @@ using namespace metashell::data;
 
 namespace
 {
-  std::vector<event_data> events()
+  template <metaprogram_mode Mode>
+  std::unique_ptr<iface::event_data_sequence> events()
   {
-    return {event_details<event_kind::evaluation_end>{
-        {type_or_code_or_error(type("the_result_type"))}}};
+    return make_event_data_sequence_ptr(in_memory_event_data_sequence(
+        cpp_code("some_type"), Mode,
+        {event_details<event_kind::evaluation_end>{
+            {type_or_code_or_error(type("the_result_type"))}}}));
   }
 }
 
 TEST(metaprogram, constructor)
 {
-  metaprogram mp(events(), metaprogram_mode::normal, cpp_code("some_type"));
+  metaprogram mp(events<metaprogram_mode::normal>());
 
   ASSERT_EQ(mp.get_evaluation_result(),
             type_or_code_or_error(type("the_result_type")));
@@ -54,21 +60,21 @@ TEST(metaprogram, constructor)
 
 TEST(metaprogram, constructor_normal_mode)
 {
-  metaprogram mp(events(), metaprogram_mode::normal, cpp_code("some_type"));
+  metaprogram mp(events<metaprogram_mode::normal>());
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::normal);
 }
 
 TEST(metaprogram, constructor_full_mode)
 {
-  metaprogram mp(events(), metaprogram_mode::full, cpp_code("some_type"));
+  metaprogram mp(events<metaprogram_mode::full>());
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::full);
 }
 
 TEST(metaprogram, constructor_profile_mode)
 {
-  metaprogram mp(events(), metaprogram_mode::profile, cpp_code("some_type"));
+  metaprogram mp(events<metaprogram_mode::profile>());
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::profile);
 }

@@ -729,10 +729,19 @@ namespace metashell
   {
     try
     {
-      mp = _preprocessor ?
-               _engine.preprocessor_tracer().eval(env, expression, mode) :
-               _engine.metaprogram_tracer().eval(
-                   env, _mdb_temp_dir, expression, mode, displayer_);
+      mp = data::metaprogram(
+          _preprocessor ?
+              _engine.preprocessor_tracer().eval(env, expression, mode) :
+              _engine.metaprogram_tracer().eval(
+                  env, _mdb_temp_dir, expression, mode, displayer_));
+      if (mp && mp->is_empty() && mp->get_evaluation_result().is_error())
+      {
+        // Most errors will cause templight to generate an empty trace
+        // We're only interested in non-empty traces
+        // Throwing here to ensure this error is handled the same way as other
+        // ones thrown by eval()
+        throw exception(mp->get_evaluation_result().get_error());
+      }
     }
     catch (const some_feature_not_supported&)
     {

@@ -1,5 +1,5 @@
-#ifndef METASHELL_PROTOBUF_TRACE_HPP
-#define METASHELL_PROTOBUF_TRACE_HPP
+#ifndef METASHELL_EVENT_DATA_SEQUENCE_IMPL_HPP
+#define METASHELL_EVENT_DATA_SEQUENCE_IMPL_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,42 +17,50 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/iface/event_data_sequence.hpp>
+
 #include <metashell/data/cpp_code.hpp>
-#include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
-#include <metashell/data/type_or_code_or_error.hpp>
 
-#include <templight/ProtobufReader.h>
-
-#include <boost/filesystem/path.hpp>
-#include <boost/optional.hpp>
-
-#include <iosfwd>
 #include <memory>
 
 namespace metashell
 {
-  class protobuf_trace
+  template <class Wrapped>
+  class event_data_sequence : public iface::event_data_sequence
   {
   public:
-    protobuf_trace(const boost::filesystem::path& src,
-                   data::type_or_code_or_error evaluation_result,
-                   data::cpp_code root_name_,
-                   data::metaprogram_mode mode_);
+    explicit event_data_sequence(Wrapped&& wrapped_)
+      : _wrapped(std::move(wrapped_))
+    {
+    }
 
-    boost::optional<data::event_data> next();
+    virtual boost::optional<data::event_data> next() override
+    {
+      return _wrapped.next();
+    }
 
-    const data::cpp_code& root_name() const;
+    virtual data::cpp_code root_name() const override
+    {
+      return _wrapped.root_name();
+    }
 
-    data::metaprogram_mode mode() const;
+    virtual data::metaprogram_mode mode() const override
+    {
+      return _wrapped.mode();
+    }
 
   private:
-    std::unique_ptr<std::istream> _src;
-    templight::ProtobufReader _reader;
-    boost::optional<data::event_data> _evaluation_result;
-    data::cpp_code _root_name;
-    data::metaprogram_mode _mode;
+    Wrapped _wrapped;
   };
+
+  template <class Wrapped>
+  std::unique_ptr<iface::event_data_sequence>
+  make_event_data_sequence_ptr(Wrapped&& arg_)
+  {
+    return std::unique_ptr<event_data_sequence<Wrapped>>(
+        new event_data_sequence<Wrapped>(std::move(arg_)));
+  }
 }
 
 #endif

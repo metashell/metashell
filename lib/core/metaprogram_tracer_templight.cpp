@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
-#include <metashell/metaprogram_parse_trace.hpp>
-#include <metashell/metaprogram_tracer_templight.hpp>
-
 #include <metashell/data/stdin_name.hpp>
-
-#include <fstream>
+#include <metashell/filter_events.hpp>
+#include <metashell/metaprogram_tracer_templight.hpp>
+#include <metashell/protobuf_trace.hpp>
 
 namespace
 {
@@ -65,7 +62,8 @@ namespace metashell
   {
   }
 
-  data::metaprogram metaprogram_tracer_templight::eval(
+  std::unique_ptr<iface::event_data_sequence>
+  metaprogram_tracer_templight::eval(
       iface::environment& env_,
       const boost::filesystem::path& temp_dir_,
       const boost::optional<data::cpp_code>& expression_,
@@ -77,34 +75,12 @@ namespace metashell
     const data::type_or_code_or_error evaluation_result = run_metaprogram(
         _templight_binary, expression_, output_path, env_, displayer_);
 
-    // Opening in binary mode, because some platforms interpret some characters
-    // specially in text mode, which caused parsing to fail.
-    std::ifstream protobuf_stream(output_path.string() + ".trace.pbf",
-                                  std::ios_base::in | std::ios_base::binary);
-
-    if (protobuf_stream)
-    {
-      const data::metaprogram result = create_metaprogram_from_protobuf_stream(
-          protobuf_stream, mode_,
-          expression_ ? *expression_ : data::cpp_code("<environment>"),
-          evaluation_result, determine_from_line(env_.get(), expression_,
-                                                 data::stdin_name_in_clang()));
-      if (result.is_empty() && evaluation_result.is_error())
-      {
-        // Most errors will cause templight to generate an empty trace
-        // We're only interested in non-empty traces
-        throw exception(evaluation_result.get_error());
-      }
-      return result;
-    }
-    else if (evaluation_result.is_error())
-    {
-      throw exception(evaluation_result.get_error());
-    }
-    else
-    {
-      // Shouldn't happen
-      throw exception("Unexpected type type_or_code_or_error result");
-    }
+    return filter_events(
+        protobuf_trace(
+            output_path.string() + ".trace.pbf", evaluation_result,
+            expression_ ? *expression_ : data::cpp_code("<environment>"),
+            mode_),
+        determine_from_line(
+            env_.get(), expression_, data::stdin_name_in_clang()));
   }
 }

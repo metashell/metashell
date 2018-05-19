@@ -30,7 +30,7 @@ namespace metashell
   public:
     explicit metaprogram_tracer_templight(clang_binary templight_binary_);
 
-    virtual data::metaprogram
+    virtual std::unique_ptr<iface::event_data_sequence>
     eval(iface::environment& env_,
          const boost::filesystem::path& temp_dir_,
          const boost::optional<data::cpp_code>& expression_,

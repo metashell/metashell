@@ -23,10 +23,12 @@
 #include <metashell/data/result.hpp>
 #include <metashell/iface/displayer.hpp>
 #include <metashell/iface/environment.hpp>
+#include <metashell/iface/event_data_sequence.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
+#include <memory>
 #include <string>
 
 namespace metashell
@@ -38,7 +40,7 @@ namespace metashell
     public:
       virtual ~metaprogram_tracer() {}
 
-      virtual data::metaprogram
+      virtual std::unique_ptr<event_data_sequence>
       eval(iface::environment& env_,
            const boost::filesystem::path& temp_dir_,
            const boost::optional<data::cpp_code>& expression_,
