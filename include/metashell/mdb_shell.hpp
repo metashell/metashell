@@ -84,9 +84,8 @@ namespace metashell
     bool require_empty_args(const std::string& args,
                             iface::displayer& displayer_) const;
     bool require_evaluated_metaprogram(iface::displayer& displayer_) const;
-    bool require_running_metaprogram(iface::displayer& displayer_) const;
-    bool
-    require_running_or_errored_metaprogram(iface::displayer& displayer_) const;
+    bool require_running_metaprogram(iface::displayer& displayer_);
+    bool require_running_or_errored_metaprogram(iface::displayer& displayer_);
 
     bool run_metaprogram_with_templight(
         const boost::optional<data::cpp_code>& expression,
@@ -108,13 +107,13 @@ namespace metashell
                        iface::displayer& displayer_) const;
     void display_current_frame(iface::displayer& displayer_) const;
     void display_current_forwardtrace(boost::optional<int> max_depth,
-                                      iface::displayer& displayer_) const;
+                                      iface::displayer& displayer_);
     void display_backtrace(iface::displayer& displayer_);
     void display_argument_parsing_failed(iface::displayer& displayer_) const;
     void display_metaprogram_reached_the_beginning(
         iface::displayer& displayer_) const;
-    void display_metaprogram_finished(iface::displayer& displayer_) const;
-    void display_movement_info(bool moved, iface::displayer& displayer_) const;
+    void display_metaprogram_finished(iface::displayer& displayer_);
+    void display_movement_info(bool moved, iface::displayer& displayer_);
 
     iface::environment& env;
 

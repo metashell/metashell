@@ -261,8 +261,7 @@ namespace metashell
     return true;
   }
 
-  bool
-  mdb_shell::require_running_metaprogram(iface::displayer& displayer_) const
+  bool mdb_shell::require_running_metaprogram(iface::displayer& displayer_)
   {
     if (!require_evaluated_metaprogram(displayer_))
     {
@@ -278,7 +277,7 @@ namespace metashell
   }
 
   bool mdb_shell::require_running_or_errored_metaprogram(
-      iface::displayer& displayer_) const
+      iface::displayer& displayer_)
   {
     if (!require_evaluated_metaprogram(displayer_))
     {
@@ -881,9 +880,8 @@ namespace metashell
     display_frame(mp->get_current_frame(), displayer_);
   }
 
-  void
-  mdb_shell::display_current_forwardtrace(boost::optional<int> max_depth,
-                                          iface::displayer& displayer_) const
+  void mdb_shell::display_current_forwardtrace(boost::optional<int> max_depth,
+                                               iface::displayer& displayer_)
   {
     displayer_.show_call_graph(boost::make_iterator_range(
         forward_trace_iterator(mp->current_position(), mp->end(), max_depth),
@@ -907,15 +905,14 @@ namespace metashell
     displayer_.show_raw_text("Metaprogram reached the beginning");
   }
 
-  void
-  mdb_shell::display_metaprogram_finished(iface::displayer& displayer_) const
+  void mdb_shell::display_metaprogram_finished(iface::displayer& displayer_)
   {
     displayer_.show_raw_text("Metaprogram finished");
     displayer_.show_type_or_code_or_error(mp->get_evaluation_result());
   }
 
   void mdb_shell::display_movement_info(bool moved,
-                                        iface::displayer& displayer_) const
+                                        iface::displayer& displayer_)
   {
     if (mp->is_finished())
     {

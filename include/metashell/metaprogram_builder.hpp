@@ -18,37 +18,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/backtrace.hpp>
-#include <metashell/data/buffered_pop_front.hpp>
 #include <metashell/data/cpp_code.hpp>
 #include <metashell/data/debugger_event.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/frame_stack.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
-#include <metashell/data/type_or_code_or_error.hpp>
 
 namespace metashell
 {
   class metaprogram_builder
   {
   public:
-    typedef data::event_data value_type;
+    typedef std::vector<data::debugger_event>::size_type size_type;
 
-    metaprogram_builder(std::vector<data::debugger_event>& events_,
-                        data::backtrace& final_bt_,
-                        data::metaprogram_mode mode_,
+    metaprogram_builder(data::metaprogram_mode mode_,
                         data::cpp_code root_name_);
 
     void push_back(data::event_data event_);
 
-    const data::type_or_code_or_error& result() const;
+    const data::debugger_event& operator[](size_type n_) const;
 
   private:
-    std::vector<data::debugger_event>* _events;
-    data::backtrace* _final_bt;
+    std::vector<data::debugger_event> _events;
     data::frame_stack _frame_stack;
-    data::buffered_pop_front<data::backtrace> _final_bt_pop;
     data::metaprogram_mode _mode;
-    data::type_or_code_or_error _result;
 
     void pop_event();
     void push_event(data::event_data event_);

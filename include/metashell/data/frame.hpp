@@ -20,6 +20,7 @@
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/event_kind.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/finalisable_counter.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/metaprogram_node.hpp>
 
@@ -70,7 +71,9 @@ namespace metashell
 
       void add_child();
 
-      int number_of_children() const;
+      boost::optional<int> number_of_children() const;
+
+      void finished();
 
     private:
       metaprogram_node _node;
@@ -81,7 +84,9 @@ namespace metashell
       boost::optional<double> _finished_at;
       boost::optional<double> _time_taken_ratio;
       bool _flat;
-      int _number_of_children = 0;
+      finalisable_counter _number_of_children;
+
+      bool finalised() const;
     };
 
     std::string to_string(const frame& f_);

@@ -1,5 +1,5 @@
-#ifndef METASHELL_FRAME_STACK_HPP
-#define METASHELL_FRAME_STACK_HPP
+#ifndef METASHELL_DATA_FINALISABLE_COUNTER_HPP
+#define METASHELL_DATA_FINALISABLE_COUNTER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,36 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/debugger_event.hpp>
-#include <metashell/data/metaprogram_mode.hpp>
+#include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
-#include <vector>
+#include <iosfwd>
+#include <string>
 
 namespace metashell
 {
   namespace data
   {
-    class frame_stack
+    class finalisable_counter : boost::incrementable<finalisable_counter>
     {
     public:
-      typedef std::vector<debugger_event>::size_type value_type;
+      // precondition: !_finalised
+      finalisable_counter& operator++();
 
-      bool empty() const;
+      // precondition: !_finalised
+      void value_is_final();
 
-      void push_back(value_type item_);
-      frame& back(std::vector<debugger_event>& events_) const;
-      pop_frame pop_back();
+      boost::optional<int> operator*() const;
 
-      void running_at(std::vector<debugger_event>& events_, double timestamp_);
+      int current_value() const;
 
     private:
-      std::vector<value_type> _stack;
+      int _value = 0;
+      bool _final = false;
     };
 
-    void running_at(frame_stack& stack_,
-                    std::vector<debugger_event>& events_,
-                    const boost::optional<double>& timestamp_,
-                    metaprogram_mode mode_);
+    std::string to_string(const finalisable_counter& c_);
+    std::ostream& operator<<(std::ostream& out_, const finalisable_counter& c_);
   }
 }
 

@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/in_memory_event_data_sequence.hpp>
 #include <metashell/metaprogram.hpp>
 
+#include <metashell/data/in_memory_event_data_sequence.hpp>
+
 #include <metashell/event_data_sequence.hpp>
+
+#include "counting_event_data_sequence.hpp"
 
 #include <gtest/gtest.h>
 
@@ -36,6 +39,22 @@ namespace
         {event_details<event_kind::evaluation_end>{
             {type_or_code_or_error(type("the_result_type"))}}}));
   }
+
+  std::unique_ptr<counting_event_data_sequence> build_counting_seq()
+  {
+    const file_location loc;
+
+    return std::unique_ptr<counting_event_data_sequence>(
+        new counting_event_data_sequence(
+            {event_details<event_kind::template_instantiation>{
+                 {type("foo<int>"), loc, loc}, 0},
+             event_details<event_kind::template_end>{{}, 0},
+             event_details<event_kind::template_instantiation>{
+                 {type("foo<char>"), loc, loc}, 0},
+             event_details<event_kind::template_end>{{}, 0},
+             event_details<event_kind::evaluation_end>{
+                 {type_or_code_or_error(type("int"))}}}));
+  }
 }
 
 TEST(metaprogram, constructor)
@@ -44,10 +63,6 @@ TEST(metaprogram, constructor)
 
   ASSERT_EQ(mp.get_evaluation_result(),
             type_or_code_or_error(type("the_result_type")));
-
-  ASSERT_TRUE(boost::get<cpp_code>(&mp.get_root_frame().node()));
-  ASSERT_EQ(
-      boost::get<cpp_code>(mp.get_root_frame().node()), cpp_code("some_type"));
 
   ASSERT_TRUE(mp.is_at_start());
   ASSERT_FALSE(mp.is_finished());
@@ -77,4 +92,81 @@ TEST(metaprogram, constructor_profile_mode)
   metaprogram mp(events<metaprogram_mode::profile>());
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::profile);
+}
+
+TEST(metaprogram, events_are_read_lazily)
+{
+  std::unique_ptr<counting_event_data_sequence> in_seq_ptr =
+      build_counting_seq();
+  counting_event_data_sequence& in_seq = *in_seq_ptr;
+
+  ASSERT_EQ(0, in_seq.next_called_times());
+  metaprogram mp(std::move(in_seq_ptr));
+
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  ASSERT_TRUE(mp.is_at_start());
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  ASSERT_FALSE(mp.is_finished());
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  ASSERT_FALSE(mp.is_empty());
+  ASSERT_EQ(1, in_seq.next_called_times());
+
+  mp.step();
+  ASSERT_EQ(1, in_seq.next_called_times());
+
+  mp.step();
+  ASSERT_EQ(3, in_seq.next_called_times());
+
+  mp.step();
+  ASSERT_EQ(5, in_seq.next_called_times());
+}
+
+TEST(metaprogram, metaprogram_iterator_reads_events_lazily)
+{
+  std::unique_ptr<counting_event_data_sequence> in_seq_ptr =
+      build_counting_seq();
+  counting_event_data_sequence& in_seq = *in_seq_ptr;
+
+  ASSERT_EQ(0, in_seq.next_called_times());
+  metaprogram mp(std::move(in_seq_ptr));
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  metaprogram::iterator i = mp.begin();
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  const metaprogram::iterator e = mp.end();
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  for (unsigned int j = 1; j != 6; ++j)
+  {
+    ASSERT_FALSE(i == e);
+    ++i;
+    ASSERT_EQ(j, in_seq.next_called_times());
+  }
+
+  ASSERT_FALSE(i == e);
+  ++i;
+  ASSERT_EQ(5, in_seq.next_called_times());
+
+  ASSERT_TRUE(i == e);
+}
+
+TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
+{
+  std::unique_ptr<counting_event_data_sequence> in_seq_ptr =
+      build_counting_seq();
+  counting_event_data_sequence& in_seq = *in_seq_ptr;
+
+  ASSERT_EQ(0, in_seq.next_called_times());
+  metaprogram mp(std::move(in_seq_ptr));
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  metaprogram::iterator i = mp.end();
+  ASSERT_EQ(0, in_seq.next_called_times());
+
+  --i;
+  ASSERT_EQ(5, in_seq.next_called_times());
 }

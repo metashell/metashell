@@ -19,38 +19,24 @@
 
 namespace metashell
 {
-  metaprogram_builder::metaprogram_builder(
-      std::vector<data::debugger_event>& events_,
-      data::backtrace& final_bt_,
-      data::metaprogram_mode mode_,
-      data::cpp_code root_name_)
-    : _events(&events_),
-      _final_bt(&final_bt_),
-      _frame_stack(),
-      _final_bt_pop(final_bt_),
-      _mode(mode_),
-      _result("Internal Metashell error: metaprogram not finished yet")
+  metaprogram_builder::metaprogram_builder(data::metaprogram_mode mode_,
+                                           data::cpp_code root_name_)
+    : _events{data::frame(std::move(root_name_))}, _mode(mode_)
   {
-    {
-      data::frame f{std::move(root_name_)};
-      _events->push_back(f);
-      _final_bt->push_front(std::move(f));
-    }
-
-    _frame_stack.push_back(back_of(*_events));
+    _frame_stack.push_back(0);
   }
 
   void metaprogram_builder::push_back(data::event_data event_)
   {
     assert(!_frame_stack.empty());
 
-    running_at(_frame_stack, timestamp(event_), _mode);
+    running_at(_frame_stack, _events, timestamp(event_), _mode);
 
     switch (relative_depth_of(event_))
     {
     case data::relative_depth::open:
       push_event(std::move(event_));
-      _frame_stack.push_back(back_of(*_events));
+      _frame_stack.push_back(_events.size() - 1);
       break;
     case data::relative_depth::flat:
       push_event(std::move(event_));
@@ -65,24 +51,17 @@ namespace metashell
     case data::relative_depth::end:
       pop_event();
 
-      if (_frame_stack.empty())
-      {
-        const auto r = result_of(event_);
-        assert(bool(r));
-        _result = *r;
-
-        if (const auto full_time = time_taken(_events->front()))
-        {
-          for (data::debugger_event& event : *_events)
-          {
-            full_time_taken(event, *full_time);
-          }
-        }
-      }
-      else
+      if (!_frame_stack.empty())
       {
         throw exception("Unclosed opening event: " +
-                        to_string(_frame_stack.back()));
+                        to_string(_frame_stack.back(_events)));
+      }
+      else if (const auto full_time = time_taken(_events.front()))
+      {
+        for (data::debugger_event& event : _events)
+        {
+          full_time_taken(event, *full_time);
+        }
       }
       break;
     }
@@ -90,22 +69,20 @@ namespace metashell
 
   void metaprogram_builder::pop_event()
   {
-    _events->emplace_back(_frame_stack.pop_back());
-    _final_bt_pop.buffer_pop_front();
+    _frame_stack.back(_events).finished();
+    _events.emplace_back(_frame_stack.pop_back());
   }
 
   void metaprogram_builder::push_event(data::event_data event_)
   {
-    _frame_stack.back().add_child();
-    _final_bt_pop.flush();
+    _frame_stack.back(_events).add_child();
 
-    data::frame f(std::move(event_), _mode);
-    _final_bt->push_front(f);
-    _events->emplace_back(std::move(f));
+    _events.emplace_back(data::frame(std::move(event_), _mode));
   }
 
-  const data::type_or_code_or_error& metaprogram_builder::result() const
+  const data::debugger_event& metaprogram_builder::
+  operator[](metaprogram_builder::size_type n_) const
   {
-    return _result;
+    return _events[n_];
   }
 }

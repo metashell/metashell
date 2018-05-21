@@ -24,6 +24,7 @@
 
 #include <boost/operators.hpp>
 #include <boost/optional.hpp>
+#include <map>
 
 namespace metashell
 {
@@ -45,10 +46,9 @@ namespace metashell
     const data::call_graph_node& operator*() const;
 
   private:
-    metaprogram::iterator _at;
-    metaprogram::iterator _end;
+    boost::optional<std::pair<metaprogram::iterator, metaprogram::iterator>>
+        _at_end;
     data::call_graph_node _current;
-    bool _finished;
 
     boost::optional<int> _max_depth;
     int _depth = 0;
@@ -62,6 +62,11 @@ namespace metashell
     bool step_to(const data::debugger_event&);
     bool step_to(const data::frame& frame_);
     bool step_to(const data::pop_frame& frame_);
+
+    bool finished() const;
+    const metaprogram::iterator& at() const;
+    metaprogram::iterator& at();
+    const metaprogram::iterator& end() const;
   };
 }
 
