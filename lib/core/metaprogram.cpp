@@ -52,7 +52,7 @@ namespace metashell
   void metaprogram::reset_state()
   {
     next_event = 0;
-    rebuild_backtrace();
+    current_bt = builder.backtrace_at(0);
     cache_current_frame();
   }
 
@@ -101,9 +101,9 @@ namespace metashell
     {
       ++next_event;
 
-      if (try_reading_until(next_event))
+      if (try_reading_until(next_event) && current_bt)
       {
-        update_backtrace(builder[next_event]);
+        update(*current_bt, builder[next_event]);
       }
     } while ((has_unread_event || next_event < read_event_count) &&
              mpark::get_if<data::pop_frame>(&builder[next_event]));
@@ -132,44 +132,6 @@ namespace metashell
     return current_frame;
   }
 
-  void metaprogram::rebuild_backtrace()
-  {
-    current_bt = data::backtrace();
-    const auto b = begin();
-    for (auto i = b, e = b + std::min(next_event + 1, read_event_count); i != e;
-         ++i)
-    {
-      update_backtrace(*i);
-    }
-  }
-
-  void metaprogram::update_backtrace(const data::debugger_event& event)
-  {
-    if (current_bt)
-    {
-      if (!current_bt->empty() && current_bt->back().flat())
-      {
-        current_bt->pop_front();
-      }
-      assert(current_bt->empty() || !current_bt->back().flat());
-
-      mpark::visit([this](const auto& e) { this->update_backtrace(e); }, event);
-    }
-  }
-
-  void metaprogram::update_backtrace(const data::frame& event)
-  {
-    current_bt->push_front(event);
-  }
-
-  void metaprogram::update_backtrace(const data::pop_frame& event)
-  {
-    assert(!current_bt->empty());
-    assert(event.target < read_event_count);
-
-    current_bt->pop_front();
-  }
-
   const data::backtrace& metaprogram::get_backtrace()
   {
     if (!has_unread_event && next_event == read_event_count &&
@@ -181,9 +143,8 @@ namespace metashell
     {
       if (!current_bt)
       {
-        rebuild_backtrace();
+        current_bt = builder.backtrace_at(next_event);
       }
-      assert(bool(current_bt));
       return *current_bt;
     }
   }

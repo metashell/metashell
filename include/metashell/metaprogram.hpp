@@ -129,11 +129,6 @@ namespace metashell
 
     data::type_or_code_or_error result;
 
-    void rebuild_backtrace();
-    void update_backtrace(const data::debugger_event& event);
-    void update_backtrace(const data::frame& event);
-    void update_backtrace(const data::pop_frame& event);
-
     void cache_current_frame();
 
     void read_next_event();

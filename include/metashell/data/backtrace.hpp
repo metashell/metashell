@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/debugger_event.hpp>
 #include <metashell/data/frame.hpp>
 
 #include <boost/operators.hpp>
@@ -57,6 +58,10 @@ namespace metashell
 
     std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
     bool operator==(const backtrace& a_, const backtrace& b_);
+
+    void update(backtrace& bt_, const debugger_event& event_);
+    void update(backtrace& bt_, const frame& event_);
+    void update(backtrace& bt_, const pop_frame& event_);
   }
 }
 

@@ -38,6 +38,8 @@ namespace metashell
 
     const data::debugger_event& operator[](size_type n_) const;
 
+    data::backtrace backtrace_at(size_type n_) const;
+
   private:
     std::vector<data::debugger_event> _events;
     data::frame_stack _frame_stack;

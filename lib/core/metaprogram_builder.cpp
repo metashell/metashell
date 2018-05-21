@@ -85,4 +85,15 @@ namespace metashell
   {
     return _events[n_];
   }
+
+  data::backtrace metaprogram_builder::backtrace_at(size_type n_) const
+  {
+    data::backtrace result;
+    const auto b = _events.begin();
+    for (auto i = b, e = b + std::min(n_ + 1, _events.size()); i != e; ++i)
+    {
+      update(result, *i);
+    }
+    return result;
+  }
 }
