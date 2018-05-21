@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/exception.hpp>
 #include <metashell/metaprogram.hpp>
 
 #include <algorithm>
@@ -26,7 +27,7 @@ namespace metashell
     : event_source(std::move(trace)),
       current_frame(event_source->root_name()),
       mode(event_source->mode()),
-      builder(mode, event_source->root_name()),
+      history(mode, current_frame),
       result("Internal Metashell error: metaprogram not finished yet")
   {
     assert(event_source);
@@ -52,7 +53,7 @@ namespace metashell
   void metaprogram::reset_state()
   {
     next_event = 0;
-    current_bt = builder.backtrace_at(0);
+    current_bt = history.backtrace_at(0);
     cache_current_frame();
   }
 
@@ -103,10 +104,10 @@ namespace metashell
 
       if (try_reading_until(next_event) && current_bt)
       {
-        update(*current_bt, builder[next_event]);
+        update(*current_bt, history[next_event]);
       }
     } while ((has_unread_event || next_event < read_event_count) &&
-             mpark::get_if<data::pop_frame>(&builder[next_event]));
+             mpark::get_if<data::pop_frame>(&history[next_event]));
 
     cache_current_frame();
   }
@@ -118,7 +119,7 @@ namespace metashell
     {
       --next_event;
     } while (next_event != 0 &&
-             mpark::get_if<data::pop_frame>(&builder[next_event]));
+             mpark::get_if<data::pop_frame>(&history[next_event]));
     current_bt = boost::none;
 
     cache_current_frame();
@@ -143,7 +144,7 @@ namespace metashell
     {
       if (!current_bt)
       {
-        current_bt = builder.backtrace_at(next_event);
+        current_bt = history.backtrace_at(next_event);
       }
       return *current_bt;
     }
@@ -172,7 +173,7 @@ namespace metashell
   {
     if (next_event < read_event_count)
     {
-      current_frame = mpark::get<data::frame>(builder[next_event]);
+      current_frame = mpark::get<data::frame>(history[next_event]);
     }
   }
 
@@ -180,16 +181,40 @@ namespace metashell
   {
     if (boost::optional<data::event_data> event = event_source->next())
     {
+      const auto at = timestamp(*event);
+
       switch (relative_depth_of(*event))
       {
       case data::relative_depth::open:
-      case data::relative_depth::flat:
+      {
+        data::frame frm(std::move(*event), mode);
+        ++tree_depth;
         final_bt_pop.flush(final_bt);
-        final_bt.push_front(data::frame{*event, mode});
+        final_bt.push_front(frm);
         read_open_or_flat = true;
-        break;
+        history.open_event(frm, at);
+      }
+      break;
+      case data::relative_depth::flat:
+      {
+        data::frame frm(std::move(*event), mode);
+        final_bt_pop.flush(final_bt);
+        final_bt.push_front(frm);
+        read_open_or_flat = true;
+        history.flat_event(frm, at);
+      }
+      break;
       case data::relative_depth::close:
         final_bt_pop.buffer_pop_front();
+        if (tree_depth < 1)
+        {
+          throw exception("Unpaired closing event: " + to_string(*event));
+        }
+        else
+        {
+          --tree_depth;
+        }
+        history.close_event(at);
         break;
       case data::relative_depth::end:
         final_bt_pop.buffer_pop_front();
@@ -198,9 +223,9 @@ namespace metashell
           assert(bool(r));
           result = *r;
         }
+        history.end_event(at);
         break;
       }
-      builder.push_back(std::move(*event));
       ++read_event_count;
     }
     else
@@ -246,7 +271,7 @@ namespace metashell
       mp->read_remaining_events();
     }
 
-    return mp->builder[at ? *at : mp->read_event_count + n];
+    return mp->history[at ? *at : mp->read_event_count + n];
   }
 
   const data::debugger_event& metaprogram::iterator::operator*() const
@@ -254,7 +279,7 @@ namespace metashell
     assert(mp);
     assert(bool(at));
 
-    return mp->builder[*at];
+    return mp->history[*at];
   }
 
   metaprogram::iterator& metaprogram::iterator::operator--()

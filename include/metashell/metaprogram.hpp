@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram_builder.hpp>
+#include <metashell/debugger_history.hpp>
 
 #include <metashell/iface/event_data_sequence.hpp>
 
@@ -43,7 +43,7 @@ namespace metashell
   class metaprogram
   {
   public:
-    typedef metaprogram_builder::size_type size_type;
+    typedef debugger_history::size_type size_type;
 
     class iterator
         : boost::random_access_iteratable<iterator,
@@ -116,6 +116,7 @@ namespace metashell
     bool read_open_or_flat = false;
     bool has_unread_event = true;
     size_type read_event_count = 1; // The root event
+    int tree_depth = 0;
 
     // using indices to avoid invalidation during copy/move
     size_type next_event = 0;
@@ -125,7 +126,7 @@ namespace metashell
 
     data::metaprogram_mode mode;
 
-    metaprogram_builder builder;
+    debugger_history history;
 
     data::type_or_code_or_error result;
 

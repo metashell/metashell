@@ -1,5 +1,5 @@
-#ifndef METASHELL_METAPROGRAM_BUILDER_HPP
-#define METASHELL_METAPROGRAM_BUILDER_HPP
+#ifndef METASHELL_DEBUGGER_HISTORY_HPP
+#define METASHELL_DEBUGGER_HISTORY_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2014, Andras Kucsma (andras.kucsma@gmail.com)
@@ -18,23 +18,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/backtrace.hpp>
-#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/debugger_event.hpp>
-#include <metashell/data/event_data.hpp>
 #include <metashell/data/frame_stack.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 
+#include <boost/optional.hpp>
+
 namespace metashell
 {
-  class metaprogram_builder
+  class debugger_history
   {
   public:
     typedef std::vector<data::debugger_event>::size_type size_type;
 
-    metaprogram_builder(data::metaprogram_mode mode_,
-                        data::cpp_code root_name_);
+    debugger_history(data::metaprogram_mode mode_, data::frame root_frame_);
 
-    void push_back(data::event_data event_);
+    void open_event(data::debugger_event event_,
+                    const boost::optional<double>& timestamp_);
+    void flat_event(data::debugger_event event_,
+                    const boost::optional<double>& timestmap_);
+    void close_event(const boost::optional<double>& timestmap_);
+    void end_event(const boost::optional<double>& timestmap_);
 
     const data::debugger_event& operator[](size_type n_) const;
 
@@ -44,9 +48,6 @@ namespace metashell
     std::vector<data::debugger_event> _events;
     data::frame_stack _frame_stack;
     data::metaprogram_mode _mode;
-
-    void pop_event();
-    void push_event(data::event_data event_);
   };
 }
 
