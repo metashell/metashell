@@ -17,8 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/event_data.hpp>
-#include <metashell/data/event_data_sequence.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/optional.hpp>
@@ -31,18 +32,26 @@
 
 namespace metashell
 {
-  class yaml_trace : public data::event_data_sequence<yaml_trace>
+  class yaml_trace
   {
   public:
     yaml_trace(const std::string& trace_,
-               data::type_or_code_or_error evaluation_result_);
+               data::type_or_code_or_error evaluation_result_,
+               data::cpp_code root_name_,
+               data::metaprogram_mode mode_);
 
     boost::optional<data::event_data> next();
+
+    const data::cpp_code& root_name() const;
+
+    data::metaprogram_mode mode() const;
 
   private:
     std::vector<YAML::Node> _nodes;
     std::vector<YAML::Node>::const_iterator _next;
     boost::optional<data::event_data> _evaluation_result;
+    data::cpp_code _root_name;
+    data::metaprogram_mode _mode;
   };
 }
 

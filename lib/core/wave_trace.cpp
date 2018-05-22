@@ -20,10 +20,17 @@ namespace metashell
 {
   wave_trace::wave_trace(const data::cpp_code& env_,
                          const boost::optional<data::cpp_code>& exp_,
-                         const data::wave_config& config_)
-    : _impl(new wave_trace_impl(env_, exp_, config_))
+                         const data::wave_config& config_,
+                         data::metaprogram_mode mode_)
+    : _impl(new wave_trace_impl(env_, exp_, config_)),
+      _root_name(exp_ ? *exp_ : data::cpp_code("<environment>")),
+      _mode(mode_)
   {
   }
 
   boost::optional<data::event_data> wave_trace::next() { return _impl->next(); }
+
+  const data::cpp_code& wave_trace::root_name() const { return _root_name; }
+
+  data::metaprogram_mode wave_trace::mode() const { return _mode; }
 }

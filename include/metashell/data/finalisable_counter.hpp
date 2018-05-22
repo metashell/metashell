@@ -1,8 +1,8 @@
-#ifndef METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
-#define METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
+#ifndef METASHELL_DATA_FINALISABLE_COUNTER_HPP
+#define METASHELL_DATA_FINALISABLE_COUNTER_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,35 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/feature.hpp>
-#include <metashell/data/metaprogram_mode.hpp>
-#include <metashell/iface/environment.hpp>
-#include <metashell/iface/event_data_sequence.hpp>
-
+#include <boost/operators.hpp>
 #include <boost/optional.hpp>
 
-#include <memory>
+#include <iosfwd>
 #include <string>
 
 namespace metashell
 {
-  namespace iface
+  namespace data
   {
-    class preprocessor_tracer
+    class finalisable_counter : boost::incrementable<finalisable_counter>
     {
     public:
-      virtual ~preprocessor_tracer() {}
+      // precondition: !_finalised
+      finalisable_counter& operator++();
 
-      virtual std::unique_ptr<iface::event_data_sequence>
-      eval(iface::environment& env_,
-           const boost::optional<data::cpp_code>& expression_,
-           data::metaprogram_mode mode_) = 0;
+      // precondition: !_finalised
+      void value_is_final();
 
-      static data::feature name_of_feature()
-      {
-        return data::feature::preprocessor_tracer();
-      }
+      boost::optional<int> operator*() const;
+
+      int current_value() const;
+
+    private:
+      int _value = 0;
+      bool _final = false;
     };
+
+    std::string to_string(const finalisable_counter& c_);
+    std::ostream& operator<<(std::ostream& out_, const finalisable_counter& c_);
   }
 }
 

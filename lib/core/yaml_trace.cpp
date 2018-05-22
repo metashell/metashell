@@ -79,11 +79,15 @@ namespace metashell
   }
 
   yaml_trace::yaml_trace(const std::string& trace_,
-                         data::type_or_code_or_error evaluation_result_)
+                         data::type_or_code_or_error evaluation_result_,
+                         data::cpp_code root_name_,
+                         data::metaprogram_mode mode_)
     : _nodes(YAML::LoadAll(trace_)),
       _next(_nodes.begin()),
       _evaluation_result(data::event_details<data::event_kind::evaluation_end>{
-          {evaluation_result_}})
+          {evaluation_result_}}),
+      _root_name(std::move(root_name_)),
+      _mode(mode_)
   {
   }
 
@@ -122,4 +126,8 @@ namespace metashell
 
     return result;
   }
+
+  const data::cpp_code& yaml_trace::root_name() const { return _root_name; }
+
+  data::metaprogram_mode yaml_trace::mode() const { return _mode; }
 }

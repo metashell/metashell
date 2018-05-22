@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/event_data_sequence.hpp>
 #include <metashell/filter_enable_reachable.hpp>
 #include <metashell/filter_expand_memoizations.hpp>
 #include <metashell/filter_merge_repeated_events.hpp>
@@ -27,18 +28,17 @@
 namespace metashell
 {
   template <class Events>
-  auto filter_events(Events&& events_,
-                     boost::optional<data::file_location> from_,
-                     bool keep_memoization_after_instantiation_)
+  std::unique_ptr<iface::event_data_sequence>
+  filter_events(Events&& events_, boost::optional<data::file_location> from_)
   {
-    return filter_expand_memoizations(
+    const bool full = events_.mode() == data::metaprogram_mode::full;
+    return make_event_data_sequence_ptr(filter_expand_memoizations(
         filter_repeated_memoization(
-            keep_memoization_after_instantiation_,
             filter_unwrap_vertices(filter_enable_reachable(
                 filter_replay_instantiations(
                     filter_merge_repeated_events(std::move(events_)), from_),
                 from_))),
-        !keep_memoization_after_instantiation_);
+        full));
   }
 }
 

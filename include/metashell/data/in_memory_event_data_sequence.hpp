@@ -1,8 +1,8 @@
-#ifndef METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
-#define METASHELL_IFACE_PREPROCESSOR_TRACER_HPP
+#ifndef METASHELL_DATA_IN_MEMORY_EVENT_DATA_SEQUENCE_HPP
+#define METASHELL_DATA_IN_MEMORY_EVENT_DATA_SEQUENCE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,34 +17,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/feature.hpp>
+#include <metashell/data/cpp_code.hpp>
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
-#include <metashell/iface/environment.hpp>
-#include <metashell/iface/event_data_sequence.hpp>
 
 #include <boost/optional.hpp>
 
-#include <memory>
-#include <string>
+#include <vector>
 
 namespace metashell
 {
-  namespace iface
+  namespace data
   {
-    class preprocessor_tracer
+    class in_memory_event_data_sequence
     {
     public:
-      virtual ~preprocessor_tracer() {}
+      in_memory_event_data_sequence(cpp_code root_name_,
+                                    metaprogram_mode mode_,
+                                    std::vector<event_data> events_);
 
-      virtual std::unique_ptr<iface::event_data_sequence>
-      eval(iface::environment& env_,
-           const boost::optional<data::cpp_code>& expression_,
-           data::metaprogram_mode mode_) = 0;
+      boost::optional<event_data> next();
 
-      static data::feature name_of_feature()
-      {
-        return data::feature::preprocessor_tracer();
-      }
+      const cpp_code& root_name() const;
+
+      metaprogram_mode mode() const;
+
+    private:
+      std::vector<event_data> _events;
+      std::vector<event_data>::size_type _next;
+      cpp_code _root_name;
+      metaprogram_mode _mode;
     };
   }
 }

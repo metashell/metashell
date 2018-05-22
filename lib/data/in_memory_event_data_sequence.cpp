@@ -1,5 +1,5 @@
 // Metashell - Interactive C++ template metaprogramming shell
-// Copyright (C) 2017, Abel Sinkovics (abel@sinkovics.hu)
+// Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +14,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/event_data_sequence.hpp>
-#include <metashell/preprocessor_tracer_constant.hpp>
-
 #include <metashell/data/in_memory_event_data_sequence.hpp>
 
 namespace metashell
 {
-  std::unique_ptr<iface::event_data_sequence>
-  preprocessor_tracer_constant::eval(iface::environment&,
-                                     const boost::optional<data::cpp_code>&,
-                                     data::metaprogram_mode mode_)
+  namespace data
   {
-    return make_event_data_sequence_ptr(
-        data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
+    in_memory_event_data_sequence::in_memory_event_data_sequence(
+        cpp_code root_name_,
+        metaprogram_mode mode_,
+        std::vector<event_data> events_)
+      : _events(std::move(events_)),
+        _next(0),
+        _root_name(std::move(root_name_)),
+        _mode(mode_)
+    {
+    }
+
+    boost::optional<event_data> in_memory_event_data_sequence::next()
+    {
+      return _next < _events.size() ? boost::make_optional(_events[_next++]) :
+                                      boost::none;
+    }
+
+    const cpp_code& in_memory_event_data_sequence::root_name() const
+    {
+      return _root_name;
+    }
+
+    metaprogram_mode in_memory_event_data_sequence::mode() const
+    {
+      return _mode;
+    }
   }
 }

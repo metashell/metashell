@@ -19,23 +19,31 @@
 
 #include <metashell/wave_trace_impl.hpp>
 
-#include <metashell/data/event_data_sequence.hpp>
+#include <metashell/data/cpp_code.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 
 #include <memory>
 
 namespace metashell
 {
-  class wave_trace : public data::event_data_sequence<wave_trace>
+  class wave_trace
   {
   public:
     wave_trace(const data::cpp_code& env_,
                const boost::optional<data::cpp_code>& exp_,
-               const data::wave_config& config_);
+               const data::wave_config& config_,
+               data::metaprogram_mode mode_);
 
     boost::optional<data::event_data> next();
 
+    const data::cpp_code& root_name() const;
+
+    data::metaprogram_mode mode() const;
+
   private:
     std::unique_ptr<wave_trace_impl> _impl;
+    data::cpp_code _root_name;
+    data::metaprogram_mode _mode;
   };
 }
 

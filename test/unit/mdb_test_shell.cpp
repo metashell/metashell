@@ -62,7 +62,7 @@ mdb_test_shell::mdb_test_shell(metashell::shell& shell, const std::string& line)
 
 bool mdb_test_shell::has_metaprogram() const { return static_cast<bool>(mp); }
 
-const metashell::data::metaprogram& mdb_test_shell::get_metaprogram() const
+const metashell::metaprogram& mdb_test_shell::get_metaprogram() const
 {
   return *mp;
 }

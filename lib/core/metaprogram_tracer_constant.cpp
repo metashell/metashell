@@ -14,20 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/event_data_sequence.hpp>
 #include <metashell/metaprogram_tracer_constant.hpp>
 
-#include <vector>
+#include <metashell/data/in_memory_event_data_sequence.hpp>
 
 namespace metashell
 {
-  data::metaprogram
+  std::unique_ptr<iface::event_data_sequence>
   metaprogram_tracer_constant::eval(iface::environment&,
                                     const boost::filesystem::path&,
                                     const boost::optional<data::cpp_code>&,
-                                    data::metaprogram_mode,
+                                    data::metaprogram_mode mode_,
                                     iface::displayer&)
   {
-    return {std::vector<data::event_data>{}, data::metaprogram_mode::normal,
-            data::cpp_code{}};
+    return make_event_data_sequence_ptr(
+        data::in_memory_event_data_sequence{data::cpp_code{}, mode_, {}});
   }
 }

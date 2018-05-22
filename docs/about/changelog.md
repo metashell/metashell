@@ -37,6 +37,7 @@
       debugging instead of the Templight dump. This makes it possible to work
       with a Clang binary (patched with Templight) and does not require a
       Templight binary. Note that profiling is not supported.
+    * The input events are read lazily in the debugger.
 
 ## Version 3.0.0
 

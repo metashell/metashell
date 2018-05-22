@@ -17,9 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/cpp_code.hpp>
 #include <metashell/data/event_data.hpp>
-#include <metashell/data/event_data_sequence.hpp>
 #include <metashell/data/file_location.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 
 #include <metashell/event_cache.hpp>
 #include <metashell/filter_with_queue.hpp>
@@ -30,7 +31,6 @@ namespace metashell
 {
   template <class Events>
   class filter_replay_instantiations_t
-      : public data::event_data_sequence<filter_replay_instantiations_t<Events>>
   {
   public:
     explicit filter_replay_instantiations_t(
@@ -64,6 +64,10 @@ namespace metashell
 
       return event;
     }
+
+    data::cpp_code root_name() const { return _events.root_name(); }
+
+    data::metaprogram_mode mode() const { return _events.mode(); }
 
   private:
     filter_with_queue<Events> _events;

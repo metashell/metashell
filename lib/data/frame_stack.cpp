@@ -24,46 +24,49 @@ namespace metashell
   {
     bool frame_stack::empty() const { return _stack.empty(); }
 
-    frame& frame_stack::back() const
+    frame& frame_stack::back(std::vector<debugger_event>& events_) const
     {
       assert(!_stack.empty());
-      frame* f = mpark::get_if<frame>(&*_stack.back());
+      assert(_stack.back() < events_.size());
+
+      frame* f = mpark::get_if<frame>(&events_[_stack.back()]);
       assert(f);
       return *f;
     }
 
     void frame_stack::push_back(value_type item_)
     {
-      assert(mpark::get_if<frame>(&*item_));
-      _stack.emplace_back(std::move(item_));
+      _stack.emplace_back(item_);
     }
 
     pop_frame frame_stack::pop_back()
     {
       assert(!_stack.empty());
-      assert(mpark::get_if<frame>(&*_stack.back()));
-      pop_frame result{_stack.back().index()};
+      pop_frame result{_stack.back()};
       _stack.pop_back();
       return result;
     }
 
-    void frame_stack::running_at(double timestamp_)
+    void frame_stack::running_at(std::vector<debugger_event>& events_,
+                                 double timestamp_)
     {
       for (auto i : _stack)
       {
-        frame* f = mpark::get_if<frame>(&*i);
+        assert(i < events_.size());
+        frame* f = mpark::get_if<frame>(&events_[i]);
         assert(f);
         f->running_at(timestamp_);
       }
     }
 
     void running_at(frame_stack& stack_,
+                    std::vector<debugger_event>& events_,
                     const boost::optional<double>& timestamp_,
                     metaprogram_mode mode_)
     {
       if (mode_ == metaprogram_mode::profile && timestamp_)
       {
-        stack_.running_at(*timestamp_);
+        stack_.running_at(events_, *timestamp_);
       }
     }
   }

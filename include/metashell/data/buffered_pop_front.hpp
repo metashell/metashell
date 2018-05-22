@@ -25,25 +25,19 @@ namespace metashell
     class buffered_pop_front
     {
     public:
-      explicit buffered_pop_front(T& container_)
-        : _container(&container_), _count(0)
-      {
-      }
-
       void buffer_pop_front() { ++_count; }
 
-      void flush()
+      void flush(T& container_)
       {
         for (int i = 0; i < _count; ++i)
         {
-          _container->pop_front();
+          container_.pop_front();
         }
         _count = 0;
       }
 
     private:
-      T* _container;
-      int _count;
+      int _count = 0;
     };
   }
 }

@@ -1,5 +1,5 @@
-#ifndef METASHELL_FILTER_WITH_QUEUE_HPP
-#define METASHELL_FILTER_WITH_QUEUE_HPP
+#ifndef METASHELL_IFACE_EVENT_DATA_SEQUENCE_HPP
+#define METASHELL_IFACE_EVENT_DATA_SEQUENCE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -23,48 +23,22 @@
 
 #include <boost/optional.hpp>
 
-#include <deque>
-
 namespace metashell
 {
-  template <class Events>
-  class filter_with_queue
+  namespace iface
   {
-  public:
-    explicit filter_with_queue(Events&& events_) : _events(std::move(events_))
+    class event_data_sequence
     {
-    }
+    public:
+      virtual ~event_data_sequence() {}
 
-    boost::optional<data::event_data> next()
-    {
-      boost::optional<data::event_data> result =
-          _queue.empty() ? _events.next() : std::move(_queue.front());
-      if (!_queue.empty())
-      {
-        _queue.pop_front();
-      }
-      return result;
-    }
+      virtual boost::optional<data::event_data> next() = 0;
 
-    template <class InputRange>
-    void queue(InputRange& events_)
-    {
-      _queue.insert(_queue.begin(), events_.begin(), events_.end());
-    }
+      virtual data::cpp_code root_name() const = 0;
 
-    void queue(data::event_data event_)
-    {
-      _queue.push_front(std::move(event_));
-    }
-
-    data::cpp_code root_name() const { return _events.root_name(); }
-
-    data::metaprogram_mode mode() const { return _events.mode(); }
-
-  private:
-    Events _events;
-    std::deque<data::event_data> _queue;
-  };
+      virtual data::metaprogram_mode mode() const = 0;
+    };
+  }
 }
 
 #endif

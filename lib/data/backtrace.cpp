@@ -19,6 +19,7 @@
 #include <boost/range/algorithm/equal.hpp>
 
 #include <algorithm>
+#include <cassert>
 
 using namespace metashell::data;
 
@@ -69,4 +70,27 @@ std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
 bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
 {
   return boost::equal(a_, b_);
+}
+
+void metashell::data::update(backtrace& bt_, const data::debugger_event& event_)
+{
+  if (!bt_.empty() && bt_.back().flat())
+  {
+    bt_.pop_front();
+  }
+  assert(bt_.empty() || !bt_.back().flat());
+
+  mpark::visit([&bt_](const auto& e) { update(bt_, e); }, event_);
+}
+
+void metashell::data::update(backtrace& bt_, const frame& event_)
+{
+  bt_.push_front(event_);
+}
+
+void metashell::data::update(backtrace& bt_, const pop_frame&)
+{
+  assert(!bt_.empty());
+
+  bt_.pop_front();
 }

@@ -145,10 +145,14 @@ namespace metashell
 
     void frame::add_child() { ++_number_of_children; }
 
-    int frame::number_of_children() const { return _number_of_children; }
+    boost::optional<int> frame::number_of_children() const
+    {
+      return *_number_of_children;
+    }
 
     void frame::running_at(double t)
     {
+      assert(!finalised());
       _started_at = _started_at ? std::min(*_started_at, t) : t;
       _finished_at = _finished_at ? std::max(*_finished_at, t) : t;
     }
@@ -167,6 +171,14 @@ namespace metashell
         }
       }
     }
+
+    void frame::finished()
+    {
+      assert(!finalised());
+      _number_of_children.value_is_final();
+    }
+
+    bool frame::finalised() const { return bool(*_number_of_children); }
 
     std::string to_string(const frame& f_)
     {
