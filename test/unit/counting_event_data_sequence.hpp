@@ -28,7 +28,9 @@ public:
   typedef std::vector<metashell::data::event_data>::size_type size_type;
 
   explicit counting_event_data_sequence(
-      std::vector<metashell::data::event_data> events_);
+      std::vector<metashell::data::event_data> events_,
+      metashell::data::metaprogram_mode mode_ =
+          metashell::data::metaprogram_mode::normal);
 
   virtual boost::optional<metashell::data::event_data> next() override;
 
@@ -39,6 +41,7 @@ public:
   size_type next_called_times() const;
 
 private:
+  metashell::data::metaprogram_mode _mode;
   std::vector<metashell::data::event_data> _events;
   size_type _next_called_times;
 };

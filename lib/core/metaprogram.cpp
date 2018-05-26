@@ -34,6 +34,11 @@ namespace metashell
 
     ++tree_depth;
     update(final_bt, current_frame);
+
+    if (mode == data::metaprogram_mode::profile)
+    {
+      read_remaining_events();
+    }
   }
 
   bool metaprogram::is_empty()
