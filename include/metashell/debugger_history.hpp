@@ -33,12 +33,9 @@ namespace metashell
 
     debugger_history(data::metaprogram_mode mode_, data::frame root_frame_);
 
-    void open_event(data::debugger_event event_,
-                    const boost::optional<double>& timestamp_);
-    void flat_event(data::debugger_event event_,
-                    const boost::optional<double>& timestmap_);
-    void close_event(const boost::optional<double>& timestmap_);
-    void end_event(const boost::optional<double>& timestmap_);
+    void add_event(data::debugger_event event_,
+                   data::relative_depth rdepth_,
+                   const boost::optional<double>& timestamp_);
 
     const data::debugger_event& operator[](size_type n_) const;
 
@@ -48,6 +45,8 @@ namespace metashell
     std::vector<data::debugger_event> _events;
     data::frame_stack _frame_stack;
     data::metaprogram_mode _mode;
+
+    void pop_event();
   };
 }
 

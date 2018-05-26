@@ -26,59 +26,56 @@ namespace metashell
     _frame_stack.push_back(0);
   }
 
-  void debugger_history::open_event(data::debugger_event event_,
-                                    const boost::optional<double>& timestamp_)
-  {
-    assert(!_frame_stack.empty());
-
-    flat_event(std::move(event_), timestamp_);
-    _frame_stack.push_back(_events.size() - 1);
-  }
-
-  void debugger_history::flat_event(data::debugger_event event_,
-                                    const boost::optional<double>& timestamp_)
+  void debugger_history::add_event(data::debugger_event event_,
+                                   data::relative_depth rdepth_,
+                                   const boost::optional<double>& timestamp_)
   {
     assert(!_frame_stack.empty());
 
     running_at(_frame_stack, _events, timestamp_, _mode);
 
-    _frame_stack.back(_events).add_child();
     _events.emplace_back(std::move(event_));
-  }
 
-  void debugger_history::close_event(const boost::optional<double>& timestamp_)
-  {
-    assert(!_frame_stack.empty());
-
-    running_at(_frame_stack, _events, timestamp_, _mode);
-
-    _frame_stack.back(_events).finished();
-    _events.emplace_back(_frame_stack.pop_back());
-  }
-
-  void debugger_history::end_event(const boost::optional<double>& timestamp_)
-  {
-    assert(!_frame_stack.empty());
-
-    close_event(timestamp_);
-
-    if (!_frame_stack.empty())
+    switch (rdepth_)
     {
-      throw exception("Unclosed opening event: " +
-                      to_string(_frame_stack.back(_events)));
-    }
-    else if (const auto full_time = time_taken(_events.front()))
-    {
-      for (data::debugger_event& event : _events)
+    case data::relative_depth::open:
+      _frame_stack.back(_events).add_child();
+      _frame_stack.push_back(_events.size() - 1);
+      break;
+    case data::relative_depth::flat:
+      _frame_stack.back(_events).add_child();
+      break;
+    case data::relative_depth::close:
+      pop_event();
+      break;
+    case data::relative_depth::end:
+      pop_event();
+      if (!_frame_stack.empty())
       {
-        full_time_taken(event, *full_time);
+        throw exception("Unclosed opening event: " +
+                        to_string(_frame_stack.back(_events)));
       }
+      else if (const auto full_time = time_taken(_events.front()))
+      {
+        for (data::debugger_event& event : _events)
+        {
+          full_time_taken(event, *full_time);
+        }
+      }
+      break;
     }
+  }
+
+  void debugger_history::pop_event()
+  {
+    _frame_stack.back(_events).finished();
+    _frame_stack.pop_back();
   }
 
   const data::debugger_event& debugger_history::
   operator[](debugger_history::size_type n_) const
   {
+    assert(n_ < _events.size());
     return _events[n_];
   }
 

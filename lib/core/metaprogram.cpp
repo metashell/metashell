@@ -32,7 +32,8 @@ namespace metashell
   {
     assert(event_source);
 
-    final_bt.push_front(current_frame);
+    ++tree_depth;
+    update(final_bt, current_frame);
   }
 
   bool metaprogram::is_empty()
@@ -181,51 +182,22 @@ namespace metashell
   {
     if (boost::optional<data::event_data> event = event_source->next())
     {
+      update(tree_depth, *event);
       const auto at = timestamp(*event);
-
-      switch (relative_depth_of(*event))
+      const data::relative_depth rdepth = relative_depth_of(*event);
+      if (rdepth == data::relative_depth::open ||
+          rdepth == data::relative_depth::flat)
       {
-      case data::relative_depth::open:
-      {
-        data::frame frm(std::move(*event), mode);
-        ++tree_depth;
-        final_bt_pop.flush(final_bt);
-        final_bt.push_front(frm);
         read_open_or_flat = true;
-        history.open_event(frm, at);
       }
-      break;
-      case data::relative_depth::flat:
+      if (auto r = result_of(*event))
       {
-        data::frame frm(std::move(*event), mode);
-        final_bt_pop.flush(final_bt);
-        final_bt.push_front(frm);
-        read_open_or_flat = true;
-        history.flat_event(frm, at);
+        result = std::move(*r);
       }
-      break;
-      case data::relative_depth::close:
-        final_bt_pop.buffer_pop_front();
-        if (tree_depth < 1)
-        {
-          throw exception("Unpaired closing event: " + to_string(*event));
-        }
-        else
-        {
-          --tree_depth;
-        }
-        history.close_event(at);
-        break;
-      case data::relative_depth::end:
-        final_bt_pop.buffer_pop_front();
-        {
-          const auto r = result_of(*event);
-          assert(bool(r));
-          result = *r;
-        }
-        history.end_event(at);
-        break;
-      }
+      const data::debugger_event de =
+          to_debugger_event(std::move(*event), mode);
+      history.add_event(de, rdepth, at);
+      update(final_bt, de);
       ++read_event_count;
     }
     else

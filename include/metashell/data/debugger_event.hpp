@@ -17,7 +17,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_data.hpp>
 #include <metashell/data/frame.hpp>
+#include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
 
 #include <boost/optional.hpp>
@@ -32,6 +34,8 @@ namespace metashell
   namespace data
   {
     typedef mpark::variant<pop_frame, frame> debugger_event;
+
+    debugger_event to_debugger_event(event_data event_, metaprogram_mode mode_);
 
     std::string to_string(const debugger_event& event_);
     std::ostream& operator<<(std::ostream& out_, const debugger_event& event_);

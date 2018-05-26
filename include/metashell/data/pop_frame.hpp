@@ -26,7 +26,6 @@ namespace metashell
   {
     struct pop_frame
     {
-      std::size_t target = 0;
     };
 
     std::string to_string(const pop_frame& f_);

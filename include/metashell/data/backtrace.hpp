@@ -21,6 +21,7 @@
 #include <metashell/data/frame.hpp>
 
 #include <boost/operators.hpp>
+#include <boost/optional.hpp>
 
 #include <iosfwd>
 #include <vector>
@@ -36,7 +37,7 @@ namespace metashell
       typedef std::vector<frame>::const_reverse_iterator iterator;
       typedef iterator const_iterator;
 
-      backtrace() = default;
+      backtrace(bool buffered_ = false);
 
       backtrace(std::initializer_list<frame> frames_);
 
@@ -54,6 +55,9 @@ namespace metashell
 
     private:
       std::vector<frame> _frames;
+      boost::optional<int> _buffered_pop_count;
+
+      void flush();
     };
 
     std::ostream& operator<<(std::ostream& o_, const backtrace& t_);

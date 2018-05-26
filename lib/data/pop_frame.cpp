@@ -22,10 +22,7 @@ namespace metashell
 {
   namespace data
   {
-    std::string to_string(const pop_frame& f_)
-    {
-      return "pop_frame{" + std::to_string(f_.target) + "}";
-    }
+    std::string to_string(const pop_frame&) { return "pop_frame{}"; }
 
     std::ostream& operator<<(std::ostream& out_, const pop_frame& f_)
     {
