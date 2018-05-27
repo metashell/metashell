@@ -22,13 +22,13 @@
 #include <metashell/iface/event_data_sequence.hpp>
 
 #include <metashell/data/backtrace.hpp>
-#include <metashell/data/buffered_pop_front.hpp>
 #include <metashell/data/debugger_event.hpp>
 #include <metashell/data/direction_t.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/frame.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
+#include <metashell/data/tree_depth.hpp>
 #include <metashell/data/type_or_code_or_error.hpp>
 
 #include <boost/operators.hpp>
@@ -116,13 +116,12 @@ namespace metashell
     bool read_open_or_flat = false;
     bool has_unread_event = true;
     size_type read_event_count = 1; // The root event
-    int tree_depth = 0;
+    data::tree_depth tree_depth;
 
     // using indices to avoid invalidation during copy/move
     size_type next_event = 0;
     boost::optional<data::backtrace> current_bt;
-    data::backtrace final_bt;
-    data::buffered_pop_front<data::backtrace> final_bt_pop;
+    data::backtrace final_bt{true};
 
     data::metaprogram_mode mode;
 

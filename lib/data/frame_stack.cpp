@@ -39,12 +39,10 @@ namespace metashell
       _stack.emplace_back(item_);
     }
 
-    pop_frame frame_stack::pop_back()
+    void frame_stack::pop_back()
     {
       assert(!_stack.empty());
-      pop_frame result{_stack.back()};
       _stack.pop_back();
-      return result;
     }
 
     void frame_stack::running_at(std::vector<debugger_event>& events_,

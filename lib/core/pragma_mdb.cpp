@@ -19,6 +19,8 @@
 #include <metashell/pragma_mdb.hpp>
 #include <metashell/shell.hpp>
 
+#include <metashell/data/mdb_usage.hpp>
+
 #include <cassert>
 
 using namespace metashell;
@@ -43,7 +45,7 @@ iface::pragma_handler* pragma_mdb::clone() const
 
 std::string pragma_mdb::arguments() const
 {
-  return _preprocessor ? "[<expression>]" : "[-full] [<type>]";
+  return data::mdb_usage(_preprocessor);
 }
 
 std::string pragma_mdb::description() const

@@ -22,6 +22,8 @@
 #include <metashell/null_history.hpp>
 #include <metashell/some_feature_not_supported.hpp>
 
+#include <metashell/data/mdb_usage.hpp>
+
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
@@ -75,8 +77,7 @@ namespace metashell
       mdb_command_handler_map({
         {{"evaluate"}, repeatable_t::non_repeatable,
           callback(&mdb_shell::command_evaluate),
-          std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-            " [" + expr + "|-]",
+          data::mdb_usage(preprocessor_),
           "Evaluate and start debugging a new metaprogram.",
           std::string(preprocessor_ ? "" :
             "Evaluating a metaprogram using the `-full` qualifier will expand all\n"

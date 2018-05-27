@@ -23,15 +23,47 @@
 
 using namespace metashell::data;
 
+namespace
+{
+  void pop_flat(backtrace& bt_)
+  {
+    if (!bt_.empty() && bt_.back().flat())
+    {
+      bt_.pop_front();
+    }
+    assert(bt_.empty() || !bt_.back().flat());
+  }
+}
+
+backtrace::backtrace(bool buffered_)
+  : _frames(),
+    _buffered_pop_count(buffered_ ? boost::make_optional(0) : boost::none)
+{
+}
+
 backtrace::backtrace(std::initializer_list<frame> frames_)
-  : _frames(std::move(frames_))
+  : _frames(std::move(frames_)), _buffered_pop_count(boost::none)
 {
   std::reverse(_frames.begin(), _frames.end());
 }
 
-void backtrace::push_front(const frame& f_) { _frames.push_back(f_); }
+void backtrace::push_front(const frame& f_)
+{
+  flush();
+  _frames.push_back(f_);
+}
 
-void backtrace::pop_front() { _frames.pop_back(); }
+void backtrace::pop_front()
+{
+  if (_buffered_pop_count)
+  {
+    ++*_buffered_pop_count;
+  }
+  else
+  {
+    _frames.pop_back();
+  }
+}
 
 bool backtrace::empty() const { return _frames.empty(); }
 
@@ -47,6 +79,18 @@ const frame& backtrace::back() const { return _frames.front(); }
 backtrace::iterator backtrace::begin() const { return _frames.rbegin(); }
 
 backtrace::iterator backtrace::end() const { return _frames.rend(); }
+
+void backtrace::flush()
+{
+  if (_buffered_pop_count)
+  {
+    assert(*_buffered_pop_count >= 0);
+    assert(static_cast<unsigned int>(*_buffered_pop_count) <= _frames.size());
+    const auto e = _frames.end();
+    _frames.erase(e - *_buffered_pop_count, e);
+    _buffered_pop_count = 0;
+  }
+}
 
 std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
 {
@@ -74,17 +118,12 @@ bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
 
 void metashell::data::update(backtrace& bt_, const data::debugger_event& event_)
 {
-  if (!bt_.empty() && bt_.back().flat())
-  {
-    bt_.pop_front();
-  }
-  assert(bt_.empty() || !bt_.back().flat());
-
   mpark::visit([&bt_](const auto& e) { update(bt_, e); }, event_);
 }
 
 void metashell::data::update(backtrace& bt_, const frame& event_)
 {
+  pop_flat(bt_);
   bt_.push_front(event_);
 }
 
@@ -92,5 +131,6 @@ void metashell::data::update(backtrace& bt_, const pop_frame&)
 {
   assert(!bt_.empty());
 
+  pop_flat(bt_);
   bt_.pop_front();
 }

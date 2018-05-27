@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_BUFFERED_POP_FRONT_HPP
-#define METASHELL_DATA_BUFFERED_POP_FRONT_HPP
+#ifndef METASHELL_DATA_TREE_DEPTH_HPP
+#define METASHELL_DATA_TREE_DEPTH_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,28 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/event_data.hpp>
+
+#include <boost/operators.hpp>
+
+#include <iosfwd>
+#include <string>
+
 namespace metashell
 {
   namespace data
   {
-    template <class T>
-    class buffered_pop_front
+    class tree_depth : boost::unit_steppable<tree_depth>
     {
     public:
-      void buffer_pop_front() { ++_count; }
+      tree_depth& operator++();
+      tree_depth& operator--();
 
-      void flush(T& container_)
-      {
-        for (int i = 0; i < _count; ++i)
-        {
-          container_.pop_front();
-        }
-        _count = 0;
-      }
+      explicit operator int() const;
 
     private:
-      int _count = 0;
+      int _value = 0;
     };
+
+    void update(tree_depth& d_, const event_data& event_);
+
+    std::string to_string(tree_depth d_);
+    std::ostream& operator<<(std::ostream& out_, tree_depth d_);
   }
 }
 

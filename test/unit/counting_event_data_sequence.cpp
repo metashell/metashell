@@ -17,8 +17,9 @@
 #include "counting_event_data_sequence.hpp"
 
 counting_event_data_sequence::counting_event_data_sequence(
-    std::vector<metashell::data::event_data> events_)
-  : _events(std::move(events_)), _next_called_times(0)
+    std::vector<metashell::data::event_data> events_,
+    metashell::data::metaprogram_mode mode_)
+  : _mode(mode_), _events(std::move(events_)), _next_called_times(0)
 {
 }
 
@@ -42,7 +43,7 @@ metashell::data::cpp_code counting_event_data_sequence::root_name() const
 
 metashell::data::metaprogram_mode counting_event_data_sequence::mode() const
 {
-  return metashell::data::metaprogram_mode::normal;
+  return _mode;
 }
 
 counting_event_data_sequence::size_type

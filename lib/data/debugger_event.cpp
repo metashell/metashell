@@ -16,6 +16,7 @@
 
 #include <metashell/data/debugger_event.hpp>
 
+#include <cassert>
 #include <iostream>
 
 namespace metashell
@@ -40,6 +41,21 @@ namespace metashell
 
         boost::none_t time_taken(const pop_frame&) { return boost::none; }
       }
+    }
+
+    debugger_event to_debugger_event(event_data event_, metaprogram_mode mode_)
+    {
+      switch (relative_depth_of(event_))
+      {
+      case relative_depth::open:
+      /* [[fallthrough]] */ case relative_depth::flat:
+        return frame(std::move(event_), mode_);
+      case relative_depth::close:
+      /* [[fallthrough]] */ case relative_depth::end:
+        return pop_frame();
+      }
+      assert(!"Invalid relative depth");
+      return debugger_event();
     }
 
     std::string to_string(const debugger_event& event_)

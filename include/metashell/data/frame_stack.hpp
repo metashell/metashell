@@ -35,7 +35,7 @@ namespace metashell
 
       void push_back(value_type item_);
       frame& back(std::vector<debugger_event>& events_) const;
-      pop_frame pop_back();
+      void pop_back();
 
       void running_at(std::vector<debugger_event>& events_, double timestamp_);
 

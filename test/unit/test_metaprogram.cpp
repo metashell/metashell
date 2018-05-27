@@ -40,7 +40,8 @@ namespace
             {type_or_code_or_error(type("the_result_type"))}}}));
   }
 
-  std::unique_ptr<counting_event_data_sequence> build_counting_seq()
+  std::unique_ptr<counting_event_data_sequence>
+  build_counting_seq(metaprogram_mode mode_ = metaprogram_mode::normal)
   {
     const file_location loc;
 
@@ -48,12 +49,13 @@ namespace
         new counting_event_data_sequence(
             {event_details<event_kind::template_instantiation>{
                  {type("foo<int>"), loc, loc}, 0},
-             event_details<event_kind::template_end>{{}, 0},
+             event_details<event_kind::template_end>{{}, 10},
              event_details<event_kind::template_instantiation>{
-                 {type("foo<char>"), loc, loc}, 0},
-             event_details<event_kind::template_end>{{}, 0},
+                 {type("foo<char>"), loc, loc}, 10},
+             event_details<event_kind::template_end>{{}, 20},
              event_details<event_kind::evaluation_end>{
-                 {type_or_code_or_error(type("int"))}}}));
+                 {type_or_code_or_error(type("int"))}}},
+            mode_));
   }
 }
 
@@ -169,4 +171,50 @@ TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
 
   --i;
   ASSERT_EQ(5, in_seq.next_called_times());
+}
+
+TEST(metaprogram, profiling_information)
+{
+  metaprogram mp(build_counting_seq(metaprogram_mode::profile));
+
+  metaprogram::iterator i = mp.begin();
+  ASSERT_FALSE(i == mp.end());
+
+  {
+    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    ASSERT_TRUE(f);
+    ASSERT_TRUE(bool(f->time_taken()));
+    ASSERT_EQ(20, int(*f->time_taken()));
+    ASSERT_TRUE(bool(f->time_taken_ratio()));
+    ASSERT_EQ(100, int(*f->time_taken_ratio() * 100));
+  }
+
+  ++i;
+  ASSERT_FALSE(i == mp.end());
+
+  {
+    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    ASSERT_TRUE(f);
+    ASSERT_TRUE(bool(f->time_taken()));
+    ASSERT_EQ(10, int(*f->time_taken()));
+    ASSERT_TRUE(bool(f->time_taken_ratio()));
+    ASSERT_EQ(50, int(*f->time_taken_ratio() * 100));
+  }
+
+  ++i;
+  ASSERT_FALSE(i == mp.end());
+
+  ASSERT_TRUE(bool(mpark::get_if<data::pop_frame>(&*i)));
+
+  ++i;
+  ASSERT_FALSE(i == mp.end());
+
+  {
+    const data::frame* f = mpark::get_if<data::frame>(&*i);
+    ASSERT_TRUE(f);
+    ASSERT_TRUE(bool(f->time_taken()));
+    ASSERT_EQ(10, int(*f->time_taken()));
+    ASSERT_TRUE(bool(f->time_taken_ratio()));
+    ASSERT_EQ(50, int(*f->time_taken_ratio() * 100));
+  }
 }

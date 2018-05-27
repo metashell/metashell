@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_POP_FRAME_HPP
-#define METASHELL_DATA_POP_FRAME_HPP
+#ifndef METASHELL_DATA_MDB_USAGE_HPP
+#define METASHELL_DATA_MDB_USAGE_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,19 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <iosfwd>
 #include <string>
 
 namespace metashell
 {
   namespace data
   {
-    struct pop_frame
-    {
-    };
-
-    std::string to_string(const pop_frame& f_);
-    std::ostream& operator<<(std::ostream& out_, const pop_frame& f_);
+    std::string mdb_usage(bool preprocessor_);
   }
 }
 
