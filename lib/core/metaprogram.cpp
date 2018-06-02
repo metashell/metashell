@@ -25,15 +25,15 @@ namespace metashell
 {
   metaprogram::metaprogram(std::unique_ptr<iface::event_data_sequence> trace)
     : event_source(std::move(trace)),
-      current_frame(event_source->root_name()),
+      current_frame(data::frame(event_source->root_name())),
       mode(event_source->mode()),
-      history(mode, current_frame),
+      history(mode, **current_frame),
       result("Internal Metashell error: metaprogram not finished yet")
   {
     assert(event_source);
 
     ++tree_depth;
-    update(final_bt, current_frame);
+    update(final_bt, **current_frame);
 
     if (mode == data::metaprogram_mode::profile)
     {
@@ -101,21 +101,62 @@ namespace metashell
     }
   }
 
+  bool metaprogram::cached_ahead_of(size_type loc) const
+  {
+    return loc < read_event_count - 1;
+  }
+
   void metaprogram::step()
   {
     assert(!is_finished());
-    do
+
+    if (cached_ahead_of(next_event))
     {
-      ++next_event;
-
-      if (try_reading_until(next_event) && current_bt)
+      do
       {
-        update(*current_bt, history[next_event]);
-      }
-    } while ((has_unread_event || next_event < read_event_count) &&
-             mpark::get_if<data::pop_frame>(&history[next_event]));
+        ++next_event;
 
-    cache_current_frame();
+        if (current_bt && next_event < read_event_count)
+        {
+          update(*current_bt, history[next_event]);
+        }
+      } while (next_event < read_event_count &&
+               mpark::get_if<data::pop_frame>(&history[next_event]));
+
+      if (has_unread_event && next_event >= read_event_count)
+      {
+        --next_event;
+      }
+      else
+      {
+        cache_current_frame();
+        return;
+      }
+    }
+
+    if (!cached_ahead_of(next_event))
+    {
+      boost::optional<data::debugger_event> last = boost::none;
+      do
+      {
+        ++next_event;
+
+        try_reading_until(next_event, &last);
+
+        if (last)
+        {
+          if (current_bt)
+          {
+            update(*current_bt, *last);
+          }
+          if (auto* f = mpark::get_if<data::frame>(&*last))
+          {
+            current_frame = *f;
+          }
+        }
+      } while ((has_unread_event || next_event < read_event_count) && last &&
+               mpark::get_if<data::pop_frame>(&*last));
+    }
   }
 
   void metaprogram::step_back()
@@ -135,8 +176,9 @@ namespace metashell
   {
     assert(!is_at_start());
     assert(!is_finished());
+    assert(bool(current_frame));
 
-    return current_frame;
+    return **current_frame;
   }
 
   const data::backtrace& metaprogram::get_backtrace()
@@ -179,11 +221,12 @@ namespace metashell
   {
     if (next_event < read_event_count)
     {
-      current_frame = mpark::get<data::frame>(history[next_event]);
+      current_frame =
+          data::frame_only_event(mpark::get<data::frame>(history[next_event]));
     }
   }
 
-  void metaprogram::read_next_event()
+  boost::optional<data::debugger_event> metaprogram::read_next_event()
   {
     if (boost::optional<data::event_data> event = event_source->next())
     {
@@ -202,20 +245,41 @@ namespace metashell
       const data::debugger_event de =
           to_debugger_event(std::move(*event), mode);
       history.add_event(de, rdepth, at);
+      if (next_event <= read_event_count &&
+          (!current_frame || current_frame->event() != history[next_event]))
+      {
+        if (const auto f = mpark::get_if<data::frame>(&history[next_event]))
+        {
+          current_frame = data::frame_only_event(*f);
+        }
+      }
       update(final_bt, de);
       ++read_event_count;
+      return de;
     }
     else
     {
       has_unread_event = false;
+      return boost::none;
     }
   }
 
-  bool metaprogram::try_reading_until(size_type pos)
+  bool metaprogram::try_reading_until(
+      size_type pos, boost::optional<data::debugger_event>* last_event_read_)
   {
+    if (last_event_read_)
+    {
+      *last_event_read_ = boost::none;
+    }
     while (pos >= read_event_count && has_unread_event)
     {
-      read_next_event();
+      if (auto n = read_next_event())
+      {
+        if (last_event_read_)
+        {
+          *last_event_read_ = n;
+        }
+      }
     }
     return pos < read_event_count;
   }
@@ -235,7 +299,7 @@ namespace metashell
   metaprogram::iterator::iterator(metaprogram& mp_, metaprogram::size_type at_)
     : mp(&mp_), at(at_)
   {
-    mp->try_reading_until(at_);
+    mp->try_reading_until(at_, nullptr);
   }
 
   metaprogram::iterator::reference metaprogram::iterator::
@@ -243,20 +307,31 @@ namespace metashell
   {
     assert(mp);
 
-    if (!at)
+    if (at)
+    {
+      return *iterator(*mp, *at + n);
+    }
+    else
     {
       mp->read_remaining_events();
+      return *iterator(*mp, mp->read_event_count + n);
     }
-
-    return mp->history[at ? *at : mp->read_event_count + n];
   }
 
-  const data::debugger_event& metaprogram::iterator::operator*() const
+  metaprogram::iterator::reference metaprogram::iterator::operator*() const
   {
     assert(mp);
     assert(bool(at));
 
-    return mp->history[*at];
+    if (*at == mp->next_event)
+    {
+      assert(bool(mp->current_frame));
+      return mp->current_frame->event();
+    }
+    else
+    {
+      return mp->history[*at];
+    }
   }
 
   metaprogram::iterator& metaprogram::iterator::operator--()
@@ -288,7 +363,7 @@ namespace metashell
       at = mp->read_event_count + n;
     }
 
-    if (!mp->try_reading_until(*at))
+    if (!mp->try_reading_until(*at, nullptr))
     {
       at = boost::none;
     }

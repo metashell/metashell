@@ -26,6 +26,7 @@
 #include <metashell/data/direction_t.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/frame.hpp>
+#include <metashell/data/frame_only_event.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
 #include <metashell/data/tree_depth.hpp>
@@ -61,7 +62,7 @@ namespace metashell
       explicit iterator(metaprogram& mp_);
       iterator(metaprogram& mp_, metaprogram::size_type at_);
 
-      const data::debugger_event& operator*() const;
+      reference operator*() const;
 
       iterator& operator++();
       iterator& operator--();
@@ -112,7 +113,7 @@ namespace metashell
   private:
     std::unique_ptr<iface::event_data_sequence> event_source;
 
-    data::frame current_frame;
+    boost::optional<data::frame_only_event> current_frame;
     bool read_open_or_flat = false;
     bool has_unread_event = true;
     size_type read_event_count = 1; // The root event
@@ -131,9 +132,15 @@ namespace metashell
 
     void cache_current_frame();
 
-    void read_next_event();
-    bool try_reading_until(size_type pos);
+    boost::optional<data::debugger_event> read_next_event();
+
+    bool
+    try_reading_until(size_type pos,
+                      boost::optional<data::debugger_event>* last_event_read_);
+
     void read_remaining_events();
+
+    bool cached_ahead_of(size_type loc) const;
   };
 }
 

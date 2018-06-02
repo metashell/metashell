@@ -1,5 +1,5 @@
-#ifndef METASHELL_DATA_POP_FRAME_HPP
-#define METASHELL_DATA_POP_FRAME_HPP
+#ifndef METASHELL_DATA_FRAME_ONLY_EVENT_HPP
+#define METASHELL_DATA_FRAME_ONLY_EVENT_HPP
 
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
@@ -17,23 +17,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/data/debugger_event.hpp>
 
 namespace metashell
 {
   namespace data
   {
-    struct pop_frame : private boost::equality_comparable<pop_frame>
+    class frame_only_event
     {
+    public:
+      frame_only_event(frame frame_);
+
+      const frame& operator*() const;
+
+      const debugger_event& event() const;
+
+      void full_time_taken(double t_);
+
+    private:
+      debugger_event _event;
     };
-
-    bool operator==(pop_frame, pop_frame);
-
-    std::string to_string(pop_frame f_);
-    std::ostream& operator<<(std::ostream& out_, pop_frame f_);
   }
 }
 
