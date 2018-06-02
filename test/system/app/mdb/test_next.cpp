@@ -17,6 +17,7 @@
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/frame.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/nocaches.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
 #include <metashell/system_test/type.hpp>
@@ -31,50 +32,66 @@ using pattern::_;
 
 TEST(mdb_next, without_evaluation)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb" + nocache);
 
-  ASSERT_EQ(error("Metaprogram not evaluated yet"), mi.command("next").front());
+    ASSERT_EQ(
+        error("Metaprogram not evaluated yet"), mi.command("next").front());
+  }
 }
 
 TEST(mdb_next, garbage_argument)
 {
-  metashell_instance mi;
-  mi.command(fibonacci_mp);
-  mi.command("#msh mdb int_<fib<2>::value>");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command(fibonacci_mp);
+    mi.command("#msh mdb" + nocache + " int_<fib<2>::value>");
 
-  ASSERT_EQ(error("Argument parsing failed"), mi.command("next asd").front());
+    ASSERT_EQ(error("Argument parsing failed"), mi.command("next asd").front());
+  }
 }
 
 TEST(mdb_next, fib_from_root)
 {
-  metashell_instance mi;
-  mi.command(fibonacci_mp);
-  mi.command("#msh mdb int_<fib<10>::value>");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command(fibonacci_mp);
+    mi.command("#msh mdb" + nocache + " int_<fib<10>::value>");
 
-  ASSERT_EQ(
-      (std::vector<json_string>{
-          to_json_string(raw_text("Metaprogram finished")),
-          to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
-      mi.command("next"));
+    ASSERT_EQ(
+        (std::vector<json_string>{
+            to_json_string(raw_text("Metaprogram finished")),
+            to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
+        mi.command("next"));
+  }
 }
 
 TEST(mdb_next, minus_1_multi_fib_from_after_step)
 {
-  metashell_instance mi;
-  mi.command(multi_fibonacci_mp);
-  mi.command("#msh mdb int_<multi_fib<10>::value>");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command(multi_fibonacci_mp);
+    mi.command("#msh mdb" + nocache + " int_<multi_fib<10>::value>");
 
-  ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
-            mi.command("step 15").front());
+    ASSERT_EQ(frame(type("multi_fib<4>"), _, _, event_kind::memoization),
+              mi.command("step 15").front());
 
-  ASSERT_EQ(frame(type("multi_fib<5>"), _, _, event_kind::memoization),
-            mi.command("next").front());
+    ASSERT_EQ(frame(type("multi_fib<5>"), _, _, event_kind::memoization),
+              mi.command("next").front());
 
-  ASSERT_EQ(frame(type("multi_fib<6>"), _, _, event_kind::memoization),
-            mi.command("next").front());
+    ASSERT_EQ(frame(type("multi_fib<6>"), _, _, event_kind::memoization),
+              mi.command("next").front());
 
-  ASSERT_EQ(
-      frame(type("multi_fib<6>"), _, _, event_kind::template_instantiation),
-      mi.command("next -1").front());
+    if (caching_enabled(nocache))
+    {
+      ASSERT_EQ(
+          frame(type("multi_fib<6>"), _, _, event_kind::template_instantiation),
+          mi.command("next -1").front());
+    }
+  }
 }

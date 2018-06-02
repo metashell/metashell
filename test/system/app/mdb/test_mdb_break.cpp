@@ -16,6 +16,7 @@
 
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/nocaches.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
 
@@ -27,42 +28,54 @@ using namespace metashell::system_test;
 
 TEST(mdb_break, list_with_no_breakpoints)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb" + nocache);
 
-  ASSERT_EQ(raw_text("No breakpoints currently set"),
-            mi.command("break list").front());
+    ASSERT_EQ(raw_text("No breakpoints currently set"),
+              mi.command("break list").front());
+  }
 }
 
 TEST(mdb_break, list_with_one_breakpoint)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb int");
-  mi.command("rbreak i");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb" + nocache + " int");
+    mi.command("rbreak i");
 
-  ASSERT_EQ(
-      raw_text("Breakpoint 1: regex(\"i\")"), mi.command("break list").front());
+    ASSERT_EQ(raw_text("Breakpoint 1: regex(\"i\")"),
+              mi.command("break list").front());
+  }
 }
 
 TEST(mdb_break, list_with_two_breakpoints)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb int");
-  mi.command("rbreak i");
-  mi.command("rbreak n");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb" + nocache + " int");
+    mi.command("rbreak i");
+    mi.command("rbreak n");
 
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Breakpoint 1: regex(\"i\")")),
-                to_json_string(raw_text("Breakpoint 2: regex(\"n\")")),
-                to_json_string(prompt("(mdb)"))}),
-            mi.command("break list"));
+    ASSERT_EQ((std::vector<json_string>{
+                  to_json_string(raw_text("Breakpoint 1: regex(\"i\")")),
+                  to_json_string(raw_text("Breakpoint 2: regex(\"n\")")),
+                  to_json_string(prompt("(mdb)"))}),
+              mi.command("break list"));
+  }
 }
 
 TEST(mdb_break, garbage_argument)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb" + nocache);
 
-  ASSERT_EQ(error("Call break like this: \"break list\""),
-            mi.command("break asd").front());
+    ASSERT_EQ(error("Call break like this: \"break list\""),
+              mi.command("break asd").front());
+  }
 }

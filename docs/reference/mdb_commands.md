@@ -3,7 +3,7 @@
 You can find the list of MDB commands here.
 
 <!-- mdb_info -->
-* __`evaluate [-full|-profile] [<type>|-]`__ <br />
+* __`evaluate [-full|-profile] [-nocache] [<type>|-]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
 Evaluating a metaprogram using the `-full` qualifier will expand all
   Memoization events.
@@ -18,6 +18,8 @@ Evaluating a metaprogram using the `-full` qualifier will expand all
   be reevaluated.
   
   Previous breakpoints are cleared.
+  
+  Evaluating a metaprogram using the `-nocache` qualifier will disable caching of the events, which will prevent stepping backwards, predicting how many times a breakpoint will be hit and displaying forwardtrace.
   
   Unlike metashell, evaluate doesn't use metashell::format to avoid cluttering
   the debugged metaprogram with unrelated code. If you need formatting, you can

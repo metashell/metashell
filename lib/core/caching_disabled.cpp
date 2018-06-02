@@ -14,17 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/mdb_usage.hpp>
+#include <metashell/caching_disabled.hpp>
 
 namespace metashell
 {
-  namespace data
+  caching_disabled::caching_disabled(const std::string& operation_)
+    : exception("Caching is disabled in the debugger and " + operation_ +
+                " requires caching.")
   {
-    std::string mdb_usage(bool preprocessor_)
-    {
-      return std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-             " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
-             "|-]";
-    }
   }
 }

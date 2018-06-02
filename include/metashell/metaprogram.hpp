@@ -83,13 +83,12 @@ namespace metashell
 
     typedef iterator const_iterator;
 
-    explicit metaprogram(std::unique_ptr<iface::event_data_sequence> trace);
+    metaprogram(std::unique_ptr<iface::event_data_sequence> trace,
+                bool caching_enabled);
 
     bool is_empty();
 
     const data::type_or_code_or_error& get_evaluation_result();
-
-    void reset_state();
 
     data::metaprogram_mode get_mode() const;
 
@@ -110,8 +109,11 @@ namespace metashell
     iterator current_position();
     iterator end();
 
+    bool caching_enabled() const;
+
   private:
     std::unique_ptr<iface::event_data_sequence> event_source;
+    boost::optional<data::event_data> next_unread_event;
 
     boost::optional<data::frame_only_event> current_frame;
     bool read_open_or_flat = false;
@@ -126,7 +128,7 @@ namespace metashell
 
     data::metaprogram_mode mode;
 
-    debugger_history history;
+    boost::optional<debugger_history> history;
 
     data::type_or_code_or_error result;
 

@@ -1,3 +1,6 @@
+#ifndef METASHELL_CACHING_DISABLED_HPP
+#define METASHELL_CACHING_DISABLED_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,17 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/mdb_usage.hpp>
+#include <metashell/exception.hpp>
+
+#include <string>
 
 namespace metashell
 {
-  namespace data
+  class caching_disabled : public exception
   {
-    std::string mdb_usage(bool preprocessor_)
-    {
-      return std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-             " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
-             "|-]";
-    }
-  }
+  public:
+    explicit caching_disabled(const std::string& operation_);
+  };
 }
+
+#endif

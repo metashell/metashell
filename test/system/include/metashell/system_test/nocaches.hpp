@@ -1,3 +1,6 @@
+#ifndef METASHELL_SYSTEM_TEST_NOCACHES_HPP
+#define METASHELL_SYSTEM_TEST_NOCACHES_HPP
+
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -14,17 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/mdb_usage.hpp>
+#include <array>
+#include <string>
 
 namespace metashell
 {
-  namespace data
+  namespace system_test
   {
-    std::string mdb_usage(bool preprocessor_)
-    {
-      return std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-             " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
-             "|-]";
-    }
+    std::array<std::string, 2> nocaches();
+
+    bool caching_enabled(const std::string& s_);
   }
 }
+
+#endif

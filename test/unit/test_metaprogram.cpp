@@ -61,7 +61,7 @@ namespace
 
 TEST(metaprogram, constructor)
 {
-  metaprogram mp(events<metaprogram_mode::normal>());
+  metaprogram mp(events<metaprogram_mode::normal>(), true);
 
   ASSERT_EQ(mp.get_evaluation_result(),
             type_or_code_or_error(type("the_result_type")));
@@ -77,21 +77,21 @@ TEST(metaprogram, constructor)
 
 TEST(metaprogram, constructor_normal_mode)
 {
-  metaprogram mp(events<metaprogram_mode::normal>());
+  metaprogram mp(events<metaprogram_mode::normal>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::normal);
 }
 
 TEST(metaprogram, constructor_full_mode)
 {
-  metaprogram mp(events<metaprogram_mode::full>());
+  metaprogram mp(events<metaprogram_mode::full>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::full);
 }
 
 TEST(metaprogram, constructor_profile_mode)
 {
-  metaprogram mp(events<metaprogram_mode::profile>());
+  metaprogram mp(events<metaprogram_mode::profile>(), true);
 
   ASSERT_EQ(mp.get_mode(), metaprogram_mode::profile);
 }
@@ -103,24 +103,24 @@ TEST(metaprogram, events_are_read_lazily)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr));
+  metaprogram mp(std::move(in_seq_ptr), true);
 
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   ASSERT_TRUE(mp.is_at_start());
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   ASSERT_FALSE(mp.is_finished());
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   ASSERT_FALSE(mp.is_empty());
   ASSERT_EQ(1, in_seq.next_called_times());
 
   mp.step();
-  ASSERT_EQ(1, in_seq.next_called_times());
+  ASSERT_EQ(2, in_seq.next_called_times());
 
   mp.step();
-  ASSERT_EQ(3, in_seq.next_called_times());
+  ASSERT_EQ(4, in_seq.next_called_times());
 
   mp.step();
   ASSERT_EQ(5, in_seq.next_called_times());
@@ -133,25 +133,28 @@ TEST(metaprogram, metaprogram_iterator_reads_events_lazily)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr));
-  ASSERT_EQ(0, in_seq.next_called_times());
+  metaprogram mp(std::move(in_seq_ptr), true);
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   metaprogram::iterator i = mp.begin();
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   const metaprogram::iterator e = mp.end();
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
-  for (unsigned int j = 1; j != 6; ++j)
+  for (unsigned int j = 2; j != 6; ++j)
   {
     ASSERT_FALSE(i == e);
     ++i;
     ASSERT_EQ(j, in_seq.next_called_times());
   }
 
-  ASSERT_FALSE(i == e);
-  ++i;
-  ASSERT_EQ(5, in_seq.next_called_times());
+  for (int j = 0; j != 2; ++j)
+  {
+    ASSERT_FALSE(i == e);
+    ++i;
+    ASSERT_EQ(5, in_seq.next_called_times());
+  }
 
   ASSERT_TRUE(i == e);
 }
@@ -163,11 +166,11 @@ TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
   counting_event_data_sequence& in_seq = *in_seq_ptr;
 
   ASSERT_EQ(0, in_seq.next_called_times());
-  metaprogram mp(std::move(in_seq_ptr));
-  ASSERT_EQ(0, in_seq.next_called_times());
+  metaprogram mp(std::move(in_seq_ptr), true);
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   metaprogram::iterator i = mp.end();
-  ASSERT_EQ(0, in_seq.next_called_times());
+  ASSERT_EQ(1, in_seq.next_called_times());
 
   --i;
   ASSERT_EQ(5, in_seq.next_called_times());
@@ -175,7 +178,7 @@ TEST(metaprogram, metaprogram_iterator_step_back_from_end_reads_everything)
 
 TEST(metaprogram, profiling_information)
 {
-  metaprogram mp(build_counting_seq(metaprogram_mode::profile));
+  metaprogram mp(build_counting_seq(metaprogram_mode::profile), true);
 
   metaprogram::iterator i = mp.begin();
   ASSERT_FALSE(i == mp.end());

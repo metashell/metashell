@@ -559,3 +559,14 @@ TEST(mdb_forwardtrace, sfinae_v1)
 
   // clang-format on
 }
+
+TEST(mdb_forwardtrace, fails_without_caching)
+{
+  const error caching_backwards_disabled(
+      "Error: Caching is disabled in the debugger and displaying forward trace "
+      "requires caching.\n");
+
+  metashell_instance mi;
+  mi.command("#msh mdb -nocache int");
+  ASSERT_EQ(caching_backwards_disabled, mi.command("ft").front());
+}

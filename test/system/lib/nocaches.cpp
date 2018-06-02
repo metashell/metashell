@@ -14,17 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/data/mdb_usage.hpp>
+#include <metashell/system_test/nocaches.hpp>
 
 namespace metashell
 {
-  namespace data
+  namespace system_test
   {
-    std::string mdb_usage(bool preprocessor_)
-    {
-      return std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-             " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
-             "|-]";
-    }
+    std::array<std::string, 2> nocaches() { return {{"", " -nocache"}}; }
+
+    bool caching_enabled(const std::string& s_) { return s_.empty(); }
   }
 }
