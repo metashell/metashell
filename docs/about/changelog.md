@@ -19,6 +19,8 @@
       macros of Templight defined by default.
     * pdb, the macro debugger
     * Support for using different configs in Metashell.
+    * Caching of the metaprogram execution can be disabled in mdb and pdb with
+      `-nocache`
 
 * Fixes
     * The `templight_metashell` executable is found even if the `metashell`
