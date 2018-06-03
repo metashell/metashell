@@ -17,6 +17,7 @@
 #include <metashell/system_test/call_graph.hpp>
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/nocaches.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
 #include <metashell/system_test/type.hpp>
@@ -32,97 +33,132 @@ using pattern::_;
 
 TEST(mdb_evaluate, int_type)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Metaprogram finished")),
-                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
-            mi.command("continue"));
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " int").front());
+    ASSERT_EQ(
+        (std::vector<json_string>{
+            to_json_string(raw_text("Metaprogram finished")),
+            to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+        mi.command("continue"));
+  }
 }
 
 TEST(mdb_evaluate, fib_10)
 {
-  metashell_instance mi;
-  mi.command(fibonacci_mp);
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command(fibonacci_mp);
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(raw_text("Metaprogram started"),
-            mi.command("evaluate int_<fib<10>::value>").front());
-  ASSERT_EQ(
-      (std::vector<json_string>{
-          to_json_string(raw_text("Metaprogram finished")),
-          to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
-      mi.command("continue"));
+    ASSERT_EQ(
+        raw_text("Metaprogram started"),
+        mi.command("evaluate" + nocache + " int_<fib<10>::value>").front());
+    ASSERT_EQ(
+        (std::vector<json_string>{
+            to_json_string(raw_text("Metaprogram finished")),
+            to_json_string(type("int_<55>")), to_json_string(prompt("(mdb)"))}),
+        mi.command("continue"));
+  }
 }
 
 TEST(mdb_evaluate, empty_environment)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
-  mi.command("continue");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
+    mi.command("continue");
 
-  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate -").front());
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Metaprogram finished")),
-                to_json_string(prompt("(mdb)"))}),
-            mi.command("continue"));
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " -").front());
+    ASSERT_EQ((std::vector<json_string>{
+                  to_json_string(raw_text("Metaprogram finished")),
+                  to_json_string(prompt("(mdb)"))}),
+              mi.command("continue"));
+  }
 }
 
 TEST(mdb_evaluate, no_arguments_no_evaluation)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      error("Nothing has been evaluated yet."), mi.command("evaluate").front());
+    ASSERT_EQ(error("Nothing has been evaluated yet."),
+              mi.command("evaluate" + nocache).front());
+  }
 }
 
 TEST(mdb_evaluate, no_arguments_with_trailing_spaces_no_evaluation)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(error("Nothing has been evaluated yet."),
-            mi.command("evaluate  ").front());
+    ASSERT_EQ(error("Nothing has been evaluated yet."),
+              mi.command("evaluate" + nocache + "  ").front());
+  }
 }
 
 TEST(mdb_evaluate, failure_will_reset_metaprogram_state)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache1 : nocaches())
+  {
+    for (const std::string& nocache2 : nocaches())
+    {
+      for (const std::string& nocache3 : nocaches())
+      {
+        metashell_instance mi;
+        mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(error(_), mi.command("evaluate in").front());
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
+        ASSERT_EQ(raw_text("Metaprogram started"),
+                  mi.command("evaluate" + nocache1 + " int").front());
+        ASSERT_EQ(error(_), mi.command("evaluate" + nocache2 + " in").front());
+        ASSERT_EQ(raw_text("Metaprogram started"),
+                  mi.command("evaluate" + nocache3 + " int").front());
+      }
+    }
+  }
 }
 
 TEST(mdb_evaluate, instantiation_failure_will_start_metaprogram)
 {
-  metashell_instance mi;
-  mi.command(missing_value_fibonacci_mp);
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command(missing_value_fibonacci_mp);
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(raw_text("Metaprogram started"),
-            mi.command("evaluate int_<fib<5>::value>").front());
+    ASSERT_EQ(
+        raw_text("Metaprogram started"),
+        mi.command("evaluate" + nocache + " int_<fib<5>::value>").front());
+  }
 }
 
 TEST(mdb_evaluate, missing_argument_will_run_last_metaprogram)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Metaprogram finished")),
-                to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
-            mi.command("continue"));
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " int").front());
+    ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+    ASSERT_EQ(
+        (std::vector<json_string>{
+            to_json_string(raw_text("Metaprogram finished")),
+            to_json_string(type("int")), to_json_string(prompt("(mdb)"))}),
+        mi.command("continue"));
+  }
 }
 
 TEST(mdb_evaluate, missing_argument_will_reset_metaprogram_state)
@@ -139,19 +175,23 @@ TEST(mdb_evaluate, missing_argument_will_reset_metaprogram_state)
 
 TEST(mdb_evaluate, reevaluate_environment)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate -").front());
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Metaprogram finished")),
-                to_json_string(prompt("(mdb)"))}),
-            mi.command("continue"));
-  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
-  ASSERT_EQ((std::vector<json_string>{
-                to_json_string(raw_text("Metaprogram finished")),
-                to_json_string(prompt("(mdb)"))}),
-            mi.command("continue"));
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " -").front());
+    ASSERT_EQ((std::vector<json_string>{
+                  to_json_string(raw_text("Metaprogram finished")),
+                  to_json_string(prompt("(mdb)"))}),
+              mi.command("continue"));
+    ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+    ASSERT_EQ((std::vector<json_string>{
+                  to_json_string(raw_text("Metaprogram finished")),
+                  to_json_string(prompt("(mdb)"))}),
+              mi.command("continue"));
+  }
 }
 
 TEST(mdb_evaluate, filters_similar_edges)
@@ -196,52 +236,70 @@ TEST(mdb_evaluate, filters_similar_edges)
 
 TEST(mdb_evaluate, clears_breakpoints)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(
-      raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
-      mi.command("rbreak int").front());
-  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
-            mi.command("break list").front());
-  ASSERT_EQ(raw_text("Metaprogram started"),
-            mi.command("evaluate unsigned int").front());
-  ASSERT_EQ(raw_text("No breakpoints currently set"),
-            mi.command("break list").front());
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " int").front());
+    ASSERT_EQ(
+        raw_text(
+            caching_enabled(nocache) ?
+                "Breakpoint \"int\" will stop the execution on 1 location" :
+                "Breakpoint \"int\" created"),
+        mi.command("rbreak int").front());
+    ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+              mi.command("break list").front());
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate unsigned int").front());
+    ASSERT_EQ(raw_text("No breakpoints currently set"),
+              mi.command("break list").front());
+  }
 }
 
 TEST(mdb_evaluate, reevaluate_clears_breakpoints)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(
-      raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
-      mi.command("rbreak int").front());
-  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
-            mi.command("break list").front());
-  ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
-  ASSERT_EQ(raw_text("No breakpoints currently set"),
-            mi.command("break list").front());
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " int").front());
+    ASSERT_EQ(
+        raw_text(
+            caching_enabled(nocache) ?
+                "Breakpoint \"int\" will stop the execution on 1 location" :
+                "Breakpoint \"int\" created"),
+        mi.command("rbreak int").front());
+    ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+              mi.command("break list").front());
+    ASSERT_EQ(raw_text("Metaprogram started"), mi.command("evaluate").front());
+    ASSERT_EQ(raw_text("No breakpoints currently set"),
+              mi.command("break list").front());
+  }
 }
 
 TEST(mdb_evaluate, failure_clears_breakpoints)
 {
-  metashell_instance mi;
-  mi.command("#msh mdb");
+  for (const std::string& nocache : nocaches())
+  {
+    metashell_instance mi;
+    mi.command("#msh mdb");
 
-  ASSERT_EQ(
-      raw_text("Metaprogram started"), mi.command("evaluate int").front());
-  ASSERT_EQ(
-      raw_text("Breakpoint \"int\" will stop the execution on 1 location"),
-      mi.command("rbreak int").front());
-  ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
-            mi.command("break list").front());
-  ASSERT_EQ(error(_), mi.command("evaluate asd").front());
-  ASSERT_EQ(raw_text("No breakpoints currently set"),
-            mi.command("break list").front());
+    ASSERT_EQ(raw_text("Metaprogram started"),
+              mi.command("evaluate" + nocache + " int").front());
+    ASSERT_EQ(
+        raw_text(
+            caching_enabled(nocache) ?
+                "Breakpoint \"int\" will stop the execution on 1 location" :
+                "Breakpoint \"int\" created"),
+        mi.command("rbreak int").front());
+    ASSERT_EQ(raw_text("Breakpoint 1: regex(\"int\")"),
+              mi.command("break list").front());
+    ASSERT_EQ(error(_), mi.command("evaluate" + nocache + " asd").front());
+    ASSERT_EQ(raw_text("No breakpoints currently set"),
+              mi.command("break list").front());
+  }
 }

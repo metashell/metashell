@@ -90,6 +90,7 @@ namespace metashell
     bool run_metaprogram_with_templight(
         const boost::optional<data::cpp_code>& expression,
         data::metaprogram_mode mode,
+        bool caching_enabled,
         iface::displayer& displayer_);
 
     static boost::optional<int>

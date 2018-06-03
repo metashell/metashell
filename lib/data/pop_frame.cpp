@@ -22,9 +22,11 @@ namespace metashell
 {
   namespace data
   {
-    std::string to_string(const pop_frame&) { return "pop_frame{}"; }
+    bool operator==(pop_frame, pop_frame) { return true; }
 
-    std::ostream& operator<<(std::ostream& out_, const pop_frame& f_)
+    std::string to_string(pop_frame) { return "pop_frame{}"; }
+
+    std::ostream& operator<<(std::ostream& out_, pop_frame f_)
     {
       return out_ << to_string(f_);
     }

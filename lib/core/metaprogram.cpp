@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
+#include <metashell/caching_disabled.hpp>
 #include <metashell/metaprogram.hpp>
 
 #include <algorithm>
@@ -23,17 +23,23 @@
 
 namespace metashell
 {
-  metaprogram::metaprogram(std::unique_ptr<iface::event_data_sequence> trace)
+  metaprogram::metaprogram(std::unique_ptr<iface::event_data_sequence> trace,
+                           bool caching_enabled)
     : event_source(std::move(trace)),
-      current_frame(event_source->root_name()),
+      next_unread_event(event_source->next()),
+      current_frame(data::frame(event_source->root_name())),
+      current_bt(data::backtrace()),
       mode(event_source->mode()),
-      history(mode, current_frame),
+      history(caching_enabled ? boost::make_optional(
+                                    debugger_history(mode, **current_frame)) :
+                                boost::none),
       result("Internal Metashell error: metaprogram not finished yet")
   {
     assert(event_source);
 
     ++tree_depth;
-    update(final_bt, current_frame);
+    update(final_bt, **current_frame);
+    update(*current_bt, **current_frame);
 
     if (mode == data::metaprogram_mode::profile)
     {
@@ -43,24 +49,38 @@ namespace metashell
 
   bool metaprogram::is_empty()
   {
-    while (!read_open_or_flat && has_unread_event)
+    if (read_open_or_flat)
     {
-      read_next_event();
+      return false;
     }
-    return !read_open_or_flat;
+    else if (next_unread_event)
+    {
+      switch (relative_depth_of(*next_unread_event))
+      {
+      case data::relative_depth::open:
+      /* [[fallthrough]] */ case data::relative_depth::flat:
+        return false;
+      case data::relative_depth::close:
+      /* [[fallthrough]] */ case data::relative_depth::end:
+        return true;
+      }
+      assert(!"Invalid realtive depth");
+    }
+    return true;
   }
 
   const data::type_or_code_or_error& metaprogram::get_evaluation_result()
   {
+    if (is_empty() && next_unread_event)
+    {
+      if (auto r = result_of(*next_unread_event))
+      {
+        result = std::move(*r);
+        return result;
+      }
+    }
     read_remaining_events();
     return result;
-  }
-
-  void metaprogram::reset_state()
-  {
-    next_event = 0;
-    current_bt = history.backtrace_at(0);
-    cache_current_frame();
   }
 
   data::metaprogram_mode metaprogram::get_mode() const { return mode; }
@@ -101,48 +121,99 @@ namespace metashell
     }
   }
 
+  bool metaprogram::cached_ahead_of(size_type loc) const
+  {
+    return loc < read_event_count - 1;
+  }
+
   void metaprogram::step()
   {
     assert(!is_finished());
-    do
+
+    if (cached_ahead_of(next_event))
     {
-      ++next_event;
+      assert(bool(history));
 
-      if (try_reading_until(next_event) && current_bt)
+      do
       {
-        update(*current_bt, history[next_event]);
-      }
-    } while ((has_unread_event || next_event < read_event_count) &&
-             mpark::get_if<data::pop_frame>(&history[next_event]));
+        ++next_event;
 
-    cache_current_frame();
+        if (current_bt && next_event < read_event_count)
+        {
+          update(*current_bt, (*history)[next_event]);
+        }
+      } while (next_event < read_event_count &&
+               mpark::get_if<data::pop_frame>(&(*history)[next_event]));
+
+      if (has_unread_event && next_event >= read_event_count)
+      {
+        --next_event;
+      }
+      else
+      {
+        cache_current_frame();
+        return;
+      }
+    }
+
+    if (!cached_ahead_of(next_event))
+    {
+      boost::optional<data::debugger_event> last = boost::none;
+      do
+      {
+        ++next_event;
+
+        try_reading_until(next_event, &last);
+
+        if (last)
+        {
+          if (current_bt)
+          {
+            update(*current_bt, *last);
+          }
+          if (auto* f = mpark::get_if<data::frame>(&*last))
+          {
+            current_frame = *f;
+          }
+        }
+      } while ((has_unread_event || next_event < read_event_count) && last &&
+               mpark::get_if<data::pop_frame>(&*last));
+    }
   }
 
   void metaprogram::step_back()
   {
     assert(!is_at_start());
-    do
-    {
-      --next_event;
-    } while (next_event != 0 &&
-             mpark::get_if<data::pop_frame>(&history[next_event]));
-    current_bt = boost::none;
 
-    cache_current_frame();
+    if (history)
+    {
+      do
+      {
+        --next_event;
+      } while (next_event != 0 &&
+               mpark::get_if<data::pop_frame>(&(*history)[next_event]));
+      current_bt = boost::none;
+
+      cache_current_frame();
+    }
+    else
+    {
+      throw caching_disabled("stepping backwards");
+    }
   }
 
   const data::frame& metaprogram::get_current_frame() const
   {
     assert(!is_at_start());
     assert(!is_finished());
+    assert(bool(current_frame));
 
-    return current_frame;
+    return **current_frame;
   }
 
   const data::backtrace& metaprogram::get_backtrace()
   {
-    if (!has_unread_event && next_event == read_event_count &&
-        get_evaluation_result().is_error())
+    if (is_finished() && get_evaluation_result().is_error())
     {
       return final_bt;
     }
@@ -150,7 +221,8 @@ namespace metashell
     {
       if (!current_bt)
       {
-        current_bt = history.backtrace_at(next_event);
+        assert(bool(history));
+        current_bt = history->backtrace_at(next_event);
       }
       return *current_bt;
     }
@@ -179,43 +251,75 @@ namespace metashell
   {
     if (next_event < read_event_count)
     {
-      current_frame = mpark::get<data::frame>(history[next_event]);
+      assert(bool(history));
+
+      current_frame = data::frame_only_event(
+          mpark::get<data::frame>((*history)[next_event]));
     }
   }
 
-  void metaprogram::read_next_event()
+  boost::optional<data::debugger_event> metaprogram::read_next_event()
   {
-    if (boost::optional<data::event_data> event = event_source->next())
+    assert(bool(history) || read_event_count <= next_event);
+
+    if (next_unread_event)
     {
-      update(tree_depth, *event);
-      const auto at = timestamp(*event);
-      const data::relative_depth rdepth = relative_depth_of(*event);
+      update(tree_depth, *next_unread_event);
+      const auto at = timestamp(*next_unread_event);
+      const data::relative_depth rdepth = relative_depth_of(*next_unread_event);
       if (rdepth == data::relative_depth::open ||
           rdepth == data::relative_depth::flat)
       {
         read_open_or_flat = true;
       }
-      if (auto r = result_of(*event))
+      if (auto r = result_of(*next_unread_event))
       {
         result = std::move(*r);
       }
       const data::debugger_event de =
-          to_debugger_event(std::move(*event), mode);
-      history.add_event(de, rdepth, at);
+          to_debugger_event(std::move(*next_unread_event), mode);
+      if (history)
+      {
+        history->add_event(de, rdepth, at);
+        if (next_event <= read_event_count &&
+            (!current_frame ||
+             current_frame->event() != (*history)[next_event]))
+        {
+          if (const auto f =
+                  mpark::get_if<data::frame>(&(*history)[next_event]))
+          {
+            current_frame = data::frame_only_event(*f);
+          }
+        }
+      }
       update(final_bt, de);
       ++read_event_count;
+      next_unread_event = event_source->next();
+      return de;
     }
     else
     {
       has_unread_event = false;
+      return boost::none;
     }
   }
 
-  bool metaprogram::try_reading_until(size_type pos)
+  bool metaprogram::try_reading_until(
+      size_type pos, boost::optional<data::debugger_event>* last_event_read_)
   {
+    if (last_event_read_)
+    {
+      *last_event_read_ = boost::none;
+    }
     while (pos >= read_event_count && has_unread_event)
     {
-      read_next_event();
+      if (auto n = read_next_event())
+      {
+        if (last_event_read_)
+        {
+          *last_event_read_ = n;
+        }
+      }
     }
     return pos < read_event_count;
   }
@@ -228,6 +332,8 @@ namespace metashell
     }
   }
 
+  bool metaprogram::caching_enabled() const { return bool(history); }
+
   metaprogram::iterator::iterator(metaprogram& mp_) : mp(&mp_), at(boost::none)
   {
   }
@@ -235,7 +341,7 @@ namespace metashell
   metaprogram::iterator::iterator(metaprogram& mp_, metaprogram::size_type at_)
     : mp(&mp_), at(at_)
   {
-    mp->try_reading_until(at_);
+    mp->try_reading_until(at_, nullptr);
   }
 
   metaprogram::iterator::reference metaprogram::iterator::
@@ -243,20 +349,32 @@ namespace metashell
   {
     assert(mp);
 
-    if (!at)
+    if (at)
+    {
+      return *iterator(*mp, *at + n);
+    }
+    else
     {
       mp->read_remaining_events();
+      return *iterator(*mp, mp->read_event_count + n);
     }
-
-    return mp->history[at ? *at : mp->read_event_count + n];
   }
 
-  const data::debugger_event& metaprogram::iterator::operator*() const
+  metaprogram::iterator::reference metaprogram::iterator::operator*() const
   {
     assert(mp);
     assert(bool(at));
 
-    return mp->history[*at];
+    if (*at == mp->next_event)
+    {
+      assert(bool(mp->current_frame));
+      return mp->current_frame->event();
+    }
+    else
+    {
+      assert(bool(mp->history));
+      return (*mp->history)[*at];
+    }
   }
 
   metaprogram::iterator& metaprogram::iterator::operator--()
@@ -288,7 +406,7 @@ namespace metashell
       at = mp->read_event_count + n;
     }
 
-    if (!mp->try_reading_until(*at))
+    if (!mp->try_reading_until(*at, nullptr))
     {
       at = boost::none;
     }

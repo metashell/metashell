@@ -69,7 +69,7 @@ Displays the names of the defined macros
 * __`#msh macros`__ <br />
 Displays the macro definitions
 
-* __`#msh mdb [-full|-profile] [<type>|-]`__ <br />
+* __`#msh mdb [-full|-profile] [-nocache] [<type>|-]`__ <br />
 Starts the metadebugger. For more information see evaluate in the metadebugger command reference.
 
 * __`#msh metaprogram evaluation [on|1|off|0]`__ <br />
@@ -78,7 +78,7 @@ Turns evaluation of metaprograms on or off. When no arguments are used, it displ
 * __`#msh metaprogram mode`__ <br />
 Set Metashell to metaprogram mode
 
-* __`#msh pdb [-profile] [<expression>|-]`__ <br />
+* __`#msh pdb [-profile] [-nocache] [<expression>|-]`__ <br />
 Starts the preprocessor debugger. For more information see evaluate in the preprocessor debugger command reference.
 
 * __`#msh pp <exp>`__ <br />

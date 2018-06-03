@@ -16,6 +16,7 @@
 
 #include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/nocaches.hpp>
 #include <metashell/system_test/prompt.hpp>
 
 #include <boost/filesystem/path.hpp>
@@ -41,19 +42,22 @@ namespace
 
 TEST(quit, when_included_file_changes)
 {
-  just::temp::directory tmp_dir;
-  const boost::filesystem::path tmp(tmp_dir.path());
+  for (const std::string& nocache : nocaches())
+  {
+    just::temp::directory tmp_dir;
+    const boost::filesystem::path tmp(tmp_dir.path());
 
-  write_file(tmp / "test.hpp", "");
+    write_file(tmp / "test.hpp", "");
 
-  metashell_instance mi({}, tmp);
-  mi.command("#include \"test.hpp\"");
-  mi.command("#msh mdb int");
+    metashell_instance mi({}, tmp);
+    mi.command("#include \"test.hpp\"");
+    mi.command("#msh mdb" + nocache + " int");
 
-  write_file(tmp / "test.hpp", "foo");
+    write_file(tmp / "test.hpp", "foo");
 
-  const std::vector<json_string> q = mi.command("q");
+    const std::vector<json_string> q = mi.command("q");
 
-  ASSERT_EQ(error(_), q.front());
-  ASSERT_EQ(prompt(">"), q.back());
+    ASSERT_EQ(error(_), q.front());
+    ASSERT_EQ(prompt(">"), q.back());
+  }
 }

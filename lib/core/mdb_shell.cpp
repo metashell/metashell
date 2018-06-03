@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/caching_disabled.hpp>
 #include <metashell/forward_trace_iterator.hpp>
 #include <metashell/highlight_syntax.hpp>
 #include <metashell/mdb_shell.hpp>
@@ -89,7 +90,8 @@ namespace metashell
           "whole environment is being debugged not just a single type expression.\n\n"
           "If called without `" + expr + "` or `-`, then the last evaluated metaprogram will\n"
           "be reevaluated.\n\n"
-          "Previous breakpoints are cleared." +
+          "Previous breakpoints are cleared.\n\n" +
+          "Evaluating a metaprogram using the `-nocache` qualifier will disable caching of the events, which will prevent stepping backwards, predicting how many times a breakpoint will be hit and displaying forwardtrace." +
           std::string(preprocessor_ ? "" :
             "\n\nUnlike metashell, evaluate doesn't use metashell::format to avoid cluttering\n"
             "the debugged metaprogram with unrelated code. If you need formatting, you can\n"
@@ -285,17 +287,15 @@ namespace metashell
       return false;
     }
 
-    if (mp->get_evaluation_result().is_error())
+    if (!mp->is_finished() || mp->get_evaluation_result().is_error())
     {
       return true;
     }
-
-    if (mp->is_finished())
+    else
     {
       display_metaprogram_finished(displayer_);
       return false;
     }
-    return true;
   }
 
   void mdb_shell::command_continue(const std::string& arg,
@@ -458,9 +458,11 @@ namespace metashell
 
     const std::string full_flag = "-full";
     const std::string profile_flag = "-profile";
+    const std::string nocache_flag = "-nocache";
 
     bool has_full = false;
     bool has_profile = false;
+    bool caching = true;
 
     // Intentionally left really ugly for more motivation to refactor
     while (true)
@@ -479,6 +481,13 @@ namespace metashell
         has_profile = true;
         arg = boost::trim_left_copy(arg.substr(profile_flag.size()));
       }
+      else if (boost::starts_with(arg, nocache_flag) &&
+               (arg.size() == nocache_flag.size() ||
+                std::isspace(arg[nocache_flag.size()])))
+      {
+        caching = false;
+        arg = boost::trim_left_copy(arg.substr(nocache_flag.size()));
+      }
       else
       {
         break;
@@ -489,6 +498,13 @@ namespace metashell
     {
       displayer_.show_error(
           "-full and -profile flags cannot be used together.");
+      return;
+    }
+
+    if (has_profile && !caching)
+    {
+      displayer_.show_error(
+          "-profile and -noncache flags cannot be used together.");
       return;
     }
 
@@ -523,7 +539,7 @@ namespace metashell
     }();
 
     last_evaluated_expression = expression;
-    if (run_metaprogram_with_templight(expression, mode, displayer_))
+    if (run_metaprogram_with_templight(expression, mode, caching, displayer_))
     {
       displayer_.show_raw_text("Metaprogram started");
       assert(mp);
@@ -617,23 +633,31 @@ namespace metashell
       breakpoint bp{next_breakpoint_id, boost::regex(arg)};
       ++next_breakpoint_id;
 
-      const auto match_count = std::count_if(
-          mp->begin(false), mp->end(), [&bp](const data::debugger_event& e) {
-            const auto p = mpark::get_if<data::frame>(&e);
-            return p && bp.match(p->node());
-          });
-
-      if (match_count == 0)
+      if (mp->caching_enabled())
       {
-        displayer_.show_raw_text("Breakpoint \"" + arg +
-                                 "\" will never stop the execution");
+        const auto match_count = std::count_if(
+            mp->begin(false), mp->end(), [&bp](const data::debugger_event& e) {
+              const auto p = mpark::get_if<data::frame>(&e);
+              return p && bp.match(p->node());
+            });
+
+        if (match_count == 0)
+        {
+          displayer_.show_raw_text("Breakpoint \"" + arg +
+                                   "\" will never stop the execution");
+        }
+        else
+        {
+          displayer_.show_raw_text(
+              "Breakpoint \"" + arg + "\" will stop the execution on " +
+              std::to_string(match_count) +
+              (match_count > 1 ? " locations" : " location"));
+          breakpoints.push_back(bp);
+        }
       }
       else
       {
-        displayer_.show_raw_text(
-            "Breakpoint \"" + arg + "\" will stop the execution on " +
-            std::to_string(match_count) +
-            (match_count > 1 ? " locations" : " location"));
+        displayer_.show_raw_text("Breakpoint \"" + arg + "\" created");
         breakpoints.push_back(bp);
       }
     }
@@ -725,6 +749,7 @@ namespace metashell
   bool mdb_shell::run_metaprogram_with_templight(
       const boost::optional<data::cpp_code>& expression,
       data::metaprogram_mode mode,
+      bool caching_enabled,
       iface::displayer& displayer_)
   {
     try
@@ -733,7 +758,8 @@ namespace metashell
           _preprocessor ?
               _engine.preprocessor_tracer().eval(env, expression, mode) :
               _engine.metaprogram_tracer().eval(
-                  env, _mdb_temp_dir, expression, mode, displayer_));
+                  env, _mdb_temp_dir, expression, mode, displayer_),
+          caching_enabled);
       if (mp && mp->is_empty() && mp->get_evaluation_result().is_error())
       {
         // Most errors will cause templight to generate an empty trace
@@ -884,14 +910,32 @@ namespace metashell
   void mdb_shell::display_current_forwardtrace(boost::optional<int> max_depth,
                                                iface::displayer& displayer_)
   {
-    displayer_.show_call_graph(boost::make_iterator_range(
-        forward_trace_iterator(mp->current_position(), mp->end(), max_depth),
-        forward_trace_iterator()));
+    if (mp->caching_enabled())
+    {
+      displayer_.show_call_graph(boost::make_iterator_range(
+          forward_trace_iterator(mp->current_position(), mp->end(), max_depth),
+          forward_trace_iterator()));
+    }
+    else
+    {
+      throw caching_disabled("displaying forward trace");
+    }
   }
 
   void mdb_shell::display_backtrace(iface::displayer& displayer_)
   {
-    displayer_.show_backtrace(mp->get_backtrace());
+    if (!mp)
+    {
+      displayer_.show_error("Metaprogram not evaluated yet");
+    }
+    else if (mp->is_finished() && !mp->get_evaluation_result().is_error())
+    {
+      display_metaprogram_finished(displayer_);
+    }
+    else
+    {
+      displayer_.show_backtrace(mp->get_backtrace());
+    }
   }
 
   void

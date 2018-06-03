@@ -61,6 +61,7 @@ TEST(pdb, dash_argument_parsing)
 {
   ASSERT_EQ(cpp_code("-full bar"), pdb_c_returns("-full FOO"));
   ASSERT_EQ(cpp_code("bar"), pdb_c_returns("-profile FOO"));
+  ASSERT_EQ(cpp_code("bar"), pdb_c_returns("-nocache FOO"));
 }
 
 TEST(pdb, help_evaluate)

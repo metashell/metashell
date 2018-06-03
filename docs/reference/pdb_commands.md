@@ -3,7 +3,7 @@
 You can find the list of PDB commands here.
 
 <!-- pdb_info -->
-* __`evaluate [-profile] [<expression>|-]`__ <br />
+* __`evaluate [-profile] [-nocache] [<expression>|-]`__ <br />
 Evaluate and start debugging a new metaprogram. <br />
 Evaluating a metaprogram using the `-profile` qualifier will enable
   profile mode.
@@ -15,6 +15,8 @@ Evaluating a metaprogram using the `-profile` qualifier will enable
   be reevaluated.
   
   Previous breakpoints are cleared.
+  
+  Evaluating a metaprogram using the `-nocache` qualifier will disable caching of the events, which will prevent stepping backwards, predicting how many times a breakpoint will be hit and displaying forwardtrace.
 
 * __`step [over|out] [n]`__ <br />
 Step the program. <br />

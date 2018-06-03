@@ -210,7 +210,8 @@ namespace metashell
              (!a_.is_full() || (a_.kind() == b_.kind() &&
                                 a_.point_of_event() == b_.point_of_event())) &&
              a_.time_taken() == b_.time_taken() &&
-             a_.time_taken_ratio() == b_.time_taken_ratio();
+             a_.time_taken_ratio() == b_.time_taken_ratio() &&
+             a_.number_of_children() == b_.number_of_children();
     }
   }
 } // namespace metashell::data

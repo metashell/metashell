@@ -26,6 +26,7 @@
 #include <metashell/data/direction_t.hpp>
 #include <metashell/data/event_data.hpp>
 #include <metashell/data/frame.hpp>
+#include <metashell/data/frame_only_event.hpp>
 #include <metashell/data/metaprogram_mode.hpp>
 #include <metashell/data/pop_frame.hpp>
 #include <metashell/data/tree_depth.hpp>
@@ -61,7 +62,7 @@ namespace metashell
       explicit iterator(metaprogram& mp_);
       iterator(metaprogram& mp_, metaprogram::size_type at_);
 
-      const data::debugger_event& operator*() const;
+      reference operator*() const;
 
       iterator& operator++();
       iterator& operator--();
@@ -82,13 +83,12 @@ namespace metashell
 
     typedef iterator const_iterator;
 
-    explicit metaprogram(std::unique_ptr<iface::event_data_sequence> trace);
+    metaprogram(std::unique_ptr<iface::event_data_sequence> trace,
+                bool caching_enabled);
 
     bool is_empty();
 
     const data::type_or_code_or_error& get_evaluation_result();
-
-    void reset_state();
 
     data::metaprogram_mode get_mode() const;
 
@@ -109,10 +109,13 @@ namespace metashell
     iterator current_position();
     iterator end();
 
+    bool caching_enabled() const;
+
   private:
     std::unique_ptr<iface::event_data_sequence> event_source;
+    boost::optional<data::event_data> next_unread_event;
 
-    data::frame current_frame;
+    boost::optional<data::frame_only_event> current_frame;
     bool read_open_or_flat = false;
     bool has_unread_event = true;
     size_type read_event_count = 1; // The root event
@@ -125,15 +128,21 @@ namespace metashell
 
     data::metaprogram_mode mode;
 
-    debugger_history history;
+    boost::optional<debugger_history> history;
 
     data::type_or_code_or_error result;
 
     void cache_current_frame();
 
-    void read_next_event();
-    bool try_reading_until(size_type pos);
+    boost::optional<data::debugger_event> read_next_event();
+
+    bool
+    try_reading_until(size_type pos,
+                      boost::optional<data::debugger_event>* last_event_read_);
+
     void read_remaining_events();
+
+    bool cached_ahead_of(size_type loc) const;
   };
 }
 

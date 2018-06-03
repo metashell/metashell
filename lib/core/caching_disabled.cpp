@@ -1,6 +1,3 @@
-#ifndef METASHELL_DATA_POP_FRAME_HPP
-#define METASHELL_DATA_POP_FRAME_HPP
-
 // Metashell - Interactive C++ template metaprogramming shell
 // Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
 //
@@ -17,24 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/operators.hpp>
-
-#include <iosfwd>
-#include <string>
+#include <metashell/caching_disabled.hpp>
 
 namespace metashell
 {
-  namespace data
+  caching_disabled::caching_disabled(const std::string& operation_)
+    : exception("Caching is disabled in the debugger and " + operation_ +
+                " requires caching.")
   {
-    struct pop_frame : private boost::equality_comparable<pop_frame>
-    {
-    };
-
-    bool operator==(pop_frame, pop_frame);
-
-    std::string to_string(pop_frame f_);
-    std::ostream& operator<<(std::ostream& out_, pop_frame f_);
   }
 }
-
-#endif

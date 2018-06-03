@@ -23,7 +23,8 @@ namespace metashell
     std::string mdb_usage(bool preprocessor_)
     {
       return std::string(preprocessor_ ? "[-profile]" : "[-full|-profile]") +
-             " [" + (preprocessor_ ? "<expression>" : "<type>") + "|-]";
+             " [-nocache] [" + (preprocessor_ ? "<expression>" : "<type>") +
+             "|-]";
     }
   }
 }
