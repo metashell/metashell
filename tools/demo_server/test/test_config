@@ -54,6 +54,18 @@ def config_of(name):
     raise Exception('Config {0} is not in the config file'.format(name))
 
 
+def paths_to_copy(config):
+    """Generator for the list of paths to copy based on a config"""
+    if 'bin' in config:
+        for path in config['bin']:
+            yield path
+
+    for key in ('include', 'share'):
+        if key in config:
+            for entry in config[key]:
+                yield entry['src']
+
+
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=too-many-public-methods
@@ -61,13 +73,15 @@ def config_of(name):
 
 class TestConfig(unittest.TestCase):
 
-    def test_binaries_are_available(self):
+    def test_files_are_available(self):
         config = config_of('metashell')
 
-        self.assertTrue('bin' in config)
+        self.assertIn('bin', config)
+        self.assertIn('include', config)
+        self.assertIn('share', config)
 
         src_root = environment_variable('SRC_ROOT')
-        for path in config['bin']:
+        for path in paths_to_copy(config):
             full_path = os.path.join(src_root, path)
             path_if_exists = full_path if os.path.exists(full_path) else ''
             self.assertEqual(path_if_exists, full_path)
