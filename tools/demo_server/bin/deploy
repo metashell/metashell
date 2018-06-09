@@ -347,7 +347,7 @@ def delete_files(path):
             os.remove(filename)
 
 
-def files_not_symlinked_to(path):
+def files_not_symlinked_to(path, log):
     """Returns the files and dirs which no symlinks (in path) point to"""
     full_paths = [os.path.join(path, f) for f in os.listdir(path)]
 
@@ -355,10 +355,22 @@ def files_not_symlinked_to(path):
         os.path.basename(os.path.realpath(l))
         for l in full_paths if os.path.islink(l)
     ]
-    return [
-        f for f in full_paths if
-        (not os.path.islink(f)) and os.path.basename(f) not in symlink_targets
-    ]
+    result = []
+    for full_path in full_paths:
+        reason = None
+        if os.path.islink(full_path):
+            reason = 'is a symlink'
+        elif os.path.basename(full_path) in symlink_targets:
+            reason = 'is a symlink target'
+        if reason:
+            log(
+                'Not considering {0} for deletion: {1}'
+                .format(full_path, reason)
+            )
+        else:
+            log('Considering {0} for deletion'.format(full_path))
+            result.append(full_path)
+    return result
 
 
 def flatten(list_of_lists):
@@ -809,7 +821,7 @@ def deploy_libs(configs, port, out_dir, log):
 
     symlinks_to_delete = collect_symlinks(out_dir)
     files_to_delete = flatten([
-        files_not_symlinked_to(os.path.join(out_dir, subdir))
+        files_not_symlinked_to(os.path.join(out_dir, subdir), log)
         for subdir in ['bin', 'include']
     ])
 
@@ -817,6 +829,11 @@ def deploy_libs(configs, port, out_dir, log):
 
     for lib in summary:
         if not lib.clone(out_dir, log):
+            log(
+                'Not deleting the following files'
+                ' because of cloning failure: {0}'
+                .format(','.join(files_to_delete))
+            )
             symlinks_to_delete = []
             files_to_delete = []
 
@@ -834,10 +851,20 @@ def deploy_libs(configs, port, out_dir, log):
     for link in symlinks_to_delete:
         if all(link not in lib.used_links for lib in summary):
             os.remove(link)
-    delete_files([
-        f for f in files_to_delete
-        if all(f not in lib.used_links for lib in summary)
-    ])
+
+    really_delete = []
+    for path in files_to_delete:
+        keep = False
+        for lib in summary:
+            if path in lib.used_links:
+                log(
+                    'Not deleting {0} because used by {1}'
+                    .format(path, lib.display_name())
+                )
+                keep = True
+        if not keep:
+            really_delete.append(path)
+    delete_files(really_delete)
 
     log(deploy_event('deployment', 'finish', None))
 
