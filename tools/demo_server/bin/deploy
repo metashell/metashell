@@ -338,12 +338,14 @@ def symlink(dst, link, log):
             raise
 
 
-def delete_files(path):
+def delete_files(path, log):
     """Delete the files and dirs"""
     for filename in path:
         if os.path.isdir(filename):
+            log('Deleting directory {0}'.format(filename))
             shutil.rmtree(filename)
         else:
+            log('Deleting file {0}'.format(filename))
             os.remove(filename)
 
 
@@ -864,7 +866,7 @@ def deploy_libs(configs, port, out_dir, log):
                 keep = True
         if not keep:
             really_delete.append(path)
-    delete_files(really_delete)
+    delete_files(really_delete, log)
 
     log(deploy_event('deployment', 'finish', None))
 
