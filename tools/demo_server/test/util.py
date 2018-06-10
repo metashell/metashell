@@ -35,12 +35,17 @@ def directory_of_this_script():
     )
 
 
+def bin_path(subpath=None):
+    """The path of the bin directory"""
+    bin_p = os.path.join(directory_of_this_script(), '..', 'bin')
+    return os.path.join(bin_p, subpath) if subpath else bin_p
+
+
 def load_from_bin(name):
     """Loads the file called name from the bin directory"""
     # Loading the code into a string and compiling that to avoid the automatic
     # bytecode file (ending with c) generation as a side-effect of testing.
-    module_path = os.path.join(directory_of_this_script(), '..', 'bin', name)
-    with open(module_path) as modulefile:
+    with open(bin_path(name)) as modulefile:
         code = modulefile.read()
     module = imp.new_module(name)
     # pylint: disable=exec-used
@@ -89,6 +94,16 @@ class TempDir(object):
         """Read the content of the file"""
         with open(self.relative(path), 'r') as in_file:
             return in_file.read()
+
+    def makedirs(self, path):
+        """Creates the provided subdirectory"""
+        full_path = self.relative(path)
+        try:
+            os.makedirs(full_path)
+        except OSError as err:
+            if err.errno != os.errno.EEXIST:
+                raise
+        return full_path
 
 
 class GitRepository(object):

@@ -27,6 +27,32 @@ import json
 import fcntl
 import datetime
 import time
+import shutil
+import tempfile
+
+
+class TempDir(object):
+    """Temporary directory"""
+
+    def __init__(self):
+        self.path = None
+
+    def __enter__(self):
+        self.path = tempfile.mkdtemp()
+        return self
+
+    def __exit__(self, typ, value, traceback):
+        shutil.rmtree(self.path)
+        self.path = None
+
+    def relative(self, path):
+        """Return the absolute path relative to the temp directory"""
+        return os.path.join(self.path, path)
+
+    def write(self, path, content):
+        """Write content into the file"""
+        with open(self.relative(path), 'w') as out_file:
+            out_file.write(content)
 
 
 class Error(Exception):
@@ -74,6 +100,25 @@ class Config(object):
         self.std = 'c++11'
         self.libs = {}
 
+    def engine_config(self, root):
+        """Return the engine config to use"""
+        return [
+            {
+                'name': 'gcc',
+                'engine': 'gcc',
+                'engine_args': self.clang_args('/usr/bin/g++', root),
+                'use_precompiled_headers': True,
+                'preprocessor_mode': False
+            },
+            {
+                'name': 'wave',
+                'engine': 'wave',
+                'engine_args': self.include_args(root),
+                'use_precompiled_headers': True,
+                'preprocessor_mode': False
+            },
+        ]
+
     def binary(self, root, name):
         """Returns the path of a binary"""
         path = os.path.join(
@@ -91,26 +136,43 @@ class Config(object):
                 )
             )
 
-    def metashell_command(self, root):
-        """Construct the command to run Metashell with this config"""
-        include_path = [
+    def include_path(self, root):
+        """Returns the include path"""
+        return [
             include_path_of(root, 'metashell', self.metashell_branch)
         ] + [
             include_path_of(root, l, v) for l, v in self.libs.items()
         ]
 
+    def include_args(self, root):
+        """Returns the include argument list"""
         return [
-            self.binary(root, 'metashell'),
-            '--engine', 'clang',
-            '--disable_saving',
-            '--',
-            self.binary(root, 'templight_metashell'),
+            '-I{0}'.format(os.path.realpath(i))
+            for i in self.include_path(root)
+        ]
+
+    def templight_path(self, root):
+        """Returns the path to the templight binary"""
+        return self.binary(root, 'templight_metashell')
+
+    def clang_args(self, clang_path, root):
+        """Returns the clang engine arguments"""
+        return [
+            clang_path,
             '-std={0}'.format(self.std),
             '-ftemplate-depth=256',
             '-Wfatal-errors'
-        ] + [
-            '-I{0}'.format(os.path.realpath(i)) for i in include_path
-        ]
+        ] + self.include_args(root)
+
+    def metashell_command(self, root, config_path):
+        """Construct the command to run Metashell with this config"""
+        return [
+            self.binary(root, 'metashell'),
+            '--engine', 'templight',
+            '--disable_saving',
+            '--load_configs', config_path,
+            '--'
+        ] + self.clang_args(self.templight_path(root), root)
 
     def add_library(self, name, version):
         """Process a library addition"""
@@ -162,11 +224,6 @@ def log(filename, msg):
         append_to_file(filename + suffix, json.dumps(msg) + '\n')
 
 
-def run(root, config):
-    """Run Metashell and return its exit code"""
-    return subprocess.call(config.metashell_command(root))
-
-
 def main():
     """The main function of the utility"""
     parser = argparse.ArgumentParser(description='Run the demo Metashell')
@@ -204,17 +261,25 @@ def main():
     if was_error:
         sys.exit(1)
     else:
-        try:
-            cmd = config.metashell_command(args.root)
-            log(args.log, {'peer': args.peer, 'cmd': cmd, 'url': args.url})
-            exit_code = subprocess.call(
-                cmd,
-                cwd=os.path.join(args.root, 'empty')
+        with TempDir() as tmp:
+            tmp.write(
+                'config.json',
+                json.dumps(config.engine_config(args.root))
             )
-        except Error, err:
-            print in_red(err)
-            sys.exit(1)
-        sys.exit(exit_code)
+            try:
+                cmd = config.metashell_command(
+                    args.root,
+                    tmp.relative('config.json')
+                )
+                log(args.log, {'peer': args.peer, 'cmd': cmd, 'url': args.url})
+                exit_code = subprocess.call(
+                    cmd,
+                    cwd=os.path.join(args.root, 'empty')
+                )
+            except Error, err:
+                print in_red(err)
+                sys.exit(1)
+            sys.exit(exit_code)
 
 
 if __name__ == '__main__':

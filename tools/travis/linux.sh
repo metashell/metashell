@@ -58,7 +58,8 @@ BUILD_THREADS=2 NO_TEMPLIGHT=1 METASHELL_NO_DOC_GENERATION=1 ./build.sh
   --gcov gcov-4.8 --gcov-options '\-lp'
 
 cd bin
-  ../tools/clang_tidy.sh | tee clang_tidy_output.txt
+  ../tools/still_working.py --period_sec 60 -- /bin/bash ../tools/clang_tidy.sh \
+    | tee clang_tidy_output.txt
   [ ! -s clang_tidy_output.txt ]
 cd ..
 
@@ -66,6 +67,7 @@ cd ..
 
 tools/demo_server/test/test_git_clone
 tools/demo_server/test/test_deploy
+tools/demo_server/test/test_run
 
 SRC_ROOT=. \
   CONFIG=tools/demo_server/config/metashell.json \
