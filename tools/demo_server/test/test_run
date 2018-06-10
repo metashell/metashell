@@ -1,0 +1,95 @@
+#!/usr/bin/python
+"""Test the run utility"""
+
+# Metashell - Interactive C++ template metaprogramming shell
+# Copyright (C) 2018, Abel Sinkovics (abel@sinkovics.hu)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import json
+import os
+import subprocess
+import unittest
+import util
+
+
+def run_run(tmp):
+    """Run the run utility. Returns the launchded command"""
+    tmp.makedirs('root/empty')
+
+    tmp.makedirs('root/bin')
+    os.symlink(
+        os.path.join(
+            util.directory_of_this_script(),
+            'metashell_stub.py'
+        ),
+        tmp.relative('root/bin/metashell_master')
+    )
+    tmp.write('root/bin/templight_metashell_master', '')
+
+    tmp.makedirs('root/include/metashell_master')
+
+    return json.loads(
+        subprocess.Popen(
+            [
+                util.bin_path('run'),
+                '--root', tmp.makedirs('root'),
+                '--peer', '127.0.0.1',
+                '--url', '',
+                '--log', tmp.makedirs('log')
+            ],
+            stdout=subprocess.PIPE
+        ).communicate()[0]
+    )
+
+
+def parse_configs(configs_string):
+    """Parses the config structures"""
+    return {c['name']: c for c in json.loads(configs_string)}
+
+
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+# pylint: disable=too-many-public-methods
+
+
+class TestRun(unittest.TestCase):
+
+    def test_arguments(self):
+        with util.TempDir() as tmp:
+            run_out = run_run(tmp)
+
+            metashell_args = run_out['metashell_args']
+            files = run_out['files']
+
+            self.assertIn('--disable_saving', metashell_args)
+
+            lc_fn = metashell_args[metashell_args.index('--load_configs') + 1]
+            self.assertFalse(os.path.exists(lc_fn))
+            self.assertIn(lc_fn, files)
+            configs = parse_configs(files[lc_fn])
+
+            self.assertEqual(['gcc', 'wave'], sorted(configs.keys()))
+
+            self.assertEqual('/usr/bin/g++', configs['gcc']['engine_args'][0])
+
+            for config in configs.values():
+                self.assertIn(
+                    '-I' + tmp.relative('root/include/metashell_master'),
+                    config['engine_args']
+                )
+
+
+if __name__ == '__main__':
+    unittest.main()

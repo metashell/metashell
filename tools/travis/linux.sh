@@ -66,6 +66,7 @@ cd ..
 
 tools/demo_server/test/test_git_clone
 tools/demo_server/test/test_deploy
+tools/demo_server/test/test_run
 
 SRC_ROOT=. \
   CONFIG=tools/demo_server/config/metashell.json \
