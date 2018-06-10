@@ -109,18 +109,15 @@ def main():
         elif opt in('-f', '--format'):
             out_format = val
 
-    try:
-        (normal, system) = get_standard_gcc_includes(gcc)
-        paths = system if inc_type == 'sys' else normal
-        if out_format == 'cpp':
-            print '\n'.join([', {0}'.format(json.dumps(s)) for s in paths])
-            print ''
-        elif out_format == 'shell':
-            print ':'.join(paths)
-        else:
-            print 'Unknown output format: {0}'.format(out_format)
-    except:
-        sys.stderr.write('Error: %s\n' % (sys.exc_info()[1]))
+    (normal, system) = get_standard_gcc_includes(gcc)
+    paths = system if inc_type == 'sys' else normal
+    if out_format == 'cpp':
+        print '\n'.join([', {0}'.format(json.dumps(s)) for s in paths])
+        print ''
+    elif out_format == 'shell':
+        print ':'.join(paths)
+    else:
+        print 'Unknown output format: {0}'.format(out_format)
 
 
 if __name__ == '__main__':

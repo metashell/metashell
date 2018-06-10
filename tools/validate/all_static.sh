@@ -23,7 +23,7 @@ then
   exit 1
 fi
 
-for c in format.sh pep8.sh pylint.sh
+for c in format.sh pycodestyle.sh pylint.sh
 do
   tools/validate/$c
 done

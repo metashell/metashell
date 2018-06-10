@@ -251,8 +251,8 @@ function download_shared_file {
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt-get -y update
 sudo apt-get -y install \
-  shellinabox git g++-6 cmake libreadline-dev python-pip python-cheetah ccache
-sudo pip install mkdocs pep8 pylint gitpython daemonize
+  shellinabox git g++-6 cmake3 libreadline-dev python-pip python-cheetah ccache
+sudo pip install mkdocs pycodestyle pylint gitpython daemonize
 
 # Create the installation directories
 

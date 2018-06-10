@@ -23,4 +23,4 @@ then
   exit 1
 fi
 
-pep8 $(tools/list/python_files.sh tools)
+pycodestyle $(tools/list/python_files.sh tools)
