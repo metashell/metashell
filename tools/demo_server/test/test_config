@@ -30,20 +30,39 @@ def no_logging(_):
     pass
 
 
-def environment_variable(name):
+def dirname_times(path, times):
+    """Calls os.path.dirname on path times times"""
+    for _ in xrange(0, times):
+        path = os.path.dirname(path)
+    return path
+
+
+def environment_variable(name, default_value):
     """Returns the value of the environment variable"""
-    if name in os.environ:
-        return os.environ[name]
-    else:
-        raise Exception('{0} environment variable is not set'.format(name))
+    return os.environ[name] if name in os.environ else default_value
+
+
+def source_root():
+    """Returns the path to the root of the source tree"""
+    return environment_variable(
+        'SRC_ROOT',
+        dirname_times(os.path.realpath(__file__), 4)
+    )
+
+
+def config_path():
+    """Returns the path to the config file to test"""
+    return environment_variable(
+        'CONFIG',
+        os.path.join(
+            source_root(), 'tools', 'demo_server', 'config', 'metashell.json'
+        )
+    )
 
 
 def load_config():
     """Loads the config file"""
-    return MODULE_UNDER_TEST.load_config_file(
-        environment_variable('CONFIG'),
-        no_logging
-    )
+    return MODULE_UNDER_TEST.load_config_file(config_path(), no_logging)
 
 
 def config_of(name):
@@ -80,7 +99,7 @@ class TestConfig(unittest.TestCase):
         self.assertIn('include', config)
         self.assertIn('share', config)
 
-        src_root = environment_variable('SRC_ROOT')
+        src_root = source_root()
         for path in paths_to_copy(config):
             full_path = os.path.join(src_root, path)
             path_if_exists = full_path if os.path.exists(full_path) else ''

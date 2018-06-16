@@ -141,7 +141,7 @@ include_directories(SYSTEM "3rd/yaml-cpp/include")
 enable_testing()
 
 # Recursing
-subdirs(lib app test 3rd)
+subdirs(lib app test 3rd tools)
 
 # Debian package
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
