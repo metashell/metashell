@@ -62,13 +62,3 @@ cd bin
     | tee clang_tidy_output.txt
   [ ! -s clang_tidy_output.txt ]
 cd ..
-
-# Test the demo server's code
-
-tools/demo_server/test/test_git_clone
-tools/demo_server/test/test_deploy
-tools/demo_server/test/test_run
-
-SRC_ROOT=. \
-  CONFIG=tools/demo_server/config/metashell.json \
-  tools/demo_server/test/test_config

@@ -102,11 +102,12 @@ class Config(object):
 
     def engine_config(self, root):
         """Return the engine config to use"""
+        hasf = ['-D__has_feature(_)=0']
         return [
             {
                 'name': 'gcc',
                 'engine': 'gcc',
-                'engine_args': self.clang_args('/usr/bin/g++', root),
+                'engine_args': self.clang_args('/usr/bin/g++', root) + hasf,
                 'use_precompiled_headers': True,
                 'preprocessor_mode': False
             },
