@@ -8,7 +8,7 @@ how the code works.
 
 Requirements:
 
-* Ubuntu server 14.04. Note that it might work on other systems, but it is not
+* Ubuntu server 18.04. Note that it might work on other systems, but it is not
   tested.
 * At least 10 GB free space
 * A number of dependent packages (see the list of them in the installation

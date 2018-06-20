@@ -166,6 +166,7 @@
 #vt100 .ansi13              { color:            #073642; } /* base02 ? */
 #vt100 .ansi14              { color:            #93a1a1; } /* base1 */
 #vt100 .ansi15              { color:            #ffffff; } /* base03 (modified) */
+#vt100 .ansiDef             { color:            #839496; }
 
 #vt100 .bgAnsi0             { background-color: #073642; }
 #vt100 .bgAnsi1             { background-color: #dc322f; }
@@ -183,6 +184,7 @@
 #vt100 .bgAnsi13            { background-color: #073642; }
 #vt100 .bgAnsi14            { background-color: #93a1a1; }
 #vt100 .bgAnsi15            {                            }
+#vt100 .bgAnsiDef           { background-color: #002b36; }
 [endif DEFINES_COLORS]
 
 @media print {
