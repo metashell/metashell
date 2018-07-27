@@ -16,6 +16,7 @@
 
 #include <metashell/system_test/comment.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
+#include <metashell/system_test/prompt.hpp>
 
 #include <gtest/gtest.h>
 
@@ -45,4 +46,13 @@ TEST(modes, metaprogram_mode)
             mi.command("#msh show cpp_errors").front());
   ASSERT_EQ(comment({paragraph("evaluation of metaprograms is on")}),
             mi.command("#msh metaprogram evaluation").front());
+}
+
+TEST(modes, undef_in_preprocessor_mode)
+{
+  metashell_instance mi;
+  mi.command("#msh preprocessor mode");
+  mi.command("#define FOO");
+
+  ASSERT_EQ(prompt(">"), mi.command("#undef FOO").front());
 }
