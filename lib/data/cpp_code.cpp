@@ -124,7 +124,13 @@ namespace metashell
       }
       else
       {
-        const auto m_len = mrk.size();
+        const auto full_len = mrk.size();
+        const auto from = p1 + full_len;
+
+        const auto last_non_new_line = mrk.find_last_not_of("\n\r");
+        const auto m_len = (last_non_new_line == std::string::npos) ?
+                               full_len :
+                               last_non_new_line + 1;
         const auto p2 = code.find(mrk, p1 + m_len);
         if (p2 == std::string::npos)
         {
@@ -133,7 +139,8 @@ namespace metashell
         }
         else if (code.find(mrk, p2 + m_len) == std::string::npos)
         {
-          return cpp_code(code.substr(p1 + m_len, p2 - p1 - m_len));
+          return p2 < from ? cpp_code() :
+                             cpp_code(code.substr(from, p2 - from));
         }
         else
         {
