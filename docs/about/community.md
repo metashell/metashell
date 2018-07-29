@@ -18,3 +18,7 @@ you can directly open a [pull request](https://github.com/metashell/metashell/pu
 
 For bigger features feel free to share your ideas on the mailing list for
 discussions and to make sure no one else is working on them already.
+
+## 3rd party extensions
+
+[MSGUI - Metashell GUI](https://github.com/RangelReale/msgui)
