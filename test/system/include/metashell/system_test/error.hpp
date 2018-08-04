@@ -36,6 +36,7 @@ namespace metashell
     public:
       explicit error(const std::string& msg_);
       explicit error(pattern::placeholder);
+      explicit error(const json_string& s_);
 
       bool message_specified() const;
       const std::string& message() const;

@@ -50,12 +50,11 @@ namespace metashell
       break;
     case data::relative_depth::end:
       pop_event();
-      if (!_frame_stack.empty())
+      while (!_frame_stack.empty())
       {
-        throw exception("Unclosed opening event: " +
-                        to_string(_frame_stack.back(_events)));
+        pop_event();
       }
-      else if (const auto full_time = time_taken(_events.front()))
+      if (const auto full_time = time_taken(_events.front()))
       {
         for (data::debugger_event& event : _events)
         {

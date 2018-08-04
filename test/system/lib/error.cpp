@@ -30,6 +30,22 @@ error::error(const std::string& msg_) : _msg(msg_) {}
 
 error::error(pattern::placeholder) : _msg(boost::none) {}
 
+error::error(const json_string& s_) : _msg(boost::none)
+{
+  rapidjson::Document d;
+  d.Parse(s_.get().c_str());
+
+  if (members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
+      d["msg"].IsString())
+  {
+    _msg = d["msg"].GetString();
+  }
+  else
+  {
+    throw std::runtime_error("Invalid error: " + s_.get());
+  }
+}
+
 bool error::message_specified() const { return _msg != boost::none; }
 
 const std::string& error::message() const

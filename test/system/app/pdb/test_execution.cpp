@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/system_test/cpp_code.hpp>
+#include <metashell/system_test/error.hpp>
 #include <metashell/system_test/metashell_instance.hpp>
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/raw_text.hpp>
@@ -24,6 +25,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
+#include <regex>
 #include <stdexcept>
 
 using namespace metashell::system_test;
@@ -53,6 +55,21 @@ namespace
               "\n"));
     }
   }
+
+  std::string remove_location(const std::string& s_)
+  {
+    std::smatch base_match;
+    if (std::regex_match(
+            s_, base_match, std::regex("^[^:]*:[0-9]*:[0-9]*:(.*)")))
+    {
+      if (base_match.size() == 2)
+      {
+        return base_match[1].str();
+      }
+    }
+    throw std::runtime_error(
+        "String does not start with location information: " + s_);
+  }
 }
 
 TEST(pdb, empty) { ASSERT_EQ(cpp_code("bar"), pdb_c_returns("FOO")); }
@@ -76,4 +93,26 @@ TEST(pdb, help_evaluate)
 
   ASSERT_TRUE(raw_text(r[0]).text().find("-full") == std::string::npos);
   ASSERT_TRUE(raw_text(r[1]).text().find("-full") == std::string::npos);
+}
+
+TEST(pdb, error_of_broken_macro_call)
+{
+  metashell_instance mi;
+  mi.command("#define FOO(a, b)");
+  mi.command("#define BAR FOO(3)");
+
+  const auto nr = mi.command("#msh pp BAR");
+  ASSERT_GT(nr.size(), 1);
+  const error normal_error(nr[0]);
+  ASSERT_TRUE(normal_error.message_specified());
+
+  mi.command("#msh pdb BAR");
+  const auto r = mi.command("continue");
+
+  ASSERT_GT(r.size(), 2);
+  const error pdb_error(r[1]);
+  ASSERT_TRUE(pdb_error.message_specified());
+
+  ASSERT_EQ(remove_location(normal_error.message()),
+            remove_location(pdb_error.message()));
 }
