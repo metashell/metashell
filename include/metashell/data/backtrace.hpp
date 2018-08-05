@@ -48,24 +48,29 @@ namespace metashell
       bool empty() const;
 
       const frame& operator[](size_type i) const;
-      const frame& back() const;
 
       iterator begin() const;
       iterator end() const;
+
+      void update(const frame& event_);
+      void update(const pop_frame& event_);
 
     private:
       std::vector<frame> _frames;
       boost::optional<int> _buffered_pop_count;
 
       void flush();
+      bool flushed_empty() const;
+      const frame& flushed_front() const;
+      int buffered_pop_count() const;
+
+      void pop_flat();
     };
 
     std::ostream& operator<<(std::ostream& o_, const backtrace& t_);
     bool operator==(const backtrace& a_, const backtrace& b_);
 
     void update(backtrace& bt_, const debugger_event& event_);
-    void update(backtrace& bt_, const frame& event_);
-    void update(backtrace& bt_, const pop_frame& event_);
   }
 }
 
