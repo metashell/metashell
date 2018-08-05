@@ -23,18 +23,6 @@
 
 using namespace metashell::data;
 
-namespace
-{
-  void pop_flat(backtrace& bt_)
-  {
-    if (!bt_.empty() && bt_.back().flat())
-    {
-      bt_.pop_front();
-    }
-    assert(bt_.empty() || !bt_.back().flat());
-  }
-}
-
 backtrace::backtrace(bool buffered_)
   : _frames(),
     _buffered_pop_count(buffered_ ? boost::make_optional(0) : boost::none)
@@ -74,8 +62,6 @@ const frame& backtrace::operator[](size_type i) const
   return _frames[_frames.size() - 1 - i];
 }
 
-const frame& backtrace::back() const { return _frames.front(); }
-
 backtrace::iterator backtrace::begin() const { return _frames.rbegin(); }
 
 backtrace::iterator backtrace::end() const { return _frames.rend(); }
@@ -90,6 +76,44 @@ void backtrace::flush()
     _frames.erase(e - *_buffered_pop_count, e);
     _buffered_pop_count = 0;
   }
+}
+
+int backtrace::buffered_pop_count() const
+{
+  return boost::get_optional_value_or(_buffered_pop_count, 0);
+}
+
+bool backtrace::flushed_empty() const
+{
+  return (_frames.size() - buffered_pop_count()) <= 0;
+}
+
+const frame& backtrace::flushed_front() const
+{
+  return _frames[_frames.size() - 1 - buffered_pop_count()];
+}
+
+void backtrace::pop_flat()
+{
+  if (!flushed_empty() && flushed_front().flat())
+  {
+    pop_front();
+  }
+  assert(flushed_empty() || !flushed_front().flat());
+}
+
+void backtrace::update(const frame& event_)
+{
+  pop_flat();
+  push_front(event_);
+}
+
+void backtrace::update(const pop_frame&)
+{
+  assert(!flushed_empty());
+
+  pop_flat();
+  pop_front();
 }
 
 std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
@@ -118,19 +142,5 @@ bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
 
 void metashell::data::update(backtrace& bt_, const data::debugger_event& event_)
 {
-  mpark::visit([&bt_](const auto& e) { update(bt_, e); }, event_);
-}
-
-void metashell::data::update(backtrace& bt_, const frame& event_)
-{
-  pop_flat(bt_);
-  bt_.push_front(event_);
-}
-
-void metashell::data::update(backtrace& bt_, const pop_frame&)
-{
-  assert(!bt_.empty());
-
-  pop_flat(bt_);
-  bt_.pop_front();
+  mpark::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
 }
