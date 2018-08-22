@@ -782,3 +782,397 @@ used. The following command displays the definition of the macros as well:
 The output of this command can be long, since it displays all macros and their
 actual definition.
 
+## Using the preprocessor debugger
+
+The preprocessor debugger lets you inspect step by step how the preprocessor
+evaluates your macros.
+
+> Note that this feature is supported by the
+> [Wave engine](../reference/engines/index.html#available-engines) only. You
+> need to start Metashell with the
+> [Wave engine](../reference/engines/index.html#available-engines) to be able to
+> follow the steps of this part of the tutorial. If you are using the
+> [online demo](../about/demo/index.html), you can switch to the the
+> [Wave engine](../reference/engines/index.html#available-engines) by running
+> the `#msh config load wave` command in the shell. Make sure that you are in
+> preprocessor mode by running `#msh preprocessor mode`.
+
+Let's define an example macro and debug it. First, let's define a macro for
+turning something into a `const` pointer:
+
+```cpp
+> #define CONST_PTR(x) const x*
+```
+
+It can be used the following way:
+
+```cpp
+> CONST_PTR(int)
+const int*
+> CONST_PTR(double)
+const double*
+```
+
+Now let's define a macro, which repeats a set of tokens multiple times:
+
+```cpp
+> #define REPEAT(n, m) REPEAT ## n(m)
+> #define REPEAT0(m)
+> #define REPEAT1(m) m
+> #define REPEAT2(m) m, REPEAT1(m)
+> #define REPEAT3(m) m, REPEAT2(m)
+> #define REPEAT4(m) m, REPEAT3(m)
+> #define REPEAT5(m) m, REPEAT4(m)
+```
+
+It can be used the following way:
+
+```cpp
+> REPEAT(3, int)
+int, int, int
+```
+
+The two macros can be combined:
+
+```cpp
+> REPEAT(3, CONST_PTR(int))
+const int*, const int*, const int*
+```
+
+Let's debug the above macro expansion. Start the preprocessor debugger by
+entering:
+
+```cpp
+> #msh pdb REPEAT(3, CONST_PTR(int))
+For help, type "help".
+Metaprogram started
+(pdb)
+```
+
+You'll see, that the prompt has changed to `(pdb)`. Now you can enter
+preprocessor debugger commands.
+
+### Stepping
+
+The preprocessor debugger provides an interface similar to
+[gdb](https://www.gnu.org/software/gdb/). For example you can step the macro
+evaluation forward three steps:
+
+```cpp
+(pdb) step 3
+const int* (Rescanning)
+```
+
+As you can see, the preprocessor debugger tells you that in this step
+`const int*` is getting expanded in a Rescanning event.
+
+Stepping backwards is also trivial in a macro evaluation:
+
+```cpp
+(pdb) step -1
+CONST_PTR(int) (MacroExpansion)
+```
+
+### Backtrace
+
+You can check the current backtrace:
+```cpp
+(pdb) bt
+#0 CONST_PTR(int) (MacroExpansion)
+#1 REPEAT(3, CONST_PTR(int)) (MacroExpansion)
+#2 REPEAT(3, CONST_PTR(int))
+```
+
+This shows us that:
+
+* We started the macro evaluation by evaluating
+  `REPEAT(3, CONST_PTR(int))`.
+* The evaluation of this expression has (at some point) called
+  `REPEAT(3, CONST_PTR(int))`.
+* The `REPEAT` macro has (at some point) called `CONST_PTR`. This is where we
+  are in the evaluation of the macro call.
+
+### Forwardtrace
+
+The preprocessor debugger can also see into the future, and print the
+forwardtrace from any step:
+
+```cpp
+(pdb) ft
+CONST_PTR(int) (MacroExpansion)
+` const int* (Rescanning)
+  ` const int* (ExpandedCode)
+```
+
+This shows us what macros the metaprogram *will* call after the current
+location. As you can see the output shows the relations between the
+preprocessing steps: which steps trigger which other steps. The events in the
+output of forwardtrace happen in that order from the top down.
+
+You probably noticed that there are three kinds of events metadebugger shows
+you:
+
+* __MacroExpansion__ event happens when the preprocessor starts the expansion of
+  a macro call.
+* __Rescanning__ event happens when the preprocessor finished substituting the
+  body of a macro and is about to expand the recursive macro calls.
+* __ExpandedCode__ event happens when the preprocessor is done with rescanning a
+  macro expansion. The tokens produced are the result of a macro expansion.
+
+For example, in the above forwardtrace output, you can see that the preprocessor
+substitues the `CONST_PTR(int)` macro call with `const int*`. This triggers a
+Rescanning event, which produces the same tokens (`const int*`) as there are no
+macro calls in it. This triggers an ExpandedCode event with with the same
+tokens.
+
+There are a few more type of events that we haven't seen so far:
+
+* __MacroDefinition__ happens, when a macro is defined (using `#define`).
+* __MacroDeletion__ happens, when a macro is deleted (using `#undef`).
+* __GeneratedToken__ happens, when an output token is generated (eg. as the
+  result of a macro call or because of outputting tokens directly from the
+  input).
+* __SkippedToken__ happens, when a token is skipped (eg. because of being in the
+  skipped branch of an `#if`).
+* __QuoteInclude__ happens, when the preprocessor starts the evaluation of a
+  `#include "..."`.
+* __SysInclude__ happens, when the preprocessor starts the evaluation of a
+  `#include <...>`.
+* __PreprocessingCondition__ happens, when the preprocessor starts the
+  evaluation of a condition (eg. `#if`, `#ifdef`).
+* __PreprocessingConditionResult__ happens, when the preprocessor determines the
+  result of a condition (`true` or `false`).
+* __PreprocessingElse__ happens, when the preprocessor reaches a `#else`.
+* __PreprocessingEndif__ happens, when the preprocessor finishes the evaluation
+  of a conditional by reaching `#endif`.
+* __ErrorDirective__ happens, when the preprocessor evaluates a `#error`.
+* __LineDirective__ happens, when the preprocessor evaluates a `#line`
+
+### Breakpoints and continue
+
+You can also create breakpoints:
+
+```cpp
+(pdb) rbreak const int
+Breakpoint "const int" will stop the execution on 13 locations
+```
+
+Now let's continue the execution until the first breakpoint:
+
+```cpp
+(pdb) continue
+Breakpoint 1: regex("const int") reached
+const int* (Rescanning)
+```
+
+Commands can be abbreviated if unambiguous. For example you can use just `c`
+instead of `continue`:
+
+```cpp
+(mdb) c
+Breakpoint 1: regex("const int") reached
+const int* (ExpandedCode)
+```
+
+You can repeat the last command by simply hitting enter again and again:
+
+```cpp
+(pdb)
+Breakpoint 1: regex("const int") reached
+REPEAT3( const int*) (Rescanning)
+(pdb)
+Breakpoint 1: regex("const int") reached
+REPEAT3( const int*) (MacroExpansion)
+(pdb)
+Breakpoint 1: regex("const int") reached
+ const int*, REPEAT2( const int*) (Rescanning)
+(pdb)
+Breakpoint 1: regex("const int") reached
+REPEAT2( const int*) (MacroExpansion)
+(pdb)
+Breakpoint 1: regex("const int") reached
+ const int*, REPEAT1( const int*) (Rescanning)
+(pdb)
+Breakpoint 1: regex("const int") reached
+REPEAT1( const int*) (MacroExpansion)
+(pdb)
+Breakpoint 1: regex("const int") reached
+ const int* (Rescanning)
+(pdb)
+Breakpoint 1: regex("const int") reached
+const int* (ExpandedCode)
+(pdb)
+Breakpoint 1: regex("const int") reached
+const int*, const int* (ExpandedCode)
+(pdb)
+Breakpoint 1: regex("const int") reached
+const int*, const int*, const int* (ExpandedCode)
+(pdb)
+Breakpoint 1: regex("const int") reached
+const int*, const int*, const int* (ExpandedCode)
+(pdb)
+Metaprogram finished
+const int*, const int*, const int*
+```
+
+### Using step over
+
+A special qualifier, `over` can be passed to the `step` command. Using
+`step over` will jump over sub events. Let's take a look at an example:
+
+```cpp
+(pdb) evaluate REPEAT(3, CONST_PTR(int))
+Metaprogram started
+(pdb) ft
+REPEAT(3, CONST_PTR(int))
++ REPEAT(3, CONST_PTR(int)) (MacroExpansion)
+| + CONST_PTR(int) (MacroExpansion)
+| | ` const int* (Rescanning)
+| |   ` const int* (ExpandedCode)
+| ` REPEAT3( const int*) (Rescanning)
+|   + REPEAT3( const int*) (MacroExpansion)
+|   | `  const int*, REPEAT2( const int*) (Rescanning)
+|   |   + REPEAT2( const int*) (MacroExpansion)
+|   |   | `  const int*, REPEAT1( const int*) (Rescanning)
+|   |   |   + REPEAT1( const int*) (MacroExpansion)            A
+|   |   |   | `  const int* (Rescanning)
+|   |   |   |   ` const int* (ExpandedCode)                     B
+|   |   |   ` const int*, const int* (ExpandedCode)            C
+|   |   ` const int*, const int*, const int* (ExpandedCode)
+|   ` const int*, const int*, const int* (ExpandedCode)
++ const (GeneratedToken)
++   (GeneratedToken)
++ int (GeneratedToken)
++ * (GeneratedToken)
++ , (GeneratedToken)
++   (GeneratedToken)
++ const (GeneratedToken)
++   (GeneratedToken)
++ int (GeneratedToken)
++ * (GeneratedToken)
++ , (GeneratedToken)
++   (GeneratedToken)
++ const (GeneratedToken)
++   (GeneratedToken)
++ int (GeneratedToken)
++ * (GeneratedToken)
+` \n (GeneratedToken)
+```
+
+Three events are marked, so it is easier to talk about them. First, let's simply
+step forward to `A`:
+
+```cpp
+(mdb) step 10
+REPEAT1( const int*) (MacroExpansion)                    A
+```
+
+Here, `step over` will jump over the details of the macro expansion triggered by
+`A` to the expanded tokens, `C`:
+
+```cpp
+(mdb) step over
+const int*, const int* (ExpandedCode)                    C
+```
+
+Of course, `step over -1` will do the reverse and bring us back to `A`:
+
+```cpp
+(mdb) step over -1
+REPEAT1( const int*) (MacroExpansion)                    A
+```
+
+Be careful though, `step over -1` is not always the inverse of `step over`.
+Let's step forward to `B` to demonstrate this:
+
+
+```cpp
+(mdb) step 2
+const int* (ExpandedCode)                                B
+```
+
+Since there are no more sub events to step over, from here `step over` has no
+other choice but to behave like a normal `step` command and jump out to `C`.
+
+```cpp
+(mdb) step over
+const int*, const int* (ExpandedCode)                    C
+```
+
+But from `C`, as we've seen earlier, `step over -1` will bring us back to `A`
+and not `B`.
+
+```cpp
+(mdb) step over -1
+REPEAT1( const int*) (MacroExpansion)                    A
+```
+
+### Quit the preprocessor debugger
+
+To exit from the preprocessor debugger use Ctrl+D or the `quit` command.
+
+```cpp
+(pdb) quit
+>
+```
+
+### Evaluating failing macros
+
+Sometimes you want to debug macros which don't compile for some reason. The
+preprocessor debugger allows this and will behave similarly to how runtime
+debuggers stop the execution when some runtime failure is detected (like a
+Segmentation Fault). To demonstrate this, consider the following faulty version
+of the `REPEAT` macro:
+
+```cpp
+> #define REPEAT(n, m) REPEAT ## n(n, m)
+> #define REPEAT0(m)
+> #define REPEAT1(m) m
+> #define REPEAT2(m) m, REPEAT1(m)
+> #define REPEAT3(m) m, REPEAT2(m)
+> #define REPEAT4(m) m, REPEAT3(m)
+> #define REPEAT5(m) m, REPEAT4(m)
+```
+
+> Note that in case you've been following this tutorial from the beginning,
+> you already have defined a (correct) `REPEAT` macro. In this case you can
+> get the broken version by running `#undef REPEAT` and
+> `#define REPEAT(n, m) REPEAT ## n(n, m)`, as the helper macros remain
+> unchanged.
+
+Let's try to evaluate `REPEAT(3, int)`:
+
+```cpp
+> REPEAT(3, int)
+<stdin>:54:1: warning: too many macro arguments: REPEAT3
+```
+
+Let's debug our macro to see what's going on:
+
+```cpp
+> #msh pdb REPEAT(3, int)
+For help, type "help".
+Metaprogram started
+```
+
+Continue the execution until we hit the error:
+
+```cpp
+> continue
+Metaprogram finished
+<stdin>:5:1: warning: too many macro arguments: REPEAT3
+```
+
+You should see the same error messages as above, but this time we can actually
+check out where the error happened:
+
+```cpp
+(pdb) bt
+#0 REPEAT3(3,  int) (Rescanning)
+#1 REPEAT(3, int) (MacroExpansion)
+#2 REPEAT(3, int)
+```
+
+As the backtrace shows, `REPEAT(3, int)` tried calling the `REPEAT3` macro with
+two arguments, while this macro takes only one.
+
