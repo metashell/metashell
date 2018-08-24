@@ -45,7 +45,8 @@ fedora)
     cmake \
     readline-devel \
     rpm-build \
-    python
+    python \
+    make
   ;;
 gentoo)
   sudo emerge dev-vcs/git dev-util/cmake sys-libs/libtermcap-compat app-arch/zip
