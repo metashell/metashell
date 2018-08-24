@@ -48,13 +48,13 @@ struct foo<0> {};
 // CHECK: {{^name:[ ]+'foo<0>'$}}
 // CHECK: {{^kind:[ ]+Memoization$}}
 // CHECK: {{^event:[ ]+Begin$}}
-// CHECK: {{^orig:[ ]+'.*templight-nested-template-instantiation.cpp:4:8'}}
+// CHECK: {{^orig:[ ]+'.*templight-nested-template-instantiation.cpp:7:8'}}
 // CHECK: {{^poi:[ ]+'.*templight-nested-template-instantiation.cpp:4:14'$}}
 // CHECK-LABEL: {{^---$}}
 // CHECK: {{^name:[ ]+'foo<0>'$}}
 // CHECK: {{^kind:[ ]+Memoization$}}
 // CHECK: {{^event:[ ]+End$}}
-// CHECK: {{^orig:[ ]+'.*templight-nested-template-instantiation.cpp:4:8'}}
+// CHECK: {{^orig:[ ]+'.*templight-nested-template-instantiation.cpp:7:8'}}
 // CHECK: {{^poi:[ ]+'.*templight-nested-template-instantiation.cpp:4:14'$}}
 //
 // CHECK-LABEL: {{^---$}}

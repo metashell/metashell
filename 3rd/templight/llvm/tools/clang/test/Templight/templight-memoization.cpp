@@ -8,13 +8,13 @@ struct foo {};
 // CHECK: {{^kind:[ ]+TemplateInstantiation$}}
 // CHECK: {{^event:[ ]+Begin$}}
 // CHECK: {{^orig:[ ]+'.*templight-memoization.cpp:4:8'}}
-// CHECK: {{^poi:[ ]+'.*templight-memoization.cpp:41:10'$}}
+// CHECK: {{^poi:[ ]+'.*templight-memoization.cpp:18:10'$}}
 // CHECK-LABEL: {{^---$}}
 // CHECK: {{^name:[ ]+'foo<int>'$}}
 // CHECK: {{^kind:[ ]+TemplateInstantiation$}}
 // CHECK: {{^event:[ ]+End$}}
 // CHECK: {{^orig:[ ]+'.*templight-memoization.cpp:4:8'}}
-// CHECK: {{^poi:[ ]+'.*templight-memoization.cpp:41:10'$}}
+// CHECK: {{^poi:[ ]+'.*templight-memoization.cpp:18:10'$}}
 foo<int> x;
 
 // CHECK-LABEL: {{^---$}}

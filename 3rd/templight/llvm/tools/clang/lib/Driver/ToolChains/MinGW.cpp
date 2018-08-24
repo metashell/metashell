@@ -82,6 +82,9 @@ void tools::MinGW::Linker::AddLibGCC(const ArgList &Args,
 
   CmdArgs.push_back("-lmoldname");
   CmdArgs.push_back("-lmingwex");
+  for (auto Lib : Args.getAllArgValues(options::OPT_l))
+    if (StringRef(Lib).startswith("msvcr") || Lib == "ucrtbase")
+      return;
   CmdArgs.push_back("-lmsvcrt");
 }
 
@@ -104,14 +107,6 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // handled somewhere else.
   Args.ClaimAllArgs(options::OPT_w);
 
-  StringRef LinkerName = Args.getLastArgValue(options::OPT_fuse_ld_EQ, "ld");
-  if (LinkerName.equals_lower("lld")) {
-    CmdArgs.push_back("-flavor");
-    CmdArgs.push_back("gnu");
-  } else if (!LinkerName.equals_lower("ld")) {
-    D.Diag(diag::err_drv_unsupported_linker) << LinkerName;
-  }
-
   if (!D.SysRoot.empty())
     CmdArgs.push_back(Args.MakeArgString("--sysroot=" + D.SysRoot));
 
@@ -119,12 +114,24 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-s");
 
   CmdArgs.push_back("-m");
-  if (TC.getArch() == llvm::Triple::x86)
+  switch (TC.getArch()) {
+  case llvm::Triple::x86:
     CmdArgs.push_back("i386pe");
-  if (TC.getArch() == llvm::Triple::x86_64)
+    break;
+  case llvm::Triple::x86_64:
     CmdArgs.push_back("i386pep");
-  if (TC.getArch() == llvm::Triple::arm)
+    break;
+  case llvm::Triple::arm:
+  case llvm::Triple::thumb:
+    // FIXME: this is incorrect for WinCE
     CmdArgs.push_back("thumb2pe");
+    break;
+  case llvm::Triple::aarch64:
+    CmdArgs.push_back("arm64pe");
+    break;
+  default:
+    llvm_unreachable("Unsupported target architecture.");
+  }
 
   if (Args.hasArg(options::OPT_mwindows)) {
     CmdArgs.push_back("--subsystem");
@@ -134,22 +141,21 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("console");
   }
 
+  if (Args.hasArg(options::OPT_mdll))
+    CmdArgs.push_back("--dll");
+  else if (Args.hasArg(options::OPT_shared))
+    CmdArgs.push_back("--shared");
   if (Args.hasArg(options::OPT_static))
     CmdArgs.push_back("-Bstatic");
-  else {
-    if (Args.hasArg(options::OPT_mdll))
-      CmdArgs.push_back("--dll");
-    else if (Args.hasArg(options::OPT_shared))
-      CmdArgs.push_back("--shared");
+  else
     CmdArgs.push_back("-Bdynamic");
-    if (Args.hasArg(options::OPT_mdll) || Args.hasArg(options::OPT_shared)) {
-      CmdArgs.push_back("-e");
-      if (TC.getArch() == llvm::Triple::x86)
-        CmdArgs.push_back("_DllMainCRTStartup@12");
-      else
-        CmdArgs.push_back("DllMainCRTStartup");
-      CmdArgs.push_back("--enable-auto-image-base");
-    }
+  if (Args.hasArg(options::OPT_mdll) || Args.hasArg(options::OPT_shared)) {
+    CmdArgs.push_back("-e");
+    if (TC.getArch() == llvm::Triple::x86)
+      CmdArgs.push_back("_DllMainCRTStartup@12");
+    else
+      CmdArgs.push_back("DllMainCRTStartup");
+    CmdArgs.push_back("--enable-auto-image-base");
   }
 
   CmdArgs.push_back("-o");
@@ -185,8 +191,7 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   // TODO: Add profile stuff here
 
-  if (D.CCCIsCXX() &&
-      !Args.hasArg(options::OPT_nostdlib, options::OPT_nodefaultlibs)) {
+  if (TC.ShouldLinkCXXStdlib(Args)) {
     bool OnlyLibstdcxxStatic = Args.hasArg(options::OPT_static_libstdcxx) &&
                                !Args.hasArg(options::OPT_static);
     if (OnlyLibstdcxxStatic)
@@ -230,7 +235,7 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
       if (Args.hasArg(options::OPT_static))
         CmdArgs.push_back("--end-group");
-      else if (!LinkerName.equals_lower("lld"))
+      else
         AddLibGCC(Args, CmdArgs);
     }
 
@@ -241,7 +246,7 @@ void tools::MinGW::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back(Args.MakeArgString(TC.GetFilePath("crtend.o")));
     }
   }
-  const char *Exec = Args.MakeArgString(TC.GetProgramPath(LinkerName.data()));
+  const char *Exec = Args.MakeArgString(TC.GetLinkerPath());
   C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
 }
 
@@ -361,8 +366,11 @@ bool toolchains::MinGW::isPICDefaultForced() const {
   return getArch() == llvm::Triple::x86_64;
 }
 
-bool toolchains::MinGW::UseSEHExceptions() const {
-  return getArch() == llvm::Triple::x86_64;
+llvm::ExceptionHandling
+toolchains::MinGW::GetExceptionModel(const ArgList &Args) const {
+  if (getArch() == llvm::Triple::x86_64)
+    return llvm::ExceptionHandling::WinEH;
+  return llvm::ExceptionHandling::DwarfCFI;
 }
 
 void toolchains::MinGW::AddCudaIncludeArgs(const ArgList &DriverArgs,

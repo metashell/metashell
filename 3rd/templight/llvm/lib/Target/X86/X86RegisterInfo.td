@@ -251,8 +251,18 @@ def ST7 : X86Reg<"st(7)", 7>, DwarfRegNum<[40, 19, 18]>;
 // Floating-point status word
 def FPSW : X86Reg<"fpsw", 0>;
 
-// Status flags register
+// Status flags register.
+//
+// Note that some flags that are commonly thought of as part of the status
+// flags register are modeled separately. Typically this is due to instructions
+// reading and updating those flags independently of all the others. We don't
+// want to create false dependencies between these instructions and so we use
+// a separate register to model them.
 def EFLAGS : X86Reg<"flags", 0>;
+
+// The direction flag.
+def DF : X86Reg<"DF", 0>;
+
 
 // Segment registers
 def CS : X86Reg<"cs", 1>;
@@ -308,6 +318,9 @@ def BND1 : X86Reg<"bnd1",   1>;
 def BND2 : X86Reg<"bnd2",   2>;
 def BND3 : X86Reg<"bnd3",   3>;
 
+// CET registers - Shadow Stack Pointer
+def SSP : X86Reg<"ssp", 0>;
+
 //===----------------------------------------------------------------------===//
 // Register Class Definitions... now that we have all of the pieces, define the
 // top-level register classes.  The order specified in the register list is
@@ -357,7 +370,7 @@ def GR64 : RegisterClass<"X86", [i64], 64,
 def SEGMENT_REG : RegisterClass<"X86", [i16], 16, (add CS, DS, SS, ES, FS, GS)>;
 
 // Debug registers.
-def DEBUG_REG : RegisterClass<"X86", [i32], 32, (sequence "DR%u", 0, 7)>;
+def DEBUG_REG : RegisterClass<"X86", [i32], 32, (sequence "DR%u", 0, 15)>;
 
 // Control registers.
 def CONTROL_REG : RegisterClass<"X86", [i64], 64, (sequence "CR%u", 0, 15)>;
@@ -491,6 +504,10 @@ def CCR : RegisterClass<"X86", [i32], 32, (add EFLAGS)> {
   let isAllocatable = 0;
 }
 def FPCCR : RegisterClass<"X86", [i16], 16, (add FPSW)> {
+  let CopyCost = -1;  // Don't allow copying of status registers.
+  let isAllocatable = 0;
+}
+def DFCCR : RegisterClass<"X86", [i32], 32, (add DF)> {
   let CopyCost = -1;  // Don't allow copying of status registers.
   let isAllocatable = 0;
 }

@@ -23,7 +23,7 @@ namespace clang {
 /// template instantiation.
 class TemplateInstantiationCallback {
 public:
-  virtual ~TemplateInstantiationCallback() {}
+  virtual ~TemplateInstantiationCallback() = default;
 
   /// \brief Called before doing AST-parsing.
   virtual void initialize(const Sema &TheSema) = 0;

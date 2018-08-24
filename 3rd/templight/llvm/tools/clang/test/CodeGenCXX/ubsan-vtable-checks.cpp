@@ -1,7 +1,7 @@
 // RUN: %clang_cc1 -std=c++11 -triple x86_64-unknown-linux -emit-llvm -fsanitize=null %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-NULL --check-prefix=ITANIUM
 // RUN: %clang_cc1 -std=c++11 -triple x86_64-windows -emit-llvm -fsanitize=null %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-NULL --check-prefix=MSABI
-// RUN: %clang_cc1 -std=c++11 -triple x86_64-unknown-linux -emit-llvm -fsanitize=vptr %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-VPTR --check-prefix=ITANIUM
-// RUN: %clang_cc1 -std=c++11 -triple x86_64-windows -emit-llvm -fsanitize=vptr %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-VPTR --check-prefix=MSABI
+// RUN: %clang_cc1 -std=c++11 -triple x86_64-unknown-linux -emit-llvm -fsanitize=null,vptr %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-VPTR --check-prefix=ITANIUM
+// RUN: %clang_cc1 -std=c++11 -triple x86_64-windows -emit-llvm -fsanitize=null,vptr %s -o - | FileCheck %s --check-prefix=CHECK --check-prefix=CHECK-VPTR --check-prefix=MSABI
 struct T {
   virtual ~T() {}
   virtual int v() { return 1; }
@@ -37,4 +37,16 @@ void delete_it(T *t) {
   // Second, we check that vtable is actually loaded once the type check is done.
   // CHECK-VPTR: load {{.*}} (%struct.T*{{.*}})**, {{.*}} (%struct.T*{{.*}})***
   delete t;
+}
+
+// ITANIUM: define %struct.U* @_Z7dyncastP1T
+// MSABI: define %struct.U* @"\01?dyncast
+U* dyncast(T *t) {
+  // First, we check that dynamic_cast is not called before a type check.
+  // CHECK-VPTR-NOT: call i8* @__{{dynamic_cast|RTDynamicCast}}
+  // CHECK-VPTR: br i1 {{.*}} label %{{.*}}
+  // CHECK-VPTR: call void @__ubsan_handle_dynamic_type_cache_miss_abort
+  // Second, we check that dynamic_cast is actually called once the type check is done.
+  // CHECK-VPTR: call i8* @__{{dynamic_cast|RTDynamicCast}}
+  return dynamic_cast<U*>(t);
 }

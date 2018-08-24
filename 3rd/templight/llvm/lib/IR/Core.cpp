@@ -85,15 +85,15 @@ LLVMContextRef LLVMGetGlobalContext() { return wrap(&*GlobalContext); }
 void LLVMContextSetDiagnosticHandler(LLVMContextRef C,
                                      LLVMDiagnosticHandler Handler,
                                      void *DiagnosticContext) {
-  unwrap(C)->setDiagnosticHandler(
-      LLVM_EXTENSION reinterpret_cast<LLVMContext::DiagnosticHandlerTy>(
+  unwrap(C)->setDiagnosticHandlerCallBack(
+      LLVM_EXTENSION reinterpret_cast<DiagnosticHandler::DiagnosticHandlerTy>(
           Handler),
       DiagnosticContext);
 }
 
 LLVMDiagnosticHandler LLVMContextGetDiagnosticHandler(LLVMContextRef C) {
   return LLVM_EXTENSION reinterpret_cast<LLVMDiagnosticHandler>(
-      unwrap(C)->getDiagnosticHandler());
+      unwrap(C)->getDiagnosticHandlerCallBack());
 }
 
 void *LLVMContextGetDiagnosticContext(LLVMContextRef C) {
@@ -276,7 +276,8 @@ LLVMBool LLVMPrintModuleToFile(LLVMModuleRef M, const char *Filename,
   dest.close();
 
   if (dest.has_error()) {
-    *ErrorMessage = strdup("Error printing to file");
+    std::string E = "Error printing to file: " + dest.error().message();
+    *ErrorMessage = strdup(E.c_str());
     return true;
   }
 
@@ -358,11 +359,9 @@ LLVMContextRef LLVMGetTypeContext(LLVMTypeRef Ty) {
   return wrap(&unwrap(Ty)->getContext());
 }
 
-#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
-LLVM_DUMP_METHOD void LLVMDumpType(LLVMTypeRef Ty) {
-  return unwrap(Ty)->dump();
+void LLVMDumpType(LLVMTypeRef Ty) {
+  return unwrap(Ty)->print(errs(), /*IsForDebug=*/true);
 }
-#endif
 
 char *LLVMPrintTypeToString(LLVMTypeRef Ty) {
   std::string buf;
@@ -450,9 +449,6 @@ LLVMTypeRef LLVMPPCFP128TypeInContext(LLVMContextRef C) {
 }
 LLVMTypeRef LLVMX86MMXTypeInContext(LLVMContextRef C) {
   return (LLVMTypeRef) Type::getX86_MMXTy(*unwrap(C));
-}
-LLVMTypeRef LLVMTokenTypeInContext(LLVMContextRef C) {
-  return (LLVMTypeRef) Type::getTokenTy(*unwrap(C));
 }
 
 LLVMTypeRef LLVMHalfType(void) {
@@ -619,6 +615,12 @@ LLVMTypeRef LLVMVoidTypeInContext(LLVMContextRef C)  {
 LLVMTypeRef LLVMLabelTypeInContext(LLVMContextRef C) {
   return wrap(Type::getLabelTy(*unwrap(C)));
 }
+LLVMTypeRef LLVMTokenTypeInContext(LLVMContextRef C) {
+  return wrap(Type::getTokenTy(*unwrap(C)));
+}
+LLVMTypeRef LLVMMetadataTypeInContext(LLVMContextRef C) {
+  return wrap(Type::getMetadataTy(*unwrap(C)));
+}
 
 LLVMTypeRef LLVMVoidType(void)  {
   return LLVMVoidTypeInContext(LLVMGetGlobalContext());
@@ -654,7 +656,7 @@ void LLVMSetValueName(LLVMValueRef Val, const char *Name) {
   unwrap(Val)->setName(Name);
 }
 
-LLVM_DUMP_METHOD void LLVMDumpValue(LLVMValueRef Val) {
+void LLVMDumpValue(LLVMValueRef Val) {
   unwrap(Val)->print(errs(), /*IsForDebug=*/true);
 }
 

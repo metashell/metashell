@@ -26,7 +26,6 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/YAMLTraits.h"
-#include <iostream>
 #include <memory>
 #include <system_error>
 
@@ -100,9 +99,12 @@ DeclContextPrintAction::CreateASTConsumer(CompilerInstance &CI,
 std::unique_ptr<ASTConsumer>
 GeneratePCHAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   std::string Sysroot;
+  if (!ComputeASTConsumerArguments(CI, /*ref*/ Sysroot))
+    return nullptr;
+
   std::string OutputFile;
   std::unique_ptr<raw_pwrite_stream> OS =
-      ComputeASTConsumerArguments(CI, InFile, Sysroot, OutputFile);
+      CreateOutputFile(CI, InFile, /*ref*/ OutputFile);
   if (!OS)
     return nullptr;
 
@@ -123,17 +125,20 @@ GeneratePCHAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return llvm::make_unique<MultiplexConsumer>(std::move(Consumers));
 }
 
-std::unique_ptr<raw_pwrite_stream>
-GeneratePCHAction::ComputeASTConsumerArguments(CompilerInstance &CI,
-                                               StringRef InFile,
-                                               std::string &Sysroot,
-                                               std::string &OutputFile) {
+bool GeneratePCHAction::ComputeASTConsumerArguments(CompilerInstance &CI,
+                                                    std::string &Sysroot) {
   Sysroot = CI.getHeaderSearchOpts().Sysroot;
   if (CI.getFrontendOpts().RelocatablePCH && Sysroot.empty()) {
     CI.getDiagnostics().Report(diag::err_relocatable_without_isysroot);
-    return nullptr;
+    return false;
   }
 
+  return true;
+}
+
+std::unique_ptr<llvm::raw_pwrite_stream>
+GeneratePCHAction::CreateOutputFile(CompilerInstance &CI, StringRef InFile,
+                                    std::string &OutputFile) {
   // We use createOutputFile here because this is exposed via libclang, and we
   // must disable the RemoveFileOnSignal behavior.
   // We use a temporary to avoid race conditions.
@@ -205,8 +210,8 @@ GenerateModuleFromModuleMapAction::CreateOutputFile(CompilerInstance &CI,
 
     HeaderSearch &HS = CI.getPreprocessor().getHeaderSearchInfo();
     CI.getFrontendOpts().OutputFile =
-        HS.getModuleFileName(CI.getLangOpts().CurrentModule, ModuleMapFile,
-                             /*UsePrebuiltPath=*/false);
+        HS.getCachedModuleFileName(CI.getLangOpts().CurrentModule,
+                                   ModuleMapFile);
   }
 
   // We use createOutputFile here because this is exposed via libclang, and we
@@ -310,12 +315,12 @@ public:
 
   virtual void atTemplateBegin(const Sema &TheSema,
                                const CodeSynthesisContext &Inst) override {
-    DisplayTemplightEntry<true>(std::cout, TheSema, Inst);
+    displayTemplightEntry<true>(llvm::outs(), TheSema, Inst);
   }
 
   virtual void atTemplateEnd(const Sema &TheSema,
                              const CodeSynthesisContext &Inst) override {
-    DisplayTemplightEntry<false>(std::cout, TheSema, Inst);
+    displayTemplightEntry<false>(llvm::outs(), TheSema, Inst);
   }
 
 private:
@@ -348,14 +353,14 @@ private:
   }
 
   template <bool BeginInstantiation>
-  static void DisplayTemplightEntry(std::ostream &Out, const Sema &TheSema,
+  static void displayTemplightEntry(llvm::raw_ostream &Out, const Sema &TheSema,
                                     const CodeSynthesisContext &Inst) {
     std::string YAML;
     {
       llvm::raw_string_ostream OS(YAML);
       llvm::yaml::Output YO(OS);
       TemplightEntry Entry =
-          GetTemplightEntry<BeginInstantiation>(TheSema, Inst);
+          getTemplightEntry<BeginInstantiation>(TheSema, Inst);
       llvm::yaml::EmptyContext Context;
       llvm::yaml::yamlize(YO, Entry, true, Context);
     }
@@ -363,12 +368,12 @@ private:
   }
 
   template <bool BeginInstantiation>
-  static TemplightEntry GetTemplightEntry(const Sema &TheSema,
+  static TemplightEntry getTemplightEntry(const Sema &TheSema,
                                           const CodeSynthesisContext &Inst) {
     TemplightEntry Entry;
     Entry.Kind = toString(Inst.Kind);
     Entry.Event = BeginInstantiation ? "Begin" : "End";
-    if (NamedDecl *NamedTemplate = dyn_cast_or_null<NamedDecl>(Inst.Entity)) {
+    if (auto *NamedTemplate = dyn_cast_or_null<NamedDecl>(Inst.Entity)) {
       llvm::raw_string_ostream OS(Entry.Name);
       NamedTemplate->getNameForDiagnostic(OS, TheSema.getLangOpts(), true);
       const PresumedLoc DefLoc = 
@@ -745,7 +750,7 @@ void PrintPreambleAction::ExecuteAction() {
   auto Buffer = CI.getFileManager().getBufferForFile(getCurrentFile());
   if (Buffer) {
     unsigned Preamble =
-        Lexer::ComputePreamble((*Buffer)->getBuffer(), CI.getLangOpts()).first;
+        Lexer::ComputePreamble((*Buffer)->getBuffer(), CI.getLangOpts()).Size;
     llvm::outs().write((*Buffer)->getBufferStart(), Preamble);
   }
 }

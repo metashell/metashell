@@ -82,8 +82,8 @@ std::string metashell::get_type_from_ast_string(const std::string& ast)
   std::size_t start_index = ast.find_last_of('\n');
 
   boost::regex reg(
-      ".*':'struct metashell::impl::wrap<?(.*)>' "
-      "'void \\(void\\)"
+      ".*':'(?:struct )?metashell::impl::wrap<?(.*)>' "
+      "'void \\((?:void)?\\)"
       "(?: __attribute__\\(\\(thiscall\\)\\)|(?:))(?: noexcept|(?:))'.*");
 
   std::string line;
