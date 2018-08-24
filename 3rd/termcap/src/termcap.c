@@ -17,6 +17,8 @@ along with this program; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+#define FEDORA_28_WORKAROUND __attribute__ ((visibility ("hidden")))
+
 /* Emacs config.h may rename various library functions such as malloc.  */
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -290,7 +292,7 @@ tgetst1 (ptr, area)
 /* Outputting a string with padding.  */
 
 #ifndef emacs
-short ospeed;
+short ospeed FEDORA_28_WORKAROUND;
 /* If OSPEED is 0, we use this as the actual baud rate.  */
 int tputs_baud_rate;
 #endif
