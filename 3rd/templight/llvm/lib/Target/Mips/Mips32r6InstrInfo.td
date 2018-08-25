@@ -13,6 +13,24 @@
 
 include "Mips32r6InstrFormats.td"
 
+//===----------------------------------------------------------------------===//
+//
+// Mips profiles and nodes
+//
+//===----------------------------------------------------------------------===//
+
+def SDT_MipsFSelect : SDTypeProfile<1, 3, [SDTCisFP<1>,
+                                           SDTCisSameAs<0,2>,
+                                           SDTCisSameAs<2,3>]>;
+
+def MipsFSelect : SDNode<"MipsISD::FSELECT", SDT_MipsFSelect>;
+
+//===----------------------------------------------------------------------===//
+//
+// Mips Operands
+//
+//===----------------------------------------------------------------------===//
+
 // Notes about removals/changes from MIPS32r6:
 // Reencoded: jr -> jalr
 // Reencoded: jr.hb -> jalr.hb
@@ -578,11 +596,20 @@ class COP1_SEL_DESC_BASE<string instr_asm, RegisterOperand FGROpnd,
   InstrItinClass Itinerary = itin;
 }
 
-class SEL_D_DESC : COP1_SEL_DESC_BASE<"sel.d", FGR64Opnd, II_SEL_D>,
-                   MipsR6Arch<"sel.d"> {
-  // We must insert a SUBREG_TO_REG around $fd_in
-  bit usesCustomInserter = 1;
+class COP1_SEL_D_DESC_BASE<string instr_asm, RegisterOperand FGROpnd,
+                           InstrItinClass itin> {
+  dag OutOperandList = (outs FGROpnd:$fd);
+  dag InOperandList = (ins FGROpnd:$fd_in, FGROpnd:$fs, FGROpnd:$ft);
+  string AsmString = !strconcat(instr_asm, "\t$fd, $fs, $ft");
+  list<dag> Pattern = [(set FGROpnd:$fd, (MipsFSelect FGROpnd:$fd_in,
+                                                      FGROpnd:$ft,
+                                                      FGROpnd:$fs))];
+  string Constraints = "$fd_in = $fd";
+  InstrItinClass Itinerary = itin;
 }
+
+class SEL_D_DESC : COP1_SEL_D_DESC_BASE<"sel.d", FGR64Opnd, II_SEL_D>,
+                   MipsR6Arch<"sel.d">;
 class SEL_S_DESC : COP1_SEL_DESC_BASE<"sel.s", FGR32Opnd, II_SEL_S>,
                    MipsR6Arch<"sel.s">;
 
@@ -795,9 +822,7 @@ let AdditionalPredicates = [NotInMicroMips] in {
   def BC1NEZ : BC1NEZ_ENC, BC1NEZ_DESC, ISA_MIPS32R6, HARDFLOAT;
   def BC2EQZ : BC2EQZ_ENC, BC2EQZ_DESC, ISA_MIPS32R6;
   def BC2NEZ : BC2NEZ_ENC, BC2NEZ_DESC, ISA_MIPS32R6;
-}
-def BC : R6MMR6Rel, BC_ENC, BC_DESC, ISA_MIPS32R6;
-let AdditionalPredicates = [NotInMicroMips] in {
+  def BC : R6MMR6Rel, BC_ENC, BC_DESC, ISA_MIPS32R6;
   def BEQC : R6MMR6Rel, BEQC_ENC, BEQC_DESC, ISA_MIPS32R6;
   def BEQZALC : R6MMR6Rel, BEQZALC_ENC, BEQZALC_DESC, ISA_MIPS32R6;
   def BEQZC : R6MMR6Rel, BEQZC_ENC, BEQZC_DESC, ISA_MIPS32R6;
@@ -923,6 +948,9 @@ def : MipsInstAlias<"div $rs, $rt", (DIV GPR32Opnd:$rs, GPR32Opnd:$rs,
 def : MipsInstAlias<"divu $rs, $rt", (DIVU GPR32Opnd:$rs, GPR32Opnd:$rs,
                                            GPR32Opnd:$rt)>, ISA_MIPS32R6;
 
+def : MipsInstAlias<"lapc $rd, $imm",
+                    (ADDIUPC GPR32Opnd:$rd, simm19_lsl2:$imm)>, ISA_MIPS32R6;
+
 //===----------------------------------------------------------------------===//
 //
 // Patterns and Pseudo Instructions
@@ -1008,3 +1036,42 @@ def : MipsPat<(select i32:$cond, immz, i32:$f),
               (SELEQZ i32:$f, i32:$cond)>,
               ISA_MIPS32R6;
 }
+
+// Pseudo instructions
+let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1, hasDelaySlot = 1,
+    hasExtraSrcRegAllocReq = 1, isCTI = 1, Defs = [AT] in {
+  class TailCallRegR6<Instruction JumpInst, Register RT, RegisterOperand RO> :
+    PseudoSE<(outs), (ins RO:$rs), [(MipsTailCall RO:$rs)], II_JR>,
+    PseudoInstExpansion<(JumpInst RT:$rt, RO:$rs)>;
+}
+
+class PseudoIndirectBranchBaseR6<Instruction JumpInst, Register RT,
+                                 RegisterOperand RO> :
+    MipsPseudo<(outs), (ins RO:$rs), [(brind RO:$rs)],
+               II_IndirectBranchPseudo>,
+    PseudoInstExpansion<(JumpInst RT:$rt, RO:$rs)> {
+  let isTerminator=1;
+  let isBarrier=1;
+  let hasDelaySlot = 1;
+  let isBranch = 1;
+  let isIndirectBranch = 1;
+  bit isCTI = 1;
+}
+
+
+let AdditionalPredicates = [NotInMips16Mode, NotInMicroMips,
+                            NoIndirectJumpGuards] in {
+  def TAILCALLR6REG : TailCallRegR6<JALR, ZERO, GPR32Opnd>, ISA_MIPS32R6;
+  def PseudoIndirectBranchR6 : PseudoIndirectBranchBaseR6<JALR, ZERO,
+                                                          GPR32Opnd>,
+                               ISA_MIPS32R6;
+}
+
+let AdditionalPredicates = [NotInMips16Mode, NotInMicroMips,
+                            UseIndirectJumpsHazard] in {
+  def TAILCALLHBR6REG : TailCallReg<JR_HB_R6, GPR32Opnd>, ISA_MIPS32R6;
+  def PseudoIndrectHazardBranchR6 : PseudoIndirectBranchBase<JR_HB_R6,
+                                                             GPR32Opnd>,
+                                    ISA_MIPS32R6;
+}
+

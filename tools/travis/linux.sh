@@ -31,7 +31,7 @@ mkdocs build
 
 cd 3rd/templight
   ARCHIVE_NAME=templight_ubuntu${UBUNTU_VERSION}_x86_64.tar.bz2
-  wget https://github.com/metashell/templight_binary/releases/download/templight_d2be28/${ARCHIVE_NAME}
+  wget https://github.com/metashell/templight_binary/releases/download/templight_9732a7/${ARCHIVE_NAME}
   tar -xvjf ${ARCHIVE_NAME}
 cd ../..
 
