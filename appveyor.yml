@@ -9,7 +9,7 @@ configuration:
 
 install:
   - cd 3rd\templight
-  - appveyor DownloadFile https://github.com/metashell/templight_binary/releases/download/templight_d2be28/templight_windows.zip
+  - appveyor DownloadFile https://github.com/metashell/templight_binary/releases/download/templight_9732a7/templight_windows.zip
   - 7z -y x templight_windows.zip
   - appveyor-retry choco install nsis -version 2.50.0.20160103
   - cd ..\..
