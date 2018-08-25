@@ -37,7 +37,7 @@ namespace boost { namespace spirit { namespace x3
           : from(from_), to(to_) {}
 
         template <typename Char, typename Context>
-        bool test(Char ch_, Context& context) const
+        bool test(Char ch_, Context const& context) const
         {
 
             char_type ch = char_type(ch_);  // optimize for token based parsing

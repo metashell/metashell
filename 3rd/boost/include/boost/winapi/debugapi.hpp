@@ -19,14 +19,14 @@
 extern "C" {
 
 #if (BOOST_USE_WINAPI_VERSION >= BOOST_WINAPI_VERSION_NT4)
-BOOST_SYMBOL_IMPORT boost::winapi::BOOL_ WINAPI
+BOOST_SYMBOL_IMPORT boost::winapi::BOOL_ BOOST_WINAPI_WINAPI_CC
 IsDebuggerPresent(BOOST_WINAPI_DETAIL_VOID);
 #endif
 
-BOOST_SYMBOL_IMPORT boost::winapi::VOID_ WINAPI
+BOOST_SYMBOL_IMPORT boost::winapi::VOID_ BOOST_WINAPI_WINAPI_CC
 OutputDebugStringA(boost::winapi::LPCSTR_);
 
-BOOST_SYMBOL_IMPORT boost::winapi::VOID_ WINAPI
+BOOST_SYMBOL_IMPORT boost::winapi::VOID_ BOOST_WINAPI_WINAPI_CC
 OutputDebugStringW(boost::winapi::LPCWSTR_);
 
 } // extern "C"

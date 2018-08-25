@@ -74,7 +74,7 @@ struct is_boost_tuple< boost::tuples::tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, 
 
 template<class Tuple>
 struct disable_if_boost_tuple
-   : boost::container::container_detail::disable_if< is_boost_tuple<Tuple> >
+   : boost::container::dtl::disable_if< is_boost_tuple<Tuple> >
 {};
 
 template<class T>
@@ -133,7 +133,7 @@ static piecewise_construct_t piecewise_construct = BOOST_CONTAINER_DOC1ST(unspec
 
 ///@cond
 
-namespace container_detail {
+namespace dtl {
 
 struct piecewise_construct_use
 {
@@ -283,7 +283,7 @@ struct pair
    pair( piecewise_construct_t\
        , BoostTuple<BOOST_MOVE_TARG##N  BOOST_MOVE_I##N BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,N),::boost::tuples::null_type)> p\
        , BoostTuple<BOOST_MOVE_TARGQ##M BOOST_MOVE_I##M BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,M),::boost::tuples::null_type)> q\
-       , typename container_detail::enable_if_c\
+       , typename dtl::enable_if_c\
          < pair_impl::is_boost_tuple< BoostTuple<BOOST_MOVE_TARG##N  BOOST_MOVE_I##N BOOST_MOVE_REPEAT(BOOST_MOVE_SUB(10,N),::boost::tuples::null_type)> >::value &&\
            !(pair_impl::is_tuple_null<BOOST_MOVE_LAST_TARG##N>::value || pair_impl::is_tuple_null<BOOST_MOVE_LAST_TARGQ##M>::value) \
          >::type* = 0\
@@ -381,10 +381,10 @@ struct pair
    }
 
    template <class D, class S>
-   typename ::boost::container::container_detail::disable_if_or
+   typename ::boost::container::dtl::disable_if_or
       < pair &
-      , ::boost::container::container_detail::is_same<T1, D>
-      , ::boost::container::container_detail::is_same<T2, S>
+      , ::boost::container::dtl::is_same<T1, D>
+      , ::boost::container::dtl::is_same<T2, S>
       >::type
       operator=(const pair<D, S>&p)
    {
@@ -394,10 +394,10 @@ struct pair
    }
 
    template <class D, class S>
-   typename ::boost::container::container_detail::disable_if_or
+   typename ::boost::container::dtl::disable_if_or
       < pair &
-      , ::boost::container::container_detail::is_same<T1, D>
-      , ::boost::container::container_detail::is_same<T2, S>
+      , ::boost::container::dtl::is_same<T1, D>
+      , ::boost::container::dtl::is_same<T2, S>
       >::type
       operator=(BOOST_RV_REF_BEG pair<D, S> BOOST_RV_REF_END p)
    {
@@ -478,13 +478,13 @@ template <class T1, class T2>
 inline void swap(pair<T1, T2>& x, pair<T1, T2>& y)
 {  x.swap(y);  }
 
-}  //namespace container_detail {
+}  //namespace dtl {
 }  //namespace container {
 
 #ifdef BOOST_NO_CXX11_RVALUE_REFERENCES
 
 template<class T1, class T2>
-struct has_move_emulation_enabled< ::boost::container::container_detail::pair<T1, T2> >
+struct has_move_emulation_enabled< ::boost::container::dtl::pair<T1, T2> >
 {
    static const bool value = true;
 };
@@ -497,7 +497,7 @@ template<class T>
 struct is_class_or_union;
 
 template <class T1, class T2>
-struct is_class_or_union< ::boost::container::container_detail::pair<T1, T2> >
+struct is_class_or_union< ::boost::container::dtl::pair<T1, T2> >
 //This specialization is needed to avoid instantiation of pair in
 //is_class, and allow recursive maps.
 {
@@ -516,7 +516,7 @@ template<class T>
 struct is_union;
 
 template <class T1, class T2>
-struct is_union< ::boost::container::container_detail::pair<T1, T2> >
+struct is_union< ::boost::container::dtl::pair<T1, T2> >
 //This specialization is needed to avoid instantiation of pair in
 //is_class, and allow recursive maps.
 {
@@ -535,7 +535,7 @@ template<class T>
 struct is_class;
 
 template <class T1, class T2>
-struct is_class< ::boost::container::container_detail::pair<T1, T2> >
+struct is_class< ::boost::container::dtl::pair<T1, T2> >
 //This specialization is needed to avoid instantiation of pair in
 //is_class, and allow recursive maps.
 {
@@ -549,6 +549,61 @@ struct is_class< std::pair<T1, T2> >
 {
    static const bool value = true;
 };
+
+
+//Triviality of pair
+template<class T>
+struct is_trivially_copy_constructible;
+
+template<class A, class B>
+struct is_trivially_copy_assignable
+   <boost::container::dtl::pair<A,B> >
+{
+   static const bool value = boost::move_detail::is_trivially_copy_assignable<A>::value &&
+                             boost::move_detail::is_trivially_copy_assignable<B>::value ;
+};
+
+template<class T>
+struct is_trivially_move_constructible;
+
+template<class A, class B>
+struct is_trivially_move_assignable
+   <boost::container::dtl::pair<A,B> >
+{
+   static const bool value = boost::move_detail::is_trivially_move_assignable<A>::value &&
+                             boost::move_detail::is_trivially_move_assignable<B>::value ;
+};
+
+template<class T>
+struct is_trivially_copy_assignable;
+
+template<class A, class B>
+struct is_trivially_copy_constructible<boost::container::dtl::pair<A,B> >
+{
+   static const bool value = boost::move_detail::is_trivially_copy_constructible<A>::value &&
+                             boost::move_detail::is_trivially_copy_constructible<B>::value ;
+};
+
+template<class T>
+struct is_trivially_move_assignable;
+
+template<class A, class B>
+struct is_trivially_move_constructible<boost::container::dtl::pair<A,B> >
+{
+   static const bool value = boost::move_detail::is_trivially_move_constructible<A>::value &&
+                             boost::move_detail::is_trivially_move_constructible<B>::value ;
+};
+
+template<class T>
+struct is_trivially_destructible;
+
+template<class A, class B>
+struct is_trivially_destructible<boost::container::dtl::pair<A,B> >
+{
+   static const bool value = boost::move_detail::is_trivially_destructible<A>::value &&
+                             boost::move_detail::is_trivially_destructible<B>::value ;
+};
+
 
 }  //namespace move_detail{
 

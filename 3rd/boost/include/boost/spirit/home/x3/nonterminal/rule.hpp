@@ -151,6 +151,21 @@ namespace boost { namespace spirit { namespace x3
     BOOST_SPIRIT_DECLARE_, _, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))            \
     /***/
 
+#if BOOST_WORKAROUND(BOOST_MSVC, < 1910)
+#define BOOST_SPIRIT_DEFINE_(r, data, rule_name)                                \
+    using BOOST_PP_CAT(rule_name, _synonym) = decltype(rule_name);              \
+    template <typename Iterator, typename Context, typename Attribute>          \
+    inline bool parse_rule(                                                     \
+        BOOST_PP_CAT(rule_name, _synonym) /* rule_ */                           \
+      , Iterator& first, Iterator const& last                                   \
+      , Context const& context, Attribute& attr)                                \
+    {                                                                           \
+        using boost::spirit::x3::unused;                                        \
+        static auto const def_ = (rule_name = BOOST_PP_CAT(rule_name, _def));   \
+        return def_.parse(first, last, context, unused, attr);                  \
+    }                                                                           \
+    /***/
+#else
 #define BOOST_SPIRIT_DEFINE_(r, data, rule_name)                                \
     template <typename Iterator, typename Context, typename Attribute>          \
     inline bool parse_rule(                                                     \
@@ -163,6 +178,7 @@ namespace boost { namespace spirit { namespace x3
         return def_.parse(first, last, context, unused, attr);                  \
     }                                                                           \
     /***/
+#endif
 
 #define BOOST_SPIRIT_DEFINE(...) BOOST_PP_SEQ_FOR_EACH(                         \
     BOOST_SPIRIT_DEFINE_, _, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))             \

@@ -70,7 +70,7 @@ struct grammar_definition
         {   // Does _not_ copy the helpers member !
         }
 
-        grammar_helper_list& operator=(grammar_helper_list const& x)
+        grammar_helper_list& operator=(grammar_helper_list const& /*x*/)
         {   // Does _not_ copy the helpers member !
             return *this;
         }

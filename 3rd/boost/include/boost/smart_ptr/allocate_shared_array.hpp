@@ -353,9 +353,9 @@ public:
     typedef A type;
 
     template<class U>
-    sp_array_state(const U& allocator, std::size_t size) BOOST_SP_NOEXCEPT
-        : allocator_(allocator),
-          size_(size) { }
+    sp_array_state(const U& _allocator, std::size_t _size) BOOST_SP_NOEXCEPT
+        : allocator_(_allocator),
+          size_(_size) { }
 
     A& allocator() BOOST_SP_NOEXCEPT {
         return allocator_;
@@ -376,8 +376,8 @@ public:
     typedef A type;
 
     template<class U>
-    sp_size_array_state(const U& allocator, std::size_t) BOOST_SP_NOEXCEPT
-        : allocator_(allocator) { }
+    sp_size_array_state(const U& _allocator, std::size_t) BOOST_SP_NOEXCEPT
+        : allocator_(_allocator) { }
 
     A& allocator() BOOST_SP_NOEXCEPT {
         return allocator_;

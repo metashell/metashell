@@ -304,7 +304,7 @@ namespace boost { namespace spirit { namespace karma { namespace detail
     struct no_buffering_policy
     {
         no_buffering_policy() {}
-        no_buffering_policy(no_counting_policy const&) {}
+        no_buffering_policy(no_buffering_policy const&) {}
 
         template <typename T>
         bool output(T const& /*value*/) 

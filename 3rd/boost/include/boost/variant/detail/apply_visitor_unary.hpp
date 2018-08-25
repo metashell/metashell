@@ -155,9 +155,9 @@ struct result_wrapper1
 {
     typedef decltype(result_multideduce1<Visitor, Variant>::deduce()) result_type;
 
-    Visitor& visitor_;
-    explicit result_wrapper1(Visitor& visitor) BOOST_NOEXCEPT
-        : visitor_(visitor)
+    Visitor&& visitor_;
+    explicit result_wrapper1(Visitor&& visitor) BOOST_NOEXCEPT
+        : visitor_(::boost::forward<Visitor>(visitor))
     {}
 
     template <class T>
@@ -169,25 +169,14 @@ struct result_wrapper1
 }} // namespace detail::variant
 
 template <typename Visitor, typename Visitable>
-inline decltype(auto) apply_visitor(Visitor& visitor, Visitable&& visitable,
+inline decltype(auto) apply_visitor(Visitor&& visitor, Visitable&& visitable,
     typename boost::disable_if<
         boost::detail::variant::has_result_type<Visitor>
     >::type* = 0)
 {
-    boost::detail::variant::result_wrapper1<Visitor, typename remove_reference<Visitable>::type> cpp14_vis(visitor);
+    boost::detail::variant::result_wrapper1<Visitor, typename remove_reference<Visitable>::type> cpp14_vis(::boost::forward<Visitor>(visitor));
     return ::boost::forward<Visitable>(visitable).apply_visitor(cpp14_vis);
 }
-
-template <typename Visitor, typename Visitable>
-inline decltype(auto) apply_visitor(const Visitor& visitor, Visitable&& visitable,
-    typename boost::disable_if<
-        boost::detail::variant::has_result_type<Visitor>
-    >::type* = 0)
-{
-    boost::detail::variant::result_wrapper1<const Visitor, typename remove_reference<Visitable>::type> cpp14_vis(visitor);
-    return ::boost::forward<Visitable>(visitable).apply_visitor(cpp14_vis);
-}
-
 
 #endif // !defined(BOOST_NO_CXX14_DECLTYPE_AUTO) && !defined(BOOST_NO_CXX11_DECLTYPE_N3276)
 

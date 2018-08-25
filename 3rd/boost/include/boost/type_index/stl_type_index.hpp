@@ -1,5 +1,5 @@
 //
-// Copyright (c) Antony Polukhin, 2013-2017.
+// Copyright (c) Antony Polukhin, 2013-2018.
 //
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -32,25 +32,20 @@
 #include <boost/static_assert.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/core/demangle.hpp>
+#include <boost/type_traits/conditional.hpp>
 #include <boost/type_traits/is_const.hpp>
 #include <boost/type_traits/is_reference.hpp>
 #include <boost/type_traits/is_volatile.hpp>
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/remove_reference.hpp>
-#include <boost/mpl/if.hpp>
-#include <boost/mpl/or.hpp>
 
-#if !((defined(_MSC_VER) && _MSC_VER > 1600) \
-    || (defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ > 5 && defined(__GXX_EXPERIMENTAL_CXX0X__)) \
-    || (defined(__GNUC__) && __GNUC__ > 4 && __cplusplus >= 201103 ))
-#   include <boost/functional/hash.hpp>
-#endif
+#include <boost/container_hash/hash.hpp>
 
 #if (defined(__EDG_VERSION__) && __EDG_VERSION__ < 245) \
         || (defined(__sgi) && defined(_COMPILER_VERSION) && _COMPILER_VERSION <= 744)
 #   include <boost/type_traits/is_signed.hpp>
 #   include <boost/type_traits/make_signed.hpp>
-#   include <boost/mpl/identity.hpp>
+#   include <boost/type_traits/type_identity.hpp>
 #endif
 
 #ifdef BOOST_HAS_PRAGMA_ONCE
@@ -236,10 +231,10 @@ inline stl_type_index stl_type_index::type_id() BOOST_NOEXCEPT {
 
         // Old EDG-based compilers seem to mistakenly distinguish 'integral' from 'signed integral'
         // in typeid() expressions. Full template specialization for 'integral' fixes that issue:
-        typedef BOOST_DEDUCED_TYPENAME boost::mpl::if_<
-            boost::is_signed<no_cvr_prefinal_t>,
+        typedef BOOST_DEDUCED_TYPENAME boost::conditional<
+            boost::is_signed<no_cvr_prefinal_t>::value,
             boost::make_signed<no_cvr_prefinal_t>,
-            boost::mpl::identity<no_cvr_prefinal_t>
+            boost::type_identity<no_cvr_prefinal_t>
         >::type no_cvr_prefinal_lazy_t;
 
         typedef BOOST_DEDUCED_TYPENAME no_cvr_prefinal_t::type no_cvr_t;
@@ -256,8 +251,8 @@ namespace detail {
 
 template <class T>
 inline stl_type_index stl_type_index::type_id_with_cvr() BOOST_NOEXCEPT {
-    typedef BOOST_DEDUCED_TYPENAME boost::mpl::if_<
-        boost::mpl::or_<boost::is_reference<T>, boost::is_const<T>, boost::is_volatile<T> >,
+    typedef BOOST_DEDUCED_TYPENAME boost::conditional<
+        boost::is_reference<T>::value ||  boost::is_const<T>::value || boost::is_volatile<T>::value,
         detail::cvr_saver<T>,
         T
     >::type type;

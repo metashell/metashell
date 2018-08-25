@@ -70,7 +70,7 @@ namespace boost { namespace spirit { namespace x3
 
         template <typename Iterator, typename Context>
         bool parse_main(Iterator& first, Iterator const& last
-          , Context& context, T& attr) const
+          , Context const& context, T& attr) const
         {
             x3::skip_over(first, last, context);
             return (n_ && policies.parse_true(first, last, attr, get_case_compare<encoding>(context)))
@@ -79,7 +79,7 @@ namespace boost { namespace spirit { namespace x3
 
         template <typename Iterator, typename Context>
         bool parse(Iterator& first, Iterator const& last
-          , Context& context, unused_type, T& attr) const
+          , Context const& context, unused_type, T& attr) const
         {
             return parse_main(first, last, context, attr);
         }

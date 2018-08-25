@@ -81,12 +81,13 @@ namespace boost { namespace spirit { namespace traits
                 detail::compensate_roundoff(n, acc_n);
                 n /= pow10<T>(-min_exp);
 
-                // return false if (-exp + min_exp) exceeds the -min_exp
+                // return false if exp still exceeds the min_exp
                 // do this check only for primitive types!
-                if (is_floating_point<T>() && (-exp + min_exp) > -min_exp)
+                exp += -min_exp;
+                if (is_floating_point<T>() && exp < min_exp)
                     return false;
 
-                n /= pow10<T>(-exp + min_exp);
+                n /= pow10<T>(-exp);
             }
             else
             {
@@ -233,6 +234,7 @@ namespace boost { namespace spirit { namespace qi  { namespace detail
                 // to zero (0) only if we already got a number.
                 if (p.parse_frac_n(first, last, acc_n, frac_digits))
                 {
+                    BOOST_ASSERT(frac_digits >= 0);
                 }
                 else if (!got_a_number || !p.allow_trailing_dot)
                 {
@@ -285,13 +287,15 @@ namespace boost { namespace spirit { namespace qi  { namespace detail
                     // by resetting 'first' prior to the exponent prefix (e|E)
                     first = e_pos;
                     // Scale the number by -frac_digits.
-                    traits::scale(-frac_digits, n, acc_n);
+                    bool r = traits::scale(-frac_digits, n, acc_n);
+                    BOOST_VERIFY(r);
                 }
             }
             else if (frac_digits)
             {
                 // No exponent found. Scale the number by -frac_digits.
-                traits::scale(-frac_digits, n, acc_n);
+                bool r = traits::scale(-frac_digits, n, acc_n);
+                BOOST_VERIFY(r);
             }
             else if (traits::is_equal_to_one(acc_n))
             {

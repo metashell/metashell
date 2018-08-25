@@ -35,39 +35,22 @@
 //--------------------------------------------------------------------------------------//
 namespace boost
 {
-    namespace system
-    {
 
-namespace
+namespace system
 {
 
-  //  standard error categories  -------------------------------------------------------//
+namespace detail
+{
 
-  class generic_error_category : public error_category
-  {
-  public:
-    generic_error_category(){}
-    const char *   name() const BOOST_SYSTEM_NOEXCEPT;
-    std::string    message( int ev ) const;
-  };
-
-  class system_error_category : public error_category
-  {
-  public:
-    system_error_category(){}
-    const char *        name() const BOOST_SYSTEM_NOEXCEPT;
-    std::string         message( int ev ) const;
-    error_condition     default_error_condition( int ev ) const BOOST_SYSTEM_NOEXCEPT;
-  };
+#ifdef BOOST_ERROR_CODE_HEADER_ONLY
+# define BOOST_SYSTEM_DECL_ inline
+#else
+# define BOOST_SYSTEM_DECL_ BOOST_SYSTEM_DECL
+#endif
 
   //  generic_error_category implementation  ---------------------------------//
 
-  const char * generic_error_category::name() const BOOST_SYSTEM_NOEXCEPT
-  {
-    return "generic";
-  }
-
-  std::string generic_error_category::message( int ev ) const
+  BOOST_SYSTEM_DECL_ std::string generic_error_category::message( int ev ) const
   {
     using namespace boost::system::errc;
 #if defined(__PGI)
@@ -160,12 +143,7 @@ namespace
   }
   //  system_error_category implementation  --------------------------------------------//
 
-  const char * system_error_category::name() const BOOST_SYSTEM_NOEXCEPT
-  {
-    return "system";
-  }
-
-  error_condition system_error_category::default_error_condition( int ev ) const
+  BOOST_SYSTEM_DECL_ error_condition system_error_category::default_error_condition( int ev ) const
     BOOST_SYSTEM_NOEXCEPT
   {
     using namespace boost::system::errc;
@@ -370,13 +348,13 @@ namespace
 
 # if !defined( BOOST_WINDOWS_API )
 
-  std::string system_error_category::message( int ev ) const
+  BOOST_SYSTEM_DECL_ std::string system_error_category::message( int ev ) const
   {
     return generic_category().message( ev );
   }
 # else
 
-  std::string system_error_category::message( int ev ) const
+  BOOST_SYSTEM_DECL_ std::string system_error_category::message( int ev ) const
   {
 #if defined(UNDER_CE) || BOOST_PLAT_WINDOWS_RUNTIME || defined(BOOST_NO_ANSI_APIS)
     std::wstring buf(128, wchar_t());
@@ -410,7 +388,7 @@ namespace
         }
     }
     
-    int num_chars = (buf.size() + 1) * 2;
+    int num_chars = static_cast<int>(buf.size() + 1) * 2;
 
     boost::winapi::LPSTR_ narrow_buffer =
 #if defined(__GNUC__)
@@ -455,7 +433,9 @@ namespace
   }
 # endif
 
-} // unnamed namespace
+#undef BOOST_SYSTEM_DECL_
+
+} // namespace detail
 
 
 # ifdef BOOST_SYSTEM_ENABLE_DEPRECATED
@@ -466,23 +446,51 @@ namespace
                                          //  address for comparison purposes
 # endif
 
-# ifdef BOOST_ERROR_CODE_HEADER_ONLY
-#   define BOOST_SYSTEM_LINKAGE inline
-# else
-#   define BOOST_SYSTEM_LINKAGE BOOST_SYSTEM_DECL
-# endif
+#if defined(BOOST_ERROR_CODE_HEADER_ONLY)
 
-    BOOST_SYSTEM_LINKAGE const error_category & system_category() BOOST_SYSTEM_NOEXCEPT
-    {
-      static const system_error_category  system_category_const;
-      return system_category_const;
-    }
+// defined in error_code.hpp
 
-    BOOST_SYSTEM_LINKAGE const error_category & generic_category() BOOST_SYSTEM_NOEXCEPT
-    {
-      static const generic_error_category generic_category_const;
-      return generic_category_const;
-    }
+#elif defined(BOOST_SYSTEM_HAS_CONSTEXPR)
 
-  } // namespace system
+namespace detail
+{
+
+BOOST_SYSTEM_REQUIRE_CONST_INIT BOOST_SYSTEM_DECL system_error_category system_category_instance;
+BOOST_SYSTEM_REQUIRE_CONST_INIT BOOST_SYSTEM_DECL generic_error_category generic_category_instance;
+
+BOOST_SYSTEM_DECL const error_category & system_category_ncx() BOOST_SYSTEM_NOEXCEPT
+{
+    return system_category_instance;
+}
+
+BOOST_SYSTEM_DECL const error_category & generic_category_ncx() BOOST_SYSTEM_NOEXCEPT
+{
+    return generic_category_instance;
+}
+
+} // namespace detail
+
+#else
+
+namespace detail
+{
+
+BOOST_SYSTEM_DECL const error_category & system_category_ncx() BOOST_SYSTEM_NOEXCEPT
+{
+    static const detail::system_error_category system_category_instance;
+    return system_category_instance;
+}
+
+BOOST_SYSTEM_DECL const error_category & generic_category_ncx() BOOST_SYSTEM_NOEXCEPT
+{
+    static const detail::generic_error_category generic_category_instance;
+    return generic_category_instance;
+}
+
+} // namespace detail
+
+#endif
+
+} // namespace system
+
 } // namespace boost

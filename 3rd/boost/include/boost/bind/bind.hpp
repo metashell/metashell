@@ -2126,7 +2126,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 
 #include <boost/bind/bind_cc.hpp>
 
-# ifdef __cpp_noexcept_function_type
+# if defined( __cpp_noexcept_function_type ) || defined( _NOEXCEPT_TYPES_SUPPORTED )
 #   undef BOOST_BIND_NOEXCEPT
 #   define BOOST_BIND_NOEXCEPT noexcept
 #   include <boost/bind/bind_cc.hpp>
@@ -2187,7 +2187,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 #include <boost/bind/bind_mf_cc.hpp>
 #include <boost/bind/bind_mf2_cc.hpp>
 
-# ifdef __cpp_noexcept_function_type
+# if defined( __cpp_noexcept_function_type ) || defined( _NOEXCEPT_TYPES_SUPPORTED )
 #   undef BOOST_BIND_MF_NOEXCEPT
 #   define BOOST_BIND_MF_NOEXCEPT noexcept
 #   include <boost/bind/bind_mf_cc.hpp>
@@ -2292,7 +2292,7 @@ template< class R, class T > struct add_cref< R (T::*) () const, 1 >
     typedef void type;
 };
 
-#ifdef __cpp_noexcept_function_type
+#if defined( __cpp_noexcept_function_type ) || defined( _NOEXCEPT_TYPES_SUPPORTED )
 
 template< class R, class T > struct add_cref< R (T::*) () const noexcept, 1 >
 {

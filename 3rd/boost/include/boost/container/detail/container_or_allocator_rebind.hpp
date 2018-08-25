@@ -24,7 +24,7 @@
 
 namespace boost {
 namespace container {
-namespace container_detail {
+namespace dtl {
 
 template<class AllocatorOrContainer, class ToType, bool = is_container<AllocatorOrContainer>::value>
 struct container_or_allocator_rebind_impl
@@ -42,7 +42,7 @@ struct container_or_allocator_rebind
    : container_or_allocator_rebind_impl<AllocatorOrContainer, ToType>
 {};
 
-}  //namespace container_detail {
+}  //namespace dtl {
 }  //namespace container {
 }  //namespace boost {
 

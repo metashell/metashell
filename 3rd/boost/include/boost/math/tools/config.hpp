@@ -31,7 +31,7 @@
 #if (defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__NetBSD__) \
    || (defined(__hppa) && !defined(__OpenBSD__)) || (defined(__NO_LONG_DOUBLE_MATH) && (DBL_MANT_DIG != LDBL_MANT_DIG))) \
    && !defined(BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS)
-//#  define BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
+#  define BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
 #endif
 #if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
 //
@@ -209,7 +209,7 @@
 // constexpr support, early GCC implementations can't cope so disable
 // constexpr for them:
 //
-#if !defined(__clang) && defined(__GNUC__)
+#if !defined(__clang__) && defined(__GNUC__)
 #if (__GNUC__ * 100 + __GNUC_MINOR__) < 490
 #  define BOOST_MATH_DISABLE_CONSTEXPR
 #endif
@@ -450,6 +450,17 @@ namespace boost{ namespace math{
 #else
 #  define BOOST_MATH_THREAD_LOCAL
 #endif
+
+//
+// Can we have constexpr tables?
+//
+#if (!defined(BOOST_NO_CXX11_HDR_ARRAY) && !defined(BOOST_NO_CXX14_CONSTEXPR)) || BOOST_WORKAROUND(BOOST_MSVC, >= 1910)
+#define BOOST_MATH_HAVE_CONSTEXPR_TABLES
+#define BOOST_MATH_CONSTEXPR_TABLE_FUNCTION constexpr
+#else
+#define BOOST_MATH_CONSTEXPR_TABLE_FUNCTION
+#endif
+
 
 #endif // BOOST_MATH_TOOLS_CONFIG_HPP
 

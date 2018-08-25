@@ -24,6 +24,7 @@
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/type_traits/is_reference.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/throw_exception.hpp>
 #include <boost/type_traits/detail/yes_no_type.hpp>
 #include <boost/type_traits/decay.hpp>
 #include <boost/type_traits/is_array.hpp>
@@ -176,7 +177,7 @@ namespace assign_detail
 #endif            
             const std::size_t sz = ar.size();
             if( sz < static_cast<const DerivedTAssign*>(this)->size() )
-                throw assign::assignment_exception( "array initialized with too many elements" );
+                BOOST_THROW_EXCEPTION( assign::assignment_exception( "array initialized with too many elements" ) );
             std::size_t n = 0; 
             iterator i   = begin(), 
                      e   = end();

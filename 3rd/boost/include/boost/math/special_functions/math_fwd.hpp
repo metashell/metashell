@@ -1057,7 +1057,7 @@ namespace boost
    typename tools::promote_args<T, U>::type epsilon_difference(const T&, const U&);
 
    template<class T>
-   T unchecked_bernoulli_b2n(const std::size_t n);
+   BOOST_MATH_CONSTEXPR_TABLE_FUNCTION T unchecked_bernoulli_b2n(const std::size_t n);
    template <class T, class Policy>
    T bernoulli_b2n(const int i, const Policy &pol);
    template <class T>

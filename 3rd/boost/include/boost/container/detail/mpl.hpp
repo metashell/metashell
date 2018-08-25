@@ -30,7 +30,7 @@
 
 namespace boost {
 namespace container {
-namespace container_detail {
+namespace dtl {
 
 using boost::move_detail::integral_constant;
 using boost::move_detail::true_type;
@@ -76,7 +76,25 @@ struct select1st
    {  return const_cast<type&>(x.first);   }
 };
 
-}  //namespace container_detail {
+template <class T, class=void>
+struct is_transparent
+{
+   static const bool value = false;
+};
+
+template <class T>
+struct is_transparent<T, typename T::is_transparent>
+{
+   static const bool value = true;
+};
+
+template <typename C, typename K, typename R>
+struct enable_if_transparent
+   : boost::move_detail::enable_if_c<dtl::is_transparent<C>::value, R>
+{};
+
+
+}  //namespace dtl {
 }  //namespace container {
 }  //namespace boost {
 

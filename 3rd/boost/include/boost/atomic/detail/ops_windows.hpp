@@ -44,6 +44,7 @@ namespace detail {
 
 struct windows_operations_base
 {
+    static BOOST_CONSTEXPR_OR_CONST bool full_cas_based = false;
     static BOOST_CONSTEXPR_OR_CONST bool is_always_lock_free = true;
 
     static BOOST_FORCEINLINE void hardware_full_fence() BOOST_NOEXCEPT
@@ -63,11 +64,15 @@ struct windows_operations_base
     }
 };
 
-template< typename T, typename Derived >
+template< std::size_t Size, bool Signed, typename Derived >
 struct windows_operations :
     public windows_operations_base
 {
-    typedef T storage_type;
+    typedef typename make_storage_type< Size >::type storage_type;
+    typedef typename make_storage_type< Size >::aligned aligned_storage_type;
+
+    static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = Size;
+    static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
 
     static BOOST_FORCEINLINE void store(storage_type volatile& storage, storage_type v, memory_order order) BOOST_NOEXCEPT
     {
@@ -104,14 +109,10 @@ struct windows_operations :
 
 template< bool Signed >
 struct operations< 4u, Signed > :
-    public windows_operations< typename make_storage_type< 4u, Signed >::type, operations< 4u, Signed > >
+    public windows_operations< 4u, Signed, operations< 4u, Signed > >
 {
-    typedef windows_operations< typename make_storage_type< 4u, Signed >::type, operations< 4u, Signed > > base_type;
+    typedef windows_operations< 4u, Signed, operations< 4u, Signed > > base_type;
     typedef typename base_type::storage_type storage_type;
-    typedef typename make_storage_type< 4u, Signed >::aligned aligned_storage_type;
-
-    static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = 4u;
-    static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
 
     static BOOST_FORCEINLINE storage_type fetch_add(storage_type volatile& storage, storage_type v, memory_order order) BOOST_NOEXCEPT
     {

@@ -227,16 +227,6 @@ public:
         return dzdx*(z*d1 - d2 + b1);
     }
 
-    void print_coefficients() const
-    {
-        std::cout << "{";
-        for(auto const & coeff : m_coeffs) {
-          std::cout << coeff << ", ";
-        }
-        std::cout << "}\n";
-    }
-
-
 private:
     std::vector<Real> m_coeffs;
     Real m_a;

@@ -213,14 +213,6 @@ division(polynomial<T> u, const polynomial<T>& v)
     return std::make_pair(q, u);
 }
 
-struct identity
-{
-    template <class T>
-    const T& operator()(T const &x) const
-    {
-        return x;
-    }
-};
 //
 // These structures are the same as the void specializations of the functors of the same name
 // in the std lib from C++14 onwards:
@@ -546,49 +538,47 @@ public:
    }
 
 private:
-    template <class U, class R1, class R2>
-    polynomial& addition(const U& value, R1 sign, R2 op)
+    template <class U, class R>
+    polynomial& addition(const U& value, R op)
     {
         if(m_data.size() == 0)
-            m_data.push_back(sign(value));
-        else
-            m_data[0] = op(m_data[0], value);
+            m_data.resize(1, 0);
+        m_data[0] = op(m_data[0], value);
         return *this;
     }
 
     template <class U>
     polynomial& addition(const U& value)
     {
-        return addition(value, detail::identity(), detail::plus());
+        return addition(value, detail::plus());
     }
 
     template <class U>
     polynomial& subtraction(const U& value)
     {
-        return addition(value, detail::negate(), detail::minus());
+        return addition(value, detail::minus());
     }
 
-    template <class U, class R1, class R2>
-    polynomial& addition(const polynomial<U>& value, R1 sign, R2 op)
+    template <class U, class R>
+    polynomial& addition(const polynomial<U>& value, R op)
     {
-        size_type s1 = (std::min)(m_data.size(), value.size());
-        for(size_type i = 0; i < s1; ++i)
+        if (m_data.size() < value.size())
+            m_data.resize(value.size(), 0);
+        for(size_type i = 0; i < value.size(); ++i)
             m_data[i] = op(m_data[i], value[i]);
-        for(size_type i = s1; i < value.size(); ++i)
-            m_data.push_back(sign(value[i]));
         return *this;
     }
 
     template <class U>
     polynomial& addition(const polynomial<U>& value)
     {
-        return addition(value, detail::identity(), detail::plus());
+        return addition(value, detail::plus());
     }
 
     template <class U>
     polynomial& subtraction(const polynomial<U>& value)
     {
-        return addition(value, detail::negate(), detail::minus());
+        return addition(value, detail::minus());
     }
 
     template <class U>

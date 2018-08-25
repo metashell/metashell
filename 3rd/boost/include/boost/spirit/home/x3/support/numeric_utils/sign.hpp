@@ -6,8 +6,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#if !defined(SPIRIT_SIGN_MAR_11_2009_0734PM)
-#define SPIRIT_SIGN_MAR_11_2009_0734PM
+#if !defined(BOOST_SPIRIT_X3_SIGN_MAR_11_2009_0734PM)
+#define BOOST_SPIRIT_X3_SIGN_MAR_11_2009_0734PM
 
 #include <boost/config/no_tr1/cmath.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
