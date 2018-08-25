@@ -19,13 +19,13 @@
 #if !defined( BOOST_USE_WINDOWS_H )
 extern "C" {
 #if !defined( BOOST_NO_ANSI_APIS )
-BOOST_SYMBOL_IMPORT boost::winapi::UINT_ WINAPI
+BOOST_SYMBOL_IMPORT boost::winapi::UINT_ BOOST_WINAPI_WINAPI_CC
 GetSystemDirectoryA(
     boost::winapi::LPSTR_  lpBuffer,
     boost::winapi::UINT_   uSize);
 #endif
 
-BOOST_SYMBOL_IMPORT boost::winapi::UINT_ WINAPI
+BOOST_SYMBOL_IMPORT boost::winapi::UINT_ BOOST_WINAPI_WINAPI_CC
 GetSystemDirectoryW(
     boost::winapi::LPWSTR_ lpBuffer,
     boost::winapi::UINT_   uSize);

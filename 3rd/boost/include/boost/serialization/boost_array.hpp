@@ -1,5 +1,5 @@
-#ifndef BOOST_SERIALIZATION_ARRAY_HPP
-#define BOOST_SERIALIZATION_ARRAY_HPP
+#ifndef BOOST_SERIALIZATION_BOOST_ARRAY_HPP
+#define BOOST_SERIALIZATION_BOOST_ARRAY_HPP
 
 // (C) Copyright 2005 Matthias Troyer and Dave Abrahams
 // Use, modification and distribution is subject to the Boost Software
@@ -30,4 +30,4 @@ void serialize(Archive& ar, boost::array<T,N>& a, const unsigned int /* version 
 } } // end namespace boost::serialization
 
 
-#endif //BOOST_SERIALIZATION_ARRAY_HPP
+#endif //BOOST_SERIALIZATION_BOOST_ARRAY_HPP

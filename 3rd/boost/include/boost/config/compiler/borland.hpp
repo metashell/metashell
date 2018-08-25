@@ -174,6 +174,7 @@
 #define BOOST_NO_CXX11_CONSTEXPR
 #define BOOST_NO_CXX11_DECLTYPE_N3276
 #define BOOST_NO_CXX11_DEFAULTED_FUNCTIONS
+#define BOOST_NO_CXX11_DEFAULTED_MOVES
 #define BOOST_NO_CXX11_DELETED_FUNCTIONS
 #define BOOST_NO_CXX11_FUNCTION_TEMPLATE_DEFAULT_ARGS
 #define BOOST_NO_CXX11_HDR_INITIALIZER_LIST
@@ -237,6 +238,9 @@
 #endif
 #if !defined(__cpp_fold_expressions) || (__cpp_fold_expressions < 201603)
 #  define BOOST_NO_CXX17_FOLD_EXPRESSIONS
+#endif
+#if !defined(__cpp_if_constexpr) || (__cpp_if_constexpr < 201606)
+#  define BOOST_NO_CXX17_IF_CONSTEXPR
 #endif
 
 #if __BORLANDC__ >= 0x590

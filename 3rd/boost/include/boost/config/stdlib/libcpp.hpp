@@ -87,9 +87,6 @@
 #endif
 
 // C++17 features
-#if (_LIBCPP_VERSION < 3700) || (__cplusplus <= 201402L)
-#  define BOOST_NO_CXX17_STD_INVOKE
-#endif
 #if (_LIBCPP_VERSION < 4000) || (__cplusplus <= 201402L)
 #  define BOOST_NO_CXX17_STD_APPLY
 #endif
@@ -104,12 +101,20 @@
 #endif
 
 #define BOOST_NO_CXX17_ITERATOR_TRAITS
+#define BOOST_NO_CXX17_STD_INVOKE      // Invoke support is incomplete (no invoke_result)
 
 #if (_LIBCPP_VERSION <= 1101) && !defined(BOOST_NO_CXX11_THREAD_LOCAL)
 // This is a bit of a sledgehammer, because really it's just libc++abi that has no
 // support for thread_local, leading to linker errors such as
 // "undefined reference to `__cxa_thread_atexit'".  It is fixed in the
 // most recent releases of libc++abi though...
+#  define BOOST_NO_CXX11_THREAD_LOCAL
+#endif
+
+#if defined(__linux__) && !defined(BOOST_NO_CXX11_THREAD_LOCAL)
+// After libc++-dev is installed on Trusty, clang++-libc++ almost works,
+// except uses of `thread_local` fail with undefined reference to
+// `__cxa_thread_atexit`.
 #  define BOOST_NO_CXX11_THREAD_LOCAL
 #endif
 

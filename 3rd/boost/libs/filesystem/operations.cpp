@@ -11,21 +11,45 @@
 //--------------------------------------------------------------------------------------// 
 
 //  define 64-bit offset macros BEFORE including boost/config.hpp (see ticket #5355) 
-#if !(defined(__HP_aCC) && defined(_ILP32) && !defined(_STATVFS_ACPP_PROBLEMS_FIXED))
-#define _FILE_OFFSET_BITS 64 // at worst, these defines may have no effect,
-#endif
-#if !defined(__PGI)
-#define __USE_FILE_OFFSET64 // but that is harmless on Windows and on POSIX
-      // 64-bit systems or on 32-bit systems which don't have files larger 
-      // than can be represented by a traditional POSIX/UNIX off_t type. 
-      // OTOH, defining them should kick in 64-bit off_t's (and thus 
-      // st_size)on 32-bit systems that provide the Large File
-      // Support (LFS)interface, such as Linux, Solaris, and IRIX.
-      // The defines are given before any headers are included to
-      // ensure that they are available to all included headers.
-      // That is required at least on Solaris, and possibly on other
-      // systems as well.
+#if defined(__ANDROID__) && defined(__ANDROID_API__) && __ANDROID_API__ < 24
+// Android fully supports 64-bit file offsets only for API 24 and above.
+//
+// Trying to define _FILE_OFFSET_BITS=64 for APIs below 24
+// leads to compilation failure for one or another reason,
+// depending on target Android API level, Android NDK version,
+// used STL, order of include paths and more.
+// For more information, please see:
+// - https://github.com/boostorg/filesystem/issues/65
+// - https://github.com/boostorg/filesystem/pull/69
+//
+// Android NDK developers consider it the expected behavior.
+// See their official position here:
+// - https://github.com/android-ndk/ndk/issues/501#issuecomment-326447479
+// - https://android.googlesource.com/platform/bionic/+/a34817457feee026e8702a1d2dffe9e92b51d7d1/docs/32-bit-abi.md#32_bit-abi-bugs
+//
+// Thus we do not define _FILE_OFFSET_BITS in such case.
 #else
+// Defining _FILE_OFFSET_BITS=64 should kick in 64-bit off_t's
+// (and thus st_size) on 32-bit systems that provide the Large File
+// Support (LFS) interface, such as Linux, Solaris, and IRIX.
+//
+// At the time of this comment writing (March 2018), on most systems
+// _FILE_OFFSET_BITS=64 definition is harmless:
+// either the definition is supported and enables 64-bit off_t,
+// or the definition is not supported and is ignored, in which case
+// off_t does not change its default size for the target system
+// (which may be 32-bit or 64-bit already).
+// Thus it makes sense to have _FILE_OFFSET_BITS=64 defined by default,
+// instead of listing every system that supports the definition.
+// Those few systems, on which _FILE_OFFSET_BITS=64 is harmful,
+// for example this definition causes compilation failure on those systems,
+// should be exempt from defining _FILE_OFFSET_BITS by adding
+// an appropriate #elif block above with the appropriate comment.
+//
+// _FILE_OFFSET_BITS must be defined before any headers are included
+// to ensure that the definition is available to all included headers.
+// That is required at least on Solaris, and possibly on other
+// systems as well.
 #define _FILE_OFFSET_BITS 64
 #endif
 
@@ -44,7 +68,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/detail/workaround.hpp>
-#include <vector> 
+#include <limits>
+#include <vector>
 #include <cstdlib>     // for malloc, free
 #include <cstring>
 #include <cstdio>      // for remove, rename
@@ -518,115 +543,28 @@ namespace
       || errval == ERROR_BAD_PATHNAME  // "//nosuch" on Win64
       || errval == ERROR_BAD_NETPATH;  // "//nosuch" on Win32
   }
-  
-  // File name case-insensitive comparison needs to be locale- and collation-independent. 
-  // The approach used below follows a combined strategy described in the following
-  // articles:
-  // http://archives.miloush.net/michkap/archive/2005/10/17/481600.html
-  // http://archives.miloush.net/michkap/archive/2007/09/14/4900107.html
-  // http://archives.miloush.net/michkap/archive/2007/10/12/5396685.html
-  // CompareStringOrdinal is only available on newer systems and is just a wrapper of
-  // RtlCompareUnicodeString, but measurements showed that RtlEqualUnicodeString has better
-  // performance. Therefore we use RtlEqualUnicodeString, and if that does not exist 
-  // we perform the equivalent characterwise comparsion using LCMapString and uppercase 
-  // binary equality. Instead of calling RtlInitUnicodeString we use wcslen directly
-  // because that results in better performance as well.
 
-  //  Windows ntdll.dll functions that may or may not be present
-  //  must be accessed through pointers
-  typedef struct _UNICODE_STRING {
-    USHORT Length;
-    USHORT MaximumLength;
-    PWSTR  Buffer;
-  } UNICODE_STRING;
-
-  typedef const UNICODE_STRING *PCUNICODE_STRING;
-
-  typedef BOOLEAN (WINAPI *PtrRtlEqualUnicodeString)(
-    /*_In_*/ PCUNICODE_STRING String1,
-    /*_In_*/ PCUNICODE_STRING String2,
-    /*_In_*/ BOOLEAN          CaseInSensitive
-  );
-
-  PtrRtlEqualUnicodeString rtl_equal_unicode_string_api = PtrRtlEqualUnicodeString(
-    ::GetProcAddress(
-      ::GetModuleHandleW(L"ntdll.dll"), "RtlEqualUnicodeString"));
-
-#ifndef LOCALE_INVARIANT
-#  define LOCALE_INVARIANT (MAKELCID(MAKELANGID(LANG_INVARIANT, SUBLANG_NEUTRAL), SORT_DEFAULT))
-#endif
-
-  bool equal_string_ordinal_ic_1(const wchar_t* s1, const wchar_t* s2)
+  static bool equal_extension( wchar_t const* p, wchar_t const (&x1)[ 5 ], wchar_t const (&x2)[ 5 ] )
   {
-    std::size_t len1 = std::wcslen(s1);
-    UNICODE_STRING us1;
-    us1.Buffer = const_cast<wchar_t*>(s1);
-    us1.Length = static_cast<USHORT>(sizeof(*s1) * len1);
-    us1.MaximumLength = static_cast<USHORT>(us1.Length + sizeof(*s1));
-    std::size_t len2 = std::wcslen(s2);
-    UNICODE_STRING us2;
-    us2.Buffer = const_cast<wchar_t*>(s2);
-    us2.Length = static_cast<USHORT>(sizeof(*s2) * len2);
-    us2.MaximumLength = static_cast<USHORT>(us2.Length + sizeof(*s2));
-    BOOLEAN res = rtl_equal_unicode_string_api(&us1, &us2, TRUE);
-    return res != FALSE;
+    return
+      (p[0] == x1[0] || p[0] == x2[0]) &&
+      (p[1] == x1[1] || p[1] == x2[1]) &&
+      (p[2] == x1[2] || p[2] == x2[2]) &&
+      (p[3] == x1[3] || p[3] == x2[3]) &&
+      p[4] == 0;
   }
 
-  inline
-  wchar_t to_upper_invariant(wchar_t input)
-  {
-    wchar_t result;
-    // According to 
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/dd318144(v=vs.85).aspx
-    // "When transforming between uppercase and lowercase, the function always maps a 
-    // single character to a single character."
-    int res = ::LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, &input, 1, &result, 1); 
-    if (res != 0)
-      return result;
-    assert(!"LCMapStringW failed to convert a character to upper case");
-    return input; // Should never happen, but this is a safe fallback.
-  }
-  
-  bool equal_string_ordinal_ic_2(const wchar_t* s1, const wchar_t* s2)
-  {
-    for (;; ++s1, ++s2)
-    {
-      const wchar_t c1 = *s1;
-      const wchar_t c2 = *s2;
-      if (c1 == c2)
-      {
-        if (!c1)
-          return true; // We have reached the end of both strings, no difference found.
-      }
-      else
-      {
-        if (!c1 || !c2)
-          return false; // We have reached the end of one string
-        // This needs to be upper case to match the behavior of the operating system,
-        // see http://archives.miloush.net/michkap/archive/2005/10/17/481600.html
-        const wchar_t u1 = to_upper_invariant(c1);
-        const wchar_t u2 = to_upper_invariant(c2);
-        if (u1 != u2)
-          return false; // strings are different
-      }
-    }
-  }  
-  
-  typedef bool (*Ptr_equal_string_ordinal_ic)(const wchar_t*, const wchar_t*);
-
-  Ptr_equal_string_ordinal_ic equal_string_ordinal_ic = 
-    rtl_equal_unicode_string_api ? equal_string_ordinal_ic_1 : equal_string_ordinal_ic_2;
-  
   perms make_permissions(const path& p, DWORD attr)
   {
     perms prms = fs::owner_read | fs::group_read | fs::others_read;
     if  ((attr & FILE_ATTRIBUTE_READONLY) == 0)
       prms |= fs::owner_write | fs::group_write | fs::others_write;
     path ext = p.extension();
-    if (equal_string_ordinal_ic(ext.c_str(), L".exe")
-      || equal_string_ordinal_ic(ext.c_str(), L".com")
-      || equal_string_ordinal_ic(ext.c_str(), L".bat")
-      || equal_string_ordinal_ic(ext.c_str(), L".cmd"))
+    wchar_t const* q = ext.c_str();
+    if (equal_extension(q, L".exe", L".EXE")
+      || equal_extension(q, L".com", L".COM")
+      || equal_extension(q, L".bat", L".BAT")
+      || equal_extension(q, L".cmd", L".CMD"))
       prms |= fs::owner_exe | fs::group_exe | fs::others_exe;
     return prms;
   }
@@ -730,7 +668,7 @@ namespace
     {
       return fs::file_status(fs::file_not_found, fs::no_perms);
     }
-    else if ((errval == ERROR_SHARING_VIOLATION))
+    else if (errval == ERROR_SHARING_VIOLATION)
     {
       return fs::file_status(fs::type_unknown);
     }
@@ -1702,6 +1640,12 @@ namespace detail
   BOOST_FILESYSTEM_DECL
   void resize_file(const path& p, uintmax_t size, system::error_code* ec)
   {
+#   if defined(BOOST_POSIX_API)
+    if (BOOST_UNLIKELY(size > static_cast< uintmax_t >((std::numeric_limits< off_t >::max)()))) {
+      error(system::errc::file_too_large, p, ec, "boost::filesystem::resize_file");
+      return;
+    }
+#   endif
     error(!BOOST_RESIZE_FILE(p.c_str(), size) ? BOOST_ERRNO : 0, p, ec,
       "boost::filesystem::resize_file");
   }
@@ -2169,17 +2113,20 @@ namespace
   inline int readdir_r_simulator(DIR * dirp, struct dirent * entry,
     struct dirent ** result)// *result set to 0 on end of directory
   {
-    errno = 0;
-
 #   if !defined(__CYGWIN__)\
     && defined(_POSIX_THREAD_SAFE_FUNCTIONS)\
     && defined(_SC_THREAD_SAFE_FUNCTIONS)\
     && (_POSIX_THREAD_SAFE_FUNCTIONS+0 >= 0)\
     && (!defined(__hpux) || defined(_REENTRANT)) \
     && (!defined(_AIX) || defined(__THREAD_SAFE))
+
+    errno = 0;
+
     if (::sysconf(_SC_THREAD_SAFE_FUNCTIONS)>= 0)
       { return ::readdir_r(dirp, entry, result); }
 #   endif
+
+    errno = 0;
 
     struct dirent * p;
     *result = 0;

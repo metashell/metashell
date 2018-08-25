@@ -239,9 +239,9 @@ public:
 
     template< class Y, class D >
     local_shared_ptr( boost::movelib::unique_ptr< Y, D > r ); // !
-    //	: px( r.get() ), pn( new boost::detail::local_counted_impl( shared_ptr<T>( std::move(r) ) ) )
+    //  : px( r.get() ), pn( new boost::detail::local_counted_impl( shared_ptr<T>( std::move(r) ) ) )
     //{
-    //	boost::detail::sp_assert_convertible< Y, T >();
+    //    boost::detail::sp_assert_convertible< Y, T >();
     //}
 
     // copy constructor

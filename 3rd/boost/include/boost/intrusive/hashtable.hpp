@@ -115,25 +115,88 @@ bool priv_algo_is_permutation(ForwardIterator1 first1, ForwardIterator1 last1, F
 template<int Dummy = 0>
 struct prime_list_holder
 {
+   private:
+
+   template <class SizeType> // sizeof(SizeType) < sizeof(std::size_t)
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType truncate_size_type(std::size_t n, detail::true_)
+   {
+      return n < std::size_t(SizeType(-1)) ? static_cast<SizeType>(n) : SizeType(-1);
+   }
+
+   template <class SizeType> // sizeof(SizeType) == sizeof(std::size_t)
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType truncate_size_type(std::size_t n, detail::false_)
+   {
+      return static_cast<SizeType>(n);
+   }
+
+   template <class SizeType>  //sizeof(SizeType) > sizeof(std::size_t)
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_upper_bucket_count_dispatch(SizeType n, detail::true_)
+   {
+      std::size_t const c = n > std::size_t(-1)
+                            ? std::size_t(-1)
+                            : suggested_upper_bucket_count_impl(static_cast<std::size_t>(n));
+      return static_cast<SizeType>(c);
+   }
+
+   template <class SizeType>  //sizeof(SizeType) > sizeof(std::size_t)
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_lower_bucket_count_dispatch(SizeType n, detail::true_)
+   {
+      std::size_t const c = n > std::size_t(-1)
+                            ? std::size_t(-1)
+                            : suggested_lower_bucket_count_impl(static_cast<std::size_t>(n));
+      return static_cast<SizeType>(c);
+   }
+
+   template <class SizeType>
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_upper_bucket_count_dispatch(SizeType n, detail::false_)
+   {
+      std::size_t const c = suggested_upper_bucket_count_impl(static_cast<std::size_t>(n));
+      return truncate_size_type<SizeType>(c, detail::bool_<(sizeof(SizeType) < sizeof(std::size_t))>());
+
+   }
+
+   template <class SizeType>
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_lower_bucket_count_dispatch(SizeType n, detail::false_)
+   {
+      std::size_t const c = suggested_lower_bucket_count_impl(static_cast<std::size_t>(n));
+      return truncate_size_type<SizeType>(c, detail::bool_<(sizeof(SizeType) < sizeof(std::size_t))>());
+   }
+
    static const std::size_t prime_list[];
    static const std::size_t prime_list_size;
 
-   static std::size_t suggested_upper_bucket_count(std::size_t n)
+   static std::size_t suggested_lower_bucket_count_impl(std::size_t n)
    {
       const std::size_t *primes     = &prime_list_holder<0>::prime_list[0];
       const std::size_t *primes_end = primes + prime_list_holder<0>::prime_list_size;
       std::size_t const* bound = std::lower_bound(primes, primes_end, n);
-      bound -= (bound == primes_end);
+      //Tables have upper SIZE_MAX, so we must always found an entry
+      BOOST_INTRUSIVE_INVARIANT_ASSERT(bound != primes_end);
+      bound -= std::size_t(bound != primes);
       return *bound;
    }
 
-   static std::size_t suggested_lower_bucket_count(std::size_t n)
+   static std::size_t suggested_upper_bucket_count_impl(std::size_t n)
    {
       const std::size_t *primes     = &prime_list_holder<0>::prime_list[0];
       const std::size_t *primes_end = primes + prime_list_holder<0>::prime_list_size;
       std::size_t const* bound = std::upper_bound(primes, primes_end, n);
-      bound -= (bound != primes);
+      bound -= std::size_t(bound == primes_end);
       return *bound;
+   }
+
+   public:
+
+   template <class SizeType>
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_upper_bucket_count(SizeType n)
+   {
+      return (suggested_upper_bucket_count_dispatch)(n, detail::bool_<(sizeof(SizeType) > sizeof(std::size_t))>());
+   }
+
+   template <class SizeType>
+   static BOOST_INTRUSIVE_FORCEINLINE SizeType suggested_lower_bucket_count(SizeType n)
+   {
+      return (suggested_lower_bucket_count_dispatch)(n, detail::bool_<(sizeof(SizeType) > sizeof(std::size_t))>());
    }
 };
 
@@ -184,9 +247,9 @@ const std::size_t prime_list_holder<Dummy>::prime_list[] = {
    BOOST_INTRUSIVE_PRIME_C(432345564227567621),    BOOST_INTRUSIVE_PRIME_C(864691128455135207),
    BOOST_INTRUSIVE_PRIME_C(1729382256910270481),   BOOST_INTRUSIVE_PRIME_C(3458764513820540933),
    BOOST_INTRUSIVE_PRIME_C(6917529027641081903),   BOOST_INTRUSIVE_PRIME_C(13835058055282163729),
-   BOOST_INTRUSIVE_PRIME_C(18446744073709551557)
+   BOOST_INTRUSIVE_PRIME_C(18446744073709551557),  BOOST_INTRUSIVE_PRIME_C(18446744073709551615)   //Upper limit, just in case
 #else
-   BOOST_INTRUSIVE_PRIME_C(4294967291)
+   BOOST_INTRUSIVE_PRIME_C(4294967291),            BOOST_INTRUSIVE_PRIME_C(4294967295)             //Upper limit, just in case
 #endif
    };
 
@@ -1476,16 +1539,12 @@ struct hashdata_internal
 
    static BOOST_INTRUSIVE_FORCEINLINE size_type suggested_upper_bucket_count(size_type n)
    {
-      std::size_t c = prime_list_holder<0>::suggested_upper_bucket_count
-         (sizeof(size_type) > sizeof(std::size_t) && n > std::size_t(-1) ? std::size_t(-1) : static_cast<std::size_t>(n));
-      return sizeof(size_type) < sizeof(std::size_t) && c > size_type(-1) ? size_type(-1) : static_cast<size_type>(c);
+      return prime_list_holder<0>::suggested_upper_bucket_count(n);
    }
 
    static BOOST_INTRUSIVE_FORCEINLINE size_type suggested_lower_bucket_count(size_type n)
    {
-      std::size_t c = prime_list_holder<0>::suggested_lower_bucket_count
-         (sizeof(size_type) > sizeof(std::size_t) && n > std::size_t(-1) ? std::size_t(-1) : static_cast<std::size_t>(n));
-      return sizeof(size_type) < sizeof(std::size_t) && c > size_type(-1) ? size_type(-1) : static_cast<size_type>(c);
+      return prime_list_holder<0>::suggested_lower_bucket_count(n);
    }
 
    const_local_iterator cbegin(size_type n) const
@@ -1497,6 +1556,7 @@ struct hashdata_internal
 
    using internal_type::end;
    using internal_type::cend;
+
    local_iterator end(size_type n)
    {  return local_iterator(this->priv_bucket_pointer()[n].end(), this->priv_value_traits_ptr());  }
 
@@ -3370,7 +3430,7 @@ class hashtable_impl
       , size_type &found_bucket
       , size_type &cnt) const
    {
-      cnt = 0;
+      size_type internal_cnt = 0;
       //Let's see if the element is present
       
       siterator prev;
@@ -3386,20 +3446,21 @@ class hashtable_impl
          //the same bucket
          bucket_type &b = this->priv_bucket_pointer()[n_bucket];
          siterator it = to_return.first;
-         ++cnt;   //At least one is found
+         ++internal_cnt;   //At least one is found
          if(optimize_multikey){
             to_return.second = ++(priv_last_in_group)(it);
-            cnt += boost::intrusive::iterator_distance(++it, to_return.second);
+            internal_cnt += boost::intrusive::iterator_distance(++it, to_return.second);
          }
          else{
             siterator const bend = b.end();
             while(++it != bend &&
                   this->priv_is_value_equal_to_key(this->priv_value_from_slist_node(it.pointed_node()), h, key, equal_func)){
-               ++cnt;
+               ++internal_cnt;
             }
             to_return.second = it;
          }
       }
+      cnt = internal_cnt;
       return to_return;
    }
 

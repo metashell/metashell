@@ -21,6 +21,7 @@
 #include <boost/memory_order.hpp>
 #include <boost/atomic/detail/config.hpp>
 #include <boost/atomic/detail/storage_type.hpp>
+#include <boost/atomic/detail/integral_extend.hpp>
 #include <boost/atomic/detail/operations_fwd.hpp>
 #include <boost/atomic/detail/ops_gcc_arm_common.hpp>
 #include <boost/atomic/capabilities.hpp>
@@ -59,8 +60,8 @@ template< bool Signed >
 struct operations< 4u, Signed > :
     public gcc_arm_operations_base
 {
-    typedef typename make_storage_type< 4u, Signed >::type storage_type;
-    typedef typename make_storage_type< 4u, Signed >::aligned aligned_storage_type;
+    typedef typename make_storage_type< 4u >::type storage_type;
+    typedef typename make_storage_type< 4u >::aligned aligned_storage_type;
 
     static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = 4u;
     static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
@@ -317,9 +318,9 @@ template< bool Signed >
 struct operations< 1u, Signed > :
     public gcc_arm_operations_base
 {
-    typedef typename make_storage_type< 1u, Signed >::type storage_type;
-    typedef typename make_storage_type< 1u, Signed >::aligned aligned_storage_type;
-    typedef typename make_storage_type< 4u, Signed >::type extended_storage_type;
+    typedef typename make_storage_type< 1u >::type storage_type;
+    typedef typename make_storage_type< 1u >::aligned aligned_storage_type;
+    typedef typename make_storage_type< 4u >::type extended_storage_type;
 
     static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = 1u;
     static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
@@ -347,13 +348,13 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb %[original], %[storage]\n"          // load the original value
+            "ldrexb %[original], %[storage]\n"          // load the original value and zero-extend to 32 bits
             "strexb %[tmp], %[value], %[storage]\n"     // store the replacement, tmp = store failed
             "teq    %[tmp], #0\n"                       // check if store succeeded
             "bne    1b\n"
             BOOST_ATOMIC_DETAIL_ARM_ASM_END(%[tmp])
             : [tmp] "=&l" (tmp), [original] "=&r" (original), [storage] "+Q" (storage)
-            : [value] "r" ((extended_storage_type)v)
+            : [value] "r" (v)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -371,7 +372,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "mov      %[success], #0\n"                      // success = 0
-            "ldrexb   %[original], %[storage]\n"             // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"             // original = zero_extend(*(&storage))
             "cmp      %[original], %[expected]\n"            // flags = original==expected
             "itt      eq\n"                                  // [hint that the following 2 instructions are conditional on flags.equal]
             "strexbeq %[success], %[desired], %[storage]\n"  // if (flags.equal) *(&storage) = desired, success = store failed
@@ -381,8 +382,8 @@ struct operations< 1u, Signed > :
               [success] "=&r" (success),    // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [expected] "Ir" ((extended_storage_type)expected),   // %4
-              [desired] "r" ((extended_storage_type)desired)       // %5
+            : [expected] "Ir" (atomics::detail::zero_extend< extended_storage_type >(expected)),   // %4
+              [desired] "r" (desired)       // %5
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         if (success)
@@ -405,7 +406,7 @@ struct operations< 1u, Signed > :
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "mov      %[success], #0\n"                      // success = 0
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"             // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"             // original = zero_extend(*(&storage))
             "cmp      %[original], %[expected]\n"            // flags = original==expected
             "bne      2f\n"                                  // if (!flags.equal) goto end
             "strexb   %[success], %[desired], %[storage]\n"  // *(&storage) = desired, success = store failed
@@ -417,8 +418,8 @@ struct operations< 1u, Signed > :
               [success] "=&r" (success),    // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [expected] "Ir" ((extended_storage_type)expected),   // %4
-              [desired] "r" ((extended_storage_type)desired)       // %5
+            : [expected] "Ir" (atomics::detail::zero_extend< extended_storage_type >(expected)),   // %4
+              [desired] "r" (desired)       // %5
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         if (success)
@@ -438,7 +439,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "add      %[result], %[original], %[value]\n"  // result = original + value
             "strexb   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -448,7 +449,7 @@ struct operations< 1u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -464,7 +465,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "sub      %[result], %[original], %[value]\n"  // result = original - value
             "strexb   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -474,7 +475,7 @@ struct operations< 1u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -490,7 +491,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "and      %[result], %[original], %[value]\n"  // result = original & value
             "strexb   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -500,7 +501,7 @@ struct operations< 1u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -516,7 +517,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "orr      %[result], %[original], %[value]\n"  // result = original | value
             "strexb   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -526,7 +527,7 @@ struct operations< 1u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -542,7 +543,7 @@ struct operations< 1u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexb   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexb   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "eor      %[result], %[original], %[value]\n"  // result = original ^ value
             "strexb   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -552,7 +553,7 @@ struct operations< 1u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -704,9 +705,9 @@ template< bool Signed >
 struct operations< 2u, Signed > :
     public gcc_arm_operations_base
 {
-    typedef typename make_storage_type< 2u, Signed >::type storage_type;
-    typedef typename make_storage_type< 2u, Signed >::aligned aligned_storage_type;
-    typedef typename make_storage_type< 4u, Signed >::type extended_storage_type;
+    typedef typename make_storage_type< 2u >::type storage_type;
+    typedef typename make_storage_type< 2u >::aligned aligned_storage_type;
+    typedef typename make_storage_type< 4u >::type extended_storage_type;
 
     static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = 2u;
     static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;
@@ -734,13 +735,13 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh %[original], %[storage]\n"          // load the original value
+            "ldrexh %[original], %[storage]\n"          // load the original value and zero-extend to 32 bits
             "strexh %[tmp], %[value], %[storage]\n"     // store the replacement, tmp = store failed
             "teq    %[tmp], #0\n"                       // check if store succeeded
             "bne    1b\n"
             BOOST_ATOMIC_DETAIL_ARM_ASM_END(%[tmp])
             : [tmp] "=&l" (tmp), [original] "=&r" (original), [storage] "+Q" (storage)
-            : [value] "r" ((extended_storage_type)v)
+            : [value] "r" (v)
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -758,7 +759,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "mov      %[success], #0\n"                      // success = 0
-            "ldrexh   %[original], %[storage]\n"             // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"             // original = zero_extend(*(&storage))
             "cmp      %[original], %[expected]\n"            // flags = original==expected
             "itt      eq\n"                                  // [hint that the following 2 instructions are conditional on flags.equal]
             "strexheq %[success], %[desired], %[storage]\n"  // if (flags.equal) *(&storage) = desired, success = store failed
@@ -768,8 +769,8 @@ struct operations< 2u, Signed > :
               [success] "=&r" (success),    // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [expected] "Ir" ((extended_storage_type)expected),   // %4
-              [desired] "r" ((extended_storage_type)desired)       // %5
+            : [expected] "Ir" (atomics::detail::zero_extend< extended_storage_type >(expected)),   // %4
+              [desired] "r" (desired)       // %5
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         if (success)
@@ -792,7 +793,7 @@ struct operations< 2u, Signed > :
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "mov      %[success], #0\n"                      // success = 0
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"             // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"             // original = zero_extend(*(&storage))
             "cmp      %[original], %[expected]\n"            // flags = original==expected
             "bne      2f\n"                                  // if (!flags.equal) goto end
             "strexh   %[success], %[desired], %[storage]\n"  // *(&storage) = desired, success = store failed
@@ -804,8 +805,8 @@ struct operations< 2u, Signed > :
               [success] "=&r" (success),    // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [expected] "Ir" ((extended_storage_type)expected),   // %4
-              [desired] "r" ((extended_storage_type)desired)       // %5
+            : [expected] "Ir" (atomics::detail::zero_extend< extended_storage_type >(expected)),   // %4
+              [desired] "r" (desired)       // %5
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         if (success)
@@ -825,7 +826,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "add      %[result], %[original], %[value]\n"  // result = original + value
             "strexh   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -835,7 +836,7 @@ struct operations< 2u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -851,7 +852,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "sub      %[result], %[original], %[value]\n"  // result = original - value
             "strexh   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -861,7 +862,7 @@ struct operations< 2u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -877,7 +878,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "and      %[result], %[original], %[value]\n"  // result = original & value
             "strexh   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -887,7 +888,7 @@ struct operations< 2u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -903,7 +904,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "orr      %[result], %[original], %[value]\n"  // result = original | value
             "strexh   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -913,7 +914,7 @@ struct operations< 2u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -929,7 +930,7 @@ struct operations< 2u, Signed > :
         (
             BOOST_ATOMIC_DETAIL_ARM_ASM_START(%[tmp])
             "1:\n"
-            "ldrexh   %[original], %[storage]\n"           // original = *(&storage)
+            "ldrexh   %[original], %[storage]\n"           // original = zero_extend(*(&storage))
             "eor      %[result], %[original], %[value]\n"  // result = original ^ value
             "strexh   %[tmp], %[result], %[storage]\n"     // *(&storage) = result, tmp = store failed
             "teq      %[tmp], #0\n"                        // flags = tmp==0
@@ -939,7 +940,7 @@ struct operations< 2u, Signed > :
               [result] "=&r" (result),      // %1
               [tmp] "=&l" (tmp),            // %2
               [storage] "+Q" (storage)      // %3
-            : [value] "Ir" ((extended_storage_type)v)              // %4
+            : [value] "Ir" (v)              // %4
             : BOOST_ATOMIC_DETAIL_ASM_CLOBBER_CC
         );
         fence_after(order);
@@ -1102,8 +1103,8 @@ template< bool Signed >
 struct operations< 8u, Signed > :
     public gcc_arm_operations_base
 {
-    typedef typename make_storage_type< 8u, Signed >::type storage_type;
-    typedef typename make_storage_type< 8u, Signed >::aligned aligned_storage_type;
+    typedef typename make_storage_type< 8u >::type storage_type;
+    typedef typename make_storage_type< 8u >::aligned aligned_storage_type;
 
     static BOOST_CONSTEXPR_OR_CONST std::size_t storage_size = 8u;
     static BOOST_CONSTEXPR_OR_CONST bool is_signed = Signed;

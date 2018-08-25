@@ -61,7 +61,7 @@
 
 namespace boost {
 namespace container {
-namespace container_detail {
+namespace dtl {
 
 using boost::intrusive::tree_value_compare;
 
@@ -71,38 +71,38 @@ struct intrusive_tree_hook;
 template<class VoidPointer, bool OptimizeSize>
 struct intrusive_tree_hook<VoidPointer, boost::container::red_black_tree, OptimizeSize>
 {
-   typedef typename container_detail::bi::make_set_base_hook
-      < container_detail::bi::void_pointer<VoidPointer>
-      , container_detail::bi::link_mode<container_detail::bi::normal_link>
-      , container_detail::bi::optimize_size<OptimizeSize>
+   typedef typename dtl::bi::make_set_base_hook
+      < dtl::bi::void_pointer<VoidPointer>
+      , dtl::bi::link_mode<dtl::bi::normal_link>
+      , dtl::bi::optimize_size<OptimizeSize>
       >::type  type;
 };
 
 template<class VoidPointer, bool OptimizeSize>
 struct intrusive_tree_hook<VoidPointer, boost::container::avl_tree, OptimizeSize>
 {
-   typedef typename container_detail::bi::make_avl_set_base_hook
-      < container_detail::bi::void_pointer<VoidPointer>
-      , container_detail::bi::link_mode<container_detail::bi::normal_link>
-      , container_detail::bi::optimize_size<OptimizeSize>
+   typedef typename dtl::bi::make_avl_set_base_hook
+      < dtl::bi::void_pointer<VoidPointer>
+      , dtl::bi::link_mode<dtl::bi::normal_link>
+      , dtl::bi::optimize_size<OptimizeSize>
       >::type  type;
 };
 
 template<class VoidPointer, bool OptimizeSize>
 struct intrusive_tree_hook<VoidPointer, boost::container::scapegoat_tree, OptimizeSize>
 {
-   typedef typename container_detail::bi::make_bs_set_base_hook
-      < container_detail::bi::void_pointer<VoidPointer>
-      , container_detail::bi::link_mode<container_detail::bi::normal_link>
+   typedef typename dtl::bi::make_bs_set_base_hook
+      < dtl::bi::void_pointer<VoidPointer>
+      , dtl::bi::link_mode<dtl::bi::normal_link>
       >::type  type;
 };
 
 template<class VoidPointer, bool OptimizeSize>
 struct intrusive_tree_hook<VoidPointer, boost::container::splay_tree, OptimizeSize>
 {
-   typedef typename container_detail::bi::make_bs_set_base_hook
-      < container_detail::bi::void_pointer<VoidPointer>
-      , container_detail::bi::link_mode<container_detail::bi::normal_link>
+   typedef typename dtl::bi::make_bs_set_base_hook
+      < dtl::bi::void_pointer<VoidPointer>
+      , dtl::bi::link_mode<dtl::bi::normal_link>
       >::type  type;
 };
 
@@ -222,9 +222,9 @@ class push_back_functor
    {  this->icont_.push_back(n); }
 };
 
-}//namespace container_detail {
+}//namespace dtl {
 
-namespace container_detail {
+namespace dtl {
 
 template< class NodeType, class NodeCompareType
         , class SizeType,  class HookType
@@ -235,12 +235,12 @@ template<class NodeType, class NodeCompareType, class SizeType, class HookType>
 struct intrusive_tree_dispatch
    <NodeType, NodeCompareType, SizeType, HookType, boost::container::red_black_tree>
 {
-   typedef typename container_detail::bi::make_rbtree
+   typedef typename dtl::bi::make_rbtree
       <NodeType
-      ,container_detail::bi::compare<NodeCompareType>
-      ,container_detail::bi::base_hook<HookType>
-      ,container_detail::bi::constant_time_size<true>
-      ,container_detail::bi::size_type<SizeType>
+      ,dtl::bi::compare<NodeCompareType>
+      ,dtl::bi::base_hook<HookType>
+      ,dtl::bi::constant_time_size<true>
+      ,dtl::bi::size_type<SizeType>
       >::type  type;
 };
 
@@ -248,12 +248,12 @@ template<class NodeType, class NodeCompareType, class SizeType, class HookType>
 struct intrusive_tree_dispatch
    <NodeType, NodeCompareType, SizeType, HookType, boost::container::avl_tree>
 {
-   typedef typename container_detail::bi::make_avltree
+   typedef typename dtl::bi::make_avltree
       <NodeType
-      ,container_detail::bi::compare<NodeCompareType>
-      ,container_detail::bi::base_hook<HookType>
-      ,container_detail::bi::constant_time_size<true>
-      ,container_detail::bi::size_type<SizeType>
+      ,dtl::bi::compare<NodeCompareType>
+      ,dtl::bi::base_hook<HookType>
+      ,dtl::bi::constant_time_size<true>
+      ,dtl::bi::size_type<SizeType>
       >::type  type;
 };
 
@@ -261,12 +261,12 @@ template<class NodeType, class NodeCompareType, class SizeType, class HookType>
 struct intrusive_tree_dispatch
    <NodeType, NodeCompareType, SizeType, HookType, boost::container::scapegoat_tree>
 {
-   typedef typename container_detail::bi::make_sgtree
+   typedef typename dtl::bi::make_sgtree
       <NodeType
-      ,container_detail::bi::compare<NodeCompareType>
-      ,container_detail::bi::base_hook<HookType>
-      ,container_detail::bi::floating_point<true>
-      ,container_detail::bi::size_type<SizeType>
+      ,dtl::bi::compare<NodeCompareType>
+      ,dtl::bi::base_hook<HookType>
+      ,dtl::bi::floating_point<true>
+      ,dtl::bi::size_type<SizeType>
       >::type  type;
 };
 
@@ -274,12 +274,12 @@ template<class NodeType, class NodeCompareType, class SizeType, class HookType>
 struct intrusive_tree_dispatch
    <NodeType, NodeCompareType, SizeType, HookType, boost::container::splay_tree>
 {
-   typedef typename container_detail::bi::make_splaytree
+   typedef typename dtl::bi::make_splaytree
       <NodeType
-      ,container_detail::bi::compare<NodeCompareType>
-      ,container_detail::bi::base_hook<HookType>
-      ,container_detail::bi::constant_time_size<true>
-      ,container_detail::bi::size_type<SizeType>
+      ,dtl::bi::compare<NodeCompareType>
+      ,dtl::bi::base_hook<HookType>
+      ,dtl::bi::constant_time_size<true>
+      ,dtl::bi::size_type<SizeType>
       >::type  type;
 };
 
@@ -293,7 +293,7 @@ struct intrusive_tree_type
       allocator_traits<Allocator>::void_pointer            void_pointer;
    typedef typename boost::container::
       allocator_traits<Allocator>::size_type               size_type;
-   typedef typename container_detail::tree_node
+   typedef typename dtl::tree_node
          < value_type, void_pointer
          , tree_type_value, OptimizeSize>                   node_t;
    typedef value_to_node_compare
@@ -340,9 +340,9 @@ struct intrusive_tree_proxy<tree_type_value, true>
    {  c.rebalance(); }
 };
 
-}  //namespace container_detail {
+}  //namespace dtl {
 
-namespace container_detail {
+namespace dtl {
 
 //This functor will be used with Intrusive clone functions to obtain
 //already allocated nodes from a intrusive container instead of
@@ -394,6 +394,7 @@ class RecyclingCloner
    intrusive_container &m_icont;
 };
 
+
 template<class KeyCompare, class KeyOfValue>
 struct key_node_compare
    :  public boost::intrusive::detail::ebo_functor_holder<KeyCompare>
@@ -407,6 +408,21 @@ struct key_node_compare
    typedef KeyOfValue                  key_of_value;
    typedef typename KeyOfValue::type   key_type;
 
+
+   template <class T, class VoidPointer, boost::container::tree_type_enum tree_type_value, bool OptimizeSize>
+   BOOST_CONTAINER_FORCEINLINE static const key_type &
+      key_from(const tree_node<T, VoidPointer, tree_type_value, OptimizeSize> &n)
+   {
+      return key_of_value()(n.get_data());
+   }
+
+   template <class T>
+   BOOST_CONTAINER_FORCEINLINE static const T &
+      key_from(const T &t)
+   {
+      return t;
+   }
+
    BOOST_CONTAINER_FORCEINLINE const key_compare &key_comp() const
    {  return static_cast<const key_compare &>(*this);  }
 
@@ -418,36 +434,51 @@ struct key_node_compare
 
    template<class U>
    BOOST_CONTAINER_FORCEINLINE bool operator()(const key_type &key1, const U &nonkey2) const
-   {  return this->key_comp()(key1, key_of_value()(nonkey2.get_data()));  }
+   {  return this->key_comp()(key1, this->key_from(nonkey2));  }
 
    template<class U>
    BOOST_CONTAINER_FORCEINLINE bool operator()(const U &nonkey1, const key_type &key2) const
-   {  return this->key_comp()(key_of_value()(nonkey1.get_data()), key2);  }
+   {  return this->key_comp()(this->key_from(nonkey1), key2);  }
 
    template<class U, class V>
    BOOST_CONTAINER_FORCEINLINE bool operator()(const U &nonkey1, const V &nonkey2) const
-   {  return this->key_comp()(key_of_value()(nonkey1.get_data()), key_of_value()(nonkey2.get_data()));  }
+   {  return this->key_comp()(this->key_from(nonkey1), this->key_from(nonkey2));  }
 };
 
-template <class T, class KeyOfValue,
-          class Compare, class Allocator,
-          class Options = tree_assoc_defaults>
+template<class Options>
+struct get_tree_opt
+{
+   typedef Options type;
+};
+
+template<>
+struct get_tree_opt<void>
+{
+   typedef tree_assoc_defaults type;
+};
+
+template <class T, class KeyOfValue, class Compare, class Allocator, class Options>
 class tree
-   : public container_detail::node_alloc_holder
+   : public dtl::node_alloc_holder
       < Allocator
-      , typename container_detail::intrusive_tree_type
+      , typename dtl::intrusive_tree_type
          < Allocator, tree_value_compare
             <typename allocator_traits<Allocator>::pointer, Compare, KeyOfValue>
-         , Options::tree_type, Options::optimize_size>::type
+         , get_tree_opt<Options>::type::tree_type
+         , get_tree_opt<Options>::type::optimize_size
+         >::type
       >
 {
    typedef tree_value_compare
       < typename allocator_traits<Allocator>::pointer
       , Compare, KeyOfValue>                                ValComp;
-   typedef typename container_detail::intrusive_tree_type
-         < Allocator, ValComp, Options::tree_type
-         , Options::optimize_size>::type                    Icont;
-   typedef container_detail::node_alloc_holder
+   typedef typename get_tree_opt<Options>::type             options_type;
+   typedef typename dtl::intrusive_tree_type
+         < Allocator, ValComp
+         , options_type::tree_type
+         , options_type::optimize_size
+         >::type                                            Icont;
+   typedef dtl::node_alloc_holder
       <Allocator, Icont>                                    AllocHolder;
    typedef typename AllocHolder::NodePtr                    NodePtr;
    typedef tree < T, KeyOfValue
@@ -459,9 +490,9 @@ class tree
    typedef typename AllocHolder::Node                       Node;
    typedef typename Icont::iterator                         iiterator;
    typedef typename Icont::const_iterator                   iconst_iterator;
-   typedef container_detail::allocator_destroyer<NodeAlloc> Destroyer;
+   typedef dtl::allocator_destroyer<NodeAlloc> Destroyer;
    typedef typename AllocHolder::alloc_version              alloc_version;
-   typedef intrusive_tree_proxy<Options::tree_type>         intrusive_tree_proxy_t;
+   typedef intrusive_tree_proxy<options_type::tree_type>    intrusive_tree_proxy_t;
 
    BOOST_COPYABLE_AND_MOVABLE(tree)
 
@@ -484,9 +515,9 @@ class tree
       allocator_traits<Allocator>::size_type          size_type;
    typedef typename boost::container::
       allocator_traits<Allocator>::difference_type    difference_type;
-   typedef container_detail::iterator_from_iiterator
+   typedef dtl::iterator_from_iiterator
       <iiterator, false>                              iterator;
-   typedef container_detail::iterator_from_iiterator
+   typedef dtl::iterator_from_iiterator
       <iiterator, true >                              const_iterator;
    typedef boost::container::reverse_iterator
       <iterator>                                      reverse_iterator;
@@ -590,10 +621,10 @@ class tree
    template <class InputIterator>
    void tree_construct_non_unique(InputIterator first, InputIterator last
       #if !defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
-      , typename container_detail::enable_if_or
+      , typename dtl::enable_if_or
          < void
-         , container_detail::is_same<alloc_version, version_1>
-         , container_detail::is_input_iterator<InputIterator>
+         , dtl::is_same<alloc_version, version_1>
+         , dtl::is_input_iterator<InputIterator>
          >::type * = 0
       #endif
          )
@@ -610,10 +641,10 @@ class tree
    template <class InputIterator>
    void tree_construct_non_unique(InputIterator first, InputIterator last
       #if !defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
-      , typename container_detail::disable_if_or
+      , typename dtl::disable_if_or
          < void
-         , container_detail::is_same<alloc_version, version_1>
-         , container_detail::is_input_iterator<InputIterator>
+         , dtl::is_same<alloc_version, version_1>
+         , dtl::is_input_iterator<InputIterator>
          >::type * = 0
       #endif
          )
@@ -627,10 +658,10 @@ class tree
    template <class InputIterator>
    void tree_construct( ordered_range_t, InputIterator first, InputIterator last
          #if !defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
-      , typename container_detail::disable_if_or
+      , typename dtl::disable_if_or
          < void
-         , container_detail::is_same<alloc_version, version_1>
-         , container_detail::is_input_iterator<InputIterator>
+         , dtl::is_same<alloc_version, version_1>
+         , dtl::is_input_iterator<InputIterator>
          >::type * = 0
          #endif
          )
@@ -638,17 +669,17 @@ class tree
       //Optimized allocation and construction
       this->allocate_many_and_construct
          ( first, boost::container::iterator_distance(first, last)
-         , container_detail::push_back_functor<Node, Icont>(this->icont()));
+         , dtl::push_back_functor<Node, Icont>(this->icont()));
       //AllocHolder clears in case of exception
    }
 
    template <class InputIterator>
    void tree_construct( ordered_range_t, InputIterator first, InputIterator last
          #if !defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
-      , typename container_detail::enable_if_or
+      , typename dtl::enable_if_or
          < void
-         , container_detail::is_same<alloc_version, version_1>
-         , container_detail::is_input_iterator<InputIterator>
+         , dtl::is_same<alloc_version, version_1>
+         , dtl::is_input_iterator<InputIterator>
          >::type * = 0
          #endif
          )
@@ -668,7 +699,7 @@ class tree
    }
 
    BOOST_CONTAINER_FORCEINLINE tree(BOOST_RV_REF(tree) x)
-      BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<Compare>::value)
+      BOOST_NOEXCEPT_IF(boost::container::dtl::is_nothrow_move_constructible<Compare>::value)
       :  AllocHolder(BOOST_MOVE_BASE(AllocHolder, x), x.value_comp())
    {}
 
@@ -701,7 +732,7 @@ class tree
       if (&x != this){
          NodeAlloc &this_alloc     = this->get_stored_allocator();
          const NodeAlloc &x_alloc  = x.get_stored_allocator();
-         container_detail::bool_<allocator_traits<NodeAlloc>::
+         dtl::bool_<allocator_traits<NodeAlloc>::
             propagate_on_container_copy_assignment::value> flag;
          if(flag && this_alloc != x_alloc){
             this->clear();
@@ -730,7 +761,7 @@ class tree
    tree& operator=(BOOST_RV_REF(tree) x)
       BOOST_NOEXCEPT_IF( (allocator_traits_type::propagate_on_container_move_assignment::value ||
                           allocator_traits_type::is_always_equal::value) &&
-                           boost::container::container_detail::is_nothrow_move_assignable<Compare>::value)
+                           boost::container::dtl::is_nothrow_move_assignable<Compare>::value)
    {
       BOOST_ASSERT(this != &x);
       NodeAlloc &this_alloc = this->node_alloc();
@@ -856,7 +887,7 @@ class tree
 
    BOOST_CONTAINER_FORCEINLINE void swap(ThisType& x)
       BOOST_NOEXCEPT_IF(  allocator_traits_type::is_always_equal::value
-                                 && boost::container::container_detail::is_nothrow_swappable<Compare>::value )
+                                 && boost::container::dtl::is_nothrow_swappable<Compare>::value )
    {  AllocHolder::swap(x);   }
 
    public:
@@ -1245,7 +1276,25 @@ class tree
    BOOST_CONTAINER_FORCEINLINE const_iterator find(const key_type& k) const
    {  return const_iterator(this->non_const_icont().find(k, KeyNodeCompare(key_comp())));  }
 
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, iterator>::type
+         find(const K& k)
+   {  return iterator(this->icont().find(k, KeyNodeCompare(key_comp())));  }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, const_iterator>::type
+         find(const K& k) const
+   {  return const_iterator(this->non_const_icont().find(k, KeyNodeCompare(key_comp())));  }
+
    BOOST_CONTAINER_FORCEINLINE size_type count(const key_type& k) const
+   {  return size_type(this->icont().count(k, KeyNodeCompare(key_comp()))); }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, size_type>::type
+         count(const K& k) const
    {  return size_type(this->icont().count(k, KeyNodeCompare(key_comp()))); }
 
    BOOST_CONTAINER_FORCEINLINE iterator lower_bound(const key_type& k)
@@ -1254,10 +1303,34 @@ class tree
    BOOST_CONTAINER_FORCEINLINE const_iterator lower_bound(const key_type& k) const
    {  return const_iterator(this->non_const_icont().lower_bound(k, KeyNodeCompare(key_comp())));  }
 
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, iterator>::type
+         lower_bound(const K& k)
+   {  return iterator(this->icont().lower_bound(k, KeyNodeCompare(key_comp())));  }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, const_iterator>::type
+         lower_bound(const K& k) const
+   {  return const_iterator(this->non_const_icont().lower_bound(k, KeyNodeCompare(key_comp())));  }
+
    BOOST_CONTAINER_FORCEINLINE iterator upper_bound(const key_type& k)
    {  return iterator(this->icont().upper_bound(k, KeyNodeCompare(key_comp())));   }
 
    BOOST_CONTAINER_FORCEINLINE const_iterator upper_bound(const key_type& k) const
+   {  return const_iterator(this->non_const_icont().upper_bound(k, KeyNodeCompare(key_comp())));  }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, iterator>::type
+         upper_bound(const K& k)
+   {  return iterator(this->icont().upper_bound(k, KeyNodeCompare(key_comp())));   }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, const_iterator>::type
+         upper_bound(const K& k) const
    {  return const_iterator(this->non_const_icont().upper_bound(k, KeyNodeCompare(key_comp())));  }
 
    std::pair<iterator,iterator> equal_range(const key_type& k)
@@ -1275,6 +1348,27 @@ class tree
          (const_iterator(ret.first), const_iterator(ret.second));
    }
 
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, std::pair<iterator,iterator> >::type
+         equal_range(const K& k)
+   {
+      std::pair<iiterator, iiterator> ret =
+         this->icont().equal_range(k, KeyNodeCompare(key_comp()));
+      return std::pair<iterator,iterator>(iterator(ret.first), iterator(ret.second));
+   }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, std::pair<const_iterator, const_iterator> >::type
+         equal_range(const K& k) const
+   {
+      std::pair<iiterator, iiterator> ret =
+         this->non_const_icont().equal_range(k, KeyNodeCompare(key_comp()));
+      return std::pair<const_iterator,const_iterator>
+         (const_iterator(ret.first), const_iterator(ret.second));
+   }
+
    std::pair<iterator,iterator> lower_bound_range(const key_type& k)
    {
       std::pair<iiterator, iiterator> ret =
@@ -1283,6 +1377,27 @@ class tree
    }
 
    std::pair<const_iterator, const_iterator> lower_bound_range(const key_type& k) const
+   {
+      std::pair<iiterator, iiterator> ret =
+         this->non_const_icont().lower_bound_range(k, KeyNodeCompare(key_comp()));
+      return std::pair<const_iterator,const_iterator>
+         (const_iterator(ret.first), const_iterator(ret.second));
+   }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, std::pair<iterator,iterator> >::type
+         lower_bound_range(const K& k)
+   {
+      std::pair<iiterator, iiterator> ret =
+         this->icont().lower_bound_range(k, KeyNodeCompare(key_comp()));
+      return std::pair<iterator,iterator>(iterator(ret.first), iterator(ret.second));
+   }
+
+   template <class K>
+   BOOST_CONTAINER_FORCEINLINE
+      typename dtl::enable_if_transparent<key_compare, K, std::pair<const_iterator, const_iterator> >::type
+         lower_bound_range(const K& k) const
    {
       std::pair<iiterator, iiterator> ret =
          this->non_const_icont().lower_bound_range(k, KeyNodeCompare(key_comp()));
@@ -1315,7 +1430,7 @@ class tree
    {  x.swap(y);  }
 };
 
-} //namespace container_detail {
+} //namespace dtl {
 } //namespace container {
 
 template <class T>
@@ -1326,7 +1441,7 @@ struct has_trivial_destructor_after_move;
 template <class T, class KeyOfValue, class Compare, class Allocator, class Options>
 struct has_trivial_destructor_after_move
    < 
-      ::boost::container::container_detail::tree
+      ::boost::container::dtl::tree
          <T, KeyOfValue, Compare, Allocator, Options>
    >
 {

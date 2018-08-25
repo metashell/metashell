@@ -11,6 +11,7 @@
 #define BOOST_QUATERNION_HPP
 
 #include <boost/config.hpp> // for BOOST_NO_STD_LOCALE
+#include <boost/math_fwd.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>

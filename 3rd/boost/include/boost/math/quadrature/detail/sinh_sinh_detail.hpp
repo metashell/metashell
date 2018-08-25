@@ -41,7 +41,7 @@ public:
     sinh_sinh_detail(size_t max_refinements);
 
     template<class F>
-    Real integrate(const F f, Real tolerance, Real* error, Real* L1, std::size_t* levels) const;
+    auto integrate(const F f, Real tolerance, Real* error, Real* L1, std::size_t* levels)->decltype(std::declval<F>()(std::declval<Real>())) const;
 
 private:
 private:
@@ -142,7 +142,7 @@ sinh_sinh_detail<Real, Policy>::sinh_sinh_detail(size_t max_refinements)
 
 template<class Real, class Policy>
 template<class F>
-Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* error, Real* L1, std::size_t* levels) const
+auto sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* error, Real* L1, std::size_t* levels)->decltype(std::declval<F>()(std::declval<Real>())) const
 {
     using std::abs;
     using std::sqrt;
@@ -151,28 +151,29 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
 
     static const char* function = "boost::math::quadrature::sinh_sinh<%1%>::integrate";
 
-    Real y_max = f(boost::math::tools::max_value<Real>());
-    if(abs(y_max) > boost::math::tools::epsilon<Real>() || !(boost::math::isfinite)(y_max))
+    typedef decltype(f(Real(0))) K;
+    K y_max = f(boost::math::tools::max_value<Real>());
+    if(abs(y_max) > boost::math::tools::epsilon<Real>())
     {
-        return policies::raise_domain_error(function,
-           "The function you are trying to integrate does not go to zero at infinity, and instead evaluates to %1%", y_max, Policy());
+        return static_cast<K>(policies::raise_domain_error(function,
+           "The function you are trying to integrate does not go to zero at infinity, and instead evaluates to %1%", y_max, Policy()));
     }
 
-    Real y_min = f(-boost::math::tools::max_value<Real>());
-    if(abs(y_min) > boost::math::tools::epsilon<Real>() || !(boost::math::isfinite)(y_min))
+    K y_min = f(-boost::math::tools::max_value<Real>());
+    if(abs(y_min) > boost::math::tools::epsilon<Real>())
     {
-        return policies::raise_domain_error(function,
-           "The function you are trying to integrate does not go to zero at -infinity, and instead evaluates to %1%", y_max, Policy());
+        return static_cast<K>(policies::raise_domain_error(function,
+           "The function you are trying to integrate does not go to zero at -infinity, and instead evaluates to %1%", y_max, Policy()));
     }
 
     // Get the party started with two estimates of the integral:
-    Real I0 = f(0)*half_pi<Real>();
+    K I0 = f(0)*half_pi<Real>();
     Real L1_I0 = abs(I0);
     for(size_t i = 0; i < m_abscissas[0].size(); ++i)
     {
         Real x = m_abscissas[0][i];
-        Real yp = f(x);
-        Real ym = f(-x);
+        K yp = f(x);
+        K ym = f(-x);
         I0 += (yp + ym)*m_weights[0][i];
         L1_I0 += (abs(yp)+abs(ym))*m_weights[0][i];
     }
@@ -180,13 +181,13 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
     // Uncomment the estimates to work the convergence on the command line.
     // std::cout << std::setprecision(std::numeric_limits<Real>::digits10);
     // std::cout << "First estimate : " << I0 << std::endl;
-    Real I1 = I0;
+    K I1 = I0;
     Real L1_I1 = L1_I0;
     for (size_t i = 0; i < m_abscissas[1].size(); ++i)
     {
         Real x= m_abscissas[1][i];
-        Real yp = f(x);
-        Real ym = f(-x);
+        K yp = f(x);
+        K ym = f(-x);
         I1 += (yp + ym)*m_weights[1][i];
         L1_I1 += (abs(yp) + abs(ym))*m_weights[1][i];
     }
@@ -195,7 +196,7 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
     L1_I1 *= half<Real>();
     Real err = abs(I0 - I1);
     // std::cout << "Second estimate: " << I1 << " Error estimate at level " << 1 << " = " << err << std::endl;
-    
+
     size_t i = 2;
     for(; i <= m_max_refinements; ++i)
     {
@@ -205,7 +206,7 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
         I1 = half<Real>()*I0;
         L1_I1 = half<Real>()*L1_I0;
         Real h = (Real) 1/ (Real) (1 << i);
-        Real sum = 0;
+        K sum = 0;
         Real absum = 0;
 
         Real abterm1 = 1;
@@ -217,8 +218,8 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
         for(size_t j = 0; j < abscissa_row.size(); ++j)
         {
             Real x = abscissa_row[j];
-            Real yp = f(x);
-            Real ym = f(-x);
+            K yp = f(x);
+            K ym = f(-x);
             sum += (yp + ym)*weight_row[j];
             Real abterm0 = (abs(yp) + abs(ym))*weight_row[j];
             absum += abterm0;
@@ -235,12 +236,12 @@ Real sinh_sinh_detail<Real, Policy>::integrate(const F f, Real tolerance, Real* 
         L1_I1 += absum*h;
         err = abs(I0 - I1);
         // std::cout << "Estimate:        " << I1 << " Error estimate at level " << i  << " = " << err << std::endl;
-        if (!(boost::math::isfinite)(I1))
+        if (!(boost::math::isfinite)(L1_I1))
         {
             const char* err_msg = "The sinh_sinh quadrature evaluated your function at a singular point, leading to the value %1%.\n"
                "sinh_sinh quadrature cannot handle singularities in the domain.\n"
                "If you are sure your function has no singularities, please submit a bug against boost.math\n";
-            return policies::raise_evaluation_error(function, err_msg, I1, Policy());
+            return static_cast<K>(policies::raise_evaluation_error(function, err_msg, I1, Policy()));
         }
         if (err <= tolerance*L1_I1)
         {

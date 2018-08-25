@@ -192,9 +192,18 @@ struct fixed_vector : private std::allocator<T>
    }
    ~fixed_vector()
    {
+#ifdef BOOST_NO_CXX11_ALLOCATOR
       for(unsigned i = 0; i < m_used; ++i)
          this->destroy(&m_data[i]);
       this->deallocate(m_data, m_capacity);
+#else
+      typedef std::allocator<T> allocator_type;
+      typedef std::allocator_traits<allocator_type> allocator_traits; 
+      allocator_type& alloc = *this; 
+      for(unsigned i = 0; i < m_used; ++i)
+         allocator_traits::destroy(alloc, &m_data[i]);
+      allocator_traits::deallocate(alloc, m_data, m_capacity);
+#endif
    }
    T& operator[](unsigned n) { BOOST_ASSERT(n < m_used); return m_data[n]; }
    const T& operator[](unsigned n)const { BOOST_ASSERT(n < m_used); return m_data[n]; }

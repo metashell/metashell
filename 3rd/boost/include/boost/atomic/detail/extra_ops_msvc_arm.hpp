@@ -34,7 +34,7 @@ namespace detail {
 #if defined(BOOST_ATOMIC_INTERLOCKED_BTS) && defined(BOOST_ATOMIC_INTERLOCKED_BTR)
 
 template< typename Base, std::size_t Size, bool Signed >
-struct extra_operations< Base, 4u, Signed > :
+struct extra_operations< Base, 4u, Signed, true > :
     public generic_extra_operations< Base, 4u, Signed >
 {
     typedef generic_extra_operations< Base, 4u, Signed > base_type;

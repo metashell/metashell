@@ -35,7 +35,7 @@
 
 namespace boost {
 namespace container {
-namespace container_detail {
+namespace dtl {
 
 template<class VoidPointer>
 class basic_multiallocation_chain
@@ -53,7 +53,7 @@ class basic_multiallocation_chain
    typedef bi::slist< node
                     , bi::linear<true>
                     , bi::cache_last<true>
-                    , bi::size_type<typename boost::container::container_detail::make_unsigned<difference_type>::type>
+                    , bi::size_type<typename boost::container::dtl::make_unsigned<difference_type>::type>
                     > slist_impl_t;
    slist_impl_t slist_impl_;
 
@@ -182,7 +182,7 @@ class basic_multiallocation_chain
 template<class T>
 struct cast_functor
 {
-   typedef typename container_detail::add_reference<T>::type result_type;
+   typedef typename dtl::add_reference<T>::type result_type;
    template<class U>
    result_type operator()(U &ptr) const
    {  return *static_cast<T*>(static_cast<void*>(&ptr));  }
@@ -211,7 +211,7 @@ class transform_multiallocation_chain
    public:
    typedef transform_iterator
       < typename MultiallocationChain::iterator
-      , container_detail::cast_functor <T> >             iterator;
+      , dtl::cast_functor <T> >             iterator;
    typedef typename MultiallocationChain::size_type      size_type;
 
    transform_multiallocation_chain()
@@ -289,7 +289,7 @@ class transform_multiallocation_chain
 
 }}}
 
-// namespace container_detail {
+// namespace dtl {
 // namespace container {
 // namespace boost {
 

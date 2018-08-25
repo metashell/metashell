@@ -107,12 +107,14 @@
 #include <boost/type_traits/is_function.hpp>
 #include <boost/type_traits/is_fundamental.hpp>
 #include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_list_constructible.hpp>
 #include <boost/type_traits/is_lvalue_reference.hpp>
 #include <boost/type_traits/is_member_function_pointer.hpp>
 #include <boost/type_traits/is_member_object_pointer.hpp>
 #include <boost/type_traits/is_member_pointer.hpp>
 #include <boost/type_traits/is_nothrow_move_assignable.hpp>
 #include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include <boost/type_traits/is_nothrow_swappable.hpp>
 #include <boost/type_traits/is_object.hpp>
 #include <boost/type_traits/is_pod.hpp>
 #include <boost/type_traits/is_pointer.hpp>

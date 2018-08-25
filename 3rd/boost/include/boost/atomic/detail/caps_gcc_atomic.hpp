@@ -16,9 +16,13 @@
 
 #include <boost/atomic/detail/config.hpp>
 #include <boost/atomic/detail/int_sizes.hpp>
+#if defined(__i386__) || defined(__x86_64__)
 #include <boost/atomic/detail/hwcaps_gcc_x86.hpp>
+#elif defined(__arm__)
 #include <boost/atomic/detail/hwcaps_gcc_arm.hpp>
+#elif defined(__POWERPC__) || defined(__PPC__)
 #include <boost/atomic/detail/hwcaps_gcc_ppc.hpp>
+#endif
 
 #ifdef BOOST_HAS_PRAGMA_ONCE
 #pragma once
@@ -30,13 +34,13 @@
 #define BOOST_ATOMIC_INT128_LOCK_FREE 0
 #endif
 
-#if __GCC_ATOMIC_LLONG_LOCK_FREE == 2
+#if (__GCC_ATOMIC_LLONG_LOCK_FREE == 2) || (defined(BOOST_ATOMIC_DETAIL_X86_HAS_CMPXCHG8B) && BOOST_ATOMIC_DETAIL_SIZEOF_LLONG == 8)
 #define BOOST_ATOMIC_LLONG_LOCK_FREE 2
 #else
 #define BOOST_ATOMIC_LLONG_LOCK_FREE BOOST_ATOMIC_INT128_LOCK_FREE
 #endif
 
-#if __GCC_ATOMIC_LONG_LOCK_FREE == 2
+#if (__GCC_ATOMIC_LONG_LOCK_FREE == 2) || (defined(BOOST_ATOMIC_DETAIL_X86_HAS_CMPXCHG8B) && BOOST_ATOMIC_DETAIL_SIZEOF_LONG == 8)
 #define BOOST_ATOMIC_LONG_LOCK_FREE 2
 #else
 #define BOOST_ATOMIC_LONG_LOCK_FREE BOOST_ATOMIC_LLONG_LOCK_FREE

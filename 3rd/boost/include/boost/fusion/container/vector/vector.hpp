@@ -247,14 +247,14 @@ namespace boost { namespace fusion
 
             template <typename J>
             BOOST_CXX14_CONSTEXPR BOOST_FUSION_GPU_ENABLED
-            auto at_impl(J) -> decltype(at_detail<J::value>(this))
+            auto at_impl(J) -> decltype(at_detail<J::value>(&std::declval<vector_data&>()))
             {
                 return at_detail<J::value>(this);
             }
 
             template <typename J>
             BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
-            auto at_impl(J) const -> decltype(at_detail<J::value>(this))
+            auto at_impl(J) const -> decltype(at_detail<J::value>(&std::declval<vector_data const&>()))
             {
                 return at_detail<J::value>(this);
             }

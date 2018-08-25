@@ -123,7 +123,11 @@ namespace detail {
 template<typename Alloc>
 struct bzip2_allocator_traits {
 #ifndef BOOST_NO_STD_ALLOCATOR
+#if defined(BOOST_NO_CXX11_ALLOCATOR)
     typedef typename Alloc::template rebind<char>::other type;
+#else
+    typedef typename std::allocator_traits<Alloc>::template rebind_alloc<char> type;
+#endif
 #else
     typedef std::allocator<char> type;
 #endif
@@ -134,7 +138,11 @@ template< typename Alloc,
               BOOST_DEDUCED_TYPENAME bzip2_allocator_traits<Alloc>::type >
 struct bzip2_allocator : private Base {
 private:
+#if defined(BOOST_NO_CXX11_ALLOCATOR) || defined(BOOST_NO_STD_ALLOCATOR)
     typedef typename Base::size_type size_type;
+#else
+    typedef typename std::allocator_traits<Base>::size_type size_type;
+#endif
 public:
     BOOST_STATIC_CONSTANT(bool, custom = 
         (!is_same<std::allocator<char>, Base>::value));

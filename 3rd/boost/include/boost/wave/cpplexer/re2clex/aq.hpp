@@ -39,10 +39,10 @@ typedef struct tag_aq_queuetype
 
 typedef aq_queuetype* aq_queue;
 
-int aq_enqueue(aq_queue q, aq_stdelement e);
+BOOST_WAVE_DECL int aq_enqueue(aq_queue q, aq_stdelement e);
 int aq_enqueue_front(aq_queue q, aq_stdelement e);
 int aq_serve(aq_queue q, aq_stdelement *e);
-int aq_pop(aq_queue q);
+BOOST_WAVE_DECL int aq_pop(aq_queue q);
 #define AQ_EMPTY(q) (q->size == 0)
 #define AQ_FULL(q) (q->size == q->max_size)
 int aq_grow(aq_queue q);

@@ -32,6 +32,7 @@
 #endif
 
 #include <boost/filesystem/path.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <boost/wave/util/time_conversion_helper.hpp>
 #include <boost/wave/util/unput_queue_iterator.hpp>
@@ -1411,11 +1412,9 @@ string_type const &value = curr_token.get_value();
 
     if (value == "__LINE__") {
     // expand the __LINE__ macro
-    char buffer[22];    // 21 bytes holds all NUL-terminated unsigned 64-bit numbers
+        std::string buffer = lexical_cast<std::string>(main_pos.get_line());
 
-        using namespace std;    // for some systems sprintf is in namespace std
-        sprintf(buffer, "%zd", main_pos.get_line());
-        expanded.push_back(token_type(T_INTLIT, buffer, curr_token.get_position()));
+        expanded.push_back(token_type(T_INTLIT, buffer.c_str(), curr_token.get_position()));
         return true;
     }
     else if (value == "__FILE__") {

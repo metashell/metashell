@@ -4,7 +4,14 @@
 // LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/thread/detail/config.hpp>
-#ifndef BOOST_NO_EXCEPTIONS
+
+#ifdef BOOST_NO_EXCEPTIONS
+namespace boost
+{
+    void shared_state_base::notify_deferred() {}
+}
+
+#else
 
 
 #include <boost/thread/futures/future_error_code.hpp>

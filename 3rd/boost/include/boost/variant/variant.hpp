@@ -40,7 +40,7 @@
 #include <boost/detail/reference_content.hpp>
 #include <boost/aligned_storage.hpp>
 #include <boost/blank.hpp>
-#include <boost/math/common_factor_ct.hpp>
+#include <boost/integer/common_factor_ct.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/repeat.hpp>
@@ -145,7 +145,7 @@ struct add_alignment
     template <typename State, typename Item>
     struct apply
         : mpl::size_t<
-              ::boost::math::static_lcm<
+              ::boost::integer::static_lcm<
                   BOOST_MPL_AUX_VALUE_WKND(State)::value
                 , ::boost::alignment_of<Item>::value
                 >::value

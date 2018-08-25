@@ -51,17 +51,15 @@ namespace boost { namespace spirit { namespace x3
         }
 
         template <typename Action>
-        action<Derived, Action>
-        operator[](Action f) const
+        action<Derived, Action> operator[](Action f) const
         {
-            return action<Derived, Action>(this->derived(), f);
+            return { this->derived(), f };
         }
 
         template <typename Handler>
-        guard<Derived, Handler>
-        on_error(Handler f) const
+        guard<Derived, Handler> on_error(Handler f) const
         {
-            return guard<Derived, Handler>(this->derived(), f);
+            return { this->derived(), f };
         }
     };
 
