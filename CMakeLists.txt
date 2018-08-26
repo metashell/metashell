@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 2.6)
 
 project(metashell)
 set(CMAKE_PROJECT_NAME metashell)
-set(MAJOR_VERSION 3)
+set(MAJOR_VERSION 4)
 set(MINOR_VERSION 0)
 set(PATCH_VERSION 0)
 
