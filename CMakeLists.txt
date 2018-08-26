@@ -208,6 +208,8 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
     elseif ("${PLATFORM_VERSION}" STREQUAL "16.04")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-5-dev")
+    elseif ("${PLATFORM_VERSION}" STREQUAL "18.04")
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-7-dev")
     else()
       message(
         WARNING
@@ -227,6 +229,10 @@ if(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
       OR ("${PLATFORM_VERSION}" STREQUAL "8.5")
     )
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-4.9-dev")
+    elseif (
+      ("${PLATFORM_VERSION}" STREQUAL "9.5")
+    )
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++-6-dev")
     else()
       message(
         WARNING
