@@ -32,6 +32,7 @@
 #ifdef __APPLE__
 #include <errno.h>
 #include <libproc.h>
+#include <mach-o/dyld.h>
 #endif
 
 #ifndef _WIN32
@@ -87,7 +88,7 @@ namespace
   }
 #endif
 
-#if defined __OpenBSD__ || defined __APPLE__
+#if defined __OpenBSD__
   boost::filesystem::path current_working_directory()
   {
     std::vector<char> buff(1);
@@ -119,7 +120,7 @@ namespace
       cb = buff.size();
     }
     return std::string(buff.begin(), buff.begin() + cb);
-#elif defined __OpenBSD__ || defined __APPLE__
+#elif defined __OpenBSD__
     if (argv0_.empty() || argv0_[0] == '/')
     {
       return argv0_;
@@ -145,6 +146,20 @@ namespace
       }
       return "";
     }
+#elif defined __APPLE__
+    (void)argv0_;
+    uint32_t size = 0;
+    // ask for size first
+    if (_NSGetExecutablePath(nullptr, &size) == 0)
+    {
+      return "";
+    }
+    std::vector<char> buff(size + 1);
+    if (_NSGetExecutablePath(buff.data(), &size) == 0)
+    {
+      return std::string(buff.data());
+    }
+    return "";
 #else
     (void)argv0_;
     return read_link("/proc/self/exe");
