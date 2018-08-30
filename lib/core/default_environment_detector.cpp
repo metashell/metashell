@@ -135,7 +135,7 @@ namespace
     {
       const std::string p = just::environment::get("PATH");
       std::vector<boost::filesystem::path> path;
-      boost::split(path, p, [](char c_) { return c_ == ';'; });
+      boost::split(path, p, [](char c_) { return c_ == ':'; });
       for (const auto& s : path)
       {
         const boost::filesystem::path fn = s / argv0_;
