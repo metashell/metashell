@@ -1,6 +1,6 @@
 # Changelog
 
-## Not in any release yet
+## Version 4.0.0
 
 * New features
     * The `clang` engine of release 3.0.0 has been renamed to `templight`. Note

@@ -3,6 +3,33 @@
 You can get binary installers for a number of platforms. If you can't or don't
 want to install them, you can build Metashell yourself.
 
+## Version 4.0.0
+
+### Linux
+
+* Ubuntu
+    * Ubuntu 18.04:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v4.0.0/metashell_4.0.0_ubuntu18.04_x86_64.deb)
+* Debian
+    * Debian 9.5:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v4.0.0/metashell_4.0.0_debian9.5_x86_64.deb)
+* Fedora
+    * Fedora 28:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v4.0.0/metashell_4.0.0_fedora28_x86_64.rpm)
+* OpenSuSE
+    * OpenSuSE Leap 42.2:
+      [64 bit](https://github.com/metashell/metashell/releases/download/v4.0.0/metashell_4.0.0_opensuse15.0_x86_64.rpm)
+
+### Windows
+
+* [Windows installer](https://github.com/metashell/metashell/releases/download/v4.0.0/metashell_4.0.0_AMD64.exe)
+
+### OS X
+
+* Using [Homebrew](http://brew.sh/): `brew install metashell`
+
+  Note that you need to install XCode with Command Line Developer Tools installed for Metashell to work properly.
+
 ## Version 3.0.0
 
 ### Linux
