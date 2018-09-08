@@ -62,9 +62,18 @@ opensuse)
     zip
   ;;
 ubuntu)
+  apt-cache policy | grep universe > /dev/null
+  if [ $? -ne 0 ]
+  then
+    sudo apt-add-repository universe
+  fi
   sudo apt-get -y install git g++ cmake libreadline-dev python-pip zip
-  sudo pip install pycodestyle pylint gitpython daemonize mkdocs cheetah
+  sudo -H pip install pycodestyle pylint gitpython daemonize mkdocs cheetah
   UBUNTU_VERSION="$(tools/detect_platform.sh --version)"
+  if [ "${UBUNTU_VERSION}" = "18.04" ]
+  then
+    UBUNTU_VERSION="16.04"
+  fi
   CLANG_ARCHIVE="clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-ubuntu-${UBUNTU_VERSION}"
   cd 3rd
     wget http://llvm.org/releases/${CLANG_VERSION}/${CLANG_ARCHIVE}.tar.xz
