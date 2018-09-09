@@ -20,18 +20,22 @@
 
 #include <metashell/system_test/metashell_instance.hpp>
 
-using namespace metashell::system_test;
-
-code_completer::code_completer(const std::string& init_code_)
-  : _init_code(init_code_)
+namespace metashell
 {
-}
+  namespace system_test
+  {
+    code_completer::code_completer(const std::string& init_code_)
+      : _init_code(init_code_)
+    {
+    }
 
-json_string code_completer::operator()(const std::string& code_) const
-{
-  metashell_instance mi;
+    json_string code_completer::operator()(const std::string& code_) const
+    {
+      metashell_instance mi;
 
-  mi.command(_init_code);
+      mi.command(_init_code);
 
-  return mi.code_completion(code_).front();
+      return mi.code_completion(code_).front();
+    }
+  }
 }

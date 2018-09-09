@@ -18,35 +18,39 @@
 
 #include <ostream>
 
-using namespace metashell::data;
-
-text::text(const std::string& s_) : paragraphs(1, paragraph(s_)) {}
-
-text::text(const std::initializer_list<paragraph>& paragraphs_)
-  : paragraphs(paragraphs_)
+namespace metashell
 {
-}
-
-bool text::operator==(const text& t_) const
-{
-  return paragraphs == t_.paragraphs;
-}
-
-std::ostream& metashell::data::operator<<(std::ostream& o_, const text& t_)
-{
-  o_ << "text({";
-  bool first = true;
-  for (const auto& p : t_.paragraphs)
+  namespace data
   {
-    if (first)
+    text::text(const std::string& s_) : paragraphs(1, paragraph(s_)) {}
+
+    text::text(const std::initializer_list<paragraph>& paragraphs_)
+      : paragraphs(paragraphs_)
     {
-      first = false;
     }
-    else
+
+    bool text::operator==(const text& t_) const
     {
-      o_ << ", ";
+      return paragraphs == t_.paragraphs;
     }
-    o_ << p;
+
+    std::ostream& operator<<(std::ostream& o_, const text& t_)
+    {
+      o_ << "text({";
+      bool first = true;
+      for (const auto& p : t_.paragraphs)
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          o_ << ", ";
+        }
+        o_ << p;
+      }
+      return o_ << "})";
+    }
   }
-  return o_ << "})";
 }

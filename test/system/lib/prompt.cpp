@@ -23,50 +23,52 @@
 
 #include <iostream>
 
-using namespace metashell::system_test;
-
-prompt::prompt(pattern::string prompt_) : _prompt(prompt_) {}
-
-const pattern::string& prompt::value() const { return _prompt; }
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const prompt& prompt_)
+namespace metashell
 {
-  return out_ << to_json_string(prompt_);
-}
-
-json_string metashell::system_test::to_json_string(const prompt& p_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("prompt");
-
-  w.Key("prompt");
-  write(p_.value(), w);
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const prompt& prompt_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "prompt"}, d) && is_string("prompt", d["type"]))
+  namespace system_test
   {
-    const auto& prompt = d["prompt"];
-    return prompt_.value().match(
-        std::string(prompt.GetString(), prompt.GetStringLength()));
-  }
-  else
-  {
-    return false;
+    prompt::prompt(pattern::string prompt_) : _prompt(prompt_) {}
+
+    const pattern::string& prompt::value() const { return _prompt; }
+
+    std::ostream& operator<<(std::ostream& out_, const prompt& prompt_)
+    {
+      return out_ << to_json_string(prompt_);
+    }
+
+    json_string to_json_string(const prompt& p_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("prompt");
+
+      w.Key("prompt");
+      write(p_.value(), w);
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const prompt& prompt_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "prompt"}, d) && is_string("prompt", d["type"]))
+      {
+        const auto& prompt = d["prompt"];
+        return prompt_.value().match(
+            std::string(prompt.GetString(), prompt.GetStringLength()));
+      }
+      else
+      {
+        return false;
+      }
+    }
   }
 }

@@ -29,105 +29,110 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell::system_test;
-
-namespace
+namespace metashell
 {
-  bool is_int(const std::string& s_)
+  namespace system_test
   {
-    return !s_.empty() && std::all_of(s_.begin(), s_.end(), [](char c_) {
-      return c_ >= '0' && c_ <= '9';
-    });
-  }
-}
-
-file_location::file_location(const json_string& s_)
-  : _filename(boost::none), _row(boost::none), _column(boost::none)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-  init(d);
-}
-
-void file_location::init(const std::string& s_)
-{
-  std::vector<std::string> parts;
-  boost::algorithm::split(parts, s_, [](char c_) { return c_ == ':'; });
-
-  auto filename_end = parts.end();
-
-  if (parts.size() > 1 && is_int(parts.back()))
-  {
-    if (parts.size() > 2 && is_int(parts[parts.size() - 2]))
+    namespace
     {
-      --filename_end;
-      _column = stoi(*filename_end);
+      bool is_int(const std::string& s_)
+      {
+        return !s_.empty() && std::all_of(s_.begin(), s_.end(), [](char c_) {
+          return c_ >= '0' && c_ <= '9';
+        });
+      }
     }
-    --filename_end;
-    _row = stoi(*filename_end);
+
+    file_location::file_location(const json_string& s_)
+      : _filename(boost::none), _row(boost::none), _column(boost::none)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+      init(d);
+    }
+
+    void file_location::init(const std::string& s_)
+    {
+      std::vector<std::string> parts;
+      boost::algorithm::split(parts, s_, [](char c_) { return c_ == ':'; });
+
+      auto filename_end = parts.end();
+
+      if (parts.size() > 1 && is_int(parts.back()))
+      {
+        if (parts.size() > 2 && is_int(parts[parts.size() - 2]))
+        {
+          --filename_end;
+          _column = stoi(*filename_end);
+        }
+        --filename_end;
+        _row = stoi(*filename_end);
+      }
+      _filename = boost::algorithm::join(
+          boost::make_iterator_range(parts.begin(), filename_end), ":");
+    }
+
+    bool file_location::filename_specified() const
+    {
+      return _filename != boost::none;
+    }
+
+    const boost::filesystem::path& file_location::filename() const
+    {
+      assert(filename_specified());
+      return *_filename;
+    }
+
+    bool file_location::row_specified() const { return _row != boost::none; }
+
+    int file_location::row() const
+    {
+      assert(row_specified());
+      return *_row;
+    }
+
+    bool file_location::column_specified() const
+    {
+      return _column != boost::none;
+    }
+
+    int file_location::column() const
+    {
+      assert(column_specified());
+      return *_column;
+    }
+
+    bool file_location::operator==(const file_location& l_) const
+    {
+      return matches(_filename, l_._filename) && matches(_row, l_._row) &&
+             matches(_column, l_._column);
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const file_location& l_)
+    {
+      return out_ << to_json_string(l_);
+    }
+
+    std::string to_string(const file_location& l_)
+    {
+      return (l_.filename_specified() ? l_.filename().string() : "*") + ':' +
+             (l_.row_specified() ? std::to_string(l_.row()) : "*") + ':' +
+             (l_.column_specified() ? std::to_string(l_.column()) : "*");
+    }
+
+    json_string to_json_string(const file_location& l_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.String(to_string(l_).c_str());
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const file_location& l_, const json_string& s_)
+    {
+      return l_ == file_location(s_);
+    }
   }
-  _filename = boost::algorithm::join(
-      boost::make_iterator_range(parts.begin(), filename_end), ":");
-}
-
-bool file_location::filename_specified() const
-{
-  return _filename != boost::none;
-}
-
-const boost::filesystem::path& file_location::filename() const
-{
-  assert(filename_specified());
-  return *_filename;
-}
-
-bool file_location::row_specified() const { return _row != boost::none; }
-
-int file_location::row() const
-{
-  assert(row_specified());
-  return *_row;
-}
-
-bool file_location::column_specified() const { return _column != boost::none; }
-
-int file_location::column() const
-{
-  assert(column_specified());
-  return *_column;
-}
-
-bool file_location::operator==(const file_location& l_) const
-{
-  return matches(_filename, l_._filename) && matches(_row, l_._row) &&
-         matches(_column, l_._column);
-}
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const file_location& l_)
-{
-  return out_ << to_json_string(l_);
-}
-
-std::string metashell::system_test::to_string(const file_location& l_)
-{
-  return (l_.filename_specified() ? l_.filename().string() : "*") + ':' +
-         (l_.row_specified() ? std::to_string(l_.row()) : "*") + ':' +
-         (l_.column_specified() ? std::to_string(l_.column()) : "*");
-}
-
-json_string metashell::system_test::to_json_string(const file_location& l_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.String(to_string(l_).c_str());
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const file_location& l_,
-                                        const json_string& s_)
-{
-  return l_ == file_location(s_);
 }

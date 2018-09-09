@@ -26,96 +26,97 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace metashell::system_test;
-
-filename_list::filename_list() : _paths() {}
-
-filename_list::filename_list(std::initializer_list<value_type> paths_)
-  : _paths(paths_)
+namespace metashell
 {
-}
-
-filename_list::filename_list(const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "filenames"}, d) &&
-      is_string("filename_list", d["type"]))
+  namespace system_test
   {
-    if (d["filenames"].IsArray())
+    filename_list::filename_list() : _paths() {}
+
+    filename_list::filename_list(std::initializer_list<value_type> paths_)
+      : _paths(paths_)
     {
-      for (auto i = d["filenames"].Begin(), e = d["filenames"].End(); i != e;
-           ++i)
+    }
+
+    filename_list::filename_list(const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "filenames"}, d) &&
+          is_string("filename_list", d["type"]))
       {
-        if (i->IsString())
+        if (d["filenames"].IsArray())
         {
-          _paths.push_back(i->GetString());
-        }
-        else
-        {
-          throw std::runtime_error("Invalid filename in filename_list: " +
-                                   s_.get());
+          for (auto i = d["filenames"].Begin(), e = d["filenames"].End();
+               i != e; ++i)
+          {
+            if (i->IsString())
+            {
+              _paths.push_back(i->GetString());
+            }
+            else
+            {
+              throw std::runtime_error("Invalid filename in filename_list: " +
+                                       s_.get());
+            }
+          }
         }
       }
+      else
+      {
+        throw std::runtime_error("Invalid filename_list: " + s_.get());
+      }
+    }
+
+    filename_list::const_iterator filename_list::begin() const
+    {
+      return _paths.begin();
+    }
+
+    filename_list::const_iterator filename_list::end() const
+    {
+      return _paths.end();
+    }
+
+    bool filename_list::empty() const { return _paths.empty(); }
+
+    std::ostream& operator<<(std::ostream& out_,
+                             const filename_list& filenames_)
+    {
+      return out_ << to_json_string(filenames_);
+    }
+
+    json_string to_json_string(const filename_list& filenames_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("filename_list");
+
+      w.Key("filenames");
+      w.StartArray();
+      for (const boost::filesystem::path& filename : filenames_)
+      {
+        w.String(filename.string().c_str());
+      }
+      w.EndArray();
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const filename_list& filenames_, const json_string& s_)
+    {
+      return to_json_string(filenames_) == s_;
+    }
+
+    bool operator==(const filename_list& a_, const filename_list& b_)
+    {
+      return boost::range::equal(a_, b_);
     }
   }
-  else
-  {
-    throw std::runtime_error("Invalid filename_list: " + s_.get());
-  }
-}
-
-filename_list::const_iterator filename_list::begin() const
-{
-  return _paths.begin();
-}
-
-filename_list::const_iterator filename_list::end() const
-{
-  return _paths.end();
-}
-
-bool filename_list::empty() const { return _paths.empty(); }
-
-std::ostream& metashell::system_test::
-operator<<(std::ostream& out_, const filename_list& filenames_)
-{
-  return out_ << to_json_string(filenames_);
-}
-
-json_string
-metashell::system_test::to_json_string(const filename_list& filenames_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("filename_list");
-
-  w.Key("filenames");
-  w.StartArray();
-  for (const boost::filesystem::path& filename : filenames_)
-  {
-    w.String(filename.string().c_str());
-  }
-  w.EndArray();
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const filename_list& filenames_,
-                                        const json_string& s_)
-{
-  return to_json_string(filenames_) == s_;
-}
-
-bool metashell::system_test::operator==(const filename_list& a_,
-                                        const filename_list& b_)
-{
-  return boost::range::equal(a_, b_);
 }

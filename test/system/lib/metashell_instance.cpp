@@ -26,91 +26,89 @@
 
 #include <algorithm>
 
-namespace
-{
-  std::string current_engine()
-  {
-    const auto& args =
-        metashell::system_test::system_test_config::metashell_args();
-    auto engine = std::find(args.begin(), args.end(), "--engine");
-    if (engine != args.end())
-    {
-      ++engine;
-      if (engine != args.end())
-      {
-        return *engine;
-      }
-    }
-    return "internal";
-  }
-
-  template <class Container, class T>
-  bool contains(const Container& container_, const T& item_)
-  {
-    return std::find(container_.begin(), container_.end(), item_) !=
-           container_.end();
-  }
-
-  std::vector<std::string>
-  construct_cmd(const std::vector<std::string>& extra_args_,
-                bool allow_user_defined_args_,
-                bool allow_standard_headers_)
-  {
-    using namespace metashell::system_test;
-
-    std::vector<std::string> cmd{"--console=json", "--nosplash"};
-    if (allow_user_defined_args_)
-    {
-      cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
-                 system_test_config::metashell_args().end());
-    }
-    if (!extra_args_.empty())
-    {
-      if (!contains(cmd, "--") || extra_args_.front() != "--")
-      {
-        cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
-      }
-      else
-      {
-        cmd.insert(cmd.end(), extra_args_.begin() + 1, extra_args_.end());
-      }
-    }
-    if (!allow_standard_headers_ && !using_msvc())
-    {
-      if (!contains(cmd, "--"))
-      {
-        cmd.push_back("--");
-      }
-      if (using_wave())
-      {
-        cmd.push_back("--nostdinc++");
-      }
-      else
-      {
-        cmd.push_back("-nostdinc");
-        cmd.push_back("-nostdinc++");
-      }
-    }
-
-    return cmd;
-  }
-
-  void append_with_prefix(std::vector<std::string>& args_,
-                          const std::string& prefix_,
-                          const std::vector<boost::filesystem::path>& paths_)
-  {
-    args_.reserve(args_.size() + paths_.size());
-    for (const boost::filesystem::path& p : paths_)
-    {
-      args_.push_back(prefix_ + p.string());
-    }
-  }
-}
-
 namespace metashell
 {
   namespace system_test
   {
+    namespace
+    {
+      std::string current_engine()
+      {
+        const auto& args = system_test_config::metashell_args();
+        auto engine = std::find(args.begin(), args.end(), "--engine");
+        if (engine != args.end())
+        {
+          ++engine;
+          if (engine != args.end())
+          {
+            return *engine;
+          }
+        }
+        return "internal";
+      }
+
+      template <class Container, class T>
+      bool contains(const Container& container_, const T& item_)
+      {
+        return std::find(container_.begin(), container_.end(), item_) !=
+               container_.end();
+      }
+
+      std::vector<std::string>
+      construct_cmd(const std::vector<std::string>& extra_args_,
+                    bool allow_user_defined_args_,
+                    bool allow_standard_headers_)
+      {
+        std::vector<std::string> cmd{"--console=json", "--nosplash"};
+        if (allow_user_defined_args_)
+        {
+          cmd.insert(cmd.end(), system_test_config::metashell_args().begin(),
+                     system_test_config::metashell_args().end());
+        }
+        if (!extra_args_.empty())
+        {
+          if (!contains(cmd, "--") || extra_args_.front() != "--")
+          {
+            cmd.insert(cmd.end(), extra_args_.begin(), extra_args_.end());
+          }
+          else
+          {
+            cmd.insert(cmd.end(), extra_args_.begin() + 1, extra_args_.end());
+          }
+        }
+        if (!allow_standard_headers_ && !using_msvc())
+        {
+          if (!contains(cmd, "--"))
+          {
+            cmd.push_back("--");
+          }
+          if (using_wave())
+          {
+            cmd.push_back("--nostdinc++");
+          }
+          else
+          {
+            cmd.push_back("-nostdinc");
+            cmd.push_back("-nostdinc++");
+          }
+        }
+
+        return cmd;
+      }
+
+      void
+      append_with_prefix(std::vector<std::string>& args_,
+                         const std::string& prefix_,
+                         const std::vector<boost::filesystem::path>& paths_)
+      {
+        args_.reserve(args_.size() + paths_.size());
+        for (const boost::filesystem::path& p : paths_)
+        {
+          args_.push_back(prefix_ + p.string());
+        }
+      }
+    }
+
     metashell_instance::metashell_instance(
         const std::vector<std::string>& extra_args_,
         const boost::filesystem::path& cwd_,

@@ -24,91 +24,94 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell::system_test;
-
-comment::comment(std::vector<paragraph> paragraphs_)
-  : _paragraphs_specified(true), _paragraphs(move(paragraphs_))
+namespace metashell
 {
-}
-
-comment::comment(pattern::placeholder)
-  : _paragraphs_specified(false), _paragraphs()
-{
-}
-
-bool comment::paragraphs_specified() const { return _paragraphs_specified; }
-
-const std::vector<paragraph>& comment::paragraphs() const
-{
-  assert(paragraphs_specified());
-  return _paragraphs;
-}
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const comment& comment_)
-{
-  return out_ << to_json_string(comment_);
-}
-
-json_string metashell::system_test::to_json_string(const comment& c_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("comment");
-
-  w.Key("paragraphs");
-  if (c_.paragraphs_specified())
+  namespace system_test
   {
-    w.StartArray();
-    for (const paragraph& p : c_.paragraphs())
+    comment::comment(std::vector<paragraph> paragraphs_)
+      : _paragraphs_specified(true), _paragraphs(move(paragraphs_))
     {
-      write(p, w);
     }
-    w.EndArray();
-  }
-  else
-  {
-    w.Null();
-  }
 
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const comment& c_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "paragraphs"}, d) && is_string("comment", d["type"]))
-  {
-    if (c_.paragraphs_specified())
+    comment::comment(pattern::placeholder)
+      : _paragraphs_specified(false), _paragraphs()
     {
-      if (d["paragraphs"].IsArray() &&
-          d["paragraphs"].Size() == c_.paragraphs().size())
+    }
+
+    bool comment::paragraphs_specified() const { return _paragraphs_specified; }
+
+    const std::vector<paragraph>& comment::paragraphs() const
+    {
+      assert(paragraphs_specified());
+      return _paragraphs;
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const comment& comment_)
+    {
+      return out_ << to_json_string(comment_);
+    }
+
+    json_string to_json_string(const comment& c_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("comment");
+
+      w.Key("paragraphs");
+      if (c_.paragraphs_specified())
       {
-        auto i = d["paragraphs"].Begin();
+        w.StartArray();
         for (const paragraph& p : c_.paragraphs())
         {
-          if (metashell::system_test::operator!=(p, *i))
-          {
-            return false;
-          }
-          ++i;
+          write(p, w);
         }
-        return true;
+        w.EndArray();
       }
+      else
+      {
+        w.Null();
+      }
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
     }
-    else
+
+    bool operator==(const comment& c_, const json_string& s_)
     {
-      return true;
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "paragraphs"}, d) &&
+          is_string("comment", d["type"]))
+      {
+        if (c_.paragraphs_specified())
+        {
+          if (d["paragraphs"].IsArray() &&
+              d["paragraphs"].Size() == c_.paragraphs().size())
+          {
+            auto i = d["paragraphs"].Begin();
+            for (const paragraph& p : c_.paragraphs())
+            {
+              if (system_test::operator!=(p, *i))
+              {
+                return false;
+              }
+              ++i;
+            }
+            return true;
+          }
+        }
+        else
+        {
+          return true;
+        }
+      }
+      return false;
     }
   }
-  return false;
 }

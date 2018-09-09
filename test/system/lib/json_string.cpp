@@ -20,31 +20,33 @@
 
 #include <pattern/boost_regex.hpp>
 
-using namespace metashell::system_test;
-
-json_string::json_string(const std::string& json_) : _json(json_) {}
-
-const std::string& json_string::get() const { return _json; }
-
-bool metashell::system_test::operator==(const json_string& a_,
-                                        const json_string& b_)
+namespace metashell
 {
-  // Not testing point_of_event and source_location
-  auto flags = boost::match_default | boost::format_all;
-  boost::regex filter_poi(R"(,"point_of_event":"[^"]*")");
-  boost::regex filter_sl(R"(,"source_location":"[^"]*")");
+  namespace system_test
+  {
+    json_string::json_string(const std::string& json_) : _json(json_) {}
 
-  auto filtered_a = boost::regex_replace(a_.get(), filter_poi, "", flags);
-  auto filtered_b = boost::regex_replace(b_.get(), filter_poi, "", flags);
+    const std::string& json_string::get() const { return _json; }
 
-  filtered_a = boost::regex_replace(filtered_a, filter_sl, "", flags);
-  filtered_b = boost::regex_replace(filtered_b, filter_sl, "", flags);
+    bool operator==(const json_string& a_, const json_string& b_)
+    {
+      // Not testing point_of_event and source_location
+      auto flags = boost::match_default | boost::format_all;
+      boost::regex filter_poi(R"(,"point_of_event":"[^"]*")");
+      boost::regex filter_sl(R"(,"source_location":"[^"]*")");
 
-  return filtered_a == filtered_b;
-}
+      auto filtered_a = boost::regex_replace(a_.get(), filter_poi, "", flags);
+      auto filtered_b = boost::regex_replace(b_.get(), filter_poi, "", flags);
 
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const json_string& s_)
-{
-  return out_ << s_.get();
+      filtered_a = boost::regex_replace(filtered_a, filter_sl, "", flags);
+      filtered_b = boost::regex_replace(filtered_b, filter_sl, "", flags);
+
+      return filtered_a == filtered_b;
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const json_string& s_)
+    {
+      return out_ << s_.get();
+    }
+  }
 }

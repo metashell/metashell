@@ -22,67 +22,71 @@
 #include <iostream>
 #include <vector>
 
-using namespace metashell::system_test;
-
-namespace
+namespace metashell
 {
-  template <class It, class T>
-  It find_last(It begin_, It end_, T val_)
+  namespace system_test
   {
-    if (begin_ == end_)
+    namespace
     {
-      return end_;
-    }
-    else
-    {
-      for (It i = end_ - 1; i != begin_; --i)
+      template <class It, class T>
+      It find_last(It begin_, It end_, T val_)
       {
-        if (*i == val_)
+        if (begin_ == end_)
         {
-          return i;
+          return end_;
+        }
+        else
+        {
+          for (It i = end_ - 1; i != begin_; --i)
+          {
+            if (*i == val_)
+            {
+              return i;
+            }
+          }
+          return *begin_ == val_ ? begin_ : end_;
         }
       }
-      return *begin_ == val_ ? begin_ : end_;
     }
-  }
-}
 
-int metashell::system_test::main(int argc_, char* argv_[])
-{
-  if (argc_ < 2)
-  {
-    std::cerr
-        << "Usage: " << argv_[0]
-        << " <metashell_binary> <metashell arguments> -- <just::test arguments>"
-        << std::endl;
-    return -1;
-  }
-  else
-  {
-    const auto end = argv_ + argc_;
-    const auto sep = find_last(argv_, end, std::string("--"));
-
-    std::cerr << "Testing the following Metashell command:";
-    for (auto i = argv_ + 1; i != sep; ++i)
+    int main(int argc_, char* argv_[])
     {
-      std::cerr << " " << *i;
-    }
-    std::cerr << std::endl;
+      if (argc_ < 2)
+      {
+        std::cerr << "Usage: " << argv_[0]
+                  << " <metashell_binary> <metashell arguments> -- <just::test "
+                     "arguments>"
+                  << std::endl;
+        return -1;
+      }
+      else
+      {
+        const auto end = argv_ + argc_;
+        const auto sep = find_last(argv_, end, std::string("--"));
 
-    system_test_config::metashell_binary(argv_[1]);
-    for (auto i = argv_ + 2; i != sep; ++i)
-    {
-      system_test_config::metashell_arg(*i);
-    }
+        std::cerr << "Testing the following Metashell command:";
+        for (auto i = argv_ + 1; i != sep; ++i)
+        {
+          std::cerr << " " << *i;
+        }
+        std::cerr << std::endl;
 
-    std::vector<char*> gtest_args = {argv_[0]};
-    if (sep != end)
-    {
-      gtest_args.insert(gtest_args.end(), sep + 1, end);
-    }
+        system_test_config::metashell_binary(argv_[1]);
+        for (auto i = argv_ + 2; i != sep; ++i)
+        {
+          system_test_config::metashell_arg(*i);
+        }
 
-    int argc = gtest_args.size();
-    ::testing::InitGoogleTest(&argc, gtest_args.data());
-    return RUN_ALL_TESTS();
+        std::vector<char*> gtest_args = {argv_[0]};
+        if (sep != end)
+        {
+          gtest_args.insert(gtest_args.end(), sep + 1, end);
+        }
+
+        int argc = gtest_args.size();
+        ::testing::InitGoogleTest(&argc, gtest_args.data());
+        return RUN_ALL_TESTS();
+      }
+    }
   }
 }

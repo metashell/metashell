@@ -16,20 +16,23 @@
 
 #include <metashell/system_test/path_builder.hpp>
 
-using namespace metashell::system_test;
-
-path_builder::path_builder(const std::string& s_) : _path(s_) {}
-
-path_builder metashell::system_test::operator/(const path_builder& a_,
-                                               const std::string& b_)
+namespace metashell
 {
-#ifdef _WIN32
-  const char sep = '\\';
-#else
-  const char sep = '/';
-#endif
-  const std::string a(a_);
-  return path_builder(a.empty() ? b_ : a + sep + b_);
-}
+  namespace system_test
+  {
+    path_builder::path_builder(const std::string& s_) : _path(s_) {}
 
-path_builder::operator std::string() const { return _path; }
+    path_builder operator/(const path_builder& a_, const std::string& b_)
+    {
+#ifdef _WIN32
+      const char sep = '\\';
+#else
+      const char sep = '/';
+#endif
+      const std::string a(a_);
+      return path_builder(a.empty() ? b_ : a + sep + b_);
+    }
+
+    path_builder::operator std::string() const { return _path; }
+  }
+}

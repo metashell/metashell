@@ -23,70 +23,72 @@
 
 #include <iostream>
 
-using namespace metashell::system_test;
-
-raw_text::raw_text(const std::string& text_) : _text(text_) {}
-
-raw_text::raw_text(pattern::placeholder) : _text(boost::none) {}
-
-raw_text::raw_text(const json_string& s_) : _text(boost::none)
+namespace metashell
 {
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "value"}, d) && is_string("raw_text", d["type"]) &&
-      d["value"].IsString())
+  namespace system_test
   {
-    _text = d["value"].GetString();
+    raw_text::raw_text(const std::string& text_) : _text(text_) {}
+
+    raw_text::raw_text(pattern::placeholder) : _text(boost::none) {}
+
+    raw_text::raw_text(const json_string& s_) : _text(boost::none)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "value"}, d) &&
+          is_string("raw_text", d["type"]) && d["value"].IsString())
+      {
+        _text = d["value"].GetString();
+      }
+      else
+      {
+        throw std::runtime_error("Invalid raw_text: " + s_.get());
+      }
+    }
+
+    bool raw_text::text_specified() const { return bool(_text); }
+
+    const std::string& raw_text::text() const { return *_text; }
+
+    std::ostream& operator<<(std::ostream& out_, const raw_text& raw_text_)
+    {
+      return out_ << to_json_string(raw_text_);
+    }
+
+    json_string to_json_string(const raw_text& t_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("raw_text");
+
+      w.Key("value");
+      if (t_.text_specified())
+      {
+        w.String(t_.text().c_str());
+      }
+      else
+      {
+        w.Null();
+      }
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const raw_text& text_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      return members_are({"type", "value"}, d) &&
+             is_string("raw_text", d["type"]) &&
+             (!text_.text_specified() || is_string(text_.text(), d["value"]));
+    }
   }
-  else
-  {
-    throw std::runtime_error("Invalid raw_text: " + s_.get());
-  }
-}
-
-bool raw_text::text_specified() const { return bool(_text); }
-
-const std::string& raw_text::text() const { return *_text; }
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const raw_text& raw_text_)
-{
-  return out_ << to_json_string(raw_text_);
-}
-
-json_string metashell::system_test::to_json_string(const raw_text& t_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("raw_text");
-
-  w.Key("value");
-  if (t_.text_specified())
-  {
-    w.String(t_.text().c_str());
-  }
-  else
-  {
-    w.Null();
-  }
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const raw_text& text_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  return members_are({"type", "value"}, d) &&
-         is_string("raw_text", d["type"]) &&
-         (!text_.text_specified() || is_string(text_.text(), d["value"]));
 }

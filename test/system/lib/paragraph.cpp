@@ -21,49 +21,52 @@
 
 #include <iostream>
 
-using namespace metashell::system_test;
-
-paragraph::paragraph(const std::string& content_,
-                     const std::string& indentation_)
-  : _content(content_),
-    _first_line_indentation(indentation_),
-    _rest_of_lines_indentation(indentation_)
+namespace metashell
 {
-}
+  namespace system_test
+  {
+    paragraph::paragraph(const std::string& content_,
+                         const std::string& indentation_)
+      : _content(content_),
+        _first_line_indentation(indentation_),
+        _rest_of_lines_indentation(indentation_)
+    {
+    }
 
-paragraph::paragraph(const std::string& content_,
-                     const std::string& rest_of_lines_indentation_,
-                     const std::string& first_line_indentation_)
-  : _content(content_),
-    _first_line_indentation(first_line_indentation_),
-    _rest_of_lines_indentation(rest_of_lines_indentation_)
-{
-}
+    paragraph::paragraph(const std::string& content_,
+                         const std::string& rest_of_lines_indentation_,
+                         const std::string& first_line_indentation_)
+      : _content(content_),
+        _first_line_indentation(first_line_indentation_),
+        _rest_of_lines_indentation(rest_of_lines_indentation_)
+    {
+    }
 
-const std::string& paragraph::content() const { return _content; }
+    const std::string& paragraph::content() const { return _content; }
 
-const std::string& paragraph::first_line_indentation() const
-{
-  return _first_line_indentation;
-}
+    const std::string& paragraph::first_line_indentation() const
+    {
+      return _first_line_indentation;
+    }
 
-const std::string& paragraph::rest_of_lines_indentation() const
-{
-  return _rest_of_lines_indentation;
-}
+    const std::string& paragraph::rest_of_lines_indentation() const
+    {
+      return _rest_of_lines_indentation;
+    }
 
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const paragraph& p_)
-{
-  return out_ << to_json_string(p_);
-}
+    std::ostream& operator<<(std::ostream& out_, const paragraph& p_)
+    {
+      return out_ << to_json_string(p_);
+    }
 
-json_string metashell::system_test::to_json_string(const paragraph& p_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+    json_string to_json_string(const paragraph& p_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
 
-  write(p_, w);
+      write(p_, w);
 
-  return json_string(buff.GetString());
+      return json_string(buff.GetString());
+    }
+  }
 }

@@ -16,26 +16,30 @@
 
 #include <metashell/data/headers.hpp>
 
-using namespace metashell::data;
-
-headers::headers(const boost::filesystem::path& internal_dir_)
-  : _headers(), _internal_dir(internal_dir_)
+namespace metashell
 {
-}
+  namespace data
+  {
+    headers::headers(const boost::filesystem::path& internal_dir_)
+      : _headers(), _internal_dir(internal_dir_)
+    {
+    }
 
-void headers::add(const boost::filesystem::path& filename_,
-                  const std::string& content_)
-{
-  _headers.push_back(data::unsaved_file(filename_, content_));
-}
+    void headers::add(const boost::filesystem::path& filename_,
+                      const std::string& content_)
+    {
+      _headers.push_back(unsaved_file(filename_, content_));
+    }
 
-headers::iterator headers::begin() const { return _headers.begin(); }
+    headers::iterator headers::begin() const { return _headers.begin(); }
 
-headers::iterator headers::end() const { return _headers.end(); }
+    headers::iterator headers::end() const { return _headers.end(); }
 
-headers::size_type headers::size() const { return _headers.size(); }
+    headers::size_type headers::size() const { return _headers.size(); }
 
-const boost::filesystem::path& headers::internal_dir() const
-{
-  return _internal_dir;
+    const boost::filesystem::path& headers::internal_dir() const
+    {
+      return _internal_dir;
+    }
+  }
 }

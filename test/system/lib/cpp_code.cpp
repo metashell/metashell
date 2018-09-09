@@ -24,65 +24,67 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace metashell::system_test;
-
-cpp_code::cpp_code(pattern::string code_) : _code(code_) {}
-
-cpp_code::cpp_code(const json_string& s_) : _code(pattern::_)
+namespace metashell
 {
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]) &&
-      d["code"].IsString())
+  namespace system_test
   {
-    _code = d["code"].GetString();
-  }
-  else
-  {
-    throw std::runtime_error("Invalid cpp_code: " + s_.get());
-  }
-}
-const pattern::string& cpp_code::code() const { return _code; }
+    cpp_code::cpp_code(pattern::string code_) : _code(code_) {}
 
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const cpp_code& cpp_code_)
-{
-  return out_ << to_json_string(cpp_code_);
-}
+    cpp_code::cpp_code(const json_string& s_) : _code(pattern::_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
 
-json_string metashell::system_test::to_json_string(const cpp_code& t_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+      if (members_are({"type", "code"}, d) &&
+          is_string("cpp_code", d["type"]) && d["code"].IsString())
+      {
+        _code = d["code"].GetString();
+      }
+      else
+      {
+        throw std::runtime_error("Invalid cpp_code: " + s_.get());
+      }
+    }
+    const pattern::string& cpp_code::code() const { return _code; }
 
-  w.StartObject();
+    std::ostream& operator<<(std::ostream& out_, const cpp_code& cpp_code_)
+    {
+      return out_ << to_json_string(cpp_code_);
+    }
 
-  w.Key("type");
-  w.String("cpp_code");
+    json_string to_json_string(const cpp_code& t_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
 
-  w.Key("code");
-  write(t_.code(), w);
+      w.StartObject();
 
-  w.EndObject();
+      w.Key("type");
+      w.String("cpp_code");
 
-  return json_string(buff.GetString());
-}
+      w.Key("code");
+      write(t_.code(), w);
 
-bool metashell::system_test::operator==(const cpp_code& cpp_code_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
+      w.EndObject();
 
-  if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]))
-  {
-    const auto& code = d["code"];
-    return cpp_code_.code().match(
-        std::string(code.GetString(), code.GetStringLength()));
-  }
-  else
-  {
-    return false;
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const cpp_code& cpp_code_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "code"}, d) && is_string("cpp_code", d["type"]))
+      {
+        const auto& code = d["code"];
+        return cpp_code_.code().match(
+            std::string(code.GetString(), code.GetStringLength()));
+      }
+      else
+      {
+        return false;
+      }
+    }
   }
 }

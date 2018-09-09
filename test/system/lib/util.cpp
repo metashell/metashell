@@ -22,109 +22,111 @@
 #include <map>
 #include <vector>
 
-using namespace metashell::system_test;
-
-namespace
+namespace metashell
 {
-  std::vector<std::pair<std::string, std::string>> include_definitions()
+  namespace system_test
   {
-    if (using_msvc())
+    namespace
     {
-      return {{"/I", ""}, {"\"/I", "\""}, {"/I\"", "\""}};
+      std::vector<std::pair<std::string, std::string>> include_definitions()
+      {
+        if (using_msvc())
+        {
+          return {{"/I", ""}, {"\"/I", "\""}, {"/I\"", "\""}};
+        }
+        else
+        {
+          return {{"-I", ""}};
+        }
+      }
+
+      template <class OutputIterator>
+      OutputIterator write_to(OutputIterator dest_, char c_)
+      {
+        *dest_ = c_;
+        ++dest_;
+        return dest_;
+      }
     }
-    else
+
+    std::string remove_prefix(const std::string& prefix_, const std::string& s_)
     {
-      return {{"-I", ""}};
+      if (const auto p = try_to_remove_prefix(prefix_, s_))
+      {
+        return *p;
+      }
+      else
+      {
+        throw std::runtime_error("String \"" + s_ + "\" has no \"" + prefix_ +
+                                 "\" prefix");
+      }
     }
-  }
 
-  template <class OutputIterator>
-  OutputIterator write_to(OutputIterator dest_, char c_)
-  {
-    *dest_ = c_;
-    ++dest_;
-    return dest_;
-  }
-}
-
-std::string metashell::system_test::remove_prefix(const std::string& prefix_,
-                                                  const std::string& s_)
-{
-  if (const auto p = try_to_remove_prefix(prefix_, s_))
-  {
-    return *p;
-  }
-  else
-  {
-    throw std::runtime_error("String \"" + s_ + "\" has no \"" + prefix_ +
-                             "\" prefix");
-  }
-}
-
-boost::optional<std::string>
-metashell::system_test::try_to_remove_prefix(const std::string& prefix_,
-                                             const std::string& s_)
-{
-  return try_to_remove_prefix_suffix(prefix_, s_, "");
-}
-
-boost::optional<std::string>
-metashell::system_test::try_to_remove_prefix_suffix(const std::string& prefix_,
-                                                    const std::string& s_,
-                                                    const std::string& suffix_)
-{
-  const auto pre_suff_size = prefix_.size() + suffix_.size();
-  if (s_.size() >= pre_suff_size &&
-      boost::algorithm::starts_with(s_, prefix_) &&
-      boost::algorithm::ends_with(s_, suffix_))
-  {
-    return s_.substr(prefix_.size(), s_.size() - pre_suff_size);
-  }
-  else
-  {
-    return boost::none;
-  }
-}
-
-boost::optional<boost::filesystem::path>
-metashell::system_test::include_path_addition(const std::string& arg_)
-{
-  for (const auto& def : include_definitions())
-  {
-    if (const auto path =
-            try_to_remove_prefix_suffix(def.first, arg_, def.second))
+    boost::optional<std::string>
+    try_to_remove_prefix(const std::string& prefix_, const std::string& s_)
     {
-      return boost::filesystem::path(*path);
+      return try_to_remove_prefix_suffix(prefix_, s_, "");
     }
-  }
-  return boost::none;
-}
 
-std::string metashell::system_test::c_string_literal(const std::string& s_)
-{
-  std::vector<char> s(s_.size() * 2 + 2);
-  auto end = write_to(s.begin(), '\"');
-  for (char c : s_)
-  {
-    switch (c)
+    boost::optional<std::string>
+    try_to_remove_prefix_suffix(const std::string& prefix_,
+                                const std::string& s_,
+                                const std::string& suffix_)
     {
-    case '\\':
-    case '\"':
-    case '\'':
-      end = write_to(end, '\\');
-    // [[fallthrough]];
-    default:
-      end = write_to(end, c);
+      const auto pre_suff_size = prefix_.size() + suffix_.size();
+      if (s_.size() >= pre_suff_size &&
+          boost::algorithm::starts_with(s_, prefix_) &&
+          boost::algorithm::ends_with(s_, suffix_))
+      {
+        return s_.substr(prefix_.size(), s_.size() - pre_suff_size);
+      }
+      else
+      {
+        return boost::none;
+      }
     }
-  }
-  return std::string(s.begin(), write_to(end, '\"'));
-}
 
-std::string metashell::system_test::new_line()
-{
+    boost::optional<boost::filesystem::path>
+    include_path_addition(const std::string& arg_)
+    {
+      for (const auto& def : include_definitions())
+      {
+        if (const auto path =
+                try_to_remove_prefix_suffix(def.first, arg_, def.second))
+        {
+          return boost::filesystem::path(*path);
+        }
+      }
+      return boost::none;
+    }
+
+    std::string c_string_literal(const std::string& s_)
+    {
+      std::vector<char> s(s_.size() * 2 + 2);
+      auto end = write_to(s.begin(), '\"');
+      for (char c : s_)
+      {
+        switch (c)
+        {
+        case '\\':
+        case '\"':
+        case '\'':
+          end = write_to(end, '\\');
+        // [[fallthrough]];
+        default:
+          end = write_to(end, c);
+        }
+      }
+      return std::string(s.begin(), write_to(end, '\"'));
+    }
+
+    std::string new_line()
+    {
 #ifdef _WIN32
-  return "\r\n";
+      return "\r\n";
 #else
-  return "\n";
+      return "\n";
 #endif
+    }
+  }
 }

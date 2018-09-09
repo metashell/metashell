@@ -24,92 +24,95 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell::system_test;
-
-code_completion_result::code_completion_result(
-    const std::initializer_list<std::string>& results_)
-  : _results(results_)
+namespace metashell
 {
-}
-
-code_completion_result::iterator code_completion_result::begin() const
-{
-  return _results.begin();
-}
-
-code_completion_result::iterator code_completion_result::end() const
-{
-  return _results.end();
-}
-
-int code_completion_result::size() const { return _results.size(); }
-
-bool code_completion_result::contains(const std::string& result_) const
-{
-  return _results.find(result_) != _results.end();
-}
-
-code_completion_result code_completion_result::with(
-    const std::initializer_list<std::string>& members_) const
-{
-  code_completion_result r(*this);
-  r._results.insert(members_.begin(), members_.end());
-  return r;
-}
-
-std::ostream& metashell::system_test::
-operator<<(std::ostream& out_, const code_completion_result& r_)
-{
-  return out_ << to_json_string(r_);
-}
-
-json_string
-metashell::system_test::to_json_string(const code_completion_result& r_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("code_completion_result");
-
-  w.Key("completions");
-  w.StartArray();
-  for (const std::string& r : r_)
+  namespace system_test
   {
-    w.String(r.c_str());
-  }
-  w.EndArray();
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const code_completion_result& r_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "completions"}, d) &&
-      is_string("code_completion_result", d["type"]) &&
-      d["completions"].IsArray() && int(d["completions"].Size()) == r_.size())
-  {
-    auto& completions = d["completions"];
-    for (auto i = completions.Begin(), e = completions.End(); i != e; ++i)
+    code_completion_result::code_completion_result(
+        const std::initializer_list<std::string>& results_)
+      : _results(results_)
     {
-      if (!(i->IsString() &&
-            r_.contains(std::string(i->GetString(), i->GetStringLength()))))
+    }
+
+    code_completion_result::iterator code_completion_result::begin() const
+    {
+      return _results.begin();
+    }
+
+    code_completion_result::iterator code_completion_result::end() const
+    {
+      return _results.end();
+    }
+
+    int code_completion_result::size() const { return _results.size(); }
+
+    bool code_completion_result::contains(const std::string& result_) const
+    {
+      return _results.find(result_) != _results.end();
+    }
+
+    code_completion_result code_completion_result::with(
+        const std::initializer_list<std::string>& members_) const
+    {
+      code_completion_result r(*this);
+      r._results.insert(members_.begin(), members_.end());
+      return r;
+    }
+
+    std::ostream& operator<<(std::ostream& out_,
+                             const code_completion_result& r_)
+    {
+      return out_ << to_json_string(r_);
+    }
+
+    json_string to_json_string(const code_completion_result& r_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("code_completion_result");
+
+      w.Key("completions");
+      w.StartArray();
+      for (const std::string& r : r_)
+      {
+        w.String(r.c_str());
+      }
+      w.EndArray();
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const code_completion_result& r_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "completions"}, d) &&
+          is_string("code_completion_result", d["type"]) &&
+          d["completions"].IsArray() &&
+          int(d["completions"].Size()) == r_.size())
+      {
+        auto& completions = d["completions"];
+        for (auto i = completions.Begin(), e = completions.End(); i != e; ++i)
+        {
+          if (!(i->IsString() &&
+                r_.contains(std::string(i->GetString(), i->GetStringLength()))))
+          {
+            return false;
+          }
+        }
+        return true;
+      }
+      else
       {
         return false;
       }
     }
-    return true;
-  }
-  else
-  {
-    return false;
   }
 }

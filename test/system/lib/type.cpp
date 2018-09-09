@@ -24,57 +24,62 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell::system_test;
-
-type::type(const std::string& name_) : _name(name_) {}
-
-type::type(pattern::placeholder) : _name(boost::none) {}
-
-bool type::name_specified() const { return _name != boost::none; }
-
-const std::string& type::name() const
+namespace metashell
 {
-  assert(name_specified());
-  return *_name;
-}
-
-bool type::operator==(const type& t_) const { return matches(_name, t_._name); }
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const type& type_)
-{
-  return out_ << to_json_string(type_);
-}
-
-json_string metashell::system_test::to_json_string(const type& t_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("type");
-
-  w.Key("name");
-  if (t_.name_specified())
+  namespace system_test
   {
-    w.String(t_.name().c_str());
+    type::type(const std::string& name_) : _name(name_) {}
+
+    type::type(pattern::placeholder) : _name(boost::none) {}
+
+    bool type::name_specified() const { return _name != boost::none; }
+
+    const std::string& type::name() const
+    {
+      assert(name_specified());
+      return *_name;
+    }
+
+    bool type::operator==(const type& t_) const
+    {
+      return matches(_name, t_._name);
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const type& type_)
+    {
+      return out_ << to_json_string(type_);
+    }
+
+    json_string to_json_string(const type& t_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("type");
+
+      w.Key("name");
+      if (t_.name_specified())
+      {
+        w.String(t_.name().c_str());
+      }
+      else
+      {
+        w.Null();
+      }
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const type& type_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+      return members_are({"type", "name"}, d) && matches(type_, d["name"]);
+    }
   }
-  else
-  {
-    w.Null();
-  }
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const type& type_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-  return members_are({"type", "name"}, d) && matches(type_, d["name"]);
 }

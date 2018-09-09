@@ -23,46 +23,50 @@
 #include <windows.h>
 #endif
 
-using namespace metashell::system_test;
-
-#ifdef _WIN32
-namespace
+namespace metashell
 {
-  std::string subpath() { return "nw"; }
-
-  void make_read_only(SECURITY_ATTRIBUTES& sa_)
+  namespace system_test
   {
-    if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
-            "D:(A;OICI;GR;;;WD)", SDDL_REVISION_1, &sa_.lpSecurityDescriptor,
-            nullptr))
+#ifdef _WIN32
+    namespace
     {
-      throw std::runtime_error("Failed to create security descriptor");
+      std::string subpath() { return "nw"; }
+
+      void make_read_only(SECURITY_ATTRIBUTES& sa_)
+      {
+        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
+                "D:(A;OICI;GR;;;WD)", SDDL_REVISION_1,
+                &sa_.lpSecurityDescriptor, nullptr))
+        {
+          throw std::runtime_error("Failed to create security descriptor");
+        }
+      }
+    }
+#endif
+
+    read_only_path::read_only_path()
+    {
+#ifdef _WIN32
+      SECURITY_ATTRIBUTES sa;
+      sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+      sa.bInheritHandle = FALSE;
+      make_read_only(sa);
+
+      const auto p = path();
+      if (!CreateDirectory(p.string().c_str(), &sa))
+      {
+        throw std::runtime_error("Error creating " + p.string());
+      }
+#endif
+    }
+
+    boost::filesystem::path read_only_path::path() const
+    {
+#ifdef _WIN32
+      return boost::filesystem::path(_temp.path()) / subpath();
+#else
+      return "/";
+#endif
     }
   }
-}
-#endif
-
-read_only_path::read_only_path()
-{
-#ifdef _WIN32
-  SECURITY_ATTRIBUTES sa;
-  sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-  sa.bInheritHandle = FALSE;
-  make_read_only(sa);
-
-  const auto p = path();
-  if (!CreateDirectory(p.string().c_str(), &sa))
-  {
-    throw std::runtime_error("Error creating " + p.string());
-  }
-#endif
-}
-
-boost::filesystem::path read_only_path::path() const
-{
-#ifdef _WIN32
-  return boost::filesystem::path(_temp.path()) / subpath();
-#else
-  return "/";
-#endif
 }

@@ -25,88 +25,92 @@
 
 #include <iostream>
 
-using namespace metashell::system_test;
-
-filename_set::filename_set() : _paths() {}
-
-filename_set::filename_set(const json_string& s_)
+namespace metashell
 {
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "filenames"}, d) &&
-      is_string("filename_set", d["type"]) && d["filenames"].IsArray())
+  namespace system_test
   {
-    const auto e = d["filenames"].End();
-    for (auto i = d["filenames"].Begin(); i != e; ++i)
+    filename_set::filename_set() : _paths() {}
+
+    filename_set::filename_set(const json_string& s_)
     {
-      if (i->IsString())
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "filenames"}, d) &&
+          is_string("filename_set", d["type"]) && d["filenames"].IsArray())
       {
-        _paths.insert(boost::filesystem::canonical(i->GetString()));
+        const auto e = d["filenames"].End();
+        for (auto i = d["filenames"].Begin(); i != e; ++i)
+        {
+          if (i->IsString())
+          {
+            _paths.insert(boost::filesystem::canonical(i->GetString()));
+          }
+          else
+          {
+            throw std::runtime_error("Invalid filename in filename_set:" +
+                                     s_.get());
+          }
+        }
       }
       else
       {
-        throw std::runtime_error("Invalid filename in filename_set:" +
-                                 s_.get());
+        throw std::runtime_error("Invalid filename_set: " + s_.get());
       }
     }
+
+    filename_set::filename_set(
+        std::initializer_list<boost::filesystem::path> paths_)
+      : _paths(paths_)
+    {
+    }
+
+    filename_set::const_iterator filename_set::begin() const
+    {
+      return _paths.begin();
+    }
+
+    filename_set::const_iterator filename_set::end() const
+    {
+      return _paths.end();
+    }
+
+    bool filename_set::operator==(const filename_set& fs_) const
+    {
+      return _paths == fs_._paths;
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const filename_set& filenames_)
+    {
+      return out_ << to_json_string(filenames_);
+    }
+
+    json_string to_json_string(const filename_set& filenames_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("filename_set");
+
+      w.Key("filenames");
+      w.StartArray();
+      for (const boost::filesystem::path& filename : filenames_)
+      {
+        w.String(filename.string().c_str());
+      }
+      w.EndArray();
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const filename_set& filenames_, const json_string& s_)
+    {
+      return filenames_ == filename_set(s_);
+    }
   }
-  else
-  {
-    throw std::runtime_error("Invalid filename_set: " + s_.get());
-  }
-}
-
-filename_set::filename_set(
-    std::initializer_list<boost::filesystem::path> paths_)
-  : _paths(paths_)
-{
-}
-
-filename_set::const_iterator filename_set::begin() const
-{
-  return _paths.begin();
-}
-
-filename_set::const_iterator filename_set::end() const { return _paths.end(); }
-
-bool filename_set::operator==(const filename_set& fs_) const
-{
-  return _paths == fs_._paths;
-}
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const filename_set& filenames_)
-{
-  return out_ << to_json_string(filenames_);
-}
-
-json_string
-metashell::system_test::to_json_string(const filename_set& filenames_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("filename_set");
-
-  w.Key("filenames");
-  w.StartArray();
-  for (const boost::filesystem::path& filename : filenames_)
-  {
-    w.String(filename.string().c_str());
-  }
-  w.EndArray();
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const filename_set& filenames_,
-                                        const json_string& s_)
-{
-  return filenames_ == filename_set(s_);
 }

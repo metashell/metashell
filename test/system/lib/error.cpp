@@ -24,73 +24,76 @@
 #include <cassert>
 #include <iostream>
 
-using namespace metashell::system_test;
-
-error::error(const std::string& msg_) : _msg(msg_) {}
-
-error::error(pattern::placeholder) : _msg(boost::none) {}
-
-error::error(const json_string& s_) : _msg(boost::none)
+namespace metashell
 {
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  if (members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
-      d["msg"].IsString())
+  namespace system_test
   {
-    _msg = d["msg"].GetString();
+    error::error(const std::string& msg_) : _msg(msg_) {}
+
+    error::error(pattern::placeholder) : _msg(boost::none) {}
+
+    error::error(const json_string& s_) : _msg(boost::none)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      if (members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
+          d["msg"].IsString())
+      {
+        _msg = d["msg"].GetString();
+      }
+      else
+      {
+        throw std::runtime_error("Invalid error: " + s_.get());
+      }
+    }
+
+    bool error::message_specified() const { return _msg != boost::none; }
+
+    const std::string& error::message() const
+    {
+      assert(message_specified());
+      return *_msg;
+    }
+
+    std::ostream& operator<<(std::ostream& out_, const error& error_)
+    {
+      return out_ << to_json_string(error_);
+    }
+
+    json_string to_json_string(const error& e_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("error");
+
+      w.Key("msg");
+      if (e_.message_specified())
+      {
+        w.String(e_.message().c_str());
+      }
+      else
+      {
+        w.Null();
+      }
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const error& error_, const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+
+      return members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
+             (!error_.message_specified() ||
+              is_string(error_.message(), d["msg"]));
+    }
   }
-  else
-  {
-    throw std::runtime_error("Invalid error: " + s_.get());
-  }
-}
-
-bool error::message_specified() const { return _msg != boost::none; }
-
-const std::string& error::message() const
-{
-  assert(message_specified());
-  return *_msg;
-}
-
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const error& error_)
-{
-  return out_ << to_json_string(error_);
-}
-
-json_string metashell::system_test::to_json_string(const error& e_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("error");
-
-  w.Key("msg");
-  if (e_.message_specified())
-  {
-    w.String(e_.message().c_str());
-  }
-  else
-  {
-    w.Null();
-  }
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const error& error_,
-                                        const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-
-  return members_are({"type", "msg"}, d) && is_string("error", d["type"]) &&
-         (!error_.message_specified() || is_string(error_.message(), d["msg"]));
 }

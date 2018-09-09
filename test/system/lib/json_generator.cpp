@@ -21,64 +21,67 @@
 
 #include <map>
 
-using namespace metashell::system_test;
-
-namespace
+namespace metashell
 {
-  json_string json_object(
-      std::initializer_list<std::pair<std::string, std::string>> values_)
+  namespace system_test
   {
-    rapidjson::StringBuffer buff;
-    rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-    w.StartObject();
-
-    for (const auto& p : values_)
+    namespace
     {
-      w.Key(p.first.c_str());
-      w.String(p.second.c_str());
+      json_string json_object(
+          std::initializer_list<std::pair<std::string, std::string>> values_)
+      {
+        rapidjson::StringBuffer buff;
+        rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+        w.StartObject();
+
+        for (const auto& p : values_)
+        {
+          w.Key(p.first.c_str());
+          w.String(p.second.c_str());
+        }
+
+        w.EndObject();
+
+        return json_string(buff.GetString());
+      }
     }
 
-    w.EndObject();
+    json_string command(const std::string& cmd_)
+    {
+      return json_object({{"type", "cmd"}, {"cmd", cmd_}});
+    }
 
-    return json_string(buff.GetString());
+    json_string code_completion(const std::string& code_)
+    {
+      return json_object({{"type", "code_completion"}, {"code", code_}});
+    }
+
+    json_string to_json(const std::string& s_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.String(s_.c_str());
+
+      return json_string(buff.GetString());
+    }
+
+    json_string to_json(const std::vector<std::string>& strings_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartArray();
+
+      for (const auto& s : strings_)
+      {
+        w.String(s.c_str());
+      }
+
+      w.EndArray();
+
+      return json_string(buff.GetString());
+    }
   }
-}
-
-json_string metashell::system_test::command(const std::string& cmd_)
-{
-  return json_object({{"type", "cmd"}, {"cmd", cmd_}});
-}
-
-json_string metashell::system_test::code_completion(const std::string& code_)
-{
-  return json_object({{"type", "code_completion"}, {"code", code_}});
-}
-
-json_string metashell::system_test::to_json(const std::string& s_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.String(s_.c_str());
-
-  return json_string(buff.GetString());
-}
-
-json_string
-metashell::system_test::to_json(const std::vector<std::string>& strings_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartArray();
-
-  for (const auto& s : strings_)
-  {
-    w.String(s.c_str());
-  }
-
-  w.EndArray();
-
-  return json_string(buff.GetString());
 }

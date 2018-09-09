@@ -18,23 +18,24 @@
 
 #include <iostream>
 
-using namespace metashell::data;
-
-exit_code_t::exit_code_t(int value_) : _value(value_) {}
-
-int exit_code_t::value() const { return _value; }
-
-bool metashell::data::operator==(exit_code_t a_, exit_code_t b_)
+namespace metashell
 {
-  return a_.value() == b_.value();
-}
+  namespace data
+  {
+    exit_code_t::exit_code_t(int value_) : _value(value_) {}
 
-std::ostream& metashell::data::operator<<(std::ostream& out_, exit_code_t e_)
-{
-  return out_ << "exit_code(" << e_.value() << ")";
-}
+    int exit_code_t::value() const { return _value; }
 
-std::string metashell::data::to_string(exit_code_t e_)
-{
-  return std::to_string(e_.value());
+    bool operator==(exit_code_t a_, exit_code_t b_)
+    {
+      return a_.value() == b_.value();
+    }
+
+    std::ostream& operator<<(std::ostream& out_, exit_code_t e_)
+    {
+      return out_ << "exit_code(" << e_.value() << ")";
+    }
+
+    std::string to_string(exit_code_t e_) { return std::to_string(e_.value()); }
+  }
 }

@@ -19,32 +19,42 @@
 
 #include <iostream>
 
-using namespace metashell::system_test;
-
-process_execution::process_execution(std::vector<std::string> cmd_)
-  : _cmd(move(cmd_)), _stdin(), _stdout()
+namespace metashell
 {
-}
+  namespace system_test
+  {
+    process_execution::process_execution(std::vector<std::string> cmd_)
+      : _cmd(move(cmd_)), _stdin(), _stdout()
+    {
+    }
 
-const std::vector<std::string>& process_execution::cmd() const { return _cmd; }
+    const std::vector<std::string>& process_execution::cmd() const
+    {
+      return _cmd;
+    }
 
-const std::string& process_execution::standard_input() const { return _stdin; }
-std::string& process_execution::standard_input() { return _stdin; }
+    const std::string& process_execution::standard_input() const
+    {
+      return _stdin;
+    }
+    std::string& process_execution::standard_input() { return _stdin; }
 
-const std::string& process_execution::standard_output() const
-{
-  return _stdout;
-}
+    const std::string& process_execution::standard_output() const
+    {
+      return _stdout;
+    }
 
-std::string& process_execution::standard_output() { return _stdout; }
+    std::string& process_execution::standard_output() { return _stdout; }
 
-std::ostream& metashell::system_test::operator<<(std::ostream& out_,
-                                                 const process_execution& e_)
-{
-  return out_ << "Command: " << to_json(e_.cmd()) << std::endl
-              << std::endl
-              << "Standard input: " << to_json(e_.standard_input()) << std::endl
-              << std::endl
-              << "Standard output: " << to_json(e_.standard_output())
-              << std::endl;
+    std::ostream& operator<<(std::ostream& out_, const process_execution& e_)
+    {
+      return out_ << "Command: " << to_json(e_.cmd()) << std::endl
+                  << std::endl
+                  << "Standard input: " << to_json(e_.standard_input())
+                  << std::endl
+                  << std::endl
+                  << "Standard output: " << to_json(e_.standard_output())
+                  << std::endl;
+    }
+  }
 }

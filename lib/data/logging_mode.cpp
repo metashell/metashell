@@ -18,18 +18,22 @@
 
 #include <ostream>
 
-using namespace metashell::data;
-
-std::ostream& metashell::data::operator<<(std::ostream& out_, logging_mode m_)
+namespace metashell
 {
-  switch (m_)
+  namespace data
   {
-  case logging_mode::none:
-    return out_ << "none";
-  case logging_mode::console:
-    return out_ << "console";
-  case logging_mode::file:
-    return out_ << "file";
+    std::ostream& operator<<(std::ostream& out_, logging_mode m_)
+    {
+      switch (m_)
+      {
+      case logging_mode::none:
+        return out_ << "none";
+      case logging_mode::console:
+        return out_ << "console";
+      case logging_mode::file:
+        return out_ << "file";
+      }
+      return out_;
+    }
   }
-  return out_;
 }

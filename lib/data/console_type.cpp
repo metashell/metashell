@@ -19,38 +19,42 @@
 #include <ostream>
 #include <stdexcept>
 
-using namespace metashell::data;
-
-std::ostream& metashell::data::operator<<(std::ostream& o_, console_type t_)
+namespace metashell
 {
-  switch (t_)
+  namespace data
   {
-  case console_type::plain:
-    return o_ << "plain";
-  case console_type::readline:
-    return o_ << "readline";
-  case console_type::json:
-    return o_ << "json";
-  }
-  return o_; // avoid "control reaches end of function" warnings
-}
+    std::ostream& operator<<(std::ostream& o_, console_type t_)
+    {
+      switch (t_)
+      {
+      case console_type::plain:
+        return o_ << "plain";
+      case console_type::readline:
+        return o_ << "readline";
+      case console_type::json:
+        return o_ << "json";
+      }
+      return o_; // avoid "control reaches end of function" warnings
+    }
 
-console_type metashell::data::parse_console_type(const std::string& con_type_)
-{
-  if (con_type_ == "plain")
-  {
-    return console_type::plain;
-  }
-  else if (con_type_ == "readline")
-  {
-    return console_type::readline;
-  }
-  else if (con_type_ == "json")
-  {
-    return console_type::json;
-  }
-  else
-  {
-    throw std::runtime_error("Not supported console type " + con_type_);
+    console_type parse_console_type(const std::string& con_type_)
+    {
+      if (con_type_ == "plain")
+      {
+        return console_type::plain;
+      }
+      else if (con_type_ == "readline")
+      {
+        return console_type::readline;
+      }
+      else if (con_type_ == "json")
+      {
+        return console_type::json;
+      }
+      else
+      {
+        throw std::runtime_error("Not supported console type " + con_type_);
+      }
+    }
   }
 }

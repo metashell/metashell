@@ -16,17 +16,21 @@
 
 #include <metashell/data/unsaved_file.hpp>
 
-using namespace metashell::data;
-
-unsaved_file::unsaved_file(const boost::filesystem::path& filename_,
-                           const std::string& content_)
-  : _filename(filename_), _content(content_)
+namespace metashell
 {
-}
+  namespace data
+  {
+    unsaved_file::unsaved_file(const boost::filesystem::path& filename_,
+                               const std::string& content_)
+      : _filename(filename_), _content(content_)
+    {
+    }
 
-const boost::filesystem::path& unsaved_file::filename() const
-{
-  return _filename;
-}
+    const boost::filesystem::path& unsaved_file::filename() const
+    {
+      return _filename;
+    }
 
-const std::string& unsaved_file::content() const { return _content; }
+    const std::string& unsaved_file::content() const { return _content; }
+  }
+}

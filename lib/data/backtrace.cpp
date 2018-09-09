@@ -21,126 +21,131 @@
 #include <algorithm>
 #include <cassert>
 
-using namespace metashell::data;
-
-backtrace::backtrace(bool buffered_)
-  : _frames(),
-    _buffered_pop_count(buffered_ ? boost::make_optional(0) : boost::none)
+namespace metashell
 {
-}
-
-backtrace::backtrace(std::initializer_list<frame> frames_)
-  : _frames(std::move(frames_)), _buffered_pop_count(boost::none)
-{
-  std::reverse(_frames.begin(), _frames.end());
-}
-
-void backtrace::push_front(const frame& f_)
-{
-  flush();
-  _frames.push_back(f_);
-}
-
-void backtrace::pop_front()
-{
-  if (_buffered_pop_count)
+  namespace data
   {
-    ++*_buffered_pop_count;
-  }
-  else
-  {
-    _frames.pop_back();
-  }
-}
-
-bool backtrace::empty() const { return _frames.empty(); }
-
-backtrace::size_type backtrace::size() const { return _frames.size(); }
-
-const frame& backtrace::operator[](size_type i) const
-{
-  return _frames[_frames.size() - 1 - i];
-}
-
-backtrace::iterator backtrace::begin() const { return _frames.rbegin(); }
-
-backtrace::iterator backtrace::end() const { return _frames.rend(); }
-
-void backtrace::flush()
-{
-  if (_buffered_pop_count)
-  {
-    assert(*_buffered_pop_count >= 0);
-    assert(static_cast<unsigned int>(*_buffered_pop_count) <= _frames.size());
-    const auto e = _frames.end();
-    _frames.erase(e - *_buffered_pop_count, e);
-    _buffered_pop_count = 0;
-  }
-}
-
-int backtrace::buffered_pop_count() const
-{
-  return boost::get_optional_value_or(_buffered_pop_count, 0);
-}
-
-bool backtrace::flushed_empty() const
-{
-  return (_frames.size() - buffered_pop_count()) <= 0;
-}
-
-const frame& backtrace::flushed_front() const
-{
-  return _frames[_frames.size() - 1 - buffered_pop_count()];
-}
-
-void backtrace::pop_flat()
-{
-  if (!flushed_empty() && flushed_front().flat())
-  {
-    pop_front();
-  }
-  assert(flushed_empty() || !flushed_front().flat());
-}
-
-void backtrace::update(const frame& event_)
-{
-  pop_flat();
-  push_front(event_);
-}
-
-void backtrace::update(const pop_frame&)
-{
-  assert(!flushed_empty());
-
-  pop_flat();
-  pop_front();
-}
-
-std::ostream& metashell::data::operator<<(std::ostream& o_, const backtrace& t_)
-{
-  o_ << "backtrace{";
-  bool first = true;
-  for (const frame& f : t_)
-  {
-    if (first)
+    backtrace::backtrace(bool buffered_)
+      : _frames(),
+        _buffered_pop_count(buffered_ ? boost::make_optional(0) : boost::none)
     {
-      first = false;
     }
-    else
+
+    backtrace::backtrace(std::initializer_list<frame> frames_)
+      : _frames(std::move(frames_)), _buffered_pop_count(boost::none)
     {
-      o_ << ", ";
+      std::reverse(_frames.begin(), _frames.end());
     }
-    o_ << f;
+
+    void backtrace::push_front(const frame& f_)
+    {
+      flush();
+      _frames.push_back(f_);
+    }
+
+    void backtrace::pop_front()
+    {
+      if (_buffered_pop_count)
+      {
+        ++*_buffered_pop_count;
+      }
+      else
+      {
+        _frames.pop_back();
+      }
+    }
+
+    bool backtrace::empty() const { return _frames.empty(); }
+
+    backtrace::size_type backtrace::size() const { return _frames.size(); }
+
+    const frame& backtrace::operator[](size_type i) const
+    {
+      return _frames[_frames.size() - 1 - i];
+    }
+
+    backtrace::iterator backtrace::begin() const { return _frames.rbegin(); }
+
+    backtrace::iterator backtrace::end() const { return _frames.rend(); }
+
+    void backtrace::flush()
+    {
+      if (_buffered_pop_count)
+      {
+        assert(*_buffered_pop_count >= 0);
+        assert(static_cast<unsigned int>(*_buffered_pop_count) <=
+               _frames.size());
+        const auto e = _frames.end();
+        _frames.erase(e - *_buffered_pop_count, e);
+        _buffered_pop_count = 0;
+      }
+    }
+
+    int backtrace::buffered_pop_count() const
+    {
+      return boost::get_optional_value_or(_buffered_pop_count, 0);
+    }
+
+    bool backtrace::flushed_empty() const
+    {
+      return (_frames.size() - buffered_pop_count()) <= 0;
+    }
+
+    const frame& backtrace::flushed_front() const
+    {
+      return _frames[_frames.size() - 1 - buffered_pop_count()];
+    }
+
+    void backtrace::pop_flat()
+    {
+      if (!flushed_empty() && flushed_front().flat())
+      {
+        pop_front();
+      }
+      assert(flushed_empty() || !flushed_front().flat());
+    }
+
+    void backtrace::update(const frame& event_)
+    {
+      pop_flat();
+      push_front(event_);
+    }
+
+    void backtrace::update(const pop_frame&)
+    {
+      assert(!flushed_empty());
+
+      pop_flat();
+      pop_front();
+    }
+
+    std::ostream& operator<<(std::ostream& o_, const backtrace& t_)
+    {
+      o_ << "backtrace{";
+      bool first = true;
+      for (const frame& f : t_)
+      {
+        if (first)
+        {
+          first = false;
+        }
+        else
+        {
+          o_ << ", ";
+        }
+        o_ << f;
+      }
+      return o_ << "}";
+    }
+
+    bool operator==(const backtrace& a_, const backtrace& b_)
+    {
+      return boost::equal(a_, b_);
+    }
+
+    void update(backtrace& bt_, const debugger_event& event_)
+    {
+      mpark::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
+    }
   }
-  return o_ << "}";
-}
-
-bool metashell::data::operator==(const backtrace& a_, const backtrace& b_)
-{
-  return boost::equal(a_, b_);
-}
-
-void metashell::data::update(backtrace& bt_, const data::debugger_event& event_)
-{
-  mpark::visit([&bt_](const auto& e) { bt_.update(e); }, event_);
 }

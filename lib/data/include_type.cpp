@@ -16,29 +16,35 @@
 
 #include <metashell/data/include_type.hpp>
 
-using namespace metashell::data;
-
-std::string metashell::data::to_string(include_type type_)
+namespace metashell
 {
-  switch (type_)
+  namespace data
   {
-  case include_type::sys:
-    return "sys";
-  case include_type::quote:
-    return "quote";
-  }
-  return ""; // to avoid warnings about the missing return on some compilers.
-}
+    std::string to_string(include_type type_)
+    {
+      switch (type_)
+      {
+      case include_type::sys:
+        return "sys";
+      case include_type::quote:
+        return "quote";
+      }
+      return ""; // to avoid warnings about the missing return on some
+      // compilers.
+    }
 
-std::string metashell::data::include_code(include_type type_,
-                                          const boost::filesystem::path& path_)
-{
-  switch (type_)
-  {
-  case include_type::sys:
-    return "<" + path_.string() + ">";
-  case include_type::quote:
-    return "\"" + path_.string() + "\"";
+    std::string include_code(include_type type_,
+                             const boost::filesystem::path& path_)
+    {
+      switch (type_)
+      {
+      case include_type::sys:
+        return "<" + path_.string() + ">";
+      case include_type::quote:
+        return "\"" + path_.string() + "\"";
+      }
+      return ""; // to avoid warnings about the missing return on some
+      // compilers.
+    }
   }
-  return ""; // to avoid warnings about the missing return on some compilers.
 }

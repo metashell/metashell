@@ -25,11 +25,15 @@
 #include <readline/readline.h>
 #endif
 
-using namespace metashell::readline;
-
-void history::add(const std::string& cmd_)
+namespace metashell
 {
-  // TODO save/restore history
-  std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
-  ::add_history(l.data());
+  namespace readline
+  {
+    void history::add(const std::string& cmd_)
+    {
+      // TODO save/restore history
+      std::vector<char> l(cmd_.c_str(), cmd_.c_str() + cmd_.size() + 1);
+      ::add_history(l.data());
+    }
+  }
 }

@@ -23,97 +23,101 @@
 
 #include <stdexcept>
 
-using namespace metashell::system_test;
-
-call_graph::call_graph(std::vector<call_graph_node> call_graph_nodes_)
-  : _call_graph_nodes(call_graph_nodes_)
+namespace metashell
 {
-}
-
-call_graph::call_graph(const json_string& s_)
-{
-  rapidjson::Document d;
-  d.Parse(s_.get().c_str());
-  if (d.IsObject() && d.HasMember("type") &&
-      is_string("call_graph", d["type"]) && d.HasMember("nodes") &&
-      d["nodes"].IsArray() && no_other_members_than({"type", "nodes"}, d))
+  namespace system_test
   {
-    const auto& nodes = d["nodes"];
-    _call_graph_nodes.reserve(nodes.Size());
-    for (auto i = nodes.Begin(); i != nodes.End(); ++i)
+    call_graph::call_graph(std::vector<call_graph_node> call_graph_nodes_)
+      : _call_graph_nodes(call_graph_nodes_)
     {
-      _call_graph_nodes.push_back(call_graph_node(*i));
-    }
-  }
-  else
-  {
-    throw std::runtime_error("Invalid call_graph: " + s_.get());
-  }
-}
-
-call_graph::iterator call_graph::begin() const
-{
-  return _call_graph_nodes.begin();
-}
-
-call_graph::iterator call_graph::end() const { return _call_graph_nodes.end(); }
-
-std::ostream& metashell::system_test::operator<<(std::ostream& o_,
-                                                 const call_graph& c_)
-{
-  return o_ << to_json_string(c_);
-}
-
-json_string metashell::system_test::to_json_string(const call_graph& c_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("call_graph");
-
-  w.Key("nodes");
-  w.StartArray();
-  for (const call_graph_node& n : c_)
-  {
-    w.StartObject();
-
-    w.Key("name");
-    const std::string name = n.current_frame().name().name();
-    w.String(name.c_str());
-
-    if (n.current_frame().has_kind())
-    {
-      w.Key("kind");
-      const std::string kind = to_string(n.current_frame().kind());
-      w.String(kind.c_str());
     }
 
-    w.Key("depth");
-    w.Int(n.depth());
+    call_graph::call_graph(const json_string& s_)
+    {
+      rapidjson::Document d;
+      d.Parse(s_.get().c_str());
+      if (d.IsObject() && d.HasMember("type") &&
+          is_string("call_graph", d["type"]) && d.HasMember("nodes") &&
+          d["nodes"].IsArray() && no_other_members_than({"type", "nodes"}, d))
+      {
+        const auto& nodes = d["nodes"];
+        _call_graph_nodes.reserve(nodes.Size());
+        for (auto i = nodes.Begin(); i != nodes.End(); ++i)
+        {
+          _call_graph_nodes.push_back(call_graph_node(*i));
+        }
+      }
+      else
+      {
+        throw std::runtime_error("Invalid call_graph: " + s_.get());
+      }
+    }
 
-    w.Key("children");
-    w.Int(n.number_of_children());
+    call_graph::iterator call_graph::begin() const
+    {
+      return _call_graph_nodes.begin();
+    }
 
-    w.EndObject();
+    call_graph::iterator call_graph::end() const
+    {
+      return _call_graph_nodes.end();
+    }
+
+    std::ostream& operator<<(std::ostream& o_, const call_graph& c_)
+    {
+      return o_ << to_json_string(c_);
+    }
+
+    json_string to_json_string(const call_graph& c_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("call_graph");
+
+      w.Key("nodes");
+      w.StartArray();
+      for (const call_graph_node& n : c_)
+      {
+        w.StartObject();
+
+        w.Key("name");
+        const std::string name = n.current_frame().name().name();
+        w.String(name.c_str());
+
+        if (n.current_frame().has_kind())
+        {
+          w.Key("kind");
+          const std::string kind = to_string(n.current_frame().kind());
+          w.String(kind.c_str());
+        }
+
+        w.Key("depth");
+        w.Int(n.depth());
+
+        w.Key("children");
+        w.Int(n.number_of_children());
+
+        w.EndObject();
+      }
+      w.EndArray();
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const call_graph& c_, const json_string& s_)
+    {
+      return c_ == call_graph(s_);
+    }
+
+    bool operator==(const call_graph& c_, const call_graph& s_)
+    {
+      return boost::equal(c_, s_);
+    }
   }
-  w.EndArray();
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const call_graph& c_,
-                                        const json_string& s_)
-{
-  return c_ == call_graph(s_);
-}
-
-bool metashell::system_test::operator==(const call_graph& c_,
-                                        const call_graph& s_)
-{
-  return boost::equal(c_, s_);
 }

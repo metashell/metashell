@@ -16,30 +16,35 @@
 
 #include <metashell/system_test/system_test_config.hpp>
 
-using namespace metashell::system_test;
-
-namespace
+namespace metashell
 {
-  boost::filesystem::path metashell_binary_path;
-  std::vector<std::string> metashell_args;
-}
+  namespace system_test
+  {
+    namespace
+    {
+      boost::filesystem::path metashell_binary_path;
+      std::vector<std::string> metashell_args_impl;
+    }
 
-void system_test_config::metashell_binary(const boost::filesystem::path& path_)
-{
-  metashell_binary_path = path_;
-}
+    void
+    system_test_config::metashell_binary(const boost::filesystem::path& path_)
+    {
+      metashell_binary_path = path_;
+    }
 
-void system_test_config::metashell_arg(const std::string& arg_)
-{
-  ::metashell_args.push_back(arg_);
-}
+    void system_test_config::metashell_arg(const std::string& arg_)
+    {
+      metashell_args_impl.push_back(arg_);
+    }
 
-boost::filesystem::path system_test_config::metashell_binary()
-{
-  return metashell_binary_path;
-}
+    boost::filesystem::path system_test_config::metashell_binary()
+    {
+      return metashell_binary_path;
+    }
 
-const std::vector<std::string>& system_test_config::metashell_args()
-{
-  return ::metashell_args;
+    const std::vector<std::string>& system_test_config::metashell_args()
+    {
+      return metashell_args_impl;
+    }
+  }
 }

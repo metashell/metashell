@@ -19,58 +19,60 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-using namespace metashell::system_test;
-
-backtrace::backtrace(std::vector<frame> frames_) : _frames(frames_) {}
-
-backtrace::iterator backtrace::begin() const { return _frames.begin(); }
-
-backtrace::iterator backtrace::end() const { return _frames.end(); }
-
-std::ostream& metashell::system_test::operator<<(std::ostream& o_,
-                                                 const backtrace& c_)
+namespace metashell
 {
-  return o_ << to_json_string(c_);
-}
-
-json_string metashell::system_test::to_json_string(const backtrace& c_)
-{
-  rapidjson::StringBuffer buff;
-  rapidjson::Writer<rapidjson::StringBuffer> w(buff);
-
-  w.StartObject();
-
-  w.Key("type");
-  w.String("backtrace");
-
-  w.Key("frames");
-  w.StartArray();
-  for (const frame& f : c_)
+  namespace system_test
   {
-    w.StartObject();
+    backtrace::backtrace(std::vector<frame> frames_) : _frames(frames_) {}
 
-    w.Key("name");
-    const std::string name = f.name().name();
-    w.String(name.c_str());
+    backtrace::iterator backtrace::begin() const { return _frames.begin(); }
 
-    if (f.has_kind())
+    backtrace::iterator backtrace::end() const { return _frames.end(); }
+
+    std::ostream& operator<<(std::ostream& o_, const backtrace& c_)
     {
-      w.Key("kind");
-      const std::string kind = to_string(f.kind());
-      w.String(kind.c_str());
+      return o_ << to_json_string(c_);
     }
 
-    w.EndObject();
+    json_string to_json_string(const backtrace& c_)
+    {
+      rapidjson::StringBuffer buff;
+      rapidjson::Writer<rapidjson::StringBuffer> w(buff);
+
+      w.StartObject();
+
+      w.Key("type");
+      w.String("backtrace");
+
+      w.Key("frames");
+      w.StartArray();
+      for (const frame& f : c_)
+      {
+        w.StartObject();
+
+        w.Key("name");
+        const std::string name = f.name().name();
+        w.String(name.c_str());
+
+        if (f.has_kind())
+        {
+          w.Key("kind");
+          const std::string kind = to_string(f.kind());
+          w.String(kind.c_str());
+        }
+
+        w.EndObject();
+      }
+      w.EndArray();
+
+      w.EndObject();
+
+      return json_string(buff.GetString());
+    }
+
+    bool operator==(const backtrace& c_, const json_string& s_)
+    {
+      return to_json_string(c_) == s_;
+    }
   }
-  w.EndArray();
-
-  w.EndObject();
-
-  return json_string(buff.GetString());
-}
-
-bool metashell::system_test::operator==(const backtrace& c_,
-                                        const json_string& s_)
-{
-  return to_json_string(c_) == s_;
 }

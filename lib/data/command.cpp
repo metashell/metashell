@@ -20,64 +20,67 @@
 
 #include <algorithm>
 
-using namespace metashell::data;
-
-namespace
+namespace metashell
 {
-  bool whitespace_or_comment(token_category c_)
+  namespace data
   {
-    return c_ == token_category::whitespace || c_ == token_category::comment;
+    namespace
+    {
+      bool whitespace_or_comment(token_category c_)
+      {
+        return c_ == token_category::whitespace ||
+               c_ == token_category::comment;
+      }
+    }
+
+    command::command(const cpp_code& cmd_) : _cmd(cmd_), _tokens()
+    {
+      for (auto t = core::create_wave_tokeniser(cmd_, "<command>");
+           t->has_further_tokens(); t->move_to_next_token())
+      {
+        _tokens.push_back(t->current_token());
+      }
+    }
+
+    command::iterator command::begin() const { return _tokens.begin(); }
+
+    command::iterator command::end() const { return _tokens.end(); }
+
+    command::iterator skip(command::iterator i_)
+    {
+      ++i_;
+      return i_;
+    }
+
+    bool command::empty() const { return _tokens.empty(); }
+
+    int command::size() const { return _tokens.size(); }
+
+    command::iterator skip_whitespace(command::iterator begin_,
+                                      const command::iterator& end_)
+    {
+      return (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
+                 skip(begin_) :
+                 begin_;
+    }
+
+    command::iterator skip_all_whitespace(const command::iterator& begin_,
+                                          const command::iterator& end_)
+    {
+      return std::find_if(begin_, end_, [](const token& token_) {
+        return !whitespace_or_comment(token_.category());
+      });
+    }
+
+    cpp_code tokens_to_string(command::iterator begin_,
+                              const command::iterator& end_)
+    {
+      std::ostringstream s;
+      for (; begin_ != end_; ++begin_)
+      {
+        s << begin_->value();
+      }
+      return cpp_code(s.str());
+    }
   }
-}
-
-command::command(const cpp_code& cmd_) : _cmd(cmd_), _tokens()
-{
-  for (auto t = core::create_wave_tokeniser(cmd_, "<command>");
-       t->has_further_tokens(); t->move_to_next_token())
-  {
-    _tokens.push_back(t->current_token());
-  }
-}
-
-command::iterator command::begin() const { return _tokens.begin(); }
-
-command::iterator command::end() const { return _tokens.end(); }
-
-command::iterator metashell::data::skip(command::iterator i_)
-{
-  ++i_;
-  return i_;
-}
-
-bool command::empty() const { return _tokens.empty(); }
-
-int command::size() const { return _tokens.size(); }
-
-command::iterator
-metashell::data::skip_whitespace(command::iterator begin_,
-                                 const command::iterator& end_)
-{
-  return (begin_ != end_ && whitespace_or_comment(begin_->category())) ?
-             skip(begin_) :
-             begin_;
-}
-
-command::iterator
-metashell::data::skip_all_whitespace(const command::iterator& begin_,
-                                     const command::iterator& end_)
-{
-  return std::find_if(begin_, end_, [](const token& token_) {
-    return !whitespace_or_comment(token_.category());
-  });
-}
-
-cpp_code metashell::data::tokens_to_string(command::iterator begin_,
-                                           const command::iterator& end_)
-{
-  std::ostringstream s;
-  for (; begin_ != end_; ++begin_)
-  {
-    s << begin_->value();
-  }
-  return metashell::data::cpp_code(s.str());
 }
