@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/stdin_name.hpp>
-#include <metashell/filter_events.hpp>
-#include <metashell/metaprogram_tracer_templight.hpp>
-#include <metashell/protobuf_trace.hpp>
+
+#include <metashell/core/filter_events.hpp>
+#include <metashell/core/metaprogram_tracer_templight.hpp>
+#include <metashell/core/protobuf_trace.hpp>
 
 namespace
 {

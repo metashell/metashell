@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/filter_events.hpp>
-#include <metashell/preprocessor_tracer_wave.hpp>
-#include <metashell/wave_trace.hpp>
+#include <metashell/core/filter_events.hpp>
+#include <metashell/core/preprocessor_tracer_wave.hpp>
+#include <metashell/core/wave_trace.hpp>
 
 #include <metashell/data/stdin_name.hpp>
 

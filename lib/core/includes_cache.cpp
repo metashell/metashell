@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang_binary.hpp>
-#include <metashell/includes_cache.hpp>
+#include <metashell/core/clang_binary.hpp>
+#include <metashell/core/includes_cache.hpp>
 
 #include <metashell/data/include_type.hpp>
 #include <metashell/data/process_output.hpp>

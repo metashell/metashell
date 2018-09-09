@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/rapid_object_handler.hpp>
+#include <metashell/core/rapid_object_handler.hpp>
 
 using namespace metashell;
 

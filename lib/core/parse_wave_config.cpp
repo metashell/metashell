@@ -14,21 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang_binary.hpp>
-#include <metashell/empty_environment.hpp>
-#include <metashell/header_discoverer_clang.hpp>
-#include <metashell/macro_discovery_clang.hpp>
-#include <metashell/parse_wave_config.hpp>
-#include <metashell/wave_token.hpp>
+#include <metashell/core/clang_binary.hpp>
+#include <metashell/core/empty_environment.hpp>
+#include <metashell/core/header_discoverer_clang.hpp>
+#include <metashell/core/macro_discovery_clang.hpp>
+#include <metashell/core/parse_wave_config.hpp>
+#include <metashell/core/wave_token.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
-
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
-
 #include <boost/algorithm/string/join.hpp>
 
 #include <algorithm>

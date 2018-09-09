@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metashell.hpp>
-#include <metashell/pragma_help.hpp>
-#include <metashell/shell.hpp>
-#include <metashell/version.hpp>
+#include <metashell/core/metashell.hpp>
+#include <metashell/core/pragma_help.hpp>
+#include <metashell/core/shell.hpp>
+#include <metashell/core/version.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 

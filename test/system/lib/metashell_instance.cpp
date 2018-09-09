@@ -20,7 +20,7 @@
 #include <metashell/system_test/prompt.hpp>
 #include <metashell/system_test/system_test_config.hpp>
 
-#include <metashell/make_unique.hpp>
+#include <metashell/core/make_unique.hpp>
 
 #include <boost/filesystem.hpp>
 

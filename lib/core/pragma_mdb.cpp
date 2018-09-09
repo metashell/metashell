@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/mdb_shell.hpp>
-#include <metashell/pragma_mdb.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/mdb_shell.hpp>
+#include <metashell/core/pragma_mdb.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <metashell/data/mdb_usage.hpp>
 

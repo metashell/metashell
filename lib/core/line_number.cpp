@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_number.hpp>
+#include <metashell/core/line_number.hpp>
 
 #include <cassert>
 #include <iostream>

@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/type_shell_clang.hpp>
-
-#include <metashell/exception.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/core/type_shell_clang.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/metashell.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 

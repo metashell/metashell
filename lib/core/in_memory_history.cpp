@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_history.hpp>
+#include <metashell/core/in_memory_history.hpp>
 
 using namespace metashell;
 

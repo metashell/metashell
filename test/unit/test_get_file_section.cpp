@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/get_file_section.hpp>
+#include <metashell/core/get_file_section.hpp>
 
 #include <gtest/gtest.h>
 

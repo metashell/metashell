@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/pragma_handler.hpp>
-#include <metashell/pragma_switch.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/metashell_pragma.hpp>
+#include <metashell/core/pragma_handler.hpp>
+#include <metashell/core/pragma_switch.hpp>
 
 #include <gtest/gtest.h>
 

@@ -15,23 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/markdown_string.hpp>
-#include <metashell/engine_entry.hpp>
-#include <metashell/parse_config.hpp>
-#include <metashell/rapid_shell_config_parser.hpp>
+
+#include <metashell/core/engine_entry.hpp>
+#include <metashell/core/parse_config.hpp>
+#include <metashell/core/rapid_shell_config_parser.hpp>
 
 #include <rapidjson/reader.h>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
-
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
-
 #include <boost/range/adaptor/map.hpp>
-
 #include <boost/optional.hpp>
-
 #include <boost/filesystem/path.hpp>
 
 #include <just/file.hpp>

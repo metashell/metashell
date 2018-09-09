@@ -16,10 +16,11 @@
 
 #include <metashell/data/config.hpp>
 #include <metashell/data/headers.hpp>
-#include <metashell/exception.hpp>
-#include <metashell/header_file_environment.hpp>
-#include <metashell/headers.hpp>
-#include <metashell/unsaved_file.hpp>
+
+#include <metashell/core/exception.hpp>
+#include <metashell/core/header_file_environment.hpp>
+#include <metashell/core/headers.hpp>
+#include <metashell/core/unsaved_file.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

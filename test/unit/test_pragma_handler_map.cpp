@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/iface/pragma_handler.hpp>
-#include <metashell/null_displayer.hpp>
-#include <metashell/pragma_handler_map.hpp>
+
+#include <metashell/core/null_displayer.hpp>
+#include <metashell/core/pragma_handler_map.hpp>
 
 #include <gtest/gtest.h>
 

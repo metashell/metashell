@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metashell.hpp>
+#include <metashell/core/metashell.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/for_each_line.hpp>
+#include <metashell/core/source_position.hpp>
+#include <metashell/core/unsaved_file.hpp>
 
 #include <metashell/data/command.hpp>
-#include <metashell/exception.hpp>
-#include <metashell/for_each_line.hpp>
-#include <metashell/source_position.hpp>
-#include <metashell/unsaved_file.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>

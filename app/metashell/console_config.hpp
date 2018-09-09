@@ -17,9 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command_processor_queue.hpp>
 #include <metashell/data/console_type.hpp>
-#include <metashell/line_reader.hpp>
+
+#include <metashell/core/command_processor_queue.hpp>
+#include <metashell/core/line_reader.hpp>
 
 #include <metashell/iface/console.hpp>
 #include <metashell/iface/displayer.hpp>

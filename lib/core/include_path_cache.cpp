@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/include_path_cache.hpp>
+#include <metashell/core/include_path_cache.hpp>
 
 using namespace metashell;
 

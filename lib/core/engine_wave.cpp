@@ -14,16 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine_wave.hpp>
-
-#include <metashell/cpp_validator_wave.hpp>
-#include <metashell/engine.hpp>
-#include <metashell/header_discoverer_wave.hpp>
-#include <metashell/macro_discovery_wave.hpp>
-#include <metashell/not_supported.hpp>
-#include <metashell/parse_wave_config.hpp>
-#include <metashell/preprocessor_shell_wave.hpp>
-#include <metashell/preprocessor_tracer_wave.hpp>
+#include <metashell/core/engine_wave.hpp>
+#include <metashell/core/cpp_validator_wave.hpp>
+#include <metashell/core/engine.hpp>
+#include <metashell/core/header_discoverer_wave.hpp>
+#include <metashell/core/macro_discovery_wave.hpp>
+#include <metashell/core/not_supported.hpp>
+#include <metashell/core/parse_wave_config.hpp>
+#include <metashell/core/preprocessor_shell_wave.hpp>
+#include <metashell/core/preprocessor_tracer_wave.hpp>
 
 using namespace metashell;
 

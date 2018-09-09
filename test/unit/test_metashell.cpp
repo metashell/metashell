@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include <metashell/metashell.hpp>
+#include <metashell/core/metashell.hpp>
 
 using namespace metashell;
 

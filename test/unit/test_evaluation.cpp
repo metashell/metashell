@@ -18,17 +18,16 @@
 #include "mock_environment_detector.hpp"
 #include "test_config.hpp"
 #include "util.hpp"
-
-#include <metashell/engine_constant.hpp>
-#include <metashell/engine_templight.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/in_memory_history.hpp>
-#include <metashell/metashell.hpp>
-#include <metashell/null_displayer.hpp>
-#include <metashell/null_history.hpp>
-#include <metashell/shell.hpp>
-
 #include "empty_container.hpp"
+
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/engine_templight.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/in_memory_history.hpp>
+#include <metashell/core/metashell.hpp>
+#include <metashell/core/null_displayer.hpp>
+#include <metashell/core/null_history.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <gtest/gtest.h>
 

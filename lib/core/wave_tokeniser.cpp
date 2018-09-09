@@ -19,9 +19,9 @@
 #pragma warning(disable : 4996)
 #endif
 
-#include <metashell/make_unique.hpp>
-#include <metashell/wave_token.hpp>
-#include <metashell/wave_tokeniser.hpp>
+#include <metashell/core/make_unique.hpp>
+#include <metashell/core/wave_token.hpp>
+#include <metashell/core/wave_tokeniser.hpp>
 
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>

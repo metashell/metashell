@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/wave_trace_impl.hpp>
+#include <metashell/core/wave_trace_impl.hpp>
 
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
-
 #include <boost/wave/grammars/cpp_chlit_grammar.hpp>
 #include <boost/wave/grammars/cpp_defined_grammar.hpp>
 #include <boost/wave/grammars/cpp_expression_grammar.hpp>

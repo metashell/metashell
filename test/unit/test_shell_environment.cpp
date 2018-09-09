@@ -16,9 +16,9 @@
 
 #include "test_config.hpp"
 
-#include <metashell/engine_constant.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <gtest/gtest.h>
 

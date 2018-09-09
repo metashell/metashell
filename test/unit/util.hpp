@@ -17,11 +17,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <metashell/data/type.hpp>
+
+#include <metashell/core/mdb_command_handler_map.hpp>
+
 #include <string>
 #include <tuple>
-
-#include <metashell/data/type.hpp>
-#include <metashell/mdb_command_handler_map.hpp>
 
 std::tuple<metashell::mdb_command, std::string>
 get_command_from_map(const metashell::mdb_command_handler_map& map,

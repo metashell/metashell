@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/header_discoverer_constant.hpp>
+#include <metashell/core/header_discoverer_constant.hpp>
 
 namespace metashell
 {

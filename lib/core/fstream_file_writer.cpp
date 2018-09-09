@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/fstream_file_writer.hpp>
+#include <metashell/core/fstream_file_writer.hpp>
 
 using namespace metashell;
 

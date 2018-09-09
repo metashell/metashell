@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mock_json_writer.hpp"
-#include <metashell/json_displayer.hpp>
+
+#include <metashell/core/json_displayer.hpp>
 
 #include <gtest/gtest.h>
 

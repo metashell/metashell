@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/cpp_validator_vc.hpp>
-
-#include <metashell/exception.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/core/cpp_validator_vc.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/metashell.hpp>
 
 namespace metashell
 {

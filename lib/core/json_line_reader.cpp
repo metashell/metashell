@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/json_line_reader.hpp>
-#include <metashell/rapid_object_handler.hpp>
+#include <metashell/core/json_line_reader.hpp>
+#include <metashell/core/rapid_object_handler.hpp>
 
 #include <rapidjson/reader.h>
 

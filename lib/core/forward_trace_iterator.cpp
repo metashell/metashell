@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/forward_trace_iterator.hpp>
+#include <metashell/core/forward_trace_iterator.hpp>
 
 #include <algorithm>
 

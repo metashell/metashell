@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/preprocessor_shell_wave.hpp>
-#include <metashell/wave_context.hpp>
+#include <metashell/core/preprocessor_shell_wave.hpp>
+#include <metashell/core/wave_context.hpp>
 
 #include <boost/wave.hpp>
 #include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 #include <boost/wave/cpplexer/cpp_lex_token.hpp>
-
 #include <boost/wave/grammars/cpp_chlit_grammar.hpp>
 #include <boost/wave/grammars/cpp_defined_grammar.hpp>
 #include <boost/wave/grammars/cpp_expression_grammar.hpp>

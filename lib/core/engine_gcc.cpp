@@ -14,16 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine_gcc.hpp>
-
-#include <metashell/cpp_validator_clang.hpp>
-#include <metashell/engine.hpp>
-#include <metashell/header_discoverer_clang.hpp>
-#include <metashell/macro_discovery_clang.hpp>
-#include <metashell/not_supported.hpp>
-#include <metashell/preprocessor_shell_clang.hpp>
-
-#include <metashell/clang_binary.hpp>
+#include <metashell/core/engine_gcc.hpp>
+#include <metashell/core/cpp_validator_clang.hpp>
+#include <metashell/core/engine.hpp>
+#include <metashell/core/header_discoverer_clang.hpp>
+#include <metashell/core/macro_discovery_clang.hpp>
+#include <metashell/core/not_supported.hpp>
+#include <metashell/core/preprocessor_shell_clang.hpp>
+#include <metashell/core/clang_binary.hpp>
 
 using namespace metashell;
 

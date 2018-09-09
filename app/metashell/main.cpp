@@ -16,17 +16,17 @@
 
 #include "console_config.hpp"
 
-#include <metashell/available_engines.hpp>
-#include <metashell/default_environment_detector.hpp>
-#include <metashell/fstream_file_writer.hpp>
-#include <metashell/logger.hpp>
-#include <metashell/make_unique.hpp>
-#include <metashell/parse_config.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/available_engines.hpp>
+#include <metashell/core/default_environment_detector.hpp>
+#include <metashell/core/fstream_file_writer.hpp>
+#include <metashell/core/logger.hpp>
+#include <metashell/core/make_unique.hpp>
+#include <metashell/core/parse_config.hpp>
+#include <metashell/core/shell.hpp>
+#include <metashell/core/version.hpp>
+#include <metashell/core/wave_tokeniser.hpp>
 
 #include <metashell/readline/version.hpp>
-#include <metashell/version.hpp>
-#include <metashell/wave_tokeniser.hpp>
 
 #include <metashell/data/config.hpp>
 

@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/metashell.hpp>
+#include <metashell/core/vc_binary.hpp>
+
 #include <metashell/process/run.hpp>
 #include <metashell/process/util.hpp>
-#include <metashell/vc_binary.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>

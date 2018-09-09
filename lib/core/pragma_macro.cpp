@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/null_history.hpp>
-#include <metashell/pragma_macro.hpp>
+#include <metashell/core/null_history.hpp>
+#include <metashell/core/pragma_macro.hpp>
 
 using namespace metashell;
 

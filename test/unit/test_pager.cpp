@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_displayer.hpp>
-#include <metashell/pager.hpp>
+#include <metashell/core/console_displayer.hpp>
+#include <metashell/core/pager.hpp>
 
 #include "mock_console.hpp"
 

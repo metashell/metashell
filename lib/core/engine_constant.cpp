@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/code_completer_constant.hpp>
-#include <metashell/cpp_validator_constant.hpp>
-#include <metashell/engine.hpp>
-#include <metashell/engine_constant.hpp>
-#include <metashell/header_discoverer_constant.hpp>
-#include <metashell/macro_discovery_constant.hpp>
-#include <metashell/metaprogram_tracer_constant.hpp>
-#include <metashell/preprocessor_shell_constant.hpp>
-#include <metashell/preprocessor_tracer_constant.hpp>
-#include <metashell/type_shell_constant.hpp>
+#include <metashell/core/code_completer_constant.hpp>
+#include <metashell/core/cpp_validator_constant.hpp>
+#include <metashell/core/engine.hpp>
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/header_discoverer_constant.hpp>
+#include <metashell/core/macro_discovery_constant.hpp>
+#include <metashell/core/metaprogram_tracer_constant.hpp>
+#include <metashell/core/preprocessor_shell_constant.hpp>
+#include <metashell/core/preprocessor_tracer_constant.hpp>
+#include <metashell/core/type_shell_constant.hpp>
 
 using namespace metashell;
 

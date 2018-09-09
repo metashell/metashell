@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/default_environment_detector.hpp>
-#include <metashell/header_file_environment.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/core/default_environment_detector.hpp>
+#include <metashell/core/header_file_environment.hpp>
+#include <metashell/core/metashell.hpp>
 
 #include <just/environment.hpp>
 

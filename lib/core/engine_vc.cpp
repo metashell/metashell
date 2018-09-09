@@ -14,16 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine_vc.hpp>
-
-#include <metashell/cpp_validator_vc.hpp>
-#include <metashell/engine.hpp>
-#include <metashell/exception.hpp>
-#include <metashell/header_discoverer_vc.hpp>
-#include <metashell/not_supported.hpp>
-#include <metashell/preprocessor_shell_vc.hpp>
-
-#include <metashell/vc_binary.hpp>
+#include <metashell/core/engine_vc.hpp>
+#include <metashell/core/cpp_validator_vc.hpp>
+#include <metashell/core/engine.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/header_discoverer_vc.hpp>
+#include <metashell/core/not_supported.hpp>
+#include <metashell/core/preprocessor_shell_vc.hpp>
+#include <metashell/core/vc_binary.hpp>
 
 #include <just/environment.hpp>
 

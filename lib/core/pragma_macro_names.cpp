@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/pragma_macro_names.hpp>
-#include <metashell/wave_tokeniser.hpp>
+#include <metashell/core/pragma_macro_names.hpp>
+#include <metashell/core/wave_tokeniser.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 

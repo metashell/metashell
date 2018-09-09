@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/clang_binary.hpp>
-#include <metashell/has_prefix.hpp>
-#include <metashell/metashell.hpp>
+#include <metashell/core/clang_binary.hpp>
+#include <metashell/core/has_prefix.hpp>
+#include <metashell/core/metashell.hpp>
+
 #include <metashell/process/run.hpp>
 #include <metashell/process/util.hpp>
 

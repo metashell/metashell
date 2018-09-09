@@ -20,9 +20,9 @@
 #include <memory>
 #include <vector>
 
-#include <metashell/mdb_shell.hpp>
-#include <metashell/metaprogram.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/mdb_shell.hpp>
+#include <metashell/core/metaprogram.hpp>
+#include <metashell/core/shell.hpp>
 
 class mdb_test_shell : public metashell::mdb_shell
 {

@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/headers.hpp>
-#include <metashell/unsaved_file.hpp>
+#include <metashell/core/headers.hpp>
+#include <metashell/core/unsaved_file.hpp>
 
 using namespace metashell;
 

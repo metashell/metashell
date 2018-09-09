@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
-#include <metashell/wave_tokeniser.hpp>
+
+#include <metashell/core/wave_tokeniser.hpp>
 
 #include <algorithm>
 

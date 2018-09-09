@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
-#include <metashell/pragma_which.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/pragma_which.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptors.hpp>

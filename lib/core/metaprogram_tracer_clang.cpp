@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
-#include <metashell/filter_events.hpp>
-#include <metashell/metaprogram_tracer_clang.hpp>
-#include <metashell/yaml_trace.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/filter_events.hpp>
+#include <metashell/core/metaprogram_tracer_clang.hpp>
+#include <metashell/core/yaml_trace.hpp>
 
 #include <metashell/data/stdin_name.hpp>
 

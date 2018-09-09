@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine_constant.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/null_displayer.hpp>
-#include <metashell/shell.hpp>
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/metashell_pragma.hpp>
+#include <metashell/core/null_displayer.hpp>
+#include <metashell/core/shell.hpp>
 
 #include "test_config.hpp"
 

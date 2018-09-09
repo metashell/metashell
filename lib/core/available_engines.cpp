@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/available_engines.hpp>
-
-#include <metashell/engine_clang.hpp>
-#include <metashell/engine_entry.hpp>
-#include <metashell/engine_gcc.hpp>
-#include <metashell/engine_null.hpp>
-#include <metashell/engine_templight.hpp>
-#include <metashell/engine_vc.hpp>
-#include <metashell/engine_wave.hpp>
+#include <metashell/core/available_engines.hpp>
+#include <metashell/core/engine_clang.hpp>
+#include <metashell/core/engine_entry.hpp>
+#include <metashell/core/engine_gcc.hpp>
+#include <metashell/core/engine_null.hpp>
+#include <metashell/core/engine_templight.hpp>
+#include <metashell/core/engine_vc.hpp>
+#include <metashell/core/engine_wave.hpp>
 
 namespace metashell
 {

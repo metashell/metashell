@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/engine.hpp>
-#include <metashell/engine_null.hpp>
-#include <metashell/not_supported.hpp>
+#include <metashell/core/engine.hpp>
+#include <metashell/core/engine_null.hpp>
+#include <metashell/core/not_supported.hpp>
 
 namespace metashell
 {

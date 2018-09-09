@@ -16,16 +16,17 @@
 
 #include "console_config.hpp"
 
-#include <metashell/console_displayer.hpp>
-#include <metashell/json_displayer.hpp>
-#include <metashell/json_line_reader.hpp>
-#include <metashell/make_unique.hpp>
-#include <metashell/null_history.hpp>
-#include <metashell/rapid_json_writer.hpp>
+#include <metashell/core/console_displayer.hpp>
+#include <metashell/core/json_displayer.hpp>
+#include <metashell/core/json_line_reader.hpp>
+#include <metashell/core/make_unique.hpp>
+#include <metashell/core/null_history.hpp>
+#include <metashell/core/rapid_json_writer.hpp>
+#include <metashell/core/stdout_console.hpp>
+#include <metashell/core/stream_console.hpp>
+
 #include <metashell/readline/history.hpp>
 #include <metashell/readline/line_reader.hpp>
-#include <metashell/stdout_console.hpp>
-#include <metashell/stream_console.hpp>
 
 #include <iostream>
 

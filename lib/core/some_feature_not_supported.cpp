@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/some_feature_not_supported.hpp>
+#include <metashell/core/some_feature_not_supported.hpp>
 
 namespace metashell
 {

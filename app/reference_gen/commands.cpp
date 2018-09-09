@@ -16,13 +16,14 @@
 
 #include "commands.hpp"
 
-#include <metashell/available_engines.hpp>
 #include <metashell/data/markdown_string.hpp>
-#include <metashell/engine_constant.hpp>
-#include <metashell/mdb_command_handler_map.hpp>
-#include <metashell/mdb_shell.hpp>
-#include <metashell/pragma_handler_map.hpp>
-#include <metashell/shell.hpp>
+
+#include <metashell/core/available_engines.hpp>
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/mdb_command_handler_map.hpp>
+#include <metashell/core/mdb_shell.hpp>
+#include <metashell/core/pragma_handler_map.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>

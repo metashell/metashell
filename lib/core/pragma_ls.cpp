@@ -15,10 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/include_argument.hpp>
-#include <metashell/exception.hpp>
-#include <metashell/include_path_cache.hpp>
-#include <metashell/pragma_ls.hpp>
-#include <metashell/shell.hpp>
+
+#include <metashell/core/exception.hpp>
+#include <metashell/core/include_path_cache.hpp>
+#include <metashell/core/pragma_ls.hpp>
+#include <metashell/core/shell.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>

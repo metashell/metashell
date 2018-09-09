@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/caching_disabled.hpp>
-#include <metashell/forward_trace_iterator.hpp>
-#include <metashell/highlight_syntax.hpp>
-#include <metashell/mdb_shell.hpp>
-#include <metashell/metashell.hpp>
-#include <metashell/null_history.hpp>
-#include <metashell/some_feature_not_supported.hpp>
+#include <metashell/core/caching_disabled.hpp>
+#include <metashell/core/forward_trace_iterator.hpp>
+#include <metashell/core/highlight_syntax.hpp>
+#include <metashell/core/mdb_shell.hpp>
+#include <metashell/core/metashell.hpp>
+#include <metashell/core/null_history.hpp>
+#include <metashell/core/some_feature_not_supported.hpp>
 
 #include <metashell/data/mdb_usage.hpp>
 

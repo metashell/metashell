@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/include_argument.hpp>
-#include <metashell/exception.hpp>
+#include <metashell/core/exception.hpp>
 
 #include <iostream>
 #include <tuple>

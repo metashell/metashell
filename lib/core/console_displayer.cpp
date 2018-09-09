@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/console_displayer.hpp>
+#include <metashell/core/console_displayer.hpp>
+#include <metashell/core/get_file_section.hpp>
+#include <metashell/core/highlight_syntax.hpp>
+#include <metashell/core/indenter.hpp>
+
 #include <metashell/data/colored_string.hpp>
-#include <metashell/get_file_section.hpp>
-#include <metashell/highlight_syntax.hpp>
-#include <metashell/indenter.hpp>
 
 #include <mindent/display.hpp>
 #include <mindent/parser.hpp>

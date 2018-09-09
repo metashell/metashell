@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/stdout_console.hpp>
+#include <metashell/core/stdout_console.hpp>
 
 #ifdef _WIN32
 #include <windows.h>

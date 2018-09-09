@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/metaprogram.hpp>
+#include <metashell/core/metaprogram.hpp>
+#include <metashell/core/event_data_sequence.hpp>
 
 #include <metashell/data/in_memory_event_data_sequence.hpp>
-
-#include <metashell/event_data_sequence.hpp>
 
 #include "counting_event_data_sequence.hpp"
 

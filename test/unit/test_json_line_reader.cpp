@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/command_processor_queue.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/json_line_reader.hpp>
-#include <metashell/null_displayer.hpp>
-#include <metashell/null_json_writer.hpp>
+#include <metashell/core/command_processor_queue.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/json_line_reader.hpp>
+#include <metashell/core/null_displayer.hpp>
+#include <metashell/core/null_json_writer.hpp>
 
 #include "mock_command_processor.hpp"
 #include "mock_json_writer.hpp"

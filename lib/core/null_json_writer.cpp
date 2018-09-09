@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/null_json_writer.hpp>
+#include <metashell/core/null_json_writer.hpp>
 
 using namespace metashell;
 

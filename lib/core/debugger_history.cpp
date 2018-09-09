@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/debugger_history.hpp>
-#include <metashell/exception.hpp>
+#include <metashell/core/debugger_history.hpp>
+#include <metashell/core/exception.hpp>
 
 namespace metashell
 {

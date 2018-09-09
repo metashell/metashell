@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/rapid_shell_config_parser.hpp>
+#include <metashell/core/rapid_shell_config_parser.hpp>
 
 #include <boost/optional.hpp>
 

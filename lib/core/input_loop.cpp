@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/interrupt_handler_override.hpp>
-#include <metashell/line_reader.hpp>
+#include <metashell/core/interrupt_handler_override.hpp>
+#include <metashell/core/line_reader.hpp>
 
 #include <cassert>
 

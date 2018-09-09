@@ -15,10 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/data/command.hpp>
-#include <metashell/engine_constant.hpp>
-#include <metashell/in_memory_displayer.hpp>
-#include <metashell/pragma_which.hpp>
-#include <metashell/shell.hpp>
+
+#include <metashell/core/engine_constant.hpp>
+#include <metashell/core/in_memory_displayer.hpp>
+#include <metashell/core/pragma_which.hpp>
+#include <metashell/core/shell.hpp>
 
 #include "test_config.hpp"
 

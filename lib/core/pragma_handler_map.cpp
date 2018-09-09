@@ -14,36 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/exception.hpp>
-#include <metashell/metashell_pragma.hpp>
-#include <metashell/pragma_handler_map.hpp>
-#include <metashell/shell.hpp>
-
-#include <metashell/pragma_config.hpp>
-#include <metashell/pragma_config_load.hpp>
-#include <metashell/pragma_config_show.hpp>
-#include <metashell/pragma_echo.hpp>
-#include <metashell/pragma_environment.hpp>
-#include <metashell/pragma_environment_add.hpp>
-#include <metashell/pragma_environment_pop.hpp>
-#include <metashell/pragma_environment_push.hpp>
-#include <metashell/pragma_environment_reload.hpp>
-#include <metashell/pragma_environment_reset.hpp>
-#include <metashell/pragma_environment_save.hpp>
-#include <metashell/pragma_environment_stack.hpp>
-#include <metashell/pragma_evaluate.hpp>
-#include <metashell/pragma_help.hpp>
-#include <metashell/pragma_included_headers.hpp>
-#include <metashell/pragma_includes.hpp>
-#include <metashell/pragma_ls.hpp>
-#include <metashell/pragma_macro.hpp>
-#include <metashell/pragma_macro_names.hpp>
-#include <metashell/pragma_macros.hpp>
-#include <metashell/pragma_mdb.hpp>
-#include <metashell/pragma_pp.hpp>
-#include <metashell/pragma_quit.hpp>
-#include <metashell/pragma_switch.hpp>
-#include <metashell/pragma_which.hpp>
+#include <metashell/core/exception.hpp>
+#include <metashell/core/metashell_pragma.hpp>
+#include <metashell/core/pragma_handler_map.hpp>
+#include <metashell/core/shell.hpp>
+#include <metashell/core/pragma_config.hpp>
+#include <metashell/core/pragma_config_load.hpp>
+#include <metashell/core/pragma_config_show.hpp>
+#include <metashell/core/pragma_echo.hpp>
+#include <metashell/core/pragma_environment.hpp>
+#include <metashell/core/pragma_environment_add.hpp>
+#include <metashell/core/pragma_environment_pop.hpp>
+#include <metashell/core/pragma_environment_push.hpp>
+#include <metashell/core/pragma_environment_reload.hpp>
+#include <metashell/core/pragma_environment_reset.hpp>
+#include <metashell/core/pragma_environment_save.hpp>
+#include <metashell/core/pragma_environment_stack.hpp>
+#include <metashell/core/pragma_evaluate.hpp>
+#include <metashell/core/pragma_help.hpp>
+#include <metashell/core/pragma_included_headers.hpp>
+#include <metashell/core/pragma_includes.hpp>
+#include <metashell/core/pragma_ls.hpp>
+#include <metashell/core/pragma_macro.hpp>
+#include <metashell/core/pragma_macro_names.hpp>
+#include <metashell/core/pragma_macros.hpp>
+#include <metashell/core/pragma_mdb.hpp>
+#include <metashell/core/pragma_pp.hpp>
+#include <metashell/core/pragma_quit.hpp>
+#include <metashell/core/pragma_switch.hpp>
+#include <metashell/core/pragma_which.hpp>
 
 #include <cassert>
 #include <sstream>

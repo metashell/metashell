@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <metashell/line_reader.hpp>
+#include <metashell/core/line_reader.hpp>
+
 #include <metashell/readline/line_reader.hpp>
 
 #ifdef USE_EDITLINE

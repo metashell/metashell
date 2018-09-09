@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <metashell/readline/version.hpp>
-#include <metashell/to_string.hpp>
+
+#include <metashell/core/to_string.hpp>
 
 #ifdef USE_EDITLINE
 #include <editline/readline.h>
